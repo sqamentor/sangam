@@ -1,0 +1,3 @@
+# Frozen E-46 kit fixtures: E46ConformanceIT checks each file's SHA-256 against the kit copy, so git must never
+# rewrite their line endings (core.autocrlf=true on Windows turned LF into CRLF and broke every hash).
+*.model -text

@@ -1,0 +1,27 @@
+{
+  "key": "sec-eu-gdpr-dsr/extend",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "Tell the data subject of the extension and why",
+    "hi": "विस्तार की सूचना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "extensionReason",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reason for the 30-day extension and expected date",
+        "hi": "Reason for the 30-day extension and expected date"
+      }
+    }
+  ]
+}

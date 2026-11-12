@@ -48,6 +48,13 @@ public class ReadReplicaWiring {
         if (url.startsWith("jdbc:mariadb:") || url.startsWith("jdbc:mysql:")) {
             replica.setConnectionInitSql("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
         }
+        // SL-59: the same 2 s acquire as the main pool (503 + Retry-After when exhausted), unless set for the replica
+        replica.setConnectionTimeout(env.getProperty("sangam.datasource.replica.connection-timeout", Long.class,
+                env.getProperty("spring.datasource.hikari.connection-timeout", Long.class, 2_000L)));
+        replica.setValidationTimeout(env.getProperty("sangam.datasource.replica.validation-timeout", Long.class,
+                env.getProperty("spring.datasource.hikari.validation-timeout", Long.class, 1_000L)));
+        // SL-59: not a bean, so PoolWaitBounds' post-processor never sees it; bound its acquire and socket reads here
+        PoolWaitBounds.apply(replica, PoolWaitBounds.networkTimeout(env), "sangam-replica");
         LOG.info("Read replica configured for analytics, audit and history GET routes");
         return new CellReadReplicaRouter(dataSource, replica);
     }

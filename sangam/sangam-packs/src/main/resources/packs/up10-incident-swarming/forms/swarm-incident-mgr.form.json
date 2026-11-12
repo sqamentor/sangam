@@ -1,6 +1,6 @@
 {
   "key": "up10-incident-swarming/swarm-incident-mgr",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up10-incident-swarming",
   "title": {
     "en": "Major incident bridge",

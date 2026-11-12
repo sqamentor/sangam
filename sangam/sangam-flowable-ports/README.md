@@ -343,7 +343,7 @@ Totals: n/a 13, avoided 14, fixed 20. Every FWT-001 … FWT-057 is referenced ab
 - FC-18 historic-instance migration (Operaton history is bound to the original definition).
 - FC-34 several tenant engines in one JVM with a moved clock (needs WS-ENGINE's per-engine clock SPI, D-10).
 - FC-51 CockroachDB, EC-06 data objects: stage E/D, not in WS-PORTS stage C.
-- Not yet tested (phase rule): every port compiles; behaviour tests come in the testing phase.
+- Tests: the module has 65 test sources under `src/test` (unit and H2). The SL-37 rows of `TESTING-GAP-REGISTER.md` record PASS on 2026-11-08 for the FW-07, FW-28…FW-40 and FW-46 test methods, and `FwtWorkerCompatIT` (sangam-server) 7/7 on PostgreSQL on 2026-11-09 (FW-07). The tests added on 2026-11-12 (`S3DocumentStoreTest`, `ContentStoreKeyTest` for SG-03; `EngineTenantMappingTest`, `InstanceLinkSharedTenantH2Test` for SL-86; `TaskSuspensionDispatchTest`; `JsonModulesTest`) are written, not yet run: the test phase follows the push.
 
 ## Third-party dependencies
 

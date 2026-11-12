@@ -46,6 +46,11 @@ export interface Act {
   bodyExtra?: Row;
   /** Send these fields as null when left empty (clear a value). */
   sendNulls?: string[];
+  /**
+   * Options of a select / checklist field that depend on the other values (e.g. the permissions of the chosen
+   * resource type, P49). Picked values that are no longer offered are dropped when the options change.
+   */
+  dynamicValues?: Record<string, (values: FormValues) => { value: string; label: string }[]>;
 }
 
 export interface DetailSection {
@@ -182,9 +187,23 @@ export function buildRequest(fields: FormField[], values: FormValues, extraJson:
 
 export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act; row?: Row; context?: FormValues; onClose: () => void; onDone: (result: unknown) => void }) {
   const { t } = useTranslation();
-  const fields = act.fields ?? [];
+  const [values, setValuesRaw] = useState<FormValues>(() => act.defaults?.(row) ?? {});
+  const dyn = act.dynamicValues;
+  const dynKey = dyn ? JSON.stringify(Object.keys(dyn).map((k) => dyn[k](values).map((o) => o.value))) : '';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fields = useMemo(() => (act.fields ?? []).map((x) => (dyn && x.key && dyn[x.key] ? { ...x, values: dyn[x.key](values) } : x)), [act.fields, dynKey]);
   const schema: FormSchema = useMemo(() => ({ components: translateFields(fields, t) }), [fields, t]);
-  const [values, setValues] = useState<FormValues>(() => act.defaults?.(row) ?? {});
+  const setValues = (next: FormValues) => {
+    if (!dyn) return setValuesRaw(next);
+    const out = { ...next };
+    for (const [k, opts] of Object.entries(dyn)) {
+      const allowed = new Set(opts(out).map((o) => o.value));
+      const v = out[k];
+      if (Array.isArray(v)) out[k] = (v as string[]).filter((x) => allowed.has(x));
+      else if (typeof v === 'string' && v && !allowed.has(v)) out[k] = '';
+    }
+    setValuesRaw(out);
+  };
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [json, setJson] = useState('');
   const [reason, setReason] = useState('');

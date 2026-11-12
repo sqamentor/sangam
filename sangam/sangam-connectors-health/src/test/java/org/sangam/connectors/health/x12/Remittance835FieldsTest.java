@@ -17,11 +17,13 @@ class Remittance835FieldsTest {
     void perClaimTotalsAndBalanceFlag() {
         String x12 = HealthSimulator.remittance835("PCN1", "100.00", "70.00", "10.00", false);
         Map<String, Object> m = HealthSimulator.decode835(x12);
-        assertEquals("100.00", String.valueOf(m.get("chargeAmount")));
+        assertEquals(10_000L, m.get("chargeAmount"), "integer cents (SD-398)");
+        assertEquals("MINOR", m.get("amountUnit"));
+        assertEquals("USD", m.get("currency"));
         Map<String, Object> c = ((List<Map<String, Object>>) m.get("claims")).get(0);
-        Map<String, String> totals = (Map<String, String>) c.get("adjustmentTotals");
-        assertEquals(0, new java.math.BigDecimal("10").compareTo(new java.math.BigDecimal(totals.get("PR"))), totals.toString());
-        assertEquals(0, new java.math.BigDecimal("20").compareTo(new java.math.BigDecimal(totals.get("CO"))), totals.toString());
+        Map<String, Object> totals = (Map<String, Object>) c.get("adjustmentTotals");
+        assertEquals(0, new java.math.BigDecimal("1000").compareTo(new java.math.BigDecimal(String.valueOf(totals.get("PR")))), totals.toString());
+        assertEquals(0, new java.math.BigDecimal("2000").compareTo(new java.math.BigDecimal(String.valueOf(totals.get("CO")))), totals.toString());
         assertEquals(true, c.get("claimBalanced"));
     }
 }

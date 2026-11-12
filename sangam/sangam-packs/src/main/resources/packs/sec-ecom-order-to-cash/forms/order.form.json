@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-order-to-cash/order",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ecom.order-to-cash",
   "title": {
     "en": "Order",
@@ -43,7 +43,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

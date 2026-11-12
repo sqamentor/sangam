@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.packs.core;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +18,8 @@ import org.operaton.bpm.engine.delegate.TaskListener;
  *
  * <p>Fields: {@code steps} (comma list of earlier task keys to compare with; empty = every earlier actor, including
  * the initiator), {@code excludeVar} (a variable holding a comma list of person ids that must not act, e.g. the
- * original verifier on appeal, J-P3-E04). A controlled exception is the variable {@code sodExceptionId}, granted by a
+ * original verifier on appeal, J-P3-E04). Inside one round of a parallel multi-instance step (a joint approval) one
+ * person completes at most one instance ({@link #actedInRound}). A controlled exception is the variable {@code sodExceptionId}, granted by a
  * higher authority through the admin route (AJ), which is recorded as {@code SOD_EXCEPTION_GRANTED}.
  */
 public class SodGuardListener implements TaskListener {
@@ -26,34 +28,75 @@ public class SodGuardListener implements TaskListener {
     private Expression excludeVar;
     private Expression stepSuffixVar;
 
+    /** One earlier actor of the case that a segregation-of-duties check compares with: the step it acted in. */
+    record EarlierActor(String step, String person, String seat) {
+    }
+
+    /**
+     * The earlier actors a completion of step {@code current} must differ from, in the order the check reads them:
+     * the initiator (as step {@code initiator}) when {@code only} is empty or names {@code initiate}, then every
+     * {@code actorLog} entry of another step ({@code only} empty = every step; a step matches by its id or by its task
+     * key before {@code #}). The same step repeated after a return is the same role and is not an earlier actor. Shared
+     * with {@link SeatResolutionDelegate} op {@code EXCLUDE_ACTORS}, so that a seat is never offered for a step whose
+     * completion this check would refuse (SL-32, J-P1-E09).
+     */
+    static List<EarlierActor> earlierActors(Set<String> only, String current, String initiatorPerson,
+                                            String initiatorSeat, List<Map<String, Object>> log) {
+        List<EarlierActor> out = new ArrayList<>();
+        if (only.isEmpty() || only.contains("initiate")) {
+            out.add(new EarlierActor("initiator", initiatorPerson, initiatorSeat));
+        }
+        for (Map<String, Object> e : log) {
+            String step = String.valueOf(e.get("step"));
+            if (step.equals(current) || "initiate".equals(step)) {
+                continue; // the same step repeated after a return is the same role
+            }
+            if (!only.isEmpty() && !only.contains(step) && !only.contains(step.split("#")[0])) {
+                continue;
+            }
+            out.add(new EarlierActor(step, e.get("person") == null ? null : String.valueOf(e.get("person")),
+                    e.get("seat") == null ? null : String.valueOf(e.get("seat"))));
+        }
+        return out;
+    }
+
+    /**
+     * True when {@code person} already completed another instance of the same round of the parallel step
+     * {@code current} (the {@code round} of {@link ActorRecorderListener}): one person is one approval of a joint
+     * approval, even through two seats held by additional charge or delegation (IFMS R-102: one seat, or one person,
+     * must not count as two approvals). Another person on another seat of the round, and the same person in a later
+     * round (after a return), are not refused.
+     */
+    static boolean actedInRound(String person, String current, String round, List<Map<String, Object>> log) {
+        if (round == null || person == null) {
+            return false;
+        }
+        for (Map<String, Object> e : log) {
+            if (current.equals(String.valueOf(e.get("step"))) && round.equals(e.get("round"))
+                    && person.equals(e.get("person"))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void notify(DelegateTask t) {
         TaskActor a = TaskActor.of(t);
         Set<String> only = Set.copyOf(Vars.csv(Vars.field(steps, t)));
         String exception = Vars.str(t, "sodExceptionId");
         String conflict = null;
-        if (only.isEmpty() || only.contains("initiate")) {
-            if (a.person().equals(Vars.str(t, Vars.INITIATOR_PERSON))
-                    || (a.seat() != null && a.seat().equals(Vars.str(t, Vars.INITIATOR_SEAT)))) {
-                conflict = "initiator";
+        String current = TaskActor.stepId(t, Vars.field(stepSuffixVar, t));
+        List<Map<String, Object>> log = Vars.jsonList(t, Vars.ACTOR_LOG);
+        for (EarlierActor e : earlierActors(only, current, Vars.str(t, Vars.INITIATOR_PERSON),
+                Vars.str(t, Vars.INITIATOR_SEAT), log)) {
+            if (a.person().equals(e.person()) || (a.seat() != null && a.seat().equals(e.seat()))) {
+                conflict = e.step();
+                break;
             }
         }
-        String current = TaskActor.stepId(t, Vars.field(stepSuffixVar, t));
-        if (conflict == null) {
-            List<Map<String, Object>> log = Vars.jsonList(t, Vars.ACTOR_LOG);
-            for (Map<String, Object> e : log) {
-                String step = String.valueOf(e.get("step"));
-                if (step.equals(current) || "initiate".equals(step)) {
-                    continue; // the same step repeated after a return is the same role
-                }
-                if (!only.isEmpty() && !only.contains(step) && !only.contains(step.split("#")[0])) {
-                    continue;
-                }
-                if (a.person().equals(e.get("person")) || (a.seat() != null && a.seat().equals(e.get("seat")))) {
-                    conflict = step;
-                    break;
-                }
-            }
+        if (conflict == null && actedInRound(a.person(), current, TaskActor.multiInstanceRound(t), log)) {
+            conflict = current + " (another instance of the same round)";
         }
         String ex = Vars.field(excludeVar, t);
         if (conflict == null && ex != null && Vars.csv(Vars.str(t, ex)).contains(a.person())) {

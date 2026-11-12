@@ -88,6 +88,33 @@ public class TaskEventDispatcher implements TaskListener {
         }
     }
 
+    /**
+     * SG-03(c): {@code task.suspend} / {@code task.activate} for the tasks a bulk suspension update changed (reported by
+     * sangam-engine's TaskManager through {@link org.sangam.core.engine.TaskSuspensionEvents}; Operaton fires no task
+     * listener for them, so the property-change branch above never sees a suspension). One event per task, with the
+     * same data shape as the other derived events, and the suspension recorded in {@link TaskLifecycleService}, all in
+     * the engine command.
+     */
+    public void suspensionChanged(List<org.sangam.core.engine.TaskSuspensionEvents.ChangedTask> tasks, boolean suspended) {
+        String type = suspended ? "task.suspend" : "task.activate";
+        for (org.sangam.core.engine.TaskSuspensionEvents.ChangedTask t : tasks) {
+            if (bus != null && bus.hasListeners()) {
+                Map<String, Object> data = new LinkedHashMap<>();
+                data.put("property", "suspensionState");
+                data.put("old", suspended ? "1" : "2");
+                data.put("new", suspended ? "2" : "1");
+                data.put("taskDefinitionKey", t.taskDefinitionKey());
+                data.put("assignee", t.assignee());
+                data.put("owner", t.owner());
+                bus.dispatch(new EngineEventBus.EngineEvent(type, t.tenantId(), t.processInstanceId(), t.caseInstanceId(),
+                        t.taskDefinitionKey(), t.taskId(), data));
+            }
+            if (lifecycle != null) {
+                lifecycle.suspended(EngineTx.connection(), t.taskId(), t.tenantId(), suspended);
+            }
+        }
+    }
+
     private void derived(DelegateTask task, Map<String, PropertyChange> changes, String property, String type) {
         PropertyChange pc = changes.get(property);
         if (pc != null) {

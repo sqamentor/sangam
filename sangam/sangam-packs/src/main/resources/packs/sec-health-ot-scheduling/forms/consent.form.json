@@ -1,6 +1,6 @@
 {
   "key": "sec-health-ot-scheduling/consent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.ot-scheduling",
   "title": {
     "en": "Informed consent for surgery and anaesthesia",

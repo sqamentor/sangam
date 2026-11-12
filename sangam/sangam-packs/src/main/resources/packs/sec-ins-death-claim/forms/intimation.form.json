@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-death-claim/intimation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ins.death-claim",
   "title": {
     "en": "Death claim intimation",
@@ -43,7 +43,9 @@
     },
     {
       "id": "sumAssured",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Sum assured (INR)",

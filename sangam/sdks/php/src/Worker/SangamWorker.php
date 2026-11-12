@@ -163,7 +163,7 @@ final class SangamWorker
     {
         $topics = [];
         foreach ($this->subscriptions as $s) {
-            $topics[] = $s->toTopicRequest();
+            $topics[] = $s->topicRequest();
         }
         try {
             $items = $this->client->work()->fetchAndLock($this->workerId, $topics, $maxTasks, $waitMs,
@@ -193,7 +193,7 @@ final class SangamWorker
             $this->unlockQuietly($w);
             return null;
         }
-        if ($w->id === null || $w->attemptId === null) {
+        if ($w->id === null || $w->attemptId === null || $w->lockVersion === null) {
             // A-1: a handler starts only after the LOCKED confirmation with lockVersion + attemptId
             $this->log->error('work.protocol.violation', 'item without LOCKED confirmation (attemptId); not started',
                 ['workerId' => $this->workerId, 'workId' => $w->id]);
@@ -204,10 +204,13 @@ final class SangamWorker
 
     private function unlockQuietly(ExternalWork $w, int $lockVersion = -1): void
     {
-        if ($w->id === null) {
+        $lv = $lockVersion >= 0 ? $lockVersion : $w->lockVersion;
+        if ($w->id === null || $lv === null) {
+            // without the work id and the fencing token the server cannot accept an unlock; the lease expires
+            $this->log->warning('work.unlock.skipped', 'unlock impossible without id and lockVersion; lease will expire',
+                ['workerId' => $this->workerId, 'workId' => $w->id]);
             return;
         }
-        $lv = $lockVersion >= 0 ? $lockVersion : $w->lockVersion;
         try {
             $this->client->work()->unlock($w->id, $this->workerId, $lv, $w->attemptId,
                 $w->operationIdOrId() . ':unlock:' . $lv);
@@ -412,8 +415,8 @@ final class SangamWorker
                     $c['lockVersion'] = $r->lockVersion;
                 }
                 // hand the LockState to the child so its report carries the current lockVersion
-                self::sendLockState($c['pipe'], $c['lockVersion'], $r->lockExpiresAt, $r->cancelRequested);
-                if ($r->cancelRequested && !$c['cancelSent']) {
+                self::sendLockState($c['pipe'], $c['lockVersion'], $r->lockExpiresAt, $r->cancelRequested === true);
+                if ($r->cancelRequested === true && !$c['cancelSent']) {
                     $c['cancelSent'] = true;
                     posix_kill($pid, SIGUSR1);
                     $this->log->warning('work.cancel.requested', 'server requested cancel',
@@ -552,8 +555,8 @@ final class SangamWorker
                 $r = $this->client->work()->extendLock($ctx->workId(), $this->workerId, $ctx->lockVersion(),
                     $ctx->attemptId(), $sub->lockDurationMs,
                     $ctx->operationId() . ':extend-lock:' . $ctx->lockVersion() . ':' . (++$this->hbSeq));
-                $ctx->markExtended(Time::parse($r->lockExpiresAt), $r->lockVersion, $r->cancelRequested);
-                if ($r->cancelRequested) {
+                $ctx->markExtended(Time::parse($r->lockExpiresAt), $r->lockVersion, $r->cancelRequested === true);
+                if ($r->cancelRequested === true) {
                     $ctx->log()->warning('work.cancel.requested', 'server requested cancel');
                 }
             } catch (StaleLeaseException|GoneException $e) {

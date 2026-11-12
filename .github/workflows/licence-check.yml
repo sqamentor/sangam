@@ -60,6 +60,16 @@ jobs:
             args+=(--jar "$j")
           done
           python3 -I deploy/licence/check_licences.py "${args[@]}"
+      - name: Build-time tools never shipped (owner 2026-11-12, licence-policy.json build_time_tools)
+        # SpotBugs, FindSecBugs, the Semgrep CLI and sonar-maven-plugin are allowed only as build-time tools: none may
+        # appear in the shipped SBOMs or the fat jar.
+        run: |
+          args=(--policy deploy/licence/licence-policy.json --sbom target/sangam-maven.cdx.json)
+          [ -f target/sangam-ui.cdx.json ] && args+=(--sbom target/sangam-ui.cdx.json)
+          for j in $(ls sangam-server/target/sangam-server-*.jar 2>/dev/null | grep -v -e '\.original$' -e '-plain\.jar$' -e '-sources\.jar$'); do
+            args+=(--jar "$j")
+          done
+          python3 -I ../.github/scripts/build_tools_not_shipped.py "${args[@]}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -265,11 +265,11 @@ public class EventDispatcher implements Inbox.Handler {
     }
 
     /**
-     * FW-29: the registry stores the default tenant as {@code ""}, the engine as {@code null}. Without this mapping an
-     * event of the default tenant would never match ({@code tenantId("")} selects nothing).
+     * FW-29: the registry stores "no tenant" as the shared key {@code TenantKey.SHARED} (SL-86; {@code ""} before), the engine as {@code null}. Without this mapping an
+     * event of the shared scope would never match ({@code tenantId("-")} selects nothing). Legacy {@code ""} rows map the same way.
      */
     static String engineTenant(String tenant) {
-        return tenant == null || tenant.isBlank() ? null : tenant;
+        return org.sangam.core.layer.TenantKey.toEngine(tenant);
     }
 
     private static void tenant(MessageCorrelationBuilder b, String tenant) {

@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.gfe-ppdr",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Good-faith estimate and patient-provider dispute resolution (No Surprises Act)",
     "es": "Presupuesto de buena fe y resolución de disputas entre paciente y proveedor (Ley No Surprises)"
@@ -70,5 +70,16 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "billedAmount",
+      "determinationAmount",
+      "expectedCharges",
+      "ppdrThreshold"
+    ]
+  }
 }

@@ -1,6 +1,6 @@
 {
   "key": "p1-bill-payment/joint-approval",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p1.bill-payment",
   "title": {
     "en": "Joint approval",
@@ -21,6 +21,24 @@
       "label": {
         "en": "Remarks",
         "hi": "टिप्पणी"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    },
+    {
+      "id": "rejectionRemarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Rejection remarks",
+        "hi": "अस्वीकृति संबंधी टिप्पणी"
       }
     },
     {

@@ -127,7 +127,7 @@ public class PortsHistoryEventHandler implements HistoryEventHandler {
             Connection c = b.connection;
             for (Map.Entry<String, List<Map<String, Object>>> en : b.byRoot.entrySet()) {
                 String tenant = b.tenantByRoot.get(en.getKey());
-                outbox.append(c, tenant == null ? "" : tenant, en.getKey(), EVENT_TYPE, Json.write(en.getValue()), destinations);
+                outbox.append(c, org.sangam.core.layer.TenantKey.of(tenant), en.getKey(), EVENT_TYPE, Json.write(en.getValue()), destinations);
             }
         } finally {
             clear(b);

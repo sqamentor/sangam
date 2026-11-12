@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.UnaryOperator;
 
 /**
- * Maps the connector ids the packs use ({@code pfms.payment}, {@code esign.sign}, {@code ifms.budget}, ... as declared in
+ * Maps the connector ids the packs use (as declared in
  * each {@code pack.json}) to connector instances of the integration {@code ConnectorRegistry}, with an optional
  * operation rename. Also keeps each pack connector's declared capability class (A-2), so {@code capabilityOf} answers
  * for connectors that are not bound yet; undeclared means (c) (A-8).
@@ -41,6 +41,34 @@ public final class PackConnectorBindings {
                                       UnaryOperator<Map<String, Object>> payloadMapper) {
         bindings.put(packConnector, new Binding(connectorId, operationOrNull, payloadMapper));
         return this;
+    }
+
+    /**
+     * Default bindings from pack data (SL-104, ADR-D-20): each pack connector's {@code simulatorBinding} in the
+     * discovered packs' manifests, plus their declared capability classes. Several packs may declare the same pack
+     * connector with the same binding; different bindings for one pack connector are refused, naming both packs. A
+     * site's {@code sangam.packs.bindings.*} configuration is applied afterwards with {@link #bind}, so it wins.
+     */
+    public static PackConnectorBindings fromPackData(Iterable<SangamPack> packs) {
+        PackConnectorBindings b = new PackConnectorBindings().declareFrom(packs);
+        Map<String, String> declaredBy = new java.util.HashMap<>();
+        Map<String, PackDescriptor.SimulatorBinding> seen = new java.util.HashMap<>();
+        for (SangamPack p : packs) {
+            for (PackDescriptor.ConnectorUse u : p.descriptor().connectors()) {
+                PackDescriptor.SimulatorBinding sb = u.simulatorBinding();
+                if (sb == null) {
+                    continue;
+                }
+                PackDescriptor.SimulatorBinding prior = seen.putIfAbsent(u.id(), sb);
+                if (prior != null && !prior.equals(sb)) {
+                    throw new IllegalStateException("pack connector " + u.id() + ": " + p.descriptor().coordinates()
+                            + " binds " + sb + " but " + declaredBy.get(u.id()) + " binds " + prior);
+                }
+                declaredBy.putIfAbsent(u.id(), p.descriptor().coordinates());
+                b.bind(u.id(), sb.connector(), sb.operation());
+            }
+        }
+        return b;
     }
 
     /** Reads the declared capability classes from the discovered packs. */
@@ -82,18 +110,4 @@ public final class PackConnectorBindings {
         return declared.getOrDefault(packConnector, CapabilityClass.C_NEITHER);
     }
 
-    /**
-     * Default bindings of the government connectors built by {@code GovConnectors} (simulator ids) to the pack
-     * connector names used by the four pilot packs. Sites override them with {@link #bind}.
-     */
-    public static PackConnectorBindings governmentDefaults() {
-        return new PackConnectorBindings()
-                .bind("pfms.payment", "pfms-sim", "pay")
-                .bind("pfms.dbt", "pfms-sim", "pay")
-                .bind("esign.sign", "esign-sim", "sign")
-                .bind("digilocker.push", "digilocker-sim", "push")
-                .bind("notify.sms", "sms-dlt-sim", "send")
-                .bind("notify.email", "smtp", "send")
-                .bind("payment.refund", "payment-gateway-sim", "createOrder");
-    }
 }

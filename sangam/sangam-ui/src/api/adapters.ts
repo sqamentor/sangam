@@ -94,6 +94,7 @@ export function normTask(t: Any): T.TaskSummary {
     slaDue: t.slaDue ?? t.due,
     claimable: t.claimable ?? !t.assignee,
     packKey: t.packKey ?? t.processDefinitionKey,
+    variables: t.variables ? fromVariableMap(t.variables) : undefined,
   } as T.TaskSummary;
 }
 

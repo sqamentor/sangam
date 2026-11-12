@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pilot packs P1-P4 (IX.4) and the DBT batch (GP-49)."""
 from lib import C, q
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
-from common import core, outcome, end_ok, rejection, reject_with, withdraw, revise, batch_loop
+from common import core, outcome, end_ok, rejection, reject_with, withdraw, revise, batch_loop, checked_query, \
+    check_conditions
 
 SIDE = ['GP-14', 'VI.5']
 
@@ -42,30 +44,36 @@ def p1():
         'reconcileRequired=true;reconcileConnector=bank.statement;ackWindow=PT4H;outputTemplate=payment-advice;'
         'closureTemplate=bill-paid;retentionCategory=C;retentionYears=10;appealAllowed=false;'
         'releaseConnector=ifms.release;jointApprovalThreshold=10000000;jointApprovalSeats=SE-CIRCLE,CE-ZONE;'
-        'recommendationSeats=;dupDuplicate=false;budgetAvailable=0;applicantRef=@payee'))
+        'recommendationSeats=;applicantRef=@payee'))
     s.seq(st, d)
-    dup = s.conn('p1_dupCheck', 'Duplicate-bill check', 'ifms.duplicateBill', 'check', 'query',
-                 'payee,invoiceNo,amount', 'dup')
-    s.flow(d, dup)
+    # SL-115: the duplicate and budget checks fail closed (cleared before every query; no default stands in)
+    de, dup = checked_query(s, 'p1_dupCheck', 'Duplicate-bill check', 'ifms.duplicateBill', 'check',
+                            'payee,invoiceNo,amount', 'dup', ['dupDuplicate'])
+    s.flow(d, de)
     dg = s.xgw('p1_dupGw', 'Similar bill exists?')
     s.flow(dup, dg)
     dr = s.user('p1_dupReview', 'Similar bill exists: pass with reason or reject | समान बिल विद्यमान: कारण सहित पारित करें या अस्वीकार करें',
                 '${fallbackSeat}', form='p1-bill-payment/duplicate-review', decision=('dupDecision', ['proceed', 'reject']),
                 fields=['duplicateOverrideReason*', 'remarks'], sod=True)
-    s.flow(dg, dr, 'dupDuplicate', 'J-P1-E03')
-    bq = s.conn('p1_budget', 'Budget-head availability', 'ifms.budget', 'available', 'query', 'budgetHead,amount',
-                'budget')
-    s.flow(dg, bq, None, 'no duplicate', default=True)
+    dup_unconfirmed, dup_found = check_conditions([('dup', ['dupDuplicate'])], 'dupDuplicate')
+    s.flow(dg, reject_with(p, s, 'p1_rjDupCheck', 'DUPLICATE_CHECK_NOT_CONFIRMED'), dup_unconfirmed,
+           'duplicate check not confirmed')
+    s.flow(dg, dr, dup_found, 'J-P1-E03')
+    be, bq = checked_query(s, 'p1_budget', 'Budget-head availability', 'ifms.budget', 'available', 'budgetHead,amount',
+                           'budget', ['budgetAvailable'])
+    s.flow(dg, be, None, 'no duplicate', default=True)
     dgr = s.xgw('p1_dupDecGw', 'Proceed?')
     s.flow(dr, dgr)
-    s.flow(dgr, bq, "dupDecision == 'proceed'", 'proceed')
+    s.flow(dgr, be, "dupDecision == 'proceed'", 'proceed')
     rej_dup = reject_with(p, s, 'p1_rjDup', 'DUPLICATE_BILL')
     s.flow(dgr, rej_dup, None, 'reject', default=True)
     bg = s.xgw('p1_budgetGw', 'Budget sufficient?')
     s.flow(bq, bg)
     enc = s.conn('p1_encumber', 'Encumber budget (commitment control)', 'ifms.encumber', 'encumber', 'submit',
                  'budgetHead,amount,sanctionRef', 'encumber', step='encumber')
-    s.flow(bg, enc, 'budgetAvailable >= amount', 'yes')
+    budget_unconfirmed, budget_enough = check_conditions([('budget', ['budgetAvailable'])], 'budgetAvailable >= amount')
+    s.flow(bg, reject_with(p, s, 'p1_rjBudget', 'FUNDS_NOT_CONFIRMED'), budget_unconfirmed, 'budget not confirmed')
+    s.flow(bg, enc, budget_enough, 'yes')
     short = s.notify('p1_budgetShort', 'Tell initiator: budget insufficient', 'budget-insufficient', 'inapp',
                      'initiatorSeat')
     s.flow(bg, short, None, 'J-P1-E11', default=True)
@@ -76,7 +84,7 @@ def p1():
     scr = core(s, 'p1_scrutiny', 'Checker scrutiny (core)', 'scrutiny')
     s.seq(enc, cand, cs, scr)
     rev = revise(p, s, 'p1_revise', 'Revise bill | बिल संशोधित करें',
-                 ['payee', 'account', 'ifsc', 'amount', 'invoiceNo', 'budgetHead', 'sanctionRef', 'documents'], dup)
+                 ['payee', 'account', 'ifsc', 'amount', 'invoiceNo', 'budgetHead', 'sanctionRef', 'documents'], de)
     s.flow(short, rev)
     rejected = rejection(p, s, 'p1_rj')
     lapsed = reject_with(p, s, 'p1_rjLapsed', 'CLARIFICATION_LAPSED')
@@ -90,12 +98,17 @@ def p1():
     jg = s.xgw('p1_jointGw', 'Joint approval needed?')
     outcome(s, 'p1_sanGw', 'sanctionOutcome', {'SANCTIONED': jg, 'RETURNED': rev}, rejected)
     s.flow(san, 'p1_sanGw')
-    joint = s.user('p1_joint', 'Joint approval | संयुक्त अनुमोदन', "${jointApprovalSeats.split(',')[loopCounter]}",
-                   form='p1-bill-payment/joint-approval', decision=('jointDecision', ['approve', 'reject']),
-                   fields=['remarks', 'presentedPayloadHash'], mi={'count': '2', 'max': 5}, sod=True, bind='approve',
-                   joint=True)
+    # J-P1-E09 (SL-32, IFMS R-102 v0.1): every joint seat approves the sanctioned payload, except a seat an earlier
+    # actor acted on or holds: above 25,00,000 the sanctioning seat is CE-ZONE, which is also a joint seat; its
+    # sanction already is its approval of that payload, so the joint step goes to SE-CIRCLE only (two approvers, two
+    # seats, one hash). SoD still refuses a second act of the same seat or person.
+    js, joint = s.joint_approval('p1_joint', 'Joint approval | संयुक्त अनुमोदन', 'jointApprovalSeats',
+                                 form='p1-bill-payment/joint-approval', decision=('jointDecision', ['approve', 'reject']),
+                                 # SL-55: 'reject' goes to the core rejection, which needs coded reasons
+                                 fields=['remarks', 'rejectionReasonCodes', 'rejectionRemarks', 'presentedPayloadHash'],
+                                 bind='approve', target='jointSeats')
     ex = core(s, 'p1_execute', 'Payment instruction (core execution)', 'execution')
-    s.flow(jg, joint, 'amount > jointApprovalThreshold', 'J-P1-E09')
+    s.flow(jg, js, 'amount > jointApprovalThreshold', 'J-P1-E09')
     s.flow(jg, ex, None, 'no', default=True)
     jr = s.xgw('p1_jointRes', 'Both approved?')
     s.flow(joint, jr)
@@ -125,7 +138,7 @@ def p1():
     s.flow(cl, e)
     s.side_exits('p1')
     pk.dmn('p1-competent-authority', 'P1 competent authority by amount band', 'FIRST',
-           [('Case type', 'caseType', 'string'), ('Amount (INR)', 'amount', 'double')],
+           [('Case type', 'caseType', 'string'), ('Amount (INR)', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [([q('SALARY'), '-'], [q('DDO')], 'salary bills: drawing and disbursing officer'),
             (['-', '<= 500000'], [q('EE')], 'Executive Engineer up to 5,00,000'),
@@ -173,7 +186,7 @@ def p1():
                     {'code': 'SE', 'name': {'en': 'Superintending Engineer', 'hi': 'अधीक्षण अभियंता'}},
                     {'code': 'CE', 'name': {'en': 'Chief Engineer', 'hi': 'मुख्य अभियंता'}}])
     bill = {'payee': 'M/s Shree Constructions', 'account': '50100012345678', 'ifsc': 'SBIN0001234',
-            'amount': 475000.0, 'invoiceNo': 'INV-2026-0412', 'budgetHead': '4059-01-051', 'sanctionRef': 'AA/2026/77',
+            'amount': 475000, 'invoiceNo': 'INV-2026-0412', 'budgetHead': '4059-01-051', 'sanctionRef': 'AA/2026/77',
             'actingSeat': 'CLERK-DDO', 'initiator': 'p1.clerk', 'officeId': 'DPW-X', 'selectedSeat': 'AO-2'}
     pk.accept('AC-01', 'Initiator > selected checker > approver by band; payment reconciles', ['T16', 'T17', 'T19', 'T27'],
               'bill of 4,75,000 by CLERK-DDO, checker AO-2 selected', 'checker forwards; EE approves and signs',
@@ -189,9 +202,17 @@ def p1():
               dict(bill, sim_pfms_payment='UNKNOWN'))  # the UNKNOWN_OUTCOME is the item's, not caseState (SL-32)
     pk.accept('J-P1-E11', 'Budget insufficient', ['T19'], 'sim_ifms_budget = available=310000', 'submit',
               'returned to the initiator with the shortfall', dict(bill, sim_ifms_budget='available=310000'), None)
-    pk.accept('J-P1-E09', 'Joint approval for high-value bills', ['T16', 'T17'], 'amount above jointApprovalThreshold',
-              'two joint approvers approve', 'both approvals bound to the same payload hash',
-              dict(bill, amount=12500000.0), None)
+    # the joint step starts strictly above jointApprovalThreshold = 1,00,00,000 (Rs 1 crore; 1000000000 paise in the
+    # BPMN), not above 25,00,000 (that is the SE / CE band edge); the simulator's default budget is also Rs 1 crore,
+    # so the given carries a budget that covers the bill
+    pk.accept('J-P1-E09', 'Joint approval for high-value bills', ['T16', 'T17'],
+              'bill of 1,25,00,000 (above jointApprovalThreshold 1,00,00,000) with 2,00,00,000 available on the head; '
+              'jointApprovalSeats SE-CIRCLE, CE-ZONE',
+              'CE-ZONE sanctions (above 25,00,000); the joint step goes only to the joint seats no earlier actor acted '
+              'on or holds (SE-CIRCLE), which approves',
+              'CE-ZONE is not asked a second time and no SOD_VIOLATION_BLOCKED; two approvals by two seats bound to '
+              'the same payload hash; payment completes and the case closes',
+              dict(bill, amount=12500000, sim_ifms_budget='available=20000000'), 'CLOSED')
 
 
 # ---------------------------------------------------------------------------------------------------------------- P2
@@ -307,7 +328,7 @@ def p2():
             ([q('VIGILANCE')], [q('SECRETARY')], ''), ([q('POLICY')], [q('JS')], ''), (['-'], [q('DS')], '')])
     pk.dmn('p2-disposal-powers', 'P2 disposal powers by seat role', 'FIRST',
            [('Seat role', 'seatRole', 'string'), ('Subject head', 'subjectHead', 'string')],
-           [('powerLimit', 'Power limit', 'double'), ('allowed', 'May dispose', 'boolean')],
+           [('powerLimit', 'Power limit', 'money'), ('allowed', 'May dispose', 'boolean')],
            [([q('SECRETARY'), '-'], ['1000000000', 'true'], ''),
             ([q('JS'), 'not("VIGILANCE")'], ['1000000000', 'true'], ''),
             ([q('DS'), q('ESTABLISHMENT')], ['1000000000', 'true'], ''),
@@ -391,7 +412,7 @@ def p3():
         'issueOutput=true;appealAllowed=true;appealWindow=P30D;appellateSeat=APPELLATE-DIR;instalmentNo=0;'
         'instalmentInterval=P90D;retentionCategory=C;retentionYears=10;amount=0;'
         'executionPayloadFields=beneficiaryId,bankAccount,ifsc,instalmentAmount,instalmentNo,schemeId;'
-        'entitlementOverride=null;childApplicant=false;regDuplicate=false;scrutinySla=7WD;sanctionSla=5WD;'
+        'entitlementOverride=null;childApplicant=false;scrutinySla=7WD;sanctionSla=5WD;'
         'correctedAccount=null;correctedIfsc=null'))
     cg = s.xgw('p3_childGw', 'Child applicant?')
     s.seq(st, d, cg)
@@ -409,9 +430,10 @@ def p3():
     s.flow(dlg, selfup, "dlStatus != 'COMPLETED'", 'J-P3-E07')
     s.flow(dlg, elig, None, 'fetched', default=True)
     s.flow(selfup, elig)
-    reg = s.conn('p3_registry', 'Duplicate-beneficiary check', 'registry.beneficiary', 'check', 'query',
-                 'beneficiaryId,schemeId', 'reg')
-    s.flow(elig, reg)
+    # SL-115: the duplicate-beneficiary check fails closed (cleared before the query; no default stands in)
+    re_, reg = checked_query(s, 'p3_registry', 'Duplicate-beneficiary check', 'registry.beneficiary', 'check',
+                             'beneficiaryId,schemeId', 'reg', ['regDuplicate'])
+    s.flow(elig, re_)
     rg = s.xgw('p3_dupGw', 'Possible duplicate?')
     s.flow(reg, rg)
     vseat = s.svc('p3_verifierSeat', 'Verifier seat for the block', C['SEAT'],
@@ -419,7 +441,10 @@ def p3():
     dupt = s.user('p3_duplicate', 'Possible duplicate beneficiary | संभावित दोहरा लाभार्थी', 'DOCVERIFIER',
                   form='p3-grant-sanction/duplicate', decision=('dupDecision', ['proceed', 'reject']),
                   fields=['remarks*'], sod=True)
-    s.flow(rg, dupt, 'regDuplicate', 'J-P3-E06')
+    reg_unconfirmed, reg_found = check_conditions([('reg', ['regDuplicate'])], 'regDuplicate')
+    s.flow(rg, reject_with(p, s, 'p3_rjDupCheck', 'DUPLICATE_CHECK_NOT_CONFIRMED'), reg_unconfirmed,
+           'duplicate check not confirmed')
+    s.flow(rg, dupt, reg_found, 'J-P3-E06')
     s.flow(rg, vseat, None, 'unique', default=True)
     dg2 = s.xgw('p3_dupDecGw')
     s.flow(dupt, dg2)
@@ -456,7 +481,9 @@ def p3():
     amt = s.setv('p3_amount', 'Entitlement is the sanction amount', values='amount=@entitlement')
     re_, rd = s.sla_task('p3_recommend', 'Recommend with entitlement | पात्रता सहित अनुशंसा', 'scrutinySeat',
                          form='p3-grant-sanction/recommend', decision=('p3RecDecision', ['recommend', 'reject']),
-                         fields=['entitlementOverride', 'overrideReason', 'remarks'], default_spec='3WD')
+                         # SL-55: 'reject' goes to the core rejection, which needs coded reasons
+                         fields=['entitlementOverride', 'overrideReason', 'remarks', 'rejectionReasonCodes',
+                                 'rejectionRemarks'], default_spec='3WD')
     s.seq(ent, amt, re_)
     og = s.xgw('p3_overrideGw', 'Override?')
     rg2 = s.xgw('p3_recGw', 'Recommended?')
@@ -511,7 +538,7 @@ def p3():
     s.flow(cl, end_ok(p, s, 'p3_end', 'Disbursed and closed'))
     s.side_exits('p3')
     pk.dmn('p3-eligibility', 'P3 eligibility (scheme rule)', 'FIRST',
-           [('Scheme', 'schemeId', 'string'), ('Income', 'income', 'double'), ('Age', 'age', 'integer'),
+           [('Scheme', 'schemeId', 'string'), ('Income', 'income', 'money'), ('Age', 'age', 'integer'),
             ('Child with guardian', 'childApplicant', 'boolean')],
            [('eligible', 'Eligible', 'boolean'), ('eligibilityReasonCode', 'Reason code', 'string')],
            [(['-', '> 250000', '-', '-'], ['false', q('INCOME_ABOVE_LIMIT')], 'income ceiling'),
@@ -520,7 +547,7 @@ def p3():
             (['-', '-', '-', '-'], ['true', q('ELIGIBLE')], '')],
            doc='SYNTHETIC scheme rule. Bound to the deployment (GP-19, J-P3-E08): in-flight cases keep it.')
     pk.dmn('p3-field-verification-required', 'P3 field verification required?', 'FIRST',
-           [('Land holding (ha)', 'landHolding', 'double'), ('Self-uploaded documents', 'documentsSelfUploaded',
+           [('Land holding (ha)', 'landHolding', 'number'), ('Self-uploaded documents', 'documentsSelfUploaded',
                                                              'boolean')],
            [('fieldVerification', 'Field verification', 'boolean')],
            [(['-', 'true'], ['true'], 'documents not from DigiLocker'),
@@ -528,7 +555,7 @@ def p3():
             (['-', '-'], ['false'], '')])
     pk.dmn('p3-entitlement', 'P3 entitlement amount and instalments', 'FIRST',
            [('Scheme', 'schemeId', 'string'), ('Social category', 'socialCategory', 'string')],
-           [('entitlement', 'Entitlement (INR)', 'double'), ('instalments', 'Instalments', 'integer')],
+           [('entitlement', 'Entitlement (INR)', 'money'), ('instalments', 'Instalments', 'integer')],
            [([q('PM-KISAN-LIKE'), '-'], ['6000', '3'], 'three instalments of 2,000'),
             ([q('HOUSING-GRANT'), q('SC')], ['150000', '3'], ''),
             ([q('HOUSING-GRANT'), q('ST')], ['150000', '3'], ''),
@@ -536,7 +563,7 @@ def p3():
             ([q('OLD-AGE-PENSION'), '-'], ['12000', '12'], 'monthly'),
             (['-', '-'], ['25000', '1'], 'default one-time grant')])
     pk.dmn('p3-sanction-authority', 'P3 sanctioning authority by amount', 'FIRST',
-           [('Amount', 'amount', 'double')], [('competentRole', 'Competent role', 'string')],
+           [('Amount', 'amount', 'money')], [('competentRole', 'Competent role', 'string')],
            [(['<= 200000'], [q('DWO')], 'District Welfare Officer'), (['<= 1000000'], [q('JD')], 'Joint Director'),
             (['> 1000000'], [q('DIRECTOR')], 'Director')])
     pk.seeds(offices=[{'id': 'DIR-WEL', 'parent': ''}, {'id': 'DIST-A', 'parent': 'DIR-WEL'},
@@ -566,7 +593,7 @@ def p3():
                     {'code': 'JD', 'name': {'en': 'Joint Director', 'hi': 'संयुक्त निदेशक'}},
                     {'code': 'DIRECTOR', 'name': {'en': 'Director', 'hi': 'निदेशक'}}])
     app = {'applicantName': 'Sita Devi', 'applicantRef': 'mobile:98XXXXXX10', 'schemeId': 'HOUSING-GRANT',
-           'beneficiaryId': 'VAULT-7f3a', 'bankAccount': '3210987654', 'ifsc': 'PUNB0123400', 'income': 120000.0,
+           'beneficiaryId': 'VAULT-7f3a', 'bankAccount': '3210987654', 'ifsc': 'PUNB0123400', 'income': 120000,
            'age': 41, 'socialCategory': 'SC', 'landHolding': 0.5, 'district': 'A', 'officeId': 'BLOCK-A1',
            'actingSeat': 'DEO-A1', 'initiator': 'p3.deo-a1', 'instalmentInterval': 'PT1S'}
     pk.accept('AC-05', 'Ineligible after verification; partial disbursement; account failure', ['T11', 'T27'],
@@ -574,7 +601,7 @@ def p3():
               'with ACCOUNT_CLOSED (variant)', 'rejection with coded reasons and appeal route; 2 of 3 credited; new '
               'account re-verified, re-sanctioned, new operationId', app, 'CLOSED')
     pk.accept('J-P3-E01', 'Ineligible after verification', ['T11'], 'income 3,00,000', 'verifier accepts documents',
-              'REJECTED with INCOME_ABOVE_LIMIT; rejection order; appeal window', dict(app, income=300000.0),
+              'REJECTED with INCOME_ABOVE_LIMIT; rejection order; appeal window', dict(app, income=300000),
               'REJECTED')
 
 
@@ -674,7 +701,10 @@ def dbt_batch():
              holdings=[], roles=[])
     pk.accept('GP-49', 'Partial batch failure resends only the failures', ['GP-09', 'GP-49'],
               'five beneficiaries, two fail with ACCOUNT_CLOSED', 'the bank desk corrects; the cell resends',
-              'round 2 has exactly the two corrected items', {'schemeId': 'PM-KISAN-LIKE'}, None)
+              'round 2 has exactly the two corrected items',
+              # B3b (SL-32 GP-49): two of the five synthesised beneficiaries fail in round 1 only
+              {'schemeId': 'PM-KISAN-LIKE', 'sim_pfms_dbt': 'FAILED:ACCOUNT_CLOSED @ :1:ITEM-00002|:1:ITEM-00004'},
+              None)
 
 
 # ---------------------------------------------------------------------------------------------------------------- P4
@@ -784,9 +814,9 @@ def p4():
     # appeal after rejection: allowed appeal goes back to approval with the original officer excluded (K5)
     s.side_exits('p4')
     pk.dmn('p4-fee', 'P4 licence fee', 'FIRST',
-           [('Licence type', 'licenceType', 'string'), ('Area (sq m)', 'premisesArea', 'double'),
+           [('Licence type', 'licenceType', 'string'), ('Area (sq m)', 'premisesArea', 'number'),
             ('Years', 'durationYears', 'integer')],
-           [('fee', 'Fee (INR)', 'double')],
+           [('fee', 'Fee (INR)', 'money')],
            [([q('TRADE'), '<= 50', '-'], ['2000'], 'small shop'), ([q('TRADE'), '<= 200', '-'], ['5000'], ''),
             ([q('TRADE'), '> 200', '-'], ['10000'], ''), ([q('FOOD'), '-', '-'], ['7500'], ''),
             ([q('FACTORY'), '-', '-'], ['25000'], ''), (['-', '-', '-'], ['3000'], 'default')],
@@ -802,12 +832,12 @@ def p4():
             (['-'], [q('30D'), q('5WD'), q('7WD'), q('ESCALATE'), q('')], '')],
            doc='Deemed approval only where the state law provides it (to confirm with the G1 buyer).')
     pk.dmn('p4-inspection-required', 'P4 inspection required?', 'FIRST',
-           [('Licence type', 'licenceType', 'string'), ('Area (sq m)', 'premisesArea', 'double')],
+           [('Licence type', 'licenceType', 'string'), ('Area (sq m)', 'premisesArea', 'number')],
            [('inspectionRequired', 'Inspection', 'boolean')],
            [([q('FOOD'), '-'], ['true'], ''), ([q('FACTORY'), '-'], ['true'], ''), (['-', '> 200'], ['true'], ''),
             (['-', '-'], ['false'], '')])
     pk.dmn('p4-approving-authority', 'P4 approving authority', 'FIRST',
-           [('Licence type', 'licenceType', 'string'), ('Amount', 'amount', 'double')],
+           [('Licence type', 'licenceType', 'string'), ('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [([q('FACTORY'), '-'], [q('DC')], 'Deputy Commissioner'), (['-', '-'], [q('LO')], 'Licensing officer')])
     pk.cmmn('sangam-p4-licence-case', P4_CASE)

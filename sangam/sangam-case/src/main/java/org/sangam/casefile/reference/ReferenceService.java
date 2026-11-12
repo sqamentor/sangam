@@ -123,7 +123,7 @@ public class ReferenceService {
         }
         String id = Db.newId();
         String number = numbers.next(c, t, kind.numbering(), r.orgCode(), received);
-        Instant due = r.fixedDueAt() != null ? r.fixedDueAt() : deadlines.add(kind.calendar(), received, kind.replyPeriod());
+        Instant due = r.fixedDueAt() != null ? r.fixedDueAt() : deadlines.add(tenant, kind.calendar(), received, kind.replyPeriod());
         DeadlineService.Deadline dl = deadlines.startAt(c, t, CaseEvents.REFERENCE, id, "REPLY", r.assignedSeat(), r.assignedPerson(), due,
                 kind.calendar(), kind.warnBefore(), kind.ladder());
         Status status = r.assignedSeat() != null || r.assignedPerson() != null ? Status.ASSIGNED : Status.RECEIVED;

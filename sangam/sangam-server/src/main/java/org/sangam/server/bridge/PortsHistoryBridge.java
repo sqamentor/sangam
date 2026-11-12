@@ -77,7 +77,14 @@ public final class PortsHistoryBridge implements HistoryPort {
     public Page<HistoricActivityInstance> activityInstances(RequestContext ctx, HistoryFilter filter,
                                                             Page.PageRequest page) {
         AuthPredicate auth = auth(ctx, ResourceRegistry.HISTORIC_PROCESS_INSTANCE, "process_instance_id");
-        return map(PortsErrors.call(() -> queries.activityInstances(filter(ctx, filter), auth, pr(page))),
+        HistoryQueryService.Filter base = filter(ctx, filter);
+        // P14 state filter onto the read model's states (HistoryProjector: open, completed, canceled)
+        String state = filter == null ? null : filter.activityState();
+        HistoryQueryService.Filter f = state == null ? base : new HistoryQueryService.Filter(base.tenantId(),
+                base.definitionKey(), base.processInstanceId(), base.caseInstanceId(), base.businessKey(),
+                base.activityId(), base.taskDefinitionKey(), base.assignee(), RUNNING.equals(state) ? "open" : state,
+                base.finished(), base.from(), base.to(), base.activityInstanceId());
+        return map(PortsErrors.call(() -> queries.activityInstances(f, auth, pr(page))),
                 r -> new HistoricActivityInstance(r.id(), r.activityId(), null, r.activityType(), r.processInstanceId(),
                         null, null, null, r.startTime(), r.endTime(), r.durationMs(),
                         r.state() != null && r.state().toUpperCase(java.util.Locale.ROOT).startsWith("CANCEL")));
@@ -181,7 +188,7 @@ public final class PortsHistoryBridge implements HistoryPort {
         HistoryFilter x = f == null ? new HistoryFilter(null, null, null, null, null, null, null, null, null, null) : f;
         return new HistoryQueryService.Filter(ctx.tenantId(), x.processDefinitionKey(), x.processInstanceId(),
                 x.caseInstanceId(), x.businessKey(), x.activityId(), x.taskDefinitionKey(), x.assignee(), null,
-                x.finished(), x.from(), x.to());
+                x.finished(), x.from(), x.to(), x.activityInstanceId());
     }
 
     private static Paging.PageRequest pr(Page.PageRequest p) {

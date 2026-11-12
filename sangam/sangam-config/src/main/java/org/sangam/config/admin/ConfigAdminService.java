@@ -111,25 +111,34 @@ public final class ConfigAdminService {
     }
 
     /**
-     * Activates an approved version after validating the chains that include it on its effective-from date. Running
-     * cases keep their bound version; new cases pick this one from its effective date.
+     * Activates an approved version after validating the chains that include it on its effective-from date: always
+     * the document's own scope (an office overlay {@code scope/office} as that office of its scope; SL-121), then each
+     * listed dependent scope. Running cases keep their bound version; new cases pick this one from its effective date.
+     * A refusal is recorded ({@code ACTIVATION_REFUSED}), so other nodes see the change marker move (SL-120).
      */
     public List<Finding> activate(String id, String version, String actor, List<String> scopesToCheck) {
         ProfileRepository.Stored s = require(id, version, Status.APPROVED);
         repo.setStatus(id, version, Status.ACTIVE);
         resolver.invalidate();
         // Default effective date: today in the document scope's business zone (office overlay id "scope/office").
+        String ownScope = id.contains("/") ? id.substring(0, id.indexOf('/')) : id;
+        String ownOffice = id.contains("/") ? id.substring(id.indexOf('/') + 1) : null;
         LocalDate from = s.document().effectiveFrom() != null ? s.document().effectiveFrom()
-                : new org.sangam.config.locale.ProfileBusinessClock(resolver, clock)
-                        .today(id.contains("/") ? id.substring(0, id.indexOf('/')) : id);
-        List<Finding> all = new ArrayList<>();
+                : new org.sangam.config.locale.ProfileBusinessClock(resolver, clock).today(ownScope);
+        List<Finding> all = new ArrayList<>(validator.validate(resolver, ownScope, ownOffice, from));
         for (String scope : scopesToCheck == null ? List.<String>of() : scopesToCheck) {
+            if (ownOffice == null && scope.equals(ownScope)) {
+                continue; // already validated as the document's own scope
+            }
             all.addAll(validator.validate(resolver, scope, null, from));
         }
         if (Finding.anyError(all)) {
             repo.setStatus(id, version, Status.APPROVED);
             resolver.invalidate();
-            throw new ConfigException("ACTIVATION_REFUSED", "dependent chains have errors", Finding.errors(all));
+            List<Finding> errors = Finding.errors(all);
+            record(s.document(), "ACTIVATION_REFUSED", actor, errors.stream().map(Finding::code).distinct()
+                    .collect(java.util.stream.Collectors.joining(",")));
+            throw new ConfigException("ACTIVATION_REFUSED", "dependent chains have errors", errors);
         }
         record(s.document(), "ACTIVATED", actor, null);
         return all;

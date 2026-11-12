@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_claim_denials" name="Denial routing by CARC (SYNTHETIC)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ushealth-claim-denials" name="Denial routing by CARC (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-ushealth-claim-denials" name="Denial routing by CARC (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-ushealth-claim-denials_t" hitPolicy="FIRST">
       <input id="sec-ushealth-claim-denials_i0" label="First adjustment reason code"><inputExpression id="sec-ushealth-claim-denials_ie0" typeRef="string"><text>eraFirstReasonCode</text></inputExpression></input>
       <output id="sec-ushealth-claim-denials_o0" label="Suggested route" name="denialRoute" typeRef="string"/>

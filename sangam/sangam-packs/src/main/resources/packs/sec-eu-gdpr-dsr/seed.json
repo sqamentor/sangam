@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "PRIVACY-EU",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DPO-EU",
+      "role": "DPO",
+      "office": "PRIVACY-EU",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Data protection officer",
+        "hi": "डेटा संरक्षण अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DPO-EU",
+      "person": "gdp.dpo-eu",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DPO",
+      "name": {
+        "en": "Data protection officer",
+        "hi": "डेटा संरक्षण अधिकारी"
+      }
+    }
+  ]
+}

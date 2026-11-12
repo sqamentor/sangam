@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-examination/evaluate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.edu.examination",
   "title": {
     "en": "Evaluation and marks entry",

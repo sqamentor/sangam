@@ -52,10 +52,10 @@ the end.
 | `lease/ExclusiveLeaseTable.java` | **R35/VI.6/A-7** `EXCLUSIVE_LEASE` acquire/extend/release |
 | `lease/CapabilityClassExpiryPolicy.java` | **A-10/A-8/VI.3 rule 5** default policy: ledger class (c) → UNKNOWN_OUTCOME + reconciliation item + hold; undeclared = (c) |
 | `timer/CycleExpression.java` | **A-12/R31/D-01/D-02/D-29/D-31** UTC elapsed cadence, anchored calendar cadence, `Rn` semantics, lastFiredInterval |
-| `timer/DstSafeCycleBusinessCalendar.java` | **A-12/D-01/D-30** next due strictly after max(now, due); FIRE_ALL catch-up bounded; Rn end |
+| `timer/DstSafeCycleBusinessCalendar.java` | **A-12/D-01/D-30** next due strictly after max(now, due); FIRE_ALL catch-up bounded; Rn end; **SL-53** cron on the timer-zone wall clock (`timer/ZonedCron.java`) |
 | `timer/TimerGuard.java` | **A-12/R31/D-30** `SANGAM_TIMER_GUARD`: suppress duplicate interval, SKIP_MISSED, fire count |
 | `timer/TimerPolicies.java` | R31 catch-up policy per timer (`sangam:catchUp`), per process key, default |
-| `timer/TaggedDurationBusinessCalendar.java` | **FC-23/D-11/R79** `cal:<name>:<duration>` via `WorkCalendar` |
+| `timer/TaggedDurationBusinessCalendar.java` | **FC-23/D-11/R79** `cal:<name>:<duration>` via `WorkCalendar`; **SL-53** untagged day/week/month durations on the timer-zone calendar |
 | `job/GuardedJobHandler.java` | Jobs: **tenant system identity bound** (VI.4 rule 7), lock timeouts, **L2 first** (VI.1 rule 4), DST guard (A-12) |
 | `job/JobIdentitySupport.java` | VI.4 rule 7: tenant from job tenant id, else `sangamTenantId` variable, else default tenant; `SecurityIdentity.system(tenant, "job:<id>")` bound engine-locally and through the installed `JobIdentityBinder` |
 | `job/JobMetricsInterceptor.java` | D-39/R13 `sangam_jobs_acquired_total` from the job executor's `AcquireJobsCmd` |
@@ -69,6 +69,7 @@ the end.
 | `history/CoreAuditChainSink.java` | Default AuditSink on core `AuditChain` |
 | `history/OutboxOnlyDbHistoryEventHandler.java` | **IR-5** outbox-only history per definition: replaces Operaton's DB history handler; `ACT_HI_*` keep only the audit level for listed keys (no variable detail, incidents, job/external-task logs, identity links, decisions, op logs); full detail only via outbox → read model |
 | `history/PerDefinitionHistoryLevel.java` | **FC-26/D-49** history level per process definition key and per activity (`key#activityId`) |
+| `history/MandatoryAudit*.java` | **M-012/X.2.3/T62** class-B audit independent of the history level: the level wrapper lets `auditedHistoryEvents` through as audit-only events, the handler wrapper sends those to the audit chain only (no `ACT_HI_*` row, no typed event), the producer skips the root-end removal-time update for them |
 | `incident/SangamIncidentHandler.java` | Incidents → reconciliation (failedJob, failedExternalTask, LEASE_EXPIRED_HELD) |
 | `incident/JdbcIncidentSink.java` | Default IncidentSink: `SANGAM_ENGINE_INCIDENT` with operationId join (A-14) |
 | `packs/JdbcLedgerStore.java` | WS-PACKS `port.LedgerStore` (GP-11, GP-48): postings idempotent by reference, reversal by reference, no-negative check, account row lock, NUMERIC amounts (R33) |
@@ -140,6 +141,14 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
    Micrometer; optionally `AuditSink`, `IncidentSink`, `ExpiryPolicy` (defaults: core `AuditChain`,
    `SANGAM_ENGINE_INCIDENT`, `CapabilityClassExpiryPolicy`); `workCalendars` from packs/tenant config.
 5. **Job executor.** `settings.jobExecutorActivate=true` on server nodes; job execution is guarded (L2, DST guard).
+   **UTC JVM (SL-53).** The configurer and `SangamEngineComponents` refuse to start unless the JVM default time zone is
+   UTC (`-Duser.timezone=UTC`; `org.sangam.core.time.EngineTimeZone`), an unknown or unreadable zone included, before
+   the first database connection: Operaton stores dates as JVM-local wall time in zone-less columns, ambiguous at an
+   autumn fold. This holds for every embedding host too. The business zone of timers is `settings.timerZone`
+   (`sangam.engine.timer-zone`, default UTC): calendar cadence, cron, day/week/month durations and the DST guard's wall
+   clock; elapsed periods run on the UTC timeline; offset-less date-times are UTC. **An embedding host must set the
+   timer zone for business cut-offs** (for example `settings.setTimerZone(ZoneId.of("Asia/Kolkata"))`): unset, it is
+   UTC, never the JVM default zone, so a host that passed `ZoneId.systemDefault()` gets UTC in the UTC JVM.
 6. **Operaton REST** commands get the Q1 guard and the L2 flush backstop, but no retry and no fencing: keep the
    external-task endpoints of `/engine-rest` closed (D-18); workers use `/api/v1/work`.
 7. **Requested core changes** (sangam-core is integrator-owned): add `operationId` (and attemptNo/businessKey) to
@@ -170,6 +179,16 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
     is the Stage D item with an upstream PR; until then: one engine per JVM, enforced by `OperatonClock.register`.
 14. **History level per activity (FC-26).** `historyLevelByProcessKey` accepts `processKey#activityId` entries as well
     as `processKey`; the most specific entry wins (`PerDefinitionHistoryLevel`).
+    **M-012 (X.2.3):** the history level never removes class-B audit. Per-definition levels and the global `activity`/`audit`
+    levels are wrapped (`MandatoryAuditHistoryLevel`, same id and name); `ACT_HI_*` rows and typed events stay what the
+    configured level produces. Global `none` is **refused at startup** (owner decision 2026-11-12, fail closed in
+    every embedding: `SangamProcessEnginePlugin.refuseGlobalHistoryNone`); use `activity`, or `none` per definition.
+    The deprecated alias `history=variable` (Operaton maps it straight to its built-in activity level) gets the same
+    activity wrapper in `postInit`, so it keeps the audit and writes exactly what `activity` writes.
+    As a per-definition base, `variable` also means `activity`. History level `auto` is **refused at startup**
+    (`refuseHistoryAuto`): Operaton resolves it from the database inside the engine constructor, after `postInit`,
+    where the job executor may already start; set an explicit level. `auto` as the per-definition base is refused
+    with the same message.
 15. **WS-PACKS ports.** Install `new JdbcLedgerStore(ds, adapter.clock(), lockTimeout)` and
     `new JdbcBatchLedger(ds, adapter.clock())` through `PackRuntime.install(...)` (replacing the in-memory simulators).
     Called from a pack delegate they write in the engine command's transaction; elsewhere in their own.
@@ -192,7 +211,9 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
     `ACT_HI_DETAIL`, incidents history, job logs or op logs return nothing for those definitions (use the read model).
 20. **IR-7 job executor.** `SangamEngineSettings` job fields (SCALE 3 defaults): core 16, max 32, queue 64,
     `maxJobsPerAcquisition` 20, wait 500 ms with increase factor 2 up to `maxWait` 5 s, lock time 5 min, backoff 0,
-    acquire by due date and by priority on, exclusive over process hierarchies off, optional lock owner. Environment
+    acquire by due date and by priority on, exclusive over process hierarchies on (SANGAM.md §4.3 item 3, M-055: one
+    root's exclusive jobs are acquired one lock at a time and batched together; their execution is serialised by the
+    L2 root lock either way; `false` restores Operaton's per-instance rule), optional lock owner. Environment
     overrides (applied in `prepare` when `applyEnvironment=true`): `SANGAM_JOB_CORE_POOL_SIZE`, `SANGAM_JOB_MAX_POOL_SIZE`,
     `SANGAM_JOB_QUEUE_CAPACITY`, `SANGAM_JOB_MAX_JOBS_PER_ACQUISITION`, `SANGAM_JOB_WAIT_TIME_IN_MILLIS`,
     `SANGAM_JOB_WAIT_INCREASE_FACTOR`, `SANGAM_JOB_MAX_WAIT`, `SANGAM_JOB_LOCK_TIME_IN_MILLIS`,
@@ -232,10 +253,13 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
 
 ## Not done, and why
 
-- Engine source patches (D-19 SKIP LOCKED mapping, D-10 per-engine clock, FC-24 job hand-off, D-27, D-52): Stage D by
+- Engine source patches (FIO D-19 SKIP LOCKED mapping, FIO D-10 per-engine clock, FC-24 job hand-off, FIO D-27, FIO D-52; "FIO D-n" are the ids of section D "Operaton weaknesses" in `spike/results/FLOWABLE-INTO-OPERATON.md`, not ADRs): Stage D by
   the plan; the interim extension-point routes are in place.
 - OFFERED/ack state (VI.3.1 stream offers): REST-first (ADR-D-5) — a fetch returns LOCKED work; OFFERED belongs to the
   worker API (WS-REST).
 - Partition epochs (R39): blocked by A-6.
-- Multi-DB verification: only H2 was executed (fast tests); PostgreSQL/Oracle/SQL Server/MySQL runs are in the testing
-  phase.
+- Multi-DB verification: the engine targets the four Tier-1 databases, PostgreSQL, Oracle, SQL Server and MySQL 8.4,
+  plus H2 for development (`db/EngineDialect.java:13-46`; MariaDB is detected as the MySQL family, `:39`). This
+  module's own tests run on H2. The DB-matrix runs of 2026-11-11 found SL-84 (Oracle), SL-88/SL-89/SL-99 (SQL Server)
+  and SL-94 (MySQL); those fixes are coded, tests written, not yet run. SG-04 records that the server starts on
+  PostgreSQL and SQL Server, with the Oracle and MySQL re-runs due in the test phase.

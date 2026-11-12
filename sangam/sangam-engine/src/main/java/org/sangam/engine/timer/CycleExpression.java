@@ -26,8 +26,9 @@ import java.util.regex.Pattern;
  *       cadence zone) + k × period, always <b>anchored on the original start</b>, so {@code P1M} from the 31st gives
  *       31 Jan, 28 Feb, 31 Mar (FLOWABLE-INTO-OPERATON D-31), never drifting to the 28th. A local time that falls into a DST gap moves forward
  *       by the gap length; a local time in a fold takes the earlier offset ({@code ZonedDateTime} rules).</li>
- *   <li>A start without an offset is local time in the zone Operaton wrote it in (the JVM default zone it caches at
- *       class load, FLOWABLE-INTO-OPERATON D-02); a start with an offset or {@code Z} is absolute.</li>
+ *   <li>A start without an offset is local time in the zone Operaton wrote it in: the JVM zone, which is UTC
+ *       (SL-53, {@code EngineTimeZone}; FLOWABLE-INTO-OPERATON D-02), so callers pass {@code EngineTimeZone.ZONE}; a
+ *       start with an offset or {@code Z} is absolute.</li>
  *   <li>{@code Rn}: n firings in total (FLOWABLE-INTO-OPERATON D-29: Operaton fires n + 1 times for {@code R3/<start>/P1M}); the count is
  *       kept by the timer guard per series. {@code R} alone repeats without bound.</li>
  * </ul>
@@ -62,7 +63,7 @@ public final class CycleExpression {
     /**
      * Parses {@code expr}.
      *
-     * @param localZone zone of a start written without an offset (Operaton's JVM default zone)
+     * @param localZone zone of a start or end written without an offset (the engine zone, UTC: SL-53)
      */
     public static CycleExpression parse(String expr, ZoneId localZone) {
         String[] tagged = stripTag(expr.trim());
@@ -104,6 +105,22 @@ public final class CycleExpression {
             throw new IllegalArgumentException("zero period in " + expr);
         }
         return new CycleExpression(times, start, datePart, timePart, end, tagged[0]);
+    }
+
+    /**
+     * A plain ISO 8601 duration ({@code P1D}, {@code P1M}, {@code P2W}, {@code PT5M}, {@code P1DT2H}): its date and
+     * time parts, or null when {@code text} is anything else (signed, zero, with a start or an end, a cycle).
+     */
+    public static CycleExpression duration(String text) {
+        String t = text == null ? "" : text.trim();
+        if (!PERIOD.matcher(t).matches() || t.equals("P") || t.endsWith("T")) {
+            return null;
+        }
+        try {
+            return parse("R/" + t, java.time.ZoneOffset.UTC);
+        } catch (IllegalArgumentException e) {
+            return null; // zero period
+        }
     }
 
     private static String[] stripTag(String expr) {

@@ -1,6 +1,6 @@
 {
   "key": "up12-order-decomposition/order",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up12-order-decomposition",
   "title": {
     "en": "Order capture",

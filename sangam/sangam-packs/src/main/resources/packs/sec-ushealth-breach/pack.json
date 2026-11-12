@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.breach",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "HIPAA breach notification",
     "es": "Notificación de violaciones de HIPAA"

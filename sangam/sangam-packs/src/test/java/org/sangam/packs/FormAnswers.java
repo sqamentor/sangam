@@ -73,7 +73,8 @@ final class FormAnswers {
                     continue;
                 }
                 Object val = switch (fld.path("type").asText()) {
-                    case "decimal", "money", "number" -> 1000.0;
+                    case "decimal", "number" -> 1000.0;
+                    case "money" -> 100_000L; // integer minor units: 1,000.00 of the pack currency (SD-398)
                     case "integer" -> 1;
                     case "boolean" -> true;
                     case "date", "datetime" -> new Date(System.currentTimeMillis() + 86_400_000L);

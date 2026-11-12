@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/patient-bill",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Bill the patient balance",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "patientBalance",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Patient balance (USD)",

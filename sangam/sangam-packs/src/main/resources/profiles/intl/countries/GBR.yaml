@@ -72,7 +72,7 @@ estimates:
   - NON_BUDGET
   - NET_CASH_REQUIREMENT
   netAndNegativeLimits: true
-  tokenAmount: '1000'
+  tokenAmount: 100000  # SL-102: GBP 1,000 token vote in minor units (pence) of locale.currency
   ambits: true
   acts:
   - MAIN_ESTIMATES

@@ -128,12 +128,15 @@ public class OpsWiring {
     }
 
     @Bean
-    public CaseFieldScheduler sangamOpsJobs(OpsApi api, TxSupport tx, DataSource ds, RestProperties rest, Environment env, ObjectProvider<AdminPort> admin) {
+    public CaseFieldScheduler sangamOpsJobs(OpsApi api, TxSupport tx, DataSource ds, RestProperties rest, Environment env, ObjectProvider<AdminPort> admin,
+            ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meters) {
         Transactions t = Transactions.of(ds);
+        ScheduleTenantsMonitor monitor = ScheduleTenantsMonitor.of("ops", "the per-tenant ops jobs (search-index drift,"
+                + " retention) do not run. Tenants come from the tenant directory plus sangam.ops.tenants.", meters);
         boolean purge = env.getProperty("sangam.ops.retention.auto-execute", Boolean.class, false);
         int limit = env.getProperty("sangam.ops.retention.batch", Integer.class, 500);
         return new CaseFieldScheduler("sangam-ops-jobs", new LeaderElection(tx.dialect(), t, rest.getNode(), Duration.ofMinutes(3)),
-                () -> CaseWiring.tenants(env, admin, "sangam.ops.tenants"),
+                monitor.observing(() -> CaseWiring.tenants(env, admin, "sangam.ops.tenants", monitor)),
                 List.of(new CaseFieldScheduler.Task("usage-rollup", Duration.ofHours(1), false,
                                 x -> api.usage().rollup(LocalDate.now(ZoneOffset.UTC).minusDays(1))),
                         new CaseFieldScheduler.Task("index-drift", Duration.ofHours(1), true, tenant -> api.index().drift(tenant, api.readers()).stream()

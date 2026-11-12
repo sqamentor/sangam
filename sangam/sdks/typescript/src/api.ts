@@ -188,8 +188,9 @@ export class TasksApi extends ApiGroup {
     return this.postObj<CompleteTaskResult>(`/tasks/${seg(taskId)}/complete`, request, o);
   }
 
-  async returnTask(taskId: string, request: ReturnTaskRequest, o?: CallOptions): Promise<JsonObject | undefined> {
-    return this.postJson(`/tasks/${seg(taskId)}/return`, request, o);
+  /** `POST /tasks/{id}/return`; answers the CompleteTaskResult (200). */
+  returnTask(taskId: string, request: ReturnTaskRequest, o?: CallOptions): Promise<CompleteTaskResult> {
+    return this.postObj<CompleteTaskResult>(`/tasks/${seg(taskId)}/return`, request, o);
   }
 
   async delegate(taskId: string, request: DelegateTaskRequest, o?: CallOptions): Promise<JsonObject | undefined> {

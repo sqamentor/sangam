@@ -1023,6 +1023,27 @@ TABLES = [
         ("payload_hash", "{str64}", "NOT NULL"), ("result_ref", "{str}", ""), ("job_id", "{str64}", "NOT NULL"),
         ("chunk_seq", "{int}", "NOT NULL"), ("row_seq", "{int}", "NOT NULL"), ("updated_at", "{ts}", "NOT NULL"),
     ], ["tenant_id", "object_type", "external_id"], []),
+    # SL-40 tenant custom fields (sangam-rest TenantCustomFieldRegistry, JdbcTenantCustomFieldStore): one row per
+    # effective-dated version of a field key on an extensible object type (form:<formKey> or a registered object type).
+    # effective_to is exclusive and NULL while open-ended; a new version closes the previous one on its start date and
+    # retirement only sets effective_to, so nothing is deleted. Field key: x_[a-z][a-z0-9_]{0,62} (at most 65 chars).
+    ("0034-01", "tenant custom field definitions, effective-dated versions (SL-40)", "TENANT_CUSTOM_FIELD", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("object_type", "{str}", "NOT NULL"), ("field_key", "{vc80}", "NOT NULL"),
+        ("version", "{int}", "NOT NULL"), ("label", "{str}", ""), ("required_flag", "{small}", "NOT NULL"),
+        ("read_only_flag", "{small}", "NOT NULL"), ("schema_json", "{text}", "NOT NULL"),
+        ("effective_from", "{date}", "NOT NULL"), ("effective_to", "{date}", ""), ("created_by", "{str}", "NOT NULL"),
+        ("created_at", "{ts}", "NOT NULL"), ("retired_by", "{str}", ""), ("retired_at", "{ts}", ""),
+    ], ["tenant_id", "object_type", "field_key", "version"], []),
+    # SL-130 / SL-131 (M-002) billing documents (sangam-billing RegistryDocumentNumbers): one row per document identity
+    # (invoice: ledger + consumer + cycle; receipt: paymentRef) with the number drawn from the registry GAP_FREE series
+    # and, for a receipt, its allocation plan. The row is claimed, the number allocated and written in one transaction,
+    # so a retry returns the stored number and plan and draws nothing. doc_number is NULL only inside that transaction.
+    ("0037-01", "billing document numbers and receipt allocation plans, keyed by document identity (SL-130, SL-131)",
+     "BIL_DOCUMENT", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("doc_type", "{str32}", "NOT NULL"), ("doc_key", "{str}", "NOT NULL"),
+        ("series_key", "{str64}", "NOT NULL"), ("doc_number", "{str}", ""), ("plan_json", "{text}", ""),
+        ("created_at", "{ts}", "NOT NULL"), ("created_by", "{str}", ""),
+    ], ["tenant_id", "doc_type", "doc_key"], []),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).
@@ -1055,6 +1076,64 @@ ALTERS = [
     ("0017-06", "history read-model query index: tasks (FC-25)", "HRM_TASK",
      [], [("HRM_TASK_QUERY", False, ["tenant_id", "process_instance_id", "task_def_key"])]),
 ]
+
+# Data changesets, applied after every table and alter changeset:
+# (changeset id, comment, table, portable statement, portable rollback, {dbms: rollback override}).
+# The statement must be valid unchanged on all five dialects.
+DATA = [
+    # SL-84: an absent key part is stored as org.sangam.core.layer.AbsentKey.NONE ('-'), never '' (Oracle stores ''
+    # as NULL: ORA-01400 in the NOT NULL key). Rows written in the old form are rewritten; on Oracle none can exist,
+    # so the statement matches nothing there ('' = NULL is never true) and the rollback has nothing to restore.
+    ("0033-01", "SL-84 root master codes: parent_code '' becomes the absent-key value '-'", "CFG_MASTER_CODE",
+     "UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';",
+     "UPDATE CFG_MASTER_CODE SET parent_code = '' WHERE parent_code = '-';",
+     {"oracle": "SELECT 1 FROM DUAL;"}),
+    # SL-84: the token sequence of "no series" moves to the same absent-key value, so today's numbering continues
+    # (a fresh '-' row would restart at 1 and repeat display numbers already issued).
+    ("0033-02", "SL-84 token sequences without a series: series '' becomes the absent-key value '-'", "RES_TOKEN_SEQ",
+     "UPDATE RES_TOKEN_SEQ SET series = '-' WHERE series = '';",
+     "UPDATE RES_TOKEN_SEQ SET series = '' WHERE series = '-';",
+     {"oracle": "SELECT 1 FROM DUAL;"}),
+]
+
+# Columns that become nullable, applied after DATA: (changeset id, comment, table, column, type token).
+# SL-87: a text value that may legitimately be empty cannot live in a NOT NULL column, because Oracle stores '' as NULL
+# (ORA-01400). The column becomes nullable; the module stores an empty value as NULL and reads NULL back as "".
+# None of these columns is in a key or index (SQL Server's ALTER COLUMN refuses an indexed column).
+# Rollback: other dialects first turn NULL back into '' and restore NOT NULL. Oracle cannot hold '' and restores NOT NULL
+# directly, so its rollback fails while NULL rows exist instead of losing them silently.
+NULLABLE = [
+    ("0035-01", "SL-87 attachment-only conversation message: body may be empty", "CH_MESSAGE", "body", "{text}"),
+    ("0035-02", "SL-87 agent run started without input text", "AI_AGENT_RUN", "input_text", "{text}"),
+    ("0035-03", "SL-87 bulk row rejected for a missing external id", "OPS_BULK_ROW", "external_id", "{str}"),
+]
+
+# SL-86: tables whose writers stored "no tenant" (a row shared by all tenants) as tenant_id '' now use the reserved
+# shared key org.sangam.core.layer.TenantKey.SHARED ('-'). Oracle stores '' as NULL (ORA-01400 in the NOT NULL key;
+# tenant_id = '' never matches). One changeset per table, applied after NULLABLE: '' (and NULL where the column is
+# nullable and its writer always used the key helper) becomes '-'.
+# Preflight: before the UPDATE, a precondition counts the rows whose key would collide with an existing '-' row in any
+# unique key that contains tenant_id (primary key or unique index, from TABLES). On a collision Liquibase HALTs with that
+# changeset and its check (the report), and nothing of the table is changed.
+# Deliberately NOT here: AUDIT_* and ROOT_SEQ (the tenant is inside the hash-chained audit envelope; ROOT_SEQ holds the
+# chain head and the outbox sequence), OUTBOX and HRM_CHECKPOINT (keyed per tenant+root stream with that sequence):
+# legacy '' streams stay valid and are read as shared (TenantKey.toEngine). TASK_LIFECYCLE stores the raw engine tenant
+# (NULL means no tenant there). Ledger and batch tables (SL-90) could never hold a null tenant (NOT NULL key).
+# (table, include NULL rows)
+SHARED_TENANT = (
+    [(t, False) for t in (
+        "CF_CONFIG", "CF_NUMBER_SEQ", "CF_CASE", "CF_PARTY", "CF_PARTY_KEY", "CF_CASE_PARTY", "CF_CASE_RECORD",
+        "CF_FOLDER", "CF_DOCUMENT", "CF_NOTE", "CF_EVENT", "CF_HEARING", "CF_CASE_LINK", "CF_DEADLINE", "CF_COMMITTEE",
+        "CF_COMMITTEE_MEMBER", "CF_MEETING", "CF_AGENDA_ITEM", "CF_ATTENDANCE", "CF_NOTICE", "CF_MINUTES", "CF_DECISION",
+        "CF_ACTION_ITEM", "CF_REFERENCE", "CF_REFERENCE_MOVE",
+        "PG_CONFIG", "PG_PROGRAMME", "PG_INDICATOR", "PG_PERIOD", "PG_TARGET", "PG_MILESTONE", "PG_RETURN_DEF",
+        "PG_RETURN", "PG_RETURN_VALUE", "PG_RETURN_FINDING", "PG_RETURN_EVENT", "PG_ACHIEVEMENT", "PG_FINANCIAL",
+        "PG_ALERT", "PG_DASHBOARD_SNAPSHOT",
+        "EVT_EVENT_DEF", "EVT_CHANNEL_DEF", "EVT_DEFINITION_SEQ", "INSTANCE_LINK", "FORM_DEF", "APP_DEPLOYMENT",
+        "PORT_BATCH", "MI_AGGREGATE", "SLA_INSTANCE")]
+    + [(t, True) for t in ("INSTANCE_BUSINESS_STATUS", "HRM_PROCESS_INSTANCE", "HRM_ACTIVITY_INSTANCE", "HRM_TASK")]
+)
+SHARED_TENANT_FIRST_ID = 1  # changesets 0036-01 .. 0036-NN, in list order
 
 
 # Column names of module reference DDL that are reserved words on one dialect. They are created QUOTED there so the
@@ -1143,7 +1222,85 @@ def render(dbms):
         drops += [f"ALTER TABLE {table} DROP COLUMN {c[0]};" for c in cols]
         out.append("--rollback " + " ".join(drops))
         out.append("")
+    for cs_id, comment, table, statement, rollback, rollback_override in DATA:
+        out.append(f"--changeset sangam:{cs_id}-{table.lower()}-data dbms:{dbms}")
+        out.append(f"--comment: {comment}")
+        out.append(statement)
+        out.append("--rollback " + rollback_override.get(dbms, rollback))
+        out.append("")
+    for cs_id, comment, table, column, token in NULLABLE:
+        out.append(f"--changeset sangam:{cs_id}-{table.lower()}-nullable dbms:{dbms}")
+        out.append(f"--comment: {comment}")
+        drop, restore = nullability_sql(dbms, table, column, DIALECTS[dbms][token])
+        out.append(drop)
+        backfill = "" if dbms == "oracle" else f"UPDATE {table} SET {column} = '' WHERE {column} IS NULL; "
+        out.append("--rollback " + backfill + restore)
+        out.append("")
+    for n, (table, include_null) in enumerate(SHARED_TENANT, start=SHARED_TENANT_FIRST_ID):
+        out.extend(shared_tenant_changeset(dbms, f"0036-{n:02d}", table, include_null))
     return "\n".join(out)
+
+
+def table_meta(table):
+    """(columns by name, primary key, unique indexes) of a catalogued table."""
+    for cs_id, comment, t, cols, pk, indexes in TABLES:
+        if t == table:
+            return {c[0]: c for c in cols}, pk, [ix for ix in indexes if ix[1]]
+    raise SystemExit(f"SHARED_TENANT: {table} is not in TABLES")
+
+
+def shared_tenant_changeset(dbms, cs_id, table, include_null):
+    """SL-86: '' (and NULL) tenant_id -> '-' after a collision preflight over every unique key holding tenant_id."""
+    cols, pk, uniques = table_meta(table)
+    nullable = "NOT NULL" not in (cols["tenant_id"][2] or "")
+    if nullable != include_null:
+        raise SystemExit(f"SHARED_TENANT: {table}.tenant_id nullable={nullable}, but include NULL={include_null}")
+    old = "tenant_id = ''" + (" OR tenant_id IS NULL" if include_null else "")
+    keys = [pk] + [ix[2] for ix in uniques]
+    checks = []
+    for key in keys:
+        if "tenant_id" not in key:
+            continue
+        others = [q(dbms, k) for k in key if k != "tenant_id"]
+        rest = ", ".join(others)
+        # a collision is the same non-null rest of the key under both '' and '-' (NULL key parts never collide)
+        not_null = "".join(f" AND {k} IS NOT NULL" for k in others)
+        checks.append(f"(SELECT COUNT(*) FROM (SELECT {rest} FROM {table} WHERE tenant_id IN ('-', ''){not_null} "
+                      f"GROUP BY {rest} HAVING COUNT(DISTINCT tenant_id) > 1) k)")
+    if checks and include_null:
+        # the check compares '' and '-' only; a NULL tenant in a unique key would need its own comparison
+        raise SystemExit(f"SHARED_TENANT: {table} has a nullable tenant_id inside a unique key; extend the preflight")
+    out = [f"--changeset sangam:{cs_id}-{table.lower()}-shared-tenant dbms:{dbms}",
+           f"--comment: SL-86 shared rows of {table}: tenant_id '' becomes the reserved shared key '-'"]
+    if checks:
+        out.append("--preconditions onFail:HALT onError:HALT")
+        out.append("--precondition-sql-check expectedResult:0 SELECT " + " + ".join(checks)
+                   + (" FROM DUAL" if dbms == "oracle" else ""))
+    out.append(f"UPDATE {table} SET tenant_id = '-' WHERE {old};")
+    if dbms == "oracle":
+        out.append("--rollback " + (f"UPDATE {table} SET tenant_id = NULL WHERE tenant_id = '-';" if include_null
+                                    else "SELECT 1 FROM DUAL;"))
+    else:
+        out.append(f"--rollback UPDATE {table} SET tenant_id = '' WHERE tenant_id = '-';")
+    out.append("")
+    return out
+
+
+def nullability_sql(dbms, table, column, sql_type):
+    """(drop NOT NULL, restore NOT NULL) for one column, in each dialect's own syntax."""
+    if dbms == "postgresql":
+        return (f"ALTER TABLE {table} ALTER COLUMN {column} DROP NOT NULL;",
+                f"ALTER TABLE {table} ALTER COLUMN {column} SET NOT NULL;")
+    if dbms == "oracle":
+        return f"ALTER TABLE {table} MODIFY ({column} NULL);", f"ALTER TABLE {table} MODIFY ({column} NOT NULL);"
+    if dbms == "mssql":
+        return (f"ALTER TABLE {table} ALTER COLUMN {column} {sql_type} NULL;",
+                f"ALTER TABLE {table} ALTER COLUMN {column} {sql_type} NOT NULL;")
+    if dbms == "mysql":
+        return (f"ALTER TABLE {table} MODIFY COLUMN {column} {sql_type} NULL;",
+                f"ALTER TABLE {table} MODIFY COLUMN {column} {sql_type} NOT NULL;")
+    return (f"ALTER TABLE {table} ALTER COLUMN {column} SET NULL;",
+            f"ALTER TABLE {table} ALTER COLUMN {column} SET NOT NULL;")
 
 
 def add_column_sql(dbms, table, col):
@@ -1168,7 +1325,7 @@ def main():
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "sangam-0001-baseline.sql"), "w", encoding="utf-8", newline="\n") as f:
             f.write(render(dbms))
-    print(f"{len(TABLES)} tables + {len(ALTERS)} alter changesets x {len(DIALECTS)} dialects written under "
+    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant changesets x {len(DIALECTS)} dialects written under "
           f"{os.path.normpath(base)}")
 
 

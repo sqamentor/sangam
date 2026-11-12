@@ -161,19 +161,14 @@ class AiRuntimeTest {
         return new org.sangam.core.security.SecurityIdentity("t", person, person, Set.of(), roles, Set.of(), Set.of(), "OIDC", null, null, false, Map.of());
     }
 
-    /** H2 cannot infer the type of a parameter inside BITAND; this only adds a cast, the compiler's predicate is unchanged. */
-    static org.sangam.core.layer.SqlPredicate h2(org.sangam.core.layer.SqlPredicate p) {
-        return p;
-    }
-
-    /** The production binding: the sangam-security PolicyCompiler (H2 dialect), with only a parameter cast for H2. */
+    /** The production binding (AiWiring): the sangam-security PolicyCompiler (H2 dialect), its SQL unchanged. */
     KnowledgeBaseService policyBoundKb() {
         tx.inTransaction(c -> org.sangam.core.layer.Jdbc.update(c,
                 "CREATE TABLE IF NOT EXISTS AUTH_CONDITION (tenant_id VARCHAR(64), condition_id VARCHAR(64), resource_type VARCHAR(255), expression TEXT)"));
         var compiler = new org.sangam.security.policy.PolicyCompiler(org.sangam.security.dialect.SecurityDialect.H2,
                 new org.sangam.security.policy.ResourceRegistry(), Duration.ZERO);
         return new KnowledgeBaseService(Dialect.POSTGRESQL, tx, new SimulatedLlm(), 200, 20, 1000,
-                (c, w) -> h2(new org.sangam.core.layer.SqlPredicate(compiler.visible(c, w, "document", org.sangam.security.policy.Permission.READ, "k").sql().replaceAll("BITAND\\(([a-z]+\\.perms), \\?\\)", "BITAND($1, CAST(? AS BIGINT))"), compiler.visible(c, w, "document", org.sangam.security.policy.Permission.READ, "k").params())));
+                (c, w) -> compiler.visible(c, w, "document", org.sangam.security.policy.Permission.READ, "k"));
     }
 
     void ingestTwo(KnowledgeBaseService kb) {

@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.util.Map;
 
@@ -20,6 +22,9 @@ import java.util.Map;
  * JSON the ports read goes through this mapper, which carries explicit {@link StreamReadConstraints} instead of
  * relying on library defaults: document {@value #MAX_DOCUMENT_BYTES} bytes, nesting {@value #MAX_NESTING}, strings
  * {@value #MAX_STRING_CHARS} chars, numbers {@value #MAX_NUMBER_CHARS} digits, names {@value #MAX_NAME_CHARS} chars.
+ *
+ * <p>SL-92: modules are registered explicitly (java.time, Optional), never discovered from the class path; discovery
+ * also registers the FEEL engine's jackson-module-scala, which turns untyped nested JSON into Scala collections.
  */
 public final class Json {
 
@@ -40,7 +45,8 @@ public final class Json {
             .build())
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
-            .findAndRegisterModules();
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module());
 
     private static final TypeReference<Map<String, Object>> MAP = new TypeReference<>() {
     };

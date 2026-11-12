@@ -97,6 +97,17 @@ const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
 
 export { sleep as delay };
 
+/**
+ * `s` without its trailing `/` characters. One backward scan, linear in the input: a regular expression such as
+ * `/\/+$/` is retried from every `/` run that is not at the end, which is quadratic on a long caller-supplied URL
+ * (CodeQL js/polynomial-redos).
+ */
+export function trimTrailingSlashes(s: string): string {
+  let end = s.length;
+  while (end > 0 && s.charCodeAt(end - 1) === 0x2f) end--;
+  return end === s.length ? s : s.substring(0, end);
+}
+
 /** Percent-encodes one path segment (ids, keys, channel names). */
 export function seg(s: string): string {
   if (s === undefined || s === null) throw new TypeError('path parameter is required');
@@ -119,7 +130,7 @@ export class HttpTransport {
   private readonly actingForSeat?: string;
 
   constructor(opts: TransportOptions) {
-    let b = opts.baseUrl.replace(/\/+$/, '');
+    let b = trimTrailingSlashes(opts.baseUrl);
     if (b.endsWith(API_PREFIX)) b = b.substring(0, b.length - API_PREFIX.length);
     this.base = b;
     this.tokens = opts.tokenProvider ?? noAuth;

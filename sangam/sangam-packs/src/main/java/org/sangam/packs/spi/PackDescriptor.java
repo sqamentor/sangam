@@ -27,12 +27,25 @@ import java.util.Map;
  *                        pack configuration, for example {@code works-config})
  * @param placeholders   values shipped in the pack's DMN that are not from a verified source; the readiness check
  *                        blocks go-live of a tenant that enables the pack until it overrides the named decision
+ * @param workers        external-task topics the pack declares with the gateway connector that serves them
+ *                        (SL-104: pack data, not product code)
  */
 public record PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
                              List<String> mainProcesses, List<PackResource> resources, List<SeedRole> roles,
                              List<SeedSeat> seats, List<ConnectorUse> connectors, List<String> covers,
                              List<AcceptanceScenario> acceptance, List<String> dependsOn,
-                             Map<String, List<String>> tenantOverrides, List<Placeholder> placeholders) {
+                             Map<String, List<String>> tenantOverrides, List<Placeholder> placeholders,
+                             List<WorkerUse> workers) {
+
+    /** Descriptor without declared workers. */
+    public PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
+                          List<String> mainProcesses, List<PackResource> resources, List<SeedRole> roles,
+                          List<SeedSeat> seats, List<ConnectorUse> connectors, List<String> covers,
+                          List<AcceptanceScenario> acceptance, List<String> dependsOn,
+                          Map<String, List<String>> tenantOverrides, List<Placeholder> placeholders) {
+        this(id, version, name, domain, description, mainProcesses, resources, roles, seats, connectors, covers,
+                acceptance, dependsOn, tenantOverrides, placeholders, List.of());
+    }
 
     /** Descriptor without placeholders. */
     public PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
@@ -56,6 +69,7 @@ public record PackDescriptor(String id, String version, Map<String, String> name
         dependsOn = dependsOn == null ? List.of() : List.copyOf(dependsOn);
         tenantOverrides = tenantOverrides == null ? Map.of() : Map.copyOf(tenantOverrides);
         placeholders = placeholders == null ? List.of() : List.copyOf(placeholders);
+        workers = workers == null ? List.of() : List.copyOf(workers);
     }
 
     /**
@@ -112,8 +126,51 @@ public record PackDescriptor(String id, String version, Map<String, String> name
      * @param capabilityClass a, b or c (A-2)
      * @param govTag          X.4.0.2 tag (G-PFMS, G-PG, G-SIGN, G-DL, G-DLT, G-MAIL ...) or empty
      * @param purpose         what for
+     * @param simulatorBinding the integration connector (and operation) that serves this pack connector by default,
+     *                        for example the site's simulator; null when the pack declares none. Pack data (SL-104):
+     *                        a site's {@code sangam.packs.bindings.*} configuration overrides it.
      */
-    public record ConnectorUse(String id, String capabilityClass, String govTag, String purpose) {
+    public record ConnectorUse(String id, String capabilityClass, String govTag, String purpose,
+                               SimulatorBinding simulatorBinding) {
+
+        /** A connector use without a default binding. */
+        public ConnectorUse(String id, String capabilityClass, String govTag, String purpose) {
+            this(id, capabilityClass, govTag, purpose, null);
+        }
+    }
+
+    /**
+     * The default integration connector of a pack connector.
+     *
+     * @param connector registry id of the integration connector
+     * @param operation operation to call; null = the pack's own operation name
+     */
+    public record SimulatorBinding(String connector, String operation) {
+        public SimulatorBinding {
+            if (connector == null || connector.isBlank()) {
+                throw new IllegalArgumentException("simulatorBinding.connector is required");
+            }
+            operation = operation == null || operation.isBlank() ? null : operation;
+        }
+    }
+
+    /**
+     * An external-task topic the pack declares, served through the pack connector gateway.
+     *
+     * @param topic           external-task topic
+     * @param connector       pack connector id the worker calls
+     * @param operation       operation of that connector
+     * @param capabilityClass a, b or c (A-2); class (c) is never repeated automatically
+     */
+    public record WorkerUse(String topic, String connector, String operation, String capabilityClass) {
+        public WorkerUse {
+            for (String[] v : new String[][]{{"topic", topic}, {"connector", connector}, {"operation", operation}}) {
+                if (v[1] == null || v[1].isBlank()) {
+                    throw new IllegalArgumentException("workers[]." + v[0] + " is required");
+                }
+            }
+            capabilityClass = capabilityClass == null || capabilityClass.isBlank() ? "c" : capabilityClass;
+        }
     }
 
     /**

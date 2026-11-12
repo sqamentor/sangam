@@ -10,7 +10,8 @@
 # Add-ons:   --profile simulators      government-system simulators (IFMS, PFMS, eSign, DLT, DigiLocker, PayGov, SMTP)
 #            --profile observability   Jaeger + Prometheus + Grafana (set OTEL_COLLECTOR_CONFIG=collector-observability.yaml)
 #
-# Always started: Keycloak (realm "sangam" with P1-P4 test seats), OTel collector, UI.
+# Always started: Keycloak (tenant realm "sangam" with P1-P4 test seats, platform realm "sangam-platform"), OTel
+# collector, UI.
 # Images and DB settings match the Stage B Testcontainers set (spike/RUN-QUEUE.md, simulators Databases.java).
 # Copy .env.example to .env and change the passwords before anything other than local development.
 # Run from this directory (deploy/compose); build contexts point at sangam/.
@@ -53,6 +54,9 @@ x-server-common: &server-common
     # are fetched over the internal network (OidcConfig prefers jwk-set-uri and still validates iss).
     SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
     SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${SANGAM_OIDC_ISSUER_INTERNAL:-http://keycloak:8180/realms/sangam}/protocol/openid-connect/certs
+    # SL-70: the separate platform realm; only its tokens are platform identities (sangam-admin = platform admin)
+    SANGAM_SECURITY_PLATFORM_ISSUER: ${SANGAM_PLATFORM_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam-platform}
+    SANGAM_SECURITY_PLATFORM_JWK_SET_URI: ${SANGAM_PLATFORM_ISSUER_INTERNAL:-http://keycloak:8180/realms/sangam-platform}/protocol/openid-connect/certs
     SANGAM_SECURITY_OIDC_AUDIENCE: sangam-server
     SANGAM_SECURITY_OIDC_TENANT_CLAIM: tenant
     SANGAM_SECURITY_OIDC_ROLES_CLAIM: roles

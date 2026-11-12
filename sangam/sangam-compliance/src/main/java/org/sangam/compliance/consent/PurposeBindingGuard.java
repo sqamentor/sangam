@@ -21,7 +21,8 @@ import java.util.Set;
  * Purpose binding: the single check every workflow step that touches personal data calls before it processes.
  * Order: the purpose exists and is active; the data categories are itemised for it (minimisation); a consent purpose
  * (unless an exemption disapplies consent) needs an active consent; an objectable basis stops after an objection; the
- * child safeguards run last. A refusal writes {@code CMP_PURPOSE_BINDING_DENIED} on the subject's chain.
+ * child safeguards run last. A refusal writes {@code CMP_PURPOSE_BINDING_DENIED} on the subject's denial chain
+ * ({@link ComplianceAudit#denial}), committed on its own so it survives the rollback that the refusal causes (M-009).
  * IN: DPDP s.4, s.6(1), s.6(5), s.7(a), s.9 (CMP-001, CMP-005, CMP-009, CMP-013, CMP-030, CMP-031).
  */
 public final class PurposeBindingGuard {
@@ -98,6 +99,6 @@ public final class PurposeBindingGuard {
     }
 
     private void deny(Connection c, String tenantId, String principalRef, String purposeCode, String reason) {
-        audit.principal(c, tenantId, principalRef, ComplianceAudit.PURPOSE_BINDING_DENIED, Sql.kv("purpose", purposeCode, "reason", reason));
+        audit.denial(c, tenantId, principalRef, ComplianceAudit.PURPOSE_BINDING_DENIED, Sql.kv("purpose", purposeCode, "reason", reason));
     }
 }

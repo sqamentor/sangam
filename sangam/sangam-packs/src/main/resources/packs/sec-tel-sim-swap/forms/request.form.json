@@ -1,6 +1,6 @@
 {
   "key": "sec-tel-sim-swap/request",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.tel.sim-swap",
   "title": {
     "en": "SIM replacement",

@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-payroll/esi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.hr.payroll",
   "title": {
     "en": "File ESI contribution and pay",

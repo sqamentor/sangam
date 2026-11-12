@@ -75,7 +75,7 @@ The refusals break down as follows:
 
 Uncovered, and not claimed:
 - the other India sectors (telecom, utilities, education, HR, NBFC, SCM): only smoke and pilot evidence;
-- worldwide PFM and EU GDPR: no end-to-end scenario (SL-33);
+- worldwide PFM and EU GDPR (SL-33): the packs are now coded through the generators (`gov-intl-pfm-execution` from `packgen/gov_intl.py`, with its PFM-CH-3 acceptance run; `sec-eu-gdpr-dsr` from `packgen/sec_eu.py`), and `SectorConformanceTest` has 4 methods for them (`worldwidePfmCommitmentVerifiedCertifiedAndPaid`, `worldwidePfmShortfallOfAuthorityOpensTheBreachReport`, `euGdprErasureWithinOneMonthAndRecipientsNotified`, `euGdprExtensionIsUsedOnceAndAddsTwoMonths`). Coded, tests written, not yet run;
 - PostgreSQL acceptance of this suite: not run, because H2 shows the behaviour and the DB matrix belongs to
   another agent.
 
@@ -165,7 +165,7 @@ power held when the officer acts. This is documented in the classes and is not a
 | New approval level (band lowered from 25 to 10 lakh) | same test: new case has 2 sanctions, in-flight case has 1 | PASS |
 | Delegation with an effective date (seat holding) | `delegationTakesEffectOnItsDateWithoutRedeploy` | PASS |
 | Locale, fiscal calendar, document types, connector bindings: profile version pinned per case | `runningCaseKeepsItsProfileBinding` (packs side); effective-dated resolution in `sangam-config` `ProfileDataTest` and `ProfileBusinessClockTest` | PASS (packs side); config side existing tests, not re-run |
-| New document type, end to end through a running pack | none | gap SL-35 (open) |
+| New document type, end to end through a running pack | `DocumentTypeAdoptionTest` (server, H2), `CatalogueProfileCheckTest` | SL-35 fixed in tree 2026-11-12; tests written, not run |
 | Tenant-specific rule override | `PilotScenarioTest.worksOrderOfSanctionsIsPackConfiguration` | PASS (existing) |
 
 ## D. CRM-grade platform qualities
@@ -177,37 +177,29 @@ reference is UNVERIFIED. The Sangam mapping is from code search: "no test" means
 | Quality | Reference (official docs, UNVERIFIED) | Sangam equivalent | Test | Status |
 |---|---|---|---|---|
 | Versioned REST API | Salesforce API end-of-life policy; Dataverse Web API versions | `/api/v1`, `sangam-rest/api/sangam-api.yaml` | none | present, no test |
-| API deprecation policy (Deprecation/Sunset headers) | Salesforce API end-of-life policy | none | – | **ABSENT** (SL-38) |
-| Events, webhooks, CDC | Salesforce Platform Events and Change Data Capture; HubSpot webhooks | Outbox, `OutboxRelayService`, `HttpWebhookPublisher`, `WebhookInboxReceiver` | `E5OutboxInboxIT`, `OutboxRelayIT`, `InboxIT`; publisher none | partial (SL-39) |
+| API deprecation policy (Deprecation/Sunset headers) | Salesforce API end-of-life policy | `DeprecationHeadersFilter`, `sangam-rest/api/sangam-api-deprecations.yaml`, `sangam-rest/API-LIFECYCLE-POLICY.md` | `DeprecationHeadersFilterTest`, `OpenApiCompatibilityTest` | PRESENT (SL-38 closed) |
+| Events, webhooks, CDC | Salesforce Platform Events and Change Data Capture; HubSpot webhooks | Outbox, `OutboxRelayService`, `HttpWebhookPublisher` (wired by `WebhooksWiring`), `WebhookInboxReceiver` | `E5OutboxInboxIT`, `OutboxRelayIT`, `InboxIT`, `HttpWebhookPublisherTest`, `WebhookRelayIT` | PRESENT (SL-39 fixed) |
 | Idempotency | Salesforce upsert by external id | `IdempotencyService`, `JdbcIdempotencyAdapter` | `E4IdempotencyIT`, `IdempotencyStoreIT` | PRESENT + TESTED |
-| Metadata-driven forms and profiles | Salesforce custom objects; Dataverse tables | forms JSON, `FormSchemaValidator`, profiles | `ProfileDataTest` | partial; tenant custom objects and fields **ABSENT** (SL-40) |
-| Validation rules and formulas | Salesforce validation rules and formula fields | `ValidationEngine`, `FormulaEvaluator`, DMN/FEEL | FEEL under SL-05/06/07 | present, no test (SL-40) |
+| Metadata-driven forms and profiles | Salesforce custom objects; Dataverse tables | forms JSON, `FormSchemaValidator`, profiles, `TenantCustomFieldRegistry` | `ProfileDataTest`, `TenantCustomFieldsTest` | tenant custom fields PRESENT (SL-40); tenant custom objects are not covered by SL-40 |
+| Validation rules and formulas | Salesforce validation rules and formula fields | `ValidationEngine`, `FormulaEvaluator`, DMN/FEEL | `FormulaAndValidationEngineTest`; FEEL under SL-05/06/07 | PRESENT (SL-40 closed) |
 | Declarative automation | Salesforce Flow; Power Automate | BPMN/CMMN/DMN packs, modeller | `E16*PatternsIT`, this suite | PRESENT + TESTED |
 | Versioned packages: dependencies and upgrade | Salesforce 2GP; Dataverse solutions | `PackDeployer`, `PackRegistry`, bundles | `PackDeploymentTest`, `DependencyResolutionTest`, `ChangeAdoptionTest` | PRESENT + TESTED |
-| Package uninstall and rollback | Salesforce 2GP uninstall | none | – | **ABSENT** (SL-41) |
+| Package uninstall and rollback | Salesforce 2GP uninstall | `PackDeployer.uninstall/rollback`; REST `PackLifecycleController` | `PackLifecycleTest`, `PackLifecycleControllerTest` | PRESENT (SL-41; the REST part coded 2026-11-12, its tests written, not run) |
 | Package signing | AppExchange security review | `BundleSigner`, `Ed25519Signer` | `PlugAndPlayAcceptanceTest` | PRESENT + TESTED; marketplace ABSENT |
-| Sandboxes and promotion between environments | Salesforce sandboxes; Power Platform environments | none (`TenantMoveService` is not promotion) | – | **ABSENT** (SL-42) |
-| Per-tenant limits and quotas with clear errors | Salesforce governor limits; HubSpot API limits | `BulkOperationGuard`, `OutboxCapacityMonitor`, public-registry rate limiter only | – | **ABSENT** for tenant API quotas (SL-43) |
+| Sandboxes and promotion between environments | Salesforce sandboxes; Power Platform environments | `PromotionService`; REST `PromotionController` (`TenantMoveService` is not promotion) | `PromotionServiceTest`, `PromotionControllerTest` | PRESENT (SL-42; the REST part coded 2026-11-12, its tests written, not run) |
+| Per-tenant limits and quotas with clear errors | Salesforce governor limits; HubSpot API limits | `TenantQuotas`, `JdbcTenantQuotas`, `TenantQuotaFilter`, `TenantQuotaEnginePlugin` (429/413 `TENANT_QUOTA_EXCEEDED`) | `JdbcTenantQuotasTest`, `QuotaPoolDeadlock*H2Test`, `TenantQuotaIT` | PRESENT (SL-43; the register keeps a second check and the T-SCALE re-run open) |
 | OAuth2 client credentials | Salesforce client credentials flow | SDK `ClientCredentialsTokenProvider` | none | present, no test |
 | Named credentials and secret refs | Salesforce Named Credentials | secret references, `SecretResolver` | `FwtChannelGuardsTest` | partial |
 | Connectors, retries, DLQ | ServiceNow IntegrationHub | `ConnectorResult`, `DeadLetterStore`, `OutboxRepair` | `T08PoisonOutboxIT`, `OutboxRepairDeadLetterTest` | PRESENT + TESTED; live HTTP connector SL-17 (other agent) |
-| Bulk data API | Salesforce Bulk API 2.0 | none for ingest | – | **ABSENT** (SL-44) |
+| Bulk data API | Salesforce Bulk API 2.0 | sangam-ops `BulkIngest`, REST `/api/v1/bulk/jobs` | `BulkIngestH2Test`, `BulkIngestPostgresIT`, `BulkIngestRestH2Test` | PRESENT (SL-44); no UI screen |
 | SDKs | HubSpot client libraries | `sdks/java`, `dotnet`, `php`, `python`, `typescript` | not confirmed in CI | present, UNVERIFIED |
-| Multi-tenant isolation | Salesforce multitenant architecture | `TenantGuard`, `TenantContext` | no cross-tenant negative test found | present, no test (SL-45, security, first) |
+| Multi-tenant isolation | Salesforce multitenant architecture | `TenantGuard`, `TenantContext`, engine plugin `TenantScopedCreation` | `CrossTenantIsolationIT`, `TenantScopedCreationH2Test` | PRESENT (SL-45 fixed in tree; the register records an earlier PostgreSQL run of the IT) |
 | Audit and field history | Salesforce field history; Dataverse auditing | `AuditChain`, `FieldAudit`, actor log | `AuditChainIT`, this suite | PRESENT + TESTED (chain) |
 | i18n (Hindi and English) | Salesforce Translation Workbench | bilingual pack and form labels (`en`/`hi`), `LocaleSettings` | label presence not asserted | partial |
 | Schema and instance migration with in-flight safety | Salesforce Flow versions | deployment binding, profile binding, Liquibase | `ChangeAdoptionTest`; instance migration none | partial |
-| LTS upgrade path | Salesforce and ServiceNow release cadence | none | – | **ABSENT**, documentation (SL-46) |
+| LTS upgrade path | Salesforce and ServiceNow release cadence | `deploy/SUPPORT-MATRIX.md` section 8 | – | PRESENT, documentation (SL-46 closed) |
 
-Most important first (security, correctness, money):
-1. SL-45 tenant isolation negative tests.
-2. SL-43 per-tenant quotas returning 429 with a problem body.
-3. SL-39 webhook publisher (signing, retry, DLQ, replay).
-4. SL-40 validation and formula evaluator tests.
-5. SL-41 uninstall and rollback.
-6. SL-38 deprecation policy.
-7. SL-44 bulk API.
-8. SL-42 sandbox promotion.
-9. SL-46 LTS policy.
-
-None of these was fixed in this pass. They are recorded with scope in the gap register.
+The nine gaps this pass found were ranked as follows (security, correctness, money first): SL-45, SL-43, SL-39,
+SL-40, SL-41, SL-38, SL-44, SL-42, SL-46. None was fixed in that pass. All nine have since been fixed in code (status
+2026-11-12, from `TESTING-GAP-REGISTER.md`); the table above gives each one's status, and the register holds the
+evidence and what is still to run.

@@ -420,6 +420,8 @@ public final class JdbcEventAdapter implements EventPort {
                 if (p == null || !p.startsWith("/")) {
                     throw invalid("correlationParameters", "correlation parameters are JSON pointers starting with '/'");
                 }
+                // SL-80: every pointer must have the one parameter name (/a/b -> a.b); ambiguous ones are refused here
+                org.sangam.rest.support.CorrelationNames.fromPointer(p, "correlationParameters");
             }
             if (in.businessKeyPointer() != null && !in.businessKeyPointer().startsWith("/")) {
                 throw invalid("businessKeyPointer", "businessKeyPointer is a JSON pointer starting with '/'");
@@ -590,8 +592,8 @@ public final class JdbcEventAdapter implements EventPort {
         return n == null || n.isMissingNode() || n.isNull() ? null : n.asText();
     }
 
+    /** SL-80: the one naming rule (/a/b -> a.b); was the last segment only, so /a/id and /b/id collided. */
     private static String paramName(String pointer) {
-        String last = pointer.substring(pointer.lastIndexOf('/') + 1);
-        return last.replace("~1", "/").replace("~0", "~");
+        return org.sangam.rest.support.CorrelationNames.fromPointer(pointer, "correlationParameters");
     }
 }

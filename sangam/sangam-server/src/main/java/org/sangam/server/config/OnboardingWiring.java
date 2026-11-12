@@ -69,7 +69,7 @@ public class OnboardingWiring {
 
     private static boolean dev(Environment env) {
         return Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.equals("h2") || p.equals("dev"))
-                && !env.getProperty("sangam.security.production", Boolean.class, false);
+                && !ProductionEnvironment.isProduction(env); // SL-109
     }
 
     @Bean

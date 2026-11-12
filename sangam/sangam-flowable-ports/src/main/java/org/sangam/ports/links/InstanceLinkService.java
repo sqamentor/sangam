@@ -48,7 +48,7 @@ public class InstanceLinkService {
                         String targetType, String targetId, String rootType, String rootId, String createdBy) {
         return Jdbc.insertIfAbsent(c, dialect, "INSERT INTO INSTANCE_LINK(tenant_id, link_type, hierarchy_type, source_type, source_id,"
                         + " target_type, target_id, root_type, root_id, created_by, created_at) VALUES (?,?,?,?,?,?,?,?,?,?," + dialect.now() + ")",
-                tenant == null ? "" : tenant, linkType, hierarchyType, sourceType, sourceId, targetType, targetId, rootType, rootId, createdBy);
+                org.sangam.core.layer.TenantKey.of(tenant), linkType, hierarchyType, sourceType, sourceId, targetType, targetId, rootType, rootId, createdBy);
     }
 
     /** Product API: a reference/sibling link between two instances (FLOWABLE-INTO-OPERATON FC-31), in its own transaction. */
@@ -64,20 +64,20 @@ public class InstanceLinkService {
 
     public int unlink(Connection c, String tenant, String linkType, String sourceType, String sourceId, String targetType, String targetId) {
         return Jdbc.update(c, "DELETE FROM INSTANCE_LINK WHERE tenant_id = ? AND link_type = ? AND source_type = ? AND source_id = ?"
-                + " AND target_type = ? AND target_id = ?", tenant == null ? "" : tenant, linkType, sourceType, sourceId, targetType, targetId);
+                + " AND target_type = ? AND target_id = ?", org.sangam.core.layer.TenantKey.of(tenant), linkType, sourceType, sourceId, targetType, targetId);
     }
 
     public List<Link> outgoing(String tenant, String sourceType, String sourceId) {
-        return tx.inTransaction(c -> query(c, "tenant_id = ? AND source_type = ? AND source_id = ?", tenant == null ? "" : tenant, sourceType, sourceId));
+        return tx.inTransaction(c -> query(c, "tenant_id = ? AND source_type = ? AND source_id = ?", org.sangam.core.layer.TenantKey.of(tenant), sourceType, sourceId));
     }
 
     public List<Link> incoming(String tenant, String targetType, String targetId) {
-        return tx.inTransaction(c -> query(c, "tenant_id = ? AND target_type = ? AND target_id = ?", tenant == null ? "" : tenant, targetType, targetId));
+        return tx.inTransaction(c -> query(c, "tenant_id = ? AND target_type = ? AND target_id = ?", org.sangam.core.layer.TenantKey.of(tenant), targetType, targetId));
     }
 
     /** Every link under one root (whole hierarchy of a root process or case, FLOWABLE-INTO-OPERATON FC-32). */
     public List<Link> byRoot(String tenant, String rootType, String rootId) {
-        return tx.inTransaction(c -> query(c, "tenant_id = ? AND root_type = ? AND root_id = ?", tenant == null ? "" : tenant, rootType, rootId));
+        return tx.inTransaction(c -> query(c, "tenant_id = ? AND root_type = ? AND root_id = ?", org.sangam.core.layer.TenantKey.of(tenant), rootType, rootId));
     }
 
     /** Transitive closure of {@code child} links below a node (bounded depth, cycle-safe). */

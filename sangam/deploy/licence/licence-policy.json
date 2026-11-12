@@ -49,13 +49,21 @@
     { "purl": "pkg:maven/org.python/jython", "rule": "LIC-10 Jython stays out of the default build (D-8)" },
     { "purl": "pkg:maven/org.jruby/", "rule": "LIC-10 JRuby stays out of the default build (D-8)" },
     { "purl": "pkg:npm/angular@1", "rule": "LIC-6 legacy AngularJS webapps are not shipped" },
-    { "purl": "pkg:npm/angular@", "rule": "LIC-6 legacy AngularJS (angular 1.x package) is not shipped" }
+    { "purl": "pkg:npm/angular@", "rule": "LIC-6 legacy AngularJS (angular 1.x package) is not shipped" },
+    { "purl": "pkg:maven/com.github.spotbugs/spotbugs@", "rule": "build_time_tools (owner 2026-11-12): SpotBugs is an LGPL-2.1 build-time tool, never shipped" },
+    { "purl": "pkg:maven/com.h3xstream.findsecbugs/findsecbugs-plugin", "rule": "build_time_tools (owner 2026-11-12): FindSecBugs is an LGPL-3.0 build-time tool, never shipped" },
+    { "purl": "pkg:maven/org.sonarsource.scanner.maven/", "rule": "build_time_tools (owner 2026-11-12): sonar-maven-plugin is an LGPL-3.0 build-time tool, never shipped" },
+    { "purl": "pkg:pypi/semgrep@", "rule": "build_time_tools (owner 2026-11-12): the Semgrep CLI is an LGPL-2.1 build-time tool, never shipped" },
+    { "purl": "pkg:maven/com.github.spotbugs/spotbugs-annotations@", "rule": "build_time_tools (owner 2026-11-12): spotbugs-annotations (LGPL-2.1, via SpotBugs) is build-time only, never shipped" },
+    { "purl": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-java-library@", "rule": "build_time_tools (owner 2026-11-12): sonar-scanner-java-library (LGPL-3.0, via sonar-maven-plugin) is build-time only, never shipped" },
+    { "purl": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-java-library-batch-interface@", "rule": "build_time_tools (owner 2026-11-12): sonar-scanner-java-library-batch-interface (LGPL-3.0, via sonar-maven-plugin) is build-time only, never shipped" },
+    { "purl": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-download-cache@", "rule": "build_time_tools (owner 2026-11-12): sonar-scanner-download-cache (LGPL-3.0, via sonar-maven-plugin) is build-time only, never shipped" }
   ],
   "_comment_namespace_bans": "Namespaces banned by a downstream programme (purl prefix), with exact group:artifact:version exceptions. Any version or artifact not listed fails; a listed one must carry exactly the stated SPDX licence.",
   "namespace_bans": [
     {
       "purl": "pkg:maven/org.camunda",
-      "rule": "OneIFMS SD-301 bans org.camunda* at the workflow-engine boundary"
+      "rule": "a consumer licence policy bans org.camunda* at the workflow-engine boundary (SG-27)"
     }
   ],
   "_comment_pinned_exceptions": "SG-27 owner exception (deploy/licence/SG-27-SD-301-exception.md). Each entry is one exact coordinate. watch=true: any OTHER version of the same group:artifact fails, so a version change must be re-verified and re-listed.",
@@ -67,6 +75,17 @@
     { "purl": "pkg:maven/com.lihaoyi/sourcecode_2.13@0.4.0", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (via fastparse)" },
     { "purl": "pkg:maven/com.lihaoyi/geny_2.13@1.1.0", "license": "MIT", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (via fastparse)" },
     { "purl": "pkg:maven/com.fasterxml.jackson.module/jackson-module-scala_2.13@2.22.3", "license": "Apache-2.0", "watch": true, "reason": "SG-27 owner exception: Operaton DMN FEEL engine (JSON values of feel-engine)" }
+  ],
+  "_comment_build_time_tools": "Owner decision 2026-11-12 (Wave 1, download batch 1): these LGPL tools are ALLOWED as build-time tools only (static analysis, CI scanning). Exactly these four tools and the four LGPL artefacts they pull in (extension of the same decision, 2026-11-12), at exactly these versions; any other version is re-approved and re-listed. They must never enter a shipped runtime classpath, image or SBOM: forbidden_components (SBOM), forbidden_jar_entries (fat jar), the root pom enforcer rule (shipped Maven scopes, ReactorBannedDependenciesTest) and .github/scripts/build_tools_not_shipped.py (SBOMs, fat jars and image SBOMs in CI) enforce that.",
+  "build_time_tools": [
+    { "tool": "SpotBugs", "coordinate": "com.github.spotbugs:spotbugs:4.10.5", "via": "com.github.spotbugs:spotbugs-maven-plugin:4.10.5.0", "license": "LGPL-2.1", "never_ship": "pkg:maven/com.github.spotbugs/spotbugs@", "decision": "owner 2026-11-12: build-time tool, never shipped" },
+    { "tool": "FindSecBugs", "coordinate": "com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0", "via": "SpotBugs plugin", "license": "LGPL-3.0", "never_ship": "pkg:maven/com.h3xstream.findsecbugs/findsecbugs-plugin", "decision": "owner 2026-11-12: build-time tool, never shipped" },
+    { "tool": "Semgrep CLI", "coordinate": "pypi:semgrep==1.185.0", "via": "CI runner only (pip, security.yml)", "license": "LGPL-2.1", "never_ship": "pkg:pypi/semgrep@", "decision": "owner 2026-11-12: build-time tool, never shipped" },
+    { "tool": "sonar-maven-plugin", "coordinate": "org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211", "via": "Maven plugin (CI only)", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.maven/", "decision": "owner 2026-11-12: build-time tool, never shipped" },
+    { "tool": "spotbugs-annotations", "coordinate": "com.github.spotbugs:spotbugs-annotations:4.10.5", "via": "transitive of com.github.spotbugs:spotbugs:4.10.5", "license": "LGPL-2.1", "never_ship": "pkg:maven/com.github.spotbugs/spotbugs-annotations@", "decision": "owner 2026-11-12: build-time only, never shipped" },
+    { "tool": "sonar-scanner-java-library", "coordinate": "org.sonarsource.scanner.lib:sonar-scanner-java-library:4.1.2.1663", "via": "transitive of sonar-maven-plugin:5.8.0.7211", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-java-library@", "decision": "owner 2026-11-12: build-time only, never shipped" },
+    { "tool": "sonar-scanner-java-library-batch-interface", "coordinate": "org.sonarsource.scanner.lib:sonar-scanner-java-library-batch-interface:4.1.2.1663", "via": "transitive of sonar-maven-plugin:5.8.0.7211", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-java-library-batch-interface@", "decision": "owner 2026-11-12: build-time only, never shipped" },
+    { "tool": "sonar-scanner-download-cache", "coordinate": "org.sonarsource.scanner.lib:sonar-scanner-download-cache:4.1.2.1663", "via": "transitive of sonar-maven-plugin:5.8.0.7211", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-download-cache@", "decision": "owner 2026-11-12: build-time only, never shipped" }
   ],
   "_comment_versions":"Version ceilings (LIC-7 Liquibase >= 5.0 is FSL until the D-7 legal review).",
   "max_versions": [
@@ -83,7 +102,8 @@
     { "pattern": "^BOOT-INF/lib/mariadb-java-client[^/]*\\.jar$", "rule": "LIC-5 MariaDB driver must be a separate replaceable jar, not inside the fat jar" },
     { "pattern": "^BOOT-INF/lib/(js|js-language|polyglot|truffle-api|js-scriptengine)-[0-9][^/]*\\.jar$", "rule": "LIC-1 GraalJS" },
     { "pattern": "^BOOT-INF/lib/(rhino|nashorn-core|jython|jruby)[^/]*\\.jar$", "rule": "LIC-10" },
-    { "pattern": "^BOOT-INF/lib/liquibase-core-([5-9]|[1-9][0-9])\\.[^/]*\\.jar$", "rule": "LIC-7" }
+    { "pattern": "^BOOT-INF/lib/liquibase-core-([5-9]|[1-9][0-9])\\.[^/]*\\.jar$", "rule": "LIC-7" },
+    { "pattern": "^BOOT-INF/lib/(spotbugs|spotbugs-annotations|findsecbugs-plugin|sonar-maven-plugin|sonar-scanner-java-library|sonar-scanner-java-library-batch-interface|sonar-scanner-download-cache)-[0-9][^/]*\\.jar$", "rule": "build_time_tools (owner 2026-11-12): LGPL build-time tools are never shipped" }
   ],
   "unknown_license": "warn"
 }

@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.order-to-cash",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Marketplace order to cash",
     "hi": "मार्केटप्लेस आदेश से नकद प्राप्ति तक"
@@ -97,5 +97,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

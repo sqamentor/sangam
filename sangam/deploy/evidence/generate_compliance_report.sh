@@ -15,7 +15,7 @@ PORT=18080; MGMT=18081
 
 ( cd "$WORK" && SANGAM_PORT=$PORT SANGAM_MANAGEMENT_PORT=$MGMT SANGAM_DEV_TOKEN="$TOKEN" SANGAM_TENANT_DEFAULT=dev \
     SERVER_ADDRESS=127.0.0.1 SPRING_PROFILES_ACTIVE=h2 SANGAM_COMPLIANCE_ORGANISATION="Sangam release pipeline" \
-    exec java -jar "$(realpath "$JAR")" ) > "$OUT/server-start.log" 2>&1 &
+    exec java -Duser.timezone=UTC -jar "$(realpath "$JAR")" ) > "$OUT/server-start.log" 2>&1 &
 PID=$!
 trap 'kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true; rm -rf "$WORK"' EXIT
 

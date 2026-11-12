@@ -73,4 +73,32 @@ class SangamModelValidatorTest {
             assertEquals(0, h2.engine.getRepositoryService().createDeploymentQuery().count(), "nothing stored");
         }
     }
+
+    /**
+     * E-46 s2.5 (WF-5): an extension the engine would drop silently is reported as EXT (namespace, local name and
+     * element), never an error by itself; a rejected deployment's report names it next to the error.
+     */
+    @Test
+    void unknownExtensionsAreNamedAndListedInARejection() {
+        SangamModelValidator v = new SangamModelValidator(new SangamModelValidator.Options(true));
+        String ext = "<userTask id=\"CHECK\" xmlns:acme=\"urn:acme:unknown\" acme:routingHint=\"fast\" "
+                + "xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" operaton:candidateGroups=\"g\">"
+                + "<extensionElements><acme:unknownThing level=\"3\"/></extensionElements></userTask>";
+        List<Finding> f = check(v, ext);
+        assertTrue(codes(f, Severity.ERROR).isEmpty(), "unknown extensions alone never reject: " + f);
+        List<String> msgs = f.stream().filter(x -> "EXT".equals(x.code())).map(x -> x.elementId() + " " + x.message()).toList();
+        assertEquals(2, msgs.size(), msgs.toString());
+        assertTrue(msgs.get(0).contains("CHECK") && msgs.get(0).contains("{urn:acme:unknown}routingHint"), msgs.toString());
+        assertTrue(msgs.get(1).contains("{urn:acme:unknown}unknownThing"), msgs.toString());
+
+        try (PortsH2Engine h2 = PortsH2Engine.start(null)) {
+            h2.engine.getRepositoryService().createDeployment().addString("ok.bpmn", HEAD + "<startEvent id=\"s\"/>"
+                    + ext.replace("CHECK", "u") + TAIL).deploy();
+            ProcessEngineException e = assertThrows(ProcessEngineException.class, () -> h2.engine.getRepositoryService()
+                    .createDeployment().addString("bad.bpmn", HEAD + "<complexGateway id=\"cg\"/>" + ext + TAIL).deploy());
+            assertTrue(e.getMessage().contains("[D-52] bad.bpmn#cg"), e.getMessage());
+            assertTrue(e.getMessage().contains("[EXT] bad.bpmn#CHECK") && e.getMessage().contains("routingHint")
+                    && e.getMessage().contains("unknownThing"), e.getMessage());
+        }
+    }
 }

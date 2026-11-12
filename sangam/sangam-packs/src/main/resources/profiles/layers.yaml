@@ -10,7 +10,6 @@ layers:
   overridable: true
   required:
   - locale.currency
-  - locale.fiscal
 - id: category
   overridable: true
 - id: government

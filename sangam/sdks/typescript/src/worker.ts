@@ -5,7 +5,7 @@ import type { SangamClient } from './client.js';
 import { GoneError, SangamApiError, StaleLeaseError, TransportError } from './errors.js';
 import { delay } from './http.js';
 import { withFields, type LogFields, type Logger } from './logger.js';
-import type { ExternalWork, TopicRequest, Variables } from './models.js';
+import type { ExternalWork, TopicRequest, Variables, WorkOperation } from './models.js';
 import { fromTypedValue, isTypedValue } from './typed.js';
 
 // ---------------------------------------------------------------- handler outcomes
@@ -100,8 +100,17 @@ export class TaskContext {
   /** @internal */ leaseLostFlag = false;
   /** @internal */ shuttingDownFlag = false;
   /** @internal */ readonly abort = new AbortController();
+  /**
+   * Downstream reference of this work's effect (for example a payment reference), sent as `outcome.reference` on
+   * `complete` and recorded as the operation-ledger providerRef (SL-16). Set it in the handler.
+   */
+  outcomeReference?: string;
 
   constructor(readonly work: ExternalWork, readonly workerId: string, readonly client: SangamClient, logger: Logger) {
+    if (!work.id || !work.attemptId || work.lockVersion === undefined || work.lockVersion === null) {
+      // A-1: a handler runs only after the LOCKED confirmation (work id, lockVersion and attemptId)
+      throw new TypeError('work item without its LOCKED confirmation (id, lockVersion, attemptId)');
+    }
     this.lockVersionValue = work.lockVersion;
     this.lockExpiresAtMs = work.lockExpiresAt ? Date.parse(work.lockExpiresAt) : undefined;
     const f: LogFields = { workerId, workId: work.id, topic: work.topic, lockVersion: work.lockVersion };
@@ -113,16 +122,17 @@ export class TaskContext {
     this.logger = withFields(logger, f);
   }
 
-  get workId(): string { return this.work.id; }
-  get topic(): string { return this.work.topic; }
+  get workId(): string { return this.work.id!; }
+  /** The topic (the worker starts only items whose topic matches a subscription). */
+  get topic(): string { return this.work.topic ?? ''; }
   get businessKey(): string | undefined { return this.work.businessKey; }
   get processInstanceId(): string | undefined { return this.work.processInstanceId; }
   /** R36 stable business-operation id (falls back to the work id). */
-  get operationId(): string { return this.work.operationId ?? this.work.id; }
+  get operationId(): string { return this.work.operationId ?? this.work.id!; }
   /** Key to forward to downstream systems (= operationId, VI.3.2 rule 4). */
   get idempotencyKey(): string { return this.operationId; }
   /** Changes per lease (A-2). */
-  get attemptId(): string { return this.work.attemptId; }
+  get attemptId(): string { return this.work.attemptId!; }
   /** Current fencing token. */
   get lockVersion(): number { return this.lockVersionValue; }
   get lockExpiresAt(): Date | undefined { return this.lockExpiresAtMs === undefined ? undefined : new Date(this.lockExpiresAtMs); }
@@ -159,6 +169,8 @@ export class TaskContext {
   get shuttingDown(): boolean { return this.shuttingDownFlag; }
   /** Pass this to downstream `fetch` calls so they stop when the lease is lost. */
   get signal(): AbortSignal { return this.abort.signal; }
+  /** The server-recorded operation-ledger entry of `operationId` (SL-16); undefined from servers that do not send it. */
+  get operation(): WorkOperation | undefined { return this.work.operation; }
 
   /** Cooperative checkpoint. */
   throwIfCancelled(): void {
@@ -191,7 +203,10 @@ export interface SubscriptionOptions {
   /** Retries for the first failure when the item carries none (default 3). */
   retries?: number;
   retryBackoff?: Backoff;
-  /** Treat unexpected handler errors as outcome-unknown even when the server does not mark `effect=irreversible`. */
+  /**
+   * The topic has an irreversible external effect (VI.3.2 rule 5): unexpected handler errors are reported as
+   * outcome-unknown instead of fail-with-retry. The work item carries no effect flag, so this is the only source.
+   */
   irreversible?: boolean;
 }
 
@@ -251,6 +266,24 @@ interface Outcome {
   kind: OutcomeKind;
   variables?: Variables;
   error?: unknown;
+}
+
+/**
+ * SL-16 stored-outcome completion (same contract as every Sangam SDK): when the server reports the operation as
+ * already SUCCEEDED and not dispatchable (`mayDispatch === false`), the worker completes with
+ * `storedOutcome.output` as variables and `storedOutcome.providerRef` as `outcome.reference`, without calling the
+ * handler (the downstream effect already happened). Any other operation state runs the handler. Returns undefined
+ * when the handler must run.
+ */
+export function storedOutcomeCompletion(
+  op: WorkOperation | undefined | null,
+): { variables: Variables; reference: string | undefined } | undefined {
+  if (!op || op.mayDispatch || op.state !== 'SUCCEEDED') return undefined;
+  const stored = op.storedOutcome ?? {};
+  const out = stored.output;
+  const ref = stored.providerRef;
+  const variables = out !== null && typeof out === 'object' && !Array.isArray(out) ? (out as Variables) : {};
+  return { variables, reference: ref === undefined || ref === null ? undefined : String(ref) };
 }
 
 function isAbortError(e: unknown): boolean {
@@ -505,7 +538,7 @@ export class SangamWorker {
           void this.unlockQuietly(w);
           continue;
         }
-        const sub = this.subscriptions.get(w.topic);
+        const sub = w.topic === undefined ? undefined : this.subscriptions.get(w.topic);
         if (!sub) {
           this.log.log('warn', 'work.unsubscribed', 'no handler for topic; unlocking', {
             workerId: this.workerId, workId: w.id, topic: String(w.topic),
@@ -513,7 +546,7 @@ export class SangamWorker {
           void this.unlockQuietly(w);
           continue;
         }
-        if (!w.id || !w.attemptId) {
+        if (!w.id || !w.attemptId || w.lockVersion === undefined || w.lockVersion === null) {
           // A-1: run only after the LOCKED confirmation with lockVersion + attemptId
           this.log.log('error', 'work.protocol.violation', 'item without LOCKED confirmation (attemptId); not started', {
             workerId: this.workerId, workId: String(w.id),
@@ -534,10 +567,10 @@ export class SangamWorker {
     const done = this.runItem(ctx, sub)
       .catch((e: unknown) => ctx.logger.log('error', 'work.crashed', 'worker internal error', undefined, e))
       .finally(() => {
-        this.inFlight.delete(work.id);
+        this.inFlight.delete(ctx.workId);
         this.slotFreed();
       });
-    this.inFlight.set(work.id, { ctx, done });
+    this.inFlight.set(ctx.workId, { ctx, done });
   }
 
   private async runItem(ctx: TaskContext, sub: TopicSubscription): Promise<void> {
@@ -559,6 +592,13 @@ export class SangamWorker {
   }
 
   private async invoke(ctx: TaskContext, sub: TopicSubscription): Promise<Outcome> {
+    const replay = storedOutcomeCompletion(ctx.work.operation);
+    if (replay) {
+      // SL-16: the operation already succeeded downstream; complete from the stored outcome, never call it again.
+      ctx.outcomeReference = replay.reference;
+      ctx.logger.log('info', 'work.replayed', 'operation already succeeded; completing from the stored outcome');
+      return { kind: 'complete', variables: replay.variables };
+    }
     try {
       const vars = await sub.handler(ctx);
       return { kind: 'complete', variables: vars ?? undefined };
@@ -570,8 +610,7 @@ export class SangamWorker {
       if (isAbortError(e) && (ctx.shuttingDownFlag || ctx.leaseLostFlag || ctx.cancelRequestedFlag)) {
         return { kind: ctx.cancelRequestedFlag ? 'cancel-ack' : 'unlock', error: e };
       }
-      const irreversible = sub.irreversible || (ctx.work.effect ?? '').toLowerCase() === 'irreversible';
-      return { kind: irreversible ? 'outcome-unknown' : 'fail', error: e };
+      return { kind: sub.irreversible ? 'outcome-unknown' : 'fail', error: e };
     }
   }
 
@@ -637,7 +676,11 @@ export class SangamWorker {
     let call: () => Promise<void>;
     switch (action) {
       case 'complete':
-        call = () => w.complete(ctx.workId, { ...base, ...(o.variables ? { variables: o.variables } : {}) }, opts);
+        call = () => w.complete(ctx.workId, {
+          ...base,
+          ...(o.variables ? { variables: o.variables } : {}),
+          ...(ctx.outcomeReference !== undefined ? { outcome: { reference: ctx.outcomeReference } } : {}),
+        }, opts);
         break;
       case 'bpmn-error': {
         const be = o.error as BpmnError;
@@ -725,6 +768,13 @@ ${details}` : reason;
   }
 
   private async unlockQuietly(w: ExternalWork): Promise<void> {
+    if (!w.id || w.lockVersion === undefined || w.lockVersion === null) {
+      // without the work id and the fencing token the server cannot accept an unlock; the lease expires
+      this.log.log('warn', 'work.unlock.skipped', 'unlock impossible without id and lockVersion; lease will expire', {
+        workerId: this.workerId, workId: w.id,
+      });
+      return;
+    }
     try {
       const op = w.operationId ?? w.id;
       await this.client.work.unlock(

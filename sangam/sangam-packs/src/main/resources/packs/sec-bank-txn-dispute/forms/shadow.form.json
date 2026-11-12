@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-txn-dispute/shadow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.txn-dispute",
   "title": {
     "en": "Shadow credit (10 working days)",

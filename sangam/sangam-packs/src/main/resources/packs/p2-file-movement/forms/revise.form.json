@@ -1,6 +1,6 @@
 {
   "key": "p2-file-movement/revise",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p2.file-movement",
   "title": {
     "en": "Revise note and draft",

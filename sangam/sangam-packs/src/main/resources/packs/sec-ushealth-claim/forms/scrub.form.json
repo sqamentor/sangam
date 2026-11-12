@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/scrub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Code and scrub the claim",
@@ -34,7 +34,9 @@
     },
     {
       "id": "totalCharge",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Total charge (USD)",

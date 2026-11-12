@@ -3,7 +3,7 @@
 
 Goal: any country, government, department or private sector adopts Sangam by configuration alone (SANGAM.md X.0e, ADR-D-20 to 24). A scenario fails if it needs a Java change. Its data may change.
 
-**Status: written, not yet run.** The scenario data has not been executed, so expect to correct data values on the first run. That is allowed. A needed product code change is a finding against conformance.
+**Status (2026-11-12).** The scenarios run in two places. The in-server suite `sangam-server` `PlugAndPlayIT` (a copy of the scenario data, PostgreSQL through Testcontainers) has run: `TESTING-GAP-REGISTER.md` rows SL-14 and APPROVE-401 record the earlier failures and the fixes, and the APPROVE-401 run on 2026-11-10 records "PlugAndPlayIT 6 + AT-6 skipped (manual signed plugin)". Since then `PlugAndPlayIT` builds and signs the example plugin for each run (`SignedExamplePlugin`), so AT-6 needs no manual step there. It has not been run on the current tree. The remote-server runner below (`PlugAndPlayAcceptanceTest`) has no recorded run. When data values need correcting on a run, that is allowed. A needed product code change is a finding against conformance.
 
 Code: `sangam-onboarding/src/test/java/org/sangam/onboarding/acceptance/PlugAndPlayAcceptanceTest.java`. Data: `sangam-onboarding/src/test/resources/acceptance/AT-n.json`.
 
@@ -16,7 +16,7 @@ Code: `sangam-onboarding/src/test/java/org/sangam/onboarding/acceptance/PlugAndP
    - `sangam.packs.simulator-fallback=true`, which is refused on a production profile. Without it, every pack connector needs a binding.
 3. Set the environment and run:
    - `SANGAM_AT_URL`;
-   - `SANGAM_AT_MAKER_TOKEN` and `SANGAM_AT_CHECKER_TOKEN`: two different people, both in `sangam-admin` (the static dev token is only one person, so use OIDC);
+   - `SANGAM_AT_MAKER_TOKEN` and `SANGAM_AT_CHECKER_TOKEN`: two different people, both in `sangam-admin` **of the platform realm** (onboarding is a platform operation: the server must list that realm in `sangam.security.platform-issuer`, SL-70; `sangam-admin` from a tenant realm is only a tenant administrator and gets 403). The static dev token is only one person, so use OIDC;
    - `SANGAM_AT_TENANT_TOKEN_<tenant>` for the business runs (dots become `_`); without it that part is skipped and reported as aborted, not passed;
    - `mvnw.cmd -B -pl sangam-onboarding test -Dtest=PlugAndPlayAcceptanceTest`.
 

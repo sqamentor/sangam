@@ -15,8 +15,8 @@ regime:
   accountsRenderedTo: CGA
   cssSharing: UT_WITHOUT_LEGISLATURE
   administratorDelegation:
-    governorOrLg: 50CR
-    other: 25CR
+    governorOrLg: 50000000000
+    other: 25000000000
     ruleRef: CAG Report 3 of 2018
 integrations:
   pfms:

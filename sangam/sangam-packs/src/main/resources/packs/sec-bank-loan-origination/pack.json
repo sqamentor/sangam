@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.loan-origination",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Loan origination to disbursal",
     "hi": "ऋण आवेदन से संवितरण तक"
@@ -113,5 +113,17 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "collateralValue",
+      "existingEmi",
+      "monthlyIncome",
+      "powerLimit"
+    ]
+  }
 }

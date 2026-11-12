@@ -1,6 +1,6 @@
 {
   "id": "universal.up01-stp-order",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "UP-01 Straight-through order processing",
     "hi": "यूपी-01 सीधा आदेश प्रसंस्करण"
@@ -57,5 +57,13 @@
   "acceptance": [],
   "dependsOn": [],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

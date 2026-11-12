@@ -80,8 +80,17 @@ public final class ManifestPack implements SangamPack {
             }
             List<ConnectorUse> conns = new ArrayList<>();
             for (JsonNode c : m.path("connectors")) {
+                JsonNode b = c.path("simulatorBinding");
+                PackDescriptor.SimulatorBinding binding = b.isObject()
+                        ? new PackDescriptor.SimulatorBinding(b.path("connector").asText(null), b.path("operation").asText(null))
+                        : null;
                 conns.add(new ConnectorUse(c.path("id").asText(), c.path("capabilityClass").asText("c"),
-                        c.path("govTag").asText(""), c.path("purpose").asText("")));
+                        c.path("govTag").asText(""), c.path("purpose").asText(""), binding));
+            }
+            List<PackDescriptor.WorkerUse> workers = new ArrayList<>();
+            for (JsonNode w : m.path("workers")) {
+                workers.add(new PackDescriptor.WorkerUse(w.path("topic").asText(null), w.path("connector").asText(null),
+                        w.path("operation").asText(null), w.path("capabilityClass").asText(null)));
             }
             List<AcceptanceScenario> acc = new ArrayList<>();
             for (JsonNode a : m.path("acceptance")) {
@@ -94,7 +103,8 @@ public final class ManifestPack implements SangamPack {
             PackDescriptor d = new PackDescriptor(m.path("id").asText(), m.path("version").asText(),
                     texts(m.path("name")), m.path("domain").asText(""), m.path("description").asText(""),
                     strings(m.path("mainProcesses")), res, roles, seats, conns, strings(m.path("covers")), acc,
-                    strings(m.path("dependsOn")), overrides(m.path("tenantOverrides")), placeholders(m.path("placeholders")));
+                    strings(m.path("dependsOn")), overrides(m.path("tenantOverrides")), placeholders(m.path("placeholders")),
+                    workers);
             return new ManifestPack(d, loader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

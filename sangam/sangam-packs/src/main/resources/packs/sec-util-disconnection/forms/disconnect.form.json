@@ -1,6 +1,6 @@
 {
   "key": "sec-util-disconnection/disconnect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.util.disconnection",
   "title": {
     "en": "Disconnect supply",

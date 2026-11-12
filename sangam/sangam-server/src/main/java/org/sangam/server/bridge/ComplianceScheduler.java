@@ -32,10 +32,16 @@ import org.springframework.context.SmartLifecycle;
  * </ul>
  * Every tenant runs in its own transaction; a failure of one tenant or task is logged and does not stop the others.
  * The tasks are idempotent, so a leader change that repeats a run is harmless.
+ *
+ * <p>SL-117: the tenant list is read once per cycle (a tick in which at least one task is due, so at most every 5
+ * minutes), never cached across cycles, so a failed directory read is retried on the next cycle. The wiring observes
+ * each read with {@code ScheduleTenantsMonitor} (scheduler {@code compliance}): an empty cycle logs a WARN and counts
+ * {@code sangam.schedule.empty{scheduler=compliance}}.
  */
 public final class ComplianceScheduler implements SmartLifecycle {
 
     public static final String LEADER = "sangam-compliance-scheduler";
+    static final List<String> TASKS = List.of("deadlines", "retention", "ntp", "logs", "integrity");
     private static final Logger LOG = LoggerFactory.getLogger(ComplianceScheduler.class);
 
     private final SangamCompliance compliance;
@@ -107,7 +113,10 @@ public final class ComplianceScheduler implements SmartLifecycle {
                 return;
             }
             Instant now = Instant.now();
-            List<String> ts = tenants.get();
+            if (!anyDue(now)) {
+                return;
+            }
+            List<String> ts = cycleTenants();
             due("deadlines", now, Duration.ofMinutes(5), () -> forEach(ts, "deadlines", t -> compliance.tx.inTransaction(c -> {
                 compliance.rights.escalateOverdue(c, t);
                 compliance.breaches.overdue(c, t);
@@ -124,6 +133,22 @@ public final class ComplianceScheduler implements SmartLifecycle {
         } catch (RuntimeException e) {
             LOG.warn("compliance schedule tick failed: {}", e.toString());
         }
+    }
+
+    /** True when at least one task is due (a task never run is due). */
+    boolean anyDue(Instant now) {
+        for (String task : TASKS) {
+            Instant next = nextRun.get(task);
+            if (next == null || !now.isBefore(next)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** SL-117: the tenants of this cycle, read afresh (never cached across cycles). */
+    List<String> cycleTenants() {
+        return List.copyOf(tenants.get());
     }
 
     private void sealAndPurge(String tenant) {

@@ -7,6 +7,7 @@ import type { Role } from '../api/types';
 import { config } from '../config';
 import { Layout } from './Layout';
 import { NAV } from './nav';
+import { ROUTE_ACCESS, canAccess, type Access } from './access';
 import { AuthCallback, SignIn } from '../areas/auth/SignIn';
 import { Loading, Notice, PageHeader } from '../components/ui';
 
@@ -150,10 +151,11 @@ const PortalGrievances = named(po, 'PortalGrievances');
 const Accessibility = named(hp, 'Accessibility');
 const About = named(hp, 'About');
 
-function Guard({ roles, children }: { roles: Role[]; children: ReactNode }) {
-  const { hasRole } = useAuth();
+/** Role guard; with `access`, a caller holding one of its endpoint permissions passes too (M-028, access.ts). */
+function Guard({ roles, access, children }: { roles?: Role[]; access?: Access; children: ReactNode }) {
+  const { hasRole, me } = useAuth();
   const { t } = useTranslation();
-  if (!hasRole(...roles))
+  if (!(access ? canAccess(me, access) : hasRole(...(roles ?? []))))
     return (
       <>
         <PageHeader title={t('error.notAvailable')} />
@@ -179,6 +181,7 @@ const CITIZEN: Role[] = ['CITIZEN'];
 
 function AuthedRoutes() {
   const g = (roles: Role[], el: ReactNode) => <Guard roles={roles}>{el}</Guard>;
+  const m = (path: keyof typeof ROUTE_ACCESS, el: ReactNode) => <Route path={path} element={<Guard access={ROUTE_ACCESS[path]}>{el}</Guard>} />;
   return (
     <Layout>
       <Suspense fallback={<Loading />}>
@@ -188,8 +191,8 @@ function AuthedRoutes() {
           <Route path="/tasks/filters" element={g(['PLATFORM_OPERATOR', 'PLATFORM_ADMIN'], <TaskFiltersPage />)} />
           <Route path="/tasks/:id" element={g(WORK, <TaskDetail />)} />
           <Route path="/welcome" element={<Welcome />} />
-          <Route path="/m/ai" element={<AiPage />} />
-          <Route path="/m/channels" element={<ChannelsPage />} />
+          {m('/m/ai', <AiPage />)}
+          {m('/m/channels', <ChannelsPage />)}
           <Route path="/modeller/tools" element={g(MODEL, <ModellerToolsPage />)} />
           <Route path="/ops/tools" element={g(OPS, <OpsToolsPage />)} />
           <Route path="/ops/drd/:id" element={g(['PLATFORM_OPERATOR'], <DrdPage />)} />
@@ -202,19 +205,19 @@ function AuthedRoutes() {
           <Route path="/admin/config" element={g(ADMIN, <ConfigPage />)} />
           <Route path="/admin/onboarding" element={g(ADMIN, <OnboardingWizard />)} />
           <Route path="/modeller/compatibility" element={g(MODEL, <CompatibilityMatrix />)} />
-          <Route path="/m/registry" element={<RegistryPage />} />
-          <Route path="/m/resources" element={<ResourcesPage />} />
-          <Route path="/m/queues" element={<QueuesPage />} />
-          <Route path="/m/rosters" element={<RostersPage />} />
-          <Route path="/m/case-files" element={<CaseFilesPage />} />
-          <Route path="/m/committees" element={<CommitteesPage />} />
-          <Route path="/m/references" element={<ReferencesPage />} />
-          <Route path="/m/ledger" element={<LedgerPage />} />
-          <Route path="/m/billing" element={<BillingPage />} />
-          <Route path="/m/programmes" element={<ProgrammesPage />} />
-          <Route path="/m/field" element={<FieldPage />} />
-          <Route path="/m/geo" element={<GeoPage />} />
-          <Route path="/m/compliance" element={<CompliancePage />} />
+          {m('/m/registry', <RegistryPage />)}
+          {m('/m/resources', <ResourcesPage />)}
+          {m('/m/queues', <QueuesPage />)}
+          {m('/m/rosters', <RostersPage />)}
+          {m('/m/case-files', <CaseFilesPage />)}
+          {m('/m/committees', <CommitteesPage />)}
+          {m('/m/references', <ReferencesPage />)}
+          {m('/m/ledger', <LedgerPage />)}
+          {m('/m/billing', <BillingPage />)}
+          {m('/m/programmes', <ProgrammesPage />)}
+          {m('/m/field', <FieldPage />)}
+          {m('/m/geo', <GeoPage />)}
+          {m('/m/compliance', <CompliancePage />)}
           <Route path="/start" element={g(WORK, <StartCatalog />)} />
           <Route path="/cases" element={g(WORK, <CaseList />)} />
           <Route path="/cases/:id" element={g([...WORK, ...OPS], <CaseWorkspace />)} />

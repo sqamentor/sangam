@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_fin_incident_reporting" name="Incident reporting obligations" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-fin-incident-reporting" name="Incident reporting obligations" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-fin-incident-reporting" name="Incident reporting obligations" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-fin-incident-reporting_t" hitPolicy="FIRST">
       <input id="sec-fin-incident-reporting_i0" label="Regulator"><inputExpression id="sec-fin-incident-reporting_ie0" typeRef="string"><text>regulatedBy</text></inputExpression></input>
       <input id="sec-fin-incident-reporting_i1" label="Priority"><inputExpression id="sec-fin-incident-reporting_ie1" typeRef="string"><text>priority</text></inputExpression></input>

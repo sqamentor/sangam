@@ -9,6 +9,7 @@ import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.SqlPredicate;
+import org.sangam.core.layer.TenantKey;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -187,8 +188,9 @@ public final class Db {
         return s == null || s.isBlank() ? null : s;
     }
 
+    /** The tenant key of a case-file row: the reserved shared key for no tenant, never '' (SL-86, Oracle '' = NULL). */
     public static String tenant(String t) {
-        return t == null ? "" : t;
+        return TenantKey.of(t);
     }
 
     public static String hash(Object value) {

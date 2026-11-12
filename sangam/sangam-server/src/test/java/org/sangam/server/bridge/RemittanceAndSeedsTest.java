@@ -60,8 +60,8 @@ class RemittanceAndSeedsTest {
         assertTrue(s.apply(LedgerRequest.of("ALLOCATE", claim("PCN1"), new BigDecimal("100"), "a")).applied());
         var posting = new PackGapConnectors.RemittancePosting(new LedgerConnector(s, (t, d) -> "OPEN", Clock.systemUTC()));
         var r = (ConnectorResult.Success) posting.invoke(post("""
-                [{"patientControlNumber":"PCN1","status":"PAID_PRIMARY","paidAmount":"70","claimBalanced":true,
-                  "adjustmentTotals":{"CO":"20","PR":"10"}}]"""));
+                [{"patientControlNumber":"PCN1","status":"PAID_PRIMARY","paidAmount":"7000","claimBalanced":true,
+                  "adjustmentTotals":{"CO":"2000","PR":"1000"}}]""")); // cents (SD-398)
         assertEquals(0, r.output().get("exceptionCount"), String.valueOf(r.output()));
         assertEquals(3, r.output().get("legsPosted"));
         assertEquals(0, s.available(claim("PCN1")).signum(), "receivable cleared");
@@ -73,12 +73,12 @@ class RemittanceAndSeedsTest {
         LedgerService s = ledger("remit2");
         assertTrue(s.apply(LedgerRequest.of("ALLOCATE", claim("PCN2"), new BigDecimal("50"), "a")).applied());
         var posting = new PackGapConnectors.RemittancePosting(new LedgerConnector(s, (t, d) -> "OPEN", Clock.systemUTC()));
-        posting.invoke(post("[{\"patientControlNumber\":\"PCN2\",\"status\":\"PAID_PRIMARY\",\"paidAmount\":\"50\"}]"));
+        posting.invoke(post("[{\"patientControlNumber\":\"PCN2\",\"status\":\"PAID_PRIMARY\",\"paidAmount\":\"5000\"}]"));
         assertEquals(0, s.available(claim("PCN2")).signum());
         var r = (ConnectorResult.Success) posting.invoke(post("""
-                [{"patientControlNumber":"NOPE","status":"PAID_PRIMARY","paidAmount":"5"},
-                 {"patientControlNumber":"PCN2","status":"PAID_PRIMARY","paidAmount":"5","claimBalanced":false},
-                 {"patientControlNumber":"PCN2","status":"REVERSAL","paidAmount":"-50"}]"""));
+                [{"patientControlNumber":"NOPE","status":"PAID_PRIMARY","paidAmount":"500"},
+                 {"patientControlNumber":"PCN2","status":"PAID_PRIMARY","paidAmount":"500","claimBalanced":false},
+                 {"patientControlNumber":"PCN2","status":"REVERSAL","paidAmount":"-5000"}]"""));
         assertEquals(2, r.output().get("exceptionCount"), String.valueOf(r.output()));
         assertEquals(0, new BigDecimal("50").compareTo(s.available(claim("PCN2"))), "reversal restores the receivable");
     }
@@ -95,19 +95,19 @@ class RemittanceAndSeedsTest {
         LedgerConnector lc = new LedgerConnector(s, (t, d) -> "OPEN", Clock.systemUTC());
         assertTrue(s.apply(LedgerRequest.of("ALLOCATE", claim("PCN3"), new BigDecimal("100"), "a")).applied());
         var posting = new PackGapConnectors.RemittancePosting(lc);
-        posting.invoke(traced("T1", "30"));
-        posting.invoke(traced("T1", "30")); // new operation id, same 835
+        posting.invoke(traced("T1", "3000"));
+        posting.invoke(traced("T1", "3000")); // new operation id, same 835
         assertEquals(0, new BigDecimal("70").compareTo(s.available(claim("PCN3"))), "replay posts nothing");
-        posting.invoke(traced("T2", "30"));
+        posting.invoke(traced("T2", "3000"));
         assertEquals(0, new BigDecimal("40").compareTo(s.available(claim("PCN3"))));
-        posting.invoke(traced("no-trace", "5"));
-        posting.invoke(traced("no-trace", "5"));
+        posting.invoke(traced("no-trace", "500"));
+        posting.invoke(traced("no-trace", "500"));
         assertEquals(0, new BigDecimal("30").compareTo(s.available(claim("PCN3"))), "no trace: never swallowed as a replay");
         lc.invoke(new ConnectorRequest("T", UUID.randomUUID(), "a1", 1, "root", "BK", "adjust", Map.of(
-                "ledgerId", "RECEIVABLES", "line", "CLAIM", "period", "OPEN", "holder", "PCN3", "amount", "10"), null));
+                "ledgerId", "RECEIVABLES", "line", "CLAIM", "period", "OPEN", "holder", "PCN3", "amount", "1000"), null));
         assertEquals(0, new BigDecimal("40").compareTo(s.available(claim("PCN3"))), "second remittance posts");
         var adj = lc.invoke(new ConnectorRequest("T", UUID.randomUUID(), "a1", 1, "root", "BK", "adjust", Map.of(
-                "ledgerId", "RECEIVABLES", "line", "CLAIM", "period", "OPEN", "holder", "PCN3", "amount", "-15"), null));
+                "ledgerId", "RECEIVABLES", "line", "CLAIM", "period", "OPEN", "holder", "PCN3", "amount", "-1500"), null));
         assertTrue(adj instanceof ConnectorResult.Success, String.valueOf(adj));
         assertEquals(0, new BigDecimal("25").compareTo(s.available(claim("PCN3"))), "corrected charge lowers the receivable");
     }

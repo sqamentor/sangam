@@ -1,6 +1,6 @@
 {
   "key": "sec-legal-dpdp-rights/retention",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.legal.dpdp-rights",
   "title": {
     "en": "Check retention duties before erasure",

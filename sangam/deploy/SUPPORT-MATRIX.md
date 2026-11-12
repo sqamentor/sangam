@@ -15,7 +15,9 @@ Combinations outside this matrix are unsupported (R5). Each row has a status:
 |---|---|---|---|---|
 | **25 LTS (Temurin)** | **Baseline and default runtime (R5)** | `eclipse-temurin:25.0.1_8-jre-noble`, `gcr.io/distroless/java25-debian13:nonroot` | `ci-build.yml` (build + unit tests), `db-matrix.yml`, `release.yml` | **Unit-tested (local)** 2026-11-08, see "Local JDK evidence" |
 | 21 LTS (Temurin) | Supported minimum; Java SDK consumers and existing installs | Build args on `server.Dockerfile` | `ci-build.yml` (build + unit tests) | Declared |
-| 27 (OpenJDK early-access build 27+35) | Forward-compatibility lane (SG-06); not a release runtime | None | none yet | **Unit-tested (local)** 2026-11-08, see "Local JDK evidence"; not supported for production |
+| 27 (OpenJDK early-access build 27+35) | Forward-compatibility lane (SG-06); not a release runtime | None | `ci-build.yml` (build + unit tests) | **Unit-tested (local)** 2026-11-08, see "Local JDK evidence"; not supported for production |
+
+CI runs the build and unit tests on all three JDKs: `ci-build.yml:38` sets `java: ["25", "21", "27"]` (SG-06). A fresh CI run of the current tree is due after the next push; until then the JDK status above rests on the local runs of 2026-11-08.
 
 Bytecode level: the parent pom still sets `maven.compiler.release=21`, so JDK 25 is the runtime and build JDK and the class files stay Java 21. Moving to `release=25` would drop JDK 21 and is an integrator decision.
 
@@ -36,10 +38,10 @@ Bytecode level: the parent pom still sets `maven.compiler.release=21`, so JDK 25
 | PostgreSQL 17 | 1 | pgJDBC 42.7.12 | In fat jar | Every PR, nightly, release |
 | Oracle Free 23 | 1 | `ojdbc11` / `ojdbc17` | **No**, customer-supplied (LIC-2) | Affected PRs, nightly, release |
 | SQL Server 2022 (RCSI ON) | 1 | mssql-jdbc 12.10.2 | In fat jar | Affected PRs, nightly, release |
-| SQL Server 2025 (RCSI ON) | 1 candidate | mssql-jdbc 12.10.2 | In fat jar | **Being validated (SG-05)**: not supported until its acceptance run passes |
+| SQL Server 2025 (RCSI ON) | 1 candidate | mssql-jdbc 12.10.2 | In fat jar | **Being validated (SG-05)**: its own `db-matrix.yml` lane `sqlserver2025` (image `2025-CU10-ubuntu-24.04`, the same as `AcceptanceDatabase`), nightly and on request, reporting but not gating. It becomes tier 1 once its acceptance run is green |
 | MySQL 8.4 (READ COMMITTED, utf8mb4) | 1 | MariaDB Connector/J 3.5.11 | Separate jar in `lib-ext` (LIC-5) | Affected PRs, nightly, release |
-| MariaDB 11.4 | 2 | MariaDB Connector/J 3.5.11 | Separate jar | Weekly |
-| Db2 12.1 | 2 (experimental, non-blocking) | JCC | **No**, customer-supplied (LIC-3) | Weekly |
+| MariaDB 11.4 | 2 | MariaDB Connector/J 3.5.11 | Separate jar | Weekly, on its own acceptance lane `mariadb` (SL-112: the mysql profile through MariaDB Connector/J, image `mariadb:11.4`). Coded; its first run is in the test phase |
+| Db2 | **Unsupported** | JCC | **No**, customer-supplied (LIC-3) | None. Dropped from Tier 2 by the owner on 2026-11-12 ("Drop from Tier 2 (Recommended)", SL-114): Sangam has no Db2 changelog, profile or dialect support, and Db2 stays unsupported until there is customer demand. The weekly `db2` leg only prints a LIC-3 skip notice |
 | H2 | Development and tests only | Bundled | In fat jar | Never for production |
 
 `SANGAM.md` lists other PostgreSQL, Oracle and SQL Server versions in places, and `deploy/README.md` section 1.4 mentions them as preparation guidance. Only the versions above run in CI, so only they can be certified.
@@ -145,7 +147,13 @@ early access `jdk-27+35`; JAVA_HOME was set only for those processes.
 | sangam-integration | PASS (1) | PASS (1) |
 
 The other reactor modules (BOM, compliance, REST, resources, case, geo, field, cell, Java SDK, control plane,
-gateway, roll-up) **compile** on both JDKs. They have no surefire unit tests, so they are compile-checked only.
+gateway, roll-up) **compile** on both JDKs. At that commit they had no surefire unit tests, so in this run they were
+compile-checked only.
+
+**Java SDK since this run:** the current tree adds unit tests to `sdks/java` (`ModelContractTest`, the contract guard
+against `sangam-api.yaml`, and `SangamWorkerTest` with `FakeWorkServer`; not yet in git). A local surefire report in
+`sdks/java/target-b5` (2026-11-12) shows 18 and 7 tests passed; which tree state produced it is not recorded, so it is
+not evidence for the current tree. The first recorded run is the CI `sdks.yml` Java job after the push.
 
 Notes:
 

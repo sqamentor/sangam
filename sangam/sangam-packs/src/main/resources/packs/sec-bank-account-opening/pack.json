@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.account-opening",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Account opening with KYC, V-CIP and CKYCR",
     "hi": "केवाईसी, वी-सीआईपी एवं सीकेवाईसीआर सहित खाता खोलना"
@@ -119,13 +119,35 @@
       "refs": [
         "SEC-BANK-002"
       ],
-      "given": "kycMode = VCIP",
+      "given": "kycMode = VCIP; CKYCR has no record, PAN valid, screening clear (simulator answers, SL-115)",
       "when": "the official records reschedule, then pass",
       "then": "a second V-CIP task; account opened",
-      "startVariables": {},
+      "startVariables": {
+        "kycMode": "VCIP",
+        "sim_ckycr_search": "found=false",
+        "sim_pan_verify": "valid=true",
+        "sim_sanctions_screen": "hit=false"
+      },
       "expectState": null,
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: the V-CIP official records reschedule"
+        "answers": {
+          "ao_vcip": {
+            "vars": {
+              "vcipDecision": "reschedule"
+            },
+            "times": 1
+          }
+        },
+        "expect": {
+          "tasks": [
+            "ao_vcip",
+            "ao_vcip",
+            "sn_sanction"
+          ],
+          "audit": [
+            "CASE_CLOSED"
+          ]
+        }
       }
     },
     {
@@ -134,11 +156,12 @@
       "refs": [
         "SEC-BANK-005"
       ],
-      "given": "sim_sanctions_screen = hit=true",
+      "given": "sim_sanctions_screen = hit=true; PAN valid (simulator answer, SL-115)",
       "when": "compliance records reject",
       "then": "rejection with SANCTIONS_MATCH",
       "startVariables": {
-        "sim_sanctions_screen": "hit=true"
+        "sim_sanctions_screen": "hit=true",
+        "sim_pan_verify": "valid=true"
       },
       "expectState": null,
       "run": {
@@ -173,5 +196,13 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "powerLimit"
+    ]
+  }
 }

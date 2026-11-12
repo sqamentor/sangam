@@ -111,7 +111,9 @@ class MixedRemittanceTest {
             new PackDeployer(engine, PackRegistry.discover()).deploy(List.of("sec.ushealth.claim"), "T");
             engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-ushealth-claim").businessKey("CASE-A")
                     .processDefinitionTenantId("T").setVariables(Map.of("customerId", "PA", "patientControlNumber", "A",
-                            "serviceDate", "2026-11-01", "statusFollowUp", "P30D")).execute();
+                            "serviceDate", "2026-11-01", "statusFollowUp", "P30D",
+                            // SL-115: the 999 acknowledgment is answered explicitly (no pack default stands in)
+                            "sim_x12_claim", "accepted=true")).execute();
             for (int i = 0; i < 20; i++) {
                 engine.getManagementService().createJobQuery().executable().list().stream()
                         .filter(j -> j.getDuedate() == null).forEach(j -> engine.getManagementService().executeJob(j.getId()));

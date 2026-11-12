@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-inoperative-deposits/verify",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.inoperative-deposits",
   "title": {
     "en": "Verify KYC and entitlement (holder, nominee, legal heir)",

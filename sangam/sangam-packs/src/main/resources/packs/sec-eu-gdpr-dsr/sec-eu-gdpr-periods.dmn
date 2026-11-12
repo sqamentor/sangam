@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_eu_gdpr_periods" name="GDPR response periods (Regulation (EU) 2016/679 Art. 12(3); tenant overridable)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SL-33. Art. 23 member-state restrictions: unverified per tenant (override this table). -->
+  <decision id="sec-eu-gdpr-periods" name="GDPR response periods (Regulation (EU) 2016/679 Art. 12(3); tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-eu-gdpr-periods_t" hitPolicy="FIRST">
+      <input id="sec-eu-gdpr-periods_i0" label="Right"><inputExpression id="sec-eu-gdpr-periods_ie0" typeRef="string"><text>dsrRight</text></inputExpression></input>
+      <output id="sec-eu-gdpr-periods_o0" label="Respond within (from receipt)" name="responseSpec" typeRef="string"/>
+      <output id="sec-eu-gdpr-periods_o1" label="Extended deadline (from the extension notice, two further months)" name="extensionSpec" typeRef="string"/>
+      <rule id="sec-eu-gdpr-periods_r0"><description>Art. 12(3): one month, extendable by two further months</description>
+        <inputEntry id="sec-eu-gdpr-periods_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-eu-gdpr-periods_r0_o0"><text>"P1M"</text></outputEntry>
+        <outputEntry id="sec-eu-gdpr-periods_r0_o1"><text>"P2M"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

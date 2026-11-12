@@ -307,12 +307,17 @@ public final class BulkIngest {
                     RowInput in = rows.get(i);
                     String ext = in == null ? null : in.externalId();
                     String problem = validate(in);
+                    // SL-87: a row rejected for a missing external id is kept (FAILED, in the error report) with
+                    // external_id NULL, never '' (Oracle stores '' as NULL: ORA-01400 aborted the whole chunk). A valid
+                    // row always has a non-blank id (validate). NULL reads back as "".
+                    String storedExt = problem == null ? ext
+                            : (ext == null || ext.isEmpty() ? null : truncate(ext, MAX_EXTERNAL_ID));
                     if (problem != null) {
                         invalid++;
                     }
                     Jdbc.update(c, "INSERT INTO OPS_BULK_ROW(job_id, chunk_seq, row_seq, external_id, payload, payload_hash, state, attempts,"
                                     + " error_code, error_text, result_ref, claimed_by, updated_at) VALUES (?,?,?,?,?,?,?,0,?,?,NULL,NULL," + dialect.now() + ")",
-                            jobId, chunkSeq, i, problem == null ? ext : truncate(ext == null ? "" : ext, MAX_EXTERNAL_ID),
+                            jobId, chunkSeq, i, storedExt,
                             payloads.get(i), sha256(payloads.get(i)), problem == null ? RowState.PENDING.name() : RowState.FAILED.name(),
                             problem == null ? null : "INVALID_ROW", problem);
                 }
@@ -599,7 +604,8 @@ public final class BulkIngest {
             Object[] params = stateOrNull == null ? new Object[]{jobId} : new Object[]{jobId, stateOrNull.name()};
             List<RowStatus> items = Jdbc.query(c, "SELECT chunk_seq, row_seq, external_id, state, attempts, error_code, error_text, result_ref"
                             + " FROM OPS_BULK_ROW WHERE " + where + " ORDER BY chunk_seq, row_seq" + window(offset, limit),
-                    rs -> new RowStatus(rs.getInt(1), rs.getInt(2), rs.getString(3), RowState.valueOf(rs.getString(4)), rs.getInt(5),
+                    rs -> new RowStatus(rs.getInt(1), rs.getInt(2), rs.getString(3) == null ? "" : rs.getString(3),
+                            RowState.valueOf(rs.getString(4)), rs.getInt(5),
                             rs.getString(6), rs.getString(7), rs.getString(8)), params);
             long total = Jdbc.one(c, "SELECT COUNT(*) FROM OPS_BULK_ROW WHERE " + where, rs -> rs.getLong(1), params).orElse(0L);
             return new Slice<>(items, total);

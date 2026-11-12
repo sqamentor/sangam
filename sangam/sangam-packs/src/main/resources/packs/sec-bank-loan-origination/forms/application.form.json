@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-origination/application",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.loan-origination",
   "title": {
     "en": "Loan application",
@@ -34,7 +34,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",
@@ -52,7 +54,9 @@
     },
     {
       "id": "monthlyIncome",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Monthly income (INR)",
@@ -61,7 +65,9 @@
     },
     {
       "id": "existingEmi",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Existing EMIs per month (INR)",

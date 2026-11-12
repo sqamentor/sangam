@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.pao-chain",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Pay and accounts office pre-check chain",
     "hi": "वेतन एवं लेखा कार्यालय पूर्व-जाँच शृंखला"
@@ -103,7 +103,7 @@
       "when": "a bill of 12 lakh passes",
       "then": "the second-signatory task is created",
       "startVariables": {
-        "amount": 1200000,
+        "amount": 120000000,
         "chainSignatures": 2
       },
       "expectState": null,
@@ -122,5 +122,13 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.sna-sparsh",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "SNA-SPARSH just-in-time release",
     "hi": "एसएनए-स्पर्श समय पर विमुक्ति"
@@ -144,5 +144,15 @@
     "sangam-core-closure",
     "sangam-core-execution",
     "sangam-core-rejection"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "centreShare",
+      "stateShare"
+    ]
+  }
 }

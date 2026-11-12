@@ -96,6 +96,6 @@ public class InstanceControlController {
     public ResponseEntity<List<InstanceControlPort.ExternalTaskLogEntry>> externalTaskLog(RequestContext ctx,
             @ModelAttribute HistoryAuditController.HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(control.externalTaskLog(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        return Lists.ok(control.externalTaskLog(ctx, q.filter().requireOnly("/history/external-task-log", true, false), Lists.page(q.page(), q.size())));
     }
 }

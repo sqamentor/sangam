@@ -43,7 +43,7 @@ import org.springframework.core.env.Environment;
  *   <li>The layer model {@code profiles/layers.yaml}, {@link ProfileResolver}, {@link ProfileValidator} and the
  *       maker-checker {@link ConfigAdminService} (change log in {@code CFG_CHANGE}).</li>
  *   <li>Connector bindings: {@code config.profile}, {@code config.documentType}, {@code config.classification},
- *       {@code config.series} → one {@link ConfigConnector} (registry id {@code config}; the pack request carries the
+ *       {@code config.series}, {@code config.crosswalk} → one {@link ConfigConnector} (registry id {@code config}; the pack request carries the
  *       operation).</li>
  *   <li>Start-up: {@code ProfileLoader.loadIndex(cl, "profiles/profiles.idx")} imported as ACTIVE release profiles
  *       (only versions not yet stored, so an administrator's later activation is never overwritten), then the master
@@ -59,6 +59,13 @@ import org.springframework.core.env.Environment;
 public class ConfigWiring {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigWiring.class);
+
+    /**
+     * The pack connector ids bound to the {@code config} connector, one per id its javadoc names (the request carries
+     * the operation; SL-123 adds {@code config.crosswalk} for {@code crosswalk.map}).
+     */
+    public static final List<String> PACK_CONNECTOR_IDS = List.of("config.profile", "config.documentType",
+            "config.classification", "config.series", "config.crosswalk");
 
     @Bean
     public JdbcConfigStore sangamConfigStore(TxSupport tx, Environment env) {
@@ -105,7 +112,9 @@ public class ConfigWiring {
 
     @Bean
     public ProfileValidator sangamProfileValidator(LayerModel layers) {
-        return new ProfileValidator(layers);
+        // SL-35: the document-type catalogue's integrity check (every type's approval chain exists) runs on every
+        // validation and activation, so a tenant's new document type cannot reach a running pack with a broken chain
+        return new ProfileValidator(layers).with(org.sangam.config.catalogue.DocumentTypeCatalogue::profileCheck);
     }
 
     @Bean
@@ -122,7 +131,10 @@ public class ConfigWiring {
     @Bean
     public ConfigConnector sangamConfigConnector(ProfileResolver resolver, ClassificationRegistry registry,
                                                  JdbcConfigStore store, org.sangam.core.time.BusinessClock businessClock) {
-        return new ConfigConnector(resolver, registry, store, businessClock);
+        // SL-119: a bound case reads the profile versions it stored at start (CFG_CASE_BINDING, ConfigCaseBindingPlugin);
+        // SL-124: inside an engine command on that command's connection, so the start transaction sees its own binding
+        return new ConfigConnector(resolver, registry, store, businessClock,
+                new org.sangam.server.bridge.CommandCaseBindings(store));
     }
 
     /** {@code config.*} pack connector ids → the {@code config} connector (the request carries the operation). */
@@ -133,7 +145,7 @@ public class ConfigWiring {
             ConfigConnectorBinder binder = new ConfigConnectorBinder(registry, bindings);
             if (binder.register(connector)) {
                 Map<String, String> ids = new java.util.LinkedHashMap<>();
-                for (String id : List.of("config.profile", "config.documentType", "config.classification", "config.series")) {
+                for (String id : PACK_CONNECTOR_IDS) {
                     ids.put(id, null);
                 }
                 LOG.info("config connector registered; {} pack connector ids bound", binder.bind("config", ids));

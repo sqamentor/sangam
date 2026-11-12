@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.engine;
 
-import java.time.ZoneId;
-
 import org.sangam.core.api.ExpiryPolicy;
 import org.sangam.core.engine.AuditSink;
 import org.sangam.core.engine.EngineMetrics;
 import org.sangam.core.engine.IncidentSink;
+import org.sangam.core.time.EngineTimeZone;
 import org.sangam.engine.clock.OperatonClock;
 import org.sangam.engine.db.EngineDialect;
 import org.sangam.engine.history.CoreAuditChainSink;
@@ -40,6 +39,8 @@ public final class SangamEngineComponents {
     private final ExpiryPolicy expiryPolicy;
 
     public SangamEngineComponents(SangamEngineSettings settings, EngineDialect dialect) {
+        // SL-53: every way of wiring a Sangam engine passes here; it never runs outside a UTC JVM
+        EngineTimeZone.requireUtcJvm();
         this.settings = settings;
         this.dialect = dialect;
         this.metrics = settings.getMetrics();
@@ -47,8 +48,9 @@ public final class SangamEngineComponents {
         this.leases = new SangamLeaseTable(dialect, settings.getLockTimeout());
         this.exclusiveLeases = new ExclusiveLeaseTable(dialect, settings.getLockTimeout());
         this.timerPolicies = new TimerPolicies(settings);
-        // Offset-less starts are local time in the JVM zone Operaton cached at class load (FLOWABLE-INTO-OPERATON D-02).
-        this.timerGuard = new TimerGuard(dialect, settings.getLockTimeout(), ZoneId.systemDefault(), settings.getTimerZone());
+        // SL-53: offset-less date-times are engine-zone (UTC) wall time, as Operaton writes them in the UTC JVM
+        // (FLOWABLE-INTO-OPERATON D-02); calendar arithmetic and the guard's wall clock use the configured timer zone.
+        this.timerGuard = new TimerGuard(dialect, settings.getLockTimeout(), settings.getTimerZone());
         this.retrier = new CommandRetrier(settings.getRetryMaxAttempts(), settings.getRetryBase(), settings.getRetryCap(),
                 metrics);
         this.auditSink = settings.getAuditSink() != null ? settings.getAuditSink()

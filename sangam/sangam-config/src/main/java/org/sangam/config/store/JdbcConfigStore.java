@@ -12,6 +12,7 @@ import org.sangam.config.master.MasterStore;
 import org.sangam.config.profile.ProfileDocument;
 import org.sangam.config.profile.ProfileLoader;
 import org.sangam.config.profile.ProfileRepository;
+import org.sangam.core.layer.AbsentKey;
 import org.sangam.core.layer.CanonicalJson;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
@@ -108,10 +109,12 @@ public final class JdbcConfigStore implements ProfileRepository, MasterStore, Nu
     }
 
     // ------------------------------------------------------------------------------------------- master codes
+    // parent_code is a NOT NULL primary-key column: a root code (no parent) is stored as AbsentKey.NONE, never '',
+    // which Oracle stores as NULL (SL-84: ORA-01400 at startup seeding).
     @Override
     public void put(MasterCode m) {
         String from = m.validFrom() == null ? "0000-01-01" : m.validFrom().toString();
-        String parent = m.parentCode() == null ? "" : m.parentCode();
+        String parent = AbsentKey.encode(m.parentCode());
         inTx(c -> {
             Jdbc.update(c, "DELETE FROM CFG_MASTER_CODE WHERE scope_id = ? AND scheme_id = ? AND segment_id = ? AND "
                     + "parent_code = ? AND code = ? AND valid_from = ?", m.scope(), m.scheme(), m.segment(), parent, m.code(), from);
@@ -127,7 +130,7 @@ public final class JdbcConfigStore implements ProfileRepository, MasterStore, Nu
     public List<MasterCode> find(String scope, String scheme, String segment, String parentCode, String code) {
         return inTx(c -> Jdbc.query(c, "SELECT * FROM CFG_MASTER_CODE WHERE scope_id = ? AND scheme_id = ? AND segment_id = ? "
                 + "AND parent_code = ? AND code = ?", JdbcConfigStore::code, scope, scheme, segment,
-                parentCode == null ? "" : parentCode, code));
+                AbsentKey.encode(parentCode), code));
     }
 
     @Override
@@ -138,17 +141,23 @@ public final class JdbcConfigStore implements ProfileRepository, MasterStore, Nu
 
     @Override
     public List<MasterCode> children(String scope, String scheme, String segment, String parentPrefix) {
+        // An empty prefix lists every code of the segment, roots included (as with the former '' root key). A non-empty
+        // prefix never selects a root: the stored root key is excluded, so a prefix starting with it cannot match.
+        if (parentPrefix.isEmpty()) {
+            return list(scope, scheme, segment);
+        }
         return inTx(c -> Jdbc.query(c, "SELECT * FROM CFG_MASTER_CODE WHERE scope_id = ? AND scheme_id = ? AND segment_id = ? "
-                + "AND parent_code LIKE ?", JdbcConfigStore::code, scope, scheme, segment, parentPrefix + "%"));
+                + "AND parent_code LIKE ? AND parent_code <> ?", JdbcConfigStore::code, scope, scheme, segment,
+                parentPrefix + "%", AbsentKey.NONE));
     }
 
     private static MasterCode code(java.sql.ResultSet rs) throws SQLException {
         String from = rs.getString("valid_from");
-        String parent = rs.getString("parent_code");
+        String parent = AbsentKey.decode(rs.getString("parent_code"));
         Map<String, String> name = new LinkedHashMap<>();
         Tree.map(json(rs.getString("name_json"))).forEach((k, v) -> name.put(k, String.valueOf(v)));
         return new MasterCode(rs.getString("scope_id"), rs.getString("scheme_id"), rs.getString("segment_id"),
-                rs.getString("code"), parent == null || parent.isEmpty() ? null : parent, name,
+                rs.getString("code"), parent, name,
                 Tree.map(json(rs.getString("flags_json"))), "0000-01-01".equals(from) ? null : EffectiveDated.date(from),
                 EffectiveDated.date(rs.getString("valid_to")), rs.getString("source_ref"));
     }
@@ -181,6 +190,38 @@ public final class JdbcConfigStore implements ProfileRepository, MasterStore, Nu
                 rs -> new ConfigAdminService.ChangeRecord(rs.getString("profile_id"), rs.getString("version"),
                         rs.getString("action"), rs.getString("actor"), ts(rs.getTimestamp("at_time")),
                         rs.getString("content_hash"), rs.getString("reason")), profileId));
+    }
+
+    /**
+     * SL-120 change marker: row count and highest id of the append-only change register {@code CFG_CHANGE}. Every
+     * lifecycle action of {@link ConfigAdminService} (draft, submit, approve, activate or its refusal, retire, import)
+     * appends one row in its own transaction, so the count moves with every committed change on any node; the count
+     * (not only the highest id) also catches a lower identity committed after a higher one.
+     */
+    @Override
+    public String changeMarker() {
+        return inTx(c -> Jdbc.one(c, "SELECT COUNT(*), MAX(change_id) FROM CFG_CHANGE",
+                rs -> rs.getLong(1) + ":" + rs.getLong(2)).orElse("0:0"));
+    }
+
+    /** The profile binding stored for a case at its start ({@code CFG_CASE_BINDING}), if any (SL-119). */
+    public Optional<String> caseBinding(String tenant, String rootId) {
+        if (tenant == null || rootId == null) {
+            return Optional.empty();
+        }
+        return inTx(c -> caseBinding(c, tenant, rootId));
+    }
+
+    /**
+     * As above, on the caller's connection (SL-124): the engine command that started the case wrote the row on its own
+     * connection, so a read in that same transaction sees it before it commits.
+     */
+    public Optional<String> caseBinding(Connection c, String tenant, String rootId) {
+        if (tenant == null || rootId == null) {
+            return Optional.empty();
+        }
+        return Jdbc.one(c, "SELECT binding FROM CFG_CASE_BINDING WHERE tenant_id = ? AND root_id = ?",
+                rs -> rs.getString(1), tenant, rootId);
     }
 
     /** Records the profile binding of a case (audit of "which configuration governed this case"). */

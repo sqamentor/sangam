@@ -1,6 +1,6 @@
 {
   "key": "audit-para/reply",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.audit-para",
   "title": {
     "en": "Reply to audit para",

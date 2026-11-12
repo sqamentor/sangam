@@ -14,7 +14,9 @@ import java.util.Map;
 
 /**
  * Decoders for the inbound HIPAA transactions into plain maps that a process can route on (US-HLT-085…090, 104, 106).
- * Every decoder returns {@code type} and {@code controlNumber}; amounts are decimal strings (R33).
+ * Every decoder returns {@code type} and {@code controlNumber}. Amounts (SD-398, the pack money contract) are integer
+ * MINOR units of {@code currency} (cents for USD) as {@code Long}, with {@code amountUnit = MINOR}; an amount that is not
+ * exact in the currency stays the raw text and is listed in {@code invalidAmounts}, never rounded or read as zero.
  */
 public final class X12Decoders {
 
@@ -108,7 +110,7 @@ public final class X12Decoders {
         if (!rejects.isEmpty()) {
             m.put("reasonCode", rejects.get(0).get("reasonCode"));
         }
-        return m;
+        return minorUnits(m);
     }
 
     /** 277: STC per claim; category A* acknowledgement, P* pending, F* finalized, R* request for information, E* error. */
@@ -165,7 +167,7 @@ public final class X12Decoders {
         if (!claims.isEmpty()) {
             m.putAll(firstNonList(claims.get(0)));
         }
-        return m;
+        return minorUnits(m);
     }
 
     static String category(String cat) {
@@ -344,7 +346,7 @@ public final class X12Decoders {
                 m.put("firstAdjustmentGroup", a0.get("group"));
             }
         }
-        return m;
+        return minorUnits(m);
     }
 
     /**
@@ -524,5 +526,50 @@ public final class X12Decoders {
             }
         });
         return out;
+    }
+
+    static final java.util.Set<String> MONEY_KEYS = java.util.Set.of("amount", "paymentAmount", "chargeAmount", "paidAmount",
+            "patientResponsibility");
+
+    /** Rewrites every decoded amount to integer minor units of the transaction currency (one exact conversion). */
+    static Map<String, Object> minorUnits(Map<String, Object> m) {
+        String ccy = currency(m);
+        m.put("currency", ccy);
+        m.put("amountUnit", "MINOR");
+        toMinor(m, ccy);
+        return m;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void toMinor(Object node, String ccy) {
+        if (node instanceof Map<?, ?> raw) {
+            Map<String, Object> mm = (Map<String, Object>) raw;
+            for (Map.Entry<String, Object> e : mm.entrySet()) {
+                Object v = e.getValue();
+                if ((MONEY_KEYS.contains(e.getKey()) && (v instanceof String || v instanceof Number))) {
+                    e.setValue(minorOrRaw(v, ccy));
+                } else if ("adjustmentTotals".equals(e.getKey()) && v instanceof Map<?, ?> totals) {
+                    Map<String, Object> conv = new LinkedHashMap<>();
+                    totals.forEach((g, x) -> conv.put(String.valueOf(g), minorOrRaw(x, ccy)));
+                    e.setValue(conv);
+                } else {
+                    toMinor(v, ccy);
+                }
+            }
+        } else if (node instanceof List<?> l) {
+            l.forEach(x -> toMinor(x, ccy));
+        }
+    }
+
+    private static Object minorOrRaw(Object v, String ccy) {
+        String s = String.valueOf(v);
+        if (s.isBlank()) {
+            return 0L;
+        }
+        try {
+            return Money.parse(s, ccy).minor();
+        } catch (RuntimeException notExact) {
+            return s; // already reported in invalidAmounts by the balance checks
+        }
     }
 }

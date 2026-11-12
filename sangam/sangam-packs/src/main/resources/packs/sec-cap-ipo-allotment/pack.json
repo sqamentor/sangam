@@ -1,6 +1,6 @@
 {
   "id": "sec.cap.ipo-allotment",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "IPO from bid close to listing (T+3)",
     "hi": "आईपीओ: बोली समापन से सूचीबद्धता (टी+3)"
@@ -76,5 +76,13 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "compensationAmount"
+    ]
+  }
 }

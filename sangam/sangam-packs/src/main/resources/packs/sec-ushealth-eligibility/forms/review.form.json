@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-eligibility/review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.eligibility",
   "title": {
     "en": "Review benefits and estimate patient responsibility",
@@ -25,7 +25,9 @@
     },
     {
       "id": "estimatedPatientShare",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Estimated patient responsibility (USD)",

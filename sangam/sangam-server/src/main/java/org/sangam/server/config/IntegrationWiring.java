@@ -8,6 +8,9 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.zaxxer.hikari.HikariDataSource;
+import com.zaxxer.hikari.util.DriverDataSource;
+
 import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.core.api.EngineAdapter;
 import org.sangam.core.api.ExpiryPolicy;
@@ -20,6 +23,7 @@ import org.sangam.core.layer.ReconciliationQueue;
 import org.sangam.core.layer.Tombstones;
 import org.sangam.core.layer.Transactions;
 import org.sangam.core.ports.UniqueStartPort;
+import org.sangam.core.security.SecurityIdentity;
 import org.sangam.integration.IntegrationMaintenance;
 import org.sangam.integration.bridge.ConnectorExternalTaskWorker;
 import org.sangam.integration.bridge.TopicBinding;
@@ -63,11 +67,14 @@ import org.sangam.integration.relay.OutboxRelayService;
 import org.sangam.integration.relay.OutboxRetention;
 import org.sangam.integration.relay.OutboxWriter;
 import org.sangam.integration.relay.PublisherRegistry;
+import org.sangam.integration.relay.WakeupListener;
 import org.sangam.integration.relay.WakeupNotifier;
 import org.sangam.integration.sim.SimulatorProfile;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
+import org.sangam.rest.support.WorkLongPoll;
 import org.sangam.security.SangamSecurity;
+import org.sangam.security.tenant.TenantContext;
 import org.sangam.server.bridge.IntegrationBackpressureFilter;
 import org.sangam.server.bridge.IntegrationLifecycleAuthorizer;
 import org.sangam.server.bridge.IntegrationServices;
@@ -129,8 +136,7 @@ public class IntegrationWiring {
     }
 
     private static String defaultTenant(Environment env) {
-        String t = env.getProperty("sangam.tenant.default");
-        return t == null || t.isBlank() ? "default" : t;
+        return AttributionTenant.resolve(env); // SL-86: the one attribution-tenant resolver
     }
 
     @Bean
@@ -355,11 +361,87 @@ public class IntegrationWiring {
 
     @Bean(destroyMethod = "")
     public OutboxRelayService sangamOutboxRelayService(TxSupport tx, DataSource ds, PublisherRegistry publishers,
-            AuditChain sangamIntegrationAuditChain, DeadLetterStore deadLetters, RestProperties rest) {
+            AuditChain sangamIntegrationAuditChain, DeadLetterStore deadLetters, RestProperties rest,
+            WakeupListener sangamWakeupListener) {
         Transactions ptx = productTx(ds);
+        // M-005: PostgreSQL notifies every node (LISTEN in sangamWakeupListener); the other dialects wake this node only
+        WakeupNotifier wakeup = sangamWakeupListener.usesListen()
+                ? WakeupNotifier.postgres(tx.dialect(), ptx, WakeupNotifier.CHANNEL)
+                : sangamWakeupListener.inJvmNotifier();
         return new OutboxRelayService(tx.dialect(), ptx, publishers, OutboxRelayService.Settings.defaults(rest.getNode()),
-                sangamIntegrationAuditChain, deadLetters, CircuitBreaker.defaults(),
-                WakeupNotifier.postgres(tx.dialect(), ptx, "sangam_outbox"));
+                sangamIntegrationAuditChain, deadLetters, CircuitBreaker.defaults(), wakeup);
+    }
+
+    // ---------------------------------------------------------------- wake-up and worker long-poll (M-005, M-053)
+
+    /**
+     * M-005: the receiving side of the relay wake-up. On PostgreSQL a {@code LISTEN} on its own physical connection,
+     * opened with the pool's driver settings but outside the pool (a pooled connection would be held forever and would
+     * carry the LISTEN session state to its next borrower); reconnects with back-off. Other dialects, or a pool that is
+     * not HikariCP: in-JVM only. Always a hint: the subscribers keep their 1 s poll (R1).
+     */
+    @Bean(initMethod = "start", destroyMethod = "close")
+    public WakeupListener sangamWakeupListener(TxSupport tx, DataSource ds) {
+        WakeupListener.ConnectionSource source = tx.dialect() == Dialect.POSTGRESQL ? listenerConnections(ds) : null;
+        if (tx.dialect() == Dialect.POSTGRESQL && source == null) {
+            LOG.warn("M-005: the data source is not a HikariCP pool with a JDBC URL; the relay wake-up is in-JVM only "
+                    + "(other nodes' long-polls use their 1 s poll)");
+        }
+        return WakeupListener.forDialect(tx.dialect(), source, WakeupNotifier.CHANNEL);
+    }
+
+    /** A source of physical connections with the pool's own URL, driver, credentials and driver properties. */
+    static WakeupListener.ConnectionSource listenerConnections(DataSource ds) {
+        HikariDataSource pool;
+        try {
+            pool = ds instanceof HikariDataSource h ? h
+                    : ds.isWrapperFor(HikariDataSource.class) ? ds.unwrap(HikariDataSource.class) : null;
+        } catch (java.sql.SQLException e) {
+            pool = null;
+        }
+        if (pool == null || pool.getJdbcUrl() == null || pool.getJdbcUrl().isBlank()) {
+            return null;
+        }
+        java.util.Properties props = new java.util.Properties();
+        props.putAll(pool.getDataSourceProperties());
+        DriverDataSource physical = new DriverDataSource(pool.getJdbcUrl(), pool.getDriverClassName(), props,
+                pool.getUsername(), pool.getPassword());
+        return physical::getConnection;
+    }
+
+    /**
+     * M-053: the worker long-poll without a parked request thread ({@code /api/v1/work/fetch-and-lock}), woken by
+     * {@link #sangamWakeupListener}. {@code sangam.work.long-poll.max-waiters} bounds the waiting requests per node
+     * (above it a request waits in its thread, as before), {@code poll-threads} the threads that run the polls. The
+     * request's tenant identity is carried to the poll thread explicitly. {@code enabled=false} keeps the blocking wait.
+     */
+    @Bean(destroyMethod = "close")
+    @ConditionalOnProperty(name = "sangam.work.long-poll.enabled", havingValue = "true", matchIfMissing = true)
+    public WorkLongPoll sangamWorkLongPoll(Environment env, WakeupListener sangamWakeupListener) {
+        WorkLongPoll.Settings d = WorkLongPoll.Settings.defaults();
+        WorkLongPoll.Settings s = new WorkLongPoll.Settings(
+                env.getProperty("sangam.work.long-poll.max-waiters", Integer.class, d.maxWaiters()),
+                env.getProperty("sangam.work.long-poll.poll-threads", Integer.class, d.pollThreads()),
+                d.firstInterval(), d.maxInterval());
+        WorkLongPoll poll = new WorkLongPoll(s, List.of(tenantIdentityCarrier()));
+        sangamWakeupListener.subscribe(poll::wakeUp);
+        return poll;
+    }
+
+    /**
+     * The request's {@link TenantContext} identity (bound by the security filter on the request thread), bound around
+     * every long-poll attempt on the poll thread, and exactly that: a request without one polls without one.
+     */
+    static WorkLongPoll.ContextCarrier tenantIdentityCarrier() {
+        return () -> {
+            SecurityIdentity identity = TenantContext.current().orElse(null);
+            return new WorkLongPoll.ContextCarrier.Scope() {
+                @Override
+                public <T> T call(java.util.function.Supplier<T> work) {
+                    return TenantContext.runAs(identity, work);
+                }
+            };
+        };
     }
 
     @Bean(destroyMethod = "")
@@ -429,19 +511,19 @@ public class IntegrationWiring {
     }
 
     /**
-     * Pack connector → integration connector bindings: the government defaults, the capability classes declared by
-     * the discovered packs, then the site's {@code sangam.packs.bindings.*} (with payload mappers), which win.
+     * Pack connector → integration connector bindings: the defaults and capability classes the discovered packs
+     * declare in their manifests ({@code connectors[].simulatorBinding}; SL-104: pack data, no system name in product
+     * code), then the site's {@code sangam.packs.bindings.*} (with payload mappers), which win.
      */
     @Bean
     public PackConnectorBindings sangamPackConnectorBindings(
             @org.springframework.beans.factory.annotation.Qualifier("sangamPackBindingsProperties")
             PackBindingsProperties properties,
             ObjectProvider<org.sangam.packs.spi.PackRegistry> packs) {
-        PackConnectorBindings bindings = PackConnectorBindings.governmentDefaults();
         org.sangam.packs.spi.PackRegistry registry = packs.getIfAvailable();
-        if (registry != null) {
-            bindings.declareFrom(registry.all());
-        }
+        PackConnectorBindings bindings = registry != null
+                ? PackConnectorBindings.fromPackData(registry.all())
+                : new PackConnectorBindings();
         properties.getBindings().forEach((packConnector, spec) -> {
             if (spec.getConnector() == null || spec.getConnector().isBlank()) {
                 throw new IllegalStateException("sangam.packs.bindings." + packConnector + ".connector is required");
@@ -464,11 +546,13 @@ public class IntegrationWiring {
             PackBindingsProperties properties, Environment env) {
         boolean fallback = properties.getSimulatorFallback() != null ? properties.getSimulatorFallback()
                 : java.util.Arrays.asList(env.getActiveProfiles()).contains("h2");
-        if (fallback && java.util.Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.contains("prod"))) {
+        if (fallback && ProductionEnvironment.isProduction(env)) { // SL-109
             throw new IllegalStateException("sangam.packs.simulator-fallback must not be enabled on a production profile");
         }
         return new IntegrationConnectorGateway(engineTx(adapter, tx), engine, store, bindings, registry, journal, queue,
-                writer, gate, fallback ? new org.sangam.packs.sim.SimulatorConnectorGateway() : null);
+                // SL-115: the demo's external checks answer from simulator DATA (demo-answers.properties), never from a
+                // pack default; a case's own sim_* directive still wins
+                writer, gate, fallback ? org.sangam.packs.sim.DemoAnswersGateway.withShippedAnswers() : null);
     }
 
     @Bean

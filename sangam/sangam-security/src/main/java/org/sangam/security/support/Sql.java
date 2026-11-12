@@ -33,7 +33,7 @@ public final class Sql {
             return Jdbc.update(c, insertSql + " ON CONFLICT DO NOTHING", params) == 1;
         }
         try (PreparedStatement ps = c.prepareStatement(insertSql)) {
-            Jdbc.bind(ps, 1, params);
+            Jdbc.bind(ps, insertSql, 1, params);
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             if (d.isUniqueViolation(e)) {

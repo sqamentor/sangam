@@ -1,0 +1,27 @@
+{
+  "key": "sec-bank-txn-dispute/statusUnconfirmed",
+  "version": "1.0.1",
+  "pack": "sec.bank.txn-dispute",
+  "title": {
+    "en": "Transaction status not confirmed: establish it with the switch",
+    "hi": "लेनदेन स्थिति की पुष्टि नहीं: स्विच से सुनिश्चित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

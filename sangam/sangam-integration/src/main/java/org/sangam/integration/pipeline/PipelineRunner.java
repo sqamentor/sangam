@@ -2,6 +2,7 @@
 package org.sangam.integration.pipeline;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Outbox;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.HttpTransport;
@@ -243,7 +244,7 @@ public final class PipelineRunner {
                 ps.setFetchSize(1000);
                 int i = 1;
                 for (Object name : s.list("params")) {
-                    ps.setObject(i++, ctx.params.get(String.valueOf(name)));
+                    setValue(ps, i++, ctx.params.get(String.valueOf(name)));
                 }
                 try (ResultSet rs = ps.executeQuery()) {
                     ResultSetMetaData md = rs.getMetaData();
@@ -679,7 +680,7 @@ public final class PipelineRunner {
             }
             try (PreparedStatement ps = c.prepareStatement(del.toString())) {
                 for (int i = 0; i < vals.size(); i++) {
-                    ps.setObject(i + 1, vals.get(i));
+                    setValue(ps, i + 1, vals.get(i));
                 }
                 ps.executeUpdate();
             }
@@ -700,9 +701,22 @@ public final class PipelineRunner {
         }
         try (PreparedStatement ps = c.prepareStatement("INSERT INTO " + table + " (" + cols + ") VALUES (" + marks + ")")) {
             for (int i = 0; i < vals.size(); i++) {
-                ps.setObject(i + 1, vals.get(i));
+                setValue(ps, i + 1, vals.get(i));
             }
             ps.executeUpdate();
+        }
+    }
+
+    /**
+     * Binds a pipeline value as is; a null goes through {@link Jdbc#setNull} so it carries the type the target database
+     * needs (SL-88: on SQL Server an untyped null is varbinary and is refused by date/time and float columns). No
+     * statement text is passed: the external schema may change while the server runs, so nothing is cached.
+     */
+    static void setValue(PreparedStatement ps, int index, Object value) throws SQLException {
+        if (value == null) {
+            Jdbc.setNull(ps, null, index);
+        } else {
+            ps.setObject(index, value);
         }
     }
 

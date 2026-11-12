@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package org.sangam.core.layer;
 
 import java.sql.Connection;
@@ -5,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,7 @@ public final class Jdbc {
 
     public static int update(Connection c, String sql, Object... params) {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
-            bind(ps, 1, params);
+            bind(ps, sql, 1, params);
             return ps.executeUpdate();
         } catch (SQLException e) {
             throw new LayerSqlException(sql, e);
@@ -50,7 +50,7 @@ public final class Jdbc {
                 ps.setMaxRows(limit);
                 ps.setFetchSize(limit);
             }
-            bind(ps, 1, params);
+            bind(ps, sql, 1, params);
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> out = new ArrayList<>();
                 while (rs.next()) {
@@ -77,7 +77,7 @@ public final class Jdbc {
         }
         try (PreparedStatement ps = c.prepareStatement(sql)) {
             for (Object[] r : rows) {
-                bind(ps, 1, r);
+                bind(ps, sql, 1, r);
                 ps.addBatch();
             }
             for (int n : ps.executeBatch()) {
@@ -90,18 +90,31 @@ public final class Jdbc {
         }
     }
 
+    /**
+     * At most one row, mapped. An existing row whose mapped value is null is an error, never an empty result: an
+     * empty {@code Optional} means "no row", and a null mapping (for example a NULL column read with
+     * {@code rs.getString}) is a data gap the caller must see. It fails as an {@link IllegalStateException} naming the
+     * statement (it used to surface as a bare {@code NullPointerException} from {@code Optional.of(null)}).
+     */
     public static <T> Optional<T> one(Connection c, String sql, RowMapper<T> mapper, Object... params) {
         List<T> rows = query(c, sql, mapper, params);
         if (rows.size() > 1) {
             throw new IllegalStateException("expected at most one row: " + sql);
         }
-        return rows.stream().findFirst();
+        if (rows.isEmpty()) {
+            return Optional.empty();
+        }
+        T value = rows.get(0);
+        if (value == null) {
+            throw new IllegalStateException("row exists but mapped value is NULL: " + sql);
+        }
+        return Optional.of(value);
     }
 
     public static long insertReturningId(Connection c, Dialect d, String sql, String idColumn, Object... params) {
         String col = d == Dialect.POSTGRESQL ? idColumn.toLowerCase() : idColumn.toUpperCase();
         try (PreparedStatement ps = c.prepareStatement(sql, new String[]{col})) {
-            bind(ps, 1, params);
+            bind(ps, sql, 1, params);
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 if (!rs.next()) {
@@ -126,7 +139,7 @@ public final class Jdbc {
             return update(c, insertSql + " ON CONFLICT DO NOTHING", params) == 1;
         }
         try (PreparedStatement ps = c.prepareStatement(insertSql)) {
-            bind(ps, 1, params);
+            bind(ps, insertSql, 1, params);
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             if (d.isUniqueViolation(e)) {
@@ -136,15 +149,29 @@ public final class Jdbc {
         }
     }
 
+    /**
+     * Binds {@code params} from index {@code start}. Prefer {@link #bind(PreparedStatement, String, int, Object...)}
+     * when the statement text is at hand: on SQL Server a null's type is then described once per statement text
+     * instead of once per execution (see {@link NullTypes}).
+     */
     public static void bind(PreparedStatement ps, int start, Object... params) throws SQLException {
+        bind(ps, null, start, params);
+    }
+
+    /**
+     * Binds {@code params} from index {@code start} of the statement prepared from {@code sql} ({@code null} when the
+     * text is unknown, or when the target schema may change under a running process, as for a pipeline's external
+     * database). Every null is bound with the JDBC type its database needs ({@link NullTypes}).
+     */
+    public static void bind(PreparedStatement ps, String sql, int start, Object... params) throws SQLException {
         int i = start;
-        int nullType = Integer.MIN_VALUE;   // resolved on the first null only
+        NullTypes nulls = null;   // resolved on the first null only
         for (Object p : params) {
             if (p == null) {
-                if (nullType == Integer.MIN_VALUE) {
-                    nullType = nullSqlType(ps);
+                if (nulls == null) {
+                    nulls = NullTypes.of(ps, sql);
                 }
-                ps.setNull(i, nullType);
+                ps.setNull(i, nulls.type(i));
             } else if (p instanceof Instant t) {
                 ps.setTimestamp(i, Timestamp.from(t));
             } else if (p instanceof byte[] b) {
@@ -163,13 +190,12 @@ public final class Jdbc {
     }
 
     /**
-     * Oracle's driver rejects {@code setNull(i, Types.NULL)} (ORA-17004) but converts a VARCHAR null into any column
-     * type; PostgreSQL is the reverse (a VARCHAR null into a numeric column fails), so the untyped NULL stays the
-     * default for every other database.
+     * Binds SQL NULL at {@code index} with the JDBC type its database needs ({@link NullTypes}); for statements that
+     * bind values themselves instead of through {@link #bind}. {@code sql} as in
+     * {@link #bind(PreparedStatement, String, int, Object...)}.
      */
-    private static int nullSqlType(PreparedStatement ps) throws SQLException {
-        String product = ps.getConnection().getMetaData().getDatabaseProductName();
-        return product != null && product.toLowerCase(java.util.Locale.ROOT).contains("oracle") ? Types.VARCHAR : Types.NULL;
+    public static void setNull(PreparedStatement ps, String sql, int index) throws SQLException {
+        ps.setNull(index, NullTypes.of(ps, sql).type(index));
     }
 
     public static Instant instant(ResultSet rs, String col) throws SQLException {

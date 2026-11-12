@@ -85,10 +85,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
-              <!-- PostgreSQL rejects the legacy zone id a Windows JVM in India reports (Asia/Calcutta) as the session
-                   TimeZone at connect; the server normalises it (LegacyTimeZoneEnvironmentPostProcessor), this
-                   plain-JDBC test JVM runs in UTC instead -->
-              <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=UTC</argLine>
+              <!-- argLine (UTC, SL-53) from the root pom -->
               <systemPropertyVariables>
                 <sangam.db>${sangam.db}</sangam.db>
                 <api.version>1.44</api.version>

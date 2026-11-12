@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-corporate-action/declare",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.cap.corporate-action",
   "title": {
     "en": "Dividend declaration",
@@ -25,7 +25,9 @@
     },
     {
       "id": "dividendPerShare",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Dividend per share (INR)",

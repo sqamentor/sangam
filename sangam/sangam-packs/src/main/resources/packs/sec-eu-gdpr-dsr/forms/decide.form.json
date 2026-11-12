@@ -1,0 +1,54 @@
+{
+  "key": "sec-eu-gdpr-dsr/decide",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "Decide the request",
+    "hi": "अनुरोध पर निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "dsrDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "fulfil",
+        "label": {
+          "en": "Provide access",
+          "hi": "Provide access"
+        }
+      },
+      {
+        "value": "extend",
+        "label": {
+          "en": "Extend",
+          "hi": "विस्तार करें"
+        }
+      },
+      {
+        "value": "noAction",
+        "label": {
+          "en": "No action (reasons given)",
+          "hi": "कोई कार्रवाई नहीं (कारण सहित)"
+        }
+      }
+    ]
+  }
+}

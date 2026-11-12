@@ -133,6 +133,15 @@
       <groupId>org.sangam</groupId>
       <artifactId>sangam-cell</artifactId>
     </dependency>
+    <!-- SL-92: ComplianceAuthorityGateway registers these explicitly (no class-path module discovery). Apache-2.0, Jackson BOM line. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+    </dependency>
 
     <!-- Spring Boot 4 -->
     <dependency>
@@ -259,6 +268,8 @@
         <version>${version.spring-boot}</version>
         <configuration>
           <mainClass>org.sangam.server.SangamServerApplication</mainClass>
+          <!-- SL-53: spring-boot:run forks the server JVM in UTC; the server refuses any other default time zone -->
+          <jvmArguments>-Duser.timezone=UTC</jvmArguments>
           <!-- PropertiesLauncher: loader.path=/opt/sangam/lib-ext adds customer/side-loaded drivers (deploy README 10) -->
           <layout>ZIP</layout>
           <excludes>

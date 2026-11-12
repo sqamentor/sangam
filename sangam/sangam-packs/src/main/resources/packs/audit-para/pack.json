@@ -1,6 +1,6 @@
 {
   "id": "gov.audit-para",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Audit inspection and paras",
     "hi": "लेखापरीक्षा निरीक्षण एवं पैरा"
@@ -62,5 +62,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

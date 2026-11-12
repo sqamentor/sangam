@@ -2,7 +2,12 @@
 """Pack container and writer: models, forms, seeds, manifest, index."""
 import json
 import os
+import re
 
+import check_results
+import money
+import reason_codes
+import releases
 from lib import Proc, dmn as dmn_xml
 from forms import L, OPT
 from acceptance_runs import RUNS
@@ -16,17 +21,36 @@ LOCALES = {}
 # (tools/profilegen/central.py), which every shipped profile extends; a tenant may define its own levels in the
 # onboarding request (security.orgLevels), and readiness then refuses seats whose level is not among them.
 ORG_LEVELS = ['HEAD_OFFICE', 'REGIONAL_OFFICE', 'FIELD_OFFICE']
+# SL-104 (ADR-D-20): the default integration connector (registry id, operation) of a pack connector, written into every
+# pack.json connector entry with that id as `simulatorBinding` (the simulator connectors the integration module builds).
+# Pack data, never product Java; a site's `sangam.packs.bindings.<packConnector>` configuration overrides it.
+SIMULATOR_BINDINGS = {
+    'pfms.payment': ('pfms-sim', 'pay'),
+    'pfms.dbt': ('pfms-sim', 'pay'),
+    'esign.sign': ('esign-sim', 'sign'),
+    'digilocker.push': ('digilocker-sim', 'push'),
+    'notify.sms': ('sms-dlt-sim', 'send'),
+    'notify.email': ('smtp', 'send'),
+    'payment.refund': ('payment-gateway-sim', 'createOrder'),
+}
+# SL-104: external-task topics a pack declares (`workers` in pack.json) when it uses the pack connector that serves
+# them: (topic, operation, capability class). Registered by PackWorkers when the pack is discovered.
+WORKERS_BY_CONNECTOR = {
+    'pfms.payment': [('sangam.pfms.paymentFile', 'submitPaymentFile', 'c')],
+}
 
 
 class Pack:
     def __init__(self, id, dir, name_en, name_hi, domain, desc, covers, connectors=None, depends=('sangam.core',),
-                 version='1.0.0', main=None, second='hi'):
+                 version='1.0.0', main=None, second='hi', currency=money.DEFAULT_CURRENCY):
         self.id, self.dir, self.name_en, self.name_hi = id, dir, name_en, name_hi
+        self.currency = currency  # money is integer minor units of this ISO 4217 currency (money.py)
+        self.money_vars = set()
         self.second = second
         self.domain, self.desc, self.covers = domain, desc, list(covers)
         self.connectors = list(connectors or [])
         self.depends = list(depends)
-        self.version = version
+        self.version = releases.version_of(id, version)  # SL-54: a released version is immutable (releases.py)
         self.main = list(main or [])
         self.procs, self.dmns, self.cmmns, self.acceptance, self.overrides = [], [], [], [], []
         self.seed = None
@@ -42,12 +66,19 @@ class Pack:
         return p
 
     def dmn(self, did, name, hit, inputs, outputs, rules, doc=''):
-        self.dmns.append((did, dmn_xml(did, name, hit, inputs, outputs, rules, doc=doc, version=self.version)))
+        self._money_columns(inputs, outputs)
+        self.dmns.append((did, dmn_xml(did, name, hit, inputs, outputs, rules, doc=doc, version=self.version,
+                                       currency=self.currency)))
 
     def override(self, tenant, did, name, hit, inputs, outputs, rules, doc=''):
         """A tenant-specific DMN override (GP-37), deployed with tenantId = tenant."""
+        self._money_columns(inputs, outputs)
         self.overrides.append((tenant, did, dmn_xml(did, name, hit, inputs, outputs, rules, doc=doc,
-                                                    version=self.version)))
+                                                    version=self.version, currency=self.currency)))
+
+    def _money_columns(self, inputs, outputs):
+        self.money_vars.update(expr for (_, expr, typ) in inputs if str(typ).lower() == 'money')
+        self.money_vars.update(nm for (nm, _, typ) in outputs if str(typ).lower() == 'money')
 
     def cmmn(self, cid, xml):
         self.cmmns.append((cid, xml))
@@ -58,8 +89,10 @@ class Pack:
         self.placeholders.append(dict(decision=decision, rule=rule, reason=reason))
 
     def accept(self, id, title, refs, given, when, then, vars=None, state=None):
+        vars = money.convert_vars(vars, f'{self.id} {id}', self.currency)  # authored in major units
+        self.money_vars.update(k for k in vars if money.is_money(k))
         self.acceptance.append(dict(id=id, title=title, refs=refs, given=given, when=when, then=then,
-                                    startVariables=vars or {}, expectState=state))
+                                    startVariables=vars, expectState=state))
 
     def seeds(self, offices, seats, holdings, roles):
         """Each seat names the org level of its office (seat['level']): an explicit value is kept, otherwise it is
@@ -96,6 +129,18 @@ def split_name(n):
     return n.strip(), None
 
 
+def field_json(pack, fid, typ, req, label):
+    """A form field. A money field (money.is_money) is type 'money': the value is integer minor units of the pack
+    currency; the form shows and takes major units (value / 10^exponent)."""
+    if money.is_money(fid):
+        if typ not in ('decimal', 'integer', 'money', 'readonly'):
+            raise ValueError(f'{pack.id}: money field {fid} has type {typ!r}')
+        pack.money_vars.add(fid)
+        return {'id': fid, 'type': 'readonly' if typ == 'readonly' else 'money', 'currency': pack.currency,
+                'exponent': money.EXPONENT[pack.currency], 'required': req, 'label': label}
+    return {'id': fid, 'type': typ, 'required': req, 'label': label}
+
+
 def form_json_second(pack, f):
     """Form in English plus a non-Hindi second locale (pack.second)."""
     loc = pack.second
@@ -110,7 +155,7 @@ def form_json_second(pack, f):
         if fid not in L or fid not in labels:
             MISSING.add(f'field:{fid}' if fid not in L else f'field-{loc}:{fid}')
             continue
-        fields.append({'id': fid, 'type': L[fid][2], 'required': req, 'label': {'en': L[fid][0], loc: labels[fid]}})
+        fields.append(field_json(pack, fid, L[fid][2], req, {'en': L[fid][0], loc: labels[fid]}))
     out = {'key': f['key'], 'version': pack.version, 'pack': pack.id, 'title': {'en': en, loc: xx or en},
            'caseSummary': {'source': 'materialFields', 'label': {'en': 'Case details', loc: summary}},
            'fields': fields}
@@ -142,7 +187,7 @@ def form_json(pack, f):
             MISSING.add('field:' + fid)
             continue
         le, lh, typ = L[fid]
-        fields.append({'id': fid, 'type': typ, 'required': req, 'label': {'en': le, 'hi': lh}})
+        fields.append(field_json(pack, fid, typ, req, {'en': le, 'hi': lh}))
     out = {'key': f['key'], 'version': pack.version, 'pack': pack.id, 'title': {'en': en, 'hi': hi or en},
            'caseSummary': {'source': 'materialFields', 'label': {'en': 'Case details', 'hi': 'प्रकरण का विवरण'}},
            'fields': fields}
@@ -163,6 +208,7 @@ def form_json(pack, f):
 def write_all(root):
     """root = src/main/resources. Writes packs/<dir>/..., META-INF/sangam/packs.idx; returns catalogue rows."""
     idx = ['# Sangam pack manifests (generated). One manifest path per line.']
+    owner = {p.pid: pk for pk in ALL for p in pk.procs}
     for pk in ALL:
         base = os.path.join(root, 'packs', pk.dir)
         os.makedirs(os.path.join(base, 'forms'), exist_ok=True)
@@ -177,6 +223,9 @@ def write_all(root):
             # strip the Hindi half from BPMN element names (forms carry both languages)
             xml = p.xml()
             xml = strip_hindi(xml)
+            xml = pin_cross_pack_calls(xml, pk, owner)
+            check_reason_codes(path, xml)
+            check_results.collect(path, xml)  # SL-115: checked after all packs (a default reaches called processes)
             write(os.path.join(root, path), xml)
             resources.append({'kind': 'BPMN', 'path': path})
         for did, xml in pk.dmns:
@@ -185,6 +234,7 @@ def write_all(root):
             resources.append({'kind': 'DMN', 'path': path})
         for cid, xml in pk.cmmns:
             path = f'packs/{pk.dir}/{cid}.cmmn'
+            check_reason_codes(path, xml)
             write(os.path.join(root, path), xml)
             resources.append({'kind': 'CMMN', 'path': path})
         seen = set()
@@ -217,6 +267,11 @@ def write_all(root):
         conns = {}
         for c in pk.connectors:
             conns[c[0]] = {'id': c[0], 'capabilityClass': c[1], 'govTag': c[2], 'purpose': c[3]}
+            if c[0] in SIMULATOR_BINDINGS:
+                conn, op = SIMULATOR_BINDINGS[c[0]]
+                conns[c[0]]['simulatorBinding'] = {'connector': conn, 'operation': op}
+        workers = [{'topic': t, 'connector': cid, 'operation': op, 'capabilityClass': cls}
+                   for cid in conns for (t, op, cls) in WORKERS_BY_CONNECTOR.get(cid, [])]
         manifest = {
             'id': pk.id, 'version': pk.version, 'name': {'en': pk.name_en, pk.second: pk.name_hi}, 'domain': pk.domain,
             'description': pk.desc, 'mainProcesses': pk.main or [p.pid for p in pk.procs[:1]],
@@ -224,15 +279,71 @@ def write_all(root):
             'acceptance': pk.acceptance, 'dependsOn': pk.depends, 'tenantOverrides': overrides,
             'calls': sorted({c for p in pk.procs for c in p.calls}),
         }
+        if workers:
+            manifest['workers'] = workers
         if pk.placeholders:
             manifest['placeholders'] = pk.placeholders
+        accepted = []
         for a in pk.acceptance:
-            if (pk.id, a['id']) in RUNS:
-                a['run'] = RUNS[(pk.id, a['id'])]
+            run = RUNS.get((pk.id, a['id']))
+            if run is not None:
+                a['run'] = money.convert_run(run, f'{pk.id} {a["id"]}', pk.currency)
+            # money inside simulator directives, by the variable the data lands in, in the process the scenario
+            # runs (its own pack's or the host process named by run.process); a copy, so a second write is the same
+            host = [p for q in ALL for p in q.procs if run and p.pid == run.get('process')] or pk.procs
+            prefixes = {}
+            for p in host:
+                for c, ps in p.conn_prefixes.items():
+                    prefixes.setdefault(c, set()).update(ps)
+            accepted.append(dict(a, startVariables=money.convert_sim_vars(
+                a['startVariables'], prefixes, f'{pk.id} {a["id"]}', pk.currency)))
+        manifest['acceptance'] = accepted
+        if pk.money_vars:
+            manifest['money'] = {'unit': 'MINOR', 'currency': pk.currency, 'exponent': money.EXPONENT[pk.currency],
+                                 'variables': sorted(pk.money_vars)}
         mpath = f'packs/{pk.dir}/pack.json'
+        check_reason_codes(mpath, json.dumps(manifest, ensure_ascii=False))   # acceptance-run answers
         write(os.path.join(root, mpath), json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
         idx.append(mpath)
     write(os.path.join(root, 'META-INF', 'sangam', 'packs.idx'), '\n'.join(idx) + '\n')
+    # the money naming convention, for the build guard PackMoneyGuardTest (one source: money.py)
+    write(os.path.join(root, 'META-INF', 'sangam', 'money.json'), json.dumps(money.convention(), indent=2) + '\n')
+    # SL-55: the rejection reason-code catalogue, for ReasonCodeCatalogueTest (one source: reason_codes.py)
+    write(os.path.join(root, 'META-INF', 'sangam', 'reason-codes.json'),
+          json.dumps(reason_codes.catalogue(), ensure_ascii=False, indent=2) + '\n')
+    # SL-115: no default pre-fills a check result unless reviewed (one source: check_results.py, CheckResultGuardTest)
+    check_results.check(MISSING)
+    write(os.path.join(root, 'META-INF', 'sangam', 'check-results.json'),
+          json.dumps(check_results.catalogue(), ensure_ascii=False, indent=2) + '\n')
+
+
+_REASONS = re.compile(r'rejectionReasonCodes(?:=|"\s*:\s*")([^;<"]*)')
+
+
+def check_reason_codes(where, text):
+    """SL-55: every reason code a generated file sets is in the catalogue (reason_codes.py); an unknown one stops the
+    generation (main.py reports MISSING)."""
+    for spec in _REASONS.findall(text):
+        for code in reason_codes.unknown(spec.strip()):
+            MISSING.add(f'reason code {code} ({where}; add it to reason_codes.CODES)')
+
+
+def pin_cross_pack_calls(xml, pk, owner):
+    """D-12: a call activity without a binding binds to its own deployment, and every pack is its own deployment, so a
+    call into another pack (core blocks, a called pack) is pinned to the callee pack's version by versionTag (every
+    generated process carries operaton:versionTag = its pack version). Calls inside the pack keep the deployment
+    binding."""
+    import re
+
+    def pin(m):
+        tag, called = m.group(0), m.group(1)
+        callee = owner.get(called)
+        if callee is None or callee is pk or 'calledElementBinding' in tag:
+            return tag
+        return tag.replace(f'calledElement="{called}"', f'calledElement="{called}" operaton:calledElementBinding="versionTag"'
+                           f' operaton:calledElementVersionTag="{callee.version}"', 1)
+
+    return re.sub(r'<callActivity\b[^>]*\bcalledElement="([^"$]+)"[^>]*>', pin, xml)
 
 
 def all_user_names(p):

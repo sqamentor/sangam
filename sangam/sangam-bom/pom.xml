@@ -59,7 +59,7 @@
       <dependency><groupId>org.liquibase</groupId><artifactId>liquibase-core</artifactId><version>4.33.0</version></dependency>
       <!-- SG-28: Operaton's StrongUuidGenerator needs it at run time (operaton-engine declares it provided) -->
       <dependency><groupId>com.fasterxml.uuid</groupId><artifactId>java-uuid-generator</artifactId><version>5.2.0</version></dependency>
-      <!-- SG-27 / OneIFMS SD-301 owner exception: Operaton DMN FEEL engine closure, exactly these versions (the ones
+      <!-- SG-27 consumer licence-policy exception (owner decision): Operaton DMN FEEL engine closure, exactly these versions (the ones
            operaton-engine-dmn 2.2.0 resolves; licences verified in deploy/licence/SG-27-SD-301-exception.md). Without
            these a bare consumer gets jackson-module-scala 2.22.1 and a non-converging scala-library. -->
       <dependency><groupId>org.camunda.feel</groupId><artifactId>feel-engine</artifactId><version>1.22.1</version></dependency>

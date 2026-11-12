@@ -41,13 +41,13 @@
 | Standards | BPMN 2.0.2, DMN 1.6 (1.7 tracked), CMMN 1.1 isolated and retire-safe; AI agentTask (A2A) + read-only MCP; CloudEvents, AsyncAPI 3, Arazzo; XES/OCEL 2.0 (Part I §3.3a, VI.7, R44) |
 | Engine | **Operaton 2.2.x** (ADR-D-1 **FINAL**, X.0d / XI.10). Flowable strengths are carried over as product-layer features or ports |
 | API / SDKs | REST first (ADR-D-5). Tier-1 SDKs: Java, .NET, PHP, Python, TypeScript/Node; Tier 2: Go, Rust, Kotlin; others via REST/OpenAPI (ADR-D-4) |
-| Databases | Tier 1: PostgreSQL, Oracle, SQL Server; Tier 2: MySQL/MariaDB, DB2; drivers for Oracle/DB2/MySQL are customer-supplied (R17, CF-11, LIC-2…5) |
+| Databases | Tier 1: PostgreSQL, Oracle, SQL Server, MySQL (ADR-D-15); Tier 2: MariaDB. Db2 is unsupported until there is customer demand (owner, 2026-11-12: "Drop from Tier 2 (Recommended)", SL-114). Drivers for Oracle/Db2/MySQL are customer-supplied (R17, CF-11, LIC-2…5) |
 | JDK / migrations / scripts | JDK 25 LTS (R5); Liquibase 4.33.0 pinned (ADR-D-7); no in-engine scripts in release 1, an out-of-process script worker instead (ADR-D-8) |
 | HA/DR | RPO ≤ 5 min, RTO ≤ 1 h, 99.5 % (ADR-D-12) |
 | Government compliance | GOV-1…GOV-12 final: 8 VERIFIED, 4 VERIFIED with a parked sub-item, 0 blocking (IX.7e) → R50–R62 |
 | Commercial | Implementation services, AMC/support, managed hosting on empanelled cloud, workflow packs + training, plus anything government policy requires (ADR-D-11) |
 
-### Decision register (24 decisions)
+### Decision register (28 decisions)
 
 | ADR | Decision | Status |
 |---|---|---|
@@ -65,7 +65,7 @@
 | D-12 | HA/DR targets (X.0) | DECIDED |
 | D-13 | Self-reliant development, no government dependency (X.0b) | DECIDED |
 | D-14 | Universal open-source product; all premium features free (X.0c) | DECIDED |
-| D-15 | Tier-1 databases PostgreSQL, Oracle, SQL Server, MySQL (X.0c) | DECIDED |
+| D-15 | Tier-1 databases PostgreSQL, Oracle, SQL Server, MySQL (X.0c); Db2 dropped from Tier 2, unsupported until there is customer demand (SL-114, 2026-11-12) | DECIDED |
 | D-16 | Operaton as a dependency + Sangam plugins; engine patches only where needed, offered upstream (X.0d) | DECIDED |
 | D-17 | Licence Apache 2.0 (X.0d) | DECIDED |
 | D-18 | Public GitHub repository `sqamentor/sangam` (X.0d) | DECIDED |
@@ -77,6 +77,8 @@
 | D-24 | Load target: India national (~3,000 starts/s, ~30,000 ops/s, ~1M users) (X.0e) | DECIDED |
 | D-25 | Strict exclusive (XOR) routing: one true flow taken; several → AMBIGUOUS_ROUTE incident; none → default or NO_MATCHING_ROUTE; priority only by explicit versioned policy (X.0f) | DECIDED |
 | D-26 | Strict, exact DMN/FEEL evaluation: numbers exact (BigDecimal/Long, never Double); evaluation failure and unmatched null input are errors, not null or catch-all; typeRef "number"; money doubles refused at deploy (X.0g) | DECIDED |
+| D-27 | The engine JVM runs in UTC; the business zone comes from configuration, never from the JVM (X.0h). Owner's words: "b: engine JVM in UTC" | DECIDED |
+| D-28 | Modules beyond the original boundary (billing, geo, field, programme, resources, ai, channels, modeller, onboarding, cli) are approved generic capabilities (X.0i) | DECIDED |
 
 ### Where the current specification lives (read only these)
 
@@ -100,6 +102,7 @@
 | Delivery plan | **VIII.9** (Stages A–E, phase→stage mapping, rule CF-9a) |
 | Parked items | **X.6** (PK-01…PK-14) |
 | What the old text said and what replaced it | **X.5.3** superseded-statements register; precedence Part X > IX > VIII > VII > VI > V > I–IV |
+| Database tiers (Db2) | Where the historical parts (I–IX, kept verbatim) list Db2 as Tier 2, **ADR-D-15 (X.0c) as amended by SL-114** overrides them: Db2 is unsupported until there is customer demand (owner, 2026-11-12) |
 
 ### Stage status
 
@@ -4248,7 +4251,7 @@ No login, CAPTCHA or other protection was bypassed. When a search engine showed 
 |---|---|
 | Owner's decision (paraphrased from Hindi) | The government processes must be handled, but Sangam will also be our own product that **anyone** can use, and it will be **completely open source**. Everything Flowable and Operaton/Camunda offer up to the premium level of their licences will be **free** in Sangam: UI and backend. Databases: PostgreSQL, Oracle, MS SQL **and MySQL**, so it can be built on any of them. A **universal solution** combining both engines' capabilities. Their weaknesses are eliminated to zero, and their strengths are included and improved end to end. Nothing is left out. |
 | **ADR-D-14 Product scope** | Sangam is a **universal, fully open-source workflow platform**. Indian government processes (IX.4, GOV-PATTERNS) are packs on top of it, not its limit. **Every capability sold in premium or commercial editions of Camunda 7/8, Flowable and Operaton** has a free Sangam equivalent: modeller, cockpit/operations, tasklist/work UI, admin/identity, analytics/optimisation/process mining, connectors, AI agents, multi-tenant administration. The premium-feature catalogue and the new requirements R63+ come from `spike/results/PREMIUM-AND-UNIVERSAL-SCOPE.md` (in progress). |
-| **ADR-D-15 Databases** | **Tier 1 = PostgreSQL, Oracle, SQL Server, MySQL** (MySQL promoted from Tier 2; supersedes R17 and CF-11 for MySQL). MariaDB and DB2 stay Tier 2. Licence rule unchanged (LIC-4): MySQL Connector/J is not bundled; the MariaDB driver is the shipped driver for MySQL where compatible, else Connector/J is customer-supplied. MySQL is added to all spike DB runs (queue Q1–Q3). |
+| **ADR-D-15 Databases** | **Tier 1 = PostgreSQL, Oracle, SQL Server, MySQL** (MySQL promoted from Tier 2; supersedes R17 and CF-11 for MySQL). MariaDB and DB2 stay Tier 2. Licence rule unchanged (LIC-4): MySQL Connector/J is not bundled; the MariaDB driver is the shipped driver for MySQL where compatible, else Connector/J is customer-supplied. MySQL is added to all spike DB runs (queue Q1–Q3). **Amended 2026-11-12 (SL-114):** Db2 is dropped from Tier 2 (owner's words: "Drop from Tier 2 (Recommended)"). Sangam has no Db2 changelog, Spring profile or dialect support, so Db2 is unsupported until there is customer demand. MariaDB stays Tier 2 (SL-112 lane). |
 | Consequences | (1) The base-engine evaluation adds MySQL and a "premium-feature buildability" view: how much of the premium catalogue each base already offers free, e.g. Operaton webapps-neo vs Flowable with no OSS UI. (2) The universal patterns UP-01… extend the test catalogue beyond government. (3) The effort re-estimate (M09) must include the premium-equivalent UI and tooling. |
 | Status | Decision: DECIDED (owner, 2026-11-05). Delivery: SPECIFIED. |
 
@@ -4313,6 +4316,41 @@ The FEEL engine is kept as pinned (feel-scala 1.22.1 behind operaton-engine-dmn 
 | Known residual | A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string still yields null in the pinned engine (built-ins cannot be overridden). Literal arguments are refused. A null that reaches a later operator, a decision-table input or a required output is still caught (strict evaluation, null-input rule, R10 `requiredOutputs`). |
 | Status | Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`. |
 
+## X.0h ADR-D-27: the engine JVM runs in UTC (DECIDED 2026-11-09)
+
+> **Context (SL-53).** Operaton stores `java.util.Date` in zone-less `TIMESTAMP` columns as the JVM's local wall time.
+> In a JVM whose default zone has daylight saving, the hour repeated at the autumn change is ambiguous: a timer due at
+> 02:00 CET (01:00Z) reads back as 02:00 CEST (00:00Z). The job then fires at once, `TimerGuard` sees the interval of
+> the previous fire and suppresses it, and one fire is lost (`DstFoldTimerH2Test`, Europe/Berlin: 5 of 6 fires). The
+> timer arithmetic itself is correct; the loss comes from the zone the JVM stores timestamps in.
+
+| Topic | Rule |
+|---|---|
+| Decision | Option (b) of SL-53, owner's words: "b: engine JVM in UTC" (Sangam session, 2026-11-09). Applied as (b1), strict UTC. |
+| Scope | Every JVM that runs a Sangam engine: the server, `SangamEngineFactory` and any host that embeds the engine, and every test JVM. |
+| Enforcement | `org.sangam.core.time.EngineTimeZone.requireUtcJvm()` runs at engine bootstrap (`SangamEngineConfigurer`, `SangamEngineComponents`) and in the server's `EngineTimeZoneEnvironmentPostProcessor`. A JVM whose default zone is not UTC, or is unknown, is refused at start-up. There is no flag to turn the check off. |
+| Business zone | Never taken from the JVM. Timers use `sangam.engine.timer-zone` (default `UTC`; for example `Asia/Kolkata`); calendar cadence, cron and calendar durations follow it, elapsed durations do not. Business dates come from `BusinessClock` and the tenant's zone. `LegacyTimeZones` is removed. |
+| Deployment | The Helm chart and the server image set `TZ=UTC`; operators must not override the JVM zone. Surefire and failsafe run every test JVM with `-Duser.timezone=UTC` (`sangam/pom.xml`); each test run records its zone (SG-16 provenance). |
+| Consumer conditions | Accepted by the owner for the consumer side on 2026-11-10 ("IFMS की तरफ़ की शर्तें मंज़ूर हैं।"), recorded by the consumer as SD-449 (decided, confirmed 2026-11-10) and SD-450 (its time rule: UTC storage, the business zone as configuration, business dates from the business-zone port, a UTC JVM on every JVM including CI). The itemised conditions are in JOINT-LEDGER §4. |
+| Follow-up (SL-53a) | (a) zone-independent UTC persistence of engine timestamps is the scheduled target. It changes the database contract (COORDINATION section 3: a MyBatis date type handler set when the `SqlSessionFactory` is built, plus a migration of existing rows). The date is the owner's. Until then, this ADR is what keeps timers correct. |
+| Consequences | A start-up that worked in a local-zone JVM now fails fast with a message naming `sangam.engine.timer-zone`. Engine timestamps in the database are UTC wall times; reports that read engine tables directly must treat them as UTC. |
+| Status | Decision: DECIDED (owner, 2026-11-09; consumer conditions 2026-11-10). Delivery: IMPLEMENTED (b1) in tree 2026-11-11 (SL-53). Tests: `DstFoldTimerH2Test`, `EngineTimeZoneTest`. Open: SL-53a; E8 on Oracle, SQL Server and MySQL. |
+
+## X.0i ADR-D-28: modules beyond the original boundary are approved generic capabilities (DECIDED 2026-11-12)
+
+> **Context.** ADR-D-22 (X.0e) names the boundary as workflow, rules, approvals, generic fund/limit ledgers, master
+> data and documents. The Stage C build (Part XII.1) also contains modules outside that list, and none of them had an
+> ADR of its own. This ADR records them in one decision instead of one ADR per module.
+
+| Topic | Rule |
+|---|---|
+| Decision | Owner's words (Sangam session, 2026-11-12, recorded in JOINT-LEDGER §4): modules without an ADR "Record one ADR (Recommended)". Billing is explicitly in scope. |
+| Modules covered (evidence: Part XII.1 and the reactor in `sangam/pom.xml`) | `sangam-billing`: tariffs, invoices, collection, receipts, refunds, penalties. `sangam-geo`: geometry, jurisdiction and geofence rules (N13). `sangam-field`: field inspection and offline capture (N05); dispatch and trips (N17). `sangam-programme`: targets, indicators, milestones and periodic returns (N15). `sangam-resources`: booking and allotment (N01), queue and token (N07), rostering (N08). `sangam-ai`: AI/agent features. `sangam-channels`: messaging channels. `sangam-modeller`: modeller services. `sangam-onboarding`: tenant onboarding and plug-and-play acceptance (AT-1…AT-7). `tools/sangam-cli`: the command-line client (NG-23). |
+| Rationale: premium parity (ADR-D-14, X.0c) | Every capability sold in premium or commercial editions of Camunda 7/8, Flowable and Operaton has a free Sangam equivalent, and the X.0c list names the modeller, AI agents, connectors and multi-tenant administration. `sangam-modeller`, `sangam-ai`, `sangam-channels`, `sangam-onboarding` and the CLI are that parity. |
+| Rationale: generic platform (ADR-D-20, X.0e) | The planned domain module is replaced by generic capabilities that serve every system a government department runs and equally serve private clients. Billing, geo, field, programme and resources are such capabilities: each is domain-neutral and takes its domain knowledge only as data (profiles, master data, DMN, packs). |
+| What this does not change | ADR-D-22 still holds for the systems Sangam integrates with: the full clinical record and the full general ledger stay in their own systems. A module listed here may not hard-code a country, government, sector or regulation (ADR-D-20; guarded by `DomainNeutralityGuardTest`, SL-104). |
+| Status | Decision: DECIDED (owner, 2026-11-12). Delivery: the modules are coded (Part XII.1); their tests are written for some modules and the test phase has not run. |
+
 ## X.1 Normative requirements R1–R62
 
 > **Purpose (M01, VIII.7 #1):** one authoritative statement per requirement, so an implementer does not have to reconcile Parts I–IX.
@@ -4341,7 +4379,7 @@ The FEEL engine is kept as pinned (feel-scala 1.22.1 behind operaton-engine-dmn 
 | R14 | AI / MCP tools | MCP MUST be read-only by default, and write tools MUST create approval tasks. Reads, fields, searches and data sent to model providers MUST be scoped. Tool output is untrusted (taint labels are not enforcement). Approvals MUST be bound to tool identity, arguments, resource and expiry, and authority rechecked at execution. Per-step and per-workflow budgets, cancellation and an agent-card allowlist MUST exist. | A changed payload invalidates the approval. An uncertain tool effect becomes an unknown outcome (R36/R37). | R19, R36, R37 | E | T12–T17, T23; add test (AI-specific) | II §19 R14; III §10, §13; VII §7, §9.2 |
 | R15 | Process-mining export | XES MUST be the primary export. OCEL is deferred; when offered it MUST be validated (pm4py in CI) with defined business-object identities, relationships, lifecycle timestamps and tenant-aware export. "Full OCEL" MUST NOT be claimed without versioned conformance evidence. | Not specified. | R42 | E | add test (export semantic fixtures) | II §19 R15; III §13; VII §7, §11.2 X14 |
 | R16 | Contract-driven schemas | One canonical semantic schema MUST generate the event and API types (JSON Schema/proto), with AsyncAPI for documentation and contract tests and automated consistency across proto, OpenAPI and AsyncAPI. | An incompatible protocol or schema change fails the compatibility tests. | R18, D-5 | C | T48 | II §19 R16; III §13; VII §7; VIII.4 |
-| R17 | Database tiers | Tier 1 MUST be PostgreSQL, Oracle and SQL Server (D-3; "PostgreSQL only" rejected), in the pilot and release checks from Stage C. Tier 2: MySQL, MariaDB, DB2 (nightly). Experimental: CockroachDB, YugabyteDB. H2 for tests only. Exact versions, licensed CI images and hardware MUST be declared. | Not specified. A DB outside the declared tiers is unsupported. | D-3, R2, R12 | B (skeleton) → C | T10, T26, T28, T29, T31 (per committed DB) | II §19 R17; III §13; V.4b; VI.7 D-3; VIII.9 cond. 2; IX.6; VII §7 |
+| R17 | Database tiers | Tier 1 MUST be PostgreSQL, Oracle and SQL Server (D-3; "PostgreSQL only" rejected), in the pilot and release checks from Stage C. Tier 2: MySQL, MariaDB, DB2 (nightly). Experimental: CockroachDB, YugabyteDB. H2 for tests only. (Amended: MySQL is Tier 1 by ADR-D-15; Db2 is unsupported since SL-114, 2026-11-12.) Exact versions, licensed CI images and hardware MUST be declared. | Not specified. A DB outside the declared tiers is unsupported. | D-3, R2, R12 | B (skeleton) → C | T10, T26, T28, T29, T31 (per committed DB) | II §19 R17; III §13; V.4b; VI.7 D-3; VIII.9 cond. 2; IX.6; VII §7 |
 | R18 | SDK tiers | **Per ADR-D-4 (IX.6):** Tier 1 (full worker lifecycle + test engine) MUST be Java, .NET, PHP, Python and TypeScript/Node. Tier 2 (generated, community-maintained): Go, Rust, Kotlin. Any other language uses the published REST/OpenAPI contract with the same lifecycle semantics. T01–T04 and T18 MUST run on every Tier-1 SDK, and promised PHP/.NET behaviour MUST NOT be silently dropped. | An SDK that diverges from the lifecycle semantics fails the contract tests and is not released at Tier 1. | R9, R16, R33, D-4 | C | T01–T04, T18, T28 | II §19 R18; III §13; V.4; IX.6 D-4; VIII.5; VII §7 |
 | R19 | Authorization | **Replaced by VI.4 + A-3.** Each policy compiles to an object check and a SQL predicate; a list-visible policy that cannot compile to SQL is rejected. `AUTH_EFFECTIVE` is maintained in the same transaction as grants. Every read (list, count, search, export, dashboard, get) MUST use `AuthorizedQueryBuilder` (enforced by ArchUnit). Explicit deny wins (`NOT EXISTS`). Post-filtering a page is forbidden. Field masks apply to lists and objects alike. The tenant comes only from the authenticated identity. Revocation bumps `policy_version` (cache ≤ 5 s). Sensitive actions re-check inside the command transaction. Approvals are bound to the payload hash and version. History uses the same predicates. | A non-compilable list policy is rejected at deployment. A revoked permission blocks the sensitive action at execution. A request tenant id only filters inside the allowed set. A fast but wrong benchmark result fails. | R26, R28, R43 | B (spike on both engines) → C | T13–T17, T37, T38 | VI.4.1–VI.4.2; VIII.3 A-3; VIII.2 M10; III §10; VII §6.3, §7 |
 | R20 | Fencing and heartbeats | Every lock MUST carry a fencing token (`lockVersion`), and stale completions are rejected. Lock time is set per job type, and heartbeats are required. The guarantee covers engine mutation only; remote effects rely on R36 operation identity and reconciliation. | A stale completion is rejected with `409 STALE_LEASE`. | R9, R36 | B → C | T02–T05, T27 | II §19 R20; III E01, §13; VI.3.2 rule 2; VII §7 |
@@ -5058,6 +5096,7 @@ envBindings: [ treasury-endpoint, esign-asp ]          # names only; values live
 ```
 
 - `package_hash = SHA-256(JCS(manifest without signatures))`. Artifact hashes are inside the manifest, so the package hash commits to every byte.
+- The pack identity checksum (`PackDeployer.contentSha256`) is taken over the canonical form of each resource: text is LF-normalised and binaries are byte-exact (`PackDeployer.canonical`, SL-54), so line endings never change a pack's identity.
 - **Promotion** (dev → test → staging → prod) moves the **same bytes**. There is no rebuild per environment. The target verifies signatures and recomputes the hash; a mismatch gets `422 PACKAGE_HASH_MISMATCH`. Production may require attached evidence references, e.g. test-run ids for T19/T20 on that hash, as a configurable gate.
 - Environment-specific values live only in `ENV_BINDING`, which has its own approval step (deployer ≠ binding approver in production). A package can reference bindings only by name. A missing binding blocks activation.
 - **Air-gapped installs** (T50) import packages as signed bundles, using the same verification.
@@ -5451,7 +5490,7 @@ Pinned versions come from Operaton `webapps/frontend/package.json` (legacy Angul
 |---|---|---|
 | LIC-1 | **GraalJS in the Operaton distros** (`org.graalvm.polyglot:js` 25.4.4.1.1, GFTC licence: redistribution only unmodified and without charging fees) | **Strip it from every Sangam build.** This is consistent with D-8 (no in-engine scripts). A Maven enforcer rule bans `org.graalvm.polyglot:js` and any GFTC artifact |
 | LIC-2 | **Oracle JDBC** (`ojdbc11`/`ojdbc17`, Oracle Free Use Terms) | **Not bundled.** The customer supplies it through a documented **bring-your-own-driver** directory. PostgreSQL is the default. Oracle stays Tier 1 (ADR-D-3), tested in CI with a driver fetched by the CI system, not shipped |
-| LIC-3 | **IBM Db2 JCC** (IBM IPLA, no redistribution right found) | **Not bundled**; customer-supplied. Db2 stays Tier 2 (R17) |
+| LIC-3 | **IBM Db2 JCC** (IBM IPLA, no redistribution right found) | **Not bundled**; customer-supplied. Db2 is unsupported until there is customer demand (dropped from Tier 2, SL-114, 2026-11-12) |
 | LIC-4 | **MySQL Connector/J** (GPL-2.0 + Universal FOSS Exception) | **Not bundled.** The MariaDB driver serves MySQL/MariaDB (Tier 2) |
 | LIC-5 | **MariaDB driver** (LGPL-2.1) | May ship **only as a separate, replaceable jar with a source offer**, never shaded into a fat jar |
 | LIC-6 | **Legacy AngularJS webapps** (EOL since Dec 2021) | **Not shipped.** The UI is based on webapps-neo only |
@@ -6315,6 +6354,12 @@ The error codes and audit event names first proposed in X.4 (and adopted in X.4a
 | VI.7 D-2 "RECOMMENDED"; III §15.2 stage labels | Stage definitions | **VIII.9** (CF-1) |
 | IX.9 G1 as a Stage A exit | Named buyer required before development | **ADR-D-13**: G1 is a go-to-market gate |
 | IX.7c request route | RQ-1…RQ-6 as a dependency | **ADR-D-13**: parked (X.6 PK-14) |
+| I §6 (event registry) | Key, tenant and payload detectors "JSON pointer, **XPath**, headers" | **FW-42 (b)** (`spike/results/FLOWABLE-WEAKNESS-AUDIT.md`): event payloads are JSON only; XML and expression deserializers are not ported. A non-JSON inbound channel is refused at deploy (`EventRegistry`) and at pipeline build (`InboundEventPipeline`) |
+| X.1 R16 (proto half), I §5.2 | proto schemas and proto–OpenAPI–AsyncAPI consistency | **ADR-D-5**: gRPC, and with it proto, is **deferred** (not dropped) until a measured need; `io.grpc:*` is banned in `sangam/pom.xml`. The AsyncAPI half of R16 is **kept** (master backlog M-050) |
+| `sangam-ui/OPERATON-UI-PARITY.md` (known limits) | Operaton embedded-form `cam-script` logic and external forms in an iframe | **Out by design:** the UI CSP is `script-src 'self'` (`sangam-ui/index.html`) and **ADR-D-8** keeps scripts out of the engine. Embedded forms are parsed into Sangam forms without their scripts; external forms are a link |
+| `sangam-field` and `sangam-geo` READMEs (known gaps) | Road-network ETA; heavy GIS topology (buffers, unions, cadastral editing) | **External worker or connector:** ETA stays straight-line distance × road factor; heavy topology goes to an external GIS worker (no JTS, so no EPL/EDL dependency) |
+
+The last four rows were recorded on 2026-11-12 (master backlog M-111). Two of them supersede module-document statements rather than Parts I–IV text.
 
 ## X.6 Parked items (ADR-D-13: none of these blocks development)
 
@@ -6557,10 +6602,16 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 # Part XII — Stage C build status (2026-11-05)
 
 **Evidence:**
-- `sangam/`: 25 Maven modules, four more Tier-1 SDKs, the UI, `deploy/` and `perf/`. Each has a README coverage map, except `sangam-core`.
+- `sangam/`: 32 reactor modules (`sangam/pom.xml`, `<module>` entries, including `sangam-bom`, `sdks/java` and `tools/sangam-cli`), four more Tier-1 SDKs, the UI, `deploy/` and `perf/`. Each has a README coverage map, except `sangam-core`. (The 2026-11-05 edition counted 25 Maven modules.)
 - `spike/results/TRACEABILITY-REGISTER.md` and `TRACEABILITY-REGISTER.csv`.
 
-**Status:** the code compiles; only H2 fast tests exist. **No behaviour test has been run.** The owner's rule is code first, tests last. In this Part, "implemented" means a README coverage map claims it. It is not test evidence.
+**Status (updated 2026-11-12):** the code compiles (compile-only gate). The 2026-11-05 statement "only H2 fast tests exist" no longer holds. Besides the unit and H2 tests, there are 38 integration/acceptance suites (`*IT`, failsafe profile `sangam-db-it`, Testcontainers):
+- `sangam-server` acceptance: `ServerStartsIT`, `E1CorpusCoverageIT`, `E2AuthorizationIT`, `E3LeaseIT`, `E4IdempotencyIT`, `E5OutboxInboxIT`, `E7DeleteIT`, `E8DstTimerIT`, `E10PlatformFitIT`, `E11GapSetIT`, `E16aPatternsIT`, `E16bPatternsIT`, `E16cPatternIT`, `E17aDomainsIT`, `E17bDomainIT`, `E17cDomainIT`, `PlugAndPlayIT`, `T08PoisonOutboxIT`, `T35RestoreIT`, `TScaleLoadIT`, `CrossTenantIsolationIT`, `FwtWorkerCompatIT`, `WorkApiLedgerIT`, `TenantQuotaIT`, `NullBindDialectIT`, `MysqlUtf8mb4PatchIT`;
+- `sangam-server` layer contracts: `AuditChainIT`, `AuthorizationPolicyIT`, `DialectSchemaIT`, `IdempotencyStoreIT`, `InboxIT`, `OperationLedgerIT`, `OutboxRelayIT`, `TombstonesIT`, `WebhookRelayIT`;
+- consumer conformance (`acceptance/consumer/ifms`, SG-37): `E46ConformanceIT`, `IfmsPacksIT`;
+- `sangam-ops`: `BulkIngestPostgresIT`.
+
+Earlier runs of some of these are recorded in `sangam/TESTING-GAP-REGISTER.md` (for example the PostgreSQL contracts suite at `15e4135`). **None has been run on the current tree:** the test phase follows the push. The owner's rule is code first, tests last. In this Part, "implemented" means a README coverage map claims it. It is not test evidence.
 
 ## XII.1 Modules
 
@@ -6573,7 +6624,7 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 | `sangam-integration` | Outbox relay, inbox, API idempotency, operation ledger, reconciliation, cancel/delete/erase, connectors and simulators | WS-INTEGRATION |
 | `sangam-connectors-health` | FHIR R4 / SMART, Da Vinci PAS / DTR, CDS Hooks and X12 005010 connectors | US-HEALTH |
 | `sangam-flowable-ports` | Flowable strengths on Operaton: ad-hoc, event registry, CMMN extensions, forms, content, batches, migration, read model | WS-PORTS |
-| `sangam-rest` | The `/api/v1` contract (OpenAPI 3.1, 283 paths): controllers, ports and default adapters | WS-REST |
+| `sangam-rest` | The `/api/v1` contract (`sangam-rest/api/sangam-api.yaml`, OpenAPI 3.1.0, `info.version` 0.1.0): 879 paths and 1,043 operations on 2026-11-12 (283 paths on 2026-11-05; the version number did not change while the contract grew). Controllers, ports and default adapters | WS-REST |
 | `sangam-packs` | Government approval core and 130 packs (government, IFMS, universal, sector), plus the government finance profiles as data | WS-PACKS |
 | `sangam-compliance` | Jurisdiction-neutral compliance framework; the IN pack (DPDP Act and Rules, CERT-In) as data | COMPLIANCE |
 | `sangam-config` | Layered profiles, master data, document-type catalogue, number series, locale | IFMS-IMPLEMENTATION |
@@ -6590,7 +6641,7 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 | `sangam-control-plane` | Cell registry, tenant placement and tenant moves | SCALE |
 | `sangam-gateway` | Reactive routing edge by tenant | SCALE |
 | `sangam-rollup` | National cross-cell read model (counts and identifiers only) | SCALE |
-| `sdks/java`, `sdks/dotnet`, `sdks/php`, `sdks/python`, `sdks/typescript` | Tier-1 SDKs: typed REST client and external-worker runtime (VI.3 lease protocol) | WS-SDK |
+| `sdks/java`, `sdks/dotnet`, `sdks/php`, `sdks/python`, `sdks/typescript` | Tier-1 SDKs: typed REST client and external-worker runtime (VI.3 lease protocol). Each SDK types a stated subset of the contract (the worker lease API, tasks, processes, decisions, audit, basic admin and ops; the exact list is in each SDK README) and reaches every other endpoint through its raw transport or `ResourceApi` | WS-SDK |
 | `sangam-ui` | React 18 SPA: tasklist, operations console, administration, modeller, analytics, audit, citizen portal | WS-UI |
 | `deploy/` | Images, Helm, compose, VM install, upgrade, backup and restore, DR, air-gapped bundle, CI | WS-DEPLOY |
 | `perf/` | k6 load model for T-SCALE-1…11 (testing phase only) | SCALE |
@@ -6600,10 +6651,10 @@ Methods are in `spike/results/scorecard.md`. The patch and market-fit methods ar
 
 | Item | Count |
 |---|---|
-| Code units | 25 Maven modules, plus the .NET, PHP, Python and TypeScript SDKs, the UI, `deploy/` and `perf/` |
+| Code units | 32 reactor modules (2026-11-12; 25 on 2026-11-05), plus the .NET, PHP, Python and TypeScript SDKs, the UI, `deploy/` and `perf/` |
 | README coverage maps | 33 |
-| Packs (`pack.json`) | 130, with 386 BPMN, 464 DMN and 8 CMMN files |
-| Java sources | About 1,190 main files. 13 test classes, H2 fast tests only |
+| Packs (`pack.json`) | 132 (2026-11-12, `META-INF/sangam/packs.idx`); the files under `sangam-packs/src/main/resources` now count 186 BPMN, 245 DMN and 4 CMMN. The 2026-11-05 figures were 130 packs with 386 BPMN, 464 DMN and 8 CMMN files |
+| Java sources | 2026-11-12: about 1,450 main files, 291 `*Test` classes and 38 `*IT` suites, none run on the current tree. 2026-11-05: about 1,190 main files and 13 test classes, H2 fast tests only |
 | Engine source patches | 0 (two MySQL schema patches, P-1 and P-2) |
 | Ids traced | 1,858, in 31 families (FA/FB: the Flowable-into-Operaton lists A and B; NG: premium re-check; AT: onboarding acceptance) |
 | Status of the traced ids (third pass, 2026-11-08) | implemented 1,180, data-only 308, partial 124, gap 28, owner-side 35, not replicated by decision 10, spec-closed 16, test-pending 157, **UNACCOUNTED 0** |
@@ -6705,6 +6756,60 @@ The register was rebuilt over the current READMEs, the pack.json files and the c
 PostgreSQL changelogs count 286 `CREATE TABLE` statements (integrator figure: 287).
 
 The figures in XII.2–XII.4 above are the third-pass ones. Earlier figures: 1,757 ids / 182 UNACCOUNTED / 43 items (first edition); 1,804 / 113 / 40 (second edition).
+
+## XII.9 0.1.0 full-scope backlog (owner decision 2026-11-12)
+
+**Scope.** Release 0.1.0 contains every known item: the open register rows, plus the plug-and-play gaps and the UI
+gaps that the readiness report of 2026-11-12 lists (sections 3 and 4, from audits B and C). Every item below is in
+scope for 0.1.0 and is **being planned or coded**. The integrator keeps the detailed backlog; this list only names the
+items and designs none of them.
+
+**Plug-and-play gaps:**
+- A single embedded starter: today only the REST layer auto-configures, and the engine and module wiring is the
+  `*Wiring` classes inside `sangam-server`.
+- SDK breadth: each SDK types a stated subset of the 879 paths; the R18 in-memory test engine; publication to a package
+  registry.
+- A release: the version is `0.1.0-SNAPSHOT` with no git tag; publishing to Maven Central, NuGet, PyPI, npm and
+  Packagist is not set up.
+- Database-per-tenant: `TenantEngineRegistry` is not used by the server.
+- An OpenAPI contract for the control-plane and roll-up endpoints (`/cells`, `/routes`, `/rollup`).
+- Tier-2 SDKs: Go, Rust and Kotlin.
+- An "integrate Sangam into your application" guide.
+- The hard host constraints, stated and handled: Spring Boot 4.1.2 only, Jackson 2.22 only, a UTC JVM, the BOM import
+  order.
+
+**UI gaps:**
+- A browser / end-to-end test suite.
+- Component tests for the core flows (most of today's UI tests cover the parity screens).
+- Request-body schemas for the domain-module operations (registry, resources, field, rosters, queues).
+- An accessibility audit: Part I §14 asks for WCAG 2.2 AA with axe/pa11y in CI.
+- Screens for bulk ingest (SL-44), pack uninstall and rollback, tenant custom fields, module security defaults, the
+  privacy policy and onboarding promotions.
+- The modeller parts listed as not built in the `sangam-ui` README.
+- Languages beyond English and Hindi.
+- A route guard on the `/m/*` routes, which today are only hidden in the menu.
+
+**0.2:** only items not yet known or recorded.
+
+## XII.10 Wave plan (pointer, 2026-11-12)
+
+The integrator's master backlog, `BACKLOG-0.1.0-MASTER.md` in the `sangam-handoff` folder (outside the repository;
+`<handoff>` in `HANDOFF.md`), turns XII.9 into items **M-001…M-136** and orders them in five waves before the test
+phase. The M-ids are grouped by epic, not by wave, so each wave takes ids from across the range. The backlog is
+authoritative: its §1 gives each item's wave, §3 the lanes and file owners per wave, and §4 the owner questions
+(Q-01…). This section only points to it.
+
+| Wave | Theme (backlog §3) |
+|---|---|
+| 1 | Correctness and security defects; unblocked foundations (contracts and schemas before their consumers) |
+| 2 | Consumers of the contracts, the embedded starter, engine internals |
+| 3 | Features that add wiring |
+| 4 | Stage D/E, modelling, AI, heavy UI, SL-53a |
+| 5 | Closure before the test phase (release, UI toolchain, final docs pass) |
+| Test phase | After the push to `main`: unit, system, integration, acceptance, then the end-to-end report |
+
+Some items are split across waves (for example evidence in one wave, code in the next); the backlog's wave column says
+so per item.
 
 # Appendix A — PDF Report, Full Extracted Text (raw)
 

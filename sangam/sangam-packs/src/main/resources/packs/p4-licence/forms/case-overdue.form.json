@@ -1,6 +1,6 @@
 {
   "key": "p4-licence/case-overdue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p4.licence",
   "title": {
     "en": "Licence overdue: direct action",

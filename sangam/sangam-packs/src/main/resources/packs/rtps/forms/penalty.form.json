@@ -1,6 +1,6 @@
 {
   "key": "rtps/penalty",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.rtps",
   "title": {
     "en": "Impose penalty on designated officer",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "officerPenalty",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Penalty on designated officer (INR)",

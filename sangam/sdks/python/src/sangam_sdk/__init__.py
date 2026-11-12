@@ -8,7 +8,7 @@ from .http import RetryPolicy
 from .log import SangamLogger
 from .models import (AuditEntry, CaseInstance, CloudEvent, CompleteTaskResult, DecisionEvaluateResult, Deployment,
                      ExternalWork, LockState, MessageResult, OutcomeUnknownResult, Page, ProcessInstance,
-                     PublishResult, ReconciliationItem, Task, TerminationResult)
+                     PublishResult, ReconciliationItem, Task, TerminationResult, TopicRequest, WorkOperation)
 from .typed import TypedValue, decode_value, decode_variables, encode_variables
 from .worker import (Backoff, BpmnError, OutcomeUnknown, TaskCancelled, TaskContext, TaskFailed,
                      TopicSubscription, Worker)
@@ -22,5 +22,5 @@ __all__ = [
     "Backoff", "BasicAuthProvider", "BpmnError", "ClientCredentialsTokenProvider", "ExternalWork", "GoneError",
     "NoAuth", "OutcomeUnknown", "Page", "Problem", "RetryPolicy", "SangamApiError", "SangamClient", "SangamError",
     "SangamLogger", "StaleLeaseError", "StaticTokenProvider", "TaskCancelled", "TaskContext", "TaskFailed",
-    "TokenError", "TokenProvider", "TopicSubscription", "TransportError", "Worker",
+    "TokenError", "TokenProvider", "TopicRequest", "TopicSubscription", "TransportError", "Worker", "WorkOperation",
 ]

@@ -4,7 +4,8 @@ supply chain and manufacturing (sec.scm.*, sec.mfg.*), education (sec.edu.*), ut
 and legal / privacy (sec.legal.*). References: spike/results/SECTOR-WORKFLOWS.md. Values marked SYNTHETIC are pilot
 values replaced by the tenant's policy (GP-37)."""
 from lib import C, q
-from common import core, outcome, end_ok, rejection, reject_with, revise
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
+from common import core, outcome, end_ok, rejection, reject_with, revise, checked_query, check_conditions
 from gov2 import simple_seeds
 from sector import SIDE, spack, start_form, clock, at_date, powers, authority, maybe
 
@@ -257,15 +258,21 @@ def health_pharmacy():
     st = start_form(p, s, 'ph_start', 'Prescription presented', 'sec-health-pharmacy-dispense/prescription',
                     'Prescription | पर्चा', ['patientName*', 'prescriptionRef*', 'drugSchedule*', 'prescriberRegNo', 'quantity'])
     d = s.setv('ph_defaults', 'Configuration', defaults='patientName=@customerId;prescriptionRef=@customerId;'
-               'drugSchedule=H;prescriberRegNo=NMR-X;prescriberValid=true;pharmacistSeat=PHARMACIST')
+               'drugSchedule=H;prescriberRegNo=NMR-X;pharmacistSeat=PHARMACIST')
     r = s.rule('ph_rule', 'Schedule controls (DMN)', 'sec-health-drug-control')
     s.seq(st, d, r)
-    nm = s.conn('ph_nmr', 'Verify prescriber on NMR', 'nmr.verify', 'verify', 'query', 'prescriberRegNo', 'prescriber')
-    g, m = maybe(s, 'ph_rxOpt', 'prescriptionRequired', nm, nm, 'Prescription drug?')
+    # SL-115: the prescriber check of a prescription drug fails closed (cleared before the query; no default stands in;
+    # the conditions read the check only when it ran: && evaluates its right side only for a prescription drug)
+    nme, nm = checked_query(s, 'ph_nmr', 'Verify prescriber on NMR', 'nmr.verify', 'verify', 'prescriberRegNo',
+                            'prescriber', ['prescriberValid'])
+    g, m = maybe(s, 'ph_rxOpt', 'prescriptionRequired', nme, nm, 'Prescription drug?')
     s.flow(r, g)
     vg = s.xgw('ph_validGw', 'Prescriber valid?')
     s.flow(m, vg)
-    s.flow(vg, reject_with(p, s, 'ph_rjRx', 'PRESCRIBER_NOT_VERIFIED'), 'prescriptionRequired && !prescriberValid', 'no')
+    rx_unconfirmed, rx_invalid = check_conditions([('prescriber', ['prescriberValid'])], '!prescriberValid')
+    s.flow(vg, reject_with(p, s, 'ph_rjRxCheck', 'PRESCRIBER_NOT_CONFIRMED'),
+           f'prescriptionRequired && ({rx_unconfirmed})', 'not confirmed')
+    s.flow(vg, reject_with(p, s, 'ph_rjRx', 'PRESCRIBER_NOT_VERIFIED'), f'prescriptionRequired && {rx_invalid}', 'no')
     pv = s.user('ph_review', 'Pharmacist review | फार्मासिस्ट समीक्षा', '${pharmacistSeat}',
                 form='sec-health-pharmacy-dispense/review', decision=('rxDecision', ['dispense', 'clarify', 'refuse']),
                 fields=['remarks'])
@@ -318,16 +325,22 @@ def ecom_order():
     st = start_form(p, s, 'eo_start', 'Order placed', 'sec-ecom-order-to-cash/order', 'Order | आदेश',
                     ['orderId*', 'customerId*', 'sellerId*', 'amount*', 'paymentMode*', 'category', 'pincode'])
     d = s.setv('eo_defaults', 'Configuration',
-               defaults='sellerId=SELLER-1;paymentMode=PREPAID;category=GENERAL;riskHold=false;sellerSla=2D;'
+               defaults='sellerId=SELLER-1;paymentMode=PREPAID;category=GENERAL;sellerSla=2D;'
                         'deliverySla=7D;returnWindow=P7D;sellerGroup=SELLER-DESK;executionConnector=pg.refund;'
                         'executionStep=refund;verifyApproval=false;reconcileRequired=false;'
                         'executionPayloadFields=orderId,amount;applicantRef=@customerId')
-    fr = s.conn('eo_fraud', 'Fraud screen', 'fraud.score', 'score', 'query', 'orderId,customerId,amount', 'risk')
+    # SL-115: the fraud screen fails closed (cleared before the query; no default clears the order): an unconfirmed
+    # screen holds the order for the risk desk like a hit
+    fre, fr = checked_query(s, 'eo_fraud', 'Fraud screen', 'fraud.score', 'score', 'orderId,customerId,amount', 'risk',
+                            ['riskHold'])
     hg = s.xgw('eo_holdGw', 'Risky?')
-    s.seq(st, d, fr, hg)
+    s.seq(st, d, fre)
+    s.flow(fr, hg)
     hv = s.user('eo_review', 'Review risky order | जोखिमपूर्ण आदेश की समीक्षा', 'RISK-DESK', form='sec-ecom-order-to-cash/review',
                 decision=('riskDecision', ['approve', 'reject']), fields=['remarks*'])
-    s.flow(hg, hv, 'riskHold', 'hold')
+    risk_unconfirmed, risk_hold = check_conditions([('risk', ['riskHold'])], 'riskHold')
+    s.flow(hg, hv, risk_unconfirmed, 'screen not confirmed: hold')
+    s.flow(hg, hv, risk_hold, 'hold')
     s.flow(hv, s.xgw('eo_revGw'))
     s.flow('eo_revGw', s.end('eo_endRiskRejected', 'Cancelled by risk review'), "riskDecision == 'reject'", 'reject')
     pg = s.xgw('eo_payGw', 'Prepaid?')
@@ -468,16 +481,29 @@ def ecom_seller():
     st = start_form(p, s, 'es_start', 'Seller applies', 'sec-ecom-seller-onboarding/apply', 'Seller registration | विक्रेता पंजीकरण',
                     ['sellerName*', 'gstin*', 'pan*', 'bankAccount*', 'ifsc*', 'grievanceOfficerName*', 'category',
                      'documents'])
-    d = s.setv('es_defaults', 'Configuration', defaults='sellerName=@supplierName;gstin=X;category=GENERAL;gstActive=true;'
-               'beneNameMatch=true;reviewSeat=SELLER-ONBOARDING')
-    gv = s.conn('es_gst', 'Verify GSTIN', 'gst.verify', 'verify', 'query', 'gstin', 'gst')
-    pv = s.conn('es_pan', 'Verify PAN', 'pan.verify', 'verify', 'query', 'pan,sellerName', 'pan')
-    bv = s.conn('es_bank', 'Penny-drop bank account', 'bene.validate', 'lookup', 'query', 'bankAccount,ifsc,sellerName', 'bene')
-    g = s.xgw('es_kycGw', 'KYC passed?')
-    s.seq(st, d, gv, pv, bv, g)
+    d = s.setv('es_defaults', 'Configuration', defaults='sellerName=@supplierName;gstin=X;category=GENERAL;'
+               'reviewSeat=SELLER-ONBOARDING')
+    # SL-115: GSTIN and bank-account checks fail closed (each cleared before its query; no default stands in)
+    gve, gv = checked_query(s, 'es_gst', 'Verify GSTIN', 'gst.verify', 'verify', 'gstin', 'gst', ['gstActive'])
+    # SL-115 (integrator decision): the PAN result is read too (it was verified and never gated)
+    pve, pv = checked_query(s, 'es_pan', 'Verify PAN', 'pan.verify', 'verify', 'pan,sellerName', 'pan', ['panValid'])
+    bve, bv = checked_query(s, 'es_bank', 'Penny-drop bank account', 'bene.validate', 'lookup',
+                            'bankAccount,ifsc,sellerName', 'bene', ['beneNameMatch'])
+    g = s.xgw('es_kycGw', 'KYC passed?', policy='priority')  # ADR-D-25: several checks can be unconfirmed
+    s.seq(st, d, gve)
+    s.seq(gv, pve)
+    s.seq(pv, bve)
+    s.flow(bv, g)
     rv = revise(p, s, 'es_correct', 'Correct registration details | पंजीकरण विवरण सुधारें',
-                ['gstin*', 'pan*', 'bankAccount*', 'ifsc*'], gv)
-    s.flow(g, rv, '!gstActive || !beneNameMatch', 'no')
+                ['gstin*', 'pan*', 'bankAccount*', 'ifsc*'], gve)
+    gst_unconfirmed, _ = check_conditions([('gst', ['gstActive'])])
+    pan_unconfirmed, _ = check_conditions([('pan', ['panValid'])])
+    bene_unconfirmed, _ = check_conditions([('bene', ['beneNameMatch'])])
+    s.flow(g, reject_with(p, s, 'es_rjGst', 'GST_NOT_CONFIRMED'), gst_unconfirmed, 'GSTIN not confirmed', priority=1)
+    s.flow(g, reject_with(p, s, 'es_rjPan', 'PAN_NOT_CONFIRMED'), pan_unconfirmed, 'PAN not confirmed', priority=2)
+    s.flow(g, reject_with(p, s, 'es_rjBank', 'BENEFICIARY_NAME_NOT_CONFIRMED'), bene_unconfirmed,
+           'bank account not confirmed', priority=3)
+    s.flow(g, rv, '!gstActive || !panValid || !beneNameMatch', 'no', priority=4)
     r = s.rule('es_docs', 'Category licences required (DMN)', 'sec-ecom-seller-docs')
     s.flow(g, r, None, 'yes', default=True)
     re_, rd = s.sla_task('es_review', 'Review licences and agreement | अनुज्ञप्ति एवं अनुबंध की समीक्षा', 'reviewSeat',
@@ -527,12 +553,16 @@ def tel_mnp():
     st = start_form(p, s, 'mn_start', 'Port-in request', 'sec-tel-mnp-port-in/request', 'Port-in request | पोर्ट-इन अनुरोध',
                     ['msisdn*', 'customerName*', 'upc*', 'donorOperator*', 'lsaType*', 'customerType'])
     d = s.setv('mn_defaults', 'Configuration', defaults='msisdn=@customerId;upc=X;donorOperator=OP-X;lsaType=INTRA;'
-               'customerType=INDIVIDUAL;kycOk=true;opsSeat=MNP-DESK;applicantRef=@msisdn')
+               'customerType=INDIVIDUAL;opsSeat=MNP-DESK;applicantRef=@msisdn')
     r = s.rule('mn_tl', 'Porting timeline (DMN)', 'sec-tel-mnp-timeline')
-    ky = s.conn('mn_kyc', 'Subscriber KYC', 'dot.kyc', 'ekyc', 'query', 'msisdn,customerName', 'kyc')
+    # SL-115: the subscriber KYC fails closed (cleared before the query; no default stands in)
+    kye, ky = checked_query(s, 'mn_kyc', 'Subscriber KYC', 'dot.kyc', 'ekyc', 'msisdn,customerName', 'kyc', ['kycOk'])
     g = s.xgw('mn_kycGw', 'KYC ok?')
-    s.seq(st, d, r, ky, g)
-    s.flow(g, reject_with(p, s, 'mn_rjKyc', 'KYC_FAILED'), '!kycOk', 'no')
+    s.seq(st, d, r, kye)
+    s.flow(ky, g)
+    kyc_unconfirmed, kyc_failed = check_conditions([('kyc', ['kycOk'])], '!kycOk')
+    s.flow(g, reject_with(p, s, 'mn_rjKycCheck', 'KYC_NOT_CONFIRMED'), kyc_unconfirmed, 'not confirmed')
+    s.flow(g, reject_with(p, s, 'mn_rjKyc', 'KYC_FAILED'), kyc_failed, 'no')
     cl = clock(s, 'mn_clock', 'port', '${portSpec}')
     rq = s.conn('mn_request', 'Port request to MNPSP', 'mnpsp.port', 'request', 'submit', 'msisdn,upc,donorOperator', 'port',
                 step='port-request')
@@ -581,14 +611,18 @@ def scm_p2p():
                     'Purchase requisition | क्रय माँग-पत्र',
                     ['itemDescription*', 'quantity*', 'unitPrice*', 'supplierName', 'msmeSupplier', 'justification'])
     d = s.setv('pp_defaults', 'Configuration',
-               defaults='supplierName=SUPPLIER-1;msmeSupplier=false;budgetOk=true;caseType=PURCHASE;'
+               defaults='supplierName=SUPPLIER-1;msmeSupplier=false;caseType=PURCHASE;'
                         'routingDecisionKey=sec-scm-pr-authority;powersDecisionKey=sec-scm-powers;appealAllowed=false;'
                         'buyerSeat=BUYER;poQty=@quantity;poPrice=@unitPrice')
     am = s.expr('pp_amount', 'Value', "${execution.setVariable('amount', quantity * unitPrice)}")
-    bc = s.conn('pp_budget', 'Budget check', 'erp.budgetCheck', 'check', 'query', 'amount', 'budget')
+    # SL-115: the budget check fails closed (cleared before the query; no default stands in)
+    bce, bc = checked_query(s, 'pp_budget', 'Budget check', 'erp.budgetCheck', 'check', 'amount', 'budget', ['budgetOk'])
     g = s.xgw('pp_budGw', 'Budget available?')
-    s.seq(st, d, am, bc, g)
-    s.flow(g, reject_with(p, s, 'pp_rjBud', 'NO_BUDGET'), '!budgetOk', 'no')
+    s.seq(st, d, am, bce)
+    s.flow(bc, g)
+    budget_unconfirmed, no_budget = check_conditions([('budget', ['budgetOk'])], '!budgetOk')
+    s.flow(g, reject_with(p, s, 'pp_rjFunds', 'FUNDS_NOT_CONFIRMED'), budget_unconfirmed, 'budget not confirmed')
+    s.flow(g, reject_with(p, s, 'pp_rjBud', 'NO_BUDGET'), no_budget, 'no')
     sm = s.rule('pp_mode', 'Sourcing mode (DMN)', 'sec-scm-sourcing')
     s.flow(g, sm, None, 'yes', default=True)
     mg = s.xgw('pp_modeGw', 'Quotations needed?')
@@ -639,7 +673,7 @@ def scm_p2p():
     s.flow(pd, pay)
     s.flow(pay, end_ok(p, s, 'pp_end', 'Paid'))
     s.side_exits('pp')
-    pk.dmn('sec-scm-sourcing', 'Sourcing mode by value (SYNTHETIC)', 'FIRST', [('Value', 'amount', 'double')],
+    pk.dmn('sec-scm-sourcing', 'Sourcing mode by value (SYNTHETIC)', 'FIRST', [('Value', 'amount', 'money')],
            [('sourcingMode', 'Mode', 'string')],
            [(['<= 100000'], [q('DIRECT')], ''), (['<= 2500000'], [q('RFQ')], 'three quotations'), (['-'], [q('RFP')], '')])
     pk.dmn('sec-scm-payment-terms', 'Payment term', 'FIRST', [('MSME supplier', 'msmeSupplier', 'boolean')],
@@ -753,7 +787,7 @@ def edu_admission():
     w4 = wd.call('ed_wdRefund', 'Refund (core execution)', 'sangam-core-execution')
     wd.seq(w1, w2, w3, w4, wd.end('ed_wdEnd', 'Withdrawn with refund'))
     pk.dmn('sec-edu-eligibility', 'Eligibility (SYNTHETIC programme rule)', 'FIRST',
-           [('Score', 'score', 'double'), ('Category', 'socialCategory', 'string')], [('eligible', 'Eligible', 'boolean')],
+           [('Score', 'score', 'number'), ('Category', 'socialCategory', 'string')], [('eligible', 'Eligible', 'boolean')],
            [(['>= 45', q('GEN')], ['true'], ''), (['>= 40', '-'], ['true'], 'relaxation for reserved categories'),
             (['-', '-'], ['false'], '')])
     pk.dmn('sec-edu-refund', 'Fee refund on withdrawal (UGC refund policy)', 'FIRST',
@@ -840,7 +874,7 @@ def util_connection():
     s.side_exits('uc')
     pk.dmn('sec-util-sop', 'Connection timeline by area (Electricity (Rights of Consumers) Rules 2020)', 'FIRST',
            [('Area', 'areaType', 'string')],
-           [('connSpec', 'Connect within', 'string'), ('compensationAmount', 'Compensation (SYNTHETIC, SERC notifies)', 'double')],
+           [('connSpec', 'Connect within', 'string'), ('compensationAmount', 'Compensation (SYNTHETIC, SERC notifies)', 'money')],
            [([q('METRO')], [q('7D'), '1000'], ''), ([q('MUNICIPAL')], [q('15D'), '1000'], ''),
             (['-'], [q('30D'), '500'], 'rural / hilly')])
     simple_seeds(pk, 'SUBDIVISION', [('SUBDIV-CLERK', 'CLERK', 'AE-SUBDIV', 'Sub-division clerk', 'उप-संभाग लिपिक'),
@@ -909,7 +943,7 @@ def hr_exit():
     s.flow(lt, end_ok(p, s, 'hx_end', 'Exited'))
     s.side_exits('hx')
     pk.dmn('sec-hr-exit-tat', 'Exit settlement periods (Code on Wages s.17(2); Code on Social Security; verify)', 'FIRST',
-           [('Exit type', 'exitType', 'string'), ('Qualifying service (years)', 'qualifyingService', 'double')],
+           [('Exit type', 'exitType', 'string'), ('Qualifying service (years)', 'qualifyingService', 'number')],
            [('fnfSpec', 'Wages within', 'string'), ('gratuitySpec', 'Gratuity within', 'string'),
             ('gratuityPayable', 'Gratuity payable', 'boolean')],
            [([q('DEATH'), '-'], [q('2WD'), q('30D'), 'true'], 'death / disablement: no service condition'),
@@ -1005,11 +1039,17 @@ def legal_dpdp():
     s = p.root
     st = start_form(p, s, 'dr_start', 'Request received', 'sec-legal-dpdp-rights/request', 'Data principal request | डेटा प्रधान अनुरोध',
                     ['customerId*', 'requestType*', 'description', 'applicantRef'])
-    d = s.setv('dr_defaults', 'Configuration', defaults='requestType=ACCESS;idVerified=true;dpoSeat=DPO;applicantRef=@customerId')
-    iv = s.conn('dr_idv', 'Verify identity', 'idv.verify', 'verify', 'query', 'customerId', 'id')
+    d = s.setv('dr_defaults', 'Configuration', defaults='requestType=ACCESS;dpoSeat=DPO;applicantRef=@customerId')
+    # SL-115: identity verification fails closed (cleared before the query; no default stands in): no request is acted
+    # on for an identity the check did not confirm
+    ive, iv = checked_query(s, 'dr_idv', 'Verify identity', 'idv.verify', 'verify', 'customerId', 'id', ['idVerified'])
     g = s.xgw('dr_idGw', 'Verified?')
-    s.seq(st, d, iv, g)
-    s.flow(g, s.end('dr_endUnverified', 'Identity not verified (data principal told)'), '!idVerified', 'no')
+    s.seq(st, d, ive)
+    s.flow(iv, g)
+    id_unconfirmed, id_failed = check_conditions([('id', ['idVerified'])], '!idVerified')
+    s.flow(g, s.end('dr_endIdUnconfirmed', 'Identity check not confirmed: request not acted on'), id_unconfirmed,
+           'not confirmed')
+    s.flow(g, s.end('dr_endUnverified', 'Identity not verified (data principal told)'), id_failed, 'no')
     tr = s.rule('dr_tat', 'Response period (DMN)', 'sec-legal-dpdp-tat')
     ck = clock(s, 'dr_clock', 'response', '${respondSpec}')
     tg = s.xgw('dr_typeGw', 'Request type?')

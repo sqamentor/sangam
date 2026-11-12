@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
+import org.sangam.config.locale.FiscalYearNotConfiguredException;
 import org.sangam.config.profile.ProfileResolver;
 import org.sangam.config.profile.ResolvedProfile;
 import org.sangam.ledger.LedgerDefinition;
@@ -51,7 +52,8 @@ public final class LedgerTenantDefinitions {
         }
         List<LedgerDefinition> defs = LedgerDefinition.all(p.get("ledgers"));
         if (!defs.isEmpty()) {
-            ledger.define(tenant, defs);
+            // SL-98: a money ledger without its currency is refused here, naming the ledger and the profile
+            ledger.define(tenant, binding + " (tenant " + tenant + ")", defs);
         }
         registered.put(tenant, binding);
     }
@@ -69,16 +71,22 @@ public final class LedgerTenantDefinitions {
         }
     }
 
-    /** Current period label of the tenant on {@code day} (its fiscal calendar), e.g. {@code 2026-27}. */
+    /**
+     * Current period label of the tenant on {@code day} (its fiscal calendar), e.g. {@code 2026-27}. SL-125 (fail
+     * closed): never an invented year. Refuses with {@link FiscalYearNotConfiguredException} when there is no profile
+     * resolver, when the tenant has no profile, or when its profile has no (complete) {@code locale.fiscal}.
+     */
     public String period(String tenant, LocalDate day) {
         if (profiles == null) {
-            return Integer.toString(day.getYear());
+            throw new FiscalYearNotConfiguredException("no configuration profile resolver: the fiscal period of tenant "
+                    + tenant + " cannot be resolved; fiscal operations are refused");
         }
-        try {
-            return profiles.resolve(tenant, day).locale().fiscal().yearOf(day).label();
-        } catch (RuntimeException e) {
-            return Integer.toString(day.getYear());
+        ResolvedProfile p = profiles.resolve(tenant, day);
+        if (p.findings().stream().anyMatch(f -> "PROFILE_NOT_FOUND".equals(f.code()))) {
+            throw new FiscalYearNotConfiguredException("tenant " + tenant + " has no configuration profile on " + day
+                    + ", so it has no fiscal year (" + FiscalYearNotConfiguredException.PATH + "); fiscal operations are refused");
         }
+        return p.locale().fiscal().yearOf(day).label();
     }
 
     public BiFunction<String, LocalDate, String> periodResolver() {

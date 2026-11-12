@@ -44,6 +44,7 @@ packs/ifms-monthly-accounts/pack.json
 packs/ifms-year-end-closing/pack.json
 packs/ifms-scheme-appraisal/pack.json
 packs/ifms-audit-para-settlement/pack.json
+packs/gov-intl-pfm-execution/pack.json
 packs/up01-stp-order/pack.json
 packs/up02-saga/pack.json
 packs/up03-event-correlation/pack.json
@@ -129,3 +130,4 @@ packs/sec-ushealth-discharge/pack.json
 packs/sec-ushealth-access-request/pack.json
 packs/sec-ushealth-breach/pack.json
 packs/sec-ushealth-baa/pack.json
+packs/sec-eu-gdpr-dsr/pack.json

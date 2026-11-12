@@ -58,11 +58,17 @@ if [ -n "$IMAGES" ]; then
   fi
 fi
 
-# Licence policy before the checksums: --annotate records the SG-27 / SD-301 owner exception (reason, verified SPDX,
+# Licence policy before the checksums: --annotate records the SG-27 consumer licence-policy exception (reason, verified SPDX,
 # evidence file) as CycloneDX properties on the exact excepted components and in metadata.properties.
 echo ">> licence policy"
+# Optional UI SBOM as an argument array, never an unquoted command substitution: an --out path with spaces would be
+# split into several arguments (ShellCheck SC2046). ${arr[@]+"${arr[@]}"} keeps `set -u` safe on bash < 4.4 when empty.
+UI_SBOM_ARGS=()
+if [ -f "$OUT/sangam-ui.cdx.json" ]; then
+  UI_SBOM_ARGS=(--sbom "$OUT/sangam-ui.cdx.json")
+fi
 python3 -I "$SANGAM/deploy/licence/check_licences.py" --policy "$SANGAM/deploy/licence/licence-policy.json" --annotate \
-  --sbom "$OUT"/sangam-maven.cdx.json $( [ -f "$OUT/sangam-ui.cdx.json" ] && echo --sbom "$OUT/sangam-ui.cdx.json" ) \
+  --sbom "$OUT/sangam-maven.cdx.json" ${UI_SBOM_ARGS[@]+"${UI_SBOM_ARGS[@]}"} \
   --report "$OUT/licence-report.md"
 # Attribution the exception carries (Apache-2.0 section 4(d) NOTICE of scala-library; MIT notices of com.lihaoyi)
 cp "$SANGAM/../NOTICE" "$OUT/NOTICE" 2>/dev/null || true

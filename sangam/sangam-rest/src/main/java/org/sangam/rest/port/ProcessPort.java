@@ -91,6 +91,18 @@ public interface ProcessPort {
 
     Map<String, Object> variables(RequestContext ctx, String processInstanceId);
 
+    /**
+     * P13: the variables whose scope is one activity instance of this process instance (its local variables; the
+     * process instance's own id is the root scope). Same tenant check and permission as {@link #variables}; an
+     * activity instance of another process instance matches nothing. {@code null} means {@link #variables}.
+     */
+    default Map<String, Object> variables(RequestContext ctx, String processInstanceId, String activityInstanceId) {
+        if (activityInstanceId == null || activityInstanceId.isBlank()) {
+            return variables(ctx, processInstanceId);
+        }
+        throw ApiProblem.badRequest("FILTER_UNSUPPORTED", "activityInstanceId is not supported by this server");
+    }
+
     Map<String, Object> setVariables(RequestContext ctx, String processInstanceId, Map<String, Object> variables);
 
     TerminationResult cancel(RequestContext ctx, String processInstanceId, TerminateRequest request);

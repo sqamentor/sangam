@@ -1,6 +1,6 @@
 {
   "key": "ifms-bill/advance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.bill",
   "title": {
     "en": "Advance bill",
@@ -34,7 +34,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

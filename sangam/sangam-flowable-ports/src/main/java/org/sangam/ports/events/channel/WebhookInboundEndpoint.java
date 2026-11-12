@@ -14,11 +14,18 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Inbound webhook channel (FLOWABLE-INTO-OPERATON FC-03, ARCHITECTURE §4 {@code POST /events/{channel}}): WS-REST maps the request onto
- * {@link #receive}. When the channel has {@code properties.secretRef}, the {@code X-Sangam-Signature: sha256=<hex>}
- * header must be the HMAC-SHA256 of the raw body (constant-time compare). The message id is the value at the
- * channel's {@code messageIdJsonPointer} when the body has one (the pipeline's rule for every adapter), else the
- * {@code Idempotency-Key} header, else {@code X-Sangam-Message-Id}.
+ * Inbound webhook channel (FLOWABLE-INTO-OPERATON FC-03, ARCHITECTURE §4 {@code POST /events/{channel}}). Two entries:
+ * <ul>
+ *   <li>{@link #receive}, the webhook ingress of a sender with no Sangam identity: when the channel has
+ *       {@code properties.secretRef}, the {@code X-Sangam-Signature: sha256=<hex>} header must be the HMAC-SHA256 of
+ *       the raw body (constant-time compare); a missing, wrong or foreign signature is refused before anything is
+ *       stored;</li>
+ *   <li>{@link #receiveAuthenticated}, for a sender the host has already authenticated as a principal of the tenant
+ *       (Sangam's token-authenticated events API): every other check of {@link #receive}, without the channel HMAC
+ *       (SL-76).</li>
+ * </ul>
+ * The message id is the value at the channel's {@code messageIdJsonPointer} when the body has one (the pipeline's rule
+ * for every adapter), else the {@code Idempotency-Key} header, else {@code X-Sangam-Message-Id}.
  */
 public class WebhookInboundEndpoint {
 
@@ -32,7 +39,24 @@ public class WebhookInboundEndpoint {
         this.env = env;
     }
 
+    /** Webhook ingress: a sender without a Sangam identity; a channel with a {@code secretRef} needs its HMAC. */
     public InboundEventProcessor.Result receive(String tenant, String channelKey, Map<String, String> headers, String body) {
+        return accept(tenant, channelKey, headers, body, true);
+    }
+
+    /**
+     * A sender the host has already authenticated as a principal of {@code tenant} (SL-76): its token is the
+     * authentication, so the channel HMAC, the credential of senders without a Sangam identity, is not checked. The
+     * channel, tenant, size, idempotency and payload-tenant rules of {@link #receive} all apply. Never wire this to a
+     * route that does not authenticate its caller: an unauthenticated route calls {@link #receive}.
+     */
+    public InboundEventProcessor.Result receiveAuthenticated(String tenant, String channelKey, Map<String, String> headers,
+                                                             String body) {
+        return accept(tenant, channelKey, headers, body, false);
+    }
+
+    private InboundEventProcessor.Result accept(String tenant, String channelKey, Map<String, String> headers, String body,
+                                                boolean verifySignature) {
         ChannelDefinition ch = registry.channel(tenant, channelKey).map(EventRegistry.DeployedChannel::definition)
                 .orElseThrow(() -> new IllegalArgumentException("unknown channel " + channelKey));
         if (ch.direction() != ChannelDefinition.Direction.INBOUND || !"webhook".equals(ch.adapterType())) {
@@ -54,7 +78,7 @@ public class WebhookInboundEndpoint {
             });
         }
         String ref = ch.properties().get("secretRef");
-        if (ref != null) {
+        if (verifySignature && ref != null) {
             String secret = env.secret(ref).orElseThrow(() -> new IllegalStateException("secret " + ref + " not found"));
             String sig = h.get("x-sangam-signature");
             String expected = "sha256=" + hmacHex(secret, body);

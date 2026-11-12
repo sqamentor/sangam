@@ -1,6 +1,6 @@
 {
   "id": "sec.edu.scholarship",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Scholarship through the National Scholarship Portal",
     "hi": "राष्ट्रीय छात्रवृत्ति पोर्टल द्वारा छात्रवृत्ति"
@@ -56,7 +56,11 @@
       "id": "pfms.dbt",
       "capabilityClass": "c",
       "govTag": "",
-      "purpose": "DBT payment"
+      "purpose": "DBT payment",
+      "simulatorBinding": {
+        "connector": "pfms-sim",
+        "operation": "pay"
+      }
     }
   ],
   "covers": [
@@ -77,5 +81,15 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "income",
+      "powerLimit"
+    ]
+  }
 }

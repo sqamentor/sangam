@@ -1,6 +1,6 @@
 {
   "id": "gov.security-instrument",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Bank guarantee / EMD / performance security",
     "hi": "बैंक गारंटी / बयाना / कार्य निष्पादन प्रतिभूति"
@@ -76,5 +76,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "bgAmount"
+    ]
+  }
 }

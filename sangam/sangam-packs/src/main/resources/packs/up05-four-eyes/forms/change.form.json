@@ -1,6 +1,6 @@
 {
   "key": "up05-four-eyes/change",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up05-four-eyes",
   "title": {
     "en": "Sensitive change",
@@ -25,7 +25,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

@@ -94,9 +94,10 @@ public class ProcessController {
     }
 
     @GetMapping("/process-instances/{id}/variables")
-    public Map<String, Object> variables(RequestContext ctx, @PathVariable String id) {
+    public Map<String, Object> variables(RequestContext ctx, @PathVariable String id,
+                                         @RequestParam(required = false) String activityInstanceId) {
         permissions.require(ctx, Permissions.PROCESS_READ);
-        return processes.variables(ctx, id);
+        return processes.variables(ctx, id, activityInstanceId);
     }
 
     @PutMapping("/process-instances/{id}/variables")

@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.proposal-underwriting",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Proposal, underwriting and policy issuance",
     "hi": "प्रस्ताव, हामीदारी एवं पॉलिसी जारी करना"
@@ -91,5 +91,14 @@
     "sangam-core-cancellation",
     "sangam-core-execution",
     "sangam-core-rejection"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "premiumAmount",
+      "sumAssured"
+    ]
+  }
 }

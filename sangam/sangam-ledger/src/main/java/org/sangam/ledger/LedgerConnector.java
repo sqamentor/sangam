@@ -2,6 +2,7 @@
 package org.sangam.ledger;
 
 import org.sangam.config.common.Tree;
+import org.sangam.config.locale.FiscalYearNotConfiguredException;
 import org.sangam.core.integration.ConnectorDescriptor;
 import org.sangam.core.integration.ConnectorProfile;
 import org.sangam.core.integration.ConnectorRequest;
@@ -33,12 +34,17 @@ import java.util.function.BiFunction;
  *   <li>ledger: {@code ledgerId}, {@code ledger};</li>
  *   <li>line: {@code line}, {@code headOfAccount}, {@code fromHead}, {@code slsCode}, {@code receiptHead}, {@code itemCode};</li>
  *   <li>holder: {@code holder}, {@code ddoCode}, {@code motherSanctionNo}, {@code consumer}, {@code location};</li>
- *   <li>period: {@code period}, {@code fiscalYear} (missing or {@code current}: the period resolver);</li>
+ *   <li>period: {@code period}, {@code fiscalYear} (missing or {@code current}: the period resolver, which refuses with
+ *       {@link FiscalYearNotConfiguredException} when the tenant has no fiscal year; the step then fails with
+ *       {@code FISCAL_YEAR_NOT_CONFIGURED}, nothing posted, never retried: SL-125);</li>
  *   <li>stage: {@code stage} (missing: the definition's consume stage; for {@code allocate} the first stage);</li>
- *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount};</li>
+ *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount}: for a money ledger (request {@code currency}, or the
+ *       ledger's currency) an integer number of MINOR units (paise for INR), the unit every pack variable carries
+ *       (SD-398, packgen {@code money.py}); for a quantity ledger (no currency) the quantity itself;</li>
  *   <li>target for transfer: line {@code toHead} and / or holder {@code toHolder}; for distribute / withdraw: the parent stage with holder
  *       {@code fromHolder} (default {@code -}).</li>
  * </ul>
+ * The output {@code available} is in the same unit as the amount: integer minor units for a money ledger.
  */
 public final class LedgerConnector implements SangamConnector {
 
@@ -52,7 +58,8 @@ public final class LedgerConnector implements SangamConnector {
 
     /**
      * @param periodResolver tenant and date to the current period label (wire it from the tenant profile's fiscal
-     *                       calendar: {@code resolver.resolve(t, d).locale().fiscal().yearOf(d).label()})
+     *                       calendar: {@code resolver.resolve(t, d).locale().fiscal().yearOf(d).label()}); it throws
+     *                       {@link FiscalYearNotConfiguredException} when no fiscal year is configured, never invents one
      */
     public LedgerConnector(LedgerService ledger, BiFunction<String, LocalDate, String> periodResolver, Clock clock) {
         this.ledger = ledger;
@@ -82,12 +89,13 @@ public final class LedgerConnector implements SangamConnector {
             String stage = first(r, List.of("stage"), "allocate".equals(op) ? def.stages().get(0) : def.consumeAt());
             AccountKey acct = new AccountKey(tenant, ledgerId, period, first(r, LINE, "-"), first(r, HOLDER, "-"), stage,
                     first(r, List.of("sub"), null));
-            BigDecimal amount = new BigDecimal(first(r, AMOUNT, "0"));
+            String ccy = r.str("currency") != null ? r.str("currency") : def.currency();
+            BigDecimal amount = fromPack(first(r, AMOUNT, "0"), ccy);
             String ref = r.operationId().toString();
             Map<String, Object> out = new LinkedHashMap<>();
             switch (op) {
                 case "available" -> {
-                    out.put("available", ledger.available(acct).toPlainString());
+                    out.put("available", toPack(ledger.available(acct), ccy));
                     return ConnectorResult.Success.of(out, null);
                 }
                 case "releaseHolds" -> {
@@ -107,13 +115,17 @@ public final class LedgerConnector implements SangamConnector {
                     out.put("applied", res.applied());
                     out.put("held", res.held());
                     out.put("duplicate", res.duplicate());
-                    out.put("available", ledger.available(acct).toPlainString());
+                    out.put("available", toPack(ledger.available(acct), ccy));
                     if (res.applied() || res.held()) {
                         return new ConnectorResult.Success(out, ref, res.duplicate());
                     }
                     return new ConnectorResult.BusinessFailure(res.reason(), "ledger refused " + op, out);
                 }
             }
+        } catch (FiscalYearNotConfiguredException e) {
+            // SL-125: a configuration refusal before any posting: a business failure (no effect), not a throw, which the
+            // invoker would take as an unknown outcome and retry
+            return ConnectorResult.BusinessFailure.of(FiscalYearNotConfiguredException.CODE, e.getMessage());
         } catch (IllegalArgumentException e) {
             return ConnectorResult.BusinessFailure.of("LEDGER_REQUEST_INVALID", e.getMessage());
         }
@@ -164,6 +176,27 @@ public final class LedgerConnector implements SangamConnector {
         return ledger.store().entry(r.tenantId(), r.operationId().toString())
                 .<LookupResult>map(e -> new LookupResult.Found(true, Map.of("operation", e.operation()), e.reference(), null))
                 .orElseGet(LookupResult.NotFound::new);
+    }
+
+    /**
+     * A pack amount to the ledger's major-unit {@link BigDecimal}: money is integer minor units (an amount with a
+     * fraction of a minor unit is refused, never rounded: SD-398); a quantity (no currency) is taken as it is.
+     */
+    static BigDecimal fromPack(String raw, String currency) {
+        BigDecimal v = new BigDecimal(raw.trim());
+        if (currency == null) {
+            return v;
+        }
+        try {
+            return JdbcLedgerStore.amount(v.longValueExact(), currency);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("amount " + raw + " " + currency + " is not a whole number of minor units");
+        }
+    }
+
+    /** A ledger amount back to the pack unit: integer minor units for money, the quantity otherwise. */
+    static Object toPack(BigDecimal v, String currency) {
+        return currency == null ? v.toPlainString() : (Object) JdbcLedgerStore.units(v, currency);
     }
 
     private static String first(ConnectorRequest r, List<String> keys, String def) {

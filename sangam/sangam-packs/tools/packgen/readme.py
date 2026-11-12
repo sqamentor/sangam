@@ -70,7 +70,7 @@ JAVA = [
     ('core/PowerLimitGuardListener.java', 'Delegated power on the action date (DMN)', 'IX.5 r3, K6'),
     ('core/ApprovalBindingListener.java', 'Approval bound to the payload hash; joint approvals', 'VI.4 r5, K4, AC-02'),
     ('core/RecommendationLevelDelegate.java', 'n-level recommendation, return to any level, comments, marking', 'GP-02, J-P2-E01/E02/E05'),
-    ('core/SeatResolutionDelegate.java', 'Role to seat by hierarchy, eligible candidates, power forward', 'IX.5 r2, S07, J-P1-E07, J-P3-E05'),
+    ('core/SeatResolutionDelegate.java', 'Role to seat by hierarchy, eligible candidates, power forward, joint seats without earlier actors', 'IX.5 r2, S07, J-P1-E07, J-P1-E09, J-P3-E05'),
     ('core/SlaDelegate.java', 'SLA plan, warning, breach (escalate / deemed approval / deemed refusal), pause / resume, deadlines', 'R31, R79, GP-06, GP-44, GP-45, J-P4-E01, J-P4-E07'),
     ('core/ExternalOperationDelegate.java', 'Execution, acknowledgement, lookup, UNKNOWN_OUTCOME, reconciliation, cancel', 'VI.3, VI.5, A-2, T35, AC-03'),
     ('core/ConnectorCallDelegate.java', 'Generic query / exactly-once submit through the gateway', 'VI.3, K13'),
@@ -169,6 +169,38 @@ def write(path, packs):
       'same key in that deployment. Deploy tenants with `deploy(packIds, tenantId)`, which includes the dependencies: '
       'Operaton resolves the call activities of a tenant process only within the same tenant. With the in-memory seat '
       'directory the seeds are loaded too.')
+    w('- **A pack version is immutable (SL-54).** Cross-pack calls are pinned by `versionTag` = the callee pack\'s '
+      'version (`pin_cross_pack_calls`), and Operaton refuses a call whose (key, versionTag, tenant) matches more than '
+      'one definition. So once a tenant scope holds `pack:<id>@<version>`, deploying that version again must carry the '
+      'same content: compared over canonical bytes (text resources with CRLF and lone CR read as LF, binary resources '
+      'byte-exact, so line endings never change a pack\'s identity), equal content reuses the existing deployment and '
+      'anything else is refused with `PACK_VERSION_IMMUTABLE` (REST 422 `PACK_REJECTED`). A changed pack ships under a '
+      'new version: `tools/packgen/releases.py` is the release ledger of the versions environments hold.')
+    w('- **Rollback is a roll-forward (SL-54).** `rollback(packId, tenantId)` takes the content of the most recent '
+      'deployment of a different version and deploys it as a NEW version, the next patch above the highest version of '
+      'the pack in that tenant scope (1.0.0 then 1.0.1 installed: rolling back deploys the 1.0.0 content as 1.0.2), '
+      'with its version-bearing parts restated (`PackVersionRewriter`: process and decision `versionTag`, '
+      '`exporterVersion`, the start listener\'s `packVersion`, form `version`, pins to the pack\'s own processes and '
+      'decisions; pins into other packs are kept). No existing `id@version` is reused or changed; new instances started '
+      'by key start on the rolled-forward content, running instances keep their definitions, and callers keep the '
+      'version they pin. A second rollback rolls forward again. Refused with `PACK_NO_PREVIOUS_VERSION`, and with '
+      '`PACK_VERSION_NOT_SEMVER` when an installed version is not `MAJOR.MINOR.PATCH`.')
+    w('- **Consequence of roll-forward numbers.** A later release that reuses a number a rollback already took in a '
+      'tenant (for example 2.0.1) is refused there with `PACK_VERSION_IMMUTABLE` until it is bumped past it.')
+    w('- **One operation per pack and tenant at a time (SL-116).** `deploy` and `rollback` read the installed '
+      'versions, compute what to deploy and deploy it inside the deployer\'s `PackOperationLock` for (tenant scope, '
+      'pack id). The server wires a row lock on the pack\'s `EVT_DEFINITION_SEQ` mark (kind `pack`) taken in the Spring '
+      'transaction the engine joins, so the lock and the deployment commit together: a second deploy or rollback of '
+      'the same pack in the same tenant waits (bounded by `sangam.packs.operation.lock-timeout`, default 10 s; Oracle '
+      '`FOR UPDATE WAIT 2`) and then computes from the first one\'s committed result, or gets 409 '
+      '`PACK_OPERATION_IN_PROGRESS`. Another pack or another tenant is not blocked. `uninstall` runs inside the same '
+      'lock. `new PackDeployer(engine, registry)` serialises nothing (bare engines in tests and tools).')
+    w('- **Several packs in one transaction (SL-116).** Deploy several packs inside one caller transaction only if no '
+      'concurrent rollback, deploy or uninstall of those packs is possible: Operaton\'s engine-wide deployment lock (the '
+      '`deployment.lock` property row, taken by every deploy) is then held to the end of the outer transaction while '
+      'the next pack waits for its own lock, and a concurrent operation holding that pack\'s lock and waiting for the '
+      'deployment lock is a deadlock, which the database ends by failing one side. Without an outer transaction every '
+      'pack commits, releasing both locks, before the next.')
     w('- `PackMigrator.migrateAll(processKey, fromVersion, toVersion, tenant)` migrates running cases (GP-20); '
       'activity ids are kept stable across pack versions for this.')
     w('- A case is bound to `packVersion = <id>@<version>` at start (R43, K10).')

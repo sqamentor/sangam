@@ -1,6 +1,6 @@
 {
   "key": "ifms-sna-sparsh/claim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.sna-sparsh",
   "title": {
     "en": "SNA-SPARSH claim",
@@ -34,7 +34,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",
@@ -44,6 +46,8 @@
     {
       "id": "centreShare",
       "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Centre share",
@@ -53,6 +57,8 @@
     {
       "id": "stateShare",
       "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "State share",

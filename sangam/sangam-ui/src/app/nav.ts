@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Role } from '../api/types';
+import { MODULE_READERS, ROUTE_ACCESS, type Access } from './access';
 
 export interface NavItem {
   to: string;
   label: string; // i18n key
   /** Further restriction within the area. */
   only?: Role[];
+  /** Replaces the area roles for this item: role or endpoint permission (M-028, access.ts). */
+  access?: Access;
 }
 export interface NavArea {
   id: string;
@@ -125,23 +128,24 @@ export const NAV: NavArea[] = [
   {
     id: 'modules',
     label: 'nav.modules',
-    roles: ['TASK_USER', 'OPERATOR', 'ADMIN', 'PLATFORM_ADMIN', 'AUDITOR', 'ANALYST'],
+    // M-028: the union of the module screens' roles (access.ts); ANALYST grants no module permission.
+    roles: MODULE_READERS,
     items: [
-      { to: '/m/ai', label: 'mod.ai.title' },
-      { to: '/m/channels', label: 'mod.channels.title' },
-      { to: '/m/case-files', label: 'mod.cases.title' },
-      { to: '/m/committees', label: 'mod.committees.title' },
-      { to: '/m/references', label: 'mod.references.title' },
-      { to: '/m/registry', label: 'mod.registry.title' },
-      { to: '/m/ledger', label: 'mod.ledger.title' },
-      { to: '/m/billing', label: 'mod.billing.title' },
-      { to: '/m/resources', label: 'mod.resources.title' },
-      { to: '/m/queues', label: 'mod.queues.title' },
-      { to: '/m/rosters', label: 'mod.rosters.title' },
-      { to: '/m/programmes', label: 'mod.programmes.title' },
-      { to: '/m/field', label: 'mod.field.title' },
-      { to: '/m/geo', label: 'mod.geo.title' },
-      { to: '/m/compliance', label: 'mod.compliance.title' },
+      { to: '/m/ai', label: 'mod.ai.title', access: ROUTE_ACCESS['/m/ai'] },
+      { to: '/m/channels', label: 'mod.channels.title', access: ROUTE_ACCESS['/m/channels'] },
+      { to: '/m/case-files', label: 'mod.cases.title', access: ROUTE_ACCESS['/m/case-files'] },
+      { to: '/m/committees', label: 'mod.committees.title', access: ROUTE_ACCESS['/m/committees'] },
+      { to: '/m/references', label: 'mod.references.title', access: ROUTE_ACCESS['/m/references'] },
+      { to: '/m/registry', label: 'mod.registry.title', access: ROUTE_ACCESS['/m/registry'] },
+      { to: '/m/ledger', label: 'mod.ledger.title', access: ROUTE_ACCESS['/m/ledger'] },
+      { to: '/m/billing', label: 'mod.billing.title', access: ROUTE_ACCESS['/m/billing'] },
+      { to: '/m/resources', label: 'mod.resources.title', access: ROUTE_ACCESS['/m/resources'] },
+      { to: '/m/queues', label: 'mod.queues.title', access: ROUTE_ACCESS['/m/queues'] },
+      { to: '/m/rosters', label: 'mod.rosters.title', access: ROUTE_ACCESS['/m/rosters'] },
+      { to: '/m/programmes', label: 'mod.programmes.title', access: ROUTE_ACCESS['/m/programmes'] },
+      { to: '/m/field', label: 'mod.field.title', access: ROUTE_ACCESS['/m/field'] },
+      { to: '/m/geo', label: 'mod.geo.title', access: ROUTE_ACCESS['/m/geo'] },
+      { to: '/m/compliance', label: 'mod.compliance.title', access: ROUTE_ACCESS['/m/compliance'] },
     ],
   },
   {

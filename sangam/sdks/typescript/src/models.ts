@@ -18,8 +18,8 @@ export type Variables = Record<string, TypedValue | unknown>;
  * for downstream calls; `attemptId` changes per lease (A-2).
  */
 export interface ExternalWork {
-  id: string;
-  topic: string;
+  id?: string;
+  topic?: string;
   tenantId?: string;
   processInstanceId?: string;
   processDefinitionKey?: string;
@@ -27,8 +27,8 @@ export interface ExternalWork {
   activityInstanceId?: string;
   businessKey?: string;
   variables?: Variables;
-  lockVersion: number;
-  attemptId: string;
+  lockVersion?: number;
+  attemptId?: string;
   operationId?: string;
   lockExpiresAt?: string;
   retries?: number;
@@ -36,11 +36,6 @@ export interface ExternalWork {
   priority?: number;
   /** Message of the previous failure, if any. */
   errorMessage?: string;
-  /**
-   * Not part of contract 0.1.0. Honoured if a future server sends `irreversible`; irreversibility otherwise comes
-   * from the subscription's `irreversible` flag.
-   */
-  effect?: string;
   /** Server-recorded ledger entry of `operationId` (SL-16); absent from older servers. */
   operation?: WorkOperation;
 }
@@ -51,10 +46,10 @@ export interface ExternalWork {
  * repeat attempt (class B: look the outcome up first).
  */
 export interface WorkOperation {
-  state: "INTENT" | "SUCCEEDED" | "FAILED" | "UNKNOWN_OUTCOME";
-  attempts: number;
+  state?: "INTENT" | "SUCCEEDED" | "FAILED" | "UNKNOWN_OUTCOME";
+  attempts?: number;
   capabilityClass?: "A_IDEMPOTENT_WITH_LOOKUP" | "B_LOOKUP_ONLY" | "C_NEITHER";
-  mayDispatch: boolean;
+  mayDispatch?: boolean;
   storedOutcome?: Record<string, unknown> | null;
 }
 
@@ -182,7 +177,7 @@ export type JsonObject = Record<string, unknown>;
 // ---------------------------------------------------------------- tasks
 
 export interface TaskView {
-  id: string;
+  id?: string;
   name?: string;
   description?: string;
   taskDefinitionKey?: string;
@@ -203,6 +198,8 @@ export interface TaskView {
   priority?: number;
   formKey?: string;
   delegationState?: string;
+  /** VariableMap (typed values still wrapped). */
+  variables?: Variables;
 }
 
 export interface TaskQuery {
@@ -232,6 +229,9 @@ export interface CompleteTaskRequest {
   remarks?: string;
   formVersion?: string;
   variables?: Variables;
+  reasonCode?: string;
+  nextSeatId?: string;
+  nextSeatReason?: string;
 }
 
 export interface CompleteTaskResult extends Replayable {
@@ -248,6 +248,12 @@ export interface ReturnTaskRequest {
   reasonCode?: string;
   targetActivityId?: string;
   variables?: Variables;
+  targetSeatId?: string;
+  /** int32 */
+  targetLevel?: number;
+  payloadHash?: string;
+  /** int64 optimistic case version */
+  caseVersion?: number;
 }
 
 export interface DelegateTaskRequest {
@@ -384,7 +390,7 @@ export type DecisionResult = DecisionEvaluateResult;
 // ---------------------------------------------------------------- audit
 
 export interface AuditEntry {
-  eventId: string;
+  eventId?: string;
   eventClass?: string;
   chainId?: string;
   seq?: number;
@@ -399,7 +405,10 @@ export interface AuditEntry {
   payload?: unknown;
   erased?: boolean;
   hash?: string;
-  evidence?: unknown;
+  evidence?: boolean;
+  prevHash?: string;
+  entryHash?: string;
+  envelope?: string;
 }
 
 export interface AuditVerifyResult {

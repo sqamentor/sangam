@@ -22,7 +22,8 @@ import org.sangam.packs.port.TenantWorkingDays;
  * Working-day calendar: office hours 09:30-18:00 in the tenant zone (the engine still stores UTC, A-12). Which dates
  * are working days, and the zone, come from the tenant's own configuration when a {@link TenantWorkingDays} source
  * answers for the tenant (sangam-server: the profile business calendar, SL-34); otherwise Saturday and Sunday are off,
- * plus holidays added here, in the default zone (IST, which has no DST).
+ * plus holidays added here, in the tenant's business zone ({@link org.sangam.core.time.BusinessClock}: the tenant's
+ * profile zone, UTC without a profile), unless a fixed zone is given. SL-104 (ADR-D-20): no country zone by default.
  */
 public class WorkingDayCalendar implements BusinessCalendar {
 
@@ -32,21 +33,39 @@ public class WorkingDayCalendar implements BusinessCalendar {
 
     private final Map<String, Set<LocalDate>> holidays = new ConcurrentHashMap<>();
     private final Map<String, ZoneId> zones = new ConcurrentHashMap<>();
-    private final ZoneId defaultZone;
+    private final java.util.function.Function<String, ZoneId> defaultZone;
     private final TenantWorkingDays tenants;
 
+    /** Default rules in each tenant's business zone ({@link org.sangam.core.time.BusinessClock#system()}). */
     public WorkingDayCalendar() {
-        this(ZoneId.of("Asia/Kolkata"));
+        this(TenantWorkingDays.NONE);
     }
 
+    /**
+     * Working days and zone from {@code tenants} for every tenant it answers for; any other tenant gets the default
+     * rules in its business zone ({@link org.sangam.core.time.BusinessClock#system()}).
+     */
+    public WorkingDayCalendar(TenantWorkingDays tenants) {
+        this(t -> org.sangam.core.time.BusinessClock.system().zone(t), tenants);
+    }
+
+    /** Default rules in one fixed zone (tests, single-zone tools). */
     public WorkingDayCalendar(ZoneId defaultZone) {
         this(defaultZone, TenantWorkingDays.NONE);
     }
 
     /** A calendar whose working days and zone come from {@code tenants} for every tenant it answers for. */
     public WorkingDayCalendar(ZoneId defaultZone, TenantWorkingDays tenants) {
-        this.defaultZone = java.util.Objects.requireNonNull(defaultZone, "defaultZone");
+        this(fixed(java.util.Objects.requireNonNull(defaultZone, "defaultZone")), tenants);
+    }
+
+    private WorkingDayCalendar(java.util.function.Function<String, ZoneId> defaultZone, TenantWorkingDays tenants) {
+        this.defaultZone = defaultZone;
         this.tenants = java.util.Objects.requireNonNull(tenants, "tenants");
+    }
+
+    private static java.util.function.Function<String, ZoneId> fixed(ZoneId zone) {
+        return t -> zone;
     }
 
     public void addHoliday(String tenantId, LocalDate day) {
@@ -65,7 +84,8 @@ public class WorkingDayCalendar implements BusinessCalendar {
     private TenantWorkingDays.Days rule(String tenantId) {
         return tenants.of(tenantId).orElseGet(() -> {
             Set<LocalDate> h = holidays.getOrDefault(key(tenantId), Set.of());
-            return new TenantWorkingDays.Days(zones.getOrDefault(key(tenantId), defaultZone), d -> {
+            ZoneId zone = zones.get(key(tenantId));
+            return new TenantWorkingDays.Days(zone != null ? zone : defaultZone.apply(tenantId), d -> {
                 DayOfWeek w = d.getDayOfWeek();
                 return w != DayOfWeek.SATURDAY && w != DayOfWeek.SUNDAY && !h.contains(d);
             });

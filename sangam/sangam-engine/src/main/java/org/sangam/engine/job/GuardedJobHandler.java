@@ -84,7 +84,8 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
         Connection c = CommandState.connection(cc);
         String type = delegate.getType();
         boolean longRunning = type != null && (type.startsWith("history-cleanup") || type.contains("batch"));
-        dialect.applyLockTimeouts(c, lockTimeout, longRunning ? java.time.Duration.ZERO : statementTimeout);
+        // SL-99: session-scoped lock waits are restored when the job's transaction ends
+        CommandState.applyLockTimeouts(cc, dialect, lockTimeout, longRunning ? java.time.Duration.ZERO : statementTimeout);
         if (execution != null && execution.getRootProcessInstanceId() != null) {
             String tenant = tenantId != null ? tenantId : defaultTenant;
             rootLock.lock(cc, Map.of(execution.getRootProcessInstanceId(), tenant),

@@ -1,6 +1,6 @@
 {
   "key": "ifms-gia-uc/uc-default",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.gia-uc",
   "title": {
     "en": "UC not received: remind or blacklist",

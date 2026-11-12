@@ -101,11 +101,14 @@ public class OperatonTaskAdapter implements TaskPort {
             if (ctx.seatId() != null && !candidateGroups.contains(ctx.seatId())) {
                 candidateGroups.add(ctx.seatId());
             }
-            q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
+            // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object.
+            // (Applying them to q put the groups outside the OR and endOr() on the root, which the engine refuses:
+            // "cannot set endOr() before or()", so every non-supervisor list failed.)
+            TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
             if (!candidateGroups.isEmpty()) {
-                q.taskCandidateGroupIn(candidateGroups);
+                any.taskCandidateGroupIn(candidateGroups);
             }
-            q.endOr();
+            any.endOr();
         }
         if (f != null) {
             if (f.assignee() != null) {
@@ -149,7 +152,14 @@ public class OperatonTaskAdapter implements TaskPort {
         q.initializeFormKeys();
         Page<org.operaton.bpm.engine.task.Task> raw = OperatonSupport.page(q, page, props.getCountCap(), t -> t);
         Map<String, String> businessKeys = businessKeys(raw.items());
-        return raw.map(t -> map(t, businessKeys.get(t.getProcessInstanceId()), null));
+        List<String> names = f == null ? List.of() : f.variableNames();
+        // P45 card variables: the same read as GET /tasks/{id}/variables (task scope and its parents) for rows the
+        // caller already sees through the visibility predicate above, so nothing unreadable is added
+        return raw.map(t -> {
+            Task row = map(t, businessKeys.get(t.getProcessInstanceId()), null);
+            return names.isEmpty() ? row : row.withVariables(TypedVariables.toJson(
+                    OperatonSupport.call(() -> tasks.getVariables(t.getId(), names))));
+        });
     }
 
     /** sortBy and sortOrder may each be a comma-separated list, applied in order; a missing order means desc. */
@@ -524,6 +534,31 @@ public class OperatonTaskAdapter implements TaskPort {
         OperatonSupport.run(() -> tasks.setVariablesLocal(taskId, locals));
     }
 
+    private volatile TaskFormRequirements formRequirements;
+
+    /** SL-77: binds the form-requirement reader; completion then refuses a task whose required form fields are empty. */
+    public void setFormRequirements(TaskFormRequirements formRequirements) {
+        this.formRequirements = formRequirements;
+    }
+
+    /**
+     * SL-77: every required field of the task's Sangam form must have a value in the task's variables after the
+     * submission ({@code values} = current variables + submitted ones), else 422 {@code REQUIRED_FIELDS_MISSING} naming
+     * the fields. Runs inside the completing transaction, before the engine completes the task.
+     */
+    private void requireFormFields(org.operaton.bpm.engine.task.Task t, Map<String, Object> values) {
+        TaskFormRequirements reqs = formRequirements;
+        if (reqs == null) {
+            return;
+        }
+        String key = safeFormKey(t);
+        List<String> missing = TaskFormRequirements.missing(
+                reqs.requiredForTask(t.getProcessDefinitionId(), t.getCaseDefinitionId(), key), values);
+        if (!missing.isEmpty()) {
+            throw TaskFormRequirements.problem(key, missing);
+        }
+    }
+
     @Override
     public CompleteTaskResult complete(RequestContext ctx, String taskId, CompleteTaskRequest r) {
         CompleteTaskRequest req = r == null
@@ -557,6 +592,7 @@ public class OperatonTaskAdapter implements TaskPort {
             submit.put(ACTORS, appendActor(vars.get(ACTORS), ctx.principalId()));
             Map<String, Object> after = new HashMap<>(vars);
             after.putAll(submit);
+            requireFormFields(t, after);
             String hashAfter = PayloadHash.hash(after);
             String pi = t.getProcessInstanceId();
             setActingLocals(ctx, taskId, req.payloadHash());

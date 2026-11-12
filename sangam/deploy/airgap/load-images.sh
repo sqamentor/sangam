@@ -23,9 +23,12 @@ done
 sha256sum --strict --quiet -c SHA256SUMS
 echo "checksums OK"
 
+# Integrity is enforced above: SHA256SUMS covers every image tarball, so a modified bundle is refused before any load.
+# The digest column is the registry provenance save-images.sh recorded (RepoDigest, or "none" for a local build);
+# docker load does not restore RepoDigests, so it is reported for the operator's record here, not re-checked.
 while read -r group ref digest file; do
   case "$group" in ''|\#*) continue ;; esac
-  echo ">> load $ref ($group)"
+  echo ">> load $ref ($group, source digest: $digest)"
   gunzip -c "$file" | docker load
   if [ -n "$REGISTRY" ]; then
     path="${ref#*/}"                       # strip the source registry host

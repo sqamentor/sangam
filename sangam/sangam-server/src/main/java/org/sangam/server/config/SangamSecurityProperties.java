@@ -13,6 +13,10 @@ public class SangamSecurityProperties {
     private final DevToken devToken = new DevToken();
     private final Claims claims = new Claims();
     private final Cors cors = new Cors();
+    /** SL-70: issuers whose tokens are platform identities ({@code sangam.security.platform-issuer}); empty = nobody. */
+    private List<String> platformIssuer = new ArrayList<>();
+    /** SL-70: JWKS of the platform issuer instead of OIDC discovery (only with exactly one platform issuer). */
+    private String platformJwkSetUri;
 
     public DevToken getDevToken() {
         return devToken;
@@ -26,13 +30,44 @@ public class SangamSecurityProperties {
         return cors;
     }
 
+    public List<String> getPlatformIssuer() {
+        return platformIssuer;
+    }
+
+    public void setPlatformIssuer(List<String> platformIssuer) {
+        this.platformIssuer = platformIssuer == null ? new ArrayList<>() : platformIssuer;
+    }
+
+    public String getPlatformJwkSetUri() {
+        return platformJwkSetUri;
+    }
+
+    public void setPlatformJwkSetUri(String platformJwkSetUri) {
+        this.platformJwkSetUri = platformJwkSetUri;
+    }
+
+    /** The SL-70 platform issuer policy of this configuration. */
+    public org.sangam.server.security.PlatformIssuers platformIssuers() {
+        return new org.sangam.server.security.PlatformIssuers(platformIssuer);
+    }
+
     /** Static bearer token for development only; refused on the {@code prod} profile. */
     public static class DevToken {
         private boolean enabled = false;
         private String token;
         private String tenant = "dev";
         private String principal = "dev-admin";
+        /** SL-70: the dev token's issuer; a platform identity only if listed in {@code sangam.security.platform-issuer}. */
+        private String issuer = org.sangam.server.security.PlatformIssuers.DEV_TOKEN_ISSUER;
         private List<String> groups = new ArrayList<>(List.of("sangam-user"));
+
+        public String getIssuer() {
+            return issuer;
+        }
+
+        public void setIssuer(String issuer) {
+            this.issuer = issuer;
+        }
 
         public boolean isEnabled() {
             return enabled;

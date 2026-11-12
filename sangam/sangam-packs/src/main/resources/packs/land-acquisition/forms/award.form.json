@@ -1,6 +1,6 @@
 {
   "key": "land-acquisition/award",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.land-acquisition",
   "title": {
     "en": "Make award (s.23)",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "awardAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Award amount (INR)",

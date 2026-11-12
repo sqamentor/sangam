@@ -105,7 +105,7 @@ budgetControl:
   - BRO
   - AUTHORISATION
 dbtBurst:
-  maxPerDay: 6000CR
+  maxPerDay: 6000000000000
 classification:
   defaultScheme: HOA
 procurement:

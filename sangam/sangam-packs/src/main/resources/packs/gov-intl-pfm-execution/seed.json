@@ -1,0 +1,158 @@
+{
+  "offices": [
+    {
+      "id": "MINISTRY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "BUDGET-HOLDER",
+      "role": "BUDGETHOLDER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Budget holder",
+        "hi": "बजट धारक"
+      }
+    },
+    {
+      "id": "COMMITMENT-OFFICER",
+      "role": "COMMITMENT-OFFICER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Commitment officer",
+        "hi": "प्रतिबद्धता अधिकारी"
+      }
+    },
+    {
+      "id": "ACCOUNTING-OFFICER",
+      "role": "ACCOUNTING-OFFICER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    },
+    {
+      "id": "VERIFIER",
+      "role": "VERIFIER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Receiving and verifying officer",
+        "hi": "सत्यापन अधिकारी"
+      }
+    },
+    {
+      "id": "CERTIFYING-OFFICER",
+      "role": "CERTIFIER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Certifying officer",
+        "hi": "प्रमाणन अधिकारी"
+      }
+    },
+    {
+      "id": "BUDGET-OFFICE",
+      "role": "BUDGETOFFICE",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Budget office",
+        "hi": "बजट कार्यालय"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "BUDGET-HOLDER",
+      "person": "ipf.budget-holder",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COMMITMENT-OFFICER",
+      "person": "ipf.commitment-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ACCOUNTING-OFFICER",
+      "person": "ipf.accounting-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "VERIFIER",
+      "person": "ipf.verifier",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "CERTIFYING-OFFICER",
+      "person": "ipf.certifying-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BUDGET-OFFICE",
+      "person": "ipf.budget-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "BUDGETHOLDER",
+      "name": {
+        "en": "Budget holder",
+        "hi": "बजट धारक"
+      }
+    },
+    {
+      "code": "COMMITMENT-OFFICER",
+      "name": {
+        "en": "Commitment officer",
+        "hi": "प्रतिबद्धता अधिकारी"
+      }
+    },
+    {
+      "code": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    },
+    {
+      "code": "VERIFIER",
+      "name": {
+        "en": "Receiving and verifying officer",
+        "hi": "सत्यापन अधिकारी"
+      }
+    },
+    {
+      "code": "CERTIFIER",
+      "name": {
+        "en": "Certifying officer",
+        "hi": "प्रमाणन अधिकारी"
+      }
+    },
+    {
+      "code": "BUDGETOFFICE",
+      "name": {
+        "en": "Budget office",
+        "hi": "बजट कार्यालय"
+      }
+    }
+  ]
+}

@@ -15,7 +15,6 @@ import org.sangam.config.profile.ProfileLoader;
 import org.sangam.config.profile.ProfileResolver;
 import org.sangam.config.profile.ResolvedProfile;
 
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -29,6 +28,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ProfileDataTest {
 
     static final Path DIR = Path.of("..", "sangam-packs", "src", "main", "resources", "profiles");
+
+    /**
+     * SL-97: every money ledger (kind LIMIT or RECEIVABLE, LIMIT by default) of every jurisdiction-level profile and
+     * below carries a currency equal to that profile's own {@code locale.currency}. The regime and international presets
+     * are currency-neutral (layers.yaml requires locale.currency from the jurisdiction layer down), so the currency
+     * comes from the jurisdiction. Without it the ledger wrote NULL-currency rows and the first posting failed
+     * (IfmsPacksIT set-up, 2026-11-11: JdbcLedgerStore.currencyOf, NullPointerException).
+     */
+    @Test
+    void everyMoneyLedgerHasItsProfileCurrency() throws Exception {
+        List<ProfileDocument> docs = ProfileLoader.loadDirectory(DIR);
+        LayerModel layers = LayerModel.from(ProfileLoader.parseTree(Files.readString(DIR.resolve("layers.yaml"))).get("layers"));
+        ProfileResolver r = new ProfileResolver(InMemoryProfileRepository.active(docs), layers);
+        int ledgers = 0;
+        for (ProfileDocument d : docs) {
+            if (d.layer().equals("international") || d.layer().equals("regime")) {
+                continue;
+            }
+            ResolvedProfile p = r.resolve(d.id(), LocalDate.of(2026, 11, 5));
+            String ccy = p.str("locale.currency", null);
+            for (java.util.Map<String, Object> l : p.list("ledgers")) {
+                String kind = String.valueOf(l.getOrDefault("kind", "LIMIT")).toUpperCase(java.util.Locale.ROOT);
+                if (!kind.equals("LIMIT") && !kind.equals("RECEIVABLE")) {
+                    continue;
+                }
+                ledgers++;
+                assertTrue(l.get("currency") != null, d.id() + ": money ledger " + l.get("id") + " has no currency");
+                assertTrue(ccy != null, d.id() + ": money ledgers but no locale.currency");
+                assertEquals(ccy, l.get("currency"), d.id() + ": ledger " + l.get("id") + " currency vs locale.currency");
+            }
+        }
+        assertTrue(ledgers >= 37 + 9, "the Indian governments and departments resolve their BUDGET ledger: " + ledgers);
+    }
 
     @Test
     void everyGovernmentAndDepartmentChainResolvesWithoutErrors() throws Exception {
@@ -84,7 +116,9 @@ class ProfileDataTest {
         assertFalse(hr.list("rulebooks.own").isEmpty(), "Haryana adopts the Punjab rulebooks");
         ResolvedProfile rail = r.resolve("GOI.RAILWAYS", LocalDate.of(2026, 11, 5));
         assertEquals("RAILWAY_BOARD_SOP", rail.str("regime.delegationBook", null));
-        assertEquals(new BigDecimal("1000000000"), r.resolve("GOI", LocalDate.of(2026, 11, 5)).amount("appraisal.ladder.0.upTo", null));
+        // SL-102: the 100 crore band is typed money (integer paise + the profile currency), no longer the text "100CR"
+        assertEquals(org.sangam.core.money.Money.ofMinor(100_000_000_000L, "INR"),
+                r.resolve("GOI", LocalDate.of(2026, 11, 5)).money("appraisal.ladder.0.upTo"));
     }
 
     @Test
@@ -144,13 +178,16 @@ class ProfileDataTest {
         for (String id : List.of("INTL", "GOI", "RJ")) {
             assertFalse(r.resolve(id, d).placeholders().containsKey("classification.schemes.COFOG"), id);
         }
-        // GA-55 is an employee-wise yearly report template, not a code-list placeholder; its official form stays [U]
+        // GA-55 is an employee-wise yearly report template, not a code-list placeholder; its official form stays [U].
+        // APPROVE-401 step 2b: a report is not a bill type, so it is a formTemplates row, outside the bill catalogue
         ResolvedProfile rj = r.resolve("RJ", d);
         assertTrue(rj.placeholders().keySet().stream().noneMatch(k -> k.contains("GA-55")), rj.placeholders().toString());
-        var ga55 = DocumentTypeCatalogue.of(rj).all().stream().filter(t -> "GA-55".equals(t.formNumber())).findFirst().orElseThrow();
-        assertEquals("REPORT", ga55.raw().get("kind"));
-        assertEquals("U", ((java.util.Map<?, ?>) ((java.util.Map<?, ?>) ga55.raw().get("evidence")).get("fieldLayout")).get("status"));
-        assertEquals(List.of("employee", "year", "month"), ((java.util.Map<?, ?>) ga55.raw().get("report")).get("parameters"));
+        assertTrue(DocumentTypeCatalogue.of(rj).byReference("RJ_GA_55").isEmpty(), "the GA-55 report is no bill type");
+        var ga55 = rj.list("formTemplates").stream().filter(t -> "RJ:GA 55".equals(t.get("formNumber"))).findFirst().orElseThrow();
+        assertEquals("RJ_GA_55", ga55.get("id"));
+        assertEquals("REPORT", ga55.get("formKind"));
+        assertEquals("U", ((java.util.Map<?, ?>) ((java.util.Map<?, ?>) ga55.get("evidence")).get("fieldLayout")).get("status"));
+        assertEquals(List.of("employee", "year", "month"), ((java.util.Map<?, ?>) ga55.get("report")).get("parameters"));
         ResolvedProfile intl = r.resolve("INTL", d);
         List<org.sangam.config.master.MasterCode> rows =
                 SeedLoader.csv("INTL", Files.readString(DIR.resolve("intl/seeds/cofog.csv")));
@@ -186,5 +223,38 @@ class ProfileDataTest {
 
     private static boolean hasCode(List<Finding> f, String code) {
         return f.stream().anyMatch(x -> code.equals(x.code()));
+    }
+
+    /**
+     * SL-125 (owner 2026-11-12, fail closed core-wide): the US health revenue-cycle reference has no fiscal year (the
+     * tenant sets it). It resolves without errors on the shipped layer model (locale.fiscal is no longer a layer
+     * requirement), with a FISCAL_NOT_CONFIGURED warning, and a fiscal operation is refused naming US and locale.fiscal;
+     * every other shipped jurisdiction, government and department chain carries a complete fiscal calendar.
+     */
+    @Test
+    void usHasNoFiscalYearAndRefusesFiscalOperationsWhileEveryOtherChainHasOne() throws Exception {
+        List<ProfileDocument> docs = ProfileLoader.loadDirectory(DIR);
+        LayerModel layers = LayerModel.from(ProfileLoader.parseTree(Files.readString(DIR.resolve("layers.yaml"))).get("layers"));
+        ProfileResolver r = new ProfileResolver(InMemoryProfileRepository.active(docs), layers);
+        ResolvedProfile us = r.resolve("US", LocalDate.of(2026, 11, 12));
+        assertTrue(Finding.errors(us.findings()).isEmpty(), "US: " + Finding.errors(us.findings()));
+        assertTrue(us.findings().stream().anyMatch(f -> f.severity() == Finding.Severity.WARNING
+                && f.code().equals(ProfileResolver.FISCAL_NOT_CONFIGURED)), us.findings()::toString);
+        assertFalse(us.locale().hasFiscal());
+        org.sangam.config.locale.FiscalYearNotConfiguredException e = org.junit.jupiter.api.Assertions.assertThrows(
+                org.sangam.config.locale.FiscalYearNotConfiguredException.class, () -> us.locale().fiscal());
+        assertTrue(e.getMessage().contains("US") && e.getMessage().contains("locale.fiscal"), e.getMessage());
+        assertEquals("USD", us.locale().money().currency().getCurrencyCode());
+        int withFiscal = 0;
+        for (ProfileDocument d : docs) {
+            if (d.id().equals("US") || !List.of("jurisdiction", "government", "department").contains(d.layer())) {
+                continue;
+            }
+            ResolvedProfile p = r.resolve(d.id(), LocalDate.of(2026, 11, 12));
+            assertTrue(p.locale().hasFiscal(), d.id() + ": " + p.locale().fiscalProblem());
+            assertTrue(p.findings().stream().noneMatch(f -> f.code().startsWith("FISCAL_")), d.id() + ": " + p.findings());
+            withFiscal++;
+        }
+        assertEquals(1 + 7 + 37 + 9, withFiscal); // IN, the seven INTL countries, GOI + 36 States / UTs, 9 GOI departments
     }
 }

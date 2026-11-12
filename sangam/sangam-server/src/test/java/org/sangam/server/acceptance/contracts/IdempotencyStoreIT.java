@@ -34,16 +34,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** X.2.2: claim, same-transaction completion, replay, 422 conflicts, takeover, outcome classification. */
 class IdempotencyStoreIT extends LayerSpecSupport {
 
-    final IdempotencyStore store = new IdempotencyStore(PG, TX, "node-a", Duration.ofSeconds(30), Duration.ofHours(24), Duration.ofDays(30));
+    final IdempotencyStore store = new IdempotencyStore(DIALECT, TX, "node-a", Duration.ofSeconds(30), Duration.ofHours(24), Duration.ofDays(30));
     final byte[] fp = IdempotencyStore.fingerprint("process.start", "POST", "/process-definitions/{key}/start",
             Map.of("key", "bill"), Map.of(), Map.of("amount", "1250.50", "payee", "P-17"));
 
     @BeforeAll
     void businessTable() throws SQLException {
         ensureIso();
-        try (Connection c = DS.getConnection(); Statement st = c.createStatement()) {
-            st.execute("CREATE TABLE IF NOT EXISTS BUSINESS_START (id VARCHAR(64) PRIMARY KEY, tenant_id VARCHAR(64))");
-        }
+        createTableIfMissing("BUSINESS_START", "CREATE TABLE BUSINESS_START (id {str64} PRIMARY KEY, tenant_id {str64})");
     }
 
     @BeforeEach
@@ -152,7 +150,7 @@ class IdempotencyStoreIT extends LayerSpecSupport {
 
     @Test
     void expiredClaimIsTakenOverAndTheOldOwnerIsFencedOut() throws Exception {
-        IdempotencyStore shortClaims = new IdempotencyStore(PG, TX, "node-b", Duration.ofMillis(150), Duration.ofHours(1), Duration.ofDays(1));
+        IdempotencyStore shortClaims = new IdempotencyStore(DIALECT, TX, "node-b", Duration.ofMillis(150), Duration.ofHours(1), Duration.ofDays(1));
         New first = (New) shortClaims.begin("t1", "process.start", "k-t", "alice", fp);
         Thread.sleep(400);
         New second = (New) shortClaims.begin("t1", "process.start", "k-t", "alice", fp);
@@ -178,7 +176,7 @@ class IdempotencyStoreIT extends LayerSpecSupport {
 
         // compaction after response retention, then key expiry
         // margins wide enough for a slower database round trip (MySQL on Docker Desktop: complete -> cleanup ~100 ms more)
-        IdempotencyStore shortRetention = new IdempotencyStore(PG, TX, "node-c", Duration.ofSeconds(30), Duration.ofMillis(300), Duration.ofMillis(2000));
+        IdempotencyStore shortRetention = new IdempotencyStore(DIALECT, TX, "node-c", Duration.ofSeconds(30), Duration.ofMillis(300), Duration.ofMillis(2000));
         New d = (New) shortRetention.begin("t1", "process.start", "k-ret", "alice", fp);
         run(c -> shortRetention.complete(c, d.claim(), 201, "{\"big\":true}".getBytes(), "root-r"));
         Thread.sleep(600);

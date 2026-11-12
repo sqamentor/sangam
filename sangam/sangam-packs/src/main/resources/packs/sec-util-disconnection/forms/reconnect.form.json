@@ -1,6 +1,6 @@
 {
   "key": "sec-util-disconnection/reconnect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.util.disconnection",
   "title": {
     "en": "Reconnect supply",

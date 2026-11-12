@@ -1,6 +1,6 @@
 {
   "key": "sec-tel-mnp-port-in/request",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.tel.mnp-port-in",
   "title": {
     "en": "Port-in request",

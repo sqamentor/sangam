@@ -26,10 +26,37 @@ import java.util.Map;
  *   calendars: {government: {...}, settlement: {...}}   # BusinessCalendar shapes
  *   exchangeRates: [...]
  * </pre>
+ * SL-125 (fail closed): {@code fiscal} is optional. Without it, or with an incomplete one, the locale still builds (money,
+ * zone, languages and calendars keep working) and {@link #fiscal()} refuses with {@link FiscalYearNotConfiguredException}
+ * naming the profile and {@code locale.fiscal}; {@link #hasFiscal()} tells the two apart. No fiscal year is ever assumed.
+ *
+ * @param fiscal        the fiscal calendar, or null when none (or an invalid one) is configured; read it with
+ *                      {@link #fiscal()}
+ * @param fiscalProblem why {@code locale.fiscal} is unusable when it is present but incomplete (null otherwise)
+ * @param subject       the profile the locale came from (scope and binding), named in the refusal
  */
 public record LocaleSettings(ZoneId zone, MoneyFormat money, FiscalCalendar fiscal, List<Language> languages,
                              Map<String, List<String>> regionLanguages, Map<String, BusinessCalendar> calendars,
-                             ExchangeRates exchangeRates) {
+                             ExchangeRates exchangeRates, String fiscalProblem, String subject) {
+
+    /** True when a complete fiscal calendar is configured. */
+    public boolean hasFiscal() {
+        return fiscal != null;
+    }
+
+    /** The fiscal calendar; refuses (never assumes one) when {@code locale.fiscal} is absent or incomplete. */
+    @Override
+    public FiscalCalendar fiscal() {
+        if (fiscal != null) {
+            return fiscal;
+        }
+        String who = subject == null ? "this profile" : subject;
+        if (fiscalProblem != null) {
+            throw new FiscalYearNotConfiguredException("the fiscal year of " + who + " is incomplete: " + fiscalProblem
+                    + "; fiscal operations are refused until " + FiscalYearNotConfiguredException.PATH + " is complete");
+        }
+        throw FiscalYearNotConfiguredException.forSubject(who);
+    }
 
     /** A language with its BCP 47 tag, ISO 15924 script and text direction. */
     public record Language(String tag, String script, String direction, boolean isDefault) {
@@ -39,6 +66,11 @@ public record LocaleSettings(ZoneId zone, MoneyFormat money, FiscalCalendar fisc
     }
 
     public static LocaleSettings from(Map<String, Object> m) {
+        return from(m, null);
+    }
+
+    /** {@code subject}: the profile (scope and binding) named when a fiscal operation is refused. */
+    public static LocaleSettings from(Map<String, Object> m, String subject) {
         ZoneId zone = ZoneId.of(Tree.str(m.get("zone"), "UTC"));
         String ccy = Tree.str(m.get("currency"), null);
         Map<String, BigDecimal> units = new LinkedHashMap<>();
@@ -59,8 +91,15 @@ public record LocaleSettings(ZoneId zone, MoneyFormat money, FiscalCalendar fisc
         Tree.map(m.get("regions")).forEach((k, v) -> regions.put(k, Tree.strings(v)));
         Map<String, BusinessCalendar> cals = new LinkedHashMap<>();
         Tree.map(m.get("calendars")).forEach((k, v) -> cals.put(k, BusinessCalendar.from(k, Tree.map(v), zone)));
-        return new LocaleSettings(zone, money, FiscalCalendar.from(Tree.map(m.get("fiscal")), zone), List.copyOf(langs),
-                Map.copyOf(regions), Map.copyOf(cals), ExchangeRates.from(m.get("exchangeRates")));
+        FiscalCalendar fiscal = null;
+        String fiscalProblem = null;
+        try {
+            fiscal = FiscalCalendar.from(Tree.map(m.get("fiscal")), zone).orElse(null);
+        } catch (RuntimeException e) {   // incomplete or invalid: kept as the reason fiscal() gives, never a default
+            fiscalProblem = e.getMessage();
+        }
+        return new LocaleSettings(zone, money, fiscal, List.copyOf(langs), Map.copyOf(regions), Map.copyOf(cals),
+                ExchangeRates.from(m.get("exchangeRates")), fiscalProblem, subject);
     }
 
     public BusinessCalendar calendar(String name) {

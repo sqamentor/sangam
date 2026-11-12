@@ -23,16 +23,22 @@ public class NumberService {
     private static final Pattern SEQ = Pattern.compile("\\{seq(?::(\\d+))?}");
 
     private final Dialect dialect;
-    private final ZoneId zone;
+    private final java.util.function.Function<String, ZoneId> zones;
 
-    public NumberService(Dialect dialect, ZoneId zone) {
+    /** {@code zones}: the business zone of a tenant (its year and month periods); null = UTC for every tenant. */
+    public NumberService(Dialect dialect, java.util.function.Function<String, ZoneId> zones) {
         this.dialect = dialect;
-        this.zone = zone == null ? ZoneId.of("UTC") : zone;
+        this.zones = zones == null ? t -> java.time.ZoneOffset.UTC : zones;
+    }
+
+    private ZoneId zone(String tenant) {
+        ZoneId z = zones.apply(tenant);
+        return z == null ? java.time.ZoneOffset.UTC : z;
     }
 
     public String next(Connection c, String tenant, CaseConfig.Numbering n, String orgCode, Instant at) {
         String t = Db.tenant(tenant);
-        ZonedDateTime z = at.atZone(zone);
+        ZonedDateTime z = at.atZone(zone(tenant));
         String period = switch (n.reset()) {
             case "NEVER" -> "-";
             case "MONTHLY" -> String.format("%04d-%02d", z.getYear(), z.getMonthValue());

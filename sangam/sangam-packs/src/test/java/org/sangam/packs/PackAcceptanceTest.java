@@ -38,7 +38,9 @@ import org.sangam.packs.spi.PackRegistry;
  * SL-32: every acceptance scenario a pack ships ({@code pack.json} {@code acceptance[]}) is executed. The scenario
  * starts the pack's process with its {@code startVariables}; every task is answered from configuration by
  * {@link FormAnswers}, with the scenario's own answers ({@code run.answers}: task key → variables, applied to the
- * first {@code times} completions of that task) where the scenario steers the case; then its machine-checkable outcome
+ * first {@code times} completions of that task) where the scenario steers the case, and its {@code run.steps}
+ * ({@link AcceptanceSteps}: advance the scenario clock, complete one occurrence, correlate a message, set variables,
+ * each when its activity is waiting; every step must have been applied); then its machine-checkable outcome
  * is asserted: {@code expectState} (the case state), and {@code run.expect} ({@code tasks}: the completed tasks contain
  * this sequence in order; {@code audit} / {@code notAudit}: audit event types present / absent; {@code ended}: the case
  * ended or is still waiting; {@code refusedAt}: completing this task is refused with this message code). A scenario
@@ -62,7 +64,7 @@ class PackAcceptanceTest {
         cfg.setHistory("full");
         engine = cfg.buildProcessEngine();
         new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
-        driver = new PackDriver(engine);
+        driver = new PackDriver(engine).withWorkers(); // external tasks too: the simulator stands in for the worker
     }
 
     @AfterAll
@@ -103,6 +105,86 @@ class PackAcceptanceTest {
         return out;
     }
 
+    /**
+     * {@code expect.merit} (GP-26 / GP-28 / GP-47): the merit-list outputs of the case ({@code MeritListDelegate},
+     * {@code WaitlistDelegate}): {@code selected} (the {@code selectedKeys} in order), {@code waitlist} (keys in
+     * order), {@code scores} (key to the score the merit list used), {@code allotted} (key to the category post),
+     * {@code promoted} (the {@code promotedKey}). Keys are the cases the scenario started ({@code <scenario>/<key>}),
+     * written without the scenario prefix.
+     */
+    static void assertMerit(JsonNode merit, String bk, String report) {
+        if (merit.isMissingNode()) {
+            return;
+        }
+        String p = bk + "/";
+        if (merit.has("selected")) {
+            List<String> want = new ArrayList<>();
+            merit.path("selected").forEach(n -> want.add(p + n.asText()));
+            Object got = driver.var(bk, "selectedKeys");
+            assertEquals(want, got == null || got.toString().isBlank() ? List.of()
+                    : List.of(got.toString().split(",")), report + ": selectedKeys");
+        }
+        Map<String, JsonNode> rows = new java.util.LinkedHashMap<>();
+        jsonOf(driver.var(bk, "meritList")).forEach(r -> rows.put(r.path("key").asText(), r));
+        if (merit.has("waitlist")) {
+            List<String> want = new ArrayList<>();
+            merit.path("waitlist").forEach(n -> want.add(p + n.asText()));
+            List<String> got = new ArrayList<>();
+            jsonOf(driver.var(bk, "waitlist")).forEach(r -> got.add(r.path("key").asText()));
+            assertEquals(want, got, report + ": waitlist");
+        }
+        for (Iterator<Map.Entry<String, JsonNode>> it = merit.path("scores").fields(); it.hasNext(); ) {
+            Map.Entry<String, JsonNode> e = it.next();
+            JsonNode row = rows.get(p + e.getKey());
+            assertTrue(row != null, report + ": " + e.getKey() + " is not on the merit list");
+            assertEquals(0, e.getValue().decimalValue().compareTo(row.path("score").decimalValue()),
+                    report + ": score of " + e.getKey() + " was " + row.path("score"));
+        }
+        for (Iterator<Map.Entry<String, JsonNode>> it = merit.path("allotted").fields(); it.hasNext(); ) {
+            Map.Entry<String, JsonNode> e = it.next();
+            JsonNode row = rows.get(p + e.getKey());
+            assertTrue(row != null, report + ": " + e.getKey() + " is not on the merit list");
+            assertEquals(e.getValue().asText(), row.path("allotted").asText(), report + ": post of " + e.getKey());
+        }
+        if (merit.hasNonNull("promoted")) {
+            assertEquals(p + merit.path("promoted").asText(), String.valueOf(driver.var(bk, "promotedKey")),
+                    report + ": promoted from the waitlist");
+        }
+    }
+
+    private static JsonNode jsonOf(Object v) {
+        if (v == null) {
+            return JSON.createArrayNode();
+        }
+        try {
+            return JSON.readTree(v instanceof byte[] b ? new String(b, StandardCharsets.UTF_8) : v.toString());
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
+    /** A pack's first main process ({@code pack.json mainProcesses}), for a {@code run.steps} start of that pack. */
+    static String mainOf(String packId) {
+        ClassLoader cl = PackAcceptanceTest.class.getClassLoader();
+        try (InputStream idx = cl.getResourceAsStream("META-INF/sangam/packs.idx")) {
+            for (String line : new String(idx.readAllBytes(), StandardCharsets.UTF_8).split("\n")) {
+                String path = line.trim();
+                if (path.isEmpty() || path.startsWith("#")) {
+                    continue;
+                }
+                try (InputStream in = cl.getResourceAsStream(path)) {
+                    JsonNode m = JSON.readTree(in);
+                    if (packId.equals(m.path("id").asText())) {
+                        return m.path("mainProcesses").path(0).asText();
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+        throw new IllegalArgumentException("no pack " + packId);
+    }
+
     static boolean checkable(Scenario s) {
         return !s.run().hasNonNull("manual") && (s.node().hasNonNull("expectState") || s.run().has("expect"));
     }
@@ -136,9 +218,19 @@ class PackAcceptanceTest {
         String key = run.path("process").asText(s.main().get(0));
         String bk = "ACC/" + s.pack() + "/" + s.id();
         // each scenario is its own "given": no simulator, ledger, batch or audit state from another one (seed seats stay)
+        // ... and its own clock: run.steps advance the engine and the pack clock together, reset after the scenario
+        driver.resetClock();
         PackRuntime.install(PackRuntime.ports().withGateway(new org.sangam.packs.sim.SimulatorConnectorGateway())
                 .withAudit(new LoggingAuditSink()).withLedgers(new org.sangam.packs.sim.InMemoryLedgerStore())
-                .withBatches(new org.sangam.packs.sim.InMemoryBatchLedger()));
+                .withBatches(new org.sangam.packs.sim.InMemoryBatchLedger()).withClock(PackDriver.clock()));
+        try {
+            drive(s, run, key, bk);
+        } finally {
+            driver.resetClock();
+        }
+    }
+
+    private static void drive(Scenario s, JsonNode run, String key, String bk) {
         String stopAt = run.path("stopAt").asText(null);
         Map<String, Object> vars = AllPacksSmokeTest.bag();
         vars.putAll(JSON.convertValue(s.node().path("startVariables"), Map.class));
@@ -149,7 +241,9 @@ class PackAcceptanceTest {
         JsonNode answers = run.path("answers");
         JsonNode expect = run.path("expect");
         String refusedAt = expect.path("refusedAt").path("task").asText(null);
+        AcceptanceSteps steps = new AcceptanceSteps(engine, driver, bk, run.path("steps"), PackAcceptanceTest::mainOf);
         List<String> done = new ArrayList<>();
+        List<String> progress = new ArrayList<>(); // the tasks completed so far, as of the current driver turn
         String refusal = null;
         try {
             done.addAll(driver.run(bk, t -> {
@@ -170,14 +264,21 @@ class PackAcceptanceTest {
                         a = new PackDriver.Answer(o.path("person").asText(), a.seat(), a.vars());
                     }
                 }
-                return a;
-            }, 120));
+                return steps.answer(t, a, progress); // a run.steps "complete" is the most specific answer
+            }, 120, d -> {
+                progress.clear();
+                progress.addAll(d);
+                return steps.beforeTurn(d);
+            }));
         } catch (RuntimeException e) {
             if (refusedAt == null) {
                 throw e;
             }
             refusal = String.valueOf(e.getMessage());
+            done.addAll(progress); // the completions before the refused one
         }
+        assertTrue(steps.pending().isEmpty(), s.pack() + "/" + s.id() + ": run.steps never reached " + steps.pending()
+                + " (done " + (done.isEmpty() ? progress : done) + ")");
         List<PackAuditEvent> audit = ((LoggingAuditSink) PackRuntime.audit()).timeline(bk);
         Set<String> types = new LinkedHashSet<>();
         audit.forEach(e -> types.add(e.type()));
@@ -210,6 +311,25 @@ class PackAcceptanceTest {
         }
         for (JsonNode a : expect.path("notAudit")) {
             assertFalse(types.contains(a.asText()), report + ": unexpected " + a.asText());
+        }
+        // batch rounds (GP-09 / GP-49): the item keys of the child cases started in each round, read from their
+        // business keys <batch>:<round>:<item> (BatchDelegate FAN_OUT; the batch id is the case's business key)
+        for (Iterator<Map.Entry<String, JsonNode>> it = expect.path("batchRounds").fields(); it.hasNext(); ) {
+            Map.Entry<String, JsonNode> e = it.next();
+            String prefix = bk + ":" + e.getKey() + ":";
+            Set<String> items = new java.util.TreeSet<>();
+            engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceBusinessKeyLike(prefix + "%")
+                    .list().forEach(p -> items.add(p.getBusinessKey().substring(prefix.length())));
+            Set<String> want = new java.util.TreeSet<>();
+            e.getValue().forEach(n -> want.add(n.asText()));
+            assertEquals(want, items, report + ": items of batch round " + e.getKey());
+        }
+        assertMerit(expect.path("merit"), bk, report);
+        // case variables at the end (the root process instance), compared as text so 1 == 1L
+        for (Iterator<Map.Entry<String, JsonNode>> it = expect.path("vars").fields(); it.hasNext(); ) {
+            Map.Entry<String, JsonNode> e = it.next();
+            assertEquals(String.valueOf(JSON.convertValue(e.getValue(), Object.class)),
+                    String.valueOf(driver.var(bk, e.getKey())), report + ": variable " + e.getKey());
         }
         if (!expect.path("incident").asBoolean(false)) {
             Set<String> mine = new java.util.HashSet<>();

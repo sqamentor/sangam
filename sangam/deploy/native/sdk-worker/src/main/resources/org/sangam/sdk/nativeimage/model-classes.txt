@@ -34,3 +34,5 @@ org.sangam.sdk.model.TerminateRequest
 org.sangam.sdk.model.TerminationResult
 org.sangam.sdk.model.TypedValue
 org.sangam.sdk.model.UnlockRequest
+org.sangam.sdk.model.WorkOperation
+org.sangam.sdk.model.WorkOutcome

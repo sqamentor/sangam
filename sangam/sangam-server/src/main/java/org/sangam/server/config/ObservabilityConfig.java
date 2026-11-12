@@ -38,6 +38,53 @@ public class ObservabilityConfig {
         return reg;
     }
 
+    /**
+     * SL-45: the outermost request scope of the MDC. Whatever a filter, a controller or an engine command puts into the
+     * MDC while a request runs ({@code Telemetry}'s {@code sangam.*} and {@code enduser.id} keys, some set by
+     * {@code IdempotencyFilter} before {@link MdcFilter} runs) is gone when the request ends. Before, only the four keys of
+     * {@link MdcFilter} were removed, so a pooled thread carried one tenant's business key, process instance id, command
+     * type and idempotency key into the log lines of another tenant's later requests (rerun 4 of
+     * {@code CrossTenantIsolationIT}: tenant A's lines logged tenant B's {@code business_key} and
+     * {@code process_instance_id}).
+     */
+    @Bean
+    public FilterRegistrationBean<Filter> sangamMdcScopeFilter() {
+        FilterRegistrationBean<Filter> reg = new FilterRegistrationBean<>(new MdcScopeFilter());
+        reg.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        reg.addUrlPatterns("/*");
+        reg.setDispatcherTypes(jakarta.servlet.DispatcherType.REQUEST, jakarta.servlet.DispatcherType.ERROR,
+                jakarta.servlet.DispatcherType.ASYNC);
+        return reg;
+    }
+
+    /** Restores the MDC of the thread to what it was before the request (or dispatch). */
+    static final class MdcScopeFilter extends OncePerRequestFilter {
+        @Override
+        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+                throws ServletException, IOException {
+            java.util.Map<String, String> previous = MDC.getCopyOfContextMap();
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                if (previous == null || previous.isEmpty()) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(previous);
+                }
+            }
+        }
+
+        @Override
+        protected boolean shouldNotFilterAsyncDispatch() {
+            return false;
+        }
+
+        @Override
+        protected boolean shouldNotFilterErrorDispatch() {
+            return false;
+        }
+    }
+
     static final class MdcFilter extends OncePerRequestFilter {
         @Override
         protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)

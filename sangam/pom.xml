@@ -70,7 +70,7 @@
     <version.liquibase>4.33.0</version.liquibase>
     <!-- SG-28: runtime dependency of Operaton's StrongUuidGenerator; operaton-engine 2.2.0 builds against 5.2.0 -->
     <version.java-uuid-generator>5.2.0</version.java-uuid-generator>
-    <!-- SG-27 / OneIFMS SD-301 owner exception: Operaton DMN FEEL engine, exactly the versions operaton-engine-dmn
+    <!-- SG-27 consumer licence-policy exception (owner decision): Operaton DMN FEEL engine, exactly the versions operaton-engine-dmn
          2.2.0 resolves (verified licences in deploy/licence/SG-27-SD-301-exception.md). Any change is re-verified;
          sangam-bom pins the same (BomPinsTest). scala-library 2.13.18 = the highest of 2.13.8/2.13.14/2.13.18 asked
          for by fastparse/sourcecode/geny/feel-engine, so the tree converges on what Maven already picked. -->
@@ -94,6 +94,25 @@
     <!-- Build output folder per module. Concurrent builds of one checkout must each pass their own -Dsangam.target=...:
          a shared target/ is rewritten under a running javac ("package does not exist"). -->
     <sangam.target>target</sangam.target>
+    <!-- M-094 / M-095 build-time tools (owner download approval batch 1, 2026-11-12). Never shipped: the enforcer rule
+         below and deploy/licence/licence-policy.json (forbidden_components, build_time_tools) keep them out of every
+         shipped scope. Every gate they drive is report-only (no build failure) until the test-phase triage. -->
+    <version.errorprone>2.52.0</version.errorprone>
+    <version.nullaway>0.14.3</version.nullaway>
+    <!-- LGPL build-only tools, allowed by the owner decision of 2026-11-12 (licence-policy.json build_time_tools) -->
+    <version.spotbugs-maven-plugin>4.10.5.0</version.spotbugs-maven-plugin>
+    <version.spotbugs>4.10.5</version.spotbugs>
+    <version.findsecbugs>1.14.0</version.findsecbugs>
+    <version.sonar-maven-plugin>5.8.0.7211</version.sonar-maven-plugin>
+    <version.jacoco>0.8.16</version.jacoco>
+    <version.pitest>1.30.2</version.pitest>
+    <version.pitest-junit5>1.2.3</version.pitest-junit5>
+    <version.jqwik>1.10.2</version.jqwik>
+    <version.jazzer>0.30.0</version.jazzer>
+    <version.cucumber>8.0.4</version.cucumber>
+    <!-- M-095: empty unless -Psangam-coverage sets it (JaCoCo prepare-agent). Surefire reads it as @{argLine}, so the
+         agent and the UTC/tmpdir flags below are both kept. -->
+    <argLine></argLine>
   </properties>
 
   <dependencyManagement>
@@ -264,6 +283,32 @@
         <artifactId>sangam-programme</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <!-- M-095 test-quality libraries (approved batch 1): versions only, test scope. The harnesses (jqwik model
+           generator, Jazzer BPMN/DMN/JSON targets, Gherkin scenarios) are added by the module owners in Wave 2. -->
+      <dependency>
+        <groupId>net.jqwik</groupId>
+        <artifactId>jqwik</artifactId>
+        <version>${version.jqwik}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.code-intelligence</groupId>
+        <artifactId>jazzer-junit</artifactId>
+        <version>${version.jazzer}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-java</artifactId>
+        <version>${version.cucumber}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit-platform-engine</artifactId>
+        <version>${version.cucumber}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -284,8 +329,9 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.5.3</version>
           <configuration>
-            <!-- quoted: the project path contains spaces -->
-            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}"</argLine>
+            <!-- quoted: the project path contains spaces. SL-53: every test JVM runs in UTC, as the engine requires
+                 (EngineTimeZone refuses any other default zone); a timer test sets sangam.engine.timer-zone instead -->
+            <argLine>@{argLine} "-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=UTC</argLine>
             <systemPropertyVariables>
               <!-- Testcontainers with Docker 29 -->
               <api.version>1.44</api.version>
@@ -297,8 +343,8 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>3.5.3</version>
           <configuration>
-            <!-- same as surefire: the JDK's Windows selector pipe (AF_UNIX) fails in some user temp folders -->
-            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}"</argLine>
+            <!-- same as surefire: the JDK's Windows selector pipe (AF_UNIX) fails in some user temp folders; UTC (SL-53) -->
+            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=UTC</argLine>
           </configuration>
         </plugin>
         <plugin>
@@ -306,7 +352,293 @@
           <artifactId>maven-jar-plugin</artifactId>
           <version>3.4.2</version>
         </plugin>
+        <!-- M-094 / M-095 build-time tools: pinned here, bound only in the report-only profiles below -->
+        <plugin>
+          <groupId>com.github.spotbugs</groupId>
+          <artifactId>spotbugs-maven-plugin</artifactId>
+          <version>${version.spotbugs-maven-plugin}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.github.spotbugs</groupId>
+              <artifactId>spotbugs</artifactId>
+              <version>${version.spotbugs}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${version.jacoco}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.pitest</groupId>
+          <artifactId>pitest-maven</artifactId>
+          <version>${version.pitest}</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.pitest</groupId>
+              <artifactId>pitest-junit5-plugin</artifactId>
+              <version>${version.pitest-junit5}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.sonarsource.scanner.maven</groupId>
+          <artifactId>sonar-maven-plugin</artifactId>
+          <version>${version.sonar-maven-plugin}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <!-- SL-106: reactor-wide bans, checked at validate in every module (deploy/licence/licence-policy.json is the
+           source; check_licences.py checks the SBOM by licence as well). Pattern = groupId:artifactId:version:type:scope;
+           a version in [] is exact (a bare version would match any version). Driver bans cover the shipped scopes
+           only: the CI-only driver profiles (LIC-2/LIC-3) and Testcontainers use test scope. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>sangam-banned-dependencies</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <!-- LIC-1 / D-8: GraalJS (GFTC), polyglot and Truffle are stripped from every build -->
+                    <exclude>org.graalvm.js:*</exclude>
+                    <exclude>org.graalvm.polyglot:*</exclude>
+                    <exclude>org.graalvm.truffle:*</exclude>
+                    <!-- LIC-10 / D-8: other script engines stay out of the default build -->
+                    <exclude>org.mozilla:rhino</exclude>
+                    <exclude>org.openjdk.nashorn:*</exclude>
+                    <exclude>org.python:jython*</exclude>
+                    <exclude>org.jruby:*</exclude>
+                    <!-- LIC-7 / D-7: Liquibase stays below 5 (4.33.0) until the legal review -->
+                    <exclude>org.liquibase:liquibase-core:[5,)</exclude>
+                    <!-- ADR-D-5: REST/OpenAPI first; gRPC only after a measured need and a decision -->
+                    <exclude>io.grpc:*</exclude>
+                    <!-- LIC-2 / LIC-3 / LIC-4: customer-supplied or never-shipped drivers (shipped scopes) -->
+                    <exclude>com.oracle.database.*:*:*:*:compile</exclude>
+                    <exclude>com.oracle.database.*:*:*:*:runtime</exclude>
+                    <exclude>com.ibm.db2*:*:*:*:compile</exclude>
+                    <exclude>com.ibm.db2*:*:*:*:runtime</exclude>
+                    <exclude>com.mysql:mysql-connector-j:*:*:compile</exclude>
+                    <exclude>com.mysql:mysql-connector-j:*:*:runtime</exclude>
+                    <exclude>mysql:mysql-connector-java:*:*:compile</exclude>
+                    <exclude>mysql:mysql-connector-java:*:*:runtime</exclude>
+                    <!-- SG-27: consumer namespace ban on org.camunda* (shipped scopes), one exact exception below -->
+                    <exclude>org.camunda*:*:*:*:compile</exclude>
+                    <exclude>org.camunda*:*:*:*:runtime</exclude>
+                    <!-- Owner decision 2026-11-12: LGPL build-time tools (licence-policy.json build_time_tools) never
+                         enter a shipped scope. They run as Maven plugins, which bannedDependencies does not see. -->
+                    <exclude>com.github.spotbugs:spotbugs:*:*:compile</exclude>
+                    <exclude>com.github.spotbugs:spotbugs:*:*:runtime</exclude>
+                    <exclude>com.h3xstream.findsecbugs:findsecbugs-plugin:*:*:compile</exclude>
+                    <exclude>com.h3xstream.findsecbugs:findsecbugs-plugin:*:*:runtime</exclude>
+                    <exclude>org.sonarsource.scanner.maven:*:*:*:compile</exclude>
+                    <exclude>org.sonarsource.scanner.maven:*:*:*:runtime</exclude>
+                    <!-- the LGPL artefacts those tools pull in (same decision, extended 2026-11-12) -->
+                    <exclude>com.github.spotbugs:spotbugs-annotations:*:*:compile</exclude>
+                    <exclude>com.github.spotbugs:spotbugs-annotations:*:*:runtime</exclude>
+                    <exclude>org.sonarsource.scanner.lib:*:*:*:compile</exclude>
+                    <exclude>org.sonarsource.scanner.lib:*:*:*:runtime</exclude>
+                  </excludes>
+                  <includes>
+                    <!-- SG-27 owner exception (licence-policy.json pinned_exceptions): exactly this version -->
+                    <include>org.camunda.feel:feel-engine:[${version.feel-engine}]</include>
+                  </includes>
+                  <message>SL-106: banned dependency (deploy/licence/licence-policy.json, SANGAM.md LIC-1..LIC-11, ADR-D-5)</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
+
+  <profiles>
+    <!-- Q22 (owner 2026-11-12): -Psangam-it-only runs the integration tests (failsafe) without the surefire unit tests.
+         The DB-matrix legs use it because the unit tests already ran once in the build job (ci-build.yml). Test
+         sources still compile; -DskipTests and -Dmaven.test.skip keep their usual meaning in every other build. -->
+    <profile>
+      <id>sangam-it-only</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skipTests>true</skipTests>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- M-094 static analysis, REPORT-ONLY (owner 2026-11-12: report first, blocking after the test-phase triage).
+         -Psangam-static-analysis compiles with Error Prone + NullAway (every finding a warning:
+         -XepAllErrorsAsWarnings, NullAway at WARN). javac is forked so the jdk.compiler exports Error Prone needs are
+         passed with -J (no .mvn/jvm.config). SpotBugs is the separate profile sangam-spotbugs below. Making any of
+         them blocking is a separate owner decision. -->
+    <profile>
+      <id>sangam-static-analysis</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <fork>true</fork>
+              <compilerArgs combine.children="append">
+                <arg>-XDcompilePolicy=simple</arg>
+                <arg>--should-stop=ifError=FLOW</arg>
+                <arg>-Xplugin:ErrorProne -XepAllErrorsAsWarnings -XepDisableWarningsInGeneratedCode -XepExcludedPaths:.*/generated-sources/.* -Xep:NullAway:WARN -XepOpt:NullAway:AnnotatedPackages=org.sangam</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+                  <version>${version.errorprone}</version>
+                </path>
+                <path>
+                  <groupId>com.uber.nullaway</groupId>
+                  <artifactId>nullaway</artifactId>
+                  <version>${version.nullaway}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- M-094 SpotBugs + FindSecBugs, REPORT-ONLY (failOnError=false, XML + SARIF in target*/), run with
+         -Psangam-spotbugs -DskipTests verify; CI runs it in security.yml (static-analysis). Its LGPL transitive
+         com.github.spotbugs:spotbugs-annotations:4.10.5 is in the owner's build-time exception (extended 2026-11-12)
+         and banned from every shipped scope by the enforcer rule above. -->
+    <profile>
+      <id>sangam-spotbugs</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sangam-spotbugs-report</id>
+                <phase>verify</phase>
+                <goals><goal>spotbugs</goal></goals>
+              </execution>
+            </executions>
+            <configuration>
+              <effort>Max</effort>
+              <threshold>Low</threshold>
+              <failOnError>false</failOnError>
+              <xmlOutput>true</xmlOutput>
+              <sarifOutput>true</sarifOutput>
+              <plugins>
+                <plugin>
+                  <groupId>com.h3xstream.findsecbugs</groupId>
+                  <artifactId>findsecbugs-plugin</artifactId>
+                  <version>${version.findsecbugs}</version>
+                </plugin>
+              </plugins>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- M-095 coverage, REPORT-ONLY: -Psangam-coverage attaches the JaCoCo agent to the surefire run (@{argLine}) and
+         writes target*/site/jacoco at verify. The SANGAM.md target (85% line coverage on core) is a check with
+         haltOnFailure=false: it reports, never fails. -->
+    <profile>
+      <id>sangam-coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>sangam-jacoco-agent</id>
+                <goals><goal>prepare-agent</goal></goals>
+              </execution>
+              <execution>
+                <id>sangam-jacoco-report</id>
+                <phase>verify</phase>
+                <goals><goal>report</goal></goals>
+              </execution>
+              <execution>
+                <id>sangam-jacoco-target</id>
+                <phase>verify</phase>
+                <goals><goal>check</goal></goals>
+                <configuration>
+                  <haltOnFailure>false</haltOnFailure>
+                  <rules>
+                    <rule>
+                      <element>BUNDLE</element>
+                      <limits>
+                        <limit>
+                          <counter>LINE</counter>
+                          <value>COVEREDRATIO</value>
+                          <minimum>0.85</minimum>
+                        </limit>
+                      </limits>
+                    </rule>
+                  </rules>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <!-- M-095 mutation testing, REPORT-ONLY and never bound to a phase: run it explicitly, e.g.
+         mvn -Psangam-mutation -pl sangam-core test-compile org.pitest:pitest-maven:mutationCoverage
+         The SANGAM.md target is 70%; mutationThreshold/coverageThreshold 0 keep it non-blocking. The test JVMs run in
+         UTC as the engine requires (SL-53). -->
+    <profile>
+      <id>sangam-mutation</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <configuration>
+              <targetClasses><param>org.sangam.*</param></targetClasses>
+              <targetTests><param>org.sangam.*</param></targetTests>
+              <excludedTestClasses>
+                <param>*IT</param>
+              </excludedTestClasses>
+              <mutationThreshold>0</mutationThreshold>
+              <coverageThreshold>0</coverageThreshold>
+              <timestampedReports>false</timestampedReports>
+              <outputFormats>
+                <format>XML</format>
+                <format>HTML</format>
+              </outputFormats>
+              <jvmArgs>
+                <value>-Duser.timezone=UTC</value>
+              </jvmArgs>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

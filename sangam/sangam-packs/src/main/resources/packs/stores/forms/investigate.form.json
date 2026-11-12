@@ -1,6 +1,6 @@
 {
   "key": "stores/investigate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.stores",
   "title": {
     "en": "Investigate discrepancy",
@@ -34,7 +34,9 @@
     },
     {
       "id": "writeOffAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Write-off amount (INR)",

@@ -5,48 +5,136 @@ import org.sangam.core.layer.*;
 
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Pure unit checks of the dialect variants (Oracle and SQL Server are not executed in the spike), plus one DB check on
- * the server: every column sangam-core's {@link Schema} defines (the columns the core classes read and write) exists in
- * the Liquibase-created product table of the same name.
+ * Pure unit checks of the dialect variants, plus two checks on the acceptance run's database ({@code -Dsangam.db}),
+ * each in the {@link Dialect} the server detects on it:
+ * <ul>
+ *   <li>every column sangam-core's {@link Schema} defines (the columns the core classes read and write) exists in the
+ *       Liquibase-created product table of the same name;</li>
+ *   <li>the dialect's skip-locked claim gives concurrent claimers exclusive batches in priority order.</li>
+ * </ul>
+ * Dialect-generic by construction: no schema or database is created (that needs privileges the server account does not
+ * have on every database, e.g. MySQL), the probe tables live next to the Liquibase tables in the connection's own
+ * catalog/schema under a per-run name prefix, and every catalog lookup goes through JDBC {@link DatabaseMetaData}.
+ * It needs none of {@link LayerSpecSupport}'s PostgreSQL-only isolated product tables, so it does not extend it.
  */
-class DialectSchemaIT extends LayerSpecSupport {
+class DialectSchemaIT extends ContractSupport {
+
+    /** The two statement forms {@link Schema#ddl} uses; anything else fails the test rather than being skipped. */
+    private static final Pattern CREATE_TABLE = Pattern.compile("^CREATE TABLE (\\w+) \\(");
+    private static final Pattern CREATE_INDEX = Pattern.compile("^CREATE (UNIQUE )?INDEX (\\w+) ON (\\w+) \\(");
 
     @Test
     void coreSchemaColumnsExistInTheLiquibaseTables() throws Exception {
-        String probe = ("acc_core_" + RUN).toLowerCase(java.util.Locale.ROOT);
-        java.util.List<String> missing = new java.util.ArrayList<>();
-        try (java.sql.Connection c = dataSource.getConnection(); java.sql.Statement st = c.createStatement()) {
-            st.execute("CREATE SCHEMA IF NOT EXISTS " + probe);
-            st.execute("SET search_path TO " + probe);
+        Dialect dialect = dialect();
+        String prefix = ("SDS_" + RUN + "_").toUpperCase(Locale.ROOT);
+        List<String> missing = new ArrayList<>();
+        List<String> created = new ArrayList<>();
+        try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
+            boolean auto = c.getAutoCommit();
+            c.setAutoCommit(true);
             try {
-                for (String ddl : Schema.ddl(Dialect.POSTGRESQL)) {
-                    st.execute(ddl);
-                }
-            } finally {
-                st.execute("SET search_path TO public");
-            }
-            for (String t : Schema.tables()) {
-                java.util.List<String> core = Jdbc.query(c, "SELECT column_name FROM information_schema.columns"
-                        + " WHERE table_schema = ? AND table_name = ?", rs -> rs.getString(1), probe, t.toLowerCase(java.util.Locale.ROOT));
-                java.util.List<String> lb = Jdbc.query(c, "SELECT column_name FROM information_schema.columns"
-                        + " WHERE table_schema = 'public' AND table_name = ?", rs -> rs.getString(1), t.toLowerCase(java.util.Locale.ROOT));
-                assertFalse(core.isEmpty(), "core DDL created " + t);
-                for (String col : core) {
-                    if (!lb.contains(col)) {
-                        missing.add(t + "." + col);
+                for (String ddl : Schema.ddl(dialect)) {
+                    Matcher table = CREATE_TABLE.matcher(ddl);
+                    st.execute(probeDdl(ddl, prefix));
+                    if (table.find()) {
+                        created.add(prefix + table.group(1));
                     }
                 }
+                Map<String, String> stored = tablesInOwnSchema(c);
+                for (String t : Schema.tables()) {
+                    List<String> core = columns(c, stored.get((prefix + t).toUpperCase(Locale.ROOT)));
+                    List<String> lb = columns(c, stored.get(t.toUpperCase(Locale.ROOT)));
+                    assertFalse(core.isEmpty(), dialect + ": core DDL created " + t);
+                    for (String col : core) {
+                        if (!lb.contains(col)) {
+                            missing.add(t + "." + col);
+                        }
+                    }
+                }
+            } finally {
+                for (int i = created.size() - 1; i >= 0; i--) {
+                    st.execute("DROP TABLE " + created.get(i));
+                }
+                c.setAutoCommit(auto);
             }
-            st.execute("DROP SCHEMA " + probe + " CASCADE");
         }
-        assertTrue(missing.isEmpty(), "core columns missing from the Liquibase schema: " + missing);
+        assertTrue(missing.isEmpty(), dialect + ": core columns missing from the Liquibase schema: " + missing);
+    }
+
+    /**
+     * The core DDL statement with every table and index name prefixed (columns, types and keys untouched). Fails on a
+     * statement form it does not know, and on any unprefixed product table name left in the result (e.g. a new
+     * {@code REFERENCES}), so the probe can never touch the Liquibase tables.
+     */
+    private static String probeDdl(String ddl, String prefix) {
+        Matcher table = CREATE_TABLE.matcher(ddl);
+        Matcher index = CREATE_INDEX.matcher(ddl);
+        String out;
+        if (table.find()) {
+            out = "CREATE TABLE " + prefix + table.group(1) + " (" + ddl.substring(table.end());
+        } else if (index.find()) {
+            out = "CREATE " + (index.group(1) == null ? "" : index.group(1)) + "INDEX " + prefix + index.group(2)
+                    + " ON " + prefix + index.group(3) + " (" + ddl.substring(index.end());
+        } else {
+            throw new AssertionError("unrecognised core DDL statement: " + ddl);
+        }
+        for (String t : Schema.tables()) {
+            if (Pattern.compile("(?<!\\w)" + t + "(?!\\w)").matcher(out).find()) {
+                throw new AssertionError("core DDL references product table " + t + " outside its name: " + ddl);
+            }
+        }
+        return out;
+    }
+
+    /** Tables of the connection's own catalog and schema, keyed by upper-cased name, valued by the stored name. */
+    private static Map<String, String> tablesInOwnSchema(Connection c) throws SQLException {
+        Map<String, String> byUpper = new HashMap<>();
+        try (ResultSet rs = c.getMetaData().getTables(c.getCatalog(), c.getSchema(), "%", new String[]{"TABLE"})) {
+            while (rs.next()) {
+                String name = rs.getString("TABLE_NAME");
+                String previous = byUpper.put(name.toUpperCase(Locale.ROOT), name);
+                assertTrue(previous == null, "two tables differ only in case: " + previous + ", " + name);
+            }
+        }
+        return byUpper;
+    }
+
+    /** Column names (lower-cased; all product identifiers are unquoted) of one table of the connection's schema. */
+    private static List<String> columns(Connection c, String storedName) throws SQLException {
+        List<String> out = new ArrayList<>();
+        if (storedName == null) {
+            return out;
+        }
+        DatabaseMetaData md = c.getMetaData();
+        String esc = md.getSearchStringEscape();
+        String pattern = esc == null || esc.isEmpty() ? storedName
+                : storedName.replace(esc, esc + esc).replace("_", esc + "_").replace("%", esc + "%");
+        try (ResultSet rs = md.getColumns(c.getCatalog(), c.getSchema(), pattern, "%")) {
+            while (rs.next()) {
+                if (storedName.equals(rs.getString("TABLE_NAME"))) {
+                    out.add(rs.getString("COLUMN_NAME").toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        return out;
     }
 
     @Test
@@ -79,33 +167,51 @@ class DialectSchemaIT extends LayerSpecSupport {
     }
 
     /**
-     * Behaviour behind the skip-locked SQL (on the suite's PostgreSQL): two concurrent claimers get exclusive batches,
-     * each in priority order, the second the next rows; and Jdbc.query honours the limit marker the Oracle variant uses
-     * to stop fetching (and so locking) at the limit.
+     * Behaviour behind the skip-locked SQL (on the run's database, in its dialect): two concurrent claimers get
+     * exclusive batches, each in priority order, the second the next rows; and Jdbc.query honours the limit marker the
+     * Oracle variant uses to stop fetching (and so locking) at the limit.
      */
     @Test
     void skipLockedClaimsAreExclusiveAndOrdered() throws Exception {
-        String t = ("acc_skip_" + RUN).toLowerCase(java.util.Locale.ROOT);
-        run(c -> {
-            Jdbc.update(c, "CREATE TABLE " + t + " (id BIGINT PRIMARY KEY, x INT NOT NULL)");
-            for (long id : new long[]{5, 3, 1, 4, 2, 6}) {
-                Jdbc.update(c, "INSERT INTO " + t + "(id, x) VALUES (?, 1)", id);
-            }
+        Dialect dialect = dialect();
+        String t = ("acc_skip_" + RUN).toLowerCase(Locale.ROOT);
+        inTx(c -> {
+            Jdbc.update(c, dialect.expand("CREATE TABLE " + t + " (id {long} PRIMARY KEY, x {int} NOT NULL)")
+                    + dialect.createTableSuffix());
+            return null;
         });
-        try (java.sql.Connection first = openTx(); java.sql.Connection second = openTx()) {
-            String sql = Dialect.POSTGRESQL.skipLockedSelect("d.id", t, "d", "d.x=1", "d.id", 2);
-            java.util.List<Long> a = Jdbc.query(first, sql, rs -> rs.getLong(1));
-            java.util.List<Long> b = Jdbc.query(second, sql, rs -> rs.getLong(1));
-            assertEquals(java.util.List.of(1L, 2L), a, "first claimer: the first rows in order");
-            assertEquals(java.util.List.of(3L, 4L), b, "second claimer: the next rows, none of the first's");
-            java.util.List<Long> marked = Jdbc.query(second, "SELECT /*sangam:limit=1*/ d.id FROM " + t
-                    + " d WHERE d.id > 4 ORDER BY d.id", rs -> rs.getLong(1));
-            assertEquals(java.util.List.of(5L), marked, "the limit marker stops the fetch at the limit");
-            first.rollback();
-            second.rollback();
+        try {
+            inTx(c -> {
+                for (long id : new long[]{5, 3, 1, 4, 2, 6}) {
+                    Jdbc.update(c, "INSERT INTO " + t + "(id, x) VALUES (?, 1)", id);
+                }
+                return null;
+            });
+            try (Connection first = openTx(); Connection second = openTx()) {
+                String sql = dialect.skipLockedSelect("d.id", t, "d", "d.x=1", "d.id", 2);
+                List<Long> a = Jdbc.query(first, sql, rs -> rs.getLong(1));
+                List<Long> b = Jdbc.query(second, sql, rs -> rs.getLong(1));
+                assertEquals(List.of(1L, 2L), a, dialect + ": first claimer: the first rows in order");
+                assertEquals(List.of(3L, 4L), b, dialect + ": second claimer: the next rows, none of the first's");
+                List<Long> marked = Jdbc.query(second, "SELECT /*sangam:limit=1*/ d.id FROM " + t
+                        + " d WHERE d.id > 4 ORDER BY d.id", rs -> rs.getLong(1));
+                assertEquals(List.of(5L), marked, dialect + ": the limit marker stops the fetch at the limit");
+                first.rollback();
+                second.rollback();
+            }
         } finally {
-            run(c -> Jdbc.update(c, "DROP TABLE " + t));
+            inTx(c -> {
+                Jdbc.update(c, "DROP TABLE " + t);
+                return null;
+            });
         }
+    }
+
+    /** A connection of the server's pool with autocommit off that the test commits or rolls back explicitly. */
+    private Connection openTx() throws SQLException {
+        Connection c = dataSource.getConnection();
+        c.setAutoCommit(false);
+        return c;
     }
 
     @Test

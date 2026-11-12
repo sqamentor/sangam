@@ -36,7 +36,7 @@ public class BatchItemOutcomeListener implements ExecutionListener {
             data.put(n, Vars.canonical(ex.getVariable(n)));
         }
         String rv = Vars.field(reasonVar, ex, "opReasonCode");
-        PackRuntime.batches().record(Vars.tenant(ex), batchId,
+        PackRuntime.batches().record(Vars.tenantKey(ex), batchId,
                 Vars.intVal(ex, Vars.field(roundVar, ex, "batchRound"), Vars.intVal(ex, "batchRound", 1)), item,
                 Vars.field(outcome, ex, "SUCCESS"), Vars.str(ex, rv), data);
     }

@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.supplementary",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Supplementary demands, new service, Contingency Fund",
     "hi": "अनुपूरक माँगें, नई सेवा, आकस्मिकता निधि"
@@ -102,5 +102,14 @@
       "rule": "CAA SUPPLEMENTARY no monetary limit",
       "reason": "the approving authority of a supplementary proposal is not read from the rule text; confirm from the delegation order and deploy it as a tenant DMN override"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
 }

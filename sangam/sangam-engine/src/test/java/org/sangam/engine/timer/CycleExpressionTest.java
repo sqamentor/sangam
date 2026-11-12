@@ -47,4 +47,30 @@ class CycleExpressionTest {
         assertEquals("mh-gov", c.calendarName());
         assertEquals(3, c.times());
     }
+
+    /** SL-53: the plain durations the duration calendar evaluates on the timer-zone calendar; anything else is not one. */
+    @Test
+    void plainDurationsAreRecognisedAndNothingElse() {
+        assertEquals(java.time.Period.ofDays(1), CycleExpression.duration("P1D").datePart());
+        assertEquals(java.time.Period.ofDays(14), CycleExpression.duration(" P2W ").datePart());
+        assertEquals(java.time.Period.of(1, 2, 3), CycleExpression.duration("P1Y2M3D").datePart());
+        CycleExpression mixed = CycleExpression.duration("P1DT2H30M");
+        assertEquals(java.time.Period.ofDays(1), mixed.datePart());
+        assertEquals(Duration.ofMinutes(150), mixed.timePart());
+        assertEquals(Duration.ofMinutes(5), CycleExpression.duration("PT5M").timePart());
+        for (String notOne : java.util.Arrays.asList("P0D", "PT0S", "P", "PT", "-P1D", "P1.5D", "R/PT1H", "R3/P1D",
+                "2026-01-01T00:00:00/P1D", "P1D/2026-01-02T00:00:00", "cal:mh-gov:P3D", "2026-01-01T00:00:00", "", null)) {
+            assertEquals(null, CycleExpression.duration(notOne), String.valueOf(notOne));
+        }
+    }
+
+    /** SL-53: a date part is added on the calendar of the zone (25 h across the Berlin autumn fold), not as 24 h. */
+    @Test
+    void dayAcrossTheAutumnFoldIsTwentyFiveHoursInBerlin() {
+        CycleExpression day = CycleExpression.duration("P1D");
+        Instant start = Instant.parse("2026-10-24T10:00:00Z"); // 12:00 CEST
+        assertEquals(Instant.parse("2026-10-25T11:00:00Z"), start.atZone(BERLIN).plus(day.datePart()).toInstant());
+        assertEquals(Instant.parse("2026-10-25T10:00:00Z"),
+                start.atZone(java.time.ZoneOffset.UTC).plus(day.datePart()).toInstant());
+    }
 }

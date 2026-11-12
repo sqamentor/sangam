@@ -43,23 +43,24 @@ op('get', '/ops-admin/migration', 'opsMigration', _T, 'Migration status', 'Check
 # The console's routes (OpsUiController).
 _OP = [q('page', 'int'), q('size', 'int')]
 _OB = {"required": True, "content": {"application/json": {"schema": typ('obj')}}}
+_OPSUI = 'sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java'
 op('get', '/search', 'uiSearch', _T, 'Global search', 'Flat rows, filtered by the policy compiler.', _OR, params=[q('q', required=True)] + _OP, resp=(200, _OLIST), perm='search.use')
 op('get', '/ops/usage', 'uiOpsUsage', _T, 'Usage metrics', 'The caller tenant; last 30 days by default.', _OR, params=[q('from', 'date'), q('to', 'date')], resp=(200, _OLIST), perm='ops.tenant.read')
 op('get', '/ops/outliers', 'uiOpsOutliers', _T, 'Slow-path associations', 'Over server allow-listed variables only.', _OR, params=[q('processDefinitionKey'), q('activityId')], resp=(200, _OLIST), perm='ops.tenant.read')
 op('get', '/ops/variables', 'uiOpsVariables', _T, 'Tenant variables', 'As rows.', _OR, params=[q('scope'), q('name')] + _OP, resp=(200, _OLIST), perm='ops.tenant.read')
-op('put', '/ops/variables', 'uiOpsSetVariable', _T, 'Set a variable', 'TENANT scope only.', _OR, body=_OB, resp=(204, None), cmd='ops.variable.set.ui', perm='ops.tenant.admin')
+op('put', '/ops/variables', 'uiOpsSetVariable', _T, 'Set a variable', 'TENANT scope only.', _OR, body=record_body(_OPSUI, 'VariableRequest'), resp=(204, None), cmd='ops.variable.set.ui', perm='ops.tenant.admin')
 op('delete', '/ops/variables/{id}', 'uiOpsDeleteVariable', _T, 'Delete a variable', 'Needs a reason.', _OR, params=[pp('id'), q('reason', required=True)], resp=(204, None), cmd='ops.variable.delete.ui', perm='ops.tenant.admin')
 op('get', '/ops/secrets', 'uiOpsSecrets', _T, 'Secrets', 'Metadata only.', _OR, params=_OP, resp=(200, _OLIST), perm='ops.tenant.admin')
-op('put', '/ops/secrets/{name}', 'uiOpsPutSecret', _T, 'Set a secret', 'The value is write-only.', _OR, params=[pp('name')], body=_OB, resp=(204, None), cmd='ops.secret.put.ui', perm='ops.tenant.admin')
+op('put', '/ops/secrets/{name}', 'uiOpsPutSecret', _T, 'Set a secret', 'The value is write-only.', _OR, params=[pp('name')], body=record_body(_OPSUI, 'SecretRequest'), resp=(204, None), cmd='ops.secret.put.ui', perm='ops.tenant.admin')
 op('delete', '/ops/secrets/{name}', 'uiOpsDeleteSecret', _T, 'Delete a secret', 'Needs a reason.', _OR, params=[pp('name'), q('reason', required=True)], resp=(204, None), cmd='ops.secret.delete.ui', perm='ops.tenant.admin')
 op('get', '/ops/sequences', 'uiOpsSequences', _T, 'Sequences', 'All sequence tables.', _OR, resp=(200, _OLIST), perm='ops.tenant.read')
-op('post', '/ops/sequences/{name}/advance', 'uiOpsAdvance', _T, 'Advance a sequence', 'Forward only.', _OR, params=[pp('name')], body=_OB, resp=(204, None), cmd='ops.sequence.advance.ui', perm='ops.tenant.admin')
+op('post', '/ops/sequences/{name}/advance', 'uiOpsAdvance', _T, 'Advance a sequence', 'Forward only.', _OR, params=[pp('name')], body=record_body(_OPSUI, 'AdvanceRequest'), resp=(204, None), cmd='ops.sequence.advance.ui', perm='ops.tenant.admin')
 op('get', '/ops/index-jobs', 'uiOpsIndexJobs', _T, 'Index jobs', 'The caller tenant.', _OR, params=_OP, resp=(200, _OLIST), perm='ops.tenant.read')
-op('post', '/ops/index-jobs', 'uiOpsStartIndexJob', _T, 'Rebuild or check the index', 'REBUILD needs ops.tenant.admin.', _OR, body=_OB, resp=(200, _OANY), cmd='ops.index.start.ui', perm='ops.tenant.read')
+op('post', '/ops/index-jobs', 'uiOpsStartIndexJob', _T, 'Rebuild or check the index', 'REBUILD needs ops.tenant.admin.', _OR, body=record_body(_OPSUI, 'IndexJobRequest'), resp=(200, _OANY), cmd='ops.index.start.ui', perm='ops.tenant.read')
 op('get', '/ops/migration-status', 'uiOpsMigration', _T, 'Migration checkpoints', 'Platform operators.', _OR, params=[q('source')] + _OP, resp=(200, _OLIST), perm='ops.read')
 op('get', '/ops/retention/plan', 'uiOpsRetentionPlan', _T, 'Preview retention', 'With a hash of the plan.', _OR, resp=(200, _OANY), perm='ops.tenant.read')
 op('get', '/ops/retention/runs', 'uiOpsRetentionRuns', _T, 'Retention runs', 'Executed purges of the caller tenant, with plan hash, reason and actor.', _OR, params=_OP, resp=(200, _OLIST), perm='ops.tenant.read')
-op('post', '/ops/retention/execute', 'uiOpsRetentionExecute', _T, 'Execute retention', 'Refused when the plan changed since the preview.', _OR, body=_OB, resp=(200, _OANY), cmd='ops.retention.execute.ui', perm='ops.tenant.admin')
+op('post', '/ops/retention/execute', 'uiOpsRetentionExecute', _T, 'Execute retention', 'Refused when the plan changed since the preview.', _OR, body=record_body(_OPSUI, 'RetentionExecute'), resp=(200, _OANY), cmd='ops.retention.execute.ui', perm='ops.tenant.admin')
 
 # SL-44 bulk ingest (BulkController): async jobs, chunked idempotent uploads, per-row status and error report.
 TAGS.append(('Bulk ingest', 'Asynchronous bulk data ingest per object type: chunked upload, per-row idempotency on (tenant, object type, external id), per-row status and error report (SL-44). sangam-ops; off unless enabled'))

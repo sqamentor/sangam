@@ -1,6 +1,6 @@
 {
   "id": "gov.dbt.batch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "DBT batch with partial failure",
     "hi": "आंशिक विफलता सहित डीबीटी बैच"
@@ -52,7 +52,11 @@
       "id": "pfms.dbt",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
-      "purpose": "DBT record"
+      "purpose": "DBT record",
+      "simulatorBinding": {
+        "connector": "pfms-sim",
+        "operation": "pay"
+      }
     },
     {
       "id": "bank.statement",
@@ -81,11 +85,64 @@
       "when": "the bank desk corrects; the cell resends",
       "then": "round 2 has exactly the two corrected items",
       "startVariables": {
-        "schemeId": "PM-KISAN-LIKE"
+        "schemeId": "PM-KISAN-LIKE",
+        "sim_pfms_dbt": "FAILED:ACCOUNT_CLOSED @ :1:ITEM-00002|:1:ITEM-00004"
       },
       "expectState": null,
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: the bank desk corrects items and the cell resends round 2"
+        "answers": {
+          "dp_fix": {
+            "vars": {
+              "fixDecision": "correct",
+              "correctedAccount": "50100099990001",
+              "correctedIfsc": "SBIN0001234"
+            }
+          },
+          "db_review": {
+            "vars": {
+              "roundDecision": "resubmit"
+            }
+          }
+        },
+        "steps": [
+          {
+            "at": "dp_fix",
+            "action": "complete",
+            "n": 2
+          },
+          {
+            "at": "db_poll",
+            "advance": "PT5M"
+          },
+          {
+            "at": "db_poll",
+            "advance": "PT5M"
+          }
+        ],
+        "expect": {
+          "tasks": [
+            "dp_fix",
+            "dp_fix",
+            "db_review"
+          ],
+          "audit": [
+            "BATCH_ROUND_COMPLETE"
+          ],
+          "ended": true,
+          "batchRounds": {
+            "1": [
+              "ITEM-00001",
+              "ITEM-00002",
+              "ITEM-00003",
+              "ITEM-00004",
+              "ITEM-00005"
+            ],
+            "2": [
+              "ITEM-00002",
+              "ITEM-00004"
+            ]
+          }
+        }
       }
     }
   ],

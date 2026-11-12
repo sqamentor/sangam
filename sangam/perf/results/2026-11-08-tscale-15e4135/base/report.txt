@@ -1,0 +1,43 @@
+cpus=8 maxHeapMB=8160 hikariMax=20 starters=32 workers=8 reviewers=16 warmup=60s measure=300s
+measuredSeconds=301.0 starts_ok=3503 starts_all=3503 starts_per_s=11.6 pg_commits_per_s=144.0
+op                 count     ops/s    p50ms    p95ms    p99ms    maxms  statuses
+start               3503      11.6   2119.5   6856.4  11018.0  22990.0  201=3503
+task.complete        514       1.7   3156.0   8031.5  11457.7  14683.1  200=514
+task.get             520       1.7   2746.3   8819.6  11939.3  24994.8  200=520
+task.list            517       1.7   1626.1   6077.3  11232.1  17095.2  200=517
+work.complete        649       2.2   2376.7   8259.0  11728.5  21071.8  204=649
+work.fetch            64       0.2   4732.7  17615.6  27229.8  27229.8  200=64
+task_ops_total=2264 task_ops_per_s=7.5
+errors(non-2xx incl. exceptions)=0 of 5767 requests (0.0000%)
+engine_instances=4200 distinct_started_ids=4200
+pg_wait_events (sampled pg_stat_activity, active non-idle backends):
+  57  Client:ClientRead | SELECT principal_id FROM AUTH_MEMBERSHIP WHERE tenant_id=$1 AND member_id=$2 AND (valid_fr
+  36  Client:ClientRead | UPDATE ROOT_SEQ SET next_outbox_seq=$1 WHERE tenant_id=$2 AND root_id=$3
+  33  Client:ClientRead | INSERT INTO ROOT_SEQ(tenant_id, root_id, next_outbox_seq, next_audit_seq, audit_head_hash)
+  33  Client:ClientRead | SELECT next_outbox_seq, next_audit_seq, audit_head_hash FROM ROOT_SEQ WHERE tenant_id=$1 A
+  29  Client:ClientRead | SELECT CURRENT_TIMESTAMP AS n
+  23  Client:ClientRead | select * from ACT_RE_PROCDEF where ID_ = $1
+  21  Client:ClientRead | UPDATE ROOT_SEQ SET next_audit_seq=$1, audit_head_hash=$2 WHERE tenant_id=$3 AND root_id=$
+  21  Client:ClientRead | select * from ACT_RU_EXECUTION where ID_ = $1
+  17  LWLock:WALWrite | COMMIT
+  16  Client:ClientRead | INSERT INTO AUDIT_EVENT(tenant_id, chain_id, seq, event_id, event_type, schema_version, oc
+  15  Client:ClientRead | UPDATE HRM_ACTIVITY_INSTANCE SET state = $1, end_time = $2 WHERE id = $3
+  14  Client:ClientRead | INSERT INTO AUDIT_PAYLOAD(event_id, salt, payload) VALUES ($1,$2,$3)
+  12  Client:ClientRead | SELECT posting_id, seat_id, person_id, kind, valid_from, valid_to, order_ref, power_cap FR
+  10  Client:ClientRead | SELECT last_seq FROM HRM_CHECKPOINT WHERE projector = $1 AND tenant_id = $2 AND root_id = 
+  10  Client:ClientRead | select * from ACT_RU_EXECUTION where PROC_INST_ID_ = $1
+top request-thread frames (sampled stacks, first sangam/operaton/hikari/jdbc frame):
+  235  TIMED_WAITING com.zaxxer.hikari.util.ConcurrentBag.borrow
+  89  RUNNABLE org.postgresql.core.VisibleBufferedInputStream.readMore
+  60  WAITING (no app frame)
+  25  RUNNABLE (no app frame)
+  2  RUNNABLE org.postgresql.util.internal.PgBufferedOutputStream.flushBuffer
+  2  TIMED_WAITING (no app frame)
+  2  RUNNABLE org.sangam.engine.tx.CommandState.rollbackOpenSession
+  1  RUNNABLE org.operaton.bpm.engine.impl.db.sql.DbSqlSession.lambda$selectById$3
+  1  RUNNABLE org.operaton.bpm.engine.impl.db.sql.DbSqlSession.lambda$executeSelectList$2
+  1  RUNNABLE org.postgresql.core.v3.QueryExecutorImpl.interpretCommandStatus
+  1  RUNNABLE org.postgresql.core.v3.QueryExecutorImpl.execute
+  1  RUNNABLE org.postgresql.core.v3.QueryExecutorImpl.processResults
+  1  RUNNABLE org.operaton.bpm.engine.impl.db.CompositePermissionCheck.<init>
+  1  RUNNABLE org.sangam.server.config.ObservabilityConfig$MdcFilter.doFilterInternal

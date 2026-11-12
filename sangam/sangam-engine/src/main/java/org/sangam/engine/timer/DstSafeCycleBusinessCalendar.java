@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.engine.timer;
 
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
 
+import org.operaton.bpm.engine.impl.ProcessEngineLogger;
 import org.operaton.bpm.engine.impl.calendar.CycleBusinessCalendar;
 import org.operaton.bpm.engine.impl.context.Context;
 import org.operaton.bpm.engine.impl.interceptor.CommandContext;
@@ -11,6 +13,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.JobEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import org.sangam.core.engine.SangamClock;
 import org.sangam.core.engine.TimerCatchUpPolicy;
+import org.sangam.core.time.EngineTimeZone;
 import org.sangam.engine.tx.CommandState;
 
 /**
@@ -22,7 +25,12 @@ import org.sangam.engine.tx.CommandState;
  * never by {@code DurationHelper}. The next due date is always strictly after {@code max(now, current due)}, so a
  * timer can never be rescheduled into the past and loop (the E8 runaway); with {@code FIRE_ALL} it is the slot right
  * after the current one until the backlog exceeds {@code maxCatchUpFires} periods. {@code Rn} ends after n firings.
- * Cron expressions keep Operaton's evaluation, with the same monotonic guard.
+ * Cron expressions are parsed as Operaton parses them and evaluated on the wall clock of the timer zone
+ * ({@link ZonedCron}).
+ *
+ * <p><b>Zones (SL-53).</b> Calendar cadence and cron use the timer zone ({@code sangam.engine.timer-zone}); elapsed
+ * cadence runs on the UTC timeline; a start or end without an offset is engine-zone UTC, the zone Operaton writes the
+ * start it inserts in (the JVM runs in UTC, {@link EngineTimeZone}). The JVM default zone is never consulted.
  */
 public class DstSafeCycleBusinessCalendar extends CycleBusinessCalendar {
 
@@ -41,12 +49,10 @@ public class DstSafeCycleBusinessCalendar extends CycleBusinessCalendar {
         Instant now = clock.now();
         TimerEntity current = currentTimer();
         if (!CycleExpression.isRepeating(expression)) {
-            // Cron: Operaton computes the next fire time after the engine clock, which is at or after the due date of
-            // the firing being executed, so it cannot fall back; a repeated local wall-clock time at a DST fold is
-            // suppressed by the TimerGuard (same wall-clock interval).
-            return super.resolveDuedate(expression, startDate, repeatOffset);
+            return cron(expression, startDate != null ? startDate.toInstant() : now);
         }
-        CycleExpression cycle = CycleExpression.parse(expression, guard.localZone());
+        // offset-less start/end: engine-zone (UTC) wall time, the zone Operaton writes the inserted start in (SL-53)
+        CycleExpression cycle = CycleExpression.parse(expression, EngineTimeZone.ZONE);
         Instant anchor = startDate != null ? startDate.toInstant() : now;
         Instant after = now;
         if (current != null && current.getDuedate() != null && current.getRepeat() != null) {
@@ -67,6 +73,24 @@ public class DstSafeCycleBusinessCalendar extends CycleBusinessCalendar {
         }
         Instant next = cycle.slotAfter(after, anchor, guard.cadenceZone());
         return next == null ? null : Date.from(next.plusMillis(repeatOffset));
+    }
+
+    /**
+     * Cron (SL-53): the next execution on the wall clock of the timer zone, after the engine clock (or after
+     * {@code startDate} when the engine passes one, as Operaton does). The engine clock is at or after the due date of
+     * the firing being executed, so the next due date cannot fall back; a local wall-clock time that repeats at an
+     * autumn fold maps to the same {@link TimerGuard} interval and fires once. Parse errors are reported as Operaton
+     * reports them.
+     */
+    private Date cron(String expression, Instant after) {
+        ZonedCron cron;
+        try {
+            cron = ZonedCron.parse(expression);
+        } catch (ParseException e) {
+            throw ProcessEngineLogger.UTIL_LOGGER.exceptionWhileParsingCycleExpresison(expression, e);
+        }
+        Instant next = cron.nextAfter(after, guard.cadenceZone());
+        return next == null ? null : Date.from(next);
     }
 
     private static TimerEntity currentTimer() {

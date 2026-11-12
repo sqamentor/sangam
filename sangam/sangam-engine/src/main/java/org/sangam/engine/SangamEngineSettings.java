@@ -3,6 +3,7 @@ package org.sangam.engine;
 
 import java.time.Duration;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -52,6 +53,13 @@ public class SangamEngineSettings {
     private boolean requireSqlServerRcsi = true;
     /** FLOWABLE-INTO-OPERATON D-06: MySQL JDBC statement timeout in seconds (also applied on the other databases; 0 = off). */
     private int jdbcStatementTimeoutSeconds = 30;
+    /**
+     * SL-59 (S-R-5 "never hang", P-419): socket read bound set on checkout on every connection of the engine's
+     * DataSource that has no network timeout of its own ({@link org.sangam.engine.db.JdbcWaitBounds#boundNetwork});
+     * ends reads on dead connections, which no statement timeout can cancel. Must exceed the longest legitimate
+     * statement; {@code 0} disables it. A host-set value on the connection is never changed.
+     */
+    private Duration networkTimeout = org.sangam.engine.db.JdbcWaitBounds.DEFAULT_NETWORK_TIMEOUT;
 
     // ------------------------------------------------------------------ VI.1 locks and retries
     private Duration lockTimeout = Duration.ofSeconds(2);
@@ -69,10 +77,15 @@ public class SangamEngineSettings {
     // ------------------------------------------------------------------ jobs and timers (A-12, R31, FLOWABLE-INTO-OPERATON FC-24)
     private int maxJobExecutionsPerCall = 1_000;
     private int maxExecutionsPerJobDefinitionPerCall = 50;
-    // Deliberately the JVM zone, not a tenant business zone: the engine evaluates cron / cycle due dates in the JVM
-    // default zone, and the DST timer guard must bucket firings on that same wall clock (a repeated local hour is
-    // only detectable in the zone that produced it). Business dates use org.sangam.core.time.BusinessClock instead.
-    private ZoneId timerZone = ZoneId.systemDefault();
+    /**
+     * SL-53 ({@code sangam.engine.timer-zone}): the business zone of timer calendars. Calendar-cadence cycles
+     * ({@code R/P1D}, {@code R/P1M}), cron expressions, the date part of durations ({@code P1D}) and the wall-clock
+     * buckets of the DST timer guard are computed in this zone; elapsed periods ({@code PT1H}) run on the UTC timeline.
+     * Never the JVM zone: the JVM runs in UTC ({@link org.sangam.core.time.EngineTimeZone}), so a date-time literal
+     * without an offset is UTC. Default UTC; an embedding host sets it for business cut-offs (for example Asia/Kolkata).
+     * Business dates use {@link org.sangam.core.time.BusinessClock}.
+     */
+    private ZoneId timerZone = ZoneOffset.UTC;
     private TimerCatchUpPolicy timerCatchUpDefault = TimerCatchUpPolicy.FIRE_ONCE;
     private Map<String, TimerCatchUpPolicy> timerCatchUpByProcessKey = new LinkedHashMap<>();
     private int maxCatchUpFires = 100;
@@ -136,8 +149,15 @@ public class SangamEngineSettings {
     private long jobMaxBackoff = 0;
     private boolean jobAcquireByDueDate = true;
     private boolean jobAcquireByPriority = true;
-    /** Exclusive jobs of a whole process hierarchy (call activities) acquired together by one node. */
-    private boolean jobExclusiveOverProcessHierarchies = false;
+    /**
+     * Exclusive jobs of a whole process hierarchy (call activities) acquired together by one node: an exclusive job is
+     * not acquired while another exclusive job of the same <b>root</b> instance holds a live lock, and one acquisition
+     * batches a root's exclusive jobs (SANGAM.md 4.3 item 3, "on by default"; M-055). Execution of a root's jobs is
+     * already serialised by the L2 root lock ({@code GuardedJobHandler}), so this moves the wait from a blocked
+     * {@code ROOT_SEQ} row lock to acquisition. {@code false} restores Operaton's per-instance rule; env
+     * {@code SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES}.
+     */
+    private boolean jobExclusiveOverProcessHierarchies = true;
     private String jobLockOwner;
 
     // ------------------------------------------------------------------ IR-5 outbox-only history
@@ -158,7 +178,16 @@ public class SangamEngineSettings {
     public String getProcessEngineName() { return processEngineName; }
     public void setProcessEngineName(String v) { processEngineName = v; }
     public String getDefaultTenantId() { return defaultTenantId; }
-    public void setDefaultTenantId(String v) { defaultTenantId = v; }
+    /**
+     * SL-91: the tenant key of untenanted engine rows (L2 root lock, job identity, incidents, history) is bound into NOT
+     * NULL key columns, and Oracle stores '' as NULL; a null or blank value is refused here, not only by the server wiring.
+     */
+    public void setDefaultTenantId(String v) {
+        if (v == null || v.isBlank()) {
+            throw new IllegalArgumentException("defaultTenantId must not be null or blank");
+        }
+        defaultTenantId = v;
+    }
     public String getHistory() { return history; }
     public void setHistory(String v) { history = v; }
     public String getEngineSchemaUpdate() { return engineSchemaUpdate; }
@@ -179,6 +208,8 @@ public class SangamEngineSettings {
     public void setRequireSqlServerRcsi(boolean v) { requireSqlServerRcsi = v; }
     public int getJdbcStatementTimeoutSeconds() { return jdbcStatementTimeoutSeconds; }
     public void setJdbcStatementTimeoutSeconds(int v) { jdbcStatementTimeoutSeconds = v; }
+    public Duration getNetworkTimeout() { return networkTimeout; }
+    public void setNetworkTimeout(Duration v) { networkTimeout = v == null ? Duration.ZERO : v; }
     public Duration getLockTimeout() { return lockTimeout; }
     public void setLockTimeout(Duration v) { lockTimeout = v; }
     public Duration getStatementTimeout() { return statementTimeout; }
@@ -200,7 +231,7 @@ public class SangamEngineSettings {
     public int getMaxExecutionsPerJobDefinitionPerCall() { return maxExecutionsPerJobDefinitionPerCall; }
     public void setMaxExecutionsPerJobDefinitionPerCall(int v) { maxExecutionsPerJobDefinitionPerCall = v; }
     public ZoneId getTimerZone() { return timerZone; }
-    public void setTimerZone(ZoneId v) { timerZone = v; }
+    public void setTimerZone(ZoneId v) { timerZone = java.util.Objects.requireNonNull(v, "sangam.engine.timer-zone"); }
     public TimerCatchUpPolicy getTimerCatchUpDefault() { return timerCatchUpDefault; }
     public void setTimerCatchUpDefault(TimerCatchUpPolicy v) { timerCatchUpDefault = v; }
     public Map<String, TimerCatchUpPolicy> getTimerCatchUpByProcessKey() { return timerCatchUpByProcessKey; }

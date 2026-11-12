@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: Apache-2.0
 package org.sangam.core.layer;
 
+import org.sangam.core.security.FieldEncryptor;
+
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +26,16 @@ import java.util.Objects;
  * </ul>
  * Replays never re-execute. The caller must re-authenticate, re-check authorization without cache and re-apply field
  * masks before returning a {@link Replay} (X.2.2.4 step 4); this store only returns the stored data.
+ *
+ * <p><b>Response at rest (X.2.2.3, R41, M-007).</b> With a {@link FieldEncryptor} bound, {@code response_body} is stored
+ * as {@link #ENCRYPTED_BODY_MARKER} followed by the encryptor's envelope of the Base64 body, under the tenant's active
+ * key with the context {@code idempotency:<commandType>:<key>} (so a body copied to another row, command or tenant
+ * fails to decrypt). A {@link Replay} carries the decrypted, byte-identical body (T57). Rows written before (or without)
+ * an encryptor hold the plain body; they have no marker and are returned as stored. The marker cannot open a legacy
+ * body: stored bodies are JSON (the replay is served as {@code application/json}), and a JSON text cannot start with
+ * {@code s}. Key rotation: the envelope names its key ({@code <tenant>/k<n>}), so bodies written before a rotation stay
+ * readable under the decrypt-only key, and compaction ({@link #cleanup}) removes every body after the response
+ * retention, so no stored body depends on a retired key for longer than that.
  */
 public final class IdempotencyStore {
 
@@ -61,9 +76,24 @@ public final class IdempotencyStore {
     private final Duration claimTtl;
     private final Duration responseRetention;
     private final Duration keyRetention;
+    private final FieldEncryptor encryptor;
+
+    /** Prefix of an encrypted {@code response_body}: this marker, then a {@link FieldEncryptor} envelope (ASCII). */
+    public static final String ENCRYPTED_BODY_MARKER = "sgm-idem1:";
+
+    private static final byte[] MARKER = ENCRYPTED_BODY_MARKER.getBytes(StandardCharsets.US_ASCII);
 
     public IdempotencyStore(Dialect dialect, Transactions tx, String node, Duration claimTtl, Duration responseRetention,
                             Duration keyRetention) {
+        this(dialect, tx, node, claimTtl, responseRetention, keyRetention, null);
+    }
+
+    /**
+     * @param encryptor tenant-key encryption of the stored response body (M-007); null stores it unencrypted, and a
+     *                  stored encrypted body then cannot be replayed ({@code ENCRYPTION_UNAVAILABLE})
+     */
+    public IdempotencyStore(Dialect dialect, Transactions tx, String node, Duration claimTtl, Duration responseRetention,
+                            Duration keyRetention, FieldEncryptor encryptor) {
         if (keyRetention.compareTo(responseRetention) < 0) {
             throw new IllegalArgumentException("keyRetention must be >= responseRetention");
         }
@@ -73,11 +103,54 @@ public final class IdempotencyStore {
         this.claimTtl = claimTtl;
         this.responseRetention = responseRetention;
         this.keyRetention = keyRetention;
+        this.encryptor = encryptor;
     }
 
     /** Defaults from X.2.2: claim TTL 30 s, response retention 24 h, key retention 30 d. */
     public IdempotencyStore(Dialect dialect, Transactions tx, String node) {
-        this(dialect, tx, node, Duration.ofSeconds(30), Duration.ofHours(24), Duration.ofDays(30));
+        this(dialect, tx, node, (FieldEncryptor) null);
+    }
+
+    /** X.2.2 defaults, with the response body encrypted at rest when {@code encryptor} is not null. */
+    public IdempotencyStore(Dialect dialect, Transactions tx, String node, FieldEncryptor encryptor) {
+        this(dialect, tx, node, Duration.ofSeconds(30), Duration.ofHours(24), Duration.ofDays(30), encryptor);
+    }
+
+    /** Authenticated context of a stored body: binds it to its command and key (the tenant is bound by the encryptor). */
+    static String bodyContext(String commandType, String key) {
+        return "idempotency:" + commandType + ":" + key;
+    }
+
+    /** The value written to {@code response_body}: encrypted when an encryptor is bound, else the body unchanged. */
+    byte[] sealBody(String tenant, String commandType, String key, byte[] body) {
+        if (body == null || encryptor == null) {
+            return body;
+        }
+        String envelope = encryptor.encrypt(tenant, bodyContext(commandType, key), Base64.getEncoder().encodeToString(body));
+        return (ENCRYPTED_BODY_MARKER + envelope).getBytes(StandardCharsets.US_ASCII);
+    }
+
+    /** The body as the command produced it: decrypted when it carries the marker, a legacy plain body unchanged. */
+    byte[] openBody(String tenant, String commandType, String key, byte[] stored) {
+        if (!isEncryptedBody(stored)) {
+            return stored;
+        }
+        if (encryptor == null) {
+            throw new IllegalStateException("ENCRYPTION_UNAVAILABLE: the stored idempotency response of " + commandType
+                    + " is encrypted at rest and no FieldEncryptor is configured");
+        }
+        String envelope = new String(stored, MARKER.length, stored.length - MARKER.length, StandardCharsets.US_ASCII);
+        return Base64.getDecoder().decode(encryptor.decrypt(tenant, bodyContext(commandType, key), envelope));
+    }
+
+    /** True for a body written by {@link #sealBody} with an encryptor: the marker followed by an envelope. */
+    static boolean isEncryptedBody(byte[] stored) {
+        if (stored == null || stored.length <= MARKER.length
+                || !Arrays.equals(stored, 0, MARKER.length, MARKER, 0, MARKER.length)) {
+            return false;
+        }
+        return FieldEncryptor.isEncrypted(new String(stored, MARKER.length, stored.length - MARKER.length,
+                StandardCharsets.US_ASCII));
     }
 
     /** X.2.2.2: {@code SHA-256(JCS({commandType, method, pathTemplate, pathParams, semanticQueryParams, body}))}. */
@@ -143,7 +216,7 @@ public final class IdempotencyStore {
         }
         switch (e.state) {
             case "COMPLETED", "FAILED_FINAL" -> {
-                return new Replay(e.status, e.body, e.ref, false);
+                return new Replay(e.status, openBody(tenant, commandType, key, e.body), e.ref, false);
             }
             case "COMPACTED" -> {
                 return new Replay(e.status, null, e.ref, true);
@@ -173,7 +246,8 @@ public final class IdempotencyStore {
                         + " completed_at=" + dialect.now() + ", response_expires_at=" + dialect.nowPlusMillisParam()
                         + ", key_expires_at=" + dialect.nowPlusMillisParam()
                         + " WHERE tenant_id=? AND command_type=? AND idem_key=? AND claim_epoch=? AND state='IN_PROGRESS'",
-                httpStatus, responseBody, resourceRef, responseRetention.toMillis(), keyRetention.toMillis(),
+                httpStatus, sealBody(claim.tenantId(), claim.commandType(), claim.key(), responseBody), resourceRef,
+                responseRetention.toMillis(), keyRetention.toMillis(),
                 claim.tenantId(), claim.commandType(), claim.key(), claim.epoch());
         if (n == 0) {
             throw new ClaimLostException(claim);
@@ -187,7 +261,8 @@ public final class IdempotencyStore {
                             + " completed_at=" + dialect.now() + ", response_expires_at=" + dialect.nowPlusMillisParam()
                             + ", key_expires_at=" + dialect.nowPlusMillisParam()
                             + " WHERE tenant_id=? AND command_type=? AND idem_key=? AND claim_epoch=? AND state='IN_PROGRESS'",
-                    httpStatus, responseBody, responseRetention.toMillis(), keyRetention.toMillis(),
+                    httpStatus, sealBody(claim.tenantId(), claim.commandType(), claim.key(), responseBody),
+                    responseRetention.toMillis(), keyRetention.toMillis(),
                     claim.tenantId(), claim.commandType(), claim.key(), claim.epoch());
             if (n == 0) {
                 throw new ClaimLostException(claim);

@@ -208,9 +208,18 @@ public final class RegistryPortBridges {
      * external URI is therefore not known inside the command ({@code Optional.empty()}); the connector outcome is in
      * the integration call journal and ledger.
      */
+    /**
+     * Publishes through the connector {@code sangam.registry.publish.connector}. SL-104 (ADR-D-20): there is no default
+     * connector; publishing without one fails in the publishing transaction, naming the property.
+     */
     public static RegistryPorts.PublishPort publisher(TxSupport tx, String connectorId) {
-        Outbox outbox = new Outbox(tx.dialect());
+        boolean configured = connectorId != null && !connectorId.isBlank();
+        Outbox outbox = configured ? new Outbox(tx.dialect()) : null;
         return (ctx, channel, objectId, documentRef, meta) -> {
+            if (!configured) {
+                throw new IllegalStateException("sangam.registry.publish.connector is not configured: cannot publish "
+                        + objectId + " on " + channel + " (SL-104: there is no default publish connector)");
+            }
             Map<String, Object> p = new LinkedHashMap<>();
             p.put("kind", "publish");
             p.put("channel", channel);

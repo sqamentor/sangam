@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-access-request/extend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.access-request",
   "title": {
     "en": "Send the extension notice (reason and expected date)",

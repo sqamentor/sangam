@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.Map;
 
 import org.operaton.bpm.engine.ProcessEngineException;
+import org.operaton.bpm.engine.impl.ProcessEngineLogger;
 import org.operaton.bpm.engine.impl.calendar.DurationBusinessCalendar;
 import org.sangam.core.engine.SangamClock;
 import org.sangam.core.engine.WorkCalendar;
@@ -14,8 +15,13 @@ import org.sangam.core.engine.WorkCalendar;
 /**
  * Business calendar per timer (FLOWABLE-INTO-OPERATON FC-23, FLOWABLE-INTO-OPERATON D-11, R79). Operaton has one calendar per timer type; Sangam keeps the type
  * calendar and lets a duration expression name a {@link WorkCalendar}: {@code cal:<name>:<ISO duration>}, for
- * example {@code cal:mh-gov:P3D} (three working days of the Maharashtra government calendar). Untagged durations
- * keep Operaton's behaviour. An unknown calendar name fails the timer with a clear message.
+ * example {@code cal:mh-gov:P3D} (three working days of the Maharashtra government calendar). An unknown calendar name
+ * fails the timer with a clear message.
+ *
+ * <p>SL-53: an untagged duration with a date part ({@code P1D}, {@code P1W}, {@code P1M}, {@code P1DT2H}) adds its
+ * days, weeks, months and years on the calendar of the timer zone ({@code sangam.engine.timer-zone}) and its time part
+ * as elapsed time, as Operaton does in the JVM zone (which is UTC, never the business zone). Elapsed durations
+ * ({@code PT5M}) and other forms keep Operaton's evaluation.
  */
 public class TaggedDurationBusinessCalendar extends DurationBusinessCalendar {
 
@@ -45,6 +51,18 @@ public class TaggedDurationBusinessCalendar extends DurationBusinessCalendar {
             Instant start = startDate != null ? startDate.toInstant() : clock.now();
             return Date.from(cal.add(start, d.datePart(), d.timePart(), zone));
         }
+        CycleExpression d = CycleExpression.duration(duedate);
+        if (d != null && !d.datePart().isZero()) {
+            // SL-53: days, weeks, months and years are calendar units of the timer zone (P1D across a DST change is
+            // 23 or 25 hours there), the time part is elapsed; Operaton would add them in the JVM zone, which is UTC
+            Instant start = startDate != null ? startDate.toInstant() : clock.now();
+            try {
+                return Date.from(start.atZone(zone).plus(d.datePart()).toInstant().plus(d.timePart()));
+            } catch (RuntimeException e) {
+                throw ProcessEngineLogger.UTIL_LOGGER.exceptionWhileResolvingDuedate(duedate, e);
+            }
+        }
+        // elapsed durations (PT5M) are zone-free; other forms keep Operaton's evaluation
         return super.resolveDuedate(duedate, startDate);
     }
 }

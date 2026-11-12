@@ -57,8 +57,10 @@ public final class TasksApi extends ApiSupport {
                 CompleteTaskResult.class);
     }
 
-    public void returnTask(String taskId, ReturnTaskRequest request, String idempotencyKey) {
-        call(ApiRequest.post("/tasks/" + seg(taskId) + "/return").body(request).idempotencyKey(idempotencyKey), Void.class);
+    /** Returns the task to an earlier step or seat; the answer is the CompleteTaskResult of the return (sangam-api.yaml). */
+    public CompleteTaskResult returnTask(String taskId, ReturnTaskRequest request, String idempotencyKey) {
+        return call(ApiRequest.post("/tasks/" + seg(taskId) + "/return").body(request).idempotencyKey(idempotencyKey),
+                CompleteTaskResult.class);
     }
 
     public void delegate(String taskId, DelegateTaskRequest request, String idempotencyKey) {

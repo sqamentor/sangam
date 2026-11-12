@@ -1,6 +1,6 @@
 {
   "id": "gov.p4.licence",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "P4 Licence / permit (time-bound service)",
     "hi": "पी4 अनुज्ञप्ति / परमिट (समयबद्ध सेवा)"
@@ -78,19 +78,31 @@
       "id": "esign.sign",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
-      "purpose": "Certificate signature"
+      "purpose": "Certificate signature",
+      "simulatorBinding": {
+        "connector": "esign-sim",
+        "operation": "sign"
+      }
     },
     {
       "id": "digilocker.push",
       "capabilityClass": "a",
       "govTag": "G-DL",
-      "purpose": "Issuer push of the certificate"
+      "purpose": "Issuer push of the certificate",
+      "simulatorBinding": {
+        "connector": "digilocker-sim",
+        "operation": "push"
+      }
     },
     {
       "id": "notify.sms",
       "capabilityClass": "b",
       "govTag": "G-DLT",
-      "purpose": "Applicant SMS with whitelisted URL"
+      "purpose": "Applicant SMS with whitelisted URL",
+      "simulatorBinding": {
+        "connector": "sms-dlt-sim",
+        "operation": "send"
+      }
     }
   ],
   "covers": [
@@ -148,7 +160,35 @@
       },
       "expectState": "CLOSED",
       "run": {
-        "manual": "needs a clock driver: the payment status lookup and the overdue approval stage"
+        "steps": [
+          {
+            "at": "ex_window",
+            "advance": "PT31M"
+          },
+          {
+            "at": "sn_sanction",
+            "advance": "P15D"
+          }
+        ],
+        "expect": {
+          "tasks": [
+            "sc_scrutiny"
+          ],
+          "audit": [
+            "EXT_OP_UNKNOWN",
+            "SLA_BREACHED",
+            "DEEMED_DECISION",
+            "DOCUMENT_ISSUED",
+            "CASE_CLOSED"
+          ],
+          "notAudit": [
+            "RECON_ITEM_OPENED"
+          ],
+          "vars": {
+            "op_lookedUp": true,
+            "feeLastStatus": "COMPLETED"
+          }
+        }
       }
     },
     {
@@ -195,5 +235,14 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "fee"
+    ]
+  }
 }

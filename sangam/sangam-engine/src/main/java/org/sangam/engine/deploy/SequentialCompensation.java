@@ -7,6 +7,7 @@ import java.util.List;
 import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.operaton.bpm.engine.delegate.ExecutionListener;
 import org.operaton.bpm.engine.impl.bpmn.behavior.CompensationEventActivityBehavior;
+import org.operaton.bpm.engine.impl.bpmn.behavior.MultiInstanceActivityBehavior;
 import org.operaton.bpm.engine.impl.bpmn.behavior.SubProcessActivityBehavior;
 import org.operaton.bpm.engine.impl.bpmn.helper.CompensationUtil;
 import org.operaton.bpm.engine.impl.bpmn.parser.CompensateEventDefinition;
@@ -112,7 +113,14 @@ public final class SequentialCompensation {
         public void handleEvent(EventSubscriptionEntity sub, Object payload, Object localPayload,
                                 Object payloadToTriggeredScope, String businessKey, CommandContext commandContext) {
             ActivityImpl handler = sub.getActivity();
-            if (handler == null || !handler.isScope() || handler.isCompensationHandler()) {
+            // SL-101 (GP-13 / D-TENDER): the event scope of a multi-instance body holds one subscription per completed
+            // instance, and the body's behaviour has no "next instance" continuation (only SubProcessBehavior has one),
+            // so throwing only the newest compensated a single instance and then ended the step. Every completed
+            // instance is compensated (BPMN 2.0 compensation of a multi-instance activity), so a multi-instance body
+            // keeps Operaton's handler (all instances of that one step, each in its own context); the
+            // one-step-at-a-time order between steps is unchanged.
+            if (handler == null || !handler.isScope() || handler.isCompensationHandler()
+                    || handler.getActivityBehavior() instanceof MultiInstanceActivityBehavior) {
                 super.handleEvent(sub, payload, localPayload, payloadToTriggeredScope, businessKey, commandContext);
                 return;
             }
@@ -159,7 +167,8 @@ public final class SequentialCompensation {
             List<EventSubscriptionEntity> subs = se.getCompensateEventSubscriptions();
             EventSubscriptionEntity mine = null;
             for (EventSubscriptionEntity s : subs) {
-                if (s.getActivity() == handler || handler.getId().equals(s.getActivityId())) {
+                // SL-101: a multi-instance body's subscription names the body itself, not the inner handler
+                if (s.getActivity() == handler || handler.getId().equals(s.getActivityId()) || s.getActivity() == act) {
                     mine = s; // the last one for this activity is the one created by this completion
                 }
             }

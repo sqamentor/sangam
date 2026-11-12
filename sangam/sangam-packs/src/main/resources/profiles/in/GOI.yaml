@@ -181,9 +181,9 @@ budgetControl:
       FROM_SUPPLEMENTARY_HEAD: r.10(7)
       FROM_CF_ADVANCE_ACTIVITY: r.10(8)
     objectGroupLimits:
-      EST_2CR: 2CR
-      NONEST_5CR: 5CR
-      OTHER_15CR: 15CR
+      EST_2CR: 2000000000
+      NONEST_5CR: 5000000000
+      OTHER_15CR: 15000000000
       ruleRef: DFPR 2024 GoI decision (1) para 3(v) (DoE OM 01-04-2024)
     q1Ban:
       enabled: true
@@ -207,7 +207,7 @@ budgetControl:
       ruleRef: DFPR 2024 r.10(10)(v)
     parliamentReport:
       percentOfBeAbove: 20
-      amountAbove: 100CR
+      amountAbove: 100000000000
       whicheverMore: true
       afterLastBatch: PRIOR_DOE_APPROVAL
       ruleRef: DFPR 2024 GoI decision (1) para 4
@@ -264,13 +264,13 @@ budgetControl:
 appraisal:
   decisionKey: ifms-scheme-appraisal
   ladder:
-  - upTo: 100CR
+  - upTo: 100000000000
     appraisal: FA
     approval: SECRETARY
-  - upTo: 500CR
+  - upTo: 500000000000
     appraisal: SFC
     approval: MINISTER
-  - upTo: 1000CR
+  - upTo: 1000000000000
     appraisal: EFC
     approval: MINISTER_AND_FM
   - appraisal: EFC
@@ -283,7 +283,7 @@ appraisal:
   timeline:
     comments: P28D
     finalMemo: P14D
-  preInvestmentUpTo: 100CR
+  preInvestmentUpTo: 100000000000
   ruleRef: DoE OM 24(35)/PF-II/2012 of 05-08-2016 (DFPR 2024 App. III)
 treasury:
   model: PAO
@@ -345,7 +345,7 @@ grants:
     universalFrom: '2023-04-01'
     head: '8454'
   cna:
-    model1Threshold: 100CR
+    model1Threshold: 100000000000
     models:
     - TSA
     - SCB_ACCOUNT
@@ -384,11 +384,11 @@ establishment:
     lifeProof:
     - JEEVAN_PRAMAAN
     - FACE_AUTH
-    minimum: '9000'
-    maximum: '125000'
+    minimum: 900000
+    maximum: 12500000
     commutationPercent: 40
   gpf:
-    annualCeiling: 5L
+    annualCeiling: 50000000
     minPercent: 6
     withdrawalSlaDays: 15
     ruleRef: G.S.R. 96 of 15-06-2022
@@ -399,7 +399,7 @@ establishment:
     switchToNpsLatestMonthsBefore: 12
     fullPayoutYears: 25
     proRataFromYears: 10
-    minimumAfter10Years: '10000'
+    minimumAfter10Years: 1000000
     basisPercentOf12MonthAverageBasic: 50
   payCommission:
     id: 8CPC
@@ -432,8 +432,8 @@ audit:
     system: IAOS
 procurement:
   gemMandatory: true
-  directPurchaseUpTo: '50000'
-  lpcUpTo: 5L
+  directPurchaseUpTo: 5000000
+  lpcUpTo: 50000000
   scientificDepartments:
   - DST
   - DBT
@@ -445,18 +445,20 @@ procurement:
   - ICAR
   - DHR
   limitedTenderUpTo:
-    general: 50L
-    scientificDepartments: 1CR
+    general: 500000000
+    scientificDepartments: 1000000000
   ruleRef: 'IFMS-RESEARCH-DELTA IFC-188 (corrected): 1 cr only for scientific departments'
 writeOff:
   decisionKey: ifms-write-off
 overpaymentWaiver:
-  departmentUpTo: 2L
+  departmentUpTo: 20000000
   ruleRef: DFPR r.15
 documentTypes:
 - id: PAY
+  formKind: BILL
+  formNumber: GOI:RPR 13
+  billTypeCode: IN-PAY
   family: ESTABLISHMENT_PAY
-  formNumber: RPR-13
   name:
     en: Pay bill (gazetted / non-gazetted)
   approvalChain: PAO_3
@@ -479,9 +481,17 @@ documentTypes:
   - INCREMENT_CERTIFICATE
   integrations:
     sourceSystem: HRMS_EIS
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: PAY_ARREAR
+  formKind: BILL
+  formNumber: GOI:RPR 13
+  billTypeCode: IN-PAY-ARREAR
   family: ESTABLISHMENT_PAY
-  formNumber: RPR-13A
   name:
     en: Arrear pay bill
   approvalChain: PAO_3
@@ -497,9 +507,17 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: INFERRED
+    formNumber: INFERRED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: NPS_NIL
+  formKind: BILL
+  formNumber: GOI:RPR 13B
+  billTypeCode: IN-PAY-NIL-NPS
   family: NIL_BILL
-  formNumber: RPR-13B
   name:
     en: NPS Government contribution nil bill
   approvalChain: PAO_3
@@ -515,9 +533,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: PAY_PRESIDENT_VP
+  formKind: BILL
+  formNumber: GOI:RPR 15
   family: ESTABLISHMENT_PAY
-  formNumber: RPR-15
   name:
     en: Pay of the President / Vice-President
   approvalChain: PAO_3
@@ -533,9 +558,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: PAY_MINISTERS
+  formKind: BILL
+  formNumber: GOI:RPR 15
   family: ESTABLISHMENT_PAY
-  formNumber: RPR-16
   name:
     en: Pay and allowances of Ministers
   approvalChain: PAO_3
@@ -551,9 +583,43 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-- id: TA_CONSOLIDATED
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
+- id: TA_PRESIDENT_MINISTERS
+  formKind: BILL
+  formNumber: GOI:RPR 16
+  billTypeCode: IN-TA-PRES-MIN
   family: PERSONAL_CLAIM
-  formNumber: RPR-14
+  name:
+    en: TA of the President / Vice-President / Ministers
+  approvalChain: PAO_3
+  sanction: NONE
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
+- id: TA_CONSOLIDATED
+  formKind: BILL
+  formNumber: GOI:RPR 14
+  billTypeCode: IN-TA-CONSOLIDATED
+  family: PERSONAL_CLAIM
   name:
     en: Consolidated TA bill
   approvalChain: PAO_3
@@ -569,9 +635,17 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: TA_TOUR
+  formKind: BILL
+  formNumber: GOI:RPR 14A
+  billTypeCode: IN-TA-TOUR
   family: PERSONAL_CLAIM
-  formNumber: RPR-14A
   name:
     en: 'TA claim-cum-bill: tour'
   approvalChain: PAO_3
@@ -590,9 +664,17 @@ documentTypes:
   attachments:
   - id: TICKETS
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: TA_TRANSFER
+  formKind: BILL
+  formNumber: GOI:RPR 14B
+  billTypeCode: IN-TA-TRANSFER
   family: PERSONAL_CLAIM
-  formNumber: RPR-14B
   name:
     en: 'TA claim-cum-bill: transfer'
   approvalChain: PAO_3
@@ -611,9 +693,17 @@ documentTypes:
   attachments:
   - id: TRANSFER_ORDER
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: LTC
+  formKind: BILL
+  formNumber: GOI:RPR 14C
+  billTypeCode: IN-LTC
   family: PERSONAL_CLAIM
-  formNumber: RPR-14C
   name:
     en: LTC claim-cum-bill
   approvalChain: PAO_3
@@ -632,9 +722,17 @@ documentTypes:
   attachments:
   - id: TICKETS
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: MEDICAL_CGHS
+  formKind: BILL
+  formNumber: GOI:RPR 23A
+  billTypeCode: IN-MEDICAL-CGHS
   family: PERSONAL_CLAIM
-  formNumber: RPR-MED-CGHS
   name:
     en: Medical reimbursement (CGHS)
   approvalChain: PAO_3
@@ -650,10 +748,17 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: MEDICAL_CSMA
+  formKind: BILL
+  formNumber: GOI:RPR 23B
+  billTypeCode: IN-MEDICAL-CSMA
   family: PERSONAL_CLAIM
-  formNumber: RPR-MED-CSMA
   name:
     en: Medical reimbursement (CS(MA))
   approvalChain: PAO_3
@@ -669,10 +774,43 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
-- id: CEA_OTHER_PERSONAL
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
+- id: MEDICAL_CONSOLIDATED
+  formKind: BILL
+  formNumber: GOI:RPR 23
+  billTypeCode: IN-MEDICAL-CONSOLIDATED
   family: PERSONAL_CLAIM
-  formNumber: RPR-48
+  name:
+    en: Consolidated medical charges reimbursement bill
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
+- id: CEA_OTHER_PERSONAL
+  formKind: BILL
+  formNumber: GOI:RPR 48
+  billTypeCode: IN-OTHER-PERSONAL
+  family: PERSONAL_CLAIM
   name:
     en: Children Education Allowance / other personal claims
   approvalChain: PAO_3
@@ -688,9 +826,17 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: CONTINGENT
+  formKind: BILL
+  formNumber: GOI:RPR 29
+  billTypeCode: IN-CONTINGENT
   family: CONTINGENT
-  formNumber: RPR-29
   name:
     en: Contingent bill (advance / adjustment / fully vouched)
   approvalChain: PAO_3
@@ -708,9 +854,17 @@ documentTypes:
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
   legacyForms:
   - GAR-47
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: IMPREST_RECOUPMENT
+  formKind: BILL
+  formNumber: GOI:RPR 29A
+  billTypeCode: IN-IMPREST-RECOUP
   family: CONTINGENT
-  formNumber: RPR-29A
   name:
     en: Imprest recoupment bill
   approvalChain: PAO_3
@@ -729,9 +883,17 @@ documentTypes:
   attachments:
   - id: RPR-28_STATEMENT
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: GEM_EBILL
+  formKind: BILL
+  formNumber: GOI:RPR 49
+  billTypeCode: IN-GEM
   family: VENDOR
-  formNumber: RPR-GEM
   name:
     en: GeM purchase e-bill
   approvalChain: PAO_3
@@ -754,11 +916,17 @@ documentTypes:
     required: true
   - id: INVOICE
     required: true
-  formNumberStatus: U
   threeWayMatch: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: VENDOR_INVOICE
+  formKind: BILL
+  formNumber: GOI:RPR 29
   family: VENDOR
-  formNumber: RPR-29
   name:
     en: Supplier / contractor bill
   approvalChain: PAO_3
@@ -779,9 +947,17 @@ documentTypes:
     required: true
   - id: RECEIPT_CERTIFICATE
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: REFUND_REVENUE
+  formKind: BILL
+  formNumber: GOI:RPR 33
+  billTypeCode: IN-REVENUE-REFUND
   family: REFUND
-  formNumber: RPR-33
   name:
     en: Refund of revenue
   approvalChain: PAO_3
@@ -800,9 +976,17 @@ documentTypes:
   attachments:
   - id: ORIGINAL_CHALLAN
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: REFUND_GST
+  formKind: BILL
+  formNumber: GOI:RPR 52
+  billTypeCode: IN-GST-REFUND
   family: REFUND
-  formNumber: RPR-GST-REFUND
   name:
     en: GST refund e-bill
   approvalChain: PAO_3
@@ -818,12 +1002,19 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: REFUND_DEPOSIT
+  formKind: BILL
+  formNumber: GOI:RPR 43 Part C
+  billTypeCode: IN-DEPOSIT-REFUND
   family: REFUND
-  formNumber: RPR-DEP-REFUND
   name:
-    en: Refund of deposit / lapsed deposit
+    en: Refund of deposit
   approvalChain: PAO_3
   sanction: REQUIRED
   paymentRail: DEFAULT
@@ -837,10 +1028,43 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
+- id: REFUND_LAPSED_DEPOSIT
+  formKind: BILL
+  formNumber: GOI:RPR 46
+  billTypeCode: IN-LAPSED-DEPOSIT-REFUND
+  family: REFUND
+  name:
+    en: Refund of lapsed deposit
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: GIA
+  formKind: BILL
+  formNumber: GOI:RPR 34
+  billTypeCode: IN-GIA
   family: GRANT
-  formNumber: RPR-34
   name:
     en: Grant-in-aid / subsidy / contribution / investment / loan bill
   approvalChain: PAO_3
@@ -859,9 +1083,16 @@ documentTypes:
   certificates:
   - SCHEME_RULES_FIN_CONSENT
   - UC_STATUS
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: HBA
+  formKind: BILL
+  formNumber: GOI:RPR 36
   family: ADVANCE
-  formNumber: RPR-HBA
   name:
     en: House building advance
   approvalChain: PAO_3
@@ -877,10 +1108,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: COMPUTER_ADVANCE
+  formKind: BILL
+  formNumber: GOI:RPR 36
   family: ADVANCE
-  formNumber: RPR-COMP
   name:
     en: Computer advance
   approvalChain: PAO_3
@@ -896,10 +1133,17 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: SHORT_ADVANCE
+  formKind: BILL
+  formNumber: GOI:RPR 37
+  billTypeCode: IN-ADV-SHORT
   family: ADVANCE
-  formNumber: RPR-ADV
   name:
     en: Short-term advances (TA, LTC, medical)
   approvalChain: PAO_3
@@ -915,10 +1159,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: GPF_WITHDRAWAL
+  formKind: BILL
+  formNumber: GOI:RPR 42
   family: PROVIDENT_FUND
-  formNumber: RPR-GPF-W
   name:
     en: GPF / CPF advance or withdrawal
   approvalChain: PAO_3
@@ -934,12 +1184,18 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
   slaDays: 15
   slaStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: GPF_FINAL
+  formKind: BILL
+  formNumber: GOI:RPR 42
   family: PROVIDENT_FUND
-  formNumber: RPR-GPF-F
   name:
     en: GPF final payment
   approvalChain: PAO_3
@@ -955,10 +1211,43 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
+- id: DLIS
+  formKind: BILL
+  formNumber: GOI:RPR 42
+  billTypeCode: IN-DLIS
+  family: PROVIDENT_FUND
+  name:
+    en: Payment under the Deposit Linked Insurance Scheme (with GPF / CPF)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: CGEGIS
+  formKind: BILL
+  formNumber: GOI:RPR 44
+  billTypeCode: IN-CGEGIS
   family: INSURANCE
-  formNumber: RPR-CGEGIS
   name:
     en: CGEGIS / GIS claim
   approvalChain: PAO_3
@@ -974,10 +1263,43 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
+- id: GIS_AIS
+  formKind: BILL
+  formNumber: GOI:RPR 45
+  billTypeCode: IN-GIS-AIS
+  family: INSURANCE
+  name:
+    en: Group Insurance Scheme accumulation (All India Services officers)
+  approvalChain: PAO_3
+  sanction: REQUIRED
+  paymentRail: DEFAULT
+  timeBarMonths: 24
+  nilAllowed: false
+  classification:
+    scheme: HOA
+    uniformSegments:
+    - major
+    uniformRuleRef: RPR Subsidiary Instructions 2.2(5)(g), CS-2 of 15-01-2025
+  retention:
+    category: FIN-VOUCHER
+  ruleRef: RPR 2022 Subsidiary Instructions (forms index)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: RETIREMENT_BENEFITS
+  formKind: BILL
+  formNumber: GOI:RPR 50
+  billTypeCode: IN-RETIREMENT
   family: RETIREMENT
-  formNumber: RPR-RB
   name:
     en: Retirement benefits (commutation, gratuity, leave encashment)
   approvalChain: PAO_3
@@ -993,10 +1315,17 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 r.32
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: CF_WITHDRAWAL
+  formKind: BILL
+  formNumber: GOI:RPR 51
+  billTypeCode: IN-CONTINGENCY-FUND
   family: CONTINGENCY_FUND
-  formNumber: RPR-CFI
   name:
     en: Bill for withdrawal from Contingency Fund of India
   approvalChain: PAO_3
@@ -1012,10 +1341,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: Art. 267(1); GFR 2017 (advance from Contingency Fund)
-  formNumberStatus: U
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: WORK_CHARGED_WAGES
+  formKind: BILL
+  formNumber: GOI:RPR 13
   family: ESTABLISHMENT_PAY
-  formNumber: RPR-13
   name:
     en: Work-charged establishment wages
   approvalChain: PAO_3
@@ -1031,9 +1366,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR SI 2.30
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: DEATH_ARREARS
+  formKind: BILL
+  formNumber: GOI:RPR 26
   family: PERSONAL_CLAIM
-  formNumber: RPR-26
   name:
     en: Arrears to heirs of a deceased employee (with indemnity)
   approvalChain: PAO_3
@@ -1052,9 +1394,16 @@ documentTypes:
   attachments:
   - id: INDEMNITY_BOND
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: SECRET_SERVICE
+  formKind: BILL
+  formNumber: GOI:RPR-SS
   family: CLASSIFIED
-  formNumber: RPR-SS
   name:
     en: Secret-service / classified payment (certificate in lieu of receipt)
   approvalChain: PAO_3
@@ -1072,11 +1421,17 @@ documentTypes:
   ruleRef: RPR SI 2.16(6); DFPR 10(10)(v)
   certificates:
   - DISBURSING_OFFICER_CERTIFICATE
-  formNumberStatus: U
   payeeConfidential: true
+  provenance:
+    formKind: INFERRED
+    formNumber: UNKNOWN
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: ENTERTAINMENT
+  formKind: BILL
+  formNumber: GOI:RPR 29
   family: CONTINGENT
-  formNumber: RPR-29
   name:
     en: Entertainment and certificate-backed claims
   approvalChain: PAO_3
@@ -1094,9 +1449,17 @@ documentTypes:
   ruleRef: RPR SI 2.16
   certificates:
   - ENTERTAINMENT_CERT
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: LPC_FIRST_PAY
+  formKind: BILL
+  formNumber: GOI:RPR 13
+  billTypeCode: IN-PAY-FIRST
   family: ESTABLISHMENT_PAY
-  formNumber: RPR-2
   name:
     en: First pay claim after transfer (Last Pay Certificate)
   approvalChain: PAO_3
@@ -1115,9 +1478,16 @@ documentTypes:
   attachments:
   - id: LPC
     required: true
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: ASSUMED
+    typeId: ASSUMED
+    name: INFERRED
 - id: CDDO_ASSIGNMENT
+  formKind: BILL
+  formNumber: GOI:RPR-CDDO
   family: ASSIGNMENT
-  formNumber: RPR-CDDO
   name:
     en: Cheque-drawing DDO payment against assignment
   approvalChain: CDDO
@@ -1133,10 +1503,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 r.13(2)-(3), 19
-  formNumberStatus: U
+  provenance:
+    formKind: INFERRED
+    formNumber: UNKNOWN
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: SNA_SPARSH_RELEASE
+  formKind: BILL
+  formNumber: GOI:PFMS-SS
   family: TRANSFER
-  formNumber: PFMS-SS
   name:
     en: SNA-SPARSH daily sanction / release
   approvalChain: SNA_SPARSH_3
@@ -1152,9 +1528,16 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: CGA SOP SNA-SPARSH 11-08-2025
+  provenance:
+    formKind: INFERRED
+    formNumber: ASSUMED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 - id: RBI_TRANSFER_STATE
+  formKind: BILL
+  formNumber: GOI:RPR-RBI
   family: TRANSFER
-  formNumber: RPR-RBI
   name:
     en: Loans / grants to States through RBI
   approvalChain: PR_AO
@@ -1170,7 +1553,12 @@ documentTypes:
   retention:
     category: FIN-VOUCHER
   ruleRef: RPR 2022 Subsidiary Instructions (forms index)
-  formNumberStatus: U
+  provenance:
+    formKind: INFERRED
+    formNumber: UNKNOWN
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: INFERRED
 approvalChains:
 - id: PAO_3
   steps:
@@ -1188,7 +1576,7 @@ approvalChains:
     fifo: true
     distributorRole: BILL_DISTRIBUTOR
   signatures:
-  - atOrAbove: 1000000
+  - atOrAbove: 100000000
     count: 2
     secondSignatoryRole: SECOND_SIGNATORY
     ruleRef: CAM 2024 2.2.9 note (two DSCs at Rs 10 lakh and above)
@@ -1308,13 +1696,13 @@ delegation:
       maxAmount: 0
       ruleRef: 'RPR 2022: DDO draws within a sanction; no sanction power of its own'
     - role: HOO
-      maxAmount: 500000
+      maxAmount: 50000000
       ruleRef: DFPR 2024 r.12(4) and department re-delegation order [U value]
     - role: HOD
-      maxAmount: 5000000
+      maxAmount: 500000000
       ruleRef: DFPR 2024 r.12(2) re-delegation to HoD [U value]
     - role: SECRETARY
-      maxAmount: 1000000000
+      maxAmount: 100000000000
       ruleRef: DFPR 2024 r.11 (open / limited tender up to 100 cr)
     - role: MINISTER
       maxAmount: 0
@@ -1323,7 +1711,59 @@ delegation:
       maxAmount: 0
       ruleRef: advice / concurrence only
     procurementThresholds:
-      direct: '50000'
-      gemL1: 10L
-      limitedTender: 50L
-      limitedTenderScientific: 1CR
+      direct: 5000000
+      gemL1: 100000000
+      limitedTender: 500000000
+      limitedTenderScientific: 1000000000
+formTemplates:
+- id: GOI_RPR_2
+  formKind: FORM
+  formNumber: GOI:RPR 2
+  name:
+    en: Last Pay Certificate (LPC)
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    name: VERIFIED
+- id: GOI_RPR_9
+  formKind: FORM
+  formNumber: GOI:RPR 9
+  name:
+    en: Bill Register
+  provenance:
+    formKind: INFERRED
+    formNumber: INFERRED
+    name: INFERRED
+- id: GOI_RPR_38
+  formKind: FORM
+  formNumber: GOI:RPR 38
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    name: UNKNOWN
+- id: GOI_RPR_100
+  formKind: FORM
+  formNumber: GOI:RPR 100
+  name:
+    en: Sanction format
+  provenance:
+    formKind: INFERRED
+    formNumber: INFERRED
+    name: INFERRED
+billTypeCatalogue:
+  resolution: CATALOGUE_ID
+  formNumberPrefix: '<government profile id>:'
+  provenanceLabels:
+  - VERIFIED
+  - INFERRED
+  - ASSUMED
+  - UNKNOWN
+  provenanceFields:
+  - formKind
+  - formNumber
+  - billTypeCode
+  - typeId
+  - name
+  note: 'A bill type is resolved by its catalogue id; one form can carry several bill types, so a form number alone may be
+    ambiguous. typeId ASSUMED: the row id is the Sangam-assigned catalogue id; the government holds no document-type id. Forms
+    that are not bills are listed under formTemplates and are never resolved as bill types.'

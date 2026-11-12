@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-eligibility/npiUnconfirmed",
+  "version": "1.0.1",
+  "pack": "sec.ushealth.eligibility",
+  "title": {
+    "en": "Provider NPI not confirmed: correct it",
+    "es": "NPI del proveedor no confirmado: corregirlo"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "providerNpi",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Provider NPI",
+        "es": "NPI del proveedor"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

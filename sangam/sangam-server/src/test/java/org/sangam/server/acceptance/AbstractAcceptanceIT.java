@@ -42,7 +42,11 @@ public abstract class AbstractAcceptanceIT {
         }
     }
 
-    /** Groups of a full administrator in the acceptance tenants. */
+    /**
+     * Groups of an administrator of one acceptance tenant. SL-70: in a tenant-realm token ({@link #bearer})
+     * {@code sangam-admin} is the tenant administrator of that tenant; the platform administrator needs
+     * {@link #platformBearer}.
+     */
     public static final java.util.List<String> ADMIN_GROUPS =
             java.util.List.of("sangam-admin", "sangam-user", "sangam-operator", "sangam-worker");
 
@@ -52,6 +56,14 @@ public abstract class AbstractAcceptanceIT {
      */
     protected static String bearer(String tenant, String person, java.util.List<String> groups) {
         return AcceptanceIdp.get().token(tenant, person, groups);
+    }
+
+    /**
+     * SL-70: a platform-realm token (OIDC JWT of {@link AcceptanceIdp#platformIssuer()}, listed by the suite as
+     * {@code sangam.security.platform-issuer}) for platform operations: onboarding, other tenants, tenant creation.
+     */
+    protected static String platformBearer(String homeTenant, String person, java.util.List<String> groups) {
+        return AcceptanceIdp.get().platformToken(homeTenant, person, groups);
     }
 
     private static String randomBase64(int bytes) {
@@ -79,6 +91,9 @@ public abstract class AbstractAcceptanceIT {
         // OIDC exactly as in production: JWTs from AcceptanceIdp, verified by OidcConfig (issuer, expiry, audience)
         r.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> AcceptanceIdp.get().issuer());
         r.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", () -> AcceptanceIdp.get().jwksUri());
+        // SL-70: the platform realm, and the suite's dev token (one platform person for API calls in tests)
+        r.add("sangam.security.platform-issuer", () -> AcceptanceIdp.get().platformIssuer() + ","
+                + org.sangam.server.security.PlatformIssuers.DEV_TOKEN_ISSUER);
         // external government/sector systems are not reachable from a test run: pack connectors without a binding
         // use the packs' simulators (refused on production profiles by IntegrationWiring)
         r.add("sangam.packs.simulator-fallback", () -> "true");
@@ -90,7 +105,7 @@ public abstract class AbstractAcceptanceIT {
         r.add("sangam.security.dev-token.groups", () -> "sangam-admin,sangam-user,sangam-operator,sangam-worker");
         r.add("sangam.security.jit-provisioning-tenants", () -> "acc");
         r.add("sangam.security.bootstrap.enabled", () -> "true");
-        r.add("sangam.security.bootstrap.admin-groups", () -> "sangam-admin");
+        r.add("sangam.security.bootstrap.admin-groups", () -> "sangam-admin,sangam-tenant-admin");
         r.add("sangam.integration.simulators.enabled", () -> "true");
         // SL-43: the suite drives load the production defaults would throttle; quotas are tested per tenant by
         // TenantQuotaIT through tenant overrides, read without caching so a test's override applies at once

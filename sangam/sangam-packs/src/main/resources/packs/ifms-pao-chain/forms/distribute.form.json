@@ -1,6 +1,6 @@
 {
   "key": "ifms-pao-chain/distribute",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.pao-chain",
   "title": {
     "en": "Assign bill in FIFO order",
@@ -34,7 +34,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Amount (INR)",

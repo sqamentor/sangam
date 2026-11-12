@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-closure/compensation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.loan-closure",
   "title": {
     "en": "Compute compensation (Rs 5,000 / day, delay attributable)",
@@ -25,7 +25,9 @@
     },
     {
       "id": "compensationAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Compensation (INR)",

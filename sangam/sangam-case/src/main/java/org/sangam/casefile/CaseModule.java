@@ -47,7 +47,12 @@ public final class CaseModule {
         public Outbox outbox;
         public InstanceLinkService links;
         public ContentService content;
-        public ZoneId zone = ZoneId.of("UTC");
+        /**
+         * The business zone of a tenant: case numbers (year/month periods) and deadline arithmetic use the tenant's own
+         * zone. Default: the tenant's profile zone through {@link org.sangam.core.time.BusinessClock#system()} (UTC
+         * without a profile). SL-104 (ADR-D-20): there is no deployment-wide or country zone.
+         */
+        public java.util.function.Function<String, ZoneId> zones = t -> org.sangam.core.time.BusinessClock.system().zone(t);
         public CaseFilePorts.Notifier notifier = CaseFilePorts.Notifier.NONE;
         public CaseFilePorts.Calendars calendars = CaseFilePorts.Calendars.PLAIN;
         public CaseFilePorts.VenueBooking venues = CaseFilePorts.VenueBooking.NONE;
@@ -84,8 +89,8 @@ public final class CaseModule {
         this.settings = s;
         this.config = new CaseConfigRegistry(s.dialect);
         this.events = new CaseEvents(s.dialect, s.outbox);
-        this.numbers = new NumberService(s.dialect, s.zone);
-        this.deadlines = new DeadlineService(s.dialect, s.tx, events, s.calendars, s.notifier, s.escalationSeats, s.zone);
+        this.numbers = new NumberService(s.dialect, s.zones);
+        this.deadlines = new DeadlineService(s.dialect, s.tx, events, s.calendars, s.notifier, s.escalationSeats, s.zones);
         this.cases = new CaseFileService(s.dialect, config, numbers, events, deadlines, s.links);
         this.parties = new PartyService(s.dialect, config, events, s.partyDirectory);
         this.contents = new CaseContentsService(s.dialect, s.tx, events, s.content, s.links);

@@ -1,6 +1,6 @@
 {
   "id": "universal.up13-returns-refunds",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "UP-13 Returns, refunds and partial fulfilment",
     "hi": "यूपी-13 वापसी, धनवापसी एवं आंशिक पूर्ति"
@@ -44,7 +44,11 @@
       "id": "payment.refund",
       "capabilityClass": "a",
       "govTag": "",
-      "purpose": "Refund"
+      "purpose": "Refund",
+      "simulatorBinding": {
+        "connector": "payment-gateway-sim",
+        "operation": "createOrder"
+      }
     }
   ],
   "covers": [
@@ -60,5 +64,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "refundAmount"
+    ]
+  }
 }

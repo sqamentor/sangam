@@ -1,6 +1,6 @@
 {
   "id": "sec.scm.eway-bill",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "E-way bill lifecycle",
     "hi": "ई-वे बिल जीवनचक्र"
@@ -65,5 +65,13 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "consignmentValue"
+    ]
+  }
 }

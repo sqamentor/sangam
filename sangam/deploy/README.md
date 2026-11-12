@@ -45,7 +45,9 @@ Also: `SUPPORT-MATRIX.md` (R5, R7: JDK, framework, driver and deployment matrix,
 deploy/
 ├─ docker/
 │  ├─ server.Dockerfile        Spring Boot server
-│  │                           targets: runtime (Temurin JRE 21, uid 10001), runtime-distroless (uid 65532)
+│  │                           targets: runtime (Temurin JRE 25, uid 10001), runtime-distroless (distroless java25, uid 65532);
+│  │                           JDK 21 variant: --build-arg JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble
+│  │                           --build-arg DISTROLESS_IMAGE=gcr.io/distroless/java21-debian12:nonroot
 │  ├─ ui.Dockerfile            Vite build served by nginx-unprivileged (uid 101, :8080, runtime /config.json)
 │  ├─ simulators.Dockerfile    government-system simulators (dev/test only)
 │  ├─ server/                  SOURCE-OFFER.txt (MariaDB, LIC-5), drivers README (bring your own driver, LIC-2/3/4)
@@ -105,9 +107,17 @@ The compose database settings match the Stage B Testcontainers set (`spike/RUN-Q
 | P2 | `p2.da1`, `p2.so1/2`, `p2.us1` (also holds the DS-1 seat as additional charge), `p2.ds1`, `p2.ca1` |
 | P3 | `p3.applicant1`, `p3.verifier1/2`, `p3.sanction1`, `p3.finance1` |
 | P4 | `p4.citizen1`, `p4.clerk1`, `p4.inspector1/2`, `p4.approver1` |
-| Platform | `admin.dev`, `operator.dev`, `auditor.dev`, `modeller.dev`, `reviewer.dev`, `approver.dev` |
+| Department staff | `dept.admin` (tenant administrator of `dept-finance`), `operator.dev`, `auditor.dev`, `modeller.dev`, `reviewer.dev`, `approver.dev` |
+| Platform realm `sangam-platform` | `admin.dev` (platform administrator), `platform.operator` |
 
 All of them use the development password set in `keycloak/generate_realm.py`. Never reuse it.
+
+**Platform realm (SL-70).** Only tokens from a separately configured platform issuer are platform identities:
+`SANGAM_SECURITY_PLATFORM_ISSUER` (comma-separated issuers; compose sets the `sangam-platform` realm, with
+`SANGAM_SECURITY_PLATFORM_JWK_SET_URI` for its keys). `sangam-admin` in a platform token is the platform administrator
+(onboarding, other tenants, engine-wide history cleanup, tenant creation, actuator). `sangam-admin` in any other token is
+the tenant administrator (`sangam-tenant-admin`) of the token's tenant. With no platform issuer configured, nobody is a
+platform administrator. The platform issuer must differ from the tenant issuer; startup fails otherwise.
 
 Tokens carry these claims: `tenant`, `seats[]`, `office`, `additional_charge[]`, `roles[]`, `groups[]` and `aud=sangam-server`.
 
@@ -175,6 +185,30 @@ Chart behaviour worth knowing:
   signer (`sangam.registry.signer.private-key` PKCS#8 + `.public-key` X.509, Ed25519, base64) and the identifier-vault
   pepper (`sangam.registry.vault.hmac-pepper`, base64). Supply them as env from a Secret (`server.envFrom`), never in
   values.
+- **One production predicate (SL-109).** The server is in production mode when `sangam.security.production=true`
+  (Helm `server.production: true`, env `SANGAM_SECURITY_PRODUCTION`) **or** a Spring profile containing `prod` is
+  active (`org.sangam.core.security.ProductionMode`, `config/ProductionEnvironment`). Every production guard uses this
+  one predicate, so it can only make a guard stricter: hosting URLs, key material, database credentials, the debugger
+  (start-up fails instead of silently skipping it), the simulator fallback, the health simulator, the webhook and live
+  HTTP rules, modeller mocks, the dev-token filter, the dev bootstrap, and the onboarding and plugin guards. Before
+  SL-109 several of these keyed only on a `prod` profile and did not fire under Helm.
+- **Database credentials (SL-103).** In production the server refuses to start when `SANGAM_DB_USER` or
+  `SANGAM_DB_PASSWORD` is unset, or when the password equals the default shipped in the database profile
+  (`application-<db>.yaml`); a value set directly must not be blank. The message names the variable and never prints the
+  value. The user name `sangam` stays allowed, because it is the documented application user
+  (`config/ProductionDatabaseCredentials`, run inside the `HostingWiring` production guard before any bean is created).
+- **No country defaults (SL-104, ADR-D-20).** `SANGAM_CELL_JURISDICTION` (`sangam.cell.jurisdiction`) is required on a
+  cell: start-up fails naming the property (`CellWiring.jurisdictionAndResidency`), and the chart refuses to render
+  `scale.cell.id` without `scale.cell.jurisdiction`; the residency defaults to the jurisdiction.
+  `SANGAM_LEDGER_RATE_SCOPE` (`sangam.ledger.rate-scope`) has no default: same-currency postings need none, and a
+  cross-currency conversion with it unset fails naming the property (`LedgerWiring.profileRates`). The `IN` values in
+  the compose files are development values only.
+- **Promotion environment (SL-42).** `SANGAM_ONBOARDING_ENVIRONMENT` (`sangam.onboarding.environment`, Helm
+  `server.environment`, for example `sandbox`, `uat`, `prod`) labels this environment for promotion bundles. It has no
+  default; while it is unset the promotion endpoints answer 409 `PROMOTION_ENVIRONMENT_NOT_SET`.
+- These guards are coded and their tests are written (`ProductionGuardsTest`, `ProductionModeTest`,
+  `ProductionPredicateGuardTest`, `ProductionDatabaseCredentialsTest`, `PromotionControllerTest`); they have not yet
+  been run.
 - **Private exposure.** `ingress.enabled` is `false` by default (no public inbound). For a private ingress set
   `ingress.className` to an internal controller and its internal-load-balancer annotations in `ingress.annotations`.
   Management (8081) is a separate ClusterIP Service and is never routed by the ingress; NetworkPolicy admits it only
@@ -183,6 +217,9 @@ Chart behaviour worth knowing:
   (`secret://...`) is resolved from the secret port at call time, so edge service-token header pairs never sit in
   configuration.
 - **Pod security.** Pods run as non-root with a read-only root filesystem, all capabilities dropped and seccomp `RuntimeDefault`.
+- **Time zone (SL-53).** `server.javaToolOptions` must keep `-Duser.timezone=UTC` (the image sets `TZ=UTC` as well).
+  The server refuses to start in a JVM with any other default zone, so an override that drops it fails the rollout
+  instead of storing ambiguous timer due dates. Set the business zone of timers with `sangam.engine.timer-zone`.
 
 ### 1.3 VMs without Kubernetes
 
@@ -207,6 +244,21 @@ Give a JVM without containers the same options as the image (`server.Dockerfile`
 JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC \
   -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/opt/sangam/tmp -Djdk.net.unixdomain.tmpdir=/opt/sangam/tmp"
 ```
+
+**Every engine JVM runs in UTC (SL-53).** The server, and every application that embeds the engine (for example the
+IFMS engine host), refuses to start unless the JVM default time zone is UTC (offset 0, no daylight saving time; a zone
+without DST such as Asia/Kolkata is refused too): keep `-Duser.timezone=UTC` in every launch. Operaton stores timestamps in zone-less `TIMESTAMP`
+columns as JVM-local wall time; in a zone with daylight saving time the repeated hour of an autumn fold is ambiguous
+and a timer firing is lost. The check runs before any bean (and again in the engine bootstrap, before the first
+database connection), the zone is never changed silently, and there is no switch to turn the check off. The business
+zone of timers (calendar cycles such as `R/P1D`, cron expressions, durations in days, weeks or months, and the DST
+timer guard) is `sangam.engine.timer-zone` (env `SANGAM_ENGINE_TIMERZONE`; default `UTC`, never the JVM zone: set it,
+for example to `Asia/Kolkata`, wherever timers express business cut-offs); elapsed periods (`PT1H`) run on the UTC
+timeline; a date-time written without an offset in a timer expression is UTC (write `17:00+05:30` for 17:00 IST). An
+unknown or unreadable JVM zone (for example a typo in `-Duser.timezone`, which the JDK silently replaces by a GMT
+offset) is refused as well. Business dates take the tenant zone from the tenant profile (`BusinessClock`). An existing
+engine database written by a JVM in another zone holds wall times of that zone: moving it to UTC is a data migration
+(SL-53a, UTC persistence), not a restart.
 
 On a **Windows** host, set both temp directories to a folder the service account owns outside the user profile
 (for example `D:\sangam\tmp`). The JDK's Windows selector opens an AF_UNIX socket in `jdk.net.unixdomain.tmpdir`
@@ -302,6 +354,33 @@ pool caps starts at `20 / (58 × t_rt)`, about 115–345 starts/s, before any ot
 floor (ADR-D-24) therefore needs a dedicated database host (`t_rt` ≤ 0.5 ms) and, per node,
 `pool = ceil(500 / nodes × 58 × t_rt × 1.3)`, e.g. 10 connections per node for 2 nodes at 0.5 ms (plus the other
 operations' share). These are estimates; no load run has yet confirmed them.
+
+#### Bounded waits (SL-59, S-R-5 "never hang")
+
+No JDBC wait is unbounded. The bounds below apply to every connection: engine, product layer, relay, the quota pool
+(which copies the main pool's settings) and the read replica.
+
+| Wait | Setting (default) | What happens when it expires |
+|---|---|---|
+| Waiting for a free pool connection | `spring.datasource.hikari.connection-timeout`, env `SANGAM_DB_CONNECTION_TIMEOUT_MS` (**2000 ms**, SCALE-ARCHITECTURE 1.6); replica: `sangam.datasource.replica.connection-timeout` (same default). `validation-timeout` 1000 ms (`SANGAM_DB_VALIDATION_TIMEOUT_MS`) | The request answers **503 `DATABASE_UNAVAILABLE`** with `Retry-After` (`sangam.db.unavailable-retry-after`, env `SANGAM_DB_UNAVAILABLE_RETRY_AFTER`, default 2 s), from controllers and from servlet filters alike, instead of a 500 or a hidden queue. A pool configured with `connection-timeout: 0` (HikariCP: wait for ever) refuses to start |
+| Socket read on a connection | `sangam.db.network-timeout`, env `SANGAM_DB_NETWORK_TIMEOUT` (**300 s**). It is set as the driver's own property: pgjdbc `socketTimeout` (s), mssql-jdbc and MariaDB `socketTimeout` (ms), Oracle `oracle.jdbc.ReadTimeout` (ms). A value already in the JDBC URL or in `spring.datasource.hikari.data-source-properties` wins. `0` disables it (logged as a warning) | The driver fails the call and the pool discards the connection. This is the only bound that ends a read on a dead connection (TCP silently dropped, server gone): statement timeouts cannot cancel it (P-419). It must exceed the longest legitimate statement (large index builds in a migration, long-running jobs) |
+| Engine statements | `sangam.engine.jdbc-statement-timeout-seconds` (30 s, unchanged) | Statement cancelled by the driver |
+| Lock waits inside Sangam commands and jobs | `sangam.engine.lock-timeout` (2 s); PostgreSQL also `statement-timeout` (5 s) inside the command | Retryable conflict, retried by the command retrier |
+
+An application that **embeds the engine** on its own pool (no Sangam server) sets the socket bound with
+`SangamEngineSettings.setNetworkTimeout(Duration)` (default **300 s**, `0` disables it): the engine's
+`IsolationGuardDataSource` applies it with `Connection.setNetworkTimeout` to every checked-out connection that has no
+network timeout of its own, so a host-chosen `socketTimeout` is never changed. The host remains responsible for its
+own pool's acquire timeout.
+
+Accepted limits:
+
+- **Oracle:** a plain `UPDATE`/`DELETE` on a row another session holds has no session lock timeout on Oracle (the
+  lock statements use `FOR UPDATE WAIT n`). Such a DML wait is ended only by the 300 s socket bound, which also
+  discards the connection.
+- **To verify in the test phase:** that pgjdbc applies `socketTimeout` already during the connection handshake
+  (`PoolWaitBoundsTest.aDeadConnectionTimesOutWithinTheBound`, a server that accepts and never answers). For
+  statements on an open connection the bound is the driver's documented behaviour.
 
 ---
 
@@ -692,6 +771,10 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 - Spring profiles `postgres | oracle | sqlserver | mysql`.
 - Isolation guard: SQL Server RCSI check, MySQL READ COMMITTED.
 - Graceful shutdown that drains the job executor.
+- The JVM runs in UTC (`-Duser.timezone=UTC`); the server and the engine bootstrap refuse any other default zone, an
+  unknown one included (SL-53). The same holds for every application that embeds `sangam-engine` (it sets
+  `SangamEngineSettings.timerZone` for its business cut-offs). The timer business zone is `sangam.engine.timer-zone`
+  (default UTC, never the JVM zone); business dates come from `BusinessClock`.
 
 **WS-SECURITY:**
 
@@ -727,6 +810,8 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 - The images come from `SANGAM_IT_IMAGE_<DB>`.
 - The Oracle and Db2 drivers come only from the profiles `sangam-oracle-driver` and `sangam-db2-driver`, at test scope.
 - `-DskipITs` must skip all Testcontainers tests.
+- Test JVMs run in UTC: the root `pom.xml` passes `-Duser.timezone=UTC` to surefire and failsafe (SL-53). A timer test
+  selects its business zone with `sangam.engine.timer-zone`, never with the JVM zone.
 
 **Metric names** used by the dashboard (to be emitted by the modules):
 
@@ -740,7 +825,7 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 
 | Tool / image | Licence | Use |
 |---|---|---|
-| Eclipse Temurin JRE 21, distroless java21 | GPL-2.0 + Classpath Exception (OpenJDK) | runtime base images |
+| Eclipse Temurin JRE 25, distroless java25 (default); Temurin JRE 21, distroless java21 (JDK 21 build-arg variant) | GPL-2.0 + Classpath Exception (OpenJDK) | runtime base images |
 | nginx-unprivileged | BSD-2-Clause | UI runtime |
 | Keycloak 26 | Apache-2.0 | dev IdP |
 | OpenTelemetry Collector contrib | Apache-2.0 | telemetry |

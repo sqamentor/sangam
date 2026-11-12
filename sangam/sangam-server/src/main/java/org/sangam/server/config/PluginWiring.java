@@ -48,7 +48,7 @@ public class PluginWiring {
             ClassLoader cl = PluginWiring.class.getClassLoader();
             Path folder = Path.of(env.getProperty("sangam.plugins.folder", "lib-ext/plugins"));
             boolean dev = Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.equals("h2") || p.equals("dev"))
-                    && !env.getProperty("sangam.security.production", Boolean.class, false);
+                    && !ProductionEnvironment.isProduction(env); // SL-109
             Map<String, String> props = Binder.get(env).bind("sangam.plugins.config",
                     Bindable.mapOf(String.class, String.class)).orElse(Map.of());
             PluginManager.Settings settings = new PluginManager.Settings(folder,

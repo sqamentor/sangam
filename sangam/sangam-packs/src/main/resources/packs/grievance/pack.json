@@ -1,6 +1,6 @@
 {
   "id": "gov.grievance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Public grievance (CPGRAMS-style)",
     "hi": "लोक शिकायत (सीपीग्राम्स-शैली)"
@@ -50,7 +50,11 @@
       "id": "notify.sms",
       "capabilityClass": "b",
       "govTag": "G-DLT",
-      "purpose": "Citizen updates"
+      "purpose": "Citizen updates",
+      "simulatorBinding": {
+        "connector": "sms-dlt-sim",
+        "operation": "send"
+      }
     }
   ],
   "covers": [

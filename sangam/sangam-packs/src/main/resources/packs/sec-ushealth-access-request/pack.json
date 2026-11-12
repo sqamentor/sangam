@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.access-request",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "HIPAA right of access (30 days, one 30-day extension)",
     "es": "Derecho de acceso HIPAA (30 días, una prórroga de 30 días)"
@@ -91,5 +91,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "copyFee"
+    ]
+  }
 }

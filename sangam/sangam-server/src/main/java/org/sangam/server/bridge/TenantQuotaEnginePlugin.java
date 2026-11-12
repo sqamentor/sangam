@@ -93,15 +93,21 @@ public final class TenantQuotaEnginePlugin implements ProcessEnginePlugin {
                     || command instanceof CreateCaseInstanceCmd;
         }
 
+        /**
+         * SG-15: the limit is read only when the command wrote a variable value. A command that writes none (queries,
+         * {@code getVariables}, fetch-and-lock) has nothing to check, yet each read the tenant's overrides; with
+         * {@code sangam.quotas.override-ttl=0s} that was one {@code SEC_TENANT} select per read-only command (most of
+         * the 43 per T-SCALE lifecycle). The first written value reads the limit exactly as before, on the same
+         * connection and at the same point (after the command, before the flush), and every written value is still
+         * checked against it; an unlimited tenant still never loads a byte-array value to measure it.
+         */
         private static void checkVariables(TenantQuotas q, String tenant) {
-            long max = q.limit(tenant, QuotaLimit.VARIABLE_BYTES);
-            if (max < 0) {
-                return;
-            }
             CommandContext ctx = Context.getCommandContext();
             if (ctx == null) {
                 return;
             }
+            long max = 0;
+            boolean limitRead = false;
             for (CachedDbEntity cached : ctx.getDbEntityManager().getDbEntityCache().getCachedEntities()) {
                 if (!(cached.getEntity() instanceof VariableInstanceEntity v)) {
                     continue;
@@ -109,6 +115,13 @@ public final class TenantQuotaEnginePlugin implements ProcessEnginePlugin {
                 DbEntityState s = cached.getEntityState();
                 boolean written = s == DbEntityState.TRANSIENT || (s == DbEntityState.PERSISTENT && cached.isDirty());
                 if (written) {
+                    if (!limitRead) {
+                        max = q.limit(tenant, QuotaLimit.VARIABLE_BYTES);
+                        limitRead = true;
+                    }
+                    if (max < 0) {
+                        return;
+                    }
                     long size = size(v);
                     if (!TenantQuotas.within(max, size)) {
                         q.checkSize(tenant, QuotaLimit.VARIABLE_BYTES, size);   // throws, audited

@@ -1,6 +1,6 @@
 {
   "id": "gov.contract-management",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Contract amendment: variation, extra item, EoT, LD, price escalation",
     "hi": "अनुबंध संशोधन: परिवर्तन, अतिरिक्त मद, समय विस्तार, परिनिर्धारित नुकसानी, मूल्य वृद्धि"
@@ -57,5 +57,17 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amendmentAmount",
+      "amount",
+      "contractValue",
+      "escalationAmount",
+      "ldAmount"
+    ]
+  }
 }

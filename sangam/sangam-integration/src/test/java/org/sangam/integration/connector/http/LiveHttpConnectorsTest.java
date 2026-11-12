@@ -7,16 +7,22 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
@@ -24,13 +30,21 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.sangam.core.integration.ConnectorProfile;
 import org.sangam.core.integration.ConnectorRequest;
 import org.sangam.core.integration.ConnectorResult;
 import org.sangam.integration.connector.ConnectorRegistry;
 import org.sangam.integration.connector.SecretResolver;
 
-/** SL-17: configuration-built LIVE HTTP connector against a local JDK HttpServer stub. */
+/**
+ * SL-17: configuration-built LIVE HTTP connector against a local JDK HttpServer stub. SG-36: {@code secret://} default
+ * headers on the live path, under every auth mode.
+ */
 class LiveHttpConnectorsTest {
 
     HttpServer server;
@@ -239,5 +253,255 @@ class LiveHttpConnectorsTest {
 
         // with a resolvable reference the same production spec builds
         LiveHttpConnectors.build("t1", https, SecretResolver.of(Map.of("secret://t/missing", "x")), true);
+    }
+
+    // ---- SG-36: secret:// default headers on the live path (SL-18) ---------------------------------------------------
+
+    /** Edge service-token headers by reference, plus one plain literal header. */
+    private static final Map<String, String> EDGE_HEADERS = Map.of("X-Edge-Client-Id", "secret://edge/client-id",
+            "X-Edge-Client-Secret", "secret://edge/client-secret", "X-Plain", "literal");
+
+    private static final String BASIC_CREDENTIAL = "svc-user:svc-pass-3Lm";
+
+    /** The auth credentials of every mode, raw and as sent; none may appear in a header other than Authorization. */
+    private static final List<String> AUTH_MATERIAL = List.of(BASIC_CREDENTIAL, "svc-pass-3Lm",
+            Base64.getEncoder().encodeToString(BASIC_CREDENTIAL.getBytes(StandardCharsets.UTF_8)), "bearer-token-7Fa",
+            "client-secret-2Hx", "ks-pass-4Nd", "tok-1", "basic:", "Basic ", "Bearer ");
+
+    /** The secret port. It is read on every call, so a test can rotate a value after the build. */
+    final Map<String, String> port = new ConcurrentHashMap<>(Map.of(
+            "secret://edge/client-id", "edge-id-5Kq",
+            "secret://edge/client-secret", "edge-secret-9Zr",
+            "secret://t/basic", BASIC_CREDENTIAL,
+            "secret://t/token", "bearer-token-7Fa",
+            "secret://t/cs", "client-secret-2Hx",
+            "secret://t/ks-pass", "ks-pass-4Nd"));
+
+    @TempDir
+    Path tmp;
+
+    @ParameterizedTest
+    @EnumSource(LiveHttpConnectors.AuthType.class)
+    void secretDefaultHeadersCarryTheSecretPortValueAndNeverTheAuthCredential(LiveHttpConnectors.AuthType type)
+            throws Exception {
+        HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
+                true), SecretResolver.of(port), false);
+        ConnectorResult r = c.invoke(request(UUID.randomUUID()));
+        assertInstanceOf(ConnectorResult.Success.class, r, type + ": " + r);
+        Map<String, String> h = lastBusinessCall();
+        assertEquals("edge-id-5Kq", h.get("x-edge-client-id"), type + ": the port's value of secret://edge/client-id");
+        assertEquals("edge-secret-9Zr", h.get("x-edge-client-secret"),
+                type + ": the port's value of secret://edge/client-secret");
+        assertEquals("literal", h.get("x-plain"), type + ": a literal default header is sent as is");
+        assertEquals(expectedAuthorization(type), h.get("authorization"), type + ": Authorization is the auth credential");
+        assertAuthMaterialOnlyInAuthorization(type, h);
+    }
+
+    @ParameterizedTest
+    @EnumSource(LiveHttpConnectors.AuthType.class)
+    void secretDefaultHeadersAreReadFromTheSecretPortOnEveryCall(LiveHttpConnectors.AuthType type) throws Exception {
+        // SL-18 resolves at call time: a rotated edge service token is used by the next call, without a rebuild
+        HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
+                true), SecretResolver.of(port), false);
+        assertInstanceOf(ConnectorResult.Success.class, c.invoke(request(UUID.randomUUID())), type.name());
+        assertEquals("edge-secret-9Zr", lastBusinessCall().get("x-edge-client-secret"), type.name());
+        port.put("secret://edge/client-secret", "edge-secret-rotated-1Qw");
+        assertInstanceOf(ConnectorResult.Success.class, c.invoke(request(UUID.randomUUID())), type.name());
+        Map<String, String> h = lastBusinessCall();
+        assertEquals("edge-secret-rotated-1Qw", h.get("x-edge-client-secret"), type + ": the rotated value");
+        assertEquals(expectedAuthorization(type), h.get("authorization"), type.name());
+        assertAuthMaterialOnlyInAuthorization(type, h);
+    }
+
+    @ParameterizedTest
+    @EnumSource(LiveHttpConnectors.AuthType.class)
+    void anUnknownOrEmptyDefaultHeaderReferenceFailsTheBuildLikeAnAuthReference(LiveHttpConnectors.AuthType type)
+            throws Exception {
+        Map<String, String> unknown = Map.of("X-Edge-Client-Id", "secret://edge/missing", "X-Plain", "literal");
+        LiveHttpConnectors.Spec local = edgeSpec(base + "/pay", base + "/token", type, unknown, true);
+        IllegalStateException dev = assertThrows(IllegalStateException.class,
+                () -> LiveHttpConnectors.build("t1", local, SecretResolver.of(port), false), type.name());
+        assertTrue(dev.getMessage().contains("default-headers.X-Edge-Client-Id cannot be resolved")
+                && dev.getMessage().contains("secret://edge/missing"), type + ": " + dev.getMessage());
+
+        // production profile: the rules of auth.secret-ref (https; the reference resolves to a non-empty value)
+        String api = "https://api.example.org/v1";
+        String tokenUrl = "https://login.example.org/token";
+        LiveHttpConnectors.Spec prodUnknown = edgeSpec(api, tokenUrl, type, unknown, false);
+        IllegalStateException prod = assertThrows(IllegalStateException.class,
+                () -> LiveHttpConnectors.build("t1", prodUnknown, SecretResolver.of(port), true), type.name());
+        assertTrue(prod.getMessage().contains("default-headers.X-Edge-Client-Id cannot be resolved"),
+                type + ": " + prod.getMessage());
+        port.put("secret://edge/blank", " ");
+        LiveHttpConnectors.Spec prodBlank = edgeSpec(api, tokenUrl, type,
+                Map.of("X-Edge-Client-Id", "secret://edge/blank"), false);
+        IllegalStateException blank = assertThrows(IllegalStateException.class,
+                () -> LiveHttpConnectors.build("t1", prodBlank, SecretResolver.of(port), true), type.name());
+        assertTrue(blank.getMessage().contains("default-headers.X-Edge-Client-Id resolves to an empty value"),
+                type + ": " + blank.getMessage());
+
+        // with resolvable references the same production spec builds (a literal header is a plain value, not a
+        // credential reference), and building sends nothing
+        LiveHttpConnectors.build("t1", edgeSpec(api, tokenUrl, type, EDGE_HEADERS, false), SecretResolver.of(port), true);
+        assertTrue(seen.isEmpty(), type + ": building never calls the endpoint");
+    }
+
+    @ParameterizedTest
+    @EnumSource(LiveHttpConnectors.AuthType.class)
+    void aDefaultHeaderSecretGoneAfterTheBuildMeansTheRequestIsNotSent(LiveHttpConnectors.AuthType type) throws Exception {
+        // SL-61: the reference resolved when the connector was built; later the secret is deleted (or the vault is down)
+        HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
+                true), SecretResolver.of(port), false);
+        port.remove("secret://edge/client-secret");
+        ConnectorResult r = c.invoke(request(UUID.randomUUID()));
+        ConnectorResult.TransientFailure t = assertInstanceOf(ConnectorResult.TransientFailure.class, r, type + ": " + r);
+        assertTrue(t.noEffect(), type + ": " + t.message());
+        assertTrue(t.message().contains("secret://edge/client-secret"), type + ": " + t.message());
+        assertTrue(seen.isEmpty(), type + ": nothing was sent, not even a token request");
+    }
+
+    /**
+     * SL-65: a secret with leading or trailing whitespace or a control character (typically the line break a file store
+     * adds) fails the build; it is never trimmed, since trimming could hide a wrong secret, and never repeated.
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("untidySecrets")
+    void aSecretWithWhitespaceOrAControlCharacterFailsTheBuildAndIsNotTrimmed(String why, LiveHttpConnectors.AuthType type,
+            String reference, String value, String name) throws Exception {
+        // SL-85: the spec (and, for mtls, the client key store with its valid password) is made first; the untidy value
+        // then reaches Sangam only through the secret port. A JDK 21 PKCS#12 store cannot even be written with a control
+        // character in its password, so writing it with the untidy value would fail in the fixture, not in Sangam's rule.
+        LiveHttpConnectors.Spec spec = edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS, true);
+        port.put(reference, value);
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> LiveHttpConnectors.build("t1", spec, SecretResolver.of(port), false), why);
+        assertTrue(e.getMessage().startsWith("connector t1/pay: " + name + " "), why + ": " + e.getMessage());
+        assertFalse(e.getMessage().contains("s3cr3t"), why + ": the value is repeated: " + e.getMessage());
+    }
+
+    static Stream<Arguments> untidySecrets() {
+        return Stream.of(
+                Arguments.of("bearer token, trailing newline", LiveHttpConnectors.AuthType.BEARER, "secret://t/token",
+                        "s3cr3t-token\n", "auth.secret-ref"),
+                Arguments.of("basic credential, trailing space", LiveHttpConnectors.AuthType.BASIC, "secret://t/basic",
+                        "svc-user:s3cr3t-pass ", "auth.secret-ref"),
+                Arguments.of("oauth2 client secret, trailing CR LF", LiveHttpConnectors.AuthType.OAUTH2_CLIENT_CREDENTIALS,
+                        "secret://t/cs", "s3cr3t-cs\r\n", "auth.client-secret-ref"),
+                // the client secret goes out with HTTP Basic (an Authorization header), so the header rule applies
+                Arguments.of("oauth2 client secret, trailing space", LiveHttpConnectors.AuthType.OAUTH2_CLIENT_CREDENTIALS,
+                        "secret://t/cs", "s3cr3t-cs ", "auth.client-secret-ref"),
+                Arguments.of("key-store password, trailing newline", LiveHttpConnectors.AuthType.MTLS, "secret://t/ks-pass",
+                        "s3cr3t-ks\n", "tls.key-store-password-ref"),
+                Arguments.of("edge default header, leading space", LiveHttpConnectors.AuthType.NONE,
+                        "secret://edge/client-id", " s3cr3t-edge", "default-headers.X-Edge-Client-Id"));
+    }
+
+    @Test
+    void aKeyStorePasswordMayBeginOrEndWithASpaceItNeverGoesIntoAHeader() throws Exception {
+        // SL-65: only a secret that becomes a header value must be free of leading and trailing whitespace; a password
+        // may legitimately have them, so only control characters (the line break of a file store) are refused for it
+        port.put("secret://t/ks-pass", " ks-pass-4Nd ");
+        HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token",
+                LiveHttpConnectors.AuthType.MTLS, EDGE_HEADERS, true), SecretResolver.of(port), false);
+        assertInstanceOf(ConnectorResult.Success.class, c.invoke(request(UUID.randomUUID())));
+    }
+
+    @ParameterizedTest
+    @EnumSource(LiveHttpConnectors.AuthType.class)
+    void aDefaultHeaderSecretRotatedToAnUntidyValueMeansTheRequestIsNotSent(LiveHttpConnectors.AuthType type)
+            throws Exception {
+        // SL-65 at call time: the secret was tidy when the connector was built, then rotated with a trailing line break
+        HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
+                true), SecretResolver.of(port), false);
+        port.put("secret://edge/client-secret", "s3cr3t-rotated\n");
+        ConnectorResult r = c.invoke(request(UUID.randomUUID()));
+        ConnectorResult.TransientFailure t = assertInstanceOf(ConnectorResult.TransientFailure.class, r, type + ": " + r);
+        assertTrue(t.noEffect(), type + ": " + t.message());
+        assertTrue(t.message().contains("credential unavailable") && t.message().contains("secret://edge/client-secret"),
+                type + ": " + t.message());
+        assertFalse(t.message().contains("s3cr3t"), type + ": the value is repeated: " + t.message());
+        assertTrue(seen.isEmpty(), type + ": nothing was sent, not even a token request");
+    }
+
+    @Test
+    void aHeaderOrMethodConfigurationErrorFailsTheBuildAndNamesTheConnector() throws Exception {
+        // SL-62: header names are case-insensitive; SL-65: names, values and the method must be valid HTTP
+        for (Map<String, String> headers : List.of(Map.of("X-Trace", "1", "x-trace", "2"), Map.of("X Bad", "v"),
+                Map.of("X-Trace", "v\r\nX-Injected: 1"))) {
+            LiveHttpConnectors.Spec spec = edgeSpec(base + "/pay", base + "/token", LiveHttpConnectors.AuthType.NONE,
+                    headers, true);
+            IllegalStateException e = assertThrows(IllegalStateException.class,
+                    () -> LiveHttpConnectors.build("t1", spec, SecretResolver.of(port), false), headers.keySet().toString());
+            assertTrue(e.getMessage().startsWith("connector t1/pay: "), e.getMessage());
+            assertFalse(e.getMessage().contains("X-Injected"), "the value is repeated: " + e.getMessage());
+        }
+        LiveHttpConnectors.Spec badMethod = new LiveHttpConnectors.Spec("pay", base + "/pay", "GE T", "a", null, null,
+                LiveHttpConnectors.Auth.NONE, null, Duration.ofSeconds(2), Duration.ofSeconds(2), 1, List.of(), true,
+                Map.of(), Map.of(), null);
+        IllegalStateException method = assertThrows(IllegalStateException.class,
+                () -> LiveHttpConnectors.build("t1", badMethod, SecretResolver.of(port), false));
+        assertTrue(method.getMessage().startsWith("connector t1/pay: "), method.getMessage());
+        assertTrue(seen.isEmpty(), "building never calls the endpoint");
+    }
+
+    /** A live spec in the given auth mode, with the auth references, token URL and client key store the mode needs. */
+    private LiveHttpConnectors.Spec edgeSpec(String url, String tokenUrl, LiveHttpConnectors.AuthType type,
+                                             Map<String, String> defaultHeaders, boolean allowPrivate) throws Exception {
+        LiveHttpConnectors.Auth auth = switch (type) {
+            case NONE, MTLS -> new LiveHttpConnectors.Auth(type, null, null, null, null, null);
+            case BASIC -> new LiveHttpConnectors.Auth(type, "secret://t/basic", null, null, null, null);
+            case BEARER -> new LiveHttpConnectors.Auth(type, "secret://t/token", null, null, null, null);
+            case OAUTH2_CLIENT_CREDENTIALS -> new LiveHttpConnectors.Auth(type, null, tokenUrl, "client-1", "secret://t/cs",
+                    "pay");
+        };
+        // mtls: a loadable PKCS#12 client key store, its password by reference. The stub speaks plain HTTP, so there is
+        // no handshake: this covers the builder's mtls branch, and the header assembly does not depend on TLS.
+        LiveHttpConnectors.Tls tls = type == LiveHttpConnectors.AuthType.MTLS
+                ? new LiveHttpConnectors.Tls(clientKeyStore().toString(), "secret://t/ks-pass", null, null) : null;
+        return new LiveHttpConnectors.Spec("pay", url, "POST", "a", null, null, auth, tls, Duration.ofSeconds(2),
+                Duration.ofSeconds(2), 1, List.of(), allowPrivate, defaultHeaders, Map.of(), null);
+    }
+
+    private Path clientKeyStore() throws Exception {
+        Path p = tmp.resolve("client.p12");
+        if (Files.notExists(p)) {
+            KeyStore ks = KeyStore.getInstance("PKCS12");
+            ks.load(null, null);
+            try (OutputStream out = Files.newOutputStream(p)) {
+                ks.store(out, port.get("secret://t/ks-pass").toCharArray());
+            }
+        }
+        return p;
+    }
+
+    private static String expectedAuthorization(LiveHttpConnectors.AuthType type) {
+        return switch (type) {
+            case NONE, MTLS -> null;
+            case BASIC -> "Basic " + Base64.getEncoder().encodeToString(BASIC_CREDENTIAL.getBytes(StandardCharsets.UTF_8));
+            case BEARER -> "Bearer bearer-token-7Fa";
+            case OAUTH2_CLIENT_CREDENTIALS -> "Bearer tok-1";
+        };
+    }
+
+    /** Headers of the last business call (the OAuth2 token call is not one). */
+    private Map<String, String> lastBusinessCall() {
+        for (int i = seen.size() - 1; i >= 0; i--) {
+            if (!"/token".equals(seen.get(i).get(":path"))) {
+                return seen.get(i);
+            }
+        }
+        throw new AssertionError("no business call reached the stub");
+    }
+
+    private static void assertAuthMaterialOnlyInAuthorization(LiveHttpConnectors.AuthType type, Map<String, String> h) {
+        for (Map.Entry<String, String> e : h.entrySet()) {
+            if (e.getKey().equals("authorization") || e.getKey().equals(":path")) {
+                continue;
+            }
+            for (String m : AUTH_MATERIAL) {
+                assertFalse(e.getValue().contains(m), type + ": header " + e.getKey() + " carries auth material: "
+                        + e.getValue());
+            }
+        }
     }
 }

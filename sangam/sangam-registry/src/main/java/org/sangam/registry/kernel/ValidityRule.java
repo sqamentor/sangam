@@ -17,7 +17,8 @@ import java.util.Map;
  *       ({@code period}, an ISO-8601 period such as {@code P1Y} or {@code P6M}), {@code GIVEN} (the caller supplies
  *       the end date);</li>
  *   <li>{@code alignTo}: {@code NONE}, {@code END_OF_MONTH}, {@code END_OF_YEAR} or {@code FISCAL_YEAR_END}
- *       (with {@code fiscalStartMonth}, 1..12) moves the end date to the end of that period;</li>
+ *       (with {@code fiscalStartMonth}, 1..12, REQUIRED: no fiscal year is assumed, SL-125) moves the end date to the
+ *       end of that period;</li>
  *   <li>{@code renewalWindow}: how long before the end the renewal becomes due (and allowed);</li>
  *   <li>{@code grace}: how long after the end a renewal is still allowed (late renewal), otherwise a fresh issue;</li>
  *   <li>{@code renewalPeriod} (default {@code period}), {@code maxRenewals} (null = unlimited), {@code renewFrom}
@@ -27,12 +28,23 @@ import java.util.Map;
  * End instants are exclusive: an instrument valid through 31 March has {@code validTo} = 1 April 00:00 in the
  * tenant zone.
  */
-public record ValidityRule(String mode, Period period, String alignTo, int fiscalStartMonth, Period renewalWindow,
+public record ValidityRule(String mode, Period period, String alignTo, Integer fiscalStartMonth, Period renewalWindow,
                            Period grace, Period renewalPeriod, Integer maxRenewals, String renewFrom,
                            String deemedRenewalDecision) {
 
-    public static final ValidityRule NONE = new ValidityRule("NONE", null, "NONE", 1, Period.ZERO, Period.ZERO, null,
+    public static final ValidityRule NONE = new ValidityRule("NONE", null, "NONE", null, Period.ZERO, Period.ZERO, null,
             null, "PREVIOUS_END", null);
+
+    /** SL-125 (fail closed): a fiscal-year alignment states its start month; none is assumed. */
+    public ValidityRule {
+        if (fiscalStartMonth != null && (fiscalStartMonth < 1 || fiscalStartMonth > 12)) {
+            throw RegistryException.invalid("validity: fiscalStartMonth must be 1..12");
+        }
+        if ("FISCAL_YEAR_END".equals(alignTo) && fiscalStartMonth == null) {
+            throw RegistryException.invalid("validity: alignTo FISCAL_YEAR_END needs fiscalStartMonth (1..12);"
+                    + " no fiscal year is assumed");
+        }
+    }
 
     public static ValidityRule from(Map<String, Object> m) {
         if (m == null || m.isEmpty()) {
@@ -43,10 +55,7 @@ public record ValidityRule(String mode, Period period, String alignTo, int fisca
         if ("PERIOD".equals(mode) && p == null) {
             throw RegistryException.invalid("validity: mode PERIOD needs a period");
         }
-        int fsm = Maps.integer(m, "fiscalStartMonth", 1);
-        if (fsm < 1 || fsm > 12) {
-            throw RegistryException.invalid("validity: fiscalStartMonth must be 1..12");
-        }
+        Integer fsm = Maps.integer(m, "fiscalStartMonth");
         Period rp = period(Maps.str(m, "renewalPeriod"));
         return new ValidityRule(mode, p, Maps.str(m, "alignTo", "NONE").toUpperCase(), fsm,
                 orZero(period(Maps.str(m, "renewalWindow"))), orZero(period(Maps.str(m, "grace"))), rp == null ? p : rp,

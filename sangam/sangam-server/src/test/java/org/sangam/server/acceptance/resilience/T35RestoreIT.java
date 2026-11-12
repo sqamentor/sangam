@@ -57,6 +57,13 @@ class T35RestoreIT {
     static final String SOURCE = "acc-t35-bill-portal";
     static final String TOPIC = "acc-t35-pay";
     static final long LOCK_MS = 20_000;
+    /**
+     * The run's tenant administrator, who also deploys over {@code /engine-rest}. SL-70: {@code sangam-admin} in this
+     * tenant-realm token is the tenant administrator, which is not an engine administrator, so the persona carries
+     * {@code sangam-engine-admin} explicitly (before SL-70 the tenant token was wrongly a platform administrator).
+     */
+    static final List<String> ENGINE_ADMIN = java.util.stream.Stream.concat(AbstractAcceptanceIT.ADMIN_GROUPS.stream(),
+            java.util.stream.Stream.of("sangam-engine-admin")).toList();
 
     final String run = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     final String tenant = "acct35" + run;
@@ -125,6 +132,7 @@ class T35RestoreIT {
     private final String pepper = randomBase64(32);
     private final String[] signer = ed25519();
     private final String[] bundle = ed25519();
+    private final String hookSecret = randomBase64(32);
 
     // ------------------------------------------------------------------ server process lifecycle
 
@@ -188,12 +196,19 @@ class T35RestoreIT {
                 "--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=" + AcceptanceIdp.get().jwksUri(),
                 "--sangam.security.jit-provisioning-tenants=" + tenant,
                 "--sangam.security.bootstrap.enabled=true",
-                "--sangam.security.bootstrap.admin-groups=sangam-admin",
+                "--sangam.security.bootstrap.admin-groups=sangam-admin,sangam-tenant-admin",
+                // the server serves only tenants that exist (TenantAdminService.requireActive); without a dev token
+                // the bootstrap creates 'dev', not this run's tenant, so every call was 401 TENANT_UNAVAILABLE
+                "--sangam.security.bootstrap.tenants=" + tenant,
+                // the inbound channel is signed like a production one (PR-3: no unsigned inbound channel); the bill
+                // portal publishes through the token-authenticated events API, which needs no signature (SL-76)
+                "--sangam.ports.secret-refs=acc-t35-hook",
+                "--sangam.ports.secrets.acc-t35-hook=" + hookSecret,
                 "--sangam.integration.simulators.enabled=true"));
         serverLog = Path.of(System.getProperty("user.dir"), System.getProperty("sangam.target", "target"),
                 "acc-t35-" + run + "-" + System.currentTimeMillis() + ".log");
         server = new ProcessBuilder(cmd).redirectErrorStream(true).redirectOutput(serverLog.toFile()).start();
-        http = AccHttp.local(port, AcceptanceIdp.get().token(tenant, "acc-t35-admin", AbstractAcceptanceIT.ADMIN_GROUPS));
+        http = AccHttp.local(port, AcceptanceIdp.get().token(tenant, "acc-t35-admin", ENGINE_ADMIN));
         HttpClient probe = HttpClient.newHttpClient();
         long end = System.currentTimeMillis() + 300_000;
         while (System.currentTimeMillis() < end) {
@@ -312,7 +327,7 @@ class T35RestoreIT {
         HttpResponse<String> r = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
                         URI.create("http://localhost:" + port + "/engine-rest/deployment/create"))
                 .header("Authorization", "Bearer " + AcceptanceIdp.get().token(tenant, "acc-t35-admin",
-                        AbstractAcceptanceIT.ADMIN_GROUPS))
+                        ENGINE_ADMIN))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8)).build(),
                 HttpResponse.BodyHandlers.ofString());
@@ -334,6 +349,7 @@ class T35RestoreIT {
         ch.put("transport", "REST");
         ch.put("eventDefinitionKeys", List.of(definition));
         ch.put("active", true);
+        ch.put("config", Map.of("secretRef", "acc-t35-hook"));
         http.call("POST", "/api/v1/events/channels", ch);
     }
 

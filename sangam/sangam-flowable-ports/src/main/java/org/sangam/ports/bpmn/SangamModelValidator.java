@@ -33,6 +33,8 @@ import java.util.Set;
  *       Operaton).</li>
  *   <li>FLOWABLE-INTO-OPERATON FC-13: skip expressions on scopes → error.</li>
  *   <li>Flowable namespace attributes left in a model → warning (use {@code FlowableModelImporter}).</li>
+ *   <li>EXT: an attribute or element in a namespace the engine does not read → warning naming {@code {ns}local} and
+ *       the element; a rejected deployment lists these too, so its report names every unsupported item.</li>
  *   <li>Custom rules: {@link Rule} (EC-21 / R48 profiles, pack-specific rules).</li>
  * </ul>
  */
@@ -54,6 +56,13 @@ public class SangamModelValidator {
 
     private static final String FLOWABLE_NS = "http://flowable.org/bpmn";
     private static final String ACTIVITI_NS = "http://activiti.org/bpmn";
+    /** Namespaces whose attributes/elements the engine reads (or that carry no semantics). */
+    private static final Set<String> ENGINE_NAMESPACES = Set.of(
+            "http://www.omg.org/spec/BPMN/20100524/MODEL", "http://www.omg.org/spec/BPMN/20100524/DI",
+            "http://www.omg.org/spec/DD/20100524/DC", "http://www.omg.org/spec/DD/20100524/DI",
+            "http://www.w3.org/2001/XMLSchema-instance", "http://www.w3.org/XML/1998/namespace",
+            "http://www.w3.org/2000/xmlns/", "http://operaton.org/schema/1.0/bpmn", "http://camunda.org/schema/1.0/bpmn",
+            "http://sangam.org/schema/1.0/bpmn", FLOWABLE_NS, ACTIVITI_NS);
     private static final Set<String> UNSUPPORTED_BPMN = Set.of("complexGateway", "standardLoopCharacteristics", "dataStoreReference");
 
     private final Options options;
@@ -130,6 +139,22 @@ public class SangamModelValidator {
                 out.add(new Finding(Severity.ERROR, "FC-13", resource, id, "skip expressions are supported on tasks only"));
             }
         }
+        if (bpmn) {
+            // E-46 s2.5: an extension the engine ignores is named (namespace, local name, element), never dropped silently
+            if (el.getNamespaceURI() != null && !ENGINE_NAMESPACES.contains(el.getNamespaceURI())) {
+                out.add(new Finding(Severity.WARNING, "EXT", resource, id(el), "extension element {"
+                        + el.getNamespaceURI() + "}" + local + " is ignored by the engine"));
+            }
+            for (int i = 0; i < el.getAttributes().getLength(); i++) {
+                Node a = el.getAttributes().item(i);
+                String ns = a.getNamespaceURI();
+                if (ns != null && !ENGINE_NAMESPACES.contains(ns)) {
+                    String an = a.getLocalName() == null ? a.getNodeName() : a.getLocalName();
+                    out.add(new Finding(Severity.WARNING, "EXT", resource, id(el), "extension attribute {" + ns + "}"
+                            + an + " on " + local + " is ignored by the engine"));
+                }
+            }
+        }
         for (int i = 0; i < el.getAttributes().getLength(); i++) {
             Node a = el.getAttributes().item(i);
             if (FLOWABLE_NS.equals(a.getNamespaceURI()) || ACTIVITI_NS.equals(a.getNamespaceURI())) {
@@ -189,15 +214,22 @@ public class SangamModelValidator {
     public Deployer deployer() {
         return deployment -> {
             List<Finding> errors = new ArrayList<>();
+            List<Finding> ignored = new ArrayList<>();
             Map<String, ResourceEntity> res = deployment.getResources();
             if (res != null) {
                 for (ResourceEntity r : res.values()) {
                     for (Finding f : validate(r.getName(), r.getBytes())) {
                         if (f.severity() == Severity.ERROR) {
                             errors.add(f);
+                        } else if ("EXT".equals(f.code())) {
+                            ignored.add(f);
                         }
                     }
                 }
+            }
+            // a rejection names every unsupported item, including extensions the engine would drop silently
+            if (!errors.isEmpty()) {
+                errors.addAll(ignored);
             }
             if (!errors.isEmpty()) {
                 StringBuilder sb = new StringBuilder("deployment rejected by the Sangam validator (R44):");

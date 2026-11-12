@@ -1,2 +1,2 @@
 org.springframework.boot.EnvironmentPostProcessor=\
-org.sangam.server.config.LegacyTimeZoneEnvironmentPostProcessor
+org.sangam.server.config.EngineTimeZoneEnvironmentPostProcessor

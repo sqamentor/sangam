@@ -225,6 +225,21 @@ public final class TenantAdminService {
                         rs.getString(6), Sql.jsonMap(rs.getString(7)), Sql.jsonMap(rs.getString(8)), rs.getInt(9) == 1));
     }
 
+    /** What a background schedule needs of a tenant (SL-117): its id and lifecycle status, no admin data. */
+    public record SystemTenant(String tenantId, String status) {
+    }
+
+    /**
+     * SL-117: the read-only tenant listing for background schedules (compliance, channels, AI worker, field, ops). Only
+     * the system principal ({@link SecurityIdentity#system()}) may call it; it returns ids and statuses only. The
+     * platform-admin listing {@link #list} and its guard are unchanged.
+     */
+    public List<SystemTenant> listForSystem(Connection c, SecurityIdentity system) {
+        requireSystem(system);
+        return Jdbc.query(c, "SELECT tenant_id, status FROM SEC_TENANT ORDER BY tenant_id",
+                rs -> new SystemTenant(rs.getString(1), rs.getString(2)));
+    }
+
     /** Requests are served only for tenants that exist and are not suspended (CREATED/CONFIGURED allow admin set-up). */
     public void requireActive(Connection c, String tenantId) {
         String status = find(c, tenantId).map(Tenant::status).orElse(null);
@@ -255,6 +270,12 @@ public final class TenantAdminService {
     static void requirePlatformAdmin(SecurityIdentity who) {
         if (!who.hasRole(PLATFORM_ADMIN_ROLE)) {
             throw new SangamSecurityException.AccessDenied("platform administrator role required", 0);
+        }
+    }
+
+    static void requireSystem(SecurityIdentity who) {
+        if (who == null || !who.system()) {
+            throw new SangamSecurityException.AccessDenied("system principal required", 0);
         }
     }
 

@@ -80,7 +80,15 @@ public final class OutboxCapacityMonitor {
             prevOpen = open;
             prevAt = now;
             double ratio = used / (double) maxBytes;
-            Double drain = mu > lambda ? open / (mu - lambda) : (open == 0 ? 0.0 : null);
+            // Drain time only while the backlog drains (A-5): null when it does not (mu <= lambda with open deliveries).
+            // Not one conditional expression: with a primitive branch the null was unboxed (NullPointerException), so
+            // every sample failed while the backlog did not drain and the level BackpressureGate reads went stale.
+            Double drain = null;
+            if (mu > lambda) {
+                drain = open / (mu - lambda);
+            } else if (open == 0) {
+                drain = 0.0;
+            }
             return new Sample(Instant.now(), used, maxBytes, ratio, level(ratio), open, lambda, mu, drain);
         });
         if (s.level() != last.level()) {

@@ -428,5 +428,16 @@
     "keep",
     "now",
     "custom"
+  ],
+  "ops.actState.": [
+    "running",
+    "completed",
+    "canceled"
+  ],
+  "field.error.": [
+    "NOT_REGISTERED",
+    "QUEUE_FULL",
+    "OFFLINE_TOO_LONG",
+    "DEVICE_REVOKED"
   ]
 }

@@ -9,8 +9,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { api } from '../../api/endpoints';
-import type { ActivityInstance, ConsequencePreview, HistoryLogKind, ModificationInstruction, ModificationKind } from '../../api/types';
+import { api, historyFilterable } from '../../api/endpoints';
+import type { ActivityInstance, ActivitySelection, ActivityState, ConsequencePreview, HistoryLogKind, ModificationInstruction, ModificationKind } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
@@ -39,6 +39,7 @@ import {
 } from '../../components/ui';
 
 const LOGS: HistoryLogKind[] = ['audit', 'jobs', 'external-tasks', 'variables', 'user-tasks', 'decisions', 'called'];
+const STATES: ActivityState[] = ['running', 'completed', 'canceled'];
 
 type Dlg = 'cancel' | 'suspend' | 'modify' | 'move' | 'inject' | 'message' | 'restart' | 'adhoc' | null;
 
@@ -55,6 +56,8 @@ export function InstanceDetail() {
   const piActions = usePlugins('process-instance.action');
   const [tab, setTab] = useState('tree');
   const [treeQ, setTreeQ] = useState('');
+  const [treeState, setTreeState] = useState<ActivityState | ''>('');
+  const [sel, setSel] = useState<ActivitySelection>();
   const [dlg, setDlg] = useState<Dlg>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const reloadAll = () => {
@@ -148,21 +151,46 @@ export function InstanceDetail() {
         tabs={[
           { id: 'tree', label: t('ops.activityTree') },
           { id: 'vars', label: t('ops.variables') },
+          { id: 'incidents', label: t('nav.incidents') },
           ...LOGS.map((l) => ({ id: `log-${l}`, label: t(`ops.log.${l}`) })),
           { id: 'links', label: t('ops.links') },
         ]}
       />
+      {sel && !sel.root && (
+        <Notice>
+          {t('ops.selectedActivity', { name: sel.label, id: sel.activityInstanceId })}{' '}
+          <button type="button" className="link" onClick={() => setSel(undefined)}>
+            {t('common.clear')}
+          </button>
+        </Notice>
+      )}
       <TabPanel id="tree" active={tab}>
         <ProblemAlert error={tree.error} />
-        <TextField label={t('common.search')} value={treeQ} onChange={setTreeQ} />
-        {tree.data && <ActivityTree node={tree.data} q={treeQ} />}
+        <div className="filters">
+          <TextField label={t('common.search')} value={treeQ} onChange={setTreeQ} />
+          <SelectField
+            label={t('ops.treeState')}
+            value={treeState}
+            onChange={(v) => setTreeState(v as ActivityState | '')}
+            placeholder={t('ops.treeCurrent')}
+            options={STATES.map((s) => ({ value: s, label: t(`ops.actState.${s}`) }))}
+          />
+        </div>
+        {treeState ? (
+          <ActivityStateList instanceId={id} state={treeState} q={treeQ} selected={sel} onSelect={setSel} />
+        ) : (
+          tree.data && <ActivityTree node={tree.data} q={treeQ} selected={sel} onSelect={setSel} />
+        )}
       </TabPanel>
       <TabPanel id="vars" active={tab}>
-        <Variables instanceId={id} editable={running} />
+        <Variables instanceId={id} editable={running} at={sel} />
+      </TabPanel>
+      <TabPanel id="incidents" active={tab}>
+        <InstanceIncidents instanceId={id} at={sel} />
       </TabPanel>
       {LOGS.map((l) => (
         <TabPanel key={l} id={`log-${l}`} active={tab}>
-          <HistoryLog instanceId={id} kind={l} />
+          <HistoryLog instanceId={id} kind={l} at={sel} />
         </TabPanel>
       ))}
       <TabPanel id="links" active={tab}>
@@ -197,19 +225,100 @@ export function InstanceDetail() {
   );
 }
 
-function ActivityTree({ node, q = '' }: { node: ActivityInstance; q?: string }) {
+type Select = (s: ActivitySelection | undefined) => void;
+
+/** Picks a node; picking the selected one again clears the selection (P13). */
+function toggle(cur: ActivitySelection | undefined, next: ActivitySelection, onSelect: Select) {
+  onSelect(cur?.activityInstanceId === next.activityInstanceId ? undefined : next);
+}
+
+function ActivityTree({ node, q = '', selected, onSelect, depth = 0 }: { node: ActivityInstance; q?: string; selected?: ActivitySelection; onSelect?: Select; depth?: number }) {
   const { t } = useTranslation();
   const hit = (n: ActivityInstance): boolean => `${n.activityName ?? ''} ${n.activityId}`.toLowerCase().includes(q.toLowerCase()) || (n.children ?? []).some(hit);
   if (q && !hit(node)) return null;
+  const label = node.activityName ?? node.activityId;
+  const pick: ActivitySelection = { activityInstanceId: node.id, activityId: node.activityId, activityType: node.activityType, label, root: depth === 0 };
+  const pressed = selected?.activityInstanceId === node.id;
   return (
     <ul className="plan-tree" role="tree">
-      <li role="treeitem" aria-expanded={node.children?.length ? true : undefined}>
-        <strong>{node.activityName ?? node.activityId}</strong> <span className="muted small">{node.activityType}</span>{' '}
-        <code className="small">{node.id}</code> {node.incidentIds?.length ? <Badge value={t('ops.incidentN', { n: node.incidentIds.length })} tone="bad" /> : null}
+      <li role="treeitem" aria-expanded={node.children?.length ? true : undefined} aria-selected={pressed}>
+        {onSelect ? (
+          <button type="button" className="link" aria-pressed={pressed} onClick={() => toggle(selected, pick, onSelect)}>
+            <strong>{label}</strong>
+          </button>
+        ) : (
+          <strong>{label}</strong>
+        )}{' '}
+        <span className="muted small">{node.activityType}</span> <code className="small">{node.id}</code>{' '}
+        {node.incidentIds?.length ? <Badge value={t('ops.incidentN', { n: node.incidentIds.length })} tone="bad" /> : null}
         {node.startTime && <span className="small muted"> · {fmtDate(node.startTime)}</span>}
-        {node.children && node.children.length > 0 && node.children.map((c) => <ActivityTree key={c.id} node={c} q={q} />)}
+        {node.children && node.children.length > 0 && node.children.map((c) => <ActivityTree key={c.id} node={c} q={q} selected={selected} onSelect={onSelect} depth={depth + 1} />)}
       </li>
     </ul>
+  );
+}
+
+/** P14: activity instances of this instance in one state, from the history API (the runtime tree has running only). */
+function ActivityStateList({ instanceId, state, q, selected, onSelect }: { instanceId: string; state: ActivityState; q: string; selected?: ActivitySelection; onSelect: Select }) {
+  const { t } = useTranslation();
+  const list = usePaged((p) => api.processes.activityHistory(instanceId, { ...p, state }), [instanceId, state]);
+  const rows = (list.data?.items ?? []).filter((a) => `${a.activityName ?? ''} ${a.activityId}`.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <>
+      <ProblemAlert error={list.error} onRetry={list.reload} />
+      {list.loading && !list.data && <Loading />}
+      {list.data && rows.length === 0 && <Empty message={t('ops.noActivities')} />}
+      {rows.length > 0 && (
+        <ul className="plan-tree" role="tree" aria-label={t(`ops.actState.${state}`)}>
+          {rows.map((a) => {
+            const label = a.activityName ?? a.activityId;
+            const pressed = selected?.activityInstanceId === a.id;
+            return (
+              <li key={a.id} role="treeitem" aria-selected={pressed}>
+                <button type="button" className="link" aria-pressed={pressed} onClick={() => toggle(selected, { activityInstanceId: a.id, activityId: a.activityId, activityType: a.activityType, label }, onSelect)}>
+                  <strong>{label}</strong>
+                </button>{' '}
+                <span className="muted small">{a.activityType}</span> <Badge value={t(`ops.actState.${state}`)} tone={state === 'canceled' ? 'warn' : state === 'completed' ? 'ok' : 'info'} />{' '}
+                <code className="small">{a.id}</code>
+                {a.startTime && <span className="small muted"> · {fmtDate(a.startTime)}</span>}
+                {a.endTime && <span className="small muted"> → {fmtDate(a.endTime)}</span>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <Pagination data={list.data} page={list.page} size={list.size} setPage={list.setPage} setSize={list.setSize} />
+    </>
+  );
+}
+
+/** Incidents of this instance (open and resolved); a tree selection narrows them to its activity (P13). */
+function InstanceIncidents({ instanceId, at }: { instanceId: string; at?: ActivitySelection }) {
+  const { t } = useTranslation();
+  const activityId = at && !at.root ? at.activityId : undefined;
+  const list = usePaged((p) => api.processes.incidentHistory(instanceId, { ...p, activityId }), [instanceId, activityId]);
+  return (
+    <>
+      <ProblemAlert error={list.error} onRetry={list.reload} />
+      {list.loading && !list.data && <Loading />}
+      {list.data?.items.length === 0 && <Empty message={t('ops.noInstanceIncidents')} />}
+      {list.data && list.data.items.length > 0 && (
+        <DataTable
+          caption={t('nav.incidents')}
+          captionHidden
+          rows={list.data.items}
+          rowKey={(r) => r.id}
+          columns={[
+            { key: 'createTime', header: t('task.when'), render: (r) => fmtDate(r.createTime) },
+            { key: 'activityId', header: t('diagram.activity'), render: (r) => r.activityId ?? '—' },
+            { key: 'type', header: t('fld.type'), render: (r) => r.type ?? '—' },
+            { key: 'message', header: t('ops.change'), render: (r) => r.message ?? '—' },
+            { key: 'state', header: t('admin.status'), render: (r) => (r.state ? <Badge value={r.state} /> : '—') },
+          ]}
+        />
+      )}
+      <Pagination data={list.data} page={list.page} size={list.size} setPage={list.setPage} setSize={list.setSize} />
+    </>
   );
 }
 
@@ -218,9 +327,10 @@ function flattenTree(n?: ActivityInstance): ActivityInstance[] {
   return [n, ...(n.children ?? []).flatMap(flattenTree)];
 }
 
-function Variables({ instanceId, editable }: { instanceId: string; editable: boolean }) {
+function Variables({ instanceId, editable, at }: { instanceId: string; editable: boolean; at?: ActivitySelection }) {
   const { t } = useTranslation();
-  const vars = useAsync(() => api.processes.variables(instanceId), [instanceId]);
+  const scope = at && !at.root ? at.activityInstanceId : undefined;
+  const vars = useAsync(() => api.processes.variables(instanceId, scope), [instanceId, scope]);
   const [edit, setEdit] = useState<{ name: string; type: string; value: string } | null>(null);
   const act = useAction();
   return (
@@ -294,11 +404,13 @@ function Variables({ instanceId, editable }: { instanceId: string; editable: boo
   );
 }
 
-function HistoryLog({ instanceId, kind }: { instanceId: string; kind: HistoryLogKind }) {
+function HistoryLog({ instanceId, kind, at }: { instanceId: string; kind: HistoryLogKind; at?: ActivitySelection }) {
   const { t } = useTranslation();
-  const list = usePaged((p) => api.processes.history(instanceId, kind, p), [instanceId, kind]);
+  const narrowed = at && !at.root && historyFilterable(kind) ? at : undefined;
+  const list = usePaged((p) => api.processes.history(instanceId, kind, p, narrowed), [instanceId, kind, narrowed?.activityInstanceId]);
   return (
     <>
+      {at && !at.root && !narrowed && <Notice>{t('ops.logNotFiltered')}</Notice>}
       <ProblemAlert error={list.error} onRetry={list.reload} />
       {list.loading && !list.data && <Loading />}
       {list.data?.items.length === 0 && <Empty message={t('ops.noHistory')} />}

@@ -1,6 +1,6 @@
 {
   "key": "sec-health-admission-discharge/admit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.admission-discharge",
   "title": {
     "en": "Admit: bed, estimate of charges, consent",
@@ -25,7 +25,9 @@
     },
     {
       "id": "estimatedCost",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Estimated cost (INR)",

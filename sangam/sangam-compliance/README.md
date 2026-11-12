@@ -127,6 +127,13 @@ Paths are under `src/main/java/org/sangam/compliance/`. CMP ids refer to the IN 
    - `logs.seal` daily, followed by `purgeExpired`;
    - `ntp.check` hourly;
    - `integrity.verifyTenant` daily.
+
+   Each cycle runs for a tenant list that the host supplies; the module does not choose tenants. In `sangam-server`
+   (SL-117) the list is every non-suspended tenant of the tenant directory, read as the system principal, plus the
+   optional extra tenants in `sangam.compliance.tenants` (`SANGAM_COMPLIANCE_TENANTS`), and only tenants with an
+   effective jurisdiction are scheduled. An empty list or a failed directory read is logged at WARN and counted in the
+   `sangam.schedule.*` metrics instead of passing silently. Details: sangam-server README, "Schedulers" under
+   Compliance.
 4. **Packs.** This module ships its own `META-INF/sangam/packs.idx` (pack `sangam.compliance`) and
    `META-INF/sangam/jurisdictions.idx`. The BPMN files have no DI layout yet.
 5. **REST (WS-REST).** Implement `api/ComplianceApi` under `/api/v1/compliance`. The endpoints are listed on its

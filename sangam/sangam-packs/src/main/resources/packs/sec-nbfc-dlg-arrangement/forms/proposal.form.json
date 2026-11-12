@@ -1,6 +1,6 @@
 {
   "key": "sec-nbfc-dlg-arrangement/proposal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.nbfc.dlg-arrangement",
   "title": {
     "en": "DLG proposal",
@@ -25,7 +25,9 @@
     },
     {
       "id": "portfolioAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Portfolio covered (INR)",
@@ -34,7 +36,9 @@
     },
     {
       "id": "dlgAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "DLG amount (INR)",

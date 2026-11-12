@@ -1,6 +1,6 @@
 {
   "key": "sec-health-blood-bank/discard",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.blood-bank",
   "title": {
     "en": "Discard and counsel the donor",

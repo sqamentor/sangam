@@ -193,11 +193,15 @@ class PlugAndPlayAcceptanceTest {
         JsonNode s = scenario("AT-6");
         String pluginId = s.at("/plugin").asText();
         boolean loaded = false;
-        for (JsonNode p : call(maker(), "GET", "/admin/plugins", null)) {
+        JsonNode plugins = call(maker(), "GET", "/admin/plugins", null);
+        for (JsonNode p : plugins) {
             loaded |= pluginId.equals(p.path("id").asText()) && "LOADED".equals(p.path("status").asText()) && !p.path("signedBy").isNull()
                     && !p.path("signedBy").asText("").isBlank();
         }
-        assumeTrue(loaded, "signed example plugin not installed: see the test plan");
+        // AT-6: the signed plugin is part of the configured environment (ACCEPTANCE-PLUG-AND-PLAY.md, Environment step 1;
+        // automated in sangam-server PlugAndPlayIT by SignedExamplePlugin): once the environment is set, a missing or
+        // unsigned plugin is a failure, not a skip
+        assertTrue(loaded, "signed example plugin not LOADED with signedBy (Environment step 1 of the plan): " + plugins);
         onboard(s.path("request"));
         business(s);
     }

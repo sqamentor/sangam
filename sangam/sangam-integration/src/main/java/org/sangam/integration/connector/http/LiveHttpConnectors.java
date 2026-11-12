@@ -24,11 +24,16 @@ import org.sangam.integration.connector.TlsConfig;
  * {@link HttpTransport} with an {@link EgressPolicy} built from the connector's egress rules (default: exactly the
  * origin of its base URL), so loopback, private, link-local/metadata, CGNAT, ULA and multicast destinations are refused
  * unless the configuration sets {@code allowPrivate} explicitly. Credentials are references resolved through the
- * {@link SecretResolver}; mTLS key and trust stores are file paths with password references.
+ * {@link SecretResolver}; mTLS key and trust stores are file paths with password references. A default header whose
+ * value is a {@code secret://} reference (SL-18, an edge service token) is checked when the connector is built and read
+ * from the secret port on every call.
  *
  * <p>On a production profile the build is refused when the base URL (or token URL) is not {@code https}, when a
  * required credential is missing or unresolvable, or when a credential is a literal rather than a {@code secret://}
- * reference.
+ * reference. On every profile a {@code secret://} reference that does not resolve to a non-empty value fails the build.
+ * So does (SL-65: refused, never trimmed) a secret that becomes a header value with leading or trailing whitespace or a
+ * control character, a key-store or trust-store password with a control character such as a line break, and a default
+ * header or method that is not valid HTTP.
  */
 public final class LiveHttpConnectors {
 
@@ -100,31 +105,50 @@ public final class LiveHttpConnectors {
         HttpRestConnector.Authorizer authorizer = null;
         switch (type) {
             case BASIC -> {
-                String v = secret(where, "auth.secret-ref", auth.secretRef(), secrets, production);
+                String v = headerSecret(where, "auth.secret-ref", auth.secretRef(), secrets, production);
                 if (!v.contains(":")) {
                     throw new IllegalStateException(where + ": basic credential must be user:password");
                 }
                 staticAuth = "basic:" + v;
             }
-            case BEARER -> staticAuth = "Bearer " + secret(where, "auth.secret-ref", auth.secretRef(), secrets, production);
+            case BEARER -> staticAuth = "Bearer " + headerSecret(where, "auth.secret-ref", auth.secretRef(), secrets,
+                    production);
+            // the client secret goes to the token endpoint with HTTP Basic, in an Authorization header
             case OAUTH2_CLIENT_CREDENTIALS -> authorizer = new OAuth2ClientCredentials(tokenUri, auth.clientId(),
-                    secret(where, "auth.client-secret-ref", auth.clientSecretRef(), secrets, production), auth.scope(),
-                    transport, Clock.systemUTC());
+                    headerSecret(where, "auth.client-secret-ref", auth.clientSecretRef(), secrets, production),
+                    auth.scope(), transport, Clock.systemUTC());
             case NONE, MTLS -> {
                 // no header; MTLS authenticates with the client certificate
             }
         }
-        // the connector resolves a static value through the resolver again: hand it the already-resolved literal
-        String fixed = staticAuth;
-        SecretResolver resolved = ref -> java.util.Optional.ofNullable(fixed);
+        // SL-18: a default header whose value is a secret:// reference (an edge service token) is a credential by
+        // reference. It is checked here by the rules of the auth references, so an unknown or empty reference fails the
+        // build, not the first call. The connector then reads it from the secret port on every call: a rotated value
+        // needs no rebuild, and no value sits in the connector's configuration. A value without the prefix is a plain
+        // header value.
+        Map<String, String> defaultHeaders = s.defaultHeaders() == null ? Map.of() : s.defaultHeaders();
+        for (Map.Entry<String, String> h : defaultHeaders.entrySet()) {
+            if (h.getValue() != null && h.getValue().startsWith("secret://")) {
+                headerSecret(where, "default-headers." + h.getKey(), h.getValue(), secrets, production);
+            }
+        }
         CapabilityClass cls = CapabilityClass.fromDeclaration(s.capabilityClass());
         if (s.lookupPath() != null && !s.lookupPath().contains("{operationId}")) {
             throw new IllegalStateException(where + ": lookup-path must contain {operationId}");
         }
-        HttpRestConnector.Config config = new HttpRestConnector.Config(s.id(), base, cls, s.idempotencyHeader(),
-                s.lookupPath(), fixed, s.defaultHeaders(), s.readTimeout(), ConnectorProfile.LIVE, authorizer,
-                new HttpRestConnector.ResponseMapping(s.outputMapping(), s.providerRefPointer()), s.method());
-        return new HttpRestConnector(config, transport, resolved);
+        // SG-36: the connector gets the real secret port, never a stand-in. The static credential goes in already
+        // resolved ("Bearer ..." / "basic:..."), and SecretResolver#require never looks up a value without the secret://
+        // prefix, so the port answers only the default-header references and the credential reaches only Authorization.
+        HttpRestConnector.Config config;
+        try {
+            config = new HttpRestConnector.Config(s.id(), base, cls, s.idempotencyHeader(), s.lookupPath(), staticAuth,
+                    defaultHeaders, s.readTimeout(), ConnectorProfile.LIVE, authorizer,
+                    new HttpRestConnector.ResponseMapping(s.outputMapping(), s.providerRefPointer()), s.method());
+        } catch (IllegalArgumentException e) {
+            // a header, method or response-mapping error names the connector like every other configuration error
+            throw new IllegalStateException(where + ": " + e.getMessage(), e);
+        }
+        return new HttpRestConnector(config, transport, secrets);
     }
 
     private static URI absolute(String where, String name, String value, boolean production) {
@@ -170,6 +194,31 @@ public final class LiveHttpConnectors {
         return v;
     }
 
+    /**
+     * SL-65: a secret that becomes (part of) a header value: no leading or trailing whitespace and no control character.
+     * Refused, never trimmed (a trailing line break from a file store could hide a wrong secret).
+     */
+    private static String headerSecret(String where, String name, String ref, SecretResolver secrets, boolean production) {
+        String v = secret(where, name, ref, secrets, production);
+        if (!HttpRestConnector.isTidySecret(v)) {
+            throw new IllegalStateException(where + ": " + name + HttpRestConnector.UNTIDY_SECRET);
+        }
+        return v;
+    }
+
+    /**
+     * SL-65: a secret that never goes into a header (a key-store or trust-store password): no control character. Leading
+     * or trailing spaces are legitimate password characters.
+     */
+    private static String passwordSecret(String where, String name, String ref, SecretResolver secrets,
+                                         boolean production) {
+        String v = secret(where, name, ref, secrets, production);
+        if (!HttpRestConnector.hasNoControlCharacter(v)) {
+            throw new IllegalStateException(where + ": " + name + HttpRestConnector.CONTROL_IN_SECRET);
+        }
+        return v;
+    }
+
     private static TlsConfig tls(String where, Tls t, SecretResolver secrets, boolean production, boolean mutualRequired) {
         boolean hasKey = t != null && t.keyStore() != null && !t.keyStore().isBlank();
         boolean hasTrust = t != null && t.trustStore() != null && !t.trustStore().isBlank();
@@ -181,10 +230,10 @@ public final class LiveHttpConnectors {
         }
         Path key = hasKey ? existing(where, "tls.key-store", t.keyStore()) : null;
         Path trust = hasTrust ? existing(where, "tls.trust-store", t.trustStore()) : null;
-        char[] kp = hasKey ? secret(where, "tls.key-store-password-ref", t.keyStorePasswordRef(), secrets, production)
-                .toCharArray() : null;
-        char[] tp = hasTrust ? secret(where, "tls.trust-store-password-ref", t.trustStorePasswordRef(), secrets, production)
-                .toCharArray() : null;
+        char[] kp = hasKey ? passwordSecret(where, "tls.key-store-password-ref", t.keyStorePasswordRef(), secrets,
+                production).toCharArray() : null;
+        char[] tp = hasTrust ? passwordSecret(where, "tls.trust-store-password-ref", t.trustStorePasswordRef(), secrets,
+                production).toCharArray() : null;
         return new TlsConfig(key, kp, trust, tp, null);
     }
 

@@ -1,6 +1,6 @@
 {
   "id": "gov.recruitment",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "e-Recruitment",
     "hi": "ई-भर्ती"
@@ -116,7 +116,154 @@
       },
       "expectState": null,
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: challenges accepted by the expert panel (round 2 scores)"
+        "steps": [
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-1",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-1",
+              "applicantRef": "mobile:9XXXXapp-1",
+              "dob": "1996-01-01",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=90"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-2",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-2",
+              "applicantRef": "mobile:9XXXXapp-2",
+              "dob": "1996-01-02",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=85"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-3",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-3",
+              "applicantRef": "mobile:9XXXXapp-3",
+              "dob": "1996-01-03",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=80 @ scoreRound=1 || score=50 @ scoreRound=2"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-4",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-4",
+              "applicantRef": "mobile:9XXXXapp-4",
+              "dob": "1996-01-04",
+              "socialCategory": "OBC",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=70"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-5",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-5",
+              "applicantRef": "mobile:9XXXXapp-5",
+              "dob": "1996-01-05",
+              "socialCategory": "SC",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=60"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-6",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-6",
+              "applicantRef": "mobile:9XXXXapp-6",
+              "dob": "1996-01-06",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=75 @ scoreRound=1 || score=95 @ scoreRound=2"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "advance": "P31D"
+          },
+          {
+            "at": "rc2_scrutinyPeriod",
+            "advance": "P16D"
+          },
+          {
+            "at": "rc2_exam",
+            "advance": "P31D"
+          },
+          {
+            "at": "rc2_challenge",
+            "action": "correlate"
+          },
+          {
+            "at": "rc2_challengeClose",
+            "advance": "P8D"
+          },
+          {
+            "at": "rc2_poll",
+            "advance": "PT11M"
+          }
+        ],
+        "expect": {
+          "tasks": [
+            "rc2_provKey",
+            "rc2_expert"
+          ],
+          "audit": [
+            "MERIT_LIST_PREPARED"
+          ],
+          "merit": {
+            "selected": [
+              "app-6",
+              "app-1",
+              "app-2",
+              "app-4",
+              "app-5"
+            ],
+            "waitlist": [
+              "app-3"
+            ],
+            "scores": {
+              "app-6": 95,
+              "app-3": 50,
+              "app-1": 90
+            }
+          }
+        }
       }
     },
     {
@@ -129,10 +276,181 @@
       "given": "merit list published",
       "when": "a selected OBC candidate declines the offer",
       "then": "the next waitlisted OBC candidate receives the offer",
-      "startVariables": {},
+      "startVariables": {
+        "postName": "Junior Assistant",
+        "vacancies": "{\"UR\":3,\"OBC\":1,\"SC\":1}"
+      },
       "expectState": null,
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: a selected candidate declines the offer"
+        "steps": [
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-1",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-1",
+              "applicantRef": "mobile:9XXXXapp-1",
+              "dob": "1996-01-01",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=90"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-2",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-2",
+              "applicantRef": "mobile:9XXXXapp-2",
+              "dob": "1996-01-02",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=85"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-3",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-3",
+              "applicantRef": "mobile:9XXXXapp-3",
+              "dob": "1996-01-03",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=80"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-4",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-4",
+              "applicantRef": "mobile:9XXXXapp-4",
+              "dob": "1996-01-04",
+              "socialCategory": "OBC",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=75"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-5",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-5",
+              "applicantRef": "mobile:9XXXXapp-5",
+              "dob": "1996-01-05",
+              "socialCategory": "SC",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=60"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-6",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-6",
+              "applicantRef": "mobile:9XXXXapp-6",
+              "dob": "1996-01-06",
+              "socialCategory": "UR",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=72"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "action": "start",
+            "process": "sangam-recruitment-application",
+            "key": "app-7",
+            "vars": {
+              "campaignId": "@case",
+              "applicantName": "Candidate app-7",
+              "applicantRef": "mobile:9XXXXapp-7",
+              "dob": "1996-01-07",
+              "socialCategory": "OBC",
+              "qualification": "GRADUATE",
+              "pwd": false,
+              "sim_exam_score": "score=65"
+            }
+          },
+          {
+            "at": "rc2_closeApps",
+            "advance": "P31D"
+          },
+          {
+            "at": "rc2_scrutinyPeriod",
+            "advance": "P16D"
+          },
+          {
+            "at": "rc2_exam",
+            "advance": "P31D"
+          },
+          {
+            "at": "rc2_challengeClose",
+            "advance": "P8D"
+          },
+          {
+            "at": "rc2_poll",
+            "advance": "PT11M"
+          },
+          {
+            "at": "ra_declined",
+            "case": "app-4",
+            "action": "correlate"
+          }
+        ],
+        "expect": {
+          "tasks": [
+            "ra_dv",
+            "ra_dv",
+            "ra_dv",
+            "ra_dv",
+            "ra_dv",
+            "ra_dv"
+          ],
+          "audit": [
+            "MERIT_LIST_PREPARED",
+            "WAITLIST_PROMOTED"
+          ],
+          "merit": {
+            "selected": [
+              "app-1",
+              "app-2",
+              "app-3",
+              "app-5",
+              "app-7"
+            ],
+            "waitlist": [
+              "app-6"
+            ],
+            "promoted": "app-7",
+            "allotted": {
+              "app-7": "OBC"
+            }
+          }
+        }
       }
     }
   ],
@@ -145,5 +463,14 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "fee"
+    ]
+  }
 }

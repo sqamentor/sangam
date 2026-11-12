@@ -1,0 +1,27 @@
+{
+  "key": "sec-eu-gdpr-dsr/no-action",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "No action: reasons, complaint and remedy (Art. 12(4))",
+    "hi": "कोई कार्रवाई नहीं"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "refusalReasons",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Reasons, supervisory-authority complaint and judicial remedy (Art. 12(4))",
+        "hi": "कारण, पर्यवेक्षी प्राधिकरण शिकायत एवं न्यायिक उपचार (अनु. 12(4))"
+      }
+    }
+  ]
+}

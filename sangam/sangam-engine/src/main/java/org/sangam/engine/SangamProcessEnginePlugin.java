@@ -2,8 +2,10 @@
 package org.sangam.engine;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.impl.bpmn.parser.BpmnParseListener;
@@ -29,6 +31,9 @@ import org.sangam.engine.feel.FeelBindingDeployer;
 import org.sangam.engine.feel.FeelBindingStore;
 import org.sangam.engine.feel.FeelPinningListener;
 import org.sangam.engine.deploy.SangamCmmnTransformListener;
+import org.sangam.engine.history.MandatoryAuditHistoryEventHandler;
+import org.sangam.engine.history.MandatoryAuditHistoryEventProducer;
+import org.sangam.engine.history.MandatoryAuditHistoryLevel;
 import org.sangam.engine.history.OutboxOnlyDbHistoryEventHandler;
 import org.sangam.engine.history.PerDefinitionHistoryLevel;
 import org.sangam.engine.history.SangamHistoryEventHandler;
@@ -64,6 +69,8 @@ import org.sangam.engine.variables.LargeStringValueSerializer;
  *   <tr><td>History → audit chain and typed events (R42, FLOWABLE-INTO-OPERATON FC-43, FLOWABLE-INTO-OPERATON FC-25); per-definition history (FLOWABLE-INTO-OPERATON FC-26)</td><td>custom
  *       history event handler; custom history level</td></tr>
  *   <tr><td>Incidents → reconciliation</td><td>custom incident handlers (failedJob, failedExternalTask)</td></tr>
+ *   <tr><td>SL-45: deployments and batches of a tenant-scoped engine identity belong to its tenant</td><td>custom
+ *       session factories: {@link org.sangam.engine.deploy.TenantScopedCreation}</td></tr>
  *   <tr><td>Engine defaults: authorization off (VI.4 is the product's), Java serialization off (FLOWABLE-INTO-OPERATON D-47), XXE off (FLOWABLE-INTO-OPERATON D-51),
  *       isolation check on (FLOWABLE-INTO-OPERATON D-56), SKIP LOCKED + timers first + priorities (FLOWABLE-INTO-OPERATON FC-24 config route), UUID ids, history TTL
  *       not enforced (R61 decides per retention class)</td><td>preInit</td></tr>
@@ -77,6 +84,11 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SangamProcessEnginePlugin.class);
 
     private final SangamEngineComponents components;
+    /** M-012: the audit-chain handler created in preInit, the audit-only target of the postInit wrapper. */
+    private SangamHistoryEventHandler auditHandler;
+    /** M-012: the wrappers registered for the global activity / audit levels (also used for history=variable). */
+    private MandatoryAuditHistoryLevel activityLevel;
+    private MandatoryAuditHistoryLevel auditLevel;
 
     public SangamProcessEnginePlugin(SangamEngineComponents components) {
         this.components = components;
@@ -133,6 +145,14 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 new RollbackGuardInterceptor(flush)), new JobMetricsInterceptor(components.metrics())));
         cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
                 new RollbackGuardInterceptor(flush)));
+
+        // SL-45: deployments and batches of a tenant-scoped engine identity belong to its tenant (Operaton has no
+        // tenant check for either; the batch's jobs then run, and are checked, as that tenant); SL-73: so do its
+        // standalone tasks
+        List<org.operaton.bpm.engine.impl.interceptor.SessionFactory> sessions = cfg.getCustomSessionFactories() == null
+                ? new ArrayList<>() : new ArrayList<>(cfg.getCustomSessionFactories());
+        sessions.addAll(org.sangam.engine.deploy.TenantScopedCreation.sessionFactories());
+        cfg.setCustomSessionFactories(sessions);
 
         // variables: long strings and JSON first, so they win over Operaton's string / Java serializers
         int threshold = s.getLargeStringThresholdChars() != null ? s.getLargeStringThresholdChars()
@@ -196,8 +216,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // history: audit chain + typed events; per-definition levels
         List<HistoryEventHandler> history = cfg.getCustomHistoryEventHandlers() == null ? new ArrayList<>()
                 : new ArrayList<>(cfg.getCustomHistoryEventHandlers());
-        history.add(new SangamHistoryEventHandler(components.auditSink(), s.getEventSink(), s.getAuditedHistoryEvents(),
-                s.getPublishedHistoryEvents(), s.getDefaultTenantId()));
+        auditHandler = new SangamHistoryEventHandler(components.auditSink(), s.getEventSink(), s.getAuditedHistoryEvents(),
+                s.getPublishedHistoryEvents(), s.getDefaultTenantId());
+        history.add(auditHandler);
         if (!s.getOutboxOnlyHistoryKeys().isEmpty()) {
             // IR-5: Operaton's DB handler replaced by one that keeps only the audit level for the listed definitions
             cfg.setEnableDefaultDbHistoryEventHandler(false);
@@ -208,13 +229,30 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
             }
         }
         cfg.setCustomHistoryEventHandlers(history);
+        // M-012 (X.2.3, T62): class-B audit is independent of the history level. Each level below "full" is replaced
+        // by a wrapper with the same id and name (Operaton picks the last level whose name matches, and the custom
+        // levels come after its built-ins) that lets the audited event types through as audit-only events.
+        Set<String> mandatory = new LinkedHashSet<>(s.getAuditedHistoryEvents());
+        List<HistoryLevel> levels = cfg.getCustomHistoryLevels() == null ? new ArrayList<>()
+                : new ArrayList<>(cfg.getCustomHistoryLevels());
         if (!s.getHistoryLevelByProcessKey().isEmpty()) {
             HistoryLevel base = PerDefinitionHistoryLevelBase.of(s.getHistory());
-            List<HistoryLevel> levels = cfg.getCustomHistoryLevels() == null ? new ArrayList<>()
-                    : new ArrayList<>(cfg.getCustomHistoryLevels());
-            levels.add(new PerDefinitionHistoryLevel(base, s.getHistoryLevelByProcessKey()));
-            cfg.setCustomHistoryLevels(levels);
+            levels.add(new MandatoryAuditHistoryLevel(
+                    new PerDefinitionHistoryLevel(base, s.getHistoryLevelByProcessKey()), mandatory));
             cfg.setHistory(PerDefinitionHistoryLevel.NAME);
+        }
+        // Global "none" is not wrapped: it is refused at startup (owner decision 2026-11-12, refuseGlobalHistoryNone).
+        activityLevel = new MandatoryAuditHistoryLevel(HistoryLevel.HISTORY_LEVEL_ACTIVITY, mandatory);
+        auditLevel = new MandatoryAuditHistoryLevel(HistoryLevel.HISTORY_LEVEL_AUDIT, mandatory);
+        levels.add(activityLevel);
+        levels.add(auditLevel);
+        cfg.setCustomHistoryLevels(levels);
+        // the root END event of an audit-only tree must not set removal times on ACT_HI_* rows
+        if (cfg.getHistoryEventProducer() == null) {
+            cfg.setHistoryEventProducer(new MandatoryAuditHistoryEventProducer());
+        } else if (!(cfg.getHistoryEventProducer() instanceof MandatoryAuditHistoryEventProducer)) {
+            LOG.warn("M-012: a custom HistoryEventProducer ({}) is set; an audit-only root end event may still set "
+                    + "removal times on ACT_HI_* rows", cfg.getHistoryEventProducer().getClass().getName());
         }
 
         // incidents -> reconciliation
@@ -233,6 +271,21 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
     @Override
     public void postInit(ProcessEngineConfigurationImpl cfg) {
         SangamEngineSettings s = components.settings();
+        // M-012 (owner decision 2026-11-12): fail closed before anything else when the resolved level is global none
+        refuseGlobalHistoryNone(cfg.getHistoryLevel(), cfg.getHistory());
+        // M-012 (integrator decision, evidence below): history level "auto" is refused as well
+        refuseHistoryAuto(cfg.getHistoryLevel(), cfg.getHistory());
+        // M-012 (integrator decision): Operaton maps the deprecated alias history=variable straight to its built-in
+        // activity level (initHistoryLevel), bypassing the name lookup and so the mandatory-audit wrapper. A built-in
+        // activity/audit object here can only come from such a bypass; it gets the wrapper with the same id and name.
+        // Safe here: until postInit only the parse-listener factories read the level, and only for NONE.equals(..).
+        cfg.setHistoryLevel(mandatoryAudit(cfg.getHistoryLevel()));
+        // M-012: after Operaton built its handler from the DB handler and every plugin's custom handlers, audit-only
+        // events (MandatoryAuditHistoryLevel) are routed to the audit chain only
+        if (auditHandler != null && cfg.getHistoryEventHandler() != null
+                && !(cfg.getHistoryEventHandler() instanceof MandatoryAuditHistoryEventHandler)) {
+            cfg.setHistoryEventHandler(new MandatoryAuditHistoryEventHandler(cfg.getHistoryEventHandler(), auditHandler));
+        }
         // sangam_jobs_failed_total: every failed job execution goes through the failed-job command factory
         cfg.setFailedJobCommandFactory(new CountingFailedJobCommandFactory(cfg.getFailedJobCommandFactory(),
                 components.metrics()));
@@ -252,7 +305,71 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
     @Override
     public void postProcessEngineBuild(ProcessEngine processEngine) {
         // DataSource-level steps (P-1/P-2) run in SangamEngineConfigurer after the build.
+        // M-012: history level "auto" is resolved from the database only during the build; check the result too
+        ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) processEngine.getProcessEngineConfiguration();
+        try {
+            refuseGlobalHistoryNone(cfg.getHistoryLevel(), null);
+        } catch (RuntimeException e) {
+            processEngine.close();
+            throw e;
+        }
     }
+
+    /**
+     * M-012, owner decision 2026-11-12 (SANGAM.md X.2.3, T62): the global history level {@code none} is refused at
+     * startup, failing closed, in every embedding (server, starter, tests). Operaton's built-in {@code none} level
+     * produces no history events at all, so the class-B audit chain would receive none. A per-definition {@code none}
+     * ({@code historyLevelByProcessKey}) is allowed: it runs through {@link MandatoryAuditHistoryLevel}, which keeps
+     * the audit.
+     *
+     * @param resolved the engine's resolved level (may be {@code null} before "auto" is resolved)
+     * @param history  the configured level name, or {@code null}
+     */
+    static void refuseGlobalHistoryNone(HistoryLevel resolved, String history) {
+        boolean none = resolved != null ? HistoryLevel.HISTORY_LEVEL_NONE.equals(resolved)
+                : history != null && "none".equalsIgnoreCase(history.trim());
+        if (none) {
+            throw new org.operaton.bpm.engine.ProcessEngineException(GLOBAL_NONE_REFUSED);
+        }
+    }
+
+    /**
+     * M-012 (integrator decision): history level {@code auto} is refused at startup, failing closed. Operaton resolves
+     * it from {@code ACT_GE_PROPERTY} only inside the {@code ProcessEngineImpl} constructor
+     * ({@code executeSchemaOperations} -> {@code DefaultHistoryLevelSetupCommand.determineAutoHistoryLevel}), i.e. after
+     * {@code postInit}, and the same constructor then runs the bootstrap command and
+     * {@code JobExecutor.registerProcessEngine}, which starts the acquisition thread when the executor auto-activates,
+     * all before {@code postProcessEngineBuild} (javap, Operaton 2.2.0). Jobs could then produce class-B events
+     * through the unwrapped built-in level before a wrapper could be installed, and Operaton's history listeners cache
+     * the level they first see. So no point after the resolution is safe for the wrapper.
+     */
+    static void refuseHistoryAuto(HistoryLevel resolved, String history) {
+        if (resolved == null && history != null && "auto".equalsIgnoreCase(history.trim())) {
+            throw new org.operaton.bpm.engine.ProcessEngineException(AUTO_REFUSED);
+        }
+    }
+
+    static final String AUTO_REFUSED = "Sangam refuses the history level 'auto' (SANGAM.md X.2.3: the class-B audit "
+            + "can never be switched off, and an 'auto' level is resolved from the database only after Sangam's "
+            + "mandatory-audit level is installed, while jobs may already run). Setting: operaton.bpm.history-level / "
+            + "sangam.engine.history / ProcessEngineConfiguration.history = auto. Set an explicit level instead: "
+            + "'activity', 'audit' or 'full' (the level this database was created with; 'none' is refused too).";
+    /** The mandatory-audit wrapper for a built-in activity/audit level object; any other level is returned as is. */
+    HistoryLevel mandatoryAudit(HistoryLevel resolved) {
+        if (resolved == HistoryLevel.HISTORY_LEVEL_ACTIVITY && activityLevel != null) {
+            return activityLevel;
+        }
+        if (resolved == HistoryLevel.HISTORY_LEVEL_AUDIT && auditLevel != null) {
+            return auditLevel;
+        }
+        return resolved;
+    }
+
+    static final String GLOBAL_NONE_REFUSED = "Sangam refuses the global history level 'none' (SANGAM.md X.2.3: the "
+            + "class-B audit can never be switched off, and Operaton's 'none' level produces no history events for the "
+            + "audit chain). Setting: operaton.bpm.history-level / sangam.engine.history / "
+            + "ProcessEngineConfiguration.history = none. Use history level 'activity' instead, or keep a higher global "
+            + "level and set 'none' per definition (sangam.engine.history-level-by-process-key.<processKey>=none).";
 
     private static List<CommandInterceptor> append(List<CommandInterceptor> list, CommandInterceptor i) {
         List<CommandInterceptor> out = list == null ? new ArrayList<>() : new ArrayList<>(list);
@@ -266,9 +383,12 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         }
 
         static HistoryLevel of(String history) {
-            return switch (history == null ? "full" : history.toLowerCase(java.util.Locale.ROOT)) {
+            return switch (history == null ? "full" : history.trim().toLowerCase(java.util.Locale.ROOT)) {
                 case "none" -> HistoryLevel.HISTORY_LEVEL_NONE;
-                case "activity" -> HistoryLevel.HISTORY_LEVEL_ACTIVITY;
+                // the deprecated alias "variable" is Operaton's activity level (initHistoryLevel), not full
+                case "activity", "variable" -> HistoryLevel.HISTORY_LEVEL_ACTIVITY;
+                // integrator decision: "auto" is refused as a per-definition base too (same message as global auto)
+                case "auto" -> throw new org.operaton.bpm.engine.ProcessEngineException(AUTO_REFUSED);
                 case "audit" -> HistoryLevel.HISTORY_LEVEL_AUDIT;
                 default -> HistoryLevel.HISTORY_LEVEL_FULL;
             };

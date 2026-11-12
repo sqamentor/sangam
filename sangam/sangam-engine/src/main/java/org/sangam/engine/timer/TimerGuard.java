@@ -10,6 +10,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.JobEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import org.sangam.core.engine.TimerCatchUpPolicy;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.time.EngineTimeZone;
 import org.sangam.engine.db.EngineDialect;
 
 /**
@@ -25,6 +26,11 @@ import org.sangam.engine.db.EngineDialect;
  *   <li>{@code fire_count}: firings so far, which bounds {@code Rn} to n firings in total (FLOWABLE-INTO-OPERATON D-29).</li>
  * </ul>
  * A series is {@code jobDefinitionId:processInstanceId} (or {@code jobDefinitionId:start} for timer start events).
+ *
+ * <p>The guard compares the due date Operaton read back from its zone-less {@code DUEDATE_} column. That value is
+ * exact only because the engine JVM runs in UTC (SL-53, {@link EngineTimeZone}): stored in a zone with daylight saving
+ * time, the repeated hour of an autumn fold reads back one hour early, and the firing would be suppressed here as a
+ * duplicate interval.
  */
 public final class TimerGuard {
 
@@ -37,14 +43,17 @@ public final class TimerGuard {
 
     private final EngineDialect dialect;
     private final Duration lockWait;
-    private final ZoneId localZone;
     private final ZoneId cadenceZone;
 
-    public TimerGuard(EngineDialect dialect, Duration lockWait, ZoneId localZone, ZoneId cadenceZone) {
+    /**
+     * @param cadenceZone the timer zone ({@code sangam.engine.timer-zone}): the wall clock of calendar cadence and of
+     *                    the cron interval. Offset-less date-times in a cycle are engine-zone UTC
+     *                    ({@link EngineTimeZone#ZONE}): Operaton writes them in the JVM zone, which is UTC (SL-53).
+     */
+    public TimerGuard(EngineDialect dialect, Duration lockWait, ZoneId cadenceZone) {
         this.dialect = dialect;
         this.lockWait = lockWait;
-        this.localZone = localZone;
-        this.cadenceZone = cadenceZone;
+        this.cadenceZone = java.util.Objects.requireNonNull(cadenceZone, "cadenceZone");
     }
 
     public static String seriesKey(JobEntity job) {
@@ -62,9 +71,9 @@ public final class TimerGuard {
 
     /** Decides whether {@code timer} fires now and records the decision (row-locked). */
     public Verdict decide(Connection c, TimerEntity timer, TimerCatchUpPolicy policy, long nowMs) {
-        // ISO repeating interval: UTC grid or wall-clock interval; cron: the local wall-clock minute.
+        // ISO repeating interval: UTC grid or wall-clock interval; cron: the wall-clock minute in the timer zone.
         CycleExpression cycle = CycleExpression.isRepeating(timer.getRepeat())
-                ? CycleExpression.parse(timer.getRepeat(), localZone) : null;
+                ? CycleExpression.parse(timer.getRepeat(), EngineTimeZone.ZONE) : null;
         long dueMs = timer.getDuedate() == null ? nowMs : timer.getDuedate().getTime();
         java.time.Instant due = java.time.Instant.ofEpochMilli(dueMs);
         long interval = cycle != null ? cycle.intervalOf(due, cadenceZone)
@@ -99,10 +108,7 @@ public final class TimerGuard {
                 + "catch_up_policy = ?, updated_at_ms = ? WHERE series_key = ?", interval, policy.name(), nowMs, key);
     }
 
-    public ZoneId localZone() {
-        return localZone;
-    }
-
+    /** The timer zone: wall clock of calendar cadence, cron and the cron interval. */
     public ZoneId cadenceZone() {
         return cadenceZone;
     }

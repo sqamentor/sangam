@@ -12,9 +12,30 @@ Requirement ids: IFC-nnn (spike/results/IFMS-CENTRAL-REQUIREMENTS.md), IFS-nnn /
 """
 from lib import C, q
 from packs import Pack
-from common import core, outcome, end_ok, rejection, reject_with, withdraw
+from common import core, outcome, end_ok, rejection, reject_with, withdraw, availability_query, availability_conditions, \
+    checked_query, check_conditions
 import forms
+from money import M, major  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from sector import powers
+import os as _os
+import sys as _sys
+
+# SL-102 (ADR-D-20 single source): the GOI money thresholds are profile data. tools/profilegen holds them (integer minor
+# units of the profile currency, SD-398) and writes them to profiles/in/GOI.yaml; the pack DMNs below take the same
+# values from that data instead of keeping a second copy. The profilegen modules are plain Python (no YAML), so packgen
+# still runs without PyYAML (ci-build.yml runs it before installing PyYAML); appended, so packgen modules win any name.
+_sys.path.append(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'profilegen'))
+from central import IN as _IN_PROFILE  # noqa: E402
+from goi import GOI as _GOI_PROFILE, REAPP as _REAPP_PROFILE  # noqa: E402
+
+
+def profile_major(pk, minor_units):
+    """A GOI profile amount (minor units of the profile currency) as the major-unit text a money DMN column is authored
+    in (lib.dmn converts it back to the same minor units). The pack must be in the profile's currency, never assumed."""
+    ccy = _IN_PROFILE['locale']['currency']
+    if pk.currency != ccy:
+        raise ValueError(f'{pk.id}: pack currency {pk.currency} differs from the GOI profile currency {ccy}')
+    return major(minor_units, ccy)
 
 SIDE = ['GP-14', 'VI.5']
 
@@ -126,7 +147,7 @@ def ledger_conn(op, purpose):
 
 
 def authority(pk, key, rows, doc):
-    pk.dmn(key, 'Competent authority', 'FIRST', [('Amount (INR)', 'amount', 'double')],
+    pk.dmn(key, 'Competent authority', 'FIRST', [('Amount (INR)', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')], [([t], [q(r)], n) for t, r, n in rows], doc=doc)
 
 
@@ -163,14 +184,18 @@ def pao_chain():
     p = pk.proc('sangam-ifms-pao-chain', 'PAO / treasury pre-check', '', start={'materialFields': 'billType,amount,tokenNo'})
     s = p.root
     st = s.start('pc_start', 'Bill received', initiator=None)
-    d = s.setv('pc_defaults', 'Configuration', defaults='chainId=PAO_3;tokenless=false;billDistributorSeat=BD-1;'
-               'dealingSeat=DH-1;aaoSeat=AAO-1;paoSeat=PAO-1;secondSignatorySeat=SS-1;chainSignatures=1;amount=0;'
+    d = s.setv('pc_defaults', 'Configuration', defaults='tokenSeries=TOKEN;tokenless=false;billDistributorSeat=BD-1;'
+               'dealingSeat=DH-1;aaoSeat=AAO-1;paoSeat=PAO-1;secondSignatorySeat=SS-1;amount=0;'
                'paoDecision=pass;tokenNo=;billType=GENERIC')
     tok = s.conn('pc_token', 'Token number (series TOKEN)', 'config.series', 'series.next', 'submit',
-                 'billType,ddoCode', 'token', step='token')
-    sig = s.conn('pc_sigs', 'Signatures required (chain template)', 'config.documentType', 'chain.signatures', 'query',
-                 'chainId,amount', 'chain')
-    s.seq(st, d, tok, sig)
+                 'tokenSeries>series,ddoCode>unit', 'token', step='token')
+    # the chain is the bill type's approval chain (documentType.get -> docApprovalChain, passed in by the bill);
+    # no default chain: an unknown chain fails the lookup instead of counting one signature. SL-115: the count is
+    # cleared before the lookup, and a count that is not confirmed requires the second signature (the stricter
+    # chain), never one signature
+    sige, sig = checked_query(s, 'pc_sigs', 'Signatures required (chain template)', 'config.documentType',
+                              'chain.signatures', 'docApprovalChain>chainId,amount', 'chain', ['chainSignatures'])
+    s.seq(st, d, tok, sige)
     e1, x1 = task(s, 'pc_distribute', 'Assign bill in FIFO order | फीफो क्रम में बिल सौंपें', 'billDistributorSeat',
                   'ifms-pao-chain/distribute', ('distributeDecision', ['forwardNext']), ['tokenNo', 'billType', 'amount'], '1WD')
     e2, x2 = task(s, 'pc_dealing', 'Dealing hand check | व्यवहार सहायक की जाँच', 'dealingSeat', 'ifms-pao-chain/dealing',
@@ -197,7 +222,9 @@ def pao_chain():
     e5, x5 = task(s, 'pc_second', 'Second signature (DSC) | द्वितीय हस्ताक्षर (डीएससी)', 'secondSignatorySeat',
                   'ifms-pao-chain/second', ('secondDecision', ['signed', 'returnBill']), ['dscSerial', 'remarks'], '1WD', sod=True)
     passed = s.setv('pc_passed', 'Outcome: passed', values='paoOutcome=PASSED')
-    s.flow(sg, e5, 'chainSignatures >= 2', 'two signatures')
+    sig_unconfirmed, two = check_conditions([('chain', ['chainSignatures'])], 'chainSignatures >= 2')
+    s.flow(sg, e5, sig_unconfirmed, 'count not confirmed: second signature')
+    s.flow(sg, e5, two, 'two signatures')
     s.flow(sg, passed, None, 'one signature', default=True)
     g5 = s.xgw('pc_secGw')
     s.flow(x5, g5)
@@ -270,42 +297,70 @@ def bill():
     p.forms.append(dict(key='ifms-bill/draft', name='Bill | बिल', decision=None,
                         fields=['billType*', 'headOfAccount*', 'grantNo', 'chargedVoted', 'amount*', 'payee*', 'payeeAccount*',
                                 'ifsc', 'sanctionRef', 'claimPeriod', 'ddoCode*', 'documents'], doc=None))
-    d = s.setv('bl_defaults', 'Configuration', defaults='billType=CONTINGENT;headOfAccount=2054-00-001-01-00-13;amount=0;'
-               'payee=;payeeAccount=;sanctionRef=;ddoCode=DDO-1;ledgerId=BUDGET;fundsAvailable=999999999999.0;'
-               'docValid=true;clsValid=true;dupDuplicate=false;payeeMultiple=false;partyId=;ifsc=;docPaymentRail=DEFAULT;docApprovalChain=PAO_3;'
+    # billFormKind is a value, not a default: the bill always asks the catalogue for a BILL row (coordinator Q2 on
+    # APPROVE-401 step 2b, defence in depth), so a later non-bill row in documentTypes never resolves as a bill
+    d = s.setv('bl_defaults', 'Configuration', values='billFormKind=BILL',
+               defaults='billType=CONTINGENT;headOfAccount=2054-00-001-01-00-13;amount=0;'
+               'payee=;payeeAccount=;sanctionRef=;ddoCode=DDO-1;ledgerId=BUDGET;'
+               'partyId=;ifsc=;docPaymentRail=DEFAULT;'
                'paoOutcome=PASSED;caseType=BILL;routingDecisionKey=ifms-bill-authority;scrutinySeat=DDO-1;'
                'executionStep=pay;reconcileRequired=true;outputTemplate=payment-advice;appealAllowed=false;'
                'encumbranceLedger=BUDGET;releaseConnector=ledger.release')
     bind = s.conn('bl_profile', 'Bind profile version', 'config.profile', 'profile.binding', 'query', 'billType', 'prof')
-    typ = s.conn('bl_type', 'Bill type from the catalogue', 'config.documentType', 'documentType.get', 'query', 'billType', 'doc')
+    # inputs use the connector contract names ('variable>parameter' renames; sangam-config ConfigConnector javadoc).
+    # The bill type is a reference into the tenant's catalogue (profile documentTypes): its catalogue id (Union
+    # GOI.yaml: GPF_WITHDRAWAL, CONTINGENT, the packs' defaults; Rajasthan RJ.yaml: RJ_FVC, RJ_FVC_GENERAL). APPROVE-401
+    # step 2b (profilegen billtypes.py): every row carries a jurisdiction-prefixed form number (RJ:GA 84, GOI:RPR 29),
+    # the government system's bill-type code and a provenance label per field; one form can carry several bill types
+    # (twelve FVC sub-types on GA 84, four Union rows on RPR 29), so a form number alone may be TYPE_AMBIGUOUS and the
+    # catalogue id is the reference to send. Forms that are not bills (GA-55 report, challans, registers) are profile
+    # formTemplates, never resolved here. documentType.get resolves the reference by the data (typeRef: exactly one
+    # match) and returns the type row (docId = catalogue id); the check runs against that id. The head of account is the
+    # classification code under the scheme its type declares (GOI.yaml classification.scheme: HOA), else the profile's
+    # classification.defaultScheme (RJ.yaml: HOA_RJ). The bill-type taxonomy itself is IFMS data (JL-S-06).
+    # No validation result has a passing default: a check that could not run stops the case (incident).
+    typ = s.conn('bl_type', 'Bill type from the catalogue', 'config.documentType', 'documentType.get', 'query',
+                 'billType>typeRef,billFormKind>formKind', 'doc')
     cls = s.conn('bl_cls', 'Validate head of account', 'config.classification', 'classification.validate', 'query',
-                 'headOfAccount', 'cls')
+                 'headOfAccount>code,docId>typeId', 'cls')
     chk = s.conn('bl_check', 'Check bill against its type', 'config.documentType', 'documentType.check', 'query',
-                 'billType,headOfAccount,amount,sanctionRef,claimPeriod', 'doc')
-    dup = s.conn('bl_dup', 'Duplicate / similar claim', 'ifms.duplicateBill', 'check', 'query', 'payee,amount,claimPeriod', 'dup')
-    payee = s.conn('bl_payee', 'Payee golden record (party registry)', 'registry.party', 'payee.resolve', 'query',
-                   'partyId,payee,payeeAccount,ifsc', 'payee')
-    s.seq(st, d, bind, typ, cls, chk, dup, payee)
+                 'docId>typeId,headOfAccount,amount,sanctionRef,claimPeriod', 'doc')
+    # SL-115: the duplicate and payee checks fail closed (each cleared before its query; no default stands in)
+    de, dup = checked_query(s, 'bl_dup', 'Duplicate / similar claim', 'ifms.duplicateBill', 'check',
+                            'payee,amount,claimPeriod', 'dup', ['dupDuplicate'])
+    pe, payee = checked_query(s, 'bl_payee', 'Payee golden record (party registry)', 'registry.party', 'payee.resolve',
+                              'partyId,payee,payeeAccount,ifsc', 'payee', ['payeeMultiple'])
+    s.seq(st, d, bind, typ, cls, chk, de)
+    s.seq(dup, pe)
     vg = s.xgw('bl_validGw', 'Valid?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(payee, vg)
     s.flow(vg, reject_with(p, s, 'bl_rjInvalid', 'BILL_INVALID'), '!docValid || !clsValid', 'invalid (findings cite the rule)', priority=1)
-    s.flow(vg, reject_with(p, s, 'bl_rjDup', 'DUPLICATE_CLAIM'), 'dupDuplicate', 'duplicate', priority=2)
-    fa = s.conn('bl_funds', 'Funds at the control dimension', 'ledger.available', 'available', 'query',
-                'ledgerId,headOfAccount,ddoCode', 'funds')
+    dup_unconfirmed, dup_found = check_conditions([('dup', ['dupDuplicate'])], 'dupDuplicate')
+    payee_unconfirmed, payee_multiple = check_conditions([('payee', ['payeeMultiple'])], 'payeeMultiple')
+    s.flow(vg, reject_with(p, s, 'bl_rjDupCheck', 'DUPLICATE_CHECK_NOT_CONFIRMED'), dup_unconfirmed,
+           'duplicate check not confirmed', priority=2)
+    s.flow(vg, reject_with(p, s, 'bl_rjDup', 'DUPLICATE_CLAIM'), dup_found, 'duplicate', priority=3)
+    s.flow(vg, reject_with(p, s, 'bl_rjPayeeCheck', 'PAYEE_CHECK_NOT_CONFIRMED'), payee_unconfirmed,
+           'payee check not confirmed', priority=4)
+    # SL-113: the funds check fails closed: no default stands in for it (availability_query clears the result first)
+    fe, fa = availability_query(s, 'bl_funds', 'Funds at the control dimension', 'ledger.available', 'available',
+                                'ledgerId,headOfAccount,ddoCode')
     pr = s.user('bl_payeeReview', 'Confirm payee: account held by several parties | आदाता की पुष्टि', 'PAO-1',
                 form='ifms-bill/payee-review', decision=('payeeDecision', ['approve', 'reject']),
                 fields=['payee', 'payeeAccount', 'remarks*'], sod=True)
-    s.flow(vg, pr, 'payeeMultiple', 'several beneficiaries on the account', priority=3)
+    s.flow(vg, pr, payee_multiple, 'several beneficiaries on the account', priority=5)
     pg = s.xgw('bl_payeeGw')
     s.flow(pr, pg)
-    s.flow(pg, fa, "payeeDecision == 'approve'", 'confirmed')
+    s.flow(pg, fe, "payeeDecision == 'approve'", 'confirmed')
     s.flow(pg, reject_with(p, s, 'bl_rjPayee', 'PAYEE_NOT_CONFIRMED'), None, 'rejected', default=True)
-    s.flow(vg, fa, None, 'valid', default=True)
+    s.flow(vg, fe, None, 'valid', default=True)
     fg = s.xgw('bl_fundsGw', 'Funds available?')
     s.flow(fa, fg)
     hold = s.catch_msg('bl_hold', 'Held for budget (released on allotment)', 'sangam.ifms.fundsAllotted')
-    s.flow(fg, hold, 'fundsAvailable < amount', 'pending for budget')
-    s.flow(hold, fa)
+    unconfirmed, short = availability_conditions()
+    s.flow(fg, reject_with(p, s, 'bl_rjFunds', 'FUNDS_NOT_CONFIRMED'), unconfirmed, 'availability not confirmed')
+    s.flow(fg, hold, short, 'pending for budget')
+    s.flow(hold, fe)
     enc = s.conn('bl_encumber', 'Encumber', 'ledger.encumber', 'encumber', 'submit', 'ledgerId,headOfAccount,ddoCode,amount',
                  'enc', step='encumber')
     s.flow(fg, enc, None, 'available', default=True)
@@ -363,7 +418,7 @@ def bill():
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'bl')
     pk.accept('BL-1', 'A bill mixing two major heads is refused with the rule cited', ['IFC-042'],
               'GOI profile, bill type CONTINGENT', 'lines carry 2054 and 2052', 'BILL_INVALID with RPR SI 2.2(5)(g)',
-              {'docValid': False})
+              {'sim_config_documentType': 'valid=false'})
     for slug, fam, default_type, en, hi, ids in FAMILIES:
         fp = pk.proc('sangam-ifms-bill-' + slug, en, '', start={'materialFields': 'billType,amount'})
         fs = fp.root
@@ -390,14 +445,25 @@ def allocation():
                'GA-03', 'GP-01', 'GP-11'] + SIDE,
               connectors=CONFIG_CONNECTORS + [ledger_conn('distribute', 'Pass the limit to the next stage'),
                                                ledger_conn('releaseHolds', 'Release bills held for budget')])
-    p = pk.proc('sangam-ifms-budget-allocation', 'Budget distribution order', '',
+    # SL-57, IFMS R-99 v0.2 s6.1 case type A (DDO-wise allocation in the Pay and Accounts Office): the Dealing Hand
+    # enters it and the Pay and Accounts Officer checks and approves it (CAM 2024 para 2.2.4; PFMS Toolkit Vol I,
+    # Nov 2016, pp. 23, 33-36); the limit moves into AUTHORISATION ("DDO-wise allocation by the PAO", GOI profile) for
+    # the DDO. The initiator is the Ministry side; FA-1 is the interim initiator seat, INFERRED (R-99 s6.1, OQ-219).
+    p = pk.proc('sangam-ifms-budget-allocation', 'Budget distribution order',
+                'DDO-wise allocation: entered by the Dealing Hand (DH-1), checked and approved by the Pay and Accounts '
+                'Officer (PAO-1) (CAM 2024 para 2.2.4; PFMS Toolkit Vol I pp. 23, 33-36); the limit moves into '
+                'AUTHORISATION for the DDO. Initiator: the Ministry-side seat; interim initiator seat FA-1, INFERRED.',
                 start={'materialFields': 'stage,headOfAccount,holder,amount'})
     s = p.root
     st = s.start('ba_start', 'Distribution proposed', form='ifms-budget-allocation/proposal')
+    # SG-37: the INFERRED initiator seat's consumer citation (IFMS R-99 v0.2 s6.1, OQ-219) stays in the comment above
     p.forms.append(dict(key='ifms-budget-allocation/proposal', name='Distribution of budget | बजट वितरण', decision=None,
-                        fields=['fiscalYear*', 'stage*', 'headOfAccount*', 'holder*', 'amount*', 'remarks'], doc=None))
-    d = s.setv('ba_defaults', 'Configuration', defaults='ledgerId=BUDGET;stage=RELEASE;amount=0;holder=DDO-1;'
-               'caseType=BUDGET_DISTRIBUTION;routingDecisionKey=ifms-allocation-authority;scrutinySeat=PRAO-1;'
+                        fields=['fiscalYear*', 'stage*', 'headOfAccount*', 'holder*', 'amount*', 'remarks'],
+                        doc='From the Ministry\'s distribution order (letter No. and date). Initiator seat FA-1 is '
+                            'INFERRED.'))
+    d = s.setv('ba_defaults', 'Configuration', defaults='ledgerId=BUDGET;stage=AUTHORISATION;amount=0;holder=DDO-1;'
+               'caseType=BUDGET_DISTRIBUTION;routingDecisionKey=ifms-allocation-authority;'
+               'powersDecisionKey=ifms-allocation-powers;scrutinySeat=DH-1;officeId=PAO-OFFICE;'
                'executionConnector=ledger.distribute;executionStep=distribute;reconcileRequired=false;'
                'outputTemplate=budget-distribution-order;appealAllowed=false')
     scr = core(s, 'ba_scrutiny', 'Budget section scrutiny (core)', 'scrutiny')
@@ -416,8 +482,15 @@ def allocation():
     s.flow(ex, 'ba_exGw')
     s.seq(hold, cl, end_ok(p, s, 'ba_end'))
     s.side_exits('ba')
-    authority(pk, 'ifms-allocation-authority', [('-', 'PR_AO', 'Pr.AO approves DDO-wise allocation entered by the PAO (CAM 2.2.4)')],
+    authority(pk, 'ifms-allocation-authority', [('-', 'PAO', 'PAO checks and approves the DDO-wise allocation entered by '
+                                                             'the Dealing Hand (CAM 2024 para 2.2.4, pp. 17-18; PFMS '
+                                                             'Toolkit Vol I, Nov 2016, pp. 23, 33, 36)')],
               'Allocation approval; a State replaces this table by tenant override.')
+    # no rupee ceiling binds the PAO's approval (VERIFIED absence: CAM 2024, GFR 2017, DFPR 2024, PFMS Toolkit; R-99 s3.1);
+    # the limits are structural ledger checks (allotments within the funds provided, CAM 2.8.1, GFR 64(1))
+    ifms_powers(pk, 'ifms-allocation-powers', 'BUDGET_DISTRIBUTION',
+                [('PAO', None, 'PAO checks and approves the DDO-wise allocation (CAM 2024 para 2.2.4); no money ceiling '
+                               '(VERIFIED absence)')])
     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'ba')
 
 
@@ -443,17 +516,22 @@ def reappropriation():
     d = s.setv('ra_defaults', 'Configuration', defaults='ledgerId=BUDGET;amount=0;objectGroup=OTHER_15CR;quarter=2;'
                'chargedToVoted=false;capitalRevenue=false;betweenGrants=false;newService=false;fromSupplementary=false;'
                'fromCfAdvance=false;worksWithoutAaTs=false;secretServicePercent=0;mofCase=false;percentOfBe=0;'
-               'afterLastBatch=false;nerTechnical=false;fundsAvailable=999999999999.0;faSeat=FA-1;'
+               'afterLastBatch=false;nerTechnical=false;faSeat=FA-1;'
                'caseType=REAPPROPRIATION;routingDecisionKey=ifms-reapp-authority;powersDecisionKey=ifms-reapp-powers;scrutinySeat=PRAO-1;'
                'referToTenant=finance;referralQuestion=Concurrence for re-appropriation;executionConnector=ledger.transfer;'
                'executionStep=transfer;reconcileRequired=false;outputTemplate=reappropriation-order;appealAllowed=false')
-    sav = s.conn('ra_savings', 'Savings in the source line', 'ledger.available', 'available', 'query', 'ledgerId,fromHead', 'funds')
+    # SL-113: the savings check fails closed (availability_query clears the result first; no default stands in)
+    se, sav = availability_query(s, 'ra_savings', 'Savings in the source line', 'ledger.available', 'available',
+                                 'ledgerId,fromHead')
     rules = s.rule('ra_rules', 'Re-appropriation rules (DMN, cited)', 'ifms-reapp-rules')
-    s.seq(st, d, sav, rules)
+    s.seq(st, d, se)
+    s.flow(sav, rules)
     g = s.xgw('ra_allowedGw', 'Allowed?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(rules, g)
     s.flow(g, reject_with(p, s, 'ra_rjRule', 'REAPP_RULE'), "reappAllowed == false", 'refused (rule cited)', priority=1)
-    s.flow(g, reject_with(p, s, 'ra_rjSav', 'SAVINGS_NOT_AVAILABLE'), 'fundsAvailable < amount', 'no savings', priority=2)
+    unconfirmed, short = availability_conditions()
+    s.flow(g, reject_with(p, s, 'ra_rjFunds', 'FUNDS_NOT_CONFIRMED'), unconfirmed, 'savings not confirmed', priority=2)
+    s.flow(g, reject_with(p, s, 'ra_rjSav', 'SAVINGS_NOT_AVAILABLE'), short, 'no savings', priority=3)
     e1, x1 = task(s, 'ra_fa', 'FA consultation | वित्तीय सलाहकार से परामर्श', 'faSeat', 'ifms-reappropriation/fa',
                   ('faDecision', ['faConcur', 'faNotConcur']), ['remarks*'], '5WD', sod=True)
     s.flow(g, e1, None, 'allowed', default=True)
@@ -481,13 +559,14 @@ def reappropriation():
     s.seq(rep, cl, end_ok(p, s, 'ra_end'))
     s.side_exits('ra')
     R = 'DFPR 2024 '
+    group = lambda g: profile_major(pk, _REAPP_PROFILE['objectGroupLimits'][g])  # noqa: E731  (SL-102: profile data)
     pk.dmn('ifms-reapp-rules', 'Re-appropriation rules (DFPR 2024 Rule 10 and GoI decisions)', 'FIRST',
            [('Charged to voted', 'chargedToVoted', 'boolean'), ('Capital to revenue', 'capitalRevenue', 'boolean'),
             ('Between grants', 'betweenGrants', 'boolean'), ('New service', 'newService', 'boolean'),
             ('From supplementary head', 'fromSupplementary', 'boolean'), ('From CF-advance activity', 'fromCfAdvance', 'boolean'),
             ('Works without AA/TS', 'worksWithoutAaTs', 'boolean'), ('Quarter', 'quarter', 'integer'),
-            ('NER technical', 'nerTechnical', 'boolean'), ('Object group', 'objectGroup', 'string'), ('Amount', 'amount', 'double'),
-            ('Increase % of BE', 'percentOfBe', 'double'), ('Secret service %', 'secretServicePercent', 'double')],
+            ('NER technical', 'nerTechnical', 'boolean'), ('Object group', 'objectGroup', 'string'), ('Amount', 'amount', 'money'),
+            ('Increase % of BE', 'percentOfBe', 'number'), ('Secret service %', 'secretServicePercent', 'number')],
            [('reappAllowed', 'Allowed', 'boolean'), ('mofCase', 'Finance Ministry approval', 'boolean'),
             ('parliamentReport', 'Report to Parliament', 'boolean'), ('ruleRef', 'Rule', 'string')],
            [(['true', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'], ['false', 'false', 'false', q(R + 'r.10(4)')], 'charged <-> voted'),
@@ -498,10 +577,10 @@ def reappropriation():
             (['-', '-', '-', '-', '-', 'true', '-', '-', '-', '-', '-', '-', '-'], ['false', 'false', 'false', q(R + 'r.10(8)')], 'CF advance activity'),
             (['-', '-', '-', '-', '-', '-', 'true', '-', '-', '-', '-', '-', '-'], ['false', 'false', 'false', q(R + 'r.10(3)')], 'works without AA/TS'),
             (['-', '-', '-', '-', '-', '-', '-', '1', 'false', '-', '-', '-', '-'], ['true', 'true', 'false', q('DoE OM 01-04-2024: Q1 needs MoF')], 'Q1 ban'),
-            (['-', '-', '-', '-', '-', '-', '-', '-', '-', q('EST_2CR'), '> 20000000', '-', '-'], ['true', 'true', 'false', q('GoI decision (1) para 3(v): 2 cr')], 'establishment group above 2 cr'),
-            (['-', '-', '-', '-', '-', '-', '-', '-', '-', q('NONEST_5CR'), '> 50000000', '-', '-'], ['true', 'true', 'false', q('GoI decision (1) para 3(v): 5 cr')], 'group above 5 cr'),
-            (['-', '-', '-', '-', '-', '-', '-', '-', '-', q('OTHER_15CR'), '> 150000000', '-', '-'], ['true', 'true', 'false', q('GoI decision (1) para 3(v): 15 cr')], 'other above 15 cr'),
-            (['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '> 1000000000', '-', '-'], ['true', 'false', 'true', q('GoI decision (1) para 4: > 100 cr')], 'Parliament: above 100 cr'),
+            (['-', '-', '-', '-', '-', '-', '-', '-', '-', q('EST_2CR'), '> ' + group('EST_2CR'), '-', '-'], ['true', 'true', 'false', q('GoI decision (1) para 3(v): 2 cr')], 'establishment group above 2 cr'),
+            (['-', '-', '-', '-', '-', '-', '-', '-', '-', q('NONEST_5CR'), '> ' + group('NONEST_5CR'), '-', '-'], ['true', 'true', 'false', q('GoI decision (1) para 3(v): 5 cr')], 'group above 5 cr'),
+            (['-', '-', '-', '-', '-', '-', '-', '-', '-', q('OTHER_15CR'), '> ' + group('OTHER_15CR'), '-', '-'], ['true', 'true', 'false', q('GoI decision (1) para 3(v): 15 cr')], 'other above 15 cr'),
+            (['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '> ' + profile_major(pk, _REAPP_PROFILE['parliamentReport']['amountAbove']), '-', '-'], ['true', 'false', 'true', q('GoI decision (1) para 4: > 100 cr')], 'Parliament: above 100 cr'),
             (['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '> 20', '-'], ['true', 'false', 'true', q('GoI decision (1) para 4: > 20% of BE')], 'Parliament: above 20% of BE'),
             (['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '>= 25'], ['true', 'true', 'false', q(R + 'r.10(10)(v): C&AG too')], 'secret service >= 25%'),
             (['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'], ['true', 'false', 'false', q(R + 'r.10(9)')], 'within CAA powers')],
@@ -598,7 +677,8 @@ def supplementary():
     s.seq(st, d, ns, e1)
     fg = s.xgw('sd_faGw')
     s.flow(x1, fg)
-    s.flow(fg, rej, "faDecision == 'faNotConcur'", 'not concurred')
+    # SL-55: a refusal nobody gives coded reasons for carries its own code (CaseRecordDelegate REJECT needs one)
+    s.flow(fg, reject_with(p, s, 'sd_rjFa', 'FA_NOT_CONCURRED'), "faDecision == 'faNotConcur'", 'not concurred')
     s.flow(fg, cf, None, 'concurred', default=True)
     s.flow(cf, cfa, "newServiceRoute == 'CONTINGENCY_FUND'", 'urgent')
     s.flow(cf, ref, None, 'batch', default=True)
@@ -606,7 +686,7 @@ def supplementary():
     cg = s.xgw('sd_refGw')
     s.flow(ref, cg)
     s.flow(cg, san, "referralDecision == 'faConcur'", 'included')
-    s.flow(cg, rej, None, 'not included', default=True)
+    s.flow(cg, reject_with(p, s, 'sd_rjRef', 'NOT_INCLUDED_BY_BUDGET_DIVISION'), None, 'not included', default=True)
     outcome(s, 'sd_sanGw', 'sanctionOutcome', {'SANCTIONED': ex}, rej)
     s.flow(san, 'sd_sanGw')
     outcome(s, 'sd_exGw', 'executionOutcome', {'DONE': cl}, rej)
@@ -614,7 +694,7 @@ def supplementary():
     s.flow(cl, end_ok(p, s, 'sd_end'))
     s.side_exits('sd')
     pk.dmn('ifms-new-service', 'New service / new instrument of service', 'FIRST',
-           [('New service', 'newServiceFlag', 'boolean'), ('Amount', 'amount', 'double')],
+           [('New service', 'newServiceFlag', 'boolean'), ('Amount', 'amount', 'money')],
            [('newServiceRoute', 'Route', 'string'), ('ruleRef', 'Rule', 'string')],
            [(['true', '-'], [q('PRIOR_PARLIAMENT'), q('DEA OM F.1(22)-B(AC)/2022 of 23-02-2024 [U limits]')], 'NS/NIS: limits are placeholders'),
             (['false', '-'], [q('BATCH'), q('ordinary supplementary')], '')])
@@ -717,7 +797,7 @@ def gia_uc():
     san = core(s, 'gr_sanction', 'Sanction (core)', 'sanction')
     rej = rejection(p, s, 'gr_rj')
     s.flow(fg, san, "faDecision == 'faConcur'", 'concur')
-    s.flow(fg, rej, None, 'not concurred', default=True)
+    s.flow(fg, reject_with(p, s, 'gr_rjFa', 'FA_NOT_CONCURRED'), None, 'not concurred', default=True)   # SL-55
     bill_ = s.call('gr_bill', 'Release bill (catalogue GIA)', 'sangam-ifms-bill')
     outcome(s, 'gr_sanGw', 'sanctionOutcome', {'SANCTIONED': bill_}, rej)
     s.flow(san, 'gr_sanGw')
@@ -750,8 +830,8 @@ def gia_uc():
     s.flow(ag, end_ok(u, s, 'uc_end', 'UC accepted'), "ucDecision == 'accepted'", 'accepted')
     s.flow(ag, eg, None, 'further action', default=True)
     pk.dmn('ifms-gia-release', 'Grant release rules', 'FIRST',
-           [('Recurring', 'recurringGrant', 'boolean'), ('Release % of sanction', 'releasePercent', 'double'),
-            ('UC status', 'ucStatus', 'string'), ('Unspent balance', 'unspentBalance', 'double'), ('Amount', 'amount', 'double')],
+           [('Recurring', 'recurringGrant', 'boolean'), ('Release % of sanction', 'releasePercent', 'number'),
+            ('UC status', 'ucStatus', 'string'), ('Unspent balance', 'unspentBalance', 'money'), ('Amount', 'amount', 'money')],
            [('releaseAllowed', 'Allowed', 'boolean'), ('ruleRef', 'Rule', 'string')],
            [(['true', '> 75', 'not("AUDITED")', '-', '-'], ['false', q('GFR 2017 r.238(2): above 75% needs UC and audited statement')], ''),
             (['true', '-', 'not("PROVISIONAL","SUBMITTED","AUDITED")', '-', '-'], ['false', q('GFR 2017 r.238(2): provisional UC first')], ''),
@@ -790,15 +870,18 @@ def sna_sparsh():
     p.forms.append(dict(key='ifms-sna-sparsh/claim', name='SNA-SPARSH claim | एसएनए-स्पर्श दावा', decision=None,
                         fields=['slsCode*', 'motherSanctionNo*', 'amount*', 'centreShare*', 'stateShare*', 'documents'], doc=None))
     d = s.setv('ss_defaults', 'Configuration', defaults='amount=0;centreShare=0;stateShare=0;ledgerId=SNA;'
-               'fundsAvailable=999999999999.0;pdCheckerSeat=FA-1;prAoSeat=PRAO-1;paoSeat=PAO-1;reissueTag=false;'
+               'pdCheckerSeat=FA-1;prAoSeat=PRAO-1;paoSeat=PAO-1;reissueTag=false;'
                'executionConnector=rail.ekuber;executionStep=rbiBatch;reconcileRequired=true;caseType=SNA_SPARSH;'
                'routingDecisionKey=ifms-sna-authority;outputTemplate=sna-release-advice;appealAllowed=false;chainId=SNA_SPARSH_3')
-    ms = s.conn('ss_mother', 'Mother sanction balance (one active per SLS)', 'ledger.available', 'available', 'query',
-                'ledgerId,slsCode,motherSanctionNo', 'funds')
-    s.seq(st, d, ms)
+    # SL-113: the mother-sanction balance check fails closed (availability_query clears the result first)
+    me, ms = availability_query(s, 'ss_mother', 'Mother sanction balance (one active per SLS)', 'ledger.available',
+                                'available', 'ledgerId,slsCode,motherSanctionNo')
+    s.seq(st, d, me)
     g = s.xgw('ss_msGw', 'Within mother sanction?')
     s.flow(ms, g)
-    s.flow(g, reject_with(p, s, 'ss_rjMs', 'NO_ACTIVE_MOTHER_SANCTION'), 'fundsAvailable < amount', 'no / exhausted mother sanction')
+    unconfirmed, short = availability_conditions()
+    s.flow(g, reject_with(p, s, 'ss_rjFunds', 'FUNDS_NOT_CONFIRMED'), unconfirmed, 'balance not confirmed')
+    s.flow(g, reject_with(p, s, 'ss_rjMs', 'NO_ACTIVE_MOTHER_SANCTION'), short, 'no / exhausted mother sanction')
     e1, x1 = task(s, 'ss_pd', 'Daily sanction (DSC) | दैनिक स्वीकृति (डीएससी)', 'pdCheckerSeat', 'ifms-sna-sparsh/daily',
                   ('pdDecision', ['signed', 'returnBill']), ['slsCode', 'amount', 'dscSerial'], '1WD')
     s.flow(g, e1, None, 'within', default=True)
@@ -857,18 +940,24 @@ def receipts():
     st = s.start('rc_start', 'Challan generated', form='ifms-receipts/challan')
     p.forms.append(dict(key='ifms-receipts/challan', name='Challan | चालान', decision=None,
                         fields=['receiptHead*', 'amount*', 'payee*', 'challanNo', 'documents'], doc=None))
-    d = s.setv('rc_defaults', 'Configuration', defaults='amount=0;receiptDeskSeat=AAO-1;scrollMatch=MATCHED;scrollAmount=0')
-    num = s.conn('rc_number', 'Challan number (series)', 'config.series', 'series.next', 'submit', 'receiptHead', 'chl', step='number')
+    d = s.setv('rc_defaults', 'Configuration', defaults='challanSeries=CHALLAN;amount=0;receiptDeskSeat=AAO-1')
+    num = s.conn('rc_number', 'Challan number (series)', 'config.series', 'series.next', 'submit',
+                 'challanSeries>series,receiptHead>unit', 'chl', step='number')
     paid = s.catch_msg('rc_paid', 'Payment confirmed by the portal (CIN / UTR)', 'sangam.ifms.challanPaid')
-    sc = s.conn('rc_scroll', 'Match with the e-scroll', 'treasury.scroll', 'match', 'query', 'challanNo,amount,utr', 'scroll')
-    s.seq(st, d, num, paid, sc)
+    # SL-115: the e-scroll match fails closed (cleared before the query; no default books a receipt): only a completed
+    # MATCHED answer books it, anything else goes to the receipt desk
+    se, sc = checked_query(s, 'rc_scroll', 'Match with the e-scroll', 'treasury.scroll', 'match', 'challanNo,amount,utr',
+                           'scroll', ['scrollMatch', 'scrollAmount'])
+    s.seq(st, d, num, paid, se)
     g = s.xgw('rc_matchGw', 'Matched?')
     s.flow(sc, g)
     book = s.svc('rc_book', 'Receipt voucher', C['DOC'], {'template': 'receipt-voucher'})
-    s.flow(g, book, "scrollMatch == 'MATCHED'", 'matched')
+    scroll_unconfirmed, scroll_matched = check_conditions([('scroll', ['scrollMatch'])], "scrollMatch == 'MATCHED'")
+    s.flow(g, book, scroll_matched, 'matched')
     e1, x1 = task(s, 'rc_resolve', 'Resolve receipt discrepancy | प्राप्ति विसंगति का निवारण', 'receiptDeskSeat',
                   'ifms-receipts/resolve', ('receiptDecision', ['book', 'refund', 'unaccounted']),
                   ['challanNo', 'utr', 'discrepancyCause*', 'remarks'], '3WD')
+    s.flow(g, e1, scroll_unconfirmed, 'match not confirmed')
     s.flow(g, e1, None, 'short / unmatched', default=True)
     rg = s.xgw('rc_resGw')
     s.flow(x1, rg)
@@ -911,8 +1000,8 @@ def gpf_advances():
     s.flow(b, end_ok(p, s, 'gp_end'))
     s.side_exits('gp')
     pk.dmn('gpf-withdrawal', 'GPF advance / withdrawal eligibility', 'FIRST',
-           [('Purpose', 'gpfPurpose', 'string'), ('Amount', 'amount', 'double'), ('Balance', 'gpfBalance', 'double'),
-            ('Qualifying service', 'qualifyingService', 'double')],
+           [('Purpose', 'gpfPurpose', 'string'), ('Amount', 'amount', 'money'), ('Balance', 'gpfBalance', 'money'),
+            ('Qualifying service', 'qualifyingService', 'number')],
            [('gpfEligible', 'Eligible', 'boolean'), ('ruleRef', 'Rule', 'string')],
            [(['-', '-', '<= 0', '-'], ['false', q('no balance')], ''),
             (['-', '> gpfBalance', '-', '-'], ['false', q('GPF (CS) Rules 1960: not above the balance')], ''),
@@ -953,7 +1042,7 @@ def gpf_advances():
     s.flow(san, 'av_sanGw')
     s.seq(b, dem, end_ok(p, s, 'av_end'))
     s.side_exits('av')
-    pk2.dmn('ifms-advance-limits', 'Advance limits', 'FIRST', [('Kind', 'advanceKind', 'string'), ('Amount', 'amount', 'double')],
+    pk2.dmn('ifms-advance-limits', 'Advance limits', 'FIRST', [('Kind', 'advanceKind', 'string'), ('Amount', 'amount', 'money')],
             [('advanceAllowed', 'Allowed', 'boolean'), ('ruleRef', 'Rule', 'string')],
             [([q('COMPUTER'), '> 50000'], ['false', q('[U] computer advance ceiling to confirm')], 'placeholder'),
              ([q('HBA'), '> 2500000'], ['false', q('[U] HBA ceiling (34 x basic pay, max 25 lakh) to confirm')], 'placeholder'),
@@ -1068,18 +1157,25 @@ def appraisal():
     s.flow(san, 'sa_sanGw')
     s.flow(cl, end_ok(p, s, 'sa_end'))
     s.side_exits('sa')
+    # SL-102: bands, forums and authorities are the GOI profile appraisal.ladder (one source); the citations stay here
+    ladder = _GOI_PROFILE['appraisal']['ladder']
+    cites = ['OM 05-08-2016: up to 100 cr', 'OM 05-08-2016: 100-500 cr', 'OM 05-08-2016: 500-1000 cr',
+             'OM 05-08-2016: above 1000 cr']
+    if len(ladder) != len(cites) or any('upTo' not in b for b in ladder[:-1]) or 'upTo' in ladder[-1]:
+        raise ValueError('GOI profile appraisal.ladder: expected 3 bands with upTo and an open top band, got ' + repr(ladder))
+    if ladder[0]['approval'] != 'SECRETARY':
+        raise ValueError('GOI profile appraisal.ladder: the first band is the Secretary power, got ' + repr(ladder[0]))
+    secretary = profile_major(pk, ladder[0]['upTo'])
     pk.dmn('ifms-scheme-appraisal', 'Scheme appraisal ladder (DoE OM 05-08-2016)', 'FIRST',
-           [('Total outlay (INR)', 'totalOutlay', 'double')],
+           [('Total outlay (INR)', 'totalOutlay', 'money')],
            [('appraisalForum', 'Appraisal forum', 'string'), ('approvalAuthority', 'Approval authority', 'string'),
             ('ruleRef', 'Rule', 'string')],
-           [(['<= 1000000000'], [q('FA'), q('SECRETARY'), q('OM 05-08-2016: up to 100 cr')], ''),
-            (['<= 5000000000'], [q('SFC'), q('MINISTER'), q('OM 05-08-2016: 100-500 cr')], ''),
-            (['<= 10000000000'], [q('EFC'), q('MINISTER_AND_FM'), q('OM 05-08-2016: 500-1000 cr')], ''),
-            (['-'], [q('EFC'), q('CABINET'), q('OM 05-08-2016: above 1000 cr')], '')],
+           [(['<= ' + profile_major(pk, b['upTo']) if 'upTo' in b else '-'], [q(b['appraisal']), q(b['approval']), q(c)], '')
+            for b, c in zip(ladder, cites)],
            doc='Thresholds mirror the GOI profile appraisal.ladder; a State loads its own ladder as a tenant override.')
-    authority(pk, 'ifms-scheme-approval', [('<= 1000000000', 'CAA', 'Secretary'), ('-', 'FA', 'routed to the authority of the ladder')], '')
+    authority(pk, 'ifms-scheme-approval', [('<= ' + secretary, 'CAA', 'Secretary'), ('-', 'FA', 'routed to the authority of the ladder')], '')
     ifms_powers(pk, 'ifms-scheme-powers', 'SCHEME',
-                [('CAA', 1000000000, 'Secretary approves schemes up to 100 cr (ladder ifms-scheme-appraisal)')],
+                [('CAA', int(secretary), 'Secretary approves schemes up to 100 cr (ladder ifms-scheme-appraisal)')],
                 unverified='the corpus verifies the appraisal forum by outlay (IFC-080) but not the approval thresholds '
                            '(Secretary / Minister / FM / Cabinet are not modelled, IFMS-CENTRAL gap 7); confirm from DFPR '
                            'App. III and deploy it as a tenant DMN override')

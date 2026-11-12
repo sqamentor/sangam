@@ -159,7 +159,10 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
         }
         String tenant = tenantOf(req.tenantId());
         UUID queryId = Hashes.uuidV5(OperationLedger.NAMESPACE, "query|" + req.connector() + "|" + req.payloadHash() + "|" + Instant.now());
-        ConnectorRequest cr = new ConnectorRequest(tenant, queryId, "query", 1, req.processInstanceId(), req.businessKey(),
+        // rootId is the ROOT case (the connector contract; SL-119: a called process's config read finds the binding
+        // its root case stored), as on the submit path
+        String root = req.processInstanceId() == null ? null : rootOf(req.processInstanceId());
+        ConnectorRequest cr = new ConnectorRequest(tenant, queryId, "query", 1, root, req.businessKey(),
                 b.get().operation() == null ? req.operation() : b.get().operation(), b.get().payloadMapper().apply(req.payload()),
                 Instant.now().plusSeconds(30));
         return switch (conn.get().invoke(cr)) {

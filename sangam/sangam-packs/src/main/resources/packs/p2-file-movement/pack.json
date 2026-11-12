@@ -1,6 +1,6 @@
 {
   "id": "gov.p2.file-movement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "P2 File movement (e-Office)",
     "hi": "पी2 फ़ाइल संचलन (ई-ऑफ़िस)"
@@ -68,7 +68,11 @@
       "id": "esign.sign",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
-      "purpose": "eSign fallback"
+      "purpose": "eSign fallback",
+      "simulatorBinding": {
+        "connector": "esign-sim",
+        "operation": "sign"
+      }
     },
     {
       "id": "dak.dispatch",
@@ -164,7 +168,20 @@
       },
       "expectState": null,
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: one person acts on two levels of the same file"
+        "answers": {
+          "sn_sanction": {
+            "person": "p2.us"
+          }
+        },
+        "expect": {
+          "audit": [
+            "SOD_VIOLATION_BLOCKED"
+          ],
+          "refusedAt": {
+            "task": "sn_sanction",
+            "code": "SOD_VIOLATION"
+          }
+        }
       }
     }
   ],
@@ -180,5 +197,13 @@
     "sangam-core-referral",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "powerLimit"
+    ]
+  }
 }

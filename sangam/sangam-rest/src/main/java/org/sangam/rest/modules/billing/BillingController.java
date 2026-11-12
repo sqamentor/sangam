@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.sangam.billing.BillingConnector;
 import org.sangam.billing.BillingService;
+import org.sangam.config.locale.FiscalYearNotConfiguredException;
 import org.sangam.core.layer.Hashes;
 import org.sangam.ledger.AccountKey;
 import org.sangam.rest.modules.config.ModuleConnectors;
@@ -180,7 +181,7 @@ public class BillingController {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "consumer, channel, paymentRef and amount are required");
         }
         String operationId = ctx.idempotencyKey() != null ? ctx.idempotencyKey() : Hashes.uuidV7().toString();
-        String period = body.period() == null ? Integer.toString(definitions.ledger().today(ctx.tenantId()).getYear()) : body.period();
+        String period = refundPeriod(definitions, ctx.tenantId(), body.period());
         AccountKey demand = new AccountKey(ctx.tenantId(), ledger, period, body.head(), body.consumer(), "DEMAND",
                 body.cycle());
         definitions.ensure(ctx.tenantId());
@@ -188,6 +189,22 @@ public class BillingController {
                 money(body.amount(), definitions.ledger().definition(ctx.tenantId(), ledger).currency()), operationId,
                 ctx.principalId());
         return Lists.okRef(operationId, new RefundResult(rail, operationId));
+    }
+
+    /**
+     * The refund's demand period: the request's {@code period}, else the tenant's current fiscal period (the same
+     * resolver the billing connector uses for the invoice, so both name the same account). SL-127: never an invented
+     * calendar year; without a fiscal year the refund is refused (422 {@code FISCAL_YEAR_NOT_CONFIGURED}).
+     */
+    static String refundPeriod(LedgerTenantDefinitions definitions, String tenant, String requested) {
+        if (requested != null && !requested.isBlank() && !"current".equalsIgnoreCase(requested)) {
+            return requested;
+        }
+        try {
+            return definitions.period(tenant, definitions.ledger().today(tenant));
+        } catch (FiscalYearNotConfiguredException e) {
+            throw ApiProblem.unprocessable(FiscalYearNotConfiguredException.CODE, e.getMessage());
+        }
     }
 
     /** Runs a billing connector operation after registering the tenant's ledger definitions. */

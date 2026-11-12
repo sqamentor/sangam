@@ -1,6 +1,6 @@
 {
   "key": "sec-mfg-batch-release/batch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.mfg.batch-release",
   "title": {
     "en": "Batch completion",

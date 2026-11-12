@@ -27,9 +27,14 @@ public class ActorRecorderListener implements TaskListener {
         String dv = Vars.field(decisionVar, t);
         Object decision = dv == null ? null : t.getVariable(dv);
         List<Map<String, Object>> log = Vars.jsonList(t, Vars.ACTOR_LOG);
-        log.add(Vars.map("step", TaskActor.stepId(t, Vars.field(stepSuffixVar, t)), "person", a.person(), "seat", a.seat(),
-                "actedFor", a.actedFor(), "decision", decision == null ? null : decision.toString(),
-                "at", Vars.now().toString()));
+        Map<String, Object> entry = Vars.map("step", TaskActor.stepId(t, Vars.field(stepSuffixVar, t)), "person",
+                a.person(), "seat", a.seat(), "actedFor", a.actedFor(), "decision",
+                decision == null ? null : decision.toString(), "at", Vars.now().toString());
+        String round = TaskActor.multiInstanceRound(t);
+        if (round != null) {
+            entry.put("round", round); // one person completes one instance of a round (SodGuardListener, J-P1-E09)
+        }
+        log.add(entry);
         Vars.setJsonDocument(t.getExecution(), Vars.ACTOR_LOG, log);
         t.getExecution().setVariable("lastActorPerson", a.person());
         t.getExecution().setVariable("lastActorSeat", a.seat());

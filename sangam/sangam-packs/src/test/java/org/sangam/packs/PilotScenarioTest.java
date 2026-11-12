@@ -72,7 +72,7 @@ class PilotScenarioTest {
         v.put("payee", "M/s Shree Constructions");
         v.put("account", "50100012345678");
         v.put("ifsc", "SBIN0001234");
-        v.put("amount", 475000.0);
+        v.put("amount", 47_500_000L); // 4,75,000 rupees in paise (SD-398)
         v.put("invoiceNo", "INV-2026-0412");
         v.put("budgetHead", "4059-01-051");
         v.put("sanctionRef", "AA/2026/77");
@@ -123,7 +123,7 @@ class PilotScenarioTest {
         start("sangam-p3-grant-application", bk, vars(
                 "applicantName", "Sita Devi", "applicantRef", "mobile:98XXXXXX10", "schemeId", "HOUSING-GRANT",
                 "beneficiaryId", "VAULT-7f3a", "bankAccount", "3210987654", "ifsc", "PUNB0123400",
-                "income", 120000.0, "age", 41, "socialCategory", "SC", "landHolding", 0.5, "district", "A",
+                "income", 12_000_000L, "age", 41, "socialCategory", "SC", "landHolding", 0.5, "district", "A",
                 "officeId", "BLOCK-A1", "actingSeat", "DEO-A1", "initiator", "p3.deo-a1", "instalmentInterval", "PT1S"));
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> asSeat(t, "scrutinyDecision", "accept");
@@ -157,7 +157,7 @@ class PilotScenarioTest {
 
     /** Starts a works case, passes estimate scrutiny, returns the call activity of the first sanction. */
     static String firstWorksSanction(String bk, String tenant, String office) {
-        Map<String, Object> v = vars("workName", "Road", "estimateAmount", 900000.0, "budgetHead", "5054",
+        Map<String, Object> v = vars("workName", "Road", "estimateAmount", 90_000_000L, "budgetHead", "5054",
                 "officeId", office, "actingSeat", "AE-WK", "initiator", "wk.ae-wk");
         var b = engine.getRuntimeService().createProcessInstanceByKey("sangam-works-project").businessKey(bk)
                 .setVariables(v);
@@ -181,7 +181,9 @@ class PilotScenarioTest {
     @Test
     void billRevisionPassesFullInputs() {
         String bk = "UTIL/BILL/1";
-        start("sangam-sec-util-bill", bk, vars("key", "CONS-1", "batchId", "CYCLE-2026-11", "units", 100));
+        // SL-115: the meter read is answered explicitly (no pack default stands in for it)
+        start("sangam-sec-util-bill", bk, vars("key", "CONS-1", "batchId", "CYCLE-2026-11", "units", 100,
+                "sim_mdm_read", "readStatus=NORMAL"));
         driver.run(bk, t -> null, 10);
         engine.getRuntimeService().createMessageCorrelation("sangam.util.billDispute").processInstanceBusinessKey(bk)
                 .correlate();
@@ -202,8 +204,9 @@ class PilotScenarioTest {
     @Test
     void claimPostingExceptionCorrectedClaimAndSecondRemittance() {
         String bk = "CLAIM/1";
-        start("sangam-sec-ushealth-claim", bk, vars("customerId", "P1", "patientControlNumber", "PCN-9", "totalCharge", 100,
-                "serviceDate", "2026-11-01", "statusFollowUp", "P30D", "sim_ledger_post", "exceptionCount=1"));
+        start("sangam-sec-ushealth-claim", bk, vars("customerId", "P1", "patientControlNumber", "PCN-9", "totalCharge", 10_000L,
+                "serviceDate", "2026-11-01", "statusFollowUp", "P30D", "sim_ledger_post", "exceptionCount=1",
+                "sim_x12_claim", "accepted=true")); // SL-115: the 999 acknowledgment is answered explicitly
         driver.run(bk, t -> "cl_scrub".equals(t.getTaskDefinitionKey()) ? asSeat(t, "codingNotes", "ok") : null, 20);
         engine.getRuntimeService().createMessageCorrelation("sangam.ushealth.remit").processInstanceBusinessKey(bk)
                 .setVariable("x12", "835").setVariable("sim_x12_remit",
@@ -212,13 +215,13 @@ class PilotScenarioTest {
         List<String> first = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "cl_postException" -> asSeat(t, "remarks", "seen");
             case "cl_denial" -> asSeat(t, "denialAction", "resubmit");
-            case "cl_scrub" -> asSeat(t, "codingNotes", "fixed", "totalCharge", 80);
+            case "cl_scrub" -> asSeat(t, "codingNotes", "fixed", "totalCharge", 8_000L); // cents
             default -> null;
         }, 30);
         assertEquals(List.of("cl_postException", "cl_denial", "cl_scrub"), first);
         var adjust = sim().journal().stream().filter(r -> "ledger.adjust".equals(r.connector())
                 && bk.equals(r.businessKey())).findFirst().orElseThrow();
-        assertEquals(-20.0, Double.parseDouble(String.valueOf(adjust.payload().get("amount"))), "adjustment leg");
+        assertEquals(-2_000L, Long.parseLong(String.valueOf(adjust.payload().get("amount"))), "adjustment leg (cents)");
         engine.getRuntimeService().createMessageCorrelation("sangam.ushealth.remit").processInstanceBusinessKey(bk)
                 .setVariable("sim_x12_remit", "traceNumber=T2;claimStatus=PAID_PRIMARY;paidAmount=80;patientResponsibility=0;balanced=true")
                 .setVariable("sim_ledger_post", "exceptionCount=0").correlate();
@@ -257,8 +260,9 @@ class PilotScenarioTest {
     @Test
     void receivableRefusalGoesToTheWorkQueue() {
         String bk = "CLAIM/2";
-        start("sangam-sec-ushealth-claim", bk, vars("customerId", "P2", "patientControlNumber", "PCN-10", "totalCharge", 100,
-                "serviceDate", "2026-11-01", "statusFollowUp", "P30D", "sim_ledger_allocate", "FAILED:LEDGER_REQUEST_INVALID"));
+        start("sangam-sec-ushealth-claim", bk, vars("customerId", "P2", "patientControlNumber", "PCN-10", "totalCharge", 10_000L,
+                "serviceDate", "2026-11-01", "statusFollowUp", "P30D", "sim_ledger_allocate", "FAILED:LEDGER_REQUEST_INVALID",
+                "sim_x12_claim", "accepted=true")); // SL-115: the 999 acknowledgment is answered explicitly
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "cl_scrub" -> asSeat(t, "codingNotes", "ok");
             case "cl_recvException" -> asSeat(t, "remarks", "seen");
@@ -283,7 +287,8 @@ class PilotScenarioTest {
         var due = sim().query(new org.sangam.packs.port.ConnectorRequest(null, "mdm.consumersDue", "list", null, null, null, Map.of(), null));
         assertTrue(String.valueOf(due.data().get("items")).contains("connectionCaseKey=" + bk), String.valueOf(due.data()));
         String bill = "UTIL/BILL/77";
-        start("sangam-sec-util-bill", bill, vars("key", "CONS-77", "batchId", "CYCLE-1", "units", 100, "connectionCaseKey", bk));
+        start("sangam-sec-util-bill", bill, vars("key", "CONS-77", "batchId", "CYCLE-1", "units", 100, "connectionCaseKey", bk,
+                "sim_mdm_read", "readStatus=NORMAL"));
         driver.run(bill, t -> null, 10);
         driver.run(bk, t -> null, 10);
         assertTrue(driver.ended(bk), "credit done");

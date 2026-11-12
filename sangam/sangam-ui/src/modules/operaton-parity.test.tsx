@@ -507,7 +507,7 @@ describe('Cockpit decisions, batches, deployments, dashboards', () => {
   it('P32 deployment delete shows the instance count first and sends cascade / skip flags', async () => {
     routes = { '/engine-rest/deployment': [{ id: 'dep1', name: 'leave.bpmn' }], '/engine-rest/process-instance/count?deploymentId=dep1': { count: 4 } };
     show(<OperatonOpsPage />);
-    await tab('mod.op.deploymentResources');
+    await tab('mod.op.deployments');
     await pickRow('leave.bpmn');
     fireEvent.click(screen.getByRole('tab', { name: T('mod.op3.instanceCount') }));
     expect(await screen.findByText('4')).toBeTruthy();
@@ -521,7 +521,7 @@ describe('Cockpit decisions, batches, deployments, dashboards', () => {
   it('P33 deployment resource preview and download', async () => {
     routes = { '/engine-rest/deployment/dep1/resources/r1/data': 'plain text body', '/engine-rest/deployment/dep1/resources': [{ id: 'r1', name: 'notes.txt' }] };
     show(<OperatonOpsPage />);
-    await tab('mod.op2.resources', 1);
+    await tab('mod.op2.resources');
     set(panel(), 'fld.deploymentId', 'dep1');
     fireEvent.click(within(panel()).getByRole('button', { name: T('common.open') }));
     fireEvent.click(await screen.findByRole('button', { name: T('mod.op2.preview') }));
@@ -713,7 +713,9 @@ describe('Admin and account', () => {
     await tab('mod.op.authorizations');
     fireEvent.click(await waitFor(() => { const b = screen.getAllByRole('button').find((x) => x.hasAttribute('aria-pressed')); expect(b).toBeTruthy(); return b!; }));
     const d = rowAction('act.update');
-    set(d, 'fld.permissions', '["READ","UPDATE"]');
+    // P49 per-permission toggles (the permissions of resource type 6, process definition), no JSON
+    expect((within(d).getByRole('checkbox', { name: 'READ' }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(within(d).getByRole('checkbox', { name: 'UPDATE' }));
     confirm(d);
     expect((await sent('PUT', '/engine-rest/authorization/a1')).body).toEqual({ resourceType: '6', resourceId: 'leave', userId: 'demo', permissions: ['READ', 'UPDATE'] });
   });

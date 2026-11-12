@@ -11,9 +11,14 @@ import org.sangam.core.layer.Transactions;
  * <p>One batched notification per claim cycle that published something, carrying <b>no payload</b> (no tenant data on
  * a broadly visible channel), sent by the relay outside any command transaction. Listeners (worker long-poll, task
  * list push) treat it as a hint only: their 1 s poll stays authoritative, so a lost notification loses no work.
+ *
+ * <p>M-005: the receiving side is {@link WakeupListener} ({@code LISTEN} on {@link #CHANNEL} on every node).
  */
 @FunctionalInterface
 public interface WakeupNotifier {
+
+    /** The PostgreSQL notification channel of the relay wake-up (sender and {@link WakeupListener} share it). */
+    String CHANNEL = "sangam_outbox";
 
     /** Called once per relay cycle that published at least one event. Must not throw. */
     void cycleCompleted(int published);

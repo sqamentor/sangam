@@ -92,4 +92,37 @@ class EngineRestTenantFilterTest {
         });
         assertTrue(passed[0]);
     }
+
+    @Test
+    void sl73TenantIdentityIsRefusedOnResourcesWithoutATenant() throws Exception {
+        AtomicReference<Authentication> current = new AtomicReference<>();
+        EngineRestTenantFilter f = new EngineRestTenantFilter(() -> identity(current), List::of);
+        SangamPrincipal tenant = new SangamPrincipal("tenant-a", "alice", Set.of("sangam-engine-admin"), "OIDC", Map.of());
+        for (String uri : List.of("/engine-rest/authorization", "/engine-rest/filter", "/engine-rest/user",
+                "/engine-rest/group", "/engine-rest/tenant", "/engine-rest/identity/groups", "/engine-rest/metrics",
+                "/engine-rest/history/cleanup", "/engine-rest/engine/default/authorization", "/engine-rest/au%74horization")) {
+            MockHttpServletResponse res = new MockHttpServletResponse();
+            boolean[] passed = {false};
+            f.doFilter(request(uri, tenant), res, (rq, rs) -> passed[0] = true);
+            assertEquals(403, res.getStatus(), uri);
+            assertTrue(res.getContentAsString().contains("ENGINE_REST_RESOURCE_NOT_TENANT_SCOPED"), uri);
+            assertTrue(!passed[0], uri + ": no engine call");
+            assertNull(current.get(), uri);
+        }
+        boolean[] passed = {false};
+        f.doFilter(request("/engine-rest/task", tenant), new MockHttpServletResponse(), (rq, rs) -> passed[0] = true);
+        assertTrue(passed[0], "a tenant-scoped resource still passes");
+    }
+
+    @Test
+    void sl73PlatformIdentityIsNotLimitedByTheAllowlist() throws Exception {
+        AtomicReference<Authentication> current = new AtomicReference<>();
+        AtomicReference<Authentication> seen = new AtomicReference<>();
+        EngineRestTenantFilter f = new EngineRestTenantFilter(() -> identity(current), List::of);
+        SangamPrincipal platform = new SangamPrincipal("tenant-a", "root", Set.of("sangam-admin", "sangam-platform"),
+                "OIDC", Map.of());
+        f.doFilter(request("/engine-rest/authorization", platform), new MockHttpServletResponse(),
+                (rq, rs) -> seen.set(current.get()));
+        assertEquals(List.of("tenant-a"), seen.get().getTenantIds(), "unchanged: the SL-45 tenant authentication");
+    }
 }

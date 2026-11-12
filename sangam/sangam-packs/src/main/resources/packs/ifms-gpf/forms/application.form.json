@@ -1,6 +1,6 @@
 {
   "key": "ifms-gpf/application",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.gpf",
   "title": {
     "en": "GPF application",
@@ -34,7 +34,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",
@@ -44,6 +46,8 @@
     {
       "id": "gpfBalance",
       "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "GPF balance",

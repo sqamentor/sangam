@@ -5,6 +5,10 @@
       "modules": {"sangam-config": ">=0.1.0-0", "sangam-ledger": ">=0.1.0-0"},
       "profileKeys": ["locale.currency", "locale.fiscal", "classification.schemes", "documentTypes"]
     }},
+    {"match": "gov.intl.pfm-execution", "requires": {"profileKeys": ["locale.fiscal"]}},
+    {"match": "universal.billing-cycle", "requires": {"profileKeys": ["locale.fiscal"]}},
+    {"match": "sec.util.meter-to-cash", "requires": {"profileKeys": ["locale.fiscal"]}},
+    {"match": "sec.util.new-connection", "requires": {"profileKeys": ["locale.fiscal"]}},
     {"match": "sec.health.*", "requires": {"profileKeys": ["locale.currency"]}},
     {"match": "sec.bank.*", "requires": {"profileKeys": ["locale.currency"]}}
   ]

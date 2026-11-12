@@ -15,6 +15,10 @@ operaton:
 
 sangam:
   security:
+    # SL-70, development only: the dev token (issuer urn:sangam:dev-token) is the platform identity of the local
+    # server, so the single developer can onboard tenants. Set SANGAM_SECURITY_PLATFORM_ISSUER= (empty) to make it a
+    # tenant token. Production profiles have no default (nobody is platform administrator).
+    platform-issuer: ${SANGAM_SECURITY_PLATFORM_ISSUER:urn:sangam:dev-token}
     dev-token:
       enabled: true
       token: ${SANGAM_DEV_TOKEN:sangam-dev-token-change-me}
@@ -31,7 +35,7 @@ sangam:
     # Dev bootstrap: tenant + admin grants on the empty database (SecurityBootstrap; never in production)
     bootstrap:
       enabled: true
-      admin-groups: sangam-admin
+      admin-groups: sangam-admin,sangam-tenant-admin
   integration:
     simulators:
       enabled: true

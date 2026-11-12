@@ -44,7 +44,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Reads are open to {@code config.read} for any scope (configuration is jurisdiction data, not personal data). Writes
  * are limited to the caller's own scope: a profile id equal to the tenant or below it ({@code <tenant>.x},
- * {@code <tenant>/office}); platform administrators ({@code sangam-admin}) may write any profile.
+ * {@code <tenant>/office}); platform administrators ({@code sangam-admin}, which only a platform-issuer identity holds,
+ * SL-70) may write any profile. A tenant token's {@code sangam-admin} is the tenant administrator: own scope only.
  */
 @RestController
 @RequestMapping("/api/v1/config")
@@ -333,7 +334,7 @@ public class ConfigController {
 
     /** Writes only within the caller's own scope, unless platform administrator. */
     private static void requireOwned(RequestContext ctx, String profileOrScopeId) {
-        if (ctx.inGroup("sangam-admin")) {
+        if (ctx.inGroup(org.sangam.rest.support.Permissions.GROUP_ADMIN)) { // platform administrator only (SL-70)
             return;
         }
         String t = ctx.tenantId();

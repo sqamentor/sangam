@@ -1,6 +1,6 @@
 {
   "key": "tender/nit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.tender",
   "title": {
     "en": "Notice inviting tender",
@@ -34,7 +34,9 @@
     },
     {
       "id": "estimateAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Estimated cost (INR)",
@@ -43,7 +45,9 @@
     },
     {
       "id": "emdAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "EMD (INR)",

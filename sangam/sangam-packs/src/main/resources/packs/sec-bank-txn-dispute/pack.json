@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.txn-dispute",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Failed transactions, unauthorised transactions and card chargebacks",
     "hi": "विफल लेनदेन, अनधिकृत लेनदेन एवं कार्ड चार्जबैक"
@@ -22,6 +22,10 @@
     {
       "kind": "FORM",
       "path": "packs/sec-bank-txn-dispute/forms/report.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-bank-txn-dispute/forms/statusUnconfirmed.form.json"
     },
     {
       "kind": "FORM",
@@ -95,5 +99,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

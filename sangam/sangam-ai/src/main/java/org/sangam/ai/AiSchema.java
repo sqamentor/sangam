@@ -33,7 +33,7 @@ public final class AiSchema {
               business_key     {str},
               principal_id     {str} NOT NULL,
               definition_json  {text} NOT NULL,
-              input_text       {text} NOT NULL,
+              input_text       {text},
               result_text      {text},
               created_at       {ts} NOT NULL,
               updated_at       {ts} NOT NULL

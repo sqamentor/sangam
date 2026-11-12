@@ -56,7 +56,7 @@ class WebhookRelayIT extends LayerSpecSupport {
     final List<String> received = Collections.synchronizedList(new ArrayList<>());
     final List<Map<String, String>> headers = Collections.synchronizedList(new ArrayList<>());
     final AtomicInteger requests = new AtomicInteger();
-    final Outbox outbox = new Outbox(PG);
+    final Outbox outbox = new Outbox(DIALECT);
 
     @BeforeAll
     void stub() throws Exception {
@@ -107,7 +107,7 @@ class WebhookRelayIT extends LayerSpecSupport {
         OutboxRelayService.Settings settings = new OutboxRelayService.Settings(
                 new Relay.Config("wh-it", 50, Duration.ofSeconds(30), maxAttempts, Duration.ZERO, Duration.ZERO),
                 Duration.ofSeconds(1), Duration.ofSeconds(15), 4);
-        return new OutboxRelayService(PG, TX, registry, settings, new AuditChain(PG), new DeadLetterStore(PG, TX),
+        return new OutboxRelayService(DIALECT, TX, registry, settings, new AuditChain(DIALECT), new DeadLetterStore(DIALECT, TX),
                 new CircuitBreaker(1000, Duration.ofSeconds(1)), WakeupNotifier.NONE);
     }
 
@@ -134,7 +134,7 @@ class WebhookRelayIT extends LayerSpecSupport {
         inTx(c -> outbox.append(c, "t1", key("rootA"), "E", "{\"n\":2}", to));
         inTx(c -> outbox.append(c, "t1", key("rootA"), "E", "{\"n\":3}", to));
         script.put(key("rootA"), new ArrayList<>(List.of(500, 503)));   // first event fails twice
-        OutboxRelayService relay = relay(new WebhookHealth(PG, TX, new AuditChain(PG), 100), 10);
+        OutboxRelayService relay = relay(new WebhookHealth(DIALECT, TX, new AuditChain(DIALECT), 100), 10);
         drain(relay);
         assertEquals(List.of(key("rootA") + "#1", key("rootA") + "#2", key("rootA") + "#3"),
                 received.stream().filter(s -> s.startsWith(key("rootA"))).toList(), "per-root order through the failures");
@@ -152,7 +152,7 @@ class WebhookRelayIT extends LayerSpecSupport {
         String d = dest("dlq");
         Outbox.Appended e = inTx(c -> outbox.append(c, "t1", key("rootD"), "E", "{}", List.of(Outbox.Destination.ordered(d))));
         script.put(key("rootD"), new ArrayList<>(List.of(500, 500, 500, 500, 500, 500)));
-        drain(relay(new WebhookHealth(PG, TX, new AuditChain(PG), 100), 4));
+        drain(relay(new WebhookHealth(DIALECT, TX, new AuditChain(DIALECT), 100), 4));
         assertEquals("PARKED", state(e.outboxId(), d));
         assertEquals(4, txInt(c -> Jdbc.one(c, "SELECT attempts FROM OUTBOX_DELIVERY WHERE outbox_id=? AND destination=?",
                 rs -> rs.getInt(1), e.outboxId(), d).orElseThrow()));
@@ -163,7 +163,7 @@ class WebhookRelayIT extends LayerSpecSupport {
     @Test
     void failingDestinationIsDisabledAuditedHeldAndResumesAfterReEnable() {
         String d = dest("disable");
-        WebhookHealth health = new WebhookHealth(PG, TX, new AuditChain(PG), 3);
+        WebhookHealth health = new WebhookHealth(DIALECT, TX, new AuditChain(DIALECT), 3);
         OutboxRelayService relay = relay(health, 50);
         Outbox.Appended e = inTx(c -> outbox.append(c, "t1", key("rootX"), "E", "{}", List.of(Outbox.Destination.ordered(d))));
         script.put(key("rootX"), new ArrayList<>(List.of(500, 500, 500)));
@@ -175,7 +175,7 @@ class WebhookRelayIT extends LayerSpecSupport {
                 rs -> rs.getInt(1), e.outboxId(), d).orElseThrow());
         assertEquals(3, attempts);
         int before = requests.get();
-        run(c -> Jdbc.update(c, "UPDATE OUTBOX_DELIVERY SET next_attempt_at=CURRENT_TIMESTAMP WHERE outbox_id=?", e.outboxId()));
+        run(c -> Jdbc.update(c, "UPDATE OUTBOX_DELIVERY SET next_attempt_at=" + DIALECT.now() + " WHERE outbox_id=?", e.outboxId()));
         drain(relay);
         assertEquals("PENDING", state(e.outboxId(), d), "held, not dead-lettered");
         assertEquals(before, requests.get(), "a disabled destination gets no requests");
@@ -185,7 +185,7 @@ class WebhookRelayIT extends LayerSpecSupport {
         assertTrue(health.enable("t1", d, "ops-1", "receiver redeployed"));
         assertEquals(1L, isoCount("SELECT count(*) FROM AUDIT_EVENT WHERE chain_id=? AND event_type='WEBHOOK_ENABLED'",
                 "webhook:" + d));
-        run(c -> Jdbc.update(c, "UPDATE OUTBOX_DELIVERY SET next_attempt_at=CURRENT_TIMESTAMP WHERE outbox_id=?", e.outboxId()));
+        run(c -> Jdbc.update(c, "UPDATE OUTBOX_DELIVERY SET next_attempt_at=" + DIALECT.now() + " WHERE outbox_id=?", e.outboxId()));
         drain(relay);
         assertEquals("DONE", state(e.outboxId(), d));
         assertTrue(received.contains(key("rootX") + "#1"));

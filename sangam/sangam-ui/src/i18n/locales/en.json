@@ -346,7 +346,12 @@
     "formScriptsIgnored": "This form contains scripts. They were not run.",
     "externalForm": "Open the external form",
     "thenSortBy": "Then sort by",
-    "thenSortHint": "Orders ties on this page only."
+    "thenSortHint": "Orders ties on this page only.",
+    "filterSidebar": "Filters",
+    "allWork": "All my work",
+    "deleteFilter": "Delete filter {{name}}",
+    "saveFilter": "Save as filter",
+    "filterStoredHint": "Saved filters are kept in this browser. The server applies every criterion, so a filter never shows more than you may see."
   },
   "sod": {
     "SAME_PERSON_AS_INITIATOR": "You initiated this case ({{initiator}}), so you cannot approve it.",
@@ -426,19 +431,40 @@
     "title": "Notifications"
   },
   "field": {
+    "assignments": "Assigned to this device",
     "checklist": "Checklist",
+    "claim": "These are mine: sync them",
     "description": "Visits work offline; records sync when you are back online.",
+    "discard": "Discard",
+    "discardConfirm": "Discard this record for good",
     "empty": "No visits assigned.",
+    "error": {
+      "DEVICE_REVOKED": "This device is no longer allowed to sync. Ask your administrator.",
+      "NOT_REGISTERED": "Go online once to register this device before recording assignments.",
+      "OFFLINE_TOO_LONG": "This device has been offline too long. Go online and sync before recording more.",
+      "QUEUE_FULL": "The offline queue is full. Go online and sync before recording more."
+    },
+    "itemNotHere": "{{label}}: record this item in the field app.",
+    "keptHint": "The server did not accept these records. They stay on this device until you discard them.",
+    "keptTitle": "Records not accepted",
+    "logoutAnyway": "Log out anyway",
+    "logoutKept": "They stay encrypted on this device and are sent only when you sign in again.",
+    "logoutPromptLabel": "Unsent field records",
+    "logoutUnsent": "{{n}} records not yet sent",
+    "notDurable": "This browser cannot keep records offline: records are kept only until the page is closed.",
     "notes": "Notes",
     "offline": "You are offline. Records are kept on this device.",
     "online": "Online",
     "queued": "{{n}} records waiting to sync.",
     "record": "Record visit",
+    "revoked": "This device was revoked. Records on it are kept but no longer sync.",
     "save": "Save record",
     "saved": "Record saved",
     "syncNow": "Sync now",
     "synced": "All records synced",
-    "title": "Field visits"
+    "title": "Field visits",
+    "unclaimed": "{{n}} records from an earlier version of this app are on this device. Sync them only if you recorded them.",
+    "wiped": "This device was revoked and its offline records were erased."
   },
   "ops": {
     "actionDone": "Action done",
@@ -690,7 +716,18 @@
     "adHocReasonHint": "Required to complete the sub-process.",
     "showPreviews": "Show diagram previews",
     "causeIncident": "Cause incident",
-    "rootCauseIncident": "Root cause incident"
+    "rootCauseIncident": "Root cause incident",
+    "treeState": "Show",
+    "treeCurrent": "Current activity tree",
+    "actState": {
+      "running": "Running",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    },
+    "selectedActivity": "Showing {{name}} ({{id}}) only in the variables, incidents and history tabs.",
+    "noActivities": "No activity instances in this state.",
+    "noInstanceIncidents": "No incidents for this instance or selection.",
+    "logNotFiltered": "This log cannot be narrowed to one activity; it shows the whole instance."
   },
   "batch": {
     "approve": "Approve",
@@ -2186,6 +2223,8 @@
     "requiredSkills": "Required skills",
     "requireLocation": "Require location",
     "resetPolicy": "Reset policy",
+    "fiscalStartMonth": "Fiscal year start month",
+    "fiscalStartMonthHint": "Required for the Financial year reset: the month the financial year starts in. No fiscal year is assumed.",
     "resourceId": "Resource ID",
     "resourceNames": "Resource names",
     "resourceType": "Resource type",
@@ -2456,6 +2495,20 @@
     "ERASURE": "Erasure",
     "EXTERNAL": "External",
     "FILTER": "Filter",
+    "fiscalMonth": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    },
     "FISCAL_YEAR": "Financial year",
     "GENERAL": "General",
     "GEOJSON_URL": "GeoJSON URL",
@@ -2855,7 +2908,8 @@
       "userTasks": "User tasks",
       "userTasksDesc": "User tasks currently open in the engine.",
       "welcome": "Welcome, {{name}}",
-      "welcomeDesc": "Work areas available to your roles."
+      "welcomeDesc": "Work areas available to your roles.",
+      "deployments": "Deployments"
     },
     "programmes": {
       "achievements": "Achievements",

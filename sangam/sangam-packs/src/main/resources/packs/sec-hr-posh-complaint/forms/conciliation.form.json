@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-posh-complaint/conciliation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.hr.posh-complaint",
   "title": {
     "en": "Conciliation (no monetary settlement)",

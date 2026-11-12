@@ -1,6 +1,6 @@
 {
   "key": "pension/papers",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.pension",
   "title": {
     "en": "Pension papers",
@@ -52,7 +52,9 @@
     },
     {
       "id": "lastPay",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Last pay drawn (INR)",

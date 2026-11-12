@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up04_sla" name="SLA and pool by priority" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="up04-sla" name="SLA and pool by priority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="up04-sla" name="SLA and pool by priority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="up04-sla_t" hitPolicy="FIRST">
       <input id="up04-sla_i0" label="Priority"><inputExpression id="up04-sla_ie0" typeRef="string"><text>priority</text></inputExpression></input>
       <output id="up04-sla_o0" label="SLA" name="slaSpec" typeRef="string"/>

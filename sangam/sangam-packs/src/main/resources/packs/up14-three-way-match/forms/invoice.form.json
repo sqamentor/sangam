@@ -1,6 +1,6 @@
 {
   "key": "up14-three-way-match/invoice",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up14-three-way-match",
   "title": {
     "en": "Supplier invoice",
@@ -52,7 +52,9 @@
     },
     {
       "id": "poPrice",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "PO unit price",
@@ -61,7 +63,9 @@
     },
     {
       "id": "invoicePrice",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Invoiced unit price",

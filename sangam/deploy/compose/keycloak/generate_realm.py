@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Generates realm/sangam-realm.json (development Keycloak realm) and the Grafana overview dashboard.
+"""Generates realm/sangam-realm.json (development tenant realm), realm/sangam-platform-realm.json (development
+platform realm, SL-70) and the Grafana overview dashboard.
 
 Run from anywhere:  python -I deploy/compose/keycloak/generate_realm.py
 The generated files are committed; edit this script, not the JSON.
@@ -12,6 +13,9 @@ Realm content:
     roles, groups and audience sangam-server (ARCHITECTURE.md 4: tenant from claim `tenant`);
   * clients sangam-ui (public, PKCE S256), sangam-server (audience), sangam-worker (client credentials),
     sangam-cli (password grant, dev only).
+Platform realm "sangam-platform" (SL-70, owner decision 2026-11-10 "Platform issuer"): the server trusts it as
+sangam.security.platform-issuer, so only its tokens are platform identities; sangam-admin there is the platform
+administrator. In the tenant realm "sangam", sangam-admin is the tenant administrator of the token's tenant.
 All passwords and secrets are DEVELOPMENT-ONLY test values.
 """
 import json
@@ -62,7 +66,8 @@ def grafana_dashboard():
 
 
 PLATFORM_ROLES = [
-    ("sangam-admin", "Platform administrator (tenants, policies, seats)"),
+    ("sangam-admin", "Tenant administrator of the token's tenant (SL-70: platform administrator only in the "
+                     "platform realm)"),
     ("sangam-operator", "Operations: incidents, jobs, outbox, reconciliation console"),
     ("sangam-auditor", "Read audit timelines and verify audit chains (READ_AUDIT)"),
     ("sangam-modeller", "Author BPMN/DMN/forms packages"),
@@ -167,7 +172,7 @@ def realm():
                 {"name": "DIC-01", "attributes": {"office": ["DIC-01"], "officeName": ["District Industries Centre"]},
                  "subGroups": [pack_group("P4", "DIC-01")]}]}]},
         {"name": "platform", "subGroups": [
-            {"name": "admins", "realmRoles": ["sangam-admin", "sangam-user"], "subGroups": []},
+            {"name": "admins", "realmRoles": ["sangam-admin", "sangam-user"], "subGroups": []},  # tenant admins
             {"name": "operators", "realmRoles": ["sangam-operator", "sangam-user"], "subGroups": []},
             {"name": "auditors", "realmRoles": ["sangam-auditor", "sangam-user"], "subGroups": []},
             {"name": "model-lifecycle", "realmRoles": ["sangam-modeller", "sangam-user"], "subGroups": []}]},
@@ -187,7 +192,9 @@ def realm():
             u["attributes"]["seat"].append("SEAT-P2-SECRETARIAT-FIN-DS-1")
             u["attributes"]["additionalCharge"] = ["SEAT-P2-SECRETARIAT-FIN-DS-1:2026-11-01/2026-11-30"]
     users += [
-        user("admin.dev", "Platform", "Admin", ["sangam-admin", "sangam-user"], ["/platform/admins"],
+        # SL-70: sangam-admin in this (tenant) realm = administrator of dept-finance only; the platform
+        # administrator admin.dev lives in the platform realm (platform_realm below)
+        user("dept.admin", "Department", "Admin", ["sangam-admin", "sangam-user"], ["/platform/admins"],
              "dept-finance", []),
         user("operator.dev", "Ops", "Operator", ["sangam-operator", "sangam-user"], ["/platform/operators"],
              "dept-finance", []),
@@ -289,6 +296,29 @@ def realm():
     }
 
 
+PLATFORM_REALM_ROLES = [
+    ("sangam-admin", "Platform administrator: tenants, onboarding, engine-wide operations (SL-70)"),
+    ("sangam-operator", "Platform operator: actuator, engine-wide operations console"),
+    ("sangam-user", "Every interactive user"),
+]
+
+
+def platform_realm(tenant_realm):
+    """SL-70 platform realm: a separate issuer (own keys), listed by the server as sangam.security.platform-issuer.
+
+    Users carry a home tenant (claim tenant, required by the server); the platform role comes from the issuer."""
+    clients = [dict(c) for c in tenant_realm["clients"] if c["clientId"] in ("sangam-ui", "sangam-server", "sangam-cli")]
+    users = [
+        user("admin.dev", "Platform", "Admin", ["sangam-admin", "sangam-user"], [], "dept-finance", []),
+        user("platform.operator", "Platform", "Operator", ["sangam-operator", "sangam-user"], [], "dept-finance", []),
+    ]
+    r = dict(tenant_realm)
+    r.update({"realm": "sangam-platform", "displayName": "Sangam platform (development)",
+              "roles": {"realm": [{"name": n, "description": d} for n, d in PLATFORM_REALM_ROLES]},
+              "groups": [], "users": users, "clients": clients})
+    return r
+
+
 def write(path, obj):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
@@ -299,5 +329,8 @@ def write(path, obj):
 if __name__ == "__main__":
     r = realm()
     write(os.path.join(HERE, "realm", "sangam-realm.json"), r)
+    pr = platform_realm(r)
+    write(os.path.join(HERE, "realm", "sangam-platform-realm.json"), pr)
     write(os.path.join(COMPOSE, "observability", "grafana", "dashboards", "sangam-overview.json"), grafana_dashboard())
-    print(f"realm: {len(r['users'])} users, {len(r['roles']['realm'])} roles; dashboard written")
+    print(f"realm: {len(r['users'])} users, {len(r['roles']['realm'])} roles; platform realm: {len(pr['users'])} users; "
+          "dashboard written")

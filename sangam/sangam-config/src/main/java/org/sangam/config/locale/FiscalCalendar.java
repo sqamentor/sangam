@@ -22,12 +22,24 @@ import java.util.Map;
  */
 public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String labelFormat, int adjustmentPeriods) {
 
+    /** The label formats {@link FiscalYear#label()} knows. */
+    public static final java.util.Set<String> LABEL_FORMATS = java.util.Set.of("START-END2", "START", "END", "START/END");
+
+    /**
+     * SL-125 (fail closed): no part of a fiscal calendar is assumed. The start month, start day and label format are
+     * always stated; only the zone may be inherited (from the locale zone, by {@link #from}).
+     */
     public FiscalCalendar {
         if (startMonth < 1 || startMonth > 12 || startDay < 1 || startDay > 28) {
             throw new IllegalArgumentException("fiscal start must be month 1..12, day 1..28");
         }
-        zone = zone == null ? ZoneId.of("UTC") : zone;
-        labelFormat = labelFormat == null ? "START-END2" : labelFormat;
+        if (zone == null) {
+            throw new IllegalArgumentException("fiscal calendar needs a zone");
+        }
+        if (labelFormat == null || !LABEL_FORMATS.contains(labelFormat)) {
+            throw new IllegalArgumentException("fiscal label must be one of " + new java.util.TreeSet<>(LABEL_FORMATS)
+                    + ", was " + labelFormat);
+        }
         if (adjustmentPeriods < 0 || adjustmentPeriods > 4) {
             throw new IllegalArgumentException("adjustment periods must be 0..4");
         }
@@ -37,21 +49,40 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
         this(startMonth, startDay, zone, labelFormat, 0);
     }
 
-    public static FiscalCalendar calendarYear(ZoneId zone) {
-        return new FiscalCalendar(1, 1, zone, "START");
-    }
-
-    /** From a profile map {@code {startMonth: 4, startDay: 1, zone: Asia/Kolkata, label: START-END2}}. */
-    public static FiscalCalendar from(Map<String, Object> m, ZoneId defaultZone) {
+    /**
+     * From a profile map {@code {startMonth: 4, startDay: 1, zone: Asia/Kolkata, label: START-END2}}: empty when the map
+     * is absent or empty (no fiscal year configured; never a calendar-year default, SL-125). Inside a present map
+     * {@code startMonth}, {@code startDay} and {@code label} are required ({@link IllegalArgumentException} naming the
+     * path); {@code zone} defaults to {@code defaultZone} (the locale zone) and {@code adjustmentPeriods} to 0 (none).
+     */
+    public static java.util.Optional<FiscalCalendar> from(Map<String, Object> m, ZoneId defaultZone) {
         if (m == null || m.isEmpty()) {
-            return calendarYear(defaultZone);
+            return java.util.Optional.empty();
         }
         Object z = m.get("zone");
-        return new FiscalCalendar(Integer.parseInt(String.valueOf(m.getOrDefault("startMonth", 1))),
-                Integer.parseInt(String.valueOf(m.getOrDefault("startDay", 1))),
-                z == null ? defaultZone : ZoneId.of(z.toString()),
-                m.get("label") == null ? null : m.get("label").toString(),
-                Integer.parseInt(String.valueOf(m.getOrDefault("adjustmentPeriods", 0))));
+        return java.util.Optional.of(new FiscalCalendar(required(m, "startMonth"), required(m, "startDay"),
+                z == null ? defaultZone : ZoneId.of(z.toString()), requiredText(m, "label"),
+                Integer.parseInt(String.valueOf(m.getOrDefault("adjustmentPeriods", 0)))));
+    }
+
+    private static int required(Map<String, Object> m, String key) {
+        Object v = m.get(key);
+        if (v == null || v.toString().isBlank()) {
+            throw new IllegalArgumentException("locale.fiscal." + key + " is required");
+        }
+        try {
+            return Integer.parseInt(v.toString().trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("locale.fiscal." + key + " must be a whole number, was '" + v + "'");
+        }
+    }
+
+    private static String requiredText(Map<String, Object> m, String key) {
+        Object v = m.get(key);
+        if (v == null || v.toString().isBlank()) {
+            throw new IllegalArgumentException("locale.fiscal." + key + " is required");
+        }
+        return v.toString().trim();
     }
 
     /** The fiscal year containing a date, identified by the calendar year in which it starts. */

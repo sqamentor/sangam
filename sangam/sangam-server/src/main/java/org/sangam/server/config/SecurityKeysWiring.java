@@ -47,7 +47,7 @@ public class SecurityKeysWiring {
 
     @Bean
     public FieldEncryptor sangamFieldEncryptor(SangamSecurity security, DataSource dataSource, Environment env) {
-        boolean production = env.getProperty("sangam.security.production", Boolean.class, false);
+        boolean production = ProductionEnvironment.isProduction(env); // SL-109
         boolean dev = Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.equals("h2") || p.equals("dev"));
         MasterKeyProvider kek = masterKey(env);
         if (kek == null) {

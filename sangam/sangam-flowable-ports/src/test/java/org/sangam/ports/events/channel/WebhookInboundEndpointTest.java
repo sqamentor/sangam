@@ -95,6 +95,31 @@ class WebhookInboundEndpointTest {
     }
 
     @Test
+    void aSenderAuthenticatedByTheHostNeedsNoChannelSignatureButEveryOtherRuleHolds() {
+        // SL-76: the host (Sangam's token-authenticated events API) has authenticated the sender as a principal of acc
+        String body = "{\"id\":\"a-1\",\"qty\":2}";
+        assertEquals(Outcome.ACCEPTED, hook.receiveAuthenticated("acc", "signed", Map.of(), body).outcome());
+        assertEquals(Outcome.DUPLICATE, hook.receiveAuthenticated("acc", "signed", Map.of(), body).outcome(),
+                "the inbox still de-duplicates by message id");
+        // the webhook ingress of the same channel stays strict
+        String other = "{\"id\":\"a-2\",\"qty\":2}";
+        assertThrows(SecurityException.class, () -> hook.receive("acc", "signed", Map.of(), other));
+        Map<String, String> wrongKey = Map.of("X-Sangam-Signature", "sha256=" + WebhookInboundEndpoint.hmacHex("other", other));
+        assertThrows(SecurityException.class, () -> hook.receive("acc", "signed", wrongKey, other));
+        // every other rule applies to the authenticated sender too
+        assertThrows(IllegalArgumentException.class, () -> hook.receiveAuthenticated("ops", "signed", Map.of(), other),
+                "a channel of another tenant");
+        assertThrows(IllegalArgumentException.class, () -> hook.receiveAuthenticated("acc", "out", Map.of(), "{}"));
+        assertThrows(IllegalArgumentException.class, () -> hook.receiveAuthenticated("acc", "jms-in", Map.of(), "{}"));
+        assertEquals(422, assertThrows(PortsProblem.class, () -> hook.receiveAuthenticated("acc", "signed", Map.of(), "")).status());
+        assertEquals("PAYLOAD_TOO_LARGE", assertThrows(PortsProblem.class, () -> hook.receiveAuthenticated("acc", "signed",
+                Map.of(), "{\"id\":\"x\",\"pad\":\"" + "a".repeat(3000) + "\"}")).code());
+        assertEquals("TENANT_MISMATCH", hook.receiveAuthenticated("acc", "open", Map.of(),
+                "{\"id\":\"a-3\",\"qty\":1,\"tenant\":\"ops\"}").code(), "FW-29 holds for an authenticated sender");
+        assertEquals(1, f.count("SELECT COUNT(*) FROM INBOX"));
+    }
+
+    @Test
     void emptyAndOversizedBodiesAreProblemsAndOnlyInboundWebhookChannelsAccept() {
         PortsProblem empty = assertThrows(PortsProblem.class, () -> hook.receive("acc", "open", Map.of(), ""));
         assertEquals(422, empty.status());

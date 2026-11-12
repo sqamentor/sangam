@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** X.2.3.3–X.2.3.4: gapless per-root chain, verify, tamper detection, erasure keeps the chain valid. */
 class AuditChainIT extends LayerSpecSupport {
 
-    final AuditChain audit = new AuditChain(PG);
+    final AuditChain audit = new AuditChain(DIALECT);
 
     private void appendFive(String root) {
         for (int i = 1; i <= 5; i++) {
@@ -48,7 +48,7 @@ class AuditChainIT extends LayerSpecSupport {
      */
     @Test
     void appendRoundTripsOnPostgres() {
-        Outbox outbox = new Outbox(PG);
+        Outbox outbox = new Outbox(DIALECT);
         int[] counts = new int[4];
         run(c -> {
             org.junit.jupiter.api.Assumptions.assumeTrue(isPostgres(c), "PostgreSQL single-statement path");
@@ -76,7 +76,7 @@ class AuditChainIT extends LayerSpecSupport {
      */
     @Test
     void mixedOldAndNewPathHistoryVerifies() {
-        Outbox outbox = new Outbox(PG);
+        Outbox outbox = new Outbox(DIALECT);
         for (int i = 1; i <= 3; i++) {
             int n = i;
             run(c -> {

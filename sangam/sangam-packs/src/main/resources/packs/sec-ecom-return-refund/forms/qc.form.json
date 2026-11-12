@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-return-refund/qc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ecom.return-refund",
   "title": {
     "en": "Quality check",

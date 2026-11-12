@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.surrender-lapse",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Surrender of savings and year-end lapse",
     "hi": "बचत का समर्पण और वर्षांत व्यपगत"
@@ -107,5 +107,15 @@
       "rule": "CAA SURRENDER no monetary limit",
       "reason": "GFR 62(1)-(2) (corpus IFC-069) requires the surrender but does not name the CAA as the approving authority; confirm from the delegation order and deploy it as a tenant DMN override"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit",
+      "surrenderAmount"
+    ]
+  }
 }

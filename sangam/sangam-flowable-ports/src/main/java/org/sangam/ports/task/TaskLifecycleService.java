@@ -95,7 +95,7 @@ public class TaskLifecycleService {
     }
 
     private static String t(String tenant) {
-        return tenant == null ? "" : tenant;
+        return org.sangam.core.layer.TenantKey.of(tenant); // SL-86: shared key, never ''
     }
 
     private void ensure(Connection c, String taskId, String tenant) {

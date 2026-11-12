@@ -107,6 +107,29 @@ class LedgerMoneyTest {
         assertEquals(fits, s.apply(LedgerRequest.of("COMMIT", k, new BigDecimal(commit), "c")).applied(), commit);
     }
 
+    /**
+     * SG-01 IFMS edges in minor units through the typed API and the BIGINT store: limit 1,00,000.00 = 10,000,000 paise;
+     * 9,999,900 (99,999.00) and 10,000,000 fit, 10,000,001 (one paisa above) and 10,000,100 (1,00,001.00) do not, and
+     * the stored committed bucket is exactly the paise posted.
+     */
+    @ParameterizedTest
+    @CsvSource({"9999900,true", "9999999,true", "10000000,true", "10000001,false", "10000100,false"})
+    void ifmsBandEdgesInPaise(long paise, boolean fits) throws Exception {
+        String name = "paise" + paise;
+        LedgerService s = jdbc(name);
+        AccountKey k = key("E");
+        org.sangam.core.money.Money limit = org.sangam.core.money.Money.ofMinor(10_000_000L, "INR");
+        assertTrue(s.apply(LedgerRequest.money("ALLOCATE", k, limit, "a")).applied());
+        org.sangam.core.money.Money commit = org.sangam.core.money.Money.ofMinor(paise, "INR");
+        assertEquals(fits, s.apply(LedgerRequest.money("COMMIT", k, commit, "c")).applied(), Long.toString(paise));
+        assertEquals(fits ? limit.minus(commit) : limit, s.availableMoney(k));
+        try (Connection c = DS.get(name).getConnection();
+             ResultSet rs = c.createStatement().executeQuery("SELECT committed FROM LDG_BALANCE")) {
+            assertTrue(rs.next());
+            assertEquals(fits ? paise : 0L, rs.getLong(1));
+        }
+    }
+
     /** Typed money API: LedgerRequest.money / availableMoney round-trip exact minor units. */
     @Test
     void moneyApi() {

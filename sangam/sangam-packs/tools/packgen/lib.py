@@ -7,6 +7,8 @@ from collections import defaultdict
 from xml.sax.saxutils import escape
 import re
 
+import money
+
 sys.setrecursionlimit(10000)
 
 P = 'org.sangam.packs.core.'
@@ -174,8 +176,12 @@ class Scope:
     def user(self, id, name, group, form=None, decision=None, fields=None, listeners=None, due=None, mi=None,
              priority=None, sod=False, sod_steps=None, sod_exclude=None, power=None, bind=None, step_suffix=None,
              doc=None, joint=False):
-        """decision = (var, [values]); power = dict(decisionKey=.., approveValues=..); bind = approve values."""
+        """decision = (var, [values]); power = dict(decisionKey=.., approveValues=..); bind = approve values.
+        joint=True only through joint_approval(), which resolves the seats first."""
         check_group_expression(id, group)
+        if joint and not (self.node(id + 'Seats') and 'EXCLUDE_ACTORS' in ''.join(self.node(id + 'Seats')['ext'])):
+            raise ValueError(f'{id}: a joint approval is made with Scope.joint_approval (SL-32, J-P1-E09: its seats '
+                             f'exclude every earlier actor of the case, so no seat counts as two approvals)')
         attrs = {'operaton:candidateGroups': group}
         if form:
             attrs['operaton:formKey'] = 'sangam:' + form
@@ -208,6 +214,24 @@ class Scope:
             b += '</multiInstanceLoopCharacteristics>'
             body.append(b)
         return self._add(dict(tag='userTask', id=id, name=name, kind='task', attrs=attrs, ext=ext, body=body))
+
+    def joint_approval(self, id, name, seats_var, form, decision, fields, bind, max_=5, target=None):
+        """A joint approval (J-P1-E09): every seat of the pack's comma list `seats_var` approves the same payload
+        (ApprovalBindingListener mode JOINT), except a seat that already acted on the case or is held by an earlier
+        actor: the seat that sanctioned the bill has approved that payload and must not count as a second approval,
+        and segregation of duties would refuse its second act (IFMS R-102 v0.1). SeatResolutionDelegate op
+        EXCLUDE_ACTORS computes the remaining seats with SodGuardListener's own earlier-actor filter, one instance per
+        seat; none left is refused (fail closed). Returns (entry, task)."""
+        target = target or id + 'Seats'
+        check_seat_var(id, seats_var)
+        check_seat_var(id, target)
+        res = self.svc(id + 'Seats', 'Joint approval seats (excluding earlier actors)', C['SEAT'],
+                       {'op': 'EXCLUDE_ACTORS', 'seatsVar': seats_var, 'targetVar': target, 'step': id})
+        task = self.user(id, name, "${" + target + ".split(',')[loopCounter]}", form=form, decision=decision,
+                         fields=fields, mi={'count': '${' + target + 'Count}', 'max': max_}, sod=True, bind=bind,
+                         joint=True)
+        self.flow(res, task)
+        return res, task
 
     def call(self, id, name, called, async_=False, ins=None, outs_all=True, mi=None, bk=None, all_in=True,
              outs=None):
@@ -294,6 +318,7 @@ class Scope:
 
     def flow(self, src, tgt, c=None, name=None, default=False, priority=None):
         fid = self.proc.fid('f')
+        check_money_condition(f'{self.proc.pid}/{fid}', c)
         self.flows.append(dict(id=fid, src=src, tgt=tgt, cond=c, name=name, default=default, priority=priority))
         return fid
 
@@ -312,7 +337,13 @@ class Scope:
     def state(self, id, st, name=None):
         return self.svc(id, name or ('State: ' + st), C['LIFE'], {'state': st})
 
+    def currency(self):
+        return getattr(self.proc.pack, 'currency', money.DEFAULT_CURRENCY)
+
     def setv(self, id, name, values=None, defaults=None):
+        # a literal amount of a money variable is authored in major units and shipped in minor units (money.py)
+        values = money.convert_assignments(values, f'{self.proc.pid}/{id}', self.currency())
+        defaults = money.convert_assignments(defaults, f'{self.proc.pid}/{id}', self.currency())
         return self.svc(id, name, C['SET'], {'values': values, 'defaults': defaults})
 
     def notify(self, id, name, template, channel='inapp', recipient=None, async_=False):
@@ -322,6 +353,8 @@ class Scope:
     def conn(self, id, name, connector, operation='call', mode='query', inputs=None, prefix=None, step=None,
              error=None, async_=True):
         self.proc.connectors.add((connector, mode))
+        # the default prefix is the connector's last segment, as ConnectorCallDelegate resolves it
+        self.proc.conn_prefixes.setdefault(connector, set()).add(prefix or connector[connector.rfind('.') + 1:])
         return self.svc(id, name, C['CALL'], {'connector': connector, 'operation': operation, 'mode': mode,
                                               'inputs': inputs, 'resultPrefix': prefix, 'step': step,
                                               'errorOnFailure': error}, async_=async_)
@@ -402,6 +435,9 @@ class Proc:
         self.calls = set()
         self.decisions_used = set()
         self.connectors = set()
+        # connector -> result prefixes of its calls (ConnectorCallDelegate writes data entries as <prefix><Key>), so
+        # money in a simulator directive is recognised by the variable it lands in (money.convert_directive)
+        self.conn_prefixes = {}
         self.root = Scope(self)
         self.listeners = []
         self.pack = pack
@@ -671,16 +707,49 @@ def route(s, t, k):
 
 # ---- DMN -------------------------------------------------------------------------------------------------------
 
-def dmn_type(typ):
-    """ADR-D-26 / SL-05: shipped DMN never uses binary floating point; 'double'/'float' become the exact 'number'.
-    The single place every generated DMN type goes through, so a pack definition cannot reintroduce a double."""
-    return 'number' if str(typ).lower() in ('double', 'float') else typ
+_MONEY_CMP = re.compile(r'\b([A-Za-z_]\w*)\s*(?:<=|>=|==|!=|<|>)\s*(-?\d+(?:\.\d+)?)\b')
 
 
-def dmn(did, name, hit, inputs, outputs, rules, doc='', ttl=3650, version='1.0.0'):
-    """inputs: [(label, expression, typeRef)], outputs: [(name, label, typeRef)], rules: [(ins, outs, note)]."""
-    inputs = [(label, expr, dmn_type(typ)) for (label, expr, typ) in inputs]
-    outputs = [(nm, label, dmn_type(typ)) for (nm, label, typ) in outputs]
+def check_money_condition(where, c):
+    """A sequence-flow condition may compare a money variable only with zero or another variable: an amount
+    threshold belongs in a 'money' DMN column (converted and checked there), never as a bare literal in a condition,
+    where a rupee figure would silently be compared with paise."""
+    if not c:
+        return
+    for var, num in _MONEY_CMP.findall(str(c)):
+        if money.is_money(var) and num.lstrip('-') not in ('0', '0.0'):
+            raise ValueError(f'{where}: condition {c!r} compares money {var} with the literal {num}: move the '
+                             f'threshold into a money DMN column')
+
+
+def dmn_type(typ, name, where):
+    """ADR-D-26 / SL-05 / SD-398: the single place every generated DMN type goes through. A shipped DMN never uses
+    binary floating point: 'double' / 'float' are refused (declare 'number', or 'money' for an amount). A column whose
+    variable is money (money.is_money) must be declared 'money': it ships as the exact 'number' with integer minor
+    units. Returns (typeRef, is_money_column)."""
+    t = str(typ).lower()
+    if t in ('double', 'float'):
+        raise ValueError(f'{where}: DMN column {name!r} typed {typ!r}: binary floating point is not allowed '
+                         f"(use 'number', or 'money' for an amount)")
+    if t == 'money':
+        return 'number', True
+    if money.is_money(name) and t in ('number', 'integer', 'long'):
+        raise ValueError(f"{where}: DMN column {name!r} is money (money.is_money): declare it 'money'")
+    return typ, False
+
+
+def dmn(did, name, hit, inputs, outputs, rules, doc='', ttl=3650, version='1.0.0', currency=money.DEFAULT_CURRENCY):
+    """inputs: [(label, expression, typeRef)], outputs: [(name, label, typeRef)], rules: [(ins, outs, note)].
+    A column typed 'money' is authored in major units and shipped in integer minor units of currency (money.py)."""
+    ins_t = [dmn_type(typ, expr, did) for (label, expr, typ) in inputs]
+    outs_t = [dmn_type(typ, nm, did) for (nm, label, typ) in outputs]
+    inputs = [(label, expr, t) for (label, expr, _), (t, _m) in zip(inputs, ins_t)]
+    outputs = [(nm, label, t) for (nm, label, _), (t, _m) in zip(outputs, outs_t)]
+    rules = [([money.column_entry(v, f'{did} rule {r} input {i}', False, currency) if ins_t[i][1] else v
+               for i, v in enumerate(ins)],
+              [money.column_entry(v, f'{did} rule {r} output {i}', True, currency) if outs_t[i][1] else v
+               for i, v in enumerate(outs)], note)
+             for r, (ins, outs, note) in enumerate(rules)]
     o = ['<?xml version="1.0" encoding="UTF-8"?>',
          '<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" '
          'xmlns:operaton="http://operaton.org/schema/1.0/dmn" '

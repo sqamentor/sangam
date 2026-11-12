@@ -48,7 +48,8 @@ import org.springframework.core.env.Environment;
  *   <li>{@link LedgerService} on the durable {@link JdbcLedgerStore} and {@link LedgerControlStore.JdbcStore}
  *       ({@code LDG_*} tables), with the engine clock.</li>
  *   <li>Ports: {@code RatePort} from the configuration profile's {@code locale.exchangeRates}
- *       ({@code sangam.ledger.rate-scope}, default {@code IN}); {@code DecisionPort} over Operaton DMN (the tenant's
+ *       ({@code sangam.ledger.rate-scope}, no default (SL-104): a cross-currency conversion with it unset fails
+ *       naming the property); {@code DecisionPort} over Operaton DMN (the tenant's
  *       decision first, then the shared one); {@code AuditLink} to the class-B audit chain ({@code LEDGER_POSTED});
  *       {@code AccountingSink} to the general-ledger connector through the outbox ({@value LedgerGlPublisher#DESTINATION},
  *       only when {@code sangam.ledger.gl-connector} is set; the {@code LDG_ACCOUNTING} table always holds the
@@ -105,6 +106,37 @@ public class LedgerWiring {
         };
     }
 
+    /**
+     * Exchange rates from the profile named by {@code sangam.ledger.rate-scope}: its {@code locale.exchangeRates} on the
+     * as-of date ("today" of that scope when none is given). SL-104 (ADR-D-20): there is no default scope. Same-currency
+     * conversion needs none; a cross-currency rate with the scope unset fails naming the property, instead of reading a
+     * country profile nobody configured.
+     */
+    static LedgerPorts.RatePort profileRates(String rateScope, java.util.function.Supplier<ProfileResolver> profiles,
+                                             java.util.function.Function<String, LocalDate> todayOf) {
+        boolean configured = rateScope != null && !rateScope.isBlank();
+        return (from, to, rateType, asOf) -> {
+            if (from.equals(to)) {
+                return Optional.of(BigDecimal.ONE);
+            }
+            if (!configured) {
+                throw new IllegalStateException("sangam.ledger.rate-scope is not configured (SANGAM_LEDGER_RATE_SCOPE):"
+                        + " no exchange-rate profile for " + from + "->" + to + " (SL-104)");
+            }
+            ProfileResolver r = profiles.get();
+            if (r == null) {
+                return Optional.empty();
+            }
+            try {
+                // A missing as-of is "today" of the rate scope (its own profile zone).
+                LocalDate d = asOf != null ? asOf : todayOf.apply(rateScope);
+                return r.resolve(rateScope, d).locale().exchangeRates().rate(from, to, d);
+            } catch (RuntimeException e) {
+                return Optional.empty();
+            }
+        };
+    }
+
     @Bean
     public LedgerService sangamLedgerService(JdbcLedgerStore store, LedgerControlStore control,
             LedgerPorts.DecisionPort decisions, ObjectProvider<ProfileResolver> profiles, ObjectProvider<AuditPort> audit,
@@ -112,23 +144,8 @@ public class LedgerWiring {
         LedgerService service = new LedgerService(store, control, ConfigWiring.engineClock()).withDecisions(decisions)
                 .withBusinessClock(new org.sangam.config.locale.ProfileBusinessClock(profiles::getIfAvailable,
                         ConfigWiring.engineClock()));
-        String rateScope = env.getProperty("sangam.ledger.rate-scope", "IN");
-        service.withRates((from, to, rateType, asOf) -> {
-            if (from.equals(to)) {
-                return Optional.of(BigDecimal.ONE);
-            }
-            ProfileResolver r = profiles.getIfAvailable();
-            if (r == null) {
-                return Optional.empty();
-            }
-            try {
-                // A missing as-of is "today" of the rate scope (its own profile zone).
-                LocalDate d = asOf != null ? asOf : service.today(rateScope);
-                return r.resolve(rateScope, d).locale().exchangeRates().rate(from, to, d);
-            } catch (RuntimeException e) {
-                return Optional.empty();
-            }
-        });
+        service.withRates(profileRates(env.getProperty("sangam.ledger.rate-scope"), profiles::getIfAvailable,
+                service::today));
         service.withAudit((tenant, reference, operation, auditRef, actor, summary) -> {
             AuditPort a = audit.getIfAvailable();
             if (a == null) {

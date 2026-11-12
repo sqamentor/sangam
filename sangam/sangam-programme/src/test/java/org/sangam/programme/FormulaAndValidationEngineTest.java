@@ -77,7 +77,8 @@ class FormulaAndValidationEngineTest {
     // ---------------------------------------------------------------- ValidationEngine
 
     private static final String CONFIG = """
-            {"indicators":[
+            {"fiscalYearStartMonth":4,
+             "indicators":[
                {"key":"spend","name":"Spend","unit":"INR","decimals":2,"cumulative":true,
                 "validation":{"min":0,"max":"1000000000000000.00","maxOfTarget":"1.5"}},
                {"key":"count","name":"Count","unit":"NO","validation":{"integer":true}},

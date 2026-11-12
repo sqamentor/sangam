@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** VI.3 rule 4–5, R36, A-2, A-8: UUIDv5 identity, lockVersion fencing, capability classes, reconciliation. */
 class OperationLedgerIT extends LayerSpecSupport {
 
-    final AuditChain audit = new AuditChain(PG);
-    final ReconciliationQueue queue = new ReconciliationQueue(PG, audit);
-    final OperationLedger ledger = new OperationLedger(PG, queue);
+    final AuditChain audit = new AuditChain(DIALECT);
+    final ReconciliationQueue queue = new ReconciliationQueue(DIALECT, audit);
+    final OperationLedger ledger = new OperationLedger(DIALECT, queue);
     final OperationRef pay = new OperationRef("t1", "root-1", "payTask:act-17", 0);
 
     // ------------------------------------------------------------------ identity (no database)

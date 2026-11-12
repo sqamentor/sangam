@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Event registry (FLOWABLE-INTO-OPERATON FC-02, FLOWABLE-INTO-OPERATON FC-03, FLOWABLE-INTO-OPERATON FC-04; R38 inbox, R83): channels, event definitions and publication of CloudEvents
  * 1.0. Inbound events are de-duplicated through the inbox by {@code (tenant, source, id)} and then start a process
@@ -13,19 +16,57 @@ import java.util.Map;
  */
 public interface EventPort {
 
-    /** direction: INBOUND | OUTBOUND. transport: REST | WEBHOOK | KAFKA | JMS | AMQP. */
+    /**
+     * direction: INBOUND | OUTBOUND. transport: REST | WEBHOOK | KAFKA | JMS | AMQP. Optional on a request (SL-81),
+     * with these defaults: {@code active} false (the channel receives nothing until activated), {@code revision} 0
+     * (none read: server-assigned on create).
+     */
     record Channel(String key, String tenantId, String name, String direction, String transport, String destination,
                    List<String> eventDefinitionKeys, String keyDetector, String tenantDetector,
                    Integer dedupWindowSeconds, Map<String, Object> config, boolean active, long revision) {
+
+        /** Request binding: an omitted optional flag or number takes the documented default above, never a guess. */
+        @JsonCreator
+        public static Channel fromRequest(@JsonProperty("key") String key, @JsonProperty("tenantId") String tenantId,
+                                   @JsonProperty("name") String name, @JsonProperty("direction") String direction,
+                                   @JsonProperty("transport") String transport,
+                                   @JsonProperty("destination") String destination,
+                                   @JsonProperty("eventDefinitionKeys") List<String> eventDefinitionKeys,
+                                   @JsonProperty("keyDetector") String keyDetector,
+                                   @JsonProperty("tenantDetector") String tenantDetector,
+                                   @JsonProperty("dedupWindowSeconds") Integer dedupWindowSeconds,
+                                   @JsonProperty("config") Map<String, Object> config,
+                                   @JsonProperty("active") Boolean active, @JsonProperty("revision") Long revision) {
+            return new Channel(key, tenantId, name, direction, transport, destination, eventDefinitionKeys, keyDetector,
+                    tenantDetector, dedupWindowSeconds, config, active != null && active, revision == null ? 0L : revision);
+        }
     }
 
     /**
      * startProcessKey or messageName says what an event does. correlationParameters are JSON pointers into the
-     * event data; businessKeyPointer selects the business key ({@code storeAsUniqueReferenceId}).
+     * event data; businessKeyPointer selects the business key ({@code storeAsUniqueReferenceId}). Optional on a
+     * request (SL-81), with these defaults: {@code uniqueStart} false; {@code version} and {@code revision} 0 (both
+     * server-assigned on create).
      */
     record EventDefinition(String key, String tenantId, String name, int version, Map<String, Object> payloadSchema,
                            List<String> correlationParameters, String businessKeyPointer, String startProcessKey,
                            String messageName, boolean uniqueStart, long revision) {
+
+        /** Request binding: an omitted optional flag or number takes the documented default above, never a guess. */
+        @JsonCreator
+        public static EventDefinition fromRequest(@JsonProperty("key") String key, @JsonProperty("tenantId") String tenantId,
+                                           @JsonProperty("name") String name, @JsonProperty("version") Integer version,
+                                           @JsonProperty("payloadSchema") Map<String, Object> payloadSchema,
+                                           @JsonProperty("correlationParameters") List<String> correlationParameters,
+                                           @JsonProperty("businessKeyPointer") String businessKeyPointer,
+                                           @JsonProperty("startProcessKey") String startProcessKey,
+                                           @JsonProperty("messageName") String messageName,
+                                           @JsonProperty("uniqueStart") Boolean uniqueStart,
+                                           @JsonProperty("revision") Long revision) {
+            return new EventDefinition(key, tenantId, name, version == null ? 0 : version, payloadSchema,
+                    correlationParameters, businessKeyPointer, startProcessKey, messageName,
+                    uniqueStart != null && uniqueStart, revision == null ? 0L : revision);
+        }
     }
 
     /** CloudEvents 1.0 structured mode (JSON). Extension attributes go in {@code extensions}. */

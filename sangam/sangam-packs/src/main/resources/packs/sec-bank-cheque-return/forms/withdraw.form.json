@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-cheque-return/withdraw",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.cheque-return",
   "title": {
     "en": "Withdraw cheque facility (repeated dishonour)",

@@ -25,6 +25,37 @@ import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
 const E = '/engine-rest';
 const MAX = { maxResults: 200 };
 
+/**
+ * P49: the permission names the engine accepts per resource type (index = resource type id), read from Operaton
+ * 2.2.0: ResourceTypeUtil.getPermissionsByResourceType(type), narrowed to the permissions whose getTypes() include
+ * the type (NONE and ALL apply to every type). Toggles replace the JSON array; the body still carries the names.
+ */
+const BASIC = ['READ', 'UPDATE', 'CREATE', 'DELETE'];
+export const ENGINE_PERMISSIONS: string[][] = [
+  ['ACCESS'], BASIC, BASIC, ['CREATE', 'DELETE'], BASIC, BASIC,
+  ['READ', 'UPDATE', 'DELETE', 'READ_TASK', 'UPDATE_TASK', 'CREATE_INSTANCE', 'READ_INSTANCE', 'UPDATE_INSTANCE', 'DELETE_INSTANCE', 'READ_HISTORY', 'DELETE_HISTORY', 'TASK_WORK', 'TASK_ASSIGN', 'MIGRATE_INSTANCE', 'RETRY_JOB', 'SUSPEND', 'SUSPEND_INSTANCE', 'UPDATE_INSTANCE_VARIABLE', 'UPDATE_TASK_VARIABLE', 'READ_INSTANCE_VARIABLE', 'READ_HISTORY_VARIABLE', 'READ_TASK_VARIABLE', 'UPDATE_HISTORY'],
+  [...BASIC, 'READ_HISTORY', 'TASK_WORK', 'TASK_ASSIGN', 'UPDATE_VARIABLE', 'READ_VARIABLE'],
+  [...BASIC, 'RETRY_JOB', 'SUSPEND', 'UPDATE_VARIABLE'],
+  ['READ', 'CREATE', 'DELETE'],
+  ['READ', 'UPDATE', 'CREATE_INSTANCE', 'READ_HISTORY', 'DELETE_HISTORY'],
+  BASIC, ['CREATE', 'DELETE'],
+  [...BASIC, 'READ_HISTORY', 'DELETE_HISTORY', 'CREATE_BATCH_MIGRATE_PROCESS_INSTANCES', 'CREATE_BATCH_MODIFY_PROCESS_INSTANCES', 'CREATE_BATCH_RESTART_PROCESS_INSTANCES', 'CREATE_BATCH_DELETE_RUNNING_PROCESS_INSTANCES', 'CREATE_BATCH_DELETE_FINISHED_PROCESS_INSTANCES', 'CREATE_BATCH_DELETE_DECISION_INSTANCES', 'CREATE_BATCH_SET_JOB_RETRIES', 'CREATE_BATCH_SET_EXTERNAL_TASK_RETRIES', 'CREATE_BATCH_UPDATE_PROCESS_INSTANCES_SUSPEND', 'CREATE_BATCH_SET_REMOVAL_TIME', 'CREATE_BATCH_SET_VARIABLES', 'CREATE_BATCH_CORRELATE_MESSAGE'],
+  ['READ'], BASIC, BASIC,
+  ['READ', 'UPDATE', 'DELETE'],
+  ['EDIT', 'SHARE'],
+  ['READ', 'READ_VARIABLE'],
+  ['READ'],
+  ['READ', 'SET', 'DELETE'],
+].map((p) => ['ALL', 'NONE', ...p]);
+
+/** Toggle options for the resource type picked in the form (none until a type is chosen). */
+export function permissionOptions(values: Record<string, unknown>): { value: string; label: string }[] {
+  const type = values.resourceType === undefined || values.resourceType === '' ? -1 : Number(values.resourceType);
+  return (ENGINE_PERMISSIONS[type] ?? []).map((p) => ({ value: p, label: p }));
+}
+
+const permissionsField = { key: 'permissions', label: 'fld.permissions', type: 'checklist' as const, validate: { required: true } };
+
 const jobDefinitions: ScreenDef = {
   id: 'jobDefs',
   title: 'mod.op.jobDefinitions',
@@ -115,7 +146,7 @@ const userTasks: ScreenDef = {
 
 const deployments: ScreenDef = {
   id: 'deployments',
-  title: 'mod.op.deploymentResources',
+  title: 'mod.op.deployments',
   list: `${E}/deployment`,
   listQuery: { ...MAX, sortBy: 'deploymentTime', sortOrder: 'desc' },
   unpaged: true,
@@ -214,7 +245,7 @@ const filterGrants: ScreenDef = {
   filters: [f.text('resourceId', 'fld.filterId')],
   columns: [c('resourceId', 'fld.filterId'), c('userId'), c('groupId'), c('permissions')],
   rowKey: ['id'],
-  create: { id: 'share', label: 'act.share', path: `${E}/authorization/create`, fields: [f.text('resourceId', 'fld.filterId', true), f.text('userId'), f.text('groupId'), f.json('permissions', undefined, true)], noJson: true, defaults: () => ({ permissions: '["READ"]' }), bodyExtra: { type: 1, resourceType: 5 } },
+  create: { id: 'share', label: 'act.share', path: `${E}/authorization/create`, fields: [f.text('resourceId', 'fld.filterId', true), f.text('userId'), f.text('groupId'), { ...permissionsField, values: permissionOptions({ resourceType: 5 }) }], noJson: true, defaults: () => ({ permissions: ['READ'] }), bodyExtra: { type: 1, resourceType: 5 } },
   actions: [{ id: 'revoke', label: 'admin.revoke', method: 'DELETE', path: `${E}/authorization/{id}`, noJson: true, danger: true }],
 };
 
@@ -292,10 +323,10 @@ const authorizations: ScreenDef = {
   filters: [{ key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts }, f.text('userIdIn', 'fld.userId'), f.text('groupIdIn', 'fld.groupId')],
   columns: [c('type', 'fld.authType', (r) => <Badge value={['GLOBAL', 'GRANT', 'REVOKE'][Number(r.type)] ?? String(r.type)} tone="info" />), c('resourceType'), c('resourceId'), c('userId'), c('groupId'), c('permissions')],
   rowKey: ['id'],
-  create: { id: 'create', label: 'act.create', path: `${E}/authorization/create`, fields: [f.num('type', 'fld.authType', true), { key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts, validate: { required: true } }, f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), f.json('permissions', undefined, true)], noJson: true, hint: 'mod.op.authTypeHint', defaults: () => ({ type: 1, resourceId: '*', permissions: '["ALL"]' }) },
+  create: { id: 'create', label: 'act.create', path: `${E}/authorization/create`, fields: [f.num('type', 'fld.authType', true), { key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts, validate: { required: true } }, f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), permissionsField], noJson: true, hint: 'mod.op.authTypeHint', defaults: () => ({ type: 1, resourceId: '*', permissions: ['ALL'] }), dynamicValues: { permissions: permissionOptions } },
   actions: [
     // The engine converts permission names against the body's resourceType (AuthorizationDto.update): without it the PUT fails.
-    { id: 'edit', label: 'act.update', method: 'PUT', path: `${E}/authorization/{id}`, fields: [{ key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts, validate: { required: true } }, f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), f.json('permissions', undefined, true)], noJson: true, hint: 'mod.op4.permissionsHint', defaults: (r) => ({ resourceType: r?.resourceType === undefined || r?.resourceType === null ? undefined : String(r.resourceType), resourceId: r?.resourceId, userId: r?.userId, groupId: r?.groupId, permissions: JSON.stringify(r?.permissions ?? []) }) },
+    { id: 'edit', label: 'act.update', method: 'PUT', path: `${E}/authorization/{id}`, fields: [{ key: 'resourceType', label: 'fld.resourceType', type: 'select', values: resOpts, validate: { required: true } }, f.text('resourceId', undefined, true), f.text('userId'), f.text('groupId'), permissionsField], noJson: true, hint: 'mod.op4.permissionsHint', defaults: (r) => ({ resourceType: r?.resourceType === undefined || r?.resourceType === null ? undefined : String(r.resourceType), resourceId: r?.resourceId, userId: r?.userId, groupId: r?.groupId, permissions: Array.isArray(r?.permissions) ? (r.permissions as string[]) : [] }), dynamicValues: { permissions: permissionOptions } },
     { id: 'delete', label: 'common.delete', method: 'DELETE', path: `${E}/authorization/{id}`, noJson: true, danger: true },
   ],
 };

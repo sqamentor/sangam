@@ -7,6 +7,7 @@ import org.sangam.casefile.CaseFileException;
 import org.sangam.casefile.support.Db;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.TenantKey;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -18,7 +19,8 @@ import java.util.Optional;
 
 /**
  * Versioned, hash-pinned store of case types, reference kinds and committee kinds ({@code CF_CONFIG}, R43). A tenant
- * definition wins over the shared ({@code ""}) one with the same key (FLOWABLE-INTO-OPERATON FC-33 fallback). Publishing the same content
+ * definition wins over the shared ({@link TenantKey#SHARED}, SL-86; formerly {@code ""}) one with the same key
+ * (FLOWABLE-INTO-OPERATON FC-33 fallback). Publishing the same content
  * again is a no-op that returns the existing version.
  */
 public class CaseConfigRegistry {
@@ -76,7 +78,7 @@ public class CaseConfigRegistry {
 
     public Optional<ConfigEntry> latest(Connection c, String tenant, String kind, String key, boolean activeOnly) {
         String t = Db.tenant(tenant);
-        for (String scope : t.isEmpty() ? List.of("") : List.of(t, "")) {
+        for (String scope : scopes(t)) {
             Optional<ConfigEntry> e = Jdbc.query(c, "SELECT * FROM CF_CONFIG WHERE tenant_id=? AND config_kind=? AND config_key=?"
                     + (activeOnly ? " AND active=1" : "") + " ORDER BY version DESC", CaseConfigRegistry::row, scope, kind, key)
                     .stream().findFirst();
@@ -89,7 +91,7 @@ public class CaseConfigRegistry {
 
     public Optional<ConfigEntry> version(Connection c, String tenant, String kind, String key, int version) {
         String t = Db.tenant(tenant);
-        for (String scope : t.isEmpty() ? List.of("") : List.of(t, "")) {
+        for (String scope : scopes(t)) {
             Optional<ConfigEntry> e = Jdbc.one(c, "SELECT * FROM CF_CONFIG WHERE tenant_id=? AND config_kind=? AND config_key=? AND version=?",
                     CaseConfigRegistry::row, scope, kind, key, version);
             if (e.isPresent()) {
@@ -100,8 +102,14 @@ public class CaseConfigRegistry {
     }
 
     public List<ConfigEntry> list(Connection c, String tenant, String kind) {
-        return Jdbc.query(c, "SELECT * FROM CF_CONFIG WHERE tenant_id IN (?, '') AND config_kind=? AND active=1"
-                + " ORDER BY config_key, version DESC", CaseConfigRegistry::row, Db.tenant(tenant), kind);
+        // the shared key is bound, never the literal '' (Oracle: tenant_id IN (?, NULL) never matched a shared row)
+        return Jdbc.query(c, "SELECT * FROM CF_CONFIG WHERE tenant_id IN (?, ?) AND config_kind=? AND active=1"
+                + " ORDER BY config_key, version DESC", CaseConfigRegistry::row, Db.tenant(tenant), TenantKey.SHARED, kind);
+    }
+
+    /** The tenant's own key first, then the shared one (SL-86). */
+    private static List<String> scopes(String tenantKey) {
+        return TenantKey.isShared(tenantKey) ? List.of(TenantKey.SHARED) : List.of(tenantKey, TenantKey.SHARED);
     }
 
     public CaseConfig.CaseType caseType(Connection c, String tenant, String key) {

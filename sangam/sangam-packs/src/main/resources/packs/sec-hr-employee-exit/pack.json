@@ -1,6 +1,6 @@
 {
   "id": "sec.hr.employee-exit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Employee exit and full and final settlement",
     "hi": "कर्मचारी निकास एवं पूर्ण एवं अंतिम निपटान"
@@ -92,5 +92,14 @@
   "calls": [
     "sangam-core-cancellation",
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "fnfAmount",
+      "gratuityAmount"
+    ]
+  }
 }

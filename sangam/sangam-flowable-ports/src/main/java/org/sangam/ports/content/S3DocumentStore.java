@@ -42,15 +42,27 @@ public class S3DocumentStore implements DocumentStore {
     private final String secretKey;
     private final long maxBytes;
     private final HttpClient http;
+    private final java.time.Clock clock;
 
     public S3DocumentStore(URI endpoint, String bucket, String region, String accessKey, String secretKey, long maxBytes) {
-        this.endpoint = endpoint;
+        this(endpoint, bucket, region, accessKey, secretKey, maxBytes,
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build(), java.time.Clock.systemUTC());
+    }
+
+    /**
+     * SG-03 (owner decision Q10(a), 2026-11-12): the HTTP client and the signing clock are injected, so the store is
+     * unit-testable without a live S3 endpoint.
+     */
+    public S3DocumentStore(URI endpoint, String bucket, String region, String accessKey, String secretKey, long maxBytes,
+                           HttpClient http, java.time.Clock clock) {
+        this.endpoint = java.util.Objects.requireNonNull(endpoint, "endpoint");
         this.bucket = bucket;
         this.region = region;
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.maxBytes = maxBytes;
-        this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        this.http = java.util.Objects.requireNonNull(http, "http");
+        this.clock = java.util.Objects.requireNonNull(clock, "clock");
     }
 
     @Override
@@ -130,7 +142,7 @@ public class S3DocumentStore implements DocumentStore {
         }
         String path = "/" + bucket + "/" + encodePath(key);
         URI uri = endpoint.resolve(path);
-        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        ZonedDateTime now = ZonedDateTime.now(clock).withZoneSameInstant(ZoneOffset.UTC);
         String amzDate = AMZ.format(now);
         String day = DAY.format(now);
         String host = uri.getPort() > 0 ? uri.getHost() + ":" + uri.getPort() : uri.getHost();

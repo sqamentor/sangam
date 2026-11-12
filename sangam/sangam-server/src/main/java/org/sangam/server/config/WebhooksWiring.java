@@ -4,10 +4,8 @@ package org.sangam.server.config;
 import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -63,7 +61,7 @@ public class WebhooksWiring {
             if (props.getSubscriptions().isEmpty()) {
                 return;
             }
-            boolean production = Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.toLowerCase(Locale.ROOT).contains("prod"));
+            boolean production = ProductionEnvironment.isProduction(env); // SL-109
             Map<String, HttpWebhookPublisher.Endpoint> endpoints = new LinkedHashMap<>();
             List<EgressPolicy.Rule> rules = new ArrayList<>();
             props.getSubscriptions().forEach((name, s) -> {

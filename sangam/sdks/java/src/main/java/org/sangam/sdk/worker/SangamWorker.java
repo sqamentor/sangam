@@ -251,7 +251,7 @@ public final class SangamWorker implements AutoCloseable {
                     unlockQuietly(w);
                     continue;
                 }
-                if (w.attemptId() == null || w.id() == null) {
+                if (w.attemptId() == null || w.id() == null || w.lockVersion() == null) {
                     // A-1: run only after the LOCKED confirmation with lockVersion + attemptId
                     log.error("work.protocol.violation", "item without LOCKED confirmation (attemptId); not started",
                             Map.of("workerId", workerId, "workId", String.valueOf(w.id())), null);
@@ -312,7 +312,7 @@ public final class SangamWorker implements AutoCloseable {
     @SuppressWarnings("unchecked")
     private Outcome invoke(TaskContext ctx, TopicSubscription sub) {
         org.sangam.sdk.model.WorkOperation op = ctx.work().operation();
-        if (op != null && !op.mayDispatch() && op.succeeded()) {
+        if (op != null && !Boolean.TRUE.equals(op.mayDispatch()) && op.succeeded()) {
             // SL-16: the operation already succeeded downstream; complete from the stored outcome, never call it again.
             Map<String, Object> stored = op.storedOutcome() == null ? Map.of() : op.storedOutcome();
             Object out = stored.get("output");
@@ -336,8 +336,8 @@ public final class SangamWorker implements AutoCloseable {
             return new Outcome(ctx.cancelRequested ? "cancel-ack" : "unlock", null, e);
         } catch (Exception | Error e) {
             if (ctx.shuttingDown && isInterrupt(e)) return new Outcome("unlock", null, e);
-            boolean irreversible = sub.irreversible() || "irreversible".equalsIgnoreCase(ctx.work().effect());
-            return new Outcome(irreversible ? "outcome-unknown" : "fail", null, e);
+            // irreversibility is declared on the subscription (the work item carries no effect field)
+            return new Outcome(sub.irreversible() ? "outcome-unknown" : "fail", null, e);
         }
     }
 
@@ -356,7 +356,7 @@ public final class SangamWorker implements AutoCloseable {
                 if (r != null) {
                     if (r.lockExpiresAt() != null) ctx.lockExpiresAt.set(r.lockExpiresAt());
                     if (r.lockVersion() != null) ctx.lockVersion.set(r.lockVersion());
-                    if (r.cancelRequested() && !ctx.cancelRequested) {
+                    if (Boolean.TRUE.equals(r.cancelRequested()) && !ctx.cancelRequested) {
                         ctx.cancelRequested = true;
                         ctx.logger().warn("work.cancel.requested", "server requested cancel", null, null);
                     }
@@ -476,6 +476,12 @@ public final class SangamWorker implements AutoCloseable {
     }
 
     private void unlockQuietly(ExternalWork w) {
+        if (w.id() == null || w.lockVersion() == null) {
+            // without the fencing token the lease cannot be released; it expires on its own
+            log.warn("work.unlock.skipped", "item without id or lockVersion; lease will expire",
+                    Map.of("workerId", workerId, "workId", String.valueOf(w.id())), null);
+            return;
+        }
         try {
             String op = w.operationId() != null ? w.operationId() : w.id();
             client.work().unlock(w.id(), new UnlockRequest(workerId, w.lockVersion(), w.attemptId()),

@@ -61,6 +61,38 @@ public record LedgerDefinition(String id, Kind kind, Mode mode, String currency,
         return out;
     }
 
+    /** LIMIT and RECEIVABLE ledgers hold money; only QUANTITY ledgers hold units (stock) without a currency. */
+    public boolean money() {
+        return kind != Kind.QUANTITY;
+    }
+
+    /**
+     * SL-98: refuses a money ledger whose resolved definition has no ISO 4217 currency (with a minor unit). Without it
+     * the store wrote NULL-currency accounts and scaled money with the quantity exponent
+     * ({@link JdbcLedgerStore#exponent}) without any error. Checked when the definition is registered, never deferred
+     * to the first posting.
+     *
+     * @param profile the profile (binding) the definition was resolved from, for the message; may be {@code null}
+     */
+    public LedgerDefinition requireMoneyCurrency(String profile) {
+        if (!money()) {
+            return this;
+        }
+        String where = "ledger '" + id + "' (kind " + kind + ") of profile "
+                + (profile == null || profile.isBlank() ? "<not given>" : profile);
+        if (currency == null || currency.isBlank()) {
+            throw new IllegalArgumentException(where + " has no currency: a money ledger needs the ISO 4217 currency "
+                    + "of its jurisdiction (ledgers[].currency)");
+        }
+        try {
+            org.sangam.core.money.Money.currency(currency);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(where + " has currency '" + currency
+                    + "', which is not an ISO 4217 currency with a minor unit", e);
+        }
+        return this;
+    }
+
     public int stageIndex(String stage) {
         return stages.indexOf(stage);
     }

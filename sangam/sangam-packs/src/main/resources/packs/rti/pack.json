@@ -1,6 +1,6 @@
 {
   "id": "gov.rti",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Right to Information request",
     "hi": "सूचना का अधिकार अनुरोध"
@@ -50,7 +50,11 @@
       "id": "notify.sms",
       "capabilityClass": "b",
       "govTag": "G-DLT",
-      "purpose": "Applicant and third-party notices"
+      "purpose": "Applicant and third-party notices",
+      "simulatorBinding": {
+        "connector": "sms-dlt-sim",
+        "operation": "send"
+      }
     }
   ],
   "covers": [
@@ -86,7 +90,26 @@
       },
       "expectState": null,
       "run": {
-        "manual": "needs a clock driver: the PIO decision deadline lapses (deemed refusal)"
+        "steps": [
+          {
+            "at": "rt_pio",
+            "advance": "P31D"
+          },
+          {
+            "at": "rj_appealFiled",
+            "action": "correlate",
+            "message": "sangam.appealFiled"
+          }
+        ],
+        "stopAt": "ap_hear",
+        "expect": {
+          "audit": [
+            "SLA_BREACHED",
+            "DEEMED_DECISION",
+            "CASE_REJECTED"
+          ],
+          "openTask": "ap_hear"
+        }
       }
     }
   ],
@@ -100,5 +123,13 @@
     "sangam-core-closure",
     "sangam-core-execution",
     "sangam-core-rejection"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "additionalFee"
+    ]
+  }
 }

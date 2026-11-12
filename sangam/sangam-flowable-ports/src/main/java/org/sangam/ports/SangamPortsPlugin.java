@@ -111,7 +111,10 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
             bpmn.add(aggregation);
         }
         if (settings.isTaskEvents()) {
-            bpmn.add(new TaskEventDispatcher(bus, taskLifecycle).parseListener());
+            TaskEventDispatcher taskEvents = new TaskEventDispatcher(bus, taskLifecycle);
+            bpmn.add(taskEvents.parseListener());
+            // SG-03(c): suspensions reach the tasks only through bulk updates; sangam-engine's TaskManager reports them
+            org.sangam.core.engine.TaskSuspensionEvents.register(cfg.getProcessEngineName(), taskEvents::suspensionChanged);
         }
         if (debuggerOrNull != null) {
             bpmn.add(debuggerOrNull.parseListener());

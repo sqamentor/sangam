@@ -14,7 +14,7 @@
 x-cell-env: &cell-env
   SANGAM_CELL_ID: ${SANGAM_CELL_ID:-cell-dev-1}
   SANGAM_CELL_REGION: ${SANGAM_CELL_REGION:-in-dev}
-  SANGAM_CELL_JURISDICTION: IN
+  SANGAM_CELL_JURISDICTION: IN   # DEVELOPMENT value; the server has no default jurisdiction (SL-104, ADR-D-20)
   SANGAM_CELL_PUBLIC_URL: http://sangam-server:8080
   SANGAM_CELL_ADMIN_URL: http://sangam-server:8080
   SANGAM_CONTROL_PLANE_URL: http://control-plane:8090

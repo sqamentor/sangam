@@ -79,8 +79,10 @@ public class BillingWiring {
     @Bean
     public BillingConnector sangamBillingConnector(BillingService billing, LedgerService ledger,
             ProfileResolver profiles, LedgerTenantDefinitions definitions, TxSupport tx) {
+        // SL-127: a billing step without a period takes the tenant's current fiscal period (the ledger connector's
+        // resolver), refused when no fiscal year is configured; never an invented calendar year
         return new BillingConnector(billing, ledger, profiles, new BillingAccountSource(tx, definitions),
-                ConfigWiring.engineClock());
+                definitions.periodResolver(), ConfigWiring.engineClock());
     }
 
     @Bean

@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_pay_powers" name="Delegated powers by role" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- K6: checker power covers single-level payments; above it the checker concurs up to the band of the authoriser covering the amount and that authoriser approves (SEC-BANK-PY-1, SL-50). -->
-  <decision id="sec-bank-pay-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-bank-pay-powers" name="Delegated powers by role" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-bank-pay-powers_t" hitPolicy="FIRST">
       <input id="sec-bank-pay-powers_i0" label="Seat role"><inputExpression id="sec-bank-pay-powers_ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
       <input id="sec-bank-pay-powers_i1" label="Case type"><inputExpression id="sec-bank-pay-powers_ie1" typeRef="string"><text>caseType</text></inputExpression></input>
@@ -20,21 +20,21 @@
         <inputEntry id="sec-bank-pay-powers_r1_i0"><text>"PAYCHECKER"</text></inputEntry>
         <inputEntry id="sec-bank-pay-powers_r1_i1"><text>-</text></inputEntry>
         <inputEntry id="sec-bank-pay-powers_r1_i2"><text>-</text></inputEntry>
-        <outputEntry id="sec-bank-pay-powers_r1_o0"><text>2500000</text></outputEntry>
+        <outputEntry id="sec-bank-pay-powers_r1_o0"><text>250000000</text></outputEntry>
         <outputEntry id="sec-bank-pay-powers_r1_o1"><text>true</text></outputEntry>
       </rule>
       <rule id="sec-bank-pay-powers_r2">
         <inputEntry id="sec-bank-pay-powers_r2_i0"><text>"PAYAUTH"</text></inputEntry>
         <inputEntry id="sec-bank-pay-powers_r2_i1"><text>-</text></inputEntry>
         <inputEntry id="sec-bank-pay-powers_r2_i2"><text>-</text></inputEntry>
-        <outputEntry id="sec-bank-pay-powers_r2_o0"><text>100000000</text></outputEntry>
+        <outputEntry id="sec-bank-pay-powers_r2_o0"><text>10000000000</text></outputEntry>
         <outputEntry id="sec-bank-pay-powers_r2_o1"><text>true</text></outputEntry>
       </rule>
       <rule id="sec-bank-pay-powers_r3">
         <inputEntry id="sec-bank-pay-powers_r3_i0"><text>"TREASURYHEAD"</text></inputEntry>
         <inputEntry id="sec-bank-pay-powers_r3_i1"><text>-</text></inputEntry>
         <inputEntry id="sec-bank-pay-powers_r3_i2"><text>-</text></inputEntry>
-        <outputEntry id="sec-bank-pay-powers_r3_o0"><text>10000000000</text></outputEntry>
+        <outputEntry id="sec-bank-pay-powers_r3_o0"><text>1000000000000</text></outputEntry>
         <outputEntry id="sec-bank-pay-powers_r3_o1"><text>true</text></outputEntry>
       </rule>
       <rule id="sec-bank-pay-powers_r4"><description>no delegated power</description>

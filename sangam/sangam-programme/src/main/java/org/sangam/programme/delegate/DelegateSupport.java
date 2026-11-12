@@ -13,7 +13,8 @@ import java.time.LocalDate;
 /**
  * Shared helpers of the programme delegates. Product rows are written on the engine command's connection, so they
  * commit or roll back with the engine state (Q1). Inputs are read from a field injection first, then from a process
- * variable of the same name. The tenant is the execution's tenant ("" when none).
+ * variable of the same name. The tenant is the execution's tenant (the shared key {@code TenantKey.SHARED} when none,
+ * SL-86).
  */
 abstract class DelegateSupport {
 
@@ -26,7 +27,7 @@ abstract class DelegateSupport {
     }
 
     static String tenant(DelegateExecution ex) {
-        return ex.getTenantId() == null ? "" : ex.getTenantId();
+        return org.sangam.programme.support.Db.tenant(ex.getTenantId());
     }
 
     static String input(Expression field, DelegateExecution ex, String name, String dflt) {

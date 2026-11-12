@@ -30,6 +30,7 @@ public record OnboardingRequest(TenantSpec tenant, ProfileSpec profile, PackSpec
         if (tenant == null || tenant.id() == null || tenant.id().isBlank()) {
             throw new IllegalArgumentException("tenant.id is required");
         }
+        org.sangam.core.layer.TenantKey.requireNotShared(tenant.id()); // SL-86: the shared key is never a tenant
         profile = profile == null ? new ProfileSpec(null, null, null, null, null, null, null, null, null, null) : profile;
         packs = packs == null ? new PackSpec(null, null, null) : packs;
         connectors = connectors == null ? List.of() : List.copyOf(connectors);

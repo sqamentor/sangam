@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.return-refund",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Return, replacement and refund",
     "hi": "वापसी, प्रतिस्थापन एवं धनवापसी"
@@ -71,5 +71,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "refundAmount"
+    ]
+  }
 }

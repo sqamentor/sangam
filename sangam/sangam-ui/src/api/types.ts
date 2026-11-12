@@ -79,6 +79,8 @@ export interface TaskSummary {
   priority?: number;
   claimable?: boolean;
   returned?: boolean;
+  /** P45 card variables, only when the list was asked for them (GET /tasks?variableNames=). */
+  variables?: Record<string, unknown>;
 }
 
 export type TaskAction =
@@ -373,6 +375,44 @@ export interface VariableEntry {
 }
 
 export type HistoryLogKind = 'audit' | 'jobs' | 'external-tasks' | 'variables' | 'user-tasks' | 'decisions' | 'called';
+
+/** P14 activity-instance state filter (GET /history/activity-instances?state=). */
+export type ActivityState = 'running' | 'completed' | 'canceled';
+
+/** GET /history/activity-instances row. */
+export interface HistoricActivityInstance {
+  id: Id;
+  activityId: string;
+  activityName?: string;
+  activityType?: string;
+  processInstanceId?: Id;
+  startTime?: Iso;
+  endTime?: Iso;
+  durationMs?: number;
+  canceled?: boolean;
+}
+
+/** P13 selection in the activity tree: filters the variables, incidents and history tabs. */
+export interface ActivitySelection {
+  activityInstanceId: Id;
+  activityId: string;
+  activityType?: string;
+  label: string;
+  /** The process-instance root: no filter. */
+  root?: boolean;
+}
+
+/** GET /history/incidents row. */
+export interface HistoricIncident {
+  id: Id;
+  type?: string;
+  message?: string;
+  processInstanceId?: Id;
+  activityId?: string;
+  createTime?: Iso;
+  endTime?: Iso;
+  state?: string;
+}
 
 export interface HistoryLogEntry {
   id: Id;

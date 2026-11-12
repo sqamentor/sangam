@@ -33,6 +33,9 @@ same ledger (profile section `ledgers:`).
   `ledger.withdraw`, `ledger.commit`, `ledger.encumber`, `ledger.release`, `ledger.consume`, `ledger.transfer`,
   `ledger.adjust`, `ledger.releaseHolds`, `ledger.closePeriod`: bind all of them to one
   `new LedgerConnector(service, (tenant, date) -> resolver.resolve(tenant, date).locale().fiscal().yearOf(date).label(), clock)`.
+  No fiscal year is ever assumed (SL-125): without `locale.fiscal` the resolver throws `FiscalYearNotConfiguredException`
+  and a step that needs the current period fails with `FISCAL_YEAR_NOT_CONFIGURED` (business failure, nothing posted, no
+  retry). A step that passes its own period (e.g. `OPEN`) is not affected.
   Production wiring: `new LedgerService(new JdbcLedgerStore(ds, d), new LedgerControlStore.JdbcStore(ds, d), clock)`.
 - **Ports to wire:** RatePort from `ExchangeRates` (config) or an FX connector; DecisionPort over Operaton DMN
   (`Decisions.evaluate` with tenant override); AccountingSink to the GL connector; AuditLink to the core audit chain.

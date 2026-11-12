@@ -34,7 +34,14 @@ The script runs `pdftotext -simple -enc UTF-8` (the xpdf 4.00 build shipped with
 | `.../hoa-minor-heads.csv` | minor heads; `parent` = `MMMM-SS` (`00` = directly under the major; `*n` = see below) |
 | `.../hoa-standard-minor-heads.csv` | parent-less rows: standard minors, plus an index row for every other official minor and sub-major code |
 
-The parent-less rows exist because `ClassificationRegistry` validates each segment alone (`profilegen/main.py` removes the segment `parent`). A code is therefore accepted if it exists anywhere at its level, **not** only under its own major head. The hierarchical rows are loaded and listable but do not yet drive validation.
+The hierarchical rows drive validation. The `HOA` scheme declares a `hierarchy` on its `subMajor` and `minor` segments (`profilegen/central.py`), so `ClassificationRegistry` checks each code under its own parent (`MMMM` for a sub-major, `MMMM-SS` for a minor) and refuses a code that exists only under another head with `CODE_NOT_UNDER_PARENT`. The same check applies to a state layout whose segments reference `HOA`. Exceptions:
+- a parent-less row flagged `standard=true` (a standard minor) is valid under any parent;
+- `00` is valid where the major head has no coded sub-major heads;
+- a minor opened by the `minorRule` of its major or sub-major head passes with an INFO finding `CODE_OPENED_BY_RULE`;
+- a sub-major opened by rule (a `subMajorRule` block, whose minors have the template parent `MMMM-*n`) passes with the same INFO finding, and its minors must be among those template rows;
+- a parent with no coded children and no rule passes with a WARNING `PARENT_HAS_NO_CODES`.
+
+The parent-less index rows (`index=true`) are a flat list of every official code at its level. They do not carry `standard`, so they never make a code valid under a wrong parent. `ProfileDataTest.headOfAccountSeedValidatesFifteenDigitCodes` covers these cases.
 
 ## Counts (CS 1127)
 

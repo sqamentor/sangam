@@ -1,0 +1,45 @@
+{
+  "key": "sec-eu-gdpr-dsr/request",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "Data subject request",
+    "hi": "डेटा विषय अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "dataSubjectName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Data subject",
+        "hi": "डेटा विषय"
+      }
+    },
+    {
+      "id": "dsrRight",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Right exercised (GDPR Art. 15-22)",
+        "hi": "प्रयुक्त अधिकार (जीडीपीआर अनु. 15-22)"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

@@ -8,8 +8,11 @@ import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
 import { LANGS, setLanguage, fmtDate, type Lang } from '../i18n';
-import { registerAnnouncer } from '../lib/hooks';
-import { NAV } from './nav';
+import { announce, registerAnnouncer } from '../lib/hooks';
+import { syncFieldRecords, unsentFieldRecords } from '../lib/offline/session';
+import { LogoutPrompt } from './LogoutPrompt';
+import { NAV, type NavArea, type NavItem } from './nav';
+import { canAccess } from './access';
 import { usePlugins } from '../plugins/host';
 import { GlobalSearch } from '../modules/platform';
 import { config } from '../config';
@@ -61,6 +64,27 @@ export function Layout({ children }: { children: ReactNode }) {
   const [msg, setMsg] = useState('');
   const [navOpen, setNavOpen] = useState(false);
   const first = useRef(true);
+  // M-001: signing out with unsent field records asks first (non-blocking); the records stay encrypted and bound
+  const [unsent, setUnsent] = useState<number | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const signOut = async () => {
+    const n = me ? await unsentFieldRecords(me) : 0;
+    if (n > 0) setUnsent(n);
+    else void logout();
+  };
+  const syncBeforeLogout = async () => {
+    if (!me) return;
+    setSyncing(true);
+    try {
+      const left = await syncFieldRecords(me);
+      setUnsent(left > 0 ? left : null);
+      if (left === 0) announce(t('field.synced'));
+    } catch {
+      /* offline or refused: the prompt stays with the same count */
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => registerAnnouncer((m) => setMsg(m)), []);
   const goto = useNavigate();
@@ -88,7 +112,10 @@ export function Layout({ children }: { children: ReactNode }) {
     window.setTimeout(() => (document.getElementById('page-title') as HTMLElement | null)?.focus(), 50);
   }, [loc.pathname]);
 
-  const areas = NAV.filter((a) => hasRole(...a.roles));
+  // M-028: an item with its own access (role or endpoint permission) is shown on that alone; an area is shown when
+  // one of its items is (a caller holding only a module permission still reaches that module).
+  const visible = (a: NavArea, i: NavItem) => (i.access ? canAccess(me, i.access) : hasRole(...a.roles) && (!i.only || hasRole(...i.only)));
+  const areas = NAV.filter((a) => a.items.some((i) => visible(a, i)));
   const appPages = usePlugins('app.page');
   const adminPages = usePlugins('admin.page');
   const pluginPages = [...appPages, ...adminPages];
@@ -116,20 +143,21 @@ export function Layout({ children }: { children: ReactNode }) {
                 {me.tenantName ? ` · ${me.tenantName}` : ''}
               </Link>
               {mode === 'dev' && <span className="badge badge-warn">{t('auth.devMode')}</span>}
-              <button type="button" onClick={() => void logout()}>
+              <button type="button" onClick={() => void signOut()}>
                 {t('auth.signOut')}
               </button>
             </div>
           )}
         </div>
       </header>
+      {unsent !== null && <LogoutPrompt count={unsent} busy={syncing} onSync={() => void syncBeforeLogout()} onLogout={() => void logout()} />}
       <div className="body">
         <nav id="primary-nav" className={`sidenav${navOpen ? ' open' : ''}`} aria-label={t('nav.primary')}>
           {areas.map((a) => (
             <div key={a.id} className="nav-area">
               <h2 className="nav-heading">{t(a.label)}</h2>
               <ul>
-                {a.items.filter((i) => !i.only || hasRole(...i.only)).map((i) => (
+                {a.items.filter((i) => visible(a, i)).map((i) => (
                   <li key={i.to}>
                     <NavLink to={i.to} end={i.to === '/ops' || i.to === '/analytics' || i.to === '/audit' || i.to === '/portal' || i.to === '/modeller'}>
                       {t(i.label)}

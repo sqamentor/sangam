@@ -15,6 +15,7 @@ import org.operaton.bpm.engine.impl.db.sql.DbSqlSession;
 import org.operaton.bpm.engine.impl.interceptor.CommandContext;
 import org.operaton.bpm.engine.impl.interceptor.Session;
 import org.sangam.core.engine.LockScope;
+import org.sangam.engine.db.EngineDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,6 +140,67 @@ public final class CommandState {
 
     private boolean closeListenerRegistered;
     private boolean acquisition;
+    /** SL-99: the session lock wait before this command first set it (null: not session-scoped or not read). */
+    private boolean lockTimeoutCaptured;
+    private Integer previousLockTimeout;
+    private boolean lockTimeoutRestored;
+
+    /**
+     * VI.1 rule 6 bounded waits for this command ({@link EngineDialect#applyLockTimeouts}), without leaking them
+     * (SL-99). Where the database keeps the lock wait as a <b>session</b> setting (SQL Server {@code SET LOCK_TIMEOUT},
+     * MySQL {@code innodb_lock_wait_timeout}, H2), a pooled connection would carry it into whatever uses the
+     * connection next (Operaton's own commands, Spring transactions, the relay), so later lock waits there depended on
+     * which code had last used the connection. The first call in a command therefore reads the session's value and
+     * restores it once the transaction has ended ({@code COMMITTED} / {@code ROLLED_BACK}: after the flush and every
+     * {@code COMMITTING} listener, so every statement of the command still runs with the bounded wait; the connection
+     * is still bound to the transaction, under Operaton's Spring integration too, as for the rollback guard). Later
+     * calls in the same command (nested adapter commands, the job handler) only set the values again.
+     */
+    public static void applyLockTimeouts(CommandContext cc, EngineDialect dialect, java.time.Duration lockTimeout,
+                                         java.time.Duration statementTimeout) {
+        Connection c = connection(cc);
+        CommandState s = of(cc);
+        boolean first;
+        synchronized (s) {
+            first = !s.lockTimeoutCaptured;
+            s.lockTimeoutCaptured = true;
+        }
+        if (first) {
+            Integer previous = dialect.sessionLockTimeout(c);
+            if (previous != null) {
+                synchronized (s) {
+                    s.previousLockTimeout = previous;
+                }
+                cc.getTransactionContext().addTransactionListener(TransactionState.COMMITTED,
+                        x -> restoreLockTimeout(cc, dialect));
+                cc.getTransactionContext().addTransactionListener(TransactionState.ROLLED_BACK,
+                        x -> restoreLockTimeout(cc, dialect));
+            }
+        }
+        dialect.applyLockTimeouts(c, lockTimeout, statementTimeout);
+    }
+
+    private static void restoreLockTimeout(CommandContext cc, EngineDialect dialect) {
+        CommandState s = of(cc);
+        Connection kept;
+        Integer previous;
+        synchronized (s) {
+            if (s.lockTimeoutRestored || s.previousLockTimeout == null) {
+                return;
+            }
+            s.lockTimeoutRestored = true;
+            kept = s.handedOut;
+            previous = s.previousLockTimeout;
+        }
+        try {
+            if (kept != null && !kept.isClosed()) {
+                dialect.restoreSessionLockTimeout(kept, previous);
+            }
+        } catch (SQLException | RuntimeException e) {
+            // never fail a finished transaction; a broken connection is discarded by the pool
+            LOG.warn("SL-99: cannot restore the session lock timeout ({}) of the engine connection", previous, e);
+        }
+    }
 
     /** R2 / VI.1 rule 4: this command is an acquisition (job or external-task fetch, lease sweep); it never takes L2. */
     public synchronized void markAcquisition() {

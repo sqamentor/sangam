@@ -73,11 +73,14 @@ class AllPacksSmokeTest {
         v.put("auditParas", "[{\"key\":\"P1\",\"paraText\":\"Excess payment\"}]");
         v.put("priority", "P2");
         v.put("key", "ITEM-1");
-        for (String n : List.of("amount", "estimateAmount", "income", "premisesArea", "quantity", "unitPrice",
-                "qualifyingService", "lastPay", "bgAmount", "contractValue", "areaHectares", "assetValue",
-                "refundAmount", "returnQty", "poQty", "grnQty", "invoiceQty", "poPrice", "invoicePrice",
-                "amendmentAmount", "escalationIndex", "emdAmount")) {
+        for (String n : List.of("premisesArea", "quantity", "qualifyingService", "areaHectares", "returnQty", "poQty",
+                "grnQty", "invoiceQty", "escalationIndex")) {
             v.put(n, 1000.0);
+        }
+        // money is integer minor units (SD-398, packgen money.py): 1,000.00 rupees = 100000 paise
+        for (String n : List.of("amount", "estimateAmount", "income", "unitPrice", "lastPay", "bgAmount", "contractValue",
+                "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount")) {
+            v.put(n, 100_000L);
         }
         for (String n : List.of("age", "durationYears", "leaveDays", "extensionDays", "delayDays", "retentionYears",
                 "riskScore")) {
@@ -98,6 +101,26 @@ class AllPacksSmokeTest {
         v.put("initiator", "smoke.user");
         v.put("actingSeat", "SMOKE-SEAT");
         v.put("instalmentInterval", "PT1S");
+        v.putAll(simulatedChecks());
+        return v;
+    }
+
+    /**
+     * SL-115: the answers of the simulated external checks for a generic run. A pack no longer pre-fills a check result
+     * with a default (packgen check_results.py), and the bare simulator answers these connectors without the result
+     * key ({@code ok=true}), which fails closed. The answers are the shipped demo data
+     * ({@link org.sangam.packs.sim.DemoAnswersGateway#shippedAnswers()}, one source for demos and tests), equal to the
+     * former pack defaults, so a generic run takes the same path as before; a test of the unconfirmed path removes or
+     * overrides the directive. {@code ledger.available} is left out (SL-113: FundsCheckFailClosedTest relies on the bare
+     * answer; a run that needs authority passes {@code sim_ledger_available}).
+     */
+    static Map<String, Object> simulatedChecks() {
+        Map<String, Object> v = new HashMap<>();
+        org.sangam.packs.sim.DemoAnswersGateway.shippedAnswers().forEach((connector, directive) -> {
+            if (!"ledger.available".equals(connector)) {
+                v.put("sim_" + connector.replace('.', '_').replace('-', '_'), directive);
+            }
+        });
         return v;
     }
 

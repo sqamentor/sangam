@@ -23,7 +23,8 @@ import org.sangam.packs.port.PackRuntime;
  *   <li>{@code connector}, {@code operation};</li>
  *   <li>{@code mode}: {@code query} (read-only, default) or {@code submit} (effect, exactly once by operationId derived
  *       from the case, {@code step} and the step attempt);</li>
- *   <li>{@code inputs}: comma list of variables sent as the payload (default: the material fields);</li>
+ *   <li>{@code inputs}: comma list of variables sent as the payload (default: the material fields); an entry
+ *       {@code variable>parameter} sends the variable under the connector's contract name;</li>
  *   <li>{@code resultPrefix}: result data entries are written as {@code <prefix><Key>} and the status as
  *       {@code <prefix>Status} (default prefix = last segment of the connector name);</li>
  *   <li>{@code errorOnFailure}: BPMN error code thrown on a FAILED result (else the status is only recorded).</li>

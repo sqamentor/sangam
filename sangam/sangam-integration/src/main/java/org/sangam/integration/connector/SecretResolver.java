@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Resolves secret references ({@code secret://ifms/client-secret}) to values. Connector configuration holds only
+ * Resolves secret references ({@code secret://<connector>/client-secret}) to values. Connector configuration holds only
  * references (R73 "credentials by reference only"); the integrator wires a vault-backed implementation in
  * sangam-server. {@link #fromEnvironment()} reads {@code SANGAM_SECRET_<NAME>} environment variables for development.
  */

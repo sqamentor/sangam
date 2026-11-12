@@ -9,5 +9,5 @@ import java.time.Instant;
 public record AuditEntry(
         String eventId, String eventClass, String chainId, Long seq, String type, Instant occurredAt, String actor,
         String seatId, String actedForSeatId, String processInstanceId, String activityId, String taskId,
-        Object payload, Boolean erased, String hash, Object evidence) {
+        Object payload, Boolean erased, String hash, Boolean evidence, String prevHash, String entryHash, String envelope) {
 }

@@ -166,12 +166,14 @@ public class AiWiring {
 
     @Bean
     public CaseFieldScheduler sangamAiWorker(AgentRuntime runtime, TxSupport tx, DataSource ds, RestProperties rest, Environment env,
-            ObjectProvider<AdminPort> admin) {
+            ObjectProvider<AdminPort> admin, ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meters) {
         Transactions t = Transactions.of(ds);
         int batch = env.getProperty("sangam.ai.worker.batch", Integer.class, 20);
+        ScheduleTenantsMonitor monitor = ScheduleTenantsMonitor.of("ai-worker", "agent work and agent reconciliation do"
+                + " not run. Tenants come from the tenant directory plus sangam.ai.worker.tenants.", meters);
         Duration retry = env.getProperty("sangam.ai.worker.external-retry", Duration.class, Duration.ofMinutes(5));
         return new CaseFieldScheduler("sangam-ai-worker", new LeaderElection(tx.dialect(), t, rest.getNode(), Duration.ofMinutes(3)),
-                () -> CaseWiring.tenants(env, admin, "sangam.ai.worker.tenants"),
+                monitor.observing(() -> CaseWiring.tenants(env, admin, "sangam.ai.worker.tenants", monitor)),
                 List.of(new CaseFieldScheduler.Task("agent-work", env.getProperty("sangam.ai.worker.every", Duration.class, Duration.ofSeconds(5)), true,
                                 tenant -> AiBindings.work(runtime, tenant, rest.getNode(), batch)),
                         new CaseFieldScheduler.Task("agent-reconcile", Duration.ofMinutes(1), true,

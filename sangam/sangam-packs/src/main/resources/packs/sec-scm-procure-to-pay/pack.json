@@ -1,6 +1,6 @@
 {
   "id": "sec.scm.procure-to-pay",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Procure to pay",
     "hi": "क्रय से भुगतान तक"
@@ -108,5 +108,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-up14-three-way-match"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit",
+      "unitPrice"
+    ]
+  }
 }

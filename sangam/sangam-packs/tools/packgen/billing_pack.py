@@ -3,8 +3,9 @@
 property tax, fees, rents, licence fees, premiums. Built on sangam-billing (tariffs from the tenant profile, RECEIVABLE
 ledger) through the `billing.*` connectors."""
 from lib import C
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
-from common import batch_loop, end_ok
+from common import batch_loop, end_ok, checked_query, check_conditions
 import forms
 
 LBL = {
@@ -61,7 +62,7 @@ def build():
     s = a.root
     st = s.start('ba_start', 'Account in cycle', initiator=None)
     d = s.setv('ba_defaults', 'Configuration', defaults='consumer=@key;tariffId=DEFAULT;ledgerId=DEMAND;dueWait=P15D;'
-               'arrInArrears=false;officerSeat=BILL-OFFICER;checkerSeat=BILL-CHECKER;waiverAmount=0;billedUnits=0')
+               'officerSeat=BILL-OFFICER;checkerSeat=BILL-CHECKER;waiverAmount=0;billedUnits=0')
     inv = s.conn('ba_invoice', 'Invoice from the tariff', 'billing.invoice', 'invoice', 'submit',
                  'ledgerId,consumer,cycle,tariffId,billedUnits', 'inv', step='invoice')
     s.seq(st, d, inv)
@@ -74,21 +75,26 @@ def build():
     col = s.conn('ba_collect', 'Collect and receipt', 'billing.collect', 'collect', 'submit',
                  'ledgerId,consumer,channel,paymentRef,amount', 'col', step='collect')
     s.flow(paid, col)
-    arr = s.conn('ba_arrears', 'Outstanding / arrears', 'billing.arrears', 'arrears', 'query', 'ledgerId,consumer', 'arr')
-    s.flow(col, arr)
-    s.flow(due, arr)
+    # SL-115: an unconfirmed arrears answer never settles the account (cleared before every query; no default stands
+    # in): it goes to the officer's arrears decision; only a confirmed "nothing outstanding" settles
+    are, arr = checked_query(s, 'ba_arrears', 'Outstanding / arrears', 'billing.arrears', 'arrears', 'ledgerId,consumer',
+                             'arr', ['arrInArrears'])
+    s.flow(col, are)
+    s.flow(due, are)
     g = s.xgw('ba_arrGw', 'In arrears?')
     s.flow(arr, g)
     s.flow(g, end_ok(a, s, 'ba_end', 'Settled'), None, 'nothing outstanding', default=True)
     pen = s.conn('ba_penalty', 'Penalty / interest (tariff)', 'billing.penalty', 'penalty', 'submit',
                  'ledgerId,consumer,tariffId', 'pen', step='penalty')
-    s.flow(g, pen, 'arrInArrears', 'arrears')
+    arr_unconfirmed, in_arrears = check_conditions([('arr', ['arrInArrears'])], 'arrInArrears')
+    s.flow(g, pen, in_arrears, 'arrears')
     rem = s.notify('ba_remind', 'Reminder / demand notice', 'billing-demand-notice', 'sms', 'consumer')
     s.flow(pen, rem)
     e1, x1 = s.sla_task('ba_decide', 'Arrears: waive or recover | बकाया: माफ़ करें या वसूली', 'officerSeat',
                         form='billing-cycle/decide', decision=('arrearsDecision', ['recover', 'waive', 'remindAgain']),
                         fields=['consumer', 'arrears', 'waiverAmount', 'orderRef', 'remarks*'], default_spec='10WD')
     s.flow(rem, e1)
+    s.flow(g, e1, arr_unconfirmed, 'arrears not confirmed: officer decides')
     dg = s.xgw('ba_decGw')
     s.flow(x1, dg)
     e2, x2 = s.sla_task('ba_check', 'Approve waiver (checker) | माफ़ी का अनुमोदन', 'checkerSeat', form='billing-cycle/approve',

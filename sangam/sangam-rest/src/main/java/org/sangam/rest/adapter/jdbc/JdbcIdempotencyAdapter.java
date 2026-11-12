@@ -33,8 +33,16 @@ public class JdbcIdempotencyAdapter implements IdempotencyPort {
     private final IdempotencyStore store;
 
     public JdbcIdempotencyAdapter(TxSupport tx, RestProperties props) {
+        this(tx, props, null);
+    }
+
+    /**
+     * @param encryptor sangam-security's tenant-key encryptor: stored response bodies are encrypted at rest and
+     *                  decrypted before a replay (M-007, X.2.2.3); null stores them unencrypted
+     */
+    public JdbcIdempotencyAdapter(TxSupport tx, RestProperties props, org.sangam.core.security.FieldEncryptor encryptor) {
         this.tx = tx;
-        this.store = new IdempotencyStore(tx.dialect(), tx.newTransactions(), props.getNode());
+        this.store = new IdempotencyStore(tx.dialect(), tx.newTransactions(), props.getNode(), encryptor);
     }
 
     @Override

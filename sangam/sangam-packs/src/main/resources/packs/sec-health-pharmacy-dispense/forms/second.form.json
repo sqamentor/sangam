@@ -1,6 +1,6 @@
 {
   "key": "sec-health-pharmacy-dispense/second",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.pharmacy-dispense",
   "title": {
     "en": "Second pharmacist check (X / NDPS)",

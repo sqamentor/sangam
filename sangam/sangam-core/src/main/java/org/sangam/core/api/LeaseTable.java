@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package org.sangam.core.api;
 
 import java.sql.Connection;
@@ -325,7 +326,11 @@ public final class LeaseTable {
     private static int update(Connection c, String sql, Object... args) {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
-                ps.setObject(i + 1, args[i]);
+                if (args[i] == null) {
+                    org.sangam.core.layer.Jdbc.setNull(ps, sql, i + 1);   // typed per database (SL-88)
+                } else {
+                    ps.setObject(i + 1, args[i]);
+                }
             }
             return ps.executeUpdate();
         } catch (SQLException e) {

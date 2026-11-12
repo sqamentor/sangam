@@ -1,6 +1,6 @@
 {
   "key": "up08-entity-lifecycle/renew",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up08-entity-lifecycle",
   "title": {
     "en": "Renew or terminate",

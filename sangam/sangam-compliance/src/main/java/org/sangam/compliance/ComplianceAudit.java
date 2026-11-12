@@ -3,6 +3,7 @@ package org.sangam.compliance;
 
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Hashes;
+import org.sangam.core.layer.Transactions;
 
 import java.sql.Connection;
 import java.util.Map;
@@ -20,8 +21,28 @@ import java.util.Map;
  *       nominations, guardian verification, retention notices). The id is a hash of tenant and principal reference, so
  *       no personal data appears in {@code chain_id}, and per-principal chains avoid one hot {@code ROOT_SEQ} row.</li>
  *   <li>The workflow root's own chain for events that belong to a case (erasure, purpose completion).</li>
+ *   <li>{@code cmp:d:<32 hex>} — one <b>denial</b> chain per data principal (same hash as {@code cmp:p:}) for refusals
+ *       that roll the caller back ({@link #denial}: purpose binding, child safeguards).</li>
  * </ul>
  * Payloads hold references and counts, not personal data; where a value is needed as proof, its SHA-256 is stored.
+ *
+ * <p><b>Denials (M-009, XII.4 #3).</b> A refusal throws, so the caller's transaction rolls back and an in-line event
+ * would be lost. {@link #denial} therefore commits the event on its own, through {@code denialTx}. Two waits could hang
+ * the caller there, and both are excluded:
+ * <ul>
+ *   <li><i>Pool wait (the SL-43 deadlock pattern).</i> The caller already holds a main-pool connection (engine command,
+ *       REST transaction). {@code denialTx} must therefore be a <b>leaf</b> pool, separate from the one callers hold,
+ *       whose connections are never held while another connection is requested (the server wires
+ *       {@code sangam-compliance-audit} in {@code ComplianceWiring}, as {@code QuotaWiring} does for the quota audit).
+ *       A wait for a leaf connection can never be part of a wait cycle.</li>
+ *   <li><i>Row-lock wait ({@code ROOT_SEQ}).</i> {@code AuditChain.append} locks the chain's {@code ROOT_SEQ} row. If
+ *       the separate transaction appended to a chain the caller had already appended to (the principal chain, after a
+ *       consent in the same command), it would wait for the caller, which waits for it. The denial chain is written only
+ *       by {@link #denial}, so only other short denial transactions ever hold its row, and they never wait for a caller
+ *       (the {@code quota:<tenant>} chain of the quota audit follows the same rule).</li>
+ * </ul>
+ * With {@code denialTx == null} (tests, embedders without a separate pool) the event is appended in-line, on the
+ * denial chain, and rolls back with the caller.
  */
 public final class ComplianceAudit {
 
@@ -77,9 +98,16 @@ public final class ComplianceAudit {
     public static final String BREACH_DELAYED = "CMP_BREACH_LAW_ENFORCEMENT_DELAY";
 
     private final AuditChain chain;
+    private final Transactions denialTx;
 
     public ComplianceAudit(AuditChain chain) {
+        this(chain, null);
+    }
+
+    /** @param denialTx leaf transactions for {@link #denial} (see the class comment); null = in-line */
+    public ComplianceAudit(AuditChain chain, Transactions denialTx) {
         this.chain = chain;
+        this.denialTx = denialTx;
     }
 
     public static String tenantChain(String tenantId) {
@@ -88,7 +116,16 @@ public final class ComplianceAudit {
 
     /** Per-principal chain id: no personal data in {@code chain_id} (VARCHAR(64)). */
     public static String principalChain(String tenantId, String principalRef) {
-        return "cmp:p:" + Hashes.hex(Hashes.sha256(tenantId + "\u0000" + principalRef)).substring(0, 32);
+        return "cmp:p:" + principalHash(tenantId, principalRef);
+    }
+
+    /** Per-principal denial chain id ({@link #denial}); never appended to in a caller's transaction. */
+    public static String denialChain(String tenantId, String principalRef) {
+        return "cmp:d:" + principalHash(tenantId, principalRef);
+    }
+
+    private static String principalHash(String tenantId, String principalRef) {
+        return Hashes.hex(Hashes.sha256(tenantId + "\u0000" + principalRef)).substring(0, 32);
     }
 
     /** Reference to a principal used in audit payloads: a hash, so the chain can be kept after erasure. */
@@ -107,6 +144,20 @@ public final class ComplianceAudit {
 
     public AuditChain.AuditEvent root(Connection c, String tenantId, String rootId, String eventType, Map<String, ?> payload) {
         return chain.append(c, tenantId, rootId, eventType, payload);
+    }
+
+    /**
+     * A refusal that the caller follows with a throw: appended to the principal's {@linkplain #denialChain denial
+     * chain} and committed on its own through {@code denialTx}, so it survives the caller's rollback (M-009). In-line on
+     * {@code c} when no {@code denialTx} is configured.
+     */
+    public AuditChain.AuditEvent denial(Connection c, String tenantId, String principalRef, String eventType,
+                                        Map<String, ?> payload) {
+        String chainId = denialChain(tenantId, principalRef);
+        if (denialTx == null) {
+            return chain.append(c, tenantId, chainId, eventType, payload);
+        }
+        return denialTx.inTransaction(leaf -> chain.append(leaf, tenantId, chainId, eventType, payload));
     }
 
     public AuditChain chain() {

@@ -115,6 +115,9 @@ tags:
 - name: Bulk ingest
   description: 'Asynchronous bulk data ingest per object type: chunked upload, per-row idempotency on (tenant, object type, external id), per-row
     status and error report (SL-44). sangam-ops; off unless enabled'
+- name: Packs
+  description: Installed packs of a tenant, uninstall (refused while dependants or live instances exist) and rollback of the previous content
+    as a new version (roll-forward, sangam-packs)
 - name: Programmes
   description: 'Programme monitoring: programmes, targets, milestones, periodic returns, roll-up, progress, variance alerts, dashboards (N15).
     sangam-programme'
@@ -574,6 +577,14 @@ paths:
         schema:
           type: string
         description: asc or desc per key, comma-separated
+      - name: variableNames
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+        description: 'P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at
+          most 20 names, repeated or comma-separated'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: task.read
@@ -1367,6 +1378,11 @@ paths:
         required: true
         schema:
           type: string
+      - name: activityInstanceId
+        in: query
+        schema:
+          type: string
+        description: 'P13: only the variables whose scope is this activity instance of the instance (the instance id itself is the root scope)'
       x-sangam-permission: process.read
       x-sangam-requirements:
       - VI.4
@@ -3608,6 +3624,20 @@ paths:
         schema:
           type: string
           format: date-time
+      - name: activityInstanceId
+        in: query
+        schema:
+          type: string
+        description: 'P13: only rows of this activity instance'
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - running
+          - completed
+          - canceled
+        description: 'P14: running, completed (ended, not canceled) or canceled'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: history.read
@@ -3762,6 +3792,11 @@ paths:
         schema:
           type: string
           format: date-time
+      - name: activityInstanceId
+        in: query
+        schema:
+          type: string
+        description: 'P13: only rows of this activity instance'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: history.read
@@ -3839,6 +3874,11 @@ paths:
         schema:
           type: string
           format: date-time
+      - name: activityInstanceId
+        in: query
+        schema:
+          type: string
+        description: 'P13: only rows of this activity instance'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: history.read
@@ -8850,6 +8890,11 @@ paths:
         schema:
           type: string
           format: date-time
+      - name: activityInstanceId
+        in: query
+        schema:
+          type: string
+        description: 'P13: only rows of this activity instance'
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/size'
       x-sangam-permission: history.read
@@ -18068,8 +18113,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AiUiDecisionRequest'
       responses:
         '200':
           description: Success
@@ -18122,8 +18166,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AiUiDecisionRequest'
       responses:
         '200':
           description: Success
@@ -18197,8 +18240,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AiUiPublishKbRequest'
       responses:
         '201':
           description: Success
@@ -18253,8 +18295,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AiUiDecisionRequest'
       responses:
         '204':
           description: Success
@@ -18302,8 +18343,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/AiUiReviewRequest'
       responses:
         '200':
           description: Success
@@ -24954,6 +24994,204 @@ paths:
           $ref: '#/components/responses/Conflict'
         '422':
           $ref: '#/components/responses/Unprocessable'
+  /custom-fields:
+    get:
+      operationId: listCustomFields
+      tags:
+      - Forms
+      summary: List custom fields
+      description: Every version of the tenant's custom fields, by object type, key and version; `on` keeps the versions in force on that date.
+        400 VALIDATION_FAILED for a malformed date.
+      parameters:
+      - name: objectType
+        in: query
+        schema:
+          type: string
+      - name: 'on'
+        in: query
+        schema:
+          type: string
+          format: date
+        description: only the versions in force on this date
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/size'
+      x-sangam-permission: form.read
+      x-sangam-requirements:
+      - SL-40
+      - R47
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomField'
+          headers:
+            X-Total-Count:
+              $ref: '#/components/headers/X-Total-Count'
+            X-Total-Count-Capped:
+              $ref: '#/components/headers/X-Total-Count-Capped'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: defineCustomField
+      tags:
+      - Forms
+      summary: Define a custom field version
+      description: Adds a new effective-dated version (the previous one is closed on its start date; history is never rewritten), audited (CUSTOM_FIELD_DEFINED).
+        400 VALIDATION_FAILED; 422 CUSTOM_FIELD_INVALID (key, schema profile, dates, object type not extensible); 409 CUSTOM_FIELD_CONFLICT when
+        changed concurrently.
+      x-sangam-command-type: custom-field.define
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-40
+      - R47
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldDefineRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomField'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /custom-fields/{objectType}/{key}:
+    get:
+      operationId: getCustomFieldVersions
+      tags:
+      - Forms
+      summary: Custom field versions
+      description: Every version of one field, oldest first. 404 NOT_FOUND when the key was never defined.
+      parameters:
+      - name: objectType
+        in: path
+        required: true
+        schema:
+          type: string
+        description: form:<formKey> or a registered object type
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: x_<name>
+      x-sangam-permission: form.read
+      x-sangam-requirements:
+      - SL-40
+      - R47
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomField'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /custom-fields/{objectType}/{key}/retire:
+    post:
+      operationId: retireCustomField
+      tags:
+      - Forms
+      summary: Retire a custom field
+      description: Closes the current version on effectiveTo, audited (CUSTOM_FIELD_RETIRED); values already stored stay readable. 400 REASON_REQUIRED;
+        404 NOT_FOUND; 422 CUSTOM_FIELD_INVALID; 409 CUSTOM_FIELD_CONFLICT.
+      x-sangam-command-type: custom-field.retire
+      x-sangam-idempotent: true
+      parameters:
+      - name: objectType
+        in: path
+        required: true
+        schema:
+          type: string
+        description: form:<formKey> or a registered object type
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: x_<name>
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-40
+      - R47
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomFieldRetireRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomField'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /field/templates:
     get:
       operationId: fieldWorkTemplates
@@ -29556,8 +29794,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ModellerFenceRequest'
       responses:
         '200':
           description: Success
@@ -29609,8 +29846,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ModellerRunActionRequest'
       responses:
         '200':
           description: Success
@@ -29741,8 +29977,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ServiceMocksCreateMock'
       responses:
         '201':
           description: Success
@@ -29789,8 +30024,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ServiceMocksToggle'
       responses:
         '200':
           description: Success
@@ -29842,8 +30076,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ServiceMocksToggle'
       responses:
         '200':
           description: Success
@@ -30679,6 +30912,9 @@ paths:
         required: true
         schema:
           type: string
+        description: 'Asset name inside the bundle, one or more segments: `/` separators unencoded, each segment percent-encoded on its own (e.g.
+          `chunks/app%20main.js`).'
+        x-sangam-path-wildcard: true
       x-sangam-requirements:
       - ADR-D-20
       - ADR-D-24
@@ -31584,8 +31820,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiVariableRequest'
       responses:
         '204':
           description: Success
@@ -31718,8 +31953,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiSecretRequest'
       responses:
         '204':
           description: Success
@@ -31840,8 +32074,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiAdvanceRequest'
       responses:
         '204':
           description: Success
@@ -31921,8 +32154,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiIndexJobRequest'
       responses:
         '200':
           description: Success
@@ -32077,8 +32309,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/OpsUiRetentionExecute'
       responses:
         '200':
           description: Success
@@ -32499,6 +32730,153 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /packs/installed:
+    get:
+      operationId: listInstalledPacks
+      tags:
+      - Packs
+      summary: Installed packs
+      description: Pack deployments of the tenant, oldest first. 400 VALIDATION_FAILED without tenant.
+      parameters:
+      - name: tenant
+        in: query
+        schema:
+          type: string
+        required: true
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-41
+      - ADR-D-20
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InstalledPack'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /packs/{id}/uninstall:
+    post:
+      operationId: uninstallPack
+      tags:
+      - Packs
+      summary: Uninstall a pack
+      description: Removes every version of the pack from the tenant, audited (PACK_UNINSTALLED). 404 PACK_NOT_INSTALLED; 409 PACK_HAS_DEPENDANTS
+        or PACK_HAS_LIVE_INSTANCES with `blockers`; 400 REASON_REQUIRED.
+      x-sangam-command-type: pack.uninstall
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: pack id, e.g. sec.health.admission-discharge
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-41
+      - ADR-D-20
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackLifecycleRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackUninstalled'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /packs/{id}/rollback:
+    post:
+      operationId: rollbackPack
+      tags:
+      - Packs
+      summary: Roll a pack back
+      description: 'Roll-forward (SL-54): the resources of the most recent deployment of a different version are read back from the engine and
+        deployed as a NEW version, the next patch above the highest installed version of the pack, with every version-bearing part restated for
+        it; no existing `id@version` is reused or changed. New instances started by key then start on the previous models; running instances keep
+        the definitions they started on. Each further rollback rolls forward again to a new version. Audited (PACK_ROLLED_BACK, with the new version).
+        404 PACK_NOT_INSTALLED; 409 PACK_NO_PREVIOUS_VERSION; 409 PACK_VERSION_NOT_SEMVER with `blockers` (the installed versions that are not
+        MAJOR.MINOR.PATCH, so the next version cannot be determined); 422 PACK_REJECTED with `violations`; 400 REASON_REQUIRED.'
+      x-sangam-command-type: pack.rollback
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: pack id, e.g. sec.health.admission-discharge
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-41
+      - ADR-D-20
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PackLifecycleRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackDeployResult'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /programme-config:
     put:
       operationId: programmePublishConfig
@@ -34833,6 +35211,127 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /onboarding/promotions/{tenant}/bundle:
+    get:
+      operationId: exportPromotionBundle
+      tags:
+      - Onboarding
+      summary: Export for promotion
+      description: The tenant's signed bundle labelled with this environment (sangam.onboarding.environment). 409 PROMOTION_ENVIRONMENT_NOT_SET
+        without a label.
+      parameters:
+      - name: tenant
+        in: path
+        required: true
+        schema:
+          type: string
+        description: tenant id
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-42
+      - ADR-D-20
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantBundle'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /onboarding/promotions/plan:
+    post:
+      operationId: planPromotion
+      tags:
+      - Onboarding
+      summary: Plan a promotion
+      description: Verifies the bundle signature, diffs it against the target tenant here and dry-runs it; returns the plan hash. 422 PROMOTION_ENVIRONMENT_MISSING,
+        PROMOTION_SAME_ENVIRONMENT, PROMOTION_TARGET_MISMATCH; 409 PROMOTION_ENVIRONMENT_NOT_SET.
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-42
+      - ADR-D-20
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionPlanRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromotionPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /onboarding/promotions:
+    post:
+      operationId: applyPromotion
+      tags:
+      - Onboarding
+      summary: Apply a promotion
+      description: Starts the onboarding run of the reviewed plan (maker-checker approval follows). 409 PROMOTION_PLAN_CHANGED, PROMOTION_NO_CHANGE;
+        422 PROMOTION_DRY_RUN_FAILED.
+      x-sangam-command-type: onboarding.promote
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-42
+      - ADR-D-20
+      - X.0e
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionApplyRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingRun'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /registry/assets/classes:
     post:
       operationId: registryAssetDefineClass
@@ -42818,8 +43317,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourceDraft'
       responses:
         '200':
           description: Success
@@ -42988,8 +43486,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcePatch'
       responses:
         '200':
           description: Success
@@ -43044,8 +43541,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesStatusRequest'
       responses:
         '200':
           description: Success
@@ -43100,8 +43596,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesMoveRequest'
       responses:
         '200':
           description: Success
@@ -43278,8 +43773,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesRestPortBlackoutRequest'
       responses:
         '200':
           description: Success
@@ -43377,8 +43871,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/CalendarServiceSlotTemplate'
       responses:
         '200':
           description: Success
@@ -43567,8 +44060,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesAvailableSearchRequest'
       responses:
         '200':
           description: Success
@@ -43608,8 +44100,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/BookingModelHoldRequest'
       responses:
         '200':
           description: Success
@@ -43650,8 +44141,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/BookingModelHoldRequest'
       responses:
         '200':
           description: Success
@@ -43701,8 +44191,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesSeriesRequest'
       responses:
         '200':
           description: Success
@@ -43944,8 +44433,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesApprovalRequest'
       responses:
         '200':
           description: Success
@@ -44098,8 +44586,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesCancelRequest'
       responses:
         '200':
           description: Success
@@ -44154,8 +44641,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesReasonRequest'
       responses:
         '200':
           description: Success
@@ -44212,8 +44698,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesBumpRequest'
       responses:
         '200':
           description: Success
@@ -44305,8 +44790,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/BookingModelWaitlistRequest'
       responses:
         '200':
           description: Success
@@ -44445,8 +44929,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesReasonRequest'
       responses:
         '200':
           description: Success
@@ -44545,8 +45028,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesDrawRequest'
       responses:
         '200':
           description: Success
@@ -44628,8 +45110,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesDrawVerifyRequest'
       responses:
         '200':
           description: Success
@@ -44672,8 +45153,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/BookingModelAllotRequest'
       responses:
         '200':
           description: Success
@@ -44776,8 +45256,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesAllotNextRequest'
       responses:
         '200':
           description: Success
@@ -44904,8 +45383,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesNoticeRequest'
       responses:
         '200':
           description: Success
@@ -44960,8 +45438,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesVacateRequest'
       responses:
         '200':
           description: Success
@@ -45016,8 +45493,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesExtendRequest'
       responses:
         '200':
           description: Success
@@ -45072,8 +45548,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/ResourcesCancelAllotmentRequest'
       responses:
         '200':
           description: Success
@@ -45226,8 +45701,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueRestPortServicePointRequest'
       responses:
         '200':
           description: Success
@@ -45316,8 +45790,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueStatusRequest'
       responses:
         '200':
           description: Success
@@ -45419,8 +45892,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueRestPortCounterRequest'
       responses:
         '200':
           description: Success
@@ -45512,8 +45984,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueOpenRequest'
       responses:
         '200':
           description: Success
@@ -45568,8 +46039,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueReasonRequest'
       responses:
         '200':
           description: Success
@@ -45673,8 +46143,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueRestPortIssueTokenRequest'
       responses:
         '200':
           description: Success
@@ -45849,8 +46318,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueRestPortTransferRequest'
       responses:
         '200':
           description: Success
@@ -45905,8 +46373,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueReasonRequest'
       responses:
         '200':
           description: Success
@@ -46010,8 +46477,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueCallRequest'
       responses:
         '200':
           description: Success
@@ -46115,8 +46581,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueReasonRequest'
       responses:
         '200':
           description: Success
@@ -46220,8 +46685,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/QueueCompleteRequest'
       responses:
         '200':
           description: Success
@@ -46532,8 +46996,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortShiftRequest'
       responses:
         '200':
           description: Success
@@ -46668,8 +47131,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortRotationRequest'
       responses:
         '200':
           description: Success
@@ -46763,8 +47225,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortPeriodRequest'
       responses:
         '200':
           description: Success
@@ -47068,8 +47529,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortMemberRequest'
       responses:
         '200':
           description: Success
@@ -47218,8 +47678,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortDemandRequest'
       responses:
         '200':
           description: Success
@@ -47382,8 +47841,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortRandomiseRequest'
       responses:
         '200':
           description: Success
@@ -47493,8 +47951,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortDecisionRequest'
       responses:
         '200':
           description: Success
@@ -47748,8 +48205,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortAssignRequest'
       responses:
         '200':
           description: Success
@@ -47856,8 +48312,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterOnCallRequest'
       responses:
         '200':
           description: Success
@@ -48054,8 +48509,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortSwapCreateRequest'
       responses:
         '200':
           description: Success
@@ -48245,8 +48699,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/RosterRestPortDecisionRequest'
       responses:
         '200':
           description: Success
@@ -49068,6 +49521,11 @@ components:
           type: string
         delegationState:
           type: string
+        variables:
+          allOf:
+          - $ref: '#/components/schemas/VariableMap'
+          description: 'P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables
+            returns to the caller.'
     TaskDetail:
       type: object
       description: Task plus the material payload hash the caller must send back on completion (VI.4 rule 5).
@@ -53372,6 +53830,8 @@ components:
           format: int32
         active:
           type: boolean
+        specialCondition:
+          type: string
       required:
       - basis
     ComplianceGiveConsentRequest:
@@ -53915,6 +54375,12 @@ components:
           type: string
         recipientSameProtectionAttested:
           type: boolean
+        mechanism:
+          type: string
+        impactAssessmentRef:
+          type: string
+        recipientConditionMet:
+          type: boolean
       required:
       - destinationCountry
     ComplianceTransferDecision:
@@ -54274,6 +54740,8 @@ components:
         context:
           type: object
           additionalProperties: true
+        packageId:
+          type: string
     AiDraft:
       type: object
       description: Draft.
@@ -54310,6 +54778,8 @@ components:
           type: string
         note:
           type: string
+        reason:
+          type: string
     AiEvaluate:
       type: object
       description: EvaluateRequest.
@@ -54340,6 +54810,8 @@ components:
         variables:
           type: object
           additionalProperties: true
+        goal:
+          type: string
     AiProposal:
       type: object
       description: Proposal.
@@ -54404,6 +54876,40 @@ components:
         correct:
           type: integer
           format: int64
+    AiUiDecisionRequest:
+      type: object
+      description: Request record AiUiDecisionRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java), typed from its
+        source.
+      properties:
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java
+    AiUiPublishKbRequest:
+      type: object
+      description: Request record AiUiPublishKbRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java), typed from
+        its source.
+      properties:
+        key:
+          type: string
+        text:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java
+    AiUiReviewRequest:
+      type: object
+      description: Request record AiUiReviewRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java), typed from its
+        source.
+      properties:
+        decision:
+          type: string
+        label:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ai/AiUiController.java
     BillingInvoiceRequest:
       type: object
       description: Raise the invoice of one consumer for one cycle (idempotent per consumer x cycle).
@@ -56536,6 +57042,73 @@ components:
         missedEvents:
           type: integer
           format: int64
+    CustomField:
+      type: object
+      description: 'One effective-dated version of a tenant custom field; effectiveTo is exclusive (null: open-ended).'
+      properties:
+        objectType:
+          type: string
+        key:
+          type: string
+        version:
+          type: integer
+          format: int32
+        label:
+          type: string
+        required:
+          type: boolean
+        readOnly:
+          type: boolean
+        schema:
+          type: object
+          additionalProperties: true
+          description: Scalar or array fragment in the Sangam form-data profile of JSON Schema (FormSchemaValidator)
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+    CustomFieldDefineRequest:
+      type: object
+      description: A new version of a field; it closes the version in force on its effectiveFrom.
+      properties:
+        objectType:
+          type: string
+        key:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+        readOnly:
+          type: boolean
+        schema:
+          type: object
+          additionalProperties: true
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+      required:
+      - objectType
+      - key
+      - schema
+      - effectiveFrom
+    CustomFieldRetireRequest:
+      type: object
+      description: Closes the current version on effectiveTo (exclusive); the reason is audited.
+      properties:
+        effectiveTo:
+          type: string
+          format: date
+        reason:
+          type: string
+      required:
+      - effectiveTo
+      - reason
     LedgerAccountKey:
       type: object
       description: An account address. Fields left out are '-'.
@@ -56905,6 +57478,11 @@ components:
           type: string
         target:
           type: string
+        name:
+          type: string
+        form: {}
+        processKey:
+          type: string
       required:
       - key
       - label
@@ -56947,6 +57525,60 @@ components:
           type: string
       required:
       - bundle
+    ModellerFenceRequest:
+      type: object
+      description: Request record ModellerFenceRequest (sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerController.java), typed
+        from its source.
+      properties:
+        fence:
+          type: integer
+          format: int64
+        packageId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerController.java
+    ModellerRunActionRequest:
+      type: object
+      description: Request record ModellerRunActionRequest (sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerController.java),
+        typed from its source.
+      properties:
+        subjectRef:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerController.java
+    ServiceMocksCreateMock:
+      type: object
+      description: Request record ServiceMocksCreateMock (sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java),
+        typed from its source.
+      properties:
+        service:
+          type: string
+        operation:
+          type: string
+        response:
+          type: object
+          additionalProperties: true
+        delayMs:
+          type: integer
+          format: int64
+        enabled:
+          type: boolean
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java
+    ServiceMocksToggle:
+      type: object
+      description: Request record ServiceMocksToggle (sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java),
+        typed from its source.
+      properties:
+        enabled:
+          type: boolean
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java
     OnboardingProblem:
       type: object
       description: One finding.
@@ -57365,6 +57997,73 @@ components:
         purged:
           type: integer
           format: int32
+    OpsUiVariableRequest:
+      type: object
+      description: Request record OpsUiVariableRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        scope:
+          type: string
+        name:
+          type: string
+        value: {}
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    OpsUiSecretRequest:
+      type: object
+      description: Request record OpsUiSecretRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        name:
+          type: string
+        scope:
+          type: string
+        value:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    OpsUiAdvanceRequest:
+      type: object
+      description: Request record OpsUiAdvanceRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        to:
+          type: integer
+          format: int64
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    OpsUiIndexJobRequest:
+      type: object
+      description: Request record OpsUiIndexJobRequest (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        alias:
+          type: string
+        kind:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
+    OpsUiRetentionExecute:
+      type: object
+      description: Request record OpsUiRetentionExecute (sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java), typed from
+        its source.
+      properties:
+        planId:
+          type: string
+        presentedHash:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsUiController.java
     BulkCreateJob:
       type: object
       description: CreateJobRequest. expectedChunks, when given, must all be uploaded before close.
@@ -57486,6 +58185,65 @@ components:
           type: string
         resultRef:
           type: string
+    InstalledPack:
+      type: object
+      description: One engine deployment of a pack version for the tenant, oldest first.
+      properties:
+        packId:
+          type: string
+        version:
+          type: string
+        tenantId:
+          type: string
+        deploymentId:
+          type: string
+        deployedAt:
+          type: string
+          format: date-time
+    PackLifecycleRequest:
+      type: object
+      description: The tenant whose packs change, and the audited reason.
+      properties:
+        tenant:
+          type: string
+        reason:
+          type: string
+      required:
+      - tenant
+      - reason
+    PackUninstalled:
+      type: object
+      description: The deployments removed; definitions retired, history kept.
+      properties:
+        packId:
+          type: string
+        tenantId:
+          type: string
+        deploymentIds:
+          type: array
+          items:
+            type: string
+    PackDeployResult:
+      type: object
+      description: 'The deployment made by a rollback: the previous content deployed as a new version (roll-forward, SL-54).'
+      properties:
+        packId:
+          type: string
+        version:
+          type: string
+          description: 'The new version: the next patch above the highest installed version of the pack (MAJOR.MINOR.PATCH); never a version that
+            was installed before.'
+        tenantId:
+          type: string
+        deploymentId:
+          type: string
+        resources:
+          type: integer
+          format: int32
+          description: Number of resources read back from the previous deployment and deployed again.
+        newDeployment:
+          type: boolean
+          description: True when the call made a new engine deployment.
     PgPublished:
       type: object
       description: Published (Java IndicatorRegistry.Published).
@@ -58288,6 +59046,881 @@ components:
         computedAt:
           type: string
           format: date-time
+    PromotionPlanRequest:
+      type: object
+      description: A signed bundle exported from another environment and the target tenant here.
+      properties:
+        bundle:
+          $ref: '#/components/schemas/TenantBundle'
+        targetTenant:
+          type: string
+      required:
+      - bundle
+      - targetTenant
+    PromotionApplyRequest:
+      type: object
+      description: 'The reviewed plan: the same bundle and target, and the plan hash shown.'
+      properties:
+        bundle:
+          $ref: '#/components/schemas/TenantBundle'
+        targetTenant:
+          type: string
+        planHash:
+          type: string
+      required:
+      - bundle
+      - targetTenant
+      - planHash
+    PromotionPlan:
+      type: object
+      description: What the apply step will do and the hash it must present. Nothing was changed.
+      properties:
+        sourceTenant:
+          type: string
+        sourceEnvironment:
+          type: string
+        targetTenant:
+          type: string
+        targetEnvironment:
+          type: string
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/BundleDiffEntry'
+        request:
+          $ref: '#/components/schemas/OnboardingRequest'
+        dryRun:
+          $ref: '#/components/schemas/OnboardingDryRun'
+        planHash:
+          type: string
+    ResourceDraft:
+      type: object
+      description: Request record ResourceDraft (sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java), typed from its
+        source.
+      properties:
+        resourceId:
+          type: string
+        typeId:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        parentId:
+          type: string
+        orgUnitId:
+          type: string
+        locationId:
+          type: string
+        geoLat:
+          type: string
+        geoLon:
+          type: string
+        capacity:
+          type: integer
+          format: int32
+        unitLabel:
+          type: string
+        calendarId:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java
+    ResourcePatch:
+      type: object
+      description: Request record ResourcePatch (sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java), typed from its
+        source.
+      properties:
+        name:
+          type: string
+        orgUnitId:
+          type: string
+        locationId:
+          type: string
+        geoLat:
+          type: string
+        geoLon:
+          type: string
+        capacity:
+          type: integer
+          format: int32
+        unitLabel:
+          type: string
+        calendarId:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java
+    ResourcesStatusRequest:
+      type: object
+      description: Request record ResourcesStatusRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - UNDER_MAINTENANCE
+          - RETIRED
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesMoveRequest:
+      type: object
+      description: Request record ResourcesMoveRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        newParentId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesRestPortBlackoutRequest:
+      type: object
+      description: Request record ResourcesRestPortBlackoutRequest (sangam-resources/src/main/java/org/sangam/resources/rest/ResourcesRestPort.java),
+        typed from its source.
+      properties:
+        calendarId:
+          type: string
+        resourceId:
+          type: string
+        kind:
+          type: string
+          enum:
+          - BLACKOUT
+          - MAINTENANCE
+          - HOLIDAY
+          - RESERVED
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/ResourcesRestPort.java
+    CalendarServiceSlotTemplate:
+      type: object
+      description: Request record CalendarServiceSlotTemplate (sangam-resources/src/main/java/org/sangam/resources/calendar/CalendarService.java),
+        typed from its source.
+      properties:
+        templateId:
+          type: string
+        resourceId:
+          type: string
+        weekdays:
+          type: array
+          items:
+            type: string
+            enum:
+            - MONDAY
+            - TUESDAY
+            - WEDNESDAY
+            - THURSDAY
+            - FRIDAY
+            - SATURDAY
+            - SUNDAY
+        from:
+          type: string
+          description: Local time (HH:mm[:ss])
+        to:
+          type: string
+          description: Local time (HH:mm[:ss])
+        slotMinutes:
+          type: integer
+          format: int32
+        unitsPerSlot:
+          type: integer
+          format: int32
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/calendar/CalendarService.java
+    ResourcesAvailableSearchRequest:
+      type: object
+      description: Request record ResourcesAvailableSearchRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        filter:
+          $ref: '#/components/schemas/ResourceQuery'
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        quantity:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourceQuery:
+      type: object
+      description: Request record ResourceQuery (sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java), typed from its
+        source.
+      properties:
+        typeId:
+          type: string
+        parentId:
+          type: string
+        ancestorId:
+          type: string
+        orgUnitId:
+          type: string
+        locationId:
+          type: string
+        minCapacity:
+          type: integer
+          format: int32
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+          - UNDER_MAINTENANCE
+          - RETIRED
+        attributes:
+          type: object
+          additionalProperties: true
+        text:
+          type: string
+        offset:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/catalogue/Resource.java
+    BookingModelHoldRequest:
+      type: object
+      description: Request record BookingModelHoldRequest (sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java), typed
+        from its source.
+      properties:
+        resourceId:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        quantity:
+          type: integer
+          format: int32
+        requesterId:
+          type: string
+        beneficiaryId:
+          type: string
+        partyRef:
+          type: string
+        purpose:
+          type: string
+        entitlementClass:
+          type: string
+        priorityLevel:
+          type: integer
+          format: int32
+        attributes:
+          type: object
+          additionalProperties: true
+        businessKey:
+          type: string
+        bump:
+          type: boolean
+        authorityRef:
+          type: string
+        reason:
+          type: string
+        waitlistIfFull:
+          type: boolean
+        holdMinutes:
+          type: integer
+          format: int32
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java
+    ResourcesSeriesRequest:
+      type: object
+      description: Request record ResourcesSeriesRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        first:
+          $ref: '#/components/schemas/BookingModelHoldRequest'
+        recurrence:
+          $ref: '#/components/schemas/BookingModelRecurrence'
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    BookingModelRecurrence:
+      type: object
+      description: Request record BookingModelRecurrence (sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java), typed
+        from its source.
+      properties:
+        frequency:
+          type: string
+          enum:
+          - DAILY
+          - WEEKLY
+          - MONTHLY
+        interval:
+          type: integer
+          format: int32
+        byDays:
+          type: array
+          items:
+            type: string
+            enum:
+            - MONDAY
+            - TUESDAY
+            - WEDNESDAY
+            - THURSDAY
+            - FRIDAY
+            - SATURDAY
+            - SUNDAY
+        count:
+          type: integer
+          format: int32
+        until:
+          type: string
+          format: date
+        allOrNothing:
+          type: boolean
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java
+    ResourcesApprovalRequest:
+      type: object
+      description: Request record ResourcesApprovalRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        approved:
+          type: boolean
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesCancelRequest:
+      type: object
+      description: Request record ResourcesCancelRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        reason:
+          type: string
+        cancelledBy:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesReasonRequest:
+      type: object
+      description: Request record ResourcesReasonRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesBumpRequest:
+      type: object
+      description: Request record ResourcesBumpRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        reason:
+          type: string
+        authorityRef:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    BookingModelWaitlistRequest:
+      type: object
+      description: Request record BookingModelWaitlistRequest (sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java),
+        typed from its source.
+      properties:
+        typeId:
+          type: string
+        resourceId:
+          type: string
+        requesterId:
+          type: string
+        beneficiaryId:
+          type: string
+        category:
+          type: string
+        priorityLevel:
+          type: integer
+          format: int32
+        seniorityAt:
+          type: string
+          format: date-time
+        wantedFrom:
+          type: string
+          format: date-time
+        wantedTo:
+          type: string
+          format: date-time
+        quantity:
+          type: integer
+          format: int32
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java
+    ResourcesDrawRequest:
+      type: object
+      description: Request record ResourcesDrawRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        scopeKey:
+          type: string
+        seed:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesDrawVerifyRequest:
+      type: object
+      description: Request record ResourcesDrawVerifyRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        entryIds:
+          type: array
+          items:
+            type: string
+        seed:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    BookingModelAllotRequest:
+      type: object
+      description: Request record BookingModelAllotRequest (sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java), typed
+        from its source.
+      properties:
+        resourceId:
+          type: string
+        unitNo:
+          type: integer
+          format: int32
+        holderId:
+          type: string
+        beneficiaryId:
+          type: string
+        validFrom:
+          type: string
+          format: date-time
+        validTo:
+          type: string
+          format: date-time
+        orderRef:
+          type: string
+        waitlistId:
+          type: string
+        entitlementClass:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java
+    ResourcesAllotNextRequest:
+      type: object
+      description: Request record ResourcesAllotNextRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        scopeKey:
+          type: string
+        resourceId:
+          type: string
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        orderRef:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesNoticeRequest:
+      type: object
+      description: Request record ResourcesNoticeRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        dueAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+        authorityRef:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesVacateRequest:
+      type: object
+      description: Request record ResourcesVacateRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesExtendRequest:
+      type: object
+      description: Request record ResourcesExtendRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        newValidTo:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          format: int64
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    ResourcesCancelAllotmentRequest:
+      type: object
+      description: Request record ResourcesCancelAllotmentRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java),
+        typed from its source.
+      properties:
+        reason:
+          type: string
+        authorityRef:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java
+    QueueRestPortServicePointRequest:
+      type: object
+      description: Request record QueueRestPortServicePointRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        name:
+          type: string
+        resourceId:
+          type: string
+        calendarId:
+          type: string
+        tokenPrefix:
+          type: string
+        slaMinutes:
+          type: integer
+          format: int32
+        priorityDecision:
+          type: string
+        routingDecision:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueStatusRequest:
+      type: object
+      description: Request record QueueStatusRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        status:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    QueueRestPortCounterRequest:
+      type: object
+      description: Request record QueueRestPortCounterRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java), typed
+        from its source.
+      properties:
+        name:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueOpenRequest:
+      type: object
+      description: Request record QueueOpenRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed from
+        its source.
+      properties:
+        operatorId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    QueueReasonRequest:
+      type: object
+      description: Request record QueueReasonRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    QueueRestPortIssueTokenRequest:
+      type: object
+      description: Request record QueueRestPortIssueTokenRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        channel:
+          type: string
+        bookingId:
+          type: string
+        partyId:
+          type: string
+        priorityClass:
+          type: string
+        skill:
+          type: string
+        routingKey:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueRestPortTransferRequest:
+      type: object
+      description: Request record QueueRestPortTransferRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java),
+        typed from its source.
+      properties:
+        targetServicePointId:
+          type: string
+        targetSkill:
+          type: string
+        targetCounterId:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java
+    QueueCallRequest:
+      type: object
+      description: Request record QueueCallRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed from
+        its source.
+      properties:
+        tokenId:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    QueueCompleteRequest:
+      type: object
+      description: Request record QueueCompleteRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java), typed
+        from its source.
+      properties:
+        outcome:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/QueueController.java
+    RosterRestPortShiftRequest:
+      type: object
+      description: Request record RosterRestPortShiftRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java), typed
+        from its source.
+      properties:
+        shiftId:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        fromTime:
+          type: string
+        durationMinutes:
+          type: integer
+          format: int32
+        night:
+          type: boolean
+        skills:
+          type: array
+          items:
+            type: string
+        zoneId:
+          type: string
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortRotationRequest:
+      type: object
+      description: Request record RosterRestPortRotationRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        rotationId:
+          type: string
+        name:
+          type: string
+        cycle:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortPeriodRequest:
+      type: object
+      description: Request record RosterRestPortPeriodRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        unitId:
+          type: string
+        name:
+          type: string
+        firstDay:
+          type: string
+          format: date
+        lastDay:
+          type: string
+          format: date
+        constraints:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortMemberRequest:
+      type: object
+      description: Request record RosterRestPortMemberRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        seatId:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+        rotationId:
+          type: string
+        rotationOffset:
+          type: integer
+          format: int32
+        attributes:
+          type: object
+          additionalProperties: true
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortDemandRequest:
+      type: object
+      description: Request record RosterRestPortDemandRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        shiftId:
+          type: string
+        skill:
+          type: string
+        weekdays:
+          type: array
+          items:
+            type: string
+        dutyDay:
+          type: string
+          format: date
+        requiredCount:
+          type: integer
+          format: int32
+        dutySeatId:
+          type: string
+        locationId:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortRandomiseRequest:
+      type: object
+      description: Request record RosterRestPortRandomiseRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        seed:
+          type: string
+        people:
+          type: array
+          items:
+            type: string
+        slots:
+          type: array
+          items:
+            type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortDecisionRequest:
+      type: object
+      description: Request record RosterRestPortDecisionRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        version:
+          type: integer
+          format: int64
+        approved:
+          type: boolean
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterRestPortAssignRequest:
+      type: object
+      description: Request record RosterRestPortAssignRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        personId:
+          type: string
+        shiftId:
+          type: string
+        day:
+          type: string
+          format: date
+        kind:
+          type: string
+        demandId:
+          type: string
+        dutySeatId:
+          type: string
+        locationId:
+          type: string
+        override:
+          type: boolean
+        overrideReason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
+    RosterOnCallRequest:
+      type: object
+      description: Request record RosterOnCallRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/RosterController.java), typed
+        from its source.
+      properties:
+        personId:
+          type: string
+        shiftId:
+          type: string
+        day:
+          type: string
+          format: date
+      additionalProperties: true
+      x-sangam-record: sangam-rest/src/main/java/org/sangam/rest/modules/resources/RosterController.java
+    RosterRestPortSwapCreateRequest:
+      type: object
+      description: Request record RosterRestPortSwapCreateRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java),
+        typed from its source.
+      properties:
+        assignmentId:
+          type: string
+        counterpartId:
+          type: string
+        counterpartAssignmentId:
+          type: string
+        reason:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java
     ModuleDefaultsRequest:
       type: object
       description: Install the module role templates; selfService also installs the person-conditioned self-service grants (default true).

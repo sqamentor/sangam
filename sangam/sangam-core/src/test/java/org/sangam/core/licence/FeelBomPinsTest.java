@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 /**
- * SG-27 guard (OneIFMS SD-301 owner exception): the Operaton DMN FEEL engine closure is pinned to the same exact
+ * SG-27 guard (consumer licence-policy exception, owner decision): the Operaton DMN FEEL engine closure is pinned to the same exact
  * versions in the build (root pom), in the consumer BOM (sangam-bom) and in the licence allowlist
  * (deploy/licence/licence-policy.json pinned_exceptions). Changing one without the others fails here; a new version
  * must be re-verified (licence, NOTICE, CVEs) before all three move. Run from sangam-core.
@@ -55,7 +55,7 @@ class FeelBomPinsTest {
     @Test
     void camundaNamespaceIsBannedWithoutWildcardExceptions() throws Exception {
         String policy = Files.readString(Path.of("..", "deploy", "licence", "licence-policy.json"));
-        assertTrue(policy.contains("\"purl\": \"pkg:maven/org.camunda\""), "SD-301 namespace ban present");
+        assertTrue(policy.contains("\"purl\": \"pkg:maven/org.camunda\""), "SG-27 consumer namespace ban present");
         Matcher m = Pattern.compile("\"purl\": \"(pkg:maven/org\\.camunda[^\"]*)\", \"license\"").matcher(policy);
         int n = 0;
         while (m.find()) {

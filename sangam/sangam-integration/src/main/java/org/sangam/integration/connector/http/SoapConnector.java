@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * SOAP 1.1 / 1.2 connector (R71; FLOWABLE-INTO-OPERATON FC-50 web-service task; Operaton connect-plugin SOAP parity B-16).
@@ -35,6 +36,11 @@ import java.util.Map;
  * {@code Server}/{@code Receiver} faults which leave the outcome unknown (the service may have acted).
  *
  * <p>XML parsing disallows DOCTYPE and external entities (XXE).
+ *
+ * <p>Headers (SL-66): names are case-insensitive and each is sent once; the connector's own headers (Content-Type,
+ * SOAPAction, X-Sangam-Operation-Id) replace a configured header of the same name. Configured headers must be valid
+ * HTTP (checked when built), and a {@code soapAction} that cannot be sent in a quoted header value is refused as
+ * {@code INVALID_REQUEST} before anything is sent (SL-65).
  */
 public final class SoapConnector implements SangamConnector {
 
@@ -45,6 +51,7 @@ public final class SoapConnector implements SangamConnector {
         public Config {
             version = version == null ? Version.SOAP_11 : version;
             headers = headers == null ? Map.of() : Map.copyOf(headers);
+            HttpRestConnector.checkConfiguredHeaders("SOAP header", headers);
         }
     }
 
@@ -80,6 +87,13 @@ public final class SoapConnector implements SangamConnector {
         if (bodyXml == null || bodyXml.isBlank()) {
             return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", "bodyXml is required");
         }
+        String action = r.str("soapAction", "");
+        if (!isHeaderAction(action)) {
+            // SL-65: the action comes from the process and goes into a quoted header value (SOAPAction, or the action
+            // parameter of a SOAP 1.2 Content-Type): refused before anything is sent, and never shown
+            return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", "soapAction cannot be sent in a header (a "
+                    + "control character, a quote or a backslash, or a character above U+00FF; the value is not shown)");
+        }
         try {
             parse(("<w>" + bodyXml + "</w>").getBytes(StandardCharsets.UTF_8));
             if (r.str("headerXml") != null) {
@@ -96,15 +110,17 @@ public final class SoapConnector implements SangamConnector {
                 + (r.str("soapAction") == null ? "" : "<wsa:Action>" + escape(r.str("soapAction")) + "</wsa:Action>")
                 + r.str("headerXml", "")
                 + "</soap:Header><soap:Body>" + bodyXml + "</soap:Body></soap:Envelope>";
-        Map<String, String> headers = new LinkedHashMap<>(config.headers());
-        String action = r.str("soapAction", "");
+        // SL-66: header names are case-insensitive; the connector's own headers replace a configured one of any case
+        Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.putAll(config.headers());
         if (v12) {
-            headers.put("Content-Type", "application/soap+xml; charset=utf-8" + (action.isEmpty() ? "" : "; action=\"" + action + "\""));
+            HttpRestConnector.own(headers, "Content-Type", "application/soap+xml; charset=utf-8"
+                    + (action.isEmpty() ? "" : "; action=\"" + action + "\""));
         } else {
-            headers.put("Content-Type", "text/xml; charset=utf-8");
-            headers.put("SOAPAction", "\"" + action + "\"");
+            HttpRestConnector.own(headers, "Content-Type", "text/xml; charset=utf-8");
+            HttpRestConnector.own(headers, "SOAPAction", "\"" + action + "\"");
         }
-        headers.put("X-Sangam-Operation-Id", r.operationId().toString());
+        HttpRestConnector.own(headers, "X-Sangam-Operation-Id", r.operationId().toString());
         boolean idempotent = config.capabilityClass() == CapabilityClass.A_IDEMPOTENT_WITH_LOOKUP;
         HttpTransport.Outcome o = transport.execute(r.tenantId(), new HttpTransport.Call("POST", config.endpoint(), headers,
                 envelope.getBytes(StandardCharsets.UTF_8), config.timeout(), idempotent),
@@ -203,5 +219,10 @@ public final class SoapConnector implements SangamConnector {
 
     private static String escape(String s) {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    /** A soapAction that fits a quoted header value: valid HTTP and no quote or backslash to break the quoting. */
+    private static boolean isHeaderAction(String action) {
+        return HttpTransport.isFieldValue(action) && action.indexOf('"') < 0 && action.indexOf('\\') < 0;
     }
 }

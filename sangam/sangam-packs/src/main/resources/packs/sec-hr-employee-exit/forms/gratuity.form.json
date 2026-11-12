@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-employee-exit/gratuity",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.hr.employee-exit",
   "title": {
     "en": "Gratuity (30 days)",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "gratuityAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Gratuity (INR)",

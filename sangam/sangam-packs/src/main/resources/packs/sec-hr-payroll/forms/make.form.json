@@ -1,6 +1,6 @@
 {
   "key": "sec-hr-payroll/make",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.hr.payroll",
   "title": {
     "en": "Review payroll register (maker)",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "grossWages",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Gross wages (INR)",

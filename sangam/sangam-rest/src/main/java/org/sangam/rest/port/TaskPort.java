@@ -11,16 +11,64 @@ import java.util.Map;
  */
 public interface TaskPort {
 
+    /**
+     * @param variableNames P45 task-card variables: each listed task carries these variables (when set), read as
+     *                      {@code GET /tasks/{id}/variables} reads them, so the caller gets nothing it could not read
+     *                      already; at most {@link #MAX_CARD_VARIABLES} names
+     */
     record TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
                       String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey,
-                      String taskDefinitionKey, String state, String sortBy, String sortOrder) {
+                      String taskDefinitionKey, String state, String sortBy, String sortOrder,
+                      List<String> variableNames) {
+
+        public TaskFilter {
+            variableNames = variableNames == null ? List.of() : variableNames.stream()
+                    .flatMap(n -> java.util.Arrays.stream(n.split(","))).map(String::trim).filter(n -> !n.isEmpty())
+                    .distinct().toList();
+            if (variableNames.size() > MAX_CARD_VARIABLES) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED",
+                        "at most " + MAX_CARD_VARIABLES + " variableNames per request");
+            }
+        }
+
+        public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
+                          String processInstanceId, String caseInstanceId, String businessKey,
+                          String processDefinitionKey, String taskDefinitionKey, String state, String sortBy,
+                          String sortOrder) {
+            this(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId, businessKey,
+                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, List.of());
+        }
     }
 
-    /** FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated. */
+    /** Upper bound of {@link TaskFilter#variableNames} (each name is one variable read per listed task). */
+    int MAX_CARD_VARIABLES = 20;
+
+    /**
+     * FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated.
+     * {@code variables}: only on list rows asked for with {@code variableNames} (P45), otherwise null.
+     */
     record Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
                 String processDefinitionKey, String caseInstanceId, String businessKey, String assignee, String owner,
                 String seatId, String tenantId, Instant created, Instant due, Instant followUp, Instant lastUpdated,
-                Instant claimTime, String state, int priority, String formKey, String delegationState) {
+                Instant claimTime, String state, int priority, String formKey, String delegationState,
+                Map<String, Object> variables) {
+
+        public Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
+                    String processDefinitionKey, String caseInstanceId, String businessKey, String assignee,
+                    String owner, String seatId, String tenantId, Instant created, Instant due, Instant followUp,
+                    Instant lastUpdated, Instant claimTime, String state, int priority, String formKey,
+                    String delegationState) {
+            this(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey, caseInstanceId,
+                    businessKey, assignee, owner, seatId, tenantId, created, due, followUp, lastUpdated, claimTime,
+                    state, priority, formKey, delegationState, null);
+        }
+
+        /** This task with card variables. */
+        public Task withVariables(Map<String, Object> vars) {
+            return new Task(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey,
+                    caseInstanceId, businessKey, assignee, owner, seatId, tenantId, created, due, followUp,
+                    lastUpdated, claimTime, state, priority, formKey, delegationState, vars);
+        }
     }
 
     /** Where a return can go (by hierarchy level and seat). {@code activityId} feeds ReturnTaskRequest.targetActivityId. */

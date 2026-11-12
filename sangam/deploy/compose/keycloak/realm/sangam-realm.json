@@ -27,7 +27,7 @@
     "realm": [
       {
         "name": "sangam-admin",
-        "description": "Platform administrator (tenants, policies, seats)"
+        "description": "Tenant administrator of the token's tenant (SL-70: platform administrator only in the platform realm)"
       },
       {
         "name": "sangam-operator",
@@ -1107,11 +1107,11 @@
       ]
     },
     {
-      "username": "admin.dev",
+      "username": "dept.admin",
       "enabled": true,
       "emailVerified": true,
-      "email": "admin.dev@sangam.test",
-      "firstName": "Platform",
+      "email": "dept.admin@sangam.test",
+      "firstName": "Department",
       "lastName": "Admin",
       "attributes": {
         "tenant": [

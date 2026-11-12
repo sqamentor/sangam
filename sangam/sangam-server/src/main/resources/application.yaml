@@ -23,6 +23,12 @@ spring:
       transaction-isolation: TRANSACTION_READ_COMMITTED
       auto-commit: true
       maximum-pool-size: ${SANGAM_DB_POOL_SIZE:20}
+      # SL-59 / SCALE-ARCHITECTURE 1.6: wait at most 2 s (milliseconds here) for a free connection; an exhausted pool
+      # answers 503 DATABASE_UNAVAILABLE with Retry-After (PoolExhaustionProblems) instead of a hidden queue. The
+      # quota pool copies this pool's settings; the replica pool defaults to the same value. The liveness check of a
+      # pooled connection must fit inside the acquire wait, so it gets 1 s.
+      connection-timeout: ${SANGAM_DB_CONNECTION_TIMEOUT_MS:2000}
+      validation-timeout: ${SANGAM_DB_VALIDATION_TIMEOUT_MS:1000}
       pool-name: sangam
   # OIDC: activate the 'oidc' profile with SANGAM_OIDC_ISSUER (application-oidc.yaml), or set
   # spring.security.oauth2.resourceserver.jwt.issuer-uri / jwk-set-uri directly. Left unset here on purpose: an empty
@@ -95,7 +101,9 @@ sangam:
   compliance:
     jurisdictions: ${SANGAM_COMPLIANCE_JURISDICTIONS:}
     organisation-name: ${SANGAM_COMPLIANCE_ORGANISATION:}
-    tenants: ${SANGAM_COMPLIANCE_TENANTS:${sangam.tenant.default:dev}}
+    # SL-117: optional extra tenants on top of the tenant directory (no fallback; sangam.tenant.default is not a tenant
+    # list). An empty schedule logs a WARN every cycle and counts sangam.schedule.empty{scheduler=compliance}.
+    tenants: ${SANGAM_COMPLIANCE_TENANTS:}
     log-archive:
       root: ${SANGAM_COMPLIANCE_LOG_ARCHIVE:data/compliance-logs}
       country: ${SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY:}
@@ -172,9 +180,24 @@ sangam:
     batch-four-eyes-threshold: 100
     outbox-budget: 100000
     node: ${SANGAM_INSTANCE_ID:${HOSTNAME:sangam-node}}
+  # M-053: fetch-and-lock long-polls wait as async servlet responses (no request thread held), polled on the old
+  # schedule (100 ms doubling to the authoritative 1 s, R1) and at once on the relay wake-up (M-005, LISTEN on
+  # PostgreSQL). Above max-waiters per node a request waits in its thread as before; poll-threads run the polls (each
+  # holds a pool connection while it polls). enabled=false keeps the blocking wait.
+  work:
+    long-poll:
+      enabled: ${SANGAM_WORK_LONG_POLL_ENABLED:true}
+      max-waiters: ${SANGAM_WORK_LONG_POLL_MAX_WAITERS:1000}
+      poll-threads: ${SANGAM_WORK_LONG_POLL_THREADS:4}
   security:
     dev-token:
       enabled: false
+    # SL-70: issuer(s) of the PLATFORM realm, comma-separated. Only their tokens are platform identities (sangam-admin
+    # = platform administrator); sangam-admin in any other token is the tenant administrator of its tenant. It must be
+    # a realm separate from the tenant issuer (refused at startup otherwise). Empty = nobody is platform administrator.
+    platform-issuer: ${SANGAM_SECURITY_PLATFORM_ISSUER:}
+    # JWKS of the platform issuer when OIDC discovery is not reachable from the server (exactly one platform issuer)
+    platform-jwk-set-uri: ${SANGAM_SECURITY_PLATFORM_JWK_SET_URI:}
     claims:
       audience: ${SANGAM_SECURITY_OIDC_AUDIENCE:sangam-server}
       tenant: ${SANGAM_SECURITY_OIDC_TENANT_CLAIM:tenant}
@@ -196,15 +219,26 @@ sangam:
     sql-file: ${SANGAM_LIQUIBASE_SQL_FILE:}
   db:
     require-rcsi: true
+    # SL-59 (S-R-5 never hang): socket read bound on every pooled connection (PoolWaitBounds; a value in the JDBC URL
+    # or the pool's data-source-properties wins). Must exceed the longest legitimate statement; 0 disables it.
+    network-timeout: ${SANGAM_DB_NETWORK_TIMEOUT:300s}
+    # Retry-After of the 503 DATABASE_UNAVAILABLE answer when no connection is available
+    unavailable-retry-after: ${SANGAM_DB_UNAVAILABLE_RETRY_AFTER:2s}
   persistence:
     changelog: classpath:db/changelog/sangam-master.yaml
     dev-schema: false
+  onboarding:
+    # SL-42: this server's environment label (sandbox, uat, prod ...), signed into promotion bundles. No default:
+    # unset or empty, /api/v1/onboarding/promotions answers 409 PROMOTION_ENVIRONMENT_NOT_SET.
+    environment: ${SANGAM_ONBOARDING_ENVIRONMENT:}
   # SCALE cell (sangam-cell README IR-2..IR-4). The cell is switched on by SANGAM_CELL_ID (sangam.cell.id); it is
   # deliberately not listed here, because an empty value would count as set.
   cell:
     region: ${SANGAM_CELL_REGION:}
-    jurisdiction: ${SANGAM_CELL_JURISDICTION:IN}
-    residency: ${SANGAM_CELL_RESIDENCY:${SANGAM_CELL_JURISDICTION:IN}}
+    # SL-104 (ADR-D-20): no product default; a cell must be given its jurisdiction (start-up fails naming the
+    # property). Residency defaults to the jurisdiction when empty.
+    jurisdiction: ${SANGAM_CELL_JURISDICTION:}
+    residency: ${SANGAM_CELL_RESIDENCY:}
     public-url: ${SANGAM_CELL_PUBLIC_URL:}
     admin-url: ${SANGAM_CELL_ADMIN_URL:}
     heartbeat-interval: ${SANGAM_CELL_HEARTBEAT_INTERVAL:10s}

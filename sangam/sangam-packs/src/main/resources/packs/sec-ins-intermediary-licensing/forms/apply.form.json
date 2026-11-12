@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-intermediary-licensing/apply",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ins.intermediary-licensing",
   "title": {
     "en": "Intermediary application",
@@ -52,7 +52,9 @@
     },
     {
       "id": "netWorth",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Net worth (INR)",

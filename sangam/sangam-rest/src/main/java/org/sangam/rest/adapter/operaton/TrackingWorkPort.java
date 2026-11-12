@@ -189,6 +189,26 @@ public class TrackingWorkPort implements WorkPort {
 
     @Override
     public List<ExternalWork> fetchAndLock(RequestContext ctx, FetchAndLockRequest request) {
+        return attempt(ctx, prepare(ctx, request), request.asyncResponseTimeoutMs());
+    }
+
+    /**
+     * One fetch-and-lock call as seen by the console, split for the non-blocking long-poll (M-053): {@link #prepare}
+     * records the call once per HTTP request (calls, topics, lock durations) and removes paused topics;
+     * {@link #attempt} fetches (the long-poll: without waiting) and records the leases. The synchronous
+     * {@link #fetchAndLock} is the same two steps with the request's own wait.
+     *
+     * @param filtered     the request without paused topics
+     * @param allPaused    every requested topic is paused: nothing is fetched (R63)
+     * @param pausedWaitMs how long a request whose topics are all paused waits before its empty answer (at most 1 s, so a
+     *                     polling worker does not spin)
+     */
+    public record Prepared(Worker worker, FetchAndLockRequest filtered, boolean allPaused,
+                           long pausedWaitMs) {
+    }
+
+    /** Records the call and filters paused topics (once per HTTP request). */
+    public Prepared prepare(RequestContext ctx, FetchAndLockRequest request) {
         String tenant = ctx.tenantId();
         Worker w = worker(tenant, request.workerId());
         w.calls.incrementAndGet();
@@ -204,14 +224,30 @@ public class TrackingWorkPort implements WorkPort {
         if (open.isEmpty() && !topics.isEmpty()) {
             long wait = Math.min(PAUSED_WAIT_MS,
                     request.asyncResponseTimeoutMs() == null ? 0 : Math.max(0, request.asyncResponseTimeoutMs()));
-            sleep(wait);
-            return List.of();
+            return new Prepared(w, request, true, wait);
         }
         FetchAndLockRequest filtered = open.size() == topics.size() ? request
                 : new FetchAndLockRequest(request.workerId(), open, request.maxTasks(), request.asyncResponseTimeoutMs(),
                 request.usePriority());
-        List<ExternalWork> locked = call(w, () -> delegate.fetchAndLock(ctx, filtered));
-        Map<String, String> owners = leaseOwner.computeIfAbsent(tenant, t -> new ConcurrentHashMap<>());
+        return new Prepared(w, filtered, false, 0);
+    }
+
+    /**
+     * Fetches for a prepared call and records the leases. {@code waitMs} is passed to the delegate as its
+     * {@code asyncResponseTimeoutMs}: 0 (or null) for one attempt without waiting, as the long-poll uses it. A call
+     * whose topics are all paused fetches nothing; it waits {@code min(waitMs, pausedWaitMs)} first (0: not at all).
+     */
+    public List<ExternalWork> attempt(RequestContext ctx, Prepared p, Long waitMs) {
+        if (p.allPaused()) {
+            sleep(Math.min(p.pausedWaitMs(), waitMs == null ? 0 : Math.max(0, waitMs)));
+            return List.of();
+        }
+        FetchAndLockRequest r = p.filtered();
+        FetchAndLockRequest once = java.util.Objects.equals(r.asyncResponseTimeoutMs(), waitMs) ? r
+                : new FetchAndLockRequest(r.workerId(), r.topics(), r.maxTasks(), waitMs, r.usePriority());
+        Worker w = p.worker();
+        List<ExternalWork> locked = call(w, () -> delegate.fetchAndLock(ctx, once));
+        Map<String, String> owners = leaseOwner.computeIfAbsent(ctx.tenantId(), t -> new ConcurrentHashMap<>());
         for (ExternalWork e : locked) {
             w.leases.add(e.id());
             owners.put(e.id(), w.workerId);

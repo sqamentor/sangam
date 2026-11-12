@@ -1,6 +1,6 @@
 {
   "key": "core/recommendation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sangam.core",
   "title": {
     "en": "Recommendation",
@@ -75,6 +75,24 @@
       "label": {
         "en": "Reason for marking out of hierarchy",
         "hi": "पदानुक्रम से बाहर चिह्नित करने का कारण"
+      }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
+    },
+    {
+      "id": "rejectionRemarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Rejection remarks",
+        "hi": "अस्वीकृति संबंधी टिप्पणी"
       }
     },
     {

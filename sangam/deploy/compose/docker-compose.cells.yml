@@ -35,6 +35,9 @@ x-cell-env: &cell-env
   SANGAM_ROLLUP_INGEST_URL: http://rollup:8095/api/v1/ingest
   SANGAM_ROLLUP_TOKEN: dev-rollup-ingest-token
   SANGAM_OUTBOX_DESTINATIONS: rollup:national
+  # DEVELOPMENT value: this local two-cell example is an India deployment. The server has no default jurisdiction
+  # (SL-104, ADR-D-20); every deployment sets its own.
+  SANGAM_CELL_JURISDICTION: IN
 
 services:
   cells-postgres:

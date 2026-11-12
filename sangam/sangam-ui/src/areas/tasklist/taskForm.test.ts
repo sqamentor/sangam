@@ -2,6 +2,10 @@
 // SL-37: the task screen loads embedded forms through the Sangam API (task-level check), never /engine-rest, which
 // task users cannot reach (403).
 import { afterEach, describe, expect, it, vi } from 'vitest';
+// Imported statically: a dynamic import inside the test body made vitest transform and load the whole API module
+// graph (endpoints, adapters, client, config) inside the 5 s test timeout, which under full-suite load (parallel
+// workers transforming jsdom suites) took seconds and timed out. Module loading now happens at collection time.
+import { api } from '../../api/endpoints';
 import { taskFormToSchema } from '../../components/embeddedForm';
 import type { TaskForm } from '../../api/types';
 import taskDetailSource from './TaskDetail.tsx?raw';
@@ -16,7 +20,6 @@ describe('task form loading', () => {
     const body: TaskForm = { taskId: 't 1', kind: 'EMBEDDED', formKey: 'embedded:deployment:f.html', contentType: 'text/html', content: '<form></form>' };
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } }));
     vi.stubGlobal('fetch', fetchMock);
-    const { api } = await import('../../api/endpoints');
     const f = await api.tasks.form('t 1');
     expect(f).toEqual(body);
     const url = String((fetchMock.mock.calls[0] as unknown[])[0]);

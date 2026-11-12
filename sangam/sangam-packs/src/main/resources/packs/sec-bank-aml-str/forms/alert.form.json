@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-aml-str/alert",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.aml-str",
   "title": {
     "en": "AML alert",

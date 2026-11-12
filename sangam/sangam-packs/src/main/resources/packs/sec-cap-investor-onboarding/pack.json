@@ -1,6 +1,6 @@
 {
   "id": "sec.cap.investor-onboarding",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Investor onboarding (KRA KYC, demat and trading account)",
     "hi": "निवेशक पंजीकरण (केआरए केवाईसी, डीमैट एवं ट्रेडिंग खाता)"
@@ -104,5 +104,14 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
 }

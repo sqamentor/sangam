@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_uw" name="Underwriting route (SYNTHETIC grid)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ins-uw" name="Underwriting route (SYNTHETIC grid)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-ins-uw" name="Underwriting route (SYNTHETIC grid)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-ins-uw_t" hitPolicy="FIRST">
       <input id="sec-ins-uw_i0" label="Age"><inputExpression id="sec-ins-uw_ie0" typeRef="integer"><text>age</text></inputExpression></input>
       <input id="sec-ins-uw_i1" label="Sum assured"><inputExpression id="sec-ins-uw_ie1" typeRef="number"><text>sumAssured</text></inputExpression></input>
@@ -21,7 +21,7 @@
       </rule>
       <rule id="sec-ins-uw_r1"><description>above 1 crore</description>
         <inputEntry id="sec-ins-uw_r1_i0"><text>-</text></inputEntry>
-        <inputEntry id="sec-ins-uw_r1_i1"><text>&gt; 10000000</text></inputEntry>
+        <inputEntry id="sec-ins-uw_r1_i1"><text>&gt; 1000000000</text></inputEntry>
         <inputEntry id="sec-ins-uw_r1_i2"><text>-</text></inputEntry>
         <outputEntry id="sec-ins-uw_r1_o0"><text>"MANUAL"</text></outputEntry>
         <outputEntry id="sec-ins-uw_r1_o1"><text>true</text></outputEntry>

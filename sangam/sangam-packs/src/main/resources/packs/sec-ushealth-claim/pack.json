@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.claim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Claim submission, status, remittance posting, denial and appeal",
     "es": "Envío de reclamaciones, estado, contabilización de remesas, denegación y apelación"
@@ -137,5 +137,15 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "patientBalance",
+      "totalCharge",
+      "writeOffAmount"
+    ]
+  }
 }

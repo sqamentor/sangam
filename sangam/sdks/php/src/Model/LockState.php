@@ -11,20 +11,20 @@ final class LockState
         public readonly ?string $id,
         public readonly ?int $lockVersion,
         public readonly ?string $lockExpiresAt,
-        public readonly bool $cancelRequested,
+        public readonly ?bool $cancelRequested,
     ) {
     }
 
     public static function fromArray(mixed $d): self
     {
         if (!is_array($d)) {
-            return new self(null, null, null, false);
+            return new self(null, null, null, null);
         }
         return new self(
             isset($d['id']) && is_scalar($d['id']) ? (string) $d['id'] : null,
             isset($d['lockVersion']) && is_numeric($d['lockVersion']) ? (int) $d['lockVersion'] : null,
             isset($d['lockExpiresAt']) && is_string($d['lockExpiresAt']) ? $d['lockExpiresAt'] : null,
-            (bool) ($d['cancelRequested'] ?? false),
+            isset($d['cancelRequested']) ? (bool) $d['cancelRequested'] : null,
         );
     }
 }

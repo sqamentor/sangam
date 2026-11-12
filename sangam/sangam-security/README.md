@@ -250,12 +250,15 @@ Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in t
   benchmark, and an H2 unit suite for the compiler and the services.
 - SCIM 2.0 provisioning (R67, Stage D) is not implemented.
 - SAML 2.0 / Parichay SSO (AJ-05) is configuration of the IdP (Keycloak brokers SAML). No SAML code is in this module.
-  `IDP_CONFIGURED` metadata management is not implemented.
+  IdP records (protocol, issuer, metadata URL, attribute mapping, MFA, session timeout) are managed outside this module,
+  by sangam-rest `JdbcIdentityAdminAdapter`: create and update audit `IDP_CONFIGURED`, and any change puts the record
+  back to DRAFT until it is tested again. The connection test covers OIDC discovery only; other protocols get a
+  failed test result.
 - Break-glass accounts (AJ-05 step 7) are not implemented as a separate mechanism. A time-limited API token plus an
   alert on use would cover them.
 - Merkle checkpoints of the audit chain (X.2.3.4 rule 4) are a core `AuditChain` gap, not handled here.
 - Field-mask checks are per resource: lists cost one object check per row and classified permission. A set-based
   projection would be faster.
 - Field encryption has no scheduled re-encryption job; values move to the new key when rewritten (`reencrypt`).
-- R82 strategies (round-robin, least-loaded, skills) are not implemented. Only seat resolution and candidate exclusion
-  exist; the strategies are Stage D.
+- R82 strategies are not in this module, which provides seat resolution and candidate exclusion only. The strategies
+  (ROUND_ROBIN, LEAST_LOADED, SKILLS, PRIORITY) are the pack delegate `AssignmentStrategyDelegate` in sangam-packs.

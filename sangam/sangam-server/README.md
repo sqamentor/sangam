@@ -23,8 +23,13 @@ curl http://localhost:8081/actuator/health/readiness
 Packaged jar (PropertiesLauncher, `<layout>ZIP</layout>`). Extra drivers come from `loader.path`:
 
 ```
-java -Dloader.path=/opt/sangam/lib-ext -jar sangam-server-0.1.0-SNAPSHOT.jar --spring.profiles.active=postgres,oidc
+java -Duser.timezone=UTC -Dloader.path=/opt/sangam/lib-ext -jar sangam-server-0.1.0-SNAPSHOT.jar --spring.profiles.active=postgres,oidc
 ```
+
+The JVM must run in UTC (SL-53): the server refuses to start with any other default time zone, before any bean.
+`spring-boot:run` forks the JVM with `-Duser.timezone=UTC` (pom), the image sets it in `JAVA_TOOL_OPTIONS`, and the
+build passes it to every test JVM. The business zone of timers is `sangam.engine.timer-zone` (default `UTC`); see
+deploy/README.md section 1.3.
 
 The fat jar does **not** contain the MariaDB driver (LGPL-2.1, LIC-4/LIC-5). It is excluded from `repackage`. The image adds it to `/opt/sangam/lib-ext`, as does the Oracle `ojdbc` driver supplied by the customer. Inside the build, `spring-boot:run` and tests still have the MariaDB driver on the runtime class path.
 
@@ -78,9 +83,27 @@ Both modes put an `org.sangam.rest.port.SangamPrincipal` on the request as the a
 Coarse rules:
 - open: `/actuator/health/**`, `/actuator/info`, `/livez`, `/readyz` and `/api/v1/openapi.yaml`;
 - `/api/**` needs authentication;
-- `/engine-rest/**` needs `sangam-admin` or `sangam-engine-admin` (Operaton's own authorization stays **off**);
-- other actuator endpoints need `sangam-operator` or `sangam-admin`;
+- `/engine-rest/**` needs `sangam-admin` (platform) or `sangam-engine-admin` (Operaton's own authorization stays **off**);
+- other actuator endpoints need a platform identity with `sangam-operator` or `sangam-admin` (SL-70);
 - everything else is denied.
+
+**Platform issuer (SL-70).** Platform and tenant identities are told apart by the token's verified issuer, never by a
+group alone:
+- `sangam.security.platform-issuer` (env `SANGAM_SECURITY_PLATFORM_ISSUER`, comma-separated) lists the issuers of the
+  separate platform realm. Only their tokens are platform identities: they keep their groups and get the marker group
+  `sangam-platform`; with `sangam-admin` they are the platform administrator (also the sangam-security role
+  `platform-admin`). `sangam.security.platform-jwk-set-uri` replaces OIDC discovery for a single platform issuer.
+- In every other token (tenant realm, dev token whose `sangam.security.dev-token.issuer` is not listed, API tokens
+  `sgm_...`) `sangam-admin` becomes `sangam-tenant-admin`, the administrator of the token's own tenant, and the
+  platform-only groups and roles (`sangam-admin`, `platform-admin`, `sangam-platform`, `sangam-system`) are removed,
+  also when they come from the organisation model.
+- Nothing configured: nobody is a platform administrator. A platform issuer equal to the tenant issuer is refused at
+  startup. A token claiming a platform issuer is verified only against that issuer's keys.
+- Platform-only operations: onboarding (`/api/v1/onboarding/**`, including `packs/resolve` and bundles of any tenant),
+  tenant creation, the engine-wide history cleanup (`POST /api/v1/ops/cleanup`, any platform identity with
+  `ops.write`), writes to other tenants' configuration profiles, untenanted engine objects, the actuator.
+- The `h2` (development) profile lists the dev token's issuer `urn:sangam:dev-token`, so the local dev token is the
+  platform identity there.
 
 Errors are RFC 9457 `application/problem+json` (`UNAUTHENTICATED`, `ACTION_NOT_PERMITTED`, `SEAT_NOT_HELD`). The API is stateless (no session, no CSRF). CORS comes from `sangam.security.cors.allowed-origins`.
 
@@ -154,7 +177,7 @@ All five modules are wired. The wiring classes live in `config/`:
 - **Job identity.** `EngineWiring` installs `TenantContext::runAs` as the engine's job identity binder (VI.4 rule 7).
   - `IdentityExtrasPort` (core): `PrivilegeService` + `ApiTokenService`.
 - **Errors.** `SecurityProblemAdvice` maps `SangamSecurityException` to problem+json.
-- **Dev bootstrap.** `SecurityBootstrap`, h2 only, creates tenant `dev` and an allow-all policy for `sangam-admin`. It is refused when `sangam.security.production=true`.
+- **Dev bootstrap.** `SecurityBootstrap`, h2 only, creates tenant `dev` and an allow-all policy for `sangam-admin` and `sangam-tenant-admin`. It is refused when `sangam.security.production=true`.
 
 **Integration.**
 - **Services.** Outbox writer and relay, inbox (engine transaction), ledger, `LedgerExpiryPolicy` (A-10, through the engine settings), lifecycle and erasure, reconciliation, maintenance, connector registry, `IntegrationBridge.install`, connector worker (`sangam.integration.topics`).
@@ -188,6 +211,7 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 - **Runtime ports.** `PackRuntime` gets the audit chain, the security seat directory, the engine clock, and **`JdbcLedgerStore` / `JdbcBatchLedger`** from sangam-engine. The lock timeout is `sangam.packs.ledger.lock-timeout`, default 5 s.
 - **Deployment.** `PackRegistry.discover()` + `PackDeployer`, with start-up deployment for `sangam.packs.tenants` when `sangam.packs.deploy-on-start` is set (default true on h2).
 - **Per-tenant provisioning.** `PacksTenantDeployer.ensureDeployed(tenant)` runs automatically after a tenant is created or activated through `/admin/tenants`, and before a `/packages/{id}/transitions` `deploy`. A decorator in `PacksWiring` does this.
+- **One operation per pack and tenant (SL-116).** `PacksWiring` gives the one `PackDeployer` a `bridge/PackOperationTxLock`, so deploy, rollback and uninstall of a pack run inside a Spring transaction (joined when the caller has one) that first row-locks the pack's mark in `EVT_DEFINITION_SEQ` (kind `pack`, key = tenant scope and pack id). The engine joins that transaction on the same connection, so the lock and the deployment commit together. The wait is bounded by `sangam.packs.operation.lock-timeout` (default 10 s): PostgreSQL `SET LOCAL lock_timeout`; SQL Server, MySQL and H2 a session lock wait that is set back right after the lock statement; Oracle `FOR UPDATE WAIT 2`. A lock-wait timeout is reported as `PACK_OPERATION_IN_PROGRESS`, which is 409 on the pack lifecycle API and in tenant provisioning (`PacksTenantDeployer`); a rejected pack stays 422 `PACK_REJECTED`. Another pack or another tenant is not blocked. Deploy several packs in one caller transaction only when no concurrent operation on them is possible (sangam-packs README §2). Coded, tests written (`PackOperationLockTest`, `PackOperationTxLockTest`, `PacksTenantDeployerTest`, `PackOperationLockH2Test`, `DefinitionVersionsPackKindH2Test`), not yet run.
 - **REST side of the pack contract** (sangam-rest):
   - the task-local variables `actingPerson`, `actingSeat` and `presentedPayloadHash` are set on every completion and return;
   - `initiator`, `initiatorPerson` and `initiatorSeat` are set at start;
@@ -214,7 +238,7 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
   - `logs.seal` (last segment to the start of today, UTC) then `purgeExpired`, daily;
   - `ntp.check` hourly;
   - `integrity.verifyTenant` daily.
-  The tenants come from the tenant directory (`AdminPort`, as the system principal) plus `sangam.compliance.tenants`.
+  The tenants come from the tenant directory: `config/ScheduleTenants.resolve` reads every page of it as the system principal (`system:compliance`, home tenant from `AttributionTenant`: `sangam.tenant.default`, else `default`) and skips `SUSPENDED` tenants (SL-117). `sangam.compliance.tenants` (`SANGAM_COMPLIANCE_TENANTS`) is only an optional list of extra tenants on top of it; there is no yaml fallback. The compliance schedule then keeps only the tenants with an effective jurisdiction (`sangam.compliance.jurisdictions`, `sangam.compliance.tenant-jurisdictions.<tenant>` or onboarding). The directory read goes through `TenantAdminService.listForSystem` (sangam-security), a read-only listing of tenant id and status that only the system principal may call; the platform-admin `list` refused the system principal with 403, which was the root cause of the empty schedule. The same reader serves the compliance, channels, case, AI, field and ops schedules. `config/ScheduleTenantsMonitor` logs a WARN naming the scheduler when a schedule turns empty, then at most once every 5 minutes while it stays empty (so the 5-minute compliance cycle warns every cycle). A failed directory read is logged at WARN at once, then at most every 5 minutes per scheduler while it persists, with one INFO line on recovery; the next cycle retries. Metrics, tagged `scheduler`: `sangam.schedule.tenants`, `sangam.schedule.empty` and `sangam.schedule.directory_failures` (every failure counted). Coded, tests written (`ScheduleTenantsTest`, `ScheduleTenantsMonitorTest`, `ComplianceSchedulerEmptyTest`, and in sangam-security `TenantAdminServiceSystemListingH2Test`), not yet run.
 - **Engine hooks** (`bridge/CompliancePurposePlugin`, ordered after the ports plugin):
   - Built-in process start and end listeners run `nationalIds.requireNoRawIdentifiers` on every start.
   - For a declared purpose (`operaton:property name="sangam:purpose"`, or the start variable `sangamPurpose`), the start also runs `purposeBinding.require` for the principal in `sangam:principalVariable` (default `sangamApplicantId`) plus `retention.track`; the end runs `onPurposeCompleted`.
@@ -280,7 +304,7 @@ Flowable worker compatibility is served at `/api/v1/compat/flowable/external-job
 | PR-5 (FW-02) | `config/PortsWiring`, `application.yaml` | `sangam.ports.events.max-payload-bytes` (default 1 MiB) goes to `InboundEventProcessor`. `spring.servlet.multipart.max-file-size` / `max-request-size` follow the content limit (256MB / 260MB, spill to disk above 1 MB). JSON bodies are bounded by the event payload limit and by `Json.MAPPER` (16 MiB) |
 | PR-6 (FW-16) | `bridge/PortsHistoryBridge` | Probed and capped ports totals are reported as "more than N" (`X-Total-Count-Capped: true`, total = lower bound), and the REST `sangam.rest.count-cap` applies on top |
 | PR-7 (FW-28, FW-32) | `sangam-integration` `inbox/InboxService` | An `IllegalArgumentException` (ports' `PortsProblem`, also when wrapped by the engine transaction) from a source handler such as `evt:*` → `EventDispatcher` is permanent. The row is parked after the first failure: INBOX state EXPIRED, claim released, plus an `INTEGRATION_DEAD_LETTER` entry (kind INBOX, reason `PERMANENT <code>: ...`) in one transaction. Transient errors keep the BUFFERED/TTL path. If parking itself fails, the row is buffered |
-| PR-8 (FW-28) | `inbox/KafkaInboxConsumer`, `inbox/JmsInboxListener` | Reviewed, not changed. Both commit/ack the broker only after `InboxService.receive` committed. Unmappable messages and foreign-tenant messages are acked (dropped and logged). Back-pressure and other runtime errors (database) are not acked (Kafka seeks back; JMS rolls back). **Gap:** `InboxService.receive` parses the payload (`Json.tree`), so malformed JSON in a mappable message is an `IllegalArgumentException` caught as an infrastructure error, and it is redelivered forever. It should be acked as a poison message (WS-INTEGRATION) |
+| PR-8 (FW-28) | `inbox/KafkaInboxConsumer`, `inbox/JmsInboxListener` | Reviewed, not changed. Both commit/ack the broker only after `InboxService.receive` committed. Unmappable messages and foreign-tenant messages are acked (dropped and logged). Back-pressure and other runtime errors (database) are not acked (Kafka seeks back; JMS rolls back). The former gap (malformed JSON in a mappable message was caught as an infrastructure error and redelivered forever) is fixed: `InboxService.receive` checks the payload first and throws `PoisonInbound.PoisonMessageException`, and both consumers catch it, write the dead letter, reconciliation item and audit entry through `PoisonInbound`, then ack (if that write fails, the message is not acked and comes back; with no dead-letter store configured it is logged and dropped) |
 
 **Testing phase (scenarios, not run):**
 - **Flowable worker compatibility:** a client that does not echo the lock version gets 409. With the opt-in on: a wrong attempt id gets 409 `STALE_LEASE`, and a correct one completes and writes `UNFENCED_WORKER_CALL`.
@@ -353,7 +377,7 @@ Plugin order (`bridge/EngineConfigurationCustomizer`): Sangam → security → i
 
 Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines start with no external data sources or HTTP egress.
 
-**Platform access.** `/engine-rest/**`, all methods, requires `sangam-admin` or `sangam-engine-admin`. **First administrator:** set `sangam.security.first-admins.*` at install, with subjects from the identity provider; no API creates a user without authentication. Verified UI plugins are served at `/api/v1/plugins/ui`.
+**Platform access.** `/engine-rest/**`, all methods, requires `sangam-admin` (only from a platform issuer, SL-70) or `sangam-engine-admin`. **First administrator:** set `sangam.security.first-admins.*` at install, with subjects from the identity provider; no API creates a user without authentication. Verified UI plugins are served at `/api/v1/plugins/ui`.
 
 ### Settings of the premium wave (ai, channels, modeller, ops, 835)
 

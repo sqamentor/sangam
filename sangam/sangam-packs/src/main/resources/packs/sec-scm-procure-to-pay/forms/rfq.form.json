@@ -1,6 +1,6 @@
 {
   "key": "sec-scm-procure-to-pay/rfq",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.scm.procure-to-pay",
   "title": {
     "en": "Collect quotations and comparative statement",
@@ -25,7 +25,9 @@
     },
     {
       "id": "unitPrice",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Unit price (INR)",

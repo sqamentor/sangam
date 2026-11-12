@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-cheque-return/complaint",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.cheque-return",
   "title": {
     "en": "File complaint before the magistrate (one month)",

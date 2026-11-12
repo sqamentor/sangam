@@ -40,10 +40,7 @@ public class EngineWiring {
         s.setApplyEnginePatches(true);
         s.setJobExecutorActivate(env.getProperty("operaton.bpm.job-execution.enabled", Boolean.class, true));
         s.setRequireSqlServerRcsi(env.getProperty("sangam.db.require-rcsi", Boolean.class, true));
-        String tenant = env.getProperty("sangam.tenant.default");
-        if (tenant != null && !tenant.isBlank()) {
-            s.setDefaultTenantId(tenant);
-        }
+        s.setDefaultTenantId(AttributionTenant.resolve(env)); // SL-86: the one attribution-tenant resolver
         // FLOWABLE-INTO-OPERATON FC-55: WS-PORTS' CMMN event listeners are on when the ports module is (note 12)
         s.setCmmnEventListenersEnabled(env.getProperty("sangam.ports.cmmn-event-listeners", Boolean.class, true));
         meters.ifAvailable(r -> s.setMetrics(new EngineMicrometerMetrics(r)));

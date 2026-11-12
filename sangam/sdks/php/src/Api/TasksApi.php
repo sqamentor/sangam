@@ -53,34 +53,41 @@ final class TasksApi extends ApiSupport
 
     /**
      * Decision on the task, bound to the payload hash (hex SHA-256 of the material payload) and case version the
-     * user saw (VI.4 rule 5); a mismatch gives 409 APPROVAL_INVALIDATED.
+     * user saw (VI.4 rule 5); a mismatch gives 409 APPROVAL_INVALIDATED. $reasonCode, $nextSeatId and $nextSeatReason
+     * are the CompleteTaskRequest routing members; null members are not sent.
      *
      * @param array<string, mixed>|null $variables
      * @return array<string, mixed> CompleteTaskResult {taskId, processInstanceId, decision, payloadHash, instanceEnded, nextTaskIds}
      */
     public function complete(string $taskId, string $payloadHash, ?array $variables = null, ?string $decision = null,
                              ?string $remarks = null, ?int $caseVersion = null, ?string $formVersion = null,
-                             ?string $idempotencyKey = null): array
+                             ?string $idempotencyKey = null, ?string $reasonCode = null, ?string $nextSeatId = null,
+                             ?string $nextSeatReason = null): array
     {
         return (array) $this->call(ApiRequest::post('/tasks/' . self::seg($taskId) . '/complete')
             ->body(['payloadHash' => $payloadHash, 'caseVersion' => $caseVersion, 'decision' => $decision,
-                'remarks' => $remarks, 'formVersion' => $formVersion, 'variables' => Json::obj($variables)])
+                'remarks' => $remarks, 'formVersion' => $formVersion, 'variables' => Json::obj($variables),
+                'reasonCode' => $reasonCode, 'nextSeatId' => $nextSeatId, 'nextSeatReason' => $nextSeatReason])
             ->idempotencyKey($idempotencyKey));
     }
 
     /**
-     * Sends the task back (for example to the initiator) with a mandatory reason.
+     * Sends the task back (for example to the initiator) with a mandatory reason (ReturnTaskRequest). $targetSeatId /
+     * $targetLevel select the level returned to; $payloadHash / $caseVersion bind the return to what the user saw.
+     * Null members are not sent.
      *
      * @param array<string, mixed>|null $variables
-     * @return array<string, mixed> CompleteTaskResult
+     * @return array<string, mixed> CompleteTaskResult {taskId, processInstanceId, decision, payloadHash, instanceEnded, nextTaskIds}
      */
     public function returnTask(string $taskId, string $reason, ?string $reasonCode = null,
                                ?string $targetActivityId = null, ?array $variables = null,
-                               ?string $idempotencyKey = null): array
+                               ?string $idempotencyKey = null, ?string $targetSeatId = null, ?int $targetLevel = null,
+                               ?string $payloadHash = null, ?int $caseVersion = null): array
     {
         return (array) $this->call(ApiRequest::post('/tasks/' . self::seg($taskId) . '/return')
             ->body(['reason' => $reason, 'reasonCode' => $reasonCode, 'targetActivityId' => $targetActivityId,
-                'variables' => Json::obj($variables)])
+                'variables' => Json::obj($variables), 'targetSeatId' => $targetSeatId, 'targetLevel' => $targetLevel,
+                'payloadHash' => $payloadHash, 'caseVersion' => $caseVersion])
             ->idempotencyKey($idempotencyKey));
     }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_health_lab_tat" name="Laboratory TAT (SYNTHETIC hospital policy)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-health-lab-tat" name="Laboratory TAT (SYNTHETIC hospital policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-health-lab-tat" name="Laboratory TAT (SYNTHETIC hospital policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-health-lab-tat_t" hitPolicy="FIRST">
       <input id="sec-health-lab-tat_i0" label="Priority"><inputExpression id="sec-health-lab-tat_ie0" typeRef="string"><text>priority</text></inputExpression></input>
       <output id="sec-health-lab-tat_o0" label="TAT" name="tatSpec" typeRef="string"/>

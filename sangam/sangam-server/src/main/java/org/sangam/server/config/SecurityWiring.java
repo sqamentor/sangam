@@ -152,8 +152,10 @@ public class SecurityWiring {
             List<String> tenants = List.of(env.getProperty("sangam.security.bootstrap.tenants", String[].class,
                     new String[]{env.getProperty("sangam.security.dev-token.tenant", "dev")}));
             List<String> groups = List.of(env.getProperty("sangam.security.bootstrap.admin-groups", String[].class,
-                    new String[]{"sangam-admin"}));
-            SecurityBootstrap.run(security, sangamProductTransactions, tenants, groups, props.isProduction());
+                    // SL-70: sangam-admin in a tenant token arrives as sangam-tenant-admin
+                    new String[]{"sangam-admin", "sangam-tenant-admin"}));
+            SecurityBootstrap.run(security, sangamProductTransactions, tenants, groups,
+                    ProductionEnvironment.isProduction(env)); // SL-109
         };
     }
 }

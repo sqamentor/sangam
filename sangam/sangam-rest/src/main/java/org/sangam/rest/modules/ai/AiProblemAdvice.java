@@ -30,6 +30,12 @@ public class AiProblemAdvice {
         return send(ApiProblem.conflict(code, e.getMessage()), req);
     }
 
+    /** SL-87: the model returned no content; 422 is the documented refusal of POST /ai/drafts (sangam-api.yaml). */
+    @ExceptionHandler(DraftService.EmptyDraftException.class)
+    public ResponseEntity<Map<String, Object>> emptyDraft(DraftService.EmptyDraftException e, HttpServletRequest req) {
+        return send(ApiProblem.unprocessable("DRAFT_EMPTY", e.getMessage()), req);
+    }
+
     @ExceptionHandler(Llm.DisabledException.class)
     public ResponseEntity<Map<String, Object>> disabled(Llm.DisabledException e, HttpServletRequest req) {
         return send(ApiProblem.unavailable("LLM_DISABLED", e.getMessage(), 3600), req);

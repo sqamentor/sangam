@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-gfe-ppdr/apply",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.gfe-ppdr",
   "title": {
     "en": "Apply the determination, adjust the bill, release the hold",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "determinationAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount determined by the SDR entity (USD)",

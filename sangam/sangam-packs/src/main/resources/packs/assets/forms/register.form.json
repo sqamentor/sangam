@@ -1,6 +1,6 @@
 {
   "key": "assets/register",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.assets",
   "title": {
     "en": "Register asset",
@@ -25,7 +25,9 @@
     },
     {
       "id": "assetValue",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Book value (INR)",

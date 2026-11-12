@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """The reusable government approval core (IX.3) as callable BPMN building blocks."""
 from lib import C, q
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
 
 core = Pack('sangam.core', 'core', 'Government approval core', 'सरकारी अनुमोदन मूल ढाँचा', 'Core',
@@ -99,8 +100,11 @@ def recommendation():
     s.seq(ok, e1)
     entry, done = s.sla_task('rc_level', 'Recommendation | अनुशंसा', 'currentSeat', form='core/recommendation',
                              decision=('recDecision', ['recommend', 'return', 'reject', 'seekComments', 'markTo']),
+                             # SL-55: 'reject' ends in recOutcome REJECTED, which the packs route to the core
+                             # rejection: the coded reasons are asked here, as in scrutiny and sanction
                              fields=['noting', 'remarks', 'returnToLevel', 'returnReason', 'commentSeats',
-                                     'markToSeat', 'markReason', 'presentedPayloadHash'],
+                                     'markToSeat', 'markReason', 'rejectionReasonCodes', 'rejectionRemarks',
+                                     'presentedPayloadHash'],
                              spec='${recommendationSla}', on_breach='${recOnBreach}', sod=True, step_suffix='recLevel')
     s.flow(dg, entry, None, 'next level', default=True)
     g = s.xgw('rc_decGw', 'Decision?')
@@ -254,6 +258,12 @@ def execution():
     s.seq(fo, e1)
     w = s.egw('ex_wait', 'Result or window')
     s.flow(g, w, "opStatus == 'PENDING'", 'pending')
+    # SL-118: a lost response (UNKNOWN) of a connector whose outcome can be looked up (class a / b) takes the same
+    # path as PENDING: wait for the result message or the acknowledgement window, then look up (capped by
+    # maxLookups in ExternalOperationDelegate.lookup); only the first UNKNOWN, so an outcome still unknown after
+    # the lookups opens the reconciliation item below. Class (c) is never looked up here (VI.3): unchanged.
+    s.flow(g, w, "opStatus == 'UNKNOWN' && opCapability != 'C_NEITHER' && opLookups == 0",
+           'unknown, lookup possible (SL-118)')
     rm = s.catch_msg('ex_result', 'Operation result (inbox)', 'sangam.operationResult')
     to = s.catch_timer('ex_window', 'Acknowledgement window', duration='${ackWindow}')
     s.flow(w, rm)
@@ -545,7 +555,7 @@ def referral():
 def decisions():
     roles = [('SO', 100000), ('US', 500000), ('DS', 2500000), ('JS', 10000000), ('SECRETARY', 100000000)]
     core.dmn('sangam-core-competent-authority', 'Competent authority (generic amount bands)', 'FIRST',
-             [('Case type', 'caseType', 'string'), ('Amount (INR)', 'amount', 'double')],
+             [('Case type', 'caseType', 'string'), ('Amount (INR)', 'amount', 'money')],
              [('competentRole', 'Competent role', 'string')],
              [(['-', f'<= {lim}'], [q(r)], f'up to {lim}') for r, lim in roles] +
              [(['-', '-'], [q('SECRETARY')], 'above all bands')],
@@ -565,7 +575,7 @@ def decisions():
               (['-', '-'], ['0', 'false'], 'no delegated power')]
     core.dmn('sangam-core-powers', 'Delegation of powers by seat role', 'FIRST',
              [('Seat role', 'seatRole', 'string'), ('Case type', 'caseType', 'string')],
-             [('powerLimit', 'Power limit (INR)', 'double'), ('allowed', 'Allowed', 'boolean')], rules,
+             [('powerLimit', 'Power limit (INR)', 'money'), ('allowed', 'Allowed', 'boolean')], rules,
              doc='K6 / IX.5 rule 3: checked at the moment of action against the version in force. SYNTHETIC limits.')
     core.dmn('sangam-core-retention', 'Retention category by case type (R61)', 'FIRST',
              [('Case type', 'caseType', 'string')],
@@ -621,12 +631,27 @@ def build():
          'normalise': ['UPPER', 'STRIP_SPACES', 'STRIP_PUNCT'], 'sensitive': True, 'matchWeight': 6},
         {'typeKey': 'MOBILE', 'label': 'Mobile number', 'normalise': ['DIGITS_ONLY'], 'pattern': '[0-9]{10,15}',
          'sensitive': True, 'matchWeight': 4, 'appliesTo': 'PERSON'}])]
+    # the core blocks run inside a pack process; each scenario names its host (acceptance_runs.py run.process,
+    # integrator decision 2026-11-12) and carries that host's data here
     core.accept('CORE-1', 'Return to any earlier level and resubmission', ['GP-02', 'R43', 'T19'],
                 'a chain of three recommendation seats', 'level 3 returns to level 1, then all recommend',
-                'caseVersion is unchanged, the case passes levels 1..3 again, CASE_RETURNED is audited')
+                'caseVersion is unchanged, the case passes levels 1..3 again, CASE_RETURNED is audited',
+                # host: P2 file movement; subject head BUDGET puts the file up SO > US > DS (p2-put-up-to)
+                {'fileNo': 'B-2/15/2026-Budget', 'subject': 'Re-appropriation proposal', 'subjectHead': 'BUDGET',
+                 'noting': 'Proposal for approval.', 'draftLetter': 'Draft order.', 'actingSeat': 'DA-B2',
+                 'initiator': 'p2.da', 'officeId': 'SEC-B2'})
     core.accept('CORE-2', 'Deemed approval keeps the state machine', ['GP-44', 'J-P4-E07', 'IX.5 rule 6'],
                 'sanctionOnBreach = DEEMED_APPROVAL', 'the sanction SLA lapses',
-                'DEEMED_DECISION by system on behalf of the seat, approval bound to the payload hash')
+                'DEEMED_DECISION by system on behalf of the seat, approval bound to the payload hash',
+                # host: P4 trade licence; p4-service-timeline gives TRADE deemedAction = DEEMED_APPROVAL
+                {'applicantName': 'Ramesh Traders', 'applicantRef': 'mobile:97XXXXXX21', 'licenceType': 'TRADE',
+                 'tradeName': 'Ramesh General Store', 'premisesAddress': 'Shop 4, Ward 7', 'premisesArea': 35.0,
+                 'durationYears': 1, 'officeId': 'WARD-7', 'initiator': 'citizen.ramesh'}, 'CLOSED')
     core.accept('CORE-3', 'Unknown outcome is never repeated for class (c)', ['AC-03', 'VI.3', 'T02'],
                 'executionConnector = pfms.payment, sim_pfms_payment = UNKNOWN_THEN_COMPLETED',
-                'the operator tries RETRY_SAME_OPERATION', 'the retry is refused; CONFIRMED_SUCCESS with evidence closes')
+                'the operator tries RETRY_SAME_OPERATION', 'the retry is refused; CONFIRMED_SUCCESS with evidence closes',
+                # host: P1 bill payment (executionConnector = pfms.payment), the bill of AC-03
+                {'payee': 'M/s Shree Constructions', 'account': '50100012345678', 'ifsc': 'SBIN0001234',
+                 'amount': 475000, 'invoiceNo': 'INV-2026-0412', 'budgetHead': '4059-01-051',
+                 'sanctionRef': 'AA/2026/77', 'actingSeat': 'CLERK-DDO', 'initiator': 'p1.clerk', 'officeId': 'DPW-X',
+                 'selectedSeat': 'AO-2', 'sim_pfms_payment': 'UNKNOWN_THEN_COMPLETED'}, 'CLOSED')

@@ -7,6 +7,7 @@ namespace Sangam\Sdk\Worker;
 use Sangam\Sdk\Log\Log;
 use Sangam\Sdk\Model\ExternalWork;
 use Sangam\Sdk\Model\TypedValue;
+use Sangam\Sdk\Model\WorkOperation;
 use Sangam\Sdk\SangamClient;
 
 /**
@@ -25,6 +26,7 @@ final class TaskContext
     private bool $cancelRequested = false;
     private bool $leaseLost = false;
     private bool $shuttingDown = false;
+    private ?string $outcomeReference = null;
     private readonly Log $log;
 
     /** @param (\Closure(TaskContext, bool): void)|null $heartbeat inline-mode heartbeat (null in fork mode) */
@@ -35,6 +37,10 @@ final class TaskContext
         Log $log,
         private readonly ?\Closure $heartbeat = null,
     ) {
+        if ($work->id === null || $work->attemptId === null || $work->lockVersion === null) {
+            // A-1: a handler runs only after the LOCKED confirmation (work id, lockVersion and attemptId)
+            throw new \InvalidArgumentException('work item without its LOCKED confirmation (id, lockVersion, attemptId)');
+        }
         $this->lockVersion = $work->lockVersion;
         $this->lockExpiresAt = $work->lockExpiresAtTs();
         $this->lastExtendedAt = microtime(true);
@@ -103,10 +109,33 @@ final class TaskContext
         return $this->lockExpiresAt;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The server-recorded operation-ledger entry of operationId (SL-16): state, attempts, capabilityClass,
+     * mayDispatch, storedOutcome. Null from servers that do not send it.
+     */
+    public function operation(): ?WorkOperation
+    {
+        return $this->work->operation;
+    }
+
+    /**
+     * Downstream reference of this work's effect (for example a payment reference). Set it in the handler; it is sent
+     * as outcome.reference on complete and recorded as the operation-ledger providerRef (SL-16).
+     */
+    public function setOutcomeReference(?string $reference): void
+    {
+        $this->outcomeReference = $reference;
+    }
+
+    public function outcomeReference(): ?string
+    {
+        return $this->outcomeReference;
+    }
+
+    /** @return array<string, mixed> the VariableMap as sent ([] when the server sent none) */
     public function variables(): array
     {
-        return $this->work->variables;
+        return $this->work->variables ?? [];
     }
 
     /**
@@ -116,10 +145,11 @@ final class TaskContext
      */
     public function variable(string $name, mixed $default = null): mixed
     {
-        if (!array_key_exists($name, $this->work->variables)) {
+        $vars = $this->variables();
+        if (!array_key_exists($name, $vars)) {
             return $default;
         }
-        $v = TypedValue::unwrap($this->work->variables[$name]);
+        $v = TypedValue::unwrap($vars[$name]);
         return $v ?? $default;
     }
 

@@ -1,6 +1,6 @@
 {
   "id": "gov.rtps",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Right to public services (time-bound delivery)",
     "hi": "लोक सेवा अधिकार (समयबद्ध प्रदाय)"
@@ -48,7 +48,11 @@
       "id": "pfms.payment",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
-      "purpose": "Compensation to the applicant"
+      "purpose": "Compensation to the applicant",
+      "simulatorBinding": {
+        "connector": "pfms-sim",
+        "operation": "pay"
+      }
     }
   ],
   "covers": [
@@ -69,5 +73,21 @@
     "sangam-core-cancellation",
     "sangam-core-closure",
     "sangam-core-rejection"
-  ]
+  ],
+  "workers": [
+    {
+      "topic": "sangam.pfms.paymentFile",
+      "connector": "pfms.payment",
+      "operation": "submitPaymentFile",
+      "capabilityClass": "c"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "officerPenalty"
+    ]
+  }
 }

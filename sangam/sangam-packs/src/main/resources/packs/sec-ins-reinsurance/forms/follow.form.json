@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-reinsurance/follow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ins.reinsurance",
   "title": {
     "en": "Follow up recovery",

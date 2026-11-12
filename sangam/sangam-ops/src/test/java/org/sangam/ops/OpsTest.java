@@ -178,7 +178,7 @@ class OpsTest {
         });
         var compiler = new org.sangam.security.policy.PolicyCompiler(org.sangam.security.dialect.SecurityDialect.H2, new org.sangam.security.policy.ResourceRegistry(), Duration.ZERO);
         GlobalSearch s = new GlobalSearch(tx, List.of(new GlobalSearch.Source("process-instance", "ACT_HI_PROCINST r", "r.ID_", "r.BUSINESS_KEY_", List.of("r.BUSINESS_KEY_"),
-                (c, w) -> new org.sangam.core.layer.SqlPredicate(compiler.visible(c, w, "HISTORIC_PROCESS_INSTANCE", org.sangam.security.policy.Permission.READ, "r").sql().replaceAll("BITAND\\(([a-z]+\\.perms), \\?\\)", "BITAND($1, CAST(? AS BIGINT))"), compiler.visible(c, w, "HISTORIC_PROCESS_INSTANCE", org.sangam.security.policy.Permission.READ, "r").params()))));  // H2 only: a cast for BITAND parameters; the compiler SQL is otherwise unchanged
+                (c, w) -> compiler.visible(c, w, "HISTORIC_PROCESS_INSTANCE", org.sangam.security.policy.Permission.READ, "r"))));  // the production binding (OpsWiring), compiler SQL unchanged on H2
         assertEquals(1, s.search(who(Set.of("ops")), "order", 5).get("process-instance").hits().size());
         assertEquals(1, OutlierAnalysis.readSamples(tx, who(Set.of("ops")), s.visibility("process-instance"), "k", "task", Set.of(), 10).size());
         tx.inTransaction(c -> AuthorizationPolicy.deny(c, D, "t", "role:ops", "*", "*", 1L << AuthorizationPolicy.Action.READ.ordinal()));

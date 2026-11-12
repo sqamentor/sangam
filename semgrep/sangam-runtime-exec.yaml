@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-094 local Semgrep rule. Test cases: sangam-runtime-exec.java (semgrep --test).
+rules:
+  - id: sangam-runtime-exec
+    languages: [java]
+    severity: ERROR
+    message: >-
+      Runtime.exec starts an operating-system process. The product runs no shell commands (script isolation, R6); a
+      real need goes through a reviewed, sandboxed worker, not the engine or the API.
+    metadata:
+      category: security
+      cwe: "CWE-78: OS Command Injection"
+      owner: M-094
+    pattern-either:
+      - pattern: Runtime.getRuntime().exec(...)
+      - pattern: (Runtime $R).exec(...)

@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
  *       recorded, voided numbers keep their row and reason, so the sequence has no unexplained gap) or
  *       {@code UNIQUE_ONLY} (numbers are unique but may skip; allocated from cached blocks without a row lock);</li>
  *   <li>{@code reset}: {@code NEVER}, {@code YEARLY}, {@code FISCAL_YEAR}, {@code MONTHLY}, {@code DAILY};</li>
+ *   <li>{@code fiscalStartMonth} (1..12): REQUIRED with {@code reset: FISCAL_YEAR} and with a {@code {fy}} or
+ *       {@code {fyStart}} token; a series without fiscal semantics has none. No fiscal year is assumed (SL-125);</li>
  *   <li>pattern tokens: {@code {seq}} / {@code {seq:W}} (zero-padded to W), {@code {prefix}}, {@code {scope}},
  *       {@code {yyyy}}, {@code {yy}}, {@code {MM}}, {@code {dd}}, {@code {fy}} (e.g. {@code 2026-27}),
  *       {@code {fyStart}}, {@code {period}}, {@code {attr:name}} (a value supplied at allocation) and {@code {check}}
@@ -28,7 +30,32 @@ import java.util.regex.Pattern;
  * </ul>
  */
 public record NumberSeriesDefinition(String seriesKey, String pattern, String prefix, String gapPolicy, String reset,
-                                     int fiscalStartMonth, long start, int blockSize, String check, Long maxValue) {
+                                     Integer fiscalStartMonth, long start, int blockSize, String check, Long maxValue) {
+
+    /** SL-125 (fail closed): fiscal semantics state their start month; none is assumed. */
+    public NumberSeriesDefinition {
+        if (fiscalStartMonth != null && (fiscalStartMonth < 1 || fiscalStartMonth > 12)) {
+            throw RegistryException.invalid("fiscalStartMonth must be 1..12");
+        }
+        if (fiscalStartMonth == null && usesFiscalYear(reset, pattern)) {
+            throw RegistryException.invalid("series " + seriesKey + ": reset FISCAL_YEAR and the {fy} / {fyStart} tokens"
+                    + " need fiscalStartMonth (1..12); no fiscal year is assumed");
+        }
+    }
+
+    /** True when the reset or the pattern has fiscal-year semantics. */
+    static boolean usesFiscalYear(String reset, String pattern) {
+        if ("FISCAL_YEAR".equals(reset)) {
+            return true;
+        }
+        Matcher t = TOKEN.matcher(pattern == null ? "" : pattern);
+        while (t.find()) {
+            if (t.group(1).equals("fy") || t.group(1).equals("fyStart")) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     private static final Pattern TOKEN = Pattern.compile("\\{([A-Za-z]+)(?::([A-Za-z0-9_.-]+))?}");
 
@@ -49,10 +76,7 @@ public record NumberSeriesDefinition(String seriesKey, String pattern, String pr
         if (!pattern.contains("{seq")) {
             throw RegistryException.invalid("pattern must contain {seq} or {seq:W}");
         }
-        int fsm = Maps.integer(m, "fiscalStartMonth", 1);
-        if (fsm < 1 || fsm > 12) {
-            throw RegistryException.invalid("fiscalStartMonth must be 1..12");
-        }
+        Integer fsm = Maps.integer(m, "fiscalStartMonth");
         return new NumberSeriesDefinition(key, pattern, Maps.str(m, "prefix", ""), gp, reset, fsm,
                 Maps.lng(m, "start") == null ? 1L : Maps.lng(m, "start"), Maps.integer(m, "blockSize", 50),
                 Maps.str(m, "check", "NONE").toUpperCase(), Maps.lng(m, "maxValue"));
@@ -62,6 +86,11 @@ public record NumberSeriesDefinition(String seriesKey, String pattern, String pr
         return Maps.of("seriesKey", seriesKey, "pattern", pattern, "prefix", prefix, "gapPolicy", gapPolicy,
                 "reset", reset, "fiscalStartMonth", fiscalStartMonth, "start", start, "blockSize", blockSize,
                 "check", check, "maxValue", maxValue);
+    }
+
+    private String fyLabel(LocalDate d) {
+        int fy = fiscalStartYear(d);
+        return fiscalStartMonth == 1 ? Integer.toString(fy) : fy + "-" + String.format("%02d", (fy + 1) % 100);
     }
 
     public boolean gapFree() {
@@ -79,15 +108,16 @@ public record NumberSeriesDefinition(String seriesKey, String pattern, String pr
         };
     }
 
+    /** The start year of the fiscal year containing {@code d}; refused for a series without a fiscal start month. */
     public int fiscalStartYear(LocalDate d) {
+        if (fiscalStartMonth == null) {
+            throw RegistryException.invalid("series " + seriesKey + " has no fiscalStartMonth; no fiscal year is assumed");
+        }
         return d.getMonthValue() >= fiscalStartMonth ? d.getYear() : d.getYear() - 1;
     }
 
     /** Formats one number. */
     public String format(long seq, String scope, LocalDate d, Map<String, ?> attrs) {
-        int fy = fiscalStartYear(d);
-        String fyLabel = fiscalStartMonth == 1 ? Integer.toString(fy)
-                : fy + "-" + String.format("%02d", (fy + 1) % 100);
         Matcher m = TOKEN.matcher(pattern);
         StringBuilder out = new StringBuilder();
         int lastEnd = 0;
@@ -104,8 +134,8 @@ public record NumberSeriesDefinition(String seriesKey, String pattern, String pr
                 case "yy" -> String.format("%02d", d.getYear() % 100);
                 case "MM" -> String.format("%02d", d.getMonthValue());
                 case "dd" -> String.format("%02d", d.getDayOfMonth());
-                case "fy" -> fyLabel;
-                case "fyStart" -> Integer.toString(fy);
+                case "fy" -> fyLabel(d);
+                case "fyStart" -> Integer.toString(fiscalStartYear(d));
                 case "period" -> periodKey(d);
                 case "attr" -> {
                     Object v = attrs == null || arg == null ? null : attrs.get(arg);

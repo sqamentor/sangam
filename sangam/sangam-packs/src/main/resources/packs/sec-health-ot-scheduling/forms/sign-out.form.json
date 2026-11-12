@@ -1,6 +1,6 @@
 {
   "key": "sec-health-ot-scheduling/sign-out",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.ot-scheduling",
   "title": {
     "en": "Sign out: counts, specimen, notes",

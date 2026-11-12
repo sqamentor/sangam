@@ -11,6 +11,7 @@ import org.operaton.bpm.engine.ProcessEngineConfiguration;
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.operaton.bpm.engine.impl.cfg.ProcessEnginePlugin;
 import org.sangam.core.engine.SangamClockHolder;
+import org.sangam.core.time.EngineTimeZone;
 import org.sangam.engine.clock.OperatonClock;
 import org.sangam.engine.db.DatabaseGuard;
 import org.sangam.engine.db.EngineDialect;
@@ -21,7 +22,9 @@ import org.sangam.persistence.SangamSchema;
  * Applies Sangam to any Operaton {@link ProcessEngineConfigurationImpl}, so it can be used from plain Java
  * ({@link SangamEngineFactory}) or from Spring, where the application owns the configuration object (for example a
  * {@code SpringProcessEngineConfiguration} bean, or a {@code StandaloneProcessEngineConfiguration} built in a
- * {@code @Bean} method). No Spring or Spring Boot type is used here.
+ * {@code @Bean} method). No Spring or Spring Boot type is used here. The JVM must run in UTC (SL-53): the constructor
+ * refuses any other default time zone, an unknown one included, before the first database connection
+ * ({@link EngineTimeZone#requireUtcJvm()}).
  *
  * <pre>
  *   SangamEngineConfigurer c = new SangamEngineConfigurer(settings);
@@ -39,7 +42,12 @@ public final class SangamEngineConfigurer {
     private SangamProcessEnginePlugin plugin;
     private OperatonClock.Registration engineSlot;
 
+    /**
+     * @throws IllegalStateException when the JVM default time zone is not UTC (SL-53, {@link EngineTimeZone}): the
+     *                               engine refuses to start before it touches the database
+     */
     public SangamEngineConfigurer(SangamEngineSettings settings) {
+        EngineTimeZone.requireUtcJvm();
         this.settings = settings == null ? new SangamEngineSettings() : settings;
     }
 
@@ -51,7 +59,9 @@ public final class SangamEngineConfigurer {
         if (settings.isApplyEnvironment()) {
             settings.applyEnvironment(System.getenv()); // IR-7 SANGAM_JOB_* overrides
         }
-        DataSource ds = raw instanceof IsolationGuardDataSource ? raw : new IsolationGuardDataSource(raw);
+        // SL-59: the guard also bounds socket reads on every checked-out connection without a network timeout
+        DataSource ds = raw instanceof IsolationGuardDataSource ? raw
+                : new IsolationGuardDataSource(raw, settings.getNetworkTimeout());
         findings = DatabaseGuard.check(ds, settings.isRequireSqlServerRcsi(), settings.getMysqlDatabaseType());
         if (findings.dialect() == EngineDialect.H2) {
             DatabaseGuard.prepareH2(ds);
@@ -145,7 +155,7 @@ public final class SangamEngineConfigurer {
     }
 
     /**
-     * Frees this configurer's engine slot (D-10 one-engine-per-JVM guard). Idempotent and thread-safe. Called when the
+     * Frees this configurer's engine slot (FLOWABLE-INTO-OPERATON D-10 guard: one engine per JVM). Idempotent and thread-safe. Called when the
      * adapter closes the engine, when a build fails, and by containers that own the engine (the server releases it
      * when its Spring context closes).
      */

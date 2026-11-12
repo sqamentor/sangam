@@ -1,6 +1,6 @@
 {
   "key": "sec-edu-admission/accept",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.edu.admission",
   "title": {
     "en": "Accept offer and pay fee",

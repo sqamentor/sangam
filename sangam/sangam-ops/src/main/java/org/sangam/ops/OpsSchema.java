@@ -142,7 +142,7 @@ public final class OpsSchema {
               job_id       {str64} NOT NULL,
               chunk_seq    {int} NOT NULL,
               row_seq      {int} NOT NULL,
-              external_id  {str} NOT NULL,
+              external_id  {str},
               payload      {text} NOT NULL,
               payload_hash {str64} NOT NULL,
               state        {str64} NOT NULL,

@@ -96,7 +96,7 @@ public class CaseRecordDelegate implements JavaDelegate {
     private void retention(DelegateExecution ex) {
         String cat = Vars.field(category, ex, Vars.str(ex, "retentionCategory", "C"));
         int y = Vars.fieldInt(years, ex, Vars.intVal(ex, "retentionYears", "A".equals(cat) ? 25 : 10));
-        int review = Vars.today().getYear() + y;
+        int review = Vars.today(Vars.tenant(ex)).getYear() + y;
         ex.setVariable("retentionCategory", cat);
         ex.setVariable("retentionReviewYear", review);
         Vars.audit(ex, "RETENTION_CLASSIFIED", Vars.map("category", cat, "reviewYear", review,

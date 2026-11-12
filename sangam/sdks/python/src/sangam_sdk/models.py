@@ -67,7 +67,8 @@ class ExternalWork(_Model):
     """A locked unit of external work (VI.3). Handlers run only after this LOCKED confirmation (A-1).
 
     ``operation_id`` is stable across retries and lease expiry (R36) and is the downstream idempotency key;
-    ``attempt_id`` changes per lease (A-2). ``effect`` is not part of contract 0.1.0 (kept, optional, ignored).
+    ``attempt_id`` changes per lease (A-2). Every member is optional in the contract; the worker starts an item only
+    when ``id``, ``lock_version`` and ``attempt_id`` are present (A-1).
     """
 
     id: str = ""
@@ -79,19 +80,49 @@ class ExternalWork(_Model):
     activity_instance_id: Optional[str] = None
     business_key: Optional[str] = None
     variables: dict[str, Any] = field(default_factory=dict)
-    lock_version: int = 0
+    lock_version: Optional[int] = None
     attempt_id: Optional[str] = None
     operation_id: Optional[str] = None
     lock_expires_at: Optional[datetime] = None
     retries: Optional[int] = None
     priority: Optional[int] = None
     error_message: Optional[str] = None
-    effect: Optional[str] = None
-    #: WorkOperation (SL-16): server-recorded ledger entry of ``operation_id`` as sent (camelCase keys: ``state``,
-    #: ``attempts``, ``capabilityClass``, ``mayDispatch``, ``storedOutcome``). ``mayDispatch`` False with state
-    #: SUCCEEDED: complete from ``storedOutcome`` ({output, providerRef, duplicate}) without calling the downstream.
-    operation: Optional[dict[str, Any]] = None
+    #: WorkOperation (SL-16): server-recorded ledger entry of ``operation_id``. ``may_dispatch`` False with state
+    #: SUCCEEDED: complete from ``stored_outcome`` ({output, providerRef, duplicate}) without calling the downstream.
+    operation: Optional["WorkOperation"] = None
     _times = ("lock_expires_at",)
+
+    def __post_init__(self) -> None:
+        if isinstance(self.operation, Mapping):
+            self.operation = WorkOperation.from_dict(self.operation)
+
+
+@dataclass
+class WorkOperation(_Model):
+    """Operation-ledger entry of a leased work item (SL-16, R37). ``attempts > 1`` is a repeat attempt."""
+
+    state: Optional[str] = None
+    attempts: Optional[int] = None
+    capability_class: Optional[str] = None
+    may_dispatch: Optional[bool] = None
+    #: recorded outcome when settled: {output, providerRef, duplicate} (wire keys); None while INTENT
+    stored_outcome: Optional[dict[str, Any]] = None
+
+
+@dataclass
+class TopicRequest(_Model):
+    """One topic of a fetch-and-lock (lease default 5 min, maximum 24 h). Only ``name`` is required."""
+
+    name: str
+    lock_duration_ms: Optional[int] = None
+    variables: Optional[list[str]] = None
+    local_variables: Optional[bool] = None
+    process_definition_key: Optional[str] = None
+    business_key: Optional[str] = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Wire form; absent (None) members are not sent."""
+        return compact({camel(f.name): getattr(self, f.name) for f in fields(self)})
 
 
 @dataclass
@@ -156,6 +187,8 @@ class Task(_Model):
     priority: Optional[int] = None
     form_key: Optional[str] = None
     delegation_state: Optional[str] = None
+    #: VariableMap as sent (TypedValues not unwrapped)
+    variables: Optional[dict[str, Any]] = None
     _times = ("created", "due", "follow_up", "last_updated", "claim_time")
 
 
@@ -263,7 +296,10 @@ class AuditEntry(_Model):
     payload: Optional[Any] = None
     erased: Optional[bool] = None
     hash: Optional[str] = None
-    evidence: Optional[Any] = None
+    evidence: Optional[bool] = None
+    prev_hash: Optional[str] = None
+    entry_hash: Optional[str] = None
+    envelope: Optional[str] = None
     _times = ("occurred_at",)
 
 

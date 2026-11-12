@@ -42,10 +42,21 @@ import java.util.Map;
  */
 public class HistoryQueryService {
 
-    /** Filter; null fields are ignored. {@code finished} true = ended only, false = running only. */
+    /**
+     * Filter; null fields are ignored. {@code finished} true = ended only, false = running only.
+     * {@code activityInstanceId} narrows activity instances (by id), variables and decisions (by scope) to one activity
+     * instance.
+     */
     public record Filter(String tenantId, String definitionKey, String processInstanceId, String caseInstanceId,
                          String businessKey, String activityId, String taskDefinitionKey, String assignee, String state,
-                         Boolean finished, Instant from, Instant to) {
+                         Boolean finished, Instant from, Instant to, String activityInstanceId) {
+
+        public Filter(String tenantId, String definitionKey, String processInstanceId, String caseInstanceId,
+                      String businessKey, String activityId, String taskDefinitionKey, String assignee, String state,
+                      Boolean finished, Instant from, Instant to) {
+            this(tenantId, definitionKey, processInstanceId, caseInstanceId, businessKey, activityId, taskDefinitionKey,
+                    assignee, state, finished, from, to, null);
+        }
     }
 
     /** VI.4 predicate from WS-SECURITY over alias {@code r}; {@link #NONE} only for system callers. */
@@ -114,6 +125,7 @@ public class HistoryQueryService {
     public PageResult<ActivityRow> activityInstances(Filter f, AuthPredicate auth, PageRequest p) {
         Where w = new Where(f, auth);
         w.eq("r.process_instance_id", f.processInstanceId() != null ? f.processInstanceId() : f.caseInstanceId());
+        w.eq("r.id", f.activityInstanceId());
         w.eq("r.activity_id", f.activityId());
         w.eq("r.state", f.state());
         w.finished(f.finished(), "r.end_time");
@@ -171,6 +183,9 @@ public class HistoryQueryService {
         if (f.definitionKey() != null) {
             q.processDefinitionKey(f.definitionKey());
         }
+        if (f.activityInstanceId() != null) {
+            q.activityInstanceIdIn(f.activityInstanceId());
+        }
         boolean bounded = f.processInstanceId() != null || f.caseInstanceId() != null;
         List<VariableRow> rows = new ArrayList<>();
         List<HistoricVariableInstance> page = q.disableBinaryFetching().orderByVariableName().asc()
@@ -199,6 +214,9 @@ public class HistoryQueryService {
         }
         if (f.activityId() != null) {
             q.activityIdIn(f.activityId());
+        }
+        if (f.activityInstanceId() != null) {
+            q.activityInstanceIdIn(f.activityInstanceId());
         }
         if (f.from() != null) {
             q.evaluatedAfter(Date.from(f.from()));

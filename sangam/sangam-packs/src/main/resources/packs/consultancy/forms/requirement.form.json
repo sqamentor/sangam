@@ -1,6 +1,6 @@
 {
   "key": "consultancy/requirement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.consultancy",
   "title": {
     "en": "Consultancy requirement",
@@ -25,7 +25,9 @@
     },
     {
       "id": "estimateAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Estimated cost (INR)",

@@ -1,6 +1,6 @@
 {
   "key": "sec-nbfc-digital-lending/application",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.nbfc.digital-lending",
   "title": {
     "en": "Digital loan application",
@@ -25,7 +25,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

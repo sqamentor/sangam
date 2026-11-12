@@ -10,5 +10,12 @@ import java.util.Map;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CompleteTaskRequest(
-        String payloadHash, Long caseVersion, String decision, String remarks, String formVersion, Map<String, Object> variables) {
+        String payloadHash, Long caseVersion, String decision, String remarks, String formVersion, Map<String, Object> variables,
+        String reasonCode, String nextSeatId, String nextSeatReason) {
+
+    /** Without reasonCode / next-seat routing (all optional in the contract). */
+    public CompleteTaskRequest(String payloadHash, Long caseVersion, String decision, String remarks, String formVersion,
+                               Map<String, Object> variables) {
+        this(payloadHash, caseVersion, decision, remarks, formVersion, variables, null, null, null);
+    }
 }

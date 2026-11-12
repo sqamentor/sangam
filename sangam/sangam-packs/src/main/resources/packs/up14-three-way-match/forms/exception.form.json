@@ -1,6 +1,6 @@
 {
   "key": "up14-three-way-match/exception",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up14-three-way-match",
   "title": {
     "en": "Resolve match exception",

@@ -1,6 +1,6 @@
 {
   "key": "gem-purchase/indent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.gem-purchase",
   "title": {
     "en": "Indent",
@@ -34,7 +34,9 @@
     },
     {
       "id": "unitPrice",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Unit price (INR)",

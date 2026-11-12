@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_works_config" name="Works pack configuration: order of sanctions" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- Per department: add a row for its office. Per tenant: deploy overrides/&lt;tenant&gt;/works-config.dmn (PackDeployer with that tenant id); the tenant table wins (GP-37). -->
-  <decision id="works-config" name="Works pack configuration: order of sanctions" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="works-config" name="Works pack configuration: order of sanctions" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="works-config_t" hitPolicy="FIRST">
       <input id="works-config_i0" label="Office / department"><inputExpression id="works-config_ie0" typeRef="string"><text>officeId</text></inputExpression></input>
       <output id="works-config_o0" label="Order of sanctions" name="worksSanctionOrder" typeRef="string"/>

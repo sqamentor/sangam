@@ -3,7 +3,6 @@ package org.sangam.rest.adapter.operaton;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,7 +50,7 @@ public class OperatonDebugAdapter implements DebugPort {
         this.management = management;
         this.props = props;
         this.profile = profile == null ? "" : profile;
-        this.enabled = enabled && !this.profile.toLowerCase(Locale.ROOT).contains("prod");
+        this.enabled = enabled && !org.sangam.core.security.ProductionMode.isProductionProfile(this.profile); // SL-109
         this.sandboxTenant = sandboxTenant == null || sandboxTenant.isBlank() ? null : sandboxTenant;
     }
 

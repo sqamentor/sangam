@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ins_intermediary" name="Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ins-intermediary" name="Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-ins-intermediary" name="Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-ins-intermediary_t" hitPolicy="FIRST">
       <input id="sec-ins-intermediary_i0" label="Type"><inputExpression id="sec-ins-intermediary_ie0" typeRef="string"><text>intermediaryType</text></inputExpression></input>
       <input id="sec-ins-intermediary_i1" label="Qualification"><inputExpression id="sec-ins-intermediary_ie1" typeRef="string"><text>qualification</text></inputExpression></input>
@@ -16,7 +16,7 @@
       <rule id="sec-ins-intermediary_r1"><description>direct broker net worth (verify)</description>
         <inputEntry id="sec-ins-intermediary_r1_i0"><text>"BROKER"</text></inputEntry>
         <inputEntry id="sec-ins-intermediary_r1_i1"><text>-</text></inputEntry>
-        <inputEntry id="sec-ins-intermediary_r1_i2"><text>&gt;= 7500000</text></inputEntry>
+        <inputEntry id="sec-ins-intermediary_r1_i2"><text>&gt;= 750000000</text></inputEntry>
         <outputEntry id="sec-ins-intermediary_r1_o0"><text>true</text></outputEntry>
       </rule>
       <rule id="sec-ins-intermediary_r2">

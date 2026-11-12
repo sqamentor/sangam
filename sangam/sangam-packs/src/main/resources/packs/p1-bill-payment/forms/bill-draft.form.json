@@ -1,6 +1,6 @@
 {
   "key": "p1-bill-payment/bill-draft",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p1.bill-payment",
   "title": {
     "en": "Bill for payment",
@@ -43,7 +43,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

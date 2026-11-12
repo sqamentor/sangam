@@ -3,11 +3,16 @@
 #   every PR      : PostgreSQL + each affected Tier-1 DB when the change touches dialect-specific SQL, mappings or
 #                   migrations (shared migrations/mappings -> all Tier-1);
 #   nightly       : full Tier-1 matrix (PostgreSQL, Oracle, SQL Server, MySQL 8.4 - ARCHITECTURE.md 1.5);
-#   weekly        : Tier 2 (MariaDB, Db2 experimental) - R17;
+#   weekly        : Tier 2 (MariaDB) - R17; Db2 is unsupported (SL-114) and its leg is skipped with a LIC-3 notice (SL-112);
 #   release       : full Tier-1 matrix, mandatory (VIII.9 condition 2) - called by release.yml.
 # Images and settings = the Stage B Testcontainers set (spike/RUN-QUEUE.md): postgres:17, Oracle Free 23,
 # SQL Server 2022 with READ_COMMITTED_SNAPSHOT ON, MySQL 8.4 with READ-COMMITTED / utf8mb4.
-# Oracle JDBC is fetched by the CI build at test scope only, never shipped (LIC-2).
+# SG-05: lane sqlserver2025 (SQL Server dialect and profile on mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04,
+# the image AcceptanceDatabase uses) runs nightly and on request as tier "1-candidate": it reports but does not gate
+# until its acceptance run is green and deploy/SUPPORT-MATRIX.md declares it (then it becomes tier 1).
+# Q22 (owner 2026-11-12): the DB legs run only the database ITs (failsafe, profile sangam-it-only); the unit tests run
+# once, in ci-build.yml. SG-16: every leg records its provenance (commit, JDK, test-JVM zone, database).
+# Oracle JDBC is a test-scope dependency of sangam-server only, never shipped (LIC-2; SL-110).
 name: db-matrix
 
 on:
@@ -19,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       dbs:
-        description: "Comma-separated: postgres,oracle,sqlserver,mysql,mariadb,db2"
+        description: "Comma-separated: postgres,oracle,sqlserver,sqlserver2025,mysql,mariadb,db2"
         default: "postgres,oracle,sqlserver,mysql"
         required: true
   workflow_call:
@@ -47,6 +52,7 @@ jobs:
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       dbs: ${{ steps.plan.outputs.dbs }}
+      has_legs: ${{ steps.plan.outputs.has_legs }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -93,13 +99,14 @@ jobs:
           import json, os
           ev = os.environ["EVENT"]; sched = os.environ.get("SCHEDULE", ""); given = os.environ.get("INPUT_DBS", "")
           tier1 = ["postgres", "oracle", "sqlserver", "mysql"]
+          candidates = ["sqlserver2025"]   # SG-05: reported, not gating, until declared in SUPPORT-MATRIX
           if given.strip():
               dbs = [d.strip() for d in given.split(",") if d.strip()]
               why = "explicit input"
           elif ev == "schedule" and sched == "30 21 * * 6":
               dbs, why = ["mariadb", "db2"], "weekly Tier-2"
           elif ev == "schedule":
-              dbs, why = tier1, "nightly Tier-1"
+              dbs, why = tier1 + candidates, "nightly Tier-1 + candidates"
           elif ev == "pull_request":
               if os.environ.get("CH_SHARED") == "true":
                   dbs, why = tier1, "PR touches shared SQL / mappings / migrations"
@@ -108,25 +115,39 @@ jobs:
                   why = "PR: PostgreSQL + affected dialects"
           else:
               dbs, why = ["postgres"], "default"
-          allowed = set(tier1 + ["mariadb", "db2"])
+          allowed = set(tier1 + candidates + ["mariadb", "db2"])
           bad = [d for d in dbs if d not in allowed]
           if bad:
               raise SystemExit(f"unknown database(s): {bad}")
-          tier = {"postgres": "1", "oracle": "1", "sqlserver": "1", "mysql": "1", "mariadb": "2", "db2": "2-experimental"}
+          tier = {"postgres": "1", "oracle": "1", "sqlserver": "1", "sqlserver2025": "1-candidate", "mysql": "1",
+                  "mariadb": "2", "db2": "unsupported"}
           inc = [{"db": d, "tier": tier[d]} for d in dict.fromkeys(dbs)]
+          # SL-112: Db2 needs the IBM Db2 JCC driver, which is customer-supplied (LIC-3): this build never fetches it,
+          # so the db2 lane cannot run here. It is skipped explicitly, never failed with "unknown sangam.db".
+          db2_note = ("db2 skipped: the IBM Db2 JCC driver is customer-supplied (LIC-3) and never fetched by this "
+                      "build; run -Dsangam.db=db2 where the driver is on the test class path (AcceptanceDatabase "
+                      "refuses the lane with the reason otherwise).")
+          skipped = [d for d in inc if d["db"] == "db2"]
+          inc = [d for d in inc if d["db"] != "db2"]
+          if skipped:
+              print(f"::notice title=Db2 lane skipped (LIC-3)::{db2_note}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write("matrix=" + json.dumps({"include": inc}) + "\n")
               f.write("dbs=" + ",".join(d["db"] for d in inc) + "\n")
+              f.write("has_legs=" + ("true" if inc else "false") + "\n")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
               f.write(f"### DB matrix ({why})\n\n" + "\n".join(f"- {d['db']} (Tier {d['tier']})" for d in inc) + "\n")
+              if skipped:
+                  f.write(f"\n> **{db2_note}**\n")
           PY
 
   test:
     name: DB ${{ matrix.db }}
     needs: plan
+    if: needs.plan.outputs.has_legs == 'true'   # an empty matrix (only db2 requested) is not a valid matrix
     runs-on: ubuntu-24.04
     timeout-minutes: 150
-    continue-on-error: ${{ matrix.tier == '2-experimental' }}
+    continue-on-error: ${{ matrix.tier == 'unsupported' || matrix.tier == '1-candidate' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
@@ -136,6 +157,8 @@ jobs:
       SANGAM_IT_IMAGE_POSTGRES: postgres:17
       SANGAM_IT_IMAGE_ORACLE: gvenzl/oracle-free:23-slim-faststart
       SANGAM_IT_IMAGE_SQLSERVER: mcr.microsoft.com/mssql/server:2022-latest
+      # SG-05: must equal AcceptanceDatabase's sqlserver2025 image
+      SANGAM_IT_IMAGE_SQLSERVER2025: mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04
       SANGAM_IT_IMAGE_MYSQL: mysql:8.4
       SANGAM_IT_IMAGE_MARIADB: mariadb:11.4
       SANGAM_IT_IMAGE_DB2: icr.io/db2_community/db2:12.1.2.0
@@ -153,7 +176,7 @@ jobs:
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
       - name: Free disk space for large DB images
-        if: matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'db2'
+        if: matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'sqlserver2025' || matrix.db == 'db2'
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
           df -h /
@@ -161,13 +184,20 @@ jobs:
         run: |
           img_var="SANGAM_IT_IMAGE_$(echo '${{ matrix.db }}' | tr a-z A-Z)"
           docker pull "${!img_var}"
+      - name: Provenance (start)
+        run: python3 -I tools/provenance/run_provenance.py start --db "${{ matrix.db }}" --out target/run-provenance
       - name: Integration tests on ${{ matrix.db }}
         run: |
-          extra=""
-          # LIC-2: ojdbc at test scope through a CI-only profile; never in a shipped artefact.
-          [ "${{ matrix.db }}" = "oracle" ] && extra="-Psangam-oracle-driver"
-          [ "${{ matrix.db }}" = "db2" ] && extra="-Psangam-db2-driver"
-          mvn $MAVEN_ARGS verify -Psangam-db-it -Dsangam.db=${{ matrix.db }} $extra
+          # LIC-2 (SL-110): the Oracle driver (ojdbc11) is a test-scope dependency of sangam-server, so every lane has
+          # it on the test class path and no artefact ships it (the reactor enforcer bans it in compile/runtime scope).
+          # No Db2 JCC driver is declared anywhere: LIC-3 makes it customer-supplied; Db2 is unsupported (SL-114), and the leg is skipped with a LIC-3 notice (SL-112).
+          # Q22: sangam-it-only skips the surefire unit tests (they run in ci-build.yml); failsafe ITs still run.
+          mvn $MAVEN_ARGS verify -Psangam-db-it,sangam-it-only -Dsangam.db=${{ matrix.db }}
+      - name: Provenance (finish)
+        if: always()
+        run: |
+          python3 -I tools/provenance/run_provenance.py finish --db "${{ matrix.db }}" --out target/run-provenance \
+            --reports . --summary "$GITHUB_STEP_SUMMARY"
       - name: Reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -176,6 +206,7 @@ jobs:
           path: |
             sangam/**/target/surefire-reports/
             sangam/**/target/failsafe-reports/
+            sangam/target/run-provenance/
           if-no-files-found: ignore
           retention-days: 30
 

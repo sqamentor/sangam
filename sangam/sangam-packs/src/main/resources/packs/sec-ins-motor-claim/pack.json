@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.motor-claim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Motor claim: own damage, theft and third party",
     "hi": "मोटर दावा: स्वयं क्षति, चोरी एवं तृतीय पक्ष"
@@ -111,5 +111,16 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "assessedLoss",
+      "claimAmount",
+      "powerLimit"
+    ]
+  }
 }

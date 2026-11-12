@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -26,7 +27,11 @@ import java.util.regex.PatternSyntaxException;
  *   <li><b>Effective dating.</b> Each definition has {@code effectiveFrom} and an optional exclusive
  *       {@code effectiveTo}. A new version of a key starts after the current one and closes it on its start date, so
  *       exactly one version is in force on any date. {@link #retire} closes the current version. Nothing is deleted.</li>
- *   <li><b>Audit.</b> Every define and retire is recorded through {@link Audit} with the full definition.</li>
+ *   <li><b>Audit.</b> Every define and retire is recorded through {@link Audit} with the full definition, inside the
+ *       store's transaction, so the change and its audit row commit or roll back together.</li>
+ *   <li><b>Persistence.</b> Definitions live in a {@link Store}: in memory by default, or the shared
+ *       {@code TENANT_CUSTOM_FIELD} table ({@code JdbcTenantCustomFieldStore}). Every read goes to the store, so a
+ *       definition made on one node is in force on every node from its effective date; nothing is cached here.</li>
  *   <li><b>Validation.</b> {@link #extendSchema} merges the fields in force on a date into a form's data schema, so the
  *       one server-side validator checks shipped and custom fields alike.</li>
  * </ul>
@@ -48,6 +53,47 @@ public final class TenantCustomFieldRegistry {
         void record(String tenantId, String actor, String action, Map<String, Object> payload);
     }
 
+    /**
+     * Where the versions of the custom fields are kept. Writes are only ever an insert of a new version and the
+     * closing of an existing one ({@code effectiveTo} set), never a delete or a rewrite of any other column.
+     */
+    public interface Store {
+
+        /** Every version of one key, ordered by version (empty when the key was never defined). */
+        List<FieldDefinition> versions(String tenantId, String objectType, String key);
+
+        /** The versions in force on {@code on} for a tenant and object type (any order). */
+        List<FieldDefinition> inForce(String tenantId, String objectType, LocalDate on);
+
+        /** Every version of every field of a tenant (any order). */
+        List<FieldDefinition> history(String tenantId);
+
+        /**
+         * Adds a new version. A version that already exists (a concurrent definition of the same key) is refused
+         * with a {@link ConcurrentChangeException}.
+         */
+        void insert(String tenantId, String actor, FieldDefinition definition);
+
+        /**
+         * Sets {@code effectiveTo} of {@code current} (exclusive end). Refused with a {@link ConcurrentChangeException}
+         * when the stored version no longer ends where {@code current} says (closed or retired concurrently).
+         */
+        void close(String tenantId, String actor, FieldDefinition current, LocalDate effectiveTo);
+
+        /** Runs {@code work} as one unit: the store writes and the audit of one change commit together. */
+        <T> T inTransaction(Supplier<T> work);
+
+        /** True only when the store is known to hold no definition at all (lets callers skip the per-date read). */
+        boolean knownEmpty();
+    }
+
+    /** A definition changed concurrently (another node or request); the caller may re-read and retry. */
+    public static final class ConcurrentChangeException extends IllegalStateException {
+        public ConcurrentChangeException(String message) {
+            super("CUSTOM_FIELD_CONFLICT: " + message);
+        }
+    }
+
     /** One version of a custom field. {@code effectiveTo} is exclusive; null means open-ended. */
     public record FieldDefinition(String objectType, String key, int version, String label, boolean required,
                                   boolean readOnly, Map<String, Object> schema, LocalDate effectiveFrom,
@@ -57,11 +103,13 @@ public final class TenantCustomFieldRegistry {
             return !on.isBefore(effectiveFrom) && (effectiveTo == null || on.isBefore(effectiveTo));
         }
 
-        FieldDefinition closedAt(LocalDate to) {
+        /** This version with {@code effectiveTo} set to {@code to}. */
+        public FieldDefinition closedAt(LocalDate to) {
             return new FieldDefinition(objectType, key, version, label, required, readOnly, schema, effectiveFrom, to);
         }
 
-        Map<String, Object> toMap() {
+        /** The audit payload: every attribute of the version. */
+        public Map<String, Object> toMap() {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("objectType", objectType);
             m.put("key", key);
@@ -78,20 +126,27 @@ public final class TenantCustomFieldRegistry {
 
     private final Set<String> registeredObjects;
     private final Audit audit;
-    /** tenant -> objectType|key -> versions in order. */
-    private final Map<String, Map<String, List<FieldDefinition>>> store = new ConcurrentHashMap<>();
+    private final Store store;
 
+    /** In-memory definitions (tests, a node without a database). */
     public TenantCustomFieldRegistry(Set<String> registeredObjects, Audit audit) {
+        this(registeredObjects, audit, new InMemoryStore());
+    }
+
+    /** Definitions kept in {@code store} (production: {@code JdbcTenantCustomFieldStore}). */
+    public TenantCustomFieldRegistry(Set<String> registeredObjects, Audit audit, Store store) {
         this.registeredObjects = Set.copyOf(registeredObjects);
         this.audit = audit;
+        this.store = java.util.Objects.requireNonNull(store, "store");
     }
 
     public static TenantCustomFieldRegistry empty() {
         return new TenantCustomFieldRegistry(Set.of(), (t, a, x, p) -> { });
     }
 
+    /** True when no definition can be in force (the store is known to be empty). */
     public boolean isEmpty() {
-        return store.isEmpty();
+        return store.knownEmpty();
     }
 
     /** True for a form object type or a registered object type. */
@@ -130,9 +185,20 @@ public final class TenantCustomFieldRegistry {
     }
 
     /** Defines a new version of {@code key}; the version in force before is closed on {@code effectiveFrom}. */
+    public FieldDefinition define(String tenantId, String actor, String objectType, String key, String label,
+                                  boolean required, boolean readOnly, Map<String, Object> schema,
+                                  LocalDate effectiveFrom, LocalDate effectiveTo) {
+        return define(tenantId, actor, objectType, key, label, required, readOnly, schema, effectiveFrom, effectiveTo,
+                audit);
+    }
+
+    /**
+     * As {@link #define(String, String, String, String, String, boolean, boolean, Map, LocalDate, LocalDate)}, audited
+     * through {@code audit} instead of the registry's sink (a caller that holds the request's audit context).
+     */
     public synchronized FieldDefinition define(String tenantId, String actor, String objectType, String key, String label,
                                                boolean required, boolean readOnly, Map<String, Object> schema,
-                                               LocalDate effectiveFrom, LocalDate effectiveTo) {
+                                               LocalDate effectiveFrom, LocalDate effectiveTo, Audit audit) {
         if (tenantId == null || tenantId.isBlank()) {
             throw invalid("tenant is required");
         }
@@ -152,63 +218,76 @@ public final class TenantCustomFieldRegistry {
             throw invalid(key + ": a read-only field cannot be required");
         }
         checkSchema(key, schema, 0);
-        Map<String, List<FieldDefinition>> tenant = store.computeIfAbsent(tenantId, t -> new ConcurrentHashMap<>());
-        List<FieldDefinition> versions = tenant.computeIfAbsent(objectType + "|" + key, k -> new ArrayList<>());
-        int version = 1;
-        if (!versions.isEmpty()) {
-            FieldDefinition last = versions.get(versions.size() - 1);
-            if (!effectiveFrom.isAfter(last.effectiveFrom())) {
-                throw invalid(key + ": a new version must start after " + last.effectiveFrom()
-                        + " (history is never rewritten)");
+        Map<String, Object> frozen = Map.copyOf(schema);
+        return store.inTransaction(() -> {
+            List<FieldDefinition> versions = store.versions(tenantId, objectType, key);
+            int version = 1;
+            if (!versions.isEmpty()) {
+                FieldDefinition last = versions.get(versions.size() - 1);
+                if (!effectiveFrom.isAfter(last.effectiveFrom())) {
+                    throw invalid(key + ": a new version must start after " + last.effectiveFrom()
+                            + " (history is never rewritten)");
+                }
+                if (last.effectiveTo() == null || last.effectiveTo().isAfter(effectiveFrom)) {
+                    store.close(tenantId, actor, last, effectiveFrom);
+                }
+                version = last.version() + 1;
             }
-            if (last.effectiveTo() == null || last.effectiveTo().isAfter(effectiveFrom)) {
-                versions.set(versions.size() - 1, last.closedAt(effectiveFrom));
-            }
-            version = last.version() + 1;
-        }
-        FieldDefinition def = new FieldDefinition(objectType, key, version, label, required, readOnly,
-                Map.copyOf(schema), effectiveFrom, effectiveTo);
-        versions.add(def);
-        audit.record(tenantId, actor, "CUSTOM_FIELD_DEFINED", def.toMap());
-        return def;
+            FieldDefinition def = new FieldDefinition(objectType, key, version, label, required, readOnly, frozen,
+                    effectiveFrom, effectiveTo);
+            store.insert(tenantId, actor, def);
+            audit.record(tenantId, actor, "CUSTOM_FIELD_DEFINED", def.toMap());
+            return def;
+        });
     }
 
     /** Closes the version in force on {@code effectiveTo} (exclusive). Values already stored stay readable. */
+    public FieldDefinition retire(String tenantId, String actor, String objectType, String key, LocalDate effectiveTo) {
+        return retire(tenantId, actor, objectType, key, effectiveTo, audit);
+    }
+
+    /** As {@link #retire(String, String, String, String, LocalDate)}, audited through {@code audit}. */
     public synchronized FieldDefinition retire(String tenantId, String actor, String objectType, String key,
-                                               LocalDate effectiveTo) {
-        List<FieldDefinition> versions = store.getOrDefault(tenantId, Map.of()).get(objectType + "|" + key);
-        if (versions == null || versions.isEmpty()) {
-            throw invalid("no custom field " + key + " on " + objectType);
+                                               LocalDate effectiveTo, Audit audit) {
+        if (effectiveTo == null) {
+            throw invalid("effectiveTo is required");
         }
-        FieldDefinition last = versions.get(versions.size() - 1);
-        if (!effectiveTo.isAfter(last.effectiveFrom())) {
-            throw invalid(key + ": retirement must be after " + last.effectiveFrom());
-        }
-        if (last.effectiveTo() != null && !effectiveTo.isBefore(last.effectiveTo())) {
-            throw invalid(key + " already ends on " + last.effectiveTo());
-        }
-        FieldDefinition closed = last.closedAt(effectiveTo);
-        versions.set(versions.size() - 1, closed);
-        audit.record(tenantId, actor, "CUSTOM_FIELD_RETIRED", closed.toMap());
-        return closed;
+        return store.inTransaction(() -> {
+            List<FieldDefinition> versions = store.versions(tenantId, objectType, key);
+            if (versions.isEmpty()) {
+                throw invalid("no custom field " + key + " on " + objectType);
+            }
+            FieldDefinition last = versions.get(versions.size() - 1);
+            if (!effectiveTo.isAfter(last.effectiveFrom())) {
+                throw invalid(key + ": retirement must be after " + last.effectiveFrom());
+            }
+            if (last.effectiveTo() != null && !effectiveTo.isBefore(last.effectiveTo())) {
+                throw invalid(key + " already ends on " + last.effectiveTo());
+            }
+            store.close(tenantId, actor, last, effectiveTo);
+            FieldDefinition closed = last.closedAt(effectiveTo);
+            audit.record(tenantId, actor, "CUSTOM_FIELD_RETIRED", closed.toMap());
+            return closed;
+        });
     }
 
     /** Field versions in force for a tenant and object type on a date, ordered by key. */
     public List<FieldDefinition> inForce(String tenantId, String objectType, LocalDate on) {
-        List<FieldDefinition> out = new ArrayList<>();
-        store.getOrDefault(tenantId, Map.of()).forEach((k, versions) -> {
-            if (k.startsWith(objectType + "|")) {
-                versions.stream().filter(v -> v.inForce(on)).forEach(out::add);
-            }
-        });
+        List<FieldDefinition> out = new ArrayList<>(store.inForce(tenantId, objectType, on));
         out.sort(Comparator.comparing(FieldDefinition::key));
+        return out;
+    }
+
+    /** Every version of one field, oldest first (empty when the key was never defined). */
+    public List<FieldDefinition> versions(String tenantId, String objectType, String key) {
+        List<FieldDefinition> out = new ArrayList<>(store.versions(tenantId, objectType, key));
+        out.sort(Comparator.comparingInt(FieldDefinition::version));
         return out;
     }
 
     /** Every version of every field of a tenant (export, audit review). */
     public List<FieldDefinition> history(String tenantId) {
-        List<FieldDefinition> out = new ArrayList<>();
-        store.getOrDefault(tenantId, Map.of()).values().forEach(out::addAll);
+        List<FieldDefinition> out = new ArrayList<>(store.history(tenantId));
         out.sort(Comparator.comparing(FieldDefinition::objectType).thenComparing(FieldDefinition::key)
                 .thenComparingInt(FieldDefinition::version));
         return out;
@@ -298,5 +377,79 @@ public final class TenantCustomFieldRegistry {
 
     private static IllegalArgumentException invalid(String why) {
         return new IllegalArgumentException("CUSTOM_FIELD_INVALID: " + why);
+    }
+
+    /**
+     * Definitions in memory: tenant -> objectType|key -> versions in order. Not shared between nodes; the
+     * registry's own lock serialises writes.
+     */
+    static final class InMemoryStore implements Store {
+
+        private final Map<String, Map<String, List<FieldDefinition>>> data = new ConcurrentHashMap<>();
+
+        private List<FieldDefinition> list(String tenantId, String objectType, String key) {
+            return data.computeIfAbsent(tenantId, t -> new ConcurrentHashMap<>())
+                    .computeIfAbsent(objectType + "|" + key, k -> new java.util.concurrent.CopyOnWriteArrayList<>());
+        }
+
+        @Override
+        public List<FieldDefinition> versions(String tenantId, String objectType, String key) {
+            Map<String, List<FieldDefinition>> tenant = data.get(tenantId);
+            List<FieldDefinition> v = tenant == null ? null : tenant.get(objectType + "|" + key);
+            return v == null ? List.of() : List.copyOf(v);
+        }
+
+        @Override
+        public List<FieldDefinition> inForce(String tenantId, String objectType, LocalDate on) {
+            List<FieldDefinition> out = new ArrayList<>();
+            data.getOrDefault(tenantId, Map.of()).forEach((k, versions) -> {
+                if (k.startsWith(objectType + "|")) {
+                    versions.stream().filter(v -> v.inForce(on)).forEach(out::add);
+                }
+            });
+            return out;
+        }
+
+        @Override
+        public List<FieldDefinition> history(String tenantId) {
+            List<FieldDefinition> out = new ArrayList<>();
+            data.getOrDefault(tenantId, Map.of()).values().forEach(out::addAll);
+            return out;
+        }
+
+        @Override
+        public void insert(String tenantId, String actor, FieldDefinition definition) {
+            List<FieldDefinition> versions = list(tenantId, definition.objectType(), definition.key());
+            if (versions.stream().anyMatch(v -> v.version() == definition.version())) {
+                throw new ConcurrentChangeException(definition.key() + " v" + definition.version() + " already exists");
+            }
+            versions.add(definition);
+        }
+
+        @Override
+        public void close(String tenantId, String actor, FieldDefinition current, LocalDate effectiveTo) {
+            List<FieldDefinition> versions = list(tenantId, current.objectType(), current.key());
+            for (int i = 0; i < versions.size(); i++) {
+                FieldDefinition v = versions.get(i);
+                if (v.version() == current.version()) {
+                    if (!java.util.Objects.equals(v.effectiveTo(), current.effectiveTo())) {
+                        throw new ConcurrentChangeException(current.key() + " v" + current.version() + " changed");
+                    }
+                    versions.set(i, v.closedAt(effectiveTo));
+                    return;
+                }
+            }
+            throw new ConcurrentChangeException(current.key() + " v" + current.version() + " does not exist");
+        }
+
+        @Override
+        public <T> T inTransaction(Supplier<T> work) {
+            return work.get();
+        }
+
+        @Override
+        public boolean knownEmpty() {
+            return data.values().stream().allMatch(t -> t.values().stream().allMatch(List::isEmpty));
+        }
     }
 }

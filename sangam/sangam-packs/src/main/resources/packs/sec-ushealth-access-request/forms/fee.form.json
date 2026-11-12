@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-access-request/fee",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.access-request",
   "title": {
     "en": "Reasonable cost-based fee",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "copyFee",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Reasonable cost-based fee (USD)",

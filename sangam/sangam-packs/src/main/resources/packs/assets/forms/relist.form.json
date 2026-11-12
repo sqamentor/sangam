@@ -1,6 +1,6 @@
 {
   "key": "assets/relist",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.assets",
   "title": {
     "en": "No bid: revise reserve price and relist",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "reservePrice",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Reserve price (INR)",

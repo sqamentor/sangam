@@ -1,6 +1,6 @@
 {
   "key": "sec-health-admission-discharge/death",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.admission-discharge",
   "title": {
     "en": "Death summary and MCCD",

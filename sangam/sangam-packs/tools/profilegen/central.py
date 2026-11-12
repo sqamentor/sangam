@@ -10,7 +10,11 @@ LAYERS = {
     'layers': [
         {'id': 'international', 'overridable': True},
         {'id': 'regime', 'overridable': True},
-        {'id': 'jurisdiction', 'overridable': True, 'required': ['locale.currency', 'locale.fiscal']},
+        # SL-125 (owner 2026-11-12, fail closed core-wide): locale.fiscal is NOT a layer requirement. A jurisdiction
+        # without a fiscal year (e.g. the US health revenue-cycle reference) stays valid; the resolver warns
+        # (FISCAL_NOT_CONFIGURED) and every fiscal operation is refused until the tenant sets it. Packs that need it
+        # require it through pack-requires.json (onboarding PROFILE_KEY_MISSING).
+        {'id': 'jurisdiction', 'overridable': True, 'required': ['locale.currency']},
         {'id': 'category', 'overridable': True},
         {'id': 'government', 'overridable': True},
         {'id': 'department', 'overridable': True},
@@ -76,6 +80,10 @@ IN = {
                            'note': 'e-Kuber holidays are loaded yearly from the RBI calendar (connector or data file)'},
             'government': {'weekend': ['SATURDAY', 'SUNDAY']}},
     },
+    # the regime's BUDGET ledger names no currency (it serves every Westminster jurisdiction); a money ledger without
+    # one wrote NULL-currency ledger rows (JdbcLedgerStore.ensure) and failed on the first posting. The jurisdiction
+    # sets it, as BGD (BDT), GBR (GBP) and GOI.MEA (INR) already do; keyed lists merge by id.
+    'ledgers': [{'id': 'BUDGET', 'currency': 'INR'}],
     'classification': {
         'seedStatus': 'OFFICIAL_LMMH_CS1127',
         'schemes': [
@@ -178,6 +186,42 @@ IN = {
 }
 
 
+import os as _os  # noqa: E402
+import re as _re  # noqa: E402
+import sys as _sys  # noqa: E402
+from decimal import Decimal as _Decimal  # noqa: E402
+
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'packgen'))
+from money import minor  # noqa: E402  (the one money helper: integer minor units, SD-398)
+
+_AMOUNT = _re.compile(r'(\d+(?:\.\d+)?)([A-Z]*)')
+
+
+def profile_money(major, locale):
+    """SL-102 (SD-398 / PACKS4): a profile amount as the profile ships it, integer minor units of the locale currency.
+
+    Authored in major units as the rule states it: an int, or a str ``<decimal>[<unit>]`` whose unit is one of the
+    locale's ``units`` (``'2CR'``, ``'5L'``, ``'2835.20CR'``, ``'50000'``). The profile never carries the free text: Java
+    reads the integer with ``ResolvedProfile.money(path)`` in ``locale.currency``. Anything else (a float, an unknown
+    unit, grouping, a fraction finer than the minor unit) fails the generation, never guessed."""
+    if isinstance(major, bool) or isinstance(major, float):
+        raise TypeError(f'money {major!r}: write the amount as int or str, never a bool or a binary float')
+    if isinstance(major, int):
+        return minor(major, locale['currency'])
+    m = _AMOUNT.fullmatch(str(major))
+    if not m:
+        raise ValueError(f'money {major!r}: expected <decimal>[<unit>] with a unit of {sorted(locale["units"])}')
+    number, unit = m.groups()
+    if unit and unit not in locale['units']:
+        raise ValueError(f'money {major!r}: unit {unit!r} is not one of the locale units {sorted(locale["units"])}')
+    return minor(_Decimal(number) * _Decimal(locale['units'][unit]) if unit else _Decimal(number), locale['currency'])
+
+
+def in_money(major):
+    """An amount of an Indian profile (every one extends IN): `profile_money` in the IN locale (its currency and units)."""
+    return profile_money(major, IN['locale'])
+
+
 def preset(code, name, category, extra):
     d = {'profile': {'id': 'IN-PRESET-' + code, 'layer': 'category', 'version': '2026.11.0', 'effectiveFrom': '2017-04-01',
                      'name': {'en': name}, 'source': 'IFMS-STATES 6.1 L1 category preset'},
@@ -202,7 +246,7 @@ PRESETS = [
     preset('UT-NOLEG', 'Union Territory without legislature', 'UT_WITHOUT_LEGISLATURE',
            {'regime': {'category': 'UT_WITHOUT_LEGISLATURE', 'budgetMode': 'UNION_DEMAND', 'accountsRenderedTo': 'CGA',
                        'cssSharing': 'UT_WITHOUT_LEGISLATURE',
-                       'administratorDelegation': {'governorOrLg': '50CR', 'other': '25CR',
+                       'administratorDelegation': {'governorOrLg': in_money('50CR'), 'other': in_money('25CR'),
                                                    'ruleRef': 'CAG Report 3 of 2018'}},
             'integrations': {'pfms': {'model': 3}, 'snaSparsh': {'enabled': True, 'directInPfms': True}}}),
     preset('UNION', 'Union Government (departmentalised accounts)', 'UNION',

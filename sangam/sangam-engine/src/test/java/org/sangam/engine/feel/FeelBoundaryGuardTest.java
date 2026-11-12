@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * SG-27 / OneIFMS SD-301 guard: the kept FEEL engine ({@code org.camunda.feel}) and its Scala runtime stay behind the
+ * SG-27 guard (consumer licence-policy exception): the kept FEEL engine ({@code org.camunda.feel}) and its Scala runtime stay behind the
  * engine adapter. No production source in the reactor may import or name {@code org.camunda.*} or {@code scala.*}
  * types, except the engine adapter's FEEL package {@code org.sangam.engine.feel}. Code that needs FEEL uses
  * Operaton's API ({@code org.operaton.bpm.dmn.feel.*}) or {@link org.sangam.core.plugin.DmnFunctionProvider}.
@@ -50,7 +50,7 @@ class FeelBoundaryGuardTest {
             }
         }
         assertTrue(scanned > 100, "scanned the reactor's production sources (" + scanned + ")");
-        assertTrue(violations.isEmpty(), "org.camunda / scala types outside " + ALLOWED + " (SG-27, SD-301): "
+        assertTrue(violations.isEmpty(), "org.camunda / scala types outside " + ALLOWED + " (SG-27): "
                 + violations);
     }
 

@@ -82,8 +82,8 @@ class ChangeAdoptionTest {
             }
             String xml = read(p, r.path());
             if (r.path().endsWith("sec-bank-pay-limits.dmn")) {
-                String changed = xml.replace("<text>&gt; 2500000</text>", "<text>&gt; 1000000</text>")
-                        .replace("operaton:versionTag=\"1.0.0\"", "operaton:versionTag=\"1.1.0\"");
+                String changed = xml.replace("<text>&gt; 250000000</text>", "<text>&gt; 100000000</text>") // paise
+                        .replace("operaton:versionTag=\"" + p.descriptor().version() + "\"", "operaton:versionTag=\"1.1.0\"");
                 assertTrue(!changed.equals(xml), "band row present in the shipped table");
                 xml = changed;
             }
@@ -92,7 +92,7 @@ class ChangeAdoptionTest {
         b.deploy();
     }
 
-    static String start(String bk, double amount) {
+    static String start(String bk, long amount) {
         java.util.Map<String, Object> v = AllPacksSmokeTest.bag();
         v.put("amount", amount);
         return engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-bank-payment").businessKey(bk)
@@ -102,9 +102,9 @@ class ChangeAdoptionTest {
     @Test
     void newRuleVersionAndApprovalLevelApplyToNewCasesOnly() {
         // in flight: started under 1.0.0, parked at the asynchronous beneficiary check before the limits rule
-        start("CHG/PAY/old", 2_000_000);
+        start("CHG/PAY/old", 200_000_000L); // 20 lakh, in paise
         deployLowerTwoLevelBand();
-        start("CHG/PAY/new", 2_000_000);
+        start("CHG/PAY/new", 200_000_000L);
         FormAnswers a = new FormAnswers(engine);
         List<String> oldDone = driver.run("CHG/PAY/old", a::answer, 60);
         List<String> newDone = driver.run("CHG/PAY/new", a::answer, 60);
@@ -134,9 +134,9 @@ class ChangeAdoptionTest {
     void runningCaseKeepsItsProfileBinding() {
         // profile = locale, fiscal calendar, document types, connector bindings (sangam-config, effective-dated)
         ProfileBindings.install((t, pack, bk) -> "profile@1#aaaaaaaaaaaa");
-        start("CHG/PROF/old", 100_000);
+        start("CHG/PROF/old", 10_000_000L); // 1 lakh, in paise
         ProfileBindings.install((t, pack, bk) -> "profile@2#bbbbbbbbbbbb");
-        start("CHG/PROF/new", 100_000);
+        start("CHG/PROF/new", 10_000_000L);
         FormAnswers a = new FormAnswers(engine);
         driver.run("CHG/PROF/old", a::answer, 60);
         driver.run("CHG/PROF/new", a::answer, 60);

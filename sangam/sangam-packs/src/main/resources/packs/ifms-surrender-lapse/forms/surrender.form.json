@@ -1,6 +1,6 @@
 {
   "key": "ifms-surrender-lapse/surrender",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.surrender-lapse",
   "title": {
     "en": "Surrender of savings",
@@ -35,6 +35,8 @@
     {
       "id": "surrenderAmount",
       "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount to surrender",

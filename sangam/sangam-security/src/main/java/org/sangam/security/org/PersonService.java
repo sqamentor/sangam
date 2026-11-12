@@ -91,6 +91,12 @@ public final class PersonService {
     /**
      * Just-in-time provisioning (R67): creates the person on first login when the tenant allows it. Runs as the system
      * principal of the tenant; the person id is derived from the subject.
+     *
+     * <p>SL-100: idempotent under concurrency. The first requests of a new identity often arrive together; each saw no
+     * person, one inserted it and the others failed the insert (primary key / {@code SEC_PERSON_SUBJECT}) and answered
+     * 409 {@code USER_EXISTS}. A lost insert now reads the person the concurrent first request created (committed, so
+     * visible to the next statement under READ COMMITTED) and returns it; only that request audits the provisioning.
+     * A conflict with a person of another subject still answers {@code USER_EXISTS}.
      */
     public OrgModel.Person provisionJit(Connection c, String tenant, String externalSubject, String displayName, String email) {
         Optional<OrgModel.Person> existing = findBySubject(c, tenant, externalSubject);
@@ -98,18 +104,27 @@ public final class PersonService {
             return existing.get();
         }
         String personId = externalSubject;
-        insert(c, tenant, personId, displayName, externalSubject, email);
+        if (!insertIfAbsent(c, tenant, personId, displayName, externalSubject, email)) {
+            return findBySubject(c, tenant, externalSubject).orElseThrow(() ->
+                    new SangamSecurityException.AdminConflict("USER_EXISTS", "user " + personId + " already exists"));
+        }
         audit.security(c, SecurityIdentity.system(tenant, personId), SecurityEventType.USER_PROVISIONED,
                 details(personId, externalSubject, "JIT"));
         return find(c, tenant, personId).orElseThrow();
     }
 
     private void insert(Connection c, String tenant, String personId, String displayName, String externalSubject, String email) {
-        if (!Sql.insertIfAbsent(c, dialect, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject, email,"
-                        + " status, created_at) VALUES (?,?,?,?,?,'ACTIVE',?)",
-                tenant, personId, displayName, externalSubject, email, Sql.dbNow(c, dialect))) {
+        if (!insertIfAbsent(c, tenant, personId, displayName, externalSubject, email)) {
             throw new SangamSecurityException.AdminConflict("USER_EXISTS", "user " + personId + " already exists");
         }
+    }
+
+    /** False when the person id or the subject exists already (a concurrent insert included). */
+    private boolean insertIfAbsent(Connection c, String tenant, String personId, String displayName, String externalSubject,
+                                   String email) {
+        return Sql.insertIfAbsent(c, dialect, "INSERT INTO SEC_PERSON(tenant_id, person_id, display_name, external_subject,"
+                        + " email, status, created_at) VALUES (?,?,?,?,?,'ACTIVE',?)",
+                tenant, personId, displayName, externalSubject, email, Sql.dbNow(c, dialect));
     }
 
     private static Map<String, Object> details(String personId, String subject, String how) {

@@ -1,6 +1,6 @@
 {
   "id": "sec.ushealth.eligibility",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Eligibility and benefits verification",
     "es": "Verificación de elegibilidad y beneficios"
@@ -26,6 +26,10 @@
     {
       "kind": "FORM",
       "path": "packs/sec-ushealth-eligibility/forms/mse.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-eligibility/forms/npiUnconfirmed.form.json"
     },
     {
       "kind": "FORM",
@@ -72,5 +76,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "estimatedPatientShare"
+    ]
+  }
 }

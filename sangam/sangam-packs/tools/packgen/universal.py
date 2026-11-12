@@ -1,8 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 """Universal (non-government) packs for UP-01..UP-22 (PREMIUM-AND-UNIVERSAL-SCOPE.md section 3.1)."""
 from lib import C, q
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
-from common import core, outcome, end_ok, rejection, batch_loop, broadcast
+from common import core, outcome, end_ok, rejection, batch_loop, broadcast, checked_query, check_conditions
 from gov2 import simple_seeds
 
 
@@ -36,7 +37,7 @@ def up01():
     for host in (res, ch, sh):
         b = s.boundary(host + '_err', host, 'Failed', error='STP_FAILED')
         s.flow(b, s.end(host + '_failEnd', 'Failed (exception queue)'))
-    pk.dmn('up01-route', 'Fulfilment route', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('up01-route', 'Fulfilment route', 'FIRST', [('Amount', 'amount', 'money')],
            [('fulfilmentChannel', 'Channel', 'string')],
            [(['> 50000'], [q('INSURED_COURIER')], ''), (['-'], [q('STANDARD')], '')])
 
@@ -174,7 +175,7 @@ def up05():
     s.flow(inv, san)
     cl = core(s, 'u5_close', 'Close (core)', 'closure')
     s.seq(ex, cl, end_ok(p, s, 'u5_end', 'Applied'))
-    pk.dmn('up05-checker', 'Checker by amount', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('up05-checker', 'Checker by amount', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['<= 1000000'], [q('DS')], 'checker'), (['-'], [q('JS')], 'senior checker')])
 
@@ -257,7 +258,7 @@ def up07():
     s.flow(kg, rb, "keepDecision == 'rollback'", 'roll back')
     s.flow(rb, s.end('u7_endRolledBack', 'Rolled back'))
     s.flow(kg, end_ok(p, s, 'u7_end', 'Kept'), None, 'keep', default=True)
-    pk.dmn('up07-approver', 'Change approver', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('up07-approver', 'Change approver', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')], [(['-'], [q('PROCESSBOARD')], '')])
     simple_seeds(pk, 'PMO', [('PROCESS-OWNER', 'OWNER', 'PROCESS-BOARD', 'Process owner', 'प्रक्रिया स्वामी'),
                              ('PROCESS-BOARD', 'PROCESSBOARD', None, 'Process board', 'प्रक्रिया बोर्ड')], 'u7')
@@ -429,24 +430,29 @@ def up11():
     p.forms.append(dict(key='up11-change-window/request', name='Change request | परिवर्तन अनुरोध', decision=None,
                         fields=['subject*', 'description*', 'changeWindowStart*', 'rollbackPlan*', 'priority'], doc=None))
     d = s.setv('u11_defaults', 'Configuration', defaults='priority=P3;committeeSeats=CAB-1,CAB-2,CAB-3;quorumRule=MAJORITY;'
-               'freezeFrozen=false;implementerSeat=IMPLEMENTER')
+               'implementerSeat=IMPLEMENTER')
     r = s.rule('u11_risk', 'Risk and CAB need (DMN)', 'up11-risk')
     g = s.xgw('u11_cabGw', 'CAB?')
     s.seq(st, d, r, g)
     cab = core(s, 'u11_cab', 'Change advisory board (core committee)', 'committee')
-    fz = s.conn('u11_freeze', 'Freeze calendar check', 'change.freezeCheck', 'check', 'query', 'changeWindowStart', 'freeze')
+    # SL-115: only a confirmed "not frozen" answer lets the window open (cleared before every query; no default
+    # stands in); an unconfirmed freeze check is treated as frozen: the initiator reschedules and it is asked again
+    fze, fz = checked_query(s, 'u11_freeze', 'Freeze calendar check', 'change.freezeCheck', 'check', 'changeWindowStart',
+                            'freeze', ['freezeFrozen'])
     s.flow(g, cab, 'cabRequired', 'yes')
-    s.flow(g, fz, None, 'standard change', default=True)
+    s.flow(g, fze, None, 'standard change', default=True)
     cg = s.xgw('u11_cabRes', 'Approved?')
     s.flow(cab, cg)
-    s.flow(cg, fz, 'committeeApproved', 'approved')
+    s.flow(cg, fze, 'committeeApproved', 'approved')
     s.flow(cg, s.end('u11_endRejected', 'Rejected by CAB'), None, 'rejected', default=True)
     fg = s.xgw('u11_freezeGw', 'Frozen?')
     s.flow(fz, fg)
     rs = s.user('u11_reschedule', 'Window falls in a freeze: reschedule | परिवर्तन रोक अवधि में: पुनर्निर्धारित करें',
                 '${initiatorSeat}', form='up11-change-window/reschedule', decision=None, fields=['changeWindowStart*'])
-    s.flow(fg, rs, 'freezeFrozen', 'frozen')
-    s.flow(rs, fz)
+    freeze_unconfirmed, frozen = check_conditions([('freeze', ['freezeFrozen'])], 'freezeFrozen')
+    s.flow(fg, rs, freeze_unconfirmed, 'freeze not confirmed')
+    s.flow(fg, rs, frozen, 'frozen')
+    s.flow(rs, fze)
     lock = s.catch_timer('u11_window', 'Change window opens', date='${changeWindowStart}')
     s.flow(fg, lock, None, 'clear', default=True)
     impl = s.user('u11_implement', 'Implement change | परिवर्तन लागू करें', '${implementerSeat}',
@@ -552,7 +558,7 @@ def up13():
     ex = core(s, 'u13_refund', 'Refund once (core execution)', 'execution')
     s.seq(calc, ex, end_ok(p, s, 'u13_end', 'Refunded'))
     pk.dmn('up13-policy', 'Return policy', 'FIRST', [('Category', 'category', 'string')],
-           [('returnEligible', 'Eligible', 'boolean'), ('restockingFeePct', 'Restocking fee %', 'double')],
+           [('returnEligible', 'Eligible', 'boolean'), ('restockingFeePct', 'Restocking fee %', 'number')],
            [([q('PERISHABLE')], ['false', '0'], ''), ([q('ELECTRONICS')], ['true', '10'], ''), (['-'], ['true', '0'], '')])
     simple_seeds(pk, 'RET', [('RETURNS-DESK', 'RETURNS', None, 'Returns desk', 'वापसी डेस्क')], 'u13')
 
@@ -589,8 +595,8 @@ def up14():
     s.flow(eg, s.end('u14_endRejected', 'Invoice rejected'), None, 'reject', default=True)
     s.flow(post, end_ok(p, s, 'u14_end', 'Posted'))
     pk.dmn('up14-tolerance', 'Three-way match tolerances (2% quantity, 1% price)', 'FIRST',
-           [('Invoice qty', 'invoiceQty', 'double'), ('Received qty', 'grnQty', 'double'), ('PO qty', 'poQty', 'double'),
-            ('Invoice price', 'invoicePrice', 'double'), ('PO price', 'poPrice', 'double')],
+           [('Invoice qty', 'invoiceQty', 'number'), ('Received qty', 'grnQty', 'number'), ('PO qty', 'poQty', 'number'),
+            ('Invoice price', 'invoicePrice', 'money'), ('PO price', 'poPrice', 'money')],
            [('matchResult', 'Result', 'string')],
            [(['-', '-', '-', '-', '-'],
              ['if invoiceQty = grnQty and grnQty <= poQty and invoicePrice = poPrice then "MATCH" '
@@ -772,7 +778,7 @@ def up18():
     sign = s.svc('u18_sign', 'E-signature on closure', C['SIGN'], {'op': 'REQUEST', 'purpose': 'capa-closure'}, async_=True)
     s.flow(g, sign, None, 'effective', default=True)
     s.flow(sign, end_ok(p, s, 'u18_end', 'Closed'))
-    pk.dmn('up18-approver', 'CAPA approver', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('up18-approver', 'CAPA approver', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')], [(['-'], [q('QAHEAD')], '')])
     simple_seeds(pk, 'QA', [('QA-LEAD', 'QA', 'QA-HEAD', 'Quality engineer', 'गुणवत्ता अभियंता'),
                             ('QA-HEAD', 'QAHEAD', None, 'Head of quality', 'गुणवत्ता प्रमुख')], 'u18')
@@ -833,7 +839,7 @@ def up19():
                             '</timeCycle></timerEventDefinition>']
     o2 = ob.notify('u19_obNotify', 'Remind obligations', 'contract-obligations', 'email', 'counterpartyName')
     ob.seq(o1, o2, ob.end('u19_obEnd', 'Reminded'))
-    pk.dmn('up19-signatory', 'Signing authority', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('up19-signatory', 'Signing authority', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['<= 1000000'], [q('DS')], ''), (['-'], [q('JS')], '')])
     simple_seeds(pk, 'LEGAL-U', [('LEGAL-COUNSEL', 'COUNSEL', None, 'Contract counsel', 'अनुबंध अधिवक्ता'),

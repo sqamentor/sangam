@@ -72,8 +72,9 @@ public final class Db {
         if (visible != null) {
             all.addAll(visible.params());
         }
-        try (PreparedStatement ps = c.prepareStatement(sql.toString())) {
-            Jdbc.bind(ps, 1, all.toArray());
+        String text = sql.toString();
+        try (PreparedStatement ps = c.prepareStatement(text)) {
+            Jdbc.bind(ps, text, 1, all.toArray());
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> out = new ArrayList<>();
                 while (rs.next()) {

@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-094 local Semgrep rule (owner 2026-11-12: local rules only). Test cases: sangam-jdbc-sql-concat.java (semgrep --test).
+rules:
+  - id: sangam-jdbc-sql-concat
+    languages: [java]
+    severity: ERROR
+    message: >-
+      SQL built by string concatenation reaches a JDBC / Spring JDBC call ($METHOD). Bind values as '?' parameters;
+      take identifiers only from constants or a fixed allow-list.
+    metadata:
+      category: security
+      cwe: "CWE-89: SQL Injection"
+      owner: M-094
+    patterns:
+      - pattern-either:
+          - pattern: $OBJ.$METHOD("..." + $X, ...)
+          - pattern: $OBJ.$METHOD($X + "...", ...)
+          - pattern: |
+              String $SQL = "..." + $X;
+              ...
+              $OBJ.$METHOD($SQL, ...);
+          - pattern: |
+              String $SQL = $X + "...";
+              ...
+              $OBJ.$METHOD($SQL, ...);
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(prepareStatement|prepareCall|executeQuery|executeUpdate|executeLargeUpdate|execute|addBatch|query|queryForObject|queryForList|queryForMap|queryForRowSet|update|batchUpdate)$
+      # string literals joined with UPPER_CASE constants (e.g. a table name from the schema class) are not input:
+      # $X must contain at least one operand that is neither
+      - metavariable-regex:
+          metavariable: $X
+          regex: '(?s)^(?!(\s*("([^"\\]|\\.)*"|([A-Z][A-Za-z0-9_]*\.)*[A-Z][A-Z0-9_]*)\s*(\+|$))+$).+'

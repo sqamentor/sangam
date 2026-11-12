@@ -53,6 +53,19 @@ public class SangamHistoryEventHandler implements HistoryEventHandler {
 
     @Override
     public void handleEvent(HistoryEvent e) {
+        handle(e, true);
+    }
+
+    /**
+     * M-012 (X.2.3): an event the configured history level would not have produced, created only because class-B audit
+     * is mandatory ({@link MandatoryAuditHistoryLevel}). It is chained like any audited event and never published as a
+     * typed event, so typed events keep following the configured level.
+     */
+    public void handleAuditOnly(HistoryEvent e) {
+        handle(e, false);
+    }
+
+    private void handle(HistoryEvent e, boolean publishAllowed) {
         if (!Context.hasActiveCommandContext()) {
             return;
         }
@@ -78,7 +91,7 @@ public class SangamHistoryEventHandler implements HistoryEventHandler {
         }
 
         boolean doAudit = audited.contains(name) && root != null;
-        boolean doPublish = published.isEmpty() || published.contains(name);
+        boolean doPublish = publishAllowed && (published.isEmpty() || published.contains(name));
         if (!doAudit && !doPublish) {
             return;
         }

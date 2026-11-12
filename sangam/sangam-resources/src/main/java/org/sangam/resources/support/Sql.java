@@ -4,6 +4,8 @@ package org.sangam.resources.support;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.resources.dialect.ResourcesDialect;
 
@@ -23,10 +25,17 @@ import java.util.UUID;
 /** JDBC and JSON helpers shared by the resources services. */
 public final class Sql {
 
+    /**
+     * Modules are registered explicitly (SL-92), never discovered from the class path: discovery also registers the
+     * FEEL engine's jackson-module-scala, which reads every nested JSON object as a Scala {@code Map}, so
+     * {@link #asMap} returned an empty map and nested settings ({@code skillRouting}, {@code priorityLevels},
+     * {@code seriesBySkill}, {@code slaMinutesByClass}) were silently ignored.
+     */
     private static final ObjectMapper JSON = new ObjectMapper()
             .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
             .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            .findAndRegisterModules();
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module());
 
     private Sql() {
     }

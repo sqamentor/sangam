@@ -47,9 +47,9 @@ public final class ResolvedIdentityCache {
 
     private final SecurityDialect dialect;
     private final PrincipalResolver resolver;
-    private final Map<SecurityIdentity, Entry> entries = new LinkedHashMap<>(1024, 0.75f, true) {
+    private final Map<SecurityIdentity, CachedIdentity> entries = new LinkedHashMap<>(1024, 0.75f, true) {
         @Override
-        protected boolean removeEldestEntry(Map.Entry<SecurityIdentity, Entry> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<SecurityIdentity, CachedIdentity> eldest) {
             return size() > MAX_ENTRIES;
         }
     };
@@ -62,7 +62,12 @@ public final class ResolvedIdentityCache {
         }
     }
 
-    private record Entry(SecurityIdentity identity, Stamp stamp, Instant validUntil) {
+    /**
+     * One cached resolution. Deliberately not named {@code Entry}: inside the anonymous {@link LinkedHashMap} subclass
+     * above, the inherited member type {@code java.util.Map.Entry} would shadow it (JLS 6.4.1), so
+     * {@code removeEldestEntry} would not override and the class would not compile on JDK 21.0.13+ / 25 / 27.
+     */
+    private record CachedIdentity(SecurityIdentity identity, Stamp stamp, Instant validUntil) {
     }
 
     public ResolvedIdentityCache(SecurityDialect dialect, PrincipalResolver resolver) {
@@ -75,7 +80,7 @@ public final class ResolvedIdentityCache {
         if ("API_KEY".equals(raw.authMethod()) || raw.subject() == null) {
             return tx.inTransaction(c -> resolver.resolve(c, raw, jit, displayName, email));
         }
-        Entry cached;
+        CachedIdentity cached;
         synchronized (entries) {
             cached = entries.get(raw);
         }
@@ -85,13 +90,13 @@ public final class ResolvedIdentityCache {
                 return cached.identity();
             }
         }
-        Entry fresh = tx.inTransaction(c -> {
+        CachedIdentity fresh = tx.inTransaction(c -> {
             // read the stamp before resolving: a change committed in between makes the next request miss (never a stale hit)
             Stamp before = stamp(c, raw);
             SecurityIdentity resolved = resolver.resolve(c, raw, jit, displayName, email);
             Instant bound = nextBoundary(c, resolved, before.now());
             Instant cap = before.now().plus(MAX_AGE);
-            return new Entry(resolved, before, bound == null || bound.isAfter(cap) ? cap : bound);
+            return new CachedIdentity(resolved, before, bound == null || bound.isAfter(cap) ? cap : bound);
         });
         synchronized (entries) {
             entries.put(raw, fresh);

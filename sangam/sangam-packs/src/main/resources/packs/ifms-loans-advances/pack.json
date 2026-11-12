@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.loans-advances",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Loans and advances to employees",
     "hi": "कर्मचारियों को ऋण और अग्रिम"
@@ -96,5 +96,14 @@
       "rule": "HOO ADVANCE no monetary limit",
       "reason": "the Compendium of Rules on Advances is not read (corpus IFC-025 / IFC-180 [U]); confirm the sanctioning authority and its limit and deploy it as a tenant DMN override"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
 }

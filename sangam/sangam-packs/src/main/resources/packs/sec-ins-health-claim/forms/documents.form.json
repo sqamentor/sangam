@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-health-claim/documents",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ins.health-claim",
   "title": {
     "en": "Submit claim documents",
@@ -25,7 +25,9 @@
     },
     {
       "id": "estimatedCost",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Estimated cost (INR)",

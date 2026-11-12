@@ -271,7 +271,7 @@ def annotate_sbom(path, policy):
         if not e:
             continue
         props = [p for p in comp.get("properties") or [] if not p.get("name", "").startswith("sangam:exception")]
-        props += [{"name": "sangam:exception", "value": "SG-27 / OneIFMS SD-301"},
+        props += [{"name": "sangam:exception", "value": "SG-27 consumer licence-policy exception"},
                   {"name": "sangam:exception:reason", "value": e["reason"]},
                   {"name": "sangam:exception:verified-license", "value": e["license"]},
                   {"name": "sangam:exception:evidence", "value": evidence}]
@@ -279,7 +279,7 @@ def annotate_sbom(path, policy):
         hit += 1
     meta = bom.setdefault("metadata", {})
     props = [p for p in meta.get("properties") or [] if p.get("name") != "sangam:exceptions"]
-    props.append({"name": "sangam:exceptions", "value": f"SG-27 / OneIFMS SD-301: {hit} component(s) under the owner "
+    props.append({"name": "sangam:exceptions", "value": f"SG-27 consumer licence-policy exception: {hit} component(s) under the owner "
                   f"exception for the Operaton DMN FEEL engine; evidence {evidence}"})
     meta["properties"] = props
     with open(path, "w", encoding="utf-8", newline="\n") as f:

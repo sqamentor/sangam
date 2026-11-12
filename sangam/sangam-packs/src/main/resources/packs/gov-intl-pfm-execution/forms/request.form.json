@@ -1,0 +1,74 @@
+{
+  "key": "gov-intl-pfm-execution/request",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-execution",
+  "title": {
+    "en": "Commitment request",
+    "hi": "प्रतिबद्धता अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "spendingUnit",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Spending unit",
+        "hi": "व्यय इकाई"
+      }
+    },
+    {
+      "id": "budgetLine",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Budget line (classification)",
+        "hi": "बजट पंक्ति (वर्गीकरण)"
+      }
+    },
+    {
+      "id": "commitmentType",
+      "type": "select",
+      "required": false,
+      "label": {
+        "en": "Commitment type (ordinary, estimative, global)",
+        "hi": "प्रतिबद्धता प्रकार"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

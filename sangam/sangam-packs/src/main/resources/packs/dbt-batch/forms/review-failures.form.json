@@ -1,6 +1,6 @@
 {
   "key": "dbt-batch/review-failures",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.dbt.batch",
   "title": {
     "en": "Review failed records by reason",

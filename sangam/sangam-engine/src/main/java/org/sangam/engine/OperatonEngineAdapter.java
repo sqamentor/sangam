@@ -183,7 +183,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     private <T> T once(BiFunction<CommandContext, Connection, T> work) {
         Command<T> cmd = cc -> {
             Connection conn = CommandState.connection(cc);
-            dialect.applyLockTimeouts(conn, settings.getLockTimeout(), settings.getStatementTimeout());
+            CommandState.applyLockTimeouts(cc, dialect, settings.getLockTimeout(), settings.getStatementTimeout()); // SL-99: restored at tx end
             return work.apply(cc, conn);
         };
         return configuration.getCommandExecutorTxRequired().execute(cmd);

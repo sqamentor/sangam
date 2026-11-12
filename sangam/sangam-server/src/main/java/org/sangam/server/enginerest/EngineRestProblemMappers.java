@@ -2,6 +2,7 @@
 package org.sangam.server.enginerest;
 
 import jakarta.annotation.Priority;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -32,6 +33,9 @@ import org.sangam.rest.web.Problems;
  * <p>Jersey picks the mapper of the nearest exception type and, between two of the same type, the one with the
  * smaller priority value; these are registered with {@link #PRIORITY} (below Operaton's default
  * {@link Priorities#USER}), so they win deterministically, whatever the registration order.
+ *
+ * <p>SL-72: for a tenant identity every not-found (also another tenant's object) is the uniform 404 of
+ * {@link EngineRestNotFound}; platform identities keep Operaton's answers.
  */
 public final class EngineRestProblemMappers {
 
@@ -46,6 +50,19 @@ public final class EngineRestProblemMappers {
         config.register(Any.class, PRIORITY);
         config.register(Engine.class, PRIORITY);
         config.register(Rest.class, PRIORITY);
+        config.register(EngineRestNotFound.TenantResponses.class);
+    }
+
+    /** The Sangam refusal, else the SL-72 uniform 404 for a tenant identity, else Operaton's answer. */
+    static Response answer(Throwable t, UriInfo uri, HttpServletRequest request, java.util.function.Supplier<Response> operaton) {
+        ApiProblem p = ProblemHandler.tenantRefusal(t);
+        if (p != null) {
+            return problem(p, uri);
+        }
+        if (EngineRestNotFound.tenantIdentity(request) && EngineRestNotFound.notFound(t)) {
+            return EngineRestNotFound.response();
+        }
+        return operaton.get();
     }
 
     static Response problem(ApiProblem p, UriInfo uri) {
@@ -66,10 +83,12 @@ public final class EngineRestProblemMappers {
         @Context
         UriInfo uri;
 
+        @Context
+        HttpServletRequest request;
+
         @Override
         public Response toResponse(Throwable t) {
-            ApiProblem p = ProblemHandler.tenantRefusal(t);
-            return p != null ? problem(p, uri) : operaton.toResponse(t);
+            return answer(t, uri, request, () -> operaton.toResponse(t));
         }
     }
 
@@ -82,10 +101,12 @@ public final class EngineRestProblemMappers {
         @Context
         UriInfo uri;
 
+        @Context
+        HttpServletRequest request;
+
         @Override
         public Response toResponse(ProcessEngineException t) {
-            ApiProblem p = ProblemHandler.tenantRefusal(t);
-            return p != null ? problem(p, uri) : operaton.toResponse(t);
+            return answer(t, uri, request, () -> operaton.toResponse(t));
         }
     }
 
@@ -98,10 +119,12 @@ public final class EngineRestProblemMappers {
         @Context
         UriInfo uri;
 
+        @Context
+        HttpServletRequest request;
+
         @Override
         public Response toResponse(RestException t) {
-            ApiProblem p = ProblemHandler.tenantRefusal(t);
-            return p != null ? problem(p, uri) : operaton.toResponse(t);
+            return answer(t, uri, request, () -> operaton.toResponse(t));
         }
     }
 }

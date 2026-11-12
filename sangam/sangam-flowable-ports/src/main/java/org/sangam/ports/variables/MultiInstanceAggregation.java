@@ -117,7 +117,7 @@ public class MultiInstanceAggregation implements BpmnParseListener {
                 json, ex.getProcessInstanceId(), body, loop);
         if (n == 0) {
             Jdbc.update(c, "INSERT INTO MI_AGGREGATE(tenant_id, process_instance_id, mi_body_instance_id, loop_counter, payload, created_at)"
-                    + " VALUES (?,?,?,?,?," + dialect.now() + ")", ex.getTenantId() == null ? "" : ex.getTenantId(),
+                    + " VALUES (?,?,?,?,?," + dialect.now() + ")", org.sangam.core.layer.TenantKey.of(ex.getTenantId()),
                     ex.getProcessInstanceId(), body, loop, json);
         }
     }

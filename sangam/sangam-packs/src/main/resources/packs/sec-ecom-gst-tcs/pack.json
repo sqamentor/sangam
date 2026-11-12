@@ -1,6 +1,6 @@
 {
   "id": "sec.ecom.gst-tcs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "GST tax collected at source by the marketplace",
     "hi": "मार्केटप्लेस द्वारा स्रोत पर जीएसटी संग्रह"
@@ -22,6 +22,10 @@
     {
       "kind": "FORM",
       "path": "packs/sec-ecom-gst-tcs/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ecom-gst-tcs/forms/suppliesUnconfirmed.form.json"
     },
     {
       "kind": "SEED",
@@ -61,5 +65,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "netSupplies"
+    ]
+  }
 }

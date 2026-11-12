@@ -11,7 +11,7 @@ import java.util.Map;
  * it again. {@code attempts > 1} is a repeat attempt (class B: look the outcome up first).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record WorkOperation(String state, int attempts, String capabilityClass, boolean mayDispatch,
+public record WorkOperation(String state, Integer attempts, String capabilityClass, Boolean mayDispatch,
                             Map<String, Object> storedOutcome) {
 
     public boolean succeeded() {

@@ -76,23 +76,44 @@ paymentRails:
   default: CENTRAL_BANK_SETTLEMENT
 documentTypes:
 - id: MP_MPTC_56
-  formNumber: MPTC-56
+  formKind: BILL
+  formNumber: MP:MPTC-56
   family: CONTINGENT
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MP_MPTC_71
-  formNumber: MPTC-71
+  formKind: BILL
+  formNumber: MP:MPTC-71
   family: PERSONAL_CLAIM
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MP_FORM_80
-  formNumber: FORM-80
+  formKind: BILL
+  formNumber: MP:FORM-80
   family: ESTABLISHMENT_PAY
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 approvalChains:
 - id: TREASURY_STD
   steps:
@@ -107,6 +128,23 @@ approvalChains:
     token: true
     tokenSeries: TOKEN
     fifo: true
+billTypeCatalogue:
+  resolution: CATALOGUE_ID
+  formNumberPrefix: '<government profile id>:'
+  provenanceLabels:
+  - VERIFIED
+  - INFERRED
+  - ASSUMED
+  - UNKNOWN
+  provenanceFields:
+  - formKind
+  - formNumber
+  - billTypeCode
+  - typeId
+  - name
+  note: 'A bill type is resolved by its catalogue id; one form can carry several bill types, so a form number alone may be
+    ambiguous. typeId ASSUMED: the row id is the Sangam-assigned catalogue id; the government holds no document-type id. Forms
+    that are not bills are listed under formTemplates and are never resolved as bill types.'
 orgTiers:
 - COMMISSIONER
 - DIVISIONAL_JD

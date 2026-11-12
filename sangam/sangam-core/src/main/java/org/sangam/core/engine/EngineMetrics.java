@@ -41,6 +41,14 @@ public interface EngineMetrics {
     default void jobFailed(String cause) {
     }
 
+    /**
+     * {@code sangam_jobs_failed_total{cause,conflict}}: as {@link #jobFailed(String)}, with {@code conflict} true when the
+     * failure was a transient database conflict whose job retry was kept (SL-89). Defaults to {@link #jobFailed(String)}.
+     */
+    default void jobFailed(String cause, boolean conflict) {
+        jobFailed(cause);
+    }
+
     /** {@code executeDueJobs} stopped at a bound (runaway guard). */
     default void jobExecutionBounded(String reason) {
     }

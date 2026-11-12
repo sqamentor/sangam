@@ -34,11 +34,8 @@ class BusinessDateGuardTest {
     static final Map<String, Integer> ALLOWED = new TreeMap<>();
 
     static {
-        // Engine timers: Operaton computes cron/cycle due dates in the JVM zone; the DST guard must use the same wall clock.
-        allow("sangam-engine/src/main/java/org/sangam/engine/SangamEngineSettings.java", 1);
-        allow("sangam-engine/src/main/java/org/sangam/engine/SangamEngineComponents.java", 1);
-        // Normalises a legacy JVM zone id at start-up (reads, never uses, the default zone).
-        allow("sangam-core/src/main/java/org/sangam/core/layer/LegacyTimeZones.java", 1);
+        // SL-53: reads the JVM default zone only to refuse a JVM that is not in UTC (never uses it as a zone).
+        allow("sangam-core/src/main/java/org/sangam/core/time/EngineTimeZone.java", 1);
         // Wire protocols that mandate a fixed zone for their own timestamps (not tenant business dates).
         allow("sangam-connectors-health/src/main/java/org/sangam/connectors/health/x12/X12Builders.java", 1);   // X12 envelope date, UTC
         allow("sangam-connectors-health/src/main/java/org/sangam/connectors/health/x12/X12.java", 1);           // X12 interchange time, UTC

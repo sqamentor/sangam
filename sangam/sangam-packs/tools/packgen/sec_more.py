@@ -5,7 +5,9 @@ licensing, OT scheduling, blood bank, GST TCS, TCCCPR, SIM swap, e-way bill, MRP
 meter-to-cash, disconnection, payroll with PF / ESI, appraisal, private litigation). Values marked SYNTHETIC or
 "verify" are DMN entries listed in the verify-before-go-live register of SECTOR-WORKFLOWS.md."""
 from lib import C, q
-from common import core, outcome, end_ok, rejection, reject_with, batch_loop
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
+from common import core, outcome, end_ok, rejection, reject_with, batch_loop, checked_query, check_conditions, \
+    unconfirmed_hold
 from gov2 import simple_seeds
 from sector import SIDE, spack, start_form, clock, at_date, powers, authority, maybe
 
@@ -156,7 +158,7 @@ def nbfc_dlg():
     s.flow(te, end_ok(p, s, 'dg_end', 'Arrangement ended'))
     s.side_exits('dg')
     pk.dmn('sec-nbfc-dlg-cap', 'DLG cap (RBI DLG guidelines, 8 Jun 2023)', 'FIRST',
-           [('Cover %', 'dlgPct', 'double'), ('Form', 'dlgForm', 'string')], [('dlgAllowed', 'Allowed', 'boolean')],
+           [('Cover %', 'dlgPct', 'number'), ('Form', 'dlgForm', 'string')], [('dlgAllowed', 'Allowed', 'boolean')],
            [(['> 5', '-'], ['false'], 'above 5 % of the portfolio'),
             (['-', q('CASH,FIXED_DEPOSIT,BANK_GUARANTEE').replace(',', '","')], ['true'], ''),
             (['-', '-'], ['false'], 'only cash, FD lien or bank guarantee')])
@@ -335,17 +337,22 @@ def ins_death_claim():
     st = start_form(p, s, 'dc_start', 'Death intimated', 'sec-ins-death-claim/intimation', 'Death claim intimation | मृत्यु दावा सूचना',
                     ['policyNo*', 'claimantName*', 'claimantType*', 'sumAssured', 'dateOfDeath', 'documents'])
     d = s.setv('dc_defaults', 'Configuration',
-               defaults='claimantName=@policyNo;claimantType=NOMINEE;sumAssured=1000000;policyAgeYears=5;coverActive=true;'
+               defaults='claimantName=@policyNo;claimantType=NOMINEE;sumAssured=1000000;policyAgeYears=5;'
                         'amount=@sumAssured;caseType=DEATH_CLAIM;routingDecisionKey=sec-ins-death-authority;'
                         'powersDecisionKey=sec-ins-death-powers;executionConnector=claims.pay;executionStep=death-claim;'
                         'reconcileRequired=true;executionPayloadFields=policyNo,claimantName,amount;'
                         'appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS;investigatorSeat=INVESTIGATOR')
-    cv = s.conn('dc_cover', 'Policy status', 'policy.coverCheck', 'check', 'query', 'policyNo', 'cover')
+    # SL-115: the policy status fails closed (cleared before the query; no default stands in)
+    cve, cv = checked_query(s, 'dc_cover', 'Policy status', 'policy.coverCheck', 'check', 'policyNo', 'cover',
+                            ['coverActive'])
     r = s.rule('dc_rule', 'Early claim and timeline (DMN)', 'sec-ins-death-rules')
-    s.seq(st, d, cv, r)
+    s.seq(st, d, cve)
+    s.flow(cv, r)
     cg = s.xgw('dc_coverGw', 'In force / within grace?')
     s.flow(r, cg)
-    s.flow(cg, reject_with(p, s, 'dc_rjLapse', 'POLICY_LAPSED'), '!coverActive', 'lapsed')
+    cover_unconfirmed, cover_lapsed = check_conditions([('cover', ['coverActive'])], '!coverActive')
+    s.flow(cg, reject_with(p, s, 'dc_rjCoverCheck', 'COVER_NOT_CONFIRMED'), cover_unconfirmed, 'cover not confirmed')
+    s.flow(cg, reject_with(p, s, 'dc_rjLapse', 'POLICY_LAPSED'), cover_lapsed, 'lapsed')
     ig = s.xgw('dc_invGw', 'Investigation warranted?')
     s.flow(cg, ig, None, 'yes', default=True)
     ie, idn = s.sla_task('dc_investigate', 'Claim investigation | दावा अन्वेषण', 'investigatorSeat',
@@ -359,7 +366,8 @@ def ins_death_claim():
     s.flow(idn, s.xgw('dc_invRes'))
     rej = rejection(p, s, 'dc_rj')
     s.flow('dc_invRes', ae, "invDecision == 'genuine'", 'genuine')
-    s.flow('dc_invRes', rej, None, 'fraud / non-disclosure', default=True)
+    s.flow('dc_invRes', reject_with(p, s, 'dc_rjInv', 'CLAIM_FRAUD_OR_NON_DISCLOSURE'), None, 'fraud / non-disclosure',
+           default=True)   # SL-55
     ag = s.xgw('dc_assGw')
     s.flow(ad, ag)
     san = core(s, 'dc_sanction', 'Settlement sanction (core sanction)', 'sanction')
@@ -431,7 +439,7 @@ def ins_reinsurance():
     s.seq(fu, fo, rw)
     s.flow(pd, end_ok(p, s, 'ri_end', 'Recovered'))
     pk.dmn('sec-ins-ri-cession', 'Retention and cession (SYNTHETIC; obligatory cession % per IRDAI notification - verify)',
-           'FIRST', [('Sum insured', 'sumInsured', 'double'), ('Line', 'lineOfBusiness', 'string')],
+           'FIRST', [('Sum insured', 'sumInsured', 'money'), ('Line', 'lineOfBusiness', 'string')],
            [('obligatoryPct', 'Obligatory cession %', 'integer'), ('facultativeRequired', 'Facultative', 'boolean')],
            [(['> 500000000', '-'], ['4', 'true'], 'above treaty capacity'), (['-', '-'], ['4', 'false'], '')])
     simple_seeds(pk, 'REINSURANCE', [('RI-DESK', 'RI', None, 'Reinsurance desk', 'पुनर्बीमा डेस्क')], 'iri')
@@ -486,7 +494,7 @@ def ins_intermediary():
     s.seq(br, bw, end_ok(p, s, 'ag_endBroker', 'Broker decision recorded'))
     s.side_exits('ag')
     pk.dmn('sec-ins-intermediary', 'Intermediary eligibility (SYNTHETIC; verify current IRDAI regulations)', 'FIRST',
-           [('Type', 'intermediaryType', 'string'), ('Qualification', 'qualification', 'string'), ('Net worth', 'netWorth', 'double')],
+           [('Type', 'intermediaryType', 'string'), ('Qualification', 'qualification', 'string'), ('Net worth', 'netWorth', 'money')],
            [('eligible', 'Eligible', 'boolean')],
            [([q('AGENT'), q('10TH,12TH,GRADUATE').replace(',', '","'), '-'], ['true'], 'minimum 10th / 12th by location'),
             ([q('BROKER'), '-', '>= 7500000'], ['true'], 'direct broker net worth (verify)'), (['-', '-', '-'], ['false'], '')])
@@ -609,7 +617,7 @@ def health_blood_bank():
     s.flow(rg, e, None, 'no', default=True)
     s.flow(hv, e)
     pk.dmn('sec-health-donor', 'Donor eligibility (verify against the current blood donor selection criteria)', 'FIRST',
-           [('Age', 'age', 'integer'), ('Haemoglobin g/dL', 'haemoglobin', 'double')], [('donorEligible', 'Eligible', 'boolean')],
+           [('Age', 'age', 'integer'), ('Haemoglobin g/dL', 'haemoglobin', 'number')], [('donorEligible', 'Eligible', 'boolean')],
            [(['< 18', '-'], ['false'], ''), (['> 65', '-'], ['false'], ''), (['-', '< 12.5'], ['false'], 'Hb below 12.5'),
             (['-', '-'], ['true'], '')])
     simple_seeds(pk, 'BLOOD-CENTRE', [('BB-TECH', 'TECH', 'BB-MO', 'Blood centre technician', 'रक्त केंद्र तकनीशियन'),
@@ -630,14 +638,25 @@ def ecom_gst_tcs():
     p = pk.proc('sangam-sec-ecom-gst-tcs', 'Monthly GST TCS', '', start={'materialFields': 'period'})
     s = p.root
     t = s.start('gt_timer', 'First of the month', timer_cycle='0 0 6 1 * ?', initiator=None)
-    d = s.setv('gt_defaults', 'Configuration', defaults='period=CURRENT;taxSeat=TAX-TEAM;netSupplies=0;executionConnector=gstn.payment;'
+    d = s.setv('gt_defaults', 'Configuration', defaults='period=CURRENT;taxSeat=TAX-TEAM;executionConnector=gstn.payment;'
                'executionStep=tcs-deposit;verifyApproval=false;reconcileRequired=true;executionPayloadFields=period,tcsAmount')
-    ns = s.conn('gt_supplies', 'Net taxable supplies by seller GSTIN', 'erp.netSupplies', 'month', 'query', None, 'net')
+    # SL-115: TCS is computed, deposited and filed only on confirmed net supplies (cleared before every query; no
+    # default 0 stands in); unconfirmed supplies go to the tax team, who establish them in the ERP; then re-check
+    nse, ns = checked_query(s, 'gt_supplies', 'Net taxable supplies by seller GSTIN', 'erp.netSupplies', 'month', None,
+                            'net', ['netSupplies'])
+    ng = s.xgw('gt_suppliesGw', 'Net supplies confirmed?')
     r = s.rule('gt_rate', 'TCS rate (DMN)', 'sec-ecom-tcs-rate')
     cp = s.expr('gt_compute', 'TCS amount', "${execution.setVariable('tcsAmount', netSupplies * tcsRatePct / 100)}")
     re_, rd = s.sla_task('gt_review', 'Review TCS by seller (deposit by the 10th) | विक्रेतावार टीसीएस की समीक्षा', 'taxSeat',
                          form='sec-ecom-gst-tcs/review', decision=None, fields=['remarks'], spec='7D', on_breach='ESCALATE')
-    s.seq(t, d, ns, r, cp, re_)
+    s.seq(t, d, nse)
+    s.flow(ns, ng)
+    supplies_unconfirmed, _ = check_conditions([('net', ['netSupplies'])])
+    s.flow(ng, unconfirmed_hold(p, s, 'gt_suppliesUnconfirmed', 'Net supplies not confirmed: establish them in the ERP '
+                                '| शुद्ध आपूर्ति की पुष्टि नहीं: ईआरपी में सुनिश्चित करें', '${taxSeat}', nse),
+           supplies_unconfirmed, 'not confirmed: tax team')
+    s.flow(ng, r, None, 'confirmed', default=True)
+    s.seq(r, cp, re_)
     dp = core(s, 'gt_deposit', 'Deposit TCS (core execution)', 'execution')
     s.flow(rd, dp)
     fl = s.conn('gt_gstr8', 'File GSTR-8', 'gstn.gstr8', 'file', 'submit', 'period,tcsAmount', 'gstr8', step='gstr8')
@@ -646,8 +665,8 @@ def ecom_gst_tcs():
     s.flow(fl, fg)
     s.flow(fg, re_, "gstr8Status == 'FAILED'", 'error: correct')
     s.flow(fg, end_ok(p, s, 'gt_end', 'Filed'), None, 'filed', default=True)
-    pk.dmn('sec-ecom-tcs-rate', 'GST TCS rate (CGST + SGST / IGST; verify notification)', 'FIRST', [('Supplies', 'netSupplies', 'double')],
-           [('tcsRatePct', 'Rate %', 'double')], [(['-'], ['0.5'], '0.5 % from 10 Jul 2024 (was 1 %) (verify)')])
+    pk.dmn('sec-ecom-tcs-rate', 'GST TCS rate (CGST + SGST / IGST; verify notification)', 'FIRST', [('Supplies', 'netSupplies', 'money')],
+           [('tcsRatePct', 'Rate %', 'number')], [(['-'], ['0.5'], '0.5 % from 10 Jul 2024 (was 1 %) (verify)')])
     simple_seeds(pk, 'TAX', [('TAX-TEAM', 'TAX', None, 'Indirect tax team', 'अप्रत्यक्ष कर दल')], 'egt')
 
 
@@ -666,13 +685,15 @@ def tel_tcccpr():
     s = p.root
     st = start_form(p, s, 'uc_start', 'Spam complaint (1909 / app)', 'sec-tel-tcccpr/complaint', 'Spam complaint | स्पैम शिकायत',
                     ['msisdn*', 'senderHeader*', 'description'])
-    d = s.setv('uc_defaults', 'Configuration', defaults='msisdn=@customerId;senderHeader=X;consentFound=false;'
+    d = s.setv('uc_defaults', 'Configuration', defaults='msisdn=@customerId;senderHeader=X;'
                'priorViolations=0;opsSeat=UCC-DESK;applicantRef=@msisdn')
     ck = clock(s, 'uc_clock', 'ucc', '${uccSpec}')
     r = s.rule('uc_rule', 'Timeline and graded action (DMN)', 'sec-tel-ucc')
-    cs = s.conn('uc_consent', 'Check preference and consent registers', 'dlt.consent', 'check', 'query', 'msisdn,senderHeader',
-                'consent')
-    s.seq(st, d, r, ck, cs)
+    # SL-115: the register answer stays as it came (cleared before the query; no default records "no consent" for a
+    # check that did not answer); the verifier decides, no gateway trusts it
+    cse, cs = checked_query(s, 'uc_consent', 'Check preference and consent registers', 'dlt.consent', 'check',
+                            'msisdn,senderHeader', 'consent', ['consentFound'])
+    s.seq(st, d, r, ck, cse)
     ve, vd = s.sla_task('uc_verify', 'Verify complaint | शिकायत का सत्यापन', 'opsSeat', form='sec-tel-tcccpr/verify',
                         decision=('uccDecision', ['valid', 'invalid']), fields=['remarks*'], spec='${uccSpec}', on_breach='ESCALATE')
     s.flow(cs, ve)
@@ -723,12 +744,17 @@ def tel_sim_swap():
     s = p.root
     st = start_form(p, s, 'ss_start', 'Replacement requested', 'sec-tel-sim-swap/request', 'SIM replacement | सिम प्रतिस्थापन',
                     ['msisdn*', 'customerName*', 'swapReason*'])
-    d = s.setv('ss_defaults', 'Configuration', defaults='msisdn=@customerId;customerName=X;swapReason=LOST;kycOk=true;'
+    d = s.setv('ss_defaults', 'Configuration', defaults='msisdn=@customerId;customerName=X;swapReason=LOST;'
                'fraudHit=false;applicantRef=@msisdn')
-    ky = s.conn('ss_kyc', 'Re-verify subscriber', 'dot.kyc', 'reverify', 'query', 'msisdn,customerName', 'kyc')
+    # SL-115: the re-verification fails closed (cleared before the query; no default stands in)
+    kye, ky = checked_query(s, 'ss_kyc', 'Re-verify subscriber', 'dot.kyc', 'reverify', 'msisdn,customerName', 'kyc',
+                            ['kycOk'])
     g = s.xgw('ss_gw', 'Verified?')
-    s.seq(st, d, ky, g)
-    s.flow(g, reject_with(p, s, 'ss_rj', 'REVERIFICATION_FAILED'), '!kycOk || fraudHit', 'no')
+    s.seq(st, d, kye)
+    s.flow(ky, g)
+    kyc_unconfirmed, kyc_failed = check_conditions([('kyc', ['kycOk'])], '!kycOk || fraudHit')
+    s.flow(g, reject_with(p, s, 'ss_rjKycCheck', 'KYC_NOT_CONFIRMED'), kyc_unconfirmed, 'not confirmed')
+    s.flow(g, reject_with(p, s, 'ss_rj', 'REVERIFICATION_FAILED'), kyc_failed, 'no')
     al = s.notify('ss_alert', 'Alert on the old SIM and e-mail', 'sim-swap-alert', 'sms,email', 'applicantRef')
     sw = s.conn('ss_swap', 'Activate the new SIM', 'hlr.swap', 'swap', 'submit', 'msisdn', 'swap', step='swap')
     br = s.conn('ss_bar', 'Bar SMS for 24 hours', 'hlr.smsBar', 'bar', 'submit', 'msisdn', 'bar', step='bar')
@@ -784,7 +810,7 @@ def scm_eway():
     vc2 = clock(s, 'ew_valid2', 'validity', '1D')
     s.seq(ex, xt, vc2, w)
     pk.dmn('sec-scm-ewb', 'E-way bill threshold and validity (CGST Rules r.138; verify state thresholds)', 'FIRST',
-           [('Value', 'consignmentValue', 'double'), ('Distance (km)', 'distanceKm', 'integer')],
+           [('Value', 'consignmentValue', 'money'), ('Distance (km)', 'distanceKm', 'integer')],
            [('ewbRequired', 'Required', 'boolean'), ('validitySpec', 'Validity', 'string')],
            [(['<= 50000', '-'], ['false', q('1D')], 'threshold Rs 50,000'),
             (['-', '<= 200'], ['true', q('1D')], '1 day per 200 km'), (['-', '<= 400'], ['true', q('2D')], ''),
@@ -918,7 +944,8 @@ def edu_scholarship():
     l1g = s.xgw('sc_l1Gw')
     s.flow(l1, l1g)
     rej = rejection(p, s, 'sc_rj')
-    s.flow(l1g, rej, "l1Decision == 'failed'", 'not verified')
+    s.flow(l1g, reject_with(p, s, 'sc_rjL1', 'INSTITUTE_VERIFICATION_FAILED'), "l1Decision == 'failed'",
+           'not verified')   # SL-55
     san = core(s, 'sc_l2', 'District / state verification and sanction (L2, core sanction)', 'sanction')
     s.flow(l1g, san, None, 'verified', default=True)
     pay = core(s, 'sc_pay', 'Pay by DBT (core execution)', 'execution')
@@ -931,7 +958,7 @@ def edu_scholarship():
     s.flow(fx, san)
     s.side_exits('sc')
     pk.dmn('sec-edu-sch-eligibility', 'Income ceiling (SYNTHETIC; per scheme guidelines)', 'FIRST',
-           [('Income', 'income', 'double')], [('eligible', 'Eligible', 'boolean')],
+           [('Income', 'income', 'money')], [('eligible', 'Eligible', 'boolean')],
            [(['<= 250000'], ['true'], 'post-matric style ceiling Rs 2.5 lakh'), (['-'], ['false'], '')])
     authority(pk, 'sec-edu-sch-authority', 'Scholarship sanction', [('-', 'DNO', 'district / state nodal officer')])
     powers(pk, 'sec-edu-sch-powers', [('DNO', 1000000, '')])
@@ -956,15 +983,20 @@ def util_billing():
     c = pk.proc('sangam-sec-util-bill', 'Bill of one consumer', '', start={'materialFields': 'key'})
     s = c.root
     a = s.start('bl_start', 'Consumer in the cycle', initiator=None)
-    d = s.setv('bl_defaults', 'Configuration', defaults='units=100;mdmReadStatus=NORMAL;tariffCategory=DOMESTIC;applicantRef=@key;'
+    d = s.setv('bl_defaults', 'Configuration', defaults='units=100;tariffCategory=DOMESTIC;applicantRef=@key;'
                'billingSeat=BILLING-CLERK;dueSpec=15D;consumer=@key;tariffId=DEFAULT;cycle=@batchId;connectionCaseKey=')
-    rd = s.conn('bl_read', 'Meter read', 'mdm.read', 'read', 'query', 'key', 'mdm')
+    # SL-115: only a confirmed NORMAL read bills automatically (cleared before the query; no default stands in); an
+    # unconfirmed read is a read exception for the billing clerk
+    rde, rd = checked_query(s, 'bl_read', 'Meter read', 'mdm.read', 'read', 'key', 'mdm', ['mdmReadStatus'])
     g = s.xgw('bl_readGw', 'Read valid?')
-    s.seq(a, d, rd, g)
+    s.seq(a, d, rde)
+    s.flow(rd, g)
     vx = s.user('bl_exception', 'Resolve read exception (provisional bill if meter defective) | रीडिंग अपवाद का समाधान',
                 '${billingSeat}', form='sec-util-meter-to-cash/exception', decision=None, fields=['units*', 'remarks'])
     tr = s.rule('bl_tariff', 'Tariff (DMN)', 'sec-util-tariff')
-    s.flow(g, vx, "mdmReadStatus != 'NORMAL'", 'zero / abnormal / defective')
+    read_unconfirmed, read_abnormal = check_conditions([('mdm', ['mdmReadStatus'])], "mdmReadStatus != 'NORMAL'")
+    s.flow(g, vx, read_unconfirmed, 'read not confirmed')
+    s.flow(g, vx, read_abnormal, 'zero / abnormal / defective')
     s.flow(g, tr, None, 'normal', default=True)
     s.flow(vx, tr)
     cp = s.expr('bl_compute', 'Bill amount', "${execution.setVariable('billAmount', fixedCharge + units * energyRate)}")
@@ -1005,8 +1037,8 @@ def util_billing():
     s.flow(od, dc)
     s.flow(dc, s.end('bl_endOverdue', 'Overdue: disconnection case opened', listeners=[c.item_listener('OVERDUE')]))
     pk.dmn('sec-util-tariff', 'Tariff (SYNTHETIC; SERC tariff order)', 'FIRST', [('Category', 'tariffCategory', 'string'),
-                                                                                   ('Units', 'units', 'double')],
-           [('fixedCharge', 'Fixed charge', 'double'), ('energyRate', 'Energy rate per unit', 'double'),
+                                                                                   ('Units', 'units', 'number')],
+           [('fixedCharge', 'Fixed charge', 'money'), ('energyRate', 'Energy rate per unit', 'money'),
             ('head', 'Bill head (must equal the tariff line head)', 'string')],
            [([q('DOMESTIC'), '<= 100'], ['50', '3.5', q('ENERGY')], ''), ([q('DOMESTIC'), '-'], ['50', '5.5', q('ENERGY')], ''),
             (['-', '-'], ['200', '8', q('ENERGY')], 'commercial')])
@@ -1101,9 +1133,9 @@ def hr_payroll():
     s.seq(jn, ps, end_ok(p, s, 'pr_end', 'Payroll closed'))
     pk.dmn('sec-hr-statutory', 'PF and ESI rates (EPF Scheme / ESI Act; verify current notifications)', 'FIRST',
            [('Period', 'period', 'string')],
-           [('pfEmployeePct', 'PF employee %', 'double'), ('pfEmployerPct', 'PF employer %', 'double'),
-            ('esiEmployeePct', 'ESI employee %', 'double'), ('esiEmployerPct', 'ESI employer %', 'double'),
-            ('pfWageCeiling', 'PF wage ceiling', 'double'), ('esiWageLimit', 'ESI wage limit', 'double')],
+           [('pfEmployeePct', 'PF employee %', 'number'), ('pfEmployerPct', 'PF employer %', 'number'),
+            ('esiEmployeePct', 'ESI employee %', 'number'), ('esiEmployerPct', 'ESI employer %', 'number'),
+            ('pfWageCeiling', 'PF wage ceiling', 'money'), ('esiWageLimit', 'ESI wage limit', 'money')],
            [(['-'], ['12', '12', '0.75', '3.25', '15000', '21000'], 'PF ceiling Rs 15,000; ESI limit Rs 21,000 (verify)')])
     authority(pk, 'sec-hr-payroll-authority', 'Payroll approver', [('-', 'HRHEAD', '')])
     powers(pk, 'sec-hr-payroll-powers', [('HRHEAD', 10000000000, '')])

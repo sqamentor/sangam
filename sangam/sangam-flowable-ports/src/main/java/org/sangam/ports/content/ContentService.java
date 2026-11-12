@@ -253,7 +253,14 @@ public class ContentService {
                 + " VALUES (?,?,?,?,?,?,?," + dialect.now() + ")", id, version, obj.key(), obj.sizeBytes(), obj.sha256Hex(), scan.name(), user);
     }
 
-    private static String safe(String tenant) {
+    /**
+     * The tenant segment of a document-store key: the tenant id with every character outside {@code [A-Za-z0-9_.-]}
+     * replaced by {@code _} (no path separator or other store syntax can enter a key), or {@code _shared} for content
+     * stored without a tenant. SG-03, owner decision Q10(b) of 2026-11-12: the {@code _shared} key is kept and the
+     * {@code CONTENT_ITEM} schema is not changed ({@code tenant_id} stays NOT NULL; {@code _shared} is only the store-key
+     * segment, never written to {@code tenant_id}). Pinned by {@code ContentStoreKeyTest}.
+     */
+    static String safe(String tenant) {
         return tenant == null || tenant.isBlank() ? "_shared" : tenant.replaceAll("[^A-Za-z0-9_.-]", "_");
     }
 

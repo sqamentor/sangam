@@ -84,6 +84,9 @@ Transport behaviour (`src/Http/HttpTransport.php`):
 - Safe calls (GET, or any mutation with an Idempotency-Key) are retried on network errors and 408/425/429/5xx with
   jittered exponential back-off, honouring `Retry-After`.
 - Lists accept a bare JSON array or `{items: [...]}` and read `X-Total-Count` / `X-Total-Count-Capped`.
+- The bytes travel through an `HttpSender` (default `CurlSender`, ext-curl). Pass `sender:` to `SangamClient` to
+  inject another wire (a proxy-aware client, or the test fake in `tests/Support/FakeSender.php`); auth, keys,
+  retries and error mapping stay in `HttpTransport`. ext-curl is required only for the default sender.
 - A mutation without a body (claim, unclaim) is sent with an empty body and no Content-Type.
 
 Token providers: `StaticTokenProvider` (dev token), `ClientCredentialsTokenProvider` (OIDC client credentials,
@@ -145,12 +148,15 @@ The parent ignores SIGPIPE so a write to a child that just exited is harmless.
 Every worker call carries `{workerId, lockVersion, attemptId}` and `Idempotency-Key: <operationId>:<action>:<lockVersion>`
 (heartbeats: `<operationId>:extend-lock:<lockVersion>:<seq>`). Result reports are retried with back-off until
 the lease expires; after that the lease expires server-side and the next attempt reuses the same operationId.
-Items without `attemptId` (no LOCKED confirmation) are never started (A-1). Items for an unsubscribed topic, or
+Items without `id`, `lockVersion` or `attemptId` (no LOCKED confirmation) are never started (A-1); every
+member of `ExternalWork` is nullable, as in the contract, and an absent member stays null. Items for an unsubscribed topic, or
 more items than requested, are unlocked at once. `subscribe()` / `unsubscribe()` work while running.
 Work endpoints are fenced by (workId, lockVersion, attemptId) rather than keyed (`x-sangam-fenced`); the derived
 Idempotency-Key is still sent and accepted. `TopicSubscription` also takes `localVariables`,
 `processDefinitionKey` and `businessKey` (TopicRequest filters); `SangamWorker(usePriority: true)` sets
 FetchAndLockRequest.usePriority. `ExternalWork::$errorMessage` carries the previous attempt's failure.
+`TopicSubscription::topicRequest()` returns the typed `Model\TopicRequest`; the array form
+`toTopicRequest()` is deprecated and kept only for compatibility.
 
 ## Example
 

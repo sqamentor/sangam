@@ -32,7 +32,7 @@ class OutboxRelayIT extends LayerSpecSupport {
 
     static final List<Destination> HISTORY = List.of(Destination.ordered("history"));
 
-    final Outbox outbox = new Outbox(PG);
+    final Outbox outbox = new Outbox(DIALECT);
     final List<String> published = Collections.synchronizedList(new ArrayList<>());
     final List<OutboxEvent> publishedEvents = Collections.synchronizedList(new ArrayList<>());
 
@@ -47,7 +47,7 @@ class OutboxRelayIT extends LayerSpecSupport {
     }
 
     Relay relay(String node, Publisher p, Duration leaseTtl, int maxAttempts, AuditChain audit) {
-        return new Relay(PG, TX, p, new Relay.Config(node, 50, leaseTtl, maxAttempts, Duration.ZERO, Duration.ZERO), audit);
+        return new Relay(DIALECT, TX, p, new Relay.Config(node, 50, leaseTtl, maxAttempts, Duration.ZERO, Duration.ZERO), audit);
     }
 
     Publisher recording() {
@@ -118,7 +118,7 @@ class OutboxRelayIT extends LayerSpecSupport {
         assertEquals(2, publishedEvents.size());
         assertEquals(publishedEvents.get(0).eventId(), publishedEvents.get(1).eventId());
         // the consumer dedups on event_id through its inbox
-        Inbox consumerInbox = new Inbox(PG, TX, "consumer", Duration.ofSeconds(30), Duration.ofSeconds(1), null);
+        Inbox consumerInbox = new Inbox(DIALECT, TX, "consumer", Duration.ofSeconds(30), Duration.ofSeconds(1), null);
         List<Inbox.ReceiveResult> results = new ArrayList<>();
         for (OutboxEvent e : publishedEvents) {
             results.add(consumerInbox.receive("t1", "sangam.history", e.eventId().toString(), e.rootId(), e.payload(), Duration.ofHours(24)));
@@ -128,7 +128,7 @@ class OutboxRelayIT extends LayerSpecSupport {
 
     @Test
     void poisonParksAndBlocksOrderedDeliveryForThatRootOnly() {
-        AuditChain audit = new AuditChain(PG);
+        AuditChain audit = new AuditChain(DIALECT);
         Publisher poisonAware = (dest, ev) -> {
             if (ev.payload().contains("poison")) throw new IllegalStateException("broker rejects payload");
             recording().publish(dest, ev);
@@ -180,7 +180,7 @@ class OutboxRelayIT extends LayerSpecSupport {
             if (!healed[0]) throw new IllegalStateException("down");
             recording().publish(dest, ev);
         };
-        Relay relay = relay("n1", flaky, Duration.ofSeconds(30), 2, new AuditChain(PG));
+        Relay relay = relay("n1", flaky, Duration.ofSeconds(30), 2, new AuditChain(DIALECT));
         Outbox.Appended e1 = inTx(c -> outbox.append(c, "t1", "rootQ", "E", "{}", HISTORY));
         relay.drain(10);
         assertEquals("PARKED", inTx(c -> Relay.state(c, e1.outboxId(), "history")));

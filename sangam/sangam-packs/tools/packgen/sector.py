@@ -10,6 +10,7 @@ UNKNOWN_OUTCOME, closure, rejection with appeal, cancellation side exits) and re
 ConnectorGateway (`conn` steps and the core execution block). Large sets use one instance per item (GP-09).
 """
 from lib import C, q
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
 import sector_forms  # noqa: F401  (registers the sector labels and decision options)
 
@@ -59,7 +60,7 @@ def powers(pk, key, rows, doc='K6 / IX.5 rule 3. SYNTHETIC limits: replace with 
     def outs(limit, allowed):
         o = ['null' if limit is None else str(limit), allowed]
         return o + (['true' if limit is None else 'false'] if unlimited else [])
-    out_cols = [('powerLimit', 'Power limit (INR)', 'double'), ('allowed', 'Allowed', 'boolean')]
+    out_cols = [('powerLimit', 'Power limit (INR)', 'money'), ('allowed', 'Allowed', 'boolean')]
     if unlimited:
         out_cols.append(('noMonetaryLimit', 'No monetary limit', 'boolean'))
     pk.dmn(key, 'Delegated powers by role', 'FIRST', ins, out_cols,
@@ -67,7 +68,7 @@ def powers(pk, key, rows, doc='K6 / IX.5 rule 3. SYNTHETIC limits: replace with 
            + [(['-'] * len(ins), outs(0, 'false'), 'no delegated power')], doc=doc)
 
 
-def authority(pk, key, name, rows, var='amount', label='Amount (INR)', typ='double', doc=''):
+def authority(pk, key, name, rows, var='amount', label='Amount (INR)', typ='money', doc=''):
     """Competent role by one input (default the amount). rows: [(test, role, note)]."""
     pk.dmn(key, name, 'FIRST', [(label, var, typ)], [('competentRole', 'Competent role', 'string')],
            [([t], [q(r)], n) for t, r, n in rows], doc=doc or 'SYNTHETIC bands; replace with the board policy.')
@@ -92,3 +93,5 @@ def build():
     sec_more.build()
     import sec_ushealth  # US-HEALTH workstream: sec.ushealth.* (English + Spanish)
     sec_ushealth.build()
+    import sec_eu  # SL-33: EU GDPR data subject rights
+    sec_eu.build()

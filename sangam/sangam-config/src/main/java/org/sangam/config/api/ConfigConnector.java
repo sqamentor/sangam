@@ -39,11 +39,15 @@ import java.util.Map;
  *   <li>{@code profile.get}: {@code paths} (comma list) → {@code values} map, {@code binding}, {@code placeholders};
  *       {@code office}, {@code asOf} optional;</li>
  *   <li>{@code profile.binding}: → {@code binding} (stored as the case's {@code profileVersion});</li>
- *   <li>{@code classification.validate}: {@code scheme}, {@code code} → {@code valid}, {@code findings},
- *       {@code attributes}, segment values;</li>
- *   <li>{@code documentType.get}: {@code typeId} or {@code formNumber} → the type row (chain, rail, sanction ...);</li>
- *   <li>{@code documentType.check}: {@code typeId}, {@code document} → {@code valid}, {@code findings};</li>
- *   <li>{@code chain.signatures}: {@code chainId}, {@code amount} → {@code signatures};</li>
+ *   <li>{@code classification.validate}: {@code scheme} (default: the {@code classification.scheme} of the document
+ *       type {@code typeId}, else profile {@code classification.defaultScheme}), {@code code} → {@code valid},
+ *       {@code findings}, {@code attributes}, segment values;</li>
+ *   <li>{@code documentType.get}: {@code typeId}, {@code formNumber}, or {@code typeRef} (a catalogue id or a form
+ *       number; exactly one type must match, else TYPE_AMBIGUOUS), optional {@code formKind} (only types of that
+ *       kind match, e.g. {@code BILL}) → the type row (chain, rail, sanction ...);</li>
+ *   <li>{@code documentType.check}: {@code typeId}, {@code document} (default: the call's own fields) →
+ *       {@code valid}, {@code findings};</li>
+ *   <li>{@code chain.signatures}: {@code chainId}, {@code amount} → {@code signatures} (unknown chain: CHAIN_UNKNOWN);</li>
  *   <li>{@code series.next}: {@code series}, {@code unit}, {@code period}, {@code format} → {@code number};</li>
  *   <li>{@code crosswalk.map}: {@code crosswalk}, {@code code}, {@code amount} → {@code mapped}.</li>
  * </ul>
@@ -56,24 +60,36 @@ public final class ConfigConnector implements SangamConnector {
     private final Map<String, Object> issued = new java.util.concurrent.ConcurrentHashMap<>();
 
     private final BusinessClock businessClock;
+    private final CaseBindings caseBindings;
+    private final java.util.Set<String> unboundLogged = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ConfigConnector.class);
 
     /** Business dates from the profiles' own {@code locale.zone} (system clock). */
     public ConfigConnector(ProfileResolver resolver, ClassificationRegistry registry, NumberSeries series) {
         this(resolver, registry, series, new ProfileBusinessClock(resolver, java.time.Clock.systemUTC()));
     }
 
+    /** Without stored case bindings: every call reads the profile versions in force ({@link CaseBindings#NONE}). */
     public ConfigConnector(ProfileResolver resolver, ClassificationRegistry registry, NumberSeries series,
                            BusinessClock businessClock) {
+        this(resolver, registry, series, businessClock, CaseBindings.NONE);
+    }
+
+    /**
+     * @param caseBindings the bindings cases stored at their start (SL-119): a call of a bound case ({@code rootId})
+     *                     reads the profile versions of its binding, so a running case keeps the configuration it
+     *                     started under (GP-19 / R43) and only new cases adopt a newly activated version
+     */
+    public ConfigConnector(ProfileResolver resolver, ClassificationRegistry registry, NumberSeries series,
+                           BusinessClock businessClock, CaseBindings caseBindings) {
         this.resolver = resolver;
         this.businessClock = java.util.Objects.requireNonNull(businessClock, "businessClock");
-        this.registry = registry.withReferenceScopes(scope -> {
-            List<String> ids = new ArrayList<>();
-            for (String ref : resolver.resolve(scope, businessClock.today(scope)).chain()) {
-                ids.add(ref.substring(0, ref.indexOf('@')));
-            }
-            java.util.Collections.reverse(ids);
-            return ids;
-        });
+        this.caseBindings = java.util.Objects.requireNonNull(caseBindings, "caseBindings");
+        // other callers of the shared registry (no profile at hand) search the chain in force; this connector passes
+        // the chain of the profile each call reads (SL-124), a running case's pinned chain included
+        this.registry = registry.withReferenceScopes(scope -> ClassificationRegistry.referenceScopesOf(
+                resolver.resolve(scope, businessClock.today(scope)).chain()));
         this.series = series;
     }
 
@@ -88,7 +104,7 @@ public final class ConfigConnector implements SangamConnector {
     public ConnectorResult invoke(ConnectorRequest r) {
         try {
             LocalDate asOf = r.str("asOf") == null ? businessClock.today(r.tenantId()) : LocalDate.parse(r.str("asOf"));
-            ResolvedProfile p = resolver.resolve(r.tenantId(), r.str("office"), asOf);
+            ResolvedProfile p = profileOf(r, asOf);
             Map<String, Object> out = new LinkedHashMap<>();
             switch (r.operation()) {
                 case "profile.get" -> {
@@ -102,15 +118,30 @@ public final class ConfigConnector implements SangamConnector {
                 }
                 case "profile.binding" -> out.put("binding", p.binding());
                 case "classification.validate" -> {
-                    String schemeId = r.str("scheme");
+                    // a call naming only the code (a bill's head of account) uses the scheme its document type declares
+                    // (catalogue classification.scheme, e.g. a Union bill type on HOA), else the profile's
+                    // classification.defaultScheme (a State's own head-of-account scheme)
+                    String schemeId = r.str("scheme") != null ? r.str("scheme") : typeScheme(p, r.str("typeId"));
+                    if (schemeId == null) {
+                        schemeId = p.str("classification.defaultScheme", null);
+                    }
+                    if (schemeId == null) {
+                        return ConnectorResult.BusinessFailure.of("SCHEME_UNKNOWN",
+                                "no scheme given, none on the document type and no classification.defaultScheme in the profile");
+                    }
+                    if (r.str("code") == null) {
+                        return ConnectorResult.BusinessFailure.of("CODE_MISSING", "no classification code to validate");
+                    }
+                    String scheme = schemeId;
                     Map<String, Object> sm = p.list("classification.schemes").stream()
-                            .filter(m -> schemeId.equals(m.get("id"))).findFirst().orElse(null);
+                            .filter(m -> scheme.equals(m.get("id"))).findFirst().orElse(null);
                     if (sm == null) {
-                        return ConnectorResult.BusinessFailure.of("SCHEME_UNKNOWN", "no scheme " + schemeId);
+                        return ConnectorResult.BusinessFailure.of("SCHEME_UNKNOWN", "no scheme " + scheme);
                     }
                     ClassificationScheme s = ClassificationScheme.from(sm);
                     ClassificationRegistry.Code c = registry.parse(s, r.str("code"));
-                    List<Finding> f = new ArrayList<>(registry.validate(r.tenantId(), s, c, asOf, id -> p.list("classification.schemes").stream()
+                    List<Finding> f = new ArrayList<>(registry.validate(r.tenantId(),
+                            ClassificationRegistry.referenceScopesOf(p.chain()), s, c, asOf, id -> p.list("classification.schemes").stream()
                             .filter(m -> id.equals(m.get("id"))).findFirst().map(ClassificationScheme::from).orElse(null)));
                     f.addAll(Crosswalk.checkCombinations(p.list("classification.combinations"), c));
                     out.put("valid", !Finding.anyError(f));
@@ -120,22 +151,47 @@ public final class ConfigConnector implements SangamConnector {
                 }
                 case "documentType.get" -> {
                     DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(p);
-                    var t = r.str("typeId") != null ? cat.type(r.str("typeId")) : cat.byForm(r.str("formNumber"));
+                    // typeRef: the caller's vocabulary (a catalogue id or a form number), resolved by the catalogue data;
+                    // exactly one type must match; several are ambiguous and never decided by catalogue order
+                    // formKind (optional, e.g. BILL): only types of that kind match, so a bill never resolves a report
+                    // or a register; no formKind applies no restriction
+                    String kind = r.str("formKind");
+                    List<org.sangam.config.catalogue.DocumentType> t = r.str("typeId") != null
+                            ? DocumentTypeCatalogue.ofKind(cat.type(r.str("typeId")).stream().toList(), kind)
+                            : r.str("formNumber") != null ? cat.byForm(r.str("formNumber"), kind).stream().toList()
+                            : cat.byReference(r.str("typeRef"), kind);
+                    if (t.size() > 1) {
+                        return ConnectorResult.BusinessFailure.of("TYPE_AMBIGUOUS", "'" + r.str("typeRef")
+                                + "' names more than one document type: " + t.stream().map(x -> x.id()).toList());
+                    }
                     if (t.isEmpty()) {
                         return ConnectorResult.BusinessFailure.of("TYPE_UNKNOWN", "document type not in the catalogue");
                     }
-                    out.putAll(t.get().raw());
+                    out.putAll(t.get(0).raw());
                 }
                 case "documentType.check" -> {
                     DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(p);
-                    List<Finding> f = cat.check(r.str("typeId"), Tree.map(r.input().get("document")), asOf, null);
+                    // the document is the 'document' map, else the call's own fields (a process sends its bill fields)
+                    Map<String, Object> doc = r.input().get("document") instanceof Map<?, ?>
+                            ? Tree.map(r.input().get("document")) : new LinkedHashMap<>(r.input());
+                    List<Finding> f = cat.check(r.str("typeId"), doc, asOf, null);
                     out.put("valid", !Finding.anyError(f));
                     out.put("findings", render(f));
                 }
                 case "chain.signatures" -> {
                     DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(p);
-                    int n = cat.chain(r.str("chainId")).map(c -> c.signaturesFor(new BigDecimal(r.str("amount")))).orElse(1);
-                    out.put("signatures", n);
+                    // an unknown chain is a failure, never a default of one signature; the amount is the
+                    // pack's number as given (its unit is the catalogue's band unit)
+                    var chain = r.str("chainId") == null ? java.util.Optional.<DocumentTypeCatalogue.ChainTemplate>empty()
+                            : cat.chain(r.str("chainId"));
+                    if (chain.isEmpty()) {
+                        return ConnectorResult.BusinessFailure.of("CHAIN_UNKNOWN",
+                                "approval chain '" + r.str("chainId") + "' not in the catalogue");
+                    }
+                    if (r.str("amount") == null) {
+                        return ConnectorResult.BusinessFailure.of("AMOUNT_MISSING", "no amount for the signature count");
+                    }
+                    out.put("signatures", chain.get().signaturesFor(new BigDecimal(r.str("amount"))));
                 }
                 case "series.next" -> {
                     Object prior = issued.get(r.operationId().toString());
@@ -168,6 +224,9 @@ public final class ConfigConnector implements SangamConnector {
             }
             return ConnectorResult.Success.of(out, null);
         } catch (RuntimeException e) {
+            if (e instanceof org.sangam.config.common.ConfigException ce && "BINDING_UNRESOLVABLE".equals(ce.code())) {
+                return ConnectorResult.BusinessFailure.of(ce.code(), ce.getMessage());
+            }
             return ConnectorResult.BusinessFailure.of("CONFIG_ERROR", e.getMessage());
         }
     }
@@ -177,6 +236,40 @@ public final class ConfigConnector implements SangamConnector {
         Object prior = issued.get(r.operationId().toString());
         return prior == null ? new LookupResult.NotFound()
                 : new LookupResult.Found(true, Map.of("number", prior), String.valueOf(prior), null);
+    }
+
+    /**
+     * The profile a call reads (SL-119): the case's stored binding when the call names a bound case, so every operation
+     * honours the pin; otherwise (no case, or a case started before bindings were stored) the versions in force on
+     * {@code asOf}, logged once per tenant. A binding that no longer resolves fails the call ({@code BINDING_*}); it is
+     * never silently replaced by today's versions. The binding is the case's whole chain, so a request's {@code office}
+     * does not add an overlay to it.
+     */
+    ResolvedProfile profileOf(ConnectorRequest r, LocalDate asOf) {
+        String binding = r.rootId() == null ? null : caseBindings.binding(r.tenantId(), r.rootId()).orElse(null);
+        if (binding == null) {
+            if (r.rootId() != null && caseBindings != CaseBindings.NONE && unboundLogged.add(r.tenantId())) {
+                LOG.warn("case {} of tenant {} has no stored profile binding: configuration reads use the versions in "
+                        + "force (logged once per tenant)", r.rootId(), r.tenantId());
+            }
+            return resolver.resolve(r.tenantId(), r.str("office"), asOf);
+        }
+        ResolvedProfile p = resolver.resolveBinding(r.tenantId(), binding, asOf);
+        List<Finding> broken = p.findings().stream().filter(ProfileResolver::isBindingError).toList();
+        if (!broken.isEmpty()) {
+            throw new org.sangam.config.common.ConfigException("BINDING_UNRESOLVABLE", "case " + r.rootId()
+                    + " binding " + binding + ": " + broken.stream().map(Finding::message).toList(), broken);
+        }
+        return p;
+    }
+
+    /** The classification scheme a document type declares for its lines ({@code classification.scheme}), or null. */
+    static String typeScheme(ResolvedProfile p, String typeId) {
+        if (typeId == null) {
+            return null;
+        }
+        return DocumentTypeCatalogue.of(p).type(typeId)
+                .map(t -> Tree.str(Tree.map(t.get("classification")).get("scheme"), null)).orElse(null);
     }
 
     static List<Map<String, Object>> render(List<Finding> f) {

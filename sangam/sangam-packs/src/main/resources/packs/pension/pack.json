@@ -1,6 +1,6 @@
 {
   "id": "gov.pension",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Pension: sanction, PPO and monthly disbursement",
     "hi": "पेंशन: स्वीकृति, पीपीओ एवं मासिक भुगतान"
@@ -84,7 +84,11 @@
       "id": "pfms.payment",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
-      "purpose": "Monthly pension payment"
+      "purpose": "Monthly pension payment",
+      "simulatorBinding": {
+        "connector": "pfms-sim",
+        "operation": "pay"
+      }
     }
   ],
   "covers": [
@@ -109,5 +113,27 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "workers": [
+    {
+      "topic": "sangam.pfms.paymentFile",
+      "connector": "pfms.payment",
+      "operation": "submitPaymentFile",
+      "capabilityClass": "c"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "averageEmoluments",
+      "familyPension",
+      "lastPay",
+      "pensionAmount",
+      "powerLimit",
+      "retirementGratuity"
+    ]
+  }
 }

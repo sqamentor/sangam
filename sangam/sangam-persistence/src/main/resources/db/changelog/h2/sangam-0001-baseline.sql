@@ -5557,6 +5557,42 @@ CREATE TABLE OPS_BULK_KEY (
 );
 --rollback DROP TABLE OPS_BULK_KEY;
 
+--changeset sangam:0034-01-tenant_custom_field dbms:h2
+--comment: tenant custom field definitions, effective-dated versions (SL-40)
+CREATE TABLE TENANT_CUSTOM_FIELD (
+  tenant_id VARCHAR(64) NOT NULL,
+  object_type VARCHAR(255) NOT NULL,
+  field_key VARCHAR(80) NOT NULL,
+  version INTEGER NOT NULL,
+  label VARCHAR(255),
+  required_flag SMALLINT NOT NULL,
+  read_only_flag SMALLINT NOT NULL,
+  schema_json CHARACTER LARGE OBJECT NOT NULL,
+  effective_from DATE NOT NULL,
+  effective_to DATE,
+  created_by VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  retired_by VARCHAR(255),
+  retired_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_TENANT_CUSTOM_FIELD PRIMARY KEY (tenant_id, object_type, field_key, version)
+);
+--rollback DROP TABLE TENANT_CUSTOM_FIELD;
+
+--changeset sangam:0037-01-bil_document dbms:h2
+--comment: billing document numbers and receipt allocation plans, keyed by document identity (SL-130, SL-131)
+CREATE TABLE BIL_DOCUMENT (
+  tenant_id VARCHAR(64) NOT NULL,
+  doc_type VARCHAR(32) NOT NULL,
+  doc_key VARCHAR(255) NOT NULL,
+  series_key VARCHAR(64) NOT NULL,
+  doc_number VARCHAR(255),
+  plan_json CHARACTER LARGE OBJECT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  created_by VARCHAR(255),
+  CONSTRAINT PK_BIL_DOCUMENT PRIMARY KEY (tenant_id, doc_type, doc_key)
+);
+--rollback DROP TABLE BIL_DOCUMENT;
+
 --changeset sangam:0016-03-form_draft-alter dbms:h2
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);
@@ -5621,3 +5657,385 @@ CREATE INDEX HRM_PI_QUERY ON HRM_PROCESS_INSTANCE (tenant_id, scope_type, defini
 --comment: history read-model query index: tasks (FC-25)
 CREATE INDEX HRM_TASK_QUERY ON HRM_TASK (tenant_id, process_instance_id, task_def_key);
 --rollback DROP INDEX HRM_TASK_QUERY;
+
+--changeset sangam:0033-01-cfg_master_code-data dbms:h2
+--comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
+UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';
+--rollback UPDATE CFG_MASTER_CODE SET parent_code = '' WHERE parent_code = '-';
+
+--changeset sangam:0033-02-res_token_seq-data dbms:h2
+--comment: SL-84 token sequences without a series: series '' becomes the absent-key value '-'
+UPDATE RES_TOKEN_SEQ SET series = '-' WHERE series = '';
+--rollback UPDATE RES_TOKEN_SEQ SET series = '' WHERE series = '-';
+
+--changeset sangam:0035-01-ch_message-nullable dbms:h2
+--comment: SL-87 attachment-only conversation message: body may be empty
+ALTER TABLE CH_MESSAGE ALTER COLUMN body SET NULL;
+--rollback UPDATE CH_MESSAGE SET body = '' WHERE body IS NULL; ALTER TABLE CH_MESSAGE ALTER COLUMN body SET NOT NULL;
+
+--changeset sangam:0035-02-ai_agent_run-nullable dbms:h2
+--comment: SL-87 agent run started without input text
+ALTER TABLE AI_AGENT_RUN ALTER COLUMN input_text SET NULL;
+--rollback UPDATE AI_AGENT_RUN SET input_text = '' WHERE input_text IS NULL; ALTER TABLE AI_AGENT_RUN ALTER COLUMN input_text SET NOT NULL;
+
+--changeset sangam:0035-03-ops_bulk_row-nullable dbms:h2
+--comment: SL-87 bulk row rejected for a missing external id
+ALTER TABLE OPS_BULK_ROW ALTER COLUMN external_id SET NULL;
+--rollback UPDATE OPS_BULK_ROW SET external_id = '' WHERE external_id IS NULL; ALTER TABLE OPS_BULK_ROW ALTER COLUMN external_id SET NOT NULL;
+
+--changeset sangam:0036-01-cf_config-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_CONFIG: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT config_kind, config_key, version FROM CF_CONFIG WHERE tenant_id IN ('-', '') AND config_kind IS NOT NULL AND config_key IS NOT NULL AND version IS NOT NULL GROUP BY config_kind, config_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_CONFIG SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_CONFIG SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-02-cf_number_seq-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_NUMBER_SEQ: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT series_key, period_key FROM CF_NUMBER_SEQ WHERE tenant_id IN ('-', '') AND series_key IS NOT NULL AND period_key IS NOT NULL GROUP BY series_key, period_key HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_NUMBER_SEQ SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_NUMBER_SEQ SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-03-cf_case-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_CASE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT case_id FROM CF_CASE WHERE tenant_id IN ('-', '') AND case_id IS NOT NULL GROUP BY case_id HAVING COUNT(DISTINCT tenant_id) > 1) k) + (SELECT COUNT(*) FROM (SELECT case_number FROM CF_CASE WHERE tenant_id IN ('-', '') AND case_number IS NOT NULL GROUP BY case_number HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_CASE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_CASE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-04-cf_party-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_PARTY: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT party_id FROM CF_PARTY WHERE tenant_id IN ('-', '') AND party_id IS NOT NULL GROUP BY party_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_PARTY SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_PARTY SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-05-cf_party_key-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_PARTY_KEY: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT key_hash, party_id FROM CF_PARTY_KEY WHERE tenant_id IN ('-', '') AND key_hash IS NOT NULL AND party_id IS NOT NULL GROUP BY key_hash, party_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_PARTY_KEY SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_PARTY_KEY SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-06-cf_case_party-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_CASE_PARTY: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT case_party_id FROM CF_CASE_PARTY WHERE tenant_id IN ('-', '') AND case_party_id IS NOT NULL GROUP BY case_party_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_CASE_PARTY SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_CASE_PARTY SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-07-cf_case_record-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_CASE_RECORD: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT record_id FROM CF_CASE_RECORD WHERE tenant_id IN ('-', '') AND record_id IS NOT NULL GROUP BY record_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_CASE_RECORD SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_CASE_RECORD SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-08-cf_folder-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_FOLDER: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT folder_id FROM CF_FOLDER WHERE tenant_id IN ('-', '') AND folder_id IS NOT NULL GROUP BY folder_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_FOLDER SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_FOLDER SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-09-cf_document-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_DOCUMENT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT document_id FROM CF_DOCUMENT WHERE tenant_id IN ('-', '') AND document_id IS NOT NULL GROUP BY document_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_DOCUMENT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_DOCUMENT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-10-cf_note-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_NOTE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT note_id FROM CF_NOTE WHERE tenant_id IN ('-', '') AND note_id IS NOT NULL GROUP BY note_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_NOTE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_NOTE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-11-cf_event-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_EVENT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT event_id FROM CF_EVENT WHERE tenant_id IN ('-', '') AND event_id IS NOT NULL GROUP BY event_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_EVENT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_EVENT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-12-cf_hearing-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_HEARING: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT hearing_id FROM CF_HEARING WHERE tenant_id IN ('-', '') AND hearing_id IS NOT NULL GROUP BY hearing_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_HEARING SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_HEARING SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-13-cf_case_link-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_CASE_LINK: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT link_id FROM CF_CASE_LINK WHERE tenant_id IN ('-', '') AND link_id IS NOT NULL GROUP BY link_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_CASE_LINK SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_CASE_LINK SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-14-cf_deadline-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_DEADLINE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT deadline_id FROM CF_DEADLINE WHERE tenant_id IN ('-', '') AND deadline_id IS NOT NULL GROUP BY deadline_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_DEADLINE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_DEADLINE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-15-cf_committee-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_COMMITTEE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT committee_id FROM CF_COMMITTEE WHERE tenant_id IN ('-', '') AND committee_id IS NOT NULL GROUP BY committee_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_COMMITTEE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_COMMITTEE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-16-cf_committee_member-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_COMMITTEE_MEMBER: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT member_id FROM CF_COMMITTEE_MEMBER WHERE tenant_id IN ('-', '') AND member_id IS NOT NULL GROUP BY member_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_COMMITTEE_MEMBER SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_COMMITTEE_MEMBER SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-17-cf_meeting-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_MEETING: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT meeting_id FROM CF_MEETING WHERE tenant_id IN ('-', '') AND meeting_id IS NOT NULL GROUP BY meeting_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_MEETING SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_MEETING SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-18-cf_agenda_item-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_AGENDA_ITEM: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT item_id FROM CF_AGENDA_ITEM WHERE tenant_id IN ('-', '') AND item_id IS NOT NULL GROUP BY item_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_AGENDA_ITEM SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_AGENDA_ITEM SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-19-cf_attendance-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_ATTENDANCE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT meeting_id, attendee_ref FROM CF_ATTENDANCE WHERE tenant_id IN ('-', '') AND meeting_id IS NOT NULL AND attendee_ref IS NOT NULL GROUP BY meeting_id, attendee_ref HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_ATTENDANCE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_ATTENDANCE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-20-cf_notice-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_NOTICE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT notice_id FROM CF_NOTICE WHERE tenant_id IN ('-', '') AND notice_id IS NOT NULL GROUP BY notice_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_NOTICE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_NOTICE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-21-cf_minutes-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_MINUTES: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT meeting_id, version FROM CF_MINUTES WHERE tenant_id IN ('-', '') AND meeting_id IS NOT NULL AND version IS NOT NULL GROUP BY meeting_id, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_MINUTES SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_MINUTES SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-22-cf_decision-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_DECISION: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT decision_id FROM CF_DECISION WHERE tenant_id IN ('-', '') AND decision_id IS NOT NULL GROUP BY decision_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_DECISION SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_DECISION SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-23-cf_action_item-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_ACTION_ITEM: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT action_id FROM CF_ACTION_ITEM WHERE tenant_id IN ('-', '') AND action_id IS NOT NULL GROUP BY action_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_ACTION_ITEM SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_ACTION_ITEM SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-24-cf_reference-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_REFERENCE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT reference_id FROM CF_REFERENCE WHERE tenant_id IN ('-', '') AND reference_id IS NOT NULL GROUP BY reference_id HAVING COUNT(DISTINCT tenant_id) > 1) k) + (SELECT COUNT(*) FROM (SELECT ref_number FROM CF_REFERENCE WHERE tenant_id IN ('-', '') AND ref_number IS NOT NULL GROUP BY ref_number HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_REFERENCE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_REFERENCE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-25-cf_reference_move-shared-tenant dbms:h2
+--comment: SL-86 shared rows of CF_REFERENCE_MOVE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT move_id FROM CF_REFERENCE_MOVE WHERE tenant_id IN ('-', '') AND move_id IS NOT NULL GROUP BY move_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE CF_REFERENCE_MOVE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE CF_REFERENCE_MOVE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-26-pg_config-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_CONFIG: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT version FROM PG_CONFIG WHERE tenant_id IN ('-', '') AND version IS NOT NULL GROUP BY version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_CONFIG SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_CONFIG SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-27-pg_programme-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_PROGRAMME: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT programme_id FROM PG_PROGRAMME WHERE tenant_id IN ('-', '') AND programme_id IS NOT NULL GROUP BY programme_id HAVING COUNT(DISTINCT tenant_id) > 1) k) + (SELECT COUNT(*) FROM (SELECT code FROM PG_PROGRAMME WHERE tenant_id IN ('-', '') AND code IS NOT NULL GROUP BY code HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_PROGRAMME SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_PROGRAMME SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-28-pg_indicator-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_INDICATOR: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT indicator_key, version FROM PG_INDICATOR WHERE tenant_id IN ('-', '') AND indicator_key IS NOT NULL AND version IS NOT NULL GROUP BY indicator_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_INDICATOR SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_INDICATOR SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-29-pg_period-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_PERIOD: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT period_id FROM PG_PERIOD WHERE tenant_id IN ('-', '') AND period_id IS NOT NULL GROUP BY period_id HAVING COUNT(DISTINCT tenant_id) > 1) k) + (SELECT COUNT(*) FROM (SELECT frequency, starts_on FROM PG_PERIOD WHERE tenant_id IN ('-', '') AND frequency IS NOT NULL AND starts_on IS NOT NULL GROUP BY frequency, starts_on HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_PERIOD SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_PERIOD SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-30-pg_target-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_TARGET: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT target_id FROM PG_TARGET WHERE tenant_id IN ('-', '') AND target_id IS NOT NULL GROUP BY target_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_TARGET SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_TARGET SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-31-pg_milestone-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_MILESTONE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT milestone_id FROM PG_MILESTONE WHERE tenant_id IN ('-', '') AND milestone_id IS NOT NULL GROUP BY milestone_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_MILESTONE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_MILESTONE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-32-pg_return_def-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_RETURN_DEF: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT return_key, version FROM PG_RETURN_DEF WHERE tenant_id IN ('-', '') AND return_key IS NOT NULL AND version IS NOT NULL GROUP BY return_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_RETURN_DEF SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_RETURN_DEF SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-33-pg_return-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_RETURN: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT return_id FROM PG_RETURN WHERE tenant_id IN ('-', '') AND return_id IS NOT NULL GROUP BY return_id HAVING COUNT(DISTINCT tenant_id) > 1) k) + (SELECT COUNT(*) FROM (SELECT return_key, period_id, org_unit FROM PG_RETURN WHERE tenant_id IN ('-', '') AND return_key IS NOT NULL AND period_id IS NOT NULL AND org_unit IS NOT NULL GROUP BY return_key, period_id, org_unit HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_RETURN SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_RETURN SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-34-pg_return_value-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_RETURN_VALUE: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT return_id, indicator_key FROM PG_RETURN_VALUE WHERE tenant_id IN ('-', '') AND return_id IS NOT NULL AND indicator_key IS NOT NULL GROUP BY return_id, indicator_key HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_RETURN_VALUE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_RETURN_VALUE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-35-pg_return_finding-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_RETURN_FINDING: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT return_id, seq FROM PG_RETURN_FINDING WHERE tenant_id IN ('-', '') AND return_id IS NOT NULL AND seq IS NOT NULL GROUP BY return_id, seq HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_RETURN_FINDING SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_RETURN_FINDING SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-36-pg_return_event-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_RETURN_EVENT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT return_id, seq FROM PG_RETURN_EVENT WHERE tenant_id IN ('-', '') AND return_id IS NOT NULL AND seq IS NOT NULL GROUP BY return_id, seq HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_RETURN_EVENT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_RETURN_EVENT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-37-pg_achievement-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_ACHIEVEMENT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT programme_id, indicator_key, period_id, org_unit FROM PG_ACHIEVEMENT WHERE tenant_id IN ('-', '') AND programme_id IS NOT NULL AND indicator_key IS NOT NULL AND period_id IS NOT NULL AND org_unit IS NOT NULL GROUP BY programme_id, indicator_key, period_id, org_unit HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_ACHIEVEMENT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_ACHIEVEMENT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-38-pg_financial-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_FINANCIAL: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT programme_id, period_id, org_unit, head FROM PG_FINANCIAL WHERE tenant_id IN ('-', '') AND programme_id IS NOT NULL AND period_id IS NOT NULL AND org_unit IS NOT NULL AND head IS NOT NULL GROUP BY programme_id, period_id, org_unit, head HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_FINANCIAL SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_FINANCIAL SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-39-pg_alert-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_ALERT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT alert_id FROM PG_ALERT WHERE tenant_id IN ('-', '') AND alert_id IS NOT NULL GROUP BY alert_id HAVING COUNT(DISTINCT tenant_id) > 1) k) + (SELECT COUNT(*) FROM (SELECT dedup_key FROM PG_ALERT WHERE tenant_id IN ('-', '') AND dedup_key IS NOT NULL GROUP BY dedup_key HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_ALERT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_ALERT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-40-pg_dashboard_snapshot-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PG_DASHBOARD_SNAPSHOT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT programme_id, period_id, org_unit FROM PG_DASHBOARD_SNAPSHOT WHERE tenant_id IN ('-', '') AND programme_id IS NOT NULL AND period_id IS NOT NULL AND org_unit IS NOT NULL GROUP BY programme_id, period_id, org_unit HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE PG_DASHBOARD_SNAPSHOT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PG_DASHBOARD_SNAPSHOT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-41-evt_event_def-shared-tenant dbms:h2
+--comment: SL-86 shared rows of EVT_EVENT_DEF: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT event_key, version FROM EVT_EVENT_DEF WHERE tenant_id IN ('-', '') AND event_key IS NOT NULL AND version IS NOT NULL GROUP BY event_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE EVT_EVENT_DEF SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE EVT_EVENT_DEF SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-42-evt_channel_def-shared-tenant dbms:h2
+--comment: SL-86 shared rows of EVT_CHANNEL_DEF: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT channel_key, version FROM EVT_CHANNEL_DEF WHERE tenant_id IN ('-', '') AND channel_key IS NOT NULL AND version IS NOT NULL GROUP BY channel_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE EVT_CHANNEL_DEF SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE EVT_CHANNEL_DEF SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-43-evt_definition_seq-shared-tenant dbms:h2
+--comment: SL-86 shared rows of EVT_DEFINITION_SEQ: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT def_kind, def_key FROM EVT_DEFINITION_SEQ WHERE tenant_id IN ('-', '') AND def_kind IS NOT NULL AND def_key IS NOT NULL GROUP BY def_kind, def_key HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE EVT_DEFINITION_SEQ SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE EVT_DEFINITION_SEQ SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-44-instance_link-shared-tenant dbms:h2
+--comment: SL-86 shared rows of INSTANCE_LINK: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT link_type, source_type, source_id, target_type, target_id FROM INSTANCE_LINK WHERE tenant_id IN ('-', '') AND link_type IS NOT NULL AND source_type IS NOT NULL AND source_id IS NOT NULL AND target_type IS NOT NULL AND target_id IS NOT NULL GROUP BY link_type, source_type, source_id, target_type, target_id HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE INSTANCE_LINK SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE INSTANCE_LINK SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-45-form_def-shared-tenant dbms:h2
+--comment: SL-86 shared rows of FORM_DEF: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT form_key, version FROM FORM_DEF WHERE tenant_id IN ('-', '') AND form_key IS NOT NULL AND version IS NOT NULL GROUP BY form_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE FORM_DEF SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE FORM_DEF SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-46-app_deployment-shared-tenant dbms:h2
+--comment: SL-86 shared rows of APP_DEPLOYMENT: tenant_id '' becomes the reserved shared key '-'
+--preconditions onFail:HALT onError:HALT
+--precondition-sql-check expectedResult:0 SELECT (SELECT COUNT(*) FROM (SELECT app_key, version FROM APP_DEPLOYMENT WHERE tenant_id IN ('-', '') AND app_key IS NOT NULL AND version IS NOT NULL GROUP BY app_key, version HAVING COUNT(DISTINCT tenant_id) > 1) k)
+UPDATE APP_DEPLOYMENT SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE APP_DEPLOYMENT SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-47-port_batch-shared-tenant dbms:h2
+--comment: SL-86 shared rows of PORT_BATCH: tenant_id '' becomes the reserved shared key '-'
+UPDATE PORT_BATCH SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE PORT_BATCH SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-48-mi_aggregate-shared-tenant dbms:h2
+--comment: SL-86 shared rows of MI_AGGREGATE: tenant_id '' becomes the reserved shared key '-'
+UPDATE MI_AGGREGATE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE MI_AGGREGATE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-49-sla_instance-shared-tenant dbms:h2
+--comment: SL-86 shared rows of SLA_INSTANCE: tenant_id '' becomes the reserved shared key '-'
+UPDATE SLA_INSTANCE SET tenant_id = '-' WHERE tenant_id = '';
+--rollback UPDATE SLA_INSTANCE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-50-instance_business_status-shared-tenant dbms:h2
+--comment: SL-86 shared rows of INSTANCE_BUSINESS_STATUS: tenant_id '' becomes the reserved shared key '-'
+UPDATE INSTANCE_BUSINESS_STATUS SET tenant_id = '-' WHERE tenant_id = '' OR tenant_id IS NULL;
+--rollback UPDATE INSTANCE_BUSINESS_STATUS SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-51-hrm_process_instance-shared-tenant dbms:h2
+--comment: SL-86 shared rows of HRM_PROCESS_INSTANCE: tenant_id '' becomes the reserved shared key '-'
+UPDATE HRM_PROCESS_INSTANCE SET tenant_id = '-' WHERE tenant_id = '' OR tenant_id IS NULL;
+--rollback UPDATE HRM_PROCESS_INSTANCE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-52-hrm_activity_instance-shared-tenant dbms:h2
+--comment: SL-86 shared rows of HRM_ACTIVITY_INSTANCE: tenant_id '' becomes the reserved shared key '-'
+UPDATE HRM_ACTIVITY_INSTANCE SET tenant_id = '-' WHERE tenant_id = '' OR tenant_id IS NULL;
+--rollback UPDATE HRM_ACTIVITY_INSTANCE SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0036-53-hrm_task-shared-tenant dbms:h2
+--comment: SL-86 shared rows of HRM_TASK: tenant_id '' becomes the reserved shared key '-'
+UPDATE HRM_TASK SET tenant_id = '-' WHERE tenant_id = '' OR tenant_id IS NULL;
+--rollback UPDATE HRM_TASK SET tenant_id = '' WHERE tenant_id = '-';

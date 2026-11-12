@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # IFMS-RESEARCH-DELTA.md (pass 2, 2026-11-05) and IFMS-STATES section 9 applied to the generated profiles.
-from central import U
+from central import U, in_money
 
 D2 = lambda i: (i, 2)
 UNION = [('major', 4), ('subMajor', 2), ('minor', 3), ('subHead', 2), ('detailed', 2), ('object', 2)]
@@ -120,7 +120,7 @@ FIELD = {  # other delta field values
                                                                     'note': 'two PAO units still separate (Silvassa, Daman); treasuries Daman, Diu'},
            'rulebooks': {'own': [{'id': 'DFPR2024', 'title': 'DFPR'}, {'id': 'GFR2017', 'title': 'GFR'}, {'id': 'CTR', 'title': 'CTR'},
                                  {'id': 'FR', 'title': 'FR'}, {'id': 'DH_PANCHAYAT_ACCOUNTS_2024_DRAFT', 'title': 'draft Panchayat Accounts Rules 2024'}]},
-           'budget': {'be2026_27Gross': '2835.20CR'}},
+           'budget': {'be2026_27Gross': in_money('2835.20CR')}},
     'MH': {'integrations': {'snaSparsh': {'onboarded': 'BY_2025-11-01'}}, 'beamsCode': {'digits': 8, 'rule': 'MH + serial'}},
     'CT': {'orgTopology': {'unitTypes': {'DISTRICT_TREASURY': 34}}},
     'JH': {'orgTopology': {'directorate': None, 'tiers': ['FINANCE_DEPARTMENT', 'TREASURY']},
@@ -236,7 +236,7 @@ GOI_DELTA = {
                               'events': [{'unit': 'CAPITAL_DEVELOPMENT', 'event': 'MOVE', 'to': 'MOHUA', 'date': '2026-07-22'},
                                          {'unit': 'URBAN_DEVELOPMENT', 'event': 'MOVE', 'to': 'MOHUA', 'date': '2026-07-22'}],
                               'vicePresidentSecretariat': 'DFPR 3(1)(e) only'}},
-    'procurement': {'limitedTenderUpTo': {'general': '50L', 'scientificDepartments': '1CR'},
+    'procurement': {'limitedTenderUpTo': {'general': in_money('50L'), 'scientificDepartments': in_money('1CR')},
                     'ruleRef': 'IFMS-RESEARCH-DELTA IFC-188 (corrected): 1 cr only for scientific departments'},
     'budgetFormulation': {'calendar': {'appendicesDue': '2025-10-03', 'circular': '2025-08-28', 'for': 'BE 2026-27'},
                           'financeCommission': {'id': '16FC', 'from': '2026-27', 'to': '2030-31', 'carryOver15thFc': False}},
@@ -251,11 +251,11 @@ GOI_DELTA = {
                'ngoDarpan': {'source': 'NITI Aayog', 'pfmsField': 'DARPAN_UID'},
                'snaReturnOms': ['2022-05-20', '2022-07-07', '2022-09-14', '2022-11-30'], 'cnaMasterCircular': '2024-05-21 paras 47, 52-53'},
     'establishment': {'ups': {'from': '2025-04-01', 'switchToNpsLatestMonthsBefore': 12, 'fullPayoutYears': 25, 'proRataFromYears': 10,
-                              'minimumAfter10Years': '10000', 'basisPercentOf12MonthAverageBasic': 50},
+                              'minimumAfter10Years': in_money('10000'), 'basisPercentOf12MonthAverageBasic': 50},
                       'pension': {'timersMonthsBeforeRetirement': {'start': 12, 'verification': 8, 'forms4_6_6A': 6, 'form7': 4, 'toAo': 4,
                                                                     'ppo': 2}, 'aoToCpaoMonths': 2, 'cpaoToBankDays': 21,
                                   'ruleRef': 'CCS (Pension) Rules 2021 r.56-63', 'lifeProof': ['JEEVAN_PRAMAAN', 'FACE_AUTH'],
-                                  'minimum': '9000', 'maximum': '125000', 'commutationPercent': 40},
+                                  'minimum': in_money('9000'), 'maximum': in_money('125000'), 'commutationPercent': 40},
                       'payCommission': {'id': '8CPC', 'constituted': '2025-11-03', 'reportDue': '2027-05'}},
     'audit': {'ebillPostCheck': {'paoPassDays': 3, 'system': 'IAOS', 'samplingPercent': None}},
     'retention': {'ruleRef': 'GFR 320 + App. 9', 'classes': {'SANCTION': 'P2Y_OR_1Y_AFTER_AUDIT', 'DDO_CASH_BOOK': 'P10Y',

@@ -68,14 +68,11 @@ public sealed record TypedValue(string Type, object? Value)
 /// idempotency key for downstream calls; <c>AttemptId</c> changes per lease (A-2).
 /// </summary>
 public sealed record ExternalWork(
-    string Id, string Topic, string? TenantId, string? ProcessInstanceId, string? ProcessDefinitionKey,
+    string? Id, string? Topic, string? TenantId, string? ProcessInstanceId, string? ProcessDefinitionKey,
     string? ActivityId, string? ActivityInstanceId, string? BusinessKey, VarMap? Variables,
-    long LockVersion, string? AttemptId, string? OperationId, DateTimeOffset? LockExpiresAt, int? Retries,
+    long? LockVersion, string? AttemptId, string? OperationId, DateTimeOffset? LockExpiresAt, int? Retries,
     long? Priority, string? ErrorMessage)
 {
-    /// <summary>Not in contract 0.1.0; read if a server sends it. Irreversibility comes from <c>TopicSubscription.Irreversible</c>.</summary>
-    public string? Effect { get; init; }
-
     /// <summary>SL-16: server-recorded ledger entry of <c>OperationId</c>; null from older servers.</summary>
     public WorkOperation? Operation { get; init; }
 }
@@ -84,28 +81,28 @@ public sealed record ExternalWork(
 /// Operation-ledger entry of a leased work item (SL-16, R37). <c>MayDispatch</c> false with state SUCCEEDED: complete
 /// from <c>StoredOutcome</c> ({output, providerRef, duplicate}) without calling the downstream again.
 /// </summary>
-public sealed record WorkOperation(string State, int Attempts, string? CapabilityClass, bool MayDispatch, Vars? StoredOutcome);
+public sealed record WorkOperation(string? State, int? Attempts, string? CapabilityClass, bool? MayDispatch, Vars? StoredOutcome);
 
 /// <summary>Downstream result recorded as the ledger outcome (<c>Reference</c> = providerRef).</summary>
 public sealed record WorkOutcome(string? Reference, Vars? Details = null);
 
 /// <summary>TopicRequest: one topic in fetch-and-lock (lease default 5 min, max 24 h).</summary>
-public sealed record FetchTopic(string Name, long LockDurationMs, IReadOnlyList<string>? Variables = null,
+public sealed record FetchTopic(string Name, long? LockDurationMs, IReadOnlyList<string>? Variables = null,
     bool? LocalVariables = null, string? ProcessDefinitionKey = null, string? BusinessKey = null);
 
 /// <summary>Body of <c>POST /work/fetch-and-lock</c> (long poll up to <c>AsyncResponseTimeoutMs</c>).</summary>
-public sealed record FetchAndLockRequest(string WorkerId, IReadOnlyList<FetchTopic> Topics, int MaxTasks, long AsyncResponseTimeoutMs, bool? UsePriority = null);
+public sealed record FetchAndLockRequest(string WorkerId, IReadOnlyList<FetchTopic> Topics, int? MaxTasks = null, long? AsyncResponseTimeoutMs = null, bool? UsePriority = null);
 
 /// <summary>Heartbeat body (VI.3.2 rule 3).</summary>
 public sealed record ExtendLockRequest(string WorkerId, long LockVersion, string? AttemptId, long NewDurationMs);
 
 /// <summary>LockState: heartbeat answer; <c>cancelRequested</c> tells the worker to stop and acknowledge (VI.3).</summary>
-public sealed record LockState(string? Id, long? LockVersion, DateTimeOffset? LockExpiresAt, bool CancelRequested);
+public sealed record LockState(string? Id, long? LockVersion, DateTimeOffset? LockExpiresAt, bool? CancelRequested);
 
 public sealed record CompleteWorkRequest(string WorkerId, long LockVersion, string? AttemptId, Vars? Variables, Vars? LocalVariables = null, WorkOutcome? Outcome = null);
 
-/// <summary><c>Retries</c> left after this failure; 0 raises an incident.</summary>
-public sealed record FailWorkRequest(string WorkerId, long LockVersion, string? AttemptId, string ErrorMessage, string? ErrorDetails, int Retries, long RetryTimeoutMs);
+/// <summary><c>Retries</c> left after this failure; 0 raises an incident. Absent (null) members are not sent.</summary>
+public sealed record FailWorkRequest(string WorkerId, long LockVersion, string? AttemptId, string? ErrorMessage = null, string? ErrorDetails = null, int? Retries = null, long? RetryTimeoutMs = null);
 
 public sealed record BpmnErrorRequest(string WorkerId, long LockVersion, string? AttemptId, string ErrorCode, string? ErrorMessage, Vars? Variables);
 
@@ -126,20 +123,22 @@ public sealed record Page<T>(IReadOnlyList<T> Items, int PageNumber, int Size, l
 
 /// <summary>A user task seen through the VI.4 policy. Variables: <c>GET /tasks/{id}/variables</c>.</summary>
 public sealed record TaskView(
-    string Id, string? Name, string? Description, string? TaskDefinitionKey, string? ProcessInstanceId,
+    string? Id, string? Name, string? Description, string? TaskDefinitionKey, string? ProcessInstanceId,
     string? ProcessDefinitionKey, string? CaseInstanceId, string? BusinessKey, string? Assignee, string? Owner,
     string? SeatId, string? TenantId, DateTimeOffset? Created, DateTimeOffset? Due, DateTimeOffset? FollowUp,
     DateTimeOffset? LastUpdated, DateTimeOffset? ClaimTime, string? State, int? Priority, string? FormKey,
-    string? DelegationState);
+    string? DelegationState, VarMap? Variables = null);
 
 /// <summary><c>POST /tasks/{id}/complete</c>: <c>PayloadHash</c> (required) binds the approval to the payload (VI.4 rule 5).</summary>
 public sealed record CompleteTaskRequest(string PayloadHash, Vars? Variables = null, string? Decision = null,
-    string? Remarks = null, long? CaseVersion = null, string? FormVersion = null);
+    string? Remarks = null, long? CaseVersion = null, string? FormVersion = null, string? ReasonCode = null,
+    string? NextSeatId = null, string? NextSeatReason = null);
 
 public sealed record CompleteTaskResult(string? TaskId, string? ProcessInstanceId, string? Decision, string? PayloadHash,
     bool? InstanceEnded, IReadOnlyList<string>? NextTaskIds);
 
-public sealed record ReturnTaskRequest(string Reason, string? ReasonCode = null, string? TargetActivityId = null, Vars? Variables = null);
+public sealed record ReturnTaskRequest(string Reason, string? ReasonCode = null, string? TargetActivityId = null, Vars? Variables = null,
+    string? TargetSeatId = null, int? TargetLevel = null, string? PayloadHash = null, long? CaseVersion = null);
 public sealed record DelegateTaskRequest(string Reason, string? ToUserId = null, string? ToSeatId = null);
 
 /// <summary><c>POST /process-instances</c>; the tenant comes from the token.</summary>
@@ -209,7 +208,8 @@ public sealed record DecisionEvaluateResult(string? DecisionDefinitionId, string
 /// <summary>One audit-chain entry (R42, AC-01).</summary>
 public sealed record AuditEntry(string? EventId, string? EventClass, string? ChainId, long? Seq, string? Type,
     DateTimeOffset? OccurredAt, string? Actor, string? SeatId, string? ActedForSeatId, string? ProcessInstanceId,
-    string? ActivityId, string? TaskId, JsonElement? Payload, bool? Erased, string? Hash, JsonElement? Evidence);
+    string? ActivityId, string? TaskId, JsonElement? Payload, bool? Erased, string? Hash, bool? Evidence,
+    string? PrevHash = null, string? EntryHash = null, string? Envelope = null);
 
 public sealed record AuditVerifyResult(string? TenantId, bool Ok, DateTimeOffset? VerifiedAt, IReadOnlyList<JsonElement>? Chains);
 

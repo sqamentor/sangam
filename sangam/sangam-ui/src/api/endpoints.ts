@@ -6,6 +6,8 @@
 import { http, download, raw, type Page, type Query } from './client';
 import * as A from './adapters';
 import type * as T from './types';
+import type { CapturePacket } from '../lib/offline/canonical';
+import type { DeviceView as FieldDeviceView, PullResult, PulledTemplate, SyncOutcome } from '../lib/offline/fieldSync';
 
 const enc = encodeURIComponent;
 
@@ -33,6 +35,28 @@ function taskSort(sort?: string): string | undefined {
   return out.join(',') || undefined;
 }
 
+/**
+ * P13: the query a tree selection adds to one history log, by what that log's API filters on. The operation log and
+ * the called-instance list have none (the server answers 400 FILTER_UNSUPPORTED rather than ignore a filter).
+ */
+export function historyActivityFilter(kind: T.HistoryLogKind, at: T.ActivitySelection): Query {
+  switch (kind) {
+    case 'variables':
+    case 'decisions':
+    case 'external-tasks':
+      return { activityInstanceId: at.activityInstanceId };
+    case 'jobs':
+      return { activityId: at.activityId };
+    case 'user-tasks':
+      return { taskDefinitionKey: at.activityId };
+    default:
+      return {};
+  }
+}
+
+/** Whether a history log narrows to a tree selection (P13). */
+export const historyFilterable = (kind: T.HistoryLogKind): boolean => kind !== 'audit' && kind !== 'called';
+
 const draftIds = new Map<string, { id: string; etag: string | null }>();
 const packageTags = new Map<string, string | null>();
 
@@ -49,7 +73,7 @@ export const api = {
   // ------------------------------------------------------------ tasks
   tasks: {
     /** GET /tasks. Inbox sections map onto contract filters; `section` is also sent for the richer server. */
-    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string }) => {
+    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[] }) => {
       const s = q.section;
       const mapped: Query = {
         page: q.page,
@@ -62,6 +86,7 @@ export const api = {
         unassigned: s === 'POOL' ? true : undefined,
         state: s === 'ESCALATED' || s === 'RETURNED' ? s : undefined,
         seatId: q.seatId,
+        variableNames: q.variableNames?.length ? q.variableNames : undefined, // P45 card variables
         ...sortParams(taskSort(q.sort)),
       };
       return A.mapPage(await http.page<Record<string, unknown>>('/tasks', mapped), A.normTask);
@@ -188,11 +213,24 @@ export const api = {
     instance: async (id: string) => A.normInstance(await http.get<Record<string, unknown>>(`/process-instances/${enc(id)}`)),
     activityTree: (id: string) => http.get<T.ActivityInstance>(`/process-instances/${enc(id)}/activity-tree`),
     instanceStatistics: async (id: string) => A.statsFromTree(await http.get<T.ActivityInstance>(`/process-instances/${enc(id)}/activity-tree`)), // derived from the activity tree
-    variables: async (id: string) => A.variableEntries(await http.get<unknown>(`/process-instances/${enc(id)}/variables`)),
+    /** P13: `activityInstanceId` narrows to the variables of that activity-instance scope. */
+    variables: async (id: string, activityInstanceId?: string) =>
+      A.variableEntries(await http.get<unknown>(`/process-instances/${enc(id)}/variables`, activityInstanceId ? { activityInstanceId } : undefined)),
+    /** P14: historic activity instances of one process instance, optionally by state (running, completed, canceled). */
+    activityHistory: (id: string, q: ListQuery & { state?: T.ActivityState; activityInstanceId?: string } = {}) =>
+      http.page<T.HistoricActivityInstance>('/history/activity-instances', { page: q.page, size: q.size, processInstanceId: id, state: q.state, activityInstanceId: q.activityInstanceId }),
+    /** Incidents of one instance (open and resolved), optionally of one activity (P13). */
+    incidentHistory: (id: string, q: ListQuery & { activityId?: string } = {}) =>
+      http.page<T.HistoricIncident>('/history/incidents', { page: q.page, size: q.size, processInstanceId: id, activityId: q.activityId }),
     /** PUT VariableMap; the reason travels as ?reason= like other audited commands. */
     setVariable: (id: string, v: { name: string; type: string; value: unknown; reason: string }, key?: string) =>
       http.put<void>(`/process-instances/${enc(id)}/variables?reason=${enc(v.reason)}`, { [v.name]: { type: v.type, value: v.value } }, key),
-    history: async (id: string, kind: T.HistoryLogKind, q: ListQuery = {}) => {
+    /**
+     * History logs of one instance. P13 `at` (a tree selection) narrows each log by what its API filters on: the
+     * activity instance for variables, decisions and external tasks, the activity for jobs, the task definition for
+     * user tasks; the operation log and called instances have no activity filter (see `filterable`).
+     */
+    history: async (id: string, kind: T.HistoryLogKind, q: ListQuery = {}, at?: T.ActivitySelection) => {
       const map: Record<T.HistoryLogKind, string> = {
         audit: '/history/operation-log',
         jobs: '/history/job-log',
@@ -203,6 +241,7 @@ export const api = {
         called: '/process-instances',
       };
       const query: Query = kind === 'called' ? { ...q, superProcessInstanceId: id } : { ...q, processInstanceId: id };
+      if (at && !at.root) Object.assign(query, historyActivityFilter(kind, at));
       return A.mapPage(await http.page<Record<string, unknown>>(map[kind], query), (r) => A.normHistory(kind, r));
     },
     links: async (id: string) => ((await http.get<Record<string, unknown>[]>(`/process-instances/${enc(id)}/links`)) ?? []).map(A.normLink),
@@ -625,6 +664,11 @@ export const api = {
   field: {
     visits: () => http.get<{ id: string; taskId: string; businessKey: string; address: string; scheduledAt?: string; checklist: { id: string; label: string }[] }[]>('/field/visits'),
     record: (id: string, body: { answers: Record<string, boolean | string>; notes: string; recordedAt: string }, key: string) => http.post<void>(`/field/visits/${enc(id)}/record`, body, key),
+    // M-001: device registration and the offline sync protocol (FieldWorkController.java:191-232, field.capture)
+    registerDevice: (body: { deviceId: string; platform: string; appVersion?: string; publicKey?: string; keyAlg?: string }) => http.post<FieldDeviceView>('/field/devices', body),
+    syncUpload: (deviceId: string, packets: CapturePacket[]) => http.post<SyncOutcome[]>(`/field/sync/${enc(deviceId)}/upload`, packets),
+    syncPull: (deviceId: string, cursor: number) => http.get<PullResult>(`/field/sync/${enc(deviceId)}/pull`, { cursor }),
+    template: (key: string, version?: number) => http.get<PulledTemplate>(`/field/templates/${enc(key)}`, { version }),
   },
 };
 

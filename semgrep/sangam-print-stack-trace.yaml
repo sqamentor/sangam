@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-094 local Semgrep rule. Test cases: sangam-print-stack-trace.java (semgrep --test).
+rules:
+  - id: sangam-print-stack-trace
+    languages: [java]
+    severity: WARNING
+    message: >-
+      printStackTrace() writes to stderr, outside the structured log, the trace id and the redaction rules. Log the
+      exception through the logger (log.error("...", e)) or rethrow it.
+    metadata:
+      category: correctness
+      cwe: "CWE-209: Generation of Error Message Containing Sensitive Information"
+      owner: M-094
+    pattern: $E.printStackTrace(...)

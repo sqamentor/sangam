@@ -25,9 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  * replacement (A-12 / R31: {@code DstSafeCycleBusinessCalendar} + {@code TimerGuard}, bounded {@code executeDueJobs}),
  * so the spike's test-side job cap is replaced by the product's own bounded runner.
  *
- * <p>Windows run for the engine's timer zone ({@code sangam.engine.timer-zone}, default the JVM zone); the Berlin
- * DST windows need a JVM started with {@code -Duser.timezone=Europe/Berlin} (e.g. {@code JAVA_TOOL_OPTIONS}), as the
- * spike ran one surefire execution per zone. Otherwise they are skipped (reported as skipped, not passed).
+ * <p>Windows run for the engine's timer zone ({@code sangam.engine.timer-zone}, default UTC). SL-53: the JVM itself
+ * always runs in UTC (the build passes {@code -Duser.timezone=UTC} and the server refuses any other default zone), so a
+ * DST window is selected with the timer zone, one zone per JVM as the spike ran one surefire execution per zone:
+ * {@code -Dsangam.engine.timer-zone=Europe/Berlin} for the four Berlin windows, {@code -Dsangam.engine.timer-zone=Asia/Kolkata}
+ * for the Kolkata one. Windows of another zone are skipped (reported as skipped, not passed).
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class E8DstTimerIT extends EngineScenarioSupport {

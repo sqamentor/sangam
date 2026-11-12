@@ -10,10 +10,55 @@ import java.util.Map;
  */
 public interface HistoryPort {
 
+    /**
+     * @param activityInstanceId only rows of this activity instance (activity instances, tasks, variables, decisions,
+     *                           external-task log); {@code 400 FILTER_UNSUPPORTED} on the other lists
+     * @param state              activity-instance lists only: {@link #RUNNING}, {@link #COMPLETED} or
+     *                           {@link #CANCELED} (case-insensitive); {@code 400} on the other lists or for another value
+     */
     record HistoryFilter(String processDefinitionKey, String processInstanceId, String businessKey,
                          String caseInstanceId, String activityId, String taskDefinitionKey, String assignee,
-                         Boolean finished, Instant from, Instant to) {
+                         Boolean finished, Instant from, Instant to, String activityInstanceId, String state) {
+
+        public HistoryFilter(String processDefinitionKey, String processInstanceId, String businessKey,
+                             String caseInstanceId, String activityId, String taskDefinitionKey, String assignee,
+                             Boolean finished, Instant from, Instant to) {
+            this(processDefinitionKey, processInstanceId, businessKey, caseInstanceId, activityId, taskDefinitionKey,
+                    assignee, finished, from, to, null, null);
+        }
+
+        /** The activity-instance state filter, normalised; {@code 400 VALIDATION_FAILED} for an unknown value. */
+        public String activityState() {
+            if (state == null || state.isBlank()) {
+                return null;
+            }
+            String s = state.trim().toLowerCase(java.util.Locale.ROOT);
+            if (!STATES.contains(s)) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "state must be one of " + STATES);
+            }
+            return s;
+        }
+
+        /**
+         * Refuses the filters a list cannot apply ({@code 400 FILTER_UNSUPPORTED}) instead of silently ignoring them,
+         * so a caller never reads an unfiltered list as a filtered one.
+         */
+        public HistoryFilter requireOnly(String list, boolean activityInstanceIdSupported, boolean stateSupported) {
+            if (!activityInstanceIdSupported && activityInstanceId != null && !activityInstanceId.isBlank()) {
+                throw ApiProblem.badRequest("FILTER_UNSUPPORTED", "activityInstanceId is not a filter of " + list);
+            }
+            if (!stateSupported && state != null && !state.isBlank()) {
+                throw ApiProblem.badRequest("FILTER_UNSUPPORTED", "state is not a filter of " + list);
+            }
+            return this;
+        }
     }
+
+    /** Activity-instance states of the {@code state} filter (P14 tree quick filter). */
+    String RUNNING = "running";
+    String COMPLETED = "completed";
+    String CANCELED = "canceled";
+    java.util.List<String> STATES = java.util.List.of(RUNNING, COMPLETED, CANCELED);
 
     record HistoricProcessInstance(String id, String processDefinitionId, String processDefinitionKey,
                                    String businessKey, String state, Instant startTime, Instant endTime,

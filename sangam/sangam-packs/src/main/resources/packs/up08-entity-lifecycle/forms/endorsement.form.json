@@ -1,6 +1,6 @@
 {
   "key": "up08-entity-lifecycle/endorsement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up08-entity-lifecycle",
   "title": {
     "en": "Process endorsement",

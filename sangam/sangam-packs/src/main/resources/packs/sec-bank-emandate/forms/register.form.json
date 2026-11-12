@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-emandate/register",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.emandate",
   "title": {
     "en": "Mandate registration",
@@ -43,7 +43,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

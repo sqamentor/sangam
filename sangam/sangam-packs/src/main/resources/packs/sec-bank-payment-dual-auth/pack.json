@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.payment-dual-auth",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Payment initiation with maker, checker and authoriser",
     "hi": "निर्माता, जाँचकर्ता एवं प्राधिकारी सहित भुगतान प्रारंभ"
@@ -95,11 +95,13 @@
         "SEC-BANK-020",
         "UP-05"
       ],
-      "given": "amount = 3,000,000 by NEFT",
+      "given": "amount = 3,000,000 by NEFT; beneficiary name matches, screening clear (simulator answers, SL-115)",
       "when": "the checker approves",
       "then": "an authoriser task opens; the checker cannot take it",
       "startVariables": {
-        "amount": 3000000
+        "amount": 300000000,
+        "sim_bene_validate": "nameMatch=true",
+        "sim_sanctions_screen": "hit=false"
       },
       "expectState": null,
       "run": {
@@ -129,13 +131,23 @@
   "placeholders": [
     {
       "decision": "sec-bank-pay-limits",
-      "rule": "SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)",
+      "rule": "SYNTHETIC band amounts in rupees (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000), shipped in paise (x100, money.py)",
       "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
     },
     {
       "decision": "sec-bank-pay-powers",
-      "rule": "SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)",
+      "rule": "SYNTHETIC band amounts in rupees (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000), shipped in paise (x100, money.py)",
       "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "authBandMax",
+      "powerLimit"
+    ]
+  }
 }

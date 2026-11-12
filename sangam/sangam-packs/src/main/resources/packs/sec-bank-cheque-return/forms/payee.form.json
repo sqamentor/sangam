@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-cheque-return/payee",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.cheque-return",
   "title": {
     "en": "Payee: legal notice or re-present (30 days)",

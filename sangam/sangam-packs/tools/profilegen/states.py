@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # The 28 States and 8 UTs (IFMS-STATES section 1, 4). Unverified values are placeholders.
-from central import U, FlowList
+from central import U, FlowList, in_money
 
 L = {'hi': ('hi', 'Deva'), 'en': ('en', 'Latn'), 'gu': ('gu', 'Gujr'), 'mr': ('mr', 'Deva'), 'kok': ('kok', 'Deva'),
      'pa': ('pa', 'Guru'), 'kn': ('kn', 'Knda'), 'ta': ('ta', 'Taml'), 'ml': ('ml', 'Mlym'), 'te': ('te', 'Telu'),
@@ -30,9 +30,23 @@ st('RJ', 'Rajasthan', 'राजस्थान', G, ['IFMS 3.0', 'Pay Manager',
    hoa={'segments': [{'id': 'demand', 'width': 2, 'position': 'prefix'}, {'id': 'subHead', 'width': 2, 'render': '({v})'},
                      {'id': 'groupHead', 'width': 2, 'render': '[{v}]', 'optional': True}, {'id': 'object', 'width': 2}],
         'totalDigits': 17, 'status': 'P'},
-   specials={'budgetControl': {'holdForBudgetQueue': True, 'autoForwardToSubTreasury': True},
+   # SL-57 (IFMS R-99 v0.2 s2.3, s2.5, s2.8, s3.2, s6.2, s8 item 5): only the VERIFIED rows; every ASSUMED or UNKNOWN
+   # seat, stage or approver stays a placeholder below, never a guessed value
+   specials={'budgetControl': {'holdForBudgetQueue': True, 'autoForwardToSubTreasury': True,
+                               'pool': {'level': 'BCO', 'distributionToDdo': False, 'distributionToDdoOffFrom': '2022-04-01',
+                                        'status': 'V',
+                                        'ruleRefs': FlowList(['FD (Budget) circular 10600 dt 29-03-2022 item 1',
+                                                              'FD circular dt 06-05-2022 substituting BM Vol I para 20.6',
+                                                              'FD (Budget) circular 14585 dt 29-08-2025 Part 3'])},
+                               'budgetManagementUsers': {'types': FlowList(['MAKER', 'CHECKER', 'APPROVER']),
+                                                         'financialAdviserDistinctLogin': True, 'status': 'V',
+                                                         'ruleRefs': FlowList(['FD circular 14536 dt 22-07-2025 point 1',
+                                                                               'FD (Budget) circular 14585 dt 29-08-2025 Part 2 s2.1 and the pool-reports circular of 23-08-2022'])},
+                               'reappropriation': {'financeDepartmentAbovePercentOfOriginalGrant': 25, 'status': 'V',
+                                                   'ruleRefs': FlowList(['BM Vol I paras 23.8.5 and 23.9.4',
+                                                                         'FD circular 14536 dt 22-07-2025 s2.3'])}},
              'unitChanges': [{'date': '2025-01-15', 'event': 'DEMOTE', 'count': 7, 'from': 'DISTRICT_TREASURY', 'to': 'SUB_TREASURY'}],
-             'publicAccounts': {'types': [{'id': 'PD', 'controls': {'cfTransferAlert': '10CR'}}]},
+             'publicAccounts': {'types': [{'id': 'PD', 'controls': {'cfTransferAlert': in_money('10CR')}}]},
              'receipts': {'portal': 'EGRAS', 'defacement': True, 'refund': True, 'challanAsBidSecurity': {'ruleRef': 'RTPP r.42(6)'}},
              'security': {'aadhaarVault': True, 'sso': 'RAJ_SSO_OTP'}, 'outputs': {'auditReports': ['hi']}},
    docs=[('SALARY', 'ESTABLISHMENT_PAY', 'PAY_MANAGER'), ('GIA', 'GRANT', None), ('FVC', 'CONTINGENT', None),
@@ -52,7 +66,19 @@ st('RJ', 'Rajasthan', 'राजस्थान', G, ['IFMS 3.0', 'Pay Manager',
            'purpose': {'status': 'I', 'value': 'annual pay-and-allowances statement of the employee (inferred, not verified)'},
            'fieldLayout': {'status': 'U', 'value': None,
                            'note': 'official form PDF text layer is a legacy Hindi font; layout unverified until OCR by owner / IFMS'}}}],
-   ph=[('rulebooks.own.PWFAR', U)])
+   ph=[('rulebooks.own.PWFAR', U),
+       # SG-37: the consumer citations of these four placeholders stay here, out of the generated profile:
+       # authorisationSeats: IFMS R-99 v0.2 s6.2 row 1, s6.3 items 5 and 9; open questions OQ-222 and OQ-223
+       ('budgetControl.pool.authorisationSeats', '[U] ASSUMED: the FD (Budget) Maker / Checker / Approver posts and seat ids of '
+        'the FD -> BCO pool authorisation; not encodable until the open consumer questions on these seats are answered'),
+       # stage: IFMS R-99 v0.2 s6.3 item 9
+       ('budgetControl.pool.stage', '[U] ASSUMED: the ledger stage of the pool authorisation; RJ names no stages'),
+       # financeExpenditureConsent: IFMS R-99 v0.2 s6.2 row 2; open question OQ-223
+       ('budgetControl.pool.financeExpenditureConsent', '[U] UNKNOWN: FD (Expenditure) consent and FD (Budget) approval as one '
+        'seat chain or two (an open consumer question)'),
+       # bcoTransfer: IFMS R-99 v0.2 s6.2 row 4; open question OQ-224
+       ('budgetControl.bcoTransfer', '[U] UNKNOWN: the competent level approving a BCO -> BCO transfer (FD circular 10724 dt '
+        '06-05-2022 para 3) and its seats (an open consumer question)')])
 st('GJ', 'Gujarat', 'गुजरात', G, ['IFMS (2009-10, 18 modules)', 'Cyber Treasury', 'IFMS-III (in development)'],
    'Directorate of Accounts & Treasuries', {'DISTRICT_TREASURY': 34, 'SUB_TREASURY': 111, 'PAO': 2, 'PENSION_TREASURY': 5,
                                            'GST_TREASURY': 1}, 5042,
@@ -167,13 +193,13 @@ st('KA', 'Karnataka', 'कर्नाटक', G, ['Khajane-II', 'e-Sanction', '
    specials={'sanctionBeforeBill': {'object': 'E_SANCTION', 'delegations': ['GDFP', 'SDFP']},
              'budgetControl': {'stages': ['BUDGET_RELEASE', 'AIE', 'GDFP_RELEASE']}, 'billSources': ['HRMS'],
              'payee': {'lockAfterValidation': True}, 'paymentRails': {'failure': {'suspense': True, 'alterationMemoAfter': 'P1Y'}},
-             'procurement': {'vmsBelow': '5L', 'gemAbove': '5L'}, 'works': {'eMbAttachments': True}},
+             'procurement': {'vmsBelow': in_money('5L'), 'gemAbove': in_money('5L')}, 'works': {'eMbAttachments': True}},
    lang_u=True)
 st('TN', 'Tamil Nadu', 'तमिलनाडु', G, ['IFHRMS Kalanjiyam', 'Global Beneficiary Master', 'Work ID', 'OPPAS'],
    'Commissioner of Treasuries & Accounts', {'DISTRICT_TREASURY': 32, 'SUB_TREASURY': 243, 'PAO': 9, 'PENSION_TREASURY': 1}, 22037,
    [('TNTT', 'TN Transparency in Tenders Act 1998 / Rules 2000')], 'CENTRAL_BANK_SETTLEMENT',
    {'onboarded': None, 'hosting': 'MODULE', 'sls': 50}, ['ta', 'en'], 7, 'TN1-TN3',
-   specials={'payee': {'globalBeneficiaryMaster': True}, 'receipts': {'channelThresholds': [{'atOrAbove': '1CR', 'channel': 'RBI_NEFT_RTGS'}]},
+   specials={'payee': {'globalBeneficiaryMaster': True}, 'receipts': {'channelThresholds': [{'atOrAbove': in_money('1CR'), 'channel': 'RBI_NEFT_RTGS'}]},
              'budgetControl': {'quarterlyCaps': True}, 'works': {'workIdOnAs': True}, 'tags': ['SC_COMPONENT', 'ST_COMPONENT', 'GENDER'],
              'pension': {'lifeProof': ['FACE_AUTH'], 'window': 'P12M'}, 'autoTdsFrom': '2025-04-01',
              'bulkBills': {'maxLines': 1000000}, 'utilityFetch': ['TNPDCL']},
@@ -203,7 +229,7 @@ st('TG', 'Telangana', 'तेलंगाना', G, ['IFMIS (2018)', 'Work ID',
    {'onboarded': '2024-05-23', 'hosting': 'MODULE'}, ['te', 'en', 'ur'], 7, 'TG1-TG2',
    specials={'publicAccounts': {'types': [{'id': 'PD', 'controls': {'lapseRule': 'GO 25/2019', 'inactivityAlert': True}}]},
              'pdAccounts': 20000, 'ddoSuccession': True, 'treasury': {'tokenUniquePerUnitPerDay': True},
-             'budgetControl': {'stages': ['BRO', 'AUTHORISATION']}, 'dbtBurst': {'maxPerDay': '6000CR'}},
+             'budgetControl': {'stages': ['BRO', 'AUTHORISATION']}, 'dbtBurst': {'maxPerDay': in_money('6000CR')}},
    ph=[('integrations.snaSparsh.onboarded', U + ' (orders 22/23-05-2024; site TLS error)'), ('chartOfAccounts', U)],
    adopt={'profile': 'AP', 'sections': ['chartOfAccounts']})
 st('WB', 'West Bengal', 'पश्चिम बंगाल', G, ['WBIFMS (2014)', 'e-Bantan', 'e-Billing', 'e-Pradan', 'GRIPS 2.0', 'HRMS', 'AAFS', 'SBMS', 'WBJIT'],

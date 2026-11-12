@@ -16,7 +16,15 @@
         "params": { "type": "string" },
         "existingSecret": { "type": "string" },
         "usernameKey": { "type": "string", "minLength": 1 },
-        "passwordKey": { "type": "string", "minLength": 1 }
+        "passwordKey": { "type": "string", "minLength": 1 },
+        "pool": {
+          "type": "object",
+          "properties": {
+            "connectionTimeoutMs": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "networkTimeout": { "type": "string", "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h|d)?$|^P[0-9A-Za-z.]+$" },
+        "unavailableRetryAfter": { "type": "string", "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h|d)?$|^P[0-9A-Za-z.]+$" }
       }
     },
     "liquibase": {
@@ -30,6 +38,8 @@
       "properties": {
         "issuerUri": { "type": "string" },
         "jwkSetUri": { "type": "string" },
+        "platformIssuerUri": { "type": "string" },
+        "platformJwkSetUri": { "type": "string" },
         "audience": { "type": "string" }
       }
     },
@@ -42,7 +52,13 @@
       "properties": {
         "replicaCount": { "type": "integer", "minimum": 1 },
         "preStopSleepSeconds": { "type": "integer", "minimum": 0 },
-        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 30 }
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 30 },
+        "jobExecutor": {
+          "type": "object",
+          "properties": {
+            "exclusiveOverProcessHierarchies": { "type": "boolean" }
+          }
+        }
       }
     },
     "backup": {

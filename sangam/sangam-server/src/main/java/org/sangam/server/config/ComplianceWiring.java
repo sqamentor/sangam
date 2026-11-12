@@ -3,14 +3,12 @@ package org.sangam.server.config;
 
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.compliance.SangamCompliance;
 import org.sangam.compliance.adapters.IntegrationErasureAdapter;
@@ -27,8 +25,6 @@ import org.sangam.integration.relay.LeaderElection;
 import org.sangam.integration.relay.OutboxWriter;
 import org.sangam.integration.relay.PublisherRegistry;
 import org.sangam.rest.port.AdminPort;
-import org.sangam.rest.port.Page;
-import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.server.bridge.ComplianceAuthorityGateway;
@@ -41,13 +37,15 @@ import org.sangam.server.bridge.ComplianceScheduler;
 import org.sangam.server.bridge.ComplianceWorkflowStarter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.bind.Bindable;
-import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Wires sangam-compliance (its README "Integration notes" §2–§6):
@@ -55,6 +53,9 @@ import org.springframework.core.env.Environment;
  *   <li>{@link SangamCompliance} on the engine transaction ({@code Transactions.of(engineAdapter)}; Spring-joined
  *       transactions when sangam-engine is disabled) with {@link ComplianceConfigProvider} (jurisdiction packs from
  *       {@code sangam.compliance.jurisdictions}, no default), then {@code ComplianceRuntime.install(...)};</li>
+ *   <li>M-009: denial audits (purpose binding, child safeguards) commit on their own through the leaf pool
+ *       {@code sangam-compliance-audit} ({@link ComplianceAuditPool}), so they survive the refused operation's
+ *       rollback without taking a second connection from the pool the caller holds (SL-43);</li>
  *   <li>ports: legal holds → integration {@code LegalHoldStore}; erasure → integration {@code ErasureService};
  *       principal messages → outbox + DLT SMS / e-mail connectors ({@link ComplianceNotifier}); supervisory and incident
  *       authorities → e-mail / HTTP connectors; workflow starts → the engine; log archive → a home-country filesystem
@@ -92,11 +93,62 @@ public class ComplianceWiring {
                 }));
     }
 
+    /**
+     * M-009 / SL-43: the leaf pool for denial audits. A denial is recorded while the caller holds a connection of the
+     * main pool (engine command, REST transaction) and must commit on its own, because the refusal rolls the caller
+     * back. A second connection from the main pool there is the SL-43 pool-locking deadlock once every slot is held by a
+     * caller waiting for its second one. A connection of this pool is never held while another connection is
+     * requested (the only work on it is one {@code AuditChain.append} on a denial-only chain), so waits for it cannot
+     * form a cycle. Same database and settings as the main pool; {@code sangam.compliance.denial-audit.pool.maximum-size}
+     * (default 2) connections.
+     */
+    static final class ComplianceAuditPool implements DisposableBean {
+        final HikariDataSource pool;
+
+        ComplianceAuditPool(HikariDataSource pool) {
+            this.pool = pool;
+        }
+
+        @Override
+        public void destroy() {
+            pool.close();
+        }
+    }
+
+    public static final String AUDIT_POOL_NAME = "sangam-compliance-audit";
+
+    @Bean
+    public ComplianceAuditPool sangamComplianceAuditPool(DataSource ds, Environment env) {
+        return new ComplianceAuditPool(leafPool(ds,
+                env.getProperty("sangam.compliance.denial-audit.pool.maximum-size", Integer.class, 2)));
+    }
+
+    /** A pool on the main pool's database and settings, separate from it (never the pool the callers hold). */
+    static HikariDataSource leafPool(DataSource ds, int maximumSize) {
+        HikariConfig cfg = new HikariConfig();
+        try {
+            if (!ds.isWrapperFor(HikariDataSource.class)) {
+                throw new IllegalStateException("M-009 compliance denial audits need a HikariCP main pool to derive their"
+                        + " own pool from (found " + ds.getClass().getName() + "); or set"
+                        + " sangam.modules.compliance.enabled=false");
+            }
+            ds.unwrap(HikariDataSource.class).copyStateTo(cfg);
+        } catch (java.sql.SQLException e) {
+            throw new IllegalStateException("cannot derive the compliance audit pool from the main DataSource", e);
+        }
+        cfg.setPoolName(AUDIT_POOL_NAME);
+        int size = Math.max(1, maximumSize);
+        cfg.setMaximumPoolSize(size);
+        cfg.setMinimumIdle(Math.min(1, size));
+        cfg.setAutoCommit(true);
+        return new HikariDataSource(cfg);
+    }
+
     @Bean
     public SangamCompliance sangamCompliance(TxSupport tx, ObjectProvider<EngineAdapter> engineAdapter,
             ComplianceConfigProvider config, ProcessEngine engine, ObjectProvider<ErasureService> erasure,
             ObjectProvider<OutboxWriter> outbox, ObjectProvider<ConnectorInvoker> invoker,
-            ObjectProvider<PublisherRegistry> publishers, Environment env) {
+            ObjectProvider<PublisherRegistry> publishers, Environment env, ComplianceAuditPool auditPool) {
         EngineAdapter adapter = engineAdapter.getIfAvailable();
         Transactions ctx = adapter != null ? Transactions.of(adapter) : joined(tx);
 
@@ -131,7 +183,8 @@ public class ComplianceWiring {
                 null /* guardianshipVerifier */, null /* processors */,
                 new ComplianceWorkflowStarter(engine), authorities, authorities, archive,
                 null /* geo */, null /* nationalIdVault */, null /* securityEvidence */, null /* sntp: built-in client */);
-        SangamCompliance compliance = new SangamCompliance(tx.dialect(), ctx, config, ports);
+        SangamCompliance compliance = new SangamCompliance(tx.dialect(), ctx, config, ports,
+                Transactions.of(auditPool.pool));
         ComplianceRuntime.install(compliance);
         LOG.info("sangam-compliance installed (erasure: {}, notifier: {}, authorities: {})", erasurePort != null,
                 notifier != null, authorities != null);
@@ -147,34 +200,28 @@ public class ComplianceWiring {
     @Bean
     @ConditionalOnProperty(name = "sangam.compliance.schedule.enabled", havingValue = "true", matchIfMissing = true)
     public ComplianceScheduler sangamComplianceScheduler(SangamCompliance compliance, TxSupport tx, DataSource ds,
-            RestProperties rest, Environment env, ObjectProvider<AdminPort> admin, ComplianceConfigProvider provider) {
+            RestProperties rest, Environment env, ObjectProvider<AdminPort> admin, ComplianceConfigProvider provider,
+            ObjectProvider<MeterRegistry> meters) {
         LeaderElection leader = new LeaderElection(tx.dialect(), Transactions.of(ds), rest.getNode(),
                 Duration.ofMinutes(3));
-        return new ComplianceScheduler(compliance, leader, () -> tenants(env, admin).stream().filter(t -> provider.effectiveJurisdiction(t) != null).toList(),
+        ScheduleTenantsMonitor monitor = ScheduleTenantsMonitor.of("compliance", "retention and DPDP erasure,"
+                + " rights/breach/incident escalation, log sealing and audit-integrity verification do not run. Tenants come"
+                + " from the tenant directory plus sangam.compliance.tenants (SANGAM_COMPLIANCE_TENANTS); only tenants with"
+                + " an effective jurisdiction (sangam.compliance.jurisdictions, sangam.compliance.tenant-jurisdictions or"
+                + " onboarding) are scheduled.", meters);
+        return new ComplianceScheduler(compliance, leader, monitor.observing(
+                () -> tenants(env, admin, monitor).stream().filter(t -> provider.effectiveJurisdiction(t) != null).toList()),
                 env.getProperty("sangam.compliance.schedule.retention-batch", Integer.class, 500),
                 env.getProperty("sangam.compliance.schedule.integrity-max-chains", Integer.class, 10_000));
     }
 
-    /** Active tenants from the tenant directory (AdminPort, as the system principal), plus {@code sangam.compliance.tenants}. */
-    static List<String> tenants(Environment env, ObjectProvider<AdminPort> admin) {
-        Set<String> out = new LinkedHashSet<>(Binder.get(env)
-                .bind("sangam.compliance.tenants", Bindable.listOf(String.class)).orElse(List.of()));
-        AdminPort port = admin.getIfAvailable();
-        if (port != null) {
-            try {
-                String home = env.getProperty("sangam.tenant.default", "dev");
-                RequestContext sys = new RequestContext(home, "system:compliance",
-                        Set.of("sangam-system", "sangam-admin"), null, null, null, null, null, "SYSTEM");
-                Page<AdminPort.Tenant> page = port.tenants(sys, new AdminPort.AdminFilter(null, null, null, null, null,
-                        null, null, false), Page.PageRequest.of(0, 500));
-                page.items().stream().filter(t -> !"SUSPENDED".equals(t.status())).map(AdminPort.Tenant::id)
-                        .forEach(out::add);
-            } catch (RuntimeException e) {
-                LOG.debug("tenant directory unavailable for the compliance schedule: {}", e.toString());
-            }
-        }
-        out.removeIf(t -> t == null || t.isBlank());
-        return new ArrayList<>(out);
+    /**
+     * Active tenants from the tenant directory (AdminPort, as the system principal of the attribution tenant), plus
+     * the optional extra tenants {@code sangam.compliance.tenants}. SL-117: one reader ({@link ScheduleTenants}); a
+     * directory failure is logged at WARN and retried on the next cycle.
+     */
+    static List<String> tenants(Environment env, ObjectProvider<AdminPort> admin, ScheduleTenantsMonitor monitor) {
+        return ScheduleTenants.resolve(env, admin, "sangam.compliance.tenants", "system:compliance", monitor);
     }
 
     /** Transactions that join the current Spring transaction (sangam-engine disabled). */

@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.reinsurance",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Reinsurance cession and recovery",
     "hi": "पुनर्बीमा अभ्यर्पण एवं वसूली"
@@ -67,5 +67,13 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "sumInsured"
+    ]
+  }
 }

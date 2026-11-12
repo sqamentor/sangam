@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.intermediary-licensing",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Agent and broker registration",
     "hi": "अभिकर्ता एवं ब्रोकर पंजीकरण"
@@ -73,5 +73,13 @@
   "calls": [
     "sangam-core-cancellation",
     "sangam-core-rejection"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "netWorth"
+    ]
+  }
 }

@@ -1,6 +1,6 @@
 {
   "id": "sec.util.meter-to-cash",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Meter to cash (billing cycle)",
     "hi": "मीटर से नकद (बिलिंग चक्र)"
@@ -76,5 +76,14 @@
     "sec.util.disconnection"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "energyRate",
+      "fixedCharge"
+    ]
+  }
 }

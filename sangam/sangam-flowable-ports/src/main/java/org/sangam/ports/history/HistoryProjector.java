@@ -154,10 +154,10 @@ public class HistoryProjector implements Publisher {
         }
     }
 
-    /** Read-model rows use "" for "no tenant" (as the other product tables), so tenant filters always match. */
+    /** Read-model rows use the shared key TenantKey.SHARED for "no tenant" (SL-86; formerly "", which Oracle stores as NULL). */
     private static String tenantOf(JsonNode e) {
         String t = text(e, "tenantId");
-        return t == null ? "" : t;
+        return org.sangam.core.layer.TenantKey.of(t);
     }
 
     private static String text(JsonNode e, String f) {

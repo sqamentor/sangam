@@ -10,7 +10,11 @@ import org.sangam.core.security.SecurityIdentity;
 import org.sangam.security.admin.ApiTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -20,10 +24,24 @@ import java.util.Optional;
 /**
  * Non-JWT bearer authentication: Sangam API tokens ({@code sgm_...}, FLOWABLE-INTO-OPERATON FC-42, R26 worker principals) and, in the dev
  * profile only, static development tokens (ARCHITECTURE.md §4 "dev profile uses a static token").
+ *
+ * <p>Both store the authentication for the whole request, as Spring's bearer-token filter stores a JWT's. They do not
+ * run again on the container's later dispatches of the same request (the error page, async); without the stored
+ * context such a dispatch was anonymous, so a real 404/409/422 reached an API-token caller as 401 UNAUTHENTICATED.
  */
 public final class TokenAuthenticationFilters {
 
+    /** The stateless chain's context store (request attribute), shared by every authentication of the request. */
+    private static final SecurityContextRepository CONTEXTS = new RequestAttributeSecurityContextRepository();
+
     private TokenAuthenticationFilters() {
+    }
+
+    private static void authenticate(Authentication authentication, HttpServletRequest req, HttpServletResponse res) {
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        CONTEXTS.saveContext(context, req, res);
     }
 
     /** {@code Authorization: Bearer sgm_<id>.<secret>}. */
@@ -50,7 +68,7 @@ public final class TokenAuthenticationFilters {
                 SecurityWebSupport.problem(res, 401, "UNAUTHENTICATED", "invalid, expired or revoked API token");
                 return;
             }
-            SecurityContextHolder.getContext().setAuthentication(new SangamAuthenticationToken(id.get(), null, false));
+            authenticate(new SangamAuthenticationToken(id.get(), null, false), req, res);
             chain.doFilter(req, res);
         }
     }
@@ -78,7 +96,7 @@ public final class TokenAuthenticationFilters {
                 SecurityIdentity id = new SecurityIdentity(d.tenant(), d.person(), d.person(), d.groups(), d.roles(),
                         java.util.Set.of(), java.util.Set.of(), "DEV_STATIC", SecurityWebSupport.clientIp(req), null, false,
                         Map.of());
-                SecurityContextHolder.getContext().setAuthentication(new SangamAuthenticationToken(id, null, false));
+                authenticate(new SangamAuthenticationToken(id, null, false), req, res);
             }
             chain.doFilter(req, res);
         }

@@ -22,8 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** VI.2.6: dedup by (tenant, source, messageId), BUFFERED until a subscription appears, EXPIRED after the TTL. */
 class InboxIT extends LayerSpecSupport {
 
-    final AuditChain audit = new AuditChain(PG);
-    final Inbox inbox = new Inbox(PG, TX, "n1", Duration.ofSeconds(30), Duration.ZERO, audit);
+    final AuditChain audit = new AuditChain(DIALECT);
+    final Inbox inbox = new Inbox(DIALECT, TX, "n1", Duration.ofSeconds(30), Duration.ZERO, audit);
 
     @Test
     void duplicateDeliveryIsDroppedAndProcessedOnce() {
@@ -103,8 +103,8 @@ class InboxIT extends LayerSpecSupport {
         // still CLAIMED (the claim committed separately); the sweeper releases it after the claim TTL
         assertEquals(Inbox.State.CLAIMED, inTx(c -> Inbox.state(c, "t1", "mq", "m-rb")));
 
-        Inbox shortClaim = new Inbox(PG, TX, "n2", Duration.ofMillis(50), Duration.ZERO, null);
-        run(c -> Jdbc.update(c, "UPDATE INBOX SET claim_expires_at = " + PG.nowPlusMillisParam(), -1000L));
+        Inbox shortClaim = new Inbox(DIALECT, TX, "n2", Duration.ofMillis(50), Duration.ZERO, null);
+        run(c -> Jdbc.update(c, "UPDATE INBOX SET claim_expires_at = " + DIALECT.nowPlusMillisParam(), -1000L));
         assertEquals(1, shortClaim.sweep());
         List<Inbox.Message> claimed = shortClaim.claim(10);
         assertEquals(1, claimed.size());

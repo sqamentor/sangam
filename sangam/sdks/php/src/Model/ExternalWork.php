@@ -11,12 +11,14 @@ namespace Sangam\Sdk\Model;
  *
  * $variables is a VariableMap: entries may be R33 TypedValue arrays ({"type":"Decimal","value":"12.50"}); use
  * TaskContext::variable() to read them unwrapped. $errorMessage is the previous attempt's failure message.
- * $effect is not part of sangam-api.yaml 0.1.0; it is parsed when present but ignored - irreversibility comes from
- * TopicSubscription::$irreversible. $priority is int64 (PHP int).
+ * $priority is int64 (PHP int). The properties are exactly sangam-api.yaml ExternalWork; none is required on the
+ * wire, so every one is nullable and an absent member stays null (no defaults). The worker starts an item only when
+ * id, lockVersion and attemptId are present (A-1). The server sends no per-item
+ * effect flag (WorkPort.ExternalWork); irreversibility comes from TopicSubscription::$irreversible.
  */
 final class ExternalWork
 {
-    /** @param array<string, mixed> $variables */
+    /** @param array<string, mixed>|null $variables */
     public function __construct(
         public readonly ?string $id,
         public readonly ?string $topic,
@@ -26,22 +28,19 @@ final class ExternalWork
         public readonly ?string $processDefinitionKey,
         public readonly ?string $businessKey,
         public readonly ?string $tenantId,
-        public readonly array $variables,
-        public readonly int $lockVersion,
+        public readonly ?array $variables,
+        public readonly ?int $lockVersion,
         public readonly ?string $attemptId,
         public readonly ?string $operationId,
         public readonly ?string $lockExpiresAt,
         public readonly ?int $retries,
-        public readonly ?string $effect,
         public readonly ?int $priority,
         public readonly ?string $errorMessage = null,
         /**
-         * SL-16 WorkOperation: server-recorded ledger entry of operationId (state, attempts, capabilityClass,
-         * mayDispatch, storedOutcome). mayDispatch false with state SUCCEEDED: complete from storedOutcome without
-         * calling the downstream again. Null from older servers.
-         * @var array<string, mixed>|null
+         * SL-16 WorkOperation: server-recorded ledger entry of operationId. mayDispatch false with state SUCCEEDED:
+         * complete from storedOutcome without calling the downstream again. Null from older servers.
          */
-        public readonly ?array $operation = null,
+        public readonly ?WorkOperation $operation = null,
     ) {
     }
 
@@ -59,16 +58,15 @@ final class ExternalWork
             $s('processDefinitionKey'),
             $s('businessKey'),
             $s('tenantId'),
-            isset($d['variables']) && is_array($d['variables']) ? $d['variables'] : [],
-            $i('lockVersion') ?? 0,
+            isset($d['variables']) && is_array($d['variables']) ? $d['variables'] : null,
+            $i('lockVersion'),
             $s('attemptId'),
             $s('operationId'),
             $s('lockExpiresAt'),
             $i('retries'),
-            $s('effect'),
             $i('priority'),
             $s('errorMessage'),
-            isset($d['operation']) && is_array($d['operation']) ? $d['operation'] : null,
+            isset($d['operation']) && is_array($d['operation']) ? WorkOperation::fromArray($d['operation']) : null,
         );
     }
 

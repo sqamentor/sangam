@@ -78,13 +78,7 @@ rulebooks:
     title: Bihar Budget Manual
 paymentRails:
   default: CENTRAL_BANK_SETTLEMENT
-documentTypes:
-- id: BR_BTC_FORM_8
-  formNumber: BTC-FORM-8
-  family: REGISTER
-  approvalChain: TREASURY_STD
-  sanction: REFERENCE
-  integrations: {}
+documentTypes: []
 approvalChains:
 - id: TREASURY_STD
   steps:
@@ -99,6 +93,32 @@ approvalChains:
     token: true
     tokenSeries: TOKEN
     fifo: true
+formTemplates:
+- id: BR_BTC_FORM_8
+  formKind: FORM
+  formNumber: BR:BTC-FORM-8
+  family: REGISTER
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    name: UNKNOWN
+billTypeCatalogue:
+  resolution: CATALOGUE_ID
+  formNumberPrefix: '<government profile id>:'
+  provenanceLabels:
+  - VERIFIED
+  - INFERRED
+  - ASSUMED
+  - UNKNOWN
+  provenanceFields:
+  - formKind
+  - formNumber
+  - billTypeCode
+  - typeId
+  - name
+  note: 'A bill type is resolved by its catalogue id; one form can carry several bill types, so a form number alone may be
+    ambiguous. typeId ASSUMED: the row id is the Sangam-assigned catalogue id; the government holds no document-type id. Forms
+    that are not bills are listed under formTemplates and are never resolved as bill types.'
 orgTiers:
 - FINANCE_DEPARTMENT
 - TREASURY

@@ -1,6 +1,6 @@
 {
   "id": "sec.ins.health-claim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Health claim: cashless pre-authorisation, discharge and reimbursement",
     "hi": "स्वास्थ्य दावा: कैशलेस पूर्व-प्राधिकरण, डिस्चार्ज एवं प्रतिपूर्ति"
@@ -95,5 +95,14 @@
     "sangam-core-cancellation",
     "sangam-core-execution",
     "sangam-core-rejection"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "approvedAmount",
+      "estimatedCost"
+    ]
+  }
 }

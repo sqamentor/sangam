@@ -38,8 +38,15 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
     @LocalServerPort
     int port;
 
+    /** AT-6: the example plugin, built and signed for this run with its own trusted key (no manual install step). */
+    @org.springframework.test.context.DynamicPropertySource
+    static void signedExamplePlugin(org.springframework.test.context.DynamicPropertyRegistry r) {
+        r.add("sangam.plugins.folder", SignedExamplePlugin::folder);
+    }
+
     AccHttp checker() {
-        return AccHttp.local(port, bearer("acc", CHECKER, ADMIN_GROUPS));
+        // SL-70: onboarding is a platform operation, so the checker is a platform-realm administrator
+        return AccHttp.local(port, platformBearer("acc", CHECKER, ADMIN_GROUPS));
     }
 
     AccHttp maker() {
@@ -119,6 +126,10 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
         while (System.currentTimeMillis() < end) {
             JsonNode inst = t.call("GET", "/api/v1/process-instances/" + pid, null);
             if (inst.path("ended").asBoolean()) {
+                assertThat(biz.path("reachesWaitState").asBoolean())
+                        .as("the scenario expects a wait state, the run ended (e.g. rejected): " + inst).isFalse();
+                // ended through its model, not terminated (cancelled or deleted)
+                assertThat(inst.path("state").asText()).as(inst.toString()).isEqualTo("COMPLETED");
                 return;
             }
             JsonNode tasks = t.call("GET", "/api/v1/tasks?businessKey=" + key, null);
@@ -126,10 +137,21 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
                 Thread.sleep(2000);
                 JsonNode again = t.call("GET", "/api/v1/process-instances/" + pid, null);
                 assertThat(again.path("state").asText()).as(again.toString()).isNotEqualTo("CANCELLED");
+                assertThat(again.path("ended").asBoolean()).as("the run must wait, not end: " + again).isFalse();
+                // a run held by a failed job or an incident (e.g. an unresolvable call activity) is not a wait state
+                JsonNode stuck = t.call("GET", "/api/v1/process-instances?businessKey=" + key + "&withIncidents=true", null);
+                assertThat(stuck.size()).as("the run waits in an incident: " + stuck).isZero();
+                // the scenario's connector outcomes (e.g. the bill type resolved by the catalogue): proves the
+                // process data reached the connectors instead of running on defaults
+                JsonNode vars = t.call("GET", "/api/v1/process-instances/" + pid + "/variables", null);
+                biz.path("expectVariables").fields().forEachRemaining(e -> assertThat(vars.path(e.getKey()))
+                        .as(e.getKey() + " in " + vars).isEqualTo(e.getValue()));
                 return;
             }
             for (JsonNode task : tasks) {
                 String tid = task.path("id").asText();
+                // K3: only the holder (or an unassigned candidate) may act; the officer takes the task first
+                t.call("POST", "/api/v1/tasks/" + tid + "/claim", null);
                 Map<String, Object> done = new LinkedHashMap<>();
                 done.put("payloadHash", t.call("GET", "/api/v1/tasks/" + tid, null).path("payloadHash").asText());
                 done.put("decision", biz.path("decision").asText("APPROVED"));
@@ -170,6 +192,7 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
     @Test
     @Order(3)
     void at3PrivateHospital() throws Exception {
+        // AT-3 (reachesWaitState false): owner decision 2026-11-10, ACCEPTANCE-PLUG-AND-PLAY.md L4–L6
         simple("AT-3");
     }
 
@@ -191,11 +214,14 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
         JsonNode s = scenario("AT-6");
         String pluginId = s.at("/plugin").asText();
         boolean loaded = false;
-        for (JsonNode p : maker().call("GET", "/api/v1/admin/plugins", null)) {
+        JsonNode plugins = maker().call("GET", "/api/v1/admin/plugins", null);
+        for (JsonNode p : plugins) {
             loaded |= pluginId.equals(p.path("id").asText()) && "LOADED".equals(p.path("status").asText())
-                    && !p.path("signedBy").asText("").isBlank();
+                    && SignedExamplePlugin.KEY.equals(p.path("signedBy").asText(""));
         }
-        assumeTrue(loaded, "signed example plugin not installed in lib-ext/plugins (manual step of the plan)");
+        // AT-6 set-up is automated (SignedExamplePlugin): the signed jar must be loaded, verified by the run's key
+        assertThat(loaded).as("signed example plugin not LOADED (signedBy " + SignedExamplePlugin.KEY + "): " + plugins)
+                .isTrue();
         onboard(s.path("request"));
         business(s);
     }

@@ -1,6 +1,6 @@
 {
   "key": "sec-legal-litigation/comply",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.legal.litigation",
   "title": {
     "en": "Comply with the order",

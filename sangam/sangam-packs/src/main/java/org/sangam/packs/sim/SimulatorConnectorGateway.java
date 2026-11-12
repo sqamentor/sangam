@@ -31,7 +31,12 @@ import org.sangam.packs.port.ReconciliationRequest;
  *   <li>{@code PENDING_THEN_COMPLETED}, {@code PENDING_THEN_FAILED:<REASON>}: the status lookup after the
  *       acknowledgement window finds the second outcome;</li>
  *   <li>for queries, any {@code key=value} pairs separated by {@code ;} are returned as data
- *       (for example {@code available=310000} for J-P1-E11, {@code duplicate=true} for J-P1-E03).</li>
+ *       (for example {@code available=310000} for J-P1-E11, {@code duplicate=true} for J-P1-E03);</li>
+ *   <li>any directive followed by {@value #SELECT} and business-key suffixes ({@code |}-separated) applies only to
+ *       the requests of those cases, for example {@code FAILED:ACCOUNT_CLOSED @ :1:ITEM-00002|:1:ITEM-00004} for two
+ *       batch items in round 1 (GP-49); batch children receive the parent's directives (BatchDelegate FAN_OUT);
+ *       a selector {@code field=value} matches a payload field instead, and alternatives are separated by
+ *       {@value #OR}, for example {@code score=60 @ scoreRound=1 || score=80 @ scoreRound=2} (GP-47).</li>
  * </ul>
  * Effects are idempotent per operationId: a repeat with the same payload hash returns the first result, a different
  * hash is refused with {@code IDEMPOTENCY_PAYLOAD_MISMATCH} (R41).
@@ -40,6 +45,10 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
 
     /** Payload key carrying the failure-injection directive. */
     public static final String DIRECTIVE = "_sim";
+    /** Separates a directive from the business-key suffixes it is limited to (per batch item, GP-49). */
+    public static final String SELECT = " @ ";
+    /** Separates alternative directives, each with its own selectors (GP-47: one score per score round). */
+    public static final String OR = "||";
 
     private static final Map<String, CapabilityClass> CAPABILITY = new HashMap<>();
 
@@ -236,7 +245,7 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
         Map<String, Object> p = r.payload();
         Map<String, Object> d = new HashMap<>();
         switch (r.connector()) {
-            case "ifms.budget" -> d.put("available", new BigDecimal("10000000"));
+            case "ifms.budget" -> d.put("available", 1_000_000_000L); // 1 crore, in paise (pack money is minor units)
             case "ifms.duplicateBill" -> {
                 String key = r.tenantId() + "|" + p.get("payee") + "|" + p.get("invoiceNo");
                 String owner = seenBills.putIfAbsent(key, String.valueOf(r.businessKey()));
@@ -276,7 +285,7 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
             }
             case "eproc.evaluate" -> {
                 d.put("l1BidderId", "BIDDER-1");
-                d.put("l1Amount", new BigDecimal("950000"));
+                d.put("l1Amount", 95_000_000L); // 9.5 lakh, in paise
                 d.put("responsiveBids", 3);
             }
             case "ai.extract" -> {
@@ -284,6 +293,29 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
                 d.put("extracted", true);
             }
             case "court.limbs" -> d.put("nextHearing", java.time.LocalDate.now().plusDays(30).toString());
+            // sangam-config's contract (ConfigConnector), simulated: a result only from the contract's inputs, so a
+            // process that does not send them is not validated by the simulator either
+            case "config.documentType" -> {
+                switch (String.valueOf(r.operation())) {
+                    case "documentType.get" -> {
+                        Object form = p.get("typeId") != null ? p.get("typeId")
+                                : p.get("typeRef") != null ? p.get("typeRef") : p.get("formNumber");
+                        if (form != null) {
+                            d.put("id", "SIM_" + form);
+                            d.put("formNumber", form);
+                            d.put("approvalChain", "SIM_CHAIN");
+                        }
+                    }
+                    case "documentType.check" -> d.put("valid", p.get("typeId") != null);
+                    case "chain.signatures" -> {
+                        if (p.get("chainId") != null && p.get("amount") != null) {
+                            d.put("signatures", 1);
+                        }
+                    }
+                    default -> d.put("ok", true);
+                }
+            }
+            case "config.classification" -> d.put("valid", p.get("code") != null);
             default -> d.put("ok", true);
         }
         return d;
@@ -291,7 +323,60 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
 
     private static String directive(ConnectorRequest r) {
         Object d = r.payload().get(DIRECTIVE);
-        return d == null || d.toString().isBlank() ? null : d.toString().trim();
+        return d == null || d.toString().isBlank() ? null
+                : selected(d.toString().trim(), r.businessKey(), r.payload());
+    }
+
+    /** {@link #selected(String, String, Map)} without payload fields (business-key selectors only). */
+    public static String selected(String directive, String businessKey) {
+        return selected(directive, businessKey, Map.of());
+    }
+
+    /**
+     * Which directive applies to a request. A directive is one or more alternatives separated by {@value #OR}, each
+     * {@code <directive>} or {@code <directive>} {@value #SELECT} {@code <selector>|<selector>...}; the first
+     * alternative with no selector or with a matching selector applies, otherwise the default outcome (null).
+     * A selector is either {@code <field>=<value>}, matching the request payload field as text (GP-47:
+     * {@code scoreRound=2}), or a business-key suffix (GP-49: a batch item is {@code <parent>:<round>:<item>}, so
+     * {@code :1:ITEM-00002} is that item in round 1 only). A malformed directive (an empty alternative, {@value
+     * #SELECT} without selectors) is refused, never guessed.
+     */
+    public static String selected(String directive, String businessKey, Map<String, Object> payload) {
+        for (String alternative : directive.split(java.util.regex.Pattern.quote(OR), -1)) {
+            String alt = alternative.trim();
+            if (alt.isEmpty()) {
+                throw new IllegalArgumentException("simulator directive with an empty alternative: " + directive);
+            }
+            String padded = " " + alt + " "; // "@ x" (no directive) and "X @" (no selector) are still found
+            int at = padded.indexOf(SELECT);
+            if (at < 0) {
+                return alt;
+            }
+            String base = padded.substring(0, at).trim();
+            String sel = padded.substring(at + SELECT.length()).trim();
+            if (sel.isEmpty()) {
+                throw new IllegalArgumentException("simulator directive selector is empty: " + directive);
+            }
+            for (String token : sel.split("\\|")) {
+                String s = token.trim();
+                if (s.isEmpty()) {
+                    throw new IllegalArgumentException("simulator directive with an empty selector: " + directive);
+                }
+                if (matches(s, businessKey, payload)) {
+                    return base.isEmpty() ? null : base;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean matches(String selector, String businessKey, Map<String, Object> payload) {
+        int eq = selector.indexOf('=');
+        if (eq > 0 && selector.substring(0, eq).matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            Object v = payload == null ? null : payload.get(selector.substring(0, eq));
+            return v != null && String.valueOf(v).equals(selector.substring(eq + 1).trim());
+        }
+        return businessKey != null && businessKey.endsWith(selector);
     }
 
     private static String reason(String directive) {

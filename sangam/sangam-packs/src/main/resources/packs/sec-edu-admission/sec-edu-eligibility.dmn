@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_edu_eligibility" name="Eligibility (SYNTHETIC programme rule)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-edu-eligibility" name="Eligibility (SYNTHETIC programme rule)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-edu-eligibility" name="Eligibility (SYNTHETIC programme rule)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-edu-eligibility_t" hitPolicy="FIRST">
       <input id="sec-edu-eligibility_i0" label="Score"><inputExpression id="sec-edu-eligibility_ie0" typeRef="number"><text>score</text></inputExpression></input>
       <input id="sec-edu-eligibility_i1" label="Category"><inputExpression id="sec-edu-eligibility_ie1" typeRef="string"><text>socialCategory</text></inputExpression></input>

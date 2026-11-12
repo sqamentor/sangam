@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.scheme-appraisal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Scheme / project appraisal and approval",
     "hi": "योजना / परियोजना मूल्यांकन और अनुमोदन"
@@ -99,5 +99,15 @@
       "rule": "CAA SCHEME up to 1000000000",
       "reason": "the corpus verifies the appraisal forum by outlay (IFC-080) but not the approval thresholds (Secretary / Minister / FM / Cabinet are not modelled, IFMS-CENTRAL gap 7); confirm from DFPR App. III and deploy it as a tenant DMN override"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit",
+      "totalOutlay"
+    ]
+  }
 }

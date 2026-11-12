@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.budget-reappropriation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Budget re-appropriation",
     "hi": "बजट पुनर्विनियोजन"
@@ -71,5 +71,13 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

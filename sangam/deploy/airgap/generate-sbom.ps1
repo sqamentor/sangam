@@ -34,7 +34,7 @@ foreach ($pair in @(@("sangam-ui", "sangam-ui"), @("sdks\typescript", "sdk-types
   } finally { Pop-Location }
 }
 
-# Licence policy before the checksums: --annotate records the SG-27 / SD-301 owner exception (reason, verified SPDX,
+# Licence policy before the checksums: --annotate records the SG-27 consumer licence-policy exception (reason, verified SPDX,
 # evidence file) as CycloneDX properties on the exact excepted components and in metadata.properties.
 $pyArgs = @("-I", (Join-Path $sangam "deploy\licence\check_licences.py"), "--policy", (Join-Path $sangam "deploy\licence\licence-policy.json"),
           "--annotate", "--sbom", (Join-Path $Out "sangam-maven.cdx.json"), "--report", (Join-Path $Out "licence-report.md"))

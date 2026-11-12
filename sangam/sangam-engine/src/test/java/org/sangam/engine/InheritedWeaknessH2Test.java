@@ -173,6 +173,85 @@ class InheritedWeaknessH2Test {
         });
     }
 
+    /** A compensable multi-instance user task {@code collect} after a compensable step {@code a} (GP-13 EMD shape). */
+    private static String miSaga(boolean sequential, int n) {
+        return """
+                  <process id="mi" isExecutable="true">
+                    <startEvent id="s"/>
+                    <sequenceFlow id="f1" sourceRef="s" targetRef="a"/>
+                    <serviceTask id="a" operaton:expression="${true}"/>
+                    <boundaryEvent id="ba" attachedToRef="a"><compensateEventDefinition/></boundaryEvent>
+                    <userTask id="undoA" isForCompensation="true"/>
+                    <sequenceFlow id="f2" sourceRef="a" targetRef="collect"/>
+                    <userTask id="collect">
+                      <multiInstanceLoopCharacteristics isSequential="%s">
+                        <loopCardinality>${%d}</loopCardinality>
+                      </multiInstanceLoopCharacteristics>
+                    </userTask>
+                    <boundaryEvent id="bc" attachedToRef="collect"><compensateEventDefinition/></boundaryEvent>
+                    <userTask id="refund" isForCompensation="true"/>
+                    <sequenceFlow id="f3" sourceRef="collect" targetRef="comp"/>
+                    <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
+                    <sequenceFlow id="f4" sourceRef="comp" targetRef="e"/>
+                    <endEvent id="e"/>
+                    <association id="x1" associationDirection="One" sourceRef="ba" targetRef="undoA"/>
+                    <association id="x2" associationDirection="One" sourceRef="bc" targetRef="refund"/>
+                  </process>
+                """.formatted(sequential, n);
+    }
+
+    /** Completes every collect instance (sequential MI: one at a time), then checks the SL-101 compensation shape. */
+    private static void assertOneRefundPerInstanceThenEarlierStep(OperatonEngineAdapter a, String pi, int n) {
+        ProcessEngine e = a.processEngine();
+        int completed = 0;
+        while (completed < n) {
+            List<Task> open = tasks(e, pi);
+            assertTrue(!open.isEmpty() && open.stream().allMatch(t -> t.getTaskDefinitionKey().equals("collect")),
+                    "only collect instances are open: " + keys(open));
+            for (Task t : open) {
+                e.getTaskService().complete(t.getId());
+                completed++;
+            }
+        }
+        List<Task> refunds = tasks(e, pi);
+        assertEquals(Collections.nCopies(n, "refund"), keys(refunds), "one refund per completed instance");
+        assertEquals(n, refunds.stream().map(Task::getExecutionId).distinct().count(),
+                "each refund runs on its own execution");
+        for (Task r : refunds) {
+            assertTrue(tasks(e, pi).stream().noneMatch(t -> t.getTaskDefinitionKey().equals("undoA")),
+                    "the earlier step waits until every instance of the later step is compensated");
+            e.getTaskService().complete(r.getId());
+        }
+        assertEquals(List.of("undoA"), keys(tasks(e, pi)), "then the step before it");
+        e.getTaskService().complete(tasks(e, pi).get(0).getId());
+        assertTrue(a.getInstance(pi).ended(), "the throw joins after the last handler");
+    }
+
+    /**
+     * SL-101 (GP-13 / D-TENDER): a compensable parallel multi-instance step compensates every completed instance,
+     * each handler in its own instance's context; steps stay one at a time in reverse (SG-08 (a)). Before the fix
+     * {@link org.sangam.engine.deploy.SequentialCompensation.EventHandler} threw only the newest inner subscription
+     * of the multi-instance body: one refund, then the throw moved on.
+     */
+    @Test
+    void compensationOfParallelMultiInstanceStepRunsOneHandlerPerCompletedInstance() {
+        withEngine(s -> { }, a -> {
+            a.setClock(Instant.parse("2026-11-08T10:00:00Z"));
+            a.deploy("t1", "mi", Map.of("mi.bpmn", bpmn(miSaga(false, 3))));
+            assertOneRefundPerInstanceThenEarlierStep(a, a.startProcess("t1", "mi", "S-4", Map.of()), 3);
+        });
+    }
+
+    /** SL-101: the same for a sequential multi-instance step (same multi-instance body behaviour family). */
+    @Test
+    void compensationOfSequentialMultiInstanceStepRunsOneHandlerPerCompletedInstance() {
+        withEngine(s -> { }, a -> {
+            a.setClock(Instant.parse("2026-11-08T10:00:00Z"));
+            a.deploy("t1", "mi", Map.of("mi.bpmn", bpmn(miSaga(true, 2))));
+            assertOneRefundPerInstanceThenEarlierStep(a, a.startProcess("t1", "mi", "S-5", Map.of()), 2);
+        });
+    }
+
     // ------------------------------------------------------------------ SG-08 (b) called element binding (D-12)
 
     private static String child(String marker) {

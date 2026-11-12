@@ -39,10 +39,10 @@ public class HistoryAuditController {
                                Boolean finished,
                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-                               Integer page, Integer size) {
+                               Integer page, Integer size, String activityInstanceId, String state) {
         HistoryPort.HistoryFilter filter() {
             return new HistoryPort.HistoryFilter(processDefinitionKey, processInstanceId, businessKey, caseInstanceId,
-                    activityId, taskDefinitionKey, assignee, finished, from, to);
+                    activityId, taskDefinitionKey, assignee, finished, from, to, activityInstanceId, state);
         }
     }
 
@@ -50,50 +50,58 @@ public class HistoryAuditController {
     public ResponseEntity<List<HistoryPort.HistoricProcessInstance>> processInstances(RequestContext ctx,
                                                                                       @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.processInstances(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/process-instances", false, false);
+        return Lists.ok(history.processInstances(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/activity-instances")
     public ResponseEntity<List<HistoryPort.HistoricActivityInstance>> activityInstances(RequestContext ctx,
                                                                                         @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.activityInstances(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/activity-instances", true, true);
+        return Lists.ok(history.activityInstances(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/tasks")
     public ResponseEntity<List<HistoryPort.HistoricTask>> tasks(RequestContext ctx, @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.tasks(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/tasks", false, false);
+        return Lists.ok(history.tasks(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/variables")
     public ResponseEntity<List<HistoryPort.HistoricVariable>> variables(RequestContext ctx, @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.variables(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/variables", true, false);
+        return Lists.ok(history.variables(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/decisions")
     public ResponseEntity<List<HistoryPort.HistoricDecision>> decisions(RequestContext ctx, @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.decisions(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/decisions", true, false);
+        return Lists.ok(history.decisions(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/incidents")
     public ResponseEntity<List<HistoryPort.HistoricIncident>> incidents(RequestContext ctx, @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.incidents(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/incidents", false, false);
+        return Lists.ok(history.incidents(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/job-log")
     public ResponseEntity<List<HistoryPort.HistoricJobLog>> jobLog(RequestContext ctx, @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.jobLog(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/job-log", false, false);
+        return Lists.ok(history.jobLog(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/history/operation-log")
     public ResponseEntity<List<HistoryPort.UserOperation>> operationLog(RequestContext ctx, @ModelAttribute HistoryQuery q) {
         permissions.require(ctx, Permissions.HISTORY_READ);
-        return Lists.ok(history.operationLog(ctx, q.filter(), Lists.page(q.page(), q.size())));
+        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/operation-log", false, false);
+        return Lists.ok(history.operationLog(ctx, f, Lists.page(q.page(), q.size())));
     }
 
     @GetMapping("/audit/{businessKey}/timeline")

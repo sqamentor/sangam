@@ -125,6 +125,13 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
+    <!-- SL-81: Spring MVC's JSON mapper in the Boot 4 server is Jackson 3; ProblemHandler names the field of a request
+         value that does not bind. Version from the Spring Boot BOM; supplied at runtime by sangam-server -->
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <!-- DocumentStore: java.time in persisted JSON documents (Apache-2.0) -->
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>

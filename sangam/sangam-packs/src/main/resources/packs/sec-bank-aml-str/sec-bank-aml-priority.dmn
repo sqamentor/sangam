@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_aml_priority" name="Alert priority" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-bank-aml-priority" name="Alert priority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-bank-aml-priority" name="Alert priority" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-bank-aml-priority_t" hitPolicy="FIRST">
       <input id="sec-bank-aml-priority_i0" label="Score"><inputExpression id="sec-bank-aml-priority_ie0" typeRef="integer"><text>alertScore</text></inputExpression></input>
       <output id="sec-bank-aml-priority_o0" label="L1 SLA" name="l1Spec" typeRef="string"/>

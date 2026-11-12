@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-096 / SANGAM.md P7: code owners per area. RECORD-ONLY (owner question Q-10 is open, also Q19 / SG-18).
+#
+# With one maintainer this file only records ownership: GitHub asks the listed owner to review, but no merge waits for
+# it. Enforcement is the branch-protection (or ruleset) setting "Require review from Code Owners" on main, plus "two
+# approvals" for the core and security areas below. That switch is OFF and stays off until Q-10 is answered and a
+# second maintainer exists; turning it on is a repository-settings change the owner makes, not a file change.
+#
+# The last matching pattern wins. When a second maintainer joins, add them to the core and security lines.
+
+*                                   @sqamentor
+
+# Core and security-sensitive modules (P7: two reviewers once enforced)
+/sangam/sangam-core/                @sqamentor
+/sangam/sangam-engine/              @sqamentor
+/sangam/sangam-security/            @sqamentor
+/sangam/sangam-persistence/         @sqamentor
+/sangam/sangam-compliance/          @sqamentor
+
+# Build, release and supply chain
+/.github/                           @sqamentor
+/sangam/pom.xml                     @sqamentor
+/sangam/deploy/licence/             @sqamentor

@@ -11,6 +11,7 @@ import jakarta.jms.MessageConsumer;
 import jakarta.jms.Session;
 import jakarta.jms.TextMessage;
 import org.sangam.integration.relay.BackpressureGate;
+import org.sangam.integration.relay.TenantAdmission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,10 @@ import java.util.function.Function;
  * session commits (ack). On back-pressure or an inbox failure the session rolls back, so the broker redelivers. A
  * message the mapper rejects is committed (dropped) and logged. Message id: CloudEvents id property if present, else
  * {@code JMSMessageID}.
+ *
+ * <p>M-008 (ADR-D-21, IR-4/IR-6): a message of a tenant that the {@link TenantAdmission} does not admit (a cell tenant
+ * that is FROZEN, IMPORTING, MOVED or PURGED) takes the same path as back-pressure: the session rolls back and the
+ * broker redelivers it later. It is never dropped and never acked.
  */
 public final class JmsInboxListener implements Runnable, AutoCloseable {
 
@@ -39,6 +44,7 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
     private final InboundMapper<Message> mapper;
     private final InboxService inbox;
     private final PoisonInbound poison;
+    private final TenantAdmission admission;
     private final AtomicBoolean running = new AtomicBoolean(true);
 
     public JmsInboxListener(ConnectionFactory factory, Function<Session, Destination> destination, ChannelBinding binding,
@@ -49,12 +55,23 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
     /** @param poisonOrNull dead-letter path for messages that can never be stored (null: log and drop) */
     public JmsInboxListener(ConnectionFactory factory, Function<Session, Destination> destination, ChannelBinding binding,
                             InboundMapper<Message> mapper, InboxService inbox, PoisonInbound poisonOrNull) {
+        this(factory, destination, binding, mapper, inbox, poisonOrNull, null);
+    }
+
+    /**
+     * @param poisonOrNull    dead-letter path for messages that can never be stored (null: log and drop)
+     * @param admissionOrNull per-tenant admission (M-008); null admits every tenant
+     */
+    public JmsInboxListener(ConnectionFactory factory, Function<Session, Destination> destination, ChannelBinding binding,
+                            InboundMapper<Message> mapper, InboxService inbox, PoisonInbound poisonOrNull,
+                            TenantAdmission admissionOrNull) {
         this.poison = poisonOrNull;
         this.factory = factory;
         this.destination = destination;
         this.binding = binding;
         this.mapper = mapper;
         this.inbox = inbox;
+        this.admission = admissionOrNull == null ? TenantAdmission.ALL : admissionOrNull;
     }
 
     /** CloudEvents properties, falling back to JMSMessageID / JMSCorrelationID. */
@@ -106,7 +123,8 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
         }
     }
 
-    private boolean store(Message m) throws JMSException {
+    /** True when the message is stored (or deliberately dropped) and the session may commit (ack). */
+    boolean store(Message m) throws JMSException {
         Map<String, String> headers = new LinkedHashMap<>();
         Enumeration<?> names = m.getPropertyNames();
         while (names.hasMoreElements()) {
@@ -129,6 +147,10 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
         if (im == null) {
             return true;
         }
+        if (!admitted(im)) {
+            LOG.debug("JMS message {}: tenant not admitted (cell tenant state); rolled back for redelivery", jmsId);
+            return false;
+        }
         try {
             inbox.receive(binding, im);
             return true;
@@ -141,6 +163,26 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
             return true;
         } catch (RuntimeException e) {
             LOG.warn("inbox unavailable; JMS message {} will be redelivered", m.getJMSMessageID(), e);
+            return false;
+        }
+    }
+
+    /**
+     * M-008: whether the message's tenant is admitted now. The tenant is resolved from the binding exactly as
+     * {@link InboxService#receive} does; a claim the binding refuses is left to {@code receive}, which refuses it as before.
+     * A failing admission check counts as not admitted (redeliver, never drop).
+     */
+    private boolean admitted(InboundMessage m) {
+        String tenant;
+        try {
+            tenant = binding.tenantFor(m.claimedTenant());
+        } catch (SecurityException e) {
+            return true;
+        }
+        try {
+            return admission.admits(tenant);
+        } catch (RuntimeException e) {
+            LOG.warn("tenant admission check for {} failed; the message is redelivered later: {}", tenant, e.toString());
             return false;
         }
     }

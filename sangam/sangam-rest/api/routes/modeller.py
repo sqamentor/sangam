@@ -12,7 +12,8 @@ schema("ModelFenceRequest", "The fence given with the lease.", "fence:long packa
 schema("ModelTakeoverRequest", "Take over a lease; the former editor's draft is kept.", "formerDraft reason", ["reason"])
 schema("ElementTemplatePublish", "Publish a template; the same id is a new version.", "kind document:obj key name content", ["kind"])
 schema("ElementTemplateApply", "Apply a template to an element.", "elementType values:obj", ["elementType"])
-schema("ActionModelPublish", "Publish an action model.", "key label scope scopeType permission formKey targetType target",
+schema("ActionModelPublish", "Publish an action model.", "key label scope scopeType permission formKey targetType target "
+       "name form:any processKey",
        ["key", "label", "scope", "permission", "targetType", "target"])
 schema("ActionModelInvoke", "Invoke an action.", "targetRef input:obj clientKey")
 schema("TestBundleExport", "Export test cases as a sealed bundle.", "packageRevision cases:list:obj mocks:list:obj")
@@ -60,11 +61,13 @@ op("get", "/catalogue", "getExtensionCatalogue", "Modeller", "Extension catalogu
 _MB = {"required": True, "content": {"application/json": {"schema": typ('obj')}}}
 _MU = {"required": False, "content": {"application/json": {"schema": typ('obj')}}}
 _ML = {"application/json": {"schema": {"type": "array", "items": {}}}}
+_MOD = "sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerController.java"
+_MOCKS = "sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java"
 op("get", "/templates/{key}", "getElementTemplate", "Modeller", "Get a template", "Latest version unless one is named.", MR, params=[pp("key"), q("version", "int")], resp=(200, "object"), perm="package.read")
-op("post", ML + "/acquire", "acquireModelLeaseUi", "Modeller", "Acquire the edit lease (console)", "Same as POST on the lease.", MR, params=[pp("file")], body=_MU, resp=(200, "object"), cmd="modeller.lease.acquire.ui", perm="package.author")
-op("post", "/actions/{key}/run", "runActionModel", "Modeller", "Run an action", "Permission checked on the subject; idempotent per request key.", MR, params=[pp("key")], body=_MB, resp=(200, "object"), cmd="modeller.action.run", perm="modeller.action.invoke")
+op("post", ML + "/acquire", "acquireModelLeaseUi", "Modeller", "Acquire the edit lease (console)", "Same as POST on the lease.", MR, params=[pp("file")], body=record_body(_MOD, "FenceRequest", False), resp=(200, "object"), cmd="modeller.lease.acquire.ui", perm="package.author")
+op("post", "/actions/{key}/run", "runActionModel", "Modeller", "Run an action", "Permission checked on the subject; idempotent per request key.", MR, params=[pp("key")], body=record_body(_MOD, "RunActionRequest"), resp=(200, "object"), cmd="modeller.action.run", perm="modeller.action.invoke")
 op("delete", "/actions/{key}", "retireActionModel", "Modeller", "Retire an action", "Needs a reason; audited.", MR, params=[pp("key"), q("reason", required=True)], resp=(204, None), cmd="modeller.action.retire", perm="modeller.action.publish")
 op("get", "/service-mocks", "listServiceMocks", "Modeller", "List service mocks", "Not on a production profile.", MR, params=[q("page", "int"), q("size", "int")], resp=(200, _ML), perm="ops.read")
-op("post", "/service-mocks", "createServiceMock", "Modeller", "Add a service mock", "This node, until restart.", MR, body=_MB, resp=(201, "object"), cmd="modeller.mock.create", perm="ops.write")
-op("put", "/service-mocks/global", "setServiceMocksGlobal", "Modeller", "Toggle all mocks", "This node.", MR, body=_MB, resp=(200, "object"), cmd="modeller.mock.global", perm="ops.write")
-op("patch", "/service-mocks/{id}", "toggleServiceMock", "Modeller", "Toggle a mock's service", "Affects every rule of the service.", MR, params=[pp("id")], body=_MB, resp=(200, "object"), cmd="modeller.mock.toggle", perm="ops.write")
+op("post", "/service-mocks", "createServiceMock", "Modeller", "Add a service mock", "This node, until restart.", MR, body=record_body(_MOCKS, "CreateMock"), resp=(201, "object"), cmd="modeller.mock.create", perm="ops.write")
+op("put", "/service-mocks/global", "setServiceMocksGlobal", "Modeller", "Toggle all mocks", "This node.", MR, body=record_body(_MOCKS, "Toggle"), resp=(200, "object"), cmd="modeller.mock.global", perm="ops.write")
+op("patch", "/service-mocks/{id}", "toggleServiceMock", "Modeller", "Toggle a mock's service", "Affects every rule of the service.", MR, params=[pp("id")], body=record_body(_MOCKS, "Toggle"), resp=(200, "object"), cmd="modeller.mock.toggle", perm="ops.write")

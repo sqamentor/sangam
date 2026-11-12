@@ -1,6 +1,6 @@
 {
   "key": "ifms-scheme-appraisal/comments",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.scheme-appraisal",
   "title": {
     "en": "Comments of DoE / NITI / ministries",

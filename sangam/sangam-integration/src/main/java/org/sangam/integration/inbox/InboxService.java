@@ -62,6 +62,7 @@ public final class InboxService implements AutoCloseable {
     private final Map<String, Inbox.Handler> sourceHandlers = new ConcurrentHashMap<>();
     private final BackpressureGate gate;
     private final DeadLetterStore deadLetters;
+    private final AuditChain audit;
     private final ScheduledExecutorService loop;
     private final AtomicBoolean running = new AtomicBoolean();
     private volatile long lastMaintenance;
@@ -77,6 +78,7 @@ public final class InboxService implements AutoCloseable {
         this.defaultHandler = defaultHandler;
         this.gate = gate == null ? BackpressureGate.open() : gate;
         this.deadLetters = deadLettersOrNull;
+        this.audit = auditOrNull;
         this.loop = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "sangam-inbox-" + settings.node());
             t.setDaemon(true);
@@ -177,20 +179,20 @@ public final class InboxService implements AutoCloseable {
                 }
             } catch (Inbox.ClaimLostException e) {
                 LOG.debug("inbox claim lost for {}/{}", m.source(), m.messageId());
-            } catch (IllegalArgumentException e) {
-                if (raw != null) {
-                    // Audit PR-7 (FW-28, FW-32): a source handler (e.g. ports' EventDispatcher for evt:*) that rejects
-                    // the message with an IllegalArgumentException (ports' PortsProblem) has a permanent error:
-                    // retrying until the TTL cannot succeed. Park it after this first failure.
-                    park(m, label, e);
-                } else {
-                    buffer(m, label, e);
-                }
             } catch (RuntimeException e) {
-                // The engine transaction may wrap the handler's exception: look for a permanent cause.
+                // SL-55: a deterministic business refusal ("422 <CODE>: ...", the WS-PACKS §8 convention that
+                // sangam-rest OperatonSupport maps to a 422 problem) fails the same way on every retry: the
+                // processing transaction rolled back, so retrying every bufferRetry until the TTL is an endless
+                // silent loop. Park it with the code, whatever the handler kind.
+                String refusal = businessRefusal(e);
+                // Audit PR-7 (FW-28, FW-32): a source handler (e.g. ports' EventDispatcher for evt:*) that rejects
+                // the message with an IllegalArgumentException (ports' PortsProblem) has a permanent error:
+                // retrying until the TTL cannot succeed. The engine transaction may wrap it: look for the cause.
                 IllegalArgumentException permanent = raw == null ? null : permanentCause(e);
-                if (permanent != null) {
-                    park(m, label, permanent);
+                if (refusal != null) {
+                    park(m, label, refusal, e);
+                } else if (permanent != null) {
+                    park(m, label, problemCode(permanent), permanent);
                 } else {
                     buffer(m, label, e);
                 }
@@ -203,6 +205,32 @@ public final class InboxService implements AutoCloseable {
         for (int depth = 0; t != null && depth < 10; depth++, t = t.getCause()) {
             if (t instanceof IllegalArgumentException iae) {
                 return iae;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The status-422 coded refusals: the pack delegates and listeners signal a business refusal as
+     * {@code "422 <CODE>: <detail>"} (CaseRecordDelegate REASONS_REQUIRED, SodGuardListener SOD_VIOLATION,
+     * PowerLimitGuardListener POWER_LIMIT_EXCEEDED, ExternalOperationDelegate RETRY_NOT_ALLOWED, ...), the format
+     * sangam-rest {@code OperatonSupport.CODED} reads. Only 422 is deterministic: 409 is also used for concurrency
+     * (STALE_LEASE, EPISODE_CHANGED) and 429 for quotas, both of which a retry can clear.
+     */
+    private static final java.util.regex.Pattern REFUSAL = java.util.regex.Pattern.compile("\\b422 ([A-Z][A-Z0-9_]{2,})\\b");
+
+    /**
+     * The code of a deterministic business refusal anywhere in the cause chain (the engine may wrap the delegate's
+     * exception), else null. Package-private for tests.
+     */
+    static String businessRefusal(Throwable t) {
+        for (int depth = 0; t != null && depth < 10; depth++, t = t.getCause()) {
+            String msg = t.getMessage();
+            if (msg != null) {
+                java.util.regex.Matcher r = REFUSAL.matcher(msg);
+                if (r.find()) {
+                    return r.group(1);
+                }
             }
         }
         return null;
@@ -225,13 +253,23 @@ public final class InboxService implements AutoCloseable {
      * Permanent handler failure: the row is expired at once (state EXPIRED, claim released) and copied to the
      * dead-letter store with the error code, in one transaction, so an operator can inspect, requeue or discard it
      * (the same parking mechanism the outbox relay uses). The {@code maintain()} dead-letter pass skips it afterwards
-     * (NOT EXISTS on the dead-letter ref).
+     * (NOT EXISTS on the dead-letter ref). SL-55: the parking is audited ({@code INBOX_MESSAGE_PARKED} with the code
+     * on the tenant's security chain, like {@code INBOX_MESSAGE_EXPIRED}); the audit append locks the chain head
+     * before the inbox row is written, the lock order of {@link Inbox#expire()}.
      */
-    private void park(Inbox.Message m, String label, IllegalArgumentException e) {
-        String code = problemCode(e);
-        LOG.warn("inbox handler rejected {}/{} ({}) permanently with {}; parked", m.source(), m.messageId(), label, code);
+    private void park(Inbox.Message m, String label, String code, RuntimeException e) {
+        LOG.warn("inbox handler rejected {}/{} ({}) permanently with {}; parked", m.source(), m.messageId(), label, code, e);
         try {
             tx.inTransaction(c -> {
+                if (audit != null) {
+                    Map<String, Object> p = new LinkedHashMap<>();
+                    p.put("source", m.source());
+                    p.put("messageId", m.messageId());
+                    p.put("correlationKey", m.correlationKey());
+                    p.put("handler", label);   // the event type, or the source of a raw source handler
+                    p.put("code", code);
+                    audit.append(c, m.tenantId(), "sec:" + m.tenantId(), "INBOX_MESSAGE_PARKED", p);
+                }
                 Jdbc.update(c, "UPDATE INBOX SET state='EXPIRED', expires_at=" + dialect.now()
                                 + ", claim_owner=NULL, claim_expires_at=NULL WHERE tenant_id=? AND source=? AND message_id=?",
                         m.tenantId(), m.source(), m.messageId());

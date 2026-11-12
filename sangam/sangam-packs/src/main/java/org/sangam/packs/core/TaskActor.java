@@ -32,7 +32,7 @@ public record TaskActor(String person, String seat, SeatHolding holding) {
         }
         SeatHolding h = null;
         if (seat != null) {
-            Optional<SeatHolding> o = PackRuntime.seats().holding(Vars.tenant(t), person, seat, Vars.today());
+            Optional<SeatHolding> o = PackRuntime.seats().holding(Vars.tenant(t), person, seat, Vars.today(Vars.tenant(t)));
             h = o.orElse(null);
         }
         return new TaskActor(person, seat, h);
@@ -45,6 +45,16 @@ public record TaskActor(String person, String seat, SeatHolding holding) {
         }
         Object v = t.getVariable(suffixVar);
         return v == null ? t.getTaskDefinitionKey() : t.getTaskDefinitionKey() + "#" + v;
+    }
+
+    /**
+     * The round of a parallel multi-instance task (a joint approval): the activity instance id of its multi-instance
+     * body ({@code <task key>#multiInstanceBody:<id>}), shared by the instances of one round and new on every entry, so
+     * a repeat of the step after a return is another round. {@code null} for a task that is not multi-instance.
+     */
+    public static String multiInstanceRound(DelegateTask t) {
+        String parent = t.getExecution() == null ? null : t.getExecution().getParentActivityInstanceId();
+        return parent != null && parent.startsWith(t.getTaskDefinitionKey() + "#multiInstanceBody:") ? parent : null;
     }
 
     public boolean actedFor() {

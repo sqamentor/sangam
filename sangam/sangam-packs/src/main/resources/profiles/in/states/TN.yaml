@@ -76,7 +76,7 @@ payee:
   globalBeneficiaryMaster: true
 receipts:
   channelThresholds:
-  - atOrAbove: 1CR
+  - atOrAbove: 1000000000
     channel: RBI_NEFT_RTGS
 budgetControl:
   quarterlyCaps: true

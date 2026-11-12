@@ -1,6 +1,6 @@
 {
   "id": "gov.inspection",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Inspection and enforcement",
     "hi": "निरीक्षण एवं प्रवर्तन"
@@ -63,5 +63,13 @@
   "calls": [
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

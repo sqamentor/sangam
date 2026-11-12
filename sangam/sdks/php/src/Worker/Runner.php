@@ -10,6 +10,7 @@ use Sangam\Sdk\Error\SangamException;
 use Sangam\Sdk\Error\StaleLeaseException;
 use Sangam\Sdk\Error\TransportException;
 use Sangam\Sdk\Log\Log;
+use Sangam\Sdk\Model\WorkOperation;
 use Sangam\Sdk\SangamClient;
 
 /**
@@ -29,6 +30,13 @@ final class Runner
     /** Maps the handler result / exception to an outcome (same table as every Sangam SDK). */
     public function invoke(TaskContext $ctx, TopicSubscription $sub): Outcome
     {
+        $replay = self::storedOutcomeCompletion($ctx->work()->operation);
+        if ($replay !== null) {
+            // SL-16: the operation already succeeded downstream; complete from the stored outcome, never call it again.
+            $ctx->setOutcomeReference($replay['reference']);
+            $ctx->log()->info('work.replayed', 'operation already succeeded; completing from the stored outcome');
+            return new Outcome('complete', $replay['variables']);
+        }
         try {
             $vars = ($sub->handler)($ctx);
             if ($vars !== null && !is_array($vars)) {
@@ -44,7 +52,8 @@ final class Runner
         } catch (TaskCancelledException $e) {
             return new Outcome($ctx->isCancelRequested() ? 'cancel-ack' : 'unlock', null, $e);
         } catch (\Throwable $e) {
-            // sangam-api.yaml 0.1.0 carries no per-item effect flag: irreversibility comes from the subscription
+            // the server sends no per-item effect flag (WorkPort.ExternalWork, sangam-api.yaml ExternalWork):
+            // irreversibility comes from the subscription, as in every Sangam SDK
             return new Outcome($sub->irreversible ? 'outcome-unknown' : 'fail', null, $e);
         }
     }
@@ -57,7 +66,7 @@ final class Runner
         $id = $ctx->workId();
         $call = match ($action) {
             'complete' => fn() => $work->complete($id, $this->workerId, $ctx->lockVersion(), $ctx->attemptId(),
-                $o->variables, self::key($ctx, $action)),
+                $o->variables, self::key($ctx, $action), null, $ctx->outcomeReference()),
             'bpmn-error' => fn() => $work->bpmnError($id, $this->workerId, $ctx->lockVersion(), $ctx->attemptId(),
                 $o->error instanceof BpmnError ? $o->error->errorCode : 'ERROR', $o->error?->getMessage(),
                 $o->variables, self::key($ctx, $action)),
@@ -142,6 +151,33 @@ final class Runner
         $d = 'unexpected error on irreversible topic: ' . self::describe($e);
         $t = self::trace($e);
         return $t === null ? $d : $d . "\n" . $t;
+    }
+
+    /**
+     * SL-16 stored-outcome completion (same contract as every Sangam SDK): when the server reports the operation as
+     * already SUCCEEDED and not dispatchable (mayDispatch false), the worker completes with storedOutcome.output as
+     * variables and storedOutcome.providerRef as outcome.reference, without calling the handler (the downstream effect
+     * already happened). Null when the handler must run (any other operation state).
+     *
+     * @param WorkOperation|array<string, mixed>|null $operation ExternalWork::$operation (or its wire array)
+     * @return array{variables: array<string, mixed>, reference: ?string}|null
+     */
+    public static function storedOutcomeCompletion(WorkOperation|array|null $operation): ?array
+    {
+        if (is_array($operation)) {
+            $operation = WorkOperation::fromArray($operation);
+        }
+        if ($operation === null || $operation->mayDispatch === true || !$operation->succeeded()) {
+            return null;
+        }
+        $stored = $operation->storedOutcome ?? [];
+        $out = $stored['output'] ?? null;
+        $ref = $stored['providerRef'] ?? null;
+        return [
+            // a JSON object decodes to an associative array; a JSON array (list) is not a variable map
+            'variables' => is_array($out) && ($out === [] || !array_is_list($out)) ? $out : [],
+            'reference' => $ref === null ? null : (is_scalar($ref) ? (string) $ref : (json_encode($ref) ?: null)),
+        ];
     }
 
     public static function key(TaskContext $ctx, string $action): string

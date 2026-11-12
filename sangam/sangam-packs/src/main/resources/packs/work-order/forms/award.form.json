@@ -1,6 +1,6 @@
 {
   "key": "work-order/award",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.work-order",
   "title": {
     "en": "Issue letter of acceptance",
@@ -34,7 +34,9 @@
     },
     {
       "id": "contractValue",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Contract value (INR)",

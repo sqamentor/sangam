@@ -88,66 +88,136 @@ paymentRails:
     parallelRun: true
 documentTypes:
 - id: MH_MTR_18
-  formNumber: MTR-18
+  formKind: BILL
+  formNumber: MH:MTR-18
   family: CONTINGENT
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_18B
-  formNumber: MTR-18B
+  formKind: BILL
+  formNumber: MH:MTR-18B
   family: CONTINGENT
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_24A
-  formNumber: MTR-24A
+  formKind: BILL
+  formNumber: MH:MTR-24A
   family: PERSONAL_CLAIM
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_28
-  formNumber: MTR-28
+  formKind: BILL
+  formNumber: MH:MTR-28
   family: ESTABLISHMENT_PAY
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations:
     sourceSystem: SEVAARTH
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_29
-  formNumber: MTR-29
+  formKind: BILL
+  formNumber: MH:MTR-29
   family: ESTABLISHMENT_PAY
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_31
-  formNumber: MTR-31
+  formKind: BILL
+  formNumber: MH:MTR-31
   family: GRANT
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_44
-  formNumber: MTR-44
+  formKind: BILL
+  formNumber: MH:MTR-44
   family: CONTINGENT
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_45
-  formNumber: MTR-45
+  formKind: BILL
+  formNumber: MH:MTR-45
   family: ADVANCE
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_MTR_52
-  formNumber: MTR-52
+  formKind: BILL
+  formNumber: MH:MTR-52
   family: REFUND
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 - id: MH_GIS_8
-  formNumber: GIS-8
+  formKind: BILL
+  formNumber: MH:GIS-8
   family: INSURANCE
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations: {}
+  provenance:
+    formKind: VERIFIED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 approvalChains:
 - id: TREASURY_STD
   steps:
@@ -162,6 +232,23 @@ approvalChains:
     token: true
     tokenSeries: TOKEN
     fifo: true
+billTypeCatalogue:
+  resolution: CATALOGUE_ID
+  formNumberPrefix: '<government profile id>:'
+  provenanceLabels:
+  - VERIFIED
+  - INFERRED
+  - ASSUMED
+  - UNKNOWN
+  provenanceFields:
+  - formKind
+  - formNumber
+  - billTypeCode
+  - typeId
+  - name
+  note: 'A bill type is resolved by its catalogue id; one form can carry several bill types, so a form number alone may be
+    ambiguous. typeId ASSUMED: the row id is the Sangam-assigned catalogue id; the government holds no document-type id. Forms
+    that are not bills are listed under formTemplates and are never resolved as bill types.'
 beneficiaryConfirmationDays: 10
 publicAccounts:
   types:

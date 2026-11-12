@@ -31,13 +31,21 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>placeholders accumulate; a later document that sets the path clears it unless it re-declares it;</li>
  *   <li>a missing {@code extends} / {@code adopt} target is an ERROR; cycles are an ERROR.</li>
  * </ul>
- * Results are cached per (scope, office, date) until {@link #invalidate()}.
+ * Results are cached per (scope, office, date) until {@link #invalidate()}, and per repository change marker
+ * ({@link ProfileRepository#changeMarker()}, SL-120): a change committed by any node (activation, retirement, import)
+ * moves the marker, so every node stops trusting its cached resolutions on its next call.
+ *
+ * <p>{@link #resolveBinding} resolves a case's stored binding (the exact document versions it started under, GP-19 /
+ * R43, SL-119) instead of the versions in force today.
  */
 public final class ProfileResolver {
+
+    private static final String LOCAL = "local";
 
     private final ProfileRepository repo;
     private final LayerModel layers;
     private final Map<String, ResolvedProfile> cache = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicReference<String> marker = new java.util.concurrent.atomic.AtomicReference<>();
 
     public ProfileResolver(ProfileRepository repo, LayerModel layers) {
         this.repo = repo;
@@ -66,8 +74,82 @@ public final class ProfileResolver {
     }
 
     public ResolvedProfile resolve(String scope, String office, LocalDate asOf) {
-        String key = scope + "|" + office + "|" + asOf;
+        String key = freshMarker() + "|" + scope + "|" + office + "|" + asOf;
         return cache.computeIfAbsent(key, k -> doResolve(ScopeRef.parse(scope), office, asOf));
+    }
+
+    /**
+     * Resolves a stored case binding ({@code id@version[sections]>...#hash12}, {@link ResolvedProfile#binding()}): the
+     * same document versions merged in the same order, whatever is active today, with row-level dates read on
+     * {@code asOf}. Versions are frozen once submitted, so the recomposed binding equals the stored one; a binding that
+     * cannot be parsed, names a version the repository no longer holds, or recomposes to a different hash carries an
+     * ERROR finding ({@code BINDING_INVALID}, {@code BINDING_VERSION_MISSING}, {@code BINDING_MISMATCH}) and must not
+     * be used in place of the case's configuration.
+     */
+    public ResolvedProfile resolveBinding(String scope, String binding, LocalDate asOf) {
+        String key = freshMarker() + "|pin|" + scope + "|" + binding + "|" + asOf;
+        return cache.computeIfAbsent(key, k -> doResolveBinding(ScopeRef.parse(scope), binding, asOf));
+    }
+
+    /** True when the finding is one of {@link #resolveBinding}'s own binding errors. */
+    public static boolean isBindingError(Finding f) {
+        return f.isError() && f.code().startsWith("BINDING_");
+    }
+
+    /**
+     * The repository's change marker; when it moved since the last call the cache is dropped (entries are keyed by the
+     * marker they were computed under, so a resolution racing a change is never served under the new marker).
+     */
+    private String freshMarker() {
+        String m = repo.changeMarker();
+        if (m == null) {
+            return LOCAL;
+        }
+        String prev = marker.getAndSet(m);
+        if (prev != null && !prev.equals(m)) {
+            cache.clear();
+        }
+        return m;
+    }
+
+    private ResolvedProfile doResolveBinding(ScopeRef scope, String binding, LocalDate asOf) {
+        List<Finding> findings = new ArrayList<>();
+        List<Step> steps = new ArrayList<>();
+        int hash = binding == null ? -1 : binding.lastIndexOf('#');
+        if (hash <= 0) {
+            findings.add(Finding.error("BINDING_INVALID", scope.id(), "binding '" + binding + "' has no chain#hash form", null));
+        } else {
+            for (String label : binding.substring(0, hash).split(">")) {
+                String base = label;
+                List<String> sections = null;
+                int open = label.indexOf('[');
+                if (open >= 0 && label.endsWith("]")) {
+                    base = label.substring(0, open);
+                    String inner = label.substring(open + 1, label.length() - 1);
+                    sections = inner.isEmpty() ? List.of() : List.of(inner.split(","));
+                }
+                int at = base.indexOf('@');
+                if (at <= 0 || at == base.length() - 1) {
+                    findings.add(Finding.error("BINDING_INVALID", scope.id(), "binding step '" + label + "' is not id@version", null));
+                    continue;
+                }
+                Optional<ProfileRepository.Stored> s = repo.get(base.substring(0, at), base.substring(at + 1));
+                if (s.isEmpty()) {
+                    findings.add(Finding.error("BINDING_VERSION_MISSING", scope.id(), "bound version " + base
+                            + " is not in the repository", null));
+                    continue;
+                }
+                steps.add(new Step(s.get().document(), sections));
+            }
+        }
+        ResolvedProfile r = compose(scope, null, asOf, steps, findings);
+        if (findings.stream().noneMatch(ProfileResolver::isBindingError) && !r.binding().equals(binding)) {
+            List<Finding> f = new ArrayList<>(r.findings());
+            f.add(Finding.error("BINDING_MISMATCH", scope.id(), "binding " + binding + " recomposes to " + r.binding(), null));
+            r = new ResolvedProfile(r.scope(), r.office(), r.asOf(), r.data(), r.chain(), r.binding(), r.placeholders(),
+                    List.copyOf(f));
+        }
+        return r;
     }
 
     private ResolvedProfile doResolve(ScopeRef scope, String office, LocalDate asOf) {
@@ -90,6 +172,11 @@ public final class ProfileResolver {
             findings.add(Finding.error("PROFILE_NOT_FOUND", scope.id(), "no active profile for scope " + scope
                     + " on " + asOf, null));
         }
+        return compose(scope, office, asOf, steps, findings);
+    }
+
+    /** Merges the chain's steps in order (layer order, locked paths, placeholders, required paths) and binds it. */
+    private ResolvedProfile compose(ScopeRef scope, String office, LocalDate asOf, List<Step> steps, List<Finding> findings) {
         Map<String, Object> data = new LinkedHashMap<>();
         Map<String, String> placeholders = new LinkedHashMap<>();
         Map<String, String> lockedBy = new LinkedHashMap<>();
@@ -163,6 +250,9 @@ public final class ProfileResolver {
                 }
             }
         }
+        if (!steps.isEmpty()) {
+            fiscalFinding(data, findings);
+        }
         for (Map.Entry<String, String> p : placeholders.entrySet()) {
             findings.add(new Finding(Finding.Severity.PLACEHOLDER, "PLACEHOLDER", p.getKey(), p.getValue(), null));
         }
@@ -170,6 +260,30 @@ public final class ProfileResolver {
         String binding = joined + "#" + Hashes.hex(Hashes.sha256(joined + "|" + org.sangam.core.layer.CanonicalJson.write(data))).substring(0, 12);
         return new ResolvedProfile(scope.id(), office, asOf, data, List.copyOf(chain), binding, Map.copyOf(placeholders),
                 List.copyOf(findings));
+    }
+
+    /** Finding code: the resolved profile has no {@code locale.fiscal} (WARNING; fiscal operations are refused). */
+    public static final String FISCAL_NOT_CONFIGURED = "FISCAL_NOT_CONFIGURED";
+    /** Finding code: {@code locale.fiscal} is present but incomplete or invalid (ERROR). */
+    public static final String FISCAL_INVALID = "FISCAL_INVALID";
+
+    /**
+     * SL-125 (fail closed): a profile without a fiscal year is valid (a fiscal year is not every tenant's business), but
+     * operators see a WARNING, and every fiscal operation is refused until the tenant sets it. A present but incomplete
+     * {@code locale.fiscal} (start month, start day or label missing or invalid) is an ERROR: nothing is assumed.
+     */
+    private static void fiscalFinding(Map<String, Object> data, List<Finding> findings) {
+        Map<String, Object> fiscal = Tree.map(Tree.get(data, "locale.fiscal"));
+        if (fiscal.isEmpty()) {
+            findings.add(Finding.warn(FISCAL_NOT_CONFIGURED, "locale.fiscal",
+                    "locale.fiscal not configured; fiscal operations are refused", null));
+            return;
+        }
+        try {
+            org.sangam.config.locale.FiscalCalendar.from(fiscal, java.time.ZoneId.of("UTC"));
+        } catch (RuntimeException e) {
+            findings.add(Finding.error(FISCAL_INVALID, "locale.fiscal", e.getMessage(), null));
+        }
     }
 
     private record Step(ProfileDocument doc, List<String> sections) {

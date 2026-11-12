@@ -2,6 +2,7 @@
 package org.sangam.billing;
 
 import org.sangam.config.common.Tree;
+import org.sangam.config.locale.FiscalYearNotConfiguredException;
 import org.sangam.config.profile.ProfileResolver;
 import org.sangam.config.profile.ResolvedProfile;
 import org.sangam.core.integration.ConnectorDescriptor;
@@ -20,6 +21,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 /**
  * In-process connector for the billing pack ({@code universal.billing-cycle}): connector ids {@code billing.accounts},
@@ -27,7 +29,9 @@ import java.util.Map;
  * {@code billing.waive}. Tariffs come from the tenant profile ({@code tariffs:}); the account list of a cycle comes
  * from an {@link AccountSource} (the consumer / property / licence register of the deployment).
  *
- * <p>Common inputs: {@code ledgerId} (default {@code DEMAND}), {@code period}, {@code consumer}, {@code cycle},
+ * <p>Common inputs: {@code ledgerId} (default {@code DEMAND}), {@code period} (invoice, penalty and waive; missing: the
+ * tenant's current fiscal period from the period resolver, which refuses when no fiscal year is configured: the step
+ * fails with {@code FISCAL_YEAR_NOT_CONFIGURED}, SL-127; never an invented calendar year), {@code consumer}, {@code cycle},
  * {@code tariffId}, {@code measures} (map) or {@code units}, {@code dueDays} (default 15), {@code amount},
  * {@code channel}, {@code paymentRef}, {@code head}, {@code orderRef}. Postings use the operationId-derived references of
  * {@link BillingService}, so retries are idempotent.
@@ -44,15 +48,35 @@ public final class BillingConnector implements SangamConnector {
     private final LedgerService ledger;
     private final ProfileResolver profiles;
     private final AccountSource accounts;
+    private final BiFunction<String, LocalDate, String> periodResolver;
     private final Clock clock;
 
+    /**
+     * @param periodResolver tenant and date to the current period label (the tenant profile's fiscal calendar, the same
+     *                       resolver as the ledger connector's); it throws {@link FiscalYearNotConfiguredException} when
+     *                       no fiscal year is configured. Null: a step without an explicit {@code period} is refused.
+     */
     public BillingConnector(BillingService billing, LedgerService ledger, ProfileResolver profiles, AccountSource accounts,
-                            Clock clock) {
+                            BiFunction<String, LocalDate, String> periodResolver, Clock clock) {
         this.billing = billing;
         this.ledger = ledger;
         this.profiles = profiles;
         this.accounts = accounts;
+        this.periodResolver = periodResolver;
         this.clock = clock == null ? Clock.systemUTC() : clock;
+    }
+
+    /** The step's {@code period}, else the tenant's current fiscal period; never an assumed calendar year (SL-127). */
+    private String period(ConnectorRequest r, String tenant, LocalDate today) {
+        String explicit = Tree.str(r.input().get("period"), null);
+        if (explicit != null && !explicit.isBlank() && !"current".equalsIgnoreCase(explicit)) {
+            return explicit;
+        }
+        if (periodResolver == null) {
+            throw new FiscalYearNotConfiguredException("no period resolver: billing step without a period for tenant "
+                    + tenant + " is refused");
+        }
+        return periodResolver.apply(tenant, today);
     }
 
     @Override
@@ -68,7 +92,6 @@ public final class BillingConnector implements SangamConnector {
             String tenant = r.tenantId();
             LocalDate today = clock.instant().atZone(ledger.zone(tenant)).toLocalDate(); // tenant business date
             String ledgerId = Tree.str(r.input().get("ledgerId"), "DEMAND");
-            String period = Tree.str(r.input().get("period"), today.toString().substring(0, 4));
             String consumer = r.str("consumer");
             Map<String, Object> out = new LinkedHashMap<>();
             switch (op) {
@@ -84,7 +107,7 @@ public final class BillingConnector implements SangamConnector {
                     if (measures.isEmpty() && r.input().get("units") != null) {
                         measures.put("units", Tree.decimal(r.input().get("units"), BigDecimal.ZERO));
                     }
-                    BillingService.Invoice inv = billing.invoice(tenant, ledgerId, period, consumer, r.str("cycle"), tariff,
+                    BillingService.Invoice inv = billing.invoice(tenant, ledgerId, period(r, tenant, today), consumer, r.str("cycle"), tariff,
                             measures, r.input(), today.plusDays(Tree.integer(r.input().get("dueDays"), 15)), r.str("actor"));
                     out.put("invoiceNo", inv.number());
                     out.put("total", inv.total().toPlainString());
@@ -109,12 +132,13 @@ public final class BillingConnector implements SangamConnector {
                     out.put("outstanding", outstanding(tenant, ledgerId, consumer).toPlainString());
                 }
                 case "penalty" -> {
-                    List<LedgerService.Result> res = billing.levyPenalties(tenant, ledgerId, period, consumer,
+                    List<LedgerService.Result> res = billing.levyPenalties(tenant, ledgerId, period(r, tenant, today), consumer,
                             tariff(tenant, r.str("tariffId"), today), today, r.str("actor"));
                     out.put("penalties", res.size());
                 }
                 case "waive" -> {
-                    AccountKey k = new AccountKey(tenant, ledgerId, period, r.str("head"), consumer, "DEMAND", r.str("cycle"));
+                    AccountKey k = new AccountKey(tenant, ledgerId, period(r, tenant, today), r.str("head"), consumer, "DEMAND",
+                            r.str("cycle"));
                     LedgerService.Result res = billing.waive(k, money(tenant, ledgerId, r.str("amount")), r.str("orderRef"), r.str("actor"));
                     out.put("applied", res.applied());
                 }
@@ -123,6 +147,8 @@ public final class BillingConnector implements SangamConnector {
                 }
             }
             return ConnectorResult.Success.of(out, r.operationId().toString());
+        } catch (FiscalYearNotConfiguredException e) {
+            return ConnectorResult.BusinessFailure.of(FiscalYearNotConfiguredException.CODE, e.getMessage());
         } catch (RuntimeException e) {
             return ConnectorResult.BusinessFailure.of("BILLING_ERROR", e.getMessage());
         }

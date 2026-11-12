@@ -579,10 +579,11 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                     id, ctx.tenantId(), TYPE_PREFIX + type, state, roots.size(), 0, 0,
                     configJson(filter, params, reason, null, fourEyes, keyBase, roots.isEmpty() ? now : null),
                     ctx.principalId(), now, now);
-            try (java.sql.PreparedStatement ps = c.prepareStatement("INSERT INTO PORT_BATCH_ITEM(batch_id, item_seq,"
-                    + " item_ref, state, attempts, result, updated_at) VALUES (?,?,?,?,?,?,?)")) {
+            String itemSql = "INSERT INTO PORT_BATCH_ITEM(batch_id, item_seq,"
+                    + " item_ref, state, attempts, result, updated_at) VALUES (?,?,?,?,?,?,?)";
+            try (java.sql.PreparedStatement ps = c.prepareStatement(itemSql)) {
                 for (int i = 0; i < roots.size(); i++) {
-                    Jdbc.bind(ps, 1, id, i, roots.get(i), "PENDING", 0, itemResult(null, keyBase + ":" + i, null), now);
+                    Jdbc.bind(ps, itemSql, 1, id, i, roots.get(i), "PENDING", 0, itemResult(null, keyBase + ":" + i, null), now);
                     ps.addBatch();
                     if (i % 500 == 499) {
                         ps.executeBatch();
@@ -892,7 +893,7 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
                                        Object... params) {
         try (java.sql.PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setMaxRows(Math.addExact(offset, limit));
-            Jdbc.bind(ps, 1, params);
+            Jdbc.bind(ps, sql, 1, params);
             List<T> out = new ArrayList<>();
             try (java.sql.ResultSet rs = ps.executeQuery()) {
                 int i = 0;
@@ -1337,6 +1338,10 @@ public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
 
     @Override
     public CleanupStatus triggerCleanup(RequestContext ctx, String reason) {
+        // SL-70: the engine's history cleanup removes the expired history of EVERY tenant: platform identities only
+        if (!ctx.inGroup(org.sangam.rest.support.Permissions.GROUP_PLATFORM)) {
+            throw ApiProblem.notPermitted("history cleanup of every tenant");
+        }
         String r = requireReason(reason);
         OperatonSupport.call(() -> historyService.cleanUpHistoryAsync(true));
         Map<String, Object> p = new LinkedHashMap<>();

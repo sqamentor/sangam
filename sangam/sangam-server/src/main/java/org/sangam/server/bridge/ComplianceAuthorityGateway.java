@@ -8,6 +8,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import org.sangam.compliance.ComplianceException;
 import org.sangam.compliance.config.ComplianceConfig;
@@ -24,8 +26,10 @@ import org.sangam.compliance.ports.CompliancePorts;
 public final class ComplianceAuthorityGateway implements CompliancePorts.SupervisoryAuthorityGateway,
         CompliancePorts.IncidentAuthorityGateway {
 
+    /** SL-92: modules registered explicitly, never discovered from the class path (that also adds jackson-module-scala). */
     private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
-            .findAndRegisterModules();
+            .registerModule(new JavaTimeModule())
+            .registerModule(new Jdk8Module());
 
     private final ComplianceConnectors connectors;
     private final ComplianceConfig.Provider config;

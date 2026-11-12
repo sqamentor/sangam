@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-gfe-ppdr/estimate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.gfe-ppdr",
   "title": {
     "en": "Prepare and deliver the good-faith estimate (with co-providers)",
@@ -34,7 +34,9 @@
     },
     {
       "id": "expectedCharges",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Expected charges in the good-faith estimate (USD)",

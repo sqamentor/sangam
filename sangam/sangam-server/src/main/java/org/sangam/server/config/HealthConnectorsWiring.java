@@ -88,7 +88,7 @@ public class HealthConnectorsWiring {
     /** The in-process health simulator, started only when a tenant uses mode {@code simulator}. */
     @Bean
     public HealthSimulatorHolder sangamHealthSimulator(HealthConnectorsProperties props, Environment env) {
-        boolean prod = Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.contains("prod"));
+        boolean prod = ProductionEnvironment.isProduction(env); // SL-109
         boolean any = props.getTenants().values().stream().anyMatch(t -> "simulator".equalsIgnoreCase(t.getMode()));
         if (!any) {
             return new HealthSimulatorHolder(null);

@@ -7,6 +7,7 @@ import org.sangam.core.layer.CanonicalJson;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.TenantKey;
 import org.sangam.programme.ProgrammeException;
 
 import java.io.IOException;
@@ -217,8 +218,9 @@ public final class Db {
         return value;
     }
 
+    /** The tenant key of a programme row: the reserved shared key for no tenant, never '' (SL-86, Oracle '' = NULL). */
     public static String tenant(String t) {
-        return t == null ? "" : t;
+        return TenantKey.of(t);
     }
 
     public static String hashOf(Object value) {

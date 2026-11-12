@@ -21,7 +21,8 @@ import java.util.TreeSet;
 
 /**
  * Generic hosting rules (SL-18): the server owns no browser-facing host name, trusts forwarding headers only from
- * configured proxies, and on a production profile refuses to start with a loopback default in any externally used URL.
+ * configured proxies, and on a production profile refuses to start with a loopback default in any externally used URL
+ * or with database credentials that were not injected (SL-103, {@link ProductionDatabaseCredentials}).
  */
 @Configuration(proxyBeanMethods = false)
 public class HostingWiring {
@@ -54,16 +55,24 @@ public class HostingWiring {
     public static org.springframework.beans.factory.config.BeanFactoryPostProcessor sangamProductionUrlGuard(Environment env) {
         return bf -> {
             List<String> bad = loopbackViolations(env);
+            List<String> credentials = ProductionDatabaseCredentials.violations(env);
+            List<String> parts = new ArrayList<>();
             if (!bad.isEmpty()) {
-                throw new IllegalStateException("sangam.security.production=true but these externally used URLs are unset "
-                        + "defaults or point at a loopback host (configure them explicitly): " + bad);
+                parts.add("these externally used URLs are unset defaults or point at a loopback host (configure them "
+                        + "explicitly): " + bad);
+            }
+            if (!credentials.isEmpty()) {
+                parts.add("the database credentials are not injected (SL-103): " + credentials);
+            }
+            if (!parts.isEmpty()) {
+                throw new IllegalStateException("sangam.security.production=true but " + String.join("; and ", parts));
             }
         };
     }
 
     /** Violations of the production URL rule; empty when not production. */
     static List<String> loopbackViolations(Environment env) {
-        if (!env.getProperty("sangam.security.production", Boolean.class, false)) {
+        if (!ProductionEnvironment.isProduction(env)) { // SL-109
             return List.of();
         }
         Set<String> keys = new TreeSet<>(EXTERNAL_URL_PROPERTIES);

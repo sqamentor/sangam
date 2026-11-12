@@ -69,7 +69,7 @@ import org.springframework.security.web.context.SecurityContextHolderFilter;
  *
  * <p>Properties: {@code sangam.modules.registry.enabled}; {@code sangam.registry.signer.private-key} /
  * {@code public-key} (base64 PKCS#8 / X.509 Ed25519); {@code sangam.registry.vault.hmac-pepper} (base64);
- * {@code sangam.registry.publish.connector} (default {@code digilocker}); {@code sangam.registry.system-of-record.<typeKey>}
+ * {@code sangam.registry.publish.connector} (no default: required to publish, SL-104); {@code sangam.registry.system-of-record.<typeKey>}
  * (connector id); {@code sangam.registry.public.rate-per-minute} (default 60); {@code sangam.registry.seeds.enabled}
  * (default true).
  */
@@ -92,7 +92,7 @@ public class RegistryWiring {
                 .withEvents(RegistryPortBridges.events(outbox.getIfAvailable(), tx))
                 .withDecisions(RegistryPortBridges.decisions(engine.getDecisionService()))
                 .withPublisher(RegistryPortBridges.publisher(tx,
-                        env.getProperty("sangam.registry.publish.connector", "digilocker")));
+                        env.getProperty("sangam.registry.publish.connector")));
         SangamSecurity sec = security.getIfAvailable();
         if (sec != null) {
             ports = ports.withVisibility(RegistryPortBridges.visibility(sec, tx))

@@ -1,6 +1,6 @@
 {
   "id": "universal.up05-four-eyes",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "UP-05 Four-eyes / dual control",
     "hi": "यूपी-05 चार-आँख / दोहरा नियंत्रण"
@@ -53,5 +53,13 @@
     "sangam-core-execution",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

@@ -106,6 +106,8 @@ op("get", "/plugins/ui", "listUiPlugins", "Plugins", "Enabled UI plugins",
    resp=(200, "array:UiPluginManifest"), errors=("Unauthorized",))
 op("get", "/plugins/ui/{id}/assets/{path}", "getUiPluginAsset", "Plugins", "A UI plugin asset",
    "No token needed (same-origin module import); plugin code holds no secrets. `path` may contain slashes. Allowed file "
-   "types only, exact name, nosniff. Disabled or refused plugins: 404.", ONB, params=[pp("id"), pp("path")],
+   "types only, exact name, nosniff. Disabled or refused plugins: 404.", ONB,
+   params=[pp("id"), pp_rest("path", "Asset name inside the bundle, one or more segments: `/` separators unencoded, each "
+                                     "segment percent-encoded on its own (e.g. `chunks/app%20main.js`).")],
    resp=(200, {"application/octet-stream": {"schema": {"type": "string", "format": "binary"}}}), errors=("NotFound",))
 public("/plugins/ui/{id}/assets/{path}", "get")

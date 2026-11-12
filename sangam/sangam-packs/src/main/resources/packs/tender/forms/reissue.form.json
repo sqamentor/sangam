@@ -1,6 +1,6 @@
 {
   "key": "tender/reissue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.tender",
   "title": {
     "en": "Re-issue NIT with new dates",

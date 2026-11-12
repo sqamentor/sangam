@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-investor-onboarding/optout",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.cap.investor-onboarding",
   "title": {
     "en": "Record declaration to opt out of nomination",

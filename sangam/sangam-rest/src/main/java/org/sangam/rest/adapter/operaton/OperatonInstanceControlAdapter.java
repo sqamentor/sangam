@@ -303,6 +303,9 @@ public class OperatonInstanceControlAdapter implements InstanceControlPort {
             if (f.activityId() != null) {
                 q.activityIdIn(f.activityId());
             }
+            if (f.activityInstanceId() != null) {
+                q.activityInstanceIdIn(f.activityInstanceId());
+            }
         }
         q.orderByTimestamp().desc();
         return OperatonSupport.page(q, page, props.getCountCap(), OperatonInstanceControlAdapter::map);

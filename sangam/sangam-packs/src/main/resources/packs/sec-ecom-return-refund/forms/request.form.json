@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-return-refund/request",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ecom.return-refund",
   "title": {
     "en": "Return request",
@@ -43,7 +43,9 @@
     },
     {
       "id": "refundAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Refund (INR)",

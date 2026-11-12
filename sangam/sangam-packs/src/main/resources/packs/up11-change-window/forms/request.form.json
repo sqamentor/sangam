@@ -1,6 +1,6 @@
 {
   "key": "up11-change-window/request",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.up11-change-window",
   "title": {
     "en": "Change request",

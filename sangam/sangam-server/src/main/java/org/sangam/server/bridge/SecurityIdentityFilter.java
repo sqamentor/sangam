@@ -21,6 +21,7 @@ import org.sangam.security.audit.LoginEventBatcher;
 import org.sangam.security.oidc.SangamAuthenticationToken;
 import org.sangam.security.oidc.SecurityProperties;
 import org.sangam.security.tenant.TenantContext;
+import org.sangam.server.security.PlatformIssuers;
 import org.sangam.server.security.ProblemResponses;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,7 +40,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *       {@link SecurityIdentities#ATTRIBUTE}; first sight of a session writes a batched {@code LOGIN} event.</li>
  * </ul>
  * A {@link SangamSecurityException} (unknown person, MFA missing, tenant suspended) is answered with problem+json.
- * Runs after the server's {@code PrincipalAttributeFilter}. Never registered as a servlet filter bean: it is added
+ * SL-70: an API token is always a tenant identity, and a tenant identity keeps no platform-only group or role, also
+ * none from the organisation model ({@link PlatformIssuers#tenant(SecurityIdentity)}). Runs after the server's
+ * {@code PrincipalAttributeFilter}. Never registered as a servlet filter bean: it is added
  * to the security chain only.
  */
 public final class SecurityIdentityFilter extends OncePerRequestFilter {
@@ -74,15 +77,19 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         SecurityIdentity raw;
         boolean resolvedAlready = false;
+        boolean platform = false;
         if (auth instanceof SangamAuthenticationToken token) {
-            // API token (sangam-security): its identity is already the owner's, tenant-bound and scoped.
-            raw = token.identity();
+            // API token (sangam-security): its identity is already the owner's, tenant-bound and scoped; SL-70: an API
+            // token is issued for one tenant, so it is never a platform identity.
+            raw = PlatformIssuers.tenant(token.identity());
             resolvedAlready = token.resolved();
             if (!(req.getAttribute(SangamPrincipal.ATTRIBUTE) instanceof SangamPrincipal)) {
                 req.setAttribute(SangamPrincipal.ATTRIBUTE, SecurityIdentities.toPrincipal(raw));
             }
         } else if (req.getAttribute(SangamPrincipal.ATTRIBUTE) instanceof SangamPrincipal p) {
             raw = SecurityIdentities.fromPrincipal(p, req.getRemoteAddr());
+            // the JWT / dev-token groups were confined by issuer when the principal was built (JwtPrincipalConverter)
+            platform = PlatformIssuers.isPlatformIdentity(p.groups());
         } else {
             chain.doFilter(req, res);
             return;
@@ -99,6 +106,10 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
                 String name = raw.attributes().getOrDefault("name", raw.attributes().get("preferred_username"));
                 String email = raw.attributes().get("email");
                 resolved = identities.resolve(tx, raw, jit, name, email);
+            }
+            if (!platform) {
+                // SL-70: memberships and role bindings of the organisation model cannot make a tenant identity platform
+                resolved = PlatformIssuers.tenant(resolved);
             }
         } catch (SangamSecurityException e) {
             if (logins != null) {

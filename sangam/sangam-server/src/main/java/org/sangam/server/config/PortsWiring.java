@@ -9,7 +9,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,7 +90,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -158,13 +156,23 @@ public class PortsWiring {
         return s;
     }
 
-    /** Debugger (FLOWABLE-INTO-OPERATON FC-44, R80): only with {@code sangam.debug.enabled=true} on a profile that is not production. */
-    @Bean
-    @ConditionalOnExpression("${sangam.debug.enabled:false} and !'${spring.profiles.active:}'.contains('prod')")
-    public DebuggerService sangamPortsDebugger(PortsSettings settings, ObjectProvider<ProcessEngine> engine, Environment env) {
-        if (Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.contains("prod"))) {
-            throw new IllegalStateException("sangam.debug.enabled must not be set on a production profile (R80)");
+    /** SL-109: the debugger and its port are refused in production (R80). */
+    static void refuseDebuggerInProduction(Environment env) {
+        if (ProductionEnvironment.isProduction(env)) {
+            throw new IllegalStateException("sangam.debug.enabled must not be set in production (R80; "
+                    + "sangam.security.production=true or a 'prod' profile)");
         }
+    }
+
+    /**
+     * Debugger (FLOWABLE-INTO-OPERATON FC-44, R80): only with {@code sangam.debug.enabled=true}, never in production.
+     * SL-109: production is {@link ProductionEnvironment} (the property Helm sets, or a {@code prod} profile); with the
+     * debugger enabled there, start-up fails instead of silently skipping the bean.
+     */
+    @Bean
+    @ConditionalOnProperty(name = "sangam.debug.enabled", havingValue = "true")
+    public DebuggerService sangamPortsDebugger(PortsSettings settings, ObjectProvider<ProcessEngine> engine, Environment env) {
+        refuseDebuggerInProduction(env);
         ProcessEngine lazy = lazyEngine(engine);
         Transactions tx = new Transactions() {
             @Override
@@ -395,10 +403,15 @@ public class PortsWiring {
     @Bean
     public FormPort sangamPortsFormPort(ProcessEngine engine, SangamFormService forms, AuditPort audit,
                                         RestProperties props, TxSupport tx,
-                                        ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor) {
+                                        ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor,
+                                        ObjectProvider<org.sangam.rest.extension.TenantCustomFieldRegistry> customFields,
+                                        ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
         OperatonFormAdapter base = new OperatonFormAdapter(engine.getRepositoryService(), engine.getTaskService(),
                 audit, props, tx);
         base.setEncryptor(encryptor.getIfAvailable()); // drafts encrypted at rest (X.2.5.8 rule 1)
+        // SL-40: tenant custom fields in force on the tenant's business date (TenantCustomFieldsWiring), as sangamFormPort
+        base.setCustomFields(customFields.getIfAvailable(),
+                new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable));
         return new PortsFormBridge(base, forms);
     }
 
@@ -442,9 +455,10 @@ public class PortsWiring {
     }
 
     @Bean
-    @ConditionalOnExpression("${sangam.debug.enabled:false} and !'${spring.profiles.active:}'.contains('prod')")
+    @ConditionalOnProperty(name = "sangam.debug.enabled", havingValue = "true")
     public DebugPort sangamPortsDebugPort(DebuggerService debugger, ProcessEngine engine, ProcessPort processes,
                                           AuditPort audit, Environment env) {
+        refuseDebuggerInProduction(env);
         return new PortsDebugBridge(debugger, engine, processes, audit, String.join(",", env.getActiveProfiles()),
                 sandboxTenants(env));
     }
@@ -466,7 +480,7 @@ public class PortsWiring {
             RestProperties props) {
         return new org.sangam.server.bridge.PortsHistoryBridge(queries,
                 new org.sangam.rest.adapter.operaton.OperatonHistoryAdapter(engine.getHistoryService(),
-                        engine.getRepositoryService(), props),
+                        engine.getRepositoryService(), engine.getManagementService(), props),
                 security.getIfAvailable(), tx, props.getCountCap());
     }
 

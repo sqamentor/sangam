@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-access-request/assemble",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.access-request",
   "title": {
     "en": "Assemble the records and decide",

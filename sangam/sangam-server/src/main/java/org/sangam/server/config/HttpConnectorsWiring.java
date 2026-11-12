@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -45,7 +44,7 @@ public class HttpConnectorsWiring {
             if (props.getTenants().isEmpty()) {
                 return;
             }
-            boolean production = Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.toLowerCase(Locale.ROOT).contains("prod"));
+            boolean production = ProductionEnvironment.isProduction(env); // SL-109
             SecretResolver resolver = secrets.getIfAvailable(SecretResolver::fromEnvironment);
             ConfigConnectorBinder binder = new ConfigConnectorBinder(registry, bindings);
             int n = 0;

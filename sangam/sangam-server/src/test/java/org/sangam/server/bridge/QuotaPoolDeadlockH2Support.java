@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -147,6 +148,70 @@ abstract class QuotaPoolDeadlockH2Support {
         }
         assertEquals((long) CALLERS * ROUNDS, engine.getRuntimeService().createProcessInstanceQuery()
                 .processDefinitionKey("sl43pool").count(), "every start committed");
-        assertEquals(0, pool.getHikariPoolMXBean().getThreadsAwaitingConnection(), "nobody left waiting");
+        // SL-79 diagnostic: the message supplier runs only when the assertion fails, so a pass adds nothing
+        assertEquals(0, pool.getHikariPoolMXBean().getThreadsAwaitingConnection(),
+                () -> "nobody left waiting" + waitDiagnostic(pool));
+    }
+
+    static final int DIAGNOSTIC_FRAMES = 15;
+
+    /**
+     * SL-79: who was waiting when "nobody left waiting" failed. The main pool's counts, then every live thread with
+     * its state, and the top {@link #DIAGNOSTIC_FRAMES} frames of every thread inside HikariCP. A Hikari frame does
+     * not carry its pool instance, so the pool is named from the thread's first frame outside Hikari and the JDK
+     * (the caller that asked for the connection); the main pool's name is printed for reference.
+     */
+    static String waitDiagnostic(HikariDataSource pool) {
+        StringBuilder out = new StringBuilder();
+        var mx = pool.getHikariPoolMXBean();
+        out.append("\n-- SL-79 diagnostic: main pool '").append(pool.getPoolName()).append("' at dump time: active=")
+                .append(mx.getActiveConnections()).append(" idle=").append(mx.getIdleConnections())
+                .append(" total=").append(mx.getTotalConnections()).append(" awaiting=")
+                .append(mx.getThreadsAwaitingConnection()).append('\n');
+        Map<Thread, StackTraceElement[]> all = Thread.getAllStackTraces();
+        List<Map.Entry<Thread, StackTraceElement[]>> threads = new ArrayList<>(all.entrySet());
+        threads.sort((x, y) -> x.getKey().getName().compareTo(y.getKey().getName()));
+        out.append("-- ").append(threads.size()).append(" live threads (name, state):\n");
+        for (Map.Entry<Thread, StackTraceElement[]> e : threads) {
+            out.append("  ").append(e.getKey().getName()).append(" [").append(e.getKey().getState()).append("]\n");
+        }
+        out.append("-- threads inside HikariCP (top ").append(DIAGNOSTIC_FRAMES).append(" frames):\n");
+        for (Map.Entry<Thread, StackTraceElement[]> e : threads) {
+            StackTraceElement[] stack = e.getValue();
+            boolean inHikari = false;
+            for (StackTraceElement f : stack) {
+                if (f.getClassName().startsWith("com.zaxxer.hikari")) {
+                    inHikari = true;
+                    break;
+                }
+            }
+            if (!inHikari) {
+                continue;
+            }
+            String caller = "unknown";
+            for (StackTraceElement f : stack) {
+                String c = f.getClassName();
+                if (!c.startsWith("com.zaxxer.hikari") && !c.startsWith("java.") && !c.startsWith("jdk.")
+                        && !c.startsWith("sun.") && !c.startsWith("org.springframework.jdbc.")
+                        && !c.startsWith("org.springframework.transaction.")) {
+                    caller = f.toString();
+                    break;
+                }
+            }
+            boolean waiting = false;
+            for (StackTraceElement f : stack) {
+                if (f.getClassName().startsWith("com.zaxxer.hikari") && f.getMethodName().equals("getConnection")) {
+                    waiting = true;
+                    break;
+                }
+            }
+            out.append("  ").append(e.getKey().getName()).append(" [").append(e.getKey().getState()).append("]")
+                    .append(waiting ? " in getConnection, pool requested by " + caller : " (Hikari internal)")
+                    .append('\n');
+            for (int i = 0; i < Math.min(DIAGNOSTIC_FRAMES, stack.length); i++) {
+                out.append("      at ").append(stack[i]).append('\n');
+            }
+        }
+        return out.toString();
     }
 }

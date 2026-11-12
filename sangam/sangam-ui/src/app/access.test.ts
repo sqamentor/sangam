@@ -1,0 +1,89 @@
+// SPDX-License-Identifier: Apache-2.0
+// M-028: every module screen is guarded by the server's own endpoint permission for its first call (access.ts), the
+// menu uses the same requirement, and the only unguarded routes are the ones the server opens to every signed-in
+// caller.
+import { describe, expect, it } from 'vitest';
+import appSource from './App.tsx?raw';
+import { MODULE_READERS, ROUTE_ACCESS, SIGNED_IN_ROUTES, canAccess } from './access';
+import { NAV } from './nav';
+import type { Role } from '../api/types';
+
+const me = (roles: Role[], permissions?: string[]) => ({ roles, permissions });
+
+/** Routes in App.tsx's authenticated table, and whether each is wrapped in a guard (g(...) or m(...)). */
+function routes(): { path: string; guarded: boolean }[] {
+  const out: { path: string; guarded: boolean }[] = [];
+  const table = appSource.slice(appSource.indexOf('function AuthedRoutes'), appSource.indexOf('function NotFound'));
+  expect(table.length).toBeGreaterThan(0);
+  for (const line of table.split(/\r?\n/)) {
+    const route = /<Route path="([^"]+)" element=\{(.*)\} \/>/.exec(line);
+    if (route) out.push({ path: route[1], guarded: /^g\(|<Guard /.test(route[2]) });
+    const mod = /\{m\('([^']+)', /.exec(line);
+    if (mod) out.push({ path: mod[1], guarded: true });
+  }
+  return out;
+}
+
+describe('M-028 route guards', () => {
+  it('guards every /m/* route with its access entry, and has an entry only for real routes', () => {
+    const all = routes();
+    const modules = all.filter((r) => r.path.startsWith('/m/'));
+    expect(modules.length).toBe(15);
+    for (const r of modules) {
+      expect(r.guarded, r.path).toBe(true);
+      expect(ROUTE_ACCESS[r.path], r.path).toBeDefined();
+    }
+    expect(Object.keys(ROUTE_ACCESS).sort()).toEqual(modules.map((r) => r.path).sort());
+  });
+
+  it('leaves unguarded only the routes the server opens to every signed-in caller', () => {
+    // '/', '*': redirect and not-found; /welcome, /account, /help/*: no module call (Account's engine calls are made
+    // for platform users only, inside the screen). /pages/:key (lowcode.read, LowCodeController.java:53) is outside
+    // M-028 and unchanged.
+    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', ...SIGNED_IN_ROUTES]);
+    const unguarded = routes().filter((r) => !r.guarded).map((r) => r.path);
+    expect(unguarded.filter((p) => !open.has(p))).toEqual([]);
+    for (const p of SIGNED_IN_ROUTES) expect(unguarded).toContain(p);
+  });
+
+  it('admits by role, by endpoint permission or by "*", and refuses otherwise', () => {
+    const ledger = ROUTE_ACCESS['/m/ledger'];
+    expect(canAccess(me(['TASK_USER']), ledger)).toBe(true);
+    expect(canAccess(me([], ['ledger.read']), ledger)).toBe(true);
+    expect(canAccess(me([], ['*']), ledger)).toBe(true);
+    expect(canAccess(me(['CITIZEN'], ['portal.use']), ledger)).toBe(false);
+    expect(canAccess(me([]), ledger)).toBe(false);
+    expect(canAccess(null, ledger)).toBe(false);
+  });
+
+  it('follows the server persona map: who may open which module', () => {
+    // tenant administrator (sangam-tenant-admin → ADMIN): module read/write/admin, but not field.capture or ai.use
+    const tenantAdmin = me(['ADMIN']);
+    expect(canAccess(tenantAdmin, ROUTE_ACCESS['/m/ledger'])).toBe(true);
+    expect(canAccess(tenantAdmin, ROUTE_ACCESS['/m/compliance'])).toBe(true);
+    expect(canAccess(tenantAdmin, ROUTE_ACCESS['/m/ai'])).toBe(false);
+    expect(canAccess(tenantAdmin, ROUTE_ACCESS['/m/field'])).toBe(false);
+    // platform administrator (sangam-admin → ADMIN, PLATFORM_ADMIN): everything
+    for (const a of Object.values(ROUTE_ACCESS)) expect(canAccess(me(['ADMIN', 'PLATFORM_ADMIN']), a)).toBe(true);
+    // auditor: module read and compliance.read, not ai.use / field.capture
+    expect(canAccess(me(['AUDITOR']), ROUTE_ACCESS['/m/registry'])).toBe(true);
+    expect(canAccess(me(['AUDITOR']), ROUTE_ACCESS['/m/compliance'])).toBe(true);
+    expect(canAccess(me(['AUDITOR']), ROUTE_ACCESS['/m/ai'])).toBe(false);
+    // plain user: module read, ai.use and field.capture, not compliance.read
+    expect(canAccess(me(['TASK_USER']), ROUTE_ACCESS['/m/ai'])).toBe(true);
+    expect(canAccess(me(['TASK_USER']), ROUTE_ACCESS['/m/field'])).toBe(true);
+    expect(canAccess(me(['TASK_USER']), ROUTE_ACCESS['/m/compliance'])).toBe(false);
+    // ANALYST alone (analytics.read) holds no module permission
+    for (const a of Object.values(ROUTE_ACCESS)) expect(canAccess(me(['ANALYST']), a)).toBe(false);
+    // data protection officer (sangam-dpo has no UI role): admitted to compliance by the permission /me reports
+    expect(canAccess(me([], ['compliance.read', 'audit.read']), ROUTE_ACCESS['/m/compliance'])).toBe(true);
+    expect(canAccess(me([], ['compliance.read', 'audit.read']), ROUTE_ACCESS['/m/ledger'])).toBe(false);
+  });
+
+  it('gives the menu the same requirement as the route', () => {
+    const modules = NAV.find((a) => a.id === 'modules');
+    expect(modules?.roles).toEqual(MODULE_READERS);
+    for (const i of modules?.items ?? []) expect(i.access, i.to).toBe(ROUTE_ACCESS[i.to]);
+    for (const a of Object.values(ROUTE_ACCESS)) for (const r of a.roles) expect(MODULE_READERS).toContain(r);
+  });
+});

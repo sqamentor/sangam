@@ -3,7 +3,9 @@
 security instruments and contract management."""
 from lib import C, q
 from packs import Pack
-from common import core, outcome, end_ok, rejection, reject_with, withdraw, revise, batch_loop
+from common import core, outcome, end_ok, rejection, reject_with, withdraw, revise, batch_loop, checked_query, \
+    check_conditions, unconfirmed_hold
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from sector import powers
 
 SIDE = ['GP-14', 'VI.5']
@@ -38,12 +40,17 @@ def budget():
     d = s.setv('br_defaults', 'Configuration', defaults='caseType=REAPPROPRIATION;routingDecisionKey=reapp-authority;'
                'scrutinySeat=BUDGET-SO;referToTenant=finance;referralQuestion=Concurrence for re-appropriation;'
                'executionConnector=ledger.transfer;executionStep=reappropriate;ledgerId=BUDGET;reconcileRequired=false;'
-               'outputTemplate=reappropriation-order;appealAllowed=false;budgetAvailable=0;budgetHead=@fromHead')
-    bq = s.conn('br_savings', 'Savings in the source head', 'ledger.available', 'available', 'query', 'ledgerId,fromHead,amount', 'budget')
+               'outputTemplate=reappropriation-order;appealAllowed=false;budgetHead=@fromHead')
+    # SL-115: the savings check fails closed (cleared before the query; no default stands in)
+    be, bq = checked_query(s, 'br_savings', 'Savings in the source head', 'ledger.available', 'available',
+                           'ledgerId,fromHead,amount', 'budget', ['budgetAvailable'])
     g = s.xgw('br_savGw', 'Savings enough?')
-    s.seq(st, d, bq, g)
+    s.seq(st, d, be)
+    s.flow(bq, g)
     scr = core(s, 'br_scrutiny', 'Budget section scrutiny (core)', 'scrutiny')
-    s.flow(g, scr, 'budgetAvailable >= amount', 'yes')
+    unconfirmed, enough = check_conditions([('budget', ['budgetAvailable'])], 'budgetAvailable >= amount')
+    s.flow(g, reject_with(p, s, 'br_rjFunds', 'FUNDS_NOT_CONFIRMED'), unconfirmed, 'savings not confirmed')
+    s.flow(g, scr, enough, 'yes')
     s.flow(g, reject_with(p, s, 'br_rjSav', 'SAVINGS_NOT_AVAILABLE'), None, 'no', default=True)
     rej = rejection(p, s, 'br_rj')
     ref = core(s, 'br_finance', 'Finance concurrence (core referral)', 'referral')
@@ -64,7 +71,7 @@ def budget():
     s.flow(fail, scr)
     s.flow(cl, end_ok(p, s, 'br_end'))
     s.side_exits('br')
-    pk.dmn('reapp-authority', 'Re-appropriation power', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('reapp-authority', 'Re-appropriation power', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['<= 1000000'], [q('HOD')], ''), (['<= 10000000'], [q('SECRETARY')], ''), (['-'], [q('FIN-SECY')], '')])
     simple_seeds(pk, 'DEPT-FIN', [('BUDGET-SO', 'BUDGET-SO', 'HOD-B', 'Budget section officer', 'बजट अनुभाग अधिकारी'),
@@ -183,7 +190,8 @@ def pension():
     san = core(s, 'ps_sanction', 'Head of Office sanction (core)', 'sanction')
     vg = s.xgw('ps_verGw')
     s.flow(vd, vg)
-    s.flow(vg, rej, None, 'not verified', default=True)
+    s.flow(vg, reject_with(p, s, 'ps_rjVerify', 'SERVICE_NOT_VERIFIED', reopen=scr), None, 'not verified',
+           default=True)   # SL-55
     vf = s.setv('ps_verified', 'Service verified', values='serviceVerified=true')
     s.flow(vg, vf, "serviceVerdict == 'verified'", 'verified')
     s.flow(vf, san)
@@ -240,29 +248,33 @@ def pension():
     outcome(s, 'pp_exGw', 'executionOutcome', {'DONE': ok}, fl)
     s.flow(ex, 'pp_exGw')
     pk.dmn('pension-computation', 'Pension computation (CCS (Pension) Rules 2021)', 'FIRST',
-           [('Qualifying service (years)', 'qualifyingService', 'double'), ('Last emoluments', 'lastPay', 'double'),
-            ('Average emoluments (10 months)', 'averageEmoluments', 'double')],
-           [('pensionAmount', 'Monthly pension', 'double'), ('eligibleForPension', 'Eligible', 'boolean'),
-            ('retirementGratuity', 'Retirement gratuity', 'double'), ('familyPension', 'Family pension (ordinary rate)', 'double'),
+           [('Qualifying service (years)', 'qualifyingService', 'number'), ('Last emoluments', 'lastPay', 'money'),
+            ('Average emoluments (10 months)', 'averageEmoluments', 'money')],
+           [('pensionAmount', 'Monthly pension', 'money'), ('eligibleForPension', 'Eligible', 'boolean'),
+            ('retirementGratuity', 'Retirement gratuity', 'money'), ('familyPension', 'Family pension (ordinary rate)', 'money'),
             ('ruleRef', 'Rule', 'string')],
-           [(['>= 10', '-', '-'], ['min([max([max([lastPay, averageEmoluments]) * 0.5, 9000]), 125000])', 'true',
-                                  'min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), 2500000])',
-                                  'max([lastPay * 0.3, 9000])',
+           # money in minor units (SD-398): amounts through M(), one rounding up to a whole minor unit per figure
+           [(['>= 10', '-', '-'], ['ceiling(min([max([max([lastPay, averageEmoluments]) * 0.5, %s]), %s]))'
+                                  % (M(9000), M(125000)), 'true',
+                                  'ceiling(min([lastPay * 0.25 * min([floor(qualifyingService * 2), 66]), %s]))'
+                                  % M(2500000),
+                                  'ceiling(max([lastPay * 0.3, %s]))' % M(9000),
                                   '"CCS (Pension) Rules 2021: 50% of last emoluments or average emoluments, whichever is more '
                                   'beneficial; minimum 9,000, maximum 50% of the highest pay (1,25,000); gratuity 1/4 per '
                                   'six-monthly period, max 16.5 x emoluments, ceiling 25 lakh [U ceiling date]"'],
              'pension after 10 years of qualifying service'),
-            (['< 10', '-', '-'], ['0', 'false', 'lastPay * 0.5 * floor(qualifyingService * 2)', 'max([lastPay * 0.3, 9000])',
+            (['< 10', '-', '-'], ['0', 'false', 'ceiling(lastPay * 0.5 * floor(qualifyingService * 2))',
+                                 'ceiling(max([lastPay * 0.3, %s]))' % M(9000),
                                  '"CCS (Pension) Rules 2021: service gratuity below 10 years (half a month per six-monthly period) [U]"'],
              'service gratuity only')],
            doc='Replaces the earlier 50 % placeholder. Values from the CCS (Pension) Rules 2021 as summarised in IFMS-CENTRAL '
                'IFC-179; ceilings marked [U] are configuration placeholders. Commutation uses ccs-commutation-factor.')
     pk.dmn('ccs-commutation-factor', 'Commutation factor by age next birthday (CCS (Commutation of Pension) Rules)', 'FIRST',
            [('Age next birthday', 'ageNextBirthday', 'integer')],
-           [('commutationFactor', 'Commutation factor', 'double'), ('ruleRef', 'Rule', 'string')],
+           [('commutationFactor', 'Commutation factor', 'number'), ('ruleRef', 'Rule', 'string')],
            [(['61'], ['8.194', '"commutation table (age 61 next birthday)"'], 'retirement at 60'),
             (['-'], ['8.194', '"[U] load the full commutation table; default row is a placeholder"'], 'placeholder')])
-    pk.dmn('pension-sanction-authority', 'Pension sanction authority', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('pension-sanction-authority', 'Pension sanction authority', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')], [(['-'], [q('HOO')], 'Head of Office')])
     # SL-30: the pension is the Head of Office's to process under the rules, not a delegated money power. CCS (Pension)
     # Rules 2021 (G.S.R. 868(E), corpus S45, verified pass 2: IFMS-CENTRAL IFC-174 r.56-60, IFC-179 r.44): the HoO
@@ -384,17 +396,19 @@ def contract():
     s.seq(tell, cl, end_ok(p, s, 'ca_end'))
     s.side_exits('ca')
     pk.dmn('contract-ld', 'Liquidated damages (synthetic GCC clause)', 'FIRST',
-           [('Delay (days)', 'delayDays', 'integer'), ('Contract value', 'contractValue', 'double')],
-           [('ldAmount', 'LD amount', 'double')],
+           [('Delay (days)', 'delayDays', 'integer'), ('Contract value', 'contractValue', 'money')],
+           [('ldAmount', 'LD amount', 'money')],
            [(['<= 0', '-'], ['0'], 'no delay'),
-            (['-', '-'], ['min(delayDays * 0.0005, 0.1) * contractValue'], '0.05% per day, capped at 10%')])
+            (['-', '-'], ['floor(min(delayDays * 0.0005, 0.1) * contractValue)'],
+             '0.05% per day, capped at 10%; rounded down once to a whole minor unit')])
     pk.dmn('contract-price-escalation', 'Price escalation (synthetic clause 10CC-style)', 'FIRST',
-           [('Index change (%)', 'escalationIndex', 'double'), ('Base amount', 'amendmentAmount', 'double')],
-           [('escalationAmount', 'Escalation', 'double')],
+           [('Index change (%)', 'escalationIndex', 'number'), ('Base amount', 'amendmentAmount', 'money')],
+           [('escalationAmount', 'Escalation', 'money')],
            [(['<= 5', '-'], ['0'], 'absorbed by the contractor up to 5%'),
-            (['-', '-'], ['(escalationIndex - 5) / 100 * contractValue * 0.85'], 'beyond 5%, on 85% of value')])
+            (['-', '-'], ['floor((escalationIndex - 5) / 100 * contractValue * 0.85)'],
+             'beyond 5%, on 85% of value; rounded down once to a whole minor unit')])
     pk.dmn('contract-amendment-authority', 'Amendment authority', 'FIRST',
-           [('Type', 'amendmentType', 'string'), ('Amount', 'amount', 'double')],
+           [('Type', 'amendmentType', 'string'), ('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [([q('EOT'), '-'], [q('SE')], 'extension of time'), ([q('LD'), '-'], [q('EE')], 'LD levy'),
             (['-', '<= 500000'], [q('EE')], ''), (['-', '<= 2500000'], [q('SE')], ''), (['-', '-'], [q('CE')], '')])
@@ -424,7 +438,7 @@ def tender():
     d = s.setv('td_defaults', 'Configuration', defaults=(
         'caseType=TENDER_NIT;amount=@estimateAmount;routingDecisionKey=tender-authority;bidOpeningSeats=BOC-1,BOC-2;'
         'tecSeats=TEC-1,TEC-2,TEC-3;financialOpeningGap=P1D;negotiationRounds=0;maxNegotiationRounds=2;'
-        'retenderCount=0;maxRetenders=2;tpcSeat=TPC-CHAIR;eprocBidsCount=1;appealAllowed=false'))
+        'retenderCount=0;maxRetenders=2;tpcSeat=TPC-CHAIR;appealAllowed=false'))
     san = core(s, 'td_nitApproval', 'NIT approval (core sanction)', 'sanction')
     s.seq(st, d, san)
     pub = s.conn('td_publish', 'Publish NIT', 'cppp.publish', 'publishNit', 'submit', 'tenderId,nitText,bidDueAt,openingAt',
@@ -443,8 +457,11 @@ def tender():
     pubc = s.conn('td_publishCorr', 'Publish corrigendum', 'cppp.publish', 'publishCorrigendum', 'submit',
                   'tenderId,corrigendumText,bidDueAt', 'corrigendum', step='corrigendum')
     s.seq(corr, apply, pubc, w)
-    bids = s.conn('td_bids', 'Bids received (EMD held)', 'eproc.bidsReceived', 'count', 'query', 'tenderId', 'eproc')
-    s.flow(close, bids)
+    # SL-115: bids are opened (or the tender re-issued) only on a confirmed count (cleared before every query; no
+    # default stands in); an unconfirmed count holds the tender for its officer, who establishes it; then re-check
+    bide, bids = checked_query(s, 'td_bids', 'Bids received (EMD held)', 'eproc.bidsReceived', 'count', 'tenderId',
+                               'eproc', ['eprocBidsCount'])
+    s.flow(close, bide)
     refund = s.conn('td_refundEmd', 'Refund EMD (compensation)', 'emd.refund', 'refundAll', 'submit', 'tenderId', 'emdRefund',
                     step='emd-refund-all')
     s.node(refund)['attrs']['isForCompensation'] = 'true'
@@ -454,7 +471,11 @@ def tender():
     bg = s.xgw('td_bidsGw', 'Any bids?')
     s.flow(bids, bg)
     lock = s.catch_timer('td_openingLock', 'Not before opening time (GP-24)', date='${openingAt}')
-    s.flow(bg, lock, 'eprocBidsCount > 0', 'bids received')
+    bids_unconfirmed, bids_received = check_conditions([('eproc', ['eprocBidsCount'])], 'eprocBidsCount > 0')
+    s.flow(bg, lock, bids_received, 'bids received')
+    s.flow(bg, unconfirmed_hold(p, s, 'td_bidsUnconfirmed', 'Bids received not confirmed: establish the count on the '
+                                'portal | प्राप्त बोलियों की पुष्टि नहीं: पोर्टल पर संख्या सुनिश्चित करें', '${initiatorSeat}',
+                                bide), bids_unconfirmed, 'count not confirmed: hold')
     retender = s.expr('td_retenderCount', 'Retender', "${execution.setVariable('retenderCount', retenderCount + 1)}")
     s.flow(bg, retender, None, 'no bids', default=True)
     s1 = s.setv('td_openCommittee', 'Bid opening committee', values='committeeSeats=@bidOpeningSeats;quorumRule=ALL')
@@ -503,11 +524,11 @@ def tender():
     s.seq(emd, ok, end_ok(p, s, 'td_end', 'Awarded'))
     s.side_exits('td')
     pk.dmn('tender-authority', 'Tender NIT / award authority', 'FIRST',
-           [('Case type', 'caseType', 'string'), ('Amount', 'amount', 'double')],
+           [('Case type', 'caseType', 'string'), ('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['-', '<= 2500000'], [q('EE')], ''), (['-', '<= 100000000'], [q('SE')], ''), (['-', '-'], [q('CE')], '')])
     pk.dmn('tender-l1-acceptability', 'L1 acceptability against the justified estimate', 'FIRST',
-           [('L1 amount', 'evaluateL1Amount', 'double'), ('Estimate', 'estimateAmount', 'double'),
+           [('L1 amount', 'evaluateL1Amount', 'money'), ('Estimate', 'estimateAmount', 'money'),
             ('Responsive bids', 'evaluateResponsiveBids', 'integer'), ('Negotiation rounds', 'negotiationRounds', 'integer')],
            [('l1Action', 'Action', 'string')],
            [(['-', '-', '< 1', '-'], [q('RETENDER')], 'no responsive bid'),
@@ -835,11 +856,11 @@ def works():
                 [('Office / department', 'officeId', 'string')],
                 [('worksSanctionOrder', 'Order of sanctions', 'string')],
                 [(['-'], [q('AA_FIRST')], 'State B grants administrative approval before technical sanction')])
-    pk.dmn('works-ts-authority', 'Technical sanction powers (synthetic)', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('works-ts-authority', 'Technical sanction powers (synthetic)', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['<= 2500000'], [q('EE')], ''), (['<= 20000000'], [q('SE')], ''), (['-'], [q('CE')], '')])
     pk.dmn('works-aa-authority', 'Administrative approval powers (synthetic)', 'FIRST',
-           [('Case type', 'caseType', 'string'), ('Amount', 'amount', 'double')],
+           [('Case type', 'caseType', 'string'), ('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['-', '<= 10000000'], [q('HOD')], ''), (['-', '<= 500000000'], [q('SECRETARY')], ''),
             (['-', '-'], [q('FIN-SECY')], 'with Finance')])
@@ -874,16 +895,21 @@ def gem():
     d = s.setv('gm_defaults', 'Configuration', defaults=(
         'caseType=PURCHASE;routingDecisionKey=gem-purchase-authority;deliveryPeriod=P30D;consigneeSeat=STORE-GM;'
         'executionConnector=gem.order;executionStep=gem-order;executionOperation=placeOrder;reconcileRequired=false;'
-        'releaseConnector=ifms.release;budgetAvailable=0;appealAllowed=false;supplierAccount=;supplierIfsc=;'
+        'releaseConnector=ifms.release;appealAllowed=false;supplierAccount=;supplierIfsc=;'
         'supplierName=GeM seller'))
     amt = s.expr('gm_amount', 'Value', "${execution.setVariable('amount', quantity * unitPrice)}")
     mode = s.rule('gm_mode', 'Mode of procurement (DMN)', 'gem-procurement-mode')
-    bq = s.conn('gm_budget', 'Budget available', 'ifms.budget', 'available', 'query', 'budgetHead,amount', 'budget')
+    # SL-115: the budget check fails closed (cleared before the query; no default stands in)
+    be, bq = checked_query(s, 'gm_budget', 'Budget available', 'ifms.budget', 'available', 'budgetHead,amount',
+                           'budget', ['budgetAvailable'])
     bg = s.xgw('gm_budgetGw', 'Budget?')
-    s.seq(st, d, amt, mode, bq, bg)
+    s.seq(st, d, amt, mode, be)
+    s.flow(bq, bg)
     enc = s.conn('gm_encumber', 'Encumber', 'ifms.encumber', 'encumber', 'submit', 'budgetHead,amount', 'encumber',
                  step='encumber')
-    s.flow(bg, enc, 'budgetAvailable >= amount', 'yes')
+    unconfirmed, enough = check_conditions([('budget', ['budgetAvailable'])], 'budgetAvailable >= amount')
+    s.flow(bg, reject_with(p, s, 'gm_rjFunds', 'FUNDS_NOT_CONFIRMED'), unconfirmed, 'budget not confirmed')
+    s.flow(bg, enc, enough, 'yes')
     s.flow(bg, reject_with(p, s, 'gm_rjBudget', 'BUDGET_NOT_AVAILABLE'), None, 'no', default=True)
     ag = s.xgw('gm_autoGw', 'Auto-approve (GP-29)?')
     s.flow(enc, ag)
@@ -911,7 +937,7 @@ def gem():
     tg = s.xgw('gm_tenderGw')
     s.flow(tdr, tg)
     s.flow(tg, order, "tenderOutcome == 'AWARDED'", 'awarded')
-    s.flow(tg, rej, None, 'failed', default=True)
+    s.flow(tg, reject_with(p, s, 'gm_rjTender', 'TENDER_NOT_AWARDED'), None, 'failed', default=True)   # SL-55
     dlw = s.svc('gm_deliveryDue', 'Delivery period', C['SLA'], {'op': 'DEADLINE', 'clock': 'delivery',
                                                                'spec': '${deliveryPeriod}'})
     outcome(s, 'gm_orderGw', 'executionOutcome', {'DONE': dlw}, rej)
@@ -952,14 +978,14 @@ def gem():
     s.seq(crac, bill, cl, end_ok(p, s, 'gm_end', 'Purchased and paid'))
     s.side_exits('gm')
     pk.dmn('gem-procurement-mode', 'Mode of procurement (synthetic thresholds)', 'FIRST',
-           [('Value', 'amount', 'double'), ('Available on GeM', 'gemAvailable', 'boolean')],
+           [('Value', 'amount', 'money'), ('Available on GeM', 'gemAvailable', 'boolean')],
            [('procurementMode', 'Mode', 'string'), ('autoApprove', 'Auto-approve', 'boolean')],
            [(['-', 'false'], [q('OUTSIDE_GEM'), 'false'], 'not on GeM: tender with justification'),
             (['<= 25000', 'true'], [q('DIRECT'), 'true'], 'direct purchase, auto-approved (GP-29)'),
             (['<= 50000', 'true'], [q('DIRECT'), 'false'], 'direct purchase'),
             (['<= 1000000', 'true'], [q('L1'), 'false'], 'L1 among three sellers'),
             (['-', 'true'], [q('BID'), 'false'], 'bid / reverse auction')])
-    pk.dmn('gem-purchase-authority', 'Purchase sanction powers', 'FIRST', [('Amount', 'amount', 'double')],
+    pk.dmn('gem-purchase-authority', 'Purchase sanction powers', 'FIRST', [('Amount', 'amount', 'money')],
            [('competentRole', 'Competent role', 'string')],
            [(['<= 100000'], [q('SO')], ''), (['<= 1000000'], [q('DS')], ''), (['-'], [q('JS')], '')])
     simple_seeds(pk, 'DEPT-GM', [('STORE-GM', 'STORE', 'SO-GM', 'Consignee / store keeper', 'परेषिती / भंडारपाल'),

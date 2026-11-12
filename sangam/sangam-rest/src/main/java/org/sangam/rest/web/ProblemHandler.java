@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.web;
 
+import java.util.List;
 import java.util.Map;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.MismatchedInputException;
 
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.layer.IdempotencyStore;
@@ -61,7 +66,29 @@ public class ProblemHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> unreadable(HttpMessageNotReadableException e, HttpServletRequest req) {
+        // SL-81: well-formed JSON whose value does not bind (a required number or flag missing or null, a wrong type)
+        // names the field: 400 VALIDATION_FAILED with "field". Only a body that is not JSON stays MALFORMED_BODY.
+        if (e.getCause() instanceof DatabindException d && !d.getPath().isEmpty()) {
+            String field = fieldPath(d.getPath());
+            String detail = d instanceof MismatchedInputException m && m.getTargetType() != null
+                    ? field + " is missing, null or not a valid " + m.getTargetType().getSimpleName()
+                    : field + " is not valid for this operation";
+            return respond(ApiProblem.badRequest("VALIDATION_FAILED", detail).with("field", field), req);
+        }
         return respond(ApiProblem.badRequest("MALFORMED_BODY", "The request body is not valid JSON for this operation"), req);
+    }
+
+    /** {@code lines[2].amount} from Jackson's reference chain. */
+    static String fieldPath(List<JacksonException.Reference> path) {
+        StringBuilder b = new StringBuilder();
+        for (JacksonException.Reference r : path) {
+            if (r.getPropertyName() != null) {
+                b.append(b.isEmpty() ? "" : ".").append(r.getPropertyName());
+            } else if (r.getIndex() >= 0) {
+                b.append('[').append(r.getIndex()).append(']');
+            }
+        }
+        return b.toString();
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class, MissingRequestHeaderException.class,
@@ -111,12 +138,18 @@ public class ProblemHandler {
                 e.retryAfterSeconds());
     }
 
-    /** SL-13 / SL-45: 403 {@code TENANT_ISOLATION_VIOLATION}, naming the element and both tenants. */
+    /**
+     * SL-13 / SL-45: 403 {@code TENANT_ISOLATION_VIOLATION}, naming the element and both tenants. A member without a
+     * value is left out ({@code targetTenant} of a refused shared definition, which has no tenant): {@link ApiProblem}
+     * copies its extensions with {@code Map.copyOf}, which refuses a null value, so a null here made the problem itself
+     * fail and the refusal answered 500 (on {@code /engine-rest}: Jersey's "exception mapper failure").
+     */
     public static ApiProblem isolationProblem(TenantIsolationException e) {
         Map<String, Object> ext = new java.util.LinkedHashMap<>();
         ext.put("element", e.element());
         ext.put("tenant", e.callerTenant());
         ext.put("targetTenant", e.targetTenant());
+        ext.values().removeIf(java.util.Objects::isNull);
         return new ApiProblem(TenantIsolationException.HTTP_STATUS, TenantIsolationException.CODE, null, e.getMessage(),
                 ext, null);
     }

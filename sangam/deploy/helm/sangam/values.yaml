@@ -33,8 +33,15 @@ database:
   pool:
     maximumPoolSize: 30
     minimumIdle: 5
-    connectionTimeoutMs: 10000
+    # SL-59 / SCALE-ARCHITECTURE 1.6: wait at most this long for a free connection, then 503 DATABASE_UNAVAILABLE
+    # with Retry-After (the server default, application.yaml). 0 (wait for ever) is refused by the server.
+    connectionTimeoutMs: 2000
     maxLifetimeMs: 1500000
+  # SL-59, optional (empty = the server default). Socket read bound on every pooled connection, a duration such as
+  # 300s (server default 300s; 0 disables it): SANGAM_DB_NETWORK_TIMEOUT.
+  networkTimeout: ""
+  # Retry-After of the 503 DATABASE_UNAVAILABLE answer, e.g. 2s (server default 2s): SANGAM_DB_UNAVAILABLE_RETRY_AFTER.
+  unavailableRetryAfter: ""
   # IR-6 read replica for analytics, audit and history reads (empty = everything on the primary).
   replica:
     jdbcUrl: ""
@@ -80,6 +87,12 @@ oidc:
   issuerUri: ""
   # Optional internal JWKS URL (when the pods cannot reach the public issuer URL).
   jwkSetUri: ""
+  # SL-70: issuer(s) of the separate PLATFORM realm, comma-separated. Only their tokens are platform identities
+  # (sangam-admin = platform administrator); sangam-admin in a tenant token = tenant administrator. Empty = nobody is
+  # platform administrator. Must differ from issuerUri.
+  platformIssuerUri: ""
+  # Optional internal JWKS URL of the platform realm (exactly one platform issuer).
+  platformJwkSetUri: ""
   audience: sangam-server
   tenantClaim: tenant
   rolesClaim: roles
@@ -118,14 +131,20 @@ server:
     pullPolicy: IfNotPresent
   replicaCount: 2
   springProfiles: ""   # extra profiles, appended after "<database.type>,oidc" (e.g. prod)
+  # keep -Duser.timezone=UTC: the server refuses to start in any other JVM zone (SL-53); timer business zone =
+  # sangam.engine.timer-zone (e.g. server.env / envFrom SANGAM_ENGINE_TIMERZONE=Asia/Kolkata)
   javaToolOptions: "-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError -XX:+UseG1GC -Duser.timezone=UTC -Dfile.encoding=UTF-8"
   defaultTenant: ""
+  environment: ""      # SL-42 SANGAM_ONBOARDING_ENVIRONMENT (sandbox, uat, prod ...); optional, empty = no promotion
   corsOrigins: ""      # SANGAM_CORS_ORIGINS; empty = same origin only (UI behind the same ingress host)
   jobExecutor:
     enabled: true      # false for API-only pods
     corePoolSize: 16
     maxPoolSize: 32
     maxJobsPerAcquisition: 20
+    # SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES (SANGAM.md 4.3 item 3, on by default): exclusive jobs are grouped
+    # per root instance (the whole call-activity tree); false = Operaton's per-instance rule
+    exclusiveOverProcessHierarchies: true
   content:             # upload limits (sangam.content.max-bytes = multipart max-file-size)
     maxBytes: "268435456"
     maxFile: 256MB
@@ -213,7 +232,7 @@ scale:
   cell:
     id: ""                  # setting it switches the cell on (SANGAM_CELL_ID); ids are immutable, never reused
     region: ""
-    jurisdiction: IN
+    jurisdiction: ""        # required with scale.cell.id (SL-104: no product default)
     residency: ""           # defaults to jurisdiction
     publicUrl: ""
     adminUrl: ""

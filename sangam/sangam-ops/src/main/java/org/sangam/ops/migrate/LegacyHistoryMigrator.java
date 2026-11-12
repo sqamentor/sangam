@@ -190,7 +190,7 @@ public final class LegacyHistoryMigrator {
             ps.setMaxRows(batchSize);
             ps.setFetchSize(batchSize);
             if (last != null) {
-                Jdbc.bind(ps, 1, t.params(last));
+                Jdbc.bind(ps, sql, 1, t.params(last));
             }
             List<Row> out = new ArrayList<>();
             try (ResultSet rs = ps.executeQuery()) {

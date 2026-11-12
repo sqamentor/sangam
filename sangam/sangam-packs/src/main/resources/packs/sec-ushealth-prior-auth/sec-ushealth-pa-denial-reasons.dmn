@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_pa_denial_reasons" name="Denial reason routing (SYNTHETIC mapping of payer reason codes)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-ushealth-pa-denial-reasons" name="Denial reason routing (SYNTHETIC mapping of payer reason codes)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-ushealth-pa-denial-reasons" name="Denial reason routing (SYNTHETIC mapping of payer reason codes)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-ushealth-pa-denial-reasons_t" hitPolicy="FIRST">
       <input id="sec-ushealth-pa-denial-reasons_i0" label="Reason code"><inputExpression id="sec-ushealth-pa-denial-reasons_ie0" typeRef="string"><text>pasReasonCode</text></inputExpression></input>
       <output id="sec-ushealth-pa-denial-reasons_o0" label="Specific denial reason" name="denialReason" typeRef="string"/>

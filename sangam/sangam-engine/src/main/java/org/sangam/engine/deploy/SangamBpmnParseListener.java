@@ -175,7 +175,10 @@ public class SangamBpmnParseListener implements BpmnParseListener {
     /** SG-08 (a): completion order of compensable activities (see {@link SequentialCompensation.OrderListener}). */
     private void attachCompensationOrder(ScopeImpl scope) {
         for (ActivityImpl a : scope.getActivities()) {
-            if (a.findCompensationHandler() != null || a.isSubProcessScope()) {
+            // SL-101: a multi-instance body is compensated as one step (Operaton creates its subscription when the body
+            // ends, CompensationUtil.createEventScopeExecution), so it takes part in the completion order like a scope
+            if (a.findCompensationHandler() != null || a.isSubProcessScope()
+                    || a.getActivityBehavior() instanceof org.operaton.bpm.engine.impl.bpmn.behavior.MultiInstanceActivityBehavior) {
                 a.addBuiltInListener(ExecutionListener.EVENTNAME_END, SequentialCompensation.OrderListener.INSTANCE);
             }
             attachCompensationOrder(a);

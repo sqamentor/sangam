@@ -44,6 +44,37 @@ jobs:
           python sangam/sangam-packs/tools/packgen/main.py
           git diff --exit-code -- sangam/sangam-packs/src/main/resources/packs \
             || { echo "Pack files differ from tools/packgen output: change the generator, then regenerate."; exit 1; }
+      - uses: actions/setup-python@v5
+        if: matrix.java == '25'
+        with:
+          python-version: "3.13"
+      - name: Other generated files match their generators (SL-106)
+        # profilegen, generate_changelogs, generate_scale_changelogs and gen_openapi (packgen above, realm in
+        # deploy-lint, native metadata in sdks.yml). Each output is LF (.gitattributes SL-56), so the check is bytewise.
+        if: matrix.java == '25'
+        working-directory: .
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -q pyyaml==6.0.3
+          python -I sangam/sangam-packs/tools/profilegen/main.py
+          python -I sangam/sangam-persistence/tools/generate_changelogs.py
+          python -I sangam/sangam-control-plane/tools/generate_scale_changelogs.py
+          python sangam/sangam-rest/api/gen_openapi.py "$RUNNER_TEMP/sangam-api.yaml"
+          cmp "$RUNNER_TEMP/sangam-api.yaml" sangam/sangam-rest/api/sangam-api.yaml \
+            || { echo "::error::sangam-api.yaml differs from gen_openapi.py output: change the generator, then regenerate."; exit 1; }
+          # the same run writes the SCALE app contracts (M-017) and the AsyncAPI events contract (M-050) next to its output
+          for name in sangam-control-plane-api.yaml sangam-rollup-api.yaml sangam-gateway-api.yaml sangam-events.asyncapi.yaml; do
+            cmp "$RUNNER_TEMP/$name" "sangam/sangam-rest/api/$name" \
+              || { echo "::error::$name differs from gen_openapi.py output: change the generator, then regenerate."; exit 1; }
+          done
+          outputs="sangam/sangam-packs/src/main/resources/profiles sangam/sangam-persistence/src/main/resources/db/changelog
+            sangam/sangam-control-plane/src/main/resources/db/changelog sangam/sangam-rollup/src/main/resources/db/changelog"
+          # shellcheck disable=SC2086
+          git diff --exit-code -- $outputs \
+            || { echo "::error::generated files differ from their generator output: change the generator, then regenerate."; exit 1; }
+          # shellcheck disable=SC2086
+          untracked=$(git status --porcelain --untracked-files=all -- $outputs | grep '^??' || true)
+          if [ -n "$untracked" ]; then echo "::error::generator wrote files that are not in git:"; echo "$untracked"; exit 1; fi
       - name: No source file hidden by .gitignore (SG-21)
         working-directory: .
         run: |
@@ -59,10 +90,21 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
+      - name: Provenance (start, SG-16)
+        run: python3 -I tools/provenance/run_provenance.py start --db h2 --out target/run-provenance
       - name: Build and unit tests
-        # Unit tests only: Testcontainers / DB suites run in db-matrix.yml (CF-11). Enforcer rules in the poms
-        # (LIC-1 GraalJS ban, LIC-7 Liquibase < 5) run as part of validate.
+        # Unit tests only: Testcontainers / DB suites run in db-matrix.yml (CF-11). The reactor enforcer
+        # (sangam/pom.xml execution sangam-banned-dependencies, SL-106: LIC-1 GraalJS/polyglot, LIC-2/3/4 drivers in
+        # shipped scopes, LIC-7 Liquibase < 5, LIC-10 script engines, ADR-D-5 gRPC, SG-27 org.camunda*) runs in validate.
         run: mvn $MAVEN_ARGS -Dsangam.db=h2 -DskipITs -Dsangam.it.skip=true verify
+      - name: Provenance (finish, SG-16)
+        if: always()
+        run: |
+          python3 -I tools/provenance/run_provenance.py finish --db h2 --out target/run-provenance \
+            --reports . --summary "$GITHUB_STEP_SUMMARY"
+      - name: Provenance tool unit tests (SG-16)
+        if: matrix.java == '25'
+        run: python3 -I -m unittest discover -s tools/provenance -v
       - name: Test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,6 +112,7 @@ jobs:
           name: unit-test-reports-jdk${{ matrix.java }}
           path: |
             sangam/**/target/surefire-reports/
+            sangam/target/run-provenance/
           if-no-files-found: ignore
           retention-days: 14
       - name: Stage server jar and MariaDB driver (LIC-5 separate jar)
@@ -82,6 +125,11 @@ jobs:
           cp "$jar" ../dist/sangam-server.jar
           mariadb=$(mvn -q -DforceStdout help:evaluate -Dexpression=version.mariadb -N)
           mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb -DoutputDirectory=../dist/lib-ext
+      - name: Build-time tools never shipped (owner 2026-11-12, licence-policy.json build_time_tools)
+        if: matrix.java == '25' && hashFiles('dist/sangam-server.jar') != ''
+        run: |
+          python3 -I ../.github/scripts/build_tools_not_shipped.py --policy deploy/licence/licence-policy.json \
+            --jar ../dist/sangam-server.jar --tree ../dist/lib-ext
       - uses: actions/upload-artifact@v4
         if: matrix.java == '25'
         with:
@@ -124,6 +172,39 @@ jobs:
               --load -t "sangam-server:ci-$target" .
           done
           docker image ls sangam-server
+      # M-094 image scans (owner download batch 1). REPORT-ONLY: exit code 0 on findings, continue-on-error on outage.
+      - name: Trivy image scan (report-only)
+        if: steps.stage.outputs.present == 'true'
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          version: v0.76.2
+          scan-type: image
+          image-ref: sangam-server:ci-runtime
+          format: sarif
+          output: trivy-server.sarif
+          exit-code: "0"
+      - name: Grype image scan (report-only)
+        if: steps.stage.outputs.present == 'true'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/v0.121.3/install.sh | sh -s -- -b "$RUNNER_TEMP/bin" v0.121.3
+          for target in runtime runtime-distroless; do
+            "$RUNNER_TEMP/bin/grype" "docker:sangam-server:ci-$target" -o table --file "../grype-$target.txt"
+            echo "### Grype sangam-server:ci-$target (report-only)" >> "$GITHUB_STEP_SUMMARY"
+            tail -n 5 "../grype-$target.txt" >> "$GITHUB_STEP_SUMMARY" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: steps.stage.outputs.present == 'true'
+        continue-on-error: true
+        with:
+          name: image-scan-reports
+          path: |
+            trivy-server.sarif
+            grype-*.txt
+          if-no-files-found: ignore
+          retention-days: 14
 
   deploy-lint:
     name: Compose + Helm lint
@@ -161,11 +242,51 @@ jobs:
             helm template sangam helm/sangam --kube-version 1.30.0 $extra -f "$f" --namespace sangam > "/tmp/$(basename "$f" .yaml).rendered.yaml"
           done
           helm template sangam helm/sangam --kube-version 1.30.0 -f helm/sangam/examples/values-postgres.yaml --set liquibase.mode=startup --set networkPolicy.enabled=false > /dev/null
+      - name: SG-38 production settings and database.existingSecret reach the pods (rendered chart)
+        # The same path is checked on the chart text by sangam-server HelmProductionSettingsTraceTest.
+        run: |
+          set -euo pipefail
+          render() { helm template sangam helm/sangam --kube-version 1.30.0 -f helm/sangam/examples/values-postgres.yaml \
+            --set database.existingSecret=sg38-db-secret --set liquibase.mode=job --show-only "templates/$1"; }
+          for t in server-deployment.yaml liquibase-job.yaml; do
+            out=$(render "$t")
+            for v in SANGAM_DB_USER:username SANGAM_DB_PASSWORD:password; do
+              block=$(printf '%s\n' "$out" | grep -A4 -- "- name: ${v%%:*}$")
+              printf '%s\n' "$block" | grep -q -- "name: sg38-db-secret$" || { echo "::error::$t: ${v%%:*} is not read from database.existingSecret"; exit 1; }
+              printf '%s\n' "$block" | grep -q -- "key: ${v##*:}$" || { echo "::error::$t: ${v%%:*} does not use database.${v##*:}Key"; exit 1; }
+            done
+            echo "$t: SANGAM_DB_USER/SANGAM_DB_PASSWORD <- secret sg38-db-secret: OK"
+          done
+          render server-deployment.yaml | grep -q -- "name: sangam-server-env$" || { echo "::error::server pods do not load the server-env ConfigMap"; exit 1; }
+          render server-configmap.yaml | grep -q -- 'SANGAM_SECURITY_PRODUCTION: "true"$' || { echo "::error::chart default is not production"; exit 1; }
+          echo "server-env ConfigMap: SANGAM_SECURITY_PRODUCTION=true: OK"
       - name: Validate rendered manifests (kubeconform)
         run: |
           set -euo pipefail
           curl -sSfL -o /tmp/kc.tgz https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
           tar -C /tmp -xzf /tmp/kc.tgz kubeconform
           /tmp/kubeconform -strict -summary -skip ServiceMonitor -kubernetes-version 1.30.0 /tmp/*.rendered.yaml
+      - name: Helm chart CIS / NSA posture (Kubescape 4.0.20, report-only)
+        # M-094. Scans the manifests rendered above; no --compliance-threshold, so findings never fail the job.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          v=4.0.20; base="https://github.com/kubescape/kubescape/releases/download/v$v"
+          curl -sSfL -o /tmp/kubescape.tgz "$base/kubescape_${v}_linux_amd64.tar.gz"
+          curl -sSfL -o /tmp/kubescape.sha256 "$base/checksums.sha256"
+          sum=$(sha256sum /tmp/kubescape.tgz | cut -d' ' -f1)
+          grep -Eq "^${sum}[[:space:]]+\*?kubescape_${v}_linux_amd64\.tar\.gz\$" /tmp/kubescape.sha256 \
+            || { echo "::error::kubescape_${v}_linux_amd64.tar.gz does not match checksums.sha256"; exit 1; }
+          tar -C /tmp -xzf /tmp/kubescape.tgz kubescape
+          /tmp/kubescape scan framework cis-v1.23-t1.0.1,nsa /tmp/*.rendered.yaml --format sarif --output /tmp/kubescape.sarif
+          /tmp/kubescape scan framework cis-v1.23-t1.0.1,nsa /tmp/*.rendered.yaml --format pretty-printer | tail -n 40 >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: kubescape-report
+          path: /tmp/kubescape.sarif
+          if-no-files-found: ignore
+          retention-days: 14
       - name: ShellCheck deploy scripts
         run: shellcheck -S warning airgap/*.sh

@@ -8,8 +8,9 @@ systems are reached through ConnectorGateway; the generic connectors are in sang
 (HealthConnectors.packBindings()). Values marked SYNTHETIC are pilot values the tenant replaces.
 """
 from lib import C, q
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack, LOCALES
-from common import end_ok
+from common import end_ok, checked_query, check_conditions, unconfirmed_hold
 from sector import SIDE, clock, at_date, maybe
 import forms
 
@@ -149,7 +150,7 @@ ES_SUMMARY = 'Detalles del caso'
 
 def upack(slug, en, es, desc, ids, connectors):
     return Pack(f'sec.ushealth.{slug}', f'sec-ushealth-{slug}', en, es, 'Healthcare (USA)', desc, list(ids),
-                connectors=list(connectors), depends=['sangam.core'], second='es')
+                connectors=list(connectors), depends=['sangam.core'], second='es', currency='USD')
 
 
 def sform(p, s, sid, name, key, title, fields):
@@ -184,7 +185,7 @@ def eligibility():
                ['patientName*', 'memberId*', 'payerId*', 'providerNpi*', 'serviceTypes', 'visitType*'])
     d = s.setv('el_defaults', 'Configuration',
                defaults='patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;providerNpi=1234567893;'
-                        'serviceTypes=30;visitType=SCHEDULED;eligEligibility=ACTIVE;npiStatus=COMPLETED;'
+                        'serviceTypes=30;visitType=SCHEDULED;'
                         'edSeat=ED-PHYSICIAN;regSeat=PATIENT-ACCESS;finSeat=FINANCIAL-COUNSELOR')
     r = s.rule('el_cfg', 'Eligibility policy (DMN)', 'sec-ushealth-eligibility-config')
     s.seq(st, d, r)
@@ -198,28 +199,40 @@ def eligibility():
     npi = s.conn('el_npi', 'Check provider NPI (NPPES)', 'npi.registry', 'lookup', 'query', 'providerNpi', 'npi')
     s.flow(eg, npi, None, 'scheduled', default=True)
     s.flow(mse, npi)
-    q271 = s.conn('el_270', 'Eligibility inquiry 270 / response 271', 'x12.eligibility', 'eligibility', 'query',
-                  'memberId,payerId,providerNpi,serviceTypes,patientName', 'elig')
-    s.flow(npi, q271)
+    # SL-115: coverage is verified only on a completed 271 that says ACTIVE (cleared before every inquiry; no default
+    # stands in); a failed or empty answer goes to the financial counselor
+    q271e, q271 = checked_query(s, 'el_270', 'Eligibility inquiry 270 / response 271', 'x12.eligibility', 'eligibility',
+                                'memberId,payerId,providerNpi,serviceTypes,patientName', 'elig', ['eligEligibility'])
+    # SL-115 (integrator decision): the NPI lookup is gated. No npi.registry adapter defines result keys yet, so the
+    # gate is the answer itself: an NPI lookup that did not complete goes to patient access to correct the NPI, then
+    # re-check; the 270 is never sent on an unconfirmed provider
+    ng = s.xgw('el_npiGw', 'Provider NPI confirmed?')
+    s.flow(npi, ng)
+    s.flow(ng, unconfirmed_hold(p, s, 'el_npiUnconfirmed', 'Provider NPI not confirmed: correct it | '
+                                'NPI del proveedor no confirmado: corregirlo', '${regSeat}', npi,
+                                fields=('providerNpi*', 'remarks*')), "npiStatus != 'COMPLETED'", 'NPI not confirmed')
+    s.flow(ng, q271e, None, 'confirmed', default=True)
     g = s.xgw('el_resultGw', 'Coverage?', policy='priority')  # ADR-D-25: conditions can both be true; explicit precedence
     s.flow(q271, g)
     rv = s.user('el_review', 'Review benefits and estimate patient responsibility | '
                 'Revisar beneficios y estimar la responsabilidad del paciente', '${regSeat}',
                 form='sec-ushealth-eligibility/review', decision=None,
                 fields=['benefitSummary', 'estimatedPatientShare*', 'remarks'])
-    s.flow(g, rv, "eligEligibility == 'ACTIVE'", 'active', priority=1)
+    elig_unconfirmed, elig_active = check_conditions([('elig', ['eligEligibility'])], "eligEligibility == 'ACTIVE'")
+    s.flow(g, rv, elig_active, 'active', priority=1)
     s.flow(rv, end_ok(p, s, 'el_end', 'Coverage verified'))
     w = s.catch_timer('el_wait', 'Payer unavailable: retry later', duration='${eligRetryAfter}')
     s.flow(g, w, "eligStatus == 'UNKNOWN' || eligStatus == 'PENDING'", 'no answer', priority=2)
-    s.flow(w, q271)
+    s.flow(w, q271e)
     fc = s.user('el_resolve', 'Resolve coverage: correct data, other coverage, self-pay | '
                 'Resolver la cobertura: corregir datos, otra cobertura, pago propio', '${finSeat}',
                 form='sec-ushealth-eligibility/resolve', decision=('coverageDecision', ['retry', 'otherCoverage', 'selfPay']),
                 fields=['memberId*', 'payerId', 'coverageResolution*'])
+    s.flow(g, fc, elig_unconfirmed, 'coverage not confirmed', priority=3)
     s.flow(g, fc, None, 'inactive / rejected (AAA)', default=True)
     rg = s.xgw('el_resolveGw')
     s.flow(fc, rg)
-    s.flow(rg, q271, "coverageDecision != 'selfPay'", 're-check')
+    s.flow(rg, q271e, "coverageDecision != 'selfPay'", 're-check')
     s.flow(rg, end_ok(p, s, 'el_endSelf', 'Self-pay: good-faith estimate due', outcome='SELF_PAY'), None, 'self-pay',
            default=True)
     s.side_exits('el')
@@ -256,32 +269,39 @@ def prior_auth():
     d = s.setv('pa_defaults', 'Configuration',
                defaults='patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;payerProgram=MA;'
                         'providerNpi=1234567893;procedureCode=72148;diagnosisCode=M54.5;priority=STANDARD;'
-                        'crdPaRequired=true;pasDecision=PENDED;pasReasonCode=null;pasPreAuthRef=null;'
+                        'pasReasonCode=null;pasPreAuthRef=null;'
                         'clinicianSeat=ORDERING-CLINICIAN;authSeat=AUTH-SPECIALIST;umSeat=UM-LEAD')
-    crd = s.conn('pa_crd', 'Coverage requirements discovery (CDS Hooks order-sign)', 'cdshooks.crd', 'call', 'query',
-                 'memberId,payerId,procedureCode,diagnosisCode', 'crd')
-    s.seq(st, d, crd)
+    # SL-115: only a completed CRD answer that says "not required" skips prior authorization (cleared before the call;
+    # no default stands in); an unconfirmed answer means authorization is needed
+    crde, crd = checked_query(s, 'pa_crd', 'Coverage requirements discovery (CDS Hooks order-sign)', 'cdshooks.crd',
+                              'call', 'memberId,payerId,procedureCode,diagnosisCode', 'crd', ['crdPaRequired'])
+    s.seq(st, d, crde)
     g = s.xgw('pa_needGw', 'Prior authorization needed?')
     s.flow(crd, g)
+    crd_unconfirmed, crd_not_required = check_conditions([('crd', ['crdPaRequired'])], '!crdPaRequired')
     s.flow(g, end_ok(p, s, 'pa_endNoAuth', 'No prior authorization required', outcome='NOT_REQUIRED'),
-           '!crdPaRequired', 'no-auth')
+           crd_not_required, 'no-auth')
     dtr = s.conn('pa_dtr', 'Documentation templates and rules (DTR package)', 'davinci.dtr', 'questionnairePackage',
                  'query', 'memberId,procedureCode', 'dtr')
+    s.flow(g, dtr, crd_unconfirmed, 'not confirmed: authorization needed')
     s.flow(g, dtr, None, 'auth-needed', default=True)
     doc = s.user('pa_doc', 'Complete the documentation questionnaire | Completar el cuestionario de documentación',
                  '${clinicianSeat}', form='sec-ushealth-prior-auth/documentation', decision=None,
                  fields=['questionnaireResponse*', 'documents'])
     clk = s.rule('pa_clocks', 'Decision timeframe by payer program and priority (DMN)', 'sec-ushealth-pa-clocks')
     dl = clock(s, 'pa_deadline', 'paDecision', '${paDecisionSpec}')
-    sub = s.conn('pa_submit', 'Submit prior authorization (PAS Claim/$submit or X12 278)', 'davinci.pas', 'submit',
-                 'submit', 'memberId,payerId,providerNpi,procedureCode,diagnosisCode,priority,questionnaireResponse',
-                 'pas', step='pas-submit')
-    s.seq(dtr, doc, clk, dl, sub)
+    # SL-115: the payer decision comes only from the PAS answer or its update (cleared before the submit; no default
+    # stands in); no decision yet waits like a pended one (the update or the deadline), it never authorizes
+    sube, sub = checked_query(s, 'pa_submit', 'Submit prior authorization (PAS Claim/$submit or X12 278)', 'davinci.pas',
+                              'submit', 'memberId,payerId,providerNpi,procedureCode,diagnosisCode,priority,'
+                              'questionnaireResponse', 'pas', ['pasDecision'], mode='submit', step='pas-submit')
+    s.seq(dtr, doc, clk, dl, sube)
     dg = s.xgw('pa_decGw', 'Payer decision?')
     s.flow(sub, dg)
     s.flow(dg, end_ok(p, s, 'pa_endApproved', 'Authorized', outcome='APPROVED', data=['pasPreAuthRef']),
            "pasDecision == 'APPROVED' || pasDecision == 'MODIFIED'", 'approved')
     w = s.egw('pa_wait', 'Pended: update or deadline')
+    s.flow(dg, w, 'pasDecision == null', 'decision not confirmed')
     s.flow(dg, w, "pasDecision == 'PENDED' || pasDecision == 'UNKNOWN'", 'pended')
     upd = s.catch_msg('pa_update', 'Decision notification (Subscription)', 'sangam.ushealth.pasUpdate')
     late = s.catch_timer('pa_late', 'Decision timeframe passed', date='${paDecisionDueAt}')
@@ -391,9 +411,8 @@ def claim():
     d = s.setv('cl_defaults', 'Configuration',
                defaults='patientName=@customerId;memberId=@customerId;payerId=SIMPAYER;payerProgram=COMMERCIAL;'
                         'providerNpi=1234567893;patientControlNumber=@customerId;totalCharge=100;claimType=837P;'
-                        'clmAccepted=true;csStatus=PENDING;eraClaimStatus=PAID_PRIMARY;eraPatientResponsibility=0;'
                         'frequency=1;coderSeat=CODER;billerSeat=BILLER;denialSeat=DENIAL-ANALYST;rcmSeat=REV-CYCLE-MGR;'
-                        'ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;eraBalanced=true;postExceptionCount=0;'
+                        'ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;'
                         'receivableRaised=null;correctionNo=0;eraTraceNumber=no-trace')
     cfg = s.rule('cl_cfg', 'Timely filing, follow-up and appeal windows (DMN)', 'sec-ushealth-claim-clocks')
     tf = clock(s, 'cl_filing', 'filing', '${filingSpec}')
@@ -401,15 +420,19 @@ def claim():
     scrub = s.user('cl_scrub', 'Code and scrub the claim | Codificar y depurar la reclamación', '${coderSeat}',
                    form='sec-ushealth-claim/scrub', decision=None, fields=['codingNotes*', 'priorAuthNumber', 'totalCharge'])
     s.flow(tf, scrub)
-    sub = s.conn('cl_submit', 'Submit claim 837P / 837I (999 acknowledgment)', 'x12.claim', 'submitClaim', 'submit',
-                 'memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate,claimType,priorAuthNumber,frequency',
-                 'clm', step='claim-submit')
-    s.flow(scrub, sub)
+    # SL-115: the claim counts as accepted only on a completed submit that says so (cleared before every submit; no
+    # default stands in); an unconfirmed acknowledgment goes to the biller like a front-end rejection
+    sube, sub = checked_query(s, 'cl_submit', 'Submit claim 837P / 837I (999 acknowledgment)', 'x12.claim', 'submitClaim',
+                              'memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate,claimType,'
+                              'priorAuthNumber,frequency', 'clm', ['clmAccepted'], mode='submit', step='claim-submit')
+    s.flow(scrub, sube)
     ag = s.xgw('cl_ackGw', 'Accepted at the front end?')
     s.flow(sub, ag)
     fix = s.user('cl_fix', 'Fix the front-end rejection (999 / 277CA) | Corregir el rechazo inicial (999 / 277CA)',
                  '${billerSeat}', form='sec-ushealth-claim/fix', decision=None, fields=['rejectionFix*'])
-    s.flow(ag, fix, '!clmAccepted', 'rejected')
+    clm_unconfirmed, clm_rejected = check_conditions([('clm', ['clmAccepted'])], '!clmAccepted')
+    s.flow(ag, fix, clm_unconfirmed, 'acknowledgment not confirmed')
+    s.flow(ag, fix, clm_rejected, 'rejected')
     s.flow(fix, scrub)
     w = s.egw('cl_wait', 'Remittance or follow-up')
     ra = s.setv('cl_receivableCfg', 'Receivable for the claim', values='holder=@patientControlNumber;amount=@totalCharge')
@@ -448,31 +471,43 @@ def claim():
                 'memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate', 'cs')
     s.flow(fu, cs)
     s.flow(cs, w)
-    era = s.conn('cl_parse', 'Decode this claim of the 835', 'x12.remit', 'parse', 'query',
-                 'x12,eraTraceNumber,patientControlNumber', 'era')
-    post = s.conn('cl_post', 'Post payment and adjustments', 'ledger.post', 'post', 'submit',
-                  'patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,eraTraceNumber,'
-                  'ledgerId,line,period', 'post', step='posting:${eraTraceNumber}')
-    s.seq(remit, era, post)
+    # SL-115: the decode and the posting fail closed (each cleared before its call; no default stands in): a remittance
+    # that is not confirmed decoded is never posted, an unconfirmed posting is never "clean"; both go to the US-HLT-106
+    # work queue, and only a confirmed claim status reaches "Paid and posted"
+    erae, era = checked_query(s, 'cl_parse', 'Decode this claim of the 835', 'x12.remit', 'parse',
+                              'x12,eraTraceNumber,patientControlNumber', 'era',
+                              ['eraClaimStatus', 'eraBalanced', 'eraPatientResponsibility'])
+    poste, post = checked_query(s, 'cl_post', 'Post payment and adjustments', 'ledger.post', 'post',
+                                'patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,'
+                                'eraTraceNumber,ledgerId,line,period', 'post', ['postExceptionCount'], mode='submit',
+                                step='posting:${eraTraceNumber}')
+    s.seq(remit, erae)
+    eg = s.xgw('cl_eraGw', 'Remittance decoded?')
+    s.flow(era, eg)
+    s.flow(eg, poste, None, 'decoded', default=True)
     pg = s.xgw('cl_paidGw', 'Paid or denied?')
     qg = s.xgw('cl_postGw', 'Posted cleanly?')
     s.flow(post, qg)
     pq = s.user('cl_postException', 'Resolve the posting exception | Resolver la excepción de contabilización', '${billerSeat}',
                 form='sec-ushealth-claim/post-exception', decision=None, fields=['remitSummary', 'remarks*'])
-    s.flow(qg, pq, "postStatus == 'FAILED' || postExceptionCount > 0 || !eraBalanced || eraClaimStatus == 'NOT_IN_FILE'",
+    era_unconfirmed, _ = check_conditions([('era', ['eraClaimStatus', 'eraBalanced', 'eraPatientResponsibility'])])
+    s.flow(eg, pq, era_unconfirmed, 'decode not confirmed: not posted')
+    post_unconfirmed, _ = check_conditions([('post', ['postExceptionCount'])])
+    s.flow(qg, pq, f"{post_unconfirmed} || postExceptionCount > 0 || !eraBalanced || eraClaimStatus == 'NOT_IN_FILE'",
            'US-HLT-106 work queue')
     s.flow(qg, pg, None, 'clean', default=True)
     s.flow(pq, pg)
     bal = s.user('cl_patientBill', 'Bill the patient balance | Facturar el saldo al paciente', '${billerSeat}',
                  form='sec-ushealth-claim/patient-bill', decision=None, fields=['patientBalance*', 'remarks'])
     g2, m2 = maybe(s, 'cl_balOpt', 'eraPatientResponsibility > 0', bal, bal, 'Patient balance?')
-    s.flow(pg, g2, "eraClaimStatus != 'DENIED'", 'paid')
+    s.flow(pg, g2, "eraClaimStatus != null && eraClaimStatus != 'DENIED'", 'paid')
     s.flow(m2, end_ok(p, s, 'cl_end', 'Paid and posted', outcome='PAID'))
     rt = s.rule('cl_denialRoute', 'Denial routing by adjustment group and CARC (DMN)', 'sec-ushealth-claim-denials')
     s.flow(pg, rt, None, 'denied', default=True)
     wk = s.user('cl_denial', 'Work the denial: correct, appeal or write off | Gestionar la denegación', '${denialSeat}',
                 form='sec-ushealth-claim/denial', decision=('denialAction', ['resubmit', 'appeal', 'writeOff']),
                 fields=['remitSummary', 'adjustmentCodes', 'remarks'])
+    s.flow(pg, wk, 'eraClaimStatus == null', 'claim status not confirmed')
     s.flow(rt, wk)
     dg = s.xgw('cl_denialGw')
     s.flow(wk, dg)
@@ -529,23 +564,27 @@ def claim():
     sr = rp.root
     r0 = sr.start('rm_start', 'Remittance received (835)', msg='sangam.ushealth.remittance', initiator=None)
     r1 = sr.setv('rm_defaults', 'Configuration', defaults='ledgerId=RECEIVABLES;line=CLAIM;period=OPEN;billerSeat=BILLER;'
-                 'eraBalanced=true;postExceptionCount=0;eraTraceNumber=no-trace;eraClaimStatus=PAID_PRIMARY;'
-                 'patientControlNumber=')
-    r2 = sr.conn('rm_parse', 'Decode this claim of the 835', 'x12.remit', 'parse', 'query',
-                 'x12,eraTraceNumber,patientControlNumber', 'era')
-    r3 = sr.xgw('rm_traceGw', 'Trace number present?')
-    sr.seq(r0, r1, r2, r3)
-    r4 = sr.conn('rm_post', 'Post the remittance', 'ledger.post', 'post', 'submit',
-                 'patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,eraTraceNumber,'
-                 'ledgerId,line,period',
-                 'post', step='posting:${eraTraceNumber}')
+                 'eraTraceNumber=no-trace;patientControlNumber=')
+    # SL-115: decode and posting fail closed as in the claim case (each cleared before its call; no default stands in)
+    r2e, r2 = checked_query(sr, 'rm_parse', 'Decode this claim of the 835', 'x12.remit', 'parse',
+                            'x12,eraTraceNumber,patientControlNumber', 'era', ['eraClaimStatus', 'eraBalanced'])
+    r3 = sr.xgw('rm_traceGw', 'Trace number present?', policy='priority')  # ADR-D-25: both can hold; explicit precedence
+    sr.seq(r0, r1, r2e)
+    sr.flow(r2, r3)
+    r4e, r4 = checked_query(sr, 'rm_post', 'Post the remittance', 'ledger.post', 'post',
+                            'patientControlNumber,eraClaims,eraClaimStatus,eraPaidAmount,eraPatientResponsibility,'
+                            'eraTraceNumber,ledgerId,line,period', 'post', ['postExceptionCount'], mode='submit',
+                            step='posting:${eraTraceNumber}')
     rq = sr.user('rm_exception', 'Resolve the remittance exception | Resolver la excepción de la remesa', '${billerSeat}',
                  form='sec-ushealth-claim/remittance-exception', decision=None, fields=['remitSummary', 'remarks*'])
-    sr.flow(r3, rq, "eraTraceNumber == 'no-trace'", 'cannot be made idempotent')
-    sr.flow(r3, r4, None, 'yes', default=True)
+    era_unconfirmed, _ = check_conditions([('era', ['eraClaimStatus', 'eraBalanced'])])
+    sr.flow(r3, rq, era_unconfirmed, 'decode not confirmed: not posted', priority=1)
+    sr.flow(r3, rq, "eraTraceNumber == 'no-trace'", 'cannot be made idempotent', priority=2)
+    sr.flow(r3, r4e, None, 'yes', default=True)
     r5 = sr.xgw('rm_postGw', 'Posted cleanly?')
     sr.flow(r4, r5)
-    sr.flow(r5, rq, "postStatus == 'FAILED' || postExceptionCount > 0 || !eraBalanced || eraClaimStatus == 'DENIED'"
+    post_unconfirmed, _ = check_conditions([('post', ['postExceptionCount'])])
+    sr.flow(r5, rq, f"{post_unconfirmed} || postExceptionCount > 0 || !eraBalanced || eraClaimStatus == 'DENIED'"
                     " || eraClaimStatus == 'NOT_IN_FILE'",
             'US-HLT-106 work queue')
     r6 = end_ok(rp, sr, 'rm_end', 'Posted', outcome='POSTED')
@@ -627,7 +666,7 @@ def gfe():
     s.side_exits('gf')
     pk.dmn('sec-ushealth-gfe-config', 'GFE timeframes and PPDR threshold (45 CFR 149.610 / 149.620; tenant overridable)',
            'FIRST', [('Business days until service', 'daysUntilService', 'integer')],
-           [('gfeSpec', 'GFE due within', 'string'), ('ppdrThreshold', 'Dispute threshold (USD)', 'double'),
+           [('gfeSpec', 'GFE due within', 'string'), ('ppdrThreshold', 'Dispute threshold (USD)', 'money'),
             ('ppdrWindowLead', 'Initiation window from the bill date', 'string')],
            [(['0'], [q('3WD'), '400', q('-P120D')], 'on request: 3 business days'),
             (['>= 10'], [q('3WD'), '400', q('-P120D')], 'scheduled 10+ business days ahead: 3 business days'),

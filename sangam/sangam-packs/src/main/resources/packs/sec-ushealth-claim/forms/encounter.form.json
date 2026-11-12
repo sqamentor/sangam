@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/encounter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Encounter",
@@ -70,7 +70,9 @@
     },
     {
       "id": "totalCharge",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Total charge (USD)",

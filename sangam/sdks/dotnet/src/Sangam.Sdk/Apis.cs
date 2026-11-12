@@ -56,7 +56,7 @@ public sealed class WorkApi : ApiBase
     /// <summary>Long-poll fetch-and-lock; HTTP timeout = async timeout + 15 s; not retried by the transport.</summary>
     public async Task<IReadOnlyList<ExternalWork>> FetchAndLockAsync(FetchAndLockRequest request, CancellationToken ct = default)
     {
-        var t = TimeSpan.FromMilliseconds(request.AsyncResponseTimeoutMs) + TimeSpan.FromSeconds(15);
+        var t = TimeSpan.FromMilliseconds(request.AsyncResponseTimeoutMs ?? 0) + TimeSpan.FromSeconds(15);
         var l = await CallAsync<List<ExternalWork>>(ApiRequest.Post("/work/fetch-and-lock").WithBody(request).WithTimeout(t).NoRetry(), ct).ConfigureAwait(false);
         return (IReadOnlyList<ExternalWork>?)l ?? Array.Empty<ExternalWork>();
     }
@@ -163,8 +163,9 @@ public sealed class TasksApi : ApiBase
     public Task<ApiResponse<CompleteTaskResult>> CompleteWithResponseAsync(string taskId, CompleteTaskRequest request, string? idempotencyKey = null, CancellationToken ct = default) =>
         Http.ExecuteAsync<CompleteTaskResult>(ApiRequest.Post("/tasks/" + Seg(taskId) + "/complete").WithBody(request).WithIdempotencyKey(idempotencyKey), ct);
 
-    public Task ReturnAsync(string taskId, ReturnTaskRequest request, string? idempotencyKey = null, CancellationToken ct = default) =>
-        CallAsync(ApiRequest.Post("/tasks/" + Seg(taskId) + "/return").WithBody(request).WithIdempotencyKey(idempotencyKey), ct);
+    /// <summary><c>POST /tasks/{id}/return</c>; answers the CompleteTaskResult (200).</summary>
+    public Task<CompleteTaskResult?> ReturnAsync(string taskId, ReturnTaskRequest request, string? idempotencyKey = null, CancellationToken ct = default) =>
+        CallAsync<CompleteTaskResult>(ApiRequest.Post("/tasks/" + Seg(taskId) + "/return").WithBody(request).WithIdempotencyKey(idempotencyKey), ct);
 
     public Task DelegateAsync(string taskId, DelegateTaskRequest request, string? idempotencyKey = null, CancellationToken ct = default) =>
         CallAsync(ApiRequest.Post("/tasks/" + Seg(taskId) + "/delegate").WithBody(request).WithIdempotencyKey(idempotencyKey), ct);

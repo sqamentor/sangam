@@ -1,6 +1,6 @@
 {
   "id": "sec.nbfc.dlg-arrangement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Default loss guarantee arrangement with the 5% cap",
     "hi": "पाँच प्रतिशत सीमा सहित डिफ़ॉल्ट हानि गारंटी व्यवस्था"
@@ -73,5 +73,16 @@
     "sangam-core-cancellation",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "dlgAmount",
+      "portfolioAmount",
+      "powerLimit"
+    ]
+  }
 }

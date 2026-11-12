@@ -61,7 +61,8 @@ rollup:
     requests: { cpu: "1", memory: 1Gi }
     limits: { memory: 2Gi }
 
-# ---- cells: values passed to the `sangam` chart per cell. Add server.env SANGAM_CELL_ID / SANGAM_CELL_RESIDENCY and
+# ---- cells: values passed to the `sangam` chart per cell. Add server.env SANGAM_CELL_ID / SANGAM_CELL_JURISDICTION /
+# SANGAM_CELL_RESIDENCY and
 # SANGAM_CONTROL_PLANE_URL (consumed once IR-1..IR-3 are wired, sangam-cell README).
 cell-a:
   enabled: true
@@ -73,6 +74,7 @@ cell-a:
     replicaCount: 4
     env:
       - { name: SANGAM_CELL_ID, value: in-ra-01 }
+      - { name: SANGAM_CELL_JURISDICTION, value: IN }   # example India deployment; no product default (SL-104)
       - { name: SANGAM_CELL_RESIDENCY, value: IN-RA }
       - { name: SANGAM_CONTROL_PLANE_URL, value: "http://sangam-national-control-plane:8090" }
       - { name: SANGAM_ROLLUP_INGEST_URL, value: "http://sangam-national-rollup:8095/api/v1/ingest" }
@@ -87,6 +89,7 @@ cell-b:
     replicaCount: 4
     env:
       - { name: SANGAM_CELL_ID, value: in-rb-01 }
+      - { name: SANGAM_CELL_JURISDICTION, value: IN }   # example India deployment; no product default (SL-104)
       - { name: SANGAM_CELL_RESIDENCY, value: IN-RB }
       - { name: SANGAM_CONTROL_PLANE_URL, value: "http://sangam-national-control-plane:8090" }
       - { name: SANGAM_ROLLUP_INGEST_URL, value: "http://sangam-national-rollup:8095/api/v1/ingest" }

@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/denial",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Work the denial: correct, appeal or write off",

@@ -34,6 +34,6 @@ public class BatchJoinListener implements ExecutionListener {
         ex.setVariable("batchId", batch);
         ex.setVariable("batchRound", round);
         ex.setVariable("itemKey", item);
-        PackRuntime.batches().open(Vars.tenant(ex), batch, round, List.of(item));
+        PackRuntime.batches().open(Vars.tenantKey(ex), batch, round, List.of(item));
     }
 }

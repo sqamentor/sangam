@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import org.sangam.server.security.DevTokenFilter;
 import org.sangam.server.security.JwtPrincipalConverter;
+import org.sangam.server.security.PlatformIssuers;
 import org.sangam.server.security.PrincipalAttributeFilter;
 import org.sangam.server.security.ProblemResponses;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -37,7 +37,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  *   <li>a development static token when {@code sangam.security.dev-token.enabled=true} (never on {@code prod});</li>
  *   <li>Operaton REST ({@code /engine-rest/**}) only for engine administrators; Operaton's own authorization stays off
  *       (VI.4: product authorization, deny wins);</li>
- *   <li>fine-grained checks happen in sangam-rest (PermissionPort) and in the adapters (VI.4 object checks).</li>
+ *   <li>fine-grained checks happen in sangam-rest (PermissionPort) and in the adapters (VI.4 object checks);</li>
+ *   <li>SL-70: platform identities only from {@code sangam.security.platform-issuer} ({@link PlatformIssuers}); the
+ *       actuator (every tenant's metrics) only for platform identities.</li>
  * </ul>
  * Stateless, no sessions, no CSRF (bearer tokens only). Errors are RFC 9457 problem+json.
  */
@@ -90,8 +92,13 @@ public class SecurityConfig {
                         .requestMatchers("/engine-rest/**")
                         .hasAnyAuthority(org.sangam.rest.support.Permissions.ENGINE_REST_GROUPS.stream()
                                 .map(g -> "GROUP_" + g).sorted().toArray(String[]::new))
+                        // SL-70: the actuator shows every tenant's data, so only a platform identity (operator/admin)
                         .requestMatchers("/actuator/**")
-                        .hasAnyAuthority("GROUP_sangam-operator", "GROUP_sangam-admin")
+                        .access(org.springframework.security.authorization.AuthorizationManagers.allOf(
+                                org.springframework.security.authorization.AuthorityAuthorizationManager
+                                        .hasAuthority("GROUP_" + org.sangam.rest.support.Permissions.GROUP_PLATFORM),
+                                org.springframework.security.authorization.AuthorityAuthorizationManager
+                                        .hasAnyAuthority("GROUP_sangam-operator", "GROUP_sangam-admin")))
                         // SCALE IR-4: the target cell pulls a tenant export with its one-time export token (checked
                         // by the controller); every other cell tenant-admin route needs the service role CELL_ADMIN.
                         // Cross-cell messages (IR-3) are checked for role XCELL by CellCrossCellInboxFilter.
@@ -122,8 +129,13 @@ public class SecurityConfig {
                     .authenticationEntryPoint(problems)
                     .accessDeniedHandler(problems)
                     .jwt(j -> j.decoder(decoder)
-                            .jwtAuthenticationConverter(new JwtPrincipalConverter(props.getClaims()))));
+                            .jwtAuthenticationConverter(new JwtPrincipalConverter(props.getClaims(), props.platformIssuers()))));
             LOG.info("OIDC JWT authentication enabled (tenant claim '{}')", props.getClaims().getTenant());
+        }
+        if (props.platformIssuers().configured()) {
+            LOG.info("SL-70 platform issuers: {} (only their tokens are platform identities)", props.platformIssuers().issuers());
+        } else {
+            LOG.warn("SL-70: no sangam.security.platform-issuer configured: nobody is a platform administrator");
         }
         http.addFilterAfter(new PrincipalAttributeFilter(), AuthorizationFilter.class);
         org.sangam.server.bridge.SecurityChainContributions contributions = module.getIfAvailable();
@@ -155,8 +167,9 @@ public class SecurityConfig {
         if (!cfg.isEnabled()) {
             return null;
         }
-        if (env.acceptsProfiles(Profiles.of("prod"))) {
-            throw new IllegalStateException("sangam.security.dev-token.enabled=true is not allowed with the 'prod' profile");
+        if (ProductionEnvironment.isProduction(env)) { // SL-109
+            throw new IllegalStateException("sangam.security.dev-token.enabled=true is not allowed in production "
+                    + "(sangam.security.production=true or a 'prod' profile)");
         }
         if (cfg.getToken() == null || cfg.getToken().length() < MIN_DEV_TOKEN_LENGTH) {
             throw new IllegalStateException("sangam.security.dev-token.token must be at least " + MIN_DEV_TOKEN_LENGTH
@@ -171,7 +184,7 @@ public class SecurityConfig {
         }
         LOG.warn("DEVELOPMENT static token authentication is ENABLED (tenant '{}', principal '{}'); never use in production",
                 cfg.getTenant(), cfg.getPrincipal());
-        return new DevTokenFilter(cfg);
+        return new DevTokenFilter(cfg, props.platformIssuers());
     }
 
     /** Keeps the dev token away from the JWT decoder when both modes are on. */

@@ -1,6 +1,6 @@
 {
   "id": "sec.legal.litigation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Private litigation and legal notices",
     "hi": "निजी मुकदमे एवं विधिक नोटिस"
@@ -83,5 +83,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

@@ -111,6 +111,17 @@ public final class LedgerService {
 
     /** Registers the ledger definitions of a tenant (from its resolved profile section {@code ledgers}). */
     public void define(String tenant, List<LedgerDefinition> defs) {
+        define(tenant, null, defs);
+    }
+
+    /**
+     * Registers the ledger definitions of a tenant resolved from {@code profile} (its binding, for messages). SL-98:
+     * every definition is validated first (a money ledger needs its currency), so an invalid set registers nothing.
+     */
+    public void define(String tenant, String profile, List<LedgerDefinition> defs) {
+        for (LedgerDefinition d : defs) {
+            d.requireMoneyCurrency(profile == null ? "<not given> (tenant " + tenant + ")" : profile);
+        }
         for (LedgerDefinition d : defs) {
             definitions.put(tenant + "|" + d.id(), d);
         }

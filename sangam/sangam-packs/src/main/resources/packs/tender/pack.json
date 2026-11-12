@@ -1,6 +1,6 @@
 {
   "id": "gov.tender",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Tender / e-procurement",
     "hi": "निविदा / ई-प्रापण"
@@ -26,6 +26,10 @@
     {
       "kind": "FORM",
       "path": "packs/tender/forms/nit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/tender/forms/bidsUnconfirmed.form.json"
     },
     {
       "kind": "FORM",
@@ -95,5 +99,17 @@
     "sangam-core-committee",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "emdAmount",
+      "estimateAmount",
+      "evaluateL1Amount",
+      "negotiatedAmount"
+    ]
+  }
 }

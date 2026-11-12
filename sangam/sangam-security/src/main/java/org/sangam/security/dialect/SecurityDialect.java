@@ -60,10 +60,18 @@ public enum SecurityDialect {
         };
     }
 
-    /** Bitwise AND of two integer expressions. Oracle and H2 have {@code BITAND}; the others use {@code &}. */
+    /**
+     * Bitwise AND of two integer expressions (the VI.4 permission masks: {@code AUTH_EFFECTIVE.perms} is BIGINT, NUMBER(19)
+     * on Oracle). Oracle and H2 have {@code BITAND}; the others use the {@code &} operator. Either operand may be a bind
+     * parameter, and every dialect must type it: PostgreSQL, SQL Server and MySQL type it from the other operand or the
+     * bound value, and Oracle's {@code BITAND} takes NUMBER arguments. H2 cannot type a parameter that is a function
+     * argument ({@code BITAND(g.perms, ?)} fails to prepare with "Unknown data type: ?n", in every compatibility mode), and
+     * it has no {@code &} operator, so on H2 both operands are cast to BIGINT (a no-op for a BIGINT column).
+     */
     public String bitAnd(String a, String b) {
         return switch (this) {
-            case ORACLE, H2 -> "BITAND(" + a + ", " + b + ")";
+            case ORACLE -> "BITAND(" + a + ", " + b + ")";
+            case H2 -> "BITAND(CAST(" + a + " AS BIGINT), CAST(" + b + " AS BIGINT))";
             default -> "(" + a + " & " + b + ")";
         };
     }

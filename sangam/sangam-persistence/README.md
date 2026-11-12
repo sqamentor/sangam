@@ -201,7 +201,7 @@ Exact columns are in each owner's `*Schema.java`; the generator mirrors them.
 | `tools/generate_changelogs.py` | D-54 single source for 5 dialects; SQL Server and MySQL key-size budgets |
 | `src/main/java/org/sangam/persistence/SangamSchema.java` | R12 controlled migration API |
 | `.../mysql/MysqlDatetimePrecisionPatch.java`, `MysqlDatetimePrecisionChange.java` | P-1 |
-| `.../mysql/MysqlUtf8mb4Patch.java`, `MysqlUtf8mb4Change.java` | P-2 (index byte limit checked per table) |
+| `.../mysql/MysqlUtf8mb4Patch.java`, `MysqlUtf8mb4Change.java` | P-2 (index byte limit checked per FK-linked table group; string FKs journaled, dropped and re-created around the conversion, SL-94) |
 | `src/test/.../SangamSchemaH2Test.java` | fast check: both entry points apply on H2 and create every table |
 
 ## Integration notes

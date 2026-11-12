@@ -97,12 +97,19 @@ paymentRails:
   note: 'delta 2026-11-05: all states on RBI e-payments except Sikkim; cheque-drawing DDOs keep cheques'
 documentTypes:
 - id: HP_HPTR_5
-  formNumber: HPTR-5
+  formKind: BILL
+  formNumber: HP:HPTR-5
   family: DBT
   approvalChain: TREASURY_STD
   sanction: REFERENCE
   integrations:
     sourceSystem: E_KALYAN
+  provenance:
+    formKind: INFERRED
+    formNumber: VERIFIED
+    billTypeCode: UNKNOWN
+    typeId: ASSUMED
+    name: UNKNOWN
 approvalChains:
 - id: TREASURY_STD
   steps:
@@ -117,6 +124,23 @@ approvalChains:
     token: true
     tokenSeries: TOKEN
     fifo: true
+billTypeCatalogue:
+  resolution: CATALOGUE_ID
+  formNumberPrefix: '<government profile id>:'
+  provenanceLabels:
+  - VERIFIED
+  - INFERRED
+  - ASSUMED
+  - UNKNOWN
+  provenanceFields:
+  - formKind
+  - formNumber
+  - billTypeCode
+  - typeId
+  - name
+  note: 'A bill type is resolved by its catalogue id; one form can carry several bill types, so a form number alone may be
+    ambiguous. typeId ASSUMED: the row id is the Sangam-assigned catalogue id; the government holds no document-type id. Forms
+    that are not bills are listed under formTemplates and are never resolved as bill types.'
 budgetControl:
   controlDimension: DDO_X_SOE
   ruleRef: HPTR 2017 r.110

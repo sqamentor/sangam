@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-origination/valuer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.loan-origination",
   "title": {
     "en": "Valuation of collateral",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "collateralValue",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Collateral value (INR)",

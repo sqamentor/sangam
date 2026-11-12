@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.budget-allocation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Budget allocation, release, authorisation, sub-allotment",
     "hi": "बजट आवंटन, विमुक्ति, प्राधिकार, उप-आवंटन"
@@ -18,6 +18,10 @@
     {
       "kind": "DMN",
       "path": "packs/ifms-budget-allocation/ifms-allocation-authority.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/ifms-budget-allocation/ifms-allocation-powers.dmn"
     },
     {
       "kind": "FORM",
@@ -103,5 +107,14 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
 }

@@ -37,7 +37,7 @@ public class MeritListDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution ex) {
-        String tenant = Vars.tenant(ex);
+        String tenant = Vars.tenantKey(ex); // SL-90: batch/ledger key only (PACK_BATCH_ITEM, PACK_LEDGER_*)
         String batchId = Vars.str(ex, "batchId");
         int round = Vars.intVal(ex, "scoreRound", Vars.intVal(ex, "batchRound", 1));
         Map<String, Map<String, Object>> data = PackRuntime.batches().itemData(tenant, batchId, round);

@@ -192,13 +192,16 @@ public class ChannelsWiring {
     @Bean
     public ChannelsScheduler sangamChannelsScheduler(TxSupport tx, DataSource ds, RestProperties rest, InboundMail mail,
             InboundEventProcessor processor, ChannelRuntimeBinder runtime, ObjectProvider<SecretResolver> secretProvider,
-            ObjectProvider<AdminPort> admin, Environment env) {
+            ObjectProvider<AdminPort> admin, Environment env,
+            ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meters) {
         LeaderElection leader = new LeaderElection(tx.dialect(), Transactions.of(ds), rest.getNode(), Duration.ofMinutes(3));
+        ScheduleTenantsMonitor monitor = ScheduleTenantsMonitor.of("channels", "no tenant's channel runtime is refreshed"
+                + " (polled sources still run). Tenants come from the tenant directory plus sangam.compliance.tenants.", meters);
         SecretResolver secrets = secretProvider.getIfAvailable(SecretResolver::fromEnvironment);
         List<ChannelsScheduler.NamedTask> polled = polledTasks(tx, mail, PolledChannels.Receiver.of(processor), runtime, secrets, env);
         return new ChannelsScheduler(leader, () -> {
             List<ChannelsScheduler.NamedTask> all = new ArrayList<>();
-            for (String tenant : ComplianceWiring.tenants(env, admin)) {
+            for (String tenant : monitor.observe(ComplianceWiring.tenants(env, admin, monitor))) {
                 all.add(new ChannelsScheduler.NamedTask("runtime:" + tenant, () -> runtime.refresh(tenant)));
             }
             all.addAll(polled);

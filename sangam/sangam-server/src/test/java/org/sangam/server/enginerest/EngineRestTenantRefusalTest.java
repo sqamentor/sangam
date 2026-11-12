@@ -36,6 +36,11 @@ import org.springframework.test.context.ActiveProfiles;
  *       its {@code RestException}): 403 {@code TENANT_ISOLATION_VIOLATION}.</li>
  * </ul>
  * Before the fix all three answered 500 with Operaton's own error body. h2 profile, dev token (tenant {@code dev}).
+ *
+ * <p>SL-45 (PostgreSQL {@code CrossTenantIsolationIT}, rerun 4): a deployment naming another tenant, or none, was
+ * created (200) because Operaton has no tenant check for deployments; it is now 403 {@code TENANT_ISOLATION_VIOLATION}
+ * and nothing is deployed. An async batch was created without a tenant, so its jobs ran without any tenant check on the
+ * other tenant's instance; it now belongs to the caller's tenant (its jobs run, and are checked, as that tenant).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "sangam.security.dev-token.groups=sangam-engine-admin",
@@ -132,6 +137,62 @@ class EngineRestTenantRefusalTest {
         assertEquals(TENANT, p.path("tenant").asText(), r.body());
         assertEquals("other-tenant", p.path("targetTenant").asText(), r.body());
         assertEquals(1, engine.getTaskService().createTaskQuery().taskId(task).count(), "the completion rolled back");
+    }
+
+    HttpResponse<String> deploy(String tenantId) throws Exception {
+        String boundary = "sl45" + java.util.UUID.randomUUID().toString().replace("-", "");
+        StringBuilder b = new StringBuilder();
+        b.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"deployment-name\"\r\n\r\n")
+                .append("sl45-refusal\r\n");
+        if (tenantId != null) {
+            b.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"tenant-id\"\r\n\r\n")
+                    .append(tenantId).append("\r\n");
+        }
+        b.append("--").append(boundary).append("\r\nContent-Disposition: form-data; name=\"data\"; filename=\"x.bpmn\"\r\n")
+                .append("Content-Type: application/xml\r\n\r\n").append(BPMN.replace("sl43refusal", "sl45refusal").strip())
+                .append("\r\n--").append(boundary).append("--\r\n");
+        return HTTP.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/engine-rest/deployment/create"))
+                .header("Authorization", "Bearer " + TOKEN).header("Accept", "application/json")
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofString(b.toString(), StandardCharsets.UTF_8)).build(),
+                HttpResponse.BodyHandlers.ofString());
+    }
+
+    @Test
+    void deploymentIntoAnotherTenantOrNoneIs403AndDeploysNothing() throws Exception {
+        for (String target : new String[] {"other-tenant", null}) {
+            HttpResponse<String> r = deploy(target);
+            JsonNode p = problem(r, 403);
+            assertEquals("TENANT_ISOLATION_VIOLATION", p.path("code").asText(), r.body());
+            assertEquals(TENANT, p.path("tenant").asText(), r.body());
+            JsonNode targetTenant = p.path("targetTenant");
+            assertEquals(target, targetTenant.isMissingNode() || targetTenant.isNull() ? null : targetTenant.asText(),
+                    r.body());
+            assertTrue(p.path("detail").asText().startsWith("SL-13 tenant isolation"), r.body());
+        }
+        assertEquals(0, engine.getRepositoryService().createProcessDefinitionQuery().processDefinitionKey("sl45refusal")
+                .count(), "nothing was deployed, neither into the other tenant nor shared");
+        HttpResponse<String> own = deploy(TENANT);
+        assertEquals(200, own.statusCode(), own.body());
+        assertEquals(TENANT, JSON.readTree(own.body()).path("tenantId").asText(), own.body());
+    }
+
+    /**
+     * The batch (here over the caller's own instance, so its job simply runs) belongs to the caller's tenant; that its
+     * jobs then refuse another tenant's instance is proven on the engine ({@code TenantScopedCreationH2Test}) and on
+     * PostgreSQL ({@code CrossTenantIsolationIT}).
+     */
+    @Test
+    void anAsyncBatchBelongsToTheCallersTenant() throws Exception {
+        ProcessInstance pi = waitingInstance();
+        HttpResponse<String> r = call("POST", "/engine-rest/process-instance/delete",
+                JSON.writeValueAsString(Map.of("processInstanceIds", java.util.List.of(pi.getId()), "deleteReason", "SL-45")));
+        assertEquals(200, r.statusCode(), r.body());
+        JsonNode batch = JSON.readTree(r.body());
+        assertEquals(TENANT, batch.path("tenantId").asText(), "the batch is the caller's: " + r.body());
+        assertEquals(TENANT, engine.getManagementService().createJobDefinitionQuery()
+                .jobDefinitionId(batch.path("batchJobDefinitionId").asText()).singleResult().getTenantId(),
+                "its jobs inherit the tenant and run with its authentication");
     }
 
     @Test

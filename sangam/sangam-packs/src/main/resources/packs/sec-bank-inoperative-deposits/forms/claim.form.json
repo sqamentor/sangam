@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-inoperative-deposits/claim",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.inoperative-deposits",
   "title": {
     "en": "Reactivation / claim",

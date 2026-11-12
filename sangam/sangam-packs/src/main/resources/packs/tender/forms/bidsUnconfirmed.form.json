@@ -1,0 +1,27 @@
+{
+  "key": "tender/bidsUnconfirmed",
+  "version": "1.0.1",
+  "pack": "gov.tender",
+  "title": {
+    "en": "Bids received not confirmed: establish the count on the portal",
+    "hi": "प्राप्त बोलियों की पुष्टि नहीं: पोर्टल पर संख्या सुनिश्चित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

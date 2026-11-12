@@ -1,6 +1,6 @@
 {
   "id": "sec.health.admission-discharge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Patient admission to discharge",
     "hi": "रोगी भर्ती से डिस्चार्ज तक"
@@ -108,5 +108,14 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-cancellation"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "estimatedCost",
+      "finalBillAmount"
+    ]
+  }
 }

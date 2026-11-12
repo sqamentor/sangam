@@ -14,6 +14,7 @@ import { useAction } from '../lib/hooks';
 import { LanguageSwitch } from '../app/Layout';
 import { JsonView, Notice, ProblemAlert, TextField } from '../components/ui';
 import { ModulePage, c, f, type ScreenDef } from './engine';
+import { fiscalStartMonthOptions, numberSeriesFields } from './registryNumbering';
 
 const objects: ScreenDef = {
   id: 'objects',
@@ -56,14 +57,15 @@ const numbering: ScreenDef = {
   description: 'mod.registry.numberingDesc',
   list: '/registry/number-series',
   unpaged: true,
-  columns: [c('seriesKey'), c('pattern'), c('resetPolicy'), c('scope'), c('state')],
+  columns: [c('seriesKey'), c('pattern'), c('reset', 'fld.resetPolicy'), c('fiscalStartMonth'), c('scope'), c('state')],
   rowKey: ['seriesKey', 'key'],
   detail: '/registry/number-series/{seriesKey}',
   sections: [
     { id: 'gaps', label: 'mod.registry.gaps', path: '/registry/number-series/{seriesKey}/gaps' },
     { id: 'allocations', label: 'mod.registry.allocations', path: '/registry/number-series/{seriesKey}/allocations' },
   ],
-  toolbar: [{ id: 'define', label: 'act.defineSeries', method: 'PUT', path: '/registry/number-series/{seriesKey}', fields: [f.text('seriesKey', undefined, true), f.text('pattern', undefined, true), f.select('resetPolicy', ['NEVER', 'YEARLY', 'FISCAL_YEAR', 'MONTHLY']), f.text('scope')], hint: 'mod.registry.patternHint' }],
+  // SL-126: the API's own field names (reset, fiscalStartMonth), one name end to end; see registryNumbering.ts
+  toolbar: [{ id: 'define', label: 'act.defineSeries', method: 'PUT', path: '/registry/number-series/{seriesKey}', fields: numberSeriesFields(), hint: 'mod.registry.patternHint', dynamicValues: { fiscalStartMonth: fiscalStartMonthOptions } }],
   actions: [
     { id: 'allocate', label: 'act.allocate', path: '/registry/number-series/{seriesKey}/allocate', fields: [f.text('scope'), f.text('period'), f.text('reference')], showResult: true },
     { id: 'void', label: 'act.voidNumber', path: '/registry/number-series/{seriesKey}/void', fields: [f.text('number', undefined, true)], reason: 'body', danger: true },

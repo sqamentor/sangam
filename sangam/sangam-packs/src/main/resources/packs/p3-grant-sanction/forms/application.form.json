@@ -1,6 +1,6 @@
 {
   "key": "p3-grant-sanction/application",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p3.grant-sanction",
   "title": {
     "en": "Scheme application",
@@ -70,7 +70,9 @@
     },
     {
       "id": "income",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Annual family income (INR)",

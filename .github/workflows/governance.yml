@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-096 engineering governance (SANGAM.md A1/A5, P7; BACKLOG P1-029). Every check here is REPORT-ONLY: findings are
+# warnings and a step summary, never a failed run, until the owner switches them on.
+#   - traceability: register rows (spike/results/TRACEABILITY-REGISTER.csv) that claim coverage but name no proving
+#     test. Switch: repository variable SANGAM_TRACEABILITY_ENFORCE=true (unset: report-only).
+#   - dco: every pull-request commit carries a Signed-off-by trailer matching its author. Switch: repository variable
+#     SANGAM_DCO_ENFORCE=true (unset: report-only). Q-10 is open: enforce only after the owner answers it.
+# CODEOWNERS (.github/CODEOWNERS) is record-only for the same reason; its enforcement is a branch-protection setting.
+# A broken register or a git error fails the job in both modes (exit 2), so bad input never reads as "no findings".
+name: governance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: governance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  traceability:
+    name: Traceability register (report-only unless SANGAM_TRACEABILITY_ENFORCE)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Governance script unit tests
+        run: python -I -m unittest discover -s .github/scripts -v
+      - name: Requirements without a proving test
+        env:
+          ENFORCE: ${{ vars.SANGAM_TRACEABILITY_ENFORCE == 'true' && '--enforce' || '' }}
+        run: |
+          # shellcheck disable=SC2086
+          python -I .github/scripts/traceability_gate.py --register spike/results/TRACEABILITY-REGISTER.csv \
+            --summary "$GITHUB_STEP_SUMMARY" $ENFORCE
+
+  dco:
+    name: DCO sign-off (report-only unless SANGAM_DCO_ENFORCE, Q-10)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Every pull-request commit is signed off by its author
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          ENFORCE: ${{ vars.SANGAM_DCO_ENFORCE == 'true' && '--enforce' || '' }}
+        run: |
+          # shellcheck disable=SC2086
+          python -I .github/scripts/dco_check.py "$BASE..$HEAD" --summary "$GITHUB_STEP_SUMMARY" $ENFORCE

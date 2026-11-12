@@ -1,6 +1,6 @@
 {
   "id": "gov.gem-purchase",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Procurement of goods (GeM-style)",
     "hi": "वस्तुओं का प्रापण (जेम-शैली)"
@@ -103,5 +103,14 @@
     "sangam-core-sanction",
     "sangam-p1-bill-payment",
     "sangam-tender"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "unitPrice"
+    ]
+  }
 }

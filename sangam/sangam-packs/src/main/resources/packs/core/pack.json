@@ -1,6 +1,6 @@
 {
   "id": "sangam.core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Government approval core",
     "hi": "सरकारी अनुमोदन मूल ढाँचा"
@@ -118,7 +118,11 @@
       "id": "esign.sign",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
-      "purpose": "Signature over the approved payload hash"
+      "purpose": "Signature over the approved payload hash",
+      "simulatorBinding": {
+        "connector": "esign-sim",
+        "operation": "sign"
+      }
     },
     {
       "id": "dsc.sign",
@@ -136,13 +140,21 @@
       "id": "notify.sms",
       "capabilityClass": "b",
       "govTag": "G-DLT",
-      "purpose": "SMS on DLT templates"
+      "purpose": "SMS on DLT templates",
+      "simulatorBinding": {
+        "connector": "sms-dlt-sim",
+        "operation": "send"
+      }
     },
     {
       "id": "notify.email",
       "capabilityClass": "b",
       "govTag": "G-MAIL",
-      "purpose": "Official e-mail"
+      "purpose": "Official e-mail",
+      "simulatorBinding": {
+        "connector": "smtp",
+        "operation": "send"
+      }
     },
     {
       "id": "notify.inapp",
@@ -230,10 +242,48 @@
       "given": "a chain of three recommendation seats",
       "when": "level 3 returns to level 1, then all recommend",
       "then": "caseVersion is unchanged, the case passes levels 1..3 again, CASE_RETURNED is audited",
-      "startVariables": {},
+      "startVariables": {
+        "fileNo": "B-2/15/2026-Budget",
+        "subject": "Re-appropriation proposal",
+        "subjectHead": "BUDGET",
+        "noting": "Proposal for approval.",
+        "draftLetter": "Draft order.",
+        "actingSeat": "DA-B2",
+        "initiator": "p2.da",
+        "officeId": "SEC-B2"
+      },
       "expectState": null,
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: level 3 returns the case to level 1 inside the core blocks"
+        "process": "sangam-p2-file-movement",
+        "steps": [
+          {
+            "at": "rc_level",
+            "action": "complete",
+            "n": 3,
+            "vars": {
+              "recDecision": "return",
+              "returnToLevel": 1,
+              "returnReason": "Re-examine the figures"
+            }
+          }
+        ],
+        "expect": {
+          "tasks": [
+            "rc_level",
+            "rc_level",
+            "rc_level",
+            "rc_level",
+            "rc_level",
+            "rc_level",
+            "sn_sanction"
+          ],
+          "audit": [
+            "CASE_RETURNED"
+          ],
+          "vars": {
+            "caseVersion": 1
+          }
+        }
       }
     },
     {
@@ -247,10 +297,40 @@
       "given": "sanctionOnBreach = DEEMED_APPROVAL",
       "when": "the sanction SLA lapses",
       "then": "DEEMED_DECISION by system on behalf of the seat, approval bound to the payload hash",
-      "startVariables": {},
-      "expectState": null,
+      "startVariables": {
+        "applicantName": "Ramesh Traders",
+        "applicantRef": "mobile:97XXXXXX21",
+        "licenceType": "TRADE",
+        "tradeName": "Ramesh General Store",
+        "premisesAddress": "Shop 4, Ward 7",
+        "premisesArea": 35.0,
+        "durationYears": 1,
+        "officeId": "WARD-7",
+        "initiator": "citizen.ramesh"
+      },
+      "expectState": "CLOSED",
       "run": {
-        "manual": "needs a clock driver: the sanction SLA lapses (deemed decision)"
+        "process": "sangam-p4-licence",
+        "steps": [
+          {
+            "at": "sn_sanction",
+            "advance": "P15D"
+          }
+        ],
+        "expect": {
+          "tasks": [
+            "sc_scrutiny"
+          ],
+          "audit": [
+            "SLA_BREACHED",
+            "DEEMED_DECISION",
+            "APPROVAL_RECORDED"
+          ],
+          "vars": {
+            "approvedBy": "system",
+            "deemedDecision": true
+          }
+        }
       }
     },
     {
@@ -264,10 +344,50 @@
       "given": "executionConnector = pfms.payment, sim_pfms_payment = UNKNOWN_THEN_COMPLETED",
       "when": "the operator tries RETRY_SAME_OPERATION",
       "then": "the retry is refused; CONFIRMED_SUCCESS with evidence closes",
-      "startVariables": {},
-      "expectState": null,
+      "startVariables": {
+        "payee": "M/s Shree Constructions",
+        "account": "50100012345678",
+        "ifsc": "SBIN0001234",
+        "amount": 47500000,
+        "invoiceNo": "INV-2026-0412",
+        "budgetHead": "4059-01-051",
+        "sanctionRef": "AA/2026/77",
+        "actingSeat": "CLERK-DDO",
+        "initiator": "p1.clerk",
+        "officeId": "DPW-X",
+        "selectedSeat": "AO-2",
+        "sim_pfms_payment": "UNKNOWN_THEN_COMPLETED"
+      },
+      "expectState": "CLOSED",
       "run": {
-        "manual": "needs scenario steering beyond configuration answers: an operator action on an unknown-outcome item"
+        "process": "sangam-p1-bill-payment",
+        "steps": [
+          {
+            "at": "ex_resolved",
+            "action": "correlate",
+            "vars": {
+              "resolution": "RETRY_SAME_OPERATION"
+            },
+            "refused": "RETRY_NOT_ALLOWED"
+          },
+          {
+            "at": "ex_resolved",
+            "action": "correlate",
+            "vars": {
+              "resolution": "CONFIRMED_SUCCESS",
+              "resolutionEvidence": "UTR123456"
+            }
+          }
+        ],
+        "expect": {
+          "audit": [
+            "EXT_OP_UNKNOWN",
+            "RECON_ITEM_OPENED",
+            "RECON_ITEM_RESOLVED",
+            "CASE_CLOSED"
+          ],
+          "ended": true
+        }
       }
     }
   ],
@@ -275,5 +395,14 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-appeal"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit"
+    ]
+  }
 }

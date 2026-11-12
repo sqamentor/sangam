@@ -1,0 +1,29 @@
+cpus=8 maxHeapMB=8160 hikariMax=20 starters=32 workers=8 reviewers=16 warmup=15s measure=30s
+measuredSeconds=32.5 starts_ok=282 starts_all=282 starts_per_s=8.7 pg_commits_per_s=109.7
+op                 count     ops/s    p50ms    p95ms    p99ms    maxms  statuses
+start                282       8.7   2922.4   8210.4  13613.4  22172.0  201=282
+task.complete         43       1.3   3683.0  11719.1  12994.6  12994.6  200=43
+task.get              43       1.3   3486.3   8654.3  13069.2  13069.2  200=43
+task.list             46       1.4   2330.6   9738.5  17174.0  17174.0  200=46
+work.complete         58       1.8   3396.5  10716.3  10854.7  10854.7  204=58
+work.fetch             1       0.0   7903.9   7903.9   7903.9   7903.9  200=1
+task_ops_total=191 task_ops_per_s=5.9
+errors(non-2xx incl. exceptions)=0 of 473 requests (0.0000%)
+engine_instances=516 distinct_started_ids=516
+pg_wait_events (sampled pg_stat_activity, active non-idle backends):
+  8  Client:ClientRead | SELECT CURRENT_TIMESTAMP AS n
+  7  Client:ClientRead | SELECT principal_id FROM AUTH_MEMBERSHIP WHERE tenant_id=$1 AND member_id=$2 AND (valid_fr
+  5  Client:ClientRead | INSERT INTO AUDIT_EVENT(tenant_id, chain_id, seq, event_id, event_type, schema_version, oc
+  5  Client:ClientRead | insert into ACT_HI_EXT_TASK_LOG ( ID_, TIMESTAMP_, EXT_TASK_ID_, RETRIES_, TOPIC_NAME_, WO
+  4  Client:ClientRead | UPDATE ROOT_SEQ SET next_outbox_seq=$1 WHERE tenant_id=$2 AND root_id=$3
+  3  Client:ClientRead | INSERT INTO CFG_CASE_BINDING (tenant_id, root_id, binding, bound_at) VALUES ($1,$2,$3,$4) 
+  3  Client:ClientRead | SELECT principal_id FROM AUTH_MEMBERSHIP WHERE tenant_id=$1 AND member_id=$2 AND source_id
+  3  Client:ClientRead | SELECT root_id FROM ROOT_SEQ WHERE tenant_id = $1 AND root_id = $2 FOR UPDATE
+  3  Client:ClientRead | UPDATE HRM_ACTIVITY_INSTANCE SET state = $1, end_time = $2 WHERE id = $3
+  2  Client:ClientRead | INSERT INTO IDEMPOTENCY_RECORD(tenant_id, command_type, idem_key, fp_version, fingerprint,
+  2  Client:ClientRead | INSERT INTO ROOT_SEQ(tenant_id, root_id, next_outbox_seq, next_audit_seq, audit_head_hash)
+  2  Client:ClientRead | SELECT next_outbox_seq, next_audit_seq, audit_head_hash FROM ROOT_SEQ WHERE tenant_id=$1 A
+  2  Client:ClientRead | SELECT person_id, display_name, external_subject, email, status FROM SEC_PERSON WHERE tena
+  2  Client:ClientRead | SELECT work_id, tenant_id, topic, root_id, operation_id, lock_version, attempt_id, attempt
+  2  Client:ClientRead | SET LOCAL statement_timeout = '5000ms'
+top request-thread frames (sampled stacks, first sangam/operaton/hikari/jdbc frame):

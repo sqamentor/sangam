@@ -110,6 +110,70 @@ class BranchCorrelationH2Test {
         });
     }
 
+    /** SL-04: a parallel multi-instance catch event (wait on the branch execution itself: the direct path). */
+    private static byte[] miCatch(String id) {
+        String xml = HEAD + "<process id=\"" + id + "\" isExecutable=\"true\">"
+                + "<startEvent id=\"s\"/><sequenceFlow id=\"f1\" sourceRef=\"s\" targetRef=\"w\"/>"
+                + "<intermediateCatchEvent id=\"w\"><multiInstanceLoopCharacteristics isSequential=\"false\">"
+                + "<loopCardinality xsi:type=\"tFormalExpression\">3</loopCardinality></multiInstanceLoopCharacteristics>"
+                + "<messageEventDefinition messageRef=\"m\"/></intermediateCatchEvent>"
+                + "<sequenceFlow id=\"f2\" sourceRef=\"w\" targetRef=\"after\"/><userTask id=\"after\"/>"
+                + "<sequenceFlow id=\"f3\" sourceRef=\"after\" targetRef=\"e\"/><endEvent id=\"e\"/></process></definitions>";
+        return xml.getBytes(StandardCharsets.UTF_8);
+    }
+
+    /** SL-04: parallel multi-instance sub-process whose branch waits at an event-based gateway (message or timer). */
+    private static byte[] miEventGateway(String id) {
+        String xml = HEAD + "<process id=\"" + id + "\" isExecutable=\"true\">"
+                + "<startEvent id=\"s\"/><sequenceFlow id=\"f1\" sourceRef=\"s\" targetRef=\"sub\"/>"
+                + "<subProcess id=\"sub\"><multiInstanceLoopCharacteristics isSequential=\"false\">"
+                + "<loopCardinality xsi:type=\"tFormalExpression\">3</loopCardinality></multiInstanceLoopCharacteristics>"
+                + "<startEvent id=\"is\"/><sequenceFlow id=\"i1\" sourceRef=\"is\" targetRef=\"g\"/>"
+                + "<eventBasedGateway id=\"g\"/>"
+                + "<sequenceFlow id=\"i2\" sourceRef=\"g\" targetRef=\"w\"/><sequenceFlow id=\"i3\" sourceRef=\"g\" targetRef=\"t\"/>"
+                + "<intermediateCatchEvent id=\"w\"><messageEventDefinition messageRef=\"m\"/></intermediateCatchEvent>"
+                + "<intermediateCatchEvent id=\"t\"><timerEventDefinition><timeDuration xsi:type=\"tFormalExpression\">P10D"
+                + "</timeDuration></timerEventDefinition></intermediateCatchEvent>"
+                + "<sequenceFlow id=\"i4\" sourceRef=\"w\" targetRef=\"ie1\"/><sequenceFlow id=\"i5\" sourceRef=\"t\" targetRef=\"ie2\"/>"
+                + "<endEvent id=\"ie1\"/><endEvent id=\"ie2\"/></subProcess>"
+                + "<sequenceFlow id=\"f2\" sourceRef=\"sub\" targetRef=\"after\"/><userTask id=\"after\"/>"
+                + "<sequenceFlow id=\"f3\" sourceRef=\"after\" targetRef=\"e\"/><endEvent id=\"e\"/></process></definitions>";
+        return xml.getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static void deliverToEachBranchInTurn(OperatonEngineAdapter a, String pid, int[] order) {
+        int left = order.length;
+        for (int branch : order) {
+            assertTrue(a.correlateMessageToBranch("t1", "branchMsg", pid, "loopCounter", branch, Map.of()) != null);
+            left--;
+            assertEquals(left, waiting(a, pid), "exactly branch " + branch + " moved on");
+        }
+        assertEquals(1, a.processEngine().getTaskService().createTaskQuery().processInstanceId(pid)
+                .taskDefinitionKey("after").count(), "all branches done, flow continues");
+    }
+
+    @Test
+    void deliversToAMultiInstanceCatchEventBranchDirectly() {
+        withEngine(a -> {
+            a.deploy("t1", "cat", Map.of("cat.bpmn", miCatch("cat")));
+            String pid = a.startProcess("t1", "cat", "BK-4", Map.of());
+            assertEquals(3, waiting(a, pid));
+            deliverToEachBranchInTurn(a, pid, new int[] {2, 0, 1});
+        });
+    }
+
+    @Test
+    void deliversToAnEventBasedGatewayBelowTheBranchScope() {
+        withEngine(a -> {
+            a.deploy("t1", "gw", Map.of("gw.bpmn", miEventGateway("gw")));
+            String pid = a.startProcess("t1", "gw", "BK-5", Map.of());
+            assertEquals(3, waiting(a, pid));
+            deliverToEachBranchInTurn(a, pid, new int[] {1, 2, 0});
+            assertEquals(0, a.processEngine().getManagementService().createJobQuery().processInstanceId(pid)
+                    .timers().count(), "the losing timers of the event-based gateways are cancelled");
+        });
+    }
+
     @Test
     void wrongTenantIsRefused() {
         withEngine(a -> {

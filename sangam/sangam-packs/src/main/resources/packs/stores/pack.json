@@ -1,6 +1,6 @@
 {
   "id": "gov.stores",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Stores: physical verification and discrepancies",
     "hi": "भंडार: भौतिक सत्यापन एवं विसंगतियाँ"
@@ -71,5 +71,14 @@
   "calls": [
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "writeOffAmount"
+    ]
+  }
 }

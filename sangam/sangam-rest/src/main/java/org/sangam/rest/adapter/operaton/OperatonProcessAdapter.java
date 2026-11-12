@@ -289,6 +289,32 @@ public class OperatonProcessAdapter implements ProcessPort {
     }
 
     @Override
+    public Map<String, Object> variables(RequestContext ctx, String id, String activityInstanceId) {
+        if (activityInstanceId == null || activityInstanceId.isBlank()) {
+            return variables(ctx, id);
+        }
+        org.operaton.bpm.engine.runtime.ProcessInstance pi = OperatonSupport.call(() ->
+                runtime.createProcessInstanceQuery().processInstanceId(id).singleResult());
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (pi == null) {
+            HistoricProcessInstance h = OperatonSupport.call(() ->
+                    history.createHistoricProcessInstanceQuery().processInstanceId(id).singleResult());
+            if (h == null) {
+                throw ApiProblem.notFound("process instance", id);
+            }
+            OperatonSupport.checkTenant(ctx, h.getTenantId(), "process instance", id);
+            OperatonSupport.call(() -> history.createHistoricVariableInstanceQuery().processInstanceId(id)
+                    .activityInstanceIdIn(activityInstanceId).list()).forEach(v -> out.put(v.getName(), v.getValue()));
+            return TypedVariables.toJson(out);
+        }
+        OperatonSupport.checkTenant(ctx, pi.getTenantId(), "process instance", id);
+        // processInstanceIdIn bounds the scope to this instance: another instance's activity id matches nothing
+        OperatonSupport.call(() -> runtime.createVariableInstanceQuery().processInstanceIdIn(id)
+                .activityInstanceIdIn(activityInstanceId).list()).forEach(v -> out.put(v.getName(), v.getValue()));
+        return TypedVariables.toJson(out);
+    }
+
+    @Override
     public Map<String, Object> setVariables(RequestContext ctx, String id, Map<String, Object> variables) {
         if (variables == null || variables.isEmpty()) {
             throw ApiProblem.badRequest("VARIABLES_REQUIRED", "at least one variable is required");

@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.cheque-return",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Cheque return and Section 138 NI Act",
     "hi": "चेक वापसी एवं परक्राम्य लिखत अधिनियम धारा 138"
@@ -72,5 +72,14 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "returnCharge"
+    ]
+  }
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.operaton.bpm.engine.HistoryService;
+import org.operaton.bpm.engine.ManagementService;
 import org.operaton.bpm.engine.RepositoryService;
 import org.operaton.bpm.engine.history.HistoricActivityInstanceQuery;
 import org.operaton.bpm.engine.history.HistoricDecisionInputInstance;
@@ -43,12 +44,22 @@ public class OperatonHistoryAdapter implements HistoryPort {
     private final HistoryService historyService;
     private final RepositoryService repositoryService;
     private final RestProperties props;
+    /** Prefixed name of the historic activity-instance table (state filter "completed", see below). */
+    private final String activityTable;
 
     public OperatonHistoryAdapter(HistoryService historyService, RepositoryService repositoryService,
                                   RestProperties props) {
+        this(historyService, repositoryService, null, props);
+    }
+
+    /** @param management resolves the engine's table prefix; null means the default {@code ACT_HI_ACTINST} */
+    public OperatonHistoryAdapter(HistoryService historyService, RepositoryService repositoryService,
+                                  ManagementService management, RestProperties props) {
         this.historyService = historyService;
         this.repositoryService = repositoryService;
         this.props = props;
+        this.activityTable = management == null ? "ACT_HI_ACTINST"
+                : management.getTableName(org.operaton.bpm.engine.history.HistoricActivityInstance.class);
     }
 
     private static HistoryFilter f(HistoryFilter filter) {
@@ -104,16 +115,29 @@ public class OperatonHistoryAdapter implements HistoryPort {
     public Page<HistoricActivityInstance> activityInstances(RequestContext ctx, HistoryFilter filter,
                                                            Page.PageRequest page) {
         HistoryFilter h = f(filter);
+        String state = h.activityState();
+        String pi = instanceOf(ctx, h);
+        String definitionId = h.processDefinitionKey() == null ? null : latestDefinitionId(ctx, h.processDefinitionKey());
+        if (CANCELED.equals(state) && Boolean.FALSE.equals(h.finished())
+                || RUNNING.equals(state) && Boolean.TRUE.equals(h.finished())) {
+            return Page.of(List.of(), 0, false);   // contradictory filters match nothing
+        }
+        if (COMPLETED.equals(state)) {
+            return Boolean.FALSE.equals(h.finished()) ? Page.of(List.of(), 0, false)
+                    : completedActivities(ctx, h, pi, definitionId, page);
+        }
         HistoricActivityInstanceQuery q = historyService.createHistoricActivityInstanceQuery();
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
-        String pi = instanceOf(ctx, h);
         if (pi != null) {
             q.processInstanceId(pi);
         }
-        if (h.processDefinitionKey() != null) {
-            q.processDefinitionId(latestDefinitionId(ctx, h.processDefinitionKey()));
+        if (definitionId != null) {
+            q.processDefinitionId(definitionId);
+        }
+        if (h.activityInstanceId() != null) {
+            q.activityInstanceId(h.activityInstanceId());
         }
         if (h.activityId() != null) {
             q.activityId(h.activityId());
@@ -121,7 +145,11 @@ public class OperatonHistoryAdapter implements HistoryPort {
         if (h.assignee() != null) {
             q.taskAssignee(h.assignee());
         }
-        if (Boolean.TRUE.equals(h.finished())) {
+        if (RUNNING.equals(state)) {
+            q.unfinished();
+        } else if (CANCELED.equals(state)) {
+            q.canceled();
+        } else if (Boolean.TRUE.equals(h.finished())) {
             q.finished();
         } else if (Boolean.FALSE.equals(h.finished())) {
             q.unfinished();
@@ -133,10 +161,63 @@ public class OperatonHistoryAdapter implements HistoryPort {
             q.startedBefore(OperatonSupport.date(h.to()));
         }
         q.orderByHistoricActivityInstanceStartTime().desc();
-        return OperatonSupport.page(q, page, props.getCountCap(), a -> new HistoricActivityInstance(a.getId(),
-                a.getActivityId(), a.getActivityName(), a.getActivityType(), a.getProcessInstanceId(),
-                a.getExecutionId(), a.getTaskId(), a.getAssignee(), OperatonSupport.instant(a.getStartTime()),
-                OperatonSupport.instant(a.getEndTime()), a.getDurationInMillis(), a.isCanceled()));
+        return OperatonSupport.page(q, page, props.getCountCap(), OperatonHistoryAdapter::activity);
+    }
+
+    private static HistoricActivityInstance activity(org.operaton.bpm.engine.history.HistoricActivityInstance a) {
+        return new HistoricActivityInstance(a.getId(), a.getActivityId(), a.getActivityName(), a.getActivityType(),
+                a.getProcessInstanceId(), a.getExecutionId(), a.getTaskId(), a.getAssignee(),
+                OperatonSupport.instant(a.getStartTime()), OperatonSupport.instant(a.getEndTime()),
+                a.getDurationInMillis(), a.isCanceled());
+    }
+
+    /**
+     * State "completed" = ended and not canceled. Operaton's query API can select ended ({@code finished()}) or
+     * canceled ({@code canceled()}) instances but not "ended without cancel" (the default and scope-complete states,
+     * {@code ACT_INST_STATE_} 0 and 1), so this one filter is a native query over the same table with the same
+     * criteria as {@link #activityInstances}, the tenant included (a native query has no implicit tenant check).
+     */
+    private Page<HistoricActivityInstance> completedActivities(RequestContext ctx, HistoryFilter h, String pi,
+                                                              String definitionId, Page.PageRequest page) {
+        StringBuilder where = new StringBuilder(" FROM " + activityTable + " RES WHERE RES.END_TIME_ IS NOT NULL"
+                + " AND (RES.ACT_INST_STATE_ IS NULL OR RES.ACT_INST_STATE_ <> 2)");
+        Map<String, Object> params = new LinkedHashMap<>();
+        java.util.function.BiConsumer<String, Object> eq = (col, v) -> {
+            if (v != null) {
+                String p = "p" + params.size();
+                where.append(" AND RES.").append(col).append(" = #{").append(p).append('}');
+                params.put(p, v);
+            }
+        };
+        eq.accept("TENANT_ID_", ctx.tenantId());
+        eq.accept("PROC_INST_ID_", pi);
+        eq.accept("PROC_DEF_ID_", definitionId);
+        eq.accept("ID_", h.activityInstanceId());
+        eq.accept("ACT_ID_", h.activityId());
+        eq.accept("ASSIGNEE_", h.assignee());
+        if (h.from() != null) {
+            where.append(" AND RES.START_TIME_ >= #{from}");
+            params.put("from", OperatonSupport.date(h.from()));
+        }
+        if (h.to() != null) {
+            where.append(" AND RES.START_TIME_ <= #{to}");
+            params.put("to", OperatonSupport.date(h.to()));
+        }
+        String rows = "SELECT RES.*" + where + " ORDER BY RES.START_TIME_ DESC, RES.ID_ ASC";
+        long cap = props.getCountCap();
+        return OperatonSupport.call(() -> {
+            java.util.function.Supplier<org.operaton.bpm.engine.history.NativeHistoricActivityInstanceQuery> list = () -> {
+                var nq = historyService.createNativeHistoricActivityInstanceQuery().sql(rows);
+                params.forEach(nq::parameter);
+                return nq;
+            };
+            var nc = historyService.createNativeHistoricActivityInstanceQuery().sql("SELECT COUNT(*)" + where);
+            params.forEach(nc::parameter);
+            List<HistoricActivityInstance> items = list.get().listPage(page.firstResult(), page.size()).stream()
+                    .map(OperatonHistoryAdapter::activity).toList();
+            boolean capped = cap > 0 && !list.get().listPage((int) Math.min(Integer.MAX_VALUE, cap), 1).isEmpty();
+            return Page.of(items, capped ? cap : nc.count(), capped);
+        });
     }
 
     @Override
@@ -187,6 +268,9 @@ public class OperatonHistoryAdapter implements HistoryPort {
         HistoryFilter h = f(filter);
         HistoricVariableInstanceQuery q = historyService.createHistoricVariableInstanceQuery()
                 .disableCustomObjectDeserialization();
+        if (h.activityInstanceId() != null) {
+            q.activityInstanceIdIn(h.activityInstanceId());
+        }
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }
@@ -214,6 +298,9 @@ public class OperatonHistoryAdapter implements HistoryPort {
         HistoryFilter h = f(filter);
         HistoricDecisionInstanceQuery q = historyService.createHistoricDecisionInstanceQuery()
                 .includeInputs().includeOutputs().disableCustomObjectDeserialization();
+        if (h.activityInstanceId() != null) {
+            q.activityInstanceIdIn(h.activityInstanceId());
+        }
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
         }

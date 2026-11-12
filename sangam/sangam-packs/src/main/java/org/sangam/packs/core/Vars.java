@@ -4,7 +4,6 @@ package org.sangam.packs.core;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -59,6 +58,16 @@ public final class Vars {
         }
         Object t = ex.getVariable("tenantId");
         return t == null ? null : t.toString();
+    }
+
+    /**
+     * SL-90: the tenant key of a pack ledger or batch row (PACK_LEDGER_ACCOUNT, PACK_LEDGER_POSTING, PACK_BATCH_ITEM:
+     * tenant_id is a NOT NULL key). Untenanted work uses the reserved shared key, never null. {@link #tenant} itself
+     * stays the engine's tenant (null when none): it also feeds the connector gateway, seats, calendars, decisions and
+     * operation-id names, which have their own "no tenant" handling.
+     */
+    public static String tenantKey(DelegateExecution ex) {
+        return org.sangam.core.layer.TenantKey.of(tenant(ex));
     }
 
     public static String tenant(DelegateTask task) {
@@ -139,8 +148,18 @@ public final class Vars {
         return PackRuntime.clock().instant();
     }
 
-    public static LocalDate today() {
-        return LocalDate.ofInstant(now(), ZoneOffset.ofHoursMinutes(5, 30));
+    /**
+     * The business zone of {@code tenantId}: the tenant's resolved profile ({@code locale.zone}) through the
+     * process-wide {@link org.sangam.core.time.BusinessClock}, which the server installs; a tenant without a profile is
+     * in UTC (the documented fallback, logged once per tenant). SL-104 (ADR-D-20): never a fixed country zone.
+     */
+    public static java.time.ZoneId zone(String tenantId) {
+        return org.sangam.core.time.BusinessClock.system().zone(tenantId);
+    }
+
+    /** Today's business date of {@code tenantId}: the pack clock's instant in the tenant's zone ({@link #zone}). */
+    public static LocalDate today(String tenantId) {
+        return LocalDate.ofInstant(now(), zone(tenantId));
     }
 
     public static Instant instant(VariableScope s, String name) {
@@ -242,7 +261,15 @@ public final class Vars {
     public static Map<String, Object> payloadOf(VariableScope s, List<String> names) {
         Map<String, Object> m = new LinkedHashMap<>();
         for (String f : names) {
-            m.put(f, canonical(s.getVariable(f)));
+            // "variable>parameter": the process variable is sent under the connector's contract name (the same
+            // source>target form as call-activity mappings), so a pack's vocabulary never has to match a connector's
+            int gt = f.indexOf('>');
+            String var = gt < 0 ? f : f.substring(0, gt).trim();
+            String param = gt < 0 ? f : f.substring(gt + 1).trim();
+            if (var.isEmpty() || param.isEmpty()) {
+                throw new IllegalArgumentException("connector input '" + f + "' must be 'variable' or 'variable>parameter'");
+            }
+            m.put(param, canonical(s.getVariable(var)));
         }
         return m;
     }

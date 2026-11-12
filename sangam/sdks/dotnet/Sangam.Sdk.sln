@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{BD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BillPaymentWorker", "examples\BillPaymentWorker\BillPaymentWorker.csproj", "{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{5C0D3E4A-7B21-4F7E-9C1A-2D6B8E4F1A30}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sangam.Sdk.Tests", "tests\Sangam.Sdk.Tests\Sangam.Sdk.Tests.csproj", "{9E3B7A52-4C1D-4A8F-B6E2-71D5C0A93F18}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +32,14 @@ Global
 		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E3B7A52-4C1D-4A8F-B6E2-71D5C0A93F18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E3B7A52-4C1D-4A8F-B6E2-71D5C0A93F18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E3B7A52-4C1D-4A8F-B6E2-71D5C0A93F18}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E3B7A52-4C1D-4A8F-B6E2-71D5C0A93F18}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F82011A7-1DBE-4C88-A369-27358F77E803} = {A7A732C5-144C-4E63-A62B-BA4C4CBE3609}
 		{B71E6C01-876F-48CB-B83E-588CAF8C7FEF} = {BD811BE5-790F-42AF-8237-2988D93BFE0B}
+		{9E3B7A52-4C1D-4A8F-B6E2-71D5C0A93F18} = {5C0D3E4A-7B21-4F7E-9C1A-2D6B8E4F1A30}
 	EndGlobalSection
 EndGlobal

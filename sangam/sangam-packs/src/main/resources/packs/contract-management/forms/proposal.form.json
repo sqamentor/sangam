@@ -1,6 +1,6 @@
 {
   "key": "contract-management/proposal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.contract-management",
   "title": {
     "en": "Contract amendment",
@@ -25,7 +25,9 @@
     },
     {
       "id": "amendmentAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Amendment amount (INR)",

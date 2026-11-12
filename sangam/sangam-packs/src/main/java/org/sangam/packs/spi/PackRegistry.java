@@ -70,6 +70,10 @@ public final class PackRegistry {
             throw new IllegalStateException("two versions of pack " + p.descriptor().id() + " on the class path: "
                     + old.descriptor().version() + " and " + p.descriptor().version());
         }
+        if (old == null) {
+            // the external-task topics the pack declares (manifest workers, SL-104)
+            org.sangam.packs.worker.PackWorkers.registerDeclared(p.descriptor());
+        }
     }
 
     public Collection<SangamPack> all() {

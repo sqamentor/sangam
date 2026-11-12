@@ -35,8 +35,12 @@ import java.util.Set;
  *   <li>Failure classification for A-2: a failure before the request reached the server (egress refusal, DNS,
  *       connection refused, TLS handshake, connect timeout) is {@link Outcome.NoEffect}; anything after the request
  *       may have been sent (request timeout, reset, truncated response) is {@link Outcome.Unknown}.</li>
- *   <li>Retries ({@link RetryPolicy}) only for no-effect failures and 429/503 answers, or for every failure when the
- *       caller declares the request idempotent (class a, operationId as Idempotency-Key).</li>
+ *   <li>SL-65: a request that is not valid HTTP (a header name or value, the method or the URI) cannot be built, so
+ *       it is not sent: {@link Outcome.NoEffect} with a reason that starts with {@value #INVALID_REQUEST}, never an
+ *       exception. The reason names the header but never shows its value, which may be a credential.</li>
+ *   <li>Retries ({@link RetryPolicy}) only for no-effect failures (except an egress refusal or an invalid request,
+ *       which would fail the same way again) and 429/503 answers, or for every failure when the caller declares the
+ *       request idempotent (class a, operationId as Idempotency-Key).</li>
  * </ul>
  */
 public final class HttpTransport {
@@ -103,6 +107,54 @@ public final class HttpTransport {
 
     private static final Set<String> RESTRICTED = Set.of("host", "connection", "content-length", "expect", "upgrade");
 
+    /** Reason prefix of a request that is not valid HTTP and was therefore not sent (SL-65). */
+    public static final String INVALID_REQUEST = "INVALID_REQUEST: ";
+
+    /** RFC 9110 §5.6.2 token: the characters a header name or a method may use. */
+    public static boolean isToken(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            boolean alnum = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9';
+            if (!alnum && "!#$%&'*+-.^_`|~".indexOf(c) < 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * RFC 9110 §5.5 field value as the HTTP client accepts it: visible characters, space, tab and ISO-8859-1 (obs-text);
+     * no other control character (CR, LF, NUL) and nothing above U+00FF.
+     */
+    public static boolean isFieldValue(String s) {
+        if (s == null) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c > 0xFF || c == 0x7F || c < 0x20 && c != '\t') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Text for a message (a header name, a method): every control character, a line break say, shown as '?'. */
+    public static String printable(String s) {
+        if (s == null) {
+            return "null";
+        }
+        StringBuilder b = new StringBuilder(s.length());
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            b.append(c < 0x20 || c == 0x7F ? '?' : c);
+        }
+        return b.toString();
+    }
+
     private final HttpClient client;
     private final EgressPolicy egress;
     private final RetryPolicy retry;
@@ -144,7 +196,8 @@ public final class HttpTransport {
         while (true) {
             Outcome o = once(tenantId, call, deadlineMillis, attempt);
             boolean retryable = switch (o) {
-                case Outcome.NoEffect ne -> !ne.reason().startsWith("EGRESS_DENIED");
+                case Outcome.NoEffect ne -> !ne.reason().startsWith("EGRESS_DENIED")
+                        && !ne.reason().startsWith(INVALID_REQUEST);
                 case Outcome.Unknown u -> call.idempotent();
                 case Outcome.Response r -> r.status() == 429 || r.status() == 503
                         || (call.idempotent() && (r.status() == 502 || r.status() == 504));
@@ -175,19 +228,19 @@ public final class HttpTransport {
                 }
                 timeout = timeout.compareTo(Duration.ofMillis(left)) > 0 ? Duration.ofMillis(left) : timeout;
             }
-            HttpRequest.Builder rb = HttpRequest.newBuilder(uri).timeout(timeout);
-            for (Map.Entry<String, String> h : call.headers().entrySet()) {
-                if (!RESTRICTED.contains(h.getKey().toLowerCase(Locale.ROOT))) {
-                    rb.header(h.getKey(), h.getValue());
-                }
+            HttpRequest request;
+            try {
+                request = request(uri, method, call.headers(), body, timeout);
+            } catch (IllegalArgumentException e) {
+                // SL-65: not valid HTTP, so not sent on this hop; the same call would be refused again
+                String reason = INVALID_REQUEST + "request not sent: " + printable(e.getMessage());
+                return hop == 0 ? new Outcome.NoEffect(reason, attempt)
+                        : new Outcome.Unknown(reason + " (on a redirect)", attempt);
             }
-            HttpRequest.BodyPublisher pub = body.length == 0 ? HttpRequest.BodyPublishers.noBody()
-                    : HttpRequest.BodyPublishers.ofByteArray(body);
-            rb.method(method, pub);
             HttpResponse<InputStream> resp;
             byte[] respBody;
             try {
-                resp = client.send(rb.build(), HttpResponse.BodyHandlers.ofInputStream());
+                resp = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
                 respBody = readBounded(resp.body(), egress.maxResponseBytes());
             } catch (HttpConnectTimeoutException e) {
                 return new Outcome.NoEffect("connect timeout: " + e.getMessage(), attempt);
@@ -221,6 +274,39 @@ public final class HttpTransport {
             }
             return new Outcome.Response(status, new LinkedHashMap<>(resp.headers().map()), respBody, attempt);
         }
+    }
+
+    /**
+     * Builds the exchange of one hop. Every header name and value is checked first, so a refusal names the header and
+     * never carries its value (the HTTP client's own message repeats the value, which may be a credential); the client
+     * still checks the method and the URI.
+     *
+     * @throws IllegalArgumentException the request is not valid HTTP
+     */
+    private static HttpRequest request(URI uri, String method, Map<String, String> headers, byte[] body, Duration timeout) {
+        HttpRequest.Builder rb = HttpRequest.newBuilder(uri).timeout(timeout);
+        for (Map.Entry<String, String> h : headers.entrySet()) {
+            String name = h.getKey();
+            if (RESTRICTED.contains(name.toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+            if (!isToken(name)) {
+                throw new IllegalArgumentException("header name '" + printable(name) + "' is not valid HTTP");
+            }
+            if (!isFieldValue(h.getValue())) {
+                throw new IllegalArgumentException("header '" + name + "' has a value that is not valid HTTP (a control "
+                        + "character such as a line break, or a character above U+00FF; the value is not shown)");
+            }
+            try {
+                rb.header(name, h.getValue());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("header '" + name
+                        + "' is refused by the HTTP client (the value is not shown)");
+            }
+        }
+        HttpRequest.BodyPublisher pub = body.length == 0 ? HttpRequest.BodyPublishers.noBody()
+                : HttpRequest.BodyPublishers.ofByteArray(body);
+        return rb.method(method, pub).build();
     }
 
     private static boolean isRedirect(int s) {

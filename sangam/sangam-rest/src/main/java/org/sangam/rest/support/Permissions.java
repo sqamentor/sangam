@@ -76,7 +76,16 @@ public final class Permissions {
     /** External applicants (PER-8): portal only, never staff APIs. */
     public static final String GROUP_CITIZEN = "sangam-citizen";
 
+    /**
+     * Platform administrator (every tenant). SL-70: only an identity from a configured platform issuer holds it; in a
+     * tenant token {@code sangam-admin} is replaced by {@link #GROUP_TENANT_ADMIN} when the identity is built.
+     */
     public static final String GROUP_ADMIN = "sangam-admin";
+    /**
+     * SL-70 marker of every identity from a platform issuer ({@code sangam.security.platform-issuer}), set by the server
+     * when the identity is built and removed from every other token. Engine-wide operations require it.
+     */
+    public static final String GROUP_PLATFORM = "sangam-platform";
     public static final String GROUP_TENANT_ADMIN = "sangam-tenant-admin";
     public static final String GROUP_OPERATOR = "sangam-operator";
     public static final String GROUP_AUDITOR = "sangam-auditor";
@@ -94,7 +103,8 @@ public final class Permissions {
     /**
      * The only groups admitted to {@code /engine-rest/**} (server gate, {@code SecurityConfig}). The workspace
      * {@code /me} roles derive the UI platform role from the same set, so a UI engine screen is shown exactly to the
-     * callers the server lets through (SL-37).
+     * callers the server lets through (SL-37). SL-70: {@code sangam-admin} here is the platform administrator (a
+     * tenant token's {@code sangam-admin} arrives as {@code sangam-tenant-admin}, which is not an engine group).
      */
     public static final Set<String> ENGINE_REST_GROUPS = Set.of(GROUP_ADMIN, GROUP_ENGINE_ADMIN);
 

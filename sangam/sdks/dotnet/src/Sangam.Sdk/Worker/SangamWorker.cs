@@ -192,7 +192,7 @@ public sealed class SangamWorker : IAsyncDisposable
                     await UnlockQuietlyAsync(w).ConfigureAwait(false);
                     continue;
                 }
-                if (w.AttemptId is null || w.Id is null)
+                if (w.AttemptId is null || w.Id is null || w.LockVersion is null)
                 {
                     // A-1: run only after the LOCKED confirmation with lockVersion + attemptId
                     _log.Error("work.protocol.violation", "item without LOCKED confirmation (attemptId); not started", F(("workerId", WorkerId), ("workId", w.Id)));
@@ -215,7 +215,7 @@ public sealed class SangamWorker : IAsyncDisposable
     private async Task RunItemAsync(ExternalWork work, TopicSubscription sub)
     {
         var ctx = new TaskContext(work, WorkerId, _client, _force!.Token);
-        _inFlight[work.Id] = ctx;
+        _inFlight[ctx.WorkId] = ctx;
         using var hbStop = new CancellationTokenSource();
         var heartbeat = Task.Run(() => HeartbeatLoopAsync(ctx, sub, hbStop.Token));
         try
@@ -238,7 +238,7 @@ public sealed class SangamWorker : IAsyncDisposable
         finally
         {
             hbStop.Cancel();
-            _inFlight.TryRemove(work.Id, out _);
+            _inFlight.TryRemove(ctx.WorkId, out _);
             ctx.Cts.Dispose();
             _slots.Release();
         }
@@ -246,6 +246,13 @@ public sealed class SangamWorker : IAsyncDisposable
 
     private static async Task<Outcome> InvokeAsync(TaskContext ctx, TopicSubscription sub)
     {
+        if (StoredOutcome.Completion(ctx.Work.Operation) is { } replay)
+        {
+            // SL-16: the operation already succeeded downstream; complete from the stored outcome, never call it again.
+            ctx.OutcomeReference = replay.Reference;
+            ctx.Logger.Info("work.replayed", "operation already succeeded; completing from the stored outcome");
+            return new Outcome("complete", replay.Variables, null);
+        }
         try
         {
             var vars = await sub.Handler(ctx, ctx.CancellationToken).ConfigureAwait(false);
@@ -283,7 +290,7 @@ public sealed class SangamWorker : IAsyncDisposable
                 {
                     if (r.LockExpiresAt is { } exp) ctx.SetLockExpiresAt(exp);
                     if (r.LockVersion is { } lv) ctx.SetLockVersion(lv);
-                    if (r.CancelRequested && !ctx.IsCancelRequested)
+                    if (r.CancelRequested == true && !ctx.IsCancelRequested)
                     {
                         ctx.Logger.Warn("work.cancel.requested", "server requested cancel");
                         ctx.MarkCancelRequested();
@@ -324,7 +331,8 @@ public sealed class SangamWorker : IAsyncDisposable
         Func<Task> call = action switch
         {
             "complete" => () => _client.Work.CompleteAsync(ctx.WorkId,
-                new CompleteWorkRequest(WorkerId, ctx.LockVersion, ctx.AttemptId, o.Variables), Key(ctx, action)),
+                new CompleteWorkRequest(WorkerId, ctx.LockVersion, ctx.AttemptId, o.Variables, null,
+                    ctx.OutcomeReference is null ? null : new WorkOutcome(ctx.OutcomeReference)), Key(ctx, action)),
             "bpmn-error" => () =>
             {
                 var be = (BpmnErrorException)o.Error!;
@@ -412,8 +420,14 @@ public sealed class SangamWorker : IAsyncDisposable
     {
         try
         {
+            if (w.Id is null || w.LockVersion is not { } lockVersion)
+            {
+                // without the work id and the fencing token the server cannot accept an unlock; the lease expires
+                _log.Warn("work.unlock.skipped", "unlock impossible without id and lockVersion; lease will expire", F(("workerId", WorkerId), ("workId", w.Id)));
+                return;
+            }
             var op = w.OperationId ?? w.Id;
-            await _client.Work.UnlockAsync(w.Id, new UnlockRequest(WorkerId, w.LockVersion, w.AttemptId), $"{op}:unlock:{w.LockVersion}").ConfigureAwait(false);
+            await _client.Work.UnlockAsync(w.Id, new UnlockRequest(WorkerId, lockVersion, w.AttemptId), $"{op}:unlock:{lockVersion}").ConfigureAwait(false);
         }
         catch (Exception e)
         {

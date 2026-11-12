@@ -21,10 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** VI.5 / T39-style: delete while a payment worker is mid-call; the late result is audited and reconciled. */
 class TombstonesIT extends LayerSpecSupport {
 
-    final AuditChain audit = new AuditChain(PG);
-    final ReconciliationQueue queue = new ReconciliationQueue(PG, audit);
-    final OperationLedger ledger = new OperationLedger(PG, queue);
-    final Tombstones tombstones = new Tombstones(PG, queue, audit);
+    final AuditChain audit = new AuditChain(DIALECT);
+    final ReconciliationQueue queue = new ReconciliationQueue(DIALECT, audit);
+    final OperationLedger ledger = new OperationLedger(DIALECT, queue);
+    final Tombstones tombstones = new Tombstones(DIALECT, queue, audit);
 
     @Test
     void lateCompletionAfterDeleteIsGoneAuditedAndReconciled() {

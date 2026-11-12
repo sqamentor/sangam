@@ -1,6 +1,6 @@
 {
   "id": "sec.health.pharmacy-dispense",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Pharmacy dispensing with schedule controls",
     "hi": "अनुसूची नियंत्रण सहित औषधि वितरण"

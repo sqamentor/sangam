@@ -160,11 +160,12 @@ class PackLifecycleTest {
         var rt = engine.getRuntimeService();
         String onV2 = rt.createProcessInstanceByKey("lcRb").processDefinitionTenantId(tenant).execute().getId();
 
+        // SL-54: a rollback is a roll-forward: the previous content (1.0.0) as the next patch above the highest version
         PackDeployer.Result r = v2.rollback("lc-rb", tenant);
-        assertEquals("1.0.0", r.version());
+        assertEquals("2.0.1", r.version());
         assertTrue(r.newDeployment());
         List<PackDeployer.Installed> installed = v2.installed(tenant);
-        assertEquals(List.of("1.0.0", "2.0.0", "1.0.0"), installed.stream().map(PackDeployer.Installed::version).toList(),
+        assertEquals(List.of("1.0.0", "2.0.0", "2.0.1"), installed.stream().map(PackDeployer.Installed::version).toList(),
                 () -> engine.getRepositoryService().createDeploymentQuery().list().stream()
                         .map(x -> x.getName() + "/" + x.getTenantId() + "/" + x.getSource() + "/" + x.getDeploymentTime().getTime()).toList().toString());
 
@@ -177,8 +178,11 @@ class PackLifecycleTest {
                 .tenantIdIn(tenant).latestVersion().singleResult().getVersion());
 
         tick();
-        // rolling back again returns to 2.0.0 (the most recent different version): rollback is itself reversible
-        assertEquals("2.0.0", v2.rollback("lc-rb", tenant).version());
+        // rolling back again returns to 2.0.0's content (the most recent different version), as 2.0.2: rollback is
+        // itself reversible
+        assertEquals("2.0.2", v2.rollback("lc-rb", tenant).version());
+        String again = rt.createProcessInstanceByKey("lcRb").processDefinitionTenantId(tenant).execute().getId();
+        assertEquals("v2-task", engine.getTaskService().createTaskQuery().processInstanceId(again).singleResult().getName());
     }
 
     @Test

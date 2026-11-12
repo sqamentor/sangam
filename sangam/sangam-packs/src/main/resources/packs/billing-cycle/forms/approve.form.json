@@ -1,6 +1,6 @@
 {
   "key": "billing-cycle/approve",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "universal.billing-cycle",
   "title": {
     "en": "Approve waiver (checker)",
@@ -17,6 +17,8 @@
     {
       "id": "waiverAmount",
       "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Amount to waive / write off",

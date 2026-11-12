@@ -40,7 +40,7 @@ public final class ChannelsSchema {
               tenant_id       {str64} NOT NULL,
               conversation_id {str64} NOT NULL,
               sender          {str} NOT NULL,
-              body            {text} NOT NULL,
+              body            {text},
               attachments     {text} NOT NULL,
               client_key      {str},
               created_at      {ts} NOT NULL

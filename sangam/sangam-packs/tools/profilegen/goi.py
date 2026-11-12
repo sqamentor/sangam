@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # GOI government profile, its department profiles and the central bill catalogue (RPR 2022 forms).
-from central import U
+import os as _os
+import sys as _sys
+
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'packgen'))
+from money import minor  # noqa: E402  (the one money helper: integer minor units)
+from central import U, in_money  # noqa: E402
 
 
 def bt(id, family, form, en, legacy=None, chain='PAO_3', sanction='REQUIRED', allow=None, certs=None, att=None,
@@ -30,12 +35,16 @@ GOI_BILLS = [
     bt('NPS_NIL', 'NIL_BILL', 'RPR-13B', 'NPS Government contribution nil bill', nil=True, sanction='NONE'),
     bt('PAY_PRESIDENT_VP', 'ESTABLISHMENT_PAY', 'RPR-15', 'Pay of the President / Vice-President', sanction='NONE'),
     bt('PAY_MINISTERS', 'ESTABLISHMENT_PAY', 'RPR-16', 'Pay and allowances of Ministers', sanction='NONE'),
+    # crosswalk v0.2 (billtypes.py): the TA bill of the President / Vice-President / Ministers is its own form (RPR 16)
+    bt('TA_PRESIDENT_MINISTERS', 'PERSONAL_CLAIM', 'RPR-16', 'TA of the President / Vice-President / Ministers',
+       sanction='NONE'),
     bt('TA_CONSOLIDATED', 'PERSONAL_CLAIM', 'RPR-14', 'Consolidated TA bill'),
     bt('TA_TOUR', 'PERSONAL_CLAIM', 'RPR-14A', 'TA claim-cum-bill: tour', att=['TICKETS']),
     bt('TA_TRANSFER', 'PERSONAL_CLAIM', 'RPR-14B', 'TA claim-cum-bill: transfer', att=['TRANSFER_ORDER']),
     bt('LTC', 'PERSONAL_CLAIM', 'RPR-14C', 'LTC claim-cum-bill', att=['TICKETS']),
     bt('MEDICAL_CGHS', 'PERSONAL_CLAIM', 'RPR-MED-CGHS', 'Medical reimbursement (CGHS)', extra={'formNumberStatus': 'U'}),
     bt('MEDICAL_CSMA', 'PERSONAL_CLAIM', 'RPR-MED-CSMA', 'Medical reimbursement (CS(MA))', extra={'formNumberStatus': 'U'}),
+    bt('MEDICAL_CONSOLIDATED', 'PERSONAL_CLAIM', 'RPR-23', 'Consolidated medical charges reimbursement bill'),
     bt('CEA_OTHER_PERSONAL', 'PERSONAL_CLAIM', 'RPR-48', 'Children Education Allowance / other personal claims'),
     bt('CONTINGENT', 'CONTINGENT', 'RPR-29', 'Contingent bill (advance / adjustment / fully vouched)', ['GAR-47']),
     bt('IMPREST_RECOUPMENT', 'CONTINGENT', 'RPR-29A', 'Imprest recoupment bill', att=['RPR-28_STATEMENT']),
@@ -45,7 +54,8 @@ GOI_BILLS = [
     bt('REFUND_REVENUE', 'REFUND', 'RPR-33', 'Refund of revenue', att=['ORIGINAL_CHALLAN'],
        src='RPR 2022 r.22; Subsidiary Instructions (RPR-33)'),
     bt('REFUND_GST', 'REFUND', 'RPR-GST-REFUND', 'GST refund e-bill', extra={'formNumberStatus': 'U'}),
-    bt('REFUND_DEPOSIT', 'REFUND', 'RPR-DEP-REFUND', 'Refund of deposit / lapsed deposit', extra={'formNumberStatus': 'U'}),
+    bt('REFUND_DEPOSIT', 'REFUND', 'RPR-DEP-REFUND', 'Refund of deposit', extra={'formNumberStatus': 'U'}),
+    bt('REFUND_LAPSED_DEPOSIT', 'REFUND', 'RPR-46', 'Refund of lapsed deposit'),
     bt('GIA', 'GRANT', 'RPR-34', 'Grant-in-aid / subsidy / contribution / investment / loan bill',
        certs=['SCHEME_RULES_FIN_CONSENT', 'UC_STATUS'], src='DFPR 2024 r.17; GFR 2017 r.230, 238'),
     bt('HBA', 'ADVANCE', 'RPR-HBA', 'House building advance', extra={'formNumberStatus': 'U'}),
@@ -54,7 +64,9 @@ GOI_BILLS = [
     bt('GPF_WITHDRAWAL', 'PROVIDENT_FUND', 'RPR-GPF-W', 'GPF / CPF advance or withdrawal', extra={'formNumberStatus': 'U',
        'slaDays': 15, 'slaStatus': 'U'}),
     bt('GPF_FINAL', 'PROVIDENT_FUND', 'RPR-GPF-F', 'GPF final payment', extra={'formNumberStatus': 'U'}),
+    bt('DLIS', 'PROVIDENT_FUND', 'RPR-42', 'Payment under the Deposit Linked Insurance Scheme (with GPF / CPF)'),
     bt('CGEGIS', 'INSURANCE', 'RPR-CGEGIS', 'CGEGIS / GIS claim', extra={'formNumberStatus': 'U'}),
+    bt('GIS_AIS', 'INSURANCE', 'RPR-45', 'Group Insurance Scheme accumulation (All India Services officers)'),
     bt('RETIREMENT_BENEFITS', 'RETIREMENT', 'RPR-RB', 'Retirement benefits (commutation, gratuity, leave encashment)',
        extra={'formNumberStatus': 'U'}, src='RPR 2022 r.32'),
     bt('CF_WITHDRAWAL', 'CONTINGENCY_FUND', 'RPR-CFI', 'Bill for withdrawal from Contingency Fund of India',
@@ -81,7 +93,8 @@ CHAINS = [
     {'id': 'PAO_3', 'steps': [{'role': 'BILL_DISTRIBUTOR'}, {'role': 'DEALING_HAND'}, {'role': 'AAO'}, {'role': 'PAO', 'sign': True}],
      'returnBy': ['PAO'], 'mayEdit': False,
      'queue': {'token': True, 'tokenSeries': 'TOKEN', 'fifo': True, 'distributorRole': 'BILL_DISTRIBUTOR'},
-     'signatures': [{'atOrAbove': 1000000, 'count': 2, 'secondSignatoryRole': 'SECOND_SIGNATORY',
+     'signatures': [{'atOrAbove': minor(1000000), 'count': 2,  # paise: the pack amount is minor units (SD-398)
+                     'secondSignatoryRole': 'SECOND_SIGNATORY',
                      'ruleRef': 'CAM 2024 2.2.9 note (two DSCs at Rs 10 lakh and above)'}],
      'sequence': ['DDO', 'PAO'], 'ruleRef': 'CAM 2024 2.2.8 (only the PAO returns a bill)'},
     {'id': 'CDDO', 'steps': [{'role': 'CDDO', 'sign': True}], 'returnBy': ['CDDO'], 'mayEdit': False},
@@ -100,14 +113,14 @@ REAPP = {
     'ruleRefs': {'NEW_SERVICE': 'DFPR 2024 r.10(1)', 'UNSANCTIONED': 'r.10(2)', 'WORKS_WITHOUT_AA_TS': 'r.10(3)',
                  'CHARGED_VOTED': 'r.10(4)', 'BETWEEN_GRANTS': 'r.10(5)', 'CAPITAL_REVENUE': 'r.10(6)',
                  'FROM_SUPPLEMENTARY_HEAD': 'r.10(7)', 'FROM_CF_ADVANCE_ACTIVITY': 'r.10(8)'},
-    'objectGroupLimits': {'EST_2CR': '2CR', 'NONEST_5CR': '5CR', 'OTHER_15CR': '15CR',
+    'objectGroupLimits': {'EST_2CR': in_money('2CR'), 'NONEST_5CR': in_money('5CR'), 'OTHER_15CR': in_money('15CR'),
                           'ruleRef': 'DFPR 2024 GoI decision (1) para 3(v) (DoE OM 01-04-2024)'},
     'q1Ban': {'enabled': True, 'quarter': 1, 'exceptNerTechnical': True, 'ruleRef': 'DoE OM 01-04-2024'},
     'financeMinistryCases': ['GIA_STATES_TO_REVENUE', 'CAPITAL_LOANS', 'FROM_SALARIES_ALLOWANCES', 'EAP_TO_NON_EAP',
                              'SECRET_SERVICE', 'FROM_BUILDINGS_INFRA_ASSETS', 'WORKS_EXCESS_ABOVE_20', 'BEYOND_MOF_LIMITS',
                              'BACK_TO_HEAD_REAPPROPRIATED_FROM', 'CS_CSS_TO_ESTABLISHMENT'],
     'cagCase': {'flag': 'SECRET_SERVICE', 'percentAtOrAbove': 25, 'ruleRef': 'DFPR 2024 r.10(10)(v)'},
-    'parliamentReport': {'percentOfBeAbove': 20, 'amountAbove': '100CR', 'whicheverMore': True,
+    'parliamentReport': {'percentOfBeAbove': 20, 'amountAbove': in_money('100CR'), 'whicheverMore': True,
                          'afterLastBatch': 'PRIOR_DOE_APPROVAL', 'ruleRef': 'DFPR 2024 GoI decision (1) para 4'},
     'worksExcessByCaa': {'percentUpTo': 20, 'ruleRef': 'DFPR 2024 r.10(9)(v)'},
     'faConsultation': 'MANDATORY',
@@ -173,13 +186,13 @@ GOI = {
     },
     'appraisal': {
         'decisionKey': 'ifms-scheme-appraisal',
-        'ladder': [{'upTo': '100CR', 'appraisal': 'FA', 'approval': 'SECRETARY'},
-                   {'upTo': '500CR', 'appraisal': 'SFC', 'approval': 'MINISTER'},
-                   {'upTo': '1000CR', 'appraisal': 'EFC', 'approval': 'MINISTER_AND_FM'},
+        'ladder': [{'upTo': in_money('100CR'), 'appraisal': 'FA', 'approval': 'SECRETARY'},
+                   {'upTo': in_money('500CR'), 'appraisal': 'SFC', 'approval': 'MINISTER'},
+                   {'upTo': in_money('1000CR'), 'appraisal': 'EFC', 'approval': 'MINISTER_AND_FM'},
                    {'appraisal': 'EFC', 'approval': 'CABINET'}],
         'includes': ['GBS', 'EBR', 'EXTERNAL_AID', 'STATE_SHARE'],
         'timeline': {'comments': 'P28D', 'finalMemo': 'P14D'},
-        'preInvestmentUpTo': '100CR', 'ruleRef': 'DoE OM 24(35)/PF-II/2012 of 05-08-2016 (DFPR 2024 App. III)'},
+        'preInvestmentUpTo': in_money('100CR'), 'ruleRef': 'DoE OM 24(35)/PF-II/2012 of 05-08-2016 (DFPR 2024 App. III)'},
     'treasury': {'model': 'PAO', 'scrutinyChain': 'PAO_3', 'tokenless': False, 'tokenReset': 'DAILY',
                  'objectionCodes': [
                      {'code': 'NO_FUNDS', 'ruleRef': 'CAM 2.1.3'}, {'code': 'NO_SANCTION', 'ruleRef': 'CAM 2.1.3'},
@@ -197,20 +210,20 @@ GOI = {
                'ucDueMonthsAfterFy': 12, 'blacklistOnDefault': True, 'eatMandatory': True,
                'unspentBalanceCheck': True, 'abCalendar': {'accountsToAudit': '06-30', 'sar': '10-31', 'toNodalMinistry': '12-31'},
                'tsa': {'universalFrom': '2023-04-01', 'head': '8454'},
-               'cna': {'model1Threshold': '100CR', 'models': ['TSA', 'SCB_ACCOUNT']}},
+               'cna': {'model1Threshold': in_money('100CR'), 'models': ['TSA', 'SCB_ACCOUNT']}},
     'establishment': {
         'pension': {'rules': 'CCS_PENSION_2021', 'decisionKey': 'ccs-pension-2021',
                     'formOnline': '6-A', 'stagesMonthsBeforeRetirement': {'form6A': 6, 'hooToPao': 4, 'paoToCpao': 1},
                     'disburser': 'CPAO'},
-        'gpf': {'annualCeiling': '5L', 'minPercent': 6, 'withdrawalSlaDays': 15, 'ruleRef': 'G.S.R. 96 of 15-06-2022'},
+        'gpf': {'annualCeiling': in_money('5L'), 'minPercent': 6, 'withdrawalSlaDays': 15, 'ruleRef': 'G.S.R. 96 of 15-06-2022'},
         'nps': {'nilBill': 'NPS_NIL'}, 'ups': {'from': '2025-04-01'}},
     'accounts': {'monthlyDueDay': 8, 'eDoDueDay': 12, 'marchCuts': [
         {'id': 'MARCH_PRELIM', 'closes': '2026-04-15'}, {'id': 'MARCH_SUPPL_1', 'closes': '2026-04-30'},
         {'id': 'MARCH_SUPPL_2', 'closes': '2026-09-03'}], 'sct': True, 'renderTo': 'CGA'},
     'audit': {'atnDeadlineMonths': 4, 'internalAuditPlan': 'RISK_BASED_ANNUAL', 'ebillPostCheck': {'samplingPercent': None}},
-    'procurement': {'gemMandatory': True, 'directPurchaseUpTo': '50000', 'lpcUpTo': '5L',
+    'procurement': {'gemMandatory': True, 'directPurchaseUpTo': in_money('50000'), 'lpcUpTo': in_money('5L'),
                     'scientificDepartments': ['DST', 'DBT', 'DSIR', 'DAE', 'DOS', 'MOES', 'DRDO', 'ICAR', 'DHR']},
-    'writeOff': {'decisionKey': 'ifms-write-off'}, 'overpaymentWaiver': {'departmentUpTo': '2L', 'ruleRef': 'DFPR r.15'},
+    'writeOff': {'decisionKey': 'ifms-write-off'}, 'overpaymentWaiver': {'departmentUpTo': in_money('2L'), 'ruleRef': 'DFPR r.15'},
     'documentTypes': GOI_BILLS,
     'approvalChains': CHAINS,
     'numberSeries': [{'id': 'TOKEN', 'reset': 'DAILY', 'format': '{unit}/{yyyyMMdd}/{n:5}'},

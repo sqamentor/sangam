@@ -11,7 +11,6 @@ import java.sql.Connection;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -272,7 +271,7 @@ public class ModellerWiring {
     /** Null on a production profile, so the mock routes answer "not installed" there (R80). */
     @Bean
     public ServiceMocks sangamServiceMocks(Environment env, TxSupport tx, DataSource ds) {
-        if (Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.contains("prod"))) {
+        if (ProductionEnvironment.isProduction(env)) { // SL-109
             return null;
         }
         String file = env.getProperty("sangam.modeller.mocks.file");

@@ -1,6 +1,6 @@
 {
   "key": "sec-health-lab-order/check",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.lab-order",
   "title": {
     "en": "Sample acceptance check",

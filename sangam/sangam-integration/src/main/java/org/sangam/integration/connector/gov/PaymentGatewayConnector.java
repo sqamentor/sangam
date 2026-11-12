@@ -63,7 +63,7 @@ public final class PaymentGatewayConnector implements SangamConnector {
      * @param secrets          resolver for the key reference
      * @param transport        HTTP transport
      * @param profile          live or simulator
-     * @param defaultCurrency  ISO 4217 currency when the input has none; null = INR
+     * @param defaultCurrency  ISO 4217 currency when the input has none; required (SL-104: no product default)
      * @param defaultReturnUrl return URL when the input has none; may be null
      * @param timeout          per-request timeout; null = 30 s
      */
@@ -75,7 +75,11 @@ public final class PaymentGatewayConnector implements SangamConnector {
             Objects.requireNonNull(transport, "transport");
             secrets = secrets == null ? SecretResolver.fromEnvironment() : secrets;
             profile = profile == null ? ConnectorProfile.LIVE : profile;
-            defaultCurrency = defaultCurrency == null ? "INR" : defaultCurrency.toUpperCase(Locale.ROOT);
+            if (defaultCurrency == null || defaultCurrency.isBlank()) {
+                throw new IllegalArgumentException("payment gateway " + id + ": defaultCurrency (ISO 4217) is required;"
+                        + " there is no product default currency (SL-104)");
+            }
+            defaultCurrency = defaultCurrency.toUpperCase(Locale.ROOT);
             timeout = timeout == null ? Duration.ofSeconds(30) : timeout;
         }
     }
@@ -93,7 +97,7 @@ public final class PaymentGatewayConnector implements SangamConnector {
     public static PaymentGatewayConnector simulator(SimulatorProfile sims) {
         PaymentGatewaySimulator sim = sims.paymentGateway();
         return new PaymentGatewayConnector(new Config("payment-gateway-sim", sim.baseUri(), null,
-                SecretResolver.of(Map.of()), HttpTransport.forSimulator(), ConnectorProfile.SIMULATOR, "INR", null,
+                SecretResolver.of(Map.of()), HttpTransport.forSimulator(), ConnectorProfile.SIMULATOR, SimulatorProfile.PG_CURRENCY, null,
                 Duration.ofSeconds(10)));
     }
 

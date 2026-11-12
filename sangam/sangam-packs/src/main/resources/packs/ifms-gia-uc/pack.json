@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.gia-uc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Grant-in-aid release and utilisation certificates",
     "hi": "सहायता अनुदान विमुक्ति और उपयोगिता प्रमाण पत्र"
@@ -131,5 +131,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-ifms-bill"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "powerLimit",
+      "unspentBalance"
+    ]
+  }
 }

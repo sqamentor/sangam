@@ -200,6 +200,8 @@ public class GeoWiring {
     }
 
     static String defaultTenant(Environment env) {
-        return env.getProperty("sangam.tenant.default", env.getProperty("sangam.security.dev-token.tenant", "dev"));
+        // SL-86: the one attribution-tenant resolver (application.yaml defines the property empty, so the old
+        // dev-token fallback never applied and geo/modeller used "")
+        return AttributionTenant.resolve(env);
     }
 }

@@ -129,6 +129,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         Map<String, List<String>> byGroup = Map.ofEntries(
                 Map.entry(Permissions.GROUP_USER, List.of("TASK_USER")),
                 Map.entry(Permissions.GROUP_OPERATOR, List.of("OPERATOR")),
+                // SL-70: GROUP_ADMIN only on platform-issuer identities; a tenant's sangam-admin is GROUP_TENANT_ADMIN
                 Map.entry(Permissions.GROUP_ADMIN, List.of("ADMIN", "PLATFORM_ADMIN")),
                 Map.entry(Permissions.GROUP_TENANT_ADMIN, List.of("ADMIN")),
                 Map.entry(Permissions.GROUP_MODEL_AUTHOR, List.of("MODELLER")),

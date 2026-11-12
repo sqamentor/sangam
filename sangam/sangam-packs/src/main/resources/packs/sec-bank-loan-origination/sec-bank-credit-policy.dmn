@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_bank_credit_policy" name="Credit policy (SYNTHETIC)" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="sec-bank-credit-policy" name="Credit policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="sec-bank-credit-policy" name="Credit policy (SYNTHETIC)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="sec-bank-credit-policy_t" hitPolicy="FIRST">
       <input id="sec-bank-credit-policy_i0" label="Bureau score"><inputExpression id="sec-bank-credit-policy_ie0" typeRef="integer"><text>bureauScore</text></inputExpression></input>
       <input id="sec-bank-credit-policy_i1" label="FOIR %"><inputExpression id="sec-bank-credit-policy_ie1" typeRef="number"><text>foirPct</text></inputExpression></input>

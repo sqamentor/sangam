@@ -35,7 +35,7 @@ from typing import Any, Callable, Mapping, Optional
 from .client import SangamClient
 from .errors import GoneError, SangamApiError, SangamError, StaleLeaseError, TransportError
 from .log import SangamLogger
-from .models import ExternalWork
+from .models import ExternalWork, TopicRequest, WorkOperation
 from .typed import decode_value, decode_variables
 
 MAX_LOCK_MS = 24 * 60 * 60 * 1000
@@ -158,6 +158,9 @@ class TaskContext:
         self.shutting_down = False
         #: set on cancel request, lease loss or shutdown; handlers may ``wait`` on it
         self.cancel_event = threading.Event()
+        #: downstream reference of this work's effect (e.g. a payment reference); set it in the handler. Sent as
+        #: ``outcome.reference`` on complete and recorded as the operation-ledger providerRef (SL-16).
+        self.outcome_reference: Optional[str] = None
         fields: dict[str, Any] = {"workerId": worker_id, "workId": work.id, "topic": work.topic,
                                   "lockVersion": work.lock_version}
         for k, v in (("operationId", work.operation_id), ("attemptId", work.attempt_id),
@@ -197,6 +200,11 @@ class TaskContext:
     def attempt_id(self) -> Optional[str]:
         """Changes per lease (A-2)."""
         return self.work.attempt_id
+
+    @property
+    def operation(self) -> Optional[WorkOperation]:
+        """The server-recorded operation-ledger entry of ``operation_id`` (SL-16); None from older servers."""
+        return self.work.operation
 
     @property
     def lock_version(self) -> int:
@@ -258,6 +266,26 @@ def _default_worker_id() -> str:
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def stored_outcome_completion(
+        operation: Optional[WorkOperation | Mapping[str, Any]]) -> Optional[tuple[dict[str, Any], Optional[str]]]:
+    """SL-16 stored-outcome completion (same contract as every Sangam SDK).
+
+    When the server reports the operation as already ``SUCCEEDED`` and not dispatchable (``mayDispatch`` false),
+    the worker completes with ``storedOutcome.output`` as variables and ``storedOutcome.providerRef`` as
+    ``outcome.reference``, without calling the handler (the downstream effect already happened). Returns
+    ``(variables, reference)``, or None when the handler must run (any other operation state).
+    """
+    if isinstance(operation, Mapping):
+        operation = WorkOperation.from_dict(operation)
+    if not isinstance(operation, WorkOperation) or operation.may_dispatch or operation.state != "SUCCEEDED":
+        return None
+    stored = operation.stored_outcome
+    stored = stored if isinstance(stored, Mapping) else {}
+    out = stored.get("output")
+    ref = stored.get("providerRef")
+    return (dict(out) if isinstance(out, Mapping) else {}), (None if ref is None else str(ref))
 
 
 @dataclass
@@ -433,9 +461,8 @@ class Worker:
                 self._stopping.wait(1.0)
                 continue
             try:
-                topics = [{"name": s.topic, "lockDurationMs": s.lock_duration_ms, "variables": s.variables,
-                           "localVariables": s.local_variables, "processDefinitionKey": s.process_definition_key,
-                           "businessKey": s.business_key} for s in subs]
+                topics = [TopicRequest(s.topic, s.lock_duration_ms, s.variables, s.local_variables,
+                                       s.process_definition_key, s.business_key) for s in subs]
                 items = self.client.work.fetch_and_lock(self.worker_id, topics, permits,
                                                         self.async_response_timeout_ms, self.use_priority)
                 errors = 0
@@ -466,7 +493,7 @@ class Worker:
                                   {"workerId": self.worker_id, "workId": w.id, "topic": w.topic})
                     self._unlock_quietly(w, "unsubscribed")
                     continue
-                if not w.id or not w.attempt_id:
+                if not w.id or not w.attempt_id or w.lock_version is None:
                     # A-1: run only after the LOCKED confirmation with lockVersion + attemptId
                     self.log.error("work.protocol.violation", "item without LOCKED confirmation (attemptId); not started",
                                    {"workerId": self.worker_id, "workId": w.id})
@@ -520,6 +547,12 @@ class Worker:
             self._slots.release()
 
     def _invoke(self, ctx: TaskContext, sub: TopicSubscription) -> _Outcome:
+        replay = stored_outcome_completion(ctx.work.operation)
+        if replay is not None:
+            # SL-16: the operation already succeeded downstream; complete from the stored outcome, never call it again.
+            ctx.outcome_reference = replay[1]
+            ctx.logger.info("work.replayed", "operation already succeeded; completing from the stored outcome")
+            return _Outcome("complete", replay[0])
         try:
             result = sub.handler(ctx)
             return _Outcome("complete", result)
@@ -594,7 +627,8 @@ class Worker:
         def call() -> None:
             lv = ctx.lock_version
             if action == "complete":
-                w.complete(ctx.work_id, wid, lv, att, o.variables, idempotency_key=key())
+                w.complete(ctx.work_id, wid, lv, att, o.variables, idempotency_key=key(),
+                           outcome_reference=ctx.outcome_reference)
             elif action == "bpmn-error":
                 e = o.error
                 assert isinstance(e, BpmnError)
@@ -667,6 +701,11 @@ class Worker:
         return msg[:1000], details, remaining, int(timeout * 1000)
 
     def _unlock_quietly(self, w: ExternalWork, why: str) -> None:
+        if not w.id or w.lock_version is None:
+            # without the work id and the fencing token the server cannot accept an unlock; the lease expires
+            self.log.warn("work.unlock.skipped", f"unlock ({why}) impossible without id and lockVersion; lease will expire",
+                          {"workerId": self.worker_id, "workId": w.id})
+            return
         op = w.operation_id or w.id
         try:
             self.client.work.unlock(w.id, self.worker_id, w.lock_version, w.attempt_id,
@@ -688,4 +727,4 @@ def _trace(e: Optional[BaseException]) -> Optional[str]:
 
 
 __all__ = ["Backoff", "BpmnError", "Handler", "OutcomeUnknown", "TaskCancelled", "TaskContext", "TaskFailed",
-           "TopicSubscription", "Worker"]
+           "TopicSubscription", "Worker", "stored_outcome_completion"]

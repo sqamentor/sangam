@@ -56,18 +56,19 @@ public class DeadlineService {
     private final CaseFilePorts.Calendars calendars;
     private final CaseFilePorts.Notifier notifier;
     private final CaseFilePorts.EscalationSeats escalation;
-    private final ZoneId defaultZone;
+    private final java.util.function.Function<String, ZoneId> zones;
     private final List<DeadlineListener> listeners = new CopyOnWriteArrayList<>();
 
     public DeadlineService(Dialect dialect, Transactions tx, CaseEvents events, CaseFilePorts.Calendars calendars,
-                           CaseFilePorts.Notifier notifier, CaseFilePorts.EscalationSeats escalation, ZoneId defaultZone) {
+                           CaseFilePorts.Notifier notifier, CaseFilePorts.EscalationSeats escalation,
+                           java.util.function.Function<String, ZoneId> zones) {
         this.dialect = dialect;
         this.tx = tx;
         this.events = events;
         this.calendars = calendars == null ? CaseFilePorts.Calendars.PLAIN : calendars;
         this.notifier = notifier == null ? CaseFilePorts.Notifier.NONE : notifier;
         this.escalation = escalation == null ? CaseFilePorts.EscalationSeats.NONE : escalation;
-        this.defaultZone = defaultZone == null ? ZoneId.of("UTC") : defaultZone;
+        this.zones = zones == null ? t -> java.time.ZoneOffset.UTC : zones;
     }
 
     public void addListener(DeadlineListener l) {
@@ -78,7 +79,7 @@ public class DeadlineService {
     public Deadline start(Connection c, String tenant, String scopeType, String scopeId, String kind, String ownerSeat,
                           String ownerPerson, String period, String calendar, String warnBefore, List<EscalationStep> ladder) {
         Instant now = Db.now(c, dialect);
-        Instant due = add(calendar, now, period);
+        Instant due = add(tenant, calendar, now, period);
         return insert(c, tenant, scopeType, scopeId, kind, ownerSeat, ownerPerson, now, due, warnBefore, ladder, calendar);
     }
 
@@ -94,7 +95,7 @@ public class DeadlineService {
                             String ownerPerson, Instant now, Instant due, String warnBefore, List<EscalationStep> ladder,
                             String calendar) {
         String id = Db.newId();
-        Instant warn = warnBefore == null ? null : minus(due, warnBefore);
+        Instant warn = warnBefore == null ? null : minus(tenant, due, warnBefore);
         if (warn != null && warn.isBefore(now)) {
             warn = now;
         }
@@ -106,7 +107,7 @@ public class DeadlineService {
                         + " due_at, warn_at, state, escalation_level, ladder_json, extension_count, calendar, zone_id, next_check_at, row_version)"
                         + " VALUES (?,?,?,?,?,?,?,?,?,?,?,0,?,0,?,?,?,0)",
                 Db.tenant(tenant), id, scopeType, scopeId, kind, ownerSeat, ownerPerson, now, due, warn, State.RUNNING,
-                Db.json(ladderJson), calendar, defaultZone.getId(), next);
+                Db.json(ladderJson), calendar, zone(tenant).getId(), next);
         events.record(c, tenant, scopeType, scopeId, "DEADLINE_STARTED", ownerPerson, kind + " due " + due,
                 Db.kv("deadlineId", id, "kind", kind, "dueAt", due.toString(), "ownerSeat", ownerSeat));
         return get(c, tenant, id).orElseThrow();
@@ -243,7 +244,7 @@ public class DeadlineService {
         Instant lastEscalated = d.lastEscalatedAt();
         while (level < d.ladder().size()) {
             EscalationStep step = d.ladder().get(level);
-            Instant at = plus(d.dueAt(), step.after());
+            Instant at = plus(d.tenantId(), d.dueAt(), step.after());
             if (now.isBefore(at)) {
                 break;
             }
@@ -268,7 +269,7 @@ public class DeadlineService {
             return d.dueAt();
         }
         if (level < d.ladder().size()) {
-            return plus(d.dueAt(), d.ladder().get(level).after());
+            return plus(d.tenantId(), d.dueAt(), d.ladder().get(level).after());
         }
         return null;
     }
@@ -311,19 +312,26 @@ public class DeadlineService {
         return d.state() == State.RUNNING || d.state() == State.WARNED || d.state() == State.BREACHED;
     }
 
-    public Instant add(String calendar, Instant from, String iso) {
+    /** {@code from} + {@code iso} on {@code calendar}, in {@code tenant}'s business zone (SL-104). */
+    public Instant add(String tenant, String calendar, Instant from, String iso) {
         Object[] pd = Db.periodAndDuration(iso);
-        return calendars.calendar(calendar).add(from, (Period) pd[0], (Duration) pd[1], defaultZone);
+        return calendars.calendar(calendar).add(from, (Period) pd[0], (Duration) pd[1], zone(tenant));
     }
 
-    private Instant minus(Instant at, String iso) {
+    private Instant minus(String tenant, Instant at, String iso) {
         Object[] pd = Db.periodAndDuration(iso);
-        return at.atZone(defaultZone).minus((Period) pd[0]).toInstant().minus((Duration) pd[1]);
+        return at.atZone(zone(tenant)).minus((Period) pd[0]).toInstant().minus((Duration) pd[1]);
     }
 
-    private Instant plus(Instant at, String iso) {
+    private Instant plus(String tenant, Instant at, String iso) {
         Object[] pd = Db.periodAndDuration(iso);
-        return at.atZone(defaultZone).plus((Period) pd[0]).toInstant().plus((Duration) pd[1]);
+        return at.atZone(zone(tenant)).plus((Period) pd[0]).toInstant().plus((Duration) pd[1]);
+    }
+
+    /** The business zone of {@code tenant} (UTC when the zone source has none). */
+    ZoneId zone(String tenant) {
+        ZoneId z = zones.apply(tenant);
+        return z == null ? java.time.ZoneOffset.UTC : z;
     }
 
     static Deadline row(ResultSet rs) throws SQLException {

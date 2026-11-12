@@ -14,7 +14,8 @@ from typing import Any, Callable, Mapping, Optional, Sequence, TypeVar
 from .http import ApiRequest, ApiResponse, HttpTransport, seg
 from .models import (AuditEntry, AuditVerifyResult, CaseInstance, CloudEvent, CompleteTaskResult,
                      DecisionEvaluateResult, Deployment, ExternalWork, LockState, MessageResult, OutcomeUnknownResult,
-                     Page, ProcessInstance, PublishResult, ReconciliationItem, Task, TerminationResult, compact)
+                     Page, ProcessInstance, PublishResult, ReconciliationItem, Task, TerminationResult, TopicRequest,
+                     compact)
 from .typed import encode_variables
 
 T = TypeVar("T")
@@ -72,14 +73,17 @@ class WorkApi(_Api):
     """Worker API ``/work`` (VI.3, fenced by ``(workId, lockVersion, attemptId)``; 409 STALE_LEASE raises
     :class:`~sangam_sdk.errors.StaleLeaseError`). Most code uses :class:`~sangam_sdk.worker.Worker`."""
 
-    def fetch_and_lock(self, worker_id: str, topics: Sequence[Mapping[str, Any]], max_tasks: int,
-                       async_response_timeout_ms: int, use_priority: bool | None = None) -> list[ExternalWork]:
-        """Long poll. ``topics`` items are TopicRequests: ``name``, ``lockDurationMs``, ``variables``,
-        ``localVariables``, ``processDefinitionKey``, ``businessKey``. Not retried by the transport."""
-        body = compact({"workerId": worker_id, "topics": [compact(t) for t in topics], "maxTasks": max_tasks,
+    def fetch_and_lock(self, worker_id: str, topics: Sequence[TopicRequest | Mapping[str, Any]],
+                       max_tasks: int | None = None, async_response_timeout_ms: int | None = None,
+                       use_priority: bool | None = None) -> list[ExternalWork]:
+        """Long poll. ``topics`` are :class:`~sangam_sdk.models.TopicRequest` (or wire mappings with ``name``,
+        ``lockDurationMs``, ``variables``, ``localVariables``, ``processDefinitionKey``, ``businessKey``). Absent
+        ``max_tasks`` / ``async_response_timeout_ms`` take the server defaults. Not retried by the transport."""
+        wire = [t.to_dict() if isinstance(t, TopicRequest) else compact(t) for t in topics]
+        body = compact({"workerId": worker_id, "topics": wire, "maxTasks": max_tasks,
                         "asyncResponseTimeoutMs": async_response_timeout_ms, "usePriority": use_priority})
         res = self._call(ApiRequest("POST", "/work/fetch-and-lock", body=body,
-                                    timeout=async_response_timeout_ms / 1000.0 + 15.0, retry=False))
+                                    timeout=(async_response_timeout_ms or 0) / 1000.0 + 15.0, retry=False))
         return [ExternalWork.from_dict(w) for w in (res or [])]
 
     def _post(self, work_id: str, action: str, body: Mapping[str, Any], key: str | None) -> ApiResponse:
@@ -99,11 +103,13 @@ class WorkApi(_Api):
         body = {"workerId": worker_id, "lockVersion": lock_version, "attemptId": attempt_id,
                 "variables": encode_variables(variables), "localVariables": encode_variables(local_variables)}
         if outcome_reference is not None or outcome_details is not None:
-            body["outcome"] = {"reference": outcome_reference, "details": outcome_details}
+            body["outcome"] = compact({"reference": outcome_reference, "details": outcome_details})
         self._post(work_id, "complete", body, idempotency_key)
 
-    def fail(self, work_id: str, worker_id: str, lock_version: int, attempt_id: str | None, error_message: str,
-             error_details: str | None, retries: int, retry_timeout_ms: int, idempotency_key: str | None = None) -> None:
+    def fail(self, work_id: str, worker_id: str, lock_version: int, attempt_id: str | None,
+             error_message: str | None = None, error_details: str | None = None, retries: int | None = None,
+             retry_timeout_ms: int | None = None, idempotency_key: str | None = None) -> None:
+        """Absent (None) members are not sent; the server then applies its defaults."""
         self._post(work_id, "fail", {"workerId": worker_id, "lockVersion": lock_version, "attemptId": attempt_id,
                                      "errorMessage": error_message, "errorDetails": error_details,
                                      "retries": retries, "retryTimeoutMs": retry_timeout_ms}, idempotency_key)
@@ -170,19 +176,26 @@ class TasksApi(_Api):
 
     def complete(self, task_id: str, payload_hash: str, *, variables: Vars = None, decision: str | None = None,
                  remarks: str | None = None, case_version: int | None = None, form_version: str | None = None,
-                 idempotency_key: str | None = None) -> CompleteTaskResult:
+                 reason_code: str | None = None, next_seat_id: str | None = None,
+                 next_seat_reason: str | None = None, idempotency_key: str | None = None) -> CompleteTaskResult:
         """``payload_hash`` (required) must equal the hash the user approved (VI.4 rule 5)."""
         body = compact({"payloadHash": payload_hash, "caseVersion": case_version, "decision": decision,
-                        "remarks": remarks, "formVersion": form_version, "variables": encode_variables(variables)})
+                        "remarks": remarks, "formVersion": form_version, "variables": encode_variables(variables),
+                        "reasonCode": reason_code, "nextSeatId": next_seat_id, "nextSeatReason": next_seat_reason})
         return self._obj(ApiRequest("POST", f"/tasks/{seg(task_id)}/complete", body=body,
                                     idempotency_key=idempotency_key), CompleteTaskResult)
 
     def return_task(self, task_id: str, reason: str, *, reason_code: str | None = None,
                     target_activity_id: str | None = None, variables: Vars = None,
-                    idempotency_key: str | None = None) -> None:
+                    target_seat_id: str | None = None, target_level: int | None = None,
+                    payload_hash: str | None = None, case_version: int | None = None,
+                    idempotency_key: str | None = None) -> CompleteTaskResult:
+        """``POST /tasks/{id}/return``; answers the CompleteTaskResult (200)."""
         body = compact({"reason": reason, "reasonCode": reason_code, "targetActivityId": target_activity_id,
-                        "variables": encode_variables(variables)})
-        self._call(ApiRequest("POST", f"/tasks/{seg(task_id)}/return", body=body, idempotency_key=idempotency_key))
+                        "variables": encode_variables(variables), "targetSeatId": target_seat_id,
+                        "targetLevel": target_level, "payloadHash": payload_hash, "caseVersion": case_version})
+        return self._obj(ApiRequest("POST", f"/tasks/{seg(task_id)}/return", body=body,
+                                    idempotency_key=idempotency_key), CompleteTaskResult)
 
     def delegate(self, task_id: str, reason: str, *, to_user_id: str | None = None, to_seat_id: str | None = None,
                  idempotency_key: str | None = None) -> None:

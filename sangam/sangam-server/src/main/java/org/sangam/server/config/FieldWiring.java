@@ -96,11 +96,14 @@ public class FieldWiring {
     @Bean
     @ConditionalOnProperty(name = "sangam.field.schedule.enabled", havingValue = "true", matchIfMissing = true)
     public CaseFieldScheduler sangamFieldScheduler(FieldModule module, TxSupport tx, DataSource ds, RestProperties rest,
-                                                   Environment env, ObjectProvider<AdminPort> admin) {
+                                                   Environment env, ObjectProvider<AdminPort> admin,
+                                                   ObjectProvider<io.micrometer.core.instrument.MeterRegistry> meters) {
+        ScheduleTenantsMonitor monitor = ScheduleTenantsMonitor.of("field", "due field schedules, the overdue sweep and"
+                + " offer expiry do not run. Tenants come from the tenant directory plus sangam.field.tenants.", meters);
         long grace = env.getProperty("sangam.field.schedule.overdue-grace", Duration.class, Duration.ofHours(1)).toSeconds();
         LeaderElection leader = new LeaderElection(tx.dialect(), Transactions.of(ds), rest.getNode(), Duration.ofMinutes(3));
         return new CaseFieldScheduler("sangam-field-scheduler", leader,
-                () -> CaseWiring.tenants(env, admin, "sangam.field.tenants"),
+                monitor.observing(() -> CaseWiring.tenants(env, admin, "sangam.field.tenants", monitor)),
                 List.of(new CaseFieldScheduler.Task("run-due", env.getProperty("sangam.field.schedule.run-due-every",
                                 Duration.class, Duration.ofHours(1)), true, t -> module.schedules.runDue(t)),
                         new CaseFieldScheduler.Task("sweep-overdue", env.getProperty("sangam.field.schedule.overdue-every",

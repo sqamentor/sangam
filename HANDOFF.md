@@ -3,8 +3,13 @@
 **For whoever resumes (new login, new session):** read this file completely before doing anything.
 It is the single source of truth for where the work stands. Nothing here is an approval. Approvals come only from the owner, in their own words, in their own session.
 
-- Repo: `D:\GITHUB  Project\Custom WorkFlow` (two spaces in the path). GitHub `sqamentor/sangam`.
-- Durable backup of everything: `D:\GITHUB  Project\sangam-handoff\2026-11-08\` (see §9).
+**Updated 2026-11-12 (docs wave, second pass after the readiness report).** §3, §6.0, §6c, §8 and §10 give the current state. §6a, §6b and §7 are the 2026-11-08 record, kept for history; where they disagree with §6.0, §6.0 and `sangam/TESTING-GAP-REGISTER.md` win.
+
+**Continuity rule.** Open every Sangam session at `<repo>` (the `Custom WorkFlow` checkout itself), never at a worktree or another folder: the owner's auto-memory is keyed to that path, so a session opened elsewhere starts without it. Work then happens in the integration tree under it (§3).
+
+- Repo: `<repo>` (the local checkout; its path contains two spaces). GitHub `sqamentor/sangam`.
+- Durable backup of everything: `<handoff>\2026-11-08\` (see §9).
+- **Path placeholders** (no local absolute paths in this file): `<repo>` is the local checkout; `<handoff>` is the `sangam-handoff` folder next to it; `<tools>` is the `.tools` folder next to it; `<lock-scratchpad>` is the IFMS master session's scratchpad that holds `heavy_lock.py`; `<home>` is the owner's user profile; `<temp>` is the user temp folder. The exact local paths are in the owner's auto-memory (`feedback-shared-heavy-lock.md`) and in `<handoff>\RESUME-LEDGER-2026-11-09.md`, outside the repository.
 - Previous session id: `898f1ff7-0dcc-4d95-b425-830a9a5ead44` (desktop app, Code tab).
 
 ---
@@ -57,11 +62,13 @@ It is the single source of truth for where the work stands. Nothing here is an a
 - **Maven:** use `.\mvnw.cmd` from `sangam\`. The Maven on PATH (3.6.2) is too old.
   - **Never run `install`.** Use `-pl <modules> -am clean verify|test` with `"-Dsangam.target=target-<ws>"`.
   - **Always pass `-am`.** `~/.m2` holds stale Sangam jars. A run without `-am` silently tests old code; this happened on 2026-11-08 with a `NoSuchMethodError`.
+- **JDK parity with CI (SL-63, 2026-11-09):** CI compiles with JDK 21.0.13, 25.0.5 and 27.0.1. The local default JDK 21.0.10 has a javac bug that accepted a JLS name-shadowing error, and that error reached main. Every compile gate before apply or commit also runs with `JAVA_HOME=<tools>\OpenJDK25U-jdk_x64_windows_hotspot_25.0.5_8\jdk-25.0.5+8`, and the pre-push gate is a full reactor `clean test-compile` on JDK 25.
+- **Heavy lock from a detached runner only (2026-11-09):** never acquire the heavy lock in an agent's own shell. A usage limit killed an agent mid-run, so its `finally` never ran, and the lock stayed held for 14.7 h. Use a runner script started with `Start-Process` that does acquire → run → release in its own `try/finally`; the agent only polls the log. After any outage, check `status` first.
 - **Private worktrees:** every workstream works in its own NEW folder `scratchpad\wt-<ws>`. Never reuse `wt` or another workstream's folder.
   - **When copying, exclude only build outputs** (`target-*` and the module-root `target/`). `sangam-programme/src/main/java/org/sangam/programme/target` is SOURCE code. Losing it broke two workstreams on 2026-11-08.
 - **Applying to the main tree:** apply in one step, and only when `-pl sangam-server -am -DskipTests compile` and the tests are green on a fresh re-copy of main. A shared file is changed only by a targeted Edit on the CURRENT main-tree file, never by copying a worktree file over it.
 - **Heavy lock (I-44/I-45):**
-  - **Command:** `python "C:\Users\Lokendra Singh\AppData\Local\Temp\claude\D--GITHUB--Project-IFMS\ff9f2caf-1246-4228-ae70-82a16cf209ae\scratchpad\heavy_lock.py" acquire <owner> "<what>"`. A backup copy is in the handoff folder.
+  - **Command:** `python "<lock-scratchpad>\heavy_lock.py" acquire <owner> "<what>"`. A backup copy is in the handoff folder (`<handoff>\2026-11-08\heavy_lock.py.copy`).
   - **Gating:** Testcontainers and failsafe runs start ONLY if the acquire exits 0; otherwise abort. Release in `finally`.
   - **Queue:** first come, first served, with tickets in `heavy-build.lock.queue/`. `status` shows the holder and the waiting tickets; tickets already served are not listed.
   - **Other rules:** run one Maven job at a time per workstream. Start each acquire fresh, right before its step, and never reuse an old waiter. Each job uses its own unique owner name (`customwf-<ws>`). The IFMS owners are `sangam` and `trial0`.
@@ -74,10 +81,17 @@ It is the single source of truth for where the work stands. Nothing here is an a
   - Profiles: `profilegen`.
   - Changelogs: `sangam-persistence/tools/generate_changelogs.py`, five dialects.
   - OpenAPI: `sangam-rest/api/gen_openapi.py`. API changes are additive only, and `OpenApiCompatibilityTest` must stay green.
-- **Tool quirks:** `ssh-keygen` from the Bash tool fails with 0xC0000142. Use PowerShell, or `C:\Windows\System32\OpenSSH\ssh-keygen.exe`.
+- **Tool quirks:** `ssh-keygen` from the Bash tool fails with 0xC0000142. Use PowerShell, or the Windows OpenSSH `ssh-keygen.exe` (`System32\OpenSSH`).
 
 ## 3. Git and GitHub state
 
+**Current (2026-11-12):**
+- **Remote main** is `1105d9c` (2026-11-09). It includes the push `15e4135..16e0e11` the owner signed on 2026-11-09 (`push-approval-main8.txt`, JOINT-LEDGER §4).
+- **Integration tree:** `.claude\worktrees\workspace-scan-resume-06b524`, branch `claude/workspace-scan-resume-06b524`, HEAD `1105d9c`. All code-complete work sits there **uncommitted** (about 1,900 changed or new paths in `git status`). Nothing is committed, staged or pushed by the agents.
+- **Main CI on `1105d9c`:** main does not compile on the CI JDKs 25.0.5 and 27.0.1 (SL-63; the fix is in the tree). The other main-CI fixes are in the tree too (SL-64 ShellCheck, CI-NVD-OIDC, SL-75 P1, SL-106); none is proven until the first CI run after the push.
+- **Change summary for the push:** `sangam/CHANGES-SINCE-1105d9c.md`.
+
+**At the 2026-11-08 handoff (historical):**
 - **Local `main`** is 4 commits ahead of `origin/main`. These are not pushed:
   - `4bd5a2e`: push gate
   - `35996f9`: owner-signed approvals
@@ -109,7 +123,7 @@ It is the single source of truth for where the work stands. Nothing here is an a
 ## 5. Push procedure (owner-signed gate, SG-34 hardened)
 
 - **Hook:** `core.hooksPath=.githooks`. The pre-push hook runs `tools/check-ignored-sources.sh` and `node tools/governance/push-approval.mjs check`.
-- **Trust root:** the owner-held `C:\Users\Lokendra Singh\.ssh\sangam_allowed_signers`. It was created by the owner on 2026-11-08 and verified to match `.githooks/allowed_signers` byte for byte: no BOM, fingerprint `SHA256:GVyGHB4GMD5muUTFctICsYNr0IDfunf7b3LsHXo7d1o`. The `SANGAM_ALLOWED_SIGNERS` environment variable is ignored.
+- **Trust root:** the owner-held `<home>\.ssh\sangam_allowed_signers`. It was created by the owner on 2026-11-08 and verified to match `.githooks/allowed_signers` byte for byte: no BOM, fingerprint `SHA256:GVyGHB4GMD5muUTFctICsYNr0IDfunf7b3LsHXo7d1o`. The `SANGAM_ALLOWED_SIGNERS` environment variable is ignored.
 
 **Steps for each push:**
 1. Commit on a branch. If needed, open a PR. Fast-forward only.
@@ -124,7 +138,21 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 
 "In tree" means applied to the main tree and uncommitted. "SV" means single-verified, still OPEN until the SD-428 check. Worktree folders are under `scratchpad\`, and the backup copy is under `<handoff>\scratchpad\`.
 
-### 6a. Done, in tree (needs the SD-428 check, then commit)
+### 6.0 Current state (2026-11-12)
+
+- **Phase.** The owner's order of 2026-11-12 is: write all code end to end with unit tests, then update the docs, then push to `main`, then test stage by stage (unit, system, integration, acceptance), then the end-to-end report (`<handoff>\CODE-COMPLETE-PLAN-2026-11-12.md`, JOINT-LEDGER §4). Code and docs run in parallel now; the test phase starts after the push.
+- **Readiness report.** `<handoff>\SANGAM-READINESS-REPORT-2026-11-12.md` (integrator) combines audits A (pending items), B (plug-and-play), C (UI) and D (continuity) in the same folder. Its findings: the code is **not** all written yet (list below); nothing has run on this tree; nothing was lost in the account switch, but the integration tree holds about 1,900 uncommitted changes, which is the single real risk (safety snapshot `<handoff>\snapshots\20261112-0923`).
+- **Release scope (owner decision 2026-11-12, relayed by the integrator).** 0.1.0 contains every **known** item: the open register rows plus all the plug-and-play gaps and UI gaps of the readiness report (sections 3 and 4), coded and fixed in the first release. They are listed in `SANGAM.md` XII.9 and are being planned or coded; the integrator keeps the detailed backlog. 0.2 takes only items not yet known or recorded. This supersedes an earlier draft that moved the plug-and-play and UI gaps to 0.2+.
+- **Master backlog and waves.** The detailed backlog is `<handoff>\BACKLOG-0.1.0-MASTER.md` (items M-001…M-136 in five waves, lanes and file owners per wave, owner questions Q-01…); `SANGAM.md` XII.10 points to it. Wave 1 is being coded under `<handoff>\WAVE1-RULES-2026-11-12.md`. Later owner questions use the backlog's Q-numbers; the older Q-numbers in this file stay as they were recorded.
+- **Coded today (B11, tests written, not run):** SL-125 (a missing fiscal year fails closed core-wide, `FISCAL_YEAR_NOT_CONFIGURED`), SL-126 (UI number-series field names `reset` and `fiscalStartMonth`) and SL-127 (billing refuses a missing period without a fiscal year).
+- **Code still to write** (readiness report §1): SL-102 (typed money thresholds), SL-78 and SL-79 (test-code fixes; a re-run alone does not close them), SG-15 (round-trip reduction; throughput never measured) — these four are being coded now; SL-58 (SQL Server 2025 / JDK 25 failure, root cause unknown); SG-39 (after the owner's route decision); later SL-53a (after Q34); and the 0.1.0 full-scope backlog above.
+- **What "done" means here.** An item is coded in the integration tree with its unit tests written, and it passes the compile-only gate (`-DskipTests test-compile`). **No new test has been run.** The register rows say "coded, tests written, not yet run" or "FIXED in tree … PENDING (test phase)"; none of them is closed by this phase.
+- **Where each item stands:** `sangam/TESTING-GAP-REGISTER.md` (owned by the integrator; nobody else edits it). The list of ids fixed in the tree is in `sangam/CHANGES-SINCE-1105d9c.md` §5.
+- **Owner decisions recorded on 2026-11-12** (JOINT-LEDGER §4, verbatim): Q7 "Accept leaf pool (Recommended)"; Q8+Q9 "Confirm both (Recommended)"; Q10 "Yes (a), keep key (b) (Recommended)"; Q22 "Skip unit tests in DB legs (Recommended)"; modules without an ADR "Record one ADR (Recommended)" (now ADR-D-28, SANGAM.md X.0i); Db2 "Drop from Tier 2 (Recommended)" (SL-114); J-P1-E09 SoD seat "Ask IFMS for the rule (Recommended)"; CI dispatch after any push of more than 300 files "Yes, dispatch all (Recommended)" (standing approval, Q16).
+- **Still open with the owner** (CODE-COMPLETE-PLAN "Owner decisions that block code"; audit A): Q12 (downloads), Q13, Q14, Q19, Q21, Q23, Q24, Q26, Q34 (the SL-53a date), the SG-39 route and the SL-07 semantics. Also owner actions: SG-12 (Q17, GitHub private vulnerability reporting), CI-NVD-OIDC (store the NVD parameter value), SL-75 P2 (removing `handoff/worktree-snapshots/**`).
+- **Test phase only** (after the push, per the plan): the SG-04 matrix rerun, SG-07, SG-13, SL-01, SL-12, SL-34, the SL-37 residuals, the SD-428 reviews (including FWT-D11/D12), the database proofs for SL-84/88/93/94, IX8/AC-07, T-SCALE and the SL-58 investigation run. SL-78 and SL-79 run here once their test-code fixes land.
+
+### 6a. Done, in tree (needs the SD-428 check, then commit) — record of 2026-11-08
 
 | ID | What | Evidence |
 |---|---|---|
@@ -146,12 +174,12 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 | E10, matrix | the LIC checks read the shipped Boot jar; E10 passes on PostgreSQL | `pg-e10b.log` |
 | COORD-1 | `sangam/COORDINATION.md` v1.1 | WorkFlow ACK |
 
-### 6b. In progress when the session ended (agents are gone; resume from these notes)
+### 6b. In progress when the session ended (agents are gone; resume from these notes) — record of 2026-11-08; superseded by §6.0 and the register
 
 | ID / workstream | Worktree | Exact state | Next step |
 |---|---|---|---|
 | **approve-401, T35, bill validation** | `wt-auth401` | Bill fixes are done in the worktree, not in main: `Vars.payloadOf` `variable>parameter`; `gov_ifms.py` `billType>formNumber`, `docId>typeId`, headOfAccount→scheme/code, signature→chainId; `ConfigConnector` turns an unknown chain or missing amount into a failure. `BillConnectorContractTest` and `ConnectorInputRenameTest` pass. The cause of the 401 is still unknown (token checks pass offline). The gated PostgreSQL run of `PlugAndPlayIT`, `E17bDomainIT` and `T35RestoreIT` (script `scratchpad\auth401-it.ps1`) was queued. | Run the gated PostgreSQL job and read the 401 `detail`; fix it at the root. Prove AT-1..7, D-REFERRAL and T35 (T35's ledger assertion must not change). Apply as targeted Edits. Then report to packs4 (apply order step 2). |
-| **SL-45 tenant isolation** | `wt-iso` | Two leaks are fixed in main: static resolution, and an unscoped `/engine-rest` (`EngineRestTenantFilter`). The IT seed bug is fixed, using `pg_catalog`. The rerun of `CrossTenantIsolationIT` was queued (log `%TEMP%\sl45-it2.log`). | Run it and root-fix any `/api/**` leak in the shared tenant-scoping layer, throwing `TenantIsolationException` (keep the "SL-13 tenant isolation" message). Then report the matrix. |
+| **SL-45 tenant isolation** | `wt-iso` | Two leaks are fixed in main: static resolution, and an unscoped `/engine-rest` (`EngineRestTenantFilter`). The IT seed bug is fixed, using `pg_catalog`. The rerun of `CrossTenantIsolationIT` was queued (log `<temp>\sl45-it2.log`). | Run it and root-fix any `/api/**` leak in the shared tenant-scoping layer, throwing `TenantIsolationException` (keep the "SL-13 tenant isolation" message). Then report the matrix. |
 | **IFMS-WF** (first IFMS workflows) | `wt-ifmswf` | Fix 1: `packs.py` `pin_cross_pack_calls` (cross-pack calls fail under D-12; 388 call activities). Fix 2: `SangamModelValidator` EXT findings. Both are in the worktree only; the test files are in main. The PostgreSQL run before the fixes gave E46 8/9 and IfmsPacksIT 0/6. The post-fix gated run (`customwf-ifmswf`) was queued. | Prove `E46ConformanceIT` 9/9 and `IfmsPacksIT` 6/6, then apply **FIRST** (apply order step 1): a targeted Edit to `packs.py`, regenerate, `--check`. Then do bills and payments (item 4). |
 | **packs4: money in minor units, plus SL-33** | `wt-packs4` | Green in the worktree: 81 packs tests; `money.py` helper; `PackMoneyGuardTest`; `LedgerConnector` and X12 decoders in minor units; profilegen bands in paise; SL-33 PFM and GDPR packs. Not applied. The gated script `scratchpad\packs4-it.ps1` is ready. | Wait for steps 1 (IFMS-WF) and 2 (approve-401), then merge onto them, regenerate, land the whole money contract in one step, and run `IfmsPacksIT` on PostgreSQL. Then do SL-35. Note the free-text profile money strings ('2CR', '5L', '1CR'), which no code reads. |
 | **SL-36 / SL-44 bulk** | `wt-bulk`, `wt-bulk2` | Bulk ingest is built. It must switch from the separate `BulkQuota` port to `TenantQuotas.current().checkSize(tenant, QuotaLimit.BATCH_SIZE, rows)`, which is now in main. A size refusal returns 413. `BulkIngestPostgresIT` is gated. | Switch, then prove on PostgreSQL. Apply; the changelog goes after 0031-01/02. Update SL-36 and SL-44. |
@@ -194,17 +222,19 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 - **SL-43 deadlock:** FIXED in the tree. It is single-verified; see the SL-43 register row.
 - **Owner note:** the quota counting uses a small separate `sangam-quota` pool, so a thread holding a main-pool connection may take one quota-pool connection. That is deadlock-free, but it is not the literal "never a second connection" rule. The literal rule would mean moving the quota counting out of the engine transaction.
 
-### 6c. Not started / open
-- **SL-35:** a new document type, end to end. It depends on packs4.
-- **IX.8 follow-ups:**
-  - AC-01..06 on PostgreSQL;
-  - AC-07 on the other databases;
-  - AC-08 cross-language worker run. .NET 8 is not installed (only 7.0.410) and PHP is not installed; ask the owner before any download.
-- **Design decisions needed from the owner, raised but not yet asked:**
-  - `S3DocumentStore` builds its own HTTP client, so it can't be unit-tested.
-  - `CONTENT_ITEM.tenant_id` is NOT NULL, while the code uses a `_shared` key for the shared tenant.
-  - The `task.suspend`/`task.activate` events may never fire (unverified).
-- **SDKs:** Python, TypeScript and PHP don't complete from the stored outcome; the .NET and TypeScript SDKs have no unit tests.
+### 6c. Open items outside the code list (current, 2026-11-12)
+
+The 2026-11-08 version of this list is resolved as follows (register rows cited; all coded with tests written, not run):
+- **SL-35** (new document type end to end): FIXED in tree (B8); follow-ups split out as SL-119 to SL-123.
+- **`S3DocumentStore` testability and the `_shared` content key:** decided by the owner (Q10) and coded under SG-03 (a) and (b).
+- **`task.suspend` / `task.activate` never firing:** verified from the Operaton bytecode and coded under SG-03 (c) (one Sangam TaskManager emits one event per affected task).
+- **SDK gaps:** every SDK completes from the stored outcome (SDK-STORED-OUTCOME) and the .NET, TypeScript and PHP SDKs have unit tests (SDK-UNIT-TESTS; PHP tests not run, no PHP installed).
+
+Still open (no register rows of their own; audit A "Planned or decided items that have no register row"):
+- **IX.8 follow-ups:** AC-01..06 on PostgreSQL; AC-07 on the other databases; the AC-08 cross-language worker run, which needs Q12 (.NET 8 and PHP are not installed; ask the owner before any download); AC-10 usability (Q28). Register rows for AC-01…AC-11 are backlog M-115: the text was drafted in Wave 1 (W1-J report), and the integrator applies it.
+- **C-19 [CONTRACT] notice** to IFMS for SL-71/72/73 (§8 step 1; backlog M-119). JOINT-LEDGER §5 has no Sangam→IFMS entry after 2026-11-11 09:58; check whether it was sent without being logged. A draft is in the Wave 1 W1-J report; sending it and logging it in JL §5 are the owner's or the integrator's act.
+- **Docs-wave items still open after this pass:** the misleading first status words of some register rows (SL-106, SL-107, SG-37, SG-38, SL-03, the SL-37 parent, SL-43) and the missing register rows of audit A (backlog M-118; integrator only), the stale header comment in `sangam-ui/src/modules/platform.tsx` (code, lane W1-G), the parity-doc line for `cam-script` and iframe forms in `sangam-ui/OPERATON-UI-PARITY.md` (lane W1-G; the decision itself is recorded in `SANGAM.md` X.5.3), and a regenerated UI licence list (`npm run licences`, backlog M-117).
+- **Stray work:** the T-SCALE text evidence from `wt-scale` (drive root, §9) is centralised in `sangam/perf/results/2026-11-08-tscale-15e4135`; the raw files (1.6 GB `ev.json`, the `.jfr` profiles) exist only in that folder. Keep them, or accept their loss, before it is deleted.
 - **AC-03 expectation:** packs3 moved `UNKNOWN_OUTCOME` from the case state to the audit expectations. I judged that correct; the owner may revisit it.
 
 ## 7. Apply order for the shared packs/connector files (strict)
@@ -213,15 +243,24 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 3. packs4 merges onto both, regenerates, and lands the whole money contract (ledger, config, health, security tables) in one step, then runs `IfmsPacksIT` on PostgreSQL.
 4. SL-35.
 
-## 8. Road to the next push (in order)
-1. Finish §6b, applying each item one at a time per §7.
-2. **SD-428 pass:** dispatch one reviewer agent, which did not write the fixes, to re-verify every SL item on the main tree, with revert checks for regression tests where they are missing. One known gap: `EngineSlotReleasedOnContextCloseTest` was never run against the old code.
-3. **Full H2 suite on the combined tree:** `.\mvnw.cmd -pl <all modules> -am clean verify` (H2, no failsafe). Root-fix anything red.
-4. Commit on a branch. The message ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-5. Run the signed push (§5); the owner signs. Watch CI. When main CI is green, tell WorkFlow, and ask the owner about required status checks.
-6. Send a REPORT to WorkFlow and IFMS main: commit id, closed IDs, next, blocked.
+## 8. Road to the next push (in order; replaces the 2026-11-08 list)
 
-## 9. Durable backup (`D:\GITHUB  Project\sangam-handoff\2026-11-08\`)
+**Process for every agent until the push** (CODE-COMPLETE-PLAN "Rules for every agent"):
+- Edit the integration tree directly with targeted edits, keep each file's line endings, never overwrite another agent's hunks. Agents never commit, stage or push.
+- **Shared files** are edited only after a claim: append `<UTC time> <agent/ws> CLAIM <path>` to `<handoff>\FILE-CLAIMS.md`, check that nobody else holds it, and append `RELEASE <path>` as soon as the edit is done. Shared files: `generate_changelogs.py` and its baselines, `SangamSchema.java`, every `pom.xml`, `sangam-api.yaml` and `gen_openapi.py`, `generate_realm.py` and the realm JSON, `application*.yaml`, `.gitattributes`, `.github/workflows/*`, `HANDOFF.md`, and `TESTING-GAP-REGISTER.md` (integrator only).
+- Data changes only through the generators, each with `--check` green. The gate is compile only; no DB, Testcontainers or heavy-lock run until the code is on `main`.
+- Every report states the files with their SHA-256, the evidence and confidence per decision, the open questions, and the exact register-row text for the integrator.
+
+**Steps:**
+0. Finish the code still to write (§6.0): SL-102, SL-78, SL-79, SG-15, the SL-58 investigation, SG-39 after the owner's route decision, and the 0.1.0 full-scope backlog (`SANGAM.md` XII.9).
+1. Finish the docs wave (Wave C of the plan): register restatements, the JL board, this file, the READMEs, the `SANGAM.md` ADRs, and the [CONTRACT] notices to IFMS (C-19 for SL-71/72/73). Done in the second pass (2026-11-12): deploy README JRE 25, the SL-116 and SL-117 READMEs, the SDK test statements, the contract counts in `SANGAM.md` XII.1, the UI and modeller README drift, `CHANGES-SINCE-1105d9c.md` for SL-125..127. Done in Wave 1, lane W1-J (M-110, M-111): the stale lines in the security, server, ops, AI and channels READMEs, `SECTOR-CONFORMANCE.md` (SL-35 and SL-38…SL-46 now fixed), the status of `ACCEPTANCE-PLUG-AND-PLAY.md`, the `OperatonPackageToolsAdapter` comments Javadoc, four supersession rows in `SANGAM.md` X.5.3 and the wave-plan pointer `SANGAM.md` XII.10.
+2. Integrator: apply the register rows reported by the agents; confirm every FILE-CLAIMS line has its RELEASE; run the full gate `.\mvnw.cmd -pl sangam-server -am -DskipTests test-compile` and every generator `--check`.
+3. Commit on a branch. The message ends with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+4. Run the signed push (§5); the owner signs. After a push of more than 300 files, dispatch every CI workflow (owner's standing approval, Q16). Watch CI.
+5. Test phase, one stage at a time: unit, system, integration, acceptance (heavy runs through the detached-runner heavy lock, §2). Record each result in the register before the next stage. Then the SD-428 independent checks.
+6. Write the end-to-end report and send a REPORT to WorkFlow and IFMS main: commit id, closed ids, next, blocked.
+
+## 9. Durable backup (`<handoff>\2026-11-08\`)
 
 - `main-tree-HEAD.txt`: base commit `9c831d0…`.
 - `main-tree-tracked.patch`: the full binary diff of tracked files against HEAD, 6.9 MB. It was verified with `git apply --check --reverse` (exit 0). To restore on a clean checkout of `9c831d0`: `git apply --binary main-tree-tracked.patch`.
@@ -233,14 +272,24 @@ The selftest `node tools/governance/selftest-push-approval.mjs` passes 31/31 und
 - `memory\`: a copy of the auto-memory, including `MEMORY.md` and `feedback-coordination-protocol.md`.
 - `heavy_lock.py.copy`: the lock tool, for reference only. Always use the original path in §2.
 - **Other worktrees on D: (durable):**
-  - `D:\wt-fwt`: FWT draft fixes.
-  - `D:\wt-scale`: T-SCALE baseline results, `tscale-base\` with JFR.
-  - `D:\sangam-wt-ci`: CI agent; can be deleted.
-  - `D:\GITHUB  Project\cwf-docs-wt`: docs agent build evidence.
+  - `wt-fwt` (drive root): FWT draft fixes.
+  - `wt-scale` (drive root): T-SCALE baseline results, `tscale-base\` with JFR.
+  - `sangam-wt-ci` (drive root): CI agent; can be deleted.
+  - `cwf-docs-wt` (next to `<repo>`): docs agent build evidence.
 
-If the live main tree is ever lost, restore it from `main-tree-tracked.patch` plus `main-tree-untracked\`. If a worktree in `%TEMP%` is lost, use the copy under `scratchpad\`.
+If the live main tree is ever lost, restore it from `main-tree-tracked.patch` plus `main-tree-untracked\`. If a worktree in `<temp>` is lost, use the copy under `scratchpad\`.
 
 ## 10. First actions for the resuming session
+
+**Current (2026-11-12):**
+0. Open the session at `<repo>` (continuity rule, top of this file), so the owner's auto-memory loads.
+1. Read `<handoff>\RESUME-LEDGER-2026-11-09.md`, then `SANGAM-READINESS-REPORT-2026-11-12.md`, `CODE-COMPLETE-PLAN-2026-11-12.md` and the tail of `FILE-CLAIMS.md` in the same folder, then this file, `sangam/COORDINATION.md` and `sangam/TESTING-GAP-REGISTER.md`.
+2. Work in the integration tree (`.claude\worktrees\workspace-scan-resume-06b524`); never edit the base checkout. Check `git status` there before anything else.
+3. Check `FILE-CLAIMS.md` for any CLAIM without a RELEASE before you touch a shared file.
+4. Run `heavy_lock.py status` (§2) after any outage; no heavy run before the push.
+5. Continue §8 from the first step not yet done.
+
+**At the 2026-11-08 handoff (historical):**
 1. Read this file, `sangam/COORDINATION.md` and the end of `sangam/TESTING-GAP-REGISTER.md`.
 2. Run `git status` and check that the main tree still matches `main-tree-status.txt`. If it does not, restore it from §9.
 3. Run `heavy_lock.py status` and look for Sangam (`customwf-*`) tickets. Their old waiter processes died with the old session. Remove nothing; start fresh gated acquires.

@@ -14,6 +14,7 @@ use Sangam\Sdk\Api\TasksApi;
 use Sangam\Sdk\Api\WorkApi;
 use Sangam\Sdk\Auth\StaticTokenProvider;
 use Sangam\Sdk\Auth\TokenProvider;
+use Sangam\Sdk\Http\HttpSender;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Http\RetryPolicy;
 use Sangam\Sdk\Log\Log;
@@ -42,14 +43,16 @@ final class SangamClient
         ?string $userAgent = null,
         ?string $seat = null,
         ?string $actingForSeat = null,
+        ?HttpSender $sender = null,
     ) {
-        if (!extension_loaded('curl')) {
+        // the curl requirement applies only to the default sender; an injected HttpSender brings its own wire
+        if ($sender === null && !extension_loaded('curl')) {
             throw new \RuntimeException('the Sangam SDK needs ext-curl');
         }
         $tokens = is_string($auth) ? new StaticTokenProvider($auth) : $auth;
         $this->log = new Log($logger ?? new StderrJsonLogger());
         $this->transport = new HttpTransport($baseUrl, $tokens, $retryPolicy, $requestTimeoutMs, $connectTimeoutMs,
-            $this->log, $userAgent, $seat, $actingForSeat);
+            $this->log, $userAgent, $seat, $actingForSeat, $sender);
     }
 
     /**

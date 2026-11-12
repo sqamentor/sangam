@@ -54,7 +54,8 @@ import org.w3c.dom.Node;
  *       evaluated offline against the package's DMN (R80);</li>
  *   <li><b>Git</b>: the configuration (remote, branch, credential reference only) is stored; pull and push are
  *       stage-E collaboration (R69) provided by sangam-packs, so they answer {@code 501 CAPABILITY_NOT_INSTALLED};</li>
- *   <li><b>comments</b>: in memory per package, audited {@code PACKAGE_COMMENTED};</li>
+ *   <li><b>comments</b>: stored per package in the document store (kind {@code package:comment}, ref = package id),
+ *       audited {@code PACKAGE_COMMENTED};</li>
  *   <li><b>assessment</b> (EC-21): classification of foreign BPMN/DMN/CMMN constructs, parsed with an XXE-safe
  *       DOM parser so Camunda, Flowable and Activiti namespaces are accepted.</li>
  * </ul>

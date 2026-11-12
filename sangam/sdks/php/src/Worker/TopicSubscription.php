@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sangam\Sdk\Worker;
 
+use Sangam\Sdk\Model\TopicRequest;
+
 /**
  * Handler registration for one topic (BPMN operaton:topic).
  * lockDurationMs: lease per fetch (VI.3.2 rule 3: default 5 min, max 24 h); heartbeat at lease/3.
@@ -46,22 +48,21 @@ final class TopicSubscription
         $this->retryBackoff = $retryBackoff ?? Backoff::retryDefaults();
     }
 
-    /** TopicRequest body for fetch-and-lock. @return array<string, mixed> */
+    /** The TopicRequest of this subscription for fetch-and-lock (localVariables sent only when true). */
+    public function topicRequest(): TopicRequest
+    {
+        return new TopicRequest($this->topic, $this->lockDurationMs, $this->variables,
+            $this->localVariables ? true : null, $this->processDefinitionKey, $this->businessKey);
+    }
+
+    /**
+     * TopicRequest body for fetch-and-lock.
+     *
+     * @deprecated since 0.1.0; use {@see topicRequest()}, the typed TopicRequest (same wire members).
+     * @return array<string, mixed>
+     */
     public function toTopicRequest(): array
     {
-        $t = ['name' => $this->topic, 'lockDurationMs' => $this->lockDurationMs];
-        if ($this->variables !== null) {
-            $t['variables'] = $this->variables;
-        }
-        if ($this->localVariables) {
-            $t['localVariables'] = true;
-        }
-        if ($this->processDefinitionKey !== null) {
-            $t['processDefinitionKey'] = $this->processDefinitionKey;
-        }
-        if ($this->businessKey !== null) {
-            $t['businessKey'] = $this->businessKey;
-        }
-        return $t;
+        return $this->topicRequest()->toArray();
     }
 }

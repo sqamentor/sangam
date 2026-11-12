@@ -198,7 +198,7 @@ regime:
   reportingUnit: Director of Accounts DNH&DD
   ruleRef: 'IFMS-RESEARCH-DELTA IFC-237: each UT reports to the CGA directly (not via MHA PAOs)'
 budget:
-  be2026_27Gross: 2835.20CR
+  be2026_27Gross: 2835200000000
 delegation:
   tables:
   - key: ifms-financial-powers

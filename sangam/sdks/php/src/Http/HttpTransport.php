@@ -14,8 +14,9 @@ use Sangam\Sdk\Error\TransportException;
 use Sangam\Sdk\Log\Log;
 
 /**
- * The single HTTP path of the SDK (ext-curl): base URL + /api/v1, Authorization with one refresh on 401,
+ * The single HTTP path of the SDK: base URL + /api/v1, Authorization with one refresh on 401,
  * Idempotency-Key on every mutation (R41), RFC 9457 problem+json decoding, jittered retries of safe calls (R28).
+ * The bytes travel through an HttpSender (default CurlSender, ext-curl); inject another one to change only the wire.
  */
 final class HttpTransport
 {
@@ -26,6 +27,7 @@ final class HttpTransport
     private readonly TokenProvider $tokens;
     private readonly RetryPolicy $retry;
     private readonly string $userAgent;
+    private readonly HttpSender $sender;
     /** @var array<string, string> */
     private array $defaultHeaders = [];
     private ?ApiResponse $last = null;
@@ -40,7 +42,9 @@ final class HttpTransport
         ?string $userAgent = null,
         ?string $seat = null,
         ?string $actingForSeat = null,
+        ?HttpSender $sender = null,
     ) {
+        $this->sender = $sender ?? new CurlSender();
         $b = rtrim($baseUrl, '/');
         if (str_ends_with($b, self::API_PREFIX)) {
             $b = substr($b, 0, -strlen(self::API_PREFIX));
@@ -131,74 +135,39 @@ final class HttpTransport
     /** @return array{0:int,1:array<string,string>,2:string} */
     private function sendOnce(ApiRequest $req, ?string $idemKey): array
     {
-        $lines = [
-            'Accept: application/json, application/problem+json',
-            'User-Agent: ' . $this->userAgent,
-            'Expect:',
+        $headers = [
+            'Accept' => 'application/json, application/problem+json',
+            'User-Agent' => $this->userAgent,
         ];
         $auth = $this->tokens->authorization();
         if ($auth !== null) {
-            $lines[] = 'Authorization: ' . $auth;
+            $headers['Authorization'] = $auth;
         }
         if ($idemKey !== null) {
-            $lines[] = 'Idempotency-Key: ' . $idemKey;
+            $headers['Idempotency-Key'] = $idemKey;
         }
         foreach (array_merge($this->defaultHeaders, $req->headers) as $k => $v) {
-            $lines[] = $k . ': ' . $v;
+            $headers[$k] = $v;
         }
         $payload = null;
         if ($req->rawBody !== null) {
-            $lines[] = 'Content-Type: ' . $req->rawContentType;
+            $headers['Content-Type'] = (string) $req->rawContentType;
             $payload = $req->rawBody;
         } elseif ($req->body !== null) {
-            $lines[] = 'Content-Type: application/json';
+            $headers['Content-Type'] = 'application/json';
             $payload = Json::encode($req->body);
         } elseif ($req->isMutation()) {
-            // no body (for example claim/unclaim): Content-Length 0, and suppress curl's default form Content-Type
-            $lines[] = 'Content-Type:';
+            // no body (for example claim/unclaim): Content-Length 0 and no Content-Type
             $payload = '';
         }
-
-        $headers = [];
-        $ch = curl_init($this->url($req));
-        $opts = [
-            CURLOPT_CUSTOMREQUEST => $req->method,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => $lines,
-            CURLOPT_TIMEOUT_MS => $req->timeoutMs ?? $this->requestTimeoutMs,
-            CURLOPT_CONNECTTIMEOUT_MS => $this->connectTimeoutMs,
-            CURLOPT_FOLLOWLOCATION => false,
-            CURLOPT_HEADERFUNCTION => static function ($ch, string $line) use (&$headers): int {
-                if (str_starts_with($line, 'HTTP/')) {
-                    $headers = []; // new status line (for example after 100 Continue)
-                } else {
-                    $parts = explode(':', $line, 2);
-                    if (count($parts) === 2) {
-                        $headers[strtolower(trim($parts[0]))] = trim($parts[1]);
-                    }
-                }
-                return strlen($line);
-            },
-        ];
-        if ($payload !== null) {
-            $opts[CURLOPT_POSTFIELDS] = $payload;
+        try {
+            return $this->sender->send($req->method, $this->url($req), $headers, $payload,
+                $req->timeoutMs ?? $this->requestTimeoutMs, $this->connectTimeoutMs, $req->abort);
+        } catch (TransportException $e) {
+            // keep the message on the API path (no host, no query) and the errno that marks an abort
+            throw new TransportException($req->method . ' ' . $req->path . ' failed: ' . $e->getMessage(),
+                $e->curlErrno, $e);
         }
-        if ($req->abort !== null) {
-            $abort = $req->abort;
-            $opts[CURLOPT_NOPROGRESS] = false;
-            $opts[CURLOPT_XFERINFOFUNCTION] = static fn($ch, int $dt, int $dn, int $ut, int $un): int => $abort() ? 1 : 0;
-        }
-        curl_setopt_array($ch, $opts);
-        $raw = curl_exec($ch);
-        if ($raw === false) {
-            $errno = curl_errno($ch);
-            $err = curl_error($ch);
-            curl_close($ch);
-            throw new TransportException($req->method . ' ' . $req->path . ' failed: ' . $err, $errno);
-        }
-        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        curl_close($ch);
-        return [$status, $headers, (string) $raw];
     }
 
     private function url(ApiRequest $req): string

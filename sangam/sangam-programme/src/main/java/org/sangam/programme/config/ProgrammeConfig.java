@@ -51,7 +51,7 @@ public record ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map
     }
 
     public static ProgrammeConfig parse(Map<String, Object> m) {
-        Month fy = Month.of(Db.intVal(m, "fiscalYearStartMonth", 1));
+        Month fy = fiscalYearStartMonth(m);
         Set<String> units = new LinkedHashSet<>();
         Db.arr(m.get("units")).forEach(u -> units.add(String.valueOf(u)));
         Map<String, Set<String>> kinds = new LinkedHashMap<>();
@@ -211,6 +211,28 @@ public record ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map
             }
         }
         return out;
+    }
+
+    /**
+     * SL-125 (fail closed): the fiscal-year start month of the tenant's reporting periods is required configuration
+     * (1..12); no fiscal year is assumed. sangam-programme does not read the tenant profile, so the published programme
+     * configuration states it.
+     */
+    private static Month fiscalYearStartMonth(Map<String, Object> m) {
+        Object v = m.get("fiscalYearStartMonth");
+        if (v == null || v.toString().isBlank()) {
+            throw cfg("fiscalYearStartMonth is required (1..12); no fiscal year is assumed");
+        }
+        int month;
+        try {
+            month = v instanceof Number n ? n.intValue() : Integer.parseInt(v.toString().trim());
+        } catch (NumberFormatException e) {
+            throw cfg("fiscalYearStartMonth must be a month number 1..12, was '" + v + "'");
+        }
+        if (month < 1 || month > 12) {
+            throw cfg("fiscalYearStartMonth must be 1..12, was " + month);
+        }
+        return Month.of(month);
     }
 
     private static ProgrammeException cfg(String message) {

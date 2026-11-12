@@ -13,7 +13,7 @@ import java.util.Map;
  *       reconciliation item (VI.3.2 rule 4). Use it when a remote call timed out after it may have taken effect.</li>
  *   <li>Throw {@link TaskFailedException}: {@code fail} with the given or the default retries/back-off.</li>
  *   <li>Throw {@link TaskCancelledException} after {@link TaskContext#isCancelRequested()}: {@code cancel-ack}.</li>
- *   <li>Any other exception: {@code fail} with retries, except on {@code effect=irreversible} topics where it is
+ *   <li>Any other exception: {@code fail} with retries, except on topics subscribed as irreversible where it is
  *       reported as {@code outcome-unknown} (VI.3.2 rule 5: no blind retries of non-idempotent effects).</li>
  * </ul>
  *

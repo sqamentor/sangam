@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-aml-str/prepare",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.aml-str",
   "title": {
     "en": "Prepare STR in FINnet format (7 days)",

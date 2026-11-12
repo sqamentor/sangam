@@ -26,6 +26,15 @@ public interface ProfileRepository {
     List<String> ids();
 
     /**
+     * A cheap value that changes whenever a lifecycle change is committed to the shared store by any node (SL-120), or
+     * null for a store private to this process (its writer invalidates the resolver itself). {@link ProfileResolver}
+     * compares it before trusting its cache.
+     */
+    default String changeMarker() {
+        return null;
+    }
+
+    /**
      * The ACTIVE version effective on {@code asOf}; among several, the one with the latest {@code effectiveFrom},
      * then the highest version string.
      */

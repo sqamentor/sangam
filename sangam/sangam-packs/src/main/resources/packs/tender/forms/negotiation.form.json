@@ -1,6 +1,6 @@
 {
   "key": "tender/negotiation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.tender",
   "title": {
     "en": "Negotiate with L1",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "negotiatedAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Negotiated amount (INR)",

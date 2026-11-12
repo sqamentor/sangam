@@ -130,7 +130,13 @@ public final class ConversationService {
         }
     }
 
-    public Message send(String tenantId, String conversationId, String sender, String body, List<Attachment> attachments, String clientKey) {
+    public Message send(String tenantId, String conversationId, String sender, String bodyOrNull, List<Attachment> attachments, String clientKey) {
+        // SL-87: an attachment-only message has an empty body. It is stored as NULL (Oracle stores '' as NULL anyway, and
+        // CH_MESSAGE.body is nullable) and read back as "". A message with neither text nor attachments is refused.
+        String body = bodyOrNull == null ? "" : bodyOrNull;
+        if (body.isEmpty() && attachments.isEmpty()) {
+            throw new IllegalArgumentException("a message needs a body or at least one attachment");
+        }
         String prefix = tenantId + "/conversations/" + conversationId + "/";
         for (Attachment a : attachments) {
             if (!a.key().startsWith(prefix)) {
@@ -150,7 +156,7 @@ public final class ConversationService {
             String id = UUID.randomUUID().toString();
             Instant now = Jdbc.dbNow(c, dialect);
             Jdbc.update(c, "INSERT INTO CH_MESSAGE(id,tenant_id,conversation_id,sender,body,attachments,client_key,created_at) VALUES (?,?,?,?,?,?,?,?)",
-                    id, tenantId, conversationId, sender, body, Json.write(attachments), clientKey, now);
+                    id, tenantId, conversationId, sender, body.isEmpty() ? null : body, Json.write(attachments), clientKey, now);
             audit.append(c, tenantId, chain(conversationId), "CONVERSATION_MESSAGE", Map.of("messageId", id, "sender", sender, "bodyHash", Hashes.hex(Hashes.sha256(body)),
                     "attachments", attachments.stream().map(Attachment::sha256).toList()));
             Set<String> to = Set.copyOf(Jdbc.query(c, "SELECT principal_id FROM CH_PARTICIPANT WHERE conversation_id=?", rs -> rs.getString(1), conversationId));
@@ -178,7 +184,8 @@ public final class ConversationService {
     public List<Message> search(String tenantId, String actor, String text, int limit) {
         String needle = "%" + text.toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
         return tx.inTransaction(c -> {
-            List<Message> all = Jdbc.query(c, SELECT + " WHERE tenant_id=? AND LOWER(body) LIKE ? ESCAPE '\\' AND conversation_id IN "
+            // COALESCE: an attachment-only message (NULL body, SL-87) still matches an empty search text, as '' did before
+            List<Message> all = Jdbc.query(c, SELECT + " WHERE tenant_id=? AND LOWER(COALESCE(body, '')) LIKE ? ESCAPE '\\' AND conversation_id IN "
                     + "(SELECT conversation_id FROM CH_PARTICIPANT WHERE principal_id=?) ORDER BY created_at DESC, id", ConversationService::map, tenantId, needle, actor);
             return List.copyOf(all.subList(0, Math.min(limit, all.size())));
         });
@@ -226,7 +233,8 @@ public final class ConversationService {
         for (var n : Json.tree(rs.getBytes(5))) {
             atts.add(Json.MAPPER.convertValue(n, Attachment.class));
         }
-        return new Message(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), atts, Jdbc.instant(rs, "created_at"));
+        String body = rs.getString(4);
+        return new Message(rs.getString(1), rs.getString(2), rs.getString(3), body == null ? "" : body, atts, Jdbc.instant(rs, "created_at"));
     }
 
     /** Conversations the actor participates in, newest first; {@code caseRefOrNull} narrows to one case. */

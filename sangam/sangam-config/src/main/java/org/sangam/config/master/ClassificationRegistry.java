@@ -59,6 +59,20 @@ public final class ClassificationRegistry {
         return this;
     }
 
+    /**
+     * The reference scopes of a resolved profile chain ({@code ResolvedProfile.chain()}, labels
+     * {@code id@version[sections]}): the document ids, most specific first.
+     */
+    public static List<String> referenceScopesOf(List<String> chain) {
+        List<String> ids = new ArrayList<>();
+        for (String ref : chain) {
+            int at = ref.indexOf('@');
+            ids.add(at < 0 ? ref : ref.substring(0, at));
+        }
+        java.util.Collections.reverse(ids);
+        return ids;
+    }
+
     public MasterStore store() {
         return store;
     }
@@ -117,6 +131,16 @@ public final class ClassificationRegistry {
      */
     public List<Finding> validate(String scope, ClassificationScheme s, Code c, LocalDate asOf,
                                   java.util.function.Function<String, ClassificationScheme> schemes) {
+        return validate(scope, referenceScopes.apply(scope), s, c, asOf, schemes);
+    }
+
+    /**
+     * As above, with the reference scopes given by the caller (SL-124): a caller holding a resolved profile, a running
+     * case's pinned binding included, passes {@link #referenceScopesOf(List) referenceScopesOf(profile.chain())}, so the
+     * master codes are searched through the chain that governs the case, never through today's chain.
+     */
+    public List<Finding> validate(String scope, List<String> references, ClassificationScheme s, Code c, LocalDate asOf,
+                                  java.util.function.Function<String, ClassificationScheme> schemes) {
         List<Finding> out = new ArrayList<>();
         for (ClassificationScheme.Segment seg : s.segments()) {
             String v = c.segment(seg.id());
@@ -138,10 +162,10 @@ public final class ClassificationRegistry {
                 ClassificationScheme ref = seg.scheme() == null ? s : schemes.apply(seg.scheme());
                 ClassificationScheme.Segment def = ref == null ? null : ref.segment(segId);
                 if (def != null && !def.hierarchy().isEmpty()) {
-                    checkHierarchy(scope, scheme, def, c, v, asOf, out);
+                    checkHierarchy(scope, references, scheme, def, c, v, asOf, out);
                     continue;
                 }
-                Optional<MasterCode> m = lookup(scope, scheme, segId, seg.scheme() != null ? null : parent, v, asOf);
+                Optional<MasterCode> m = lookup(scope, references, scheme, segId, seg.scheme() != null ? null : parent, v, asOf);
                 if (m.isEmpty()) {
                     out.add(Finding.error("CODE_UNKNOWN", seg.id(), "code " + v + (parent == null ? "" : " under " + parent)
                             + " is not valid on " + asOf, null));
@@ -165,7 +189,7 @@ public final class ClassificationRegistry {
      * A parent with no coded children and no rule cannot refute a code: it passes with a WARNING. A rule-opened code
      * passes with an INFO finding quoting the rule.
      */
-    private void checkHierarchy(String scope, String scheme, ClassificationScheme.Segment def, Code c, String v, LocalDate asOf,
+    private void checkHierarchy(String scope, List<String> references, String scheme, ClassificationScheme.Segment def, Code c, String v, LocalDate asOf,
                                 List<Finding> out) {
         Map<String, Object> h = def.hierarchy();
         List<String> path = Tree.strings(h.get("path"));
@@ -178,26 +202,26 @@ public final class ClassificationRegistry {
             values.add(c.segment(p));
         }
         String parent = String.join(sep, values);
-        if (lookup(scope, scheme, def.id(), path.isEmpty() ? null : parent, v, asOf).isPresent()) {
+        if (lookup(scope, references, scheme, def.id(), path.isEmpty() ? null : parent, v, asOf).isPresent()) {
             return;
         }
         String anyFlag = Tree.str(h.get("anyParentFlag"), null);
-        if (anyFlag != null && lookup(scope, scheme, def.id(), null, v, asOf)
+        if (anyFlag != null && lookup(scope, references, scheme, def.id(), null, v, asOf)
                 .filter(m -> Tree.bool(m.flags().get(anyFlag), false)).isPresent()) {
             return;
         }
         if (v.equals(Tree.str(h.get("noneCode"), null)) && !path.isEmpty()
-                && children(scope, scheme, def.id(), parent, asOf).isEmpty()) {
+                && children(scope, references, scheme, def.id(), parent, asOf).isEmpty()) {
             return;
         }
         String wildcard = Tree.str(h.get("templateWildcard"), null);
         String template = wildcard == null || path.size() < 2 ? null
                 : String.join(sep, values.subList(0, values.size() - 1)) + sep + wildcard;
-        if (template != null && children(scope, scheme, def.id(), template, asOf).stream().anyMatch(m -> m.code().equals(v))) {
+        if (template != null && children(scope, references, scheme, def.id(), template, asOf).stream().anyMatch(m -> m.code().equals(v))) {
             return;
         }
         String childSeg = Tree.str(h.get("templateChild"), null);
-        if (childSeg != null && wildcard != null && !children(scope, scheme, childSeg, parent + sep + wildcard, asOf).isEmpty()) {
+        if (childSeg != null && wildcard != null && !children(scope, references, scheme, childSeg, parent + sep + wildcard, asOf).isEmpty()) {
             out.add(Finding.info("CODE_OPENED_BY_RULE", def.id(), "code " + v + " opened by rule under " + parent, null));
             return;
         }
@@ -206,11 +230,11 @@ public final class ClassificationRegistry {
             String rule = null;
             for (int i = 0; i < path.size() && rule == null; i++) {
                 String ancestorParent = i == 0 ? null : String.join(sep, values.subList(0, i));
-                rule = lookup(scope, scheme, path.get(i), ancestorParent, values.get(i), asOf)
+                rule = lookup(scope, references, scheme, path.get(i), ancestorParent, values.get(i), asOf)
                         .map(m -> Tree.str(m.flags().get(ruleFlag), null)).orElse(null);
             }
             if (rule == null) {
-                rule = children(scope, scheme, def.id(), parent, asOf).stream()
+                rule = children(scope, references, scheme, def.id(), parent, asOf).stream()
                         .filter(m -> parent.equals(m.parentCode()) && m.flags().get(ruleFlag) != null)
                         .map(m -> Tree.str(m.flags().get(ruleFlag), null)).findFirst().orElse(null);
             }
@@ -219,8 +243,8 @@ public final class ClassificationRegistry {
                 return;
             }
         }
-        if (!path.isEmpty() && children(scope, scheme, def.id(), parent, asOf).isEmpty()
-                && (template == null || children(scope, scheme, def.id(), template, asOf).isEmpty())) {
+        if (!path.isEmpty() && children(scope, references, scheme, def.id(), parent, asOf).isEmpty()
+                && (template == null || children(scope, references, scheme, def.id(), template, asOf).isEmpty())) {
             out.add(Finding.warn("PARENT_HAS_NO_CODES", def.id(), "no codes listed under " + parent + "; " + v + " not verified", null));
             return;
         }
@@ -228,9 +252,10 @@ public final class ClassificationRegistry {
     }
 
     /** Codes valid on the date whose parent starts with the prefix, through the scope chain. */
-    private List<MasterCode> children(String scope, String scheme, String segment, String prefix, LocalDate asOf) {
+    private List<MasterCode> children(String scope, List<String> references, String scheme, String segment, String prefix,
+                                      LocalDate asOf) {
         List<String> scopes = new ArrayList<>(ScopeRef.parse(scope).prefixes());
-        scopes.addAll(referenceScopes.apply(scope));
+        scopes.addAll(references);
         scopes.add("*");
         List<MasterCode> out = new ArrayList<>();
         for (String sc : scopes) {
@@ -242,9 +267,15 @@ public final class ClassificationRegistry {
     /** Looks a code up in the scope and its ancestors (most specific first). */
     public Optional<MasterCode> lookup(String scope, String scheme, String segment, String parentCode, String code,
                                        LocalDate asOf) {
+        return lookup(scope, referenceScopes.apply(scope), scheme, segment, parentCode, code, asOf);
+    }
+
+    /** As above, through the given reference scopes (SL-124: those of the chain that governs the caller). */
+    public Optional<MasterCode> lookup(String scope, List<String> references, String scheme, String segment,
+                                       String parentCode, String code, LocalDate asOf) {
         List<String> prefixes = new ArrayList<>(ScopeRef.parse(scope).prefixes());
         java.util.Collections.reverse(prefixes);
-        prefixes.addAll(referenceScopes.apply(scope));
+        prefixes.addAll(references);
         prefixes.add("*");
         for (String p : prefixes) {
             Optional<MasterCode> m = store.find(p, scheme, segment, parentCode, code).stream().filter(x -> x.validOn(asOf))

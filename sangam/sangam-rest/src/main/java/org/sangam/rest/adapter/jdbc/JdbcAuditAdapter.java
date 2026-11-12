@@ -344,7 +344,7 @@ public class JdbcAuditAdapter implements AuditPort {
             if (maxRows > 0) {
                 ps.setMaxRows(maxRows);
             }
-            Jdbc.bind(ps, 1, params);
+            Jdbc.bind(ps, sql, 1, params);
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> out = new ArrayList<>();
                 while (rs.next() && (maxRows <= 0 || out.size() < maxRows)) {

@@ -41,7 +41,7 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
     static final int TASKS_PER_TENANT = 40;
     static final List<Action> ACTIONS = List.of(Action.READ, Action.READ_TASK, Action.CLAIM);
 
-    final AuthorizationPolicy policy = new AuthorizationPolicy(PG, TYPE, new ResourceColumns("TENANT_ID_", "ID_"));
+    final AuthorizationPolicy policy = new AuthorizationPolicy(DIALECT, TYPE, new ResourceColumns("TENANT_ID_", "ID_"));
 
     record Row(String tenant, String id, String name) {
     }
@@ -51,9 +51,10 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
     @BeforeAll
     void createEngineLikeTaskTable() throws SQLException {
         ensureIso();
+        createTableIfMissing("ACT_RU_TASK_SIM",
+                "CREATE TABLE ACT_RU_TASK_SIM (ID_ {str64} PRIMARY KEY, TENANT_ID_ {str64} NOT NULL, NAME_ {str})");
         try (Connection c = DS.getConnection(); Statement st = c.createStatement()) {
-            st.execute("CREATE TABLE IF NOT EXISTS ACT_RU_TASK_SIM (ID_ VARCHAR(64) PRIMARY KEY, TENANT_ID_ VARCHAR(64) NOT NULL, NAME_ VARCHAR(255))");
-            st.execute("TRUNCATE ACT_RU_TASK_SIM");
+            st.execute("TRUNCATE TABLE ACT_RU_TASK_SIM");
             TASKS.clear();
             for (String t : TENANTS) {
                 for (int i = 0; i < TASKS_PER_TENANT; i++) {
@@ -108,7 +109,7 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
                 if (conditional) {
                     // a grant whose condition cannot be compiled in the spike: both forms must ignore it
                     // Liquibase AUTH_EFFECTIVE keys on cond_key (the condition id; '-' for unconditional rows)
-                    run(c -> Jdbc.insertIfAbsent(c, PG, "INSERT INTO AUTH_EFFECTIVE(tenant_id, principal_id, resource_type, resource_id,"
+                    run(c -> Jdbc.insertIfAbsent(c, DIALECT, "INSERT INTO AUTH_EFFECTIVE(tenant_id, principal_id, resource_type, resource_id,"
                                     + " deny_flag, perms, condition_id, cond_key, policy_version) VALUES (?,?,?,?,0,?,?,?,1)",
                             tenant, principal + "#cond", TYPE, resourceId, p, "cond-amount-lt-1000", "cond-amount-lt-1000"));
                     // stored under a distinct principal id so it cannot collide with an unconditional row's key
@@ -117,9 +118,9 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
                 }
                 run(c -> {
                     if (deny) {
-                        AuthorizationPolicy.deny(c, PG, tenant, principal, TYPE, resourceId, p);
+                        AuthorizationPolicy.deny(c, DIALECT, tenant, principal, TYPE, resourceId, p);
                     } else {
-                        AuthorizationPolicy.grant(c, PG, tenant, principal, TYPE, resourceId, p);
+                        AuthorizationPolicy.grant(c, DIALECT, tenant, principal, TYPE, resourceId, p);
                     }
                 });
                 oracle.merge(new Key(tenant, principal, resourceId, deny, false), perms, (x, y) -> x | y);
@@ -151,7 +152,7 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
             List<String> paged = new ArrayList<>();
             for (int offset = 0; ; offset += 7) {
                 List<String> page = ids(c, "SELECT r.ID_ FROM ACT_RU_TASK_SIM r WHERE " + pred.sql()
-                        + " ORDER BY r.ID_ LIMIT 7 OFFSET " + offset, pred);
+                        + " ORDER BY r.ID_" + page(7, offset), pred);
                 paged.addAll(page);
                 if (page.size() < 7) break;
             }
@@ -222,17 +223,17 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
     void explicitDenyWinsAtEveryScopeAndAcrossUserAndGroup() {
         Principal alice = new Principal("t1", "alice", Set.of("clerks"));
         Resource task = new Resource("t1", "t1-task-01");
-        run(c -> AuthorizationPolicy.grant(c, PG, "t1", "alice", TYPE, "t1-task-01", Action.READ.bit()));
+        run(c -> AuthorizationPolicy.grant(c, DIALECT, "t1", "alice", TYPE, "t1-task-01", Action.READ.bit()));
         assertTrue(txBool(c -> policy.allow(c, alice, Action.READ, task)));
 
         // group deny on '*' beats the user's specific grant
-        run(c -> AuthorizationPolicy.deny(c, PG, "t1", "clerks", TYPE, AuthorizationPolicy.ANY, Action.READ.bit()));
+        run(c -> AuthorizationPolicy.deny(c, DIALECT, "t1", "clerks", TYPE, AuthorizationPolicy.ANY, Action.READ.bit()));
         assertFalse(txBool(c -> policy.allow(c, alice, Action.READ, task)));
         assertEquals(0L, txLong(c -> countVisible(c, alice, Action.READ)));
 
         // a deny for another permission does not affect READ
-        run(c -> AuthorizationPolicy.revoke(c, PG, "t1", "clerks", TYPE, AuthorizationPolicy.ANY, true));
-        run(c -> AuthorizationPolicy.deny(c, PG, "t1", "clerks", TYPE, AuthorizationPolicy.ANY, Action.CLAIM.bit()));
+        run(c -> AuthorizationPolicy.revoke(c, DIALECT, "t1", "clerks", TYPE, AuthorizationPolicy.ANY, true));
+        run(c -> AuthorizationPolicy.deny(c, DIALECT, "t1", "clerks", TYPE, AuthorizationPolicy.ANY, Action.CLAIM.bit()));
         assertTrue(txBool(c -> policy.allow(c, alice, Action.READ, task)));
         assertFalse(txBool(c -> policy.allow(c, alice, Action.CLAIM, task)));
         assertEquals(1L, txLong(c -> countVisible(c, alice, Action.READ)));
@@ -241,12 +242,12 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
     @Test
     void tenantComesFromTheIdentityNeverFromTheGrantTarget() {
         // a t1 grant naming a t2 task id, and a '*' grant in t2 for a t1 principal's user id
-        run(c -> AuthorizationPolicy.grant(c, PG, "t1", "bob", TYPE, "t2-task-03", Action.READ.bit()));
+        run(c -> AuthorizationPolicy.grant(c, DIALECT, "t1", "bob", TYPE, "t2-task-03", Action.READ.bit()));
         Principal bobT1 = new Principal("t1", "bob", Set.of());
         assertFalse(txBool(c -> policy.allow(c, bobT1, Action.READ, new Resource("t2", "t2-task-03"))));
         assertEquals(0L, txLong(c -> countVisible(c, bobT1, Action.READ)));
 
-        run(c -> AuthorizationPolicy.grant(c, PG, "t2", "bob", TYPE, AuthorizationPolicy.ANY, Action.READ.bit()));
+        run(c -> AuthorizationPolicy.grant(c, DIALECT, "t2", "bob", TYPE, AuthorizationPolicy.ANY, Action.READ.bit()));
         assertEquals(0L, txLong(c -> countVisible(c, bobT1, Action.READ)));
         assertEquals((long) TASKS_PER_TENANT, txLong(c -> countVisible(c, new Principal("t2", "bob", Set.of()), Action.READ)));
     }
@@ -254,9 +255,9 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
     @Test
     void everyGrantChangeBumpsThePolicyVersion() {
         long v0 = inTx(c -> AuthorizationPolicy.policyVersion(c, "t1"));
-        run(c -> AuthorizationPolicy.grant(c, PG, "t1", "x", TYPE, "*", Action.READ.bit()));
-        run(c -> AuthorizationPolicy.deny(c, PG, "t1", "x", TYPE, "t1-task-00", Action.READ.bit()));
-        run(c -> AuthorizationPolicy.revoke(c, PG, "t1", "x", TYPE, "t1-task-00", true));
+        run(c -> AuthorizationPolicy.grant(c, DIALECT, "t1", "x", TYPE, "*", Action.READ.bit()));
+        run(c -> AuthorizationPolicy.deny(c, DIALECT, "t1", "x", TYPE, "t1-task-00", Action.READ.bit()));
+        run(c -> AuthorizationPolicy.revoke(c, DIALECT, "t1", "x", TYPE, "t1-task-00", true));
         assertEquals(v0 + 3, txLong(c -> AuthorizationPolicy.policyVersion(c, "t1")));
     }
 

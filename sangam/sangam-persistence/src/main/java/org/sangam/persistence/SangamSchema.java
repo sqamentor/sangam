@@ -78,6 +78,8 @@ public final class SangamSchema {
             "ONB_RUN",
             // sangam-ledger LedgerSchema (also the billing tables)
             "LDG_BALANCE", "LDG_ENTRY", "LDG_HOLD", "LDG_FREEZE", "LDG_ACCOUNTING",
+            // sangam-billing RegistryDocumentNumbers: document numbers and receipt plans by document identity (SL-130/131)
+            "BIL_DOCUMENT",
             // sangam-registry RegistrySchema
             "REG_OBJECT_TYPE", "REG_OBJECT", "REG_OBJECT_VERSION", "REG_NUMBER_SERIES",
             "REG_NUMBER_COUNTER", "REG_NUMBER_ALLOCATION", "REG_REGISTER_DEF", "REG_REGISTER_BOOK",
@@ -124,6 +126,8 @@ public final class SangamSchema {
             "SANGAM_TIMER_GUARD", "SANGAM_PAUSE",
             // WS-REST default adapters: typed JSON documents and binary contents (nothing kept in memory)
             "REST_DOCUMENT", "REST_BLOB",
+            // SL-40 tenant custom fields (sangam-rest JdbcTenantCustomFieldStore), effective-dated versions
+            "TENANT_CUSTOM_FIELD",
             // sangam-compliance (ComplianceSchema): DPDP Act 2023 / Rules 2025, CERT-In (GOV-4, R53)
             "CMP_PURPOSE", "CMP_OBJECTION", "CMP_PROCESSING_ACTIVITY", "CMP_DISCLOSURE", "CMP_LAWFUL_REQUEST",
             "CMP_CONTACT", "CMP_TIER_STATUS", "CMP_IMPACT_ASSESSMENT", "CMP_AUDIT_EVIDENCE", "CMP_NOTICE",
@@ -137,10 +141,14 @@ public final class SangamSchema {
      * SEC_POWER_TABLE name/test_cases/deployment_id/row_revision, PACKAGE_VERSION.package_id,
      * DEBUG_BREAKPOINT.process_instance_id (0016-03..06); EVT_CHANNEL_DEF / EVT_EVENT_DEF state, retired_by,
      * retired_at; PORT_BATCH reason, four_eyes_flag, approved_by/_at, completed_at + PORT_BATCH_STATE;
-     * SLA_INSTANCE.definition_key + SLA_INSTANCE_STATS; HRM_PI_QUERY; HRM_TASK_QUERY (0017-01..06).
+     * SLA_INSTANCE.definition_key + SLA_INSTANCE_STATS; HRM_PI_QUERY; HRM_TASK_QUERY (0017-01..06); plus the
+     * generator {@code DATA} changesets: CFG_MASTER_CODE root parent_code and RES_TOKEN_SEQ no-series key '' to '-'
+     * (0033-01..02, SL-84); plus the generator {@code NULLABLE} changesets: CH_MESSAGE.body, AI_AGENT_RUN.input_text,
+     * OPS_BULK_ROW.external_id (0035-01..03, SL-87); plus the generator {@code SHARED_TENANT} changesets: tenant_id ''
+     * to the reserved shared key '-' in 53 tables, each after a collision preflight (0036-01..53, SL-86).
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 10;
+    public static final int ADDITIONAL_CHANGESETS = 68;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {

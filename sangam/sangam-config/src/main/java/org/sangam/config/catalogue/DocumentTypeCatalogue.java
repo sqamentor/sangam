@@ -109,12 +109,56 @@ public final class DocumentTypeCatalogue {
 
     /** Looks a type up by its form number (or a legacy form number). */
     public Optional<DocumentType> byForm(String formNumber) {
-        for (DocumentType t : types.values()) {
+        return byForm(formNumber, null);
+    }
+
+    /** {@link #byForm(String)} among the types of one form kind ({@code null} or blank: every type). */
+    public Optional<DocumentType> byForm(String formNumber, String formKind) {
+        for (DocumentType t : ofKind(List.copyOf(types.values()), formKind)) {
             if (formNumber.equals(t.formNumber()) || Tree.strings(t.get("legacyForms")).contains(formNumber)) {
                 return Optional.of(t);
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Every type a reference names: the type whose id it is, and the types whose form number (or a legacy form number)
+     * it is. A process carries a document type as its catalogue id, such as the Union's {@code GPF_WITHDRAWAL} or
+     * Rajasthan's {@code RJ_FVC}, or as a form number, such as {@code GOI:RPR 42}; exactly one match identifies the
+     * type, more than one is ambiguous and is never decided by catalogue order. One form can carry several types
+     * (Rajasthan's {@code RJ:GA 84} carries the FVC bill and its sub-types; the Union's {@code GOI:RPR 29} the contingent,
+     * supplier and entertainment claims), so the catalogue id is the reference that always identifies one type.
+     */
+    public List<DocumentType> byReference(String ref) {
+        if (ref == null || ref.isBlank()) {
+            return List.of();
+        }
+        java.util.Set<DocumentType> out = new java.util.LinkedHashSet<>();
+        type(ref).ifPresent(out::add);
+        for (DocumentType t : types.values()) {
+            if (ref.equals(t.formNumber()) || Tree.strings(t.get("legacyForms")).contains(ref)) {
+                out.add(t);
+            }
+        }
+        return List.copyOf(out);
+    }
+
+    /**
+     * {@link #byReference(String)} restricted to one form kind (the row's {@code formKind}, for example {@code BILL}):
+     * a type of another kind, or a row that declares no kind, does not match. A {@code null} or blank kind applies no
+     * restriction, so a caller that names no kind sees the catalogue as before.
+     */
+    public List<DocumentType> byReference(String ref, String formKind) {
+        return ofKind(byReference(ref), formKind);
+    }
+
+    /** The types of {@code candidates} whose {@code formKind} is {@code formKind}; all of them when no kind is named. */
+    public static List<DocumentType> ofKind(List<DocumentType> candidates, String formKind) {
+        if (formKind == null || formKind.isBlank()) {
+            return candidates;
+        }
+        return candidates.stream().filter(t -> formKind.equals(t.formKind())).toList();
     }
 
     public List<DocumentType> family(String family) {
@@ -142,6 +186,16 @@ public final class DocumentTypeCatalogue {
             }
         }
         return out;
+    }
+
+    /**
+     * The catalogue's contribution to the profile linter ({@code ProfileValidator.with(DocumentTypeCatalogue::profileCheck)},
+     * the "document-type chains" check of its javadoc): the {@link #lint()} findings of a resolved profile. The
+     * composition root registers it, so a profile version whose document type names an approval chain the catalogue
+     * does not define is refused at activation instead of failing the running pack's chain step ({@code CHAIN_UNKNOWN}).
+     */
+    public static List<Finding> profileCheck(ResolvedProfile profile) {
+        return of(profile).lint();
     }
 
     /**
@@ -179,7 +233,7 @@ public final class DocumentTypeCatalogue {
                 out.add(Finding.error("CERTIFICATE_REQUIRED", c, "certificate " + c + " is required", ref));
             }
         }
-        List<Map<String, Object>> lines = Tree.maps(doc.get("lines"));
+        List<Map<String, Object>> lines = linesOf(doc);
         Map<String, Object> cls = t.classification();
         List<String> allow = Tree.strings(cls.get("allow"));
         BigDecimal total = BigDecimal.ZERO;
@@ -199,11 +253,24 @@ public final class DocumentTypeCatalogue {
                 }
             }
         }
-        if (total.signum() == 0 && !lines.isEmpty() && !t.nilAllowed()) {
+        boolean amounted = !Tree.maps(doc.get("lines")).isEmpty() || doc.get("amount") != null;
+        if (total.signum() == 0 && amounted && !t.nilAllowed()) {
             out.add(Finding.error("NIL_NOT_ALLOWED", "lines", "net amount zero is not allowed for " + typeId, ref));
         }
-        BigDecimal max = Tree.decimal(t.get("limits.maxAmount"), null);
-        if (max != null && total.compareTo(max) > 0) {
+        // SL-122: the limit and the document amounts are both integer minor units (SD-398 / PACKS4: packs send money
+        // in minor units, profilegen money.minor() writes profile money in minor units), so they compare as they are.
+        // A limit that is set but is not a plain number is an error, never a skipped check.
+        Object rawMax = t.get("limits.maxAmount");
+        BigDecimal max;
+        try {
+            max = Tree.decimal(rawMax, null);
+        } catch (NumberFormatException e) {
+            max = null;
+        }
+        if (rawMax != null && max == null) {
+            out.add(Finding.error("LIMIT_INVALID", "limits.maxAmount", "type limit '" + rawMax
+                    + "' is not an amount in minor units", ref));
+        } else if (max != null && amounted && total.compareTo(max) > 0) {
             out.add(Finding.error("AMOUNT_ABOVE_LIMIT", "lines", "amount above the type limit " + max, ref));
         }
         LocalDate due = Tree.date(doc.get("dueDate"), null);
@@ -215,6 +282,26 @@ public final class DocumentTypeCatalogue {
             out.add(Finding.error("SANCTION_REQUIRED", "sanctionRef", "a sanction reference is required", ref));
         }
         return out;
+    }
+
+    /**
+     * The document's lines (SL-122): its {@code lines} when it has them, else one line made of its top-level
+     * {@code headOfAccount} (the classification) and {@code amount}, as a single-head bill sends them, so the
+     * allow-list, the nil rule and the amount limit apply to it too; a document with neither has no lines.
+     */
+    static List<Map<String, Object>> linesOf(Map<String, Object> doc) {
+        List<Map<String, Object>> lines = Tree.maps(doc.get("lines"));
+        if (!lines.isEmpty() || (doc.get("headOfAccount") == null && doc.get("amount") == null)) {
+            return lines;
+        }
+        Map<String, Object> one = new LinkedHashMap<>();
+        if (doc.get("headOfAccount") != null) {
+            one.put("classification", doc.get("headOfAccount"));
+        }
+        if (doc.get("amount") != null) {
+            one.put("amount", doc.get("amount"));
+        }
+        return List.of(one);
     }
 
     /** Glob match on codes: {@code *} matches any run of characters, {@code ?} one character. */

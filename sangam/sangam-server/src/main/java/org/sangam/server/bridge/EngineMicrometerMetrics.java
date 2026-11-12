@@ -12,7 +12,7 @@ import org.sangam.core.engine.EngineMetrics;
 /**
  * {@link EngineMetrics} on Micrometer (sangam-engine README notes 4 and 17, R13). Prometheus names:
  * {@code sangam_engine_*}, plus the deploy dashboard's {@code sangam_jobs_acquired_total} and
- * {@code sangam_jobs_failed_total{cause}}.
+ * {@code sangam_jobs_failed_total{cause,conflict}}.
  * Tags are bounded: process definition keys, command names and topics come from deployed models, not from users.
  */
 public final class EngineMicrometerMetrics implements EngineMetrics {
@@ -65,11 +65,21 @@ public final class EngineMicrometerMetrics implements EngineMetrics {
         }
     }
 
-    /** Note 17: Prometheus {@code sangam_jobs_failed_total{cause}}; the cause is the exception class simple name. */
+    /** Note 17: Prometheus {@code sangam_jobs_failed_total{cause,conflict}}; the cause is the exception class simple name. */
     @Override
     public void jobFailed(String cause) {
+        jobFailed(cause, false);
+    }
+
+    /**
+     * {@code conflict="true"}: a transient database conflict whose job retry was kept (SL-89). Every series of the
+     * meter carries both tags (a Prometheus meter needs one tag-key set per name).
+     */
+    @Override
+    public void jobFailed(String cause, boolean conflict) {
         Counter.builder("sangam.jobs.failed").description("job executions that failed")
-                .tag("cause", tag(simpleName(cause))).register(registry).increment();
+                .tag("cause", tag(simpleName(cause))).tag("conflict", Boolean.toString(conflict))
+                .register(registry).increment();
     }
 
     private static String simpleName(String cause) {

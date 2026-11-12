@@ -22,6 +22,7 @@ import org.sangam.integration.inbox.InboxService;
 import org.sangam.integration.relay.LeaderElection;
 import org.sangam.integration.relay.OutboxCapacityMonitor;
 import org.sangam.integration.relay.PublisherRegistry;
+import org.sangam.integration.relay.TenantAdmission;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.support.DocumentStore;
 import org.sangam.rest.support.RestProperties;
@@ -91,6 +92,22 @@ public class CellWiring {
     @Bean
     public CellTenantStateStore sangamCellTenantStates(DocumentStore documents) {
         return new CellTenantStateStore(documents);
+    }
+
+    /**
+     * M-008 (ADR-D-21, IR-4/IR-6): broker inbox consumers store and ack a message only for an ACTIVE tenant of this
+     * cell; for FROZEN, IMPORTING, MOVED and PURGED the message is not acked and the broker redelivers it (the
+     * consumers' back-pressure path), the broker-side counterpart of {@link CellTenantStateFilter}. The state is read
+     * through the store's 2 s cache.
+     */
+    @Bean
+    public TenantAdmission sangamInboxTenantAdmission(CellTenantStateStore states) {
+        return tenant -> admitsInbound(states.get(tenant).state());
+    }
+
+    /** Only an ACTIVE tenant takes broker messages; every move state keeps them in the broker (M-008). */
+    static boolean admitsInbound(CellTenantStateStore.State state) {
+        return state == CellTenantStateStore.State.ACTIVE;
     }
 
     @Bean
@@ -171,10 +188,11 @@ public class CellWiring {
         String cellId = env.getRequiredProperty("sangam.cell.id");
         String version = env.getProperty("sangam.version", CellWiring.class.getPackage().getImplementationVersion() == null
                 ? "0.1.0-SNAPSHOT" : CellWiring.class.getPackage().getImplementationVersion());
+        String[] where = jurisdictionAndResidency(env);
         CellDescriptor descriptor = new CellDescriptor(cellId,
                 env.getProperty("sangam.cell.region", ""),
-                env.getProperty("sangam.cell.jurisdiction", "IN"),
-                env.getProperty("sangam.cell.residency", env.getProperty("sangam.cell.jurisdiction", "IN")),
+                where[0],
+                where[1],
                 env.getProperty("sangam.cell.public-url", ""),
                 env.getProperty("sangam.cell.admin-url", ""),
                 dbVendor(dataSource),
@@ -194,6 +212,21 @@ public class CellWiring {
                 .toMillis());
         self[0] = service;
         return service;
+    }
+
+    /**
+     * SL-104 (ADR-D-20): the cell's {@code sangam.cell.jurisdiction} and {@code sangam.cell.residency} (default: the
+     * jurisdiction) come from the deployment's configuration, never from a country default in product code. A cell
+     * without a configured jurisdiction does not register (fails at start-up, naming the property).
+     */
+    static String[] jurisdictionAndResidency(Environment env) {
+        String jurisdiction = env.getProperty("sangam.cell.jurisdiction");
+        if (jurisdiction == null || jurisdiction.isBlank()) {
+            throw new IllegalStateException("sangam.cell.jurisdiction is not configured (SANGAM_CELL_JURISDICTION):"
+                    + " a cell registers with its deployment's jurisdiction; there is no product default (SL-104)");
+        }
+        String residency = env.getProperty("sangam.cell.residency");
+        return new String[]{jurisdiction, residency == null || residency.isBlank() ? jurisdiction : residency};
     }
 
     /** Starts registration when the application is ready; DRAINING heartbeat at shutdown (before services stop). */

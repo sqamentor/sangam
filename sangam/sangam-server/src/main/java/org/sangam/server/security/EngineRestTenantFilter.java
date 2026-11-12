@@ -24,6 +24,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * itself filters queries (another tenant's objects do not exist), refuses commands on other tenants' objects and
  * refuses deployments into another tenant. A request without a Sangam principal or tenant is refused (fail closed).
  * The previous engine authentication of the thread is restored afterwards.
+ *
+ * <p>SL-73: Operaton's tenant check shows rows without a tenant to every tenant and does not cover authorizations,
+ * filters or identity objects at all, so a tenant identity is limited to the tenant-scoped resources of
+ * {@link EngineRestTenantScope} (403 {@code ENGINE_REST_RESOURCE_NOT_TENANT_SCOPED} for everything else). Platform
+ * identities (SL-70, {@link PlatformIssuers}) are not limited.
  */
 public final class EngineRestTenantFilter extends OncePerRequestFilter {
 
@@ -56,6 +61,15 @@ public final class EngineRestTenantFilter extends OncePerRequestFilter {
             ProblemResponses.write(request, response, 403, "TENANT_REQUIRED", "Tenant required",
                     "The Operaton REST API is available only to an identity of one tenant");
             return;
+        }
+        if (!PlatformIssuers.isPlatformIdentity(p.groups())) {
+            String uri = request.getRequestURI().substring(request.getContextPath().length());
+            if (!EngineRestTenantScope.allowed(uri.substring(PREFIX.length()))) {
+                ProblemResponses.write(request, response, 403, "ENGINE_REST_RESOURCE_NOT_TENANT_SCOPED",
+                        "Resource not available to a tenant", "This Operaton REST resource is not scoped to one tenant;"
+                        + " it is available only to platform identities");
+                return;
+            }
         }
         Authentication previous = ids.getCurrentAuthentication();
         // an Operaton admin group would switch the engine's tenant check off: never carried over from a token

@@ -1,6 +1,6 @@
 {
   "id": "gov.p3.grant-sanction",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "P3 Grant / scheme sanction (DBT)",
     "hi": "पी3 अनुदान / योजना स्वीकृति (डीबीटी)"
@@ -78,7 +78,11 @@
       "id": "pfms.dbt",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
-      "purpose": "DBT record per instalment"
+      "purpose": "DBT record per instalment",
+      "simulatorBinding": {
+        "connector": "pfms-sim",
+        "operation": "pay"
+      }
     },
     {
       "id": "bank.statement",
@@ -90,7 +94,11 @@
       "id": "esign.sign",
       "capabilityClass": "b",
       "govTag": "G-SIGN",
-      "purpose": "Sanction order signature"
+      "purpose": "Sanction order signature",
+      "simulatorBinding": {
+        "connector": "esign-sim",
+        "operation": "sign"
+      }
     }
   ],
   "covers": [
@@ -134,7 +142,7 @@
         "beneficiaryId": "VAULT-7f3a",
         "bankAccount": "3210987654",
         "ifsc": "PUNB0123400",
-        "income": 120000.0,
+        "income": 12000000,
         "age": 41,
         "socialCategory": "SC",
         "landHolding": 0.5,
@@ -173,7 +181,7 @@
         "beneficiaryId": "VAULT-7f3a",
         "bankAccount": "3210987654",
         "ifsc": "PUNB0123400",
-        "income": 300000.0,
+        "income": 30000000,
         "age": 41,
         "socialCategory": "SC",
         "landHolding": 0.5,
@@ -207,5 +215,16 @@
     "sangam-core-rejection",
     "sangam-core-sanction",
     "sangam-core-scrutiny"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "entitlement",
+      "entitlementOverride",
+      "income"
+    ]
+  }
 }

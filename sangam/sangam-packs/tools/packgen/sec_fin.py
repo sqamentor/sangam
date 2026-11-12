@@ -5,7 +5,9 @@ Regulatory references: spike/results/SECTOR-WORKFLOWS.md (SEC-BANK-*, SEC-NBFC-*
 All thresholds, limits and timelines marked SYNTHETIC are pilot values; regulated entities replace them with their
 board-approved policy (tenant DMN override, GP-37)."""
 from lib import C, q
-from common import core, outcome, end_ok, rejection, reject_with, revise, batch_loop
+from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
+from common import core, outcome, end_ok, rejection, reject_with, revise, batch_loop, checked_query, check_conditions, \
+    unconfirmed_hold
 from gov2 import simple_seeds
 from sector import SIDE, spack, start_form, clock, at_date, powers, authority, maybe
 
@@ -35,7 +37,7 @@ def bank_account_opening():
                      'applicantRef', 'documents'])
     d = s.setv('ao_defaults', 'Configuration',
                defaults='customerName=@customerId;accountType=SAVINGS;kycMode=AADHAAR_OTP;occupation=SALARIED;'
-                        'consentGiven=true;ckycFound=false;panValid=true;screenHit=false;pepFlag=false;amount=0;'
+                        'consentGiven=true;pepFlag=false;amount=0;'
                         'caseType=ACCOUNT_OPENING;routingDecisionKey=sec-bank-ao-checker;'
                         'powersDecisionKey=sec-bank-ao-powers;executionConnector=cbs.accountOpen;'
                         'executionStep=open-account;reconcileRequired=false;outputTemplate=welcome-kit;'
@@ -44,18 +46,24 @@ def bank_account_opening():
     cg = s.xgw('ao_consentGw', 'Consent for KYC?')
     s.seq(st, d, cg)
     s.flow(cg, s.end('ao_endNoConsent', 'Stopped: no consent'), '!consentGiven', 'no')
-    ck = s.conn('ao_ckycSearch', 'Search CKYCR', 'ckycr.search', 'search', 'query', 'pan,customerName', 'ckyc')
-    s.flow(cg, ck, None, 'yes', default=True)
+    # SL-115: CKYCR search, PAN and screening fail closed (each cleared before its query; no default stands in)
+    cke, ck = checked_query(s, 'ao_ckycSearch', 'Search CKYCR', 'ckycr.search', 'search', 'pan,customerName', 'ckyc',
+                            ['ckycFound'])
+    s.flow(cg, cke, None, 'yes', default=True)
     dl = s.conn('ao_ckycDownload', 'Download CKYC record', 'ckycr.download', 'download', 'query', 'pan', 'ckycRec')
-    g1, m1 = maybe(s, 'ao_ckyc', 'ckycFound', dl, dl, 'Found in CKYCR?')
+    ckyc_unconfirmed, ckyc_found = check_conditions([('ckyc', ['ckycFound'])], 'ckycFound')
+    g1, m1 = maybe(s, 'ao_ckyc', ckyc_found, dl, dl, 'Found in CKYCR?')
+    s.flow(g1, m1, ckyc_unconfirmed, 'search not confirmed: no CKYC record relied on')
     s.flow(ck, g1)
-    pv = s.conn('ao_pan', 'Verify PAN', 'pan.verify', 'verify', 'query', 'pan,customerName', 'pan')
-    s.flow(m1, pv)
+    pve, pv = checked_query(s, 'ao_pan', 'Verify PAN', 'pan.verify', 'verify', 'pan,customerName', 'pan', ['panValid'])
+    s.flow(m1, pve)
     pg = s.xgw('ao_panGw', 'PAN valid?')
     s.flow(pv, pg)
     rv = revise(p, s, 'ao_correct', 'Correct application details | आवेदन विवरण सुधारें',
-                ['customerName*', 'pan*', 'mobile*'], pv)
-    s.flow(pg, rv, '!panValid', 'mismatch: correct')
+                ['customerName*', 'pan*', 'mobile*'], pve)
+    pan_unconfirmed, pan_invalid = check_conditions([('pan', ['panValid'])], '!panValid')
+    s.flow(pg, reject_with(p, s, 'ao_rjPan', 'PAN_NOT_CONFIRMED'), pan_unconfirmed, 'PAN not confirmed')
+    s.flow(pg, rv, pan_invalid, 'mismatch: correct')
     mg = s.xgw('ao_modeGw', 'KYC mode?')
     s.flow(pg, mg, None, 'valid', default=True)
     ve, vd = s.sla_task('ao_vcip', 'V-CIP: live video identification | वी-सीआईपी: सजीव वीडियो पहचान', 'vcipSeat',
@@ -74,16 +82,19 @@ def bank_account_opening():
     s.flow(vg, kj, "vcipDecision == 'pass'", 'pass')
     s.flow(ek, kj)
     s.flow(vg, reject_with(p, s, 'ao_rjVcip', 'VCIP_FAILED'), None, 'fail', default=True)
-    sc = s.conn('ao_screen', 'Screen UNSC / UAPA / PEP lists', 'sanctions.screen', 'screen', 'query',
-                'customerName,pan', 'screen')
-    s.flow(kj, sc)
+    sce, sc = checked_query(s, 'ao_screen', 'Screen UNSC / UAPA / PEP lists', 'sanctions.screen', 'screen',
+                            'customerName,pan', 'screen', ['screenHit'])
+    s.flow(kj, sce)
     sg = s.xgw('ao_screenGw', 'Screening hit?')
     s.flow(sc, sg)
     cr = s.user('ao_compliance', 'Review screening hit | स्क्रीनिंग मिलान की समीक्षा', '${complianceSeat}',
                 form='sec-bank-account-opening/screening', decision=('screenDecision', ['falsePositive', 'reject']),
                 fields=['screenMatchDetails', 'remarks*'], sod=True,
                 doc='A true match with a designated list is frozen and reported (UAPA s.51A order), never opened.')
-    s.flow(sg, cr, 'screenHit', 'possible match')
+    screen_unconfirmed, screen_hit = check_conditions([('screen', ['screenHit'])], 'screenHit')
+    s.flow(sg, reject_with(p, s, 'ao_rjScreenCheck', 'SCREENING_NOT_CONFIRMED'), screen_unconfirmed,
+           'screening not confirmed')
+    s.flow(sg, cr, screen_hit, 'possible match')
     rk = s.rule('ao_risk', 'Customer risk category (DMN)', 'sec-bank-kyc-risk')
     s.flow(sg, rk, None, 'clear', default=True)
     crg = s.xgw('ao_compGw')
@@ -130,10 +141,14 @@ def bank_account_opening():
         ('AML-COMPLIANCE', 'COMPLIANCE', None, 'AML compliance officer', 'धन-शोधन निवारण अनुपालन अधिकारी'),
         ('BRANCH-HEAD', 'BRANCHHEAD', None, 'Branch head', 'शाखा प्रमुख')], 'bao')
     pk.accept('SEC-BANK-AO-1', 'V-CIP dropped call is rescheduled, not failed', ['SEC-BANK-002'],
-              'kycMode = VCIP', 'the official records reschedule, then pass', 'a second V-CIP task; account opened')
+              'kycMode = VCIP; CKYCR has no record, PAN valid, screening clear (simulator answers, SL-115)',
+              'the official records reschedule, then pass', 'a second V-CIP task; account opened',
+              vars={'kycMode': 'VCIP', 'sim_ckycr_search': 'found=false', 'sim_pan_verify': 'valid=true',
+                    'sim_sanctions_screen': 'hit=false'})
     pk.accept('SEC-BANK-AO-2', 'Screening true match never opens the account', ['SEC-BANK-005'],
-              'sim_sanctions_screen = hit=true', 'compliance records reject', 'rejection with SANCTIONS_MATCH',
-              vars={'sim_sanctions_screen': 'hit=true'})
+              'sim_sanctions_screen = hit=true; PAN valid (simulator answer, SL-115)', 'compliance records reject',
+              'rejection with SANCTIONS_MATCH',
+              vars={'sim_sanctions_screen': 'hit=true', 'sim_pan_verify': 'valid=true'})
 
 
 def bank_rekyc():
@@ -226,7 +241,7 @@ def bank_loan_origination():
                      'collateralType', 'consentGiven*', 'applicantRef', 'documents'])
     d = s.setv('lo_defaults', 'Configuration',
                defaults='loanProduct=PERSONAL;tenureMonths=36;monthlyIncome=50000;existingEmi=0;collateralType=NONE;'
-                        'consentGiven=true;kycCompliant=true;bureauScore=750;roiPct=12;caseType=LOAN;'
+                        'consentGiven=true;roiPct=12;caseType=LOAN;committeeThreshold=50000000;'
                         'routingDecisionKey=sec-bank-loan-authority;powersDecisionKey=sec-bank-loan-powers;'
                         'signatureRequired=true;committeeSeats=CREDIT-COMM-1,CREDIT-COMM-2,CREDIT-COMM-3;'
                         'quorumRule=MAJORITY;analystSeat=CREDIT-ANALYST;kfsValidity=3WD;'
@@ -235,18 +250,29 @@ def bank_loan_origination():
     cg = s.xgw('lo_consentGw', 'Consent for bureau pull?')
     s.seq(st, d, cg)
     s.flow(cg, s.end('lo_endNoConsent', 'Stopped: no consent'), '!consentGiven', 'no')
-    ky = s.conn('lo_kyc', 'KYC status', 'cbs.kycStatus', 'status', 'query', 'customerId', 'kyc')
-    s.flow(cg, ky, None, 'yes', default=True)
+    # SL-115: the KYC status and the bureau score fail closed (cleared before every query; no default stands in)
+    kye, ky = checked_query(s, 'lo_kyc', 'KYC status', 'cbs.kycStatus', 'status', 'customerId', 'kyc',
+                            ['kycCompliant'])
+    s.flow(cg, kye, None, 'yes', default=True)
     kg = s.xgw('lo_kycGw', 'KYC compliant?')
     s.flow(ky, kg)
-    s.flow(kg, reject_with(p, s, 'lo_rjKyc', 'KYC_NOT_COMPLIANT'), '!kycCompliant', 'no')
-    bu = s.conn('lo_bureau', 'Credit bureau report', 'bureau.pull', 'report', 'query', 'customerId', 'bureau')
-    s.flow(kg, bu, None, 'yes', default=True)
+    kyc_unconfirmed, kyc_not = check_conditions([('kyc', ['kycCompliant'])], '!kycCompliant')
+    s.flow(kg, reject_with(p, s, 'lo_rjKycCheck', 'KYC_NOT_CONFIRMED'), kyc_unconfirmed, 'KYC not confirmed')
+    s.flow(kg, reject_with(p, s, 'lo_rjKyc', 'KYC_NOT_COMPLIANT'), kyc_not, 'no')
+    bue, bu = checked_query(s, 'lo_bureau', 'Credit bureau report', 'bureau.pull', 'report', 'customerId', 'bureau',
+                            ['bureauScore'])
+    s.flow(kg, bue, None, 'yes', default=True)
+    bg = s.xgw('lo_bureauGw', 'Bureau score?')
+    s.flow(bu, bg)
+    bureau_unconfirmed, _ = check_conditions([('bureau', ['bureauScore'])])
+    s.flow(bg, reject_with(p, s, 'lo_rjBureau', 'CREDIT_BUREAU_NOT_CONFIRMED'), bureau_unconfirmed,
+           'bureau score not confirmed')
     fo = s.expr('lo_foir', 'Indicative FOIR',
                 "${execution.setVariable('foirPct', (existingEmi + amount / tenureMonths) * 100 / monthlyIncome)}")
+    s.flow(bg, fo, None, 'score received', default=True)
     pol = s.rule('lo_policy', 'Credit policy (DMN)', 'sec-bank-credit-policy')
     pg = s.xgw('lo_policyGw', 'Policy result?')
-    s.seq(bu, fo, pol, pg)
+    s.seq(fo, pol, pg)
     s.flow(pg, reject_with(p, s, 'lo_rjPolicy', 'CREDIT_POLICY_DECLINE'), "creditDecision == 'DECLINE'",
            'decline (reasons communicated)')
     ae, ad = s.sla_task('lo_appraise', 'Credit appraisal | ऋण मूल्यांकन', 'analystSeat',
@@ -278,7 +304,7 @@ def bank_loan_origination():
     s.flow(secg, cmg, None, 'unsecured', default=True)
     com = core(s, 'lo_committee', 'Credit committee (core committee)', 'committee')
     san = core(s, 'lo_sanction', 'Sanction by delegated power (core sanction, SoD, signature)', 'sanction')
-    s.flow(cmg, com, 'amount > 50000000', 'above 5 crore')
+    s.flow(cmg, com, 'amount > committeeThreshold', 'above 5 crore (committeeThreshold, minor units)')
     s.flow(cmg, san, None, 'within delegated power', default=True)
     ccg = s.xgw('lo_commRes')
     s.flow(com, ccg)
@@ -313,7 +339,7 @@ def bank_loan_origination():
     s.seq(bk, cl, end_ok(p, s, 'lo_end', 'Disbursed'))
     s.side_exits('lo')
     pk.dmn('sec-bank-credit-policy', 'Credit policy (SYNTHETIC)', 'FIRST',
-           [('Bureau score', 'bureauScore', 'integer'), ('FOIR %', 'foirPct', 'double')],
+           [('Bureau score', 'bureauScore', 'integer'), ('FOIR %', 'foirPct', 'number')],
            [('creditDecision', 'Decision', 'string'), ('kfsValidity', 'KFS validity', 'string')],
            [(['< 650', '-'], [q('DECLINE'), q('3WD')], 'score below cut-off'),
             (['-', '> 60'], [q('DECLINE'), q('3WD')], 'FOIR above 60%'),
@@ -353,15 +379,15 @@ def bank_collections():
     s = p.root
     st = s.start('co_start', 'Loan overdue (LMS end of day)', msg='sangam.loan.overdue', initiator=None)
     d = s.setv('co_defaults', 'Configuration',
-               defaults='dpd=1;amount=0;loanAccountNo=@customerId;ptpDays=P7D;agentPool=COLL-AGENT-1,COLL-AGENT-2;'
+               defaults='dpd=1;amount=0;crilcThreshold=50000000;loanAccountNo=@customerId;ptpDays=P7D;agentPool=COLL-AGENT-1,COLL-AGENT-2;'
                         'caseType=SETTLEMENT;routingDecisionKey=sec-bank-ots-authority;'
-                        'powersDecisionKey=sec-bank-ots-powers;loanCured=false;appealAllowed=false;'
+                        'powersDecisionKey=sec-bank-ots-powers;appealAllowed=false;'
                         'applicantRef=@customerId')
     cls = s.rule('co_class', 'SMA / NPA classification (DMN)', 'sec-bank-sma')
     s.seq(st, d, cls)
     cr = s.conn('co_crilc', 'Report to CRILC / CICs', 'crilc.report', 'report', 'submit', 'loanAccountNo,smaClass,amount',
                 'crilc', step='crilc')
-    g1, m1 = maybe(s, 'co_crilcOpt', 'amount >= 50000000', cr, cr, 'Exposure 5 crore or more?')
+    g1, m1 = maybe(s, 'co_crilcOpt', 'amount >= crilcThreshold', cr, cr, 'Exposure 5 crore or more?')
     s.flow(cls, g1)
     rem = s.notify('co_remind', 'Overdue reminder', 'loan-overdue', 'sms,email', 'applicantRef')
     asg = s.svc('co_assign', 'Allocate collection agent', C['ASSIGN'], {'strategy': 'LEAST_LOADED',
@@ -377,11 +403,16 @@ def bank_collections():
     s.flow(cd, g)
     s.flow(g, end_ok(p, s, 'co_endPaid', 'Regularised'), "collectDecision == 'paid'", 'paid')
     ptp = s.catch_timer('co_ptp', 'Promise-to-pay date', duration='${ptpDays}')
-    chk = s.conn('co_status', 'Check repayment', 'lms.status', 'status', 'query', 'loanAccountNo', 'loan')
+    # SL-115: only a confirmed repayment cures the account (cleared before every query; no default stands in)
+    che, chk = checked_query(s, 'co_status', 'Check repayment', 'lms.status', 'status', 'loanAccountNo', 'loan',
+                             ['loanCured'])
     pg = s.xgw('co_curedGw', 'Cured?')
     s.flow(g, ptp, "collectDecision == 'promise'", 'promise to pay')
-    s.seq(ptp, chk, pg)
-    s.flow(pg, end_ok(p, s, 'co_endCured', 'Cured'), 'loanCured', 'yes')
+    s.seq(ptp, che)
+    s.flow(chk, pg)
+    cure_unconfirmed, cured = check_conditions([('loan', ['loanCured'])], 'loanCured')
+    s.flow(pg, end_ok(p, s, 'co_endCured', 'Cured'), cured, 'yes')
+    s.flow(pg, cls, cure_unconfirmed, 'repayment not confirmed: reclassify')
     s.flow(pg, cls, None, 'broken promise: reclassify', default=True)
     sanR = core(s, 'co_restructure', 'Restructuring sanction (core sanction, SoD)', 'sanction')
     s.flow(g, s.setv('co_kindR', 'Kind: restructuring', values='caseType=RESTRUCTURING'), "collectDecision == 'restructure'",
@@ -460,14 +491,19 @@ def bank_loan_closure():
     st = start_form(p, s, 'lc_start', 'Loan repaid / settled', 'sec-bank-loan-closure/request',
                     'Loan closure | ऋण समापन', ['loanAccountNo*', 'customerId*', 'applicantRef'])
     d = s.setv('lc_defaults', 'Configuration',
-               defaults='loanAccountNo=@customerId;closureDuesNil=true;compensationDue=false;docsSeat=DOCS-CUSTODIAN;'
+               defaults='loanAccountNo=@customerId;compensationDue=false;docsSeat=DOCS-CUSTODIAN;'
                         'compensationAmount=0;delayDays=0;applicantRef=@customerId;'
                         'executionConnector=bank.credit;executionStep=delay-compensation;verifyApproval=false;'
                         'reconcileRequired=false;executionPayloadFields=customerId,compensationAmount')
-    ck = s.conn('lc_check', 'Closure check', 'lms.closureCheck', 'check', 'query', 'loanAccountNo', 'closure')
+    # SL-115: documents are released only on a confirmed nil-dues answer (cleared before the query; no default)
+    cke, ck = checked_query(s, 'lc_check', 'Closure check', 'lms.closureCheck', 'check', 'loanAccountNo', 'closure',
+                            ['closureDuesNil'])
     g = s.xgw('lc_gw', 'Dues nil?')
-    s.seq(st, d, ck, g)
-    s.flow(g, s.end('lc_endDues', 'Dues outstanding: not closed'), '!closureDuesNil', 'no')
+    s.seq(st, d, cke)
+    s.flow(ck, g)
+    dues_unconfirmed, dues_open = check_conditions([('closure', ['closureDuesNil'])], '!closureDuesNil')
+    s.flow(g, s.end('lc_endDuesUnconfirmed', 'Dues not confirmed: not closed'), dues_unconfirmed, 'not confirmed')
+    s.flow(g, s.end('lc_endDues', 'Dues outstanding: not closed'), dues_open, 'no')
     clk = clock(s, 'lc_clock', 'release', '30D')
     s.flow(g, clk, None, 'yes', default=True)
     re_ = s.user('lc_release', 'Release original documents and NOC | मूल दस्तावेज़ एवं अनापत्ति प्रमाणपत्र लौटाएँ',
@@ -525,26 +561,35 @@ def bank_payment():
                     'Payment initiation | भुगतान प्रारंभ',
                     ['payee*', 'account*', 'ifsc*', 'amount*', 'paymentRail*', 'purposeCode', 'remarks'])
     d = s.setv('py_defaults', 'Configuration',
-               defaults='paymentRail=NEFT;purposeCode=P0101;beneNameMatch=true;screenHit=false;caseType=PAYMENT;'
+               defaults='paymentRail=NEFT;purposeCode=P0101;caseType=PAYMENT;'
                         'routingDecisionKey=sec-bank-pay-checker;powersDecisionKey=sec-bank-pay-powers;'
                         'executionConnector=bank.transfer;executionStep=pay;reconcileRequired=true;'
                         'executionPayloadFields=payee,account,ifsc,amount,paymentRail;outputTemplate=payment-advice;'
                         'appealAllowed=false;complianceSeat=AML-COMPLIANCE')
-    bv = s.conn('py_bene', 'Validate beneficiary name', 'bene.validate', 'lookup', 'query', 'account,ifsc,payee', 'bene')
-    s.seq(st, d, bv)
+    # SL-115: beneficiary validation and screening fail closed (each cleared before its query; no default stands in)
+    bve, bv = checked_query(s, 'py_bene', 'Validate beneficiary name', 'bene.validate', 'lookup', 'account,ifsc,payee',
+                            'bene', ['beneNameMatch'])
+    s.seq(st, d, bve)
     bg = s.xgw('py_beneGw', 'Name matches?')
     s.flow(bv, bg)
     rv = revise(p, s, 'py_correct', 'Correct beneficiary details | लाभार्थी विवरण सुधारें', ['payee*', 'account*', 'ifsc*'],
-                bv)
-    s.flow(bg, rv, '!beneNameMatch', 'mismatch')
-    sc = s.conn('py_screen', 'Screen payee', 'sanctions.screen', 'screen', 'query', 'payee', 'screen')
-    s.flow(bg, sc, None, 'match', default=True)
+                bve)
+    bene_unconfirmed, bene_mismatch = check_conditions([('bene', ['beneNameMatch'])], '!beneNameMatch')
+    s.flow(bg, reject_with(p, s, 'py_rjBene', 'BENEFICIARY_NAME_NOT_CONFIRMED'), bene_unconfirmed,
+           'validation not confirmed')
+    s.flow(bg, rv, bene_mismatch, 'mismatch')
+    sce, sc = checked_query(s, 'py_screen', 'Screen payee', 'sanctions.screen', 'screen', 'payee', 'screen',
+                            ['screenHit'])
+    s.flow(bg, sce, None, 'match', default=True)
     sg = s.xgw('py_screenGw', 'Hit?')
     s.flow(sc, sg)
     cr = s.user('py_compliance', 'Review screening hit | स्क्रीनिंग मिलान की समीक्षा', '${complianceSeat}',
                 form='sec-bank-payment-dual-auth/screening', decision=('screenDecision', ['falsePositive', 'reject']),
                 fields=['screenMatchDetails', 'remarks*'], sod=True)
-    s.flow(sg, cr, 'screenHit', 'hit')
+    screen_unconfirmed, screen_hit = check_conditions([('screen', ['screenHit'])], 'screenHit')
+    s.flow(sg, reject_with(p, s, 'py_rjScreenCheck', 'SCREENING_NOT_CONFIRMED'), screen_unconfirmed,
+           'screening not confirmed')
+    s.flow(sg, cr, screen_hit, 'hit')
     lim = s.rule('py_limits', 'Rail limits and authorisation levels (DMN)', 'sec-bank-pay-limits')
     s.flow(sg, lim, None, 'clear', default=True)
     crg = s.xgw('py_compGw')
@@ -592,9 +637,9 @@ def bank_payment():
     auth_bands = [('PAYAUTH', 100000000), ('TREASURYHEAD', 10000000000)]  # (role, band ceiling), ascending
     lows = [checker_alone] + [hi for _, hi in auth_bands[:-1]]
     pk.dmn('sec-bank-pay-limits', 'Rail limits and authorisation levels (SYNTHETIC bands)', 'FIRST',
-           [('Rail', 'paymentRail', 'string'), ('Amount', 'amount', 'double')],
+           [('Rail', 'paymentRail', 'string'), ('Amount', 'amount', 'money')],
            [('railAllowed', 'Rail allowed', 'boolean'), ('authLevels', 'Authorisation levels', 'integer'),
-            ('authBandMax', 'Ceiling of the authoriser band covering the amount (INR)', 'double')],
+            ('authBandMax', 'Ceiling of the authoriser band covering the amount (INR)', 'money')],
            [([q('RTGS'), '< 200000'], ['false', '1', '0'], 'RTGS minimum 2 lakh'),
             ([q('IMPS'), '> 500000'], ['false', '1', '0'], 'IMPS per-transaction cap 5 lakh'),
             (['-', '> %d' % auth_bands[-1][1]], ['true', '2', '0'],
@@ -614,7 +659,8 @@ def bank_payment():
            doc='K6: checker power covers single-level payments; above it the checker concurs up to the band of the '
                'authoriser covering the amount and that authoriser approves (SEC-BANK-PY-1, SL-50).')
     for d in ('sec-bank-pay-limits', 'sec-bank-pay-powers'):
-        pk.placeholder(d, 'SYNTHETIC band amounts (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD 10000000000)',
+        pk.placeholder(d, 'SYNTHETIC band amounts in rupees (checker alone 2500000; PAYAUTH 100000000; TREASURYHEAD '
+                          '10000000000), shipped in paise (x100, money.py)',
                        'tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: '
                        'checker concurrence capped at the band of the authoriser covering the amount); the band amounts '
                        'are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy '
@@ -626,8 +672,9 @@ def bank_payment():
         ('TREASURY-HEAD', 'TREASURYHEAD', None, 'Head of treasury operations', 'कोष संचालन प्रमुख'),
         ('AML-COMPLIANCE', 'COMPLIANCE', None, 'AML compliance officer', 'धन-शोधन निवारण अनुपालन अधिकारी')], 'bpy')
     pk.accept('SEC-BANK-PY-1', 'Above-band payment needs two different approvers', ['SEC-BANK-020', 'UP-05'],
-              'amount = 3,000,000 by NEFT', 'the checker approves', 'an authoriser task opens; the checker cannot take it',
-              vars={'amount': 3000000})
+              'amount = 3,000,000 by NEFT; beneficiary name matches, screening clear (simulator answers, SL-115)',
+              'the checker approves', 'an authoriser task opens; the checker cannot take it',
+              vars={'amount': 3000000, 'sim_bene_validate': 'nameMatch=true', 'sim_sanctions_screen': 'hit=false'})
 
 
 def bank_aml():
@@ -804,7 +851,7 @@ def bank_emandate():
     s.flow(ex, 'ed_exGw')
     s.flow(bn, s.end('ed_endBounced', 'Bounced'))
     pk.dmn('sec-bank-afa-limit', 'Additional factor of authentication for recurring debits', 'FIRST',
-           [('Merchant category', 'merchantCategory', 'string'), ('Amount', 'amount', 'double')],
+           [('Merchant category', 'merchantCategory', 'string'), ('Amount', 'amount', 'money')],
            [('afaRequired', 'AFA required', 'boolean')],
            [([q('MUTUAL_FUND,INSURANCE,CREDIT_CARD').replace(',', '","'), '> 100000'], ['true'],
              'Rs 1 lakh for mutual funds, insurance premium, credit card bills'),
@@ -868,8 +915,8 @@ def bank_cheque():
     s.flow(cd, s.end('cq_endComplaint', 'Complaint filed'))
     pk.dmn('sec-bank-cheque-rules', 'Cheque return rules (SYNTHETIC board policy)', 'FIRST',
            [('Reason', 'returnReason', 'string'), ('Returns this year', 'returnCount', 'integer'),
-            ('Amount', 'amount', 'double')],
-           [('withdrawChequeBook', 'Withdraw facility', 'boolean'), ('returnCharge', 'Charge (INR)', 'integer')],
+            ('Amount', 'amount', 'money')],
+           [('withdrawChequeBook', 'Withdraw facility', 'boolean'), ('returnCharge', 'Charge (INR)', 'money')],
            [([q('FUNDS_INSUFFICIENT'), '>= 4', '>= 10000000'], ['true', '500'],
              'dishonour four times in a financial year for 1 crore or more'),
             ([q('FUNDS_INSUFFICIENT'), '-', '-'], ['false', '500'], ''),
@@ -896,7 +943,7 @@ def bank_dispute():
     st = start_form(p, s, 'dp_start', 'Dispute reported', 'sec-bank-txn-dispute/report', 'Transaction dispute | लेनदेन विवाद',
                     ['customerId*', 'disputeType*', 'txnRef*', 'amount*', 'channel*', 'reportedWithinDays', 'description'])
     d = s.setv('dp_defaults', 'Configuration',
-               defaults='disputeType=FAILED_TXN;channel=UPI;txnRef=@customerId;reportedWithinDays=1;txnFailed=true;'
+               defaults='disputeType=FAILED_TXN;channel=UPI;txnRef=@customerId;reportedWithinDays=1;'
                         'tatBreached=false;opsSeat=DISPUTE-DESK;executionConnector=cbs.reversal;executionStep=reversal;'
                         'verifyApproval=false;reconcileRequired=false;executionPayloadFields=customerId,txnRef,amount;'
                         'applicantRef=@customerId')
@@ -905,11 +952,19 @@ def bank_dispute():
     s.seq(st, d, r, tg)
     tc = clock(s, 'dp_tatClock', 'tat', '${tatSpec}')
     s.flow(tg, tc, "disputeType == 'FAILED_TXN'", 'failed transaction')
-    ss = s.conn('dp_status', 'Transaction status from the switch', 'switch.status', 'status', 'query', 'txnRef', 'txn')
-    s.flow(tc, ss)
+    # SL-115: the debit is reversed (or the dispute closed as successful) only on a confirmed switch status (cleared
+    # before every query; no default stands in); an unconfirmed status goes to the dispute desk, which establishes it;
+    # then re-check. Nothing is reversed automatically on an unknown status
+    sse, ss = checked_query(s, 'dp_status', 'Transaction status from the switch', 'switch.status', 'status', 'txnRef',
+                            'txn', ['txnFailed'])
+    s.flow(tc, sse)
     fg = s.xgw('dp_failGw', 'Debited, not credited?')
     s.flow(ss, fg)
-    s.flow(fg, s.end('dp_endSuccess', 'Transaction was successful (evidence sent)'), '!txnFailed', 'no')
+    txn_unconfirmed, txn_succeeded = check_conditions([('txn', ['txnFailed'])], '!txnFailed')
+    s.flow(fg, s.end('dp_endSuccess', 'Transaction was successful (evidence sent)'), txn_succeeded, 'no')
+    s.flow(fg, unconfirmed_hold(p, s, 'dp_statusUnconfirmed', 'Transaction status not confirmed: establish it with the '
+                                'switch | लेनदेन स्थिति की पुष्टि नहीं: स्विच से सुनिश्चित करें', '${opsSeat}', sse),
+           txn_unconfirmed, 'status not confirmed: dispute desk')
     rvs = s.user('dp_reverse', 'Reverse the failed debit | विफल नामे की प्रतिवर्ती प्रविष्टि', '${opsSeat}',
                  form='sec-bank-txn-dispute/reverse', decision=None, fields=['remarks'], due='${tatDueAt}')
     s.flow(fg, rvs, None, 'yes', default=True)
@@ -1155,7 +1210,7 @@ def nbfc_digital_lending():
                     'Digital loan application | डिजिटल ऋण आवेदन',
                     ['customerId*', 'amount*', 'tenureDays*', 'lspName', 'consentGiven*', 'dataConsentScope'])
     d = s.setv('dl_defaults', 'Configuration',
-               defaults='tenureDays=90;lspName=DIRECT;consentGiven=true;bureauScore=720;aprPct=24;caseType=LOAN;'
+               defaults='tenureDays=90;lspName=DIRECT;consentGiven=true;aprPct=24;caseType=LOAN;'
                         'routingDecisionKey=sec-nbfc-dl-authority;powersDecisionKey=sec-nbfc-dl-powers;'
                         'executionConnector=bank.transfer;executionStep=disburse;reconcileRequired=true;'
                         'executionPayloadFields=customerId,amount;appealAllowed=false;outputTemplate=loan-documents')
@@ -1164,10 +1219,19 @@ def nbfc_digital_lending():
     s.flow(cg, s.end('dl_endNoConsent', 'Stopped: no consent'), '!consentGiven', 'no')
     aa = s.conn('dl_aa', 'Fetch bank statements via Account Aggregator', 'aa.fetch', 'fetch', 'query', 'customerId', 'aa')
     s.flow(cg, aa, None, 'yes', default=True)
-    bu = s.conn('dl_bureau', 'Bureau report', 'bureau.pull', 'report', 'query', 'customerId', 'bureau')
+    # SL-115: the bureau score fails closed (cleared before the query; no default score stands in)
+    bue, bu = checked_query(s, 'dl_bureau', 'Bureau report', 'bureau.pull', 'report', 'customerId', 'bureau',
+                            ['bureauScore'])
+    bg = s.xgw('dl_bureauGw', 'Bureau score?')
+    s.seq(aa, bue)
+    s.flow(bu, bg)
+    bureau_unconfirmed, _ = check_conditions([('bureau', ['bureauScore'])])
+    s.flow(bg, reject_with(p, s, 'dl_rjBureau', 'CREDIT_BUREAU_NOT_CONFIRMED'), bureau_unconfirmed,
+           'bureau score not confirmed')
     r = s.rule('dl_policy', 'Credit decision of the RE (DMN)', 'sec-nbfc-dl-policy')
+    s.flow(bg, r, None, 'score received', default=True)
     g = s.xgw('dl_policyGw', 'Decision?')
-    s.seq(aa, bu, r, g)
+    s.flow(r, g)
     s.flow(g, reject_with(p, s, 'dl_rj', 'CREDIT_POLICY_DECLINE'), "creditDecision == 'DECLINE'", 'decline')
     san = core(s, 'dl_sanction', 'Credit officer of the RE sanctions (core sanction)', 'sanction')
     s.flow(g, san, None, 'approve / refer', default=True)
@@ -1240,26 +1304,34 @@ def cap_onboarding():
                     ['customerName*', 'pan*', 'mobile*', 'segments*', 'nominationOpted*', 'incomeRange', 'documents'])
     d = s.setv('io_defaults', 'Configuration',
                defaults='customerName=@customerId;segments=EQUITY;nominationOpted=true;incomeRange=BELOW_10L;'
-                        'kraValidated=false;panOperative=true;caseType=ONBOARDING;amount=0;'
+                        'caseType=ONBOARDING;amount=0;'
                         'routingDecisionKey=sec-cap-checker;powersDecisionKey=sec-cap-powers;issueOutput=true;'
                         'outputTemplate=account-opening-kit;appealAllowed=false;executionConnector=exchange.ucc;'
                         'executionStep=ucc;reconcileRequired=false')
-    kr = s.conn('io_kra', 'Fetch KYC from KRA', 'kra.fetch', 'fetch', 'query', 'pan', 'kra')
-    pv = s.conn('io_pan', 'PAN status and Aadhaar seeding', 'pan.verify', 'verify', 'query', 'pan,customerName', 'pan')
-    s.seq(st, d, kr, pv)
+    # SL-115: the KRA fetch and the PAN status fail closed (each cleared before its query; no default stands in): an
+    # unconfirmed PAN rejects, an unconfirmed KRA record means a fresh KYC
+    kre, kr = checked_query(s, 'io_kra', 'Fetch KYC from KRA', 'kra.fetch', 'fetch', 'pan', 'kra', ['kraValidated'])
+    pve, pv = checked_query(s, 'io_pan', 'PAN status and Aadhaar seeding', 'pan.verify', 'verify', 'pan,customerName',
+                            'pan', ['panOperative'])
+    s.seq(st, d, kre)
+    s.seq(kr, pve)
     pg = s.xgw('io_panGw', 'PAN operative?')
     s.flow(pv, pg)
-    s.flow(pg, reject_with(p, s, 'io_rjPan', 'PAN_INOPERATIVE'), '!panOperative', 'no')
+    pan_unconfirmed, pan_inoperative = check_conditions([('pan', ['panOperative'])], '!panOperative')
+    s.flow(pg, reject_with(p, s, 'io_rjPanCheck', 'PAN_NOT_CONFIRMED'), pan_unconfirmed, 'PAN not confirmed')
+    s.flow(pg, reject_with(p, s, 'io_rjPan', 'PAN_INOPERATIVE'), pan_inoperative, 'no')
     kg = s.xgw('io_kraGw', 'KRA KYC validated?')
     s.flow(pg, kg, None, 'yes', default=True)
     ek = s.conn('io_ekyc', 'Aadhaar e-KYC', 'uidai.ekyc', 'otp-ekyc', 'query', 'customerName,mobile', 'ekyc')
     ipv = s.user('io_ipv', 'In-person / video verification (IPV / VIPV) | व्यक्तिगत / वीडियो सत्यापन', 'KYC-OFFICER',
                  form='sec-cap-investor-onboarding/ipv', decision=None,
                  fields=['livenessChecked*', 'geoTag', 'vcipRecordingRef', 'remarks'])
-    s.flow(kg, ek, '!kraValidated', 'fresh KYC')
+    kra_unconfirmed, kra_validated = check_conditions([('kra', ['kraValidated'])], 'kraValidated')
+    s.flow(kg, ek, kra_unconfirmed, 'KRA record not confirmed: fresh KYC')
     s.flow(ek, ipv)
     kj = s.xgw('io_kycJoin')
-    s.flow(kg, kj, None, 'validated', default=True)
+    s.flow(kg, kj, kra_validated, 'validated')
+    s.flow(kg, ek, None, 'fresh KYC', default=True)
     s.flow(ipv, kj)
     nom = s.user('io_optout', 'Record declaration to opt out of nomination | नामांकन से बाहर रहने की घोषणा', 'KYC-OFFICER',
                  form='sec-cap-investor-onboarding/optout', decision=None, fields=['documents*', 'remarks'])
@@ -1380,7 +1452,7 @@ def ins_proposal():
     s.flow(ft, end_ok(p, s, 'ip_end', 'Policy in force'))
     s.side_exits('ip')
     pk.dmn('sec-ins-uw', 'Underwriting route (SYNTHETIC grid)', 'FIRST',
-           [('Age', 'age', 'integer'), ('Sum assured', 'sumAssured', 'double'), ('Smoker', 'smoker', 'boolean')],
+           [('Age', 'age', 'integer'), ('Sum assured', 'sumAssured', 'money'), ('Smoker', 'smoker', 'boolean')],
            [('uwRoute', 'Route', 'string'), ('medicalRequired', 'Medicals', 'boolean'),
             ('decisionSpec', 'Decide within', 'string'), ('freeLookSpec', 'Free-look period', 'string')],
            [(['> 50', '-', '-'], [q('MANUAL'), 'true', q('7D'), q('30D')], 'above 50: medicals'),
@@ -1408,19 +1480,27 @@ def ins_motor_claim():
     st = start_form(p, s, 'mc_start', 'Claim intimated (FNOL)', 'sec-ins-motor-claim/fnol', 'Motor claim intimation | मोटर दावा सूचना',
                     ['policyNo*', 'vehicleRegNo*', 'lossType*', 'claimAmount*', 'lossDate', 'garageId', 'firNo', 'photos'])
     d = s.setv('mc_defaults', 'Configuration',
-               defaults='vehicleRegNo=@policyNo;lossType=OWN_DAMAGE;claimAmount=@amount;coverActive=true;fraudScore=10;'
+               defaults='vehicleRegNo=@policyNo;lossType=OWN_DAMAGE;claimAmount=@amount;'
                         'totalLoss=false;amount=@claimAmount;caseType=CLAIM;routingDecisionKey=sec-ins-claim-authority;'
                         'powersDecisionKey=sec-ins-claim-powers;sanctionSla=7D;executionConnector=claims.pay;'
                         'executionStep=pay-claim;reconcileRequired=true;executionPayloadFields=policyNo,amount,garageId;'
                         'garageId=REIMBURSEMENT;outputTemplate=settlement-letter;appellateSeat=GRIEVANCE-CELL;'
                         'handlerSeat=CLAIMS-HANDLER')
-    cv = s.conn('mc_cover', 'Cover check', 'policy.coverCheck', 'check', 'query', 'policyNo,lossDate', 'cover')
+    # SL-115: the cover check fails closed (cleared before the query; no default stands in)
+    cve, cv = checked_query(s, 'mc_cover', 'Cover check', 'policy.coverCheck', 'check', 'policyNo,lossDate', 'cover',
+                            ['coverActive'])
     cg = s.xgw('mc_coverGw', 'Policy in force?')
-    s.seq(st, d, cv, cg)
-    s.flow(cg, reject_with(p, s, 'mc_rjCover', 'POLICY_NOT_IN_FORCE'), '!coverActive', 'no')
-    fr = s.conn('mc_fraud', 'Fraud score', 'fraud.score', 'score', 'query', 'policyNo,vehicleRegNo,claimAmount', 'fraud')
+    s.seq(st, d, cve)
+    s.flow(cv, cg)
+    cover_unconfirmed, cover_lapsed = check_conditions([('cover', ['coverActive'])], '!coverActive')
+    s.flow(cg, reject_with(p, s, 'mc_rjCoverCheck', 'COVER_NOT_CONFIRMED'), cover_unconfirmed, 'cover not confirmed')
+    s.flow(cg, reject_with(p, s, 'mc_rjCover', 'POLICY_NOT_IN_FORCE'), cover_lapsed, 'no')
+    # SL-115: no default score (cleared before the query); a claim whose fraud score is not confirmed is referred to
+    # the SIU (mc_siuGw below), never assessed at the desk on an assumed score and never auto-rejected
+    fre, fr = checked_query(s, 'mc_fraud', 'Fraud score', 'fraud.score', 'score', 'policyNo,vehicleRegNo,claimAmount',
+                            'fraud', ['fraudScore'])
     tr = s.rule('mc_triage', 'Claim triage (DMN)', 'sec-ins-motor-triage')
-    s.flow(cg, fr, None, 'yes', default=True)
+    s.flow(cg, fre, None, 'yes', default=True)
     lg = s.xgw('mc_typeGw', 'Loss type?')
     s.seq(fr, tr, lg)
     tp = s.user('mc_tp', 'Third-party claim: defend or settle before MACT | तृतीय पक्ष दावा: एमएसीटी में बचाव या समझौता',
@@ -1453,7 +1533,9 @@ def ins_motor_claim():
     s.flow(sub, sj)
     siu = s.user('mc_siu', 'SIU investigation | विशेष जाँच इकाई जाँच', 'SIU', form='sec-ins-motor-claim/siu',
                  decision=('siuDecision', ['genuine', 'fraud']), fields=['findings*'])
-    s.flow(sj, siu, 'siuReferral', 'yes')
+    fraud_unconfirmed, fraud_referral = check_conditions([('fraud', ['fraudScore'])], 'siuReferral')
+    s.flow(sj, siu, fraud_unconfirmed, 'fraud score not confirmed: SIU')
+    s.flow(sj, siu, fraud_referral, 'yes')
     asg = s.user('mc_assess', 'Assess claim | दावे का आकलन', '${handlerSeat}', form='sec-ins-motor-claim/assess',
                  decision=('assessDecision', ['approve', 'reject']),
                  fields=['assessedLoss*', 'amount*', 'rejectionReasonCodes', 'remarks'], sod=True)
@@ -1462,7 +1544,7 @@ def ins_motor_claim():
     s.flow(siu, siug)
     s.flow(siug, asg, "siuDecision == 'genuine'", 'genuine')
     rej = rejection(p, s, 'mc_rj')
-    s.flow(siug, rej, None, 'fraud', default=True)
+    s.flow(siug, reject_with(p, s, 'mc_rjSiu', 'CLAIM_FRAUD'), None, 'fraud', default=True)   # SL-55
     san = core(s, 'mc_sanction', 'Settlement sanction (core sanction, 7 days)', 'sanction')
     ag = s.xgw('mc_assGw')
     s.flow(asg, ag)
@@ -1482,7 +1564,7 @@ def ins_motor_claim():
     s.seq(m3, cl, end_ok(p, s, 'mc_end', 'Settled'))
     s.side_exits('mc')
     pk.dmn('sec-ins-motor-triage', 'Motor claim triage (SYNTHETIC)', 'FIRST',
-           [('Claim amount', 'claimAmount', 'double'), ('Fraud score', 'fraudScore', 'integer')],
+           [('Claim amount', 'claimAmount', 'money'), ('Fraud score', 'fraudScore', 'integer')],
            [('surveyorRequired', 'Licensed surveyor', 'boolean'), ('siuReferral', 'SIU', 'boolean'),
             ('surveyorAppointSpec', 'Appoint surveyor within', 'string'), ('surveyReportSpec', 'Survey report within', 'string'),
             ('sanctionSla', 'Settle within (after the report)', 'string')],
@@ -1524,16 +1606,20 @@ def ins_health_cashless():
                      'abhaNumber', 'documents'])
     d = s.setv('hc_defaults', 'Configuration',
                defaults='patientName=@policyNo;hospitalId=NETWORK-HOSP-1;admissionType=EMERGENCY;estimatedCost=@amount;'
-                        'coverActive=true;networkHospital=true;tpaSeat=TPA-DOCTOR;executionConnector=hcx.settle;'
+                        'networkHospital=true;tpaSeat=TPA-DOCTOR;executionConnector=hcx.settle;'
                         'executionStep=settle;verifyApproval=false;reconcileRequired=false;'
                         'executionPayloadFields=policyNo,hospitalId,approvedAmount;approvedAmount=@estimatedCost;'
                         'appellateSeat=CLAIMS-REVIEW-COMMITTEE')
     tat = s.rule('hc_tat', 'Health claim timelines (DMN)', 'sec-ins-health-tat')
-    cv = s.conn('hc_cover', 'Cover and NHCX eligibility', 'hcx.eligibility', 'eligibility', 'query',
-                'policyNo,hospitalId', 'cover')
+    # SL-115: the cover check fails closed (cleared before the query; no default stands in)
+    cve, cv = checked_query(s, 'hc_cover', 'Cover and NHCX eligibility', 'hcx.eligibility', 'eligibility',
+                            'policyNo,hospitalId', 'cover', ['coverActive'])
     cg = s.xgw('hc_coverGw', 'Covered?')
-    s.seq(st, d, tat, cv, cg)
-    s.flow(cg, reject_with(p, s, 'hc_rjCover', 'NOT_COVERED'), '!coverActive', 'no')
+    s.seq(st, d, tat, cve)
+    s.flow(cv, cg)
+    cover_unconfirmed, not_covered = check_conditions([('cover', ['coverActive'])], '!coverActive')
+    s.flow(cg, reject_with(p, s, 'hc_rjCoverCheck', 'COVER_NOT_CONFIRMED'), cover_unconfirmed, 'cover not confirmed')
+    s.flow(cg, reject_with(p, s, 'hc_rjCover', 'NOT_COVERED'), not_covered, 'no')
     ng = s.xgw('hc_netGw', 'Cashless at a network hospital?')
     s.flow(cg, ng, None, 'yes', default=True)
     pe, pd = s.sla_task('hc_preauth', 'Cashless pre-authorisation (1 hour) | कैशलेस पूर्व-प्राधिकरण (1 घंटा)', 'tpaSeat',

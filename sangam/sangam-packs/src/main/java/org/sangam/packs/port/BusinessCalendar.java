@@ -15,7 +15,8 @@ import java.time.Instant;
  *   <li>{@code 8WH}: eight working hours;</li>
  *   <li>an ISO-8601 duration such as {@code P15D} or {@code PT4H} (calendar time).</li>
  * </ul>
- * All instants are UTC (A-12); the calendar applies the tenant's zone (IST by default) only to find working time.
+ * All instants are UTC (A-12); the calendar applies the tenant's business zone (its profile; UTC without one) only to
+ * find working time.
  */
 public interface BusinessCalendar {
 

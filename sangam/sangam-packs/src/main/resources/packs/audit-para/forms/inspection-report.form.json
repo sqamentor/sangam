@@ -1,6 +1,6 @@
 {
   "key": "audit-para/inspection-report",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.audit-para",
   "title": {
     "en": "Audit inspection report",

@@ -1,6 +1,6 @@
 {
   "key": "sec-ecom-order-to-cash/seller",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ecom.order-to-cash",
   "title": {
     "en": "Seller confirms and packs",

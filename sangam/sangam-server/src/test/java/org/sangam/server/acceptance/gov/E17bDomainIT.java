@@ -486,18 +486,40 @@ class E17bDomainIT extends GovBSupport {
             TaskView fin = referred.stream().filter(t -> t.variables().containsKey("amount")).findFirst().orElseThrow();
             TaskView law = referred.stream().filter(t -> !t.variables().containsKey("amount")).findFirst().orElseThrow();
             eq(ctx, "New district court complex", law.variables().get("subject"), "in-mapping");
+            eq(ctx, 182_000_000L, fin.variables().get("amount"), "in-mapping of the amount to Finance");
+            eq(ctx, "PWD/BLDG/2026/45", fin.variables().get("fileNo"), "in-mapping of the file number");
             adapter.completeTask(fin.id(), m("concurred", true, "remarks", "Within budget head 4059"));
+            eq(ctx, 0, tasksIn(p, "ref_prepare").size(), "the join waits for Law");
             adapter.completeTask(law.id(), m("concurred", false, "remarks", "Land title to be verified"));
             eq(ctx, "Land title to be verified", var(p, "lawRemarks"), "out-mapping with renaming");
+            eq(ctx, "Within budget head 4059", var(p, "finRemarks"), "out-mapping with renaming (Finance)");
+            eq(ctx, true, var(p, "finConcurred"), "Finance concurred");
+            eq(ctx, false, var(p, "lawConcurred"), "Law did not concur");
+            eq(ctx, 0, tasksIn(p, "ref_approve").size(), "no approval without both concurrences");
             eq(ctx, 1, tasksIn(p, "ref_prepare").size(), "returned for revision");
             completeTask(p, "ref_prepare", m("revision", 1));
-            for (TaskView t : forGroups("dept-works", "concurrence-officer")) {
+            List<String> round2 = subProcessInstances(p);
+            eq(ctx, 4, round2.size(), "second referral round started two more called instances");
+            eq(ctx, Set.of(tn("dept-works")), new HashSet<>(round2.stream().map(this::instanceTenant).toList()),
+                    "second-round callees run in the caller's tenant (SL-13)");
+            eq(ctx, 0, forGroups("dept-fin", "concurrence-officer").size() + forGroups("dept-law", "concurrence-officer").size(),
+                    "nothing in another tenant in the second round (SL-13)");
+            List<TaskView> again = forGroups("dept-works", "concurrence-officer");
+            eq(ctx, 2, again.size(), "both departments referred again");
+            eq(ctx, 1L, again.stream().filter(t -> t.variables().containsKey("amount")).count(),
+                    "Finance again receives the amount, Law does not");
+            for (TaskView t : again) {
                 adapter.completeTask(t.id(), t.variables().containsKey("amount") ? m("concurred", true, "remarks", "Concurred")
                         : m("concurred", true, "remarks", "Vetted"));
             }
+            eq(ctx, "Vetted", var(p, "lawRemarks"), "second-round out-mapping (Law)");
+            eq(ctx, "Concurred", var(p, "finRemarks"), "second-round out-mapping (Finance)");
+            eq(ctx, true, var(p, "lawConcurred"), "Law concurred after revision");
+            eq(ctx, 0, tasksIn(p, "ref_prepare").size(), "not returned again");
             completeTask(p, "ref_approve", m("approvedBy", "Secretary PWD"));
             yes(ctx, ended(p), "referral ended");
             eq(ctx, 4, subProcessInstances(p).size(), "two referral rounds x two departments");
+            eq(ctx, 0, forGroups("dept-fin").size() + forGroups("dept-law").size(), "no task ever in Finance/Law tenants");
         });
     }
 }

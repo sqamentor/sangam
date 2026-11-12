@@ -660,7 +660,7 @@ public class OperatonOpsConsoleAdapter implements OpsConsolePort {
     private static <T> List<T> limited(Connection c, String sql, int maxRows, Jdbc.RowMapper<T> mapper, Object... params) {
         try (PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setMaxRows(Math.max(0, maxRows));
-            Jdbc.bind(ps, 1, params);
+            Jdbc.bind(ps, sql, 1, params);
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> out = new ArrayList<>();
                 while (rs.next()) {

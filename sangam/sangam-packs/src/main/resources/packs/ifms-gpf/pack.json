@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.gpf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "GPF advance, withdrawal and final payment",
     "hi": "जीपीएफ अग्रिम, आहरण और अंतिम भुगतान"
@@ -90,5 +90,15 @@
       "rule": "HOO GPF no monetary limit",
       "reason": "the GPF (CS) Rules 1960 sanctioning authority is not read (corpus IFC-171 [U: department order]); confirm and deploy it as a tenant DMN override"
     }
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "gpfBalance",
+      "powerLimit"
+    ]
+  }
 }

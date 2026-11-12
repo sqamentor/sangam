@@ -40,6 +40,10 @@ public final class RequestContexts {
         if (p.tenantId() == null || p.tenantId().isBlank()) {
             throw new ApiProblem(401, "UNAUTHENTICATED", "The token carries no tenant claim");
         }
+        if (org.sangam.core.layer.TenantKey.SHARED.equals(p.tenantId())) {
+            // SL-86: the reserved key of rows shared by all tenants is never a caller's tenant
+            throw new ApiProblem(401, "UNAUTHENTICATED", "The token's tenant claim is a reserved value");
+        }
         RequestContext ctx = new RequestContext(p.tenantId(), p.principalId(), p.groups(),
                 blankToNull(request.getHeader(SEAT_HEADER)), blankToNull(request.getHeader(ACTING_FOR_HEADER)),
                 blankToNull(request.getHeader(IDEMPOTENCY_HEADER)), traceId(), request.getRemoteAddr(),

@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-ipo-allotment/compensation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.cap.ipo-allotment",
   "title": {
     "en": "Investor compensation for late unblocking",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "compensationAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Compensation (INR)",

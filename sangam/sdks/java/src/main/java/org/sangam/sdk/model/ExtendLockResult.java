@@ -7,5 +7,5 @@ import java.time.Instant;
 /** LockState: heartbeat answer with new expiry and {@code cancelRequested} (VI.3). */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ExtendLockResult(
-        String id, Long lockVersion, Instant lockExpiresAt, boolean cancelRequested) {
+        String id, Long lockVersion, Instant lockExpiresAt, Boolean cancelRequested) {
 }

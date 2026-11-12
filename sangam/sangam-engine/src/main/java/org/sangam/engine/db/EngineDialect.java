@@ -87,7 +87,7 @@ public enum EngineDialect {
             default -> insert;
         };
         try (java.sql.PreparedStatement ps = c.prepareStatement(sql)) {
-            org.sangam.core.layer.Jdbc.bind(ps, 1, values);
+            org.sangam.core.layer.Jdbc.bind(ps, sql, 1, values);
             return ps.executeUpdate() == 1;
         } catch (SQLException e) {
             if (isUniqueViolation(e)) {
@@ -117,7 +117,8 @@ public enum EngineDialect {
 
     /**
      * VI.1 rule 6: bounded waits inside the current transaction. PostgreSQL {@code SET LOCAL} (transaction scope);
-     * SQL Server, MySQL and H2 set the session value (every Sangam command sets it again, so pooled sessions agree);
+     * SQL Server, MySQL and H2 set the session value, which outlives the transaction on a pooled connection: callers
+     * restore it when the transaction ends ({@link #sessionLockTimeout}, {@link #restoreSessionLockTimeout}; SL-99);
      * Oracle uses {@code FOR UPDATE WAIT n} in the lock statements instead.
      */
     public void applyLockTimeouts(Connection c, Duration lockTimeout, Duration statementTimeout) {
@@ -139,6 +140,48 @@ public enum EngineDialect {
         }
     }
 
+    /**
+     * SL-99: the session's current lock wait, where {@link #applyLockTimeouts} changes a <b>session</b> setting
+     * (SQL Server {@code @@LOCK_TIMEOUT} in ms, MySQL {@code innodb_lock_wait_timeout} in s, H2 {@code LOCK_TIMEOUT()}
+     * in ms), so the caller can restore it when its transaction ends; null where the setting is already scoped to the
+     * transaction or the statement (PostgreSQL {@code SET LOCAL}, Oracle {@code FOR UPDATE WAIT n}).
+     */
+    public Integer sessionLockTimeout(Connection c) {
+        String sql = switch (this) {
+            case SQLSERVER -> "SELECT @@LOCK_TIMEOUT";
+            case MYSQL -> "SELECT @@SESSION.innodb_lock_wait_timeout";
+            case H2 -> "SELECT LOCK_TIMEOUT()";
+            case POSTGRESQL, ORACLE -> null;
+        };
+        if (sql == null) {
+            return null;
+        }
+        try (Statement s = c.createStatement(); java.sql.ResultSet rs = s.executeQuery(sql)) {
+            if (!rs.next()) {
+                throw new IllegalStateException("no lock timeout returned by " + sql);
+            }
+            return rs.getInt(1);
+        } catch (SQLException e) {
+            throw new IllegalStateException("cannot read the session lock timeout on " + this, e);
+        }
+    }
+
+    /** SL-99: sets the session lock wait back to {@code previous}, as read by {@link #sessionLockTimeout}. */
+    public void restoreSessionLockTimeout(Connection c, int previous) {
+        String sql = switch (this) {
+            case SQLSERVER, H2 -> "SET LOCK_TIMEOUT " + previous;
+            case MYSQL -> "SET SESSION innodb_lock_wait_timeout = " + previous;
+            case POSTGRESQL, ORACLE -> null;
+        };
+        if (sql == null) {
+            return;
+        }
+        try (Statement s = c.createStatement()) {
+            s.execute(sql);
+        } catch (SQLException e) {
+            throw new IllegalStateException("cannot restore the session lock timeout on " + this, e);
+        }
+    }
     /** Largest string the engine's {@code TEXT_} column takes on this database (FLOWABLE-INTO-OPERATON D-07, FLOWABLE-INTO-OPERATON FC-29). */
     public int engineTextLimitChars() {
         // Oracle ACT_*.TEXT_ is NVARCHAR2(2000); PostgreSQL/MySQL varchar(4000); SQL Server nvarchar(4000); H2 4000.

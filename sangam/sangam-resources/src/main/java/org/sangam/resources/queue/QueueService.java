@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.resources.queue;
 
+import org.sangam.core.layer.AbsentKey;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.resources.ResourcesContext;
@@ -874,7 +875,13 @@ public final class QueueService {
     }
 
     /** Gap-free number per (service point, day, series): the sequence row is locked for the rest of the transaction. */
-    private long nextNumber(Connection c, String tenantId, String servicePointId, String day, String series) {
+    private long nextNumber(Connection c, String tenantId, String servicePointId, String day, String displaySeries) {
+        // The series is part of the NOT NULL key: "no series" is stored as AbsentKey.NONE, never '' (Oracle stores '' as
+        // NULL: SL-84). The displayed number keeps the series as configured ("" shows nothing).
+        if (AbsentKey.NONE.equals(displaySeries)) {
+            throw ResourcesException.invalid("SERIES", "'" + AbsentKey.NONE + "' is reserved and cannot be a token series");
+        }
+        String series = AbsentKey.encode(displaySeries);
         String where = "tenant_id=? AND service_point_id=? AND day_key=? AND series=?";
         Optional<Long> last = Jdbc.one(c, d.lockingSelect("last_no", "RES_TOKEN_SEQ", where), rs -> rs.getLong(1),
                 tenantId, servicePointId, day, series);

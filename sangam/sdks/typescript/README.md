@@ -115,7 +115,7 @@ await worker.run();              // stops gracefully on SIGTERM / SIGINT
 | throws `TaskCancelledError` (or aborts) after a cancel request | `cancel-ack` | VI.3.1 CANCEL_REQUESTED → CANCELLED |
 | throws `TaskCancelledError` during shutdown | `unlock` | another worker can take the item at once |
 | throws any other error | `fail` | retries = item retries (or the subscription default) − 1; `retryTimeoutMs` grows from about 1 min (R28) |
-| throws any other error on a subscription marked `irreversible: true` | `outcome-unknown` | never a blind retry (VI.3.2 rule 5). `effect` is not in contract 0.1.0; it is honoured only if a server sends `effect: irreversible` |
+| throws any other error on a subscription marked `irreversible: true` | `outcome-unknown` | never a blind retry (VI.3.2 rule 5). The work item carries no per-item `effect`, so the subscription flag is the only source |
 | lease lost (409 / 410 / expiry while unreachable) | none | `ctx.signal` is aborted and the result is discarded |
 
 Runtime behaviour (`src/worker.ts`):
@@ -181,5 +181,5 @@ Run it with `npm run example:bill-payment`.
 - **Reconciliation.** The SDK is reconciled against `sangam-rest/api/sangam-api.yaml` 0.1.0, including `outcome-unknown` and `cancel-ack`, which are in the contract.
 - **Endpoints without typed wrappers.** These are reachable through `ResourceApi.action` / `getSub` or `client.transport`: task comments and attachments, activity tree, modify, migrate, packages, documents, links, history and batches.
 - **Admin and ops bodies.** These are JSON objects (`ResourceApi`). Only incident retry/resolve, job retries and outbox requeue/skip have typed request bodies.
-- **Tests.** The test engine (the R18 Tier-1 "test engine") and contract tests T01–T04 / T18 are not written yet, because tests come last.
+- **Tests.** Unit tests exist under `test/` (node:test, run with `npm test`; CI runs them in the `sdks.yml` typescript job): `worker.test.ts` (worker loop, stored-outcome completion, outcome mapping, report retries, fencing), `http.test.ts` (problem+json mapping, retryability, base-URL normalisation), `typed.test.ts` (R33 typed values) and `contract.test.ts` (drift guard of `src/models.ts` against `sangam-api.yaml`), with the in-process `fake-server.ts`. They have not been run on the current tree. Not written yet: the R18 Tier-1 in-memory test engine and the contract tests T01–T04 / T18.
 - **`cmmnTerminate`.** The Flowable CMMN worker result `cmmnTerminate` is not offered. In Sangam a CMMN external worker is modelled as processTask → BPMN external task (FC-11 pattern).

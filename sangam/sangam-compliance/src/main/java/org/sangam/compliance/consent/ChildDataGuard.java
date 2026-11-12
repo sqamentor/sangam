@@ -19,7 +19,8 @@ import java.util.Set;
  * processing detrimental to a child's well-being and targeted advertising are always refused; tracking and
  * behavioural monitoring are refused unless the purpose declares a pack child exemption whose {@code covers} includes
  * the flag. An unknown category is treated as a possible child when the operation carries a restricted flag (fail
- * closed), so age is established first.
+ * closed), so age is established first. A refusal writes {@code CMP_CHILD_PROCESSING_BLOCKED} on the subject's denial
+ * chain ({@link ComplianceAudit#denial}), committed on its own so it survives the rollback that the refusal causes (M-009).
  */
 public final class ChildDataGuard {
 
@@ -64,7 +65,7 @@ public final class ChildDataGuard {
     }
 
     private void block(Connection c, String tenantId, String principalRef, PurposeDefinition purpose, ProcessingFlag flag) {
-        audit.principal(c, tenantId, principalRef, ComplianceAudit.CHILD_PROCESSING_BLOCKED, Sql.kv("purpose", purpose.code(),
+        audit.denial(c, tenantId, principalRef, ComplianceAudit.CHILD_PROCESSING_BLOCKED, Sql.kv("purpose", purpose.code(),
                 "flag", flag.name()));
         throw new ComplianceException(Code.CHILD_PROCESSING_FORBIDDEN, flag.name() + " of a child is not permitted for purpose "
                 + purpose.code());

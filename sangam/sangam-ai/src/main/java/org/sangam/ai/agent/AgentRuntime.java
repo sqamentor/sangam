@@ -116,16 +116,19 @@ public final class AgentRuntime {
             throw new Llm.DisabledException();
         }
         String root = rootIdOrNull == null ? runId : rootIdOrNull;
+        // SL-87: a run may start with no input text (a child agent working from context). AI_AGENT_RUN.input_text is
+        // nullable: an empty input is stored as NULL (Oracle stores '' as NULL anyway) and read back as "".
+        String text = input == null ? "" : input;
         tx.inTransaction(c -> {
             Instant now = Jdbc.dbNow(c, dialect);
             boolean created = Jdbc.insertIfAbsent(c, dialect, "INSERT INTO AI_AGENT_RUN(run_id,tenant_id,agent_key,agent_version,state,"
                             + "lock_version,parent_run_id,depth,steps_used,tokens_used,root_id,business_key,principal_id,definition_json,"
                             + "input_text,created_at,updated_at) VALUES (?,?,?,?,?,0,?,?,0,0,?,?,?,?,?,?,?)",
                     runId, tenantId, def.key(), def.version(), State.RUNNABLE.name(), parentRunId, depth, root, businessKey, principalId,
-                    Json.write(def), input, now, now);
+                    Json.write(def), text.isEmpty() ? null : text, now, now);
             if (created) {
                 audit.append(c, tenantId, root, "AGENT_RUN_STARTED", Map.of("runId", runId, "agent", def.key(),
-                        "version", def.version(), "principal", principalId, "inputHash", Hashes.hex(Hashes.sha256(input))));
+                        "version", def.version(), "principal", principalId, "inputHash", Hashes.hex(Hashes.sha256(text))));
             }
             return null;
         });
@@ -457,7 +460,8 @@ public final class AgentRuntime {
         return tx.inTransaction(c -> Jdbc.one(c, "SELECT run_id,tenant_id,agent_key,state,lock_version,depth,steps_used,tokens_used,root_id,"
                 + "business_key,principal_id,definition_json,input_text,result_text FROM AI_AGENT_RUN WHERE run_id=?", rs -> new Run(rs.getString(1), rs.getString(2),
                 rs.getString(3), State.valueOf(rs.getString(4)), rs.getLong(5), rs.getInt(6), rs.getInt(7), rs.getLong(8), rs.getString(9),
-                rs.getString(10), rs.getString(11), readDef(rs.getString(12)), rs.getString(13), rs.getString(14)), runId));
+                rs.getString(10), rs.getString(11), readDef(rs.getString(12)), rs.getString(13) == null ? "" : rs.getString(13),
+                rs.getString(14)), runId));
     }
 
     private static AgentDefinition readDef(String json) {

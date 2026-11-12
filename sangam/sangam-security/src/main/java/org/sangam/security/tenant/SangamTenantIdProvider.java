@@ -61,6 +61,11 @@ public final class SangamTenantIdProvider implements TenantIdProvider {
             LOG.warn("instance of a shared definition started without an identity: no tenant assigned (invisible, fail closed)");
             return null;
         }
+        if (org.sangam.core.layer.TenantKey.SHARED.equals(id.tenantId())) {
+            // SL-86: a system identity bound for a shared row carries the reserved shared key; it is no engine tenant
+            LOG.warn("identity with the reserved shared tenant key: no tenant assigned (invisible, fail closed)");
+            return null;
+        }
         return id.tenantId();
     }
 }

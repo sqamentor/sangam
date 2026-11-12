@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Head-of-account seeds from the official LMMH extract (tools/lmmh/data, see tools/lmmh/README.md).
 
-No head is inferred here: every row comes from the extract of the CGA list and carries its page number. The parent-less
-rows in standard_rows() are what ClassificationRegistry looks up today (it validates each segment on its own)."""
+No head is inferred here: every row comes from the extract of the CGA list and carries its page number. Validation is
+parent-aware: the HOA hierarchy in central.py makes ClassificationRegistry check a sub-major under its major and a minor
+under its major-sub-major. Of the parent-less rows in standard_rows(), only those flagged standard=true are valid under
+any parent; the index=true rows list the codes at a level and never satisfy the parent check."""
 import csv as _csv
 import os
 

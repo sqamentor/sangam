@@ -1,6 +1,6 @@
 {
   "id": "gov.works",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Works / WAMS project lifecycle",
     "hi": "निर्माण कार्य / डब्ल्यूएएमएस परियोजना जीवनचक्र"
@@ -122,5 +122,15 @@
     "sangam-p1-bill-payment",
     "sangam-tender",
     "sangam-work-order"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount",
+      "estimateAmount",
+      "measuredValue"
+    ]
+  }
 }

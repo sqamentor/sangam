@@ -20,7 +20,7 @@ import java.util.Map;
  *       {@code start}. The item is correlated to <b>waiting executions only</b> (Operaton's correlateAll would also
  *       fire a message start event and start an instance unguarded). Only with {@code "start": true}, and only when
  *       nothing was waiting, one instance is started through the message start event, and then only through the
- *       unique-start guard on (tenant, process key, business key = item) (FC-04, VI.2.6 rule 4): a repeated
+ *       unique-start guard on (tenant, process key, business key = item) (FLOWABLE-INTO-OPERATON FC-04, VI.2.6 rule 4): a repeated
  *       business key reports {@code duplicate start}.</li>
  *   <li>{@code process-cancel}: item = process instance id; config {@code reason}. Missing instances count as done.</li>
  * </ul>
@@ -55,7 +55,7 @@ public final class StandardBatchHandlers {
             String message = String.valueOf(cfg.get("messageName"));
             Map<String, Object> vars = (Map<String, Object>) cfg.getOrDefault("variables", Map.of());
             boolean start = Boolean.TRUE.equals(cfg.get("start"));
-            String engineTenant = tenant == null || tenant.isEmpty() ? null : tenant;
+            String engineTenant = org.sangam.core.layer.TenantKey.toEngine(tenant);
             if (start && uniqueStartOrNull == null) {
                 throw new IllegalStateException("message-correlate with start=true needs a UniqueStartPort");
             }

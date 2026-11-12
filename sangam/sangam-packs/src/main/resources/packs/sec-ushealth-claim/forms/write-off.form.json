@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-claim/write-off",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.claim",
   "title": {
     "en": "Approve the write-off (segregation of duties)",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "writeOffAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Write-off amount (INR)",

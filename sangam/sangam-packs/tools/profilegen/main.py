@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG_FULL, COFOG_SOURCE, U
 from goi import GOI, DEPTS
 from states import S, L
+import billtypes
 import delta
 import lmmh
 import skeletons
@@ -73,6 +74,9 @@ dump('us/US.yaml', {
                 'source': 'spike/results/US-HEALTH-WORKFLOWS.md US-HLT-089, US-HLT-106'},
     'placeholders': [{'path': 'ledgers', 'reason': U + ' (the claim balance rule used in posting was not read from a public source)'}],
     'jurisdiction': 'US',
+    # layers.yaml requires locale.currency at the jurisdiction layer; it is the currency the RECEIVABLES ledger already
+    # declares (SL-97 follow-up: every money ledger's currency equals its profile's locale.currency)
+    'locale': {'currency': 'USD'},
     'ledgers': [{'id': 'RECEIVABLES', 'kind': 'RECEIVABLE', 'mode': 'AUTHORITATIVE', 'currency': 'USD', 'stages': ['DEMAND'],
                  'availability': {'type': 'NO_YEAR'}}]})
 for k, v in delta.GOI_DELTA.items():
@@ -83,6 +87,10 @@ for d in DEPTS:
             deep_set(d, k, copy.deepcopy(v))
 _sec, _ph = skeletons.write(ROOT, 'GOI')
 GOI['delegation'] = _sec
+# APPROVE-401 step 2b: the Union bill-type crosswalk (prefixed form numbers, provenance per field, non-bill forms)
+GOI['documentTypes'] = copy.deepcopy(billtypes.union(GOI['documentTypes']))
+GOI['formTemplates'] = copy.deepcopy(billtypes.GOI_FORMS)
+GOI['billTypeCatalogue'] = copy.deepcopy(billtypes.note('GOI'))
 dump('in/GOI.yaml', GOI)
 for d in DEPTS:
     dump('in/goi/' + d['profile']['id'] + '.yaml', d)
@@ -136,9 +144,18 @@ for code, s in S.items():
                                                                   {'role': 'TREASURY_OFFICER', 'sign': True}],
                                   'returnBy': ['TREASURY_OFFICER'], 'mayEdit': False,
                                   'queue': {'token': True, 'tokenSeries': 'TOKEN', 'fifo': True}}]
-    if s['reports']:
-        doc.setdefault('documentTypes', []).extend(
-            dict(copy.deepcopy(r), id=code + '_' + r['id']) for r in s['reports'])
+    reports = [dict(copy.deepcopy(r), id=code + '_' + r['id']) for r in s['reports']]
+    if s['docs'] or reports:
+        # APPROVE-401 step 2b: the bill-type crosswalk (bill type -> form number -> catalogue id, provenance per field),
+        # one shape for every government (coordinator Q8); forms that are not bills go to formTemplates, outside the
+        # catalogue documentType.get resolves
+        bills, forms = billtypes.catalogue(code)
+        generated = doc.get('documentTypes', [])
+        doc['documentTypes'] = copy.deepcopy(bills(generated))
+        templates = forms(generated, reports)
+        if templates:
+            doc['formTemplates'] = copy.deepcopy(templates)
+        doc['billTypeCatalogue'] = copy.deepcopy(billtypes.note(code))
     for k, v in s['specials'].items():
         deep_set(doc, k, copy.deepcopy(v))
     extra = delta.apply(code, doc, IN['classification']['schemes'][0]['derive'])

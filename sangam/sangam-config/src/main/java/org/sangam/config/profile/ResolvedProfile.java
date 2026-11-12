@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.config.profile;
 
+import org.sangam.config.common.ConfigException;
 import org.sangam.config.common.Finding;
 import org.sangam.config.common.Tree;
 import org.sangam.config.locale.LocaleSettings;
+import org.sangam.core.money.Money;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
+import java.util.Currency;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +41,10 @@ public record ResolvedProfile(String scope, String office, LocalDate asOf, Map<S
         return Tree.integer(get(path), def);
     }
 
-    /** Decimal value; amount unit suffixes ({@code 10L}, {@code 5M}) are resolved with the profile locale. */
+    /**
+     * Decimal value; amount unit suffixes ({@code 10L}, {@code 5M}) are resolved with the profile locale. Not for
+     * money: a profile amount is integer minor units read with {@link #money(String)} (SL-102).
+     */
     public BigDecimal amount(String path, BigDecimal def) {
         Object v = get(path);
         if (v == null) {
@@ -45,6 +52,45 @@ public record ResolvedProfile(String scope, String office, LocalDate asOf, Map<S
         }
         BigDecimal b = locale().money().parse(v);
         return b == null ? def : b;
+    }
+
+    /**
+     * A money value of the profile (SL-102; SD-398 / PACKS4, the rule packs follow): an integer count of ISO 4217
+     * minor units of this profile's {@code locale.currency}, as profilegen writes it ({@code upTo: 100000000000} is
+     * 100 crore rupees in paise). The result carries the amount and the currency together.
+     *
+     * <p>Strict, never guessed: free text ({@code "2CR"}, {@code "5L"}), a numeric string ({@code "50000"}: major or
+     * minor units?), a decimal or a float is refused with {@code MONEY_NOT_MINOR_UNITS}; a profile without
+     * {@code locale.currency} is refused with {@code MONEY_CURRENCY_MISSING} (no default currency). Both name the
+     * profile and the path.
+     *
+     * @return the amount, or null when the path is absent
+     */
+    public Money money(String path) {
+        Object v = get(path);
+        if (v == null) {
+            return null;
+        }
+        long minor;
+        if (v instanceof Integer || v instanceof Long || v instanceof Short || v instanceof Byte) {
+            minor = ((Number) v).longValue();
+        } else if (v instanceof BigInteger b && b.bitLength() < Long.SIZE) {
+            minor = b.longValue();
+        } else {
+            throw new ConfigException("MONEY_NOT_MINOR_UNITS", subject() + ": " + path + " = '" + v
+                    + "' is not an integer amount in minor units of locale.currency (free text, numeric strings and"
+                    + " decimals are refused)");
+        }
+        Currency currency = locale().money().currency();
+        if (currency == null) {
+            throw new ConfigException("MONEY_CURRENCY_MISSING", subject() + ": " + path
+                    + " is money but locale.currency is not set");
+        }
+        return Money.ofMinor(minor, currency.getCurrencyCode());
+    }
+
+    private String subject() {
+        return "profile " + scope + (binding == null ? "" : " (" + binding + ")");
     }
 
     public Map<String, Object> map(String path) {
@@ -59,8 +105,9 @@ public record ResolvedProfile(String scope, String office, LocalDate asOf, Map<S
         return Tree.strings(get(path));
     }
 
+    /** The locale section; its {@code fiscal()} names this profile (scope and binding) when it refuses (SL-125). */
     public LocaleSettings locale() {
-        return LocaleSettings.from(map("locale"));
+        return LocaleSettings.from(map("locale"), subject());
     }
 
     /** True if the path (or one of its ancestors) is an unverified placeholder. */

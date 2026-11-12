@@ -186,4 +186,5 @@ The Flowable clients (Apache-2.0) were a design reference only. No code was copi
 - **No in-memory test engine yet.** R18 requires one for Tier 1.
 - **Contract tests not written.** T01–T04 and T18 are deferred to the testing phase, per the owner's phase rule.
 - **Untyped admin and ops bodies.** These are `Map<String, Object>`; typed records for OrgUnit, Seat and the other admin schemas can be added later.
-- **`effect` field not in the contract.** `ExternalWork.effect` is not in `sangam-api.yaml`, so irreversibility comes from `TopicSubscription.irreversible`.
+- **Irreversibility.** The server sends no `effect` on `ExternalWork` (it is not in `sangam-api.yaml`), so the SDK has no such field; irreversibility comes from `TopicSubscription.irreversible`.
+- **Contract guard.** `ModelContractTest` compares the worker and task models with `sangam-api.yaml` (field names, and no primitives for optional fields), so model drift fails the build.

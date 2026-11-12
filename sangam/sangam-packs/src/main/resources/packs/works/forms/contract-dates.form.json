@@ -1,6 +1,6 @@
 {
   "key": "works/contract-dates",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.works",
   "title": {
     "en": "Contract dates and payee details",

@@ -1,6 +1,6 @@
 {
   "key": "sec-ins-reinsurance/risk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ins.reinsurance",
   "title": {
     "en": "Risk for reinsurance",
@@ -25,7 +25,9 @@
     },
     {
       "id": "sumInsured",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Sum insured (INR)",

@@ -1,6 +1,6 @@
 {
   "id": "universal.up18-capa",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "UP-18 Non-conformance to CAPA with effectiveness check",
     "hi": "यूपी-18 गैर-अनुरूपता से सीएपीए एवं प्रभावशीलता जाँच"
@@ -57,5 +57,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-sanction"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

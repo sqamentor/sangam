@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 package org.sangam.core.layer;
 
 import java.sql.Connection;
@@ -106,10 +107,17 @@ public final class Relay implements OutboxRepair {
 
     public List<Claimed> claim() {
         return tx.inTransaction(c -> {
+            // SL-86 upgrade: the shared tenant key changed from '' to '-' (TenantKey.SHARED). Both are the same shared root
+            // stream, but each has its own ROOT_SEQ row, so their root_seq values are not comparable. An ordered '-'
+            // delivery therefore also waits until no legacy '' delivery of the same root and destination is unfinished:
+            // the legacy stream drains first, then the new one continues. ('' never matches on Oracle, which had none.)
             String where = "d.state = 'PENDING' AND d.next_attempt_at <= " + dialect.now()
-                    + " AND (d.ordered_flag = 0 OR NOT EXISTS (SELECT 1 FROM OUTBOX_DELIVERY y"
+                    + " AND (d.ordered_flag = 0 OR (NOT EXISTS (SELECT 1 FROM OUTBOX_DELIVERY y"
                     + " WHERE y.tenant_id = d.tenant_id AND y.root_id = d.root_id AND y.destination = d.destination"
-                    + " AND y.root_seq < d.root_seq AND y.state IN ('PENDING','CLAIMED','PARKED')))";
+                    + " AND y.root_seq < d.root_seq AND y.state IN ('PENDING','CLAIMED','PARKED'))"
+                    + " AND NOT (d.tenant_id = '" + TenantKey.SHARED + "' AND EXISTS (SELECT 1 FROM OUTBOX_DELIVERY z"
+                    + " WHERE z.tenant_id = '' AND z.root_id = d.root_id AND z.destination = d.destination"
+                    + " AND z.state IN ('PENDING','CLAIMED','PARKED')))))";
             String sql = dialect.skipLockedSelect("d.outbox_id, d.destination", "OUTBOX_DELIVERY", "d", where,
                     "d.next_attempt_at, d.root_seq", config.batchSize());
             List<Object[]> keys = Jdbc.query(c, sql, rs -> new Object[]{rs.getLong(1), rs.getString(2)});

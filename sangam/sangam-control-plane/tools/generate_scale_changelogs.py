@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Generates the per-dialect Liquibase formatted-SQL changelogs of the SCALE modules (control plane, roll-up)
-from one portable catalogue (same approach as sangam-persistence/tools). Run from sangam/:
+from one portable catalogue (same approach as sangam-persistence/tools). Runs from any directory (outputs are
+anchored to this file, SL-128), e.g. from sangam/:
     python -E -X utf8 sangam-control-plane/tools/generate_scale_changelogs.py
 """
 import os
@@ -105,8 +106,12 @@ def master(dirname, prefix):
 </databaseChangeLog>
 '''
 
+# SL-128: outputs are anchored to this script (sangam/<module>/tools/), never to the working directory, so a run from
+# the repository root (as CI does) writes the committed files instead of stray copies outside sangam/.
+SANGAM_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 for module, base, prefix, tables in (CONTROL_PLANE, ROLLUP):
-    root = os.path.join(module, "src", "main", "resources", base)
+    root = os.path.join(SANGAM_DIR, module, "src", "main", "resources", base)
     for d in DIALECTS:
         os.makedirs(os.path.join(root, d), exist_ok=True)
         with open(os.path.join(root, d, f"{prefix}-0001-baseline.sql"), "w", encoding="utf-8", newline="\n") as f:

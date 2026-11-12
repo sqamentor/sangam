@@ -11,10 +11,14 @@ import java.util.Map;
  * All of it is data in a profile section {@code documentTypes: [...]}:
  *
  * <pre>
- * - id: TA_TOUR
- *   family: PERSONAL_CLAIM
- *   formNumber: "RPR-14A"           # the jurisdiction's own form number
- *   legacyForms: ["GAR-14"]
+ * - id: CONTINGENT                    # the catalogue id: the reference a process sends (Sangam-assigned)
+ *   formKind: BILL                    # forms that are not bills are profile formTemplates, not documentTypes
+ *   family: CONTINGENT
+ *   formNumber: "GOI:RPR 29"          # the jurisdiction's own form number, jurisdiction-prefixed; one form may
+ *                                     # carry several types, so a form number alone can be ambiguous
+ *   legacyForms: ["GAR-47"]
+ *   billTypeCode: IN-CONTINGENT       # the government system's own bill-type code, when known
+ *   provenance: {formKind: VERIFIED, formNumber: VERIFIED, billTypeCode: ASSUMED, typeId: ASSUMED, name: INFERRED}
  *   name: {en: ..., hi: ...}
  *   fields: [{id: claimant, required: true}, {id: journeyFrom}]
  *   attachments: [{id: tickets, required: true}]
@@ -40,6 +44,11 @@ public record DocumentType(String id, Map<String, Object> raw) {
 
     public String formNumber() {
         return Tree.str(raw.get("formNumber"), null);
+    }
+
+    /** The kind of form ({@code BILL}, {@code REPORT}, {@code FORM} ...); {@code null} when the row declares none. */
+    public String formKind() {
+        return Tree.str(raw.get("formKind"), null);
     }
 
     public String approvalChain() {

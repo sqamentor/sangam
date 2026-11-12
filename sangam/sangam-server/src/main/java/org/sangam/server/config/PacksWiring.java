@@ -83,9 +83,24 @@ public class PacksWiring {
         return r;
     }
 
+    /**
+     * SL-116: deploy and rollback of one pack in one tenant scope are serialised by a row lock on its
+     * {@code EVT_DEFINITION_SEQ} mark (kind {@code pack}) in the Spring transaction the engine joins, so the lock and
+     * the deployment commit together. The wait for a held lock is bounded by {@code sangam.packs.operation.lock-timeout}
+     * (default 10 s; Oracle: the product layer's {@code FOR UPDATE WAIT 2}); a timeout is 409
+     * {@code PACK_OPERATION_IN_PROGRESS}.
+     */
     @Bean
-    public PackDeployer sangamPackDeployer(ProcessEngine engine, PackRegistry registry) {
-        return new PackDeployer(engine, registry);
+    public org.sangam.packs.spi.PackOperationLock sangamPackOperationLock(TxSupport tx, Environment env) {
+        Duration wait = env.getProperty("sangam.packs.operation.lock-timeout", Duration.class, Duration.ofSeconds(10));
+        return org.sangam.server.bridge.PackOperationTxLock.of(tx, wait);
+    }
+
+    /** The one deployer of the server (onboarding, tenant provisioning, the pack lifecycle API), with the SL-116 lock. */
+    @Bean
+    public PackDeployer sangamPackDeployer(ProcessEngine engine, PackRegistry registry,
+            org.sangam.packs.spi.PackOperationLock operationLock) {
+        return new PackDeployer(engine, registry, operationLock);
     }
 
     @Bean
@@ -109,8 +124,7 @@ public class PacksWiring {
             ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles) {
         return () -> {
             Dialect dialect = tx.dialect();
-            String defaultTenant = env.getProperty("sangam.tenant.default",
-                    env.getProperty("sangam.security.dev-token.tenant", "dev"));
+            String defaultTenant = AttributionTenant.resolve(env); // SL-86: the one attribution-tenant resolver
             // Seat validity days are business dates in each tenant's profile zone; sangam.packs.zone, if set,
             // forces one zone for every tenant (legacy override).
             String forced = env.getProperty("sangam.packs.zone");
@@ -157,7 +171,8 @@ public class PacksWiring {
     /** The packs' business calendar over the tenant profile calendar {@code calendarName} in force today. */
     static org.sangam.packs.port.BusinessCalendar packCalendar(org.sangam.config.profile.ProfileResolver profiles,
             ObjectProvider<org.sangam.core.time.BusinessClock> clocks, String calendarName) {
-        return new org.sangam.packs.sim.WorkingDayCalendar(ZoneId.of("Asia/Kolkata"),
+        // SL-104: a tenant without a profile calendar falls back to its business zone (BusinessClock: UTC, logged once)
+        return new org.sangam.packs.sim.WorkingDayCalendar(
                 new org.sangam.server.bridge.ProfileWorkingDays(tenant -> profiles.resolve(tenant,
                         ConfigWiring.businessClock(clocks).today(tenant)).locale().calendar(calendarName)));
     }

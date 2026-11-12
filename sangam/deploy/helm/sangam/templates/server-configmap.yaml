@@ -23,10 +23,21 @@ data:
   {{- with .Values.server.defaultTenant }}
   SANGAM_TENANT_DEFAULT: {{ . | quote }}
   {{- end }}
+  {{- with .Values.server.environment }}
+  SANGAM_ONBOARDING_ENVIRONMENT: {{ . | quote }}
+  {{- end }}
   SANGAM_DB_POOL_SIZE: {{ .Values.database.pool.maximumPoolSize | quote }}
   SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: {{ .Values.database.pool.minimumIdle | quote }}
   SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: {{ .Values.database.pool.connectionTimeoutMs | quote }}
   SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: {{ .Values.database.pool.maxLifetimeMs | quote }}
+  {{- with .Values.database.networkTimeout }}
+  # SL-59: socket read bound on every pooled connection
+  SANGAM_DB_NETWORK_TIMEOUT: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.database.unavailableRetryAfter }}
+  # SL-59: Retry-After of 503 DATABASE_UNAVAILABLE
+  SANGAM_DB_UNAVAILABLE_RETRY_AFTER: {{ . | quote }}
+  {{- end }}
   {{- with .Values.database.replica.jdbcUrl }}
   # IR-6 read replica for analytics, audit and history reads
   SANGAM_DB_REPLICA_URL: {{ . | quote }}
@@ -37,10 +48,18 @@ data:
   SANGAM_JOB_CORE_POOL_SIZE: {{ .Values.server.jobExecutor.corePoolSize | quote }}
   SANGAM_JOB_MAX_POOL_SIZE: {{ .Values.server.jobExecutor.maxPoolSize | quote }}
   SANGAM_JOB_MAX_JOBS_PER_ACQUISITION: {{ .Values.server.jobExecutor.maxJobsPerAcquisition | quote }}
+  # M-055 / SANGAM.md 4.3 item 3: exclusive jobs grouped per root instance (false = per process instance)
+  SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES: {{ .Values.server.jobExecutor.exclusiveOverProcessHierarchies | quote }}
   # OIDC (profile "oidc"): SANGAM_OIDC_ISSUER is the iss the tokens carry; jwk-set-uri optional (internal JWKS URL)
   SANGAM_OIDC_ISSUER: {{ required "oidc.issuerUri is required" .Values.oidc.issuerUri | quote }}
   {{- with .Values.oidc.jwkSetUri }}
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.oidc.platformIssuerUri }}
+  SANGAM_SECURITY_PLATFORM_ISSUER: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.oidc.platformJwkSetUri }}
+  SANGAM_SECURITY_PLATFORM_JWK_SET_URI: {{ . | quote }}
   {{- end }}
   SANGAM_SECURITY_OIDC_AUDIENCE: {{ .Values.oidc.audience | quote }}
   SANGAM_SECURITY_OIDC_TENANT_CLAIM: {{ .Values.oidc.tenantClaim | quote }}
@@ -96,7 +115,7 @@ data:
   # SCALE cell (sangam-cell IR-1..IR-4). SANGAM_CELL_ID switches the cell on, so it is only rendered when set.
   SANGAM_CELL_ID: {{ $cell.id | quote }}
   SANGAM_CELL_REGION: {{ $cell.region | quote }}
-  SANGAM_CELL_JURISDICTION: {{ $cell.jurisdiction | quote }}
+  SANGAM_CELL_JURISDICTION: {{ required "scale.cell.jurisdiction is required with scale.cell.id (SL-104: no product default)" $cell.jurisdiction | quote }}
   SANGAM_CELL_RESIDENCY: {{ default $cell.jurisdiction $cell.residency | quote }}
   SANGAM_CELL_PUBLIC_URL: {{ required "scale.cell.publicUrl is required with scale.cell.id" $cell.publicUrl | quote }}
   SANGAM_CELL_ADMIN_URL: {{ default $cell.publicUrl $cell.adminUrl | quote }}

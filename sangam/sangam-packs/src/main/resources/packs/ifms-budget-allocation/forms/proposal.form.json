@@ -1,6 +1,6 @@
 {
   "key": "ifms-budget-allocation/proposal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.ifms.budget-allocation",
   "title": {
     "en": "Distribution of budget",
@@ -52,7 +52,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",
@@ -68,5 +70,6 @@
         "hi": "टिप्पणी"
       }
     }
-  ]
+  ],
+  "help": "From the Ministry's distribution order (letter No. and date). Initiator seat FA-1 is INFERRED."
 }

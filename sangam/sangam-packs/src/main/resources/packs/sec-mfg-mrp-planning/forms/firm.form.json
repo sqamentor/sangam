@@ -1,6 +1,6 @@
 {
   "key": "sec-mfg-mrp-planning/firm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.mfg.mrp-planning",
   "title": {
     "en": "Firm the planned order",

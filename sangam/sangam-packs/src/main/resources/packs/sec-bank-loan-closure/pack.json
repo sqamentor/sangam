@@ -1,6 +1,6 @@
 {
   "id": "sec.bank.loan-closure",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Loan closure and release of property documents",
     "hi": "ऋण समापन एवं संपत्ति दस्तावेज़ों की वापसी"
@@ -76,5 +76,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "compensationAmount"
+    ]
+  }
 }

@@ -1,6 +1,6 @@
 {
   "id": "universal.up14-three-way-match",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "UP-14 Three-way match with tolerance exceptions",
     "hi": "यूपी-14 सहनशीलता अपवादों सहित त्रि-पक्षीय मिलान"
@@ -56,5 +56,14 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
-  ]
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "invoicePrice",
+      "poPrice"
+    ]
+  }
 }

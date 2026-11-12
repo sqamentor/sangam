@@ -24,15 +24,26 @@ import org.springframework.security.oauth2.jwt.Jwt;
  * claim (default {@code roles}), else {@code groups}, else Keycloak {@code realm_access.roles}. The seats the token
  * names (claim default {@code seats}) are put in {@code claims["seats"]} as a list of strings; effective dating and
  * additional charge are resolved server-side (sangam-security), the token list only limits {@code X-Sangam-Seat}.
+ *
+ * <p>SL-70: the groups are confined by the verified issuer ({@link PlatformIssuers}): only a platform issuer's token is
+ * a platform identity; in every other token {@code sangam-admin} is the tenant administrator of its tenant and the
+ * platform-only groups are removed.
  */
 public final class JwtPrincipalConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     public static final String SEATS = "seats";
 
     private final SangamSecurityProperties.Claims claims;
+    private final PlatformIssuers platform;
 
+    /** Without a platform issuer policy: every token is a tenant identity (fail closed). */
     public JwtPrincipalConverter(SangamSecurityProperties.Claims claims) {
+        this(claims, PlatformIssuers.none());
+    }
+
+    public JwtPrincipalConverter(SangamSecurityProperties.Claims claims, PlatformIssuers platform) {
         this.claims = claims;
+        this.platform = platform == null ? PlatformIssuers.none() : platform;
     }
 
     @Override
@@ -58,7 +69,8 @@ public final class JwtPrincipalConverter implements Converter<Jwt, AbstractAuthe
         } else {
             all.remove(SEATS);
         }
-        SangamPrincipal p = new SangamPrincipal(tenant, principal, roles(jwt), "OIDC", all);
+        SangamPrincipal p = new SangamPrincipal(tenant, principal,
+                platform.groups(jwt.getClaimAsString("iss"), roles(jwt)), "OIDC", all);
         return new SangamAuthenticationToken(p, jwt);
     }
 

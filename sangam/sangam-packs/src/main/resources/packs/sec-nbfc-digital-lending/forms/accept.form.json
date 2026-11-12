@@ -1,6 +1,6 @@
 {
   "key": "sec-nbfc-digital-lending/accept",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.nbfc.digital-lending",
   "title": {
     "en": "Accept KFS and loan agreement",

@@ -3,11 +3,7 @@ package org.sangam.server.config;
 
 import java.sql.Connection;
 import java.time.Duration;
-import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.sql.DataSource;
 
@@ -32,8 +28,6 @@ import org.sangam.ports.support.EngineTx;
 import org.sangam.registry.RegistryModule;
 import org.sangam.resources.SangamResources;
 import org.sangam.rest.port.AdminPort;
-import org.sangam.rest.port.Page;
-import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.security.SangamSecurity;
@@ -96,7 +90,8 @@ public class CaseWiring {
         s.outbox = new Outbox(dialect);
         s.links = new InstanceLinkService(dialect, engineTx);
         s.content = content.getIfAvailable();
-        s.zone = ZoneId.of(env.getProperty("sangam.case.zone", "Asia/Kolkata"));
+        // SL-104: case numbers and deadlines use each tenant's business zone (CaseModule.Settings.zones: BusinessClock);
+        // there is no deployment-wide case zone.
         s.calendars = CaseModuleDirectories.calendars(beans.getBeansOfType(WorkCalendar.class));
         s.processes = new CaseModuleProcessStarter(engine.getRuntimeService(), engine.getRepositoryService());
         SangamSecurity sec = security.getIfAvailable();
@@ -201,24 +196,12 @@ public class CaseWiring {
         return Binder.get(env).bind(property, Bindable.listOf(String.class)).orElse(List.of());
     }
 
-    /** Tenants for per-tenant schedules: {@code <property>} plus the active tenants of the tenant directory. */
-    static List<String> tenants(Environment env, ObjectProvider<AdminPort> admin, String property) {
-        Set<String> out = new LinkedHashSet<>(list(env, property));
-        AdminPort port = admin.getIfAvailable();
-        if (port != null) {
-            try {
-                String home = env.getProperty("sangam.tenant.default", "dev");
-                RequestContext sys = new RequestContext(home, "system:scheduler", Set.of("sangam-system", "sangam-admin"),
-                        null, null, null, null, null, "SYSTEM");
-                Page<AdminPort.Tenant> page = port.tenants(sys, new AdminPort.AdminFilter(null, null, null, null, null,
-                        null, null, false), Page.PageRequest.of(0, 500));
-                page.items().stream().filter(t -> !"SUSPENDED".equals(t.status())).map(AdminPort.Tenant::id)
-                        .forEach(out::add);
-            } catch (RuntimeException e) {
-                LOG.debug("tenant directory unavailable for a module schedule: {}", e.toString());
-            }
-        }
-        out.removeIf(t -> t == null || t.isBlank());
-        return new ArrayList<>(out);
+    /**
+     * Tenants for per-tenant schedules: {@code <property>} plus the active tenants of the tenant directory. SL-117: one
+     * reader ({@link ScheduleTenants}); a directory failure is logged at WARN and retried on the next cycle.
+     */
+    static List<String> tenants(Environment env, ObjectProvider<AdminPort> admin, String property,
+                                ScheduleTenantsMonitor monitor) {
+        return ScheduleTenants.resolve(env, admin, property, "system:scheduler", monitor);
     }
 }

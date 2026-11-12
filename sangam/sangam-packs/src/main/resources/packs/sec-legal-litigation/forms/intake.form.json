@@ -1,6 +1,6 @@
 {
   "key": "sec-legal-litigation/intake",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.legal.litigation",
   "title": {
     "en": "Legal matter intake",
@@ -43,7 +43,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": false,
       "label": {
         "en": "Amount (INR)",

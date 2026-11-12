@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-loan-closure/duplicate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.loan-closure",
   "title": {
     "en": "Obtain certified copies at the bank's cost",

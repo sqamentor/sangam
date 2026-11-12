@@ -1,6 +1,6 @@
 {
   "key": "sec-cap-surveillance-alert/review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.cap.surveillance-alert",
   "title": {
     "en": "Review alert and client trading",

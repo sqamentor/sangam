@@ -1,0 +1,27 @@
+{
+  "key": "sec-ecom-gst-tcs/suppliesUnconfirmed",
+  "version": "1.0.1",
+  "pack": "sec.ecom.gst-tcs",
+  "title": {
+    "en": "Net supplies not confirmed: establish them in the ERP",
+    "hi": "शुद्ध आपूर्ति की पुष्टि नहीं: ईआरपी में सुनिश्चित करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

@@ -1,14 +1,21 @@
 # SPDX-License-Identifier: Apache-2.0
 # Static analysis (CodeQL: Java, JavaScript/TypeScript) and OWASP Dependency-Check (fails on CVSS >= 7).
-# NVD_API_KEY (repository secret) makes the NVD download fast; without it the scan still runs, slowly.
+# M-094 (report-only, never failing): Error Prone + NullAway, SpotBugs + FindSecBugs, Semgrep (local rules in
+# semgrep/ only, plus a pip licence report), Gitleaks, OpenSSF Scorecard; Sonar waits for a server (jobs below the
+# dependency-check job).
+# The NVD API key is read at run time from AWS SSM (/shared/security/nvd-api-key, SecureString) through GitHub OIDC and
+# the IAM role sangam-ci (SHARED-CONFIG-AWS.md section 3). No long-lived secret is stored in GitHub. A missing parameter
+# fails the job with a message naming it; there is no fallback to any other path. Pull requests from forks and from
+# Dependabot get no OIDC token: there the scan is skipped with a notice in the step summary (it stays strict on main,
+# nightly and release).
 name: security
 
 on:
   push:
     branches: [main]
-    paths: ["sangam/**", ".github/workflows/security.yml"]
+    paths: ["sangam/**", "semgrep/**", ".github/workflows/security.yml"]
   pull_request:
-    paths: ["sangam/**", ".github/workflows/security.yml"]
+    paths: ["sangam/**", "semgrep/**", ".github/workflows/security.yml"]
   schedule:
     - cron: "0 23 * * 1"
   workflow_dispatch:
@@ -58,6 +65,8 @@ jobs:
             paths-ignore:
               - spike/**
               - reference/**
+              # SL-75: byte copies of private worktrees, not product code
+              - handoff/**
               - "**/node_modules/**"
               - "**/target/**"
       - name: Build (Java)
@@ -76,11 +85,61 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      id-token: write   # GitHub OIDC -> IAM role sangam-ci (reads /shared/security/nvd-api-key)
     steps:
+      - name: OIDC availability (fork and Dependabot pull requests get no token)
+        id: oidc
+        shell: bash
+        env:
+          # GitHub issues no OIDC token to pull requests from forks or from Dependabot, so the NVD key cannot be read.
+          NO_OIDC_PR: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]') }}
+        run: |
+          if [ "$NO_OIDC_PR" = "true" ]; then
+            msg="OWASP Dependency-Check skipped: this pull request (fork or Dependabot) gets no GitHub OIDC token, so the NVD API key (SSM /shared/security/nvd-api-key, role sangam-ci) cannot be read. The NVD scan runs on main, nightly and release, where it is strict."
+            echo "::notice title=NVD scan skipped::$msg"
+            echo "### NVD scan skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error title=NVD API key unavailable::no GitHub OIDC token for this run (event '${{ github.event_name }}'), so SSM /shared/security/nvd-api-key cannot be read through role sangam-ci"
+            exit 1
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        if: steps.oidc.outputs.run == 'true'
       - uses: actions/setup-java@v4
+        if: steps.oidc.outputs.run == 'true'
         with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - name: AWS credentials (OIDC, role sangam-ci)
+        if: steps.oidc.outputs.run == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::196337091345:role/sangam-ci
+          role-session-name: sangam-dependency-check-${{ github.run_id }}
+          aws-region: ap-south-1
+      - name: NVD API key from SSM /shared/security/nvd-api-key
+        if: steps.oidc.outputs.run == 'true'
+        shell: bash
+        env:
+          NVD_PARAM: /shared/security/nvd-api-key
+        run: |
+          set -euo pipefail
+          err="$RUNNER_TEMP/nvd-ssm.err"
+          if ! value="$(aws ssm get-parameter --name "$NVD_PARAM" --with-decryption --query Parameter.Value --output text 2>"$err")"; then
+            echo "::error title=NVD API key missing::cannot read SSM parameter $NVD_PARAM (SecureString, region ap-south-1) as role sangam-ci. The owner stores it with: aws ssm put-parameter --name $NVD_PARAM --type SecureString --key-id alias/shared-config"
+            cat "$err" >&2
+            exit 1
+          fi
+          if [ -z "$value" ] || [ "$value" = "None" ] || [ "$value" != "${value//$'\n'/}" ]; then
+            echo "::error title=NVD API key missing::SSM parameter $NVD_PARAM is empty or not a single-line value"
+            exit 1
+          fi
+          echo "::add-mask::$value"
+          echo "NVD_API_KEY=$value" >> "$GITHUB_ENV"
       - name: NVD data cache
+        if: steps.oidc.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
@@ -89,24 +148,196 @@ jobs:
           key: nvd-13.0.0-${{ github.run_id }}
           restore-keys: nvd-13.0.0-
       - name: dependency-check aggregate
+        if: steps.oidc.outputs.run == 'true'
         working-directory: sangam
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        # NVD_API_KEY comes from the masked SSM step above (GITHUB_ENV); it is never a repository secret.
         run: |
           mvn -B -ntp -DskipTests install
           mvn -B -ntp org.owasp:dependency-check-maven:13.0.0:aggregate \
             -DfailBuildOnCVSS=7 -Dformats=HTML,SARIF,JSON -DskipTestScope=true -DskipProvidedScope=true \
             -DassemblyAnalyzerEnabled=false -DossindexAnalyzerEnabled=false \
             -DsuppressionFile=deploy/licence/dependency-check-suppressions.xml \
-            ${NVD_API_KEY:+-DnvdApiKey=$NVD_API_KEY}
+            "-DnvdApiKey=${NVD_API_KEY:?NVD_API_KEY not set: the SSM step must run first}"
       - uses: github/codeql-action/upload-sarif@v3
-        if: always() && hashFiles('sangam/target/dependency-check-report.sarif') != ''
+        if: always() && steps.oidc.outputs.run == 'true' && hashFiles('sangam/target/dependency-check-report.sarif') != ''
         with:
           sarif_file: sangam/target/dependency-check-report.sarif
           category: dependency-check
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.oidc.outputs.run == 'true'
         with:
           name: dependency-check-report
           path: sangam/target/dependency-check-report.*
           if-no-files-found: ignore
+
+  # ---- M-094 gates (owner download batch 1, 2026-11-12). ALL REPORT-ONLY: every scanner exits 0 on findings and
+  # every job is continue-on-error, so no finding (or tool outage) fails this workflow, a pull request or a release.
+  # Making one blocking is an owner decision after the test-phase triage; the baselines come from that triage.
+
+  static-analysis:
+    # SpotBugs + FindSecBugs (profile sangam-spotbugs, failOnError=false). Its LGPL-2.1 transitive spotbugs-annotations
+    # 4.10.5 is in the owner's build-time exception (extended 2026-11-12) and banned from shipped scopes (enforcer).
+    # One SpotBugs report per module: they are kept as an artifact with a count per module in the step summary, not
+    # uploaded to code scanning (one category cannot take several runs of the same tool).
+    name: Error Prone + NullAway, SpotBugs + FindSecBugs (report-only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - name: Compile with Error Prone + NullAway (warnings), then SpotBugs + FindSecBugs at verify (no failure)
+        working-directory: sangam
+        # sangam/pom.xml profiles sangam-static-analysis and sangam-spotbugs (versions in its properties); no tests run
+        run: mvn -B -ntp -Psangam-static-analysis,sangam-spotbugs -DskipTests verify 2>&1 | tee ../static-analysis.log
+      - name: Summarise the reports
+        if: always()
+        shell: bash
+        run: |
+          grep -E '\.java:\[[0-9]+,[0-9]+\] \[[A-Za-z]+\]' static-analysis.log > error-prone-warnings.txt || true
+          echo "### Error Prone + NullAway (report-only): $(wc -l < error-prone-warnings.txt) warnings" >> "$GITHUB_STEP_SUMMARY"
+          echo "### SpotBugs + FindSecBugs (report-only): findings per module" >> "$GITHUB_STEP_SUMMARY"
+          find sangam -path '*/target*/spotbugsXml.xml' | sort | while read -r f; do
+            echo "- ${f%%/target*}: $(grep -c '<BugInstance' "$f" || true)" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: static-analysis-report
+          path: |
+            error-prone-warnings.txt
+            sangam/**/target*/spotbugsXml.xml
+            sangam/**/target*/spotbugsSarif.json
+          if-no-files-found: ignore
+
+  semgrep:
+    name: Semgrep (report-only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Semgrep CLI 1.185.0 in its own venv (LGPL-2.1 build-time tool, licence-policy.json build_time_tools)
+        run: |
+          python -m venv "$RUNNER_TEMP/semgrep-venv"
+          "$RUNNER_TEMP/semgrep-venv/bin/python" -m pip install --disable-pip-version-check -q semgrep==1.185.0
+          echo "$RUNNER_TEMP/semgrep-venv/bin" >> "$GITHUB_PATH"
+      - name: Licences of Semgrep's pip dependencies (pip-licenses 5.5.5, MIT; report-only)
+        run: |
+          python -m pip install --disable-pip-version-check -q pip-licenses==5.5.5
+          pip-licenses --python "$RUNNER_TEMP/semgrep-venv/bin/python" --from=mixed --format=json --output-file semgrep-pip-licences.json
+          python -I .github/scripts/pip_licence_report.py --packages semgrep-pip-licences.json \
+            --policy sangam/deploy/licence/licence-policy.json --summary "$GITHUB_STEP_SUMMARY"
+      - name: Local rules pass their own test cases (semgrep --test)
+        # semgrep/<rule>.yaml + semgrep/<rule>.java (// ruleid: and // ok: annotations). Owner 2026-11-12: local rules
+        # only, no registry rule packs.
+        run: semgrep --test --metrics=off semgrep/
+      - name: Scan with the local rules only (findings never fail the job; no --error)
+        run: |
+          semgrep scan --metrics=off --config semgrep/ --sarif --output semgrep.sarif \
+            --exclude spike --exclude reference --exclude handoff --exclude node_modules --exclude 'target*' sangam || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-report
+          path: |
+            semgrep.sarif
+            semgrep-pip-licences.json
+          if-no-files-found: ignore
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('semgrep.sarif') != ''
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep
+
+  gitleaks:
+    name: Gitleaks (report-only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks 8.30.1 (binary, MIT; checksum verified)
+        run: |
+          set -euo pipefail
+          v=8.30.1; base="https://github.com/gitleaks/gitleaks/releases/download/v$v"
+          cd "$RUNNER_TEMP"
+          curl -sSfLO "$base/gitleaks_${v}_linux_x64.tar.gz"
+          curl -sSfLO "$base/gitleaks_${v}_checksums.txt"
+          grep " gitleaks_${v}_linux_x64.tar.gz\$" "gitleaks_${v}_checksums.txt" | sha256sum -c -
+          tar -xzf "gitleaks_${v}_linux_x64.tar.gz" gitleaks
+      - name: "Scan the git history (exit code 0 on findings: report-only; secrets redacted in the report)"
+        run: |
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --exit-code 0 \
+            --report-format sarif --report-path gitleaks.sarif .
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
+
+  scorecard:
+    name: OpenSSF Scorecard (report-only)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    continue-on-error: true
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ossf/scorecard-action@v2.5.0
+        with:
+          results_file: scorecard.sarif
+          results_format: sarif
+          publish_results: false
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('scorecard.sarif') != ''
+        with:
+          sarif_file: scorecard.sarif
+          category: scorecard
+
+  sonar:
+    name: Sonar (report-only, runs only when SANGAM_SONAR_HOST_URL is set)
+    # M-095: sonar-maven-plugin 5.8.0.7211 (LGPL-3.0 build-time tool). No Sonar server is configured yet, so this job
+    # is skipped until the owner sets the repository variable SANGAM_SONAR_HOST_URL and the secret SANGAM_SONAR_TOKEN.
+    # Its LGPL-3.0 transitives org.sonarsource.scanner.lib:sonar-scanner-java-library (+ batch-interface,
+    # download-cache) 4.1.2.1663 are in the owner's build-time exception (extended 2026-11-12). HELD until a Sonar
+    # server is configured (owner 2026-11-12).
+    if: vars.SANGAM_SONAR_HOST_URL != '' && github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - name: Unit tests with coverage, then the Sonar analysis (no quality-gate wait)
+        working-directory: sangam
+        env:
+          SONAR_TOKEN: ${{ secrets.SANGAM_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SANGAM_SONAR_HOST_URL }}
+        run: |
+          mvn -B -ntp -Psangam-coverage -Dsangam.db=h2 -DskipITs -Dsangam.it.skip=true verify \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:5.8.0.7211:sonar -Dsonar.qualitygate.wait=false

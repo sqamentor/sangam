@@ -19,8 +19,8 @@ import java.util.Objects;
  *
  * <p>A {@link Handler} is typically a DMN evaluation (the integrator binds {@code DecisionDelegate}-style evaluation
  * per service id); it returns cards and system actions. JWT verification of the caller is done before
- * {@link #handle} by the REST layer with the client's JWKS (the {@code authorizedClient} argument is the verified
- * {@code iss}).
+ * {@link #handle} by the REST layer with the client's JWKS (M-006: sangam-rest {@code CdsClientVerifier} over
+ * sangam-security {@code ClientJwtVerifier}; the {@code authorizedClient} argument is the verified {@code iss}).
  */
 public final class CdsHooksService {
 

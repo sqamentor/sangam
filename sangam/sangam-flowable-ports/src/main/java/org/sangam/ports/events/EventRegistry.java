@@ -53,7 +53,7 @@ public class EventRegistry {
     }
 
     public DeployedEvent deployEvent(String tenantId, String json, String appDeploymentId) {
-        String tenant = tenantId == null ? "" : tenantId;
+        String tenant = org.sangam.core.layer.TenantKey.of(tenantId);
         EventDefinition def = Json.read(json, EventDefinition.class);
         validate(def);
         String canonical = Json.write(def);
@@ -63,7 +63,7 @@ public class EventRegistry {
     }
 
     public DeployedChannel deployChannel(String tenantId, String json, String appDeploymentId) {
-        String tenant = tenantId == null ? "" : tenantId;
+        String tenant = org.sangam.core.layer.TenantKey.of(tenantId);
         ChannelDefinition def = Json.read(json, ChannelDefinition.class);
         validate(def);
         String canonical = Json.write(def);
@@ -73,13 +73,13 @@ public class EventRegistry {
     }
 
     public Optional<DeployedEvent> event(String tenantId, String key) {
-        String tenant = tenantId == null ? "" : tenantId;
+        String tenant = org.sangam.core.layer.TenantKey.of(tenantId);
         return cached(eventCache, tenant + "|" + key, () -> tx.inTransaction(c -> latest(c, "EVT_EVENT_DEF", "event_key", tenant, key)
                 .map(r -> new DeployedEvent(tenant, r.version, Json.read(r.json, EventDefinition.class)))));
     }
 
     public Optional<DeployedChannel> channel(String tenantId, String key) {
-        String tenant = tenantId == null ? "" : tenantId;
+        String tenant = org.sangam.core.layer.TenantKey.of(tenantId);
         return cached(channelCache, tenant + "|" + key, () -> tx.inTransaction(c -> latest(c, "EVT_CHANNEL_DEF", "channel_key", tenant, key)
                 .map(r -> new DeployedChannel(tenant, r.version, Json.read(r.json, ChannelDefinition.class)))));
     }
@@ -94,7 +94,7 @@ public class EventRegistry {
     }
 
     public List<DeployedEvent> events(String tenantId) {
-        String tenant = tenantId == null ? "" : tenantId;
+        String tenant = org.sangam.core.layer.TenantKey.of(tenantId);
         return tx.inTransaction(c -> Jdbc.query(c,
                 "SELECT d.version, d.definition FROM EVT_EVENT_DEF d WHERE d.tenant_id = ? AND d.state = 'ACTIVE' AND d.version = "
                         + "(SELECT MAX(x.version) FROM EVT_EVENT_DEF x WHERE x.tenant_id = d.tenant_id AND x.event_key = d.event_key"
@@ -268,7 +268,7 @@ public class EventRegistry {
     }
 
     private static String t(String tenant) {
-        return tenant == null ? "" : tenant;
+        return org.sangam.core.layer.TenantKey.of(tenant); // SL-86: shared key, never ''
     }
 
 

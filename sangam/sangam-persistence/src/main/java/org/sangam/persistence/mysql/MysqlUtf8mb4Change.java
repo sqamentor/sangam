@@ -22,9 +22,13 @@ public class MysqlUtf8mb4Change implements CustomTaskChange {
     public void execute(Database database) throws CustomChangeException {
         try {
             result = MysqlUtf8mb4Patch.apply(MysqlDatetimePrecisionChange.jdbc(database));
-            if (!result.skippedWidestIndexBytes().isEmpty()) {
-                LOG.warn("P-2: tables left in utf8mb3 because an index would exceed {} bytes: {}",
-                        MysqlUtf8mb4Patch.MAX_INDEX_BYTES, result.skippedWidestIndexBytes());
+            if (!result.skipped().isEmpty()) {
+                LOG.warn("P-2: tables left in utf8mb3 (a whole FK-linked group is skipped together): {}",
+                        result.skipped());
+            }
+            if (!result.foreignKeysRecreated().isEmpty()) {
+                LOG.info("P-2: foreign keys dropped and re-created around the conversion (validated by MySQL): {}",
+                        result.foreignKeysRecreated());
             }
         } catch (SQLException e) {
             throw new CustomChangeException("P-2 MySQL utf8mb4 conversion failed", e);
@@ -35,7 +39,8 @@ public class MysqlUtf8mb4Change implements CustomTaskChange {
     public String getConfirmationMessage() {
         return result == null ? "P-2: not run"
                 : "P-2: " + result.converted().size() + " ACT_* tables converted to utf8mb4, "
-                + result.skippedWidestIndexBytes().size() + " skipped";
+                + result.skipped().size() + " skipped, " + result.foreignKeysRecreated().size()
+                + " foreign keys re-created";
     }
 
     @Override

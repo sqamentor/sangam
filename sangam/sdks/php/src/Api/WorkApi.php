@@ -8,6 +8,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\Json;
 use Sangam\Sdk\Model\ExternalWork;
 use Sangam\Sdk\Model\LockState;
+use Sangam\Sdk\Model\TopicRequest;
 
 /**
  * Worker API /api/v1/work (ARCHITECTURE section 4, VI.3). Every call after fetch carries
@@ -19,24 +20,26 @@ use Sangam\Sdk\Model\LockState;
 final class WorkApi extends ApiSupport
 {
     /**
-     * Long-poll fetch-and-lock. $topics = list of TopicRequest arrays: name (required), lockDurationMs, variables
-     * (list|null), localVariables (bool), processDefinitionKey, businessKey.
+     * Long-poll fetch-and-lock. $topics = TopicRequest objects (or their wire arrays: name required; lockDurationMs,
+     * variables, localVariables, processDefinitionKey, businessKey optional). Null $maxTasks / $asyncResponseTimeoutMs
+     * are not sent: the server then hands out 1 item and does not wait (EngineAdapterWorkAdapter).
      *
-     * @param list<array<string, mixed>> $topics
+     * @param list<TopicRequest|array<string, mixed>> $topics
      * @return list<ExternalWork>
      */
-    public function fetchAndLock(string $workerId, array $topics, int $maxTasks, int $asyncResponseTimeoutMs,
+    public function fetchAndLock(string $workerId, array $topics, ?int $maxTasks, ?int $asyncResponseTimeoutMs,
                                  ?\Closure $abort = null, ?bool $usePriority = null): array
     {
         $req = ApiRequest::post('/work/fetch-and-lock')
             ->body([
                 'workerId' => $workerId,
-                'topics' => $topics,
+                'topics' => array_map(static fn(TopicRequest|array $t): array => $t instanceof TopicRequest
+                    ? $t->toArray() : $t, array_values($topics)),
                 'maxTasks' => $maxTasks,
                 'asyncResponseTimeoutMs' => $asyncResponseTimeoutMs,
                 'usePriority' => $usePriority,
             ])
-            ->timeoutMs($asyncResponseTimeoutMs + 15000)
+            ->timeoutMs(($asyncResponseTimeoutMs ?? 0) + 15000)
             ->noRetry()
             ->abortWhen($abort);
         $body = $this->call($req);
@@ -59,27 +62,34 @@ final class WorkApi extends ApiSupport
     }
 
     /**
+     * WorkCompleteRequest. $outcomeReference / $outcomeDetails form the WorkOutcome (SL-16: recorded as the ledger
+     * outcome, reference = providerRef); outcome is sent only when one of them is set, and only its set members.
+     *
      * @param array<string, mixed>|null $variables
      * @param array<string, mixed>|null $localVariables
+     * @param array<string, mixed>|null $outcomeDetails
      */
     public function complete(string $workId, string $workerId, int $lockVersion, ?string $attemptId,
                              ?array $variables, ?string $idempotencyKey, ?array $localVariables = null,
-                             ?string $outcomeReference = null): void
+                             ?string $outcomeReference = null, ?array $outcomeDetails = null): void
     {
         $body = ['workerId' => $workerId, 'lockVersion' => $lockVersion, 'attemptId' => $attemptId,
             'variables' => Json::obj($variables), 'localVariables' => Json::obj($localVariables)];
-        if ($outcomeReference !== null) {
-            // SL-16: the downstream reference is recorded as the ledger outcome
-            $body['outcome'] = ['reference' => $outcomeReference];
+        if ($outcomeReference !== null || $outcomeDetails !== null) {
+            $body['outcome'] = array_filter(['reference' => $outcomeReference, 'details' => Json::obj($outcomeDetails)],
+                static fn(mixed $v): bool => $v !== null);
         }
         $this->call(ApiRequest::post('/work/' . self::seg($workId) . '/complete')
             ->body($body)
             ->idempotencyKey($idempotencyKey));
     }
 
-    /** $retries = retries left after this failure; 0 raises an incident. */
-    public function fail(string $workId, string $workerId, int $lockVersion, ?string $attemptId, string $errorMessage,
-                         ?string $errorDetails, int $retries, int $retryTimeoutMs, ?string $idempotencyKey): void
+    /**
+     * WorkFailRequest. $retries = retries left after this failure; 0 raises an incident. errorMessage, errorDetails,
+     * retries and retryTimeoutMs are optional on the wire: null members are not sent.
+     */
+    public function fail(string $workId, string $workerId, int $lockVersion, ?string $attemptId, ?string $errorMessage,
+                         ?string $errorDetails, ?int $retries, ?int $retryTimeoutMs, ?string $idempotencyKey): void
     {
         $this->call(ApiRequest::post('/work/' . self::seg($workId) . '/fail')
             ->body(['workerId' => $workerId, 'lockVersion' => $lockVersion, 'attemptId' => $attemptId,

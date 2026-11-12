@@ -167,8 +167,12 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TaskPort sangamTaskPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props) {
-        return new OperatonTaskAdapter(engine.getTaskService(), engine.getRuntimeService(), engine.getHistoryService(),
-                engine.getFormService(), tx, audit, props);
+        OperatonTaskAdapter adapter = new OperatonTaskAdapter(engine.getTaskService(), engine.getRuntimeService(),
+                engine.getHistoryService(), engine.getFormService(), tx, audit, props);
+        // SL-77: required fields of the task's Sangam form are enforced on completion.
+        adapter.setFormRequirements(new org.sangam.rest.adapter.operaton.TaskFormRequirements(
+                engine.getRepositoryService()));
+        return adapter;
     }
 
     @Bean
@@ -219,7 +223,8 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public HistoryPort sangamHistoryPort(ProcessEngine engine, RestProperties props) {
-        return new OperatonHistoryAdapter(engine.getHistoryService(), engine.getRepositoryService(), props);
+        return new OperatonHistoryAdapter(engine.getHistoryService(), engine.getRepositoryService(),
+                engine.getManagementService(), props);
     }
 
     @Bean
@@ -348,7 +353,11 @@ public class SangamRestAutoConfiguration {
     @ConditionalOnMissingBean
     public org.sangam.rest.port.DebugPort sangamDebugPort(ProcessEngine engine, RestProperties props,
             org.springframework.core.env.Environment env, TxSupport tx) {
-        boolean enabled = env.getProperty("sangam.debug.enabled", Boolean.class, false);
+        // SL-109: never enabled in production (ProductionMode: the production property or a 'prod' profile)
+        boolean enabled = env.getProperty("sangam.debug.enabled", Boolean.class, false)
+                && !org.sangam.core.security.ProductionMode.isProduction(
+                        env.getProperty(org.sangam.core.security.ProductionMode.PROPERTY, Boolean.class, false),
+                        java.util.Arrays.asList(env.getActiveProfiles()));
         String profile = String.join(",", env.getActiveProfiles());
         return new org.sangam.rest.adapter.operaton.OperatonDebugAdapter(engine.getRuntimeService(),
                 engine.getManagementService(), props, enabled, profile, env.getProperty("sangam.debug.sandbox-tenant"),

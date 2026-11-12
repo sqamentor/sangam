@@ -1,6 +1,6 @@
 {
   "key": "sec-scm-eway-bill/dispatch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.scm.eway-bill",
   "title": {
     "en": "Dispatch",
@@ -25,7 +25,9 @@
     },
     {
       "id": "consignmentValue",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Consignment value (INR)",

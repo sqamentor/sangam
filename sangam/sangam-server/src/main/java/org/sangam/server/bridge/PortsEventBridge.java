@@ -30,9 +30,11 @@ import org.sangam.rest.support.RestProperties;
  *       registry's version states ({@code ACTIVE} / {@code RETIRED}); delete retires first and then removes the
  *       retired versions; all three are refused with {@code 409 EVENT_IN_FLIGHT} while events of the key are buffered
  *       or undelivered.</li>
- *   <li>{@code POST /events/{channel}} is the {@link WebhookInboundEndpoint}: the CloudEvent (structured mode) is the
- *       raw body, {@code id} is the message id, so the inbox de-duplicates redeliveries (R38); dispatch to processes
- *       and cases (start, correlation, {@code uniqueStart}) happens asynchronously in the inbox loop.</li>
+ *   <li>{@code POST /events/{channel}} goes to {@link WebhookInboundEndpoint#receiveAuthenticated}: the caller is a
+ *       Sangam principal of the tenant holding {@code EVENT_PUBLISH} (token-authenticated API), so its token, not the
+ *       channel HMAC, authenticates the event (SL-76). The CloudEvent (structured mode) is the body, {@code id} is the
+ *       message id, so the inbox de-duplicates redeliveries (R38); dispatch to processes and cases (start, correlation,
+ *       {@code uniqueStart}) happens asynchronously in the inbox loop.</li>
  * </ul>
  * REST transports map onto ports adapter types: REST/WEBHOOK → webhook (inbound) / http (outbound), KAFKA → kafka,
  * JMS → jms, AMQP → rabbitmq.
@@ -216,7 +218,9 @@ public final class PortsEventBridge implements EventPort {
         json.put("payload", payloadFields(d.payloadSchema()));
         List<Map<String, Object>> corr = new ArrayList<>();
         for (String p : d.correlationParameters() == null ? List.<String>of() : d.correlationParameters()) {
-            String name = p.startsWith("/") ? p.substring(1).replace('/', '.') : p;
+            // SL-80: one naming rule for pointers (/a/b -> a.b), shared with the business-key reference below
+            String name = p.startsWith("/") ? org.sangam.rest.support.CorrelationNames.fromPointer(p,
+                    "correlationParameters") : p;
             corr.add(Map.of("name", name, "type", "string"));
         }
         json.put("correlationParameters", corr);
@@ -225,10 +229,21 @@ public final class PortsEventBridge implements EventPort {
         if (bk != null) {
             json.put("businessKeyField", bk);
         }
+        // SL-80: the business key as a correlation parameter has the same name a correlation pointer to it has
+        // (/bill/id -> bill.id); before, it was the pointer text bill/id
+        String bkName = bk == null ? null : d.businessKeyPointer().startsWith("/")
+                ? org.sangam.rest.support.CorrelationNames.fromPointer(d.businessKeyPointer(), "businessKeyPointer") : bk;
         if (d.uniqueStart()) {
-            String ref = bk != null ? bk : corr.isEmpty() ? null : String.valueOf(corr.get(0).get("name"));
+            String ref = bkName != null ? bkName : corr.isEmpty() ? null : String.valueOf(corr.get(0).get("name"));
             if (ref == null) {
                 throw ApiProblem.badRequest("VALIDATION_FAILED", "uniqueStart needs a businessKeyPointer or a correlation parameter");
+            }
+            // The ports registry reads the unique-start value from the event's correlation values, so the reference
+            // must be a declared correlation parameter. A start that is unique on the business key (the REST contract:
+            // businessKeyPointer alone, as JdbcEventAdapter accepts it) declares it here; before, T35's definition was
+            // refused with 422 "startUniqueReference 'billId' is not a correlation parameter".
+            if (corr.stream().noneMatch(m -> ref.equals(m.get("name")))) {
+                corr.add(Map.of("name", ref, "type", "string"));
             }
             json.put("startUniqueReference", ref);
         }
@@ -293,11 +308,13 @@ public final class PortsEventBridge implements EventPort {
         headers.put("ce-source", e.source());
         headers.put("ce-type", e.type());
         headers.put("ce-specversion", "1.0");
-        if (e.extensions() != null && e.extensions().get("signature") instanceof String sig) {
-            headers.put("X-Sangam-Signature", sig);
-        }
+        // SL-76: the caller is authenticated by its token as a principal of ctx.tenantId() with EVENT_PUBLISH, so the
+        // channel HMAC (the credential of webhook senders without a Sangam identity) is not re-verified. It could not
+        // be: the body here is rebuilt from the parsed event (and used to contain the "signature" extension itself), so
+        // a channel with a secretRef refused every authenticated publish with 403 "webhook signature invalid".
         String raw = write(body);
-        InboundEventProcessor.Result r = PortsErrors.call(() -> webhook.receive(ctx.tenantId(), channelKey, headers, raw));
+        InboundEventProcessor.Result r = PortsErrors.call(
+                () -> webhook.receiveAuthenticated(ctx.tenantId(), channelKey, headers, raw));
         if (r.outcome() == InboundEventProcessor.Outcome.REJECTED) {
             // Audit PR-3: map by the processor's code, so a too-large or cross-tenant event is not a generic 422.
             String code = r.code();

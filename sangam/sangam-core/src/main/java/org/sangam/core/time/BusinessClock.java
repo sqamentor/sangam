@@ -13,7 +13,7 @@ import java.util.function.Function;
 /**
  * The business calendar day of a tenant. Every business date ("today" for receipt numbers, effective dates, as-of
  * dates, assignment validity, period defaults) is the date <em>in the tenant's zone</em>, never the JVM default zone
- * (production JVMs run with {@code -Duser.timezone=UTC}). Technical timestamps (audit, leases, events) stay UTC
+ * (which is UTC: a JVM that runs the engine is refused otherwise, {@link EngineTimeZone}). Technical timestamps (audit, leases, events) stay UTC
  * {@link Instant}s and do not use this.
  * <p>
  * Backed by an injectable {@link Clock} (only its instant is used, never its zone) so tests can fix the moment.

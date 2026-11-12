@@ -45,6 +45,8 @@ public final class SimulatorProfile implements AutoCloseable {
     public static final String DIGILOCKER_ORG_ID = "in.gov.sangam.sim";
     /** Shared secret the payment gateway simulator signs callbacks with. */
     public static final String PG_CALLBACK_SECRET = "sim-pg-callback-secret";
+    /** Currency of the payment gateway simulator's orders (simulator data, SL-104: not a product default). */
+    public static final String PG_CURRENCY = "INR";
     /** PFMS source system id and scheme used against the PFMS simulator. */
     public static final String PFMS_SSID = "SIMSSID";
     public static final String PFMS_SCHEME = "SIMSCHEME";

@@ -30,12 +30,17 @@ import org.sangam.persistence.SangamSchema;
 import org.sangam.security.SangamSecurity;
 import org.sangam.security.dialect.SecurityDialect;
 import org.sangam.security.identity.ResolvedIdentityCache;
+import org.sangam.security.support.Sql;
 
 /**
  * SG-15 T-SCALE: the per-token identity cache on a real H2 security schema. A hit costs one validation statement
  * instead of the full resolution (~10 statements); every change that can alter the resolved identity is seen on the
  * next request, exactly as without the cache: a membership change (policy version), a membership that starts later
  * (effective-date boundary), a disabled person, a suspended tenant, a relinked subject.
+ *
+ * <p>Every "now" of this test is the product's database time, {@link Sql#dbNow} (A-1, truncated to milliseconds), the
+ * instant the resolver compares effective dates with. A change made effective at a finer instant lies after the start
+ * of its millisecond, so a next request in that same millisecond still saw it as not yet effective (SL-67).
  */
 class ResolvedIdentityCacheH2Test {
 
@@ -126,7 +131,7 @@ class ResolvedIdentityCacheH2Test {
     @Test
     void aMembershipThatStartsLaterIsSeenFromItsStartWithoutAnyVersionBump() throws Exception {
         SecurityIdentity raw = token("sub-1", Set.of());
-        Instant start = tx.inTransaction(c -> Jdbc.dbNow(c, security.dialect().core())).plusMillis(1500);
+        Instant start = tx.inTransaction(c -> Sql.dbNow(c, security.dialect())).plusMillis(1500);
         tx.inTransaction(c -> security.memberships().put(c, T, SecurityIdentity.USER + "p1", SecurityIdentity.GROUP + "night-shift",
                 "LOCAL", start, start.plusMillis(1500)));
         SecurityIdentity before = resolve(raw);
@@ -231,7 +236,7 @@ class ResolvedIdentityCacheH2Test {
         tx.inTransaction(c -> security.memberships().put(c, T, SecurityIdentity.USER + "p1", SecurityIdentity.GROUP + "g1",
                 "src-1", Instant.EPOCH, null));
         assertTrue(resolve(raw).groups().contains("g1"));
-        assertFalse(nextAfter(raw, c -> security.memberships().end(c, T, "src-1", Jdbc.dbNow(c, security.dialect().core())))
+        assertFalse(nextAfter(raw, c -> security.memberships().end(c, T, "src-1", Sql.dbNow(c, security.dialect())))
                 .groups().contains("g1"), "expire (end) now");
         tx.inTransaction(c -> security.memberships().put(c, T, SecurityIdentity.USER + "p1", SecurityIdentity.GROUP + "g2",
                 "src-2", Instant.EPOCH, null));
@@ -256,7 +261,7 @@ class ResolvedIdentityCacheH2Test {
                 org.sangam.security.org.OrgModel.PostingKind.REGULAR, past, null, "order-1", null).postingId());
         assertTrue(posted.seats().contains("S1"), "posting is seen at once");
         SecurityIdentity onLeave = nextAfter(raw, c -> {
-            Instant now = Jdbc.dbNow(c, security.dialect().core());
+            Instant now = Sql.dbNow(c, security.dialect());
             security.postings().recordLeave(c, SecurityIdentity.system(T, "p3").withPerson("p3"), "p1", now.minusSeconds(60),
                     now.plusSeconds(3600), null, "p1");
         });
@@ -267,7 +272,7 @@ class ResolvedIdentityCacheH2Test {
         });
         assertTrue(resolve(raw).seats().contains("S1"));
         SecurityIdentity relieved = nextAfter(raw, c -> security.postings().endPosting(c, SYSTEM, posting[0],
-                Jdbc.dbNow(c, security.dialect().core())));
+                Sql.dbNow(c, security.dialect())));
         assertFalse(relieved.seats().contains("S1"), "relieving is seen at once");
     }
 

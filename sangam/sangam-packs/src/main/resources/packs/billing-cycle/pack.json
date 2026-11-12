@@ -1,6 +1,6 @@
 {
   "id": "universal.billing-cycle",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Billing cycle: invoice, collection, arrears, penalty, waiver",
     "hi": "बिलिंग चक्र: बीजक, संग्रह, बकाया, दंड, माफ़ी"
@@ -85,5 +85,13 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "waiverAmount"
+    ]
+  }
 }

@@ -233,10 +233,10 @@ public final class DocumentStore {
         String where = where(tenant, kind, filter, params);
         int max = limit <= 0 ? 100_000 : Math.addExact(offset, limit);
         return tx.withConnection(c -> {
-            try (PreparedStatement ps = c.prepareStatement("SELECT " + COLS + " FROM REST_DOCUMENT WHERE " + where
-                    + " ORDER BY created_at, doc_id")) {
+            String sql = "SELECT " + COLS + " FROM REST_DOCUMENT WHERE " + where + " ORDER BY created_at, doc_id";
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows(max);
-                Jdbc.bind(ps, 1, params.toArray());
+                Jdbc.bind(ps, sql, 1, params.toArray());
                 List<Doc> out = new ArrayList<>();
                 try (ResultSet rs = ps.executeQuery()) {
                     int i = 0;
@@ -262,9 +262,10 @@ public final class DocumentStore {
         List<Object> params = new ArrayList<>();
         String where = where(tenant, kind, filter, params);
         return tx.withConnection(c -> {
-            try (PreparedStatement ps = c.prepareStatement("SELECT doc_id FROM REST_DOCUMENT WHERE " + where)) {
+            String sql = "SELECT doc_id FROM REST_DOCUMENT WHERE " + where;
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows((int) Math.min(Integer.MAX_VALUE, cap + 1));
-                Jdbc.bind(ps, 1, params.toArray());
+                Jdbc.bind(ps, sql, 1, params.toArray());
                 long n = 0;
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {

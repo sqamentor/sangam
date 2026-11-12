@@ -1,6 +1,6 @@
 {
   "key": "p4-licence/pay-again",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p4.licence",
   "title": {
     "en": "Payment failed: pay again",

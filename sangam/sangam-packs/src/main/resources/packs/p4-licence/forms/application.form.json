@@ -1,6 +1,6 @@
 {
   "key": "p4-licence/application",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.p4.licence",
   "title": {
     "en": "Licence application",

@@ -1145,3 +1145,11 @@ dialog::backdrop {
 
 .sg-rule-hit { background: #fff4d6 !important; color: #000; font-weight: 700; }
 
+
+/* P35 inbox filter sidebar */
+.inbox-layout { display: grid; grid-template-columns: minmax(12rem, 16rem) 1fr; gap: 1rem; align-items: start; }
+.inbox-sidebar ul.plain { list-style: none; padding: 0; margin: 0 0 0.75rem; }
+.inbox-sidebar li { margin: 0.25rem 0; }
+.inbox-sidebar [aria-pressed='true'] { font-weight: 700; }
+.inbox-main { min-width: 0; }
+@media (max-width: 48rem) { .inbox-layout { grid-template-columns: 1fr; } }

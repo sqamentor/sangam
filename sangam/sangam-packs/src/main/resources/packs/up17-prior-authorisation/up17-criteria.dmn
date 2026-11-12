@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_up17_criteria" name="Clinical criteria and decision clock" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
-  <decision id="up17-criteria" name="Clinical criteria and decision clock" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="up17-criteria" name="Clinical criteria and decision clock" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="up17-criteria_t" hitPolicy="FIRST">
       <input id="up17-criteria_i0" label="Urgency"><inputExpression id="up17-criteria_ie0" typeRef="string"><text>urgency</text></inputExpression></input>
       <output id="up17-criteria_o0" label="Auto-approve" name="autoApprove" typeRef="boolean"/>

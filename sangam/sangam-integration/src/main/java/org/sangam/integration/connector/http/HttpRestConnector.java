@@ -17,9 +17,14 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,6 +35,18 @@ import java.util.regex.Pattern;
  * input, URL-encoded), {@code query} (map), {@code headers} (map), {@code body} (any JSON value; a string is sent as
  * is). The operationId is sent in the configured idempotency header (default {@code Idempotency-Key}). Timeouts, retries
  * and mTLS come from the {@link HttpTransport}; egress is checked on every hop (R27).
+ *
+ * <p>Headers (SL-62): names are case-insensitive and each is sent once. The connector's own headers (Authorization, the
+ * idempotency header, {@code X-Sangam-*}) replace a configured default header of the same name. The request's
+ * {@code headers} come from the process, so a name the connector owns or fills from the secret port, or a name given
+ * twice, is refused as {@code INVALID_REQUEST} and nothing is sent: credentials and Sangam's own headers never come
+ * from process input. A {@code secret://} value the secret port cannot supply at call time means the request is not
+ * sent (SL-61): a no-effect transient failure, or an unavailable lookup.
+ *
+ * <p>Validity (SL-65): a request header name or value, or a method, that is not valid HTTP is refused as
+ * {@code INVALID_REQUEST} before anything is sent; configured headers and the default method are checked when the
+ * connector is built. A secret with leading or trailing whitespace or a control character (the line break a file store
+ * adds) is refused, never trimmed. No message shows a header value.
  *
  * <p>Response mapping: 2xx → success with {@code status}, {@code headers} and {@code body} (parsed JSON when the
  * content type is JSON); 4xx except 408/409/429 → business failure {@code HTTP_<status>}; 409 → business failure
@@ -48,8 +65,13 @@ public final class HttpRestConnector implements SangamConnector {
         public Config {
             idempotencyHeader = idempotencyHeader == null ? "Idempotency-Key" : idempotencyHeader;
             defaultHeaders = defaultHeaders == null ? Map.of() : Map.copyOf(defaultHeaders);
+            checkConfiguredHeaders("default header", defaultHeaders);
             mapping = mapping == null ? ResponseMapping.NONE : mapping;
             defaultMethod = defaultMethod == null || defaultMethod.isBlank() ? "POST" : defaultMethod.toUpperCase(java.util.Locale.ROOT);
+            if (!isMethod(defaultMethod)) {
+                throw new IllegalArgumentException("method '" + HttpTransport.printable(defaultMethod)
+                        + "' is not a valid HTTP method");
+            }
         }
 
         /** Static {@code authorization} secret reference only, no response mapping. */
@@ -101,17 +123,29 @@ public final class HttpRestConnector implements SangamConnector {
     }
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([A-Za-z0-9_.-]+)}");
+    private static final String SECRET_PREFIX = "secret://";
+    /** Lower-case prefix of Sangam's own headers (operation id, attempt id); all of them belong to the connector. */
+    private static final String SANGAM_HEADER_PREFIX = "x-sangam-";
 
     private final Config config;
     private final HttpTransport transport;
     private final SecretResolver secrets;
     private final ConnectorDescriptor descriptor;
+    /** Default headers the connector fills from the secret port (SL-18); names compared case-insensitively. */
+    private final Set<String> secretHeaders;
 
     public HttpRestConnector(Config config, HttpTransport transport, SecretResolver secrets) {
         this.config = config;
         this.transport = transport;
         this.secrets = secrets == null ? SecretResolver.fromEnvironment() : secrets;
         this.descriptor = new ConnectorDescriptor(config.id(), "http", config.capabilityClass(), List.of(), config.profile());
+        Set<String> fromPort = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        config.defaultHeaders().forEach((name, value) -> {
+            if (value.startsWith(SECRET_PREFIX)) {
+                fromPort.add(name);
+            }
+        });
+        this.secretHeaders = Collections.unmodifiableSet(fromPort);
     }
 
     /** Simulator profile against {@code RestEchoSimulator} ({@code POST /api/operations}, lookup by id), class (a). */
@@ -130,14 +164,21 @@ public final class HttpRestConnector implements SangamConnector {
     public ConnectorResult invoke(ConnectorRequest r) {
         String method = r.str("method", config.defaultMethod()).toUpperCase(java.util.Locale.ROOT);
         URI uri;
+        Map<String, String> requestHeaders;
         try {
+            if (!isMethod(method)) {
+                // SL-65: the method comes from the process; refused here rather than by the HTTP client
+                throw new IllegalArgumentException("method '" + HttpTransport.printable(method)
+                        + "' is not a valid HTTP method");
+            }
             uri = resolve(r.str("path", "/"), r, r.map("query"));
+            requestHeaders = requestHeaders(r);
         } catch (IllegalArgumentException e) {
             return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", e.getMessage());
         }
         Map<String, String> headers;
         try {
-            headers = headers(r);
+            headers = headers(r, requestHeaders);
         } catch (AuthUnavailableException e) {
             return ConnectorResult.TransientFailure.noEffect("credential unavailable, request not sent: " + e.getMessage());
         }
@@ -189,7 +230,9 @@ public final class HttpRestConnector implements SangamConnector {
         URI uri = resolve(config.lookupPath(), r, Map.of());
         Map<String, String> lookupHeaders;
         try {
-            lookupHeaders = headers(r);
+            lookupHeaders = headers(r, requestHeaders(r));
+        } catch (IllegalArgumentException e) {
+            return new LookupResult.Unavailable("INVALID_REQUEST: " + e.getMessage());
         } catch (AuthUnavailableException e) {
             return new LookupResult.Unavailable("credential unavailable: " + e.getMessage());
         }
@@ -249,36 +292,176 @@ public final class HttpRestConnector implements SangamConnector {
         return out;
     }
 
-    private Map<String, String> headers(ConnectorRequest r) {
-        Map<String, String> h = new LinkedHashMap<>();
+    /**
+     * SL-62: the request's own headers (the {@code headers} input, which comes from the process). A name the connector
+     * owns (Authorization, the idempotency header, any {@code X-Sangam-} header) or fills from the secret port is
+     * refused, and so is a name given twice in different letter case: credentials and Sangam's own headers never come
+     * from process input, and a header is never sent twice. SL-65: a name or value that is not valid HTTP is refused
+     * here too, and the message never shows the value.
+     *
+     * @throws IllegalArgumentException the request is invalid (INVALID_REQUEST; nothing is sent)
+     */
+    private Map<String, String> requestHeaders(ConnectorRequest r) {
+        Map<String, String> out = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (Map.Entry<String, Object> e : r.map("headers").entrySet()) {
+            String name = e.getKey();
+            if (name == null || name.isBlank()) {
+                throw new IllegalArgumentException("request header without a name");
+            }
+            if (!HttpTransport.isToken(name)) {
+                throw new IllegalArgumentException("request header name '" + HttpTransport.printable(name)
+                        + "' is not valid HTTP");
+            }
+            if (!HttpTransport.isFieldValue(String.valueOf(e.getValue()))) {
+                throw new IllegalArgumentException("request header '" + name + "' has a value that is not valid HTTP (a "
+                        + "control character such as a line break, or a character above U+00FF; the value is not shown)");
+            }
+            if (name.equalsIgnoreCase("Authorization") || name.equalsIgnoreCase(config.idempotencyHeader())
+                    || name.toLowerCase(Locale.ROOT).startsWith(SANGAM_HEADER_PREFIX)) {
+                throw new IllegalArgumentException("request header '" + name + "' is reserved for the connector");
+            }
+            if (secretHeaders.contains(name)) {
+                throw new IllegalArgumentException("request header '" + name
+                        + "' is filled by the connector from the secret port");
+            }
+            if (out.put(name, String.valueOf(e.getValue())) != null) {
+                throw new IllegalArgumentException("request header '" + name
+                        + "' is given twice (header names are case-insensitive)");
+            }
+        }
+        return out;
+    }
+
+    private Map<String, String> headers(ConnectorRequest r, Map<String, String> requestHeaders) {
+        // SL-62: one value per header name, whatever its letter case
+        Map<String, String> h = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         // SL-18: a default header value that is a secret reference (secret://...) is read from the secret port at call time, so static service
         // tokens for an edge access gate (for example a client-id / client-secret header pair) never sit in config.
         for (Map.Entry<String, String> e : config.defaultHeaders().entrySet()) {
-            String v = e.getValue();
-            h.put(e.getKey(), secrets.require(v));
+            h.put(e.getKey(), configured("default header " + e.getKey(), e.getValue()));
         }
-        for (Map.Entry<String, Object> e : r.map("headers").entrySet()) {
-            h.put(e.getKey(), String.valueOf(e.getValue()));
-        }
-        h.put(config.idempotencyHeader(), r.operationId().toString());
-        h.put("X-Sangam-Operation-Id", r.operationId().toString());
+        h.putAll(requestHeaders);
+        own(h, config.idempotencyHeader(), r.operationId().toString());
+        own(h, "X-Sangam-Operation-Id", r.operationId().toString());
         if (r.attemptId() != null) {
-            h.put("X-Sangam-Attempt-Id", r.attemptId());
+            own(h, "X-Sangam-Attempt-Id", r.attemptId());
         }
+        String authorization = null;
         if (config.authorization() != null) {
-            String a = secrets.require(config.authorization());
-            if (a.startsWith("basic:")) {
-                a = "Basic " + Base64.getEncoder().encodeToString(a.substring(6).getBytes(StandardCharsets.UTF_8));
+            authorization = configured("authorization", config.authorization());
+            if (authorization.startsWith("basic:")) {
+                authorization = "Basic " + Base64.getEncoder().encodeToString(authorization.substring(6)
+                        .getBytes(StandardCharsets.UTF_8));
             }
-            h.put("Authorization", a);
         }
         if (config.authorizer() != null) {
             String a = config.authorizer().authorization(r.tenantId());
             if (a != null) {
-                h.put("Authorization", a);
+                authorization = a;
             }
         }
+        if (authorization != null) {
+            own(h, "Authorization", authorization);
+        }
         return h;
+    }
+
+    /** SL-62: a header the connector sets replaces a configured one of the same name in any letter case. */
+    static void own(Map<String, String> headers, String name, String value) {
+        headers.remove(name);
+        headers.put(name, value);
+    }
+
+    /**
+     * SL-61: a configured header value; a {@code secret://} reference is read from the secret port now. A reference the
+     * port cannot supply (unknown, blank, or the port itself failed) is a credential the call cannot get, so the request
+     * is not sent ({@link AuthUnavailableException}, no effect). No exception leaves the connector: the invoker would
+     * have to record it as an unknown outcome although nothing was sent. SL-65: so is a secret that is not tidy
+     * ({@link #isTidySecret}); it is never trimmed, and its value is never shown.
+     */
+    private String configured(String what, String value) {
+        if (!value.startsWith(SECRET_PREFIX)) {
+            return value;
+        }
+        String v;
+        try {
+            v = secrets.require(value);
+        } catch (RuntimeException e) {
+            throw new AuthUnavailableException(what + ": " + value + " cannot be resolved (" + e.getMessage() + ")");
+        }
+        if (v == null || v.isBlank()) {
+            throw new AuthUnavailableException(what + ": " + value + " resolves to an empty value");
+        }
+        if (!isTidySecret(v)) {
+            throw new AuthUnavailableException(what + ": " + value + UNTIDY_SECRET);
+        }
+        return v;
+    }
+
+    /** Why a secret that becomes a header value is refused rather than trimmed (SL-65); the value is never shown. */
+    static final String UNTIDY_SECRET = " resolves to a value with leading or trailing whitespace or a control character "
+            + "such as a line break; secrets are never trimmed, since that could hide a wrong secret "
+            + "(the value is not shown)";
+
+    /** Why a secret that never goes into a header (a password) is refused (SL-65); the value is never shown. */
+    static final String CONTROL_IN_SECRET = " resolves to a value with a control character such as a line break; "
+            + "secrets are never trimmed, since that could hide a wrong secret (the value is not shown)";
+
+    /**
+     * SL-65: a secret that becomes (part of) a header value (a token, a basic credential, a client secret sent with HTTP
+     * Basic, a default header): no leading or trailing whitespace, which a header value cannot carry, and no control
+     * character (the line break a file store adds, a tab, NUL). Refused, never trimmed: trimming could hide a wrong secret.
+     */
+    static boolean isTidySecret(String s) {
+        return s != null && !s.isEmpty() && !Character.isWhitespace(s.charAt(0))
+                && !Character.isWhitespace(s.charAt(s.length() - 1)) && hasNoControlCharacter(s);
+    }
+
+    /**
+     * SL-65: a secret that never goes into a header (a key-store or trust-store password) only has to be free of
+     * control characters, which catches the line break of a file store; leading or trailing spaces are legitimate
+     * password characters.
+     */
+    static boolean hasNoControlCharacter(String s) {
+        if (s == null) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < 0x20 || c == 0x7F) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** A method the HTTP client can send: an RFC 9110 token, and not CONNECT (a tunnel, never a connector call). */
+    static boolean isMethod(String method) {
+        return HttpTransport.isToken(method) && !method.equals("CONNECT");
+    }
+
+    /**
+     * SL-62 / SL-65: configured headers must be valid HTTP and each name given once, whatever its letter case. The
+     * message names the header and never shows a value.
+     *
+     * @throws IllegalArgumentException the configuration is invalid
+     */
+    static void checkConfiguredHeaders(String what, Map<String, String> headers) {
+        Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (Map.Entry<String, String> h : headers.entrySet()) {
+            String name = h.getKey();
+            if (!HttpTransport.isToken(name)) {
+                throw new IllegalArgumentException(what + " name '" + HttpTransport.printable(name) + "' is not valid HTTP");
+            }
+            if (!names.add(name)) {
+                throw new IllegalArgumentException(what + " '" + name
+                        + "' is given twice (header names are case-insensitive)");
+            }
+            if (!HttpTransport.isFieldValue(h.getValue())) {
+                throw new IllegalArgumentException(what + " '" + name + "' has a value that is not valid HTTP (a control "
+                        + "character such as a line break, or a character above U+00FF; the value is not shown)");
+            }
+        }
     }
 
     private URI resolve(String pathTemplate, ConnectorRequest r, Map<String, Object> query) {

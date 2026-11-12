@@ -2,7 +2,7 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_grievance_routing" name="Grievance routing and resolution time" namespace="http://sangam.org/packs">
   <!-- SPDX-License-Identifier: Apache-2.0 -->
   <!-- CPGRAMS reform (2024) targets 21 days; synthetic roles. -->
-  <decision id="grievance-routing" name="Grievance routing and resolution time" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+  <decision id="grievance-routing" name="Grievance routing and resolution time" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
     <decisionTable id="grievance-routing_t" hitPolicy="FIRST">
       <input id="grievance-routing_i0" label="Category"><inputExpression id="grievance-routing_ie0" typeRef="string"><text>category</text></inputExpression></input>
       <output id="grievance-routing_o0" label="Grievance officer role" name="groRole" typeRef="string"/>

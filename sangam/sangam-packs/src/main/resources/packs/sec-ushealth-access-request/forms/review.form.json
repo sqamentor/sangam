@@ -1,6 +1,6 @@
 {
   "key": "sec-ushealth-access-request/review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.ushealth.access-request",
   "title": {
     "en": "Review of the denial by a licensed professional not involved",

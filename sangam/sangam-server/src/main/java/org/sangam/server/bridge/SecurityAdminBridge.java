@@ -76,7 +76,7 @@ public final class SecurityAdminBridge implements AdminPort {
 
     @Override
     public OrgUnit orgUnit(RequestContext ctx, String id) {
-        return run(c -> security.orgUnits().unitAt(c, ctx.tenantId(), id, Instant.now())
+        return run(c -> security.orgUnits().unitAt(c, ctx.tenantId(), id, dbNow(c))
                 .map(u -> unit(ctx.tenantId(), u.unitId(), u.levelType(), u.nameEn(), u.nameHi(), u.status(), u.parentId()))
                 .orElseThrow(() -> ApiProblem.notFound("org unit", id)));
     }
@@ -87,7 +87,7 @@ public final class SecurityAdminBridge implements AdminPort {
         require(o.level(), "level");
         String id = o.id() != null && !o.id().isBlank() ? o.id() : o.code() != null ? o.code() : Hashes.uuidV7().toString();
         String nameHi = o.names() == null ? null : o.names().get("hi");
-        run(c -> security.orgUnits().createUnit(c, actor(ctx), id, o.level(), o.parentId(), o.name(), nameHi, Instant.now()));
+        run(c -> security.orgUnits().createUnit(c, actor(ctx), id, o.level(), o.parentId(), o.name(), nameHi, dbNow(c)));
         return orgUnit(ctx, id);
     }
 
@@ -102,16 +102,16 @@ public final class SecurityAdminBridge implements AdminPort {
             String nameEn = o.name() != null ? o.name() : current.name();
             String orderRef = o.attributes() == null || o.attributes().get("orderRef") == null ? null
                     : String.valueOf(o.attributes().get("orderRef"));
-            Instant from = o.attributes() != null && o.attributes().get("effectiveFrom") != null
-                    ? Instant.parse(String.valueOf(o.attributes().get("effectiveFrom"))) : Instant.now();
+            Instant given = o.attributes() != null && o.attributes().get("effectiveFrom") != null
+                    ? Instant.parse(String.valueOf(o.attributes().get("effectiveFrom"))) : null;
             run(c -> {
-                security.orgUnits().renameUnit(c, actor(ctx), id, nameEn, nameHi, from, orderRef);
+                security.orgUnits().renameUnit(c, actor(ctx), id, nameEn, nameHi, given != null ? given : dbNow(c), orderRef);
                 return null;
             });
         }
         if (o.parentId() != null && !o.parentId().equals(current.parentId())) {
             run(c -> {
-                security.orgUnits().moveUnit(c, actor(ctx), id, o.parentId(), Instant.now());
+                security.orgUnits().moveUnit(c, actor(ctx), id, o.parentId(), dbNow(c));
                 return null;
             });
         }
@@ -138,7 +138,7 @@ public final class SecurityAdminBridge implements AdminPort {
 
     @Override
     public Seat seat(RequestContext ctx, String id) {
-        return run(c -> security.seats().seatAt(c, ctx.tenantId(), id, Instant.now())
+        return run(c -> security.seats().seatAt(c, ctx.tenantId(), id, dbNow(c))
                 .map(s -> seat(ctx.tenantId(), s.seatId(), s.designation(), s.rankNo(), s.pool(), s.escalationSeatId(),
                         s.status(), s.unitId()))
                 .orElseThrow(() -> ApiProblem.notFound("seat", id)));
@@ -152,7 +152,7 @@ public final class SecurityAdminBridge implements AdminPort {
         boolean pool = s.attributes() != null && Boolean.TRUE.equals(s.attributes().get("pool"));
         int rank = s.hierarchyLevel() == null ? 0 : s.hierarchyLevel();
         run(c -> security.seats().createSeat(c, actor(ctx), id, s.designation(), s.orgUnitId(), rank, pool,
-                s.reportsToSeatId(), Instant.now()));
+                s.reportsToSeatId(), dbNow(c)));
         return seat(ctx, id);
     }
 
@@ -161,7 +161,7 @@ public final class SecurityAdminBridge implements AdminPort {
         Seat current = seat(ctx, id);
         if (s.orgUnitId() != null && !s.orgUnitId().equals(current.orgUnitId())) {
             run(c -> {
-                security.seats().moveSeat(c, actor(ctx), id, s.orgUnitId(), Instant.now());
+                security.seats().moveSeat(c, actor(ctx), id, s.orgUnitId(), dbNow(c));
                 return null;
             });
         }
@@ -175,7 +175,7 @@ public final class SecurityAdminBridge implements AdminPort {
     @Override
     public void deleteSeat(RequestContext ctx, String id, String reason) {
         run(c -> {
-            security.seats().abolishSeat(c, actor(ctx), id, Instant.now());
+            security.seats().abolishSeat(c, actor(ctx), id, dbNow(c));
             return null;
         });
     }
@@ -188,9 +188,13 @@ public final class SecurityAdminBridge implements AdminPort {
         var filter = new SecurityDirectoryService.PostingFilter(f == null ? null : f.seatId(),
                 f == null ? null : f.personId(), kind, false, f == null ? null : at(f.activeOn()),
                 f != null && Boolean.TRUE.equals(f.includeInactive()));
-        var p = run(c -> security.directory().postings(c, actor(ctx), filter, page.firstResult(), page.size(), cap()));
+        Instant[] now = new Instant[1];
+        var p = run(c -> {
+            now[0] = dbNow(c); // the same database's now for every row of the page (SL-108)
+            return security.directory().postings(c, actor(ctx), filter, page.firstResult(), page.size(), cap());
+        });
         return rest(p, r -> {
-            Assignment a = assignment(r.posting());
+            Assignment a = assignment(r.posting(), now[0]);
             return new Assignment(a.id(), a.tenantId(), a.seatId(), a.personId(), a.kind(), a.validFrom(), a.validTo(),
                     a.actedForSeatId(), a.orderRef(), r.createdBy(), r.createdAt(), a.ended() || r.revoked());
         });
@@ -206,7 +210,7 @@ public final class SecurityAdminBridge implements AdminPort {
 
     @Override
     public Assignment assignment(RequestContext ctx, String id) {
-        return run(c -> security.postings().posting(c, ctx.tenantId(), id).map(p -> assignment(p))
+        return run(c -> security.postings().posting(c, ctx.tenantId(), id).map(p -> assignment(p, dbNow(c)))
                 .orElseThrow(() -> ApiProblem.notFound("assignment", id)));
     }
 
@@ -221,9 +225,9 @@ public final class SecurityAdminBridge implements AdminPort {
         SecurityIdentity actor = actor(ctx);
         return switch (kind) {
             case "SUBSTANTIVE" -> run(c -> assignment(security.postings().post(c, actor, a.seatId(), a.personId(),
-                    OrgModel.PostingKind.REGULAR, from, to, a.orderRef(), null)));
+                    OrgModel.PostingKind.REGULAR, from, to, a.orderRef(), null), dbNow(c)));
             case "ADDITIONAL_CHARGE", "ACTING" -> run(c -> assignment(security.postings().grantAdditionalCharge(c, actor,
-                    a.seatId(), a.personId(), from, to, a.orderRef(), null)));
+                    a.seatId(), a.personId(), from, to, a.orderRef(), null), dbNow(c)));
             case "LEAVE_SUBSTITUTE" -> {
                 String seat = a.actedForSeatId() != null ? a.actedForSeatId() : a.seatId();
                 if (to == null) {
@@ -248,8 +252,10 @@ public final class SecurityAdminBridge implements AdminPort {
 
     @Override
     public Assignment endAssignment(RequestContext ctx, String id, LocalDate validTo, String reason) {
-        Instant at = validTo == null ? Instant.now() : start(validTo.plusDays(1));
         run(c -> {
+            // SL-83: "now" is the product database's time (A-1), as every effective-dated read uses; the JVM clock can
+            // be behind the database, so a posting ended at JVM time could still be in force for the next read
+            Instant at = validTo == null ? dbNow(c) : start(validTo.plusDays(1));
             security.postings().endPosting(c, actor(ctx), id, at);
             return null;
         });
@@ -341,8 +347,12 @@ public final class SecurityAdminBridge implements AdminPort {
     public Page<Tenant> tenants(RequestContext ctx, AdminFilter filter, Page.PageRequest page) {
         SecurityIdentity actor = actor(ctx);
         List<Tenant> all;
-        if (actor.hasRole(TenantAdminService.PLATFORM_ADMIN_ROLE) || actor.system()) {
+        if (actor.hasRole(TenantAdminService.PLATFORM_ADMIN_ROLE)) {
             all = run(c -> security.tenants().list(c, actor).stream().map(SecurityAdminBridge::tenant).toList());
+        } else if (actor.system()) {
+            // SL-117: background schedules read the directory as the system principal, which list() (platform admins
+            // only) refuses; the dedicated read-only listing gives ids and statuses, no admin data.
+            all = run(c -> security.tenants().listForSystem(c, actor).stream().map(SecurityAdminBridge::systemTenant).toList());
         } else {
             all = run(c -> security.tenants().find(c, ctx.tenantId()).map(SecurityAdminBridge::tenant).stream().toList());
         }
@@ -444,10 +454,21 @@ public final class SecurityAdminBridge implements AdminPort {
                 status == null || "ACTIVE".equalsIgnoreCase(status), Map.of("pool", pool), 0);
     }
 
-    private static Assignment assignment(OrgModel.Posting p) {
+    /** {@code ended} compares the stored (database-time) end with the database's now (SL-108). */
+    private static Assignment assignment(OrgModel.Posting p, Instant dbNow) {
         return new Assignment(p.postingId(), p.tenantId(), p.seatId(), p.personId(), restKind(p.kind().name()),
                 date(p.validFrom()), date(p.validTo()), p.kind().acting() ? p.seatId() : null, p.orderRef(), null, null,
-                p.validTo() != null && p.validTo().isBefore(Instant.now()));
+                p.validTo() != null && !p.validTo().isAfter(dbNow));
+    }
+
+    /**
+     * SL-83 / SL-108: "now" of every effective-dated read or write here is the product database's time (A-1,
+     * {@link org.sangam.security.support.Sql#dbNow}, milliseconds), the time sangam-security's own reads use. The JVM
+     * clock has finer precision and can differ, so an org unit or seat created "now" at JVM time was not yet in force for
+     * the read that follows it. JVM time stays only for response metadata ({@code createdAt} of a returned record).
+     */
+    private Instant dbNow(java.sql.Connection c) {
+        return org.sangam.security.support.Sql.dbNow(c, security.dialect());
     }
 
     private static String restKind(String postingKind) {
@@ -464,6 +485,11 @@ public final class SecurityAdminBridge implements AdminPort {
     private static boolean activeOn(Assignment a, LocalDate on) {
         return (a.validFrom() == null || !a.validFrom().isAfter(on)) && (a.validTo() == null || !a.validTo().isBefore(on))
                 && !a.ended();
+    }
+
+    /** SL-117: a tenant as the system listing gives it: id and status only. */
+    static Tenant systemTenant(TenantAdminService.SystemTenant t) {
+        return new Tenant(t.tenantId(), null, t.status(), null, null, null, List.of(), Map.of(), null, 0);
     }
 
     private static Tenant tenant(TenantAdminService.Tenant t) {

@@ -2,7 +2,9 @@
 
 Back ends for modeller features. Independent implementations from public behaviour; no bpmn.io add-on or vendor format was copied. The template format is Sangam's own.
 
-**Evidence level:** compiled, with `ModellerTest` run on H2. No screen exists for any of this yet.
+**Evidence level:** compiled, with `ModellerTest` run on H2 (an earlier run; not re-run on the current tree).
+
+**Screens (sangam-ui).** `/modeller/tools` (`ModellerToolsPage` in `src/modules/platform.tsx`, roles MODELLER or REVIEWER) has templates, actions (with run), service mocks, the extension catalogue and the landscape view. The package workspace (`src/areas/modeller/Modeller.tsx`) shows the model lease banner, the token walk for a BPMN file, the bulk test report and the FEEL playground. The REST side is `sangam-rest` `ModellerController` and `ServiceMocksController`. These screens have not been run against a live server, and the UI gaps that remain are listed in the sangam-ui README ("Not built").
 
 ## Coverage
 

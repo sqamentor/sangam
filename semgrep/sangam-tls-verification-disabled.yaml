@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-094 local Semgrep rule. Test cases: sangam-tls-verification-disabled.java (semgrep --test).
+rules:
+  - id: sangam-tls-verification-disabled
+    languages: [java]
+    severity: ERROR
+    message: >-
+      TLS certificate or host-name verification is switched off. Every outbound connection verifies the peer; for a
+      private CA, load it into a trust store instead.
+    metadata:
+      category: security
+      cwe: "CWE-295: Improper Certificate Validation"
+      owner: M-094
+    pattern-either:
+      # a trust manager whose checkServerTrusted accepts every chain (empty body)
+      - pattern-regex: checkServerTrusted\s*\([^)]*\)\s*(throws\s+[\w.,\s]+)?\{\s*\}
+      # a host-name verifier that accepts every host
+      - pattern: $X.setHostnameVerifier(($H, $S) -> true)
+      - pattern: $X.setDefaultHostnameVerifier(($H, $S) -> true)
+      - pattern: NoopHostnameVerifier.INSTANCE
+      - pattern: new NoopHostnameVerifier()
+      - pattern: InsecureTrustManagerFactory.INSTANCE
+      - pattern: System.setProperty("jdk.internal.httpclient.disableHostnameVerification", ...)

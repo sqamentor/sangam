@@ -1,6 +1,6 @@
 {
   "key": "inspection/inspect",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "gov.inspection",
   "title": {
     "en": "Schedule and inspect",

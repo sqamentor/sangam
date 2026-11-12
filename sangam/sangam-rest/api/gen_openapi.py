@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Generates sangam-rest/api/sangam-api.yaml (OpenAPI 3.1) from the WS-REST route table and port records."""
+"""Generates sangam-rest/api/sangam-api.yaml (OpenAPI 3.1) from the WS-REST route table and port records, and next to
+it the SCALE app contracts (api/apps/*.py: sangam-control-plane-api.yaml, sangam-rollup-api.yaml, sangam-gateway-api.yaml;
+M-017) and the AsyncAPI 3 events contract (api/events/*.py: sangam-events.asyncapi.yaml; M-050)."""
 import sys
 import yaml
 
@@ -149,7 +151,8 @@ schema("CancelAckRequest", "Acknowledge CANCEL_REQUESTED (VI.5).", "workerId loc
 # Tasks
 schema("Task", "A BPMN user task or CMMN human task (FC-52 lifecycle fields included).",
        "id name description taskDefinitionKey processInstanceId processDefinitionKey caseInstanceId businessKey assignee owner "
-       "seatId tenantId created:dt due:dt followUp:dt lastUpdated:dt claimTime:dt state priority:int formKey delegationState")
+       "seatId tenantId created:dt due:dt followUp:dt lastUpdated:dt claimTime:dt state priority:int formKey delegationState variables:map",
+       descs={"variables": "P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller."})
 schema("TaskDetail", "Task plus the material payload hash the caller must send back on completion (VI.4 rule 5).",
        "task:Task variables:map payloadHash caseVersion:long formVersion materialFields:list:s allowedActions:list:s "
        "candidateUsers:list:s candidateGroups:list:s returnTargets:list:ReturnTarget sod:SodCheck candidates:list:CandidateSeat "
@@ -635,12 +638,25 @@ def pp(name, desc=None):
     return p
 
 
+def pp_rest(name, desc):
+    """M-013: a path parameter that spans the rest of the path, slashes included (the server maps Spring `{*name}`).
+    An OpenAPI 3.1 path parameter cannot contain '/', so the template keeps `{name}` and `x-sangam-path-wildcard: true`
+    tells clients to send the value with its '/' separators unencoded and each segment percent-encoded on its own.
+    op() requires it to be the last segment of the template."""
+    p = pp(name, desc)
+    p["x-sangam-path-wildcard"] = True
+    return p
+
+
 def op(method, path, opid, tag, summary, desc, reqs=(), params=(), body=None, resp=(200, None), cmd=None,
        perm=None, errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound"), list_=False, fenced=False,
        body_required=True, created=False, etag=False, if_match=False, content_type="application/json", resp_ct=None):
     assert opid not in OPIDS, opid
     OPIDS.add(opid)
     o = {"operationId": opid, "tags": [tag], "summary": summary, "description": desc}
+    for x in params:
+        assert not x.get("x-sangam-path-wildcard") or path.endswith("/{%s}" % x["name"]), (
+            "%s: a multi-segment path parameter must be the last segment" % opid)
     prms = []
     for x in params:
         prms.append(x)
@@ -737,7 +753,8 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
    ["VI.4", "A-16", "R76"], list_=True, resp=(200, "array:Task"), perm="task.read", errors=STD_R,
    params=[q("assignee"), q("mine", "bool", "Assigned to me or I am a candidate"), q("unassigned", "bool"), q("candidateGroup"),
            q("seatId"), q("processInstanceId"), q("caseInstanceId"), q("businessKey"), q("processDefinitionKey"),
-           q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority or name; a comma-separated list sorts by several keys"), q("sortOrder", desc="asc or desc per key, comma-separated")])
+           q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority or name; a comma-separated list sorts by several keys"), q("sortOrder", desc="asc or desc per key, comma-separated"),
+             q("variableNames", "list:s", "P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated")])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
 op("get", "/tasks/{id}/variables", "getTaskVariables", "Tasks", "Task variables", "Variables visible on the task (K11).", ["VI.4"],
@@ -786,7 +803,7 @@ op("get", "/process-instances/{id}", "getProcessInstance", "Processes", "Get a p
 op("get", "/process-instances/{id}/activity-tree", "getActivityTree", "Processes", "Activity instance tree", "Current activity instances (FC-20 equivalent).",
    ["FC-20", "R63"], params=[ID], resp=(200, "ActivityInstance"), perm="process.read", errors=GET_E)
 op("get", "/process-instances/{id}/variables", "getProcessVariables", "Processes", "Instance variables", "Variables with field masks (K11).",
-   ["VI.4"], params=[ID], resp=(200, "object"), perm="process.read", errors=GET_E)
+   ["VI.4"], params=[ID, q("activityInstanceId", desc="P13: only the variables whose scope is this activity instance of the instance (the instance id itself is the root scope)")], resp=(200, "object"), perm="process.read", errors=GET_E)
 op("put", "/process-instances/{id}/variables", "setProcessVariables", "Processes", "Update instance variables",
    "Sets variables (R33 typed values); audited.", ["R41", "R33", "R42"], params=[ID],
    body={"required": True, "content": {"application/json": {"schema": R("VariableMap")}}}, resp=(200, "object"),
@@ -935,6 +952,11 @@ op("delete", "/links/{id}", "deleteLink", "Links", "Delete a link", "Removes an 
 # History
 HQ = [q("processDefinitionKey"), q("processInstanceId"), q("businessKey"), q("caseInstanceId"), q("activityId"), q("taskDefinitionKey"),
       q("assignee"), q("finished", "bool"), q("from", "dt"), q("to", "dt")]
+HQ_AI = q("activityInstanceId", desc="P13: only rows of this activity instance")
+HQ_EXTRA = {
+    "activity-instances": [HQ_AI, q("state", desc="P14: running, completed (ended, not canceled) or canceled", enum=["running", "completed", "canceled"])],
+    "variables": [HQ_AI], "decisions": [HQ_AI],
+}
 for path, opid, s, sch in [
     ("process-instances", "listHistoricProcessInstances", "Historic process instances", "HistoricProcessInstance"),
     ("activity-instances", "listHistoricActivityInstances", "Historic activity instances", "HistoricActivityInstance"),
@@ -946,7 +968,7 @@ for path, opid, s, sch in [
     ("operation-log", "listUserOperationLog", "User operation log", "UserOperation"),
 ]:
     op("get", "/history/" + path, opid, "History", s, "Class-A operational history (READ_HISTORY; not evidence, rule D-0; R63 history views, PF-01).",
-       ["R63", "PF-01", "VI.4"], list_=True, params=HQ, resp=(200, "array:" + sch), perm="history.read", errors=STD_R)
+       ["R63", "PF-01", "VI.4"], list_=True, params=HQ + HQ_EXTRA.get(path, []), resp=(200, "array:" + sch), perm="history.read", errors=STD_R)
 
 # Audit
 op("get", "/audit/{businessKey}/timeline", "getAuditTimeline", "Audit", "Audit timeline of a case",
@@ -1222,7 +1244,7 @@ op("post", "/process-instances/{id}/cross-boundary-move", "moveAcrossBoundary", 
    ["FC-17", "R49", "R41", "R42"], params=[ID], body="CrossBoundaryMoveRequest", resp=(200, "ProcessInstance"),
    cmd="process.cross-boundary-move", perm="process.modify")
 op("get", "/history/external-task-log", "listExternalTaskLog", "History", "External-task log",
-   "Historic external-task log (class A, PF-01).", ["R63", "PF-01"], list_=True, params=HQ,
+   "Historic external-task log (class A, PF-01).", ["R63", "PF-01"], list_=True, params=HQ + [HQ_AI],
    resp=(200, "array:ExternalTaskLogEntry"), perm="history.read", errors=STD_R)
 
 # Portal (PortalPort)
@@ -1519,7 +1541,7 @@ schema("CompliancePublishResult", "Published languages and the missing translati
 schema("CompliancePurpose", "A processing purpose with its legal basis, data items and retention (DPDP s.4, s.7, s.8(7)). Durations are ISO-8601.",
        "code names:smap descriptions:smap dataItems:list:obj basis legalRef subGround registerRef standardsAttested:bool "
        "exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention retentionClass "
-       "recordClass recordRetention recordRetentionRef version:int active:bool", ["basis"])
+       "recordClass recordRetention recordRetentionRef version:int active:bool specialCondition", ["basis"])
 schema("ComplianceGiveConsentRequest", "Consent by the data principal (or a verified guardian, DPDP s.9). `language` is a code of the tenant's jurisdiction pack; principalRef defaults to the caller.",
        "principalRef noticeKey noticeVersion:int language purposeCodes:list:s affirmativeAction:bool channel "
        "guardianVerificationId consentManagerId cmArtefactId", ["noticeKey", "purposeCodes", "affirmativeAction"])
@@ -1568,8 +1590,8 @@ schema("ComplianceImpactAssessment", "Recorded impact assessment.",
        "assessmentId activityId scope risks:list:s measures:list:s residualRisk assessor independent:bool assessedAt:dt "
        "nextDueAt:dt authorityReportRef evidenceHash")
 schema("ComplianceTransferRequest", "A cross-border transfer to evaluate (DPDP s.16, localisation rules).",
-       "destinationCountry recipient purposeCode dataCategories:list:s approvalRef recipientSameProtectionAttested:bool",
-       ["destinationCountry"])
+       "destinationCountry recipient purposeCode dataCategories:list:s approvalRef recipientSameProtectionAttested:bool "
+       "mechanism impactAssessmentRef recipientConditionMet:bool", ["destinationCountry"])
 schema("ComplianceTransferDecision", "The recorded transfer decision.", "decisionId allowed:bool rule reason")
 schema("ComplianceSealLogsRequest", "Seal the log segment [from, to) (CERT-In 180-day logs, hash-chained).", "from:dt to:dt", ["from"])
 schema("ComplianceLogSegment", "A sealed, hash-chained log segment in the home-country archive.",
@@ -1863,3 +1885,181 @@ with open(OUT, "w", encoding="utf-8", newline="\n") as f:
     yaml.dump(doc, f, Dumper=D, sort_keys=False, allow_unicode=True, width=140)
 ops = sum(len(v) for v in PATHS.values())
 print("paths", len(PATHS), "operations", ops, "schemas", len(SCHEMAS))
+
+
+# ---------------------------------------------------------------- per-app contracts (M-017)
+# The SCALE apps are separate services with their own base URL, roles and error bodies, so each gets its own OpenAPI
+# document instead of paths in sangam-api.yaml. api/apps/<name>.py runs in this namespace with fresh SCHEMAS, PATHS and
+# OPIDS: it calls app() once, then schema() and aop() for its records and controller mappings. The document is written
+# next to OUT as APP["file"] (sangam-rest/api/ in the repository), so one generator run writes every contract.
+# The roll-up stream event (org.sangam.cell.rollup.RollupEnvelope.toJson/parse; RollupProjector.validate): the ingest
+# body of sangam-rollup-api.yaml and the message of the AsyncAPI channel rollup:national.
+ROLLUP_CLOUDEVENT = {
+    "type": "object",
+    "description": "CloudEvents 1.0, structured JSON (SCALE-ARCHITECTURE section 8). Consumers deduplicate on `id`. A "
+                   "missing or too long id, type, sangamcell or sangamtenantpath rejects the event.",
+    "required": ["id", "type", "sangamcell", "sangamtenantpath"],
+    "properties": {
+        "specversion": {"type": "string", "description": "1.0"},
+        "id": {"type": "string", "maxLength": 64, "description": "The outbox event id"},
+        "source": {"type": "string", "description": "sangam://cell/<cell id>"},
+        "type": {"type": "string", "minLength": 1, "description": "The outbox event type, e.g. sangam.history.process.start"},
+        "time": {"type": "string", "format": "date-time"},
+        "subject": {"type": "string", "description": "The root id (same as sangamroot)"},
+        "datacontenttype": {"type": "string", "description": "application/json"},
+        "sangamcell": {"type": "string", "minLength": 1, "maxLength": 16, "description": "Publishing cell id"},
+        "sangamtenant": {"type": "string", "description": "Tenant code; the last path segment when absent"},
+        "sangamtenantpath": {"type": "string", "minLength": 1, "maxLength": 256,
+                             "description": "Hierarchy path from the root, /-separated (e.g. IN/RJ/RJ-JPR); every prefix "
+                                            "is projected"},
+        "sangamroot": {"type": "string", "description": "Root id: per-root order (VI.2)"},
+        "sangamrootseq": {"type": "integer", "format": "int64", "description": "Sequence within the root"},
+        "sangamoperationid": {"type": "string", "description": "Operation id of a cross-cell business message (R36)"},
+        "data": {"type": "object", "additionalProperties": True,
+                 "description": "Only allow-listed payload fields leave the cell (RollupPublisher.DEFAULT_FIELDS: "
+                                "eventType, processDefinitionKey, taskDefinitionKey, activityType, incidentType, durationMs, "
+                                "outcome, amountMinor, currency, category, targetTenant, operationId); no personal data"},
+    },
+    "additionalProperties": True,
+}
+
+APP_ERRORS = {
+    "BadRequest": "Invalid request: a body that does not bind, a missing or invalid parameter, or a rule the input breaks",
+    "Unauthorized": "No bearer token, or a token the service does not know",
+    "Forbidden": "The token's roles do not include one of the operation's `x-sangam-roles`",
+    "NotFound": "The named resource does not exist",
+    "Conflict": "The current state does not allow the operation",
+    "Unprocessable": "The request was understood but rejected",
+}
+
+
+def app(file, title, summary, description, roles, tags, servers=None, problem=None, components=None, extensions=None,
+        errors=None, bearer=None):
+    """Starts an app contract. `roles` maps a role to its meaning; `problem` replaces the default Problem schema,
+    `errors` the default error-response texts (APP_ERRORS) and `bearer` the bearer-token description."""
+    global APP
+    APP = {"file": file, "title": title, "summary": summary, "description": description, "roles": roles, "tags": tags,
+           "servers": servers or [{"url": "/api/v1"}], "components": components or {}, "extensions": extensions or {},
+           "errors": dict(APP_ERRORS, **(errors or {})),
+           "bearer": bearer or ("Static service token from the app's token list (`<token>:<ROLE>[,<ROLE>]`), compared in "
+                                "constant time. Roles: " + "; ".join("%s (%s)" % kv for kv in roles.items()) + ".")}
+    SCHEMAS["Problem"] = problem or {
+        "type": "object",
+        "description": "RFC 9457 problem details (Spring ProblemDetail). `type` is about:blank unless stated; extra members "
+                       "(for example `field`, the JSON path of a body field that does not bind) may follow.",
+        "required": ["title", "status"],
+        "properties": {"type": {"type": "string", "format": "uri-reference"}, "title": {"type": "string"},
+                       "status": {"type": "integer", "format": "int32"}, "detail": {"type": "string"},
+                       "instance": {"type": "string", "format": "uri-reference"}, "field": {"type": "string"}},
+        "additionalProperties": True,
+    }
+
+
+
+
+def aop(method, path, opid, tag, summary, desc, roles, params=(), body=None, body_required=True, body_ct=("application/json",),
+        resp=(200, None), errors=("BadRequest", "Unauthorized", "Forbidden"), more=None):
+    """One app operation. `roles` are the Spring Security roles the app's SecurityConfig requires (x-sangam-roles);
+    `more` adds responses by status code."""
+    assert opid not in OPIDS, opid
+    OPIDS.add(opid)
+    for r in roles:
+        assert r in APP["roles"], "%s: unknown role %s" % (opid, r)
+    o = {"operationId": opid, "tags": [tag], "summary": summary, "description": desc, "x-sangam-roles": list(roles)}
+    if params:
+        o["parameters"] = list(params)
+    if body is not None:
+        schema_ = body if isinstance(body, dict) else R(body)
+        o["requestBody"] = {"required": body_required, "content": {ct: {"schema": schema_} for ct in body_ct}}
+    status, rs = resp
+    r = {"description": "Success"}
+    if isinstance(rs, dict):
+        r["content"] = {"application/json": {"schema": rs}}
+    elif isinstance(rs, str):
+        r["content"] = {"application/json": {"schema": {"type": "array", "items": R(rs[6:])} if rs.startswith("array:")
+                                             else R(rs)}}
+    responses = {str(status): r}
+    for e in errors:
+        responses[{"BadRequest": "400", "Unauthorized": "401", "Forbidden": "403", "NotFound": "404", "Conflict": "409",
+                   "Unprocessable": "422"}[e]] = RESP(e)
+    responses.update(more or {})
+    o["responses"] = responses
+    PATHS.setdefault(path, {})[method] = o
+
+
+def _write_app_contract():
+    used = {e["$ref"] for item in PATHS.values() for o in item.values() for e in o["responses"].values() if "$ref" in e}
+    responses = {}
+    for name, text in APP["errors"].items():
+        if RESP(name)["$ref"] in used:
+            responses[name] = {"description": text, "content": {"application/problem+json": {"schema": R("Problem")}}}
+    comps = {"securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "description": APP["bearer"]}}}
+    if responses:
+        comps["responses"] = responses
+    comps["schemas"] = SCHEMAS
+    for k, v in APP["components"].items():
+        comps.setdefault(k, {}).update(v)
+    d = {"openapi": "3.1.0",
+         "info": {"title": APP["title"], "version": "0.1.0", "summary": APP["summary"], "description": APP["description"],
+                  "license": {"name": "Apache-2.0", "identifier": "Apache-2.0"}},
+         "servers": APP["servers"], "security": [{"bearerAuth": []}],
+         "tags": [{"name": n, "description": t} for n, t in APP["tags"]], "paths": PATHS, "components": comps}
+    d.update(APP["extensions"])
+    t = json.dumps(d)
+    for ref in set(re.findall(r'"#/components/(\w+)/([\w-]+)"', t)):
+        assert ref[1] in d["components"].get(ref[0], {}), (APP["file"], ref)
+    with open(_os.path.join(_os.path.dirname(_os.path.abspath(OUT)), APP["file"]), "w", encoding="utf-8", newline="\n") as f:
+        f.write("# SPDX-License-Identifier: Apache-2.0\n")
+        f.write("# %s contract (OpenAPI 3.1). Generated by sangam-rest/api/gen_openapi.py from api/apps/%s; do not edit.\n"
+                % (APP["title"], _app_source))
+        yaml.dump(d, f, Dumper=D, sort_keys=False, allow_unicode=True, width=140)
+    print(APP["file"], "paths", len(PATHS), "operations", sum(len(v) for v in PATHS.values()), "schemas", len(SCHEMAS))
+
+
+for _app_file in sorted(_glob.glob(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "apps", "*.py"))):
+    SCHEMAS, PATHS, OPIDS, APP = {}, {}, set(), None
+    _app_source = _os.path.basename(_app_file)
+    with open(_app_file, encoding="utf-8") as _f:
+        exec(compile(_f.read(), _app_file, "exec"), globals())
+    assert APP is not None, _app_file + " must call app()"
+    _write_app_contract()
+
+
+# ---------------------------------------------------------------- AsyncAPI contract (M-050)
+# api/events/*.py fill EVENTS_SCHEMAS, EVENTS_MESSAGES, EVENTS_CHANNELS and EVENTS_OPERATIONS; the AsyncAPI 3 document
+# sangam-events.asyncapi.yaml is written next to OUT. ROLLUP_CLOUDEVENT is the same schema object as the roll-up
+# ingest body, so the two contracts cannot disagree on it.
+EVENTS_SCHEMAS, EVENTS_MESSAGES, EVENTS_CHANNELS, EVENTS_OPERATIONS = {}, {}, {}, {}
+for _ev_file in sorted(_glob.glob(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "events", "*.py"))):
+    with open(_ev_file, encoding="utf-8") as _f:
+        exec(compile(_f.read(), _ev_file, "exec"), globals())
+_events = {
+    "asyncapi": "3.0.0",
+    "info": {
+        "title": "Sangam events", "version": "0.1.0",
+        "description": (
+            "Events Sangam sends from its transactional outbox (VI.2) and receives from brokers (R16, R38). Delivery is "
+            "at least once: receivers deduplicate on the event id (CloudEvents `id`, `Idempotency-Key`). Events of "
+            "one root keep their order on ordered destinations. Channel addresses are outbox destination names; "
+            "each operation says how the relay delivers them. Audit event names (X.4.0.3) are published as the "
+            "`AuditEventName` schema."),
+        "license": {"name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0"},
+    },
+    "defaultContentType": "application/json",
+    "channels": EVENTS_CHANNELS,
+    "operations": EVENTS_OPERATIONS,
+    "components": {"schemas": EVENTS_SCHEMAS, "messages": EVENTS_MESSAGES},
+}
+_t = json.dumps(_events)
+for _ref in set(re.findall(r'"#/components/(\w+)/([\w-]+)"', _t)):
+    assert _ref[1] in _events["components"][_ref[0]], ("asyncapi", _ref)
+for _ref in set(re.findall(r'"#/channels/(\w+)(?:/messages/(\w+))?"', _t)):
+    assert _ref[0] in EVENTS_CHANNELS and (not _ref[1] or _ref[1] in EVENTS_CHANNELS[_ref[0]]["messages"]), ("asyncapi", _ref)
+with open(_os.path.join(_os.path.dirname(_os.path.abspath(OUT)), "sangam-events.asyncapi.yaml"), "w", encoding="utf-8",
+          newline="\n") as f:
+    f.write("# SPDX-License-Identifier: Apache-2.0\n")
+    f.write("# Sangam events contract (AsyncAPI 3.0). Generated by sangam-rest/api/gen_openapi.py from api/events/*.py; "
+            "do not edit.\n")
+    yaml.dump(_events, f, Dumper=D, sort_keys=False, allow_unicode=True, width=140)
+print("sangam-events.asyncapi.yaml channels", len(EVENTS_CHANNELS), "operations", len(EVENTS_OPERATIONS), "messages",
+      len(EVENTS_MESSAGES), "schemas", len(EVENTS_SCHEMAS))

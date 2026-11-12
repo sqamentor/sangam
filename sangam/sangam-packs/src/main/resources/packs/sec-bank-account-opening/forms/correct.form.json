@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-account-opening/correct",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.account-opening",
   "title": {
     "en": "Correct application details",

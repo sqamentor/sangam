@@ -136,7 +136,7 @@ class SectorConformanceTest {
     @Test
     void stateTreasuryBillPaymentWithPayment() {
         Run r = conform("gov.p1.bill-payment", "sangam-p1-bill-payment", answers(),
-                "amount", 475000.0, "officeId", "DPW-X", "actingSeat", "CLERK-DDO", "initiator", "p1.clerk",
+                "amount", 47_500_000L, "officeId", "DPW-X", "actingSeat", "CLERK-DDO", "initiator", "p1.clerk",
                 "selectedSeat", "AO-2");
         assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
         assertTrue(called(r.bk(), "pfms.payment") || called(r.bk(), "ifms.payment"), "payment rail");
@@ -144,7 +144,7 @@ class SectorConformanceTest {
 
     @Test
     void stateGrantSanctionDbtInstalments() {
-        Run r = conform("gov.p3.grant-sanction", "sangam-p3-grant-application", answers(), "income", 120000.0,
+        Run r = conform("gov.p3.grant-sanction", "sangam-p3-grant-application", answers(), "income", 12_000_000L,
                 "socialCategory", "SC", "officeId", "BLOCK-A1", "actingSeat", "DEO-A1", "initiator", "p3.deo-a1");
         assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
     }
@@ -174,26 +174,28 @@ class SectorConformanceTest {
 
     @Test
     void ifmsReappropriationByTheChiefAccountingAuthority() {
-        Run r = conform("gov.ifms.reappropriation", "sangam-ifms-reappropriation", answers(), "amount", 150000,
-                "fromHead", "2052-00-090-01", "toHead", "2052-00-090-02");
+        Run r = conform("gov.ifms.reappropriation", "sangam-ifms-reappropriation", answers(), "amount", 15_000_000L,
+                "fromHead", "2052-00-090-01", "toHead", "2052-00-090-02",
+                // SL-113: the fail-closed funds gate asks the ledger; the simulator answers enough (>= amount)
+                "sim_ledger_available", "available=15000000");
         assertSanctionedWithinPower(r.bk(), "ifms-reapp-powers");
     }
 
     @Test
     void ifmsSurrenderOfSavings() {
-        Run r = conform("gov.ifms.surrender-lapse", "sangam-ifms-surrender", answers(), "surrenderAmount", 2500000);
+        Run r = conform("gov.ifms.surrender-lapse", "sangam-ifms-surrender", answers(), "surrenderAmount", 250_000_000L);
         assertSanctionedWithinPower(r.bk(), "ifms-surrender-powers");
     }
 
     @Test
     void ifmsSchemeAppraisalWithinTheSecretaryBand() {
-        Run r = conform("gov.ifms.scheme-appraisal", "sangam-ifms-scheme-appraisal", answers(), "totalOutlay", 800000000);
+        Run r = conform("gov.ifms.scheme-appraisal", "sangam-ifms-scheme-appraisal", answers(), "totalOutlay", 80_000_000_000L);
         assertSanctionedWithinPower(r.bk(), "ifms-scheme-powers");
     }
 
     @Test
     void ifmsBudgetFormulationThroughSecretaryApproval() {
-        String bk = throughSanction("sangam-ifms-budget-formulation", answers(), "beAmount", 12500000);
+        String bk = throughSanction("sangam-ifms-budget-formulation", answers(), "beAmount", 1_250_000_000L);
         assertSanctionedWithinPower(bk, "ifms-formulation-powers");
     }
 
@@ -201,7 +203,7 @@ class SectorConformanceTest {
     void ifmsSupplementaryThroughApproval() {
         String bk = "CONF/sangam-ifms-supplementary";
         Map<String, Object> vars = AllPacksSmokeTest.bag();
-        vars.put("amount", 4000000);
+        vars.put("amount", 400_000_000L);
         engine.getRuntimeService().createProcessInstanceByKey("sangam-ifms-supplementary").businessKey(bk)
                 .setVariables(vars).processDefinitionWithoutTenantId().execute();
         List<String> done = new java.util.ArrayList<>(driver.run(bk, answers()::answer, 40));
@@ -230,19 +232,45 @@ class SectorConformanceTest {
     @Test
     void ifmsGrantInAidReleaseHasNoMonetaryCeiling() {
         // DFPR r.17: full powers; a release far above every banded power still passes the power check
-        String bk = throughSanction("sangam-ifms-gia-release", answers(), "amount", 50000000000L);
+        String bk = throughSanction("sangam-ifms-gia-release", answers(), "amount", 5_000_000_000_000L);
         assertSanctionedWithinPower(bk, "ifms-gia-powers");
     }
 
     @Test
     void ifmsEmployeeAdvanceByTheHeadOfOffice() {
-        String bk = throughSanction("sangam-ifms-advance", answers(), "amount", 40000, "advanceKind", "COMPUTER");
+        String bk = throughSanction("sangam-ifms-advance", answers(), "amount", 4_000_000L, "advanceKind", "COMPUTER");
         assertSanctionedWithinPower(bk, "ifms-advance-powers");
     }
 
     @Test
+    void ifmsBudgetDistributionEnteredByTheDealingHandApprovedByThePayAndAccountsOfficer() {
+        // SL-57 (IFMS R-99 v0.2 s6.1; CAM 2024 para 2.2.4): the Ministry side starts the DDO-wise allocation (interim
+        // initiator seat FA-1, INFERRED), the Dealing Hand enters it (scrutiny, DH-1) and the Pay and Accounts Officer
+        // checks and approves it (sanction, PAO-1, no money ceiling); the limit moves into AUTHORISATION for DDO-1.
+        // Every step is acted by the real holder of its seat, so segregation of duties by person and by seat holds;
+        // the old data (scrutiny on PRAO-1 and approval by PR_AO, also PRAO-1) was refused with 422 SOD_VIOLATION
+        java.time.LocalDate today = java.time.LocalDate.now();
+        String initiator = PackRuntime.seats().holderOf(null, "FA-1", today).orElseThrow();
+        String bk = throughSanction("sangam-ifms-budget-allocation", answers(), "amount", 250_000_000L,
+                "headOfAccount", "2052-00-090-01", "initiator", initiator, "actingSeat", "FA-1");
+        assertSanctionedWithinPower(bk, "ifms-allocation-powers");
+        List<PackAuditEvent> done = ((LoggingAuditSink) PackRuntime.audit()).timeline(bk).stream()
+                .filter(e -> "TASK_COMPLETED".equals(e.type())).toList();
+        assertEquals(List.of("DH-1", "PAO-1"), done.stream().map(PackAuditEvent::actorSeatId).limit(2).toList(),
+                "entered by the Dealing Hand, then checked and approved by the Pay and Accounts Officer");
+        assertEquals(List.of(PackRuntime.seats().holderOf(null, "DH-1", today).orElseThrow(),
+                PackRuntime.seats().holderOf(null, "PAO-1", today).orElseThrow()),
+                done.stream().map(PackAuditEvent::actorPersonId).limit(2).toList(), "each seat's own holder acted");
+        org.sangam.packs.port.ConnectorRequest distribute = sim().journal().stream()
+                .filter(r -> bk.equals(r.businessKey()) && "ledger.distribute".equals(r.connector())).findFirst()
+                .orElseThrow(() -> new AssertionError("ledger.distribute not called for " + bk));
+        assertEquals("AUTHORISATION", distribute.payload().get("stage"), "DDO-wise allocation stage");
+        assertEquals("DDO-1", distribute.payload().get("holder"), "the DDO receives the limit");
+    }
+
+    @Test
     void ifmsGpfWithdrawalByTheHeadOfOffice() {
-        String bk = throughSanction("sangam-ifms-gpf", answers(), "amount", 50000, "gpfBalance", 400000,
+        String bk = throughSanction("sangam-ifms-gpf", answers(), "amount", 5_000_000L, "gpfBalance", 40_000_000L,
                 "gpfPurpose", "ADVANCE");
         assertSanctionedWithinPower(bk, "ifms-gpf-powers");
     }
@@ -271,11 +299,78 @@ class SectorConformanceTest {
                 bk + ": no passing power check against " + table);
     }
 
+    // ---- SL-33: worldwide PFM and EU GDPR ----------------------------------------------------------------------------
+
+    @Test
+    void worldwidePfmCommitmentVerifiedCertifiedAndPaid() {
+        // PFM-CH-2 / CH-3: commitment within authority, verifier and certifying officer differ from the approver
+        // SL-115: the released authority is the ledger's answer (runtime directive, minor units); a start value of
+        // fundsAvailable is never trusted
+        Run r = conform("gov.intl.pfm-execution", "sangam-intl-pfm-execution", answers(), "amount", 5_000_000L,
+                "sim_ledger_available", "available=100000000", "payee", "SUPPLIER-1");
+        assertEquals("CLOSED", driver.var(r.bk(), "caseState"));
+        assertTrue(r.done().containsAll(List.of("sn_sanction", "pe_verify", "pe_certify")), "chain: " + r.done());
+        assertTrue(called(r.bk(), "ledger.encumber"), "commitment recorded against authority");
+        assertTrue(called(r.bk(), "treasury.pay"), "class (c) payment rail");
+        List<PackAuditEvent> acts = ((LoggingAuditSink) PackRuntime.audit()).timeline(r.bk()).stream()
+                .filter(e -> "TASK_COMPLETED".equals(e.type()) && List.of("sn_sanction", "pe_verify", "pe_certify")
+                        .contains(e.details().get("task"))).toList();
+        assertEquals(3, acts.stream().map(PackAuditEvent::actorPersonId).distinct().count(), "three persons");
+    }
+
+    @Test
+    void worldwidePfmShortfallOfAuthorityOpensTheBreachReport() {
+        // PFM-034 / PFM-039: no commitment without available released authority
+        String bk = "CONF/pfm-breach";
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        vars.put("amount", 5_000_000L);
+        vars.put("sim_ledger_available", "available=4999999"); // one minor unit short (SL-115: the ledger answers)
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-intl-pfm-execution").businessKey(bk)
+                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+        List<String> done = driver.run(bk, answers()::answer, 40);
+        assertEquals(List.of("pe_breach"), done, "breach report only");
+        assertTrue(driver.ended(bk));
+        assertTrue(!called(bk, "ledger.encumber"), "no commitment recorded");
+    }
+
+    @Test
+    void euGdprErasureWithinOneMonthAndRecipientsNotified() {
+        Run r = conform("sec.eu.gdpr-dsr", "sangam-sec-eu-gdpr-dsr", answers(), "dsrRight", "ERASURE");
+        assertTrue(r.done().containsAll(List.of("gd_verify", "gd_decide", "gd_erasure", "gd_respond")), "" + r.done());
+        assertTrue(called(r.bk(), "records.erase") && called(r.bk(), "recipients.notify"), "Art. 17 + Art. 19");
+        Object due = driver.var(r.bk(), "gdprDueAt");
+        assertTrue(due instanceof java.util.Date d && d.toInstant().isAfter(java.time.Instant.now().plus(java.time.Duration.ofDays(27)))
+                && d.toInstant().isBefore(java.time.Instant.now().plus(java.time.Duration.ofDays(32))), "Art. 12(3) one month: " + due);
+    }
+
+    @Test
+    void euGdprExtensionIsUsedOnceAndAddsTwoMonths() {
+        String bk = "CONF/gdpr-ext";
+        Map<String, Object> vars = AllPacksSmokeTest.bag();
+        vars.put("dsrRight", "ACCESS");
+        engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-eu-gdpr-dsr").businessKey(bk)
+                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+        FormAnswers a = answers();
+        int[] n = {0};
+        List<String> done = driver.run(bk, t -> {
+            PackDriver.Answer x = a.answer(t);
+            if ("gd_decide".equals(t.getTaskDefinitionKey())) {
+                java.util.Map<String, Object> v = new java.util.HashMap<>(x.vars());
+                v.put("dsrDecision", ++n[0] == 1 ? "extend" : "fulfil");
+                return new PackDriver.Answer(x.person(), x.seat(), v);
+            }
+            return x;
+        }, 40);
+        assertEquals(List.of("gd_verify", "gd_decide", "gd_extend", "gd_decide", "gd_respond"), done);
+        assertEquals(Boolean.TRUE, driver.var(bk, "gdprExtended"));
+        assertTrue(called(bk, "records.summary"), "Art. 15 copy");
+    }
+
     // ---- priority 2/3: India sectors ------------------------------------------------------------------------------
 
     @Test
     void bankPaymentAboveBandNeedsCheckerAndAuthoriser() {
-        Run r = conform("sec.bank.payment-dual-auth", "sangam-sec-bank-payment", answers(), "amount", 3000000);
+        Run r = conform("sec.bank.payment-dual-auth", "sangam-sec-bank-payment", answers(), "amount", 300_000_000L);
         assertEquals(2, ((Number) driver.var(r.bk(), "authLevels")).intValue());
         assertEquals(2, r.done().stream().filter("sn_sanction"::equals).count(), "checker then authoriser");
         List<PackAuditEvent> approvals = ((LoggingAuditSink) PackRuntime.audit()).timeline(r.bk()).stream()

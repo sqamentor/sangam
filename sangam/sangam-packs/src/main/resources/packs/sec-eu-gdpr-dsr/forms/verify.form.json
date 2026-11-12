@@ -1,0 +1,56 @@
+{
+  "key": "sec-eu-gdpr-dsr/verify",
+  "version": "1.0.0",
+  "pack": "sec.eu.gdpr-dsr",
+  "title": {
+    "en": "Confirm identity (Art. 12(6))",
+    "hi": "पहचान की पुष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "identityEvidence2",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Additional identity information (Art. 12(6))",
+        "hi": "अतिरिक्त पहचान जानकारी (अनु. 12(6))"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "verifyDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "verified",
+        "label": {
+          "en": "Verified",
+          "hi": "सत्यापित"
+        }
+      },
+      {
+        "value": "notVerified",
+        "label": {
+          "en": "Ask for proof",
+          "hi": "Ask for proof"
+        }
+      }
+    ]
+  }
+}

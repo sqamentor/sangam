@@ -1,6 +1,6 @@
 {
   "key": "sec-bank-cheque-return/return",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.bank.cheque-return",
   "title": {
     "en": "Cheque return",
@@ -25,7 +25,9 @@
     },
     {
       "id": "amount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Amount (INR)",

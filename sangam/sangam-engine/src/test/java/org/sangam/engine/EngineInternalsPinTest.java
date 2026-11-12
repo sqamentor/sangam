@@ -23,13 +23,25 @@ import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 import org.operaton.bpm.engine.impl.calendar.CycleBusinessCalendar;
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.operaton.bpm.engine.OptimisticLockingException;
+import org.operaton.bpm.engine.delegate.DelegateExecution;
+import org.operaton.bpm.engine.delegate.JavaDelegate;
+import org.operaton.bpm.engine.impl.interceptor.SessionFactory;
+import org.operaton.bpm.engine.impl.persistence.entity.BatchManager;
+import org.operaton.bpm.engine.impl.persistence.entity.DeploymentManager;
+import org.operaton.bpm.engine.impl.persistence.entity.ResourceManager;
+import org.operaton.bpm.engine.impl.persistence.entity.SuspensionState;
+import org.operaton.bpm.engine.impl.persistence.entity.TaskEntity;
+import org.operaton.bpm.engine.impl.persistence.entity.TaskManager;
+import org.operaton.bpm.engine.runtime.Job;
 import org.sangam.core.engine.SangamEngineAdapter;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.engine.timer.DstSafeCycleBusinessCalendar;
+import org.sangam.engine.timer.ZonedCron;
 
 /**
- * SG-09: Sangam relies on four behaviours of engine-internal Operaton classes for which Operaton 2.2 has no public
- * API or extension point (PATCHES.md I-7 … I-10, upgrade checklist items 2 and 3). Each test pins one of them through
+ * SG-09: Sangam relies on behaviours of engine-internal Operaton classes for which Operaton 2.2 has no public
+ * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, upgrade checklist items 2, 3, 6 and 7). Each test pins one of them through
  * its observable effect, so an Operaton upgrade that changes the internal behaviour fails here, loudly, instead of
  * silently weakening Sangam.
  */
@@ -205,5 +217,164 @@ class EngineInternalsPinTest {
             assertEquals(1L, fired, "I-10: the guard ran in the handler with the follow-up already scheduled");
             assertEquals(1, a.queryTasks(new SangamEngineAdapter.TaskQuery("t1", null, null, pi, "t", 0, 10)).size());
         });
+    }
+
+    /**
+     * I-17 (SL-53): Sangam evaluates cron cycles in the timer zone with {@link ZonedCron}, which parses through the
+     * cron-utils copy shaded into operaton-engine with the definition {@code CronTimer.parse} uses. Pinned: in the UTC
+     * JVM, with zone UTC, it accepts and rejects the same expressions as Operaton and returns the same next execution,
+     * so an Operaton upgrade that changes cron parsing or evaluation fails here.
+     */
+    @Test
+    void i17_cronParsedAndEvaluatedAsOperatonDoes() throws Exception {
+        assertTrue(org.sangam.core.time.EngineTimeZone.isUtc(java.util.TimeZone.getDefault().toZoneId()),
+                "the build's test JVM runs in UTC");
+        java.util.Date after = java.util.Date.from(Instant.parse("2026-10-24T23:59:30Z"));
+        for (String cron : List.of("0 0 9 * * *", "0 30 2 * * *", "0 */15 * * * *", "0 0 12 ? * MON-FRI",
+                "0 0 0 L * *", "*/10 * * * * *", "0 0 3 1 1 *")) {
+            java.util.Date operaton = org.operaton.bpm.engine.impl.calendar.CronTimer.parse(cron).getDueDate(after);
+            Instant sangam = ZonedCron.parse(cron).nextAfter(after.toInstant(), java.time.ZoneOffset.UTC);
+            assertEquals(operaton.toInstant(), sangam, cron);
+        }
+        for (String bad : List.of("not a cron", "0 0 25 * * *", "0 0 9 * *", "")) {
+            assertTrue(fails(() -> org.operaton.bpm.engine.impl.calendar.CronTimer.parse(bad)), "Operaton rejects " + bad);
+            assertTrue(fails(() -> ZonedCron.parse(bad)), "Sangam rejects " + bad);
+        }
+    }
+
+    /**
+     * I-18 (B-26): {@code ProcessEngineConfigurationImpl.initSessionFactories} adds the {@code customSessionFactories}
+     * after the built-in ones into a map keyed by session type ({@code addSessionFactory}: last one wins), and
+     * {@code CommandContext#getSession} resolves a manager by that type. Pinned: the custom factories Sangam registers
+     * are the engine's factories for the batch, deployment, resource and task managers, every command gets Sangam's
+     * managers, and the Operaton TaskManager methods the Sangam TaskManager overrides still exist with these signatures.
+     */
+    @Test
+    void i18_customSessionFactoriesReplaceTheBuiltInManagers() throws Exception {
+        List<Class<?>> types = List.of(BatchManager.class, DeploymentManager.class, ResourceManager.class, TaskManager.class);
+        withEngine(a -> {
+            ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) a.processEngine()
+                    .getProcessEngineConfiguration();
+            for (Class<?> type : types) {
+                SessionFactory used = cfg.getSessionFactories().get(type);
+                assertTrue(cfg.getCustomSessionFactories().contains(used),
+                        "I-18: the registered custom factory is the engine's factory for " + type.getSimpleName());
+            }
+            List<Object> managers = cfg.getCommandExecutorTxRequired().execute(cc -> List.<Object>of(cc.getBatchManager(),
+                    cc.getDeploymentManager(), cc.getResourceManager(), cc.getTaskManager()));
+            for (int i = 0; i < types.size(); i++) {
+                Class<?> c = managers.get(i).getClass();
+                assertTrue(types.get(i).isAssignableFrom(c) && c != types.get(i) && c.getName().startsWith("org.sangam."),
+                        "I-18: commands use Sangam's " + types.get(i).getSimpleName() + ", got " + c.getName());
+            }
+        });
+        TaskManager.class.getMethod("insertTask", TaskEntity.class);
+        for (String m : List.of("updateTaskSuspensionStateByProcessDefinitionId", "updateTaskSuspensionStateByProcessInstanceId",
+                "updateTaskSuspensionStateByProcessDefinitionKey", "updateTaskSuspensionStateByCaseExecutionId")) {
+            TaskManager.class.getMethod(m, String.class, SuspensionState.class);
+        }
+        TaskManager.class.getMethod("updateTaskSuspensionStateByProcessDefinitionKeyAndTenantId", String.class, String.class,
+                SuspensionState.class);
+        // what the SG-03(c) overrides call: the query by criteria and the command's check switches
+        TaskManager.class.getMethod("findTasksByQueryCriteria", org.operaton.bpm.engine.impl.TaskQueryImpl.class);
+        org.operaton.bpm.engine.impl.TaskQueryImpl.class.getConstructor();
+        Class<?> cc = org.operaton.bpm.engine.impl.interceptor.CommandContext.class;
+        for (String m : List.of("isAuthorizationCheckEnabled", "isTenantCheckEnabled", "disableAuthorizationCheck",
+                "disableTenantCheck")) {
+            cc.getMethod(m);
+        }
+        cc.getMethod("setAuthorizationCheckEnabled", boolean.class);
+        cc.getMethod("setTenantCheckEnabled", boolean.class);
+        withEngine(a -> {
+            ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) a.processEngine()
+                    .getProcessEngineConfiguration();
+            List<Boolean> flags = cfg.getCommandExecutorTxRequired().execute(c -> {
+                boolean auth = c.isAuthorizationCheckEnabled();
+                boolean tenant = c.isTenantCheckEnabled();
+                c.disableAuthorizationCheck();
+                c.disableTenantCheck();
+                boolean offAuth = c.isAuthorizationCheckEnabled();
+                boolean offTenant = c.isTenantCheckEnabled();
+                c.setAuthorizationCheckEnabled(auth);
+                c.setTenantCheckEnabled(tenant);
+                return List.of(offAuth, offTenant, c.isAuthorizationCheckEnabled() == auth,
+                        c.isTenantCheckEnabled() == tenant);
+            });
+            assertEquals(List.of(false, false, true, true), flags,
+                    "I-18: disable* switches the command's checks off and set* restores them");
+        });
+    }
+
+    /** Throws {@link #failure} from an async service task (I-19). */
+    public static class FailingDelegate implements JavaDelegate {
+        static volatile RuntimeException failure;
+
+        @Override
+        public void execute(DelegateExecution execution) {
+            throw failure;
+        }
+    }
+
+    /**
+     * I-19 (B-16, SL-89): every failed job execution ({@code ManagementService.executeJob} as well as the job executor)
+     * runs the command of the configured {@code FailedJobCommandFactory} ({@code ExecuteJobHelper} ->
+     * {@code FailedJobListener}), and Operaton's {@code JobRetryCmd.shouldDecrementRetriesFor} spares a retry only for an
+     * {@code OptimisticLockingException}. Pinned: a plain failure costs one retry; an {@code OptimisticLockingException}
+     * costs none; and a transient database conflict (here a deadlock, SQLState 40P01), which Sangam's factory hands to
+     * the engine as an {@code OptimisticLockingException}, costs none either.
+     */
+    @Test
+    void i19_retryIsKeptOnlyForOptimisticLockingFailures() {
+        String m = """
+                  <process id="fail" isExecutable="true">
+                    <startEvent id="s"/>
+                    <sequenceFlow id="f1" sourceRef="s" targetRef="work"/>
+                    <serviceTask id="work" operaton:asyncBefore="true" operaton:class="%s"/>
+                    <sequenceFlow id="f2" sourceRef="work" targetRef="e"/>
+                    <endEvent id="e"/>
+                  </process>
+                """.formatted(FailingDelegate.class.getName());
+        withEngine(a -> {
+            a.deploy("t1", "fail", Map.of("fail.bpmn", bpmn(m)));
+            assertEquals(1, retriesLost(a, "F-plain", new IllegalStateException("plain failure")),
+                    "a plain failure costs one retry");
+            assertEquals(0, retriesLost(a, "F-olock", new OptimisticLockingException("engine conflict")),
+                    "I-19: an OptimisticLockingException keeps the retry");
+            assertEquals(0, retriesLost(a, "F-deadlock", new RuntimeException("deadlock",
+                            new java.sql.SQLException("deadlock detected", "40P01"))),
+                    "SL-89: a transient database conflict keeps the retry");
+        });
+    }
+
+    private static int retriesLost(OperatonEngineAdapter a, String businessKey, RuntimeException failure) {
+        String pi = a.startProcess("t1", "fail", businessKey, Map.of());
+        var management = a.processEngine().getManagementService();
+        Job before = management.createJobQuery().processInstanceId(pi).singleResult();
+        FailingDelegate.failure = failure;
+        try {
+            management.executeJob(before.getId());
+            throw new AssertionError("the job was expected to fail");
+        } catch (RuntimeException expected) {
+            // the failure surfaces to the caller after the failed-job command ran
+        } finally {
+            FailingDelegate.failure = null;
+        }
+        Job after = management.createJobQuery().jobId(before.getId()).singleResult();
+        return before.getRetries() - after.getRetries();
+    }
+
+    private interface ParseCall {
+        void run() throws Exception;
+    }
+
+    private static boolean fails(ParseCall c) {
+        try {
+            c.run();
+            return false;
+        } catch (java.text.ParseException e) {
+            return true;
+        } catch (Exception e) {
+            throw new AssertionError("expected a ParseException, got " + e, e);
+        }
     }
 }

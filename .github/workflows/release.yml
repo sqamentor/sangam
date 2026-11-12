@@ -54,13 +54,22 @@ jobs:
       contents: read
       security-events: write
       actions: read
+      id-token: write   # dependency-check reads the NVD API key from SSM through OIDC (role sangam-ci)
     uses: ./.github/workflows/security.yml
-    secrets: inherit
+
+  governance:
+    # M-096: traceability register report (report-only; no job waits for it until SANGAM_TRACEABILITY_ENFORCE is set)
+    needs: meta
+    permissions:
+      contents: read
+    uses: ./.github/workflows/governance.yml
 
   build:
     needs: meta
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    outputs:
+      hashes: ${{ steps.subjects.outputs.hashes }}
     defaults:
       run:
         working-directory: sangam
@@ -120,6 +129,15 @@ jobs:
                 --jar ../dist/sangam-server-${{ needs.meta.outputs.version }}.jar)
           for s in ../dist/sbom/*.cdx.json; do args+=(--sbom "$s"); done
           python3 -I deploy/licence/check_licences.py "${args[@]}"
+      - name: Build-time tools never shipped (owner 2026-11-12, licence-policy.json build_time_tools)
+        run: |
+          args=(--policy deploy/licence/licence-policy.json --jar ../dist/sangam-server-${{ needs.meta.outputs.version }}.jar --tree ../dist/lib-ext)
+          for s in ../dist/sbom/*.cdx.json; do args+=(--sbom "$s"); done
+          python3 -I ../.github/scripts/build_tools_not_shipped.py "${args[@]}"
+      - name: SLSA subjects (M-094, input of the provenance job)
+        id: subjects
+        working-directory: dist
+        run: echo "hashes=$(sha256sum *.jar sbom/*.cdx.json | base64 -w0)" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
           name: release-dist
@@ -254,9 +272,37 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/sangam-server
           subject-digest: ${{ steps.server.outputs.digest }}
           push-to-registry: true
+      - name: Image SBOMs hold no build-time tool (owner 2026-11-12, licence-policy.json build_time_tools)
+        if: needs.meta.outputs.push == 'true'
+        run: python3 -I ../.github/scripts/build_tools_not_shipped.py --policy deploy/licence/licence-policy.json $(for s in ../image-sbom/*.cdx.json; do printf -- '--sbom %s ' "$s"; done)
+      - name: Provenance for the release jars and SBOMs (M-094, GitHub build provenance)
+        # Same action as the image attestation above. SLSA L3 provenance for the same jars and SBOMs comes from the
+        # isolated slsa-github-generator in the slsa-provenance job.
+        if: needs.meta.outputs.push == 'true'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/*.jar
+            dist/sbom/*.cdx.json
+            image-sbom/*.cdx.json
       - uses: actions/upload-artifact@v4
         if: needs.meta.outputs.push == 'true'
         with: { name: image-sbom, path: image-sbom/ }
+
+  slsa-provenance:
+    # M-094: SLSA Build L3 provenance from the isolated reusable workflow (slsa-github-generator v2.1.0, approved
+    # batch 1). Report-only: no job needs it, so a failure here never blocks the publish job. The generator must be
+    # referenced by its release tag (it verifies its own ref). The .intoto.jsonl is a workflow artifact.
+    needs: [meta, build]
+    if: needs.meta.outputs.push == 'true'
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.hashes }}
+      upload-assets: false
 
   evidence:
     # R52: audit evidence pack for a CERT-In-empanelled audit (GOV-3). A missing mandatory area fails the release.

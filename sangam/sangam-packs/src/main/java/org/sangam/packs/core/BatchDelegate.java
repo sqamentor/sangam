@@ -28,7 +28,8 @@ import org.sangam.packs.port.PackRuntime;
  *   <li>{@code OPEN}: reads the items (JSON array of objects with {@code key} in {@code itemsVar}), opens round
  *       {@code batchRound} in the ledger, resets {@code fanOutCursor};</li>
  *   <li>{@code FAN_OUT}: starts up to {@code chunkSize} child instances of {@code childProcessKey} (business key
- *       {@code <parent>:<round>:<item>}, variables: the item fields + {@code inherit} list + batch ids); sets
+ *       {@code <parent>:<round>:<item>}, variables: the item fields + {@code inherit} list + batch ids + the case's
+ *       simulator directives {@code sim_*}, GP-49); sets
  *       {@code fanOutDone} when every item is started. The BPMN loops this step with {@code asyncBefore}, so each chunk
  *       is its own transaction;</li>
  *   <li>{@code AGGREGATE}: reads the round summary: {@code batchComplete}, {@code batchSucceeded},
@@ -64,6 +65,7 @@ public class BatchDelegate implements JavaDelegate {
     public void execute(DelegateExecution ex) {
         BatchLedger ledger = PackRuntime.batches();
         String tenant = Vars.tenant(ex);
+        String key = Vars.tenantKey(ex); // SL-90: PACK_BATCH_ITEM.tenant_id is a NOT NULL key, never null
         String batchId = Vars.str(ex, "batchId", ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId()
                 : ex.getProcessBusinessKey());
         ex.setVariable("batchId", batchId);
@@ -81,7 +83,7 @@ public class BatchDelegate implements JavaDelegate {
                     }
                     keys.add(k.toString());
                 }
-                ledger.open(tenant, batchId, round, keys);
+                ledger.open(key, batchId, round, keys);
                 ex.setVariable("fanOutCursor", 0);
                 ex.setVariable("fanOutDone", keys.isEmpty());
                 ex.setVariable("batchSize", keys.size());
@@ -91,20 +93,20 @@ public class BatchDelegate implements JavaDelegate {
             case "FAN_OUT" -> fanOut(ex, tenant, batchId, round, iv);
             case "AGGREGATE" -> {
                 int r = Vars.fieldInt(this.round, ex, round);
-                BatchLedger.BatchSummary s = ledger.summary(tenant, batchId, r);
+                BatchLedger.BatchSummary s = ledger.summary(key, batchId, r);
                 ex.setVariable("batchComplete", s.complete());
                 ex.setVariable("batchSucceeded", s.succeeded());
                 ex.setVariable("batchFailed", s.done() - s.succeeded());
                 ex.setVariable("batchDone", s.done());
                 ex.setVariable("batchOutcomes", Vars.toJson(s.byOutcome()));
-                Vars.setJsonDocument(ex, "batchFailures", ledger.failures(tenant, batchId, r));
+                Vars.setJsonDocument(ex, "batchFailures", ledger.failures(key, batchId, r));
                 if (s.complete()) {
                     Vars.audit(ex, "BATCH_ROUND_COMPLETE", Vars.map("batchId", batchId, "round", r,
                             "total", s.total(), "succeeded", s.succeeded(), "byOutcome", s.byOutcome()));
                 }
             }
-            case "NEXT_ROUND" -> nextRound(ex, ledger, tenant, batchId, round, iv);
-            case "NOTIFY_ITEMS" -> notifyItems(ex, ledger, tenant, batchId, round);
+            case "NEXT_ROUND" -> nextRound(ex, ledger, key, batchId, round, iv);
+            case "NOTIFY_ITEMS" -> notifyItems(ex, ledger, key, batchId, round);
             default -> throw new ProcessEngineException("unknown batch op");
         }
     }
@@ -123,7 +125,7 @@ public class BatchDelegate implements JavaDelegate {
         int n = Vars.fieldInt(sampleSize, ex, 3);
         List<Map<String, Object>> synth = new ArrayList<>();
         for (int i = 1; i <= n; i++) {
-            synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 1000 * i));
+            synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 100_000L * i)); // i thousand rupees, in paise
         }
         Vars.setJsonDocument(ex, iv, synth);
     }
@@ -135,9 +137,18 @@ public class BatchDelegate implements JavaDelegate {
         String key = Vars.field(childProcessKey, ex);
         RuntimeService rs = ex.getProcessEngineServices().getRuntimeService();
         int end = Math.min(items.size(), cursor + chunk);
+        // simulator directives (sim_<connector>, ADR-D-13) describe the whole case, its items included (GP-49);
+        // a production case has none, so nothing changes there
+        Map<String, Object> directives = new HashMap<>();
+        String simPrefix = Vars.simVar(""); // "sim_", the one naming rule of directive variables
+        ex.getVariables().forEach((n, v) -> {
+            if (n.startsWith(simPrefix) && v != null) {
+                directives.put(n, v);
+            }
+        });
         for (int i = cursor; i < end; i++) {
             Map<String, Object> it = items.get(i);
-            Map<String, Object> vars = new HashMap<>();
+            Map<String, Object> vars = new HashMap<>(directives);
             for (String n : Vars.csv(Vars.field(inherit, ex))) {
                 vars.put(n, ex.getVariable(n));
             }

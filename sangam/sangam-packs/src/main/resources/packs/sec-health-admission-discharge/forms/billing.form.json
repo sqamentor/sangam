@@ -1,6 +1,6 @@
 {
   "key": "sec-health-admission-discharge/billing",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "pack": "sec.health.admission-discharge",
   "title": {
     "en": "Final bill (itemised)",
@@ -16,7 +16,9 @@
   "fields": [
     {
       "id": "finalBillAmount",
-      "type": "decimal",
+      "type": "money",
+      "currency": "INR",
+      "exponent": 2,
       "required": true,
       "label": {
         "en": "Final bill (INR)",

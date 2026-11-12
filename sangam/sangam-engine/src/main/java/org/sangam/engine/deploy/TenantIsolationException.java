@@ -19,9 +19,19 @@ public final class TenantIsolationException extends ProcessEngineException {
     private final String targetTenant;
 
     public TenantIsolationException(String element, String callerTenant, String targetTenant) {
-        super("SL-13 tenant isolation: '" + element + "' of tenant " + callerTenant
+        this(element, callerTenant, targetTenant, "'" + element + "' of tenant " + callerTenant
                 + " may not resolve a definition of tenant " + targetTenant + "; only the caller's own tenant and shared"
                 + " definitions are allowed (cross-tenant work is a message to the other tenant, J-P2-E09)");
+    }
+
+    /**
+     * A refusal that is not a definition reference (SL-45: a deployment or a batch of another tenant, see
+     * {@link TenantScopedCreation}); same code, same HTTP mapping, same message prefix.
+     *
+     * @param detail what was refused, appended to {@code "SL-13 tenant isolation: "}
+     */
+    public TenantIsolationException(String element, String callerTenant, String targetTenant, String detail) {
+        super("SL-13 tenant isolation: " + detail);
         this.element = element;
         this.callerTenant = callerTenant;
         this.targetTenant = targetTenant;

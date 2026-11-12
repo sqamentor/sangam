@@ -53,6 +53,9 @@ locale:
       weekend:
       - SATURDAY
       - SUNDAY
+ledgers:
+- id: BUDGET
+  currency: INR
 classification:
   seedStatus: OFFICIAL_LMMH_CS1127
   schemes:

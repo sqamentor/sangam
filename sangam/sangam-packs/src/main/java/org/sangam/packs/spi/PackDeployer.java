@@ -25,8 +25,9 @@ import org.sangam.packs.spi.PackDescriptor.PackResource;
  *
  * <ul>
  *   <li>one engine deployment per pack and tenant, named {@code pack:<id>@<version>}, with duplicate filtering, so a
- *       restart redeploys nothing and a changed pack creates new definition versions while running cases keep theirs
- *       (GP-19, GP-20, R43);</li>
+ *       restart redeploys nothing and a new pack version creates new definition versions while running cases keep theirs
+ *       (GP-19, GP-20, R43); a pack version is immutable, so changed content under an already deployed
+ *       {@code id@version} is refused with {@code PACK_VERSION_IMMUTABLE} (SL-54);</li>
  *   <li>{@code tenantId} null deploys the shared definitions; a tenant id deploys that department's overrides
  *       (GP-37), which {@link org.sangam.packs.core.Decisions} prefers at evaluation time;</li>
  *   <li>the manifest's tenant overrides for {@code tenantId} (DMN tables and pack configuration such as the works
@@ -43,10 +44,23 @@ public final class PackDeployer {
 
     private final ProcessEngine engine;
     private final PackRegistry registry;
+    private final PackOperationLock lock;
 
+    /** A deployer without serialisation ({@link PackOperationLock#NONE}): bare engines in tests and tools. */
     public PackDeployer(ProcessEngine engine, PackRegistry registry) {
+        this(engine, registry, PackOperationLock.NONE);
+    }
+
+    /** A deployer whose deploy and rollback of one pack in one tenant scope run inside {@code lock} (SL-116). */
+    public PackDeployer(ProcessEngine engine, PackRegistry registry, PackOperationLock lock) {
         this.engine = engine;
         this.registry = registry;
+        this.lock = java.util.Objects.requireNonNull(lock, "lock");
+    }
+
+    /** The lock deploy and rollback run in (SL-116). */
+    public PackOperationLock operationLock() {
+        return lock;
     }
 
     /** Result of deploying one pack. */
@@ -72,6 +86,13 @@ public final class PackDeployer {
      * Deploys the given packs and their dependencies. For a tenant this is the method to use: Operaton resolves a call
      * activity of a tenant's process only within that tenant (no fallback to shared definitions), so the core blocks
      * and every called pack must be deployed for the same tenant.
+     *
+     * <p>Each pack is deployed in its own {@link PackOperationLock} section. Call this inside one caller transaction
+     * only if no concurrent rollback (or deploy or uninstall) of a pack of the list is possible: Operaton takes its
+     * engine-wide deployment lock (the {@code deployment.lock} property row) at the first pack's deploy and holds it to
+     * the end of the outer transaction, while the next pack's section waits for that pack's lock; a concurrent rollback
+     * holding that pack's lock and waiting for the deployment lock is then a deadlock (SL-116). Without an outer
+     * transaction each pack commits, and both locks are released, before the next one.
      */
     public List<Result> deploy(Collection<String> packIds, String tenantId) {
         List<Result> out = new ArrayList<>();
@@ -90,7 +111,15 @@ public final class PackDeployer {
         return out;
     }
 
+    /**
+     * Deploys one pack (without its dependencies) for the tenant scope, inside the pack's {@link PackOperationLock}
+     * (SL-116): the immutability check reads the scope's deployments and the deploy follows under the same lock.
+     */
     public Result deploy(SangamPack pack, String tenantId) {
+        return lock.exclusive(tenantId, pack.descriptor().id(), () -> deployLocked(pack, tenantId));
+    }
+
+    private Result deployLocked(SangamPack pack, String tenantId) {
         PackDescriptor d = pack.descriptor();
         List<String> violations = new ArrayList<>();
         List<byte[]> contents = new ArrayList<>();
@@ -113,21 +142,36 @@ public final class PackDeployer {
         for (String override : d.overridesFor(tenantId)) {
             replaced.add(override.substring(override.lastIndexOf('/') + 1));
         }
+        Map<String, byte[]> planned = new java.util.LinkedHashMap<>(); // exactly what this deployment carries (SL-54)
         for (int i = 0; i < d.resources().size(); i++) {
             String path = d.resources().get(i).path();
             if (d.resources().get(i).kind() == PackResource.Kind.DMN
                     && replaced.contains(path.substring(path.lastIndexOf('/') + 1))) {
                 continue; // the tenant's own table replaces the shared one of the same key in this deployment
             }
-            b = b.addInputStream(path, new ByteArrayInputStream(contents.get(i)));
+            planned.put(path, contents.get(i));
         }
         for (String override : d.overridesFor(tenantId)) {
             // department-specific DMN deployed for this tenant only; Decisions prefers it (GP-37)
-            b = b.addInputStream(override, new ByteArrayInputStream(read(pack, override)));
+            planned.put(override, read(pack, override));
         }
-        DeploymentWithDefinitions dep = b.deployWithResult();
-        boolean fresh = notEmpty(dep.getDeployedProcessDefinitions()) || notEmpty(dep.getDeployedDecisionDefinitions())
-                || notEmpty(dep.getDeployedCaseDefinitions());
+        String depId;
+        boolean fresh;
+        String existing = requireImmutableVersion(d.id(), d.version(), tenantId, planned);
+        if (existing != null) {
+            // this version is already deployed with the same canonical content: reuse its definitions. Deploying the
+            // bytes again would let a line-ending-only difference create a second definition per versionTag (SL-54)
+            depId = existing;
+            fresh = false;
+        } else {
+            for (Map.Entry<String, byte[]> e : planned.entrySet()) {
+                b = b.addInputStream(e.getKey(), new ByteArrayInputStream(e.getValue()));
+            }
+            DeploymentWithDefinitions dep = b.deployWithResult();
+            depId = dep.getId();
+            fresh = notEmpty(dep.getDeployedProcessDefinitions()) || notEmpty(dep.getDeployedDecisionDefinitions())
+                    || notEmpty(dep.getDeployedCaseDefinitions());
+        }
         if (PackRuntime.seats() instanceof InMemorySeatDirectory mem) {
             for (PackResource r : d.resources(PackResource.Kind.SEED)) {
                 try (InputStream in = pack.open(r.path())) {
@@ -137,9 +181,118 @@ public final class PackDeployer {
                 }
             }
         }
-        LOG.info("deployed pack {} (tenant {}): deployment {}, {} resources", d.coordinates(), tenantId, dep.getId(),
+        LOG.info("deployed pack {} (tenant {}): deployment {}, {} resources", d.coordinates(), tenantId, depId,
                 d.resources().size());
-        return new Result(d.id(), d.version(), tenantId, dep.getId(), d.resources().size(), fresh);
+        return new Result(d.id(), d.version(), tenantId, depId, d.resources().size(), fresh);
+    }
+
+    // ------------------------------------------------------------------ pack-version immutability (SL-54)
+
+    /** Violation code of a pack version deployed again with different content. */
+    public static final String PACK_VERSION_IMMUTABLE = "PACK_VERSION_IMMUTABLE";
+
+    /**
+     * SL-54: a pack version is immutable within a tenant scope. Cross-pack calls bind by {@code versionTag} (the callee
+     * pack's version, written by packgen {@code pin_cross_pack_calls}), and Operaton refuses such a call when one
+     * (key, versionTag, tenant) matches more than one definition. Deploying changed content under an existing
+     * {@code pack:<id>@<version>} would make duplicate filtering create exactly that second definition. So when the scope
+     * already holds that deployment, the resources about to be deployed must equal those of its latest deployment in
+     * {@linkplain #canonical canonical form} (same names, same canonical bytes, so line endings never change a pack's
+     * identity); the caller then reuses that deployment instead of deploying. Anything else is refused with
+     * {@link #PACK_VERSION_IMMUTABLE}, the changed resources and both content checksums, so the change has to ship as a
+     * new pack version.
+     *
+     * @return the id of the deployment holding this version with the same canonical content, or null when the scope
+     *         does not hold this version yet
+     */
+    private String requireImmutableVersion(String packId, String version, String tenantId, Map<String, byte[]> planned) {
+        String coordinates = packId + "@" + version;
+        var repo = engine.getRepositoryService();
+        var q = repo.createDeploymentQuery().deploymentName(NAME_PREFIX + coordinates).deploymentSource(SOURCE);
+        q = tenantId == null ? q.withoutTenantId() : q.tenantIdIn(tenantId);
+        List<org.operaton.bpm.engine.repository.Deployment> same = q.orderByDeploymentTime().desc().list();
+        if (same.isEmpty()) {
+            return null;
+        }
+        String existingId = same.get(0).getId();
+        Map<String, byte[]> existing = new java.util.TreeMap<>();
+        for (String n : repo.getDeploymentResourceNames(existingId)) {
+            try (InputStream in = repo.getResourceAsStream(existingId, n)) {
+                existing.put(n, in.readAllBytes());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        java.util.Set<String> names = new java.util.TreeSet<>(existing.keySet());
+        names.addAll(planned.keySet());
+        List<String> changed = new ArrayList<>();
+        for (String n : names) {
+            byte[] was = existing.get(n);
+            byte[] now = planned.get(n);
+            if (was == null) {
+                changed.add(n + " (added)");
+            } else if (now == null) {
+                changed.add(n + " (removed)");
+            } else if (!java.util.Arrays.equals(canonical(n, was), canonical(n, now))) {
+                changed.add(n + " (changed)");
+            }
+        }
+        if (!changed.isEmpty()) {
+            throw new PackRejectedException(packId, List.of(PACK_VERSION_IMMUTABLE + ": pack " + coordinates
+                    + " is already deployed in " + scope(tenantId) + " (deployment " + existingId + ", content sha256 "
+                    + contentSha256(existing) + ") and the content to deploy differs (sha256 " + contentSha256(planned)
+                    + "): " + String.join(", ", changed) + "; a changed pack must carry a new version"));
+        }
+        return existingId;
+    }
+
+    /** File extensions of text resources, compared and checksummed with normalised line endings (SL-54). */
+    private static final List<String> TEXT_EXTENSIONS =
+            List.of(".bpmn", ".dmn", ".cmmn", ".json", ".form", ".xml", ".md", ".txt");
+
+    /** True when {@code name} is a text resource by its extension (case-insensitive); everything else is binary. */
+    public static boolean isTextResource(String name) {
+        String n = name.toLowerCase(java.util.Locale.ROOT);
+        return TEXT_EXTENSIONS.stream().anyMatch(n::endsWith);
+    }
+
+    /**
+     * The canonical bytes of a resource, over which pack identity is defined: a text resource has every CRLF and every
+     * lone CR replaced by LF; a binary resource is byte-exact.
+     */
+    public static byte[] canonical(String name, byte[] bytes) {
+        if (!isTextResource(name)) {
+            return bytes;
+        }
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream(bytes.length);
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] == '\r') {
+                out.write('\n');
+                if (i + 1 < bytes.length && bytes[i + 1] == '\n') {
+                    i++;
+                }
+            } else {
+                out.write(bytes[i]);
+            }
+        }
+        return out.toByteArray();
+    }
+
+    /** SHA-256 over the canonical resources in name order: name, NUL, length, canonical bytes for each. */
+    public static String contentSha256(Map<String, byte[]> resources) {
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            for (Map.Entry<String, byte[]> e : new java.util.TreeMap<>(resources).entrySet()) {
+                byte[] c = canonical(e.getKey(), e.getValue());
+                md.update(e.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                md.update((byte) 0);
+                md.update(java.nio.ByteBuffer.allocate(Integer.BYTES).putInt(c.length).array());
+                md.update(c);
+            }
+            return java.util.HexFormat.of().formatHex(md.digest());
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
     }
 
     // ------------------------------------------------------------------ lifecycle: installed, uninstall, rollback (SL-41)
@@ -200,8 +353,16 @@ public final class PackDeployer {
      * instance of any of its versions is running. Otherwise the definitions are retired: every process definition is
      * suspended first (no new instance can start while the uninstall runs), then each deployment is removed without
      * cascade, so the engine itself refuses if an instance appeared meanwhile and history stays for audit.
+     * The whole uninstall runs inside the pack's {@link PackOperationLock} (SL-116), so it is serialised with a deploy
+     * or rollback of the same pack in the same scope; inside a transactional lock (the server's) a refused removal rolls
+     * the whole uninstall back, suspensions included. The dependants check reads other packs, which the per-pack lock
+     * does not hold: a dependant deployed concurrently is not excluded by it.
      */
     public Uninstalled uninstall(String packId, String tenantId) {
+        return lock.exclusive(tenantId, packId, () -> uninstallLocked(packId, tenantId));
+    }
+
+    private Uninstalled uninstallLocked(String packId, String tenantId) {
         List<Installed> all = installed(tenantId);
         List<Installed> mine = all.stream().filter(i -> i.packId().equals(packId)).toList();
         if (mine.isEmpty()) {
@@ -254,13 +415,30 @@ public final class PackDeployer {
         return new Uninstalled(packId, tenantId, removed);
     }
 
+    /** A pack version the roll-forward can count from: {@code MAJOR.MINOR.PATCH}, digits only. */
+    private static final java.util.regex.Pattern SEMVER = java.util.regex.Pattern.compile("(\\d{1,9})\\.(\\d{1,9})\\.(\\d{1,9})");
+
     /**
-     * Rolls a pack back to its previous version in one tenant scope: the resources of the most recent deployment of a
-     * different version are read back from the engine (not from the class path, which only has the current version) and
-     * deployed again as {@code pack:<id>@<previous>}. New instances then start on the previous models; running
-     * instances keep the definitions they started on (deployment binding). Refused with {@code PACK_NO_PREVIOUS_VERSION}.
+     * Rolls a pack back to its previous content in one tenant scope, as a ROLL-FORWARD (SL-54): the resources of the
+     * most recent deployment of a different version are read back from the engine (not from the class path, which only
+     * has the current version) and deployed as a NEW version, the next patch above the highest version of the pack in
+     * the scope, with every version-bearing part restated for it ({@link PackVersionRewriter}). No existing
+     * {@code id@version} is reused or changed, so one {@code id@version} keeps exactly one content and every
+     * {@code versionTag} pin keeps resolving to exactly one definition. New instances started by key then start on the
+     * previous models (the new deployment is the latest definition version); running instances keep the definitions
+     * they started on (deployment binding). A second rollback rolls forward again (the most recent different version is
+     * then the one rolled back from), each time to a new version: an older definition can never again become the latest
+     * one, so reusing an earlier roll-forward could not change what new instances start on.
+     * Refused with {@code PACK_NO_PREVIOUS_VERSION}, and with {@code PACK_VERSION_NOT_SEMVER} when an installed version
+     * of the pack is not {@code MAJOR.MINOR.PATCH}, so the next version cannot be determined. Reading the installed
+     * versions, computing the next one and deploying it run inside the pack's {@link PackOperationLock} (SL-116), so a
+     * concurrent rollback or deploy of the same pack in the same scope computes from this one's committed result.
      */
     public Result rollback(String packId, String tenantId) {
+        return lock.exclusive(tenantId, packId, () -> rollbackLocked(packId, tenantId));
+    }
+
+    private Result rollbackLocked(String packId, String tenantId) {
         List<Installed> mine = installed(tenantId).stream().filter(i -> i.packId().equals(packId)).toList();
         if (mine.isEmpty()) {
             throw new PackLifecycleException("PACK_NOT_INSTALLED", "pack " + packId + " is not installed for "
@@ -277,34 +455,66 @@ public final class PackDeployer {
             throw new PackLifecycleException("PACK_NO_PREVIOUS_VERSION", "pack " + packId + " has only version "
                     + current.version() + " in " + scope(tenantId), List.of());
         }
+        String next = nextPatchVersion(packId, tenantId, mine);
         var repo = engine.getRepositoryService();
-        DeploymentBuilder b = repo.createDeployment().name(NAME_PREFIX + packId + "@" + previous.version())
-                .source(SOURCE); // no duplicate filtering: enableDuplicateFiltering(x) always filters (x = changed only), and the
-        // last deployment of this name is the previous version itself, so a filtered rollback would deploy nothing
-        if (tenantId != null) {
-            b = b.tenantId(tenantId);
-        }
         List<String> names = repo.getDeploymentResourceNames(previous.deploymentId());
-        List<String> violations = new ArrayList<>();
+        Map<String, byte[]> content = new java.util.LinkedHashMap<>();
         for (String n : names) {
-            byte[] bytes;
             try (InputStream in = repo.getResourceAsStream(previous.deploymentId(), n)) {
-                bytes = in.readAllBytes();
+                content.put(n, in.readAllBytes());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
+        }
+        Map<String, byte[]> restated = PackVersionRewriter.rewrite(content, previous.version(), next);
+        List<String> violations = new ArrayList<>();
+        for (Map.Entry<String, byte[]> e : restated.entrySet()) {
+            String n = e.getKey();
             if (n.endsWith(".bpmn") || n.endsWith(".bpmn20.xml")) {
-                violations.addAll(ModelGuard.check(n, bytes)); // the guard may be stricter now than at first deploy
+                violations.addAll(ModelGuard.check(n, e.getValue())); // the guard may be stricter now than at first deploy
             }
-            b = b.addInputStream(n, new ByteArrayInputStream(bytes));
         }
         if (!violations.isEmpty()) {
             throw new PackRejectedException(packId, violations);
         }
-        DeploymentWithDefinitions dep = b.deployWithResult();
-        LOG.info("rolled back pack {} in {} from {} to {}: deployment {}", packId, scope(tenantId), current.version(),
-                previous.version(), dep.getId());
-        return new Result(packId, previous.version(), tenantId, dep.getId(), names.size(), true);
+        // the new version is above every version of the scope, so it holds no deployment yet; the check is kept so the
+        // one-content-per-version rule has a single enforcement point
+        String existing = requireImmutableVersion(packId, next, tenantId, restated);
+        DeploymentBuilder b = repo.createDeployment().name(NAME_PREFIX + packId + "@" + next).source(SOURCE)
+                .enableDuplicateFiltering(true);
+        if (tenantId != null) {
+            b = b.tenantId(tenantId);
+        }
+        for (Map.Entry<String, byte[]> e : restated.entrySet()) {
+            b = b.addInputStream(e.getKey(), new ByteArrayInputStream(e.getValue()));
+        }
+        String depId = existing != null ? existing : b.deployWithResult().getId();
+        LOG.info("rolled back pack {} in {} from {} to the content of {}, rolled forward as {}: deployment {}", packId,
+                scope(tenantId), current.version(), previous.version(), next, depId);
+        return new Result(packId, next, tenantId, depId, names.size(), existing == null);
+    }
+
+    /** The next patch version above the highest installed version of the pack in the scope (SL-54 roll-forward). */
+    private static String nextPatchVersion(String packId, String tenantId, List<Installed> mine) {
+        int[] highest = null;
+        List<String> notSemver = new ArrayList<>();
+        for (Installed i : mine) {
+            java.util.regex.Matcher m = SEMVER.matcher(i.version());
+            if (!m.matches()) {
+                notSemver.add(i.packId() + "@" + i.version());
+                continue;
+            }
+            int[] v = {Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3))};
+            if (highest == null || java.util.Arrays.compare(v, highest) > 0) {
+                highest = v;
+            }
+        }
+        if (!notSemver.isEmpty() || highest == null) {
+            throw new PackLifecycleException("PACK_VERSION_NOT_SEMVER", "pack " + packId + " in " + scope(tenantId)
+                    + " has versions that are not MAJOR.MINOR.PATCH, so the roll-forward version cannot be determined",
+                    notSemver);
+        }
+        return highest[0] + "." + highest[1] + "." + (highest[2] + 1);
     }
 
     private List<String> liveInstances(List<Installed> deployments) {

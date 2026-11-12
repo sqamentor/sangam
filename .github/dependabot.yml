@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Dependabot scope (SL-75, P1). Only product manifests under sangam/ and the workflow actions are in scope.
+# handoff/** holds byte copies of private worktrees (handoff/worktree-snapshots, from f553b43); they are not product
+# code and are excluded until the owner removes them from main (SL-75 P2).
+# open-pull-requests-limit 0 keeps today's behaviour: no version-update pull requests, security updates only.
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /sangam
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    exclude-paths: ["handoff/**"]
+  - package-ecosystem: npm
+    directories: [/sangam/sangam-ui, /sangam/sdks/typescript]
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    exclude-paths: ["handoff/**"]
+  # SDKs (B5 test projects included): .NET solution, Python pyproject, PHP composer
+  - package-ecosystem: nuget
+    directory: /sangam/sdks/dotnet
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    exclude-paths: ["handoff/**"]
+  - package-ecosystem: pip
+    directory: /sangam/sdks/python
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    exclude-paths: ["handoff/**"]
+  - package-ecosystem: composer
+    directory: /sangam/sdks/php
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    exclude-paths: ["handoff/**"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0
+    exclude-paths: ["handoff/**"]

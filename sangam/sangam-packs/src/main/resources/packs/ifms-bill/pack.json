@@ -1,6 +1,6 @@
 {
   "id": "gov.ifms.bill",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": {
     "en": "Bill by catalogue type (all bill-type families)",
     "hi": "सूची प्रकार अनुसार बिल (सभी बिल श्रेणियाँ)"
@@ -210,7 +210,11 @@
       "id": "pfms.payment",
       "capabilityClass": "c",
       "govTag": "G-PFMS",
-      "purpose": "Payment file (PFMS)"
+      "purpose": "Payment file (PFMS)",
+      "simulatorBinding": {
+        "connector": "pfms-sim",
+        "operation": "pay"
+      }
     },
     {
       "id": "rail.ekuber",
@@ -369,7 +373,7 @@
       "when": "lines carry 2054 and 2052",
       "then": "BILL_INVALID with RPR SI 2.2(5)(g)",
       "startVariables": {
-        "docValid": false
+        "sim_config_documentType": "valid=false"
       },
       "expectState": null,
       "run": {
@@ -408,5 +412,21 @@
     "sangam-core-rejection",
     "sangam-ifms-bill",
     "sangam-ifms-pao-chain"
-  ]
+  ],
+  "workers": [
+    {
+      "topic": "sangam.pfms.paymentFile",
+      "connector": "pfms.payment",
+      "operation": "submitPaymentFile",
+      "capabilityClass": "c"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "INR",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
 }

@@ -55,6 +55,8 @@ public final class PacksTenantDeployer {
             results = selection == null ? deployer.deployAll(tenantId) : deployer.deploy(selection, tenantId);
         } catch (PackDeployer.PackRejectedException e) {
             throw ApiProblem.unprocessable("PACK_REJECTED", e.getMessage()).with("violations", e.violations());
+        } catch (PackDeployer.PackLifecycleException e) {
+            throw lifecycleProblem(e);
         }
         Map<String, String> out = new LinkedHashMap<>();
         List<String> packs = new ArrayList<>();
@@ -73,6 +75,18 @@ public final class PacksTenantDeployer {
         }
         LOG.info("Deployed {} packs for tenant {}", packs.size(), tenantId);
         return out;
+    }
+
+    /**
+     * A refused pack lifecycle step as the pack lifecycle API renders it ({@code PackLifecycleController.call}):
+     * {@code PACK_NOT_INSTALLED} 404, every other code 409 (SL-116: {@code PACK_OPERATION_IN_PROGRESS} when another
+     * deploy, rollback or uninstall of the same pack and tenant held its lock too long), with {@code blockers} when any.
+     */
+    static ApiProblem lifecycleProblem(PackDeployer.PackLifecycleException e) {
+        ApiProblem p = "PACK_NOT_INSTALLED".equals(e.code())
+                ? new ApiProblem(404, e.code(), e.getMessage())
+                : ApiProblem.conflict(e.code(), e.getMessage());
+        return e.blockers().isEmpty() ? p : p.with("blockers", e.blockers());
     }
 
     /** Deploys once per tenant per node lifetime (the engine's duplicate filtering keeps later calls cheap anyway). */

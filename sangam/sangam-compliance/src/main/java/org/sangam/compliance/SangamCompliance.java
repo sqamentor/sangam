@@ -92,11 +92,21 @@ public final class SangamCompliance {
     public final ComplianceEvidenceReportGenerator reports;
 
     public SangamCompliance(Dialect dialect, Transactions tx, ComplianceConfig.Provider config, Ports p) {
+        this(dialect, tx, config, p, null);
+    }
+
+    /**
+     * @param denialTx leaf transactions in which denial audits commit on their own (M-009; {@link ComplianceAudit}
+     *                 class comment: a pool separate from the one callers hold); null = in-line in the caller's
+     *                 transaction, so a denial audit rolls back with the refused operation
+     */
+    public SangamCompliance(Dialect dialect, Transactions tx, ComplianceConfig.Provider config, Ports p,
+                            Transactions denialTx) {
         this.dialect = dialect;
         this.tx = tx;
         this.config = config;
         AuditChain chain = new AuditChain(dialect);
-        this.audit = new ComplianceAudit(chain);
+        this.audit = new ComplianceAudit(chain, denialTx);
         CompliancePorts.LegalHoldPort holds = p.legalHolds() != null ? p.legalHolds() : NO_HOLDS;
         CompliancePorts.ErasurePort erasure = p.erasure() != null ? p.erasure()
                 : (t, r, k, a, why) -> new CompliancePorts.ErasureOutcome(CompliancePorts.ErasureStatus.FAILED, java.util.Map.of(), "ErasurePort not configured");

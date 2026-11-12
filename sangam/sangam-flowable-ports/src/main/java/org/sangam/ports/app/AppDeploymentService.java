@@ -102,7 +102,7 @@ public class AppDeploymentService {
             if (!expanded.isEmpty()) {
                 DeploymentBuilder db = engine.getRepositoryService().createDeployment().name(bundle.manifest().key())
                         .source("sangam-app");
-                if (tenant != null && !tenant.isEmpty()) {
+                if (org.sangam.core.layer.TenantKey.toEngine(tenant) != null) {
                     db.tenantId(tenant);
                 }
                 expanded.forEach((n, b) -> db.addInputStream(n, new ByteArrayInputStream(b)));
@@ -177,6 +177,6 @@ public class AppDeploymentService {
     }
 
     private static String tenantOrEmpty(String tenant) {
-        return tenant == null ? "" : tenant;
+        return org.sangam.core.layer.TenantKey.of(tenant); // SL-86: shared key, never ''
     }
 }

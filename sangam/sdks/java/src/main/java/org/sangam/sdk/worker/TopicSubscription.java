@@ -17,8 +17,9 @@ import java.util.Objects;
  * @param localVariables       fetch only local variables of the activity
  * @param processDefinitionKey only work of this process definition
  * @param businessKey          only work of this business key
- * @param irreversible   treat unexpected handler exceptions as outcome-unknown even if the server does not mark
- *                       the topic {@code effect=irreversible}
+ * @param irreversible   the topic has an irreversible effect (VI.3.2 rule 5): unexpected handler exceptions are
+ *                       reported as outcome-unknown, never fail-with-retry. The work item carries no effect field,
+ *                       so this flag is the only source on the worker side
  */
 public record TopicSubscription(String topic, TaskHandler handler, Duration lockDuration, List<String> variables,
                                 int retries, Backoff retryBackoff, boolean irreversible,

@@ -36,14 +36,16 @@ import org.sangam.packs.spi.PackRegistry;
  * ceiling the concurrence is allowed; one minor unit above it the payment belongs to the next authoriser band (routing
  * and cap move together); above every authoriser band the concurrence is refused with {@code 422
  * POWER_LIMIT_EXCEEDED} and audited. Maker, checker and authoriser stay three persons on three seats. The bands are
- * data (packgen {@code sec_fin.bank_payment}); this test reads them only through the shipped DMN.
+ * data (packgen {@code sec_fin.bank_payment}); this test reads them only through the shipped DMN. Amounts are integer minor
+ * units (paise, SD-398 / packgen {@code money.py}): the band ceiling plus one paisa is the ceiling plus 1.
  */
 class BankPaymentConcurrenceTest {
 
     static final String KEY = "sangam-sec-bank-payment";
-    static final double AUTH_BAND = 100_000_000d;        // PAYAUTH band ceiling (10 crore)
-    static final double TOP_BAND = 10_000_000_000d;      // TREASURYHEAD band ceiling (1,000 crore)
-    static final double MINOR = 0.01;                    // one paisa
+    static final long CHECKER_ALONE = 250_000_000L;      // checker's own band (25 lakh), in paise
+    static final long AUTH_BAND = 10_000_000_000L;       // PAYAUTH band ceiling (10 crore), in paise
+    static final long TOP_BAND = 1_000_000_000_000L;     // TREASURYHEAD band ceiling (1,000 crore), in paise
+    static final long MINOR = 1L;                        // one paisa
 
     static ProcessEngine engine;
     static PackDriver driver;
@@ -71,7 +73,7 @@ class BankPaymentConcurrenceTest {
     }
 
     /** Starts a NEFT payment of {@code amount} raised by the seed maker; returns its business key. */
-    static String start(double amount) {
+    static String start(long amount) {
         String bk = "SL50/" + (++seq);
         Map<String, Object> v = AllPacksSmokeTest.bag();
         v.put("amount", amount);
@@ -110,7 +112,7 @@ class BankPaymentConcurrenceTest {
     }
 
     /** Runs to the end and checks the two-level approval: checker seat, then {@code authSeat}, three persons. */
-    static void assertConcurredAndAuthorisedBy(double amount, String authSeat, String authPerson) {
+    static void assertConcurredAndAuthorisedBy(long amount, String authSeat, String authPerson) {
         String bk = start(amount);
         List<Step> steps = drive(bk);
         assertTrue(driver.ended(bk), amount + ": did not end; steps " + steps);
@@ -164,7 +166,7 @@ class BankPaymentConcurrenceTest {
         assertEquals(0, new BigDecimal(refusal.details().get("powerLimit").toString()).signum(),
                 "no authoriser band covers the amount: nothing to concur up to");
         assertEquals(0, new BigDecimal(refusal.details().get("amount").toString())
-                .compareTo(BigDecimal.valueOf(TOP_BAND + MINOR)), "amount on the refusal");
+                .compareTo(BigDecimal.valueOf(TOP_BAND + MINOR)), "amount on the refusal (paise)");
         assertFalse(driver.ended(bk), "refused concurrence does not move the case");
         assertNotNull(engine.getTaskService().createTaskQuery().taskId(chk.getId()).singleResult(), "task still open");
         assertFalse(transferred(bk), "no payment after a refused concurrence");
@@ -196,7 +198,7 @@ class BankPaymentConcurrenceTest {
     /** The concurrence cap is the power of the authoriser the routing picks for that amount, at every band edge. */
     @Test
     void concurrenceCapEqualsThePowerOfTheRoutedAuthoriser() {
-        for (double amount : new double[] {2_500_000d + MINOR, AUTH_BAND, AUTH_BAND + MINOR, TOP_BAND}) {
+        for (long amount : new long[] {CHECKER_ALONE + MINOR, AUTH_BAND, AUTH_BAND + MINOR, TOP_BAND}) {
             DmnDecisionRuleResult lim = decide("sec-bank-pay-limits", Map.of("paymentRail", "NEFT", "amount", amount));
             assertEquals(2, ((Number) lim.get("authLevels")).intValue(), amount + " two levels");
             Object bandMax = lim.get("authBandMax");
@@ -215,8 +217,8 @@ class BankPaymentConcurrenceTest {
         assertEquals(0, new BigDecimal(over.get("authBandMax").toString()).signum(), "no band above the top band");
         // a single-level payment keeps the checker's own band
         Map<String, Object> alone = new HashMap<>(Map.of("seatRole", "PAYCHECKER", "caseType", "PAYMENT",
-                "authLevels", 1, "authBandMax", 0d, "amount", 2_500_000d));
-        assertEquals(0, new BigDecimal("2500000").compareTo(
+                "authLevels", 1, "authBandMax", 0L, "amount", CHECKER_ALONE));
+        assertEquals(0, BigDecimal.valueOf(CHECKER_ALONE).compareTo(
                 new BigDecimal(decide("sec-bank-pay-powers", alone).get("powerLimit").toString())));
     }
 }
