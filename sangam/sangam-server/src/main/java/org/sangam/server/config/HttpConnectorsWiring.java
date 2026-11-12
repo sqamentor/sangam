@@ -84,10 +84,16 @@ public class HttpConnectorsWiring {
         return new LiveHttpConnectors.Spec(id, e.getBaseUrl(), e.getMethod(), e.getCapabilityClass(),
                 e.getIdempotencyHeader(), e.getLookupPath(),
                 new LiveHttpConnectors.Auth(at, a.getSecretRef(), a.getTokenUrl(), a.getClientId(), a.getClientSecretRef(),
-                        a.getScope()),
+                        a.getScope(), new LiveHttpConnectors.Provider(a.getRegion(), a.getService(), a.getAccessKeyRef(),
+                                a.getSecretKeyRef(), a.getSessionTokenRef(), a.getHeaderName(), a.getAudience(),
+                                a.getServiceAccountKeyRef(), a.getMetadataUrl())),
                 new LiveHttpConnectors.Tls(t.getKeyStore(), t.getKeyStorePasswordRef(), t.getTrustStore(),
                         t.getTrustStorePasswordRef()),
                 e.getConnectTimeout(), e.getReadTimeout(), e.getMaxAttempts(), e.getEgress(), e.isAllowPrivate(),
-                e.getDefaultHeaders(), e.getResponse().getOutput(), e.getResponse().getProviderRef());
+                e.getDefaultHeaders(), e.getResponse().getOutput(), e.getResponse().getProviderRef(),
+                e.getCallback() == null || e.getCallback().getUrl() == null ? null
+                        : new LiveHttpConnectors.Callback(e.getCallback().getUrl(), e.getCallback().getEventType(),
+                                e.getCallback().getPlacement(), e.getCallback().getField()),
+                e.getResponse().getFailureHeader());
     }
 }

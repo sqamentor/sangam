@@ -581,7 +581,7 @@ public final class ProcessesApi {
     /**
      * Run a named query
      *
-     * <p>Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown handler; 422 VALIDATION_FAILED for missing or mistyped arguments; evaluation is bounded in time and size (R19).
+     * <p>Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown instance or handler name; 422 VALIDATION_FAILED for missing or mistyped arguments, HANDLER_EVALUATION_FAILED when the strict-mode FEEL evaluation fails, RESULT_TOO_LARGE when the result exceeds 10000 values or 32 levels; evaluation is bounded in time and size (R19).
      *
      * <p>{@code POST /process-instances/{id}/queries/{name}} (operationId {@code queryProcessInstance}); permission {@code process.read}.
      * @param id path parameter {@code id}
@@ -599,7 +599,7 @@ public final class ProcessesApi {
     /**
      * Run a named update
      *
-     * <p>Validates the arguments against the handler, applies the declared changes in one command transaction and records the change (R42). A modification under R49: reason mandatory, permission re-checked, bound to payloadHash and caseVersion; obligations the change affects are re-evaluated. 404 unknown handler; 409 APPROVAL_INVALIDATED, REVISION_CONFLICT; 422 VALIDATION_FAILED, SOD_VIOLATION.
+     * <p>Validates the arguments against the handler, applies the declared changes in one command transaction and records the change (R42). A modification under R49: reason mandatory, permission re-checked, bound to payloadHash and caseVersion; obligations the change affects are re-evaluated. 400 REASON_REQUIRED without a reason; 404 unknown instance or handler name; 409 APPROVAL_INVALIDATED, REVISION_CONFLICT, STATE_INVALID when the handler declares activities and the instance is at none of them (E21); 422 VALIDATION_FAILED (arguments), HANDLER_EVALUATION_FAILED (strict FEEL failure), RESULT_TOO_LARGE (over 10000 values or 32 levels), SOD_VIOLATION.
      *
      * <p>{@code POST /process-instances/{id}/updates/{name}} (operationId {@code updateProcessInstance}); permission {@code process.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}

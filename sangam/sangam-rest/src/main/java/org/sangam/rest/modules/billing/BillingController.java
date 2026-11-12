@@ -194,14 +194,13 @@ public class BillingController {
     /**
      * The refund's demand period: the request's {@code period}, else the tenant's current fiscal period (the same
      * resolver the billing connector uses for the invoice, so both name the same account). SL-127: never an invented
-     * calendar year; without a fiscal year the refund is refused (422 {@code FISCAL_YEAR_NOT_CONFIGURED}).
+     * calendar year; without a fiscal year the refund is refused (422 {@code FISCAL_YEAR_NOT_CONFIGURED}). The rule is
+     * the ledger's and the billing connector's one ({@link org.sangam.ledger.LedgerPeriods#periodOr}, X1-08).
      */
     static String refundPeriod(LedgerTenantDefinitions definitions, String tenant, String requested) {
-        if (requested != null && !requested.isBlank() && !"current".equalsIgnoreCase(requested)) {
-            return requested;
-        }
         try {
-            return definitions.period(tenant, definitions.ledger().today(tenant));
+            return org.sangam.ledger.LedgerPeriods.periodOr(requested,
+                    () -> definitions.period(tenant, definitions.ledger().today(tenant)));
         } catch (FiscalYearNotConfiguredException e) {
             throw ApiProblem.unprocessable(FiscalYearNotConfiguredException.CODE, e.getMessage());
         }

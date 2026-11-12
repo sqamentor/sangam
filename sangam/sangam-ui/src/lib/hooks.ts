@@ -9,7 +9,8 @@ export interface AsyncState<T> {
   /** true after 10 s without a result ("Still loading", X.4.7.2). */
   slow: boolean;
   reload: () => void;
-  setData: (d: T) => void;
+  /** A value, or an update of the current value (safe when several updates arrive before a render, e.g. a stream). */
+  setData: (d: T | ((prev: T | undefined) => T)) => void;
 }
 
 export function useAsync<T>(fn: (signal: AbortSignal) => Promise<T>, deps: DependencyList, enabled = true): AsyncState<T> {

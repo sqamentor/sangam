@@ -24,13 +24,18 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-/** Schema (own changelog, five dialects) and token security (CELL ingests, DASHBOARD reads). */
+/**
+ * Schema (own changelog, five dialects) and token security (CELL ingests, TIER ingests including explicit metric
+ * events of a lower roll-up tier, DASHBOARD reads).
+ */
 @Configuration(proxyBeanMethods = false)
 public class RollupConfig {
 
@@ -51,11 +56,27 @@ public class RollupConfig {
                 .addFilterBefore(new TokenFilter(parse(props.tokens())), AnonymousAuthenticationFilter.class)
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/livez", "/readyz").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/ingest").hasAnyRole("CELL", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/ingest").hasAnyRole("CELL", "TIER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/rollup/**").hasAnyRole("DASHBOARD", "ADMIN")
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().denyAll());
         return http.build();
+    }
+
+    /**
+     * M-063: the caller may send explicit metric events (a lower roll-up tier, role TIER, or an operator, role ADMIN).
+     * A cell token (CELL) may not: one such event moves a total by more than one.
+     */
+    static boolean isTier(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        for (GrantedAuthority a : auth.getAuthorities()) {
+            if ("ROLE_TIER".equals(a.getAuthority()) || "ROLE_ADMIN".equals(a.getAuthority())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     record Grant(byte[] token, List<SimpleGrantedAuthority> roles, String name) {

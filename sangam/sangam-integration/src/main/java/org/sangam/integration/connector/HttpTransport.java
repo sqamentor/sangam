@@ -23,10 +23,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.sangam.core.engine.LockScope;
+
 /**
  * HTTP transport shared by the REST, SOAP, webhook and government connectors.
  *
  * <ul>
+ *   <li>SANGAM.md VI.1 rule 5 (owner decision 86): {@link #execute} refuses to call out while the thread's engine
+ *       command holds an L2 root lock ({@link LockScope}); there is no exception list.</li>
  *   <li>Connect and request timeouts; the request timeout never exceeds the caller's deadline.</li>
  *   <li>Optional mTLS ({@link TlsConfig}).</li>
  *   <li>Egress control on every hop (R27): redirects are followed manually, each hop re-checked, at most
@@ -185,13 +189,26 @@ public final class HttpTransport {
         return egress;
     }
 
+    /** Scheme, host and port of {@code uri}, for messages (never the path or query, which may carry a credential). */
+    private static String origin(URI uri) {
+        if (uri == null || uri.getHost() == null) {
+            return "?";
+        }
+        return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() == -1 ? "" : ":" + uri.getPort());
+    }
+
     /**
      * Performs the call with egress checks, redirects, bounded body and retries.
      *
      * @param tenantId       tenant whose allow-list applies
      * @param deadlineMillis epoch ms by which the call must end; 0 = none
+     * @throws LockScope.IllegalRemoteCallInLockScope the calling thread's engine command holds an L2 root lock
+     *         (SANGAM.md VI.1 rule 5, owner decision 86); nothing is sent. Remote work belongs in the outbox or an
+     *         external task, after commit.
      */
     public Outcome execute(String tenantId, Call call, long deadlineMillis) {
+        // VI.1 rule 5 (decision 86): no remote call while this thread's engine command holds an L2 root lock
+        LockScope.assertNoLockHeld("HTTP " + (call == null ? "?" : call.method() + " " + origin(call.uri())));
         int attempt = 1;
         while (true) {
             Outcome o = once(tenantId, call, deadlineMillis, attempt);

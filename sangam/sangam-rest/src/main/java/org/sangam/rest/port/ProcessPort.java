@@ -20,7 +20,16 @@ public interface ProcessPort {
                            Integer processDefinitionVersion, String businessKey, String tenantId, String state,
                            boolean ended, Instant startTime, Instant endTime, List<String> activeActivityIds,
                            long caseVersion, String startedBy, String businessStatus, String superProcessInstanceId,
-                           String rootProcessInstanceId) {
+                           String rootProcessInstanceId,
+                           @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                           String traceId) {
+
+        /** M-044: the same instance with the recorded W3C trace id of its starting command (null: none recorded). */
+        public ProcessInstance withTraceId(String recorded) {
+            return new ProcessInstance(id, processDefinitionId, processDefinitionKey, processDefinitionVersion,
+                    businessKey, tenantId, state, ended, startTime, endTime, activeActivityIds, caseVersion, startedBy,
+                    businessStatus, superProcessInstanceId, rootProcessInstanceId, recorded);
+        }
     }
 
     record ProcessFilter(String key, String businessKey, String state, Instant startedAfter, Instant startedBefore,

@@ -81,8 +81,57 @@ public final class TenantAdminService {
         return List.copyOf(codes);
     }
 
+    /** {@code isolation}: SHARED, SCHEMA or DATABASE ({@code SEC_TENANT.isolation}, decision 97). */
     public record Tenant(String tenantId, String nameEn, String nameHi, String nameLocal, String hostingProfile, String status,
-                         Map<String, Object> config, Map<String, Object> quotas, boolean fourEyes) {
+                         Map<String, Object> config, Map<String, Object> quotas, boolean fourEyes, String isolation) {
+
+        /** A tenant without a stored isolation is SHARED (the column default). */
+        public Tenant(String tenantId, String nameEn, String nameHi, String nameLocal, String hostingProfile, String status,
+                      Map<String, Object> config, Map<String, Object> quotas, boolean fourEyes) {
+            this(tenantId, nameEn, nameHi, nameLocal, hostingProfile, status, config, quotas, fourEyes, SHARED);
+        }
+    }
+
+    public static final String SHARED = "SHARED";
+    public static final String SCHEMA = "SCHEMA";
+    public static final String DATABASE = "DATABASE";
+    public static final List<String> ISOLATIONS = List.of(SHARED, SCHEMA, DATABASE);
+
+    /** M-016: the one tenant this instance serves when it is a dedicated instance; null on a shared instance. */
+    private volatile String dedicatedTenant;
+
+    /**
+     * Marks this instance as dedicated to {@code tenantId} ({@code sangam.tenancy.dedicated-tenant}); blank = shared.
+     * A dedicated instance creates no tenant but its own, and records that one with isolation DATABASE.
+     */
+    public void useDedicatedTenant(String tenantId) {
+        this.dedicatedTenant = tenantId == null || tenantId.isBlank() ? null : tenantId.trim();
+    }
+
+    /** A stored isolation as read; a NULL from a database without the column default is SHARED. */
+    private static String isolation(String stored) {
+        return stored == null || stored.isBlank() ? SHARED : stored.trim().toUpperCase(java.util.Locale.ROOT);
+    }
+
+    /** The validated isolation (upper case); null means the default of this instance. */
+    String isolationFor(String tenantId, String requested) {
+        String iso = requested == null || requested.isBlank() ? null : requested.trim().toUpperCase(java.util.Locale.ROOT);
+        if (iso != null && !ISOLATIONS.contains(iso)) {
+            throw new SangamSecurityException.AdminConflict("INVALID_ISOLATION", "isolation must be one of " + ISOLATIONS);
+        }
+        String dedicated = dedicatedTenant;
+        if (dedicated == null) {
+            return iso == null ? SHARED : iso;
+        }
+        if (!dedicated.equals(tenantId)) {
+            throw new SangamSecurityException.AdminConflict("DEDICATED_INSTANCE", "this instance is dedicated to tenant "
+                    + dedicated + "; other tenants are created on a shared instance");
+        }
+        if (iso != null && !DATABASE.equals(iso)) {
+            throw new SangamSecurityException.AdminConflict("INVALID_ISOLATION",
+                    "the tenant of a dedicated instance has isolation DATABASE, not " + iso);
+        }
+        return DATABASE;
     }
 
     private final SecurityDialect dialect;
@@ -137,21 +186,33 @@ public final class TenantAdminService {
 
     public Tenant createTenant(Connection c, SecurityIdentity platformAdmin, String tenantId, String nameEn, String nameHi,
                                String nameLocal, String hostingProfile, Map<String, Object> quotas) {
+        return createTenant(c, platformAdmin, tenantId, nameEn, nameHi, nameLocal, hostingProfile, quotas, null);
+    }
+
+    /**
+     * Creates a tenant with its isolation (SHARED, SCHEMA or DATABASE; null = SHARED, or DATABASE on a dedicated
+     * instance). A dedicated instance refuses every other tenant ({@code 409 DEDICATED_INSTANCE}).
+     */
+    public Tenant createTenant(Connection c, SecurityIdentity platformAdmin, String tenantId, String nameEn, String nameHi,
+                               String nameLocal, String hostingProfile, Map<String, Object> quotas, String isolation) {
         requirePlatformAdmin(platformAdmin);
         validateQuotas(quotas);
         if (!tenantId.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,59}")) {
             throw new SangamSecurityException.AdminConflict("INVALID_TENANT_ID", "tenant id must be 1-60 safe characters");
         }
+        String iso = isolationFor(tenantId, isolation);
         if (!Sql.insertIfAbsent(c, dialect, "INSERT INTO SEC_TENANT(tenant_id, name_en, name_hi, name_local, hosting_profile, status,"
-                        + " config, quotas, four_eyes, created_at, activated_at) VALUES (?,?,?,?,?,'CREATED','{}',?,1,?,NULL)",
+                        + " config, quotas, four_eyes, created_at, activated_at, isolation)"
+                        + " VALUES (?,?,?,?,?,'CREATED','{}',?,1,?,NULL,?)",
                 tenantId, nameEn, nameHi, nameLocal, hostingProfile, Sql.toJson(quotas == null ? Map.of() : quotas),
-                Sql.dbNow(c, dialect))) {
+                Sql.dbNow(c, dialect), iso)) {
             throw new SangamSecurityException.AdminConflict("TENANT_EXISTS", "tenant " + tenantId + " exists");
         }
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("tenant", tenantId);
         p.put("name_en", nameEn);
         p.put("hosting_profile", hostingProfile);
+        p.put("isolation", iso);
         audit.securityIn(c, tenantId, platformAdmin, SecurityEventType.TENANT_CREATED, p);
         return find(c, tenantId).orElseThrow();
     }
@@ -210,34 +271,53 @@ public final class TenantAdminService {
     }
 
     public Optional<Tenant> find(Connection c, String tenantId) {
-        return Jdbc.one(c, "SELECT tenant_id, name_en, name_hi, name_local, hosting_profile, status, config, quotas, four_eyes"
+        return Jdbc.one(c, "SELECT tenant_id, name_en, name_hi, name_local, hosting_profile, status, config, quotas, four_eyes, isolation"
                         + " FROM SEC_TENANT WHERE tenant_id=?",
                 rs -> new Tenant(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
-                        rs.getString(6), Sql.jsonMap(rs.getString(7)), Sql.jsonMap(rs.getString(8)), rs.getInt(9) == 1),
+                        rs.getString(6), Sql.jsonMap(rs.getString(7)), Sql.jsonMap(rs.getString(8)), rs.getInt(9) == 1, isolation(rs.getString(10))),
                 tenantId);
     }
 
     public List<Tenant> list(Connection c, SecurityIdentity platformAdmin) {
         requirePlatformAdmin(platformAdmin);
-        return Jdbc.query(c, "SELECT tenant_id, name_en, name_hi, name_local, hosting_profile, status, config, quotas, four_eyes"
+        return Jdbc.query(c, "SELECT tenant_id, name_en, name_hi, name_local, hosting_profile, status, config, quotas, four_eyes, isolation"
                         + " FROM SEC_TENANT ORDER BY tenant_id",
                 rs -> new Tenant(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
-                        rs.getString(6), Sql.jsonMap(rs.getString(7)), Sql.jsonMap(rs.getString(8)), rs.getInt(9) == 1));
+                        rs.getString(6), Sql.jsonMap(rs.getString(7)), Sql.jsonMap(rs.getString(8)), rs.getInt(9) == 1, isolation(rs.getString(10))));
     }
 
-    /** What a background schedule needs of a tenant (SL-117): its id and lifecycle status, no admin data. */
-    public record SystemTenant(String tenantId, String status) {
+    /**
+     * What a background schedule or a request filter needs of a tenant (SL-117, decision 97): its id, lifecycle status
+     * and isolation (SHARED, SCHEMA or DATABASE), no admin data.
+     */
+    public record SystemTenant(String tenantId, String status, String isolation) {
+        /** A tenant on shared isolation (the column default). */
+        public SystemTenant(String tenantId, String status) {
+            this(tenantId, status, SHARED);
+        }
     }
 
     /**
      * SL-117: the read-only tenant listing for background schedules (compliance, channels, AI worker, field, ops). Only
-     * the system principal ({@link SecurityIdentity#system()}) may call it; it returns ids and statuses only. The
-     * platform-admin listing {@link #list} and its guard are unchanged.
+     * the system principal ({@link SecurityIdentity#system()}) may call it; it returns ids, statuses and isolations
+     * only. The platform-admin listing {@link #list} and its guard are unchanged.
      */
     public List<SystemTenant> listForSystem(Connection c, SecurityIdentity system) {
         requireSystem(system);
-        return Jdbc.query(c, "SELECT tenant_id, status FROM SEC_TENANT ORDER BY tenant_id",
-                rs -> new SystemTenant(rs.getString(1), rs.getString(2)));
+        return Jdbc.query(c, "SELECT tenant_id, status, isolation FROM SEC_TENANT ORDER BY tenant_id",
+                rs -> new SystemTenant(rs.getString(1), rs.getString(2), isolation(rs.getString(3))));
+    }
+
+    /**
+     * Decision 97: the read-only system view of one tenant (id, status, isolation), for the shared-instance isolation
+     * check that runs before any user permission is known. Only the system principal may call it; it reads nothing
+     * else and changes nothing. Empty when the tenant does not exist.
+     */
+    public Optional<SystemTenant> findForSystem(Connection c, SecurityIdentity system, String tenantId) {
+        requireSystem(system);
+        List<SystemTenant> rows = Jdbc.query(c, "SELECT tenant_id, status, isolation FROM SEC_TENANT WHERE tenant_id = ?",
+                rs -> new SystemTenant(rs.getString(1), rs.getString(2), isolation(rs.getString(3))), tenantId);
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
     }
 
     /** Requests are served only for tenants that exist and are not suspended (CREATED/CONFIGURED allow admin set-up). */

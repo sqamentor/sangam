@@ -147,7 +147,7 @@ jobs:
       - if: steps.d.outputs.present == 'true'
         working-directory: sangam/sdks/typescript
         run: |
-          npm ci --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
           npm run --if-present lint
           npm run build
           npm test --if-present
@@ -172,6 +172,58 @@ jobs:
           # no composer.lock in a library: the exact phpunit is pinned here (composer update --with, Composer >= 2.2)
           composer update --no-interaction --prefer-dist --with phpunit/phpunit:11.5.0
           vendor/bin/phpunit
+
+  # M-027 framework adapters (the FastAPI adapter is deferred past 0.1.0, decision 131: no job). Each uses only the toolchain and versions of its SDK job above; no new actions.
+  dotnet-hosting:
+    name: .NET Sangam.Sdk.Hosting adapter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        shell: bash
+        run: if [ -f sangam/sdks/dotnet/src/Sangam.Sdk.Hosting/Sangam.Sdk.Hosting.csproj ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::Sangam.Sdk.Hosting not present"; fi
+      - uses: actions/setup-dotnet@v4
+        id: sdk
+        if: steps.d.outputs.present == 'true'
+        with: { dotnet-version: "8.0.404" }
+      - if: steps.d.outputs.present == 'true'
+        working-directory: sangam/sdks/dotnet
+        run: |
+          # same SDK pin as the dotnet job (global.json, see there); Microsoft.AspNetCore.App is a framework reference
+          dotnet new globaljson --force --sdk-version "${{ steps.sdk.outputs.dotnet-version }}" --roll-forward latestPatch
+          dotnet restore tests/Sangam.Sdk.Tests/Sangam.Sdk.Tests.csproj
+          dotnet build --no-restore -c Release tests/Sangam.Sdk.Tests/Sangam.Sdk.Tests.csproj
+          dotnet test --no-build -c Release tests/Sangam.Sdk.Tests/Sangam.Sdk.Tests.csproj --filter "FullyQualifiedName~Sangam.Sdk.Tests.Hosting" --logger trx
+          # decision 132 (C-17): Sangam.Sdk.Hosting stays source only in 0.1.0; tested here, never packed or published
+
+  typescript-nestjs:
+    name: TypeScript NestJS adapter
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        shell: bash
+        run: if [ -f sangam/sdks/typescript-nestjs/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::sdks/typescript-nestjs not present"; fi
+      - uses: actions/setup-node@v4
+        if: steps.d.outputs.present == 'true'
+        with: { node-version: "22", cache: npm, cache-dependency-path: sangam/sdks/typescript/package-lock.json }
+      - if: steps.d.outputs.present == 'true'
+        working-directory: sangam/sdks
+        run: |
+          # The adapter has no dependencies of its own to install: TypeScript and @types/node come from the SDK's lockfile
+          # (npm ci there) and @sangam/sdk is this tree's SDK build. @nestjs is a peer dependency the adapter never imports.
+          (cd typescript && npm ci --ignore-scripts --no-audit --no-fund && npm run build)
+          cd typescript-nestjs
+          mkdir -p node_modules/@sangam
+          ln -sfn ../../../typescript node_modules/@sangam/sdk
+          TSC=../typescript/node_modules/typescript/bin/tsc
+          TYPES=../typescript/node_modules/@types
+          node "$TSC" -p tsconfig.check.json --noEmit --typeRoots "$TYPES"
+          node "$TSC" -p tsconfig.json --typeRoots "$TYPES"
+          node "$TSC" -p test/tsconfig.json --typeRoots "$TYPES"
+          node --test build-test/test/*.test.js
 
   codegen:
     # M-020: the typed surface of all five Tier-1 SDKs is generated from the contract; a stale tree fails here.
@@ -286,7 +338,7 @@ jobs:
         run: |
           (cd dotnet && dotnet new globaljson --force --sdk-version "${{ steps.dotnet.outputs.dotnet-version }}" --roll-forward latestPatch && dotnet build examples/Ac08Worker -c Release)
           python -m pip install -e python
-          (cd typescript && npm ci --no-audit --no-fund && npx tsc -p examples/tsconfig.json)
+          (cd typescript && npm ci --ignore-scripts --no-audit --no-fund && npx tsc -p examples/tsconfig.json)
           (cd php && composer install --no-interaction --prefer-dist --no-dev)
       - name: Run the harness
         working-directory: sangam

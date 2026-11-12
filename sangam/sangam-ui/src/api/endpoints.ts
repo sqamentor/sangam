@@ -25,9 +25,12 @@ function sortParams(sort?: string): Query {
   return { sortBy: keys.map((k) => k.replace(/^-/, '')).join(','), sortOrder: keys.map((k) => (k.startsWith('-') ? 'desc' : 'asc')).join(',') };
 }
 
-/** Inbox columns → the contract's task sort keys. */
-const TASK_SORT: Record<string, string> = { received: 'created', created: 'created', slaDue: 'due', due: 'due', priority: 'priority', subject: 'name', name: 'name' };
-function taskSort(sort?: string): string | undefined {
+/**
+ * Inbox columns → the contract's task sort keys. M-042: amount and reference sort on the typed task-index column
+ * (W3-G) through sortBy=amount / sortBy=reference (W3-M contract REQUEST, WAVE3-SYNC-BOARD 2026-11-12T11:28:00Z).
+ */
+const TASK_SORT: Record<string, string> = { received: 'created', created: 'created', slaDue: 'due', due: 'due', priority: 'priority', subject: 'name', name: 'name', amount: 'amount', reference: 'reference' };
+export function taskSort(sort?: string): string | undefined {
   const out = (sort ?? '').split(',').filter(Boolean).flatMap((k) => {
     const m = TASK_SORT[k.replace(/^-/, '')];
     return m ? [(k.startsWith('-') ? '-' : '') + m] : [];
@@ -72,8 +75,12 @@ export const api = {
 
   // ------------------------------------------------------------ tasks
   tasks: {
-    /** GET /tasks. Inbox sections map onto contract filters; `section` is also sent for the richer server. */
-    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[] }) => {
+    /**
+     * GET /tasks. Inbox sections map onto contract filters; `section` is also sent for the richer server. M-042:
+     * `currency` (ISO 4217) keeps only tasks whose indexed amount is in that currency; the server requires it with
+     * sortBy=amount (400 VALIDATION_FAILED otherwise), and the inbox only offers the amount sort once one is chosen.
+     */
+    list: async (q: ListQuery & { section?: T.TaskSection; packKey?: string; slaState?: string; seatId?: string; variableNames?: string[]; currency?: string }) => {
       const s = q.section;
       const mapped: Query = {
         page: q.page,
@@ -87,6 +94,7 @@ export const api = {
         state: s === 'ESCALATED' || s === 'RETURNED' ? s : undefined,
         seatId: q.seatId,
         variableNames: q.variableNames?.length ? q.variableNames : undefined, // P45 card variables
+        currency: q.currency || undefined,
         ...sortParams(taskSort(q.sort)),
       };
       return A.mapPage(await http.page<Record<string, unknown>>('/tasks', mapped), A.normTask);
@@ -365,6 +373,11 @@ export const api = {
       http.post<{ ahead: number; behind: number; conflicts: string[] }>(`/packages/${enc(id)}/git/${direction}`, { message }),
     comments: (id: string) => http.get<T.Comment[]>(`/packages/${enc(id)}/comments`),
     addComment: (id: string, text: string, elementId?: string) => http.post<T.Comment>(`/packages/${enc(id)}/comments`, { text, elementId }),
+    /** M-068 listApiContracts: the latest version of each API contract stored for the package (package.read). */
+    contracts: (id: string) => http.get<T.ApiContractSummary[]>(`/packages/${enc(id)}/contracts`),
+    /** M-068 listApiContractOperations: the operations of one contract version (the latest without one), for the picker. */
+    contractOperations: (id: string, contractId: string, version?: number) =>
+      http.get<T.ContractOperation[]>(`/packages/${enc(id)}/contracts/${enc(contractId)}/operations`, { version }),
     assess: (files: File[]) => {
       const f = new FormData();
       files.forEach((x) => f.append('files', x, x.name));
@@ -556,6 +569,14 @@ export const api = {
     save: <R extends { id?: string }>(path: string, r: R) => (r.id ? http.put<R>(`${path}/${enc(r.id)}`, r) : http.post<R>(path, r)),
     remove: (path: string, id: string, reason: string) => http.del<void>(`${path}/${enc(id)}`, { reason }),
     action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(`${path}/${enc(id)}/${action}`, body),
+  },
+  /**
+   * M-021 test-mode clock (contract tag TestMode, group sangam-admin): getTestClock (admin.read) and changeTestClock
+   * (admin.write, idempotent, audited TEST_CLOCK_CHANGED). Both answer 404 unless the server runs in test mode.
+   */
+  testMode: {
+    clock: () => http.get<T.TestClock>('/test-mode/clock'),
+    change: (b: T.TestClockChange, key?: string) => http.post<T.TestClock>('/test-mode/clock', b, key),
   },
 
   // ------------------------------------------------------------ analytics (R65, R66, R79)

@@ -88,6 +88,8 @@ Paths are under `src/main/java/org/sangam/compliance/`. CMP ids refer to the IN 
 | `accountability/AccountabilityService` | Elevated-tier designation, impact assessments every 12 months, periodic audit evidence (CMP-032-034, 073-075, 097, 101, 105, 107, 109, 126, 131). |
 | `transfer/DataLocalisationPolicy`, `CrossBorderTransferGuard` | Localisation findings and the transfer rule chain, recorded and audited (CMP-042, 075, 080, 104, 125, 131, 132, 142, 145, 150). |
 | `identity/NationalIdGuard` | Aadhaar detection (Verhoeff), masking, redaction, vault tokenising and a variable guard (CMP-140-142). |
+| `identity/EncryptedNationalIdVault` | M-078: the `NationalIdVault` port on table `CMP_NATIONAL_ID_VAULT` (changeset 0043-03). The number is stored only as a `FieldEncryptor` envelope bound to the context `national-id:<type>:<reference>`; lookup is a keyed HMAC-SHA256 (pepper of at least 16 bytes) of tenant, type and number, so the same number gets the same reference key. The mask keeps the pack's last digits. Vaulting and every reveal (with purpose and actor) are audited (`CMP_NATIONAL_ID_VAULTED`, `CMP_NATIONAL_ID_REVEALED`). No biometric data is stored. |
+| `accountability/ProcessorAgreementTemplate`, `resources/.../IN/agreements/processor-agreement_en.md` | M-087: the data-processor agreement template of the pack (`processorAgreementTemplates` in `pack.json`), filled from named placeholders; a missing or blank value is refused. The template is PdfMarkup text, so the PDF/A renderer (M-081) can render it. |
 | `security/SecurityPracticesChecklist` | The pack checklist evaluated from deployment facts (CMP-054-060, 097-107, 126, 139). |
 | `report/ObligationCatalogue`, `ComplianceEvidenceReportGenerator` | Evidence report in JSON and HTML, with an automated status per obligation, hashed and stored in `CMP_REPORT` (CMP-022, 082, 089). |
 | `bpmn/ComplianceSteps`, `ComplianceStepDelegate`, `ComplianceRuntime` | Service-task steps for the packs. |
@@ -191,6 +193,15 @@ jackson-databind and slf4j, all Apache-2.0.
   | `sangam-breach-incident` | `DPO`, `CISO` | `BreachIncidentService.register` |
   | `sangam-incident-report` | `CISO`, `CISO-HEAD` | `IncidentReportingService` (also checked by a breach registration that links an incident) |
   | `sangam-breach-notification-plan` | `PRIVACY-OFFICER` | `BreachNotificationPlanner.start`, once, right after the breach is registered, and only where the tenant's jurisdiction defines breach notification rules or risk factors (`BreachNotificationPlanner.applies`; owner decision 2026-11-12: for example EU-GDPR and US-HIPAA; IN keeps its fixed-step flow and needs no `PRIVACY-OFFICER` seat) |
+- **Verifier and vault binding (M-078, M-087), coded 2026-11-12, tests not run.** `ComplianceWiring` (sangam-server)
+  passes the `AdultIdentityVerifier`, `GuardianshipVerifier` and `NationalIdVault` beans to the facade when exactly one
+  of each exists (the DigiLocker wiring publishes the adult verifier). The vault bean is on only when
+  `sangam.compliance.national-id-vault.hmac-pepper` (Base64, at least 16 bytes) is set, and it refuses to start without
+  a `FieldEncryptor`. Owner decision 68: no guardianship verifier ships, so a lawful-guardian verification is refused
+  before anything is written and guardian-dependent consent fails closed (`GuardianVerifierFailClosedH2Test`); an
+  officer-attested verifier is a later item after legal review. Owner decision 67: Aadhaar authentication goes through
+  the AUA-neutral `AadhaarSubAuaConnector` and its simulator in sangam-integration (consent first, no biometrics, yes/no
+  answer only); a per-AUA adapter follows once the AUA is named.
 - **Consent managers.** No integration with an actual registered Consent Manager exists. None is registered with the
   Board yet.
 - **Not in Sangam's scope.** Cloud/VPN KYC record keeping (CERT-In para (v)/(vi)) and other deployer-only obligations

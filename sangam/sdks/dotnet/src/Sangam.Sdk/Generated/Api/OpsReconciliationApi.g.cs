@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Ops /reconciliation (9 operations).
+/// Typed operations of Ops /reconciliation (6 operations).
 /// </summary>
 public sealed class OpsReconciliationApi
 {
@@ -85,39 +85,5 @@ public sealed class OpsReconciliationApi
         var req = ApiRequest.Post($"/ops/reconciliation/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/evidence");
         if (body is not null) req.WithContent(GeneratedCalls.Multipart(body));
         return await _calls.JsonAsync<M.Evidence?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Parked inbound messages
-    /// Open POISON_INBOUND items of the caller's tenant whose message was parked because the tenant moved or was purged (PoisonInbound.listOpen, parked = true).
-    /// GET /ops/reconciliation/parked-inbound (operationId listParkedInbound); permission ops.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.PoisonInboundItem>?> ListParkedInboundAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops/reconciliation/parked-inbound");
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.PoisonInboundItem>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// View a parked inbound message
-    /// The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
-    /// GET /ops/reconciliation/parked-inbound/{itemId} (operationId getParkedInbound); permission ops.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.PoisonInboundParked?> GetParkedInboundAsync(string itemId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops/reconciliation/parked-inbound/{HttpTransport.Seg(GeneratedCalls.Str(itemId)!)}");
-        return await _calls.JsonAsync<M.PoisonInboundParked?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Replay a parked inbound message
-    /// Hands the message, with its original id, type and key, to the tenant's new cell; then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over leaves the item open; a repeat is deduplicated by the target inbox (PoisonInbound.replayParked).
-    /// POST /ops/reconciliation/parked-inbound/{itemId}/replay (operationId replayParkedInbound); permission recon.resolve; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task ReplayParkedInboundAsync(string itemId, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/ops/reconciliation/parked-inbound/{HttpTransport.Seg(GeneratedCalls.Str(itemId)!)}/replay");
-        if (body is not null) req.WithBody(body);
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

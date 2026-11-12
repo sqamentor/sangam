@@ -60,6 +60,9 @@ spec:
               value: {{ .Values.ui.environmentLabel | quote }}
             - name: SANGAM_CSP_CONNECT_EXTRA
               value: {{ .Values.ui.cspConnectExtra | quote }}
+            # M-044: trace viewer link template with {traceId} (/config.json traceUrlTemplate); empty = no links
+            - name: SANGAM_TRACE_URL_TEMPLATE
+              value: {{ .Values.ui.traceUrlTemplate | quote }}
           livenessProbe:
             httpGet: { path: /healthz, port: http }
             periodSeconds: 10

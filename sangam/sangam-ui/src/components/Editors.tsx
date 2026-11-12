@@ -26,6 +26,8 @@ import '@bpmn-io/form-js-editor/dist/assets/form-js-editor.css';
 import '@bpmn-io/form-js-viewer/dist/assets/form-js.css';
 import { ProblemAlert } from './ui';
 import { ElementTemplatePanel, type ModelerLike, type Selected } from './ElementTemplatePanel';
+import { TemplatePalette } from './TemplatePalette';
+import { FormComponentPanel, type FormEditorLike } from './FormComponentPanel';
 
 export interface EditorHandle {
   getContent: () => Promise<string>;
@@ -56,7 +58,8 @@ export const EMPTY_DMN = `<?xml version="1.0" encoding="UTF-8"?>
 
 export const EMPTY_FORM = JSON.stringify({ type: 'default', schemaVersion: 16, components: [] }, null, 2);
 
-export function BpmnEditor({ xml, onReady, onChange, height = 560 }: { xml: string; onReady: (h: EditorHandle) => void; onChange?: () => void; height?: number }) {
+/** packageId: the package being edited, for the M-068 operation picker of the template fields (none outside a package). */
+export function BpmnEditor({ xml, onReady, onChange, height = 560, packageId }: { xml: string; onReady: (h: EditorHandle) => void; onChange?: () => void; height?: number; packageId?: string }) {
   const { t } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
   const [err, setErr] = useState<Error>();
@@ -89,7 +92,8 @@ export function BpmnEditor({ xml, onReady, onChange, height = 560 }: { xml: stri
       <ProblemAlert error={err} />
       <div ref={host} className="bpmn-host" style={{ height }} tabIndex={0} aria-label={t('modeller.bpmnCanvas')} />
       <p className="hint">{t('modeller.editorKeyboardHint')}</p>
-      <ElementTemplatePanel modeler={modeler} selected={selected} />
+      <TemplatePalette modeler={modeler} packageId={packageId} />
+      <ElementTemplatePanel modeler={modeler} selected={selected} packageId={packageId} />
     </div>
   );
 }
@@ -140,9 +144,12 @@ export function FormBuilder({ schema, onReady, onChange, height = 560 }: { schem
   const [err, setErr] = useState<Error>();
   const changeRef = useRef(onChange);
   changeRef.current = onChange;
+  // C3-14: the editor, for the form-component templates panel
+  const [editor, setEditor] = useState<FormEditorLike | null>(null);
   useEffect(() => {
     if (!host.current) return;
     const ed = new FormEditor({ container: host.current });
+    setEditor(ed as unknown as FormEditorLike);
     let parsed: unknown;
     try {
       parsed = JSON.parse(schema || EMPTY_FORM);
@@ -161,6 +168,7 @@ export function FormBuilder({ schema, onReady, onChange, height = 560 }: { schem
       <ProblemAlert error={err} />
       <div ref={host} className="form-host" style={{ minHeight: height }} aria-label={t('modeller.formCanvas')} />
       <p className="hint">{t('modeller.formI18nHint')}</p>
+      <FormComponentPanel editor={editor} onInserted={() => changeRef.current?.()} />
     </div>
   );
 }

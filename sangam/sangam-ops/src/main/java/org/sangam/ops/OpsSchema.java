@@ -119,6 +119,7 @@ public final class OpsSchema {
               chunk_count     {int} NOT NULL,
               total_rows      {long} NOT NULL,
               created_by      {str},
+              creator_identity {text},
               created_at      {ts} NOT NULL,
               updated_at      {ts} NOT NULL,
               closed_at       {ts},

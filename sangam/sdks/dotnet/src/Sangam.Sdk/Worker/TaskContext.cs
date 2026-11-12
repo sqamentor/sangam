@@ -116,6 +116,27 @@ public sealed class TaskContext
     /// <summary>Cooperative checkpoint.</summary>
     public void ThrowIfCancelled() => Cts.Token.ThrowIfCancellationRequested();
 
+    /// <summary>
+    /// Durable step (M-025, R37): runs <paramref name="fn"/> at most once per successful outcome of this work's operation,
+    /// as far as the step journal can tell. A step that an earlier attempt recorded <c>SUCCEEDED</c> is not called again;
+    /// its recorded result is decoded to <typeparamref name="T"/> (R33 typed values unwrapped as in
+    /// <see cref="Variable{T}"/>) and returned. The call should send <see cref="Step.IdempotencyKey"/> to the remote API.
+    /// <para>
+    /// <b>NOT exactly-once for remote APIs.</b> The journal is written before (<c>INTENT</c>) and after
+    /// (<c>SUCCEEDED</c>) the remote call; a crash between the two leaves <c>INTENT</c>. The next attempt then looks the
+    /// outcome up, runs again only when the call is idempotent, or reports outcome-unknown (<see cref="StepOptions{T}"/>),
+    /// never re-issuing blindly. Default options are capability class (c).
+    /// </para>
+    /// A 409 STALE_LEASE or 410 from the journal marks the lease lost (<see cref="IsLeaseLost"/>) and throws
+    /// <see cref="OperationCanceledException"/>.
+    /// </summary>
+    /// <param name="name">step name, unique within the work's operation (1-128 printable ASCII)</param>
+    /// <param name="fn">the side-effecting call (<see cref="StepCall{T}"/>)</param>
+    /// <param name="options">recovery options of the call's capability class; null = class (c)</param>
+    /// <param name="cancellationToken">token for the journal calls and <paramref name="fn"/>; none = <see cref="CancellationToken"/></param>
+    public Task<T> StepAsync<T>(string name, StepCall<T> fn, StepOptions<T>? options = null, CancellationToken cancellationToken = default) =>
+        DurableSteps.RunAsync(this, name, fn, options, cancellationToken);
+
     /// <summary>Logger whose lines always carry workerId, workId, topic, operationId, attemptId, lockVersion, businessKey.</summary>
     public ISangamLogger Logger { get; }
     public IReadOnlyDictionary<string, object?> LogFields { get; }

@@ -600,6 +600,41 @@ export interface AnalyticsSummary {
 }
 
 /**
+ * One stored contract version with its document (ApiContractStore.ApiContract).
+ *
+ * Schema `ApiContract`.
+ */
+export interface ApiContract {
+  tenantId?: string;
+  packageId: string;
+  contractId: string;
+  version: number;
+  /**  One of: OPENAPI, ASYNCAPI. */
+  format: 'OPENAPI' | 'ASYNCAPI';
+  specVersion?: string;
+  sha256: string;
+  document: Record<string, unknown>;
+}
+
+/**
+ * One stored contract version (ApiContractStore.ApiContract without the document).
+ *
+ * Schema `ApiContractSummary`.
+ */
+export interface ApiContractSummary {
+  tenantId?: string;
+  packageId: string;
+  contractId: string;
+  version: number;
+  /**  One of: OPENAPI, ASYNCAPI. */
+  format: 'OPENAPI' | 'ASYNCAPI';
+  /** The document's openapi or asyncapi field, e.g. 3.1.0 or 2.6.0 */
+  specVersion?: string;
+  /** SHA-256 (hex) of the stored document */
+  sha256: string;
+}
+
+/**
  * Appeal a decision.
  *
  * Schema `AppealRequest`.
@@ -1036,6 +1071,68 @@ export interface BookingModelWaitlistRequest {
   attributes?: Record<string, unknown>;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
+}
+
+/**
+ * A break-glass grant (M-084).
+ *
+ * Schema `BreakGlassGrant`.
+ */
+export interface BreakGlassGrant {
+  grantId: string;
+  tokenClass: string;
+  holderPersonId: string;
+  requestedBy?: string;
+  reason?: string;
+  /**  One of: REQUESTED, ISSUED, REJECTED. */
+  status: 'REQUESTED' | 'ISSUED' | 'REJECTED';
+  requiredApprovals?: number;
+  approvals?: Array<Record<string, unknown>>;
+  validMinutes?: number;
+  issuedAt?: string;
+  expiresAt?: string;
+  firstUsedAt?: string;
+  lastUsedAt?: string;
+  useCount?: number;
+  /**  One of: NONE, PENDING, DONE. */
+  reviewStatus?: 'NONE' | 'PENDING' | 'DONE';
+  reviewedBy?: string;
+  /**  One of: ACCEPTED, ESCALATED. */
+  reviewOutcome?: 'ACCEPTED' | 'ESCALATED';
+  reviewedAt?: string;
+}
+
+/**
+ * The last required approval issued the token: it is shown here once and never again.
+ *
+ * Schema `BreakGlassIssued`.
+ */
+export interface BreakGlassIssued {
+  grant: BreakGlassGrant;
+  token: string;
+  expiresAt: string;
+}
+
+/**
+ * Request a break-glass grant.
+ *
+ * Schema `BreakGlassRequest`.
+ */
+export interface BreakGlassRequest {
+  tokenClass: string;
+  holderPersonId: string;
+  reason: string;
+}
+
+/**
+ * Post-use review of a grant.
+ *
+ * Schema `BreakGlassReview`.
+ */
+export interface BreakGlassReview {
+  /**  One of: ACCEPTED, ESCALATED. */
+  outcome: 'ACCEPTED' | 'ESCALATED';
+  notes?: string;
 }
 
 /**
@@ -2837,6 +2934,18 @@ export interface ChannelSendMessage {
 }
 
 /**
+ * Slack Events API answer: challenge for url_verification, otherwise the delivery counts.
+ *
+ * Schema `ChannelSlackHookResult`.
+ */
+export interface ChannelSlackHookResult {
+  challenge?: string;
+  accepted?: number;
+  duplicates?: number;
+  notOptedIn?: number;
+}
+
+/**
  * Runtime state of a channel entry: ACTIVE, NO_ADAPTER or INVALID.
  *
  * Schema `ChannelStatus`.
@@ -3717,6 +3826,27 @@ export interface ConsequencePreview {
   requiresFourEyes?: boolean;
   affectedCount?: number;
   limitExceeded?: boolean;
+}
+
+/**
+ * One operation of a contract (ContractOperations.Operation without the document): method and path for OpenAPI, action and channel for AsyncAPI; schemas have their local references inlined.
+ *
+ * Schema `ContractOperation`.
+ */
+export interface ContractOperation {
+  operationId: string;
+  /**  One of: OPENAPI, ASYNCAPI. */
+  format: 'OPENAPI' | 'ASYNCAPI';
+  method?: string;
+  path?: string;
+  action?: string;
+  channel?: string;
+  summary?: string;
+  /** JSON body schema (OpenAPI) or message payload schema (AsyncAPI) */
+  requestSchema?: Record<string, unknown>;
+  /** Response body schema by HTTP status code (OpenAPI only) */
+  responseSchemas?: Record<string, unknown>;
+  servers?: Array<string>;
 }
 
 /**
@@ -6874,7 +7004,7 @@ export interface PackageSignature {
   alg?: 'Ed25519';
   /** Id of the signing key (per purpose and environment, Q-04); the key itself never leaves the secret provider */
   keyId?: string;
-  /** Base64 signature over the raw 32-byte package hash */
+  /** Base64 Ed25519 signature over the UTF-8 of JCS({packageHash, role, principalId, seatId, signedAt}), signedAt ISO-8601 UTC with at most millisecond precision; a signature relabelled to another role, signer, seat or time does not verify (BAD_SIGNATURE) */
   signature?: string;
   signedAt?: string;
 }
@@ -7067,6 +7197,20 @@ export interface PgCampaignResult {
   offices?: number;
   created?: number;
   processesStarted?: number;
+}
+
+/**
+ * The current published programme configuration (Java IndicatorRegistry.Current, C3-09).
+ *
+ * Schema `PgCurrentConfig`.
+ */
+export interface PgCurrentConfig {
+  version: number;
+  contentHash: string;
+  definedBy?: string;
+  definedAt?: string;
+  /** The configuration object as it was published: the body PUT /programme-config took (fiscalYearStartMonth, fiscalStartDay, indicators, returns,...). */
+  config: Record<string, unknown>;
 }
 
 /**
@@ -7832,6 +7976,8 @@ export interface ProcessInstance {
   businessStatus?: string;
   superProcessInstanceId?: string;
   rootProcessInstanceId?: string;
+  /** M-044 (decision 57): W3C trace id (32 lowercase hex) of the command that started the instance; absent when none was recorded. The UI links it through config traceUrlTemplate. */
+  traceId?: string;
 }
 
 /**
@@ -8067,6 +8213,15 @@ export interface RandomSelectorCandidate {
  */
 export interface ReasonRequest {
   reason: string;
+}
+
+/**
+ * Contract schema ReceiveMatrixTransactionRequest.
+ *
+ * Schema `ReceiveMatrixTransactionRequest`.
+ */
+export interface ReceiveMatrixTransactionRequest {
+  events: Array<Record<string, unknown>>;
 }
 
 /**
@@ -10836,6 +10991,12 @@ export interface Task {
   delegationState?: string;
   /** P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller. */
   variables?: Record<string, unknown>;
+  /** M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount. */
+  amount?: number;
+  /** M-042 task index: ISO 4217 code of amount; absent or null with amount. */
+  currency?: string;
+  /** M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one. */
+  reference?: string;
 }
 
 /**
@@ -10966,6 +11127,31 @@ export interface TestBundleExport {
  */
 export interface TestBundleVerify {
   bundle: string;
+}
+
+/**
+ * The test-mode clock (TestModeClock): the instant the engine and business clocks now read and their offset from the wall clock; `action` is set on a change.
+ *
+ * Schema `TestClock`.
+ */
+export interface TestClock {
+  now: string;
+  offsetMs: number;
+  /**  One of: ADVANCE, SET, RESET. */
+  action?: 'ADVANCE' | 'SET' | 'RESET';
+}
+
+/**
+ * Exactly one of advanceBy (a positive ISO-8601 duration), set (an instant) or reset (true); reason is recorded in the TEST_CLOCK_CHANGED audit event.
+ *
+ * Schema `TestClockChange`.
+ */
+export interface TestClockChange {
+  /** Positive ISO-8601 duration, e.g. P3D or PT2H */
+  advanceBy?: string;
+  set?: string;
+  reset?: boolean;
+  reason?: string;
 }
 
 /**

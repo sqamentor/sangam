@@ -5743,6 +5743,169 @@ CREATE TABLE JOB_TRACE_CONTEXT (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 --rollback DROP TABLE JOB_TRACE_CONTEXT;
 
+--changeset sangam:0043-01-package_signature dbms:mysql
+--comment: M-074 R43 package signatures over the frozen package hash, one per signing role (X.2.4.5)
+CREATE TABLE PACKAGE_SIGNATURE (
+  tenant_id VARCHAR(64) NOT NULL,
+  package_hash VARBINARY(32) NOT NULL,
+  signer_role VARCHAR(16) NOT NULL,
+  principal_id VARCHAR(255),
+  seat_id VARCHAR(64),
+  alg VARCHAR(16) NOT NULL,
+  key_id VARCHAR(64) NOT NULL,
+  signature LONGBLOB NOT NULL,
+  signed_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_PACKAGE_SIGNATURE PRIMARY KEY (tenant_id, package_hash, signer_role)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE PACKAGE_SIGNATURE;
+
+--changeset sangam:0043-02-env_binding dbms:mysql
+--comment: M-074 R43 environment bindings: versioned, approved values a package names (X.2.4.5)
+CREATE TABLE ENV_BINDING (
+  tenant_id VARCHAR(64) NOT NULL,
+  env VARCHAR(64) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  value_ref VARCHAR(1000) NOT NULL,
+  state VARCHAR(16) NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  approved_by VARCHAR(255),
+  approved_at DATETIME(6),
+  reason VARCHAR(1000),
+  CONSTRAINT PK_ENV_BINDING PRIMARY KEY (tenant_id, env, name, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX ENV_BINDING_STATE ON ENV_BINDING (tenant_id, env, state);
+--rollback DROP TABLE ENV_BINDING;
+
+--changeset sangam:0043-03-cmp_national_id_vault dbms:mysql
+--comment: M-078 national id vault: encrypted number, masked form and HMAC lookup hash per reference key
+CREATE TABLE CMP_NATIONAL_ID_VAULT (
+  tenant_id VARCHAR(64) NOT NULL,
+  reference_key VARCHAR(64) NOT NULL,
+  id_type VARCHAR(64) NOT NULL,
+  lookup_hash VARCHAR(64) NOT NULL,
+  number_enc LONGTEXT NOT NULL,
+  masked VARCHAR(64),
+  created_by VARCHAR(255),
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CMP_NATIONAL_ID_VAULT PRIMARY KEY (tenant_id, reference_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE UNIQUE INDEX CMP_NATIONAL_ID_LOOKUP ON CMP_NATIONAL_ID_VAULT (tenant_id, id_type, lookup_hash);
+--rollback DROP TABLE CMP_NATIONAL_ID_VAULT;
+
+--changeset sangam:0043-04-sec_break_glass dbms:mysql
+--comment: M-084 break-glass grants: request, approvals, one-time token issue, use and after-the-fact review
+CREATE TABLE SEC_BREAK_GLASS (
+  tenant_id VARCHAR(64) NOT NULL,
+  grant_id VARCHAR(64) NOT NULL,
+  token_class VARCHAR(64) NOT NULL,
+  holder_person_id VARCHAR(64) NOT NULL,
+  requested_by VARCHAR(255) NOT NULL,
+  reason LONGTEXT NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  required_approvals INT NOT NULL,
+  approvals LONGTEXT NOT NULL,
+  valid_minutes INT NOT NULL,
+  token_id VARCHAR(64),
+  requested_at DATETIME(6) NOT NULL,
+  issued_at DATETIME(6),
+  expires_at DATETIME(6),
+  first_used_at DATETIME(6),
+  last_used_at DATETIME(6),
+  use_count BIGINT NOT NULL,
+  review_status VARCHAR(16) NOT NULL,
+  reviewed_by VARCHAR(255),
+  review_outcome VARCHAR(16),
+  review_notes LONGTEXT,
+  reviewed_at DATETIME(6),
+  CONSTRAINT PK_SEC_BREAK_GLASS PRIMARY KEY (tenant_id, grant_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX SEC_BREAK_GLASS_TOKEN ON SEC_BREAK_GLASS (token_id);
+CREATE INDEX SEC_BREAK_GLASS_REVIEW ON SEC_BREAK_GLASS (tenant_id, review_status);
+--rollback DROP TABLE SEC_BREAK_GLASS;
+
+--changeset sangam:0043-05-sec_reencrypt_progress dbms:mysql
+--comment: M-085 field re-encryption progress: resumable cursor and counters per tenant and source
+CREATE TABLE SEC_REENCRYPT_PROGRESS (
+  tenant_id VARCHAR(64) NOT NULL,
+  source VARCHAR(64) NOT NULL,
+  target_key_id VARCHAR(80) NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  last_key VARCHAR(255),
+  scanned BIGINT NOT NULL,
+  rewritten BIGINT NOT NULL,
+  failed BIGINT NOT NULL,
+  started_at DATETIME(6) NOT NULL,
+  updated_at DATETIME(6) NOT NULL,
+  finished_at DATETIME(6),
+  CONSTRAINT PK_SEC_REENCRYPT_PROGRESS PRIMARY KEY (tenant_id, source)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE SEC_REENCRYPT_PROGRESS;
+
+--changeset sangam:0043-06-work_step dbms:mysql
+--comment: M-025 R37 work step journal: one recorded step per operation and step name, fenced by the lease
+CREATE TABLE WORK_STEP (
+  operation_id VARCHAR(64) NOT NULL,
+  step_name VARCHAR(255) NOT NULL,
+  tenant_id VARCHAR(64),
+  work_id VARCHAR(64) NOT NULL,
+  step_seq INT NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  result_json LONGTEXT,
+  provider_ref VARCHAR(255),
+  error LONGTEXT,
+  attempt_id VARCHAR(64) NOT NULL,
+  lock_version BIGINT NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  recorded_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_WORK_STEP PRIMARY KEY (operation_id, step_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX WORK_STEP_WORK ON WORK_STEP (tenant_id, work_id);
+CREATE INDEX WORK_STEP_OP_SEQ ON WORK_STEP (operation_id, step_seq);
+--rollback DROP TABLE WORK_STEP;
+
+--changeset sangam:0043-07-ch_message_gram dbms:mysql
+--comment: M-071 conversation search index: distinct trigrams of each message body (ConversationService.search)
+CREATE TABLE CH_MESSAGE_GRAM (
+  message_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  gram VARCHAR(64) NOT NULL,
+  CONSTRAINT PK_CH_MESSAGE_GRAM PRIMARY KEY (message_id, gram)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX CH_MESSAGE_GRAM_LOOKUP ON CH_MESSAGE_GRAM (tenant_id, gram, message_id);
+--rollback DROP TABLE CH_MESSAGE_GRAM;
+
+--changeset sangam:0043-08-api_contract dbms:mysql
+--comment: M-068 package API contracts: OpenAPI or AsyncAPI document per package, contract id and version
+CREATE TABLE API_CONTRACT (
+  tenant_id VARCHAR(64) NOT NULL,
+  package_id VARCHAR(64) NOT NULL,
+  contract_id VARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  format VARCHAR(16) NOT NULL,
+  spec_version VARCHAR(16),
+  document LONGTEXT NOT NULL,
+  sha256 VARCHAR(64) NOT NULL,
+  created_by VARCHAR(255),
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_API_CONTRACT PRIMARY KEY (tenant_id, package_id, contract_id, version)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE API_CONTRACT;
+
+--changeset sangam:0043-12-process_trace dbms:mysql
+--comment: M-044 W3C trace id (32 lower-case hex) of each process instance, written once at start
+CREATE TABLE PROCESS_TRACE (
+  process_instance_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64),
+  root_process_instance_id VARCHAR(64),
+  trace_id CHAR(32) NOT NULL,
+  created_at_ms BIGINT NOT NULL,
+  CONSTRAINT PK_PROCESS_TRACE PRIMARY KEY (process_instance_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX PROCESS_TRACE_ROOT ON PROCESS_TRACE (root_process_instance_id);
+--rollback DROP TABLE PROCESS_TRACE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);
@@ -5844,6 +6007,31 @@ ALTER TABLE CMP_RIGHTS_REQUEST ADD COLUMN extended SMALLINT DEFAULT 0 NOT NULL;
 ALTER TABLE CMP_RIGHTS_REQUEST ADD COLUMN extension_reason LONGTEXT;
 ALTER TABLE CMP_RIGHTS_REQUEST ADD COLUMN access_exception VARCHAR(64);
 --rollback ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extended; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extension_reason; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN access_exception;
+
+--changeset sangam:0043-09-ops_bulk_job-alter dbms:mysql
+--comment: bulk job creator identity snapshot (M-130)
+ALTER TABLE OPS_BULK_JOB ADD COLUMN creator_identity LONGTEXT;
+--rollback ALTER TABLE OPS_BULK_JOB DROP COLUMN creator_identity;
+
+--changeset sangam:0043-11-sec_tenant-alter dbms:mysql
+--comment: decision 97 tenant isolation: SHARED, SCHEMA or DATABASE (was not stored)
+ALTER TABLE SEC_TENANT ADD COLUMN isolation VARCHAR(16) DEFAULT 'SHARED' NOT NULL CONSTRAINT CK_SEC_TENANT_ISOLATION CHECK (isolation IN ('SHARED', 'SCHEMA', 'DATABASE'));
+--rollback ALTER TABLE SEC_TENANT DROP CHECK CK_SEC_TENANT_ISOLATION; ALTER TABLE SEC_TENANT DROP COLUMN isolation;
+
+--changeset sangam:0043-13-ch_inbound_seen-alter dbms:mysql
+--comment: inbound channel message identity and media-fetch state (W3-C, ChannelsSchema)
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN external_id VARCHAR(255);
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN principal_id VARCHAR(255);
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_ref LONGTEXT;
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_state VARCHAR(64);
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_attempt INT;
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_next_at DATETIME(6);
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_owner VARCHAR(255);
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_epoch BIGINT;
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_doc LONGTEXT;
+ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_error LONGTEXT;
+CREATE INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN (media_state, media_next_at);
+--rollback DROP INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN external_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN principal_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_ref; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_state; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_attempt; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_next_at; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_owner; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_epoch; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_doc; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_error;
 
 --changeset sangam:0033-01-cfg_master_code-data dbms:mysql
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
@@ -6241,3 +6429,9 @@ ALTER TABLE EXEC_MAP MODIFY COLUMN coordinator_node VARCHAR(255) NULL;
 --comment: R39 executor node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)
 ALTER TABLE EXEC_NODE MODIFY COLUMN node_id VARCHAR(255) NOT NULL;
 --rollback ALTER TABLE EXEC_NODE MODIFY COLUMN node_id VARCHAR(64) NOT NULL;
+
+--changeset sangam:0043-10-package_version-package_hash-nullable-unique dbms:mysql
+--comment: decision 83: draft packages have no hash (NULL); the unique package hash covers frozen hashes only
+ALTER TABLE PACKAGE_VERSION MODIFY COLUMN package_hash VARBINARY(32) NULL;
+UPDATE PACKAGE_VERSION SET package_hash = NULL WHERE package_hash = X'0000000000000000000000000000000000000000000000000000000000000000';
+--rollback UPDATE PACKAGE_VERSION SET package_hash = X'0000000000000000000000000000000000000000000000000000000000000000' WHERE package_hash IS NULL; ALTER TABLE PACKAGE_VERSION MODIFY COLUMN package_hash VARBINARY(32) NOT NULL;

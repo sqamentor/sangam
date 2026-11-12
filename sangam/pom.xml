@@ -46,6 +46,8 @@
     <module>sangam-field</module>
     <module>sangam-server</module>
     <module>sdks/java</module>
+    <!-- M-027: Spring Boot worker adapter (an SDK host, decision 74) -->
+    <module>sdks/java-spring-boot</module>
     <!-- SCALE workstream (SCALE-ARCHITECTURE.md) -->
     <module>sangam-cell</module>
     <module>sangam-control-plane</module>
@@ -57,6 +59,7 @@
     <module>sangam-ops</module>
     <module>sangam-modeller</module>
     <module>tools/sangam-cli</module>
+    <module>tools/sangam-script-worker</module>
     <module>sangam-onboarding</module>
     <!-- M-014: embedded mode (auto-configuration over sangam-server's plain library jar) -->
     <module>sangam-spring-boot-starter</module>
@@ -94,6 +97,19 @@
          Spring Boot BOM would otherwise resolve a different kafka-clients for a module that gets it transitively -->
     <version.kafka>3.9.2</version.kafka>
     <version.jakarta-jms>3.1.0</version.jakarta-jms>
+    <!-- M-068: JSON-Schema validation of contract-bound requests. Apache-2.0; pulls jackson-dataformat-yaml (jackson-bom), itu 1.10.2, snakeyaml 2.5, all Apache-2.0 (decision 56, DOWNLOADS-WAVE3) -->
+    <version.json-schema-validator>1.5.1</version.json-schema-validator>
+    <!-- M-132: EXIF of PNG and HEIF/HEIC evidence. metadata-extractor Apache-2.0, xmpcore BSD-3-Clause (decisions 56, 60) -->
+    <version.metadata-extractor>2.22.0</version.metadata-extractor>
+    <version.xmpcore>6.1.11</version.xmpcore>
+    <!-- M-081: PDF/A-2b + PDF/UA-1 renderer, Apache-2.0 (decision 56) -->
+    <version.pdfbox>3.0.8</version.pdfbox>
+    <!-- M-081: PDF/A-2b + PDF/UA-1 validator, MPL-2.0 elected (decisions 94, 102); jakarta line for Jakarta EE 11 -->
+    <version.verapdf>1.30.4</version.verapdf>
+    <!-- M-076: OpenSAML line declared by spring-security-saml2-service-provider 7.1.2 (Apache-2.0; shib 9.2.3 Apache-2.0;
+         cryptacular 1.3.0 dual Apache-2.0 OR LGPL-3.0, Apache-2.0 elected, owner decision 90). Resolved from the
+         Shibboleth repository below (decision 56). -->
+    <opensaml.version>5.2.3</opensaml.version>
     <!-- The one Spring line for every module: the Boot version operaton-bpm-spring-boot-starter 2.2.0 is built
          against (operaton-root 2.2.0: Spring Boot 4.1.2, Spring Framework 7.0.10, Spring Security 7.1.2). -->
     <version.spring-boot>4.1.2</version.spring-boot>
@@ -129,6 +145,57 @@
         <version>${version.operaton}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.networknt</groupId>
+        <artifactId>json-schema-validator</artifactId>
+        <version>${version.json-schema-validator}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.drewnoakes</groupId>
+        <artifactId>metadata-extractor</artifactId>
+        <version>${version.metadata-extractor}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.adobe.xmp</groupId>
+        <artifactId>xmpcore</artifactId>
+        <version>${version.xmpcore}</version>
+      </dependency>
+      <!-- M-064 / M-058 broker clients (W3-A REQUEST 12:13:34Z, decision 56) -->
+      <dependency>
+        <groupId>org.eclipse.paho</groupId>
+        <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+        <version>1.2.5</version>
+      </dependency>
+      <dependency>
+        <groupId>io.nats</groupId>
+        <artifactId>jnats</artifactId>
+        <version>2.26.4</version>
+      </dependency>
+      <dependency>
+        <groupId>redis.clients</groupId>
+        <artifactId>jedis</artifactId>
+        <version>7.5.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>${version.pdfbox}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.verapdf</groupId>
+        <artifactId>validation-model-jakarta</artifactId>
+        <version>${version.verapdf}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>opensaml-saml-api</artifactId>
+        <version>${opensaml.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>opensaml-saml-impl</artifactId>
+        <version>${opensaml.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson</groupId>
@@ -342,6 +409,17 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <!-- M-076 (decision 56): OpenSAML is published only on the Shibboleth repository, used for org.opensaml / net.shibboleth
+       artifacts only; Maven Central stays the default for everything else. -->
+  <repositories>
+    <repository>
+      <id>shibboleth-releases</id>
+      <url>https://build.shibboleth.net/maven/releases/</url>
+      <releases><enabled>true</enabled></releases>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+  </repositories>
 
   <build>
     <directory>${project.basedir}/${sangam.target}</directory>

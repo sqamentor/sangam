@@ -82,12 +82,56 @@ public final class FieldMaskService {
         return out;
     }
 
-    /** Masks one row of a list the same way as an object (K11). */
+    /**
+     * Masks every row of a list exactly as {@link #mask} masks the row as an object (K11), set-based (M-086, R19): the
+     * rules are read once, and each classified permission is decided for all row ids in one step
+     * ({@link AuthorizationService#allowedIds}, which equals the object check per id) instead of one object check per
+     * row and permission. The result, and the {@code SENSITIVE_READ} events (one per row that shows a sensitive field,
+     * in row order, with the same payload), are those of calling {@link #mask} for each row
+     * ({@code FieldMaskSetEquivalencePropertiesTest}).
+     */
     public List<Map<String, Object>> maskAll(Connection c, SecurityIdentity who, String resourceType, String scopeKey,
                                              List<Map<String, Object>> rows, String idField) {
         List<Map<String, Object>> out = new ArrayList<>(rows.size());
-        for (Map<String, Object> row : rows) {
-            out.add(mask(c, who, resourceType, String.valueOf(row.get(idField)), scopeKey, row));
+        if (rows.isEmpty()) {
+            return out;
+        }
+        List<FieldRule> rules = rules(c, who.tenantId(), resourceType, scopeKey);
+        if (rules.isEmpty()) {
+            rows.forEach(r -> out.add(new LinkedHashMap<>(r)));
+            return out;
+        }
+        List<String> ids = new ArrayList<>(rows.size());
+        rows.forEach(r -> ids.add(String.valueOf(r.get(idField))));
+        // the permissions some row actually needs (mask() checks a permission only for a field the row has)
+        Map<Permission, List<String>> needed = new LinkedHashMap<>();
+        for (int i = 0; i < rows.size(); i++) {
+            for (FieldRule r : rules) {
+                if (rows.get(i).containsKey(r.field())) {
+                    needed.computeIfAbsent(r.required(), p -> new ArrayList<>()).add(ids.get(i));
+                }
+            }
+        }
+        Map<Permission, java.util.Set<String>> allowedIds = new HashMap<>();
+        needed.forEach((p, forIds) -> allowedIds.put(p, authz.allowedIds(c, who, resourceType, p, forIds)));
+        for (int i = 0; i < rows.size(); i++) {
+            Map<String, Object> row = new LinkedHashMap<>(rows.get(i));
+            List<String> sensitiveShown = new ArrayList<>();
+            for (FieldRule r : rules) {
+                if (!row.containsKey(r.field())) {
+                    continue;
+                }
+                if (!allowedIds.get(r.required()).contains(ids.get(i))) {
+                    row.put(r.field(), MASK);
+                } else if (r.required() == Permission.READ_SENSITIVE) {
+                    sensitiveShown.add(r.field());
+                }
+            }
+            if (!sensitiveShown.isEmpty()) {
+                audit.security(c, who, SecurityEventType.SENSITIVE_READ, Map.of("resource_type", resourceType,
+                        "resource_id", ids.get(i), "fields", sensitiveShown));
+            }
+            out.add(row);
         }
         return out;
     }

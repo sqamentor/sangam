@@ -83,7 +83,7 @@ class ArchitectureGuardTest {
     static {
         CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java", 1373);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java", 1341);
-        CLASS_SIZE_ALLOWED.put("sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", 1195);
+        CLASS_SIZE_ALLOWED.put("sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", 1142);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java", 1146);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/custody/CustodyService.java", 1118);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java", 1042);
@@ -144,11 +144,11 @@ class ArchitectureGuardTest {
     static final Map<String, Integer> DETERMINISM_ALLOWED = new TreeMap<>();
 
     static {
-        // JobIdentityBinder.CURRENT: the engine-local job identity; sangam-engine JobIdentitySupport sets and reads the
-        // public field, so explicit context passing is an engine change (W2-D, sangam-engine).
-        DETERMINISM_ALLOWED.put("sangam-core/src/main/java/org/sangam/core/engine/JobIdentityBinder.java", 1);
+        // JobIdentityBinder.CURRENT removed 2026-11-12 (W3-F C3-05): the job identity is passed explicitly and kept on
+        // the job's engine command (sangam-engine JobIdentitySupport / CommandState).
         // LockScope.DEPTH: VI.1 rule 5 marker (L2 root lock held), entered/exited by sangam-engine CommandState and read by
-        // connector and HTTP clients; replacing it is an engine plus integration change (W2-D, W2-N/W3-B).
+        // connector and HTTP clients; it marks the thread that holds the lock, which Operaton's fixed delegate
+        // signatures cannot carry to a remote client (W3-F evidence, owner question in the W3-F report).
         DETERMINISM_ALLOWED.put("sangam-core/src/main/java/org/sangam/core/engine/LockScope.java", 1);
     }
 
@@ -486,7 +486,10 @@ class ArchitectureGuardTest {
             }
         }
         assertEquals(3, DETERMINISM_PROVIDERS.size(), "the D11 providers are SangamClock, BusinessClock and IdSource");
-        assertTrue(DETERMINISM_ALLOWED.size() <= 3, "M-097 debt only shrinks (3 entries on 2026-11-12)");
+        assertTrue(DETERMINISM_ALLOWED.size() <= 1,
+                "M-097 debt only shrinks (3 entries on 2026-11-12, 1 after W3-F C3-05 removed JobIdentityBinder.CURRENT)");
+        assertFalse(DETERMINISM_ALLOWED.containsKey("sangam-core/src/main/java/org/sangam/core/engine/JobIdentityBinder.java"),
+                "C3-05: the job identity is passed explicitly, JobIdentityBinder holds no thread-local state");
     }
 
     @Test

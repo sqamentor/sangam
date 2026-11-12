@@ -37,10 +37,13 @@ import org.sangam.modeller.template.ElementTemplates;
 import org.sangam.modeller.test.BulkModelTests;
 import org.sangam.rest.modules.modeller.ModellerRequestScope;
 import org.sangam.rest.port.ApiProblem;
+import org.sangam.rest.port.CasePort;
 import org.sangam.rest.port.PackagePort;
 import org.sangam.rest.port.PackageToolsPort;
 import org.sangam.rest.port.PermissionPort;
+import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RequestContext;
+import org.sangam.rest.port.TaskPort;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.server.bridge.TokenExchangeConnector;
 import org.slf4j.Logger;
@@ -112,15 +115,73 @@ public class ModellerWiring {
 
     @Bean
     public ActionModels sangamActionModels(TxSupport tx, PermissionPort permissions, ObjectProvider<ProcessEngine> engine,
-                                           ObjectProvider<ConnectorRegistry> connectors) {
+                                           ObjectProvider<ConnectorRegistry> connectors, ObjectProvider<CasePort> cases,
+                                           ObjectProvider<ProcessPort> processes, ObjectProvider<TaskPort> tasks) {
         Dialect d = tx.dialect();
-        return new ActionModels(d, tx.newTransactions(), new AuditChain(d), (tenant, user, permission, target) -> {
-            RequestContext ctx = ModellerRequestScope.current();
-            return ctx != null && tenant.equals(ctx.tenantId()) && user.equals(ctx.principalId()) && permissions.has(ctx, permission);
-        }, (tenant, operationId, action, targetRef, input) -> dispatch(engine, connectors, tenant, operationId, action, targetRef, input));
+        return new ActionModels(d, tx.newTransactions(), new AuditChain(d), new SubjectPermission(permissions, cases, processes, tasks),
+                (tenant, operationId, action, targetRef, input) -> dispatch(engine, connectors, tenant, operationId, action, targetRef, input));
     }
 
-    /** BPMN: starts the process keyed by the operation id. REST: {@code connectorId:operation}. SCRIPT has no worker binding yet. */
+    /**
+     * SL-166 / owner decision 64: the action's permission AND its subject. The caller must be the request's own principal in its own
+     * tenant, hold the permission, and see the subject of the action's scope through the same port the UI reads it with (CASE:
+     * {@link CasePort#get}, PROCESS: {@link ProcessPort#get}, TASK: {@link TaskPort#get}); a subject that is unknown or not visible
+     * (404 / 403) is "not permitted", so an action never runs against an object its caller cannot open.
+     */
+    static final class SubjectPermission implements ActionModels.Permission {
+        private final PermissionPort permissions;
+        private final ObjectProvider<CasePort> cases;
+        private final ObjectProvider<ProcessPort> processes;
+        private final ObjectProvider<TaskPort> tasks;
+
+        SubjectPermission(PermissionPort permissions, ObjectProvider<CasePort> cases, ObjectProvider<ProcessPort> processes,
+                          ObjectProvider<TaskPort> tasks) {
+            this.permissions = permissions;
+            this.cases = cases;
+            this.processes = processes;
+            this.tasks = tasks;
+        }
+
+        @Override
+        public boolean allowed(String tenant, String user, String permission, String target) {
+            RequestContext ctx = ModellerRequestScope.current();
+            return ctx != null && tenant.equals(ctx.tenantId()) && user.equals(ctx.principalId()) && permissions.has(ctx, permission);
+        }
+
+        @Override
+        public boolean allowed(String tenant, String user, String permission, ActionModels.Scope scope, String target) {
+            if (!allowed(tenant, user, permission, target)) {
+                return false;
+            }
+            if (scope == null || target == null || target.isBlank()) {
+                return false;
+            }
+            RequestContext ctx = ModellerRequestScope.current();
+            try {
+                Object subject = switch (scope) {
+                    case CASE -> port(cases, "case").get(ctx, target);
+                    case PROCESS -> port(processes, "process").get(ctx, target);
+                    case TASK -> port(tasks, "task").get(ctx, target);
+                };
+                return subject != null;
+            } catch (ApiProblem p) {
+                if (p.status() == 404 || p.status() == 403) {
+                    return false;
+                }
+                throw p;
+            }
+        }
+
+        private static <T> T port(ObjectProvider<T> provider, String what) {
+            T p = provider.getIfAvailable();
+            if (p == null) {
+                throw ApiProblem.notInstalled(what + " actions", "the " + what + " module");
+            }
+            return p;
+        }
+    }
+
+    /** BPMN: starts the process keyed by the operation id. REST: {@code connectorId:operation} (decision 65). SCRIPT has no worker binding yet. */
     private static Map<String, Object> dispatch(ObjectProvider<ProcessEngine> engine, ObjectProvider<ConnectorRegistry> connectors,
             String tenant, UUID operationId, ActionModels.Action action, String targetRef, Map<String, Object> input) {
         switch (action.targetType()) {
@@ -130,9 +191,12 @@ public class ModellerWiring {
                 return Map.of("processInstanceId", pi.getId());
             }
             case REST -> {
+                if (!action.target().matches(ActionModels.REST_TARGET_PATTERN)) {
+                    throw new IllegalArgumentException("ACTION_TARGET_INVALID: a REST target is connectorId:operation");
+                }
                 String[] parts = action.target().split(":", 2);
                 ConnectorRequest request = new ConnectorRequest(tenant, operationId, operationId.toString(), 1, null, targetRef,
-                        parts.length > 1 ? parts[1] : "invoke", input, null);
+                        parts[1], input, null);
                 ConnectorResult result = connectors.getObject().require(tenant, parts[0]).invoke(request);
                 if (result instanceof ConnectorResult.Success s) {
                     return s.output();

@@ -1,0 +1,127 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- /* M-082 / owner decision 71: optional ClamAV service (clamav/clamav, GPL-2.0), a separate service, never linked. */ -}}
+{{- if .Values.malware.clamav.enabled }}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- $cv := .Values.malware.clamav -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-clamav
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: clamav
+spec:
+  replicas: {{ $cv.replicaCount }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "clamav") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" . "component" "clamav") | nindent 8 }}
+    spec:
+      {{- include "sangam.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "sangam.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with $cv.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: clamav
+          image: {{ include "sangam.image" (dict "ctx" . "image" $cv.image) | quote }}
+          imagePullPolicy: {{ $cv.image.pullPolicy }}
+          {{- with $cv.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: clamd
+              containerPort: 3310
+              protocol: TCP
+          env:
+            - name: TZ
+              value: UTC
+            {{- with $cv.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          # clamd answers only after the signature database is loaded (freshclam at start can take minutes).
+          startupProbe:
+            tcpSocket: { port: clamd }
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket: { port: clamd }
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: clamd }
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            {{- toYaml $cv.resources | nindent 12 }}
+          volumeMounts:
+            - name: signatures
+              mountPath: /var/lib/clamav
+      volumes:
+        - name: signatures
+          emptyDir:
+            sizeLimit: {{ $cv.databaseSizeLimit }}
+      {{- with $cv.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $cv.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $cv.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-clamav
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: clamav
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "sangam.selectorLabels" (dict "ctx" . "component" "clamav") | nindent 4 }}
+  ports:
+    - name: clamd
+      port: {{ $cv.port }}
+      targetPort: clamd
+      protocol: TCP
+{{- if .Values.networkPolicy.enabled }}
+---
+# ClamAV: clamd only from the server pods; egress DNS plus malware.clamav.egress (the signature mirror).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-clamav
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: clamav
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "clamav") | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" . "component" "server") | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 3310 }
+  egress:
+    {{- include "sangam.np.dnsEgress" . | nindent 4 }}
+    {{- with $cv.egress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- end }}

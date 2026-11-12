@@ -25,6 +25,14 @@ public interface OutboundEventSerializer {
     /** Payload only, for consumers that expect the bare business object. */
     OutboundEventSerializer JSON_PAYLOAD_ONLY = (eventKey, tenantId, messageId, payload) -> Json.write(payload);
 
+    /**
+     * Structured-mode CloudEvent (M-065) with the default source {@code urn:sangam}. The channel publisher uses
+     * {@link CloudEventsFormat} directly, with the channel's source and content mode; this form exists so that the
+     * serializer list below stays the one list of supported types.
+     */
+    OutboundEventSerializer CLOUDEVENTS_STRUCTURED = (eventKey, tenantId, messageId, payload) -> CloudEventsFormat.structured(
+            CloudEventsFormat.attributes("urn:sangam", tenantId, eventKey, messageId), payload);
+
     static OutboundEventSerializer of(String type) {
         if (type == null || "json".equalsIgnoreCase(type)) {
             return JSON;
@@ -32,6 +40,9 @@ public interface OutboundEventSerializer {
         if ("json-payload".equalsIgnoreCase(type)) {
             return JSON_PAYLOAD_ONLY;
         }
-        throw new IllegalArgumentException("serializer '" + type + "' is not supported (json, json-payload)");
+        if (CloudEventsFormat.TYPE.equalsIgnoreCase(type)) {
+            return CLOUDEVENTS_STRUCTURED;
+        }
+        throw new IllegalArgumentException("serializer '" + type + "' is not supported (json, json-payload, cloudevents)");
     }
 }

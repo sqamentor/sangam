@@ -77,6 +77,20 @@ public class SangamFeelEngine extends ScalaFeelEngine {
     }
 
     /**
+     * M-059 deploy check: parses {@code expression} without evaluating it and returns the variable names it
+     * references (as the pinned feel-scala engine reports them).
+     *
+     * @throws FeelException when the expression does not parse
+     */
+    public Set<String> referencedNames(String expression) {
+        org.camunda.feel.api.ParseResult r = feelEngineApi.parseExpression(expression);
+        if (r.isFailure()) {
+            throw new FeelException("SANGAM-FEEL-SYNTAX: '" + expression + "': " + r.failure().message());
+        }
+        return Set.copyOf(r.getVariableNames());
+    }
+
+    /**
      * Built-in conversion functions ({@code date("2026-02-30")}, {@code duration("x")}, ...) return null without
      * any failure record in the pinned engine, and built-ins cannot be overridden by a function provider. Sangam
      * evaluates every literal call once (cached per expression) and refuses one that yields null.

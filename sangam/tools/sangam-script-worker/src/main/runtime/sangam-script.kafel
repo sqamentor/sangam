@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// seccomp policy (kafel, read by nsjail --seccomp_policy) for every script process of the Sangam script worker
+// (ADR-D-8 script sandbox, owner decision 53). A deny list on top of nsjail's namespaces and cgroups: the calls below
+// reach kernel surface a script never needs (tracing other processes, mounting, new namespaces, kernel modules and
+// keyrings, BPF, perf, userfaultfd, io_uring, raw I/O ports, clocks, hostname). They fail with EPERM, so a script that
+// tries gets an ordinary error and the attempt shows in the escape tests (ScriptSandboxEscapeIT).
+//
+// Syscalls from Linux 5.0 on are given by number: from 424 on the numbers are the same on every architecture.
+// clone3 answers ENOSYS so that the C library falls back to clone(2).
+
+POLICY sangam_script_deny {
+  ERRNO(1) {
+    ptrace, process_vm_readv, process_vm_writev, kcmp,
+    mount, umount2, pivot_root, chroot, unshare, setns,
+    init_module, finit_module, delete_module, kexec_load, kexec_file_load,
+    reboot, swapon, swapoff, acct, quotactl,
+    keyctl, add_key, request_key,
+    bpf, perf_event_open, userfaultfd,
+    open_by_handle_at, name_to_handle_at, lookup_dcookie,
+    syslog, iopl, ioperm, personality,
+    settimeofday, clock_settime, clock_adjtime, adjtimex,
+    sethostname, setdomainname, fanotify_init,
+    SYSCALL[425], SYSCALL[426], SYSCALL[427],
+    SYSCALL[428], SYSCALL[429], SYSCALL[430], SYSCALL[431], SYSCALL[432], SYSCALL[433],
+    SYSCALL[438], SYSCALL[442]
+  }
+  ERRNO(38) {
+    SYSCALL[435]
+  }
+}
+
+// 425-427 io_uring_setup/enter/register; 428-433 open_tree, move_mount, fsopen, fsconfig, fsmount, fspick;
+// 438 pidfd_getfd; 442 mount_setattr; 435 clone3.
+USE sangam_script_deny DEFAULT ALLOW

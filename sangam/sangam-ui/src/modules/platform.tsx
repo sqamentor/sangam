@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { http, request } from '../api/client';
+import { mergeById, openEventStream } from '../api/sse';
 import { useAction, useAsync, useInterval } from '../lib/hooks';
 import { BpmnDiagram } from '../components/BpmnDiagram';
 import { fmtNumber } from '../i18n';
@@ -94,6 +95,37 @@ export function AiPage() {
 
 // ------------------------------------------------------------------ channels
 
+/**
+ * M-040: the live stream of one conversation (GET /channels/conversations/{id}/stream, event 'message', event id =
+ * message id; ChannelsController.java:109-114, ChannelsLiveHub.java:52). History is re-read after every (re)connect,
+ * because the server streams only what happens while the stream is open. Returns whether the stream is live.
+ */
+export function useConversationStream(conversationId: string | undefined, onOpen: () => void, onMessage: (m: Row) => void): boolean {
+  const [live, setLive] = useState(false);
+  const open = useRef(onOpen);
+  const msg = useRef(onMessage);
+  open.current = onOpen;
+  msg.current = onMessage;
+  useEffect(() => {
+    setLive(false);
+    if (!conversationId) return;
+    return openEventStream(`/channels/conversations/${encodeURIComponent(conversationId)}/stream`, {
+      onOpen: () => open.current(),
+      onLive: setLive,
+      onEvent: (e) => {
+        if (e.event !== 'message') return;
+        try {
+          const m = JSON.parse(e.data) as Row;
+          if (m && typeof m === 'object' && m.id !== undefined) msg.current(m);
+        } catch {
+          open.current(); // not JSON: read the history instead of guessing
+        }
+      },
+    });
+  }, [conversationId]);
+  return live;
+}
+
 /** Conversation against the live /channels routes. The server has no list route, so a conversation is reached by message search, by id, or by creating it. */
 export function ConversationPanel({ caseId }: { caseId?: string }) {
   const { t } = useTranslation();
@@ -106,7 +138,9 @@ export function ConversationPanel({ caseId }: { caseId?: string }) {
   const base = '/channels/conversations';
   const hits = useAsync(() => http.get<Row[]>(`${base}/search`, { text: term, limit: 50 }), [term], !!term);
   const msgs = useAsync(() => http.get<Row[]>(`${base}/${encodeURIComponent(sel!)}/messages`, { limit: 200 }), [sel], !!sel);
-  useInterval(() => { if (sel) msgs.reload(); }, 10000);
+  const live = useConversationStream(sel, msgs.reload, (m) => msgs.setData((prev) => mergeById(prev, m)));
+  // M-040: the 10 s poll stays as the fallback while the stream is not live.
+  useInterval(() => { if (sel) msgs.reload(); }, sel && !live ? 10000 : null);
   const act = useAction();
   const path = () => `${base}/${encodeURIComponent(sel!)}`;
   return (
@@ -129,6 +163,7 @@ export function ConversationPanel({ caseId }: { caseId?: string }) {
       <ul>{hits.data?.map((m) => <li key={String(m.id)}><button type="button" className="link" onClick={() => setSel(String(m.conversationId))}>{String(m.body ?? m.id)}</button></li>)}</ul>
       {sel && (
         <div>
+          <p className="small muted" role="status">{live ? t('mod.channels.live') : t('mod.channels.polling')}</p>
           <ol className="comments" aria-live="polite">
             {msgs.data?.map((m) => (
               <li key={String(m.id)}>

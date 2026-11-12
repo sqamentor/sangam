@@ -205,11 +205,48 @@ public final class PoisonInbound {
         }
     }
 
-    /** The parked message behind an open item (SL-142); refused for a poison item or a resolved one. */
+    /**
+     * The parked message behind an open item (SL-142), of ANY tenant: for the cell operator only (owner decision 61,
+     * {@code /admin/cell/parked-inbound}, role CELL_ADMIN). A tenant-scoped caller uses {@link #parked(String, long)}.
+     * Refused for a poison item or a resolved one.
+     */
     public Parked parked(long itemId) {
+        return parkedWhere(itemId, null);
+    }
+
+    /**
+     * The parked message behind an open item of {@code tenant} only; an item of another tenant is not found (the same
+     * {@link IllegalArgumentException} as an unknown id, so its existence is not disclosed).
+     */
+    public Parked parked(String tenant, long itemId) {
+        if (tenant == null || tenant.isBlank()) {
+            throw new IllegalArgumentException("a tenant is required");
+        }
+        return parkedWhere(itemId, tenant);
+    }
+
+    /** Open parked items of every tenant of this cell (SL-142, decision 61), oldest first: for the cell operator only. */
+    public List<Item> listParked() {
+        return tx.inTransaction(c -> Jdbc.query(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.created_at, r.details, d.ref_id, d.error"
+                        + " FROM RECONCILIATION_ITEM r JOIN INTEGRATION_DEAD_LETTER d ON r.task_id = " + concat("'dead-letter:'", idText("d.id"))
+                        + " WHERE r.kind=? AND r.state='OPEN' ORDER BY r.id",
+                PoisonInbound::map, KIND)).stream().filter(Item::parked).toList();
+    }
+
+    /** One item (poison or parked, any state) of {@code tenant} only; another tenant's item is not found. */
+    public Item item(String tenant, long itemId) {
+        if (tenant == null || tenant.isBlank()) {
+            throw new IllegalArgumentException("a tenant is required");
+        }
+        return get(tenant, itemId);
+    }
+
+    private Parked parkedWhere(long itemId, String tenantOrNull) {
+        String scope = tenantOrNull == null ? "" : " AND r.tenant_id=?";
+        Object[] args = tenantOrNull == null ? new Object[]{itemId, KIND} : new Object[]{itemId, KIND, tenantOrNull};
         return tx.inTransaction(c -> Jdbc.one(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.details, d.ref_id, d.event_type,"
                         + " d.payload FROM RECONCILIATION_ITEM r JOIN INTEGRATION_DEAD_LETTER d ON r.task_id = "
-                        + concat("'dead-letter:'", idText("d.id")) + " WHERE r.id=? AND r.kind=?", rs -> {
+                        + concat("'dead-letter:'", idText("d.id")) + " WHERE r.id=? AND r.kind=?" + scope, rs -> {
                     Map<String, Object> d = Json.readMap(rs.getString("details"));
                     if (!Boolean.TRUE.equals(d.get("parked"))) {
                         throw new IllegalStateException("409 NOT_PARKED: item " + itemId + " is a poison message");
@@ -222,7 +259,7 @@ public final class PoisonInbound {
                             text(d.get("source")), text(d.get("messageId")), rs.getString("event_type"), text(d.get("correlationKey")),
                             text(d.get("claimedTenant")), rs.getString("payload"), text(d.get("tenantState")),
                             text(d.get("targetCell")), text(d.get("moveId")));
-                }, itemId, KIND))
+                }, args))
                 .orElseThrow(() -> new IllegalArgumentException("no " + KIND + " item " + itemId));
     }
 
@@ -287,9 +324,16 @@ public final class PoisonInbound {
     }
 
     private Item get(long itemId) {
+        return get(null, itemId);
+    }
+
+    /** The item; with {@code tenantOrNull} set, only an item of that tenant (another tenant's id is not found). */
+    private Item get(String tenantOrNull, long itemId) {
+        String scope = tenantOrNull == null ? "" : " AND r.tenant_id=?";
+        Object[] args = tenantOrNull == null ? new Object[]{itemId, KIND} : new Object[]{itemId, KIND, tenantOrNull};
         return tx.inTransaction(c -> Jdbc.one(c, "SELECT r.id, r.tenant_id, r.task_id, r.state, r.created_at, r.details, d.ref_id, d.error"
                         + " FROM RECONCILIATION_ITEM r JOIN INTEGRATION_DEAD_LETTER d ON r.task_id = " + concat("'dead-letter:'", idText("d.id"))
-                        + " WHERE r.id=? AND r.kind=?", PoisonInbound::map, itemId, KIND))
+                        + " WHERE r.id=? AND r.kind=?" + scope, PoisonInbound::map, args))
                 .orElseThrow(() -> new IllegalArgumentException("no " + KIND + " item " + itemId));
     }
 

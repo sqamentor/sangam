@@ -19,7 +19,33 @@ public interface DeploymentPort {
     record DeployRequest(String name, String source, boolean duplicateFiltering, Map<String, byte[]> resources) {
     }
 
+    /**
+     * A raw deployment. The package deploy identity (name prefix {@code pkg:}, source {@code sangam-package}) is
+     * reserved for {@link #deployPackage} and refused here with 422 MODEL_INVALID.
+     */
     Deployment deploy(RequestContext ctx, DeployRequest request);
+
+    /**
+     * M-068: a package's own deploy, called only by the package lifecycle ({@link PackagePort}, after review, approval
+     * and the signature check). The deployment is named {@code pkg:<packageKey>:<packageHash>} with source
+     * {@code sangam-package}, and the engine is given the proof that it is this package's deploy, so it may bind the
+     * package's API contract operations. This default (for adapters without the proof) answers as {@link #deploy},
+     * which refuses the reserved identity.
+     */
+    default Deployment deployPackage(RequestContext ctx, String packageKey, String packageHash,
+                                     java.util.Map<String, byte[]> resources) {
+        return deploy(ctx, new DeployRequest(PACKAGE_NAME_PREFIX + packageKey + ":" + packageHash, PACKAGE_SOURCE, false,
+                resources));
+    }
+
+    /** The reserved package deploy identity (the engine's {@code OperationRefPinning} enforces the same values). */
+    String PACKAGE_NAME_PREFIX = "pkg:";
+    String PACKAGE_SOURCE = "sangam-package";
+
+    /** True when a raw deployment request claims the reserved package deploy identity. */
+    static boolean claimsPackageIdentity(String name, String source) {
+        return (name != null && name.startsWith(PACKAGE_NAME_PREFIX)) || PACKAGE_SOURCE.equals(source);
+    }
 
     Page<Deployment> list(RequestContext ctx, String name, Page.PageRequest page);
 

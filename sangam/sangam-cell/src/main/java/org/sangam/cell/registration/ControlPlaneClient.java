@@ -49,7 +49,33 @@ public final class ControlPlaneClient {
         m.put("capacityStartsPerSec", d.capacityStartsPerSec());
         m.put("capacityTenants", d.capacityTenants());
         m.put("version", d.version());
-        send("PUT", "/api/v1/cells/" + enc(d.cellId()), MiniJson.write(m));
+        if (d.dedicated()) {
+            m.put("dedicatedTenant", d.dedicatedTenant());
+        }
+        String body = send("PUT", "/api/v1/cells/" + enc(d.cellId()), MiniJson.write(m));
+        if (d.dedicated()) {
+            requireDedicationRecorded(d, body);
+        }
+    }
+
+    /**
+     * M-016 fail-closed: a dedicated cell counts as registered only when the control plane answers with the same
+     * {@code dedicatedTenant}. A control plane that ignored the field would place other tenants on the cell (which the
+     * cell then refuses, 421), so the registration fails instead and is retried by the caller.
+     */
+    static void requireDedicationRecorded(CellDescriptor d, String responseBody) throws IOException {
+        Object recorded;
+        try {
+            recorded = responseBody == null || responseBody.isBlank() ? null
+                    : MiniJson.readObject(responseBody).get("dedicatedTenant");
+        } catch (RuntimeException e) {
+            recorded = null;
+        }
+        if (recorded == null || !d.dedicatedTenant().equalsIgnoreCase(recorded.toString().trim())) {
+            throw new IOException("control plane did not record cell " + d.cellId() + " as dedicated to tenant "
+                    + d.dedicatedTenant() + " (answered dedicatedTenant=" + recorded + "); the cell stays unregistered"
+                    + " until the control plane supports dedicated cells (M-016)");
+        }
     }
 
     public void heartbeat(CellHeartbeat h) throws IOException, InterruptedException {

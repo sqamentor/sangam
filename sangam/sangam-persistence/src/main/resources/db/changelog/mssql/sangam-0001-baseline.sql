@@ -5743,6 +5743,169 @@ CREATE TABLE JOB_TRACE_CONTEXT (
 );
 --rollback DROP TABLE JOB_TRACE_CONTEXT;
 
+--changeset sangam:0043-01-package_signature dbms:mssql
+--comment: M-074 R43 package signatures over the frozen package hash, one per signing role (X.2.4.5)
+CREATE TABLE PACKAGE_SIGNATURE (
+  tenant_id NVARCHAR(64) NOT NULL,
+  package_hash VARBINARY(32) NOT NULL,
+  signer_role NVARCHAR(16) NOT NULL,
+  principal_id NVARCHAR(255),
+  seat_id NVARCHAR(64),
+  alg NVARCHAR(16) NOT NULL,
+  key_id NVARCHAR(64) NOT NULL,
+  signature VARBINARY(MAX) NOT NULL,
+  signed_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_PACKAGE_SIGNATURE PRIMARY KEY (tenant_id, package_hash, signer_role)
+);
+--rollback DROP TABLE PACKAGE_SIGNATURE;
+
+--changeset sangam:0043-02-env_binding dbms:mssql
+--comment: M-074 R43 environment bindings: versioned, approved values a package names (X.2.4.5)
+CREATE TABLE ENV_BINDING (
+  tenant_id NVARCHAR(64) NOT NULL,
+  env NVARCHAR(64) NOT NULL,
+  name NVARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  value_ref NVARCHAR(1000) NOT NULL,
+  state NVARCHAR(16) NOT NULL,
+  created_by NVARCHAR(255) NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL,
+  approved_by NVARCHAR(255),
+  approved_at DATETIMEOFFSET,
+  reason NVARCHAR(1000),
+  CONSTRAINT PK_ENV_BINDING PRIMARY KEY (tenant_id, env, name, version)
+);
+CREATE INDEX ENV_BINDING_STATE ON ENV_BINDING (tenant_id, env, state);
+--rollback DROP TABLE ENV_BINDING;
+
+--changeset sangam:0043-03-cmp_national_id_vault dbms:mssql
+--comment: M-078 national id vault: encrypted number, masked form and HMAC lookup hash per reference key
+CREATE TABLE CMP_NATIONAL_ID_VAULT (
+  tenant_id NVARCHAR(64) NOT NULL,
+  reference_key NVARCHAR(64) NOT NULL,
+  id_type NVARCHAR(64) NOT NULL,
+  lookup_hash NVARCHAR(64) NOT NULL,
+  number_enc NVARCHAR(MAX) NOT NULL,
+  masked NVARCHAR(64),
+  created_by NVARCHAR(255),
+  created_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_CMP_NATIONAL_ID_VAULT PRIMARY KEY (tenant_id, reference_key)
+);
+CREATE UNIQUE INDEX CMP_NATIONAL_ID_LOOKUP ON CMP_NATIONAL_ID_VAULT (tenant_id, id_type, lookup_hash);
+--rollback DROP TABLE CMP_NATIONAL_ID_VAULT;
+
+--changeset sangam:0043-04-sec_break_glass dbms:mssql
+--comment: M-084 break-glass grants: request, approvals, one-time token issue, use and after-the-fact review
+CREATE TABLE SEC_BREAK_GLASS (
+  tenant_id NVARCHAR(64) NOT NULL,
+  grant_id NVARCHAR(64) NOT NULL,
+  token_class NVARCHAR(64) NOT NULL,
+  holder_person_id NVARCHAR(64) NOT NULL,
+  requested_by NVARCHAR(255) NOT NULL,
+  reason NVARCHAR(MAX) NOT NULL,
+  status NVARCHAR(16) NOT NULL,
+  required_approvals INT NOT NULL,
+  approvals NVARCHAR(MAX) NOT NULL,
+  valid_minutes INT NOT NULL,
+  token_id NVARCHAR(64),
+  requested_at DATETIMEOFFSET NOT NULL,
+  issued_at DATETIMEOFFSET,
+  expires_at DATETIMEOFFSET,
+  first_used_at DATETIMEOFFSET,
+  last_used_at DATETIMEOFFSET,
+  use_count BIGINT NOT NULL,
+  review_status NVARCHAR(16) NOT NULL,
+  reviewed_by NVARCHAR(255),
+  review_outcome NVARCHAR(16),
+  review_notes NVARCHAR(MAX),
+  reviewed_at DATETIMEOFFSET,
+  CONSTRAINT PK_SEC_BREAK_GLASS PRIMARY KEY (tenant_id, grant_id)
+);
+CREATE INDEX SEC_BREAK_GLASS_TOKEN ON SEC_BREAK_GLASS (token_id);
+CREATE INDEX SEC_BREAK_GLASS_REVIEW ON SEC_BREAK_GLASS (tenant_id, review_status);
+--rollback DROP TABLE SEC_BREAK_GLASS;
+
+--changeset sangam:0043-05-sec_reencrypt_progress dbms:mssql
+--comment: M-085 field re-encryption progress: resumable cursor and counters per tenant and source
+CREATE TABLE SEC_REENCRYPT_PROGRESS (
+  tenant_id NVARCHAR(64) NOT NULL,
+  source NVARCHAR(64) NOT NULL,
+  target_key_id NVARCHAR(80) NOT NULL,
+  status NVARCHAR(16) NOT NULL,
+  last_key NVARCHAR(255),
+  scanned BIGINT NOT NULL,
+  rewritten BIGINT NOT NULL,
+  failed BIGINT NOT NULL,
+  started_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  finished_at DATETIMEOFFSET,
+  CONSTRAINT PK_SEC_REENCRYPT_PROGRESS PRIMARY KEY (tenant_id, source)
+);
+--rollback DROP TABLE SEC_REENCRYPT_PROGRESS;
+
+--changeset sangam:0043-06-work_step dbms:mssql
+--comment: M-025 R37 work step journal: one recorded step per operation and step name, fenced by the lease
+CREATE TABLE WORK_STEP (
+  operation_id NVARCHAR(64) NOT NULL,
+  step_name NVARCHAR(255) NOT NULL,
+  tenant_id NVARCHAR(64),
+  work_id NVARCHAR(64) NOT NULL,
+  step_seq INT NOT NULL,
+  state NVARCHAR(64) NOT NULL,
+  result_json NVARCHAR(MAX),
+  provider_ref NVARCHAR(255),
+  error NVARCHAR(MAX),
+  attempt_id NVARCHAR(64) NOT NULL,
+  lock_version BIGINT NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL,
+  recorded_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_WORK_STEP PRIMARY KEY (operation_id, step_name)
+);
+CREATE INDEX WORK_STEP_WORK ON WORK_STEP (tenant_id, work_id);
+CREATE INDEX WORK_STEP_OP_SEQ ON WORK_STEP (operation_id, step_seq);
+--rollback DROP TABLE WORK_STEP;
+
+--changeset sangam:0043-07-ch_message_gram dbms:mssql
+--comment: M-071 conversation search index: distinct trigrams of each message body (ConversationService.search)
+CREATE TABLE CH_MESSAGE_GRAM (
+  message_id NVARCHAR(64) NOT NULL,
+  tenant_id NVARCHAR(64) NOT NULL,
+  gram NVARCHAR(64) NOT NULL,
+  CONSTRAINT PK_CH_MESSAGE_GRAM PRIMARY KEY (message_id, gram)
+);
+CREATE INDEX CH_MESSAGE_GRAM_LOOKUP ON CH_MESSAGE_GRAM (tenant_id, gram, message_id);
+--rollback DROP TABLE CH_MESSAGE_GRAM;
+
+--changeset sangam:0043-08-api_contract dbms:mssql
+--comment: M-068 package API contracts: OpenAPI or AsyncAPI document per package, contract id and version
+CREATE TABLE API_CONTRACT (
+  tenant_id NVARCHAR(64) NOT NULL,
+  package_id NVARCHAR(64) NOT NULL,
+  contract_id NVARCHAR(255) NOT NULL,
+  version INT NOT NULL,
+  format NVARCHAR(16) NOT NULL,
+  spec_version NVARCHAR(16),
+  document NVARCHAR(MAX) NOT NULL,
+  sha256 NVARCHAR(64) NOT NULL,
+  created_by NVARCHAR(255),
+  created_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_API_CONTRACT PRIMARY KEY (tenant_id, package_id, contract_id, version)
+);
+--rollback DROP TABLE API_CONTRACT;
+
+--changeset sangam:0043-12-process_trace dbms:mssql
+--comment: M-044 W3C trace id (32 lower-case hex) of each process instance, written once at start
+CREATE TABLE PROCESS_TRACE (
+  process_instance_id NVARCHAR(64) NOT NULL,
+  tenant_id NVARCHAR(64),
+  root_process_instance_id NVARCHAR(64),
+  trace_id CHAR(32) NOT NULL,
+  created_at_ms BIGINT NOT NULL,
+  CONSTRAINT PK_PROCESS_TRACE PRIMARY KEY (process_instance_id)
+);
+CREATE INDEX PROCESS_TRACE_ROOT ON PROCESS_TRACE (root_process_instance_id);
+--rollback DROP TABLE PROCESS_TRACE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mssql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD form_version_hash NVARCHAR(64);
@@ -5844,6 +6007,31 @@ ALTER TABLE CMP_RIGHTS_REQUEST ADD extended SMALLINT DEFAULT 0 NOT NULL;
 ALTER TABLE CMP_RIGHTS_REQUEST ADD extension_reason NVARCHAR(MAX);
 ALTER TABLE CMP_RIGHTS_REQUEST ADD access_exception NVARCHAR(64);
 --rollback ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extended; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extension_reason; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN access_exception;
+
+--changeset sangam:0043-09-ops_bulk_job-alter dbms:mssql
+--comment: bulk job creator identity snapshot (M-130)
+ALTER TABLE OPS_BULK_JOB ADD creator_identity NVARCHAR(MAX);
+--rollback ALTER TABLE OPS_BULK_JOB DROP COLUMN creator_identity;
+
+--changeset sangam:0043-11-sec_tenant-alter dbms:mssql
+--comment: decision 97 tenant isolation: SHARED, SCHEMA or DATABASE (was not stored)
+ALTER TABLE SEC_TENANT ADD isolation NVARCHAR(16) CONSTRAINT DF_SEC_TENANT_ISOLATION DEFAULT 'SHARED' NOT NULL CONSTRAINT CK_SEC_TENANT_ISOLATION CHECK (isolation IN ('SHARED', 'SCHEMA', 'DATABASE'));
+--rollback ALTER TABLE SEC_TENANT DROP CONSTRAINT CK_SEC_TENANT_ISOLATION; ALTER TABLE SEC_TENANT DROP CONSTRAINT DF_SEC_TENANT_ISOLATION; ALTER TABLE SEC_TENANT DROP COLUMN isolation;
+
+--changeset sangam:0043-13-ch_inbound_seen-alter dbms:mssql
+--comment: inbound channel message identity and media-fetch state (W3-C, ChannelsSchema)
+ALTER TABLE CH_INBOUND_SEEN ADD external_id NVARCHAR(255);
+ALTER TABLE CH_INBOUND_SEEN ADD principal_id NVARCHAR(255);
+ALTER TABLE CH_INBOUND_SEEN ADD media_ref NVARCHAR(MAX);
+ALTER TABLE CH_INBOUND_SEEN ADD media_state NVARCHAR(64);
+ALTER TABLE CH_INBOUND_SEEN ADD media_attempt INT;
+ALTER TABLE CH_INBOUND_SEEN ADD media_next_at DATETIMEOFFSET;
+ALTER TABLE CH_INBOUND_SEEN ADD media_owner NVARCHAR(255);
+ALTER TABLE CH_INBOUND_SEEN ADD media_epoch BIGINT;
+ALTER TABLE CH_INBOUND_SEEN ADD media_doc NVARCHAR(MAX);
+ALTER TABLE CH_INBOUND_SEEN ADD media_error NVARCHAR(MAX);
+CREATE INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN (media_state, media_next_at);
+--rollback DROP INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN external_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN principal_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_ref; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_state; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_attempt; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_next_at; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_owner; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_epoch; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_doc; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_error;
 
 --changeset sangam:0033-01-cfg_master_code-data dbms:mssql
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
@@ -6241,3 +6429,11 @@ ALTER TABLE EXEC_MAP ALTER COLUMN coordinator_node NVARCHAR(255) NULL;
 --comment: R39 executor node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)
 ALTER TABLE EXEC_NODE DROP CONSTRAINT PK_EXEC_NODE; ALTER TABLE EXEC_NODE ALTER COLUMN node_id NVARCHAR(255) NOT NULL; ALTER TABLE EXEC_NODE ADD CONSTRAINT PK_EXEC_NODE PRIMARY KEY (node_id);
 --rollback ALTER TABLE EXEC_NODE DROP CONSTRAINT PK_EXEC_NODE; ALTER TABLE EXEC_NODE ALTER COLUMN node_id NVARCHAR(64) NOT NULL; ALTER TABLE EXEC_NODE ADD CONSTRAINT PK_EXEC_NODE PRIMARY KEY (node_id);
+
+--changeset sangam:0043-10-package_version-package_hash-nullable-unique dbms:mssql
+--comment: decision 83: draft packages have no hash (NULL); the unique package hash covers frozen hashes only
+DROP INDEX PACKAGE_VERSION_HASH ON PACKAGE_VERSION;
+ALTER TABLE PACKAGE_VERSION ALTER COLUMN package_hash VARBINARY(32) NULL;
+UPDATE PACKAGE_VERSION SET package_hash = NULL WHERE package_hash = 0x0000000000000000000000000000000000000000000000000000000000000000;
+CREATE UNIQUE INDEX PACKAGE_VERSION_HASH ON PACKAGE_VERSION (tenant_id, package_hash) WHERE package_hash IS NOT NULL;
+--rollback DROP INDEX PACKAGE_VERSION_HASH ON PACKAGE_VERSION; UPDATE PACKAGE_VERSION SET package_hash = 0x0000000000000000000000000000000000000000000000000000000000000000 WHERE package_hash IS NULL; ALTER TABLE PACKAGE_VERSION ALTER COLUMN package_hash VARBINARY(32) NOT NULL; CREATE UNIQUE INDEX PACKAGE_VERSION_HASH ON PACKAGE_VERSION (tenant_id, package_hash);

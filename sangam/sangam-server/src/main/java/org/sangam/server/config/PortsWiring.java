@@ -207,7 +207,19 @@ public class PortsWiring {
     }
 
     @Bean
-    public ChannelAdapters.Environment sangamChannelEnvironment(Environment env) {
+    public ChannelAdapters.Environment sangamChannelEnvironment(Environment env,
+            ObjectProvider<org.sangam.integration.connector.SecretResolver> platformSecrets) {
+        return channelEnvironment(env,
+                platformSecrets.getIfAvailable(org.sangam.integration.connector.SecretResolver::fromEnvironment));
+    }
+
+    /**
+     * Channel secrets resolve through the one platform {@code SecretResolver} (Q4): the bean, or its environment fallback,
+     * first; the static {@code sangam.ports.secrets.<ref>} values (listed in {@code sangam.ports.secret-refs}) are only the
+     * last resolver of that chain, never a separate lookup.
+     */
+    static ChannelAdapters.Environment channelEnvironment(Environment env,
+            org.sangam.integration.connector.SecretResolver platform) {
         Map<String, String> secrets = new LinkedHashMap<>();
         String refs = env.getProperty("sangam.ports.secret-refs", "");
         for (String ref : refs.split(",")) {
@@ -226,18 +238,29 @@ public class PortsWiring {
             }
         }
         // Air-gapped by default (ARCHITECTURE §1.9): no egress host unless configured.
-        return ChannelAdapters.Environment.of(secrets, egress);
+        // M-064: the cloud channel families (sqs, sns, eventbridge, servicebus, eventgrid, pubsub) plug in as a provider;
+        // they reach only the hosts above, over https, through the connector transport.
+        org.sangam.integration.connector.SecretResolver chain = org.sangam.integration.connector.SecretResolver.chain(
+                List.of(platform, org.sangam.integration.connector.SecretResolver.of(secrets)));
+        return ChannelAdapters.Environment.of(chain::resolve, egress,
+                List.of(new org.sangam.integration.publish.cloud.CloudChannels(java.time.Clock.systemUTC())));
     }
 
     @Bean
     public InboundEventProcessor sangamInboundEventProcessor(EventRegistry registry, EventLog log, ProcessEngine engine,
-                                                             PortsSettings settings, RestProperties props, Environment env) {
+                                                             PortsSettings settings, RestProperties props, Environment env,
+                                                             ObjectProvider<org.sangam.integration.relay.TenantAdmission> admission,
+                                                             ObjectProvider<org.sangam.integration.inbox.PoisonInbound> poison) {
         Transactions tx = EngineTx.transactions(engine);
         Inbox inbox = new Inbox(settings.getDialect(), tx, props.getNode(), Duration.ofSeconds(30), Duration.ofSeconds(30),
                 new AuditChain(settings.getDialect()));
         // Audit PR-5 (FW-02): bounded event payload; larger events are REJECTED with PAYLOAD_TOO_LARGE (413 on REST).
         int maxPayload = env.getProperty("sangam.ports.events.max-payload-bytes", Integer.class, 1024 * 1024);
-        return new InboundEventProcessor(registry, inbox, log, tx, maxPayload);
+        // SL-142 / C3-06: broker channels ask the cell tenant admission and park MOVED/PURGED messages through the one
+        // park store; HTTP receive() is unchanged. Without cells every tenant is admitted.
+        return new InboundEventProcessor(registry, inbox, log, tx, maxPayload)
+                .withTenantAdmission(new org.sangam.integration.broker.InboundTenantGate(admission::getIfAvailable,
+                        poison::getIfAvailable));
     }
 
     @Bean
@@ -331,12 +354,18 @@ public class PortsWiring {
     }
 
     @Bean
-    public ContentService sangamContentService(ProcessEngine engine, PortsSettings settings, Environment env) {
+    public ContentService sangamContentService(ProcessEngine engine, PortsSettings settings, Environment env,
+            ObjectProvider<org.sangam.integration.malware.MalwareScanning> malware) {
         Path root = Path.of(env.getProperty("sangam.content.root", "data/content"));
+        // M-082: with a scanner (MalwareScanWiring) every stored version is scanned; reads of a version that is not CLEAN
+        // are refused when require-clean is on, which then defaults to sangam.malware.fail-closed.
+        org.sangam.integration.malware.MalwareScanning scanning = malware.getIfAvailable();
+        boolean requireClean = env.getProperty("sangam.content.require-clean", Boolean.class,
+                scanning != null && scanning.failClosed());
         try {
             // Audit PR-4 (FW-39): bounded uploads; above the limit 413 PAYLOAD_TOO_LARGE and the partial object is removed.
             return new ContentService(settings.getDialect(), EngineTx.transactions(engine), new FileSystemDocumentStore(root),
-                    null, env.getProperty("sangam.content.require-clean", Boolean.class, false), contentMaxBytes(env));
+                    scanning == null ? null : scanning.contentScanner(), requireClean, contentMaxBytes(env));
         } catch (IOException e) {
             throw new IllegalStateException("cannot open the document store at " + root.toAbsolutePath(), e);
         }

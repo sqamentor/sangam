@@ -361,6 +361,13 @@ public final class SecurityAdminBridge implements AdminPort {
 
     @Override
     public Tenant tenant(RequestContext ctx, String id) {
+        SecurityIdentity actor = actor(ctx);
+        if (actor.system()) {
+            // decision 97: the shared-instance isolation check reads as the system principal, before any user
+            // permission is known; it gets the read-only system view (id, status, isolation), no admin data.
+            return run(c -> security.tenants().findForSystem(c, actor, id).map(SecurityAdminBridge::systemTenant)
+                    .orElseThrow(() -> ApiProblem.notFound("tenant", id)));
+        }
         if (!id.equals(ctx.tenantId()) && !actor(ctx).hasRole(TenantAdminService.PLATFORM_ADMIN_ROLE)) {
             throw ApiProblem.notFound("tenant", id);
         }
@@ -374,14 +381,21 @@ public final class SecurityAdminBridge implements AdminPort {
         require(t.name(), "name");
         String nameHi = t.attributes() == null || t.attributes().get("nameHi") == null ? null
                 : String.valueOf(t.attributes().get("nameHi"));
+        // decision 97: the requested isolation is stored (null = the instance default); a dedicated instance refuses others
         return run(c -> tenant(security.tenants().createTenant(c, actor(ctx), t.id(), t.name(), nameHi, null,
-                t.profile(), Map.of())));
+                t.profile(), Map.of(), t.isolation())));
     }
 
     @Override
     public Tenant updateTenant(RequestContext ctx, String id, Tenant t) {
         SecurityIdentity actor = actor(ctx);
         Tenant current = tenant(ctx, id);
+        // decision 97: the isolation is fixed at creation; moving a tenant is a data move, never a field update
+        if (t.isolation() != null && !t.isolation().isBlank()
+                && !t.isolation().trim().equalsIgnoreCase(current.isolation())) {
+            throw ApiProblem.conflict("ISOLATION_IMMUTABLE", "tenant " + id + " has isolation " + current.isolation()
+                    + "; it is not changed by an update").with("field", "isolation");
+        }
         run(c -> {
             if (id.equals(ctx.tenantId()) && t.attributes() != null) {
                 security.tenants().configure(c, actor, new LinkedHashMap<>(t.attributes()), null, null);
@@ -487,9 +501,9 @@ public final class SecurityAdminBridge implements AdminPort {
                 && !a.ended();
     }
 
-    /** SL-117: a tenant as the system listing gives it: id and status only. */
+    /** SL-117, decision 97: a tenant as the system view gives it: id, status and isolation only. */
     static Tenant systemTenant(TenantAdminService.SystemTenant t) {
-        return new Tenant(t.tenantId(), null, t.status(), null, null, null, List.of(), Map.of(), null, 0);
+        return new Tenant(t.tenantId(), null, t.status(), null, t.isolation(), null, List.of(), Map.of(), null, 0);
     }
 
     private static Tenant tenant(TenantAdminService.Tenant t) {
@@ -498,7 +512,7 @@ public final class SecurityAdminBridge implements AdminPort {
             attributes.put("nameHi", t.nameHi());
         }
         attributes.put("fourEyes", t.fourEyes());
-        return new Tenant(t.tenantId(), t.nameEn(), t.status(), t.hostingProfile(), "SHARED", "en",
+        return new Tenant(t.tenantId(), t.nameEn(), t.status(), t.hostingProfile(), t.isolation(), "en",
                 t.nameHi() == null ? List.of("en") : List.of("en", "hi"), attributes, null, 0);
     }
 

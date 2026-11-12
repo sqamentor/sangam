@@ -53,6 +53,18 @@ public interface EngineMetrics {
     default void jobExecutionBounded(String reason) {
     }
 
+    /** M-056 (X.2.1.8 rule 5): {@code executor_partition_owner_changes_total{reason}} (claimed, lost, drained, ...). */
+    default void executorOwnerChanged(String reason) {
+    }
+
+    /** M-056: {@code executor_jobs_recovered_total}. */
+    default void executorJobsRecovered(int count) {
+    }
+
+    /** M-056: {@code executor_orphaned_partitions} (gauge, seen by the coordinator). */
+    default void executorOrphanedPartitions(long count) {
+    }
+
     EngineMetrics NONE = new EngineMetrics() {
     };
 }

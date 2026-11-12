@@ -649,6 +649,7 @@ components:
       - INSTANCE_CANCELLED
       - INSTANCE_DELETED
       - INSTANCE_MODIFIED
+      - INSTANCE_UPDATED
       - OUTBOX_REQUEUED
       - OUTBOX_SKIPPED
       - POISON_INBOUND_RECEIVED
@@ -710,6 +711,9 @@ components:
       - BULK_OPERATION_APPROVED
       - OPERATOR_ACTION
       - TENANT_QUOTA_EXCEEDED
+      - EXECUTOR_OWNERSHIP_CHANGED
+      - TEST_CLOCK_CHANGED
+      - API_CONTRACT_STORED
       - SEC_INCIDENT_OPENED
       - SEC_INCIDENT_CLASSIFIED
       - SEC_REPORT_SUBMITTED
@@ -720,6 +724,13 @@ components:
       - SENSITIVE_READ
       - EXPORT
       - READ_AUDIT
+      - BREAK_GLASS_REQUESTED
+      - BREAK_GLASS_APPROVED
+      - BREAK_GLASS_REJECTED
+      - BREAK_GLASS_ISSUED
+      - BREAK_GLASS_USED
+      - BREAK_GLASS_REVIEWED
+      - FIELD_REENCRYPTION_COMPLETED
       x-sangam-groups:
         Identity:
         - AUTH_LOGIN
@@ -797,6 +808,7 @@ components:
         - INSTANCE_CANCELLED
         - INSTANCE_DELETED
         - INSTANCE_MODIFIED
+        - INSTANCE_UPDATED
         - OUTBOX_REQUEUED
         - OUTBOX_SKIPPED
         - POISON_INBOUND_RECEIVED
@@ -863,6 +875,9 @@ components:
         - BULK_OPERATION_APPROVED
         - OPERATOR_ACTION
         - TENANT_QUOTA_EXCEEDED
+        - EXECUTOR_OWNERSHIP_CHANGED
+        - TEST_CLOCK_CHANGED
+        - API_CONTRACT_STORED
         Security:
         - SEC_INCIDENT_OPENED
         - SEC_INCIDENT_CLASSIFIED
@@ -874,6 +889,13 @@ components:
         - SENSITIVE_READ
         - EXPORT
         - READ_AUDIT
+        - BREAK_GLASS_REQUESTED
+        - BREAK_GLASS_APPROVED
+        - BREAK_GLASS_REJECTED
+        - BREAK_GLASS_ISSUED
+        - BREAK_GLASS_USED
+        - BREAK_GLASS_REVIEWED
+        - FIELD_REENCRYPTION_COMPLETED
       x-sangam-pending-change-control: {}
   messages:
     WebhookCaseFileEvent:

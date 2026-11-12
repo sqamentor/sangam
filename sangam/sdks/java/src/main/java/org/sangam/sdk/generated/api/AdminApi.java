@@ -13,8 +13,6 @@ import org.sangam.sdk.generated.model.Group;
 import org.sangam.sdk.generated.model.IdentityProvider;
 import org.sangam.sdk.generated.model.IdentitySyncResult;
 import org.sangam.sdk.generated.model.IdentityTestResult;
-import org.sangam.sdk.generated.model.ModuleDefaultsRequest;
-import org.sangam.sdk.generated.model.ModuleDefaultsResult;
 import org.sangam.sdk.generated.model.Policy;
 import org.sangam.sdk.generated.model.PolicyVersion;
 import org.sangam.sdk.generated.model.ReasonRequest;
@@ -26,7 +24,7 @@ import org.sangam.sdk.generated.model.Tenant;
 import org.sangam.sdk.generated.model.User;
 
 /**
- * Typed operations of {@code Admin} (37 operations), generated from
+ * Typed operations of {@code Admin} (36 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -59,7 +57,6 @@ public final class AdminApi {
     private static final TypeReference<ServicePrincipalSecret> R_createServicePrincipal = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipalSecret> R_rotateServicePrincipal = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipal> R_revokeServicePrincipal = new TypeReference<>() { };
-    private static final TypeReference<ModuleDefaultsResult> R_installModuleDefaults = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -717,21 +714,5 @@ public final class AdminApi {
         ApiRequest req = ApiRequest.post("/admin/service-principals/" + HttpTransport.seg(String.valueOf(id)) + "/revoke");
         req.body(body);
         return call.json(req, options, R_revokeServicePrincipal);
-    }
-
-    /**
-     * Install module role templates and self-service grants
-     *
-     * <p>Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
-     *
-     * <p>{@code POST /admin/security/module-defaults} (operationId {@code installModuleDefaults}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public ModuleDefaultsResult installModuleDefaults(ModuleDefaultsRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/admin/security/module-defaults");
-        req.body(body);
-        return call.json(req, options, R_installModuleDefaults);
     }
 }

@@ -59,6 +59,12 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
+    <!-- M-132: EXIF of PNG (eXIf) and HEIF/HEIC evidence. Apache-2.0; brings com.adobe.xmp:xmpcore (BSD-3-Clause).
+         Owner decisions 56 and 60. Versions are managed in the root pom (version.metadata-extractor, version.xmpcore). -->
+    <dependency>
+      <groupId>com.drewnoakes</groupId>
+      <artifactId>metadata-extractor</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -114,7 +114,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
      * owner decision 2026-11-12: internal lookups write no extra event). Visibility is checked as by {@code get}.
      */
     private TaskPort.TaskDetail internalDetail(RequestContext ctx, String taskId) {
-        return taskPort instanceof OperatonTaskAdapter a ? a.detail(ctx, taskId, false) : taskPort.get(ctx, taskId);
+        return org.sangam.rest.support.VariableMaskingPorts.unwrap(taskPort) instanceof OperatonTaskAdapter a ? a.detail(ctx, taskId, false) : taskPort.get(ctx, taskId);
     }
 
     // ------------------------------------------------------------------ me

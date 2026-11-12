@@ -75,7 +75,9 @@ export interface TaskSummary {
   seatName?: string;
   actingForSeatName?: string;
   fromSeatName?: string;
+  /** M-042 task index (contract Task.amount, int64): whole minor units of `currency`; show with fmtMinorMoney, never divide. */
   amount?: number;
+  /** M-042: ISO 4217 code of `amount`; absent with it. */
   currency?: string;
   created: Iso;
   received?: Iso;
@@ -358,6 +360,11 @@ export interface ProcessInstance {
   incidents?: number;
   superInstanceId?: Id;
   lifecycleState?: string;
+  /**
+   * M-044: W3C trace id (32 lowercase hex) of the command that started the instance; absent when none was recorded.
+   * Requested from W3-M as ProcessInstance.traceId (WAVE3-SYNC-BOARD 2026-11-12T11:28:00Z).
+   */
+  traceId?: string;
 }
 
 export interface ActivityInstance {
@@ -1074,6 +1081,43 @@ export interface Application {
   appealDeadline?: Iso;
   paymentStatus?: 'NOT_REQUIRED' | 'DUE' | 'PAID' | 'UNKNOWN_OUTCOME';
 }
+
+/** M-068 contract ApiContractSummary: one stored contract version, without its document. */
+export interface ApiContractSummary {
+  tenantId?: string;
+  packageId: string;
+  contractId: string;
+  version: number;
+  format: 'OPENAPI' | 'ASYNCAPI';
+  specVersion?: string;
+  sha256: string;
+}
+
+/** M-068 contract ContractOperation: method and path (OpenAPI) or action and channel (AsyncAPI). */
+export interface ContractOperation {
+  operationId: string;
+  format: 'OPENAPI' | 'ASYNCAPI';
+  method?: string;
+  path?: string;
+  action?: string;
+  channel?: string;
+  summary?: string;
+  requestSchema?: Record<string, unknown>;
+  responseSchemas?: Record<string, unknown>;
+  servers?: string[];
+}
+
+/** M-021 contract TestClock: the instant the engine and business clocks read, their offset from the wall clock. */
+export interface TestClock {
+  now: Iso;
+  /** int64 milliseconds; negative when the clock was set into the past. */
+  offsetMs: number;
+  /** Set on a change only. */
+  action?: 'ADVANCE' | 'SET' | 'RESET';
+}
+
+/** M-021 contract TestClockChange: exactly one of advanceBy, set or reset; reason goes to TEST_CLOCK_CHANGED. */
+export type TestClockChange = ({ advanceBy: string } | { set: Iso } | { reset: true }) & { reason?: string };
 
 export interface Notification {
   id: Id;

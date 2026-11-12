@@ -9,6 +9,7 @@ import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.AppealRequest;
 import org.sangam.sdk.generated.model.Application;
 import org.sangam.sdk.generated.model.ApplyRequest;
+import org.sangam.sdk.generated.model.FormVersion;
 import org.sangam.sdk.generated.model.Grievance;
 import org.sangam.sdk.generated.model.GrievanceReceipt;
 import org.sangam.sdk.generated.model.GrievanceRequest;
@@ -16,7 +17,7 @@ import org.sangam.sdk.generated.model.PortalService;
 import org.sangam.sdk.generated.model.WithdrawRequest;
 
 /**
- * Typed operations of {@code Portal} (10 operations), generated from
+ * Typed operations of {@code Portal} (11 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -25,6 +26,7 @@ import org.sangam.sdk.generated.model.WithdrawRequest;
 public final class PortalApi {
 
     private static final TypeReference<java.util.List<PortalService>> R_listPortalServices = new TypeReference<>() { };
+    private static final TypeReference<FormVersion> R_getPortalServiceForm = new TypeReference<>() { };
     private static final TypeReference<Application> R_applyForService = new TypeReference<>() { };
     private static final TypeReference<Application> R_getMyApplication = new TypeReference<>() { };
     private static final TypeReference<Application> R_replyToClarification = new TypeReference<>() { };
@@ -51,6 +53,21 @@ public final class PortalApi {
     public java.util.List<PortalService> listPortalServices(RequestOptions options) {
         ApiRequest req = ApiRequest.get("/portal/services");
         return call.json(req, options, R_listPortalServices);
+    }
+
+    /**
+     * Application form of a service
+     *
+     * <p>The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
+     *
+     * <p>{@code GET /portal/services/{key}/form} (operationId {@code getPortalServiceForm}); permission {@code portal.use}.
+     * @param key path parameter {@code key}. service key
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public FormVersion getPortalServiceForm(String key, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/portal/services/" + HttpTransport.seg(String.valueOf(key)) + "/form");
+        return call.json(req, options, R_getPortalServiceForm);
     }
 
     /**

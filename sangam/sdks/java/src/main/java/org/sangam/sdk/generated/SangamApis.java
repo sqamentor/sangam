@@ -9,7 +9,9 @@ import org.sangam.sdk.generated.api.AdminApi;
 import org.sangam.sdk.generated.api.AdminAssignmentsApi;
 import org.sangam.sdk.generated.api.AdminOrgUnitsApi;
 import org.sangam.sdk.generated.api.AdminPowerTablesApi;
+import org.sangam.sdk.generated.api.AdminSecurityApi;
 import org.sangam.sdk.generated.api.AnalyticsApi;
+import org.sangam.sdk.generated.api.ApiContractsApi;
 import org.sangam.sdk.generated.api.AuditApi;
 import org.sangam.sdk.generated.api.BillingApi;
 import org.sangam.sdk.generated.api.BulkIngestApi;
@@ -69,11 +71,12 @@ import org.sangam.sdk.generated.api.RostersApi;
 import org.sangam.sdk.generated.api.SCIMApi;
 import org.sangam.sdk.generated.api.TasksApi;
 import org.sangam.sdk.generated.api.TenantOperationsApi;
+import org.sangam.sdk.generated.api.TestModeApi;
 import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1074 operations on 901 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
@@ -84,7 +87,9 @@ public final class SangamApis {
     private final AdminAssignmentsApi adminAssignments;
     private final AdminOrgUnitsApi adminOrgUnits;
     private final AdminPowerTablesApi adminPowerTables;
+    private final AdminSecurityApi adminSecurity;
     private final AnalyticsApi analytics;
+    private final ApiContractsApi apiContracts;
     private final AuditApi audit;
     private final BillingApi billing;
     private final BulkIngestApi bulkIngest;
@@ -144,6 +149,7 @@ public final class SangamApis {
     private final SCIMApi sCIM;
     private final TasksApi tasks;
     private final TenantOperationsApi tenantOperations;
+    private final TestModeApi testMode;
     private final WorkApi work;
     private final WorkspaceApi workspace;
 
@@ -153,7 +159,9 @@ public final class SangamApis {
         this.adminAssignments = new AdminAssignmentsApi(http);
         this.adminOrgUnits = new AdminOrgUnitsApi(http);
         this.adminPowerTables = new AdminPowerTablesApi(http);
+        this.adminSecurity = new AdminSecurityApi(http);
         this.analytics = new AnalyticsApi(http);
+        this.apiContracts = new ApiContractsApi(http);
         this.audit = new AuditApi(http);
         this.billing = new BillingApi(http);
         this.bulkIngest = new BulkIngestApi(http);
@@ -213,13 +221,14 @@ public final class SangamApis {
         this.sCIM = new SCIMApi(http);
         this.tasks = new TasksApi(http);
         this.tenantOperations = new TenantOperationsApi(http);
+        this.testMode = new TestModeApi(http);
         this.work = new WorkApi(http);
         this.workspace = new WorkspaceApi(http);
     }
 
     /** {@code AI}: 34 operations. */
     public AIApi aI() { return aI; }
-    /** {@code Admin}: 37 operations. */
+    /** {@code Admin}: 36 operations. */
     public AdminApi admin() { return admin; }
     /** {@code Admin /assignments}: 7 operations. */
     public AdminAssignmentsApi adminAssignments() { return adminAssignments; }
@@ -227,8 +236,12 @@ public final class SangamApis {
     public AdminOrgUnitsApi adminOrgUnits() { return adminOrgUnits; }
     /** {@code Admin /power-tables}: 8 operations. */
     public AdminPowerTablesApi adminPowerTables() { return adminPowerTables; }
+    /** {@code Admin /security}: 6 operations. */
+    public AdminSecurityApi adminSecurity() { return adminSecurity; }
     /** {@code Analytics}: 15 operations. */
     public AnalyticsApi analytics() { return analytics; }
+    /** {@code ApiContracts}: 4 operations. */
+    public ApiContractsApi apiContracts() { return apiContracts; }
     /** {@code Audit}: 8 operations. */
     public AuditApi audit() { return audit; }
     /** {@code Billing}: 7 operations. */
@@ -243,9 +256,9 @@ public final class SangamApis {
     public CaseFiles3Api caseFiles3() { return caseFiles3; }
     /** {@code Cases}: 11 operations. */
     public CasesApi cases() { return cases; }
-    /** {@code Cell}: 12 operations. */
+    /** {@code Cell}: 15 operations. */
     public CellApi cell() { return cell; }
-    /** {@code Channels}: 17 operations. */
+    /** {@code Channels}: 19 operations. */
     public ChannelsApi channels() { return channels; }
     /** {@code Compliance}: 32 operations. */
     public ComplianceApi compliance() { return compliance; }
@@ -295,7 +308,7 @@ public final class SangamApis {
     public OpsIncidentsApi opsIncidents() { return opsIncidents; }
     /** {@code Ops /jobs}: 6 operations. */
     public OpsJobsApi opsJobs() { return opsJobs; }
-    /** {@code Ops /reconciliation}: 9 operations. */
+    /** {@code Ops /reconciliation}: 6 operations. */
     public OpsReconciliationApi opsReconciliation() { return opsReconciliation; }
     /** {@code Packages}: 22 operations. */
     public PackagesApi packages() { return packages; }
@@ -303,11 +316,11 @@ public final class SangamApis {
     public PacksApi packs() { return packs; }
     /** {@code Plugins}: 6 operations. */
     public PluginsApi plugins() { return plugins; }
-    /** {@code Portal}: 10 operations. */
+    /** {@code Portal}: 11 operations. */
     public PortalApi portal() { return portal; }
     /** {@code Processes}: 31 operations. */
     public ProcessesApi processes() { return processes; }
-    /** {@code Programmes}: 24 operations. */
+    /** {@code Programmes}: 25 operations. */
     public ProgrammesApi programmes() { return programmes; }
     /** {@code Programmes}: 24 operations. */
     public Programmes2Api programmes2() { return programmes2; }
@@ -347,6 +360,8 @@ public final class SangamApis {
     public TasksApi tasks() { return tasks; }
     /** {@code Tenant operations}: 36 operations. */
     public TenantOperationsApi tenantOperations() { return tenantOperations; }
+    /** {@code TestMode}: 2 operations. */
+    public TestModeApi testMode() { return testMode; }
     /** {@code Work}: 11 operations. */
     public WorkApi work() { return work; }
     /** {@code Workspace}: 7 operations. */

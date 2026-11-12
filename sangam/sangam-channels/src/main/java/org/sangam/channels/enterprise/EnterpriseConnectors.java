@@ -22,11 +22,12 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
- * SAP and ServiceNow connectors over public HTTP interfaces. No vendor library is bundled. SAP RFC needs the customer's own
- * restricted client library and is not implemented here.
+ * SAP and ServiceNow connectors over public HTTP interfaces. No vendor library is bundled. SAP RFC, which needs the
+ * customer's own SAP JCo, is {@link SapRfc} (loaded reflectively by {@link JcoRfcClient}).
  */
 public final class EnterpriseConnectors {
 
@@ -123,13 +124,16 @@ public final class EnterpriseConnectors {
     // ---- SAP OData -----------------------------------------------------------------------------
 
     /**
-     * SAP Gateway OData over public HTTP conventions: {@code read} is GET, {@code create} is POST with the CSRF token fetch
-     * (header {@code X-CSRF-Token: Fetch}) and session cookie. Class (c) by default: OData has no universal idempotency key, so a
-     * lost answer on create becomes UNKNOWN_OUTCOME. A deployment whose service stores an external id can use the HTTP/REST
-     * connector's lookup path instead.
+     * SAP Gateway OData over public HTTP conventions: {@code read} is GET; {@code create} (POST), {@code update} (PATCH, or PUT
+     * with input {@code method=PUT}) and {@code delete} (DELETE) fetch a CSRF token first (header {@code X-CSRF-Token: Fetch})
+     * with its session cookie. Update and delete address one entity by input {@code key} (the OData key predicate, for example
+     * {@code '0001'}) and send {@code If-Match: *} unless input {@code etag} gives the entity's ETag. Class (c) by default:
+     * OData has no universal idempotency key, so a lost answer on create becomes UNKNOWN_OUTCOME; update and delete are
+     * idempotent by HTTP semantics, so a lost answer there is a retryable failure. A deployment whose service stores an
+     * external id can use the HTTP/REST connector's lookup path instead.
      */
     public static SangamConnector sapOData(String id, ConnectorProfile profile, URI serviceRoot, String authRef, HttpTransport transport, SecretResolver secrets) {
-        ConnectorDescriptor d = new ConnectorDescriptor(id, "sap-odata", CapabilityClass.C_NEITHER, List.of("read", "create"), profile);
+        ConnectorDescriptor d = new ConnectorDescriptor(id, "sap-odata", CapabilityClass.C_NEITHER, List.of("read", "create", "update", "delete"), profile);
         return new SangamConnector() {
             @Override
             public ConnectorDescriptor descriptor() {
@@ -145,47 +149,76 @@ public final class EnterpriseConnectors {
                     Map<String, String> base = new LinkedHashMap<>();
                     base.put("Accept", "application/json");
                     base.put("Authorization", secrets.require(authRef));
-                    if ("read".equals(r.operation())) {
-                        String key = r.str("key");
-                        String q = r.str("query", "");
-                        if (!q.isEmpty() && (q.contains("#") || q.contains(" "))) {
-                            return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", "query must be URL-encoded");
+                    switch (r.operation()) {
+                        case "read" -> {
+                            String key = r.str("key");
+                            String q = r.str("query", "");
+                            if (!q.isEmpty() && (q.contains("#") || q.contains(" "))) {
+                                return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", "query must be URL-encoded");
+                            }
+                            URI uri = URI.create(root + "/" + entitySet + (key == null ? "" : "(" + URLEncoder.encode(key, StandardCharsets.UTF_8) + ")") + (q.isEmpty() ? "" : "?" + q));
+                            return map(transport.execute(r.tenantId(), HttpTransport.Call.get(uri, base), deadline), true,
+                                    resp -> ConnectorResult.Success.of(Map.of("body", Json.MAPPER.convertValue(tree(resp), Object.class)), null));
                         }
-                        URI uri = URI.create(root + "/" + entitySet + (key == null ? "" : "(" + URLEncoder.encode(key, StandardCharsets.UTF_8) + ")") + (q.isEmpty() ? "" : "?" + q));
-                        return map(transport.execute(r.tenantId(), HttpTransport.Call.get(uri, base), deadline), true,
-                                resp -> ConnectorResult.Success.of(Map.of("body", Json.MAPPER.convertValue(tree(resp), Object.class)), null));
-                    }
-                    if (!"create".equals(r.operation())) {
-                        return ConnectorResult.BusinessFailure.of("UNSUPPORTED_OPERATION", r.operation());
-                    }
-                    HttpTransport.Outcome posted = null;
-                    // A 403 with "X-CSRF-Token: Required" was refused before processing, so one retry with a new token is safe.
-                    for (int attempt = 0; attempt < 2; attempt++) {
-                        Map<String, String> fetch = new LinkedHashMap<>(base);
-                        fetch.put("X-CSRF-Token", "Fetch");
-                        HttpTransport.Outcome f = transport.execute(r.tenantId(), HttpTransport.Call.get(URI.create(root + "/"), fetch), deadline);
-                        if (!(f instanceof HttpTransport.Outcome.Response fr) || !fr.is2xx() || fr.header("X-CSRF-Token").isEmpty()) {
-                            return ConnectorResult.TransientFailure.noEffect("could not fetch the CSRF token: " + (f instanceof HttpTransport.Outcome.Response x ? "HTTP " + x.status() : f.toString()));
+                        case "create" -> {
+                            HttpTransport.Outcome posted = withCsrf(r, root, base, deadline, "POST", URI.create(root + "/" + entitySet), Json.bytes(r.map("fields")), Map.of());
+                            return map(posted, false,
+                                    resp -> ConnectorResult.Success.of(Map.of("body", Json.MAPPER.convertValue(tree(resp), Object.class)), resp.header("Location").orElse(null)));
                         }
-                        Map<String, String> h = new LinkedHashMap<>(base);
-                        h.put("Content-Type", "application/json");
-                        h.put("X-CSRF-Token", fr.header("X-CSRF-Token").get());
-                        List<String> cookies = fr.headers().entrySet().stream().filter(e -> "set-cookie".equalsIgnoreCase(e.getKey())).flatMap(e -> e.getValue().stream())
-                                .map(c -> c.split(";", 2)[0]).toList();
-                        if (!cookies.isEmpty()) {
-                            h.put("Cookie", String.join("; ", cookies));
+                        case "update", "delete" -> {
+                            URI entity = URI.create(root + "/" + entitySet + "(" + URLEncoder.encode(r.required("key"), StandardCharsets.UTF_8) + ")");
+                            Map<String, String> extra = Map.of("If-Match", r.str("etag", "*"));
+                            boolean update = "update".equals(r.operation());
+                            String method = update ? r.str("method", "PATCH").toUpperCase(Locale.ROOT) : "DELETE";
+                            if (!method.equals("PATCH") && !method.equals("PUT") && !method.equals("DELETE")) {
+                                return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", "update method must be PATCH or PUT");
+                            }
+                            HttpTransport.Outcome o = withCsrf(r, root, base, deadline, method, entity, update ? Json.bytes(r.map("fields")) : null, extra);
+                            // 204 No Content is the usual answer, so there is no body to return
+                            return map(o, true, resp -> ConnectorResult.Success.of(Map.of("status", resp.status()), null));
                         }
-                        posted = transport.execute(r.tenantId(), HttpTransport.Call.post(URI.create(root + "/" + entitySet), h, Json.bytes(r.map("fields")), false), deadline);
-                        if (!(posted instanceof HttpTransport.Outcome.Response pr && pr.status() == 403
-                                && "required".equalsIgnoreCase(pr.header("X-CSRF-Token").orElse("")))) {
-                            break;
+                        default -> {
+                            return ConnectorResult.BusinessFailure.of("UNSUPPORTED_OPERATION", r.operation());
                         }
                     }
-                    return map(posted, false,
-                            resp -> ConnectorResult.Success.of(Map.of("body", Json.MAPPER.convertValue(tree(resp), Object.class)), resp.header("Location").orElse(null)));
                 } catch (IllegalArgumentException e) {
                     return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", e.getMessage());
                 }
+            }
+
+            /**
+             * Fetches a CSRF token and session cookie, then sends the change. A 403 with {@code X-CSRF-Token: Required} was
+             * refused before processing, so one retry with a new token is safe.
+             */
+            private HttpTransport.Outcome withCsrf(ConnectorRequest r, String root, Map<String, String> base, long deadline, String method, URI uri, byte[] body,
+                                                   Map<String, String> extra) {
+                HttpTransport.Outcome sent = null;
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    Map<String, String> fetch = new LinkedHashMap<>(base);
+                    fetch.put("X-CSRF-Token", "Fetch");
+                    HttpTransport.Outcome f = transport.execute(r.tenantId(), HttpTransport.Call.get(URI.create(root + "/"), fetch), deadline);
+                    if (!(f instanceof HttpTransport.Outcome.Response fr) || !fr.is2xx() || fr.header("X-CSRF-Token").isEmpty()) {
+                        String why = f instanceof HttpTransport.Outcome.Response x ? "HTTP " + x.status() : f.toString();
+                        return new HttpTransport.Outcome.NoEffect("could not fetch the CSRF token: " + why, 1);
+                    }
+                    Map<String, String> h = new LinkedHashMap<>(base);
+                    h.putAll(extra);
+                    if (body != null) {
+                        h.put("Content-Type", "application/json");
+                    }
+                    h.put("X-CSRF-Token", fr.header("X-CSRF-Token").get());
+                    List<String> cookies = fr.headers().entrySet().stream().filter(e -> "set-cookie".equalsIgnoreCase(e.getKey())).flatMap(e -> e.getValue().stream())
+                            .map(c -> c.split(";", 2)[0]).toList();
+                    if (!cookies.isEmpty()) {
+                        h.put("Cookie", String.join("; ", cookies));
+                    }
+                    sent = transport.execute(r.tenantId(), new HttpTransport.Call(method, uri, h, body, null, !"POST".equals(method)), deadline);
+                    if (!(sent instanceof HttpTransport.Outcome.Response pr && pr.status() == 403
+                            && "required".equalsIgnoreCase(pr.header("X-CSRF-Token").orElse("")))) {
+                        break;
+                    }
+                }
+                return sent;
             }
         };
     }

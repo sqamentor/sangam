@@ -5743,6 +5743,169 @@ CREATE TABLE JOB_TRACE_CONTEXT (
 );
 --rollback DROP TABLE JOB_TRACE_CONTEXT;
 
+--changeset sangam:0043-01-package_signature dbms:oracle
+--comment: M-074 R43 package signatures over the frozen package hash, one per signing role (X.2.4.5)
+CREATE TABLE PACKAGE_SIGNATURE (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  package_hash RAW(32) NOT NULL,
+  signer_role VARCHAR2(16 CHAR) NOT NULL,
+  principal_id VARCHAR2(255 CHAR),
+  seat_id VARCHAR2(64 CHAR),
+  alg VARCHAR2(16 CHAR) NOT NULL,
+  key_id VARCHAR2(64 CHAR) NOT NULL,
+  signature BLOB NOT NULL,
+  signed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_PACKAGE_SIGNATURE PRIMARY KEY (tenant_id, package_hash, signer_role)
+);
+--rollback DROP TABLE PACKAGE_SIGNATURE;
+
+--changeset sangam:0043-02-env_binding dbms:oracle
+--comment: M-074 R43 environment bindings: versioned, approved values a package names (X.2.4.5)
+CREATE TABLE ENV_BINDING (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  env VARCHAR2(64 CHAR) NOT NULL,
+  name VARCHAR2(255 CHAR) NOT NULL,
+  version NUMBER(10) NOT NULL,
+  value_ref VARCHAR2(1000 CHAR) NOT NULL,
+  state VARCHAR2(16 CHAR) NOT NULL,
+  created_by VARCHAR2(255 CHAR) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  approved_by VARCHAR2(255 CHAR),
+  approved_at TIMESTAMP WITH TIME ZONE,
+  reason VARCHAR2(1000 CHAR),
+  CONSTRAINT PK_ENV_BINDING PRIMARY KEY (tenant_id, env, name, version)
+);
+CREATE INDEX ENV_BINDING_STATE ON ENV_BINDING (tenant_id, env, state);
+--rollback DROP TABLE ENV_BINDING;
+
+--changeset sangam:0043-03-cmp_national_id_vault dbms:oracle
+--comment: M-078 national id vault: encrypted number, masked form and HMAC lookup hash per reference key
+CREATE TABLE CMP_NATIONAL_ID_VAULT (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  reference_key VARCHAR2(64 CHAR) NOT NULL,
+  id_type VARCHAR2(64 CHAR) NOT NULL,
+  lookup_hash VARCHAR2(64 CHAR) NOT NULL,
+  number_enc CLOB NOT NULL,
+  masked VARCHAR2(64 CHAR),
+  created_by VARCHAR2(255 CHAR),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_CMP_NATIONAL_ID_VAULT PRIMARY KEY (tenant_id, reference_key)
+);
+CREATE UNIQUE INDEX CMP_NATIONAL_ID_LOOKUP ON CMP_NATIONAL_ID_VAULT (tenant_id, id_type, lookup_hash);
+--rollback DROP TABLE CMP_NATIONAL_ID_VAULT;
+
+--changeset sangam:0043-04-sec_break_glass dbms:oracle
+--comment: M-084 break-glass grants: request, approvals, one-time token issue, use and after-the-fact review
+CREATE TABLE SEC_BREAK_GLASS (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  grant_id VARCHAR2(64 CHAR) NOT NULL,
+  token_class VARCHAR2(64 CHAR) NOT NULL,
+  holder_person_id VARCHAR2(64 CHAR) NOT NULL,
+  requested_by VARCHAR2(255 CHAR) NOT NULL,
+  reason CLOB NOT NULL,
+  status VARCHAR2(16 CHAR) NOT NULL,
+  required_approvals NUMBER(10) NOT NULL,
+  approvals CLOB NOT NULL,
+  valid_minutes NUMBER(10) NOT NULL,
+  token_id VARCHAR2(64 CHAR),
+  requested_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  issued_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE,
+  first_used_at TIMESTAMP WITH TIME ZONE,
+  last_used_at TIMESTAMP WITH TIME ZONE,
+  use_count NUMBER(19) NOT NULL,
+  review_status VARCHAR2(16 CHAR) NOT NULL,
+  reviewed_by VARCHAR2(255 CHAR),
+  review_outcome VARCHAR2(16 CHAR),
+  review_notes CLOB,
+  reviewed_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_SEC_BREAK_GLASS PRIMARY KEY (tenant_id, grant_id)
+);
+CREATE INDEX SEC_BREAK_GLASS_TOKEN ON SEC_BREAK_GLASS (token_id);
+CREATE INDEX SEC_BREAK_GLASS_REVIEW ON SEC_BREAK_GLASS (tenant_id, review_status);
+--rollback DROP TABLE SEC_BREAK_GLASS;
+
+--changeset sangam:0043-05-sec_reencrypt_progress dbms:oracle
+--comment: M-085 field re-encryption progress: resumable cursor and counters per tenant and source
+CREATE TABLE SEC_REENCRYPT_PROGRESS (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  source VARCHAR2(64 CHAR) NOT NULL,
+  target_key_id VARCHAR2(80 CHAR) NOT NULL,
+  status VARCHAR2(16 CHAR) NOT NULL,
+  last_key VARCHAR2(255 CHAR),
+  scanned NUMBER(19) NOT NULL,
+  rewritten NUMBER(19) NOT NULL,
+  failed NUMBER(19) NOT NULL,
+  started_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  finished_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_SEC_REENCRYPT_PROGRESS PRIMARY KEY (tenant_id, source)
+);
+--rollback DROP TABLE SEC_REENCRYPT_PROGRESS;
+
+--changeset sangam:0043-06-work_step dbms:oracle
+--comment: M-025 R37 work step journal: one recorded step per operation and step name, fenced by the lease
+CREATE TABLE WORK_STEP (
+  operation_id VARCHAR2(64 CHAR) NOT NULL,
+  step_name VARCHAR2(255 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR),
+  work_id VARCHAR2(64 CHAR) NOT NULL,
+  step_seq NUMBER(10) NOT NULL,
+  state VARCHAR2(64 CHAR) NOT NULL,
+  result_json CLOB,
+  provider_ref VARCHAR2(255 CHAR),
+  error CLOB,
+  attempt_id VARCHAR2(64 CHAR) NOT NULL,
+  lock_version NUMBER(19) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  recorded_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_WORK_STEP PRIMARY KEY (operation_id, step_name)
+);
+CREATE INDEX WORK_STEP_WORK ON WORK_STEP (tenant_id, work_id);
+CREATE INDEX WORK_STEP_OP_SEQ ON WORK_STEP (operation_id, step_seq);
+--rollback DROP TABLE WORK_STEP;
+
+--changeset sangam:0043-07-ch_message_gram dbms:oracle
+--comment: M-071 conversation search index: distinct trigrams of each message body (ConversationService.search)
+CREATE TABLE CH_MESSAGE_GRAM (
+  message_id VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  gram VARCHAR2(64 CHAR) NOT NULL,
+  CONSTRAINT PK_CH_MESSAGE_GRAM PRIMARY KEY (message_id, gram)
+);
+CREATE INDEX CH_MESSAGE_GRAM_LOOKUP ON CH_MESSAGE_GRAM (tenant_id, gram, message_id);
+--rollback DROP TABLE CH_MESSAGE_GRAM;
+
+--changeset sangam:0043-08-api_contract dbms:oracle
+--comment: M-068 package API contracts: OpenAPI or AsyncAPI document per package, contract id and version
+CREATE TABLE API_CONTRACT (
+  tenant_id VARCHAR2(64 CHAR) NOT NULL,
+  package_id VARCHAR2(64 CHAR) NOT NULL,
+  contract_id VARCHAR2(255 CHAR) NOT NULL,
+  version NUMBER(10) NOT NULL,
+  format VARCHAR2(16 CHAR) NOT NULL,
+  spec_version VARCHAR2(16 CHAR),
+  document CLOB NOT NULL,
+  sha256 VARCHAR2(64 CHAR) NOT NULL,
+  created_by VARCHAR2(255 CHAR),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_API_CONTRACT PRIMARY KEY (tenant_id, package_id, contract_id, version)
+);
+--rollback DROP TABLE API_CONTRACT;
+
+--changeset sangam:0043-12-process_trace dbms:oracle
+--comment: M-044 W3C trace id (32 lower-case hex) of each process instance, written once at start
+CREATE TABLE PROCESS_TRACE (
+  process_instance_id VARCHAR2(64 CHAR) NOT NULL,
+  tenant_id VARCHAR2(64 CHAR),
+  root_process_instance_id VARCHAR2(64 CHAR),
+  trace_id CHAR(32 CHAR) NOT NULL,
+  created_at_ms NUMBER(19) NOT NULL,
+  CONSTRAINT PK_PROCESS_TRACE PRIMARY KEY (process_instance_id)
+);
+CREATE INDEX PROCESS_TRACE_ROOT ON PROCESS_TRACE (root_process_instance_id);
+--rollback DROP TABLE PROCESS_TRACE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:oracle
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD (form_version_hash VARCHAR2(64 CHAR));
@@ -5844,6 +6007,31 @@ ALTER TABLE CMP_RIGHTS_REQUEST ADD (extended NUMBER(5) DEFAULT 0 NOT NULL);
 ALTER TABLE CMP_RIGHTS_REQUEST ADD (extension_reason CLOB);
 ALTER TABLE CMP_RIGHTS_REQUEST ADD (access_exception VARCHAR2(64 CHAR));
 --rollback ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extended; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extension_reason; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN access_exception;
+
+--changeset sangam:0043-09-ops_bulk_job-alter dbms:oracle
+--comment: bulk job creator identity snapshot (M-130)
+ALTER TABLE OPS_BULK_JOB ADD (creator_identity CLOB);
+--rollback ALTER TABLE OPS_BULK_JOB DROP COLUMN creator_identity;
+
+--changeset sangam:0043-11-sec_tenant-alter dbms:oracle
+--comment: decision 97 tenant isolation: SHARED, SCHEMA or DATABASE (was not stored)
+ALTER TABLE SEC_TENANT ADD (isolation VARCHAR2(16 CHAR) DEFAULT 'SHARED' NOT NULL CONSTRAINT CK_SEC_TENANT_ISOLATION CHECK (isolation IN ('SHARED', 'SCHEMA', 'DATABASE')));
+--rollback ALTER TABLE SEC_TENANT DROP CONSTRAINT CK_SEC_TENANT_ISOLATION; ALTER TABLE SEC_TENANT DROP COLUMN isolation;
+
+--changeset sangam:0043-13-ch_inbound_seen-alter dbms:oracle
+--comment: inbound channel message identity and media-fetch state (W3-C, ChannelsSchema)
+ALTER TABLE CH_INBOUND_SEEN ADD (external_id VARCHAR2(255 CHAR));
+ALTER TABLE CH_INBOUND_SEEN ADD (principal_id VARCHAR2(255 CHAR));
+ALTER TABLE CH_INBOUND_SEEN ADD (media_ref CLOB);
+ALTER TABLE CH_INBOUND_SEEN ADD (media_state VARCHAR2(64 CHAR));
+ALTER TABLE CH_INBOUND_SEEN ADD (media_attempt NUMBER(10));
+ALTER TABLE CH_INBOUND_SEEN ADD (media_next_at TIMESTAMP WITH TIME ZONE);
+ALTER TABLE CH_INBOUND_SEEN ADD (media_owner VARCHAR2(255 CHAR));
+ALTER TABLE CH_INBOUND_SEEN ADD (media_epoch NUMBER(19));
+ALTER TABLE CH_INBOUND_SEEN ADD (media_doc CLOB);
+ALTER TABLE CH_INBOUND_SEEN ADD (media_error CLOB);
+CREATE INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN (media_state, media_next_at);
+--rollback DROP INDEX CH_INBOUND_SEEN_MEDIA; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN external_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN principal_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_ref; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_state; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_attempt; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_next_at; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_owner; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_epoch; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_doc; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_error;
 
 --changeset sangam:0033-01-cfg_master_code-data dbms:oracle
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
@@ -6241,3 +6429,11 @@ ALTER TABLE EXEC_MAP MODIFY (coordinator_node VARCHAR2(255 CHAR));
 --comment: R39 executor node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)
 ALTER TABLE EXEC_NODE MODIFY (node_id VARCHAR2(255 CHAR));
 --rollback ALTER TABLE EXEC_NODE MODIFY (node_id VARCHAR2(64 CHAR));
+
+--changeset sangam:0043-10-package_version-package_hash-nullable-unique dbms:oracle
+--comment: decision 83: draft packages have no hash (NULL); the unique package hash covers frozen hashes only
+DROP INDEX PACKAGE_VERSION_HASH;
+ALTER TABLE PACKAGE_VERSION MODIFY (package_hash NULL);
+UPDATE PACKAGE_VERSION SET package_hash = NULL WHERE package_hash = HEXTORAW('0000000000000000000000000000000000000000000000000000000000000000');
+CREATE UNIQUE INDEX PACKAGE_VERSION_HASH ON PACKAGE_VERSION (CASE WHEN package_hash IS NOT NULL THEN tenant_id END, package_hash);
+--rollback DROP INDEX PACKAGE_VERSION_HASH; UPDATE PACKAGE_VERSION SET package_hash = HEXTORAW('0000000000000000000000000000000000000000000000000000000000000000') WHERE package_hash IS NULL; ALTER TABLE PACKAGE_VERSION MODIFY (package_hash NOT NULL); CREATE UNIQUE INDEX PACKAGE_VERSION_HASH ON PACKAGE_VERSION (tenant_id, package_hash);

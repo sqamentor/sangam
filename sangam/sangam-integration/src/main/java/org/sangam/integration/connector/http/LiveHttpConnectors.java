@@ -37,16 +37,45 @@ import org.sangam.integration.connector.TlsConfig;
  */
 public final class LiveHttpConnectors {
 
-    public enum AuthType { NONE, BASIC, BEARER, OAUTH2_CLIENT_CREDENTIALS, MTLS }
+    public enum AuthType { NONE, BASIC, BEARER, OAUTH2_CLIENT_CREDENTIALS, MTLS, AWS_SIGV4, FUNCTION_KEY, GCP_ID_TOKEN }
 
     /**
-     * Authentication. {@code secretRef}: BASIC {@code user:password}, BEARER the token. OAUTH2: {@code tokenUrl},
-     * {@code clientId}, {@code clientSecretRef}, optional {@code scope}. MTLS: the {@link Tls} key store.
+     * Authentication. {@code secretRef}: BASIC {@code user:password}, BEARER the token, FUNCTION_KEY the key. OAUTH2:
+     * {@code tokenUrl}, {@code clientId}, {@code clientSecretRef}, optional {@code scope}. MTLS: the {@link Tls} key
+     * store. AWS_SIGV4, FUNCTION_KEY and GCP_ID_TOKEN (M-067 serverless providers) read {@link Provider}.
      */
     public record Auth(AuthType type, String secretRef, String tokenUrl, String clientId, String clientSecretRef,
-                       String scope) {
-        public static final Auth NONE = new Auth(AuthType.NONE, null, null, null, null, null);
+                       String scope, Provider provider) {
+        public static final Auth NONE = new Auth(AuthType.NONE, null, null, null, null, null, null);
+
+        public Auth(AuthType type, String secretRef, String tokenUrl, String clientId, String clientSecretRef,
+                    String scope) {
+            this(type, secretRef, tokenUrl, clientId, clientSecretRef, scope, null);
+        }
     }
+
+    /**
+     * M-067 provider authentication.
+     *
+     * <ul>
+     *   <li>AWS_SIGV4: {@code region}, {@code service} (lambda, execute-api, ...), {@code accessKeyRef},
+     *       {@code secretKeyRef}, optional {@code sessionTokenRef}; every request is signed (AWS Lambda invoke, Lambda
+     *       function URLs and API Gateway with IAM auth).</li>
+     *   <li>FUNCTION_KEY: the key is {@link Auth#secretRef()}, sent in {@code headerName} (default
+     *       {@value #FUNCTION_KEY_HEADER}, Azure Functions); it is a default header read from the secret port on every
+     *       call (SL-18).</li>
+     *   <li>GCP_ID_TOKEN: {@code Bearer <ID token>} with {@code audience} (default: the base URL's origin, which is what
+     *       Cloud Run and Cloud Functions expect), from {@code serviceAccountKeyRef} (a service-account key JSON by
+     *       reference) or from the metadata server at {@code metadataUrl}. The metadata server is a link-local address:
+     *       configuring {@code metadataUrl} is the explicit approval that adds its origin to the allow-list.</li>
+     * </ul>
+     */
+    public record Provider(String region, String service, String accessKeyRef, String secretKeyRef, String sessionTokenRef,
+                           String headerName, String audience, String serviceAccountKeyRef, String metadataUrl) {
+    }
+
+    /** Header of the Azure Functions key. */
+    public static final String FUNCTION_KEY_HEADER = "x-functions-key";
 
     /** mTLS / private trust: PKCS#12 or JKS paths; passwords by reference. */
     public record Tls(String keyStore, String keyStorePasswordRef, String trustStore, String trustStorePasswordRef) {
@@ -61,7 +90,21 @@ public final class LiveHttpConnectors {
     public record Spec(String id, String baseUrl, String method, String capabilityClass, String idempotencyHeader,
                        String lookupPath, Auth auth, Tls tls, Duration connectTimeout, Duration readTimeout, int maxAttempts,
                        List<String> egress, boolean allowPrivate, Map<String, String> defaultHeaders,
-                       Map<String, String> outputMapping, String providerRefPointer) {
+                       Map<String, String> outputMapping, String providerRefPointer, Callback callback,
+                       String failureHeader) {
+
+        /** Without an async callback or a failure header (the shape before M-067). */
+        public Spec(String id, String baseUrl, String method, String capabilityClass, String idempotencyHeader,
+                    String lookupPath, Auth auth, Tls tls, Duration connectTimeout, Duration readTimeout, int maxAttempts,
+                    List<String> egress, boolean allowPrivate, Map<String, String> defaultHeaders,
+                    Map<String, String> outputMapping, String providerRefPointer) {
+            this(id, baseUrl, method, capabilityClass, idempotencyHeader, lookupPath, auth, tls, connectTimeout, readTimeout,
+                    maxAttempts, egress, allowPrivate, defaultHeaders, outputMapping, providerRefPointer, null, null);
+        }
+    }
+
+    /** M-067 async callback configuration ({@link AsyncCallback}); {@code placement} is {@code body} or {@code headers}. */
+    public record Callback(String url, String eventType, String placement, String field) {
     }
 
     private LiveHttpConnectors() {
@@ -94,6 +137,42 @@ public final class LiveHttpConnectors {
                 rules.add(EgressPolicy.Rule.parse(tenant, origin(tokenUri), s.allowPrivate()));
             }
         }
+        Provider provider = auth.provider();
+        URI metadataUri = null;
+        if (type == AuthType.GCP_ID_TOKEN) {
+            boolean hasKey = provider != null && provider.serviceAccountKeyRef() != null
+                    && !provider.serviceAccountKeyRef().isBlank();
+            boolean hasMetadata = provider != null && provider.metadataUrl() != null && !provider.metadataUrl().isBlank();
+            if (hasKey == hasMetadata) {
+                throw new IllegalStateException(where + ": gcp-id-token needs exactly one of auth.service-account-key-ref"
+                        + " and auth.metadata-url");
+            }
+            if (hasMetadata) {
+                metadataUri = absolute(where, "auth.metadata-url", provider.metadataUrl(), false);
+                // the operator named the metadata server explicitly: its (link-local) origin is approved, nothing else
+                rules.add(EgressPolicy.Rule.parse(tenant, origin(metadataUri), true));
+            }
+        }
+        GcpTokens gcp = null;
+        if (type == AuthType.GCP_ID_TOKEN && metadataUri == null) {
+            String keyRef = provider.serviceAccountKeyRef();
+            if (production && !keyRef.startsWith("secret://")) {
+                throw new IllegalStateException(where + ": auth.service-account-key-ref must be a secret:// reference on a"
+                        + " production profile");
+            }
+            // the key is read and parsed now, so an unknown or unreadable key fails the build, not the first call
+            URI tokenEndpoint;
+            try {
+                tokenEndpoint = GcpTokens.serviceAccount(keyRef, secrets,
+                        HttpTransport.forSimulator(), Clock.systemUTC()).tokenEndpoint();
+            } catch (HttpRestConnector.AuthUnavailableException e) {
+                throw new IllegalStateException(where + ": auth.service-account-key-ref: " + e.getMessage());
+            }
+            absolute(where, "service-account token_uri", tokenEndpoint.toString(), production);
+            if (s.egress() == null || s.egress().isEmpty()) {
+                rules.add(EgressPolicy.Rule.parse(tenant, origin(tokenEndpoint), s.allowPrivate()));
+            }
+        }
         TlsConfig tls = tls(where, s.tls(), secrets, production, type == AuthType.MTLS);
         int attempts = Math.max(1, s.maxAttempts());
         HttpTransport transport = new HttpTransport(EgressPolicy.of(rules, 3, 32L * 1024 * 1024), tls,
@@ -103,6 +182,43 @@ public final class LiveHttpConnectors {
 
         String staticAuth = null;
         HttpRestConnector.Authorizer authorizer = null;
+        HttpRestConnector.RequestSigner signer = null;
+        Map<String, String> defaultHeaders = new java.util.LinkedHashMap<>(
+                s.defaultHeaders() == null ? Map.of() : s.defaultHeaders());
+        switch (type) {
+            case AWS_SIGV4 -> {
+                if (provider == null || blank(provider.region()) || blank(provider.service())) {
+                    throw new IllegalStateException(where + ": aws-sigv4 needs auth.region and auth.service");
+                }
+                headerSecret(where, "auth.access-key-ref", provider.accessKeyRef(), secrets, production);
+                headerSecret(where, "auth.secret-key-ref", provider.secretKeyRef(), secrets, production);
+                if (!blank(provider.sessionTokenRef())) {
+                    headerSecret(where, "auth.session-token-ref", provider.sessionTokenRef(), secrets, production);
+                }
+                signer = AwsRequestSigner.signer(provider.region().trim(), provider.service().trim(), provider.accessKeyRef(),
+                        provider.secretKeyRef(), blank(provider.sessionTokenRef()) ? null : provider.sessionTokenRef(),
+                        secrets, Clock.systemUTC());
+            }
+            case FUNCTION_KEY -> {
+                String header = provider == null || blank(provider.headerName()) ? FUNCTION_KEY_HEADER
+                        : provider.headerName().trim();
+                headerSecret(where, "auth.secret-ref", auth.secretRef(), secrets, production);
+                if (defaultHeaders.keySet().stream().anyMatch(header::equalsIgnoreCase)) {
+                    throw new IllegalStateException(where + ": default-headers." + header + " is the function key header");
+                }
+                // a default header by reference (SL-18): read from the secret port on every call, never stored
+                defaultHeaders.put(header, auth.secretRef());
+            }
+            case GCP_ID_TOKEN -> {
+                String audience = provider == null || blank(provider.audience()) ? origin(base) : provider.audience().trim();
+                gcp = metadataUri != null ? GcpTokens.metadata(metadataUri, transport, Clock.systemUTC())
+                        : GcpTokens.serviceAccount(provider.serviceAccountKeyRef(), secrets, transport, Clock.systemUTC());
+                authorizer = gcp.idTokenAuthorizer(audience);
+            }
+            default -> {
+                // the classic types below
+            }
+        }
         switch (type) {
             case BASIC -> {
                 String v = headerSecret(where, "auth.secret-ref", auth.secretRef(), secrets, production);
@@ -126,7 +242,6 @@ public final class LiveHttpConnectors {
         // build, not the first call. The connector then reads it from the secret port on every call: a rotated value
         // needs no rebuild, and no value sits in the connector's configuration. A value without the prefix is a plain
         // header value.
-        Map<String, String> defaultHeaders = s.defaultHeaders() == null ? Map.of() : s.defaultHeaders();
         for (Map.Entry<String, String> h : defaultHeaders.entrySet()) {
             if (h.getValue() != null && h.getValue().startsWith("secret://")) {
                 headerSecret(where, "default-headers." + h.getKey(), h.getValue(), secrets, production);
@@ -141,9 +256,16 @@ public final class LiveHttpConnectors {
         // prefix, so the port answers only the default-header references and the credential reaches only Authorization.
         HttpRestConnector.Config config;
         try {
+            AsyncCallback callback = null;
+            if (s.callback() != null && !blank(s.callback().url())) {
+                URI cbUrl = absolute(where, "callback.url", s.callback().url(), production);
+                callback = new AsyncCallback(cbUrl, s.callback().eventType(),
+                        AsyncCallback.Placement.parse(s.callback().placement()), s.callback().field());
+            }
             config = new HttpRestConnector.Config(s.id(), base, cls, s.idempotencyHeader(), s.lookupPath(), staticAuth,
                     defaultHeaders, s.readTimeout(), ConnectorProfile.LIVE, authorizer,
-                    new HttpRestConnector.ResponseMapping(s.outputMapping(), s.providerRefPointer()), s.method());
+                    new HttpRestConnector.ResponseMapping(s.outputMapping(), s.providerRefPointer(), s.failureHeader()),
+                    s.method(), signer, callback);
         } catch (IllegalArgumentException e) {
             // a header, method or response-mapping error names the connector like every other configuration error
             throw new IllegalStateException(where + ": " + e.getMessage(), e);
@@ -169,6 +291,10 @@ public final class LiveHttpConnectors {
             throw new IllegalStateException(where + ": " + name + " must be https on a production profile: " + value);
         }
         return u;
+    }
+
+    private static boolean blank(String s) {
+        return s == null || s.isBlank();
     }
 
     private static String origin(URI u) {

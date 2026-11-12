@@ -15,11 +15,13 @@ public interface TaskPort {
      * @param variableNames P45 task-card variables: each listed task carries these variables (when set), read as
      *                      {@code GET /tasks/{id}/variables} reads them, so the caller gets nothing it could not read
      *                      already; at most {@link #MAX_CARD_VARIABLES} names
+     * @param currency      M-042: only tasks whose indexed amount is in this ISO 4217 currency; required with
+     *                      {@code sortBy=amount} (amounts in different currencies do not compare)
      */
     record TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
                       String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey,
                       String taskDefinitionKey, String state, String sortBy, String sortOrder,
-                      List<String> variableNames) {
+                      List<String> variableNames, String currency) {
 
         public TaskFilter {
             variableNames = variableNames == null ? List.of() : variableNames.stream()
@@ -36,7 +38,15 @@ public interface TaskPort {
                           String processDefinitionKey, String taskDefinitionKey, String state, String sortBy,
                           String sortOrder) {
             this(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId, businessKey,
-                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, List.of());
+                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, List.of(), null);
+        }
+
+        public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
+                          String processInstanceId, String caseInstanceId, String businessKey,
+                          String processDefinitionKey, String taskDefinitionKey, String state, String sortBy,
+                          String sortOrder, List<String> variableNames) {
+            this(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId, businessKey,
+                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, variableNames, null);
         }
     }
 
@@ -46,12 +56,24 @@ public interface TaskPort {
     /**
      * FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated.
      * {@code variables}: only on list rows asked for with {@code variableNames} (P45), otherwise null.
+     * {@code amount} (minor units), {@code currency} and {@code reference}: the M-042 task index of list rows, set at
+     * task creation by a per-process rule (null when the process has none).
      */
     record Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
                 String processDefinitionKey, String caseInstanceId, String businessKey, String assignee, String owner,
                 String seatId, String tenantId, Instant created, Instant due, Instant followUp, Instant lastUpdated,
                 Instant claimTime, String state, int priority, String formKey, String delegationState,
-                Map<String, Object> variables) {
+                Map<String, Object> variables, Long amount, String currency, String reference) {
+
+        public Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
+                    String processDefinitionKey, String caseInstanceId, String businessKey, String assignee,
+                    String owner, String seatId, String tenantId, Instant created, Instant due, Instant followUp,
+                    Instant lastUpdated, Instant claimTime, String state, int priority, String formKey,
+                    String delegationState, Map<String, Object> variables) {
+            this(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey, caseInstanceId,
+                    businessKey, assignee, owner, seatId, tenantId, created, due, followUp, lastUpdated, claimTime,
+                    state, priority, formKey, delegationState, variables, null, null, null);
+        }
 
         public Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
                     String processDefinitionKey, String caseInstanceId, String businessKey, String assignee,
@@ -67,7 +89,15 @@ public interface TaskPort {
         public Task withVariables(Map<String, Object> vars) {
             return new Task(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey,
                     caseInstanceId, businessKey, assignee, owner, seatId, tenantId, created, due, followUp,
-                    lastUpdated, claimTime, state, priority, formKey, delegationState, vars);
+                    lastUpdated, claimTime, state, priority, formKey, delegationState, vars, amount, currency, reference);
+        }
+
+        /** This task with its M-042 index values. */
+        public Task withIndex(Long amount, String currency, String reference) {
+            return new Task(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey,
+                    caseInstanceId, businessKey, assignee, owner, seatId, tenantId, created, due, followUp,
+                    lastUpdated, claimTime, state, priority, formKey, delegationState, variables, amount, currency,
+                    reference);
         }
     }
 

@@ -161,12 +161,15 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
         Optional<GeneratedDocument> render(RegistryContext ctx, String templateKey, Map<String, Object> model);
     }
 
-    /** Push of an issued document to an external locker or wallet; returns the external URI. Idempotent by object id. */
+    /**
+     * Push of an issued document to an external locker or wallet; returns the external URI. Idempotent by object id.
+     * {@code c} is the caller's connection (SL-169): an outbox row is written on it, so it commits with the command.
+     */
     @FunctionalInterface
     public interface PublishPort {
-        PublishPort NONE = (ctx, channel, objectId, documentRef, meta) -> Optional.empty();
+        PublishPort NONE = (c, ctx, channel, objectId, documentRef, meta) -> Optional.empty();
 
-        Optional<String> publish(RegistryContext ctx, String channel, String objectId, String documentRef,
+        Optional<String> publish(Connection c, RegistryContext ctx, String channel, String objectId, String documentRef,
                                  Map<String, Object> meta);
     }
 
@@ -184,17 +187,19 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
     /**
      * Consent and purpose checks; the compliance module implements it. The registry calls {@link #check} before it
      * processes or discloses a party's data for a purpose, and tells the compliance side about merges so consent
-     * records follow the golden record.
+     * records follow the golden record. {@code c} is the caller's connection (SL-169): the check reads on it, so it
+     * sees the caller's uncommitted writes and never borrows a second pool connection.
      */
     public interface ConsentPort {
         ConsentPort PERMIT_ALL = new ConsentPort() {
             @Override
-            public ConsentDecision check(RegistryContext ctx, String partyId, String purpose, String processing) {
+            public ConsentDecision check(Connection c, RegistryContext ctx, String partyId, String purpose,
+                                         String processing) {
                 return ConsentDecision.permit(null);
             }
         };
 
-        ConsentDecision check(RegistryContext ctx, String partyId, String purpose, String processing);
+        ConsentDecision check(Connection c, RegistryContext ctx, String partyId, String purpose, String processing);
 
         default void partiesMerged(RegistryContext ctx, String survivorId, String mergedId) {
         }
@@ -207,12 +212,15 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
         }
     }
 
-    /** Purpose-based masking of a view before it leaves the registry. */
+    /**
+     * Purpose-based masking of a view before it leaves the registry. {@code c} is the caller's connection (SL-169): any
+     * policy read runs on it, never on a second pool connection.
+     */
     @FunctionalInterface
     public interface PrivacyPort {
-        PrivacyPort NONE = (ctx, resourceType, view, sensitiveFields) -> view;
+        PrivacyPort NONE = (c, ctx, resourceType, view, sensitiveFields) -> view;
 
-        Map<String, Object> mask(RegistryContext ctx, String resourceType, Map<String, Object> view,
+        Map<String, Object> mask(Connection c, RegistryContext ctx, String resourceType, Map<String, Object> view,
                                  List<String> sensitiveFields);
     }
 
@@ -243,14 +251,16 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
 
     /**
      * Row visibility for list and get queries: the security module's compiled predicate over the given table alias
-     * (columns {@code tenant_id} and {@code id}). The default limits rows to the caller's tenant only.
+     * (columns {@code tenant_id} and {@code id}). The default limits rows to the caller's tenant only. {@code c} is the
+     * caller's connection (SL-169): the policy is compiled on it, in the caller's transaction, never on a second pool
+     * connection.
      */
     @FunctionalInterface
     public interface VisibilityPort {
-        VisibilityPort TENANT_ONLY = (ctx, resourceType, alias) ->
+        VisibilityPort TENANT_ONLY = (c, ctx, resourceType, alias) ->
                 new SqlPredicate(alias + ".tenant_id = ?", List.of(ctx.tenant()));
 
-        SqlPredicate visible(RegistryContext ctx, String resourceType, String alias);
+        SqlPredicate visible(Connection c, RegistryContext ctx, String resourceType, String alias);
     }
 
     /** DMN evaluation: output rows for the input variables. */
@@ -273,14 +283,15 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
             }
 
             @Override
-            public void push(RegistryContext ctx, String typeKey, String objectId, String externalRef, String change,
-                             Map<String, Object> view) {
+            public void push(Connection c, RegistryContext ctx, String typeKey, String objectId, String externalRef,
+                             String change, Map<String, Object> view) {
             }
         };
 
         Optional<Map<String, Object>> fetch(RegistryContext ctx, String typeKey, String externalRef);
 
-        void push(RegistryContext ctx, String typeKey, String objectId, String externalRef, String change,
+        /** {@code c} is the caller's connection (SL-169): the push is queued on it and commits with the command. */
+        void push(Connection c, RegistryContext ctx, String typeKey, String objectId, String externalRef, String change,
                   Map<String, Object> view);
     }
 

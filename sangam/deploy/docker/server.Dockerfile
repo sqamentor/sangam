@@ -80,6 +80,9 @@ FROM ${MAVEN_IMAGE} AS layout
 COPY --from=jar /out/ /layout/opt/sangam/
 COPY deploy/docker/server/SOURCE-OFFER.txt /layout/opt/sangam/lib-ext/SOURCE-OFFER.txt
 COPY deploy/docker/server/drivers-README.txt /layout/opt/sangam/drivers/README.txt
+# M-081 (decisions 94, 95): fonts embedded in generated PDF/A-2b and PDF/UA-1 documents (Noto Sans and Noto Sans
+# Devanagari, SIL OFL 1.1, the licence-policy font exception), shipped with their OFL texts.
+COPY deploy/fonts/*.ttf deploy/fonts/OFL-*.txt /layout/opt/sangam/fonts/
 # The last command is the licence guard (LIC-1/2/3/4/5/10): the build fails if a forbidden driver or script runtime
 # ended up inside the fat jar.
 RUN mkdir -p /layout/opt/sangam/config /layout/var/lib/sangam/compliance-logs /layout/var/lib/sangam/cell-exports \
@@ -111,6 +114,7 @@ ENV TZ=UTC \
     SANGAM_COMPLIANCE_LOG_ARCHIVE=/var/lib/sangam/compliance-logs \
     SANGAM_CELL_EXPORT_DIR=/var/lib/sangam/cell-exports \
     SANGAM_CONTENT_ROOT=/var/lib/sangam/content \
+    SANGAM_PDF_FONTS=/opt/sangam/fonts/NotoSans-Regular.ttf,/opt/sangam/fonts/NotoSansDevanagari-Regular.ttf \
     SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/sangam/config/
 WORKDIR /opt/sangam
 USER 10001:0
@@ -136,6 +140,7 @@ ENV TZ=UTC \
     SANGAM_COMPLIANCE_LOG_ARCHIVE=/var/lib/sangam/compliance-logs \
     SANGAM_CELL_EXPORT_DIR=/var/lib/sangam/cell-exports \
     SANGAM_CONTENT_ROOT=/var/lib/sangam/content \
+    SANGAM_PDF_FONTS=/opt/sangam/fonts/NotoSans-Regular.ttf,/opt/sangam/fonts/NotoSansDevanagari-Regular.ttf \
     SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/sangam/config/
 WORKDIR /opt/sangam
 USER 65532:0

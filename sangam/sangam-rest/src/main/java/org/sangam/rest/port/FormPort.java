@@ -40,6 +40,16 @@ public interface FormPort {
     /** {@code version} null = the version bound to the task, else the ACTIVE one. */
     FormVersion get(RequestContext ctx, String formKey, String version);
 
+    /**
+     * SL-166 f2 / owner decision 63: the ACTIVE version as a caller without {@code form.read} renders it (the citizen
+     * portal), with the tenant's custom fields in force on its business date merged into {@code dataSchema} on the
+     * server, exactly as {@link #validate} applies them. {@code versionHash} stays the form's own, so a submission made
+     * from it validates. Default: {@link #get} with no custom fields.
+     */
+    default FormVersion effective(RequestContext ctx, String formKey) {
+        return get(ctx, formKey, null);
+    }
+
     ValidationResult validate(RequestContext ctx, String formKey, ValidateRequest request);
 
     Page<Draft> drafts(RequestContext ctx, String taskId, Page.PageRequest page);

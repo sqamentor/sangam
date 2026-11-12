@@ -360,7 +360,12 @@ denial-audit pool `sangam-security-audit` is the third (SL-132, `sangam.security
 `SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE`, default 2; `SecurityAuditPoolWiring`): sangam-security writes `AUTH_DENIED`,
 `SOD_VIOLATION_BLOCKED` and `POWER_LIMIT_EXCEEDED` to their `sec:d:` denial chains through it (`Options.denialTx`), and
 the tenant data-key store uses it too (SL-161). With the defaults that is 8 connections per node on top of `pool`; a
-read replica pool counts against the replica's own limit. Read `R`
+read replica pool counts against the replica's own limit. The three sizes are set in Helm under
+`database.pool.leafPools` (`quota`, `securityDenialAudit`, `complianceDenialAudit`) and in compose by the env
+`SANGAM_QUOTA_POOL_SIZE`, `SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE` and `SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE`
+(SL-168); keep the security pool at 2 or more (SL-161). Engine spans (M-062, `sangam.tracing.engine.enabled`, env
+`SANGAM_TRACING_ENGINE_ENABLED`, default off) are Helm `otel.engineTracing`; they leave the pod only with OTLP
+enabled (`otel.enabled`). Read `R`
 from the T-SCALE probe (`jdbc_round_trips_per_op` in `report.txt` of `TScaleLoadIT`, `-Dsangam.tscale=true`) and
 `t_rt` from `hikaricp.connections.usage` divided by `R`. More connections than about 2–4 × the database's cores
 add no throughput (PostgreSQL contends on WAL and locks); above that, lower `R` or add nodes.
@@ -399,6 +404,37 @@ Accepted limits:
 - **To verify in the test phase:** that pgjdbc applies `socketTimeout` already during the connection handshake
   (`PoolWaitBoundsTest.aDeadConnectionTimesOutWithinTheBound`, a server that accepts and never answers). For
   statements on an open connection the bound is the driver's documented behaviour.
+
+### 1.7 Optional services and keys (Wave 3)
+
+All of these are off by default; the chart's `values.schema.json` checks each value.
+
+- **Upload malware scanning (M-082).** `malware.scanner` is `none` (default), `clamd` or `icap`, rendered as
+  `SANGAM_MALWARE_SCANNER`, with `malware.failClosed` (default true: a scanner error refuses the upload),
+  `malware.timeout` (30s), `malware.maxBytes` (25 MiB), `malware.clamd.host`/`port` and `malware.icap.uri`.
+  `malware.clamav.enabled=true` adds a ClamAV Deployment and Service (`clamav/clamav`, GPL-2.0, a separate service,
+  never linked; owner decision 71) with a pinned tag; clamd is reachable only from the server pods, and its signature
+  mirror must be allowed in `malware.clamav.egress` (air-gapped: a private mirror). With `scanner: clamd` and no host,
+  the server uses this release's ClamAV service. Compose: `--profile malware` with `SANGAM_MALWARE_SCANNER=clamd`.
+- **Secret providers (M-075).** `secrets.providers` (comma list: `file`, `vault`, `aws`, `azure`, `gcp`, `env`)
+  switches on the platform secret resolver; empty means no resolver and connectors read `secret://` references from
+  the environment only. Every `*Ref` is itself a `secret://` reference, never a value. `secrets.file.existingSecret`
+  mounts a Kubernetes Secret read-only at `secrets.file.root`. Outbound providers need `networkPolicy.extraEgress`.
+  Compose sets no `SANGAM_SECRETS_*` (an empty `SANGAM_SECRETS_PROVIDERS` would still switch the resolver on): put
+  `sangam.secrets.*` into `config/server/application.yaml`.
+- **State roll-up tier (M-063).** `sangam-national` `rollup.states` adds one roll-up instance per state (same image,
+  `SANGAM_RU_SCOPE`, `SANGAM_RU_UPSTREAM_URL`, `SANGAM_RU_UPSTREAM_TOKEN` = a national token with role `TIER`); the
+  national `tokens` Secret gains one `<token>:TIER` per state and the cells of that state send their roll-up stream
+  to the state instance. Compose: `--profile state-tier` in `docker-compose.cells.yml`.
+- **Trace links in the UI (M-044).** `ui.traceUrlTemplate` (`SANGAM_TRACE_URL_TEMPLATE`), an http(s) URL with the
+  placeholder `{traceId}`; empty means no links.
+- **Script worker (M-061).** `scriptWorker.enabled=true` runs BPMN script tasks in nsjail (owner decisions 53, 77,
+  78). Credentials come from `scriptWorker.existingSecret` (key `token`, or `clientSecret` with `oidcTokenUrl` and
+  `clientId`). The container runs as root with `SYS_ADMIN` and seccomp/AppArmor unconfined at container level, as
+  decision 78 allows; nsjail applies its own per-script seccomp and runs every script as nobody in its own user
+  namespace. It holds no database credentials and has no ingress. Compose: `--profile script-worker` (cgroup
+  private, `systempaths=unconfined`). In Kubernetes, `procMount: Unmasked` is available only with `hostUsers: false`;
+  whether nsjail needs it on a given runtime is checked in the test phase.
 
 ---
 
@@ -871,6 +907,7 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 | OpenTelemetry Collector contrib | Apache-2.0 | telemetry |
 | Jaeger, Prometheus | Apache-2.0 | optional observability |
 | Grafana OSS | AGPL-3.0 | optional observability (unmodified) |
+| ClamAV (`clamav/clamav`, pinned tag) | GPL-2.0 | optional upload scanning, a separate service, never linked (owner decision 71) |
 | CycloneDX Maven plugin / cyclonedx-npm | Apache-2.0 | SBOM |
 | syft | Apache-2.0 | image SBOM |
 | OWASP Dependency-Check | Apache-2.0 | CVE scan |

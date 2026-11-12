@@ -23,5 +23,10 @@ public enum SecurityEventType {
     DELEGATION_GRANTED, DELEGATION_EXPIRED, PACKAGE_SUBMITTED_FOR_REVIEW, PACKAGE_APPROVED, PACKAGE_PUBLISHED,
     PACKAGE_RETIRED, WORKER_BOUND, WORKER_UNBOUND, BULK_OPERATION_APPROVED, OPERATOR_ACTION,
     // quotas (SL-43; chain quota:<tenant>, written by JdbcTenantQuotas)
-    TENANT_QUOTA_EXCEEDED
+    TENANT_QUOTA_EXCEEDED,
+    // break-glass access (M-084, AJ-05 step 7; security chain). BREAK_GLASS_USED carries alarm=true on every use.
+    BREAK_GLASS_REQUESTED, BREAK_GLASS_APPROVED, BREAK_GLASS_REJECTED, BREAK_GLASS_ISSUED, BREAK_GLASS_USED,
+    BREAK_GLASS_REVIEWED,
+    // field re-encryption after a key rotation (M-085; security chain, one per source and target key)
+    FIELD_REENCRYPTION_COMPLETED
 }

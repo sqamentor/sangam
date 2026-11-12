@@ -14,7 +14,7 @@ import { api } from '../../api/endpoints';
 import { ApiError } from '../../api/client';
 import type { CompleteTaskResult, FieldChange, TaskAction, TaskDetail as TD } from '../../api/types';
 import { announce, useAction, useAsync } from '../../lib/hooks';
-import { fmtDate, fmtMoney, fmtNumber } from '../../i18n';
+import { fmtDate, fmtMinorMoney, fmtNumber } from '../../i18n';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import { classifyFormKey, externalFormUrl, taskFormToSchema } from '../../components/embeddedForm';
 import { PluginSlot } from '../../plugins/host';
@@ -231,7 +231,7 @@ export function TaskDetail() {
               [t('task.state'), <Badge key="s" value={d.section} />],
               [t('task.seat'), d.seatName],
               [t('task.fromSeat'), d.fromSeatName],
-              [t('task.amount'), d.amount !== undefined ? fmtMoney(d.amount, d.currency) : undefined],
+              [t('task.amount'), d.amount !== undefined && d.amount !== null ? fmtMinorMoney(d.amount, d.currency) : undefined],
               [t('task.received'), fmtDate(d.received ?? d.created)],
               [t('task.slaDue'), <span key="sla">{fmtDate(d.slaDue ?? d.due)} {d.slaState && <Badge value={d.slaState} />}</span>],
               [t('task.version'), `v${d.version}`],

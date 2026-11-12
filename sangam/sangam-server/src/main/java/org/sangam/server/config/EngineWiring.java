@@ -1,12 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+
 import io.micrometer.core.instrument.MeterRegistry;
 
 import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.core.engine.SangamClock;
 import org.sangam.engine.OperatonEngineAdapter;
 import org.sangam.engine.SangamEngineSettings;
+import org.sangam.engine.deploy.OperationRefPinning;
+import org.sangam.integration.connector.contract.ApiContractStore;
+import org.sangam.integration.connector.contract.ContractOperations;
+import org.sangam.integration.connector.contract.OperationRef;
+import org.sangam.rest.port.PackagePort;
+import org.sangam.rest.port.Page;
+import org.sangam.rest.port.RequestContext;
 import org.sangam.server.bridge.EngineConfigurationCustomizer;
 import org.sangam.server.bridge.EngineConfigurerHolder;
 import org.sangam.server.bridge.EngineMicrometerMetrics;
@@ -35,7 +46,8 @@ public class EngineWiring {
     @Bean
     @ConfigurationProperties("sangam.engine")
     public SangamEngineSettings sangamEngineSettings(Environment env, ObjectProvider<MeterRegistry> meters,
-            ObjectProvider<io.opentelemetry.api.OpenTelemetry> otel) {
+            ObjectProvider<io.opentelemetry.api.OpenTelemetry> otel, ObjectProvider<ApiContractStore> contracts,
+            ObjectProvider<PackagePort> packages) {
         SangamEngineSettings s = new SangamEngineSettings();
         s.setApplyProductSchema(false);
         s.setApplyEnginePatches(true);
@@ -44,12 +56,151 @@ public class EngineWiring {
         s.setDefaultTenantId(AttributionTenant.resolve(env)); // SL-86: the one attribution-tenant resolver
         // FLOWABLE-INTO-OPERATON FC-55: WS-PORTS' CMMN event listeners are on when the ports module is (note 12)
         s.setCmmnEventListenersEnabled(env.getProperty("sangam.ports.cmmn-event-listeners", Boolean.class, true));
+        // M-021: the one test-mode switch and the host's profiles; the engine refuses it on any database but H2
+        s.enableTestMode(testMode(env), java.util.List.of(env.getActiveProfiles()));
+        // M-044: the starting trace id of each new process instance is the current OpenTelemetry span's (the request's
+        // or the engine command's); no valid span, no trace id
+        s.setTraceIdSource(EngineWiring::currentTraceId);
+        // M-068: sangam:operationRef is pinned at deploy against the package's stored contracts. Both beans are looked up
+        // at deploy time: PackagePort depends on DeploymentPort and so on the engine, which this bean configures.
+        s.setOperationRefPinner(operationRefPinner(contracts::getIfAvailable, packages::getIfAvailable));
         meters.ifAvailable(r -> s.setMetrics(new EngineMicrometerMetrics(r)));
         // Note 16 (VI.4 rule 7): jobs, timers and async continuations run with the tenant's system identity bound in
         // sangam-security's TenantContext. Without the security module the engine binds JobIdentityBinder.current() only.
-        if (env.getProperty("sangam.modules.security.enabled", Boolean.class, true)) {
+        if (securityModuleEnabled(env)) {
             s.setJobIdentityBinder(org.sangam.security.tenant.TenantContext::runAs);
         }
+        return finish(s, env, otel);
+    }
+
+    /** M-044: the W3C trace id of the current OpenTelemetry span, or {@code null} when no valid span is current. */
+    static String currentTraceId() {
+        io.opentelemetry.api.trace.SpanContext sc = io.opentelemetry.api.trace.Span.current().getSpanContext();
+        return sc.isValid() ? sc.getTraceId() : null;
+    }
+
+    /**
+     * M-068 (integrator rulings 14:38Z and on the forged package deployment): the engine's
+     * {@code OperationRefPinning.Pinner}. A contract belongs to a package, so the engine calls it only for a package's own
+     * deploy, with the proof that deploy path bound ({@code PackageDeploy}: tenant, package key, package hash); a
+     * deployment name is never read. The package is the one package of that tenant with that key and hash in state
+     * APPROVED, the state it has while its own deploy transition runs (found through {@link PackagePort}, no second
+     * mapping). The ref names a contract stored for that package and an operation of it; without a version the newest
+     * stored version is pinned (decision 115: versions are stored only while the package is DRAFT, so it is one that went
+     * through review). Every refusal is {@code 422 MODEL_INVALID} with the reason: no proof, an unknown or ambiguous
+     * package, an unknown contract, version or operation, a malformed ref, a missing store.
+     */
+    static OperationRefPinning.Pinner operationRefPinner(Supplier<ApiContractStore> contracts,
+                                                         Supplier<PackagePort> packages) {
+        return (proof, value) -> {
+            try {
+                if (proof == null) {
+                    throw refused(value, "only a package's own deploy (/packages) can bind contract operations");
+                }
+                OperationRef ref = OperationRef.parse(value);
+                String packageId = packageOf(packages.get(), proof);
+                ApiContractStore store = contracts.get();
+                if (store == null) {
+                    throw refused(value, "no API contract store is bound");
+                }
+                ApiContractStore.ApiContract c = store.find(proof.tenantId(), packageId, ref.contractId(), ref.version())
+                        .orElseThrow(() -> refused(value, "contract " + ref.contractId()
+                                + (ref.version() == null ? "" : "@" + ref.version()) + " is not stored for package "
+                                + packageId));
+                if (ContractOperations.find(c, ref.operationId()).isEmpty()) {
+                    throw refused(value, "operation " + ref.operationId() + " is not in " + ref.contractId() + "@"
+                            + c.version());
+                }
+                return ref.pinned(c.version()).toString();
+            } catch (IllegalArgumentException e) {
+                throw e.getMessage() != null && e.getMessage().startsWith(REFUSED) ? e : refused(value, e.getMessage());
+            }
+        };
+    }
+
+    private static final String REFUSED = "422 MODEL_INVALID: ";
+
+    /** Read by the deploy path's error mapping ({@code OperatonSupport}: "<status> <CODE>: <detail>"). */
+    private static IllegalArgumentException refused(String value, String reason) {
+        return new IllegalArgumentException(REFUSED + "sangam:operationRef '" + value + "': " + reason);
+    }
+
+    /** The id of the APPROVED package a package deploy deploys, or a refusal. */
+    static String packageOf(PackagePort packages, OperationRefPinning.PackageDeploy proof) {
+        if (packages == null) {
+            throw new IllegalArgumentException("no package store is bound");
+        }
+        String key = proof.packageKey();
+        String hash = proof.packageHash();
+        RequestContext ctx = RequestContext.system(proof.tenantId(), null);
+        List<String> ids = new ArrayList<>();
+        for (int page = 0; ; page++) {
+            Page<PackagePort.Package> p = packages.list(ctx, key, "APPROVED",
+                    new Page.PageRequest(page, Page.PageRequest.MAX_SIZE));
+            for (PackagePort.Package pkg : p.items()) {
+                if (key.equals(pkg.key()) && hash.equals(pkg.packageHash())) {
+                    ids.add(pkg.id());
+                }
+            }
+            if (p.items().size() < Page.PageRequest.MAX_SIZE) {
+                break;
+            }
+        }
+        if (ids.size() != 1) {
+            throw new IllegalArgumentException(ids.isEmpty()
+                    ? "no APPROVED package " + key + " with hash " + hash + " is being deployed in this tenant"
+                    : "package " + key + " with hash " + hash + " is ambiguous (" + ids.size() + " APPROVED packages)");
+        }
+        return ids.get(0);
+    }
+
+    static final String TEST_MODE_PROPERTY = "sangam.test-mode.enabled";
+
+    /**
+     * M-021: {@value #TEST_MODE_PROPERTY} (default off). On together with a production environment (SL-109:
+     * {@code sangam.security.production=true} or a {@code prod} profile) the start is refused.
+     */
+    static boolean testMode(Environment env) {
+        boolean on = env.getProperty(TEST_MODE_PROPERTY, Boolean.class, false);
+        if (on && ProductionEnvironment.isProduction(env)) {
+            throw new IllegalStateException("M-021: " + TEST_MODE_PROPERTY + "=true is refused in production"
+                    + " (sangam.security.production or a prod profile)");
+        }
+        return on;
+    }
+
+    /**
+     * M-021: the clock behind {@code /api/v1/test-mode/clock}, only with {@value #TEST_MODE_PROPERTY}. Built after the
+     * engine (it takes the adapter), and re-checks H2 and the profiles itself rather than trusting the settings bean.
+     */
+    @Bean
+    @ConditionalOnProperty(name = TEST_MODE_PROPERTY, havingValue = "true")
+    public org.sangam.rest.port.TestClockPort sangamTestClockPort(SangamEngineSettings sangamEngineSettings,
+                                                                  OperatonEngineAdapter sangamEngineAdapter,
+                                                                  ProcessEngine engine, Environment env) {
+        testMode(env);
+        String db = ((org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration())
+                .getDatabaseType();
+        return new org.sangam.server.bridge.TestModeClockBridge(org.sangam.engine.clock.TestModeClock.forEngine(
+                sangamEngineSettings, "h2".equalsIgnoreCase(db), java.util.List.of(env.getActiveProfiles()),
+                org.sangam.server.bridge.TestModeClockBridge::log));
+    }
+
+    /**
+     * Owner decision 75 (fail closed): without the security module the engine runs jobs, timers and async continuations
+     * without the tenant's system identity. That is refused unless development is explicit, and logged at every start.
+     */
+    static boolean securityModuleEnabled(Environment env) {
+        if (env.getProperty("sangam.modules.security.enabled", Boolean.class, true)) {
+            return true;
+        }
+        org.sangam.rest.config.SangamRestAutoConfiguration.requireDevelopmentWithoutSecurity(env, "engine jobs, timers and"
+                + " async continuations run without the tenant's system identity (no TenantContext job identity binding)");
+        return false;
+    }
+
+    private SangamEngineSettings finish(SangamEngineSettings s, Environment env,
+                                        ObjectProvider<io.opentelemetry.api.OpenTelemetry> otel) {
         s.setTracing(tracing(env, otel.getIfAvailable()));
         return s;
     }

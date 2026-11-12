@@ -192,7 +192,7 @@ public final class VerificationService {
         }
         List<String> sensitive = new java.util.ArrayList<>(type.schema().sensitiveFields());
         sensitive.add("holderName");
-        return ports.privacy().mask(ctx, "registry-instrument-public", v, sensitive);
+        return ports.privacy().mask(c, ctx, "registry-instrument-public", v, sensitive);
     }
 
     private Result count(Result r) {

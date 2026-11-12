@@ -110,12 +110,20 @@ PDF/A and DOCX rendering is not available by default.
 | `DynamicPort` | `NotInstalledDynamicAdapter` (501) | sangam-flowable-ports (FC-01, FC-15) | Ad-hoc sub-process and injection are unavailable |
 | `CasePort` | `OperatonCaseAdapter` | sangam-flowable-ports (FC-55–58) | Plain CMMN 1.1 lifecycle only |
 | `FormPort` | `OperatonFormAdapter` (forms from deployment resources, drafts in memory) | sangam-flowable-ports / -packs | Drafts are not encrypted or persisted (X.2.5.8) |
-| `PackagePort` | `InMemoryPackageAdapter` | sangam-packs / -engine (R43 signatures, hash-pinned binding) | No signatures or environment promotion (X.2.4.5); deferred `activateAt` needs a scheduler |
+| `PackagePort` | `JdbcPackageAdapter` (`PACKAGE_VERSION`, `PACKAGE_SIGNATURE`, `ENV_BINDING`; routes `/packages/{id}/signatures`, `/packages/{id}/export`, `/packages/import/verify`, `/packages/import`, `/env-bindings` in `web/PackagePromotionController`) | sangam-packs / -engine (R43 signatures, hash-pinned binding) | Signatures need a package key per environment (`sangam.packages.signing.*`, sangam-server); deferred `activateAt` needs a scheduler |
 | `AnalyticsPort` | `OperatonAnalyticsAdapter` (Operaton history, bounded samples) | separate read model (R65) | Reads the history tables directly |
 
 Tables these adapters need: `AUDIT_EVENT`, `AUDIT_PAYLOAD`, `ROOT_SEQ`, `IDEMPOTENCY_RECORD`, `RECONCILIATION_ITEM`, `TOMBSTONE`, `OUTBOX`, `OUTBOX_DELIVERY` and `INBOX` (core `Schema`), plus the `LeaseTable` tables. For h2, sangam-server creates them with core `Schema`; in production they come from the sangam-persistence Liquibase changelog.
 
 Conventions used by the adapters, which packs and models must follow: the process variables `sangamInitiator`, `sangamCaseVersion`, `sangamMaterialFields`, `sangamSodExclude`, `sangamActors`, `sangamDecision`, `sangamSeatId`, `sangamFormVersion` and `sangamPackageHash`, and the task-local variable `sangamSod=strict`.
+
+## Executable packages: manifest, signatures, environment bindings (M-074, X.2.4.5)
+
+- **Manifest and hash.** The server builds the manifest from the package resources: `package` = `{key, name}` and `artifacts` = one `{path, sha256}` per resource, sorted by path. `package_hash` = SHA-256 of the canonical JSON (JCS) of the manifest, frozen at submit; a draft has none (`PACKAGE_VERSION.package_hash` NULL, decision 83), so a tenant can hold any number of drafts.
+- **`sangam-package.json` (reserved resource, decision 85).** The author's part of the manifest is an optional package resource named `sangam-package.json`: a JSON object whose members are copied into the manifest (`profile`, `bindings`, `rulesets`, `contracts`, `policies`, `envBindings`). `package` and `artifacts` are computed by the server and refused there (422 `PACKAGE_MANIFEST_INVALID`), numbers must be integral (decimals as strings, R33). `envBindings` is the list of environment binding names the package needs, each `[A-Za-z0-9._-]{1,128}`, no duplicates. Example: `{"envBindings":["treasury-endpoint"]}`.
+- **Signatures (decision 84).** Ed25519 over the UTF-8 of `JCS({packageHash, role, principalId, seatId, signedAt})`, `signedAt` ISO-8601 UTC cut to milliseconds: the author signs at submit, the approver at approve. Relabelling the role, signer, seat or time breaks the signature. Deploy and import verify against the environment's trusted keys; outside the h2/dev profiles, or in production, an unsigned package is refused (`PACKAGE_UNSIGNED`), an unknown key `PACKAGE_KEY_UNKNOWN`, a bad signature always `PACKAGE_SIGNATURE_INVALID`.
+- **Promotion.** `GET /packages/{id}/export` gives the bundle (manifest, artifacts, signatures, source environment); `POST /packages/import/verify` checks it without a database write (air-gapped verification); `POST /packages/import` imports the same bytes once as APPROVED.
+- **Environment bindings.** `ENV_BINDING` holds a reference (absolute URI, for example `secret://...`), never a secret value. Every change is a new PENDING version; another person approves it (in production not a deployer of a package that uses it); the previous APPROVED version is RETIRED. Activation is refused while a name in `envBindings` has no APPROVED version in the environment (409 `ENV_BINDING_MISSING`).
 
 ## Third-party dependencies (new in this module)
 

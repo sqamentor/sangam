@@ -49,17 +49,29 @@ public class SangamBpmnParseListener implements BpmnParseListener {
     private final TimerPolicies timerPolicies;
     private final MultiInstanceSizeGuard miGuard;
 
+    private final org.sangam.engine.history.ModelHistoryLevels modelHistory;
+
     public SangamBpmnParseListener(SangamEngineSettings settings, TimerPolicies timerPolicies) {
+        this(settings, timerPolicies, null);
+    }
+
+    /** @param modelHistory M-057 registry, or null when {@code historyModelOverrides} is off */
+    public SangamBpmnParseListener(SangamEngineSettings settings, TimerPolicies timerPolicies,
+                                   org.sangam.engine.history.ModelHistoryLevels modelHistory) {
         this.settings = settings;
         this.timerPolicies = timerPolicies;
         this.miGuard = new MultiInstanceSizeGuard(settings.getMultiInstanceMaxCardinality());
+        this.modelHistory = modelHistory;
     }
 
     @Override
     public void parseProcess(Element processElement, ProcessDefinitionEntity processDefinition) {
+        registerModelHistory(processElement, processDefinition);
+        checkOperationRefs(processElement, processDefinition);
         attachMultiInstanceGuards(processDefinition);
         attachCompensationOrder(processDefinition);
         validateRouting(processDefinition);
+        validateInstanceHandlers(processElement, processDefinition);
         if (processDefinition.getHistoryTimeToLive() == null) {
             String retentionClass = properties(processElement).getOrDefault("sangam:retentionClass", "default");
             Integer ttl = settings.getHistoryTtlDaysByRetentionClass().containsKey(retentionClass)
@@ -69,6 +81,135 @@ public class SangamBpmnParseListener implements BpmnParseListener {
                 processDefinition.setHistoryTimeToLive(ttl);
             }
         }
+    }
+
+    // ------------------------------------------------------------------ M-057 model-declared history levels
+
+    private static final org.slf4j.Logger HISTORY_LOG = org.slf4j.LoggerFactory.getLogger("org.sangam.engine.history");
+
+    /**
+     * M-057 (decision 88): {@code sangam:historyLevel} on the process and its activities. Off (the default): ignored
+     * with a warning, so the model still deploys. On: registered per definition id; an unknown level name, or the
+     * property on an element that is not an activity, refuses the deployment.
+     */
+    private void registerModelHistory(Element processElement, ProcessDefinitionEntity def) {
+        java.util.List<String[]> declared = new java.util.ArrayList<>();
+        collectHistoryLevels(processElement, true, declared);
+        if (modelHistory != null) {
+            modelHistory.clear(def.getId());
+        }
+        if (declared.isEmpty()) {
+            return;
+        }
+        if (modelHistory == null) {
+            HISTORY_LOG.warn("M-057: process '{}' declares {} but sangam.engine.history-model-overrides is off; ignored",
+                    def.getKey(), org.sangam.engine.history.ModelHistoryLevels.PROPERTY);
+            return;
+        }
+        for (String[] d : declared) {
+            if (d[0] != null && def.findActivity(d[0]) == null) {
+                throw new ProcessEngineException("M-057: " + org.sangam.engine.history.ModelHistoryLevels.PROPERTY
+                        + " on '" + d[0] + "' in process '" + def.getKey() + "', which is not an activity");
+            }
+            try {
+                modelHistory.register(def.getId(), d[0], d[1]);
+            } catch (IllegalArgumentException e) {
+                throw new ProcessEngineException("M-057: process '" + def.getKey() + "': " + e.getMessage()
+                        + " (none, activity, audit, full)", e);
+            }
+        }
+    }
+
+    /** {activityId (null for the process), level} for every element declaring the property, extension elements skipped. */
+    private static void collectHistoryLevels(Element e, boolean isProcess, java.util.List<String[]> out) {
+        String level = properties(e).get(org.sangam.engine.history.ModelHistoryLevels.PROPERTY);
+        if (level != null) {
+            out.add(new String[]{isProcess ? null : e.attribute("id"), level});
+        }
+        for (Element c : e.elements()) {
+            if (!"extensionElements".equals(c.getTagName())) {
+                collectHistoryLevels(c, false, out);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ M-068 sangam:operationRef
+
+    /** Activity property holding the pinned {@code contractId@version#operationId} for the connector at run time. */
+    public static final String OPERATION_REF_PROPERTY = "sangamOperationRef";
+
+    /**
+     * M-068: every {@code sangam:operationRef} that runs is pinned ({@link OperationRefPinning#PINNED}; new deployments
+     * are pinned by the pre-deployer before this parse) and is exposed on its activity as
+     * {@link #OPERATION_REF_PROPERTY}.
+     */
+    private void checkOperationRefs(Element e, ProcessDefinitionEntity def) {
+        String ref = e.attributeNS(SANGAM_NS, OperationRefPinning.ATTRIBUTE);
+        if (ref != null) {
+            String id = e.attribute("id");
+            ActivityImpl a = id == null ? null : def.findActivity(id);
+            if (a == null || !OperationRefPinning.ELEMENTS.contains(e.getTagName())) {
+                throw new ProcessEngineException("M-068: sangam:operationRef is allowed on a service or send task only ('"
+                        + id + "' in process '" + def.getKey() + "')");
+            }
+            if (!OperationRefPinning.PINNED.matcher(ref).matches()) {
+                throw new ProcessEngineException("M-068: sangam:operationRef '" + ref + "' on '" + id + "' in process '"
+                        + def.getKey() + "' is not pinned (contractId@version#operationId)");
+            }
+            a.setProperty(OPERATION_REF_PROPERTY, ref);
+        }
+        for (Element c : e.elements()) {
+            if (!"extensionElements".equals(c.getTagName())) {
+                checkOperationRefs(c, def);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ M-059 sangam:query / sangam:update (L6)
+
+    private final org.sangam.engine.handlers.InstanceHandlerEvaluator handlerCheck =
+            new org.sangam.engine.handlers.InstanceHandlerEvaluator();
+
+    /**
+     * M-059: the named query and update handlers of the process ({@code sangam:query} / {@code sangam:update} in its
+     * extension elements) are validated at deploy; a process that declares none is not touched.
+     */
+    private void validateInstanceHandlers(Element processElement, ProcessDefinitionEntity processDefinition) {
+        Element ext = processElement.element("extensionElements");
+        if (ext == null) {
+            return;
+        }
+        try {
+            org.sangam.engine.handlers.InstanceHandlers.parse(processDefinition.getKey(), node(ext),
+                    id -> processDefinition.findActivity(id) != null, handlerCheck);
+        } catch (org.sangam.engine.handlers.InstanceHandlerException e) {
+            throw new ProcessEngineException("M-059/L6: " + e.getMessage(), e);
+        }
+    }
+
+    /** Operaton's parse element as an {@link org.sangam.engine.handlers.InstanceHandlers.Node}. */
+    static org.sangam.engine.handlers.InstanceHandlers.Node node(Element e) {
+        return new org.sangam.engine.handlers.InstanceHandlers.Node() {
+            @Override
+            public String uri() {
+                return e.getUri();
+            }
+
+            @Override
+            public String localName() {
+                return e.getTagName();
+            }
+
+            @Override
+            public String attr(String name) {
+                return e.attribute(name);
+            }
+
+            @Override
+            public List<org.sangam.engine.handlers.InstanceHandlers.Node> children() {
+                return e.elements().stream().map(SangamBpmnParseListener::node).toList();
+            }
+        };
     }
 
     @Override

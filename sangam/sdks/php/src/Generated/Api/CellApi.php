@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Cell (12 operations). */
+/** Typed operations of Cell (15 operations). */
 final class CellApi
 {
     public function __construct(private readonly Calls $calls)
@@ -217,5 +217,52 @@ final class CellApi
         $req = ApiRequest::get('/admin/cell/exports/' . HttpTransport::seg((string) $exportId));
         $req->header('X-Sangam-Export-Token', Support::headerValue($xSangamExportToken));
         return $this->calls->raw($req, $options, 'application/octet-stream');
+    }
+
+    /**
+     * Parked inbound messages of this cell
+     *
+     * Open POISON_INBOUND items of every tenant of this cell whose message was parked because the tenant moved or was purged, oldest first (PoisonInbound.listParked); `tenant` narrows the list to one tenant.
+     *
+     * GET /admin/cell/parked-inbound (operationId listParkedInbound); permission role CELL_ADMIN.
+     * @param string|null $tenant query tenant
+     * @return list<Model\PoisonInboundItem>
+     */
+    public function listParkedInbound(?string $tenant = null, ?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::get('/admin/cell/parked-inbound');
+        $req->query('tenant', $tenant);
+        return $this->calls->models($req, $options, Model\PoisonInboundItem::class);
+    }
+
+    /**
+     * View a parked inbound message
+     *
+     * The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
+     *
+     * GET /admin/cell/parked-inbound/{itemId} (operationId getParkedInbound); permission role CELL_ADMIN.
+     * @return Model\PoisonInboundParked|null
+     */
+    public function getParkedInbound(string $itemId, ?RequestOptions $options = null): ?Model\PoisonInboundParked
+    {
+        $req = ApiRequest::get('/admin/cell/parked-inbound/' . HttpTransport::seg((string) $itemId));
+        return $this->calls->model($req, $options, Model\PoisonInboundParked::class);
+    }
+
+    /**
+     * Replay a parked inbound message
+     *
+     * Hands the message, with its original source, message id, event type and correlation key, to the tenant's current cell through the gateway (sangam.cell.gateway-url; the target inbox deduplicates on tenant, source and message id); then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over, or a target where the tenant is not ACTIVE, leaves the item open: 503 REPLAY_FAILED; 503 REPLAY_NOT_CONFIGURED without a gateway URL (PoisonInbound.replayParked).
+     *
+     * POST /admin/cell/parked-inbound/{itemId}/replay (operationId replayParkedInbound); permission role CELL_ADMIN; result stored atomically with the state change.
+     * @param Model\ReasonRequest|array $body request body
+     */
+    public function replayParkedInbound(string $itemId, Model\ReasonRequest|array $body, ?RequestOptions $options = null): void
+    {
+        $req = ApiRequest::post('/admin/cell/parked-inbound/' . HttpTransport::seg((string) $itemId) . '/replay');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        $this->calls->none($req, $options);
     }
 }

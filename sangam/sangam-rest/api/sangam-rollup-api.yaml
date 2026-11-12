@@ -28,10 +28,14 @@ paths:
       tags:
       - Ingest
       summary: Ingest roll-up events
-      description: One structured CloudEvent or a JSON array of them. Each event is projected at most once (deduplicated on `id`). 202 with the
-        counts; a single event that is rejected answers 422 with the counts, which the cell's relay treats as a poison event.
+      description: 'One structured CloudEvent or a JSON array of them. Each event is projected at most once (deduplicated on `id`). 202 with the
+        counts; a single event that is rejected answers 422 with the counts, which the cell''s relay treats as a poison event. An array is projected
+        as one pre-aggregated batch. A `sangam.rollup.metric` event with `data.metric` (string, max 96), `data.day` (yyyyMMdd integer) and `data.delta`
+        (integer, may be negative) is an explicit metric event (M-063): it is accepted only from TIER or ADMIN and adds `delta` to that metric
+        on that day for the path and every prefix.'
       x-sangam-roles:
       - CELL
+      - TIER
       - ADMIN
       requestBody:
         required: true
@@ -242,7 +246,7 @@ components:
       type: http
       scheme: bearer
       description: 'Static service token from the app''s token list (`<token>:<ROLE>[,<ROLE>]`), compared in constant time. Roles: ADMIN (everything);
-        CELL (ingest); DASHBOARD (queries).'
+        CELL (ingest); TIER (ingest, including explicit metric events of a lower roll-up tier (M-063)); DASHBOARD (queries).'
   responses:
     BadRequest:
       description: Invalid request. A rule the input breaks (for example a batch larger than `sangam.rollup.max-batch`, default 500) answers problem+json;

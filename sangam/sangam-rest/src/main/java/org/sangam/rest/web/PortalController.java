@@ -6,11 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.sangam.rest.port.ApiProblem;
+import org.sangam.rest.port.FormPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.PortalPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.support.TypedVariables;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,16 +37,38 @@ public class PortalController {
 
     private final PortalPort portal;
     private final PermissionPort permissions;
+    private final ObjectProvider<FormPort> forms;
 
-    public PortalController(PortalPort portal, PermissionPort permissions) {
+    public PortalController(PortalPort portal, PermissionPort permissions, ObjectProvider<FormPort> forms) {
         this.portal = portal;
         this.permissions = permissions;
+        this.forms = forms;
     }
 
     @GetMapping("/services")
     public ResponseEntity<List<PortalPort.PortalService>> services(RequestContext ctx) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         return Lists.ok(portal.services(ctx));
+    }
+
+    /**
+     * SL-166 f2 / owner decision 63: the application form of one service of the caller's catalogue, with the tenant's
+     * custom fields merged into the data schema on the server ({@link FormPort#effective}). Only a service the caller can
+     * list is served, so {@code portal.use} never reads an arbitrary form key.
+     */
+    @GetMapping("/services/{key}/form")
+    public FormPort.FormVersion serviceForm(RequestContext ctx, @PathVariable String key) {
+        permissions.require(ctx, Permissions.PORTAL_USE);
+        PortalPort.PortalService service = portal.services(ctx).stream().filter(s -> s.key().equals(key)).findFirst()
+                .orElseThrow(() -> ApiProblem.notFound("Portal service", key));
+        if (service.formKey() == null || service.formKey().isBlank()) {
+            throw ApiProblem.notFound("Portal service form", key);
+        }
+        FormPort f = forms.getIfAvailable();
+        if (f == null) {
+            throw ApiProblem.notInstalled("forms", "sangam-rest forms");
+        }
+        return f.effective(ctx, service.formKey());
     }
 
     @PostMapping("/applications")

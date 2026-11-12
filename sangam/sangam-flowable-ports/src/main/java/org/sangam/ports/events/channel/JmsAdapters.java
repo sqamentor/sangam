@@ -28,6 +28,13 @@ import java.util.Map;
  * <p>Inbound: {@code CLIENT_ACKNOWLEDGE}; a message is acknowledged after it is stored in the inbox, otherwise the
  * session is recovered and the broker redelivers. Outbound: one {@code JMSContext} per send (use a pooling
  * factory), persistent delivery, {@code JMSCorrelationID} = message id.
+ *
+ * <p>CloudEvents (M-065): JMS has no CloudEvents protocol binding and JMS property names cannot hold {@code -} or
+ * {@code :}, so binary mode uses the AMQP binding's {@code cloudEvents_<attr>} properties (as the integration
+ * {@code JmsPublisher} does) and {@code cloudEvents_datacontenttype}; structured mode sends the CloudEvent as the text
+ * body. SL-142 (C3-06): a message of a tenant that may not be stored yet is not acknowledged: after
+ * {@code properties.redeliverBackoffMs} the session is recovered and the broker redelivers it; a MOVED or PURGED
+ * tenant's message is parked, then acknowledged.
  */
 final class JmsAdapters {
 
@@ -70,14 +77,23 @@ final class JmsAdapters {
 
         @Override
         public void send(String tenantId, String eventKey, String messageId, String body) {
+            send(ChannelAdapters.Outgoing.json(tenantId, eventKey, messageId, body));
+        }
+
+        @Override
+        public void send(ChannelAdapters.Outgoing m) {
             try (JMSContext ctx = cf.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
                 Destination d = isTopic(ch) ? ctx.createTopic(destinationName(ch)) : ctx.createQueue(destinationName(ch));
-                JMSProducer p = ctx.createProducer().setJMSCorrelationID(messageId)
-                        .setProperty("messageId", messageId).setProperty("eventKey", eventKey);
-                if (tenantId != null) {
-                    p.setProperty("tenantId", tenantId);
+                JMSProducer p = ctx.createProducer().setJMSCorrelationID(m.messageId())
+                        .setProperty("messageId", m.messageId()).setProperty("eventKey", m.eventKey());
+                if (m.tenantId() != null) {
+                    p.setProperty("tenantId", m.tenantId());
                 }
-                p.send(d, body);
+                if (!m.binary() && !"application/json".equals(m.contentType())) {
+                    p.setProperty("contentType", m.contentType());
+                }
+                m.cloudEventsOrEmpty().forEach((k, v) -> p.setProperty("cloudEvents_" + k, v));
+                p.send(d, m.body());
             }
         }
     }
@@ -124,8 +140,13 @@ final class JmsAdapters {
                     headers.put(n, String.valueOf(m.getObjectProperty(n)));
                 }
                 String id = headers.containsKey("messageId") ? headers.get("messageId") : m.getJMSMessageID();
-                processor.receive(tenant, ch.key(), body, headers, id);
-                m.acknowledge();
+                if (ChannelAdapters.deliver(processor, tenant, ch, body, headers, id)) {
+                    m.acknowledge();
+                } else {
+                    // SL-142: the tenant may not take it yet; back off, then let the broker redeliver it
+                    ChannelAdapters.sleep(ChannelAdapters.redeliverBackoffMs(ch));
+                    session.recover();
+                }
             } catch (Exception e) {
                 LOG.warn("jms channel {}: message not stored, recovering session: {}", ch.key(), e.toString());
                 try {

@@ -26,7 +26,7 @@ class BillingRefundPeriodTest {
 
     @Test
     void aRefundWithoutAPeriodAndWithoutAFiscalYearIsRefused() {
-        for (String requested : new String[]{null, "", "current"}) {
+        for (String requested : new String[]{null, "", " ", "current", "CURRENT"}) { // X1-08: LedgerPeriods.periodOr
             ApiProblem p = assertThrows(ApiProblem.class, () -> BillingController.refundPeriod(defs(), "NOFY", requested));
             assertEquals(422, p.status());
             assertEquals(FiscalYearNotConfiguredException.CODE, p.code());

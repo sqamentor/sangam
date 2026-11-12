@@ -51,3 +51,31 @@ CREATE TABLE RU_CELL_FEED (
   CONSTRAINT PK_RU_CELL_FEED PRIMARY KEY (cell_id, shard)
 );
 --rollback DROP TABLE RU_CELL_FEED;
+
+--changeset sangam-scale:ru-0001-05-ru_upstream_pending dbms:postgresql
+--comment: Tier forwarding: counter deltas not yet shipped to the upper roll-up, sharded like RU_COUNTER
+CREATE TABLE RU_UPSTREAM_PENDING (
+  node_path VARCHAR(256) NOT NULL,
+  metric VARCHAR(96) NOT NULL,
+  day_bucket INTEGER NOT NULL,
+  shard INTEGER NOT NULL,
+  pending_delta BIGINT NOT NULL,
+  updated_at_ms BIGINT NOT NULL,
+  CONSTRAINT PK_RU_UPSTREAM_PENDING PRIMARY KEY (node_path, metric, day_bucket, shard)
+);
+--rollback DROP TABLE RU_UPSTREAM_PENDING;
+
+--changeset sangam-scale:ru-0001-06-ru_upstream_outbox dbms:postgresql
+--comment: Tier forwarding: explicit metric events to the upper roll-up, written with the pending decrement
+CREATE TABLE RU_UPSTREAM_OUTBOX (
+  event_id VARCHAR(64) NOT NULL,
+  payload VARCHAR(2000) NOT NULL,
+  created_at_ms BIGINT NOT NULL,
+  attempts INTEGER NOT NULL,
+  next_attempt_ms BIGINT NOT NULL,
+  parked INTEGER NOT NULL,
+  last_error VARCHAR(1000),
+  CONSTRAINT PK_RU_UPSTREAM_OUTBOX PRIMARY KEY (event_id)
+);
+CREATE INDEX RU_UPSTREAM_DUE ON RU_UPSTREAM_OUTBOX (parked, next_attempt_ms);
+--rollback DROP TABLE RU_UPSTREAM_OUTBOX;

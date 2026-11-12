@@ -3,6 +3,7 @@ package org.sangam.cli;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -14,8 +15,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -30,6 +30,7 @@ import java.util.UUID;
  * <pre>
  *   sangam login --server URL --issuer URL --client ID            device flow (RFC 8628)
  *   sangam login --server URL --issuer URL --client ID --secret-env VAR   service principal (client credentials)
+ *   sangam logout                                                 forget the saved tokens and the keychain key
  *   sangam deploy FILE [--name N]                                 POST /deployments (multipart)
  *   sangam list tasks|process-instances|process-definitions|incidents [--query k=v]...
  *   sangam get PATH                                               any GET under /api/v1
@@ -38,6 +39,12 @@ import java.util.UUID;
  *   sangam batch status ID                                        GET /ops/jobs/{id}
  * </pre>
  * Every mutation sends a fresh {@code Idempotency-Key}, or the value of {@code --idempotency-key} so a CI retry stays one operation.
+ *
+ * <p>Tokens (NG-23, M-093): {@code ~/.sangam/cli.json} holds only non-secret settings (server, token endpoint, client
+ * id, account id, the NAME of the secret variable). The tokens go to {@link TokenStore}: encrypted under a key in the OS
+ * keychain, or an owner-only file where there is no keychain ({@code SANGAM_TOKEN_STORE=auto|keychain|file}). The access
+ * token is renewed shortly before it expires and once after a 401 ({@link TokenSession}). {@code SANGAM_TOKEN}
+ * overrides everything and is never stored or renewed. No command prints a token.
  */
 public final class Main {
 
@@ -59,19 +66,35 @@ public final class Main {
     private final PrintStream out;
     private final PrintStream err;
     private final java.util.function.Function<String, String> env;
+    private final TokenStore store;
+    private final TokenSession session;
 
+    /** Tokens in an owner-only file next to the config file (no keychain); the system clock. */
     Main(Http http, Path configFile, PrintStream out, PrintStream err, java.util.function.Function<String, String> env) {
+        this(http, configFile, out, err, env, null, Clock.systemUTC());
+    }
+
+    /**
+     * @param protector the OS keychain front end, or {@code null} for none; the mode comes from {@code SANGAM_TOKEN_STORE}
+     */
+    Main(Http http, Path configFile, PrintStream out, PrintStream err, java.util.function.Function<String, String> env,
+         KeyProtector protector, Clock clock) {
         this.http = http;
         this.configFile = configFile;
         this.out = out;
         this.err = err;
         this.env = env;
+        this.store = new TokenStore(configFile.toAbsolutePath().getParent().resolve("credentials"), protector,
+                TokenStore.Mode.parse(env.apply("SANGAM_TOKEN_STORE")), err);
+        this.session = new TokenSession(http, store, clock, env, err);
     }
 
     public static void main(String[] args) {
         HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).followRedirects(HttpClient.Redirect.NEVER).build();
         Path config = Path.of(System.getProperty("user.home"), ".sangam", "cli.json");
-        System.exit(new Main(r -> client.send(r, HttpResponse.BodyHandlers.ofString()), config, System.out, System.err, System::getenv).run(args));
+        KeyProtector keychain = KeyProtector.forOs(System.getProperty("os.name"), ProcessRunner.system());
+        System.exit(new Main(r -> client.send(r, HttpResponse.BodyHandlers.ofString()), config, System.out, System.err, System::getenv,
+                keychain, Clock.systemUTC()).run(args));
     }
 
     int run(String[] args) {
@@ -82,6 +105,7 @@ public final class Main {
             Args a = Args.parse(args);
             return switch (a.positional.get(0)) {
                 case "login" -> login(a);
+                case "logout" -> logout();
                 case "deploy" -> deploy(a);
                 case "list" -> list(a);
                 case "get" -> a.positional.size() == 2 ? call("GET", a.positional.get(1), null, a) : usage("get PATH");
@@ -103,7 +127,7 @@ public final class Main {
     }
 
     private int usage(String why) {
-        err.println("usage: " + why + "\ncommands: login, deploy, list, get, start, test run, batch status");
+        err.println("usage: " + why + "\ncommands: login, logout, deploy, list, get, start, test run, batch status");
         return USAGE;
     }
 
@@ -127,7 +151,9 @@ public final class Main {
             }
             token = form(tokenEndpoint, Map.of("grant_type", "client_credentials", "client_id", client, "client_secret", secret));
         } else {
-            JsonNode device = form(conf.path("device_authorization_endpoint").asText(), Map.of("client_id", client, "scope", "openid"));
+            String deviceEndpoint = conf.path("device_authorization_endpoint").asText();
+            requireSecureUrl(deviceEndpoint);
+            JsonNode device = form(deviceEndpoint, Map.of("client_id", client, "scope", "openid"));
             err.println("Open " + device.path("verification_uri").asText() + " and enter " + device.path("user_code").asText());
             long interval = device.path("interval").asLong(5);
             long deadline = System.currentTimeMillis() + device.path("expires_in").asLong(600) * 1000;
@@ -156,16 +182,42 @@ public final class Main {
             err.println("login failed: " + token.path("error").asText("no access token"));
             return AUTH;
         }
-        save(Map.of("server", server.replaceAll("/+$", ""), "accessToken", token.get("access_token").asText()));
-        out.println("{\"loggedIn\":true}");
+        String serverBase = server.replaceAll("/+$", "");
+        String account = TokenStore.account(serverBase, client);
+        ObjectNode config = JSON.createObjectNode().put("server", serverBase).put("issuer", issuer).put("tokenEndpoint", tokenEndpoint)
+                .put("clientId", client).put("account", account);
+        if (a.has("secret-env")) {
+            config.put("secretEnv", a.require("secret-env")); // the variable's name, never its value
+        }
+        String where;
+        try {
+            where = store.save(account, session.credentials(token, null));
+        } catch (IOException e) {
+            err.println("login failed: " + e.getMessage());
+            return AUTH;
+        }
+        writeConfig(config);
+        out.println(JSON.createObjectNode().put("loggedIn", true).put("tokenStore", where));
+        return OK;
+    }
+
+    private int logout() throws IOException, InterruptedException {
+        JsonNode c = loadConfig();
+        String account = c.path("account").asText("");
+        boolean had = !account.isEmpty() && store.clear(account);
+        if (c.size() > 0) {
+            ObjectNode kept = JSON.createObjectNode();
+            if (c.hasNonNull("server")) {
+                kept.put("server", c.get("server").asText());
+            }
+            writeConfig(kept);
+        }
+        out.println(JSON.createObjectNode().put("loggedOut", true).put("hadTokens", had));
         return OK;
     }
 
     private JsonNode form(String url, Map<String, String> fields) throws IOException, InterruptedException {
-        StringBuilder b = new StringBuilder();
-        fields.forEach((k, v) -> b.append(b.isEmpty() ? "" : "&").append(enc(k)).append('=').append(enc(v)));
-        return JSON.readTree(http.send(HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(30)).header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(b.toString())).build()).body());
+        return TokenSession.form(http, url, fields);
     }
 
     private int deploy(Args a) throws IOException, InterruptedException {
@@ -253,21 +305,49 @@ public final class Main {
 
     // ---- transport -----------------------------------------------------------------------------
 
-    private HttpRequest.Builder request(String path, Args a) throws IOException {
+    private HttpRequest.Builder request(String path, Args a) throws IOException, InterruptedException {
         JsonNode c = loadConfig();
         String server = a.opt("server", c.path("server").asText(""));
-        String token = env.apply("SANGAM_TOKEN") != null ? env.apply("SANGAM_TOKEN") : c.path("accessToken").asText("");
         if (server.isEmpty()) {
             throw new IllegalArgumentException("no server: run login or pass --server");
         }
         if (!path.startsWith("/") || path.contains("..")) {
             throw new IllegalArgumentException("path must be absolute under /api/v1");
         }
-        return HttpRequest.newBuilder(URI.create(server + "/api/v1" + path)).timeout(Duration.ofMinutes(2)).header("Accept", "application/json").header("Authorization", "Bearer " + token);
+        return HttpRequest.newBuilder(URI.create(server + "/api/v1" + path)).timeout(Duration.ofMinutes(2)).header("Accept", "application/json");
+    }
+
+    /**
+     * Sends with the session's bearer token. After a 401 the session is renewed once and the same request (same
+     * {@code Idempotency-Key}) is sent again: a 401 means the server did not act on it.
+     */
+    private HttpResponse<String> authorized(HttpRequest r) throws IOException, InterruptedException {
+        String fixed = env.apply("SANGAM_TOKEN");
+        if (fixed != null) {
+            return http.send(withBearer(r, fixed));
+        }
+        JsonNode c = loadConfig();
+        String token = session.bearer(c);
+        if (token == null) {
+            err.println("note: not logged in; run sangam login or set SANGAM_TOKEN");
+            return http.send(r);
+        }
+        HttpResponse<String> resp = http.send(withBearer(r, token));
+        if (resp.statusCode() == 401) {
+            String renewed = session.renewAfterRejection(c);
+            if (renewed != null) {
+                return http.send(withBearer(r, renewed));
+            }
+        }
+        return resp;
+    }
+
+    private static HttpRequest withBearer(HttpRequest r, String token) {
+        return HttpRequest.newBuilder(r, (name, value) -> !name.equalsIgnoreCase("Authorization")).header("Authorization", "Bearer " + token).build();
     }
 
     private int send(HttpRequest r, boolean failOnTestFailures) throws IOException, InterruptedException {
-        HttpResponse<String> resp = http.send(r);
+        HttpResponse<String> resp = authorized(r);
         int s = resp.statusCode();
         if (s == 401 || s == 403) {
             err.println(resp.body());
@@ -294,27 +374,40 @@ public final class Main {
         return OK;
     }
 
-    private JsonNode loadConfig() throws IOException {
-        return Files.exists(configFile) ? JSON.readTree(configFile.toFile()) : JSON.createObjectNode();
-    }
-
-    /** Stores the token with owner-only permissions where the file system supports them. */
-    private void save(Map<String, String> config) throws IOException {
-        Files.createDirectories(configFile.getParent());
+    /**
+     * The settings. A {@code cli.json} written before M-093 held the access token itself: it is moved into the token
+     * store once (no refresh is possible for it) and the file is rewritten without it.
+     */
+    private JsonNode loadConfig() throws IOException, InterruptedException {
         if (!Files.exists(configFile)) {
-            Files.createFile(configFile);
+            return JSON.createObjectNode();
         }
-        try {
-            Files.setPosixFilePermissions(configFile, PosixFilePermissions.fromString("rw-------"));
-        } catch (UnsupportedOperationException e) {
-            err.println("note: the token file relies on the user profile's permissions on this file system");
+        JsonNode c = JSON.readTree(configFile.toFile());
+        if (c == null || !c.isObject()) {
+            return JSON.createObjectNode();
         }
-        Files.writeString(configFile, JSON.writeValueAsString(config), StandardOpenOption.TRUNCATE_EXISTING);
+        if (c.hasNonNull("accessToken")) {
+            ObjectNode moved = ((ObjectNode) c).deepCopy();
+            String legacy = moved.remove("accessToken").asText();
+            String account = TokenStore.account(moved.path("server").asText(""), "");
+            store.save(account, new TokenStore.Credentials(legacy, null, 0));
+            moved.put("account", account);
+            writeConfig(moved);
+            return moved;
+        }
+        return c;
     }
 
-    private static void requireSecureUrl(String url) {
+    /** The settings file holds no secret, but is still written owner-only. */
+    private void writeConfig(JsonNode config) throws IOException {
+        if (OwnerOnlyFiles.write(configFile, JSON.writeValueAsString(config)) == OwnerOnlyFiles.Protection.PROFILE_ONLY) {
+            err.println("note: this file system has no owner-only permissions; cli.json relies on the user profile's permissions");
+        }
+    }
+
+    static void requireSecureUrl(String url) {
         URI u = URI.create(url);
-        boolean loopback = "localhost".equals(u.getHost()) || "127.0.0.1".equals(u.getHost());
+        boolean loopback = "localhost".equals(u.getHost()) || "127.0.0.1".equals(u.getHost()) || "[::1]".equals(u.getHost());
         if (!"https".equals(u.getScheme()) && !loopback) {
             throw new IllegalArgumentException("https is required except on loopback: " + url);
         }

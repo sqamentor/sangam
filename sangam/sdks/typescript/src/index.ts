@@ -24,6 +24,24 @@ export {
 export * from './api.js';
 export * from './client.js';
 export * from './worker.js';
+/** Durable steps (M-025, R37): `ctx.step(name, fn, options?)`. */
+export {
+  Step,
+  StepNoEffectError,
+  type StepCall,
+  type StepLookup,
+  type StepOptions,
+  type StepPreviousState,
+} from './steps.js';
+/** Saga and compensation helper (M-026). */
+export {
+  CompensationContext,
+  Saga,
+  SagaBuilder,
+  type SagaAction,
+  type SagaCompensation,
+  type SagaRecord,
+} from './saga.js';
 /** R18 test engine (M-021): in-process fake of the worker API for unit tests. */
 export {
   DEFAULT_LOCK_MS,

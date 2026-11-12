@@ -106,13 +106,21 @@ public class ChannelsController {
         return Lists.okRef(a.key(), a);
     }
 
+    /**
+     * Live messages (M-040), across nodes. With {@code Last-Event-ID} (a message id from an earlier stream) the messages after
+     * it are replayed first, at least once; the client drops a repeated id. A value that is not a plausible id is ignored.
+     */
     @GetMapping(value = "/conversations/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(RequestContext ctx, @PathVariable String id) {
+    public SseEmitter stream(RequestContext ctx, @PathVariable String id,
+            @RequestHeader(value = "Last-Event-ID", required = false) String lastEventId) {
         permissions.require(ctx, READ);
         // history refuses anyone who is not a participant of this tenant's conversation.
-        conversations.history(ctx.tenantId(), id, ctx.principalId(), 1);
-        return live.subscribe(ctx.tenantId(), ctx.principalId(), id);
+        List<ConversationService.Message> newest = conversations.history(ctx.tenantId(), id, ctx.principalId(), 1);
+        String after = lastEventId != null && LAST_EVENT_ID.matcher(lastEventId).matches() ? lastEventId : null;
+        return live.subscribe(ctx.tenantId(), ctx.principalId(), id, after, newest.isEmpty() ? null : newest.get(0).at());
     }
+
+    private static final java.util.regex.Pattern LAST_EVENT_ID = java.util.regex.Pattern.compile("[A-Za-z0-9_-]{1,64}");
 
     @GetMapping("/conversations/search")
     public ResponseEntity<List<ConversationService.Message>> search(RequestContext ctx, @RequestParam String text,

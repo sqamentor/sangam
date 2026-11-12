@@ -32,8 +32,11 @@ schema("RouteSnapshot", "Every route changed after `sinceMs`, with the snapshot 
        "asOfMs:long routes:list:Route")
 schema("CellRegistration", "Cell registration (CellDirectory.Registration). Idempotent; residency is immutable. Capacity "
        "defaults: 500 starts/s, 2000 tenants.",
-       "region jurisdiction residency apiBaseUrl adminBaseUrl dbVendor capacityStartsPerSec:int capacityTenants:int version",
-       ["apiBaseUrl", "jurisdiction", "residency"])
+       "region jurisdiction residency apiBaseUrl adminBaseUrl dbVendor capacityStartsPerSec:int capacityTenants:int version "
+       "dedicatedTenant", ["apiBaseUrl", "jurisdiction", "residency"],
+       descs={"dedicatedTenant": "M-016: tenant code this cell is dedicated to (database-per-tenant instance); absent = shared. "
+                          "A cell registered with it hosts only that tenant, and the registration answer echoes it back "
+                          "(a dedicated cell never registers as a shared one)"})
 schema("CellHeartbeat", "Cell heartbeat (CellDirectory.Heartbeat). Missing numbers count as 0.",
        "status startsPerSec:num p99CommandMs:num activeNodes:int dbPoolUsagePct:num outboxFillPct:num tenants:long version",
        descs={"status": "UP (default), DEGRADED or DRAINING, case-insensitive"})
@@ -41,18 +44,25 @@ schema("Cell", "Cell directory entry (org.sangam.controlplane.cells.Cell). `stat
        "DRAINING), DOWN (no heartbeat within the timeout) or RETIRED; `placementOpen` is the administrative switch.",
        "cellId region jurisdiction residency apiBaseUrl adminBaseUrl dbVendor capacityStartsPerSec:int capacityTenants:int "
        "status placementOpen:bool startsPerSec:num p99CommandMs:num activeNodes:int dbPoolUsagePct:num outboxFillPct:num "
-       "tenantsReported:long version lastHeartbeatMs:long registeredAtMs:long",
-       enums={"status": ["UP", "DEGRADED", "DRAINING", "DOWN", "RETIRED"]})
+       "tenantsReported:long version lastHeartbeatMs:long registeredAtMs:long dedicatedTenant",
+       enums={"status": ["UP", "DEGRADED", "DRAINING", "DOWN", "RETIRED"]},
+       descs={"dedicatedTenant": "M-016: tenant code this cell is dedicated to (database-per-tenant instance); absent = shared. "
+                          "A cell registered with it hosts only that tenant, and the registration answer echoes it back "
+                          "(a dedicated cell never registers as a shared one)"})
 schema("CreateTenantRequest", "A new tenant node (ControlPlaneController.CreateTenant). jurisdiction and residency are "
        "inherited from the parent when absent and required for a root; residency must lie within the parent's. "
        "`place` (default true) places the tenant on a cell right away.",
-       "tenantCode parentCode levelKind name jurisdiction residency sector expectedStartsPerSec:num place:bool", ["tenantCode"],
-       descs={"levelKind": "Hierarchy level name (data, ADR-D-20); default ORG"})
+       "tenantCode parentCode levelKind name jurisdiction residency sector expectedStartsPerSec:num place:bool isolation",
+       ["tenantCode"], enums={"isolation": ["SHARED", "SCHEMA", "DATABASE"]},
+       descs={"levelKind": "Hierarchy level name (data, ADR-D-20); default ORG", "isolation": "M-016 (decision 97): SHARED (default), SCHEMA or DATABASE. A DATABASE tenant is placed only on the "
+                    "cell dedicated to it; SHARED and SCHEMA tenants on shared cells"})
 schema("Tenant", "A tenant node of the n-level hierarchy (org.sangam.controlplane.registry.Tenant). `cellId` is set for "
        "placed tenants.",
        "tenantCode parentCode path depth:int levelKind name jurisdiction residency sector expectedStartsPerSec:num cellId "
-       "status routeEpoch:long createdAtMs:long updatedAtMs:long",
-       enums={"status": ["ACTIVE", "DRAINING", "MOVING", "RETIRED"]})
+       "status routeEpoch:long createdAtMs:long updatedAtMs:long isolation",
+       enums={"status": ["ACTIVE", "DRAINING", "MOVING", "RETIRED"], "isolation": ["SHARED", "SCHEMA", "DATABASE"]},
+       descs={"isolation": "M-016 (decision 97): SHARED (default), SCHEMA or DATABASE. A DATABASE tenant is placed only on the "
+                    "cell dedicated to it; SHARED and SCHEMA tenants on shared cells"})
 schema("PlacementCandidate", "A cell that can host the tenant (PlacementService.Candidate), best first.",
        "cell:Cell affinity:int headroom:num reason")
 schema("MoveRequest", "Start a tenant move (ControlPlaneController.MoveRequest). Without `targetCell` the placement "

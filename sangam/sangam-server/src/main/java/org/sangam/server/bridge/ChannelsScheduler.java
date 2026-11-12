@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.bridge;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +28,44 @@ public final class ChannelsScheduler implements SmartLifecycle {
     }
 
     public record NamedTask(String name, Task task) {
+    }
+
+    /**
+     * Spaces a task out to at most once per {@code period} on this node (daily retention inside the poll loop). The next run
+     * is due {@code period} after a success and {@code retry} after a failure, which is rethrown so the tick logs it. The
+     * state is in memory: a new leader runs a due task once more, so wrapped tasks must be repeatable.
+     */
+    public static final class Spaced {
+        private final Duration period;
+        private final Duration retry;
+        private final Clock clock;
+        private final Map<String, Instant> due = new ConcurrentHashMap<>();
+
+        public Spaced(Duration period, Duration retry, Clock clock) {
+            if (period.isNegative() || period.isZero() || retry.isNegative() || retry.isZero()) {
+                throw new IllegalArgumentException("period and retry must be positive");
+            }
+            this.period = period;
+            this.retry = retry;
+            this.clock = clock;
+        }
+
+        public Task wrap(String key, Task task) {
+            return () -> {
+                Instant now = clock.instant();
+                Instant next = due.get(key);
+                if (next != null && now.isBefore(next)) {
+                    return;
+                }
+                try {
+                    task.run();
+                    due.put(key, now.plus(period));
+                } catch (Exception e) {
+                    due.put(key, now.plus(retry));
+                    throw e;
+                }
+            };
+        }
     }
 
     private final LeaderElection leader;

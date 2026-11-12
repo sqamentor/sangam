@@ -304,7 +304,7 @@ Reference DDL to port to sangam-persistence: `PipelineStore.DDL`, `TelemetrySche
 
 ### Hand-off to WS-PORTS (event registry)
 
-Wired in `ports/EventRegistryWiring.java`. This module depends on `sangam-flowable-ports` as an optional dependency. There is no cycle, because ports depends only on sangam-core. Call this once at start-up:
+Wired in `ports/EventRegistryWiring.java`. This module depends on `sangam-flowable-ports` as an optional dependency. There is no cycle, because ports depends only on sangam-core. Because the dependency is optional, a deployment that uses the HTTP connector's `aws-sigv4` auth or the AWS Secrets Manager secret provider must also have `sangam-flowable-ports` on its runtime classpath, since the one SigV4 signer (`org.sangam.ports.events.channel.AwsSigV4`) lives there; sangam-server already includes it. Call this once at start-up:
 
 ```java
 EventRegistryWiring.wire(inboxService, publisherRegistry, eventDispatcher, channelPublisher, historyProjectorOrNull)

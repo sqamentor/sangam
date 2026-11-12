@@ -93,3 +93,13 @@ CREATE TABLE CP_AUDIT (
 );
 CREATE INDEX CP_AUDIT_SUBJECT ON CP_AUDIT (subject, at_ms);
 --rollback DROP TABLE CP_AUDIT;
+
+--changeset sangam-scale:cp-0001-05-cp_cell-add-dedicated_tenant dbms:oracle
+--comment: M-016: a cell dedicated to one tenant hosts only that tenant (NULL = shared cell)
+ALTER TABLE CP_CELL ADD dedicated_tenant VARCHAR2(64 CHAR);
+--rollback ALTER TABLE CP_CELL DROP COLUMN dedicated_tenant;
+
+--changeset sangam-scale:cp-0001-06-cp_tenant-add-isolation dbms:oracle
+--comment: M-016: tenant isolation SHARED, SCHEMA or DATABASE (existing rows SHARED)
+ALTER TABLE CP_TENANT ADD isolation VARCHAR2(16 CHAR) DEFAULT 'SHARED' NOT NULL;
+--rollback ALTER TABLE CP_TENANT DROP COLUMN isolation;

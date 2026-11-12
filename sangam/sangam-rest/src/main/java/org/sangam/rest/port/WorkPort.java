@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.port;
 
+import java.sql.Connection;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Worker API (ARCHITECTURE §4, VI.3, FLOWABLE-INTO-OPERATON FC-36 / FLOWABLE-INTO-OPERATON FC-11 external-worker parity for BPMN and CMMN-hosted work).
@@ -135,5 +138,41 @@ public interface WorkPort {
     default long lockVersionOfAttempt(RequestContext ctx, String workId, String workerId, String attemptId) {
         throw ApiProblem.conflict("FENCING_TOKEN_REQUIRED",
                 "this worker API cannot resolve an attempt id; echo sangamLockVersion from the acquire response");
+    }
+
+    /**
+     * The lease a fenced body runs under (M-025, R37): the work's stable {@code operationId} (R36), the tenant of the
+     * work, and the caller's fencing triple, already checked against the current lease.
+     */
+    record FencedLease(String workId, String tenantId, UUID operationId, String workerId, long lockVersion,
+                       String attemptId) {
+    }
+
+    /** A body that runs on the connection of the transaction that checked the lease (M-025, R37). */
+    @FunctionalInterface
+    interface FencedWork<T> {
+        T run(Connection c, FencedLease lease);
+    }
+
+    /**
+     * M-025 (R37 step journal): checks that {@code workerId} holds the current lease {@code lockVersion} /
+     * {@code attemptId} of {@code workId} in the caller's tenant and runs {@code work} in the same transaction, on the
+     * connection that holds the lease row lock, so a stale lease ({@code 409 STALE_LEASE}) records nothing. An unknown
+     * work item is {@code 404}; a work item whose instance was deleted is {@code 410 GONE_INSTANCE_DELETED}.
+     * Additive: an implementation without a lease model it can fence in one transaction refuses with
+     * {@code 409 STEP_JOURNAL_UNAVAILABLE}.
+     */
+    default <T> T inFencedWork(RequestContext ctx, String workId, String workerId, long lockVersion, String attemptId,
+                               FencedWork<T> work) {
+        throw ApiProblem.conflict("STEP_JOURNAL_UNAVAILABLE",
+                "this worker API cannot record steps in the transaction of its lease check");
+    }
+
+    /**
+     * The stable {@code operationId} (R36) of open work in the caller's tenant, without a lease check (diagnosis,
+     * {@code ops.read}); empty when the work is unknown here or this implementation derives none.
+     */
+    default Optional<UUID> operationIdOfWork(RequestContext ctx, String workId) {
+        return Optional.empty();
     }
 }

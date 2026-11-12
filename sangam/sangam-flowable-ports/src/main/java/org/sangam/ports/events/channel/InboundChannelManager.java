@@ -36,7 +36,8 @@ public class InboundChannelManager implements AutoCloseable {
         Set<String> wanted = new HashSet<>();
         for (EventRegistry.DeployedChannel ch : registry.allChannels()) {
             ChannelDefinition d = ch.definition();
-            if (d.direction() != ChannelDefinition.Direction.INBOUND || "webhook".equals(d.adapterType())) {
+            if (d.direction() != ChannelDefinition.Direction.INBOUND || "webhook".equals(d.adapterType())
+                    || ChannelAdapters.OUTBOUND_ONLY.contains(d.adapterType())) {
                 continue;
             }
             String id = ch.tenantId() + "|" + d.key() + "|" + ch.version();
@@ -44,7 +45,7 @@ public class InboundChannelManager implements AutoCloseable {
             if (running.containsKey(id)) {
                 continue;
             }
-            if (!ChannelAdapters.available(d.adapterType())) {
+            if (!ChannelAdapters.available(d.adapterType(), env)) {
                 LOG.warn("inbound channel {} ({}) skipped: client library not on the class path", d.key(), d.adapterType());
                 continue;
             }

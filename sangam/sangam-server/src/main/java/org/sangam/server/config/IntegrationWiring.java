@@ -28,6 +28,7 @@ import org.sangam.core.ports.UniqueStartPort;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.integration.IntegrationMaintenance;
 import org.sangam.integration.bridge.ConnectorExternalTaskWorker;
+import org.sangam.integration.broker.BrokerWakeupBus;
 import org.sangam.integration.bridge.TopicBinding;
 import org.sangam.integration.bridge.WorkContextResolver;
 import org.sangam.integration.bridge.operaton.IntegrationBridge;
@@ -214,15 +215,38 @@ public class IntegrationWiring {
         boolean rollup = !env.getProperty("sangam.cell.id", "").isBlank()
                 && !env.getProperty("sangam.cell.rollup.ingest-url", "").isBlank()
                 && fixed.stream().noneMatch(d -> d.name().equals(org.sangam.cell.rollup.RollupPublisher.DESTINATION));
-        if (!rollup) {
-            return new OutboxWriter(tx.dialect(), OutboxWriter.SubscriptionResolver.fixed(fixed));
+        // M-057: the configured external history projection sinks (HistoryProjectionWiring) receive sangam.history.* only
+        return new OutboxWriter(tx.dialect(), subscriptions(fixed, rollup, HistoryProjectionWiring.destinations(env)));
+    }
+
+    /**
+     * Every event goes to {@code fixed}; history, cross-cell and roll-up events also to the roll-up stream when
+     * {@code rollup}; history events also to the external projection sinks.
+     */
+    static OutboxWriter.SubscriptionResolver subscriptions(List<Outbox.Destination> fixed, boolean rollup,
+                                                           List<Outbox.Destination> projection) {
+        if (!rollup && projection.isEmpty()) {
+            return OutboxWriter.SubscriptionResolver.fixed(fixed);
         }
-        List<Outbox.Destination> withRollup = new ArrayList<>(fixed);
-        withRollup.add(Outbox.Destination.unordered(org.sangam.cell.rollup.RollupPublisher.DESTINATION));
-        List<Outbox.Destination> rollupSet = List.copyOf(withRollup);
-        return new OutboxWriter(tx.dialect(), (tenant, eventType) -> eventType != null
-                && (eventType.startsWith("sangam.history.") || eventType.startsWith("sangam.xcell.")
-                || eventType.startsWith("sangam.rollup.")) ? rollupSet : fixed);
+        List<Outbox.Destination> rollupSet = rollup
+                ? merge(fixed, List.of(Outbox.Destination.unordered(org.sangam.cell.rollup.RollupPublisher.DESTINATION)))
+                : fixed;
+        List<Outbox.Destination> historySet = merge(rollupSet, projection);
+        return (tenant, eventType) -> eventType == null ? fixed
+                : eventType.startsWith(HistoryProjectionWiring.HISTORY_TYPES) ? historySet
+                : eventType.startsWith("sangam.xcell.") || eventType.startsWith("sangam.rollup.") ? rollupSet
+                : fixed;
+    }
+
+    /** {@code a} then the destinations of {@code b} not already named in {@code a}. */
+    static List<Outbox.Destination> merge(List<Outbox.Destination> a, List<Outbox.Destination> b) {
+        List<Outbox.Destination> out = new ArrayList<>(a);
+        for (Outbox.Destination d : b) {
+            if (out.stream().noneMatch(x -> x.name().equals(d.name()))) {
+                out.add(d);
+            }
+        }
+        return List.copyOf(out);
     }
 
     @Bean
@@ -409,14 +433,25 @@ public class IntegrationWiring {
     @Bean(destroyMethod = "")
     public OutboxRelayService sangamOutboxRelayService(TxSupport tx, DataSource ds, PublisherRegistry publishers,
             AuditChain sangamIntegrationAuditChain, DeadLetterStore deadLetters, RestProperties rest,
-            WakeupListener sangamWakeupListener) {
-        Transactions ptx = productTx(ds);
+            WakeupNotifier sangamWakeupNotifier) {
+        return new OutboxRelayService(tx.dialect(), productTx(ds), publishers, OutboxRelayService.Settings.defaults(rest.getNode()),
+                sangamIntegrationAuditChain, deadLetters, CircuitBreaker.defaults(), sangamWakeupNotifier);
+    }
+
+    /**
+     * The one wake-up hint sender: the relay after a cycle that delivered, and the M-066 work announcer
+     * ({@code WorkAnnounceWiring}) after a command that created external work. Never throws.
+     */
+    @Bean
+    public WakeupNotifier sangamWakeupNotifier(TxSupport tx, DataSource ds, WakeupListener sangamWakeupListener,
+            ObjectProvider<BrokerWakeupBus> brokerWakeup) {
         // M-005: PostgreSQL notifies every node (LISTEN in sangamWakeupListener); the other dialects wake this node only
         WakeupNotifier wakeup = sangamWakeupListener.usesListen()
-                ? WakeupNotifier.postgres(tx.dialect(), ptx, WakeupNotifier.CHANNEL)
+                ? WakeupNotifier.postgres(tx.dialect(), productTx(ds), WakeupNotifier.CHANNEL)
                 : sangamWakeupListener.inJvmNotifier();
-        return new OutboxRelayService(tx.dialect(), ptx, publishers, OutboxRelayService.Settings.defaults(rest.getNode()),
-                sangamIntegrationAuditChain, deadLetters, CircuitBreaker.defaults(), wakeup);
+        // M-058: opt-in broker bus (BrokerWakeupWiring) wakes the other nodes where the database has no LISTEN
+        BrokerWakeupBus bus = brokerWakeup.getIfAvailable();
+        return bus == null ? wakeup : wakeup.andThen(bus);
     }
 
     // ---------------------------------------------------------------- wake-up and worker long-poll (M-005, M-053)

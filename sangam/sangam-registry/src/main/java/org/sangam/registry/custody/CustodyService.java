@@ -787,7 +787,7 @@ public final class CustodyService {
     // ------------------------------------------------------------------------------------------- queries
 
     public CustodyItem get(Connection c, RegistryContext ctx, String itemId) {
-        SqlPredicate vis = ports.visibility().visible(ctx, RegisteredObjectService.RESOURCE, "o");
+        SqlPredicate vis = ports.visibility().visible(c, ctx, RegisteredObjectService.RESOURCE, "o");
         List<Object> params = new ArrayList<>(List.of(itemId, ctx.tenant()));
         params.addAll(vis.params());
         return Jdbc.one(c, JOINED + " WHERE i.object_id=? AND i.tenant_id=? AND (" + vis.sql() + ")",
@@ -810,7 +810,7 @@ public final class CustodyService {
         add(where, params, "i.custody_state", q.custodyState() == null ? null : q.custodyState().toUpperCase());
         add(where, params, "i.label", q.label());
         return Db.page(c, dialect, JOINED, where.toString(), params,
-                ports.visibility().visible(ctx, RegisteredObjectService.RESOURCE, "o"), "i.last_event_at DESC, i.object_id",
+                ports.visibility().visible(c, ctx, RegisteredObjectService.RESOURCE, "o"), "i.last_event_at DESC, i.object_id",
                 q.page(), q.size(), CustodyService::joined);
     }
 
@@ -838,7 +838,7 @@ public final class CustodyService {
         return Db.page(c, dialect, "SELECT t." + TRANSFER_COLS.replace(", ", ", t.") + " FROM REG_CUSTODY_TRANSFER t"
                         + " JOIN REG_OBJECT o ON o.id = t.item_id AND o.tenant_id = t.tenant_id",
                 "t.tenant_id=? AND t.to_custodian=? AND t.status='PENDING'", List.of(ctx.tenant(), toCustodian),
-                ports.visibility().visible(ctx, RegisteredObjectService.RESOURCE, "o"), "t.initiated_at, t.id", page, size,
+                ports.visibility().visible(c, ctx, RegisteredObjectService.RESOURCE, "o"), "t.initiated_at, t.id", page, size,
                 CustodyService::transferRow);
     }
 
@@ -860,7 +860,7 @@ public final class CustodyService {
      */
     public GapReport gapCheck(Connection c, RegistryContext ctx, Duration transitLimit, Duration staleLimit, int limit) {
         Instant now = Db.now(c, dialect);
-        SqlPredicate vis = ports.visibility().visible(ctx, RegisteredObjectService.RESOURCE, "o");
+        SqlPredicate vis = ports.visibility().visible(c, ctx, RegisteredObjectService.RESOURCE, "o");
         int max = limit <= 0 ? 100 : limit;
         List<CustodyItem> noCustodian = Db.page(c, dialect, JOINED,
                 "i.tenant_id=? AND i.custodian_ref IS NULL AND i.custody_state NOT IN ('DISPOSED','RELEASED')",

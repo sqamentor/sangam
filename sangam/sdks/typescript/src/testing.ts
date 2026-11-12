@@ -31,9 +31,12 @@
  * - R41 for `POST /process-instances`: same Idempotency-Key + same body -> the stored response with
  *   `Idempotent-Replayed: true`; same key + another body -> `422 IDEMPOTENCY_KEY_REUSED`.
  * - `fetch-and-lock` answers at once (no long-poll wait); an empty answer comes after one timer tick of at most 10 ms.
+ * - The step journal of durable steps (M-025): `GET/PUT /work/{id}/steps/{name}`, `GET /work/{id}/steps`, with the
+ *   server's transitions and fencing (`testing-steps.ts`).
  */
 import { SangamClient, type SangamClientOptions } from './client.js';
 import { randomUUID } from 'node:crypto';
+import { EngineSteps } from './testing-steps.js';
 
 export const DEFAULT_LOCK_MS = 5 * 60 * 1000;
 export const MAX_LOCK_MS = 24 * 60 * 60 * 1000;
@@ -86,6 +89,9 @@ interface LeaseRow { lockVersion: number; attemptId: string | null; workerId: st
 export type EngineWorkState = 'AVAILABLE' | 'LOCKED' | 'CANCEL_REQUESTED' | 'COMPLETED' | 'COMPLETED_WITH_ERROR' | 'INCIDENT'
   | 'UNKNOWN_OUTCOME' | 'CANCELLED' | 'FAILED';
 
+/** States in which the server still has the work's external task (incident and reconciliation hold keep it). */
+const TASK_EXISTS: ReadonlySet<EngineWorkState> = new Set<EngineWorkState>(['AVAILABLE', 'LOCKED', 'INCIDENT', 'UNKNOWN_OUTCOME']);
+
 interface Work {
   id: string; topic: string; variables: Json; retries: number | null; priority: number; businessKey?: string;
   processDefinitionKey: string; processInstanceId: string; activityInstanceId: string; tenantId: string;
@@ -115,6 +121,14 @@ export class SangamTestEngine {
   private readonly lose = new Map<string, number>();
   private readonly idem = new Map<string, [string, number, Json]>();
   private reconSeq = 0;
+  private readonly journal = new EngineSteps<Work>({
+    work: (id) => this.work.get(id),
+    fence: (w, b) => this.fence(w, b),
+    open: (w) => TASK_EXISTS.has(w.state),
+    problem: (status, code, detail, ext) => new EngineProblem(status, code, detail, undefined, ext ?? {}),
+    notFound,
+    nowMs: () => this.now,
+  });
 
   constructor(o: TestEngineOptions = {}) {
     this.irreversibleTopics = new Set(o.irreversibleTopics ?? []);
@@ -217,7 +231,7 @@ export class SangamTestEngine {
     if (typeof init?.body === 'string' && init.body.length > 0) {
       try { body = JSON.parse(init.body); } catch { body = undefined; }
     }
-    const a = this.handle(init?.method ?? 'GET', path, key, body);
+    const a = this.handle(init?.method ?? 'GET', path, key, body, url.searchParams);
     if (a.lose) throw new TypeError('fetch failed: connection closed by the test engine (lost response)');
     if (path === '/work/fetch-and-lock' && Array.isArray(a.body) && a.body.length === 0) {
       // no long poll, but one short timer tick (<= 10 ms) so a worker loop never monopolises the event loop
@@ -229,8 +243,8 @@ export class SangamTestEngine {
     return new Response(a.body === undefined ? null : JSON.stringify(a.body), { status: a.status, headers });
   };
 
-  /** One request without HTTP: status, headers, JSON body, and whether the answer is lost. */
-  handle(method: string, path: string, key: string | undefined, body: unknown): Answer {
+  /** One request without HTTP: status, headers, JSON body, and whether the answer is lost. `query`: the step GET's lease. */
+  handle(method: string, path: string, key: string | undefined, body: unknown, query?: URLSearchParams): Answer {
     this.calls.push({ method, path, idempotencyKey: key, body });
     const action = path.substring(path.lastIndexOf('/') + 1);
     const pending = this.lose.get(action) ?? 0;
@@ -239,6 +253,8 @@ export class SangamTestEngine {
     const b = body && typeof body === 'object' && !Array.isArray(body) ? (body as Json) : {};
     try {
       this.sweep();
+      const step = this.journal.route(method, path, query, b);
+      if (step) return { status: step.status, headers: {}, body: step.body, lose };
       return { ...this.route(method, path, key, b), lose };
     } catch (e) {
       if (e instanceof EngineProblem) {
@@ -315,10 +331,14 @@ export class SangamTestEngine {
     }
   }
 
-  /** requireTask: the external task exists while it is not finished. */
+  /**
+   * requireTask: the external task exists until the work finished or was deleted; an incident or an outcome awaiting
+   * reconciliation keeps it, so a call on such work reaches the fence (409 STALE_LEASE: outcome-unknown ended the lease)
+   * as on both server work adapters (SL-174).
+   */
   private task(wid: string): Work {
     const w = this.work.get(wid);
-    if (!w || w.deleted || (w.state !== 'AVAILABLE' && w.state !== 'LOCKED')) throw notFound('external work', wid);
+    if (!w || w.deleted || !TASK_EXISTS.has(w.state)) throw notFound('external work', wid);
     return w;
   }
 

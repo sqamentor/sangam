@@ -135,6 +135,31 @@ public final class TaskContext {
     /** The server-recorded ledger entry of {@link #operationId()}; null from servers that do not send it. */
     public org.sangam.sdk.model.WorkOperation operation() { return work.operation(); }
 
+    /**
+     * Durable step (M-025, R37): runs {@code call} at most once per successful outcome of this work's operation, as
+     * far as the step journal can tell. A step that an earlier attempt recorded {@code SUCCEEDED} is not called again;
+     * its recorded result is decoded to {@code type} and returned. The call should send
+     * {@link Step#idempotencyKey()} to the remote API.
+     *
+     * <p><b>Not exactly-once for remote APIs.</b> The journal is written before ({@code INTENT}) and after
+     * ({@code SUCCEEDED}) the remote call; a crash between the two leaves {@code INTENT}. The next attempt then looks
+     * the outcome up, runs again only when the call is idempotent, or reports outcome-unknown
+     * ({@link StepOptions}), never re-issuing blindly. Default options are capability class (c).
+     *
+     * @param name step name, unique within the work's operation (1-128 printable ASCII)
+     * @param type the result type for replay (records, maps, {@code BigDecimal} from R33 typed values); null/Void = none
+     */
+    public <T> T step(String name, Class<T> type, StepCall<T> call) throws Exception {
+        return DurableSteps.run(this, name, type, StepOptions.defaults(), call);
+    }
+
+    /** {@link #step(String, Class, StepCall)} with the recovery options of the call's capability class. */
+    public <T> T step(String name, Class<T> type, StepOptions<T> options, StepCall<T> call) throws Exception {
+        return DurableSteps.run(this, name, type, options, call);
+    }
+
+    ObjectMapper json() { return json; }
+
     public SangamLogger logger() { return logger; }
 
     public Map<String, Object> logFields() { return logFields; }

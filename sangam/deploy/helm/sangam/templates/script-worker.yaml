@@ -1,0 +1,125 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- /* M-061 (owner decisions 53, 77, 78): optional script worker, BPMN script tasks in an nsjail sandbox. */ -}}
+{{- if .Values.scriptWorker.enabled }}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- $sw := .Values.scriptWorker -}}
+{{- $url := $sw.url -}}
+{{- if not $url -}}
+{{- $url = ternary (printf "http://%s-gateway:%v" $fullname .Values.scale.gateway.port) (printf "http://%s-server:%v" $fullname .Values.server.service.port) .Values.scale.gateway.enabled -}}
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-script-worker
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: script-worker
+spec:
+  replicas: {{ $sw.replicaCount }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "script-worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" . "component" "script-worker") | nindent 8 }}
+        # admitted by the server NetworkPolicy as an API client
+        sangam.io/api-client: "true"
+    spec:
+      {{- include "sangam.imagePullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "sangam.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      {{- with $sw.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: script-worker
+          image: {{ include "sangam.image" (dict "ctx" . "image" $sw.image) | quote }}
+          imagePullPolicy: {{ $sw.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $sw.securityContext | nindent 12 }}
+          env:
+            - name: TZ
+              value: UTC
+            - name: SANGAM_URL
+              value: {{ $url | quote }}
+            {{- if $sw.oidcTokenUrl }}
+            - name: SANGAM_OIDC_TOKEN_URL
+              value: {{ $sw.oidcTokenUrl | quote }}
+            - name: SANGAM_CLIENT_ID
+              value: {{ required "scriptWorker.clientId is required with scriptWorker.oidcTokenUrl" $sw.clientId | quote }}
+            - name: SANGAM_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "scriptWorker.existingSecret is required" $sw.existingSecret }}
+                  key: clientSecret
+            {{- else }}
+            - name: SANGAM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "scriptWorker.existingSecret is required" $sw.existingSecret }}
+                  key: token
+            {{- end }}
+            {{- range $k, $v := dict "LANGUAGES" $sw.languages "MAX_CONCURRENCY" $sw.maxConcurrency "CPU_SECONDS" $sw.cpuSeconds "WALL_TIME" $sw.wallTime "MEMORY_BYTES" $sw.memoryBytes "MAX_PROCESSES" $sw.maxProcesses }}
+            {{- if $v }}
+            - name: SANGAM_SCRIPT_{{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with $sw.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml $sw.resources | nindent 12 }}
+      {{- with $sw.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $sw.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $sw.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.networkPolicy.enabled }}
+---
+# Script worker: no ingress; egress DNS, this release's server/gateway API and the identity provider (OIDC cidrs).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-script-worker
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    app.kubernetes.io/component: script-worker
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" . "component" "script-worker") | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    {{- include "sangam.np.dnsEgress" . | nindent 4 }}
+    - to:
+        - podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
+              - { key: app.kubernetes.io/component, operator: In, values: [server, gateway] }
+      ports:
+        - { protocol: TCP, port: {{ .Values.server.service.port }} }
+        - { protocol: TCP, port: {{ .Values.scale.gateway.port }} }
+    {{- with .Values.networkPolicy.oidc.cidrs }}
+    - to:
+        {{- range . }}
+        - ipBlock: { cidr: {{ . }} }
+        {{- end }}
+      ports:
+        {{- range $.Values.networkPolicy.oidc.ports }}
+        - { protocol: TCP, port: {{ . }} }
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

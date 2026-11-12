@@ -68,8 +68,23 @@ public abstract class SimHttpServer implements AutoCloseable {
         }
     }
 
-    /** A response produced by a route handler. */
-    public record Response(int status, String contentType, byte[] body) {
+    /** A response produced by a route handler; {@code headers} are extra response headers (M-067). */
+    public record Response(int status, String contentType, byte[] body, java.util.Map<String, String> headers) {
+        public Response {
+            headers = headers == null ? java.util.Map.of() : java.util.Map.copyOf(headers);
+        }
+
+        public Response(int status, String contentType, byte[] body) {
+            this(status, contentType, body, null);
+        }
+
+        /** The same response with one more header. */
+        public Response withHeader(String name, String value) {
+            java.util.Map<String, String> h = new java.util.LinkedHashMap<>(headers);
+            h.put(name, value);
+            return new Response(status, contentType, body, h);
+        }
+
         public static Response json(int status, String json) {
             return new Response(status, "application/json; charset=utf-8", json.getBytes(StandardCharsets.UTF_8));
         }
@@ -208,6 +223,7 @@ public abstract class SimHttpServer implements AutoCloseable {
 
     private static void send(HttpExchange ex, Response r) throws IOException {
         ex.getResponseHeaders().set("Content-Type", r.contentType());
+        r.headers().forEach((k, v) -> ex.getResponseHeaders().set(k, v));
         byte[] body = r.body();
         ex.sendResponseHeaders(r.status(), body.length == 0 ? -1 : body.length);
         if (body.length > 0) {

@@ -15,9 +15,12 @@ import org.sangam.sdk.generated.model.CellMoveRequest;
 import org.sangam.sdk.generated.model.CellMovedRequest;
 import org.sangam.sdk.generated.model.CellTenantChecksum;
 import org.sangam.sdk.generated.model.CellTenantState;
+import org.sangam.sdk.generated.model.PoisonInboundItem;
+import org.sangam.sdk.generated.model.PoisonInboundParked;
+import org.sangam.sdk.generated.model.ReasonRequest;
 
 /**
- * Typed operations of {@code Cell} (12 operations), generated from
+ * Typed operations of {@code Cell} (15 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -36,6 +39,8 @@ public final class CellApi {
     private static final TypeReference<CellTenantState> R_purgeCellTenant = new TypeReference<>() { };
     private static final TypeReference<CellDrainStatus> R_getCellDrainStatus = new TypeReference<>() { };
     private static final TypeReference<CellTenantChecksum> R_getCellTenantChecksum = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<PoisonInboundItem>> R_listParkedInbound = new TypeReference<>() { };
+    private static final TypeReference<PoisonInboundParked> R_getParkedInbound = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -241,5 +246,52 @@ public final class CellApi {
         ApiRequest req = ApiRequest.get("/admin/cell/exports/" + HttpTransport.seg(String.valueOf(exportId)));
         req.header("X-Sangam-Export-Token", xSangamExportToken == null ? null : String.valueOf(xSangamExportToken));
         return call.bytes(req, options, "application/octet-stream");
+    }
+
+    /**
+     * Parked inbound messages of this cell
+     *
+     * <p>Open POISON_INBOUND items of every tenant of this cell whose message was parked because the tenant moved or was purged, oldest first (PoisonInbound.listParked); `tenant` narrows the list to one tenant.
+     *
+     * <p>{@code GET /admin/cell/parked-inbound} (operationId {@code listParkedInbound}); permission {@code role CELL_ADMIN}.
+     * @param tenant query parameter {@code tenant}, or null. Tenant code (optional filter)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<PoisonInboundItem> listParkedInbound(String tenant, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/admin/cell/parked-inbound");
+        req.query("tenant", tenant);
+        return call.json(req, options, R_listParkedInbound);
+    }
+
+    /**
+     * View a parked inbound message
+     *
+     * <p>The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
+     *
+     * <p>{@code GET /admin/cell/parked-inbound/{itemId}} (operationId {@code getParkedInbound}); permission {@code role CELL_ADMIN}.
+     * @param itemId path parameter {@code itemId}. reconciliation item id of the parked message (POISON_INBOUND)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public PoisonInboundParked getParkedInbound(String itemId, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/admin/cell/parked-inbound/" + HttpTransport.seg(String.valueOf(itemId)));
+        return call.json(req, options, R_getParkedInbound);
+    }
+
+    /**
+     * Replay a parked inbound message
+     *
+     * <p>Hands the message, with its original source, message id, event type and correlation key, to the tenant's current cell through the gateway (sangam.cell.gateway-url; the target inbox deduplicates on tenant, source and message id); then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over, or a target where the tenant is not ACTIVE, leaves the item open: 503 REPLAY_FAILED; 503 REPLAY_NOT_CONFIGURED without a gateway URL (PoisonInbound.replayParked).
+     *
+     * <p>{@code POST /admin/cell/parked-inbound/{itemId}/replay} (operationId {@code replayParkedInbound}); permission {@code role CELL_ADMIN}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param itemId path parameter {@code itemId}. reconciliation item id of the parked message (POISON_INBOUND)
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     */
+    public void replayParkedInbound(String itemId, ReasonRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/admin/cell/parked-inbound/" + HttpTransport.seg(String.valueOf(itemId)) + "/replay");
+        req.body(body);
+        call.none(req, options);
     }
 }

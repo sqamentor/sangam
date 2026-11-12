@@ -185,9 +185,10 @@ const parties: ScreenDef = {
     { id: 'rematch', label: 'act.rematch', path: '/registry/parties/{id}/match', showResult: true },
     { id: 'snapshot', label: 'act.snapshot', path: '/registry/parties/{id}/snapshots', fields: [f.text('reference', undefined, true)], showResult: true },
     { id: 'deactivate', label: 'act.deactivate', path: '/registry/parties/{id}/deactivate', reason: 'body', danger: true },
-    // M-039: reveal an identifier; the declared purpose is the X-Purpose header (PartyController.java:29, :119-124), checked,
-    // consent-gated and audited as PARTY_IDENTIFIER_REVEALED by the server (PartyService.java:432-443)
-    { id: 'reveal', label: 'act.reveal', path: '/registry/parties/identifiers/{identifierId}/reveal', fields: [f.path(f.text('identifierId', 'fld.identifierId', true))], reason: 'body', reasonHeader: 'X-Purpose', noJson: true, showResult: true, hint: 'mod.registry.revealHint' },
+    // M-039: reveal an identifier; the declared purpose CODE is the X-Purpose header (PartyController.java:29, :119-124),
+    // bound as the compliance purpose key (SL-166 (5)), consent-gated and audited as PARTY_IDENTIFIER_REVEALED by the server
+    // (PartyService.java:432-443). The route takes no body, so no free-text reason is asked for.
+    { id: 'reveal', label: 'act.reveal', path: '/registry/parties/identifiers/{identifierId}/reveal', fields: [f.path(f.text('identifierId', 'fld.identifierId', true))], purposeHeader: 'X-Purpose', noJson: true, showResult: true, hint: 'mod.registry.revealHint' },
     { id: 'reactivate', label: 'act.reactivate', path: '/registry/parties/{id}/reactivate', reason: 'body' },
   ],
 };

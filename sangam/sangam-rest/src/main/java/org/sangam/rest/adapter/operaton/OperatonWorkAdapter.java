@@ -425,6 +425,40 @@ public class OperatonWorkAdapter implements WorkPort {
         });
     }
 
+    /**
+     * M-025 (R37): the {@link LeaseTable} fence ({@code lockVersion}, owner, expiry, then the row-locked attempt id) and
+     * {@code work} in one Spring transaction, with the work's stable operationId. A work item whose instance was
+     * deleted (tombstone, no task) is 410; an unknown one 404.
+     */
+    @Override
+    public <T> T inFencedWork(RequestContext ctx, String workId, String workerId, long lockVersion, String attemptId,
+                              FencedWork<T> work) {
+        guardWork(ctx, workId);   // R26 (SL-158)
+        ensureLeaseTable();
+        return tx.inTx(() -> {
+            Connection c = tx.connection();
+            ExternalTask task = task(workId);
+            if (task == null && tombstones.find(c, ctx.tenantId(), workId).isPresent()) {
+                throw ApiProblem.gone("GONE_INSTANCE_DELETED", "The instance of this work was deleted")
+                        .with("workId", workId);
+            }
+            task = requireTask(ctx, workId);
+            fence(c, workId, workerId, lockVersion, attemptId);
+            String tenant = ctx.tenantId() != null ? ctx.tenantId() : task.getTenantId();   // as the list filter
+            return work.run(c, new FencedLease(workId, tenant, operationIds.of(task), workerId, lockVersion, attemptId));
+        });
+    }
+
+    /** M-025: the operationId of open work in the caller's tenant (no lease check). */
+    @Override
+    public Optional<UUID> operationIdOfWork(RequestContext ctx, String workId) {
+        ExternalTask t = task(workId);
+        if (t == null || (ctx.tenantId() != null && t.getTenantId() != null && !ctx.tenantId().equals(t.getTenantId()))) {
+            return Optional.empty();
+        }
+        return Optional.of(operationIds.of(t));
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private void ensureLeaseTable() {

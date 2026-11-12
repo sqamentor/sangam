@@ -10,6 +10,7 @@ import org.sangam.casefile.ports.CaseFilePorts;
 import org.sangam.casefile.support.Db;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.security.SecurityIdentity;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -319,9 +320,39 @@ public class MeetingService {
         return out;
     }
 
-    public void acknowledgeNotice(Connection c, String tenant, String noticeId) {
-        Jdbc.update(c, "UPDATE CF_NOTICE SET acknowledged_at=" + dialect.now() + " WHERE tenant_id=? AND notice_id=? AND acknowledged_at IS NULL",
-                Db.tenant(tenant), noticeId);
+    /**
+     * Records the first acknowledgement of a notice of the tenant; a repeat keeps the first time (idempotent). SL-166
+     * (6): a notice id that the tenant does not have is {@code NOT_FOUND} (404), never a silent success. Owner decision
+     * 66: only the notice's recipient may acknowledge it ({@link #isRecipient}); anyone else is {@code ACCESS_DENIED}
+     * (403) and writes nothing.
+     */
+    public void acknowledgeNotice(Connection c, String tenant, String noticeId, SecurityIdentity who) {
+        String t = Db.tenant(tenant);
+        String recipient = Jdbc.one(c, "SELECT recipient_ref FROM CF_NOTICE WHERE tenant_id=? AND notice_id=?",
+                rs -> rs.getString(1), t, noticeId).orElseThrow(() -> CaseFileException.notFound("meeting notice", noticeId));
+        if (!isRecipient(who, recipient)) {
+            throw new CaseFileException(CaseFileException.Code.ACCESS_DENIED, "only the recipient of a meeting notice may acknowledge it");
+        }
+        Jdbc.update(c, "UPDATE CF_NOTICE SET acknowledged_at=" + dialect.now()
+                + " WHERE tenant_id=? AND notice_id=? AND acknowledged_at IS NULL", t, noticeId);
+    }
+
+    /**
+     * Whether {@code who} is the recipient {@code recipientRef} of a notice, in the form {@link CommitteeService.Member#ref()}
+     * writes: {@code user:<personId>} is that person, {@code seat:<seatRef>} is a holder of that seat. A delegate acting for
+     * the seat is not its recipient.
+     */
+    public static boolean isRecipient(SecurityIdentity who, String recipientRef) {
+        if (who == null || recipientRef == null) {
+            return false;
+        }
+        if (recipientRef.startsWith("user:")) {
+            return who.personId() != null && who.personId().equals(recipientRef.substring(5));
+        }
+        if (recipientRef.startsWith("seat:")) {
+            return who.seats() != null && who.holdsSeat(recipientRef.substring(5));
+        }
+        return false;
     }
 
     public List<Notice> notices(Connection c, String tenant, String meetingId) {

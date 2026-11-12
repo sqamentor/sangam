@@ -24,6 +24,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Sangam.Sdk\Sangam.Sdk.csproj" />
+    <!-- M-027 adapter; brings the in-box Microsoft.AspNetCore.App framework reference, no extra package -->
+    <ProjectReference Include="..\..\src\Sangam.Sdk.Hosting\Sangam.Sdk.Hosting.csproj" />
   </ItemGroup>
 
 </Project>

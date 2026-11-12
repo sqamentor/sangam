@@ -52,6 +52,17 @@ public final class OperatonClock implements SangamClock {
     }
 
     /**
+     * M-021 test mode: the engine clock runs on, shifted by {@code offsetMillis} from system time (0 = system time).
+     * JVM-wide, like {@link #set}.
+     */
+    public void offset(long offsetMillis) {
+        ClockUtil.reset();
+        if (offsetMillis != 0) {
+            ClockUtil.offset(offsetMillis);
+        }
+    }
+
+    /**
      * Takes the engine slot of this JVM; refuses when another engine still holds one, unless {@code allowMany}.
      * The caller must {@link Registration#release() release} the handle when its engine closes (or fails to build).
      */

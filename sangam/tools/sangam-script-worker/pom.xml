@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Out-of-process script worker (M-061, ADR-D-8 script sandbox, owner decision 53 = Q-07 option A): a Java SDK worker on
+  the VI.3 lease protocol that runs each script task as a child process of Node.js or CPython inside nsjail (new
+  network, PID, mount, IPC, UTS and user namespaces; a seccomp policy; cgroup v2 memory, PID and CPU limits). No
+  script engine runs in any JVM: GraalJS, Rhino, Nashorn, Jython and JRuby stay banned (LIC-1/LIC-10, root pom
+  enforcer and the rule below).
+
+  Image: deploy/docker/script-worker.Dockerfile. Escape tests (*EscapeIT) need nsjail, node and python3, so they run
+  only inside that image: mvn -f tools/sangam-script-worker/pom.xml -Pscript-sandbox verify.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <artifactId>sangam-script-worker</artifactId>
+  <name>Sangam script worker (ADR-D-8)</name>
+  <description>Runs BPMN script tasks (JavaScript, Python) outside the engine: a lease-protocol worker that executes each script in an nsjail sandbox without network.</description>
+
+  <properties>
+    <script-worker.mainClass>org.sangam.scriptworker.ScriptWorkerMain</script-worker.mainClass>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-sdk-java</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>${script-worker.mainClass}</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- The escape tests: only where nsjail, node and python3 exist (the script-worker image). Not bound by default,
+         so no other build skips them silently: they are simply not part of it. -->
+    <profile>
+      <id>script-sandbox</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

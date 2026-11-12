@@ -132,7 +132,8 @@ CREATE TABLE SEC_FIELD_RULE (
 CREATE TABLE SEC_TENANT (
   tenant_id VARCHAR(64) NOT NULL PRIMARY KEY, name_en VARCHAR(255) NOT NULL, name_hi VARCHAR(255), name_local VARCHAR(255),
   hosting_profile VARCHAR(64), status VARCHAR(16) NOT NULL, config TEXT NOT NULL, quotas TEXT NOT NULL,
-  four_eyes SMALLINT NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL, activated_at TIMESTAMP WITH TIME ZONE
+  four_eyes SMALLINT NOT NULL, created_at TIMESTAMP WITH TIME ZONE NOT NULL, activated_at TIMESTAMP WITH TIME ZONE,
+  isolation VARCHAR(16) DEFAULT 'SHARED' NOT NULL CHECK (isolation IN ('SHARED', 'SCHEMA', 'DATABASE'))
 );
 CREATE TABLE SEC_TENANT_CHECKLIST (
   tenant_id VARCHAR(64) NOT NULL, item VARCHAR(64) NOT NULL, evidence_ref VARCHAR(1000), recorded_by VARCHAR(255),
@@ -238,3 +239,26 @@ CREATE TABLE SEC_TENANT_KEY (
   PRIMARY KEY (tenant_id, version)
 );
 CREATE UNIQUE INDEX SEC_TENANT_KEY_ID ON SEC_TENANT_KEY (tenant_id, key_id);
+-- M-085 field re-encryption progress (FieldReencryptionJob): resumable cursor and counters per tenant and source
+CREATE TABLE SEC_REENCRYPT_PROGRESS (
+  tenant_id VARCHAR(64) NOT NULL, source VARCHAR(64) NOT NULL, target_key_id VARCHAR(80) NOT NULL,
+  status VARCHAR(16) NOT NULL,                     -- RUNNING | DONE
+  last_key VARCHAR(255), scanned BIGINT NOT NULL, rewritten BIGINT NOT NULL, failed BIGINT NOT NULL,
+  started_at TIMESTAMP WITH TIME ZONE NOT NULL, updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  finished_at TIMESTAMP WITH TIME ZONE, PRIMARY KEY (tenant_id, source)
+);
+
+-- ---------------------------------------------------------------- break-glass access (M-084, BreakGlassService)
+CREATE TABLE SEC_BREAK_GLASS (
+  tenant_id VARCHAR(64) NOT NULL, grant_id VARCHAR(64) NOT NULL, token_class VARCHAR(64) NOT NULL,
+  holder_person_id VARCHAR(64) NOT NULL, requested_by VARCHAR(255) NOT NULL, reason TEXT NOT NULL,
+  status VARCHAR(16) NOT NULL,                     -- REQUESTED | ISSUED | REJECTED
+  required_approvals INTEGER NOT NULL, approvals TEXT NOT NULL, valid_minutes INTEGER NOT NULL, token_id VARCHAR(64),
+  requested_at TIMESTAMP WITH TIME ZONE NOT NULL, issued_at TIMESTAMP WITH TIME ZONE, expires_at TIMESTAMP WITH TIME ZONE,
+  first_used_at TIMESTAMP WITH TIME ZONE, last_used_at TIMESTAMP WITH TIME ZONE, use_count BIGINT NOT NULL,
+  review_status VARCHAR(16) NOT NULL,              -- NONE | PENDING | DONE
+  reviewed_by VARCHAR(255), review_outcome VARCHAR(16), review_notes TEXT, reviewed_at TIMESTAMP WITH TIME ZONE,
+  PRIMARY KEY (tenant_id, grant_id)
+);
+CREATE INDEX SEC_BREAK_GLASS_TOKEN ON SEC_BREAK_GLASS (token_id);
+CREATE INDEX SEC_BREAK_GLASS_REVIEW ON SEC_BREAK_GLASS (tenant_id, review_status);

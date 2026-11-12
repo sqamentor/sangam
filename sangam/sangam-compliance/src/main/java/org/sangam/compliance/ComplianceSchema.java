@@ -140,7 +140,12 @@ public final class ComplianceSchema {
               decided_by {str}, decided_at {ts} NOT NULL, PRIMARY KEY (tenant_id, decision_id))""",
             """
             CREATE TABLE CMP_REPORT (tenant_id {str64} NOT NULL, report_id {str64} NOT NULL, period_from {ts} NOT NULL, period_to {ts} NOT NULL,
-              report_hash {str64} NOT NULL, generated_by {str}, generated_at {ts} NOT NULL, PRIMARY KEY (tenant_id, report_id))"""
+              report_hash {str64} NOT NULL, generated_by {str}, generated_at {ts} NOT NULL, PRIMARY KEY (tenant_id, report_id))""",
+            // M-078: the national-identifier data vault (EncryptedNationalIdVault); number_enc is a FieldEncryptor envelope
+            """
+            CREATE TABLE CMP_NATIONAL_ID_VAULT (tenant_id {str64} NOT NULL, reference_key {str64} NOT NULL, id_type {str64} NOT NULL,
+              lookup_hash {str64} NOT NULL, number_enc {text} NOT NULL, masked {str64}, created_by {str}, created_at {ts} NOT NULL,
+              PRIMARY KEY (tenant_id, reference_key))"""
     };
 
     private static final String[] INDEXES = {
@@ -161,7 +166,8 @@ public final class ComplianceSchema {
             "CREATE INDEX CMP_LOG_SEGMENT_TO ON CMP_LOG_SEGMENT (tenant_id, to_ts)",
             "CREATE INDEX CMP_AUDIT_EVIDENCE_K ON CMP_AUDIT_EVIDENCE (tenant_id, kind, completed_at)",
             "CREATE INDEX CMP_RESTRICTION_P ON CMP_RESTRICTION (tenant_id, principal_ref, active)",
-            "CREATE INDEX CMP_BREACH_PLAN_DUE ON CMP_BREACH_PLAN (tenant_id, status, due_at)"
+            "CREATE INDEX CMP_BREACH_PLAN_DUE ON CMP_BREACH_PLAN (tenant_id, status, due_at)",
+            "CREATE UNIQUE INDEX CMP_NATIONAL_ID_LOOKUP ON CMP_NATIONAL_ID_VAULT (tenant_id, id_type, lookup_hash)"
     };
 
     public static List<String> ddl(Dialect dialect) {

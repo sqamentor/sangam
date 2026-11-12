@@ -13,6 +13,8 @@ import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.history.HistoricProcessInstance;
 import org.operaton.bpm.engine.history.HistoricVariableInstance;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
+import org.sangam.integration.document.pdf.PdfMarkup;
+import org.sangam.integration.document.pdf.PdfRendering;
 import org.sangam.ports.content.ContentService;
 import org.sangam.ports.content.OutputTemplateRenderer;
 import org.sangam.rest.port.ApiProblem;
@@ -27,7 +29,9 @@ import org.sangam.rest.port.RequestContext;
  * {@link DocumentExtrasPort} on the ports content service: version history from {@code CONTENT_VERSION}, legal hold
  * (R61; held documents refuse deletion in {@link PortsDocumentBridge}) and template generation (R74, S12) through
  * {@link OutputTemplateRenderer}. Templates are the {@code templates} registry entries ({@code body} per language).
- * HTML and plain text are rendered here; PDF/A and DOCX are left to sangam-integration ({@code 422 FORMAT_NOT_AVAILABLE}).
+ * HTML and plain text are rendered here. {@code PDFA} templates (M-081) are written in the {@link PdfMarkup} text form and
+ * rendered through {@link PdfRendering} (render, validate, then store as {@code application/pdf}); with no renderer
+ * installed, or for DOCX, the answer is {@code 422 FORMAT_NOT_AVAILABLE}.
  */
 public final class PortsDocumentExtrasBridge implements DocumentExtrasPort {
 
@@ -37,9 +41,17 @@ public final class PortsDocumentExtrasBridge implements DocumentExtrasPort {
     private final HistoryService history;
     private final RegistryPort registry;
     private final AuditPort audit;
+    private final PdfRendering pdf;
 
+    /** PDF output from the renderer installed on the class path ({@link PdfRendering#installed()}). */
     public PortsDocumentExtrasBridge(PortsDocumentBridge documents, OutputTemplateRenderer renderer, RuntimeService runtime,
                                      HistoryService history, RegistryPort registry, AuditPort audit) {
+        this(documents, renderer, runtime, history, registry, audit, PdfRendering.installed());
+    }
+
+    public PortsDocumentExtrasBridge(PortsDocumentBridge documents, OutputTemplateRenderer renderer, RuntimeService runtime,
+                                     HistoryService history, RegistryPort registry, AuditPort audit, PdfRendering pdf) {
+        this.pdf = java.util.Objects.requireNonNull(pdf, "pdf");
         this.documents = documents;
         this.renderer = renderer;
         this.runtime = runtime;
@@ -88,23 +100,28 @@ public final class PortsDocumentExtrasBridge implements DocumentExtrasPort {
                 .filter(e -> r.templateId().equals(String.valueOf(e.get("id"))) || r.templateId().equals(String.valueOf(e.get("key"))))
                 .findFirst().orElseThrow(() -> ApiProblem.notFound("document template", r.templateId()));
         DocumentTemplate t = template(entry);
-        boolean html;
-        if ("HTML".equals(t.format())) {
-            html = true;
-        } else if ("TEXT".equals(t.format())) {
-            html = false;
-        } else {
-            throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE",
-                    t.format() + " rendering is provided by sangam-integration; this server renders HTML and text templates");
+        String kind = t.format();
+        if (!"HTML".equals(kind) && !"TEXT".equals(kind) && !"PDFA".equals(kind)) {
+            throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", kind + " rendering is not available; this server renders"
+                    + " HTML, text and (with a PDF renderer installed) PDF/A templates");
+        }
+        if ("PDFA".equals(kind) && !pdf.available()) {
+            throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", "PDF/A rendering is off: " + pdf.unavailableReason());
         }
         String lang = r.language() == null || r.language().isBlank() ? "en" : r.language();
         String body = body(entry, lang);
         String pi = instanceId(ctx, r.businessKey());
         Map<String, Object> vars = variables(pi);
         vars.putIfAbsent("businessKey", r.businessKey());
-        String name = safe(t.name()) + "-" + safe(r.businessKey()) + "-" + safe(lang) + (html ? ".html" : ".txt");
-        ContentService.ContentItem item = PortsErrors.call(() -> renderer.renderToDocument(ctx.tenantId(), name, body, vars,
-                html, "bpmn", pi, ctx.principalId()));
+        String base = safe(t.name()) + "-" + safe(r.businessKey()) + "-" + safe(lang);
+        ContentService.ContentItem item;
+        if ("PDFA".equals(kind)) {
+            item = renderPdf(ctx, t, lang, body, vars, base + ".pdf", pi);
+        } else {
+            boolean html = "HTML".equals(kind);
+            item = PortsErrors.call(() -> renderer.renderToDocument(ctx.tenantId(), base + (html ? ".html" : ".txt"), body,
+                    vars, html, "bpmn", pi, ctx.principalId()));
+        }
         DocumentPort.Document d = documents.map(item);
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("document_id", d.id());
@@ -115,6 +132,28 @@ public final class PortsDocumentExtrasBridge implements DocumentExtrasPort {
         p.put("business_key", r.businessKey());
         audit.record(ctx, pi, "DOCUMENT_ISSUED", p);
         return d;
+    }
+
+    /**
+     * M-081: the structure is parsed from the template, then each block is filled (placeholders are never markup), then
+     * rendered and validated; only validated bytes are stored. A validation failure is {@code 422 PDF_INVALID}.
+     */
+    private ContentService.ContentItem renderPdf(RequestContext ctx, DocumentTemplate t, String lang, String body,
+                                                 Map<String, Object> vars, String name, String pi) {
+        PdfRendering.Rendered out;
+        try {
+            out = pdf.render(PdfMarkup.parse(t.name(), lang, body, text -> renderer.render(text, vars, false, false)));
+        } catch (IllegalArgumentException e) {
+            // a missing template variable: the same answer as the HTML and text path (PortsErrors)
+            throw ApiProblem.unprocessable("VALIDATION_FAILED", e.getMessage());
+        } catch (PdfRendering.Unavailable e) {
+            throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", e.getMessage());
+        } catch (PdfRendering.Invalid e) {
+            throw ApiProblem.unprocessable("PDF_INVALID", e.getMessage());
+        }
+        byte[] bytes = out.content();
+        return PortsErrors.call(() -> documents.content().create(ctx.tenantId(), name, PdfRendering.Rendered.CONTENT_TYPE,
+                "bpmn", pi, null, new java.io.ByteArrayInputStream(bytes), ctx.principalId()));
     }
 
     private List<Map<String, Object>> entries(RequestContext ctx) {

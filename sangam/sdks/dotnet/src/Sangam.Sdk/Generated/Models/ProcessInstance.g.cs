@@ -59,4 +59,10 @@ public sealed record ProcessInstance
 
     [global::System.Text.Json.Serialization.JsonPropertyName("rootProcessInstanceId")]
     public string? RootProcessInstanceId { get; init; }
+
+    /// <summary>
+    /// M-044 (decision 57): W3C trace id (32 lowercase hex) of the command that started the instance; absent when none was recorded. The UI links it through config traceUrlTemplate.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("traceId")]
+    public string? TraceId { get; init; }
 }

@@ -75,8 +75,7 @@ public final class EvidenceService {
             throw new FieldException("INVALID_REQUEST", "evidence bytes are empty");
         }
         String sha = Hashes.hex(Hashes.sha256(bytes));
-        boolean jpeg = bytes.length > 2 && (bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xD8;
-        ExifReader.ExifData exif = jpeg ? ExifReader.read(bytes) : ExifReader.ExifData.NONE;
+        ExifReader.ExifData exif = ExifReader.read(bytes); // JPEG, PNG and HEIF/HEIC (M-132); NONE for other formats
         String ref = blobs.put(tenantId, sha, u.mediaType(), bytes);
         return tx.inTransaction(c -> {
             String id = u.evidenceId() == null || u.evidenceId().isBlank() ? FieldSql.newId() : u.evidenceId();

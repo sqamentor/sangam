@@ -136,8 +136,10 @@ public class SecurityConfig {
                     .authenticationEntryPoint(problems)
                     .accessDeniedHandler(problems)
                     .jwt(j -> j.decoder(decoder)
-                            .jwtAuthenticationConverter(new JwtPrincipalConverter(props.getClaims(), props.platformIssuers()))));
-            LOG.info("OIDC JWT authentication enabled (tenant claim '{}')", props.getClaims().getTenant());
+                            .jwtAuthenticationConverter(new JwtPrincipalConverter(props.getClaims(), props.platformIssuers(),
+                                    props.claimsProfileOrNull(), props.getMfaAcrValues()))));
+            LOG.info("OIDC JWT authentication enabled (tenant claim '{}', claims profile {})", props.getClaims().getTenant(),
+                    props.claimsProfileOrNull() == null ? "none" : props.claimsProfileOrNull().name());
         }
         if (props.platformIssuers().configured()) {
             LOG.info("SL-70 platform issuers: {} (only their tokens are platform identities)", props.platformIssuers().issuers());

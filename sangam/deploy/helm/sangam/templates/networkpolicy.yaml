@@ -86,6 +86,15 @@ spec:
               - { key: app.kubernetes.io/instance, operator: In, values: [{{ .Release.Name | quote }}] }
               - { key: app.kubernetes.io/component, operator: In, values: [gateway, control-plane, rollup] }
     {{- end }}
+    {{- if .Values.malware.clamav.enabled }}
+    # M-082: clamd of this release's ClamAV service
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" . "component" "clamav") | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: 3310 }
+    {{- end }}
     {{- with $np.extraEgress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

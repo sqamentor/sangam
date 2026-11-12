@@ -153,11 +153,18 @@ public class OpsWiring {
 
     /**
      * SL-44 bulk ingest. Sinks: the built-in tenant-variable sink plus every {@link org.sangam.ops.bulk.BulkIngest.Sink}
-     * bean. Quota: the SL-43 {@code TenantQuotas} (batch size per chunk). Limits: {@code sangam.ops.bulk.*}.
+     * bean, and the module sinks of {@link org.sangam.server.bridge.ModuleBulkSinks} and
+     * {@link org.sangam.server.bridge.RegistryPartyBulkSink} when the module is wired (M-130; the party key type is
+     * {@code sangam.ops.bulk.registry-party.key-type}, owner decision 93).
+     * The creator of a job is the identity resolved for the creating request (owner decision 59): rows of an
+     * {@link org.sangam.ops.bulk.IdentitySink} are applied as that creator, never as the system.
+     * Quota: the SL-43 {@code TenantQuotas} (batch size per chunk). Limits: {@code sangam.ops.bulk.*}.
      */
     @Bean
     public org.sangam.ops.bulk.BulkIngest sangamBulkIngest(TxSupport tx, DataSource ds, ScopedVariables vars, RestProperties rest, Environment env,
-            ObjectProvider<org.sangam.ops.bulk.BulkIngest.Sink> sinks) {
+            ObjectProvider<org.sangam.ops.bulk.BulkIngest.Sink> sinks, ObjectProvider<org.sangam.resources.SangamResources> resources,
+            ObjectProvider<org.sangam.config.store.JdbcConfigStore> configStore,
+            ObjectProvider<org.sangam.registry.party.PartyService> parties) {
         Dialect d = tx.dialect();
         org.sangam.ops.bulk.BulkIngest.Limits def = org.sangam.ops.bulk.BulkIngest.Limits.DEFAULTS;
         org.sangam.ops.bulk.BulkIngest.Limits limits = new org.sangam.ops.bulk.BulkIngest.Limits(
@@ -168,7 +175,15 @@ public class OpsWiring {
                 env.getProperty("sangam.ops.bulk.max-active-jobs-per-tenant", Integer.class, def.maxActiveJobsPerTenant()),
                 env.getProperty("sangam.ops.bulk.max-attempts", Integer.class, def.maxAttempts()));
         org.sangam.ops.bulk.BulkIngest ingest = new org.sangam.ops.bulk.BulkIngest(d, Transactions.of(ds), new AuditChain(d), limits, rest.getNode());
+        ingest.creatorIdentity(org.sangam.security.tenant.TenantContext::current);
         ingest.register(org.sangam.ops.bulk.BulkSinks.variables(vars, org.sangam.rest.modules.ops.OpsController.ADMIN));
+        resources.ifAvailable(r -> {
+            ingest.register(org.sangam.server.bridge.ModuleBulkSinks.resources(r.catalogue()));
+            ingest.register(org.sangam.server.bridge.ModuleBulkSinks.rosterDuties(r.roster()));
+        });
+        configStore.ifAvailable(s -> ingest.register(org.sangam.server.bridge.ModuleBulkSinks.masterCodes(s)));
+        parties.ifAvailable(p -> ingest.register(new org.sangam.server.bridge.RegistryPartyBulkSink(p, env.getProperty(
+                "sangam.ops.bulk.registry-party.key-type", org.sangam.server.bridge.RegistryPartyBulkSink.DEFAULT_KEY_TYPE))));
         sinks.orderedStream().forEach(ingest::register);
         return ingest;
     }

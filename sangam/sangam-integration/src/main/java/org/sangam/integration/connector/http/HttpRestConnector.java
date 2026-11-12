@@ -55,13 +55,18 @@ import java.util.regex.Pattern;
  *
  * <p>Lookup (class a/b): {@code GET lookupPath} with {@code {operationId}}; 200 → found (a body field
  * {@code status=FAILED} marks a failed effect), 404 → not found.
+ *
+ * <p>Serverless (M-067): a {@link RequestSigner} signs the final request (AWS SigV4); an {@link AsyncCallback} tells the
+ * function where to send its result (the operationId is the correlation key) and a 2xx answer then means "accepted";
+ * {@link ResponseMapping#failureHeader()} turns a 2xx that reports a function error into a business failure.
  */
 public final class HttpRestConnector implements SangamConnector {
 
     /** Static configuration of one REST endpoint. */
     public record Config(String id, URI baseUri, CapabilityClass capabilityClass, String idempotencyHeader,
                          String lookupPath, String authorization, Map<String, String> defaultHeaders, Duration timeout,
-                         ConnectorProfile profile, Authorizer authorizer, ResponseMapping mapping, String defaultMethod) {
+                         ConnectorProfile profile, Authorizer authorizer, ResponseMapping mapping, String defaultMethod,
+                         RequestSigner signer, AsyncCallback callback) {
         public Config {
             idempotencyHeader = idempotencyHeader == null ? "Idempotency-Key" : idempotencyHeader;
             defaultHeaders = defaultHeaders == null ? Map.of() : Map.copyOf(defaultHeaders);
@@ -74,11 +79,19 @@ public final class HttpRestConnector implements SangamConnector {
             }
         }
 
+        /** No request signer and no async callback (the shape before M-067). */
+        public Config(String id, URI baseUri, CapabilityClass capabilityClass, String idempotencyHeader, String lookupPath,
+                      String authorization, Map<String, String> defaultHeaders, Duration timeout, ConnectorProfile profile,
+                      Authorizer authorizer, ResponseMapping mapping, String defaultMethod) {
+            this(id, baseUri, capabilityClass, idempotencyHeader, lookupPath, authorization, defaultHeaders, timeout, profile,
+                    authorizer, mapping, defaultMethod, null, null);
+        }
+
         /** Static {@code authorization} secret reference only, no response mapping. */
         public Config(String id, URI baseUri, CapabilityClass capabilityClass, String idempotencyHeader, String lookupPath,
                       String authorization, Map<String, String> defaultHeaders, Duration timeout, ConnectorProfile profile) {
             this(id, baseUri, capabilityClass, idempotencyHeader, lookupPath, authorization, defaultHeaders, timeout, profile,
-                    null, null, null);
+                    null, null, null, null, null);
         }
     }
 
@@ -91,6 +104,16 @@ public final class HttpRestConnector implements SangamConnector {
         String authorization(String tenantId);
     }
 
+    /**
+     * M-067: signs the final request (AWS SigV4, {@link AwsRequestSigner#signer}). It sees the method, URI, every header that
+     * will be sent and the body, and returns the headers to add; a header it returns replaces one of the same name.
+     * Throwing {@link AuthUnavailableException} means the request was not sent (no effect).
+     */
+    @FunctionalInterface
+    public interface RequestSigner {
+        Map<String, String> sign(String tenantId, String method, URI uri, Map<String, String> headers, byte[] body);
+    }
+
     /** The credential for a call could not be obtained; the call is not sent. */
     public static final class AuthUnavailableException extends RuntimeException {
         public AuthUnavailableException(String message) {
@@ -100,10 +123,13 @@ public final class HttpRestConnector implements SangamConnector {
 
     /**
      * Mapping of a 2xx JSON body: {@code output} name → JSON pointer (added to the success output under {@code mapped});
-     * {@code providerRefPointer} names the downstream reference (else the {@code Location} header).
+     * {@code providerRefPointer} names the downstream reference (else the {@code Location} header). M-067:
+     * {@code failureHeader} names a response header whose presence on a 2xx answer means the called code failed (AWS
+     * Lambda's {@code X-Amz-Function-Error}); such an answer is a business failure {@code FUNCTION_ERROR} with the header
+     * value as {@code errorType}, never a success.
      */
-    public record ResponseMapping(Map<String, String> output, String providerRefPointer) {
-        public static final ResponseMapping NONE = new ResponseMapping(Map.of(), null);
+    public record ResponseMapping(Map<String, String> output, String providerRefPointer, String failureHeader) {
+        public static final ResponseMapping NONE = new ResponseMapping(Map.of(), null, null);
 
         public ResponseMapping {
             output = output == null ? Map.of() : Map.copyOf(output);
@@ -113,6 +139,15 @@ public final class HttpRestConnector implements SangamConnector {
             if (providerRefPointer != null) {
                 requirePointer(providerRefPointer);
             }
+            failureHeader = failureHeader == null || failureHeader.isBlank() ? null : failureHeader;
+            if (failureHeader != null && !HttpTransport.isToken(failureHeader)) {
+                throw new IllegalArgumentException("failure header name '" + HttpTransport.printable(failureHeader)
+                        + "' is not valid HTTP");
+            }
+        }
+
+        public ResponseMapping(Map<String, String> output, String providerRefPointer) {
+            this(output, providerRefPointer, null);
         }
 
         private static void requirePointer(String p) {
@@ -182,15 +217,78 @@ public final class HttpRestConnector implements SangamConnector {
         } catch (AuthUnavailableException e) {
             return ConnectorResult.TransientFailure.noEffect("credential unavailable, request not sent: " + e.getMessage());
         }
-        byte[] body = bodyOf(r.input().get("body"));
+        AsyncCallback cb = config.callback();
+        String correlationKey = r.operationId().toString();
+        byte[] body;
+        try {
+            Object input = r.input().get("body");
+            body = cb != null && cb.placement() == AsyncCallback.Placement.BODY
+                    ? Json.bytes(withCallback(input, cb, correlationKey)) : bodyOf(input);
+        } catch (IllegalArgumentException e) {
+            return ConnectorResult.BusinessFailure.of("INVALID_REQUEST", e.getMessage());
+        }
+        if (cb != null && cb.placement() == AsyncCallback.Placement.HEADERS) {
+            cb.headers(correlationKey).forEach((k, v) -> own(headers, k, v));
+        }
         if (body.length > 0) {
             headers.putIfAbsent("Content-Type", "application/json");
+        }
+        if (config.signer() != null) {
+            try {
+                Map<String, String> sig = config.signer().sign(r.tenantId(), method, uri,
+                        Collections.unmodifiableMap(new LinkedHashMap<>(headers)), body);
+                sig.forEach((k, v) -> own(headers, k, v));
+            } catch (AuthUnavailableException e) {
+                return ConnectorResult.TransientFailure.noEffect("credential unavailable, request not sent: "
+                        + e.getMessage());
+            }
         }
         boolean idempotent = method.equals("GET") || method.equals("PUT") || method.equals("DELETE")
                 || config.capabilityClass() == CapabilityClass.A_IDEMPOTENT_WITH_LOOKUP;
         HttpTransport.Call call = new HttpTransport.Call(method, uri, headers, body, config.timeout(), idempotent);
         HttpTransport.Outcome o = transport.execute(r.tenantId(), call, deadline(r));
-        return applyMapping(map(o, idempotent));
+        String failureHeader = config.mapping().failureHeader();
+        if (failureHeader != null && o instanceof HttpTransport.Outcome.Response resp && resp.is2xx()
+                && resp.header(failureHeader).isPresent()) {
+            // M-067: the call reached the code and the code failed (Lambda X-Amz-Function-Error): never a success
+            Map<String, Object> out = responseMap(resp);
+            out.put("errorType", resp.header(failureHeader).get());
+            return new ConnectorResult.BusinessFailure("FUNCTION_ERROR", abbreviate(resp.bodyString()), out);
+        }
+        ConnectorResult result = applyMapping(map(o, idempotent));
+        if (cb != null && result instanceof ConnectorResult.Success s) {
+            Map<String, Object> out = new LinkedHashMap<>(s.output());
+            out.put("callback", cb.awaiting(correlationKey));
+            return new ConnectorResult.Success(out, s.providerRef(), s.duplicate());
+        }
+        return result;
+    }
+
+    /**
+     * M-067: the body with the callback envelope. A JSON object gets the envelope as field {@code cb.field()} (refused
+     * when the process already set that field); any other body is wrapped as {@code {"payload": body, field: envelope}}.
+     */
+    @SuppressWarnings("unchecked")
+    static Object withCallback(Object body, AsyncCallback cb, String correlationKey) {
+        Object value = body;
+        if (body instanceof String s) {
+            var tree = Json.tree(s);
+            value = tree == null ? s : Json.MAPPER.convertValue(tree, Object.class);
+        } else if (body instanceof byte[]) {
+            throw new IllegalArgumentException("an async callback needs a JSON body, not bytes");
+        }
+        if (value instanceof Map<?, ?> m) {
+            if (m.containsKey(cb.field())) {
+                throw new IllegalArgumentException("body field '" + cb.field() + "' is reserved for the callback");
+            }
+            Map<String, Object> out = new LinkedHashMap<>((Map<String, Object>) m);
+            out.put(cb.field(), cb.envelope(correlationKey));
+            return out;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("payload", value);
+        out.put(cb.field(), cb.envelope(correlationKey));
+        return out;
     }
 
     /** Applies {@link ResponseMapping} to a success: mapped fields under {@code mapped}, providerRef from the body. */
@@ -231,6 +329,10 @@ public final class HttpRestConnector implements SangamConnector {
         Map<String, String> lookupHeaders;
         try {
             lookupHeaders = headers(r, requestHeaders(r));
+            if (config.signer() != null) {
+                config.signer().sign(r.tenantId(), "GET", uri, Collections.unmodifiableMap(new LinkedHashMap<>(lookupHeaders)),
+                        new byte[0]).forEach((k, v) -> own(lookupHeaders, k, v));
+            }
         } catch (IllegalArgumentException e) {
             return new LookupResult.Unavailable("INVALID_REQUEST: " + e.getMessage());
         } catch (AuthUnavailableException e) {

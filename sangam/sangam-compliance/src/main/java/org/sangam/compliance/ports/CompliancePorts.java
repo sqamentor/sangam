@@ -197,9 +197,22 @@ public final class CompliancePorts {
         GeoResolver NONE = u -> Optional.empty();
     }
 
-    /** Vault for national identifiers (IN: Aadhaar Data Vault): returns a reference key; the number stays outside Sangam. */
+    /**
+     * Vault for national identifiers (IN: Aadhaar Data Vault): returns a reference key; the rest of Sangam holds only
+     * the key. Implemented by {@code identity.EncryptedNationalIdVault} (M-078) or by an external vault service.
+     */
     public interface NationalIdVault {
+        /** The reference key of the number; the same number and type always give the same key. */
         String referenceKey(String tenantId, String identifierType, String number);
+
+        /**
+         * The number behind a reference key, for a stated purpose (for example an authentication request to the
+         * identity authority); every reveal is audited by the vault. Empty when the key is unknown. A vault that never
+         * hands numbers back (one-way tokenisation) keeps this default and refuses.
+         */
+        default Optional<String> reveal(String tenantId, String referenceKey, String purpose, String actor) {
+            throw new UnsupportedOperationException("this national-id vault does not reveal numbers");
+        }
     }
 
     /** Facts about the deployment for the pack's security checklist. */

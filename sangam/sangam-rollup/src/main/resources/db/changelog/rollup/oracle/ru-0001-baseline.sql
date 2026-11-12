@@ -51,3 +51,31 @@ CREATE TABLE RU_CELL_FEED (
   CONSTRAINT PK_RU_CELL_FEED PRIMARY KEY (cell_id, shard)
 );
 --rollback DROP TABLE RU_CELL_FEED;
+
+--changeset sangam-scale:ru-0001-05-ru_upstream_pending dbms:oracle
+--comment: Tier forwarding: counter deltas not yet shipped to the upper roll-up, sharded like RU_COUNTER
+CREATE TABLE RU_UPSTREAM_PENDING (
+  node_path VARCHAR2(256 CHAR) NOT NULL,
+  metric VARCHAR2(96 CHAR) NOT NULL,
+  day_bucket NUMBER(10) NOT NULL,
+  shard NUMBER(10) NOT NULL,
+  pending_delta NUMBER(19) NOT NULL,
+  updated_at_ms NUMBER(19) NOT NULL,
+  CONSTRAINT PK_RU_UPSTREAM_PENDING PRIMARY KEY (node_path, metric, day_bucket, shard)
+);
+--rollback DROP TABLE RU_UPSTREAM_PENDING;
+
+--changeset sangam-scale:ru-0001-06-ru_upstream_outbox dbms:oracle
+--comment: Tier forwarding: explicit metric events to the upper roll-up, written with the pending decrement
+CREATE TABLE RU_UPSTREAM_OUTBOX (
+  event_id VARCHAR2(64 CHAR) NOT NULL,
+  payload VARCHAR2(2000 CHAR) NOT NULL,
+  created_at_ms NUMBER(19) NOT NULL,
+  attempts NUMBER(10) NOT NULL,
+  next_attempt_ms NUMBER(19) NOT NULL,
+  parked NUMBER(10) NOT NULL,
+  last_error VARCHAR2(1000 CHAR),
+  CONSTRAINT PK_RU_UPSTREAM_OUTBOX PRIMARY KEY (event_id)
+);
+CREATE INDEX RU_UPSTREAM_DUE ON RU_UPSTREAM_OUTBOX (parked, next_attempt_ms);
+--rollback DROP TABLE RU_UPSTREAM_OUTBOX;

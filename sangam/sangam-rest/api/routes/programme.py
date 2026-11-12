@@ -89,6 +89,15 @@ schema('PgSnapshot', 'Snapshot (Java DashboardFeed.Snapshot).',
 
 op('put', '/programme-config', 'programmePublishConfig', 'Programmes', 'Publish the programme configuration (indicators, returns, kinds)', 'Publish the programme configuration (indicators, returns, kinds).', ['N15', 'VI.4', 'R41', 'R42'],
    body={"required": True, "content": {"application/json": {"schema": typ('obj')}}}, resp=(200, 'PgPublished'), cmd='programme.publish-config', perm='programme.admin')
+schema('PgCurrentConfig', 'The current published programme configuration (Java IndicatorRegistry.Current, C3-09).',
+       'version:int contentHash:s definedBy:s definedAt:dt config:obj',
+       required=('version', 'contentHash', 'config'),
+       descs={'config': 'The configuration object as it was published: the body PUT /programme-config took '
+                        '(fiscalYearStartMonth, fiscalStartDay, indicators, returns, ...).'})
+op('get', '/programme-config', 'programmeCurrentConfig', 'Programmes', 'The current programme configuration',
+   'The current published configuration, as it was published, with its version, content hash, publisher and time '
+   '(prefill for the publish form). 404 NOT_FOUND when nothing is published yet.', ['N15', 'VI.4'],
+   resp=(200, 'PgCurrentConfig'), perm='programme.admin', errors=GET_E)
 op('get', '/programme-config/history', 'programmeConfigHistory', 'Programmes', 'Published configuration versions', 'Published configuration versions.', ['N15', 'VI.4', 'R41', 'R42'],
    resp=(200, {"application/json": {"schema": {"type": "array", "items": {}}}}), perm='programme.read')
 op('post', '/programme-periods/generate', 'programmeGeneratePeriods', 'Programmes', 'Generate the reporting periods of a fiscal year', 'Generate the reporting periods of a fiscal year.', ['N15', 'VI.4', 'R41', 'R42'],

@@ -139,6 +139,133 @@ public final class PolicyCompiler {
         return allowVirtual(c, who, resourceType, permission, resourceId, attributes);
     }
 
+    // ------------------------------------------------------------------ set form of the object check (M-086)
+
+    /** Ids per statement of {@link #allowedIds}: keeps the bind count far below every driver's limit (SQL Server 2,100). */
+    static final int SET_CHUNK = 32;
+
+    /**
+     * The set form of {@link #allow(Connection, SecurityIdentity, String, Permission, String)} (M-086, R19): the subset of
+     * {@code ids} for which the object check holds, so {@code allowedIds(c, w, t, p, ids).contains(id) ==
+     * allow(c, w, t, p, id)} for every {@code id} in {@code ids} (virtual types: with no attributes, as that overload).
+     *
+     * <p>One statement per {@value #SET_CHUNK} ids instead of one per id. The ids are compared in SQL exactly as the
+     * object check compares one id ({@code column = ?}, a bound string under the column's collation): every id gets its
+     * own {@code CASE WHEN column = ? THEN 1 ELSE 0 END} flag, so an id the database treats as equal to a stored id
+     * (case-insensitive collations) is decided as the object check decides it, and the result never depends on how
+     * Java compares strings.
+     * <ul>
+     *   <li>table-backed type: {@code SELECT <flags> FROM <table> r WHERE r.<id> IN (<ids>) AND <visible>}, the list
+     *       predicate the object check runs, bound once per statement;</li>
+     *   <li>virtual type: the caller's grant rows for {@code <ids>} and {@code '*'} with one flag per id plus a
+     *       {@code '*'} flag, decided per id in Java by the same rules as the object check (deny wins, an unknown
+     *       condition of a deny fails closed).</li>
+     * </ul>
+     */
+    public java.util.Set<String> allowedIds(Connection c, SecurityIdentity who, String resourceType, Permission permission,
+                                            java.util.Collection<String> ids) {
+        List<String> distinct = new ArrayList<>(new java.util.LinkedHashSet<>(ids));
+        java.util.Set<String> out = new java.util.LinkedHashSet<>();
+        if (distinct.isEmpty()) {
+            return out;
+        }
+        ResourceDescriptor d = registry.get(resourceType);
+        for (int from = 0; from < distinct.size(); from += SET_CHUNK) {
+            List<String> chunk = distinct.subList(from, Math.min(distinct.size(), from + SET_CHUNK));
+            if (d.hasTable()) {
+                allowedInTable(c, who, d, resourceType, permission, chunk, out);
+            } else {
+                allowedVirtual(c, who, resourceType, permission, chunk, out);
+            }
+        }
+        return out;
+    }
+
+    private void allowedInTable(Connection c, SecurityIdentity who, ResourceDescriptor d, String resourceType,
+                                Permission permission, List<String> chunk, java.util.Set<String> out) {
+        SqlPredicate p = visible(c, who, resourceType, permission, "r");
+        String idCol = "r." + d.idColumn();
+        StringBuilder sql = new StringBuilder("SELECT ");
+        List<Object> params = new ArrayList<>();
+        for (int i = 0; i < chunk.size(); i++) {
+            sql.append(i == 0 ? "" : ", ").append("CASE WHEN ").append(idCol).append(" = ? THEN 1 ELSE 0 END");
+            params.add(chunk.get(i));
+        }
+        sql.append(" FROM ").append(d.table()).append(" r WHERE ").append(idCol).append(" IN (")
+                .append(Sql.placeholders(chunk.size())).append(") AND ").append(p.sql());
+        params.addAll(chunk);
+        params.addAll(p.params());
+        boolean[] hit = new boolean[chunk.size()];
+        Jdbc.query(c, sql.toString(), rs -> {
+            for (int i = 0; i < hit.length; i++) {
+                hit[i] |= rs.getInt(i + 1) == 1;
+            }
+            return null;
+        }, params.toArray());
+        for (int i = 0; i < hit.length; i++) {
+            if (hit[i]) {
+                out.add(chunk.get(i));
+            }
+        }
+    }
+
+    private void allowedVirtual(Connection c, SecurityIdentity who, String resourceType, Permission permission,
+                                List<String> chunk, java.util.Set<String> out) {
+        Map<String, Condition> conds = new java.util.HashMap<>();
+        for (CompiledCondition cc : conditions(c, who.tenantId(), resourceType, permission.sensitive())) {
+            conds.put(cc.conditionId(), cc.condition());
+        }
+        StringBuilder sql = new StringBuilder("SELECT a.deny_flag, a.perms, a.condition_id, CASE WHEN a.resource_id = ? THEN 1 ELSE 0 END");
+        List<Object> params = new ArrayList<>();
+        params.add(ResourceRegistry.ANY_ID);
+        for (String id : chunk) {
+            sql.append(", CASE WHEN a.resource_id = ? THEN 1 ELSE 0 END");
+            params.add(id);
+        }
+        sql.append(" FROM AUTH_EFFECTIVE a WHERE a.tenant_id = ? AND ");
+        params.add(who.tenantId());
+        appendPrincipal(sql, params, "a", who);
+        sql.append(" AND a.resource_type IN (?, ?) AND a.resource_id IN (").append(Sql.placeholders(chunk.size() + 1)).append(")");
+        params.add(resourceType);
+        params.add(ResourceRegistry.ANY_TYPE);
+        params.addAll(chunk);
+        params.add(ResourceRegistry.ANY_ID);
+        int n = chunk.size();
+        boolean[] granted = new boolean[n];
+        boolean[] denied = new boolean[n];
+        Jdbc.query(c, sql.toString(), rs -> {
+            int deny = rs.getInt(1);
+            long perms = rs.getLong(2);
+            String condId = rs.getString(3);
+            boolean star = rs.getInt(4) == 1;
+            if ((perms & permission.bit()) == 0) {
+                return null;
+            }
+            Condition cond = condId == null ? null : conds.get(condId);
+            boolean applies = deny == 1
+                    ? condId == null || cond == null || ConditionCompiler.evaluate(cond, Map.of(), who)
+                    : condId == null || (cond != null && ConditionCompiler.evaluate(cond, Map.of(), who));
+            if (!applies) {
+                return null;
+            }
+            for (int i = 0; i < n; i++) {
+                if (star || rs.getInt(5 + i) == 1) {
+                    if (deny == 1) {
+                        denied[i] = true;
+                    } else {
+                        granted[i] = true;
+                    }
+                }
+            }
+            return null;
+        }, params.toArray());
+        for (int i = 0; i < n; i++) {
+            if (granted[i] && !denied[i]) {
+                out.add(chunk.get(i));
+            }
+        }
+    }
+
     private boolean allowVirtual(Connection c, SecurityIdentity who, String resourceType, Permission permission,
                                  String resourceId, Map<String, ?> attributes) {
         Map<String, Condition> conds = new java.util.HashMap<>();

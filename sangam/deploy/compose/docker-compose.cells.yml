@@ -60,6 +60,8 @@ services:
       <<: *cell-env
       SANGAM_CELL_ID: in-ra-01
       SANGAM_CELL_RESIDENCY: IN-RA
+      # M-063 state tier: CELL_A_ROLLUP_INGEST_URL=http://rollup-ra:8095/api/v1/ingest with --profile state-tier
+      SANGAM_ROLLUP_INGEST_URL: ${CELL_A_ROLLUP_INGEST_URL:-http://rollup:8095/api/v1/ingest}
       SPRING_DATASOURCE_URL: jdbc:postgresql://cells-postgres:5432/sangam_cell_a?ApplicationName=cell-a
       SPRING_DATASOURCE_USERNAME: sangam_cell_a
       SPRING_DATASOURCE_PASSWORD: cell-a-dev-only
@@ -125,8 +127,32 @@ services:
       SANGAM_RU_DB_URL: jdbc:postgresql://cells-postgres:5432/sangam_rollup
       SANGAM_RU_DB_USER: sangam_rollup
       SANGAM_RU_DB_PASSWORD: rollup-dev-only
-      SANGAM_RU_TOKENS: dev-rollup-ingest-token:CELL,dev-dashboard-token:DASHBOARD
+      # dev-tier-ra-token: the state roll-up rollup-ra (M-063, role TIER: explicit metric events)
+      SANGAM_RU_TOKENS: dev-rollup-ingest-token:CELL,dev-dashboard-token:DASHBOARD,dev-tier-ra-token:TIER
     ports: ["127.0.0.1:8095:8095"]
+
+  # M-063 (SCALE-ARCHITECTURE 8.4): optional state roll-up tier, same image. It projects the cells of IN/RA and
+  # forwards its counts to the national ingest as explicit metric events (TIER token). Default: no state tier.
+  #   docker compose -f docker-compose.cells.yml --profile two-cells --profile state-tier up -d --build
+  #   with CELL_A_ROLLUP_INGEST_URL=http://rollup-ra:8095/api/v1/ingest so cell-a reports to the state instance
+  rollup-ra:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-rollup:${SANGAM_VERSION:-dev}
+    restart: unless-stopped
+    profiles: [state-tier]
+    networks: [cells]
+    depends_on:
+      cells-postgres:
+        condition: service_healthy
+    environment:
+      SANGAM_RU_DB_URL: jdbc:postgresql://cells-postgres:5432/sangam_rollup_ra
+      SANGAM_RU_DB_USER: sangam_rollup_ra
+      SANGAM_RU_DB_PASSWORD: rollup-ra-dev-only
+      SANGAM_RU_TOKENS: dev-rollup-ingest-token:CELL,dev-dashboard-token:DASHBOARD
+      SANGAM_RU_SCOPE: IN/RA
+      SANGAM_RU_INSTANCE_ID: rollup-ra
+      SANGAM_RU_UPSTREAM_URL: http://rollup:8095/api/v1/ingest
+      SANGAM_RU_UPSTREAM_TOKEN: dev-tier-ra-token
+    ports: ["127.0.0.1:8097:8095"]
 
   cell-register:
     image: curlimages/curl:8.15.0

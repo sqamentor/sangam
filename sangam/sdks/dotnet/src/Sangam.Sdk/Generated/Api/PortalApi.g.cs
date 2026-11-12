@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Portal (10 operations).
+/// Typed operations of Portal (11 operations).
 /// </summary>
 public sealed class PortalApi
 {
@@ -24,6 +24,17 @@ public sealed class PortalApi
     {
         var req = ApiRequest.Get($"/portal/services");
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.PortalService>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Application form of a service
+    /// The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
+    /// GET /portal/services/{key}/form (operationId getPortalServiceForm); permission portal.use.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.FormVersion?> GetPortalServiceFormAsync(string key, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/portal/services/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/form");
+        return await _calls.JsonAsync<M.FormVersion?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -285,7 +285,7 @@ public final class ModelCodeAllowList {
         return b.toString();
     }
 
-    private static Document parse(byte[] xml) throws Exception {
+    static Document parse(byte[] xml) throws Exception { // hardened (no DOCTYPE, no XXE); shared with OperationRefPinning
         DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
         f.setNamespaceAware(true);
         f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true); // FLOWABLE-INTO-OPERATON D-51 (no DOCTYPE, no XXE) / R24

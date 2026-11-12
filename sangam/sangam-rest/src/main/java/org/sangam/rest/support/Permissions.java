@@ -127,6 +127,8 @@ public final class Permissions {
                     TASK_READ, CASE_READ, DOCUMENT_READ, PACKAGE_READ, DOCUMENT_LEGAL_HOLD, COMPLIANCE_READ))),
             Map.entry(GROUP_TENANT_ADMIN, union(union(union(MODULE_READ, MODULE_WRITE), MODULE_ADMIN), Set.of(ADMIN_READ, ADMIN_WRITE, POLICY_ADMIN, TENANT_ADMIN, EVENT_ADMIN,
                     PACKAGE_READ, PACKAGE_AUTHOR, DEPLOYMENT_READ, ANALYTICS_READ, ANALYTICS_ADMIN, HISTORY_READ,
+                    // SL-166: a tenant admin defines and retires custom fields (tenant.admin), so it must list them
+                    FORM_READ,
                     POWER_TABLE_APPROVE, DOCUMENT_LEGAL_HOLD, LOWCODE_READ, LOWCODE_ADMIN, COMPLIANCE_READ,
                     COMPLIANCE_MODIFY, COMPLIANCE_ADMIN))),
             Map.entry(GROUP_DPO, Set.of(COMPLIANCE_READ, COMPLIANCE_MODIFY, COMPLIANCE_ADMIN, AUDIT_READ, AUDIT_EXPORT,

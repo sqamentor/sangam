@@ -169,6 +169,16 @@ public final class SangamLeaseTable {
 
     /** The lease ends without completing the work (fail, release, expiry): version + 1, no owner. */
     public void end(Connection c, String workId, State newState, long nowMs) {
+        endLease(c, workId, newState, nowMs);
+    }
+
+    /**
+     * {@link #end} for a caller that has the engine connection but not this table: the worker API's outcome-unknown
+     * path (CX-5, VI.3), which ends the lease while the engine keeps the work locked, so every later call with the old
+     * lease is stale and only reconciliation moves the work on. Run it in the engine transaction of the fenced call it
+     * follows (the lease is checked there under its row lock).
+     */
+    public static void endLease(Connection c, String workId, State newState, long nowMs) {
         Jdbc.update(c, "UPDATE SANGAM_LEASE SET lock_version = lock_version + 1, attempt_id = NULL, worker_id = NULL, "
                 + "expires_at_ms = NULL, cancel_requested = 0, state = ?, updated_at_ms = ? WHERE work_id = ?",
                 newState.name(), nowMs, workId);

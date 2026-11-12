@@ -122,6 +122,12 @@ spec:
               mountPath: /opt/sangam/secrets
               readOnly: true
             {{- end }}
+            {{- if .Values.secrets.file.existingSecret }}
+            # M-075: the file secret provider's directory (sangam.secrets.file.root)
+            - name: secret-files
+              mountPath: {{ required "secrets.file.root is required with secrets.file.existingSecret" .Values.secrets.file.root }}
+              readOnly: true
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir:
@@ -137,6 +143,12 @@ spec:
         - name: keys
           secret:
             secretName: {{ .Values.server.keys.existingSecret }}
+            defaultMode: 0440
+        {{- end }}
+        {{- with .Values.secrets.file.existingSecret }}
+        - name: secret-files
+          secret:
+            secretName: {{ . }}
             defaultMode: 0440
         {{- end }}
       {{- if .Values.server.topologySpread }}

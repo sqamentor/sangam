@@ -238,7 +238,7 @@ public final class AssetService {
         add(where, params, "a.location_ref", q.locationRef());
         add(where, params, "a.custodian_ref", q.custodianRef());
         return Db.page(c, dialect, "SELECT " + Asset.COLUMNS + " FROM REG_ASSET a JOIN REG_OBJECT o ON o.id = a.object_id",
-                where.toString(), params, ports.visibility().visible(ctx, RegisteredObjectService.RESOURCE, "o"),
+                where.toString(), params, ports.visibility().visible(c, ctx, RegisteredObjectService.RESOURCE, "o"),
                 "a.asset_tag", q.page(), q.size(), Asset::map);
     }
 

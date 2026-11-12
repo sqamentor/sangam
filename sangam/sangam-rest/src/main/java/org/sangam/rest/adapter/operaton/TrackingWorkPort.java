@@ -328,6 +328,19 @@ public class TrackingWorkPort implements WorkPort {
         return call(w, () -> delegate.lockVersionOfAttempt(ctx, workId, workerId, attemptId));
     }
 
+    /** M-025: the step journal's fenced transaction, counted like every other worker call. */
+    @Override
+    public <T> T inFencedWork(RequestContext ctx, String workId, String workerId, long lockVersion, String attemptId,
+                              FencedWork<T> work) {
+        Worker w = worker(ctx.tenantId(), workerId);
+        return call(w, () -> delegate.inFencedWork(ctx, workId, workerId, lockVersion, attemptId, work));
+    }
+
+    @Override
+    public java.util.Optional<java.util.UUID> operationIdOfWork(RequestContext ctx, String workId) {
+        return delegate.operationIdOfWork(ctx, workId);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private Worker worker(String tenant, String workerId) {

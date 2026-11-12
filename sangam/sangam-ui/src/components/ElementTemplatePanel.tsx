@@ -10,8 +10,9 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError, http } from '../api/client';
 import { announce, useAction, useAsync } from '../lib/hooks';
-import { applicable, fieldError, namespacesFor, planWrites, templateFields, type Applied, type TemplateView } from '../modeller/templates';
+import { applicable, fieldError, namespacesFor, planWrites, templateFields, type Applied, type TemplateField, type TemplateView } from '../modeller/templates';
 import { JsonView, Notice, ProblemAlert, SelectField, TextField } from './ui';
+import { OPERATION_REF_BINDING, OperationRefPicker } from './OperationRefPicker';
 
 /** The parts of a bpmn-js Modeler the panel uses (stable public services of bpmn-js 17). */
 export interface ModelerLike {
@@ -24,9 +25,10 @@ export interface Selected {
   type: string;
 }
 
-async function elementTemplates(signal?: AbortSignal): Promise<TemplateView[]> {
+/** GET /templates ?kind: the latest version of each template of that kind; none without package.read (403). */
+export async function templatesOfKind(kind: TemplateView['kind'], signal?: AbortSignal): Promise<TemplateView[]> {
   try {
-    const r = await http.get<TemplateView[]>('/templates', { kind: 'ELEMENT' }, signal);
+    const r = await http.get<TemplateView[]>('/templates', { kind }, signal);
     return Array.isArray(r) ? r : [];
   } catch (e) {
     if (e instanceof ApiError && (e.status === 403 || e.status === 404 || e.status === 501)) return [];
@@ -34,7 +36,63 @@ async function elementTemplates(signal?: AbortSignal): Promise<TemplateView[]> {
   }
 }
 
-export function ElementTemplatePanel({ modeler, selected }: { modeler: ModelerLike | null; selected: Selected | null }) {
+const elementTemplates = (signal?: AbortSignal) => templatesOfKind('ELEMENT', signal);
+
+/** POST /templates/{id}/apply ?version {elementType, values}: the server validates and resolves the bindings. */
+export function applyTemplate(tpl: TemplateView, elementType: string, values: Record<string, string>): Promise<Applied> {
+  return http.post<Applied>(`/templates/${encodeURIComponent(tpl.key)}/apply?version=${tpl.version}`, { elementType, values });
+}
+
+/**
+ * Writes the server's applied properties into one diagram element (bpmn-js modeling.updateProperties, undoable) and
+ * returns the bindings the editor does not write (input:, output:, form:), or undefined when there are none.
+ */
+export function writeApplied(modeler: ModelerLike, element: unknown, properties: Record<string, unknown>): Record<string, unknown> | undefined {
+  const w = planWrites(properties);
+  const defs = modeler.getDefinitions?.();
+  if (defs) defs.$attrs = { ...(defs.$attrs ?? {}), ...namespacesFor(w.attrs) };
+  if (element) (modeler.get('modeling') as { updateProperties: (e: unknown, p: Record<string, unknown>) => void }).updateProperties(element, { ...w.bpmn, ...w.attrs });
+  return Object.keys(w.manual).length ? w.manual : undefined;
+}
+
+/**
+ * The value inputs of a template's fields, with the client-side hints (the server stays the judge). M-068: inside a
+ * package (packageId), a field bound to sangam:operationRef also offers the operation picker, which fills the field.
+ */
+export function TemplateFieldInputs({ fields, values, onChange, packageId }: { fields: TemplateField[]; values: Record<string, string>; onChange: (v: Record<string, string>) => void; packageId?: string }) {
+  const set = (name: string) => (v: string) => onChange({ ...values, [name]: v });
+  return (
+    <>
+      {fields.map((f) =>
+        f.binding === OPERATION_REF_BINDING && packageId && !f.choices?.length ? (
+          <div key={f.name} className="stack">
+            <OperationRefPicker packageId={packageId} onPick={set(f.name)} />
+            <FieldInput field={f} value={values[f.name]} onChange={set(f.name)} />
+          </div>
+        ) : (
+          <FieldInput key={f.name} field={f} value={values[f.name]} onChange={set(f.name)} />
+        ),
+      )}
+    </>
+  );
+}
+
+/** One field: its choices as a select, else a text input checked by the field's client-side rules. */
+function FieldInput({ field: f, value, onChange }: { field: TemplateField; value: string | undefined; onChange: (v: string) => void }) {
+  const { t } = useTranslation();
+  if (f.choices?.length) {
+    return <SelectField label={f.name} required={f.required} value={value ?? ''} onChange={onChange} placeholder="" options={f.choices.map((c) => ({ value: c, label: c }))} />;
+  }
+  const e = value !== undefined ? fieldError(f, value) : null;
+  return <TextField label={f.name} hint={f.binding} required={f.required} value={value ?? ''} onChange={onChange} error={e ? t(`tpl.err.${e}`) : undefined} />;
+}
+
+/** The fields' defaults as the initial values of the inputs. */
+export function defaultValues(tpl: TemplateView | undefined): Record<string, string> {
+  return Object.fromEntries((tpl ? templateFields(tpl) : []).filter((f) => f.default !== undefined && f.default !== null).map((f) => [f.name, String(f.default)]));
+}
+
+export function ElementTemplatePanel({ modeler, selected, packageId }: { modeler: ModelerLike | null; selected: Selected | null; packageId?: string }) {
   const { t } = useTranslation();
   const list = useAsync((signal) => elementTemplates(signal), []);
   const [key, setKey] = useState('');
@@ -49,17 +107,13 @@ export function ElementTemplatePanel({ modeler, selected }: { modeler: ModelerLi
 
   const apply = () =>
     void act
-      .run(() => http.post<Applied>(`/templates/${encodeURIComponent(chosen!.key)}/apply?version=${chosen!.version}`, { elementType: selected.type, values }))
+      .run(() => applyTemplate(chosen!, selected.type, values))
       .then((r) => {
         if (!r) return;
         setErrors(r.errors ?? []);
         if (r.errors?.length) return;
-        const w = planWrites(r.properties ?? {});
-        const defs = modeler.getDefinitions?.();
-        if (defs) defs.$attrs = { ...(defs.$attrs ?? {}), ...namespacesFor(w.attrs) };
         const el = (modeler.get('elementRegistry') as { get: (id: string) => unknown }).get(selected.id);
-        if (el) (modeler.get('modeling') as { updateProperties: (e: unknown, p: Record<string, unknown>) => void }).updateProperties(el, { ...w.bpmn, ...w.attrs });
-        setManual(Object.keys(w.manual).length ? w.manual : undefined);
+        setManual(writeApplied(modeler, el, r.properties ?? {}));
         announce(t('tpl.applied'));
       });
 
@@ -71,32 +125,14 @@ export function ElementTemplatePanel({ modeler, selected }: { modeler: ModelerLi
         value={key}
         onChange={(k) => {
           setKey(k);
-          const tpl = options.find((x) => x.key === k);
-          setValues(Object.fromEntries((tpl ? templateFields(tpl) : []).filter((f) => f.default !== undefined && f.default !== null).map((f) => [f.name, String(f.default)])));
+          setValues(defaultValues(options.find((x) => x.key === k)));
           setErrors([]);
           setManual(undefined);
         }}
         placeholder={t('tpl.choose')}
         options={options.map((x) => ({ value: x.key, label: `${x.name ?? x.key} v${x.version}` }))}
       />
-      {fields.map((f) =>
-        f.choices?.length ? (
-          <SelectField key={f.name} label={f.name} required={f.required} value={values[f.name] ?? ''} onChange={(v) => setValues({ ...values, [f.name]: v })} placeholder="" options={f.choices.map((c) => ({ value: c, label: c }))} />
-        ) : (
-          <TextField
-            key={f.name}
-            label={f.name}
-            hint={f.binding}
-            required={f.required}
-            value={values[f.name] ?? ''}
-            onChange={(v) => setValues({ ...values, [f.name]: v })}
-            error={(() => {
-              const e = values[f.name] !== undefined ? fieldError(f, values[f.name]) : null;
-              return e ? t(`tpl.err.${e}`) : undefined;
-            })()}
-          />
-        ),
-      )}
+      <TemplateFieldInputs fields={fields} values={values} onChange={setValues} packageId={packageId} />
       {chosen && (
         <button type="button" className="primary" disabled={act.busy} onClick={apply}>
           {t('tpl.apply')}

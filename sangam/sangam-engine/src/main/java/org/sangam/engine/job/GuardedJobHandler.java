@@ -74,7 +74,7 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
 
     @Override
     public void execute(T configuration, ExecutionEntity execution, CommandContext cc, String tenantId) {
-        identity.runAs(identity.identityFor(cc.getCurrentJob(), execution, tenantId), () -> {
+        identity.runAs(cc, identity.identityFor(cc.getCurrentJob(), execution, tenantId), () -> {
             executeGuarded(configuration, execution, cc, tenantId);
             return null;
         });

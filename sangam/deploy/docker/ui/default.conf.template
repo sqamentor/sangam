@@ -34,8 +34,10 @@ server {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         include /etc/nginx/conf.d/security-headers.inc;
-        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}"}';
+        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"${SANGAM_TRACE_URL_TEMPLATE}"}';
     }
+    # traceUrlTemplate (M-044, owner decision 57): a link to the operator's trace viewer with the placeholder
+    # {traceId}, e.g. https://tracing.example/trace/{traceId}; empty = no trace links. The UI links only http(s).
 
     # Sangam API, worker API and the (unchanged, Sangam-authenticated) Operaton REST API.
     location ~ ^/(api|engine-rest)/ {

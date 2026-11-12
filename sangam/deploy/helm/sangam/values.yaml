@@ -37,6 +37,17 @@ database:
     # with Retry-After (the server default, application.yaml). 0 (wait for ever) is refused by the server.
     connectionTimeoutMs: 2000
     maxLifetimeMs: 1500000
+    # SL-168 / X1-05: the three leaf pools (separate HikariCP pools on the same database, with the main pool's settings).
+    # Each is ON TOP of maximumPoolSize on every pod: budget max_connections >= pods x (maximumPoolSize + the three) +
+    # admin/replication slots (deploy/README.md section 1.6). Defaults are the server's.
+    leafPools:
+      # SANGAM_QUOTA_POOL_SIZE: sangam.quotas.pool.maximum-size, quota counting and audit (SL-43), default 4
+      quota: 4
+      # SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE: sangam.security.denial-audit.pool.maximum-size (SL-132; also the tenant
+      # data-key store, SL-161: keep it at 2 or more), default 2
+      securityDenialAudit: 2
+      # SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE: sangam.compliance.denial-audit.pool.maximum-size (SL-137), default 2
+      complianceDenialAudit: 2
   # SL-59, optional (empty = the server default). Socket read bound on every pooled connection, a duration such as
   # 300s (server default 300s; 0 disables it): SANGAM_DB_NETWORK_TIMEOUT.
   networkTimeout: ""
@@ -99,6 +110,11 @@ oidc:
   seatsClaim: seats
   # Public client used by the browser (PKCE).
   uiClientId: sangam-ui
+  # OPEN POINT (owner decision 113): brokered sign-ins need the post-broker-login OTP flow and the amr mapper that
+  # deploy/compose/keycloak/configure-broker-otp.sh adds with kcadm. This chart deploys no Keycloak (the IdP is
+  # external), so it has no post-install Job for it: run the script once against the production Keycloak (same
+  # variables: KEYCLOAK_URL, KEYCLOAK_ADMIN, KEYCLOAK_ADMIN_PASSWORD_FILE, BROKER_ALIASES, AMR_CLIENTS) after each
+  # realm change, or have the IdP operator configure the same flow.
 
 # ------------------------------------------------------------------------------------------------ telemetry (R13, R56)
 otel:
@@ -108,6 +124,9 @@ otel:
   protocol: http/protobuf
   samplerRatio: "0.1"
   resourceAttributes: ""
+  # SL-168 / M-062: engine spans, one per engine command, jobs as root spans (SANGAM_TRACING_ENGINE_ENABLED,
+  # sangam.tracing.engine.enabled). Off by default; the spans leave the pod only when enabled above is true.
+  engineTracing: false
 
 metrics:
   serviceMonitor:
@@ -171,6 +190,11 @@ server:
   defaultTenant: ""
   environment: ""      # SL-42 SANGAM_ONBOARDING_ENVIRONMENT (sandbox, uat, prod ...); optional, empty = no promotion
   corsOrigins: ""      # SANGAM_CORS_ORIGINS; empty = same origin only (UI behind the same ingress host)
+  # M-081 (decisions 94, 95): SANGAM_PDF_FONTS, the fonts the PDF/A and PDF/UA renderer embeds. Default = the Noto
+  # fonts shipped in the image under /opt/sangam/fonts (SIL OFL 1.1). Override only to point at other licensed fonts
+  # mounted into the pod (comma-separated); empty = not rendered, the image's own SANGAM_PDF_FONTS applies. Without a
+  # usable font the renderer reports not ready and PDF output stays off.
+  pdfFonts: "/opt/sangam/fonts/NotoSans-Regular.ttf,/opt/sangam/fonts/NotoSansDevanagari-Regular.ttf"
   jobExecutor:
     enabled: true      # false for API-only pods
     corePoolSize: 16
@@ -246,6 +270,157 @@ server:
   topologySpread: true
   podAnnotations: {}
   podLabels: {}
+
+# ------------------------------------------------------------------------------------------------ malware scanning (M-082)
+# Uploads are scanned before they are stored (sangam.malware.*, sangam-server MalwareScanWiring). scanner none = no
+# scanner (the server default). Rendered into the server environment as SANGAM_MALWARE_*.
+malware:
+  # none | clamd | icap (SANGAM_MALWARE_SCANNER)
+  scanner: none
+  # A scanner error or timeout refuses the upload (SANGAM_MALWARE_FAIL_CLOSED); with a scanner on it is also the
+  # default of sangam.content.require-clean. Server default true.
+  failClosed: true
+  # Time limit of one scan, a duration (SANGAM_MALWARE_TIMEOUT). Server default 30s.
+  timeout: 30s
+  # Bytes of one upload sent to the scanner (SANGAM_MALWARE_MAX_BYTES), a string so helm keeps the digits. Server
+  # default 26214400 (25 MiB).
+  maxBytes: "26214400"
+  clamd:
+    # SANGAM_MALWARE_CLAMD_HOST. Empty = this release's ClamAV service (malware.clamav.enabled); with scanner clamd and
+    # no ClamAV service in this release it is required.
+    host: ""
+    # SANGAM_MALWARE_CLAMD_PORT. Server default 3310.
+    port: 3310
+  icap:
+    # SANGAM_MALWARE_ICAP_URI, required with scanner icap, e.g. icap://icap.example.internal:1344/avscan. Allow the
+    # ICAP server in networkPolicy.extraEgress.
+    uri: ""
+  # Optional ClamAV service in this release (owner decision 71): image clamav/clamav (GPL-2.0) as a SEPARATE service,
+  # never linked into Sangam, with a pinned tag; pulled only in the test phase. Off by default. clamd answers on 3310
+  # inside the cluster only (no Ingress). freshclam inside the image fetches signatures: allow the mirror in
+  # malware.clamav.egress (air-gapped: a private mirror, set through extraEnv / a mounted freshclam.conf).
+  clamav:
+    enabled: false
+    image:
+      registry: docker.io
+      repository: clamav/clamav
+      # Pinned (approval line in the W3-M report); never empty, never "latest".
+      tag: "1.4.3"
+      digest: ""
+      pullPolicy: IfNotPresent
+    replicaCount: 1
+    port: 3310
+    # Signature database (/var/lib/clamav), an emptyDir refilled by freshclam at start.
+    databaseSizeLimit: 2Gi
+    # Egress of the ClamAV pods besides DNS (NetworkPolicyEgressRule items), e.g. the signature mirror on 443.
+    egress: []
+    extraEnv: []
+    # clamd keeps the whole signature set in memory.
+    resources:
+      requests: { cpu: 250m, memory: 2Gi }
+      limits: { memory: 4Gi }
+    # The image starts as root and drops to its clamav user; no product default is forced here.
+    podSecurityContext: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
+
+# ------------------------------------------------------------------------------------------------ secret providers (M-075)
+# The platform SecretResolver (sangam-server SecretsWiring): only when providers is set; empty = no resolver bean and
+# every connector keeps reading its secret:// references from the environment (R56: no outbound call by default).
+# Every *Ref below is a secret:// REFERENCE resolved by the file and env providers only, never a value.
+# Rendered as SANGAM_SECRETS_*; outbound providers (vault, aws, azure, gcp) need networkPolicy.extraEgress.
+secrets:
+  # Comma list, asked in order: file, vault, aws, azure, gcp, env (SANGAM_SECRETS_PROVIDERS).
+  providers: ""
+  # Cache time of a resolved secret, a duration (SANGAM_SECRETS_CACHE_TTL). Empty = server default 300s.
+  cacheTtl: ""
+  file:
+    # Directory of the file provider, one file per secret (SANGAM_SECRETS_FILE_ROOT).
+    root: /var/run/sangam/secrets
+    # Kubernetes Secret mounted read-only at file.root (each key becomes a file). Empty = nothing mounted.
+    existingSecret: ""
+  vault:
+    url: ""
+    mount: ""
+    pathPrefix: ""
+    namespace: ""
+    tokenRef: ""
+    # Allow a private or loopback Vault address (SSRF guard; off by default).
+    allowPrivate: false
+  aws:
+    region: ""
+    endpoint: ""
+    namePrefix: ""
+    accessKeyRef: ""
+    secretKeyRef: ""
+    sessionTokenRef: ""
+  azure:
+    vaultUrl: ""
+    tenantId: ""
+    clientId: ""
+    clientSecretRef: ""
+    authority: ""
+  gcp:
+    project: ""
+    serviceAccountKeyRef: ""
+    namePrefix: ""
+    endpoint: ""
+
+# ------------------------------------------------------------------------------------------------ script worker (M-061)
+# BPMN script tasks run outside the engine JVM (owner decision 53): an SDK worker on the lease protocol starts each
+# script as a Node.js or CPython child inside nsjail (tools/sangam-script-worker/README.md). Off by default. The pod
+# holds only the worker: no database credentials, no ingress. It calls the server API as a labelled API client.
+scriptWorker:
+  enabled: false
+  image:
+    registry: ghcr.io
+    repository: sqamentor/sangam-script-worker
+    tag: ""            # defaults to .Chart.AppVersion
+    digest: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  # SANGAM_URL; empty = this release's server (or gateway when scale.gateway.enabled).
+  url: ""
+  # Credentials: a Secret with key `token` (SANGAM_TOKEN), or OIDC client credentials (oidcTokenUrl + clientId and
+  # the Secret key `clientSecret`, SANGAM_CLIENT_SECRET). Never a value in this file.
+  existingSecret: ""
+  oidcTokenUrl: ""
+  clientId: ""
+  # Languages and limits (tools/sangam-script-worker README "Limits"); empty = the worker default.
+  languages: javascript,python
+  maxConcurrency: ""
+  cpuSeconds: ""
+  wallTime: ""
+  memoryBytes: ""
+  maxProcesses: ""
+  extraEnv: []
+  resources:
+    requests: { cpu: 500m, memory: 512Mi }
+    limits: { memory: 2Gi }
+  # Owner decision 78: nsjail creates namespaces and cgroups per script, so the CONTAINER runs as root with
+  # SYS_ADMIN and with seccomp and AppArmor unconfined at container level; nsjail applies its own per-script seccomp
+  # policy, and every script runs as nobody in its own user namespace with no capabilities. The worker container
+  # needs a private cgroup namespace (the default with cgroup v2) and, where the runtime masks /proc paths, an
+  # unmasked /proc (procMount: Unmasked, which Kubernetes allows only with hostUsers: false).
+  # OPEN POINT (integrator, round 2): whether the chart must also set securityContext.procMount: Unmasked with
+  # hostUsers: false (the Kubernetes counterpart of compose security_opt systempaths=unconfined) is checked when the
+  # image is first run in the test phase; until then neither is rendered.
+  podSecurityContext:
+    seccompProfile: { type: Unconfined }
+  securityContext:
+    runAsUser: 0
+    runAsNonRoot: false
+    allowPrivilegeEscalation: true
+    readOnlyRootFilesystem: false
+    capabilities: { add: [SYS_ADMIN], drop: [] }
+    seccompProfile: { type: Unconfined }
+    appArmorProfile: { type: Unconfined }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
 # ------------------------------------------------------------------------------------------------ compliance
 # sangam-compliance: DPDP Act 2023 / Rules 2025, CERT-In Directions 2022 (jurisdiction pack IN).
@@ -326,6 +501,10 @@ ui:
   defaultLocale: en
   locales: en,hi
   cspConnectExtra: ""
+  # M-044 (owner decision 57): link to the operator's trace viewer with the placeholder {traceId}, e.g.
+  # https://tracing.example.gov.in/trace/{traceId} (SANGAM_TRACE_URL_TEMPLATE, served in /config.json). Empty = no
+  # trace links; the UI links only http(s) results.
+  traceUrlTemplate: ""
   resources:
     requests: { cpu: 50m, memory: 64Mi }
     limits: { memory: 128Mi }

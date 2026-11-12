@@ -206,6 +206,8 @@ public final class JurisdictionPack {
     private final List<ChecklistItem> checklist;
     private final List<String> noticeLint;
     private final String noticeTemplatePath;
+    /** M-087: folder of the data-processor agreement templates ({@code processor-agreement_<lang>.md}); null when the pack has none. */
+    private final String processorAgreementPath;
     private final String obligationsPath;
 
     private final List<String> goLiveEvidence = new java.util.ArrayList<>();
@@ -317,6 +319,7 @@ public final class JurisdictionPack {
                 x.path("activity").asText(null), x.path("maxAgeMonths").asInt(0), x.path("enforced").asBoolean(true)));
         noticeLint = texts(n.path("noticeLint"));
         noticeTemplatePath = n.path("noticeTemplates").asText("compliance/jurisdictions/" + code + "/notices");
+        processorAgreementPath = n.path("processorAgreementTemplates").asText(null);
         obligationsPath = n.path("obligations").asText(null);
     }
 
@@ -389,6 +392,8 @@ public final class JurisdictionPack {
     public List<ChecklistItem> checklist() { return checklist; }
     public List<String> noticeLint() { return noticeLint; }
     public String noticeTemplatePath() { return noticeTemplatePath; }
+
+    public String processorAgreementPath() { return processorAgreementPath; }
     public String obligationsPath() { return obligationsPath; }
 
     /** Pack vocabulary, e.g. {@code dataSubject} → "Data Principal"; falls back to the neutral term. */

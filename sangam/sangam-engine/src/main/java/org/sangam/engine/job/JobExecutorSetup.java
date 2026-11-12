@@ -41,8 +41,11 @@ public final class JobExecutorSetup {
         return s.isTraceLinks() && s.getTracing() != EngineTracing.NONE;
     }
 
-    /** preInit: the executor, the partitioned acquisition factory, and the side-row interceptors to register. */
-    public List<CommandInterceptor> preInit(ProcessEngineConfigurationImpl cfg) {
+    /**
+     * preInit: the executor, the partitioned acquisition factory, and the side-row interceptors to register, as
+     * factories: each command chain needs its own interceptor object, since the chain sets the interceptor's next.
+     */
+    public List<java.util.function.Supplier<CommandInterceptor>> preInit(ProcessEngineConfigurationImpl cfg) {
         if (s.isTraceLinks() && s.getTracing() == EngineTracing.NONE) {
             LOG.warn("M-062: sangam.engine.trace-links is on but no EngineTracing is bound; no trace context is stored");
         }
@@ -90,7 +93,7 @@ public final class JobExecutorSetup {
         }
         JobSideRows rows = new JobSideRows(s.isExecutorPartitioning(), s.getExecutorSlots(),
                 traceLinks() ? s.getTracing() : null, s.getDefaultTenantId(), () -> clock.get().toEpochMilli());
-        return List.of(rows.interceptor());
+        return List.of(rows::interceptor);
     }
 
     /**
@@ -106,6 +109,129 @@ public final class JobExecutorSetup {
         if (cfg.getJobExecutor().getAcquireJobsCmdFactory() != partitionedFactory) {
             throw new ProcessEngineException("M-056: sangam.engine.executor-partitioning is on, but another plugin "
                     + "replaced the job acquisition (" + cfg.getJobExecutor().getAcquireJobsCmdFactory() + ")");
+        }
+    }
+
+    private PartitionLeaseManager leases;
+    private java.util.concurrent.ScheduledExecutorService leaseTimer;
+
+    /**
+     * postProcessEngineBuild (M-056 finish, C3-04): with partitioning on, starts this node's partition lease cycle
+     * ({@link PartitionLeaseManager}) every {@code leaseTtl/3}. Partitions are held only while this node's job executor
+     * is active (a node that owns partitions but does not acquire would strand their jobs); when the executor stops or
+     * the engine is closed, the partitions are released and the cycle ends. Off: nothing is started.
+     *
+     * @return the manager, or {@code null} when partitioning is off
+     */
+    public PartitionLeaseManager startLeases(org.operaton.bpm.engine.ProcessEngine engine) {
+        return startLeases(engine, org.sangam.core.engine.EngineMetrics.NONE, org.sangam.core.engine.AuditSink.NONE, null);
+    }
+
+    /** {@code OWNERSHIP_CHANGED} audit event type (C3-04, X.2.1.8 rule 5). */
+    public static final String OWNERSHIP_CHANGED = "EXECUTOR_OWNERSHIP_CHANGED";
+
+    /**
+     * As {@link #startLeases(org.operaton.bpm.engine.ProcessEngine)}, with the C3-04 observability: every ownership
+     * write appends {@value #OWNERSHIP_CHANGED} to the class-B audit chain in the same transaction (root
+     * {@code executor:<clusterId>}, tenant {@code auditTenant}), and the {@code executor_*} metrics are fed.
+     */
+    public PartitionLeaseManager startLeases(org.operaton.bpm.engine.ProcessEngine engine,
+                                             org.sangam.core.engine.EngineMetrics metrics,
+                                             org.sangam.core.engine.AuditSink auditSink, String auditTenant) {
+        if (incarnation == null) {
+            return null;
+        }
+        ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration();
+        JobExecutor je = cfg.getJobExecutor();
+        String node = s.getJobLockOwner() != null ? s.getJobLockOwner() : je.getLockOwner();
+        PartitionLeaseManager.Config config = new PartitionLeaseManager.Config(s.getExecutorClusterId(), node, incarnation,
+                s.getExecutorPartitions(), s.getExecutorSlots(), s.getExecutorLeaseTtl(), s.getExecutorLeaseSafetyMargin(),
+                s.getExecutorDrainTimeout(), s.getExecutorRecoveryBatch(), s.getExecutorMaxRecoveries());
+        org.sangam.core.engine.EngineMetrics m = metrics == null ? org.sangam.core.engine.EngineMetrics.NONE : metrics;
+        PartitionLeaseManager.Listener incidents = new PartitionLeaseManager.Listener() {
+            @Override
+            public void ownerChanged(int partition, long epoch, String reason) {
+                observe(() -> m.executorOwnerChanged(reason));
+            }
+
+            @Override
+            public void recovered(int partition, int jobs) {
+                observe(() -> m.executorJobsRecovered(jobs));
+            }
+
+            @Override
+            public void orphanedPartitions(long count) {
+                observe(() -> m.executorOrphanedPartitions(count));
+            }
+
+            @Override
+            public void recoveryLoop(String jobId, String executionId, int recoveries) {
+                if (executionId != null) { // X.2.1.6: the poison job is parked (retries 0) and visible as an incident
+                    engine.getRuntimeService().createIncident(PartitionLeaseManager.RECOVERY_LOOP, executionId, jobId,
+                            PartitionLeaseManager.RECOVERY_LOOP + ": job " + jobId + " was recovered " + recoveries
+                                    + " times after its executor was lost; retries set to 0 (X.2.1.6)");
+                }
+            }
+        };
+        leases = new PartitionLeaseManager(cfg.getDataSource(), dialect.coreDialect(), config, clock, System::nanoTime,
+                incidents, ownershipAudit(auditSink, auditTenant, config, incarnation));
+        leaseTimer = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "sangam-exec-lease-" + node);
+            t.setDaemon(true);
+            return t;
+        });
+        long every = Math.max(1, config.renewInterval().toMillis());
+        leaseTimer.scheduleWithFixedDelay(() -> leaseCycle(engine, je), 0, every,
+                java.util.concurrent.TimeUnit.MILLISECONDS);
+        return leases;
+    }
+
+    private void leaseCycle(org.operaton.bpm.engine.ProcessEngine engine, JobExecutor je) {
+        try {
+            if (!je.getProcessEngines().contains(engine)) { // engine closed
+                leases.releaseAll();
+                leaseTimer.shutdown();
+                return;
+            }
+            if (!je.isActive()) {
+                if (!leases.ownedLive().isEmpty()) {
+                    leases.releaseAll();
+                }
+                return;
+            }
+            leases.tick();
+        } catch (RuntimeException e) {
+            LOG.warn("M-056 partition lease cycle failed: {}", e.toString());
+        }
+    }
+
+    /** The {@value #OWNERSHIP_CHANGED} audit on the ownership write's own connection (fails the write when it fails). */
+    static PartitionLeaseManager.OwnershipAudit ownershipAudit(org.sangam.core.engine.AuditSink sink, String tenant,
+                                                               PartitionLeaseManager.Config config, String incarnation) {
+        if (sink == null || sink == org.sangam.core.engine.AuditSink.NONE) {
+            return PartitionLeaseManager.OwnershipAudit.NONE;
+        }
+        String root = "executor:" + config.clusterId();
+        return (conn, partition, epoch, reason, previousOwner) -> {
+            java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+            payload.put("clusterId", config.clusterId());
+            payload.put("partition", partition);
+            payload.put("epoch", epoch);
+            payload.put("reason", reason);
+            payload.put("node", config.nodeId());
+            payload.put("incarnation", incarnation);
+            if (previousOwner != null) {
+                payload.put("previousOwner", previousOwner);
+            }
+            sink.append(conn, tenant, root, OWNERSHIP_CHANGED, payload);
+        };
+    }
+
+    private static void observe(Runnable r) {
+        try {
+            r.run();
+        } catch (RuntimeException e) {
+            LOG.warn("M-056 executor metrics failed: {}", e.toString());
         }
     }
 

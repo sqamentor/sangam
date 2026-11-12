@@ -11,7 +11,7 @@ from typing import Any, Literal, TypedDict, Union
 
 Number = Union[int, float, Decimal]
 
-__all__ = ["Number", "ActAgentBody", "ActConversationChannelBody", "ActRetentionClassBody", "ActRoutingStrategyBody", "ActServiceBody", "ActSlaModelBody", "ActTemplateBody", "ActionModelInvoke", "ActionModelPublish", "ActivityInstance", "ActivityStat", "AdHocActivity", "AdHocState", "AddCaseCommentRequest", "AddCommentRequest", "AgeBucket", "AgentUsage", "AiA2aBody", "AiA2aBodyParams", "AiA2aBodyParamsMessage", "AiA2aBodyParamsMessagePartsItem", "AiApproval", "AiClassification", "AiClassify", "AiCorrect", "AiDecide", "AiDraft", "AiDraftGenerate", "AiDraftReview", "AiEvalResult", "AiEvaluate", "AiEvaluation", "AiIngest", "AiIngestResult", "AiKbSearch", "AiKbVersion", "AiMcpBody", "AiMcpBodyParams", "AiProposal", "AiPropose", "AiReason", "AiRun", "AiStartRun", "AiUiDecisionRequest", "AiUiPublishKbRequest", "AiUiReviewRequest", "AlertRule", "AnalyticsSummary", "AppealRequest", "Application", "ApplyRequest", "AssessmentRow", "Assignment", "AssignmentImpact", "AssignmentServiceNewAssignment", "AuditEntry", "AuditExportJob", "AuditExportRequest", "AuditVerifyResult", "Batch", "BatchControlRequest", "BatchFilter", "BatchItem", "BatchPreview", "BatchRequest", "BillingCollectionRequest", "BillingInvoiceRequest", "BillingPenaltyRequest", "BillingRefundRequest", "BillingRefundResult", "BillingWaiverRequest", "BookingModelAllotRequest", "BookingModelHoldRequest", "BookingModelRecurrence", "BookingModelWaitlistRequest", "BreakpointsRequest", "BulkChunk", "BulkChunkReceipt", "BulkClaimRequest", "BulkCompleteRequest", "BulkCreateJob", "BulkFailure", "BulkJob", "BulkResult", "BulkRowInput", "BulkRowStatus", "BundleDiffEntry", "BundleDiffRequest", "BundleImportRequest", "BundleImportResult", "CalendarServiceSlotTemplate", "CancelAckRequest", "CandidateSeat", "CaseComment", "CaseDefinition", "CaseExecution", "CaseExecutionCommand", "CaseFilePublishConfigBody", "CaseInstance", "CaseInstanceCommand", "CaseVersion", "CatalogueEntry", "CellActivateRequest", "CellDrainStatus", "CellExportHandle", "CellImportRequest", "CellImportResult", "CellMoveRequest", "CellMovedRequest", "CellTenantChecksum", "CellTenantState", "CfActionItem", "CfActionItemServicePendency", "CfAddPartyRequest", "CfAdjournRequest", "CfAgendaItem", "CfAgendaOrder", "CfAgendaRequest", "CfApproveBody", "CfApproveMinutesRequest", "CfAtrBody", "CfAttendance", "CfAttendanceRequest", "CfCarryResult", "CfCaseFile", "CfCaseFileRestPortAssignRequest", "CfCaseFileRestPortExtendRequest", "CfCaseLink", "CfCaseParty", "CfCaseView", "CfCommittee", "CfCommitteeView", "CfConfigEntry", "CfConflict", "CfConstituteRequest", "CfCreateRequest", "CfDeadline", "CfDecision", "CfDecisionInput", "CfDocument", "CfDocumentRequest", "CfDraftBody", "CfDuplicateCandidate", "CfEntry", "CfEscalationStep", "CfEvent", "CfFolder", "CfFolderRequest", "CfFollowUpRequest", "CfHearing", "CfHearingRequest", "CfLinkRequest", "CfLinkedRecord", "CfMeeting", "CfMeetingControllerReasonBody", "CfMeetingView", "CfMember", "CfMemberInput", "CfMergeRequest", "CfMilestoneRequest", "CfMinutes", "CfMove", "CfNote", "CfNoteRequest", "CfNotice", "CfOpenRequest", "CfOutcomeRequest", "CfParty", "CfPartyInput", "CfPartyResult", "CfPublishedConfig", "CfQuorumStatus", "CfReasonRequest", "CfReassignBody", "CfReconstituteRequest", "CfRecordRequest", "CfReference", "CfReferenceControllerReasonBody", "CfReferenceRestPortAssignRequest", "CfReferenceRestPortExtendRequest", "CfReferenceServicePendency", "CfReferenceView", "CfRegisterRequest", "CfReplyRequest", "CfRescheduleRequest", "CfScheduleRequest", "CfSplitRequest", "CfStageRequest", "CfTextBody", "CfTransferRequest", "CfUpdateRequest", "CfVerifyRequest", "ChainVerification", "ChannelAddParticipant", "ChannelAttachment", "ChannelConversation", "ChannelCreateConversation", "ChannelHookResult", "ChannelMessage", "ChannelOptInRequest", "ChannelSendMessage", "ChannelStatus", "ChecklistItem", "Clarification", "CleanupStatus", "ClockItem", "CloudEvent", "CodedReason", "Comment", "CompleteTaskRequest", "CompleteTaskResult", "ComplianceAuditEvidence", "ComplianceAuditEvidenceRequest", "ComplianceAuditVerification", "ComplianceBreach", "ComplianceBreachRequest", "ComplianceConsent", "ComplianceConsentArtefact", "ComplianceContact", "ComplianceGiveConsentRequest", "ComplianceImpactAssessment", "ComplianceImpactAssessmentRequest", "ComplianceIncident", "ComplianceIncidentRequest", "ComplianceJurisdiction", "ComplianceLawfulRequest", "ComplianceLawfulRequestBody", "ComplianceLogSegment", "CompliancePublishNoticeRequest", "CompliancePublishResult", "CompliancePurpose", "ComplianceReasonBody", "ComplianceRenderedNotice", "ComplianceReport", "ComplianceRespondLawfulRequest", "ComplianceRightsRequest", "ComplianceRightsSubmission", "ComplianceSealLogsRequest", "ComplianceSubmitIncidentRequest", "ComplianceTransferDecision", "ComplianceTransferRequest", "ComplianceVerifyLawfulRequest", "ComplianceWithdrawConsentRequest", "ConfigActivateRequest", "ConfigApproveRequest", "ConfigChangeRecord", "ConfigClassificationRequest", "ConfigCorrectionSlip", "ConfigCrosswalkRequest", "ConfigDocumentCheckRequest", "ConfigFinding", "ConfigFindingsResult", "ConfigMasterCode", "ConfigProfileVersion", "ConfigProfileVersionDocument", "ConfigRejectRequest", "ConfigResolvedProfile", "ConfigSeedResult", "ConfigSlipChange", "ConfigValidateRequest", "ConformanceResult", "ConsequencePreview", "CreateLinkRequest", "CreatePackageRequest", "CrossBoundaryMoveRequest", "CustomField", "CustomFieldDefineRequest", "CustomFieldRetireRequest", "DataObjectDef", "DataObjectField", "DebugStatus", "DebugStepResult", "DecisionDefinition", "DecisionEvaluateRequest", "DecisionEvaluateResult", "DelegateTaskRequest", "Delegation", "DeployedDefinition", "Deployment", "Deviation", "DeviceRegistryRegistration", "DispatchServiceUnitInput", "Document", "DocumentGenerateRequest", "DocumentTemplate", "DurationReportRow", "ElementTemplateApply", "ElementTemplatePublish", "EndAssignmentRequest", "EntityLink", "EnvBinding", "EnvBindingApproval", "EnvBindingRequest", "EventChannel", "EventDefinition", "Evidence", "ExplainRequest", "ExplainResult", "ExtendLockRequest", "ExternalTaskLogEntry", "ExternalWork", "FetchAndLockRequest", "FieldChange", "FieldError", "FieldTemplate", "FieldTemplateEvidenceRules", "FieldTemplateGeofenceRule", "FieldTemplateGrade", "FieldTemplateItem", "FieldTemplateOption", "FieldTemplateScoring", "FieldTemplateSection", "FieldTemplateVisibleIf", "FieldVisit", "FieldWorkCreateAssignmentBody", "FieldWorkCreateJobBody", "FieldWorkDefineScheduleBody", "FieldWorkDevicePolicyBody", "FieldWorkDeviceStatusBody", "FieldWorkJobActionBody", "FieldWorkPingBody", "FieldWorkPublishTemplateBody", "FieldWorkReassignBody", "FieldWorkRegisterDeviceBody", "FieldWorkResolveConflictBody", "FieldWorkRespondOfferBody", "FieldWorkReviewBody", "FieldWorkRouteBody", "FieldWorkSelectBody", "FieldWorkStartTripBody", "FieldWorkTransitionBody", "FieldWorkTripActionBody", "FieldWorkUnitStatusBody", "FieldWorkUpsertUnitBody", "FormDraft", "FormValidateRequest", "FormValidationResult", "FormVersion", "GeoGeoCheckFenceBody", "GeoGeoDefineFenceBody", "GeoGeoDefineLayerBody", "GeoGeoDefineLayerBodyLevelsItem", "GeoGeoImportBoundariesBody", "GeoGeoImportBoundariesBodyLayer", "GeoGeoImportBoundariesBodyLayerLevelsItem", "GeoGeoImportExternalBody", "GeoGeoOverlapsBody", "GeoGeoPutFeatureBody", "GeoGeoPutObjectGeometryBody", "GeoGeoQueryExternalBody", "GeoGeoRegisterExternalBody", "GitConfig", "GitStatus", "GitSyncRequest", "GitSyncResult", "Grievance", "GrievanceReceipt", "GrievanceRequest", "Group", "HandlerParameter", "HealthHookResult", "HistoricActivityInstance", "HistoricDecision", "HistoricIncident", "HistoricJobLog", "HistoricProcessInstance", "HistoricTask", "HistoricVariable", "IdentityProvider", "IdentitySyncResult", "IdentityTestResult", "InboxEntry", "Incident", "IncidentAction", "InjectionRequest", "InjectionResult", "InstalledPack", "InstanceHandler", "InstanceQueryRequest", "InstanceQueryResult", "InstanceUpdateRequest", "InstanceUpdateResult", "Job", "JobRetriesRequest", "JobSummary", "JobSuspensionRequest", "LeaveRequest", "LedgerAccount", "LedgerAccountKey", "LedgerAccountRef", "LedgerAccountingEntry", "LedgerCloseRequest", "LedgerFreezeOrder", "LedgerFreezeRequest", "LedgerHeldRequest", "LedgerOperationRequest", "LedgerReconcileRequest", "LedgerReconcileRow", "LedgerResult", "LegalHoldRequest", "LifecycleEvent", "LockState", "LookupResult", "Me", "MeLocale", "MessageRequest", "MessageResult", "MigrationExecuteRequest", "MigrationInstruction", "MigrationPlan", "MigrationPlanRequest", "ModelEditLease", "ModelFenceRequest", "ModelLeaseOutcome", "ModelTakeoverRequest", "ModelTokenWalkRequest", "ModellerFenceRequest", "ModellerRunActionRequest", "ModificationInstruction", "ModifyPreviewRequest", "ModifyRequest", "ModuleDefaultsRequest", "ModuleDefaultsResult", "NodeStatus", "NoteRequest", "Notification", "NotificationFailure", "NumberGrouping", "OnboardingApproveRequest", "OnboardingDryRun", "OnboardingProblem", "OnboardingReadiness", "OnboardingReasonRequest", "OnboardingRequest", "OnboardingRequestAdminSpec", "OnboardingRequestComplianceSpec", "OnboardingRequestConnectorBindingSpec", "OnboardingRequestGoLiveSpec", "OnboardingRequestPackSpec", "OnboardingRequestProfileSpec", "OnboardingRequestRoleRuleSpec", "OnboardingRequestRoleSpec", "OnboardingRequestSeedSpec", "OnboardingRequestTenantSpec", "OnboardingRequestTestCall", "OnboardingRun", "OnboardingSecurity", "OpenTaskCount", "OpsAdvance", "OpsDashboard", "OpsJob", "OpsMetric", "OpsPurge", "OpsReason", "OpsSecret", "OpsUiAdvanceRequest", "OpsUiIndexJobRequest", "OpsUiRetentionExecute", "OpsUiSecretRequest", "OpsUiVariableRequest", "OpsValue", "OrgUnit", "OrgUnitImportResult", "OutboxDelivery", "OutboxRepairRequest", "OutboxStats", "OutboxUsage", "OutcomeUnknownRequest", "OutcomeUnknownResult", "PackDeployResult", "PackLifecycleRequest", "PackResolution", "PackResolveRequest", "PackUninstalled", "Package", "PackageAddCommentRequest", "PackageBundle", "PackageComment", "PackageDiffEntry", "PackageEvent", "PackageImportRequest", "PackageSignature", "PackageTransitionRequest", "PackageVerification", "PageBlock", "PageModel", "PageSummary", "Participant", "PartitionCount", "PgAchievement", "PgAchievementRequest", "PgAlert", "PgAllocationRequest", "PgCampaignRequest", "PgCampaignResult", "PgEvent", "PgFinancial", "PgFinancialRequest", "PgFinding", "PgGeneratePeriodsRequest", "PgImportRequest", "PgImportResult", "PgMilestone", "PgMilestoneRequest", "PgMilestoneServiceProgress", "PgNode", "PgOutcome", "PgPeriod", "PgPeriodStateRequest", "PgProgramme", "PgProgrammeInput", "PgProgressServiceProgress", "PgPublished", "PgReasonBody", "PgRefreshResult", "PgReturnDetail", "PgReturnRow", "PgReturnValuesRequest", "PgReviseTargetRequest", "PgRollupRequest", "PgRollupResult", "PgSetTargetRequest", "PgSnapshot", "PgStatusRequest", "PgStoredFinding", "PgTarget", "PgUpdateProgrammeRequest", "PgValue", "PgVarianceRequest", "PgVersionBody", "PluginInfo", "PoisonInboundItem", "PoisonInboundParked", "Policy", "PolicyMatch", "PolicyVersion", "PortalMessage", "PortalService", "PowerTable", "PowerTableCheckResult", "PowerTableTestCase", "PowerTableTestOutcome", "PowerTableTransitionRequest", "Problem", "ProcessDefinition", "ProcessInstance", "ProgrammePublishConfigBody", "ProgrammePublishConfigBodyVariance", "PromotionApplyRequest", "PromotionPlan", "PromotionPlanRequest", "PublishResult", "QueueCallRequest", "QueueCompleteRequest", "QueueOpenRequest", "QueuePolicy", "QueueReasonRequest", "QueueRestPortCounterRequest", "QueueRestPortIssueTokenRequest", "QueueRestPortServicePointRequest", "QueueRestPortTransferRequest", "QueueStatusRequest", "RandomSelectorCandidate", "ReasonRequest", "ReconciliationItem", "ReconciliationResolveRequest", "RegistryAssetAddMeterBody", "RegistryAssetAddPlanBody", "RegistryAssetCorrectReadingBody", "RegistryAssetCreateWorkOrderBody", "RegistryAssetDefineClassBody", "RegistryAssetDefineClassBodyDepreciation", "RegistryAssetDefineClassBodyMaintenancePlansItem", "RegistryAssetDefineClassBodyMetersItem", "RegistryAssetDisposeBody", "RegistryAssetGenerateDueBody", "RegistryAssetMoveBody", "RegistryAssetPlanStatusBody", "RegistryAssetRecordReadingBody", "RegistryAssetRegisterBody", "RegistryAssetRejectReadingBody", "RegistryAssetReparentBody", "RegistryAssetStepBody", "RegistryAssetTriggerConditionBody", "RegistryAssetUpdateDetailsBody", "RegistryAssetUpdatePlanBody", "RegistryCustodyAcceptBody", "RegistryCustodyBreakSealBody", "RegistryCustodyCancelBody", "RegistryCustodyCancelDisposalBody", "RegistryCustodyExecuteBody", "RegistryCustodyHandoverBody", "RegistryCustodyInitiateBody", "RegistryCustodyInspectBody", "RegistryCustodyLocationBody", "RegistryCustodyOrderDisposalBody", "RegistryCustodyPutIntoBody", "RegistryCustodyRegisterBody", "RegistryCustodyRejectBody", "RegistryCustodySealBody", "RegistryCustodyTakeOutBody", "RegistryEntry", "RegistryInstrumentAmendBody", "RegistryInstrumentDuplicateBody", "RegistryInstrumentEndorseBody", "RegistryInstrumentIssueBody", "RegistryInstrumentReinstateBody", "RegistryInstrumentRenewBody", "RegistryInstrumentRevokeBody", "RegistryInstrumentSurrenderBody", "RegistryInstrumentSuspendBody", "RegistryInstrumentTransferHolderBody", "RegistryInstrumentTransferReissueBody", "RegistryInstrumentTransitionBody", "RegistryInstrumentVerifyQrBody", "RegistryPartyAddAddressBody", "RegistryPartyAddIdentifierBody", "RegistryPartyAddRelationshipBody", "RegistryPartyConfirmBody", "RegistryPartyCreateBody", "RegistryPartyCreateBodyAddressesItem", "RegistryPartyCreateBodyIdentifiersItem", "RegistryPartyCreateBodyNames", "RegistryPartyDeactivateBody", "RegistryPartyEndRelationshipBody", "RegistryPartyMatchBody", "RegistryPartyMatchBodyIdentifiersItem", "RegistryPartyMatchBodyNames", "RegistryPartyMergeBody", "RegistryPartyReactivateBody", "RegistryPartyRejectBody", "RegistryPartyRetireAddressBody", "RegistryPartyRetireIdentifierBody", "RegistryPartySaveIdentifierTypesBody", "RegistryPartySaveMatchConfigBody", "RegistryPartySaveMatchConfigBodyComparatorsItem", "RegistryPartySaveMatchConfigBodyRulesItem", "RegistryPartySnapshotBody", "RegistryPartyUnmergeBody", "RegistryPartyUpdateBody", "RegistryPartyUpdateBodyNames", "RegistryRegisterAppendBody", "RegistryRegisterCloseBody", "RegistryRegisterCorrectBody", "RegistryRegisterDefineBody", "RegistryRegisterDefineBodyColumns", "RegistryRegisterDefineBodyColumnsFieldsItem", "RegistryRegisterExtractBody", "RegistryRegistryAllocateBody", "RegistryRegistryClosePeriodBody", "RegistryRegistryCreateBody", "RegistryRegistryDefineSeriesBody", "RegistryRegistryMarkUsedBody", "RegistryRegistryMirrorBody", "RegistryRegistryPublishTypeBody", "RegistryRegistryPublishTypeBodyDefinition", "RegistryRegistryPublishTypeBodyDefinitionDocuments", "RegistryRegistryPublishTypeBodyDefinitionLifecycle", "RegistryRegistryPublishTypeBodyDefinitionLifecycleStatesItem", "RegistryRegistryPublishTypeBodyDefinitionLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyDefinitionNumbering", "RegistryRegistryPublishTypeBodyDefinitionSchema", "RegistryRegistryPublishTypeBodyDefinitionSchemaFieldsItem", "RegistryRegistryPublishTypeBodyDefinitionValidity", "RegistryRegistryPublishTypeBodyDefinitionVerification", "RegistryRegistryPublishTypeBodyDocuments", "RegistryRegistryPublishTypeBodyLifecycle", "RegistryRegistryPublishTypeBodyLifecycleStatesItem", "RegistryRegistryPublishTypeBodyLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyNumbering", "RegistryRegistryPublishTypeBodySchema", "RegistryRegistryPublishTypeBodySchemaFieldsItem", "RegistryRegistryPublishTypeBodyValidity", "RegistryRegistryPublishTypeBodyVerification", "RegistryRegistryTransitionBody", "RegistryRegistryUpdateBody", "RegistryRegistryVoidNumberBody", "ResourceDraft", "ResourcePatch", "ResourceQuery", "ResourcesAllotNextRequest", "ResourcesApprovalRequest", "ResourcesAvailableSearchRequest", "ResourcesBumpRequest", "ResourcesCancelAllotmentRequest", "ResourcesCancelRequest", "ResourcesDrawRequest", "ResourcesDrawVerifyRequest", "ResourcesExtendRequest", "ResourcesMoveRequest", "ResourcesNoticeRequest", "ResourcesReasonRequest", "ResourcesResourcesDefineTypeBody", "ResourcesResourcesSaveCalendarBody", "ResourcesRestPortBlackoutRequest", "ResourcesSeriesRequest", "ResourcesStatusRequest", "ResourcesVacateRequest", "RestartRequest", "ResubmitRequest", "ReturnTarget", "ReturnTaskRequest", "RosterOnCallRequest", "RosterRestPortAssignRequest", "RosterRestPortDecisionRequest", "RosterRestPortDemandRequest", "RosterRestPortMemberRequest", "RosterRestPortPeriodRequest", "RosterRestPortRandomiseRequest", "RosterRestPortRotationRequest", "RosterRestPortShiftRequest", "RosterRestPortSwapCreateRequest", "RostersRosterUpdateConstraintsBody", "RuleEvidence", "SaveDraftRequest", "ScheduleServiceSchedule", "ScheduleServiceTarget", "ScimError", "ScimGroup", "ScimGroupList", "ScimGroupRef", "ScimMember", "ScimMeta", "ScimMultiValue", "ScimName", "ScimPatchOperation", "ScimPatchRequest", "ScimPosting", "ScimSangamUser", "ScimUser", "ScimUserList", "Seat", "SeatHolding", "ServiceMocksCreateMock", "ServiceMocksToggle", "ServicePrincipal", "ServicePrincipalSecret", "SignalRequest", "SignatureCheck", "SlaRow", "SodCheck", "SodConflict", "SodException", "StartAdHocActivityRequest", "StartCaseRequest", "StartProcessRequest", "SuspensionRequest", "Task", "TaskDetail", "TaskForm", "TaskStat", "Tenant", "TenantBundle", "TerminateRequest", "TerminationResult", "TestBundleExport", "TestBundleVerify", "TestRun", "TimePoint", "TopicBacklog", "TopicInfo", "TopicRequest", "TraceContext", "TriggerRequest", "TtlRequest", "TypedValue", "UiPluginManifest", "UpdatePackageRequest", "User", "UserOperation", "ValidationIssue", "Variant", "VisitRecord", "WithdrawRequest", "WorkBpmnErrorRequest", "WorkCompleteRequest", "WorkFailRequest", "WorkOperation", "WorkOutcome", "WorkStep", "WorkStepRequest", "WorkUnlockRequest", "WorkerInfo"]
+__all__ = ["Number", "ActAgentBody", "ActConversationChannelBody", "ActRetentionClassBody", "ActRoutingStrategyBody", "ActServiceBody", "ActSlaModelBody", "ActTemplateBody", "ActionModelInvoke", "ActionModelPublish", "ActivityInstance", "ActivityStat", "AdHocActivity", "AdHocState", "AddCaseCommentRequest", "AddCommentRequest", "AgeBucket", "AgentUsage", "AiA2aBody", "AiA2aBodyParams", "AiA2aBodyParamsMessage", "AiA2aBodyParamsMessagePartsItem", "AiApproval", "AiClassification", "AiClassify", "AiCorrect", "AiDecide", "AiDraft", "AiDraftGenerate", "AiDraftReview", "AiEvalResult", "AiEvaluate", "AiEvaluation", "AiIngest", "AiIngestResult", "AiKbSearch", "AiKbVersion", "AiMcpBody", "AiMcpBodyParams", "AiProposal", "AiPropose", "AiReason", "AiRun", "AiStartRun", "AiUiDecisionRequest", "AiUiPublishKbRequest", "AiUiReviewRequest", "AlertRule", "AnalyticsSummary", "ApiContract", "ApiContractSummary", "AppealRequest", "Application", "ApplyRequest", "AssessmentRow", "Assignment", "AssignmentImpact", "AssignmentServiceNewAssignment", "AuditEntry", "AuditExportJob", "AuditExportRequest", "AuditVerifyResult", "Batch", "BatchControlRequest", "BatchFilter", "BatchItem", "BatchPreview", "BatchRequest", "BillingCollectionRequest", "BillingInvoiceRequest", "BillingPenaltyRequest", "BillingRefundRequest", "BillingRefundResult", "BillingWaiverRequest", "BookingModelAllotRequest", "BookingModelHoldRequest", "BookingModelRecurrence", "BookingModelWaitlistRequest", "BreakGlassGrant", "BreakGlassIssued", "BreakGlassRequest", "BreakGlassReview", "BreakpointsRequest", "BulkChunk", "BulkChunkReceipt", "BulkClaimRequest", "BulkCompleteRequest", "BulkCreateJob", "BulkFailure", "BulkJob", "BulkResult", "BulkRowInput", "BulkRowStatus", "BundleDiffEntry", "BundleDiffRequest", "BundleImportRequest", "BundleImportResult", "CalendarServiceSlotTemplate", "CancelAckRequest", "CandidateSeat", "CaseComment", "CaseDefinition", "CaseExecution", "CaseExecutionCommand", "CaseFilePublishConfigBody", "CaseInstance", "CaseInstanceCommand", "CaseVersion", "CatalogueEntry", "CellActivateRequest", "CellDrainStatus", "CellExportHandle", "CellImportRequest", "CellImportResult", "CellMoveRequest", "CellMovedRequest", "CellTenantChecksum", "CellTenantState", "CfActionItem", "CfActionItemServicePendency", "CfAddPartyRequest", "CfAdjournRequest", "CfAgendaItem", "CfAgendaOrder", "CfAgendaRequest", "CfApproveBody", "CfApproveMinutesRequest", "CfAtrBody", "CfAttendance", "CfAttendanceRequest", "CfCarryResult", "CfCaseFile", "CfCaseFileRestPortAssignRequest", "CfCaseFileRestPortExtendRequest", "CfCaseLink", "CfCaseParty", "CfCaseView", "CfCommittee", "CfCommitteeView", "CfConfigEntry", "CfConflict", "CfConstituteRequest", "CfCreateRequest", "CfDeadline", "CfDecision", "CfDecisionInput", "CfDocument", "CfDocumentRequest", "CfDraftBody", "CfDuplicateCandidate", "CfEntry", "CfEscalationStep", "CfEvent", "CfFolder", "CfFolderRequest", "CfFollowUpRequest", "CfHearing", "CfHearingRequest", "CfLinkRequest", "CfLinkedRecord", "CfMeeting", "CfMeetingControllerReasonBody", "CfMeetingView", "CfMember", "CfMemberInput", "CfMergeRequest", "CfMilestoneRequest", "CfMinutes", "CfMove", "CfNote", "CfNoteRequest", "CfNotice", "CfOpenRequest", "CfOutcomeRequest", "CfParty", "CfPartyInput", "CfPartyResult", "CfPublishedConfig", "CfQuorumStatus", "CfReasonRequest", "CfReassignBody", "CfReconstituteRequest", "CfRecordRequest", "CfReference", "CfReferenceControllerReasonBody", "CfReferenceRestPortAssignRequest", "CfReferenceRestPortExtendRequest", "CfReferenceServicePendency", "CfReferenceView", "CfRegisterRequest", "CfReplyRequest", "CfRescheduleRequest", "CfScheduleRequest", "CfSplitRequest", "CfStageRequest", "CfTextBody", "CfTransferRequest", "CfUpdateRequest", "CfVerifyRequest", "ChainVerification", "ChannelAddParticipant", "ChannelAttachment", "ChannelConversation", "ChannelCreateConversation", "ChannelHookResult", "ChannelMessage", "ChannelOptInRequest", "ChannelSendMessage", "ChannelSlackHookResult", "ChannelStatus", "ChecklistItem", "Clarification", "CleanupStatus", "ClockItem", "CloudEvent", "CodedReason", "Comment", "CompleteTaskRequest", "CompleteTaskResult", "ComplianceAuditEvidence", "ComplianceAuditEvidenceRequest", "ComplianceAuditVerification", "ComplianceBreach", "ComplianceBreachRequest", "ComplianceConsent", "ComplianceConsentArtefact", "ComplianceContact", "ComplianceGiveConsentRequest", "ComplianceImpactAssessment", "ComplianceImpactAssessmentRequest", "ComplianceIncident", "ComplianceIncidentRequest", "ComplianceJurisdiction", "ComplianceLawfulRequest", "ComplianceLawfulRequestBody", "ComplianceLogSegment", "CompliancePublishNoticeRequest", "CompliancePublishResult", "CompliancePurpose", "ComplianceReasonBody", "ComplianceRenderedNotice", "ComplianceReport", "ComplianceRespondLawfulRequest", "ComplianceRightsRequest", "ComplianceRightsSubmission", "ComplianceSealLogsRequest", "ComplianceSubmitIncidentRequest", "ComplianceTransferDecision", "ComplianceTransferRequest", "ComplianceVerifyLawfulRequest", "ComplianceWithdrawConsentRequest", "ConfigActivateRequest", "ConfigApproveRequest", "ConfigChangeRecord", "ConfigClassificationRequest", "ConfigCorrectionSlip", "ConfigCrosswalkRequest", "ConfigDocumentCheckRequest", "ConfigFinding", "ConfigFindingsResult", "ConfigMasterCode", "ConfigProfileVersion", "ConfigProfileVersionDocument", "ConfigRejectRequest", "ConfigResolvedProfile", "ConfigSeedResult", "ConfigSlipChange", "ConfigValidateRequest", "ConformanceResult", "ConsequencePreview", "ContractOperation", "CreateLinkRequest", "CreatePackageRequest", "CrossBoundaryMoveRequest", "CustomField", "CustomFieldDefineRequest", "CustomFieldRetireRequest", "DataObjectDef", "DataObjectField", "DebugStatus", "DebugStepResult", "DecisionDefinition", "DecisionEvaluateRequest", "DecisionEvaluateResult", "DelegateTaskRequest", "Delegation", "DeployedDefinition", "Deployment", "Deviation", "DeviceRegistryRegistration", "DispatchServiceUnitInput", "Document", "DocumentGenerateRequest", "DocumentTemplate", "DurationReportRow", "ElementTemplateApply", "ElementTemplatePublish", "EndAssignmentRequest", "EntityLink", "EnvBinding", "EnvBindingApproval", "EnvBindingRequest", "EventChannel", "EventDefinition", "Evidence", "ExplainRequest", "ExplainResult", "ExtendLockRequest", "ExternalTaskLogEntry", "ExternalWork", "FetchAndLockRequest", "FieldChange", "FieldError", "FieldTemplate", "FieldTemplateEvidenceRules", "FieldTemplateGeofenceRule", "FieldTemplateGrade", "FieldTemplateItem", "FieldTemplateOption", "FieldTemplateScoring", "FieldTemplateSection", "FieldTemplateVisibleIf", "FieldVisit", "FieldWorkCreateAssignmentBody", "FieldWorkCreateJobBody", "FieldWorkDefineScheduleBody", "FieldWorkDevicePolicyBody", "FieldWorkDeviceStatusBody", "FieldWorkJobActionBody", "FieldWorkPingBody", "FieldWorkPublishTemplateBody", "FieldWorkReassignBody", "FieldWorkRegisterDeviceBody", "FieldWorkResolveConflictBody", "FieldWorkRespondOfferBody", "FieldWorkReviewBody", "FieldWorkRouteBody", "FieldWorkSelectBody", "FieldWorkStartTripBody", "FieldWorkTransitionBody", "FieldWorkTripActionBody", "FieldWorkUnitStatusBody", "FieldWorkUpsertUnitBody", "FormDraft", "FormValidateRequest", "FormValidationResult", "FormVersion", "GeoGeoCheckFenceBody", "GeoGeoDefineFenceBody", "GeoGeoDefineLayerBody", "GeoGeoDefineLayerBodyLevelsItem", "GeoGeoImportBoundariesBody", "GeoGeoImportBoundariesBodyLayer", "GeoGeoImportBoundariesBodyLayerLevelsItem", "GeoGeoImportExternalBody", "GeoGeoOverlapsBody", "GeoGeoPutFeatureBody", "GeoGeoPutObjectGeometryBody", "GeoGeoQueryExternalBody", "GeoGeoRegisterExternalBody", "GitConfig", "GitStatus", "GitSyncRequest", "GitSyncResult", "Grievance", "GrievanceReceipt", "GrievanceRequest", "Group", "HandlerParameter", "HealthHookResult", "HistoricActivityInstance", "HistoricDecision", "HistoricIncident", "HistoricJobLog", "HistoricProcessInstance", "HistoricTask", "HistoricVariable", "IdentityProvider", "IdentitySyncResult", "IdentityTestResult", "InboxEntry", "Incident", "IncidentAction", "InjectionRequest", "InjectionResult", "InstalledPack", "InstanceHandler", "InstanceQueryRequest", "InstanceQueryResult", "InstanceUpdateRequest", "InstanceUpdateResult", "Job", "JobRetriesRequest", "JobSummary", "JobSuspensionRequest", "LeaveRequest", "LedgerAccount", "LedgerAccountKey", "LedgerAccountRef", "LedgerAccountingEntry", "LedgerCloseRequest", "LedgerFreezeOrder", "LedgerFreezeRequest", "LedgerHeldRequest", "LedgerOperationRequest", "LedgerReconcileRequest", "LedgerReconcileRow", "LedgerResult", "LegalHoldRequest", "LifecycleEvent", "LockState", "LookupResult", "Me", "MeLocale", "MessageRequest", "MessageResult", "MigrationExecuteRequest", "MigrationInstruction", "MigrationPlan", "MigrationPlanRequest", "ModelEditLease", "ModelFenceRequest", "ModelLeaseOutcome", "ModelTakeoverRequest", "ModelTokenWalkRequest", "ModellerFenceRequest", "ModellerRunActionRequest", "ModificationInstruction", "ModifyPreviewRequest", "ModifyRequest", "ModuleDefaultsRequest", "ModuleDefaultsResult", "NodeStatus", "NoteRequest", "Notification", "NotificationFailure", "NumberGrouping", "OnboardingApproveRequest", "OnboardingDryRun", "OnboardingProblem", "OnboardingReadiness", "OnboardingReasonRequest", "OnboardingRequest", "OnboardingRequestAdminSpec", "OnboardingRequestComplianceSpec", "OnboardingRequestConnectorBindingSpec", "OnboardingRequestGoLiveSpec", "OnboardingRequestPackSpec", "OnboardingRequestProfileSpec", "OnboardingRequestRoleRuleSpec", "OnboardingRequestRoleSpec", "OnboardingRequestSeedSpec", "OnboardingRequestTenantSpec", "OnboardingRequestTestCall", "OnboardingRun", "OnboardingSecurity", "OpenTaskCount", "OpsAdvance", "OpsDashboard", "OpsJob", "OpsMetric", "OpsPurge", "OpsReason", "OpsSecret", "OpsUiAdvanceRequest", "OpsUiIndexJobRequest", "OpsUiRetentionExecute", "OpsUiSecretRequest", "OpsUiVariableRequest", "OpsValue", "OrgUnit", "OrgUnitImportResult", "OutboxDelivery", "OutboxRepairRequest", "OutboxStats", "OutboxUsage", "OutcomeUnknownRequest", "OutcomeUnknownResult", "PackDeployResult", "PackLifecycleRequest", "PackResolution", "PackResolveRequest", "PackUninstalled", "Package", "PackageAddCommentRequest", "PackageBundle", "PackageComment", "PackageDiffEntry", "PackageEvent", "PackageImportRequest", "PackageSignature", "PackageTransitionRequest", "PackageVerification", "PageBlock", "PageModel", "PageSummary", "Participant", "PartitionCount", "PgAchievement", "PgAchievementRequest", "PgAlert", "PgAllocationRequest", "PgCampaignRequest", "PgCampaignResult", "PgCurrentConfig", "PgEvent", "PgFinancial", "PgFinancialRequest", "PgFinding", "PgGeneratePeriodsRequest", "PgImportRequest", "PgImportResult", "PgMilestone", "PgMilestoneRequest", "PgMilestoneServiceProgress", "PgNode", "PgOutcome", "PgPeriod", "PgPeriodStateRequest", "PgProgramme", "PgProgrammeInput", "PgProgressServiceProgress", "PgPublished", "PgReasonBody", "PgRefreshResult", "PgReturnDetail", "PgReturnRow", "PgReturnValuesRequest", "PgReviseTargetRequest", "PgRollupRequest", "PgRollupResult", "PgSetTargetRequest", "PgSnapshot", "PgStatusRequest", "PgStoredFinding", "PgTarget", "PgUpdateProgrammeRequest", "PgValue", "PgVarianceRequest", "PgVersionBody", "PluginInfo", "PoisonInboundItem", "PoisonInboundParked", "Policy", "PolicyMatch", "PolicyVersion", "PortalMessage", "PortalService", "PowerTable", "PowerTableCheckResult", "PowerTableTestCase", "PowerTableTestOutcome", "PowerTableTransitionRequest", "Problem", "ProcessDefinition", "ProcessInstance", "ProgrammePublishConfigBody", "ProgrammePublishConfigBodyVariance", "PromotionApplyRequest", "PromotionPlan", "PromotionPlanRequest", "PublishResult", "QueueCallRequest", "QueueCompleteRequest", "QueueOpenRequest", "QueuePolicy", "QueueReasonRequest", "QueueRestPortCounterRequest", "QueueRestPortIssueTokenRequest", "QueueRestPortServicePointRequest", "QueueRestPortTransferRequest", "QueueStatusRequest", "RandomSelectorCandidate", "ReasonRequest", "ReceiveMatrixTransactionRequest", "ReconciliationItem", "ReconciliationResolveRequest", "RegistryAssetAddMeterBody", "RegistryAssetAddPlanBody", "RegistryAssetCorrectReadingBody", "RegistryAssetCreateWorkOrderBody", "RegistryAssetDefineClassBody", "RegistryAssetDefineClassBodyDepreciation", "RegistryAssetDefineClassBodyMaintenancePlansItem", "RegistryAssetDefineClassBodyMetersItem", "RegistryAssetDisposeBody", "RegistryAssetGenerateDueBody", "RegistryAssetMoveBody", "RegistryAssetPlanStatusBody", "RegistryAssetRecordReadingBody", "RegistryAssetRegisterBody", "RegistryAssetRejectReadingBody", "RegistryAssetReparentBody", "RegistryAssetStepBody", "RegistryAssetTriggerConditionBody", "RegistryAssetUpdateDetailsBody", "RegistryAssetUpdatePlanBody", "RegistryCustodyAcceptBody", "RegistryCustodyBreakSealBody", "RegistryCustodyCancelBody", "RegistryCustodyCancelDisposalBody", "RegistryCustodyExecuteBody", "RegistryCustodyHandoverBody", "RegistryCustodyInitiateBody", "RegistryCustodyInspectBody", "RegistryCustodyLocationBody", "RegistryCustodyOrderDisposalBody", "RegistryCustodyPutIntoBody", "RegistryCustodyRegisterBody", "RegistryCustodyRejectBody", "RegistryCustodySealBody", "RegistryCustodyTakeOutBody", "RegistryEntry", "RegistryInstrumentAmendBody", "RegistryInstrumentDuplicateBody", "RegistryInstrumentEndorseBody", "RegistryInstrumentIssueBody", "RegistryInstrumentReinstateBody", "RegistryInstrumentRenewBody", "RegistryInstrumentRevokeBody", "RegistryInstrumentSurrenderBody", "RegistryInstrumentSuspendBody", "RegistryInstrumentTransferHolderBody", "RegistryInstrumentTransferReissueBody", "RegistryInstrumentTransitionBody", "RegistryInstrumentVerifyQrBody", "RegistryPartyAddAddressBody", "RegistryPartyAddIdentifierBody", "RegistryPartyAddRelationshipBody", "RegistryPartyConfirmBody", "RegistryPartyCreateBody", "RegistryPartyCreateBodyAddressesItem", "RegistryPartyCreateBodyIdentifiersItem", "RegistryPartyCreateBodyNames", "RegistryPartyDeactivateBody", "RegistryPartyEndRelationshipBody", "RegistryPartyMatchBody", "RegistryPartyMatchBodyIdentifiersItem", "RegistryPartyMatchBodyNames", "RegistryPartyMergeBody", "RegistryPartyReactivateBody", "RegistryPartyRejectBody", "RegistryPartyRetireAddressBody", "RegistryPartyRetireIdentifierBody", "RegistryPartySaveIdentifierTypesBody", "RegistryPartySaveMatchConfigBody", "RegistryPartySaveMatchConfigBodyComparatorsItem", "RegistryPartySaveMatchConfigBodyRulesItem", "RegistryPartySnapshotBody", "RegistryPartyUnmergeBody", "RegistryPartyUpdateBody", "RegistryPartyUpdateBodyNames", "RegistryRegisterAppendBody", "RegistryRegisterCloseBody", "RegistryRegisterCorrectBody", "RegistryRegisterDefineBody", "RegistryRegisterDefineBodyColumns", "RegistryRegisterDefineBodyColumnsFieldsItem", "RegistryRegisterExtractBody", "RegistryRegistryAllocateBody", "RegistryRegistryClosePeriodBody", "RegistryRegistryCreateBody", "RegistryRegistryDefineSeriesBody", "RegistryRegistryMarkUsedBody", "RegistryRegistryMirrorBody", "RegistryRegistryPublishTypeBody", "RegistryRegistryPublishTypeBodyDefinition", "RegistryRegistryPublishTypeBodyDefinitionDocuments", "RegistryRegistryPublishTypeBodyDefinitionLifecycle", "RegistryRegistryPublishTypeBodyDefinitionLifecycleStatesItem", "RegistryRegistryPublishTypeBodyDefinitionLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyDefinitionNumbering", "RegistryRegistryPublishTypeBodyDefinitionSchema", "RegistryRegistryPublishTypeBodyDefinitionSchemaFieldsItem", "RegistryRegistryPublishTypeBodyDefinitionValidity", "RegistryRegistryPublishTypeBodyDefinitionVerification", "RegistryRegistryPublishTypeBodyDocuments", "RegistryRegistryPublishTypeBodyLifecycle", "RegistryRegistryPublishTypeBodyLifecycleStatesItem", "RegistryRegistryPublishTypeBodyLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyNumbering", "RegistryRegistryPublishTypeBodySchema", "RegistryRegistryPublishTypeBodySchemaFieldsItem", "RegistryRegistryPublishTypeBodyValidity", "RegistryRegistryPublishTypeBodyVerification", "RegistryRegistryTransitionBody", "RegistryRegistryUpdateBody", "RegistryRegistryVoidNumberBody", "ResourceDraft", "ResourcePatch", "ResourceQuery", "ResourcesAllotNextRequest", "ResourcesApprovalRequest", "ResourcesAvailableSearchRequest", "ResourcesBumpRequest", "ResourcesCancelAllotmentRequest", "ResourcesCancelRequest", "ResourcesDrawRequest", "ResourcesDrawVerifyRequest", "ResourcesExtendRequest", "ResourcesMoveRequest", "ResourcesNoticeRequest", "ResourcesReasonRequest", "ResourcesResourcesDefineTypeBody", "ResourcesResourcesSaveCalendarBody", "ResourcesRestPortBlackoutRequest", "ResourcesSeriesRequest", "ResourcesStatusRequest", "ResourcesVacateRequest", "RestartRequest", "ResubmitRequest", "ReturnTarget", "ReturnTaskRequest", "RosterOnCallRequest", "RosterRestPortAssignRequest", "RosterRestPortDecisionRequest", "RosterRestPortDemandRequest", "RosterRestPortMemberRequest", "RosterRestPortPeriodRequest", "RosterRestPortRandomiseRequest", "RosterRestPortRotationRequest", "RosterRestPortShiftRequest", "RosterRestPortSwapCreateRequest", "RostersRosterUpdateConstraintsBody", "RuleEvidence", "SaveDraftRequest", "ScheduleServiceSchedule", "ScheduleServiceTarget", "ScimError", "ScimGroup", "ScimGroupList", "ScimGroupRef", "ScimMember", "ScimMeta", "ScimMultiValue", "ScimName", "ScimPatchOperation", "ScimPatchRequest", "ScimPosting", "ScimSangamUser", "ScimUser", "ScimUserList", "Seat", "SeatHolding", "ServiceMocksCreateMock", "ServiceMocksToggle", "ServicePrincipal", "ServicePrincipalSecret", "SignalRequest", "SignatureCheck", "SlaRow", "SodCheck", "SodConflict", "SodException", "StartAdHocActivityRequest", "StartCaseRequest", "StartProcessRequest", "SuspensionRequest", "Task", "TaskDetail", "TaskForm", "TaskStat", "Tenant", "TenantBundle", "TerminateRequest", "TerminationResult", "TestBundleExport", "TestBundleVerify", "TestClock", "TestClockChange", "TestRun", "TimePoint", "TopicBacklog", "TopicInfo", "TopicRequest", "TraceContext", "TriggerRequest", "TtlRequest", "TypedValue", "UiPluginManifest", "UpdatePackageRequest", "User", "UserOperation", "ValidationIssue", "Variant", "VisitRecord", "WithdrawRequest", "WorkBpmnErrorRequest", "WorkCompleteRequest", "WorkFailRequest", "WorkOperation", "WorkOutcome", "WorkStep", "WorkStepRequest", "WorkUnlockRequest", "WorkerInfo"]
 
 class ActAgentBody(TypedDict, total=False):
     """Request body of RegistryController.action, read by the service as a JSON object; typed from the keys the service reads (M-051). Members it does not read are accepted and ignored.
@@ -503,6 +503,39 @@ AnalyticsSummary.__doc__ = """Process KPIs (R65).
 
 Schema ``AnalyticsSummary``."""
 
+class _ApiContractRequired(TypedDict):
+    packageId: str
+    contractId: str
+    version: int
+    format: Literal["OPENAPI", "ASYNCAPI"]
+    sha256: str
+    document: dict[str, Any]
+
+
+class ApiContract(_ApiContractRequired, total=False):
+    """One stored contract version with its document (ApiContractStore.ApiContract).
+
+Schema ``ApiContract``."""
+    tenantId: str
+    specVersion: str
+
+
+class _ApiContractSummaryRequired(TypedDict):
+    packageId: str
+    contractId: str
+    version: int
+    format: Literal["OPENAPI", "ASYNCAPI"]
+    sha256: str
+
+
+class ApiContractSummary(_ApiContractSummaryRequired, total=False):
+    """One stored contract version (ApiContractStore.ApiContract without the document).
+
+Schema ``ApiContractSummary``."""
+    tenantId: str
+    specVersion: str
+
+
 class AppealRequest(TypedDict):
     """Appeal a decision.
 
@@ -893,6 +926,62 @@ The schema allows members it does not name (additionalProperties); they are kept
     wantedTo: str
     quantity: int
     attributes: dict[str, Any]
+
+
+class _BreakGlassGrantRequired(TypedDict):
+    grantId: str
+    tokenClass: str
+    holderPersonId: str
+    status: Literal["REQUESTED", "ISSUED", "REJECTED"]
+
+
+class BreakGlassGrant(_BreakGlassGrantRequired, total=False):
+    """A break-glass grant (M-084).
+
+Schema ``BreakGlassGrant``."""
+    requestedBy: str
+    reason: str
+    requiredApprovals: int
+    approvals: list[dict[str, Any]]
+    validMinutes: int
+    issuedAt: str
+    expiresAt: str
+    firstUsedAt: str
+    lastUsedAt: str
+    useCount: int
+    reviewStatus: Literal["NONE", "PENDING", "DONE"]
+    reviewedBy: str
+    reviewOutcome: Literal["ACCEPTED", "ESCALATED"]
+    reviewedAt: str
+
+
+class BreakGlassIssued(TypedDict):
+    """The last required approval issued the token: it is shown here once and never again.
+
+Schema ``BreakGlassIssued``."""
+    grant: BreakGlassGrant
+    token: str
+    expiresAt: str
+
+
+class BreakGlassRequest(TypedDict):
+    """Request a break-glass grant.
+
+Schema ``BreakGlassRequest``."""
+    tokenClass: str
+    holderPersonId: str
+    reason: str
+
+
+class _BreakGlassReviewRequired(TypedDict):
+    outcome: Literal["ACCEPTED", "ESCALATED"]
+
+
+class BreakGlassReview(_BreakGlassReviewRequired, total=False):
+    """Post-use review of a grant.
+
+Schema ``BreakGlassReview``."""
+    notes: str
 
 
 class BreakpointsRequest(TypedDict):
@@ -2455,6 +2544,16 @@ Schema ``ChannelSendMessage``."""
     clientKey: str
 
 
+class ChannelSlackHookResult(TypedDict, total=False):
+    """Slack Events API answer: challenge for url_verification, otherwise the delivery counts.
+
+Schema ``ChannelSlackHookResult``."""
+    challenge: str
+    accepted: int
+    duplicates: int
+    notOptedIn: int
+
+
 class _ChannelStatusRequired(TypedDict):
     key: str
     channel: str
@@ -3248,6 +3347,25 @@ Schema ``ConsequencePreview``."""
     requiresFourEyes: bool
     affectedCount: int
     limitExceeded: bool
+
+
+class _ContractOperationRequired(TypedDict):
+    operationId: str
+    format: Literal["OPENAPI", "ASYNCAPI"]
+
+
+class ContractOperation(_ContractOperationRequired, total=False):
+    """One operation of a contract (ContractOperations.Operation without the document): method and path for OpenAPI, action and channel for AsyncAPI; schemas have their local references inlined.
+
+Schema ``ContractOperation``."""
+    method: str
+    path: str
+    action: str
+    channel: str
+    summary: str
+    requestSchema: dict[str, Any]
+    responseSchemas: dict[str, Any]
+    servers: list[str]
 
 
 class _CreateLinkRequestRequired(TypedDict):
@@ -6175,6 +6293,20 @@ Schema ``PgCampaignResult``."""
     processesStarted: int
 
 
+class _PgCurrentConfigRequired(TypedDict):
+    version: int
+    contentHash: str
+    config: dict[str, Any]
+
+
+class PgCurrentConfig(_PgCurrentConfigRequired, total=False):
+    """The current published programme configuration (Java IndicatorRegistry.Current, C3-09).
+
+Schema ``PgCurrentConfig``."""
+    definedBy: str
+    definedAt: str
+
+
 class PgEvent(TypedDict, total=False):
     """Event (Java ReturnService.Event).
 
@@ -6840,6 +6972,7 @@ Schema ``ProcessInstance``."""
     businessStatus: str
     superProcessInstanceId: str
     rootProcessInstanceId: str
+    traceId: str
 
 
 class ProgrammePublishConfigBody(TypedDict, total=False):
@@ -7038,6 +7171,13 @@ class ReasonRequest(TypedDict):
 
 Schema ``ReasonRequest``."""
     reason: str
+
+
+class ReceiveMatrixTransactionRequest(TypedDict):
+    """Contract schema ReceiveMatrixTransactionRequest.
+
+Schema ``ReceiveMatrixTransactionRequest``."""
+    events: list[dict[str, Any]]
 
 
 class ReconciliationItem(TypedDict, total=False):
@@ -9387,6 +9527,9 @@ Schema ``Task``."""
     formKey: str
     delegationState: str
     variables: dict[str, Any]
+    amount: int
+    currency: str
+    reference: str
 
 
 class TaskDetail(TypedDict, total=False):
@@ -9505,6 +9648,28 @@ class TestBundleVerify(TypedDict):
 
 Schema ``TestBundleVerify``."""
     bundle: str
+
+
+class _TestClockRequired(TypedDict):
+    now: str
+    offsetMs: int
+
+
+class TestClock(_TestClockRequired, total=False):
+    """The test-mode clock (TestModeClock): the instant the engine and business clocks now read and their offset from the wall clock; `action` is set on a change.
+
+Schema ``TestClock``."""
+    action: Literal["ADVANCE", "SET", "RESET"]
+
+
+class TestClockChange(TypedDict, total=False):
+    """Exactly one of advanceBy (a positive ISO-8601 duration), set (an instant) or reset (true); reason is recorded in the TEST_CLOCK_CHANGED audit event.
+
+Schema ``TestClockChange``."""
+    advanceBy: str
+    set: str
+    reset: bool
+    reason: str
 
 
 class TestRun(TypedDict, total=False):

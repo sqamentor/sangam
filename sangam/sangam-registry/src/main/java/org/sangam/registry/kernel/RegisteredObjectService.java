@@ -141,7 +141,7 @@ public final class RegisteredObjectService {
                 "typeVersion", type.version(), "kind", type.kind().name(), "number", number, "state", initialState,
                 "attrsDigest", digest(attrs)));
         insertVersion(c, o, "CREATE", null, ev.eventId(), now, ctx.actor());
-        pushExternal(ctx, type, o, "CREATE");
+        pushExternal(c, ctx, type, o, "CREATE");
         return o;
     }
 
@@ -253,7 +253,7 @@ public final class RegisteredObjectService {
         facts.put("attrsDigest", digest(after.attrs()));
         AuditChain.AuditEvent ev = audit.record(c, ctx, id, "REGISTRY_OBJECT_" + changeType, facts);
         insertVersion(c, after, changeType, reason, ev.eventId(), now, ctx.actor());
-        pushExternal(ctx, typeOf(c, after), after, changeType);
+        pushExternal(c, ctx, typeOf(c, after), after, changeType);
         return after;
     }
 
@@ -272,9 +272,9 @@ public final class RegisteredObjectService {
                 o.holderPartyId(), Json.write(o.attrs()), auditEventId, at, by);
     }
 
-    private void pushExternal(RegistryContext ctx, ObjectTypeDefinition type, RegisteredObject o, String change) {
+    private void pushExternal(Connection c, RegistryContext ctx, ObjectTypeDefinition type, RegisteredObject o, String change) {
         if ("EXTERNAL".equalsIgnoreCase(Maps.str(type.extensions(), "systemOfRecord"))) {
-            ports.records().push(ctx, type.typeKey(), o.id(), o.externalRef(), change, o.toMap());
+            ports.records().push(c, ctx, type.typeKey(), o.id(), o.externalRef(), change, o.toMap());
         }
     }
 
@@ -313,7 +313,7 @@ public final class RegisteredObjectService {
     // ------------------------------------------------------------------------------------------------ queries
 
     public RegisteredObject get(Connection c, RegistryContext ctx, String id) {
-        SqlPredicate vis = ports.visibility().visible(ctx, RESOURCE, "o");
+        SqlPredicate vis = ports.visibility().visible(c, ctx, RESOURCE, "o");
         List<Object> params = new ArrayList<>(List.of(id, ctx.tenant()));
         params.addAll(vis.params());
         return Jdbc.one(c, "SELECT " + RegisteredObject.COLUMNS + " FROM REG_OBJECT o WHERE o.id=? AND o.tenant_id=? AND ("
@@ -322,7 +322,7 @@ public final class RegisteredObjectService {
     }
 
     public RegisteredObject byNumber(Connection c, RegistryContext ctx, String typeKey, String number) {
-        SqlPredicate vis = ports.visibility().visible(ctx, RESOURCE, "o");
+        SqlPredicate vis = ports.visibility().visible(c, ctx, RESOURCE, "o");
         List<Object> params = new ArrayList<>(List.of(ctx.tenant(), number));
         String typeFilter = "";
         if (typeKey != null) {
@@ -352,7 +352,7 @@ public final class RegisteredObjectService {
         add(where, params, "o.object_number", q.number());
         add(where, params, "o.subject_ref", q.subjectRef());
         return Db.page(c, dialect, "SELECT " + RegisteredObject.COLUMNS + " FROM REG_OBJECT o", where.toString(), params,
-                ports.visibility().visible(ctx, RESOURCE, "o"), "o.created_at DESC, o.id", q.page(), q.size(),
+                ports.visibility().visible(c, ctx, RESOURCE, "o"), "o.created_at DESC, o.id", q.page(), q.size(),
                 RegisteredObject::map);
     }
 

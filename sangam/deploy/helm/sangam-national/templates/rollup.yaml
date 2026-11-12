@@ -23,11 +23,14 @@ spec:
             - { name: SANGAM_RU_PORT, value: {{ $r.port | quote }} }
             - { name: SANGAM_RU_MANAGEMENT_PORT, value: {{ $r.managementPort | quote }} }
             - { name: SANGAM_ROLLUP_SHARDS, value: {{ $r.shards | quote }} }
+            # M-063: an ingest array is projected as one pre-aggregated batch
+            - { name: SANGAM_RU_PRE_AGGREGATE, value: {{ $r.preAggregate | quote }} }
             - { name: SANGAM_RU_DB_URL, value: {{ required "rollup.database.jdbcUrl is required" $r.database.jdbcUrl | quote }} }
             - name: SANGAM_RU_DB_USER
               valueFrom: { secretKeyRef: { name: {{ required "rollup.database.existingSecret" $r.database.existingSecret }}, key: username } }
             - name: SANGAM_RU_DB_PASSWORD
               valueFrom: { secretKeyRef: { name: {{ $r.database.existingSecret }}, key: password } }
+            # <token>:CELL,<token>:DASHBOARD and, with state roll-ups, one <token>:TIER per state (M-063)
             - name: SANGAM_RU_TOKENS
               valueFrom: { secretKeyRef: { name: {{ required "rollup.tokensSecret" $r.tokensSecret }}, key: tokens } }
       volumes:
@@ -42,4 +45,61 @@ spec:
   selector: { app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/name: rollup }
   ports:
     - { name: http, port: {{ $r.port }}, targetPort: http }
+{{- /* M-063: optional state roll-up tier. Each state instance (same image) projects its cells and forwards its counts
+     as explicit metric events to the national ingest with a TIER token. The cells of that state point their roll-up
+     relay (SANGAM_ROLLUP_INGEST_URL) at the state instance. No states = a single national roll-up (the default). */}}
+{{- range $st := $r.states }}
+{{- $sn := printf "rollup-%s" (required "rollup.states[].name is required" $st.name) }}
+{{- $cfg := dict "repository" $r.repository "port" $r.port "managementPort" $r.managementPort "resources" (default $r.resources $st.resources) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name $sn }}
+  labels: {{ include "national.labels" (dict "root" $ "name" $sn) | nindent 4 }}
+spec:
+  replicas: {{ default 1 $st.replicaCount }}
+  selector:
+    matchLabels: { app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $sn }} }
+  template:
+    metadata:
+      labels: {{ include "national.labels" (dict "root" $ "name" $sn) | nindent 8 }}
+    spec:
+      {{- include "national.pod" (dict "root" $) | nindent 6 }}
+      containers:
+        - name: rollup
+          {{- include "national.container" (dict "root" $ "cfg" $cfg) | nindent 10 }}
+          env:
+            - { name: SANGAM_RU_PORT, value: {{ $r.port | quote }} }
+            - { name: SANGAM_RU_MANAGEMENT_PORT, value: {{ $r.managementPort | quote }} }
+            - { name: SANGAM_ROLLUP_SHARDS, value: {{ $r.shards | quote }} }
+            - { name: SANGAM_RU_PRE_AGGREGATE, value: {{ $r.preAggregate | quote }} }
+            # the tenant-path prefix this instance owns, e.g. IN/RA
+            - { name: SANGAM_RU_SCOPE, value: {{ required "rollup.states[].scope is required" $st.scope | quote }} }
+            - { name: SANGAM_RU_INSTANCE_ID, value: {{ default $sn $st.instanceId | quote }} }
+            - { name: SANGAM_RU_UPSTREAM_URL, value: {{ default (printf "http://%s:%v/api/v1/ingest" $name $r.port) $st.upstreamUrl | quote }} }
+            # a national token with role TIER (Secret key upstreamToken)
+            - name: SANGAM_RU_UPSTREAM_TOKEN
+              valueFrom: { secretKeyRef: { name: {{ required "rollup.states[].tokensSecret is required" $st.tokensSecret }}, key: upstreamToken } }
+            - { name: SANGAM_RU_DB_URL, value: {{ required "rollup.states[].database.jdbcUrl is required" $st.database.jdbcUrl | quote }} }
+            - name: SANGAM_RU_DB_USER
+              valueFrom: { secretKeyRef: { name: {{ required "rollup.states[].database.existingSecret is required" $st.database.existingSecret }}, key: username } }
+            - name: SANGAM_RU_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $st.database.existingSecret }}, key: password } }
+            # this state's cells (<token>:CELL) and dashboards (<token>:DASHBOARD)
+            - name: SANGAM_RU_TOKENS
+              valueFrom: { secretKeyRef: { name: {{ $st.tokensSecret }}, key: tokens } }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name $sn }}
+  labels: {{ include "national.labels" (dict "root" $ "name" $sn) | nindent 4 }}
+spec:
+  selector: { app.kubernetes.io/instance: {{ $.Release.Name }}, app.kubernetes.io/name: {{ $sn }} }
+  ports:
+    - { name: http, port: {{ $r.port }}, targetPort: http }
+{{- end }}
 {{- end }}

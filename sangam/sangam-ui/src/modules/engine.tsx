@@ -8,14 +8,15 @@
  *   a mandatory reason where the API asks for one, an Idempotency-Key per attempt (R41), and the server response shown.
  * Labels are i18n keys. Paths use {placeholders} resolved from the selected row, then the filter values.
  */
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { http, request, type Query } from '../api/client';
+import { ApiError, http, request, type Query } from '../api/client';
 import type { FormField, FormSchema } from '../api/types';
 import { announce, useAction, useAsync, usePaged } from '../lib/hooks';
 import { fmtDate } from '../i18n';
 import { truncate } from '../lib/text';
 import { FormRenderer, validateForm, type FormValues } from '../components/FormRenderer';
+import { PurposeCodeField, isPurposeCode } from './purposeField';
 import { Badge, DataTable, Dialog, Empty, JsonView, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, Section, TabPanel, Tabs, TextArea, type Column } from '../components/ui';
 
 export type Row = Record<string, unknown>;
@@ -36,10 +37,11 @@ export interface Act {
   /** Ask for a reason; sent as body.reason, or as ?reason= for DELETE / reason: 'query'. */
   reason?: 'body' | 'query';
   /**
-   * Send the reason in this request header instead (e.g. X-Purpose of a registry identifier reveal,
-   * PartyController.java:29, :119-124). An HTTP header carries printable ASCII only, so other text is refused here.
+   * Ask for a declared processing purpose and send its CODE in this request header (X-Purpose of a registry identifier
+   * reveal, PartyController.java:29, :119-124). Never free text: the server binds it as the compliance purpose key
+   * (SL-166 (5)); the user picks the purpose by its name (purposeField.tsx).
    */
-  reasonHeader?: string;
+  purposeHeader?: string;
   /** Body fields taken from the selected row (e.g. an id the server wants in the body as well as in the path). */
   bodyFromRow?: (r: Row) => Row;
   danger?: boolean;
@@ -59,6 +61,33 @@ export interface Act {
    * resource type, P49). Picked values that are no longer offered are dropped when the options change.
    */
   dynamicValues?: Record<string, (values: FormValues) => { value: string; label: string }[]>;
+  /**
+   * Prefill from the server when the dialog opens: GET this path and turn the answer into form values (prefillFrom).
+   * Keys of the answer named in `omit` (metadata such as version) are dropped; keys no field takes go to the JSON
+   * "more fields" editor. 404 means nothing to prefill (the form opens empty); what the user already typed is kept.
+   */
+  load?: { path: string; omit?: string[] };
+}
+
+/**
+ * A server object → the dialog's values and its "more fields" JSON: a select gets the value as text, a number field a
+ * number, a JSON field pretty-printed JSON, any other field text; keys no field takes are returned as JSON (or '').
+ */
+export function prefillFrom(fields: FormField[], body: unknown, omit: string[] = []): { values: FormValues; json: string } {
+  const values: FormValues = {};
+  const rest: Row = {};
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { values, json: '' };
+  const byKey = new Map(flat(fields).filter((x) => x.key && !x.inPath && !x.inQuery).map((x) => [x.key!, x]));
+  for (const [k, v] of Object.entries(body as Row)) {
+    if (omit.includes(k) || v === undefined || v === null) continue;
+    const fd = byKey.get(k);
+    if (!fd) rest[k] = v;
+    else if (fd.type === 'select') values[k] = String(v);
+    else if (fd.type === 'number') values[k] = typeof v === 'number' ? v : Number(v);
+    else if (fd.json || typeof v === 'object') values[k] = JSON.stringify(v, null, 2);
+    else values[k] = String(v);
+  }
+  return { values, json: Object.keys(rest).length ? JSON.stringify(rest, null, 2) : '' };
 }
 
 export interface DetailSection {
@@ -218,8 +247,32 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
   const [result, setResult] = useState<unknown>();
   const [jsonErr, setJsonErr] = useState<string>();
   const run = useAction();
+  const [prefilled, setPrefilled] = useState(false);
+  const [loadError, setLoadError] = useState<Error>();
+  useEffect(() => {
+    if (!act.load) return;
+    const ctl = new AbortController();
+    http
+      .get<unknown>(fill(act.load.path, row, context), undefined, ctl.signal)
+      .then((body) => {
+        if (ctl.signal.aborted) return;
+        const p = prefillFrom(act.fields ?? [], body, act.load?.omit);
+        // what the user typed while the answer was on its way wins
+        setValuesRaw((cur) => ({ ...p.values, ...Object.fromEntries(Object.entries(cur).filter(([, v]) => v !== undefined && v !== '')) }));
+        setJson((cur) => (cur.trim() ? cur : p.json));
+        setPrefilled(Object.keys(p.values).length > 0 || p.json !== '');
+      })
+      .catch((e: Error) => {
+        if (ctl.signal.aborted || e.name === 'AbortError') return;
+        if (e instanceof ApiError && e.status === 404) return; // nothing published yet
+        setLoadError(e);
+      });
+    return () => ctl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [act.load?.path]);
   const method = act.method ?? 'POST';
-  const headerReasonBad = !!act.reasonHeader && /[^\x20-\x7e]/.test(reason.trim());
+  const [purpose, setPurpose] = useState('');
+  const purposeMissing = !!act.purposeHeader && !isPurposeCode(purpose.trim());
   const submit = () => {
     const errs = validateForm(schema, values, t);
     setErrors(errs);
@@ -233,9 +286,9 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
     Object.assign(req.body, act.bodyExtra ?? {}, row && act.bodyFromRow ? act.bodyFromRow(row) : {});
     for (const k of act.sendNulls ?? []) if (req.body[k] === undefined) req.body[k] = null;
     const headers: Record<string, string> = {};
+    if (act.purposeHeader) headers[act.purposeHeader] = purpose.trim();
     if (act.reason) {
-      if (act.reasonHeader) headers[act.reasonHeader] = reason.trim();
-      else if (method === 'DELETE' || act.reason === 'query') req.query.reason = reason;
+      if (method === 'DELETE' || act.reason === 'query') req.query.reason = reason;
       else req.body.reason = reason;
     }
     if (method === 'GET') {
@@ -272,7 +325,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
             <button type="button" onClick={onClose}>
               {t('common.cancel')}
             </button>
-            <button type="button" className={act.danger ? 'danger' : 'primary'} disabled={run.busy || (!!act.reason && reason.trim().length < 5) || headerReasonBad} onClick={submit}>
+            <button type="button" className={act.danger ? 'danger' : 'primary'} disabled={run.busy || (!!act.reason && reason.trim().length < 5) || purposeMissing} onClick={submit}>
               {run.busy ? t('common.working') : t('common.confirm')}
             </button>
           </>
@@ -280,6 +333,8 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
       }
     >
       {act.hint && <p className="hint">{t(act.hint)}</p>}
+      {prefilled && result === undefined && <Notice>{t('mod.common.prefilled')}</Notice>}
+      {loadError && result === undefined && <ProblemAlert error={loadError} />}
       {result !== undefined ? (
         <>
           <Notice tone="ok">{t('mod.common.done')}</Notice>
@@ -295,7 +350,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
             </details>
           )}
           {act.reason && <TextArea label={t('common.reason')} hint={t('common.reasonHint')} required value={reason} onChange={setReason} />}
-          {headerReasonBad && <Notice tone="bad">{t('mod.common.reasonAsciiOnly')}</Notice>}
+          {act.purposeHeader && <PurposeCodeField value={purpose} onChange={setPurpose} />}
           {jsonErr && <Notice tone="bad">{jsonErr}</Notice>}
           <ProblemAlert error={run.error} />
         </>

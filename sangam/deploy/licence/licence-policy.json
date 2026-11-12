@@ -18,6 +18,31 @@
       "license": "LicenseRef-bpmn.io",
       "components": ["pkg:npm/bpmn-js", "pkg:npm/dmn-js", "pkg:npm/form-js", "pkg:npm/%40bpmn-io/form-js", "pkg:npm/%40bpmn-io/form-js-viewer", "pkg:npm/%40bpmn-io/form-js-editor", "pkg:npm/%40bpmn-io/form-js-playground", "pkg:npm/cmmn-js", "pkg:npm/diagram-js", "pkg:npm/bpmn-js-properties-panel", "pkg:npm/dmn-js-shared", "pkg:npm/dmn-js-drd", "pkg:npm/dmn-js-decision-table", "pkg:npm/dmn-js-literal-expression", "pkg:npm/dmn-js-boxed-expression", "pkg:npm/%40bpmn-io/properties-panel"],
       "condition": "LIC-8: unmodified, watermark kept visible in modeller and viewer screens"
+    },
+    {
+      "license": "OFL-1.1",
+      "components": ["pkg:generic/noto-sans-devanagari", "pkg:github/notofonts/devanagari", "pkg:generic/noto-sans", "pkg:github/notofonts/latin-greek-cyrillic"],
+      "condition": "Owner decision 70 (2026-11-12): fonts only, embedded in generated PDF/A documents by the M-081 renderer. Reason: PDF/A-2b requires every font to be embedded and Devanagari text needs a font that covers it; Noto Sans Devanagari is OFL-1.1. Scope: the unmodified font file, shipped with its OFL.txt, never sold on its own and never renamed (OFL-1.1 conditions 1, 3, 4); no OFL-licensed code. Widened by owner decision 95 to Noto Sans for Latin text; files and hashes in deploy/fonts/README.md. Any other OFL font needs a new owner decision."
+    },
+    {
+      "license": "LGPL-3.0",
+      "components": ["pkg:maven/org.cryptacular/cryptacular@1.3.0"],
+      "condition": "Owner decision 90 (2026-11-12): cryptacular 1.3.0 is dual-licensed Apache-2.0 OR LGPL-3.0; Sangam elects Apache-2.0. Reached only through the optional M-076 SAML relying party (OpenSAML 5.2.3). Exactly this version; any other version is re-approved."
+    },
+    {
+      "license": "GPL-3.0-or-later",
+      "components": ["pkg:maven/org.verapdf/"],
+      "condition": "Owner decision 94 (2026-11-12): veraPDF 1.30.4 (jakarta) is dual-licensed GPL-3.0-or-later OR MPL-2.0; Sangam elects MPL-2.0. Used only as the PDF/A-2b and PDF/UA-1 validator of the M-081 renderer. Exactly version 1.30.4 (wcag-algorithms 1.30.3); any other version is re-approved."
+    },
+    {
+      "license": "LicenseRef-BSD-3-Clause-Nuclear-Disclaimer",
+      "components": ["pkg:maven/com.github.jai-imageio/jai-imageio-core@1.4.0", "pkg:maven/com.github.jai-imageio/jai-imageio-jpeg2000@1.3.0"],
+      "condition": "Owner decision 102 (2026-11-12): BSD-3-Clause with a nuclear-facility disclaimer (jpeg2000 also under the JJ2000 licence). Reached only through veraPDF (decision 94) for image checks during PDF validation. Exactly these versions."
+    },
+    {
+      "license": "LicenseRef-BSD-stax-utils",
+      "components": ["pkg:maven/net.java.dev.stax-utils/stax-utils@20070216"],
+      "condition": "Owner decision 102 (2026-11-12): BSD-style licence of stax-utils, reached only through veraPDF (decision 94). Exactly this version."
     }
   ],
   "_comment_forbidden": "Fails the build when found in what Sangam ships (runtime/compile scope SBOM, npm production deps).",

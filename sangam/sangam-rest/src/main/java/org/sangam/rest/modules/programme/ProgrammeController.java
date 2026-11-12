@@ -127,6 +127,15 @@ public class ProgrammeController {
         return port.publishConfig(api(ctx, ADMIN), body);
     }
 
+    /**
+     * The current published configuration (C3-09): {@code config} is the object the publish took, with its version,
+     * content hash, publisher and time; 404 {@code NOT_FOUND} when nothing is published yet.
+     */
+    @GetMapping("/programme-config")
+    public IndicatorRegistry.Current publishedConfig(RequestContext ctx) {
+        return port.publishedConfig(api(ctx, ADMIN));
+    }
+
     /** Published configuration versions. */
     @GetMapping("/programme-config/history")
     public ResponseEntity<List<Map<String, Object>>> configHistory(RequestContext ctx) {

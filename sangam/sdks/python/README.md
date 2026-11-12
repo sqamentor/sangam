@@ -109,6 +109,50 @@ elsewhere.
 
 Money: JSON numbers with a fraction are decoded as `Decimal`; outgoing `Decimal` is always a TypedValue (R33).
 
+## Durable steps
+
+`ctx.step(name, fn, *, idempotent=False, lookup=None)` (M-025, R37) runs a side-effecting call once per operation and
+records it in the step journal (`GET/PUT /work/{id}/steps/{name}`, fenced by the lease):
+
+```python
+from sangam_sdk import StepNoEffectError
+
+def handler(ctx):
+    def charge(step):
+        r = psp.charge(ctx.decimal("amount"), idempotency_key=step.idempotency_key)   # operationId + ":" + name
+        if r.rejected:
+            raise StepNoEffectError(r.reason)   # recorded FAILED: may run again
+        step.provider_ref = r.payment_id
+        return {"paymentId": r.payment_id}
+    return ctx.step("charge", charge, lookup=lambda step: psp.find(step.idempotency_key))
+```
+
+A recorded `SUCCEEDED` step is replayed (result unwrapped like variables, R33) without calling again. **NOT
+exactly-once for remote APIs**: a crash between the call and its record leaves `INTENT`; the next attempt then asks
+`lookup` (a value is recorded and returned, None means no effect), re-runs only when `idempotent=True`, and otherwise
+raises `OutcomeUnknown` (outcome-unknown, reconciliation decides). Any other exception from `fn` leaves `INTENT`. A
+409/410 from the journal marks the lease lost and raises `TaskCancelled`. Code: `src/sangam_sdk/steps.py`; the test
+engine serves the journal (`src/sangam_sdk/testing_steps.py`, `engine.steps(work_id)`).
+
+## Sagas
+
+`Saga` (M-026, R36) registers a forward action and its compensation as two subscriptions; the forward completion adds
+the variable `sangamSaga_<name>` (Json: step, operationId, providerRef, workId), and the compensation handler gets a
+`CompensationContext` whose `idempotency_key` is `<forward operationId>:compensate:<name>`:
+
+```python
+Saga.step("charge") \
+    .action("payment.charge", charge) \
+    .compensation("payment.refund", lambda c: refund(c.forward_provider_ref, c.idempotency_key)) \
+    .irreversible().build().register_on(worker)
+```
+
+## Framework adapter
+
+FastAPI / Starlette: the separate distribution `sangam/sdks/python-frameworks/fastapi` (`sangam_sdk_fastapi`,
+M-027) starts the worker in the app lifespan and stops it gracefully on shutdown. Django: not provided in 0.1.0
+(Django is not installed in the build environment; adapter pending approval of the dependency).
+
 ## Example
 
 `examples/bill_payment_worker.py`: P1 bill payment on topic `payment` (`wf1_payment`). Env: `SANGAM_URL`,

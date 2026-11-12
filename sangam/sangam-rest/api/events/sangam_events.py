@@ -203,7 +203,8 @@ def _audit_events():
 AUDIT_EVENTS = _audit_events()
 # Names the code writes (org.sangam.security.audit.SecurityEventType, org.sangam.packs.core.CaseState) that X.4.0.3 does
 # not list; each needs change control (X.5.2) before 0.1.0. Empty since SANGAM.md X.4.0.3 took the 33 SecurityEventType
-# and 4 CaseState names (Wave 2, 2026-11-12); EventContractTest fails when the code writes a name missing from both.
+# and 4 CaseState names (Wave 2, 2026-11-12), and again since X.4.0.3 took INSTANCE_UPDATED, EXECUTOR_OWNERSHIP_CHANGED
+# and TEST_CLOCK_CHANGED (Wave 3, 2026-11-12); EventContractTest fails when the code writes a name missing from both.
 AUDIT_EVENTS_PENDING = []
 EVENTS_SCHEMAS["AuditEventName"] = {
     "type": "string",

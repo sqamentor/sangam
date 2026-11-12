@@ -82,10 +82,7 @@ public final class LedgerConnector implements SangamConnector {
             LocalDate today = clock.instant().atZone(ledger.zone(tenant)).toLocalDate(); // tenant business date
             String ledgerId = first(r, List.of("ledgerId", "ledger"), "BUDGET");
             LedgerDefinition def = ledger.definition(tenant, ledgerId);
-            String period = first(r, List.of("period", "fiscalYear"), null);
-            if (period == null || "current".equalsIgnoreCase(period)) {
-                period = periodResolver.apply(tenant, today);
-            }
+            String period = LedgerPeriods.periodOr(r.input(), tenant, today, periodResolver); // X1-08: one rule
             String stage = first(r, List.of("stage"), "allocate".equals(op) ? def.stages().get(0) : def.consumeAt());
             AccountKey acct = new AccountKey(tenant, ledgerId, period, first(r, LINE, "-"), first(r, HOLDER, "-"), stage,
                     first(r, List.of("sub"), null));

@@ -20,7 +20,16 @@
         "pool": {
           "type": "object",
           "properties": {
-            "connectionTimeoutMs": { "type": "integer", "minimum": 1 }
+            "connectionTimeoutMs": { "type": "integer", "minimum": 1 },
+            "leafPools": {
+              "$comment": "SL-168: SANGAM_QUOTA_POOL_SIZE, SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE, SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE; each on top of maximumPoolSize per pod.",
+              "type": "object",
+              "properties": {
+                "quota": { "type": "integer", "minimum": 1 },
+                "securityDenialAudit": { "type": "integer", "minimum": 1 },
+                "complianceDenialAudit": { "type": "integer", "minimum": 1 }
+              }
+            }
           }
         },
         "networkTimeout": { "type": "string", "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h|d)?$|^P[0-9A-Za-z.]+$" },
@@ -45,7 +54,7 @@
     },
     "otel": {
       "type": "object",
-      "properties": { "enabled": { "type": "boolean" }, "endpoint": { "type": "string" } }
+      "properties": { "enabled": { "type": "boolean" }, "endpoint": { "type": "string" }, "engineTracing": { "type": "boolean" } }
     },
     "server": {
       "type": "object",
@@ -60,6 +69,142 @@
             "virtualThreads": { "type": "boolean" }
           }
         }
+      }
+    },
+    "malware": {
+      "$comment": "M-082: SANGAM_MALWARE_*; clamd needs a host or this release's ClamAV service, icap needs a uri; the ClamAV image tag is pinned (owner decision 71).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scanner", "failClosed", "timeout", "maxBytes", "clamd", "icap", "clamav"],
+      "properties": {
+        "scanner": { "type": "string", "enum": ["none", "clamd", "icap"] },
+        "failClosed": { "type": "boolean" },
+        "timeout": { "type": "string", "pattern": "^[0-9]+(ns|us|ms|s|m|h|d)?$|^P[0-9A-Za-z.]+$" },
+        "maxBytes": { "type": "string", "pattern": "^[1-9][0-9]*$" },
+        "clamd": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "host": { "type": "string" },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+          }
+        },
+        "icap": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "uri": { "type": "string", "pattern": "^$|^icaps?://" } }
+        },
+        "clamav": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "image": {
+              "type": "object",
+              "required": ["repository", "tag"],
+              "properties": {
+                "repository": { "type": "string", "minLength": 1 },
+                "tag": { "type": "string", "minLength": 1, "not": { "enum": ["latest", "stable", "unstable"] } },
+                "digest": { "type": "string" }
+              }
+            },
+            "replicaCount": { "type": "integer", "minimum": 1 },
+            "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+            "egress": { "type": "array" },
+            "extraEnv": { "type": "array" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "scanner": { "const": "icap" } } },
+          "then": { "properties": { "icap": { "required": ["uri"], "properties": { "uri": { "minLength": 1 } } } } }
+        }
+      ]
+    },
+    "secrets": {
+      "$comment": "M-075: SANGAM_SECRETS_*, rendered only when providers is set; every *Ref is a secret:// reference, never a value.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "providers": { "type": "string", "pattern": "^$|^(file|vault|aws|azure|gcp|env)(,(file|vault|aws|azure|gcp|env))*$" },
+        "cacheTtl": { "type": "string", "pattern": "^$|^[0-9]+(ns|us|ms|s|m|h|d)?$|^P[0-9A-Za-z.]+$" },
+        "file": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "root": { "type": "string", "pattern": "^$|^/" }, "existingSecret": { "type": "string" } }
+        },
+        "vault": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "url": { "type": "string" },
+            "mount": { "type": "string" },
+            "pathPrefix": { "type": "string" },
+            "namespace": { "type": "string" },
+            "tokenRef": { "$ref": "#/definitions/secretRef" },
+            "allowPrivate": { "type": "boolean" }
+          }
+        },
+        "aws": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "region": { "type": "string" },
+            "endpoint": { "type": "string" },
+            "namePrefix": { "type": "string" },
+            "accessKeyRef": { "$ref": "#/definitions/secretRef" },
+            "secretKeyRef": { "$ref": "#/definitions/secretRef" },
+            "sessionTokenRef": { "$ref": "#/definitions/secretRef" }
+          }
+        },
+        "azure": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "vaultUrl": { "type": "string" },
+            "tenantId": { "type": "string" },
+            "clientId": { "type": "string" },
+            "clientSecretRef": { "$ref": "#/definitions/secretRef" },
+            "authority": { "type": "string" }
+          }
+        },
+        "gcp": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "project": { "type": "string" },
+            "serviceAccountKeyRef": { "$ref": "#/definitions/secretRef" },
+            "namePrefix": { "type": "string" },
+            "endpoint": { "type": "string" }
+          }
+        }
+      }
+    },
+    "scriptWorker": {
+      "$comment": "M-061: optional script worker; credentials only from existingSecret (token or clientSecret); privileges per owner decision 78.",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "url": { "type": "string" },
+        "existingSecret": { "type": "string" },
+        "oidcTokenUrl": { "type": "string" },
+        "clientId": { "type": "string" },
+        "languages": { "type": "string", "pattern": "^$|^(javascript|python)(,(javascript|python))*$" },
+        "maxConcurrency": { "type": "string", "pattern": "^$|^[1-9][0-9]*$" },
+        "cpuSeconds": { "type": "string", "pattern": "^$|^[1-9][0-9]*$" },
+        "wallTime": { "type": "string", "pattern": "^$|^P[0-9A-Za-z.]+$" },
+        "memoryBytes": { "type": "string", "pattern": "^$|^[1-9][0-9]*$" },
+        "maxProcesses": { "type": "string", "pattern": "^$|^[1-9][0-9]*$" },
+        "extraEnv": { "type": "array" }
+      },
+      "if": { "properties": { "enabled": { "const": true } } },
+      "then": { "required": ["existingSecret"], "properties": { "existingSecret": { "minLength": 1 } } }
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "traceUrlTemplate": { "type": "string", "pattern": "^$|^https?://[^\\s]*\\{traceId\\}" }
       }
     },
     "ingress": {
@@ -247,6 +392,11 @@
       "pattern": "^([0-9]{1,3}([.][0-9]{1,3}){3}/([0-9]|[12][0-9]|3[0-2])|[0-9A-Fa-f:]*:[0-9A-Fa-f:.]*/([0-9]|[1-9][0-9]|1[01][0-9]|12[0-8]))$"
     },
     "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+    "secretRef": {
+      "$comment": "M-075: a secret:// reference resolved by the file and env providers, never a secret value.",
+      "type": "string",
+      "pattern": "^$|^secret://"
+    },
     "publicIngressClass": {
       "$comment": "Classes that only ever provision a public load balancer: GKE 'gce' (external Application Load Balancer).",
       "enum": ["gce"]

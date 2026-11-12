@@ -53,7 +53,7 @@ is unset, the module uses an air-gapped default (ARCHITECTURE §1.9):
 | `visit/VisitService.java` | The submission pipeline, shared by sync and online capture: conflict check → declared evidence → checklist → time, accuracy, mock-location and geofence checks → score → findings → SUBMITTED. A FLAGGED visit is recorded and marked for review. The review step enforces maker-checker (the inspector cannot review their own visit). Conflict resolution re-applies the held submission |
 | `evidence/CapturePacket.java` | N05 `CapturePacket`: answers, media refs, GPS fix with accuracy, provider and mock flag, device clock, server receipt, device id, app version, SHA-256, a per-device prevHash chain and an optional signature |
 | `evidence/PacketHasher.java` | Canonical packet hash: numbers as decimal strings, ISO instants, nulls dropped, then RFC 8785-style core `CanonicalJson`. Verifies SHA256withECDSA signatures |
-| `evidence/ExifReader.java` | Minimal, bounded pure-Java JPEG EXIF reader: Make, Model, Software, DateTimeOriginal, OffsetTimeOriginal, and GPS position, date and time |
+| `evidence/ExifReader.java` | The one EXIF reader for JPEG, PNG and HEIF/HEIC evidence: Make, Model, Software, DateTimeOriginal, OffsetTimeOriginal, and GPS position, date and time. JPEG uses a minimal, bounded pure-Java parser. PNG (`eXIf` chunk) and HEIF/HEIC (`Exif` item) are parsed by metadata-extractor (M-132), up to 64 MiB, and their EXIF directories are interpreted by the same code. `ExifReaderFormatsTest` (written, not run) builds all three formats byte by byte |
 | `evidence/IntegrityChecks.java`, `IntegrityReport.java` | Anti-spoofing checks: device clock ahead of receipt, visit window, accuracy limit, mock location, geofence (INSIDE / OUTSIDE / INDETERMINATE, accuracy-aware), hash match, duplicate photo, EXIF time and GPS consistency, photo age. Results are VERIFIED, FLAGGED or REJECTED |
 | `evidence/EvidenceService.java`, `EvidenceBlobStore.java` | Content-addressed evidence storage (file-system default, atomic rename). Declared media is held as PENDING_UPLOAD until the bytes arrive and match the declared hash. Re-verification at rest. Per-device chain verification reports HASH, LINK and GAP breaks |
 | `dispatch/DispatchModel.java` | N17 `Unit`, `UnitStatus` (AVAILABLE, ASSIGNED, EN_ROUTE, ON_SCENE, RETURNING, OFF_DUTY), `Job`, `Offer`, `Trip` / `Leg`, `PositionFix`, `Eta`, `Candidate`, with transition tables |
@@ -63,10 +63,13 @@ is unset, the module uses an air-gapped default (ARCHITECTURE §1.9):
 
 ## Third-party dependencies added
 
-None new. The module uses `jackson-databind` and `jackson-datatype-jsr310` (Apache-2.0, the parent's Jackson BOM line,
-already used by sangam-rest), `operaton-engine` (Apache-2.0, optional), and `spring-webmvc` (Apache-2.0, optional,
-from the parent Spring Boot BOM). `jakarta.servlet-api` has provided scope. EXIF parsing, geohash and geometry use
-no library.
+- `com.drewnoakes:metadata-extractor:2.22.0` (Apache-2.0) with its dependency `com.adobe.xmp:xmpcore:6.1.11`
+  (BSD-3-Clause), for PNG and HEIF/HEIC EXIF (M-132, owner decisions 56 and 60). Both are in `licence-policy.json`
+  `allowed`. The version is pinned in this module's pom until the root pom `dependencyManagement` entry lands.
+- The module also uses `jackson-databind` and `jackson-datatype-jsr310` (Apache-2.0, the parent's Jackson BOM line,
+  already used by sangam-rest), `operaton-engine` (Apache-2.0, optional), and `spring-webmvc` (Apache-2.0, optional,
+  from the parent Spring Boot BOM). `jakarta.servlet-api` has provided scope. JPEG EXIF, geohash and geometry use no
+  library.
 
 ## Integration notes
 
@@ -105,7 +108,8 @@ no library.
 ## Known gaps
 
 - ETA uses straight-line distance × road factor. Road-network routing is out of scope and needs a connector.
-- EXIF is read only from JPEG. HEIC and PNG evidence gets hash, duplicate and fix checks but no EXIF checks.
+- EXIF is read from JPEG, PNG and HEIF/HEIC. Other formats (WebP, GIF) get hash, duplicate and fix checks but no EXIF
+  checks. HEIF EXIF is found through the item location box; a file with an unusual layout yields no EXIF, which the template rule `exifRequired` then flags.
 - **Offline queue (SL-129), coded on both sides 2026-11-12, tests not run.** The PWA (`sangam-ui/src/lib/offline/`:
   `crypto.ts`, `storage.ts`, `fieldSync.ts`) implements `LocalQueueContract`: one non-extractable AES-256-GCM queue key
   per device installation, the v1 envelope, and the AAD `tenantId|deviceId|operationId|userId`. The server reference

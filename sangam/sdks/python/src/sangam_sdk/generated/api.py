@@ -497,7 +497,7 @@ class AIApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class AdminApi:
-    """``Admin`` (37 operations)."""
+    """``Admin`` (36 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -877,17 +877,6 @@ class AdminApi:
         req.body = body
         return cast("M.ServicePrincipal", self._c.json(req, options))
 
-    def install_module_defaults(self, body: M.ModuleDefaultsRequest, *, options: Optional[RequestOptions] = None) -> M.ModuleDefaultsResult:
-        """Install module role templates and self-service grants
-
-        Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
-
-        ``POST /admin/security/module-defaults`` (operationId ``installModuleDefaults``); permission ``tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("POST", f"/admin/security/module-defaults")
-        req.body = body
-        return cast("M.ModuleDefaultsResult", self._c.json(req, options))
-
 class AdminAssignmentsApi:
     """``Admin /assignments`` (7 operations)."""
 
@@ -1129,6 +1118,76 @@ class AdminPowerTablesApi:
         req.body = body
         return cast("M.PowerTable", self._c.json(req, options))
 
+class AdminSecurityApi:
+    """``Admin /security`` (6 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def request_break_glass_grant(self, body: M.BreakGlassRequest, *, options: Optional[RequestOptions] = None) -> M.BreakGlassGrant:
+        """Request a break-glass grant
+
+        Records a grant in REQUESTED with its reason (audited BREAK_GLASS_REQUESTED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+
+        ``POST /admin/security/break-glass/grants`` (operationId ``requestBreakGlassGrant``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/security/break-glass/grants")
+        req.body = body
+        return cast("M.BreakGlassGrant", self._c.json(req, options))
+
+    def list_break_glass_grants(self, *, status: Optional[str] = None, review_status: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.BreakGlassGrant]:
+        """Break-glass grants
+
+        Grants of the caller's tenant, filtered by status and review status. ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+
+        ``GET /admin/security/break-glass/grants`` (operationId ``listBreakGlassGrants``); permission ``admin.read``.
+        """
+        req = ApiRequest("GET", f"/admin/security/break-glass/grants", query={"status": status, "reviewStatus": review_status, "page": page, "size": size})
+        return cast("Page[M.BreakGlassGrant]", self._c.page(req, options, page, size))
+
+    def approve_break_glass_grant(self, grant_id: str, *, options: Optional[RequestOptions] = None) -> M.BreakGlassGrant:
+        """Approve a break-glass grant
+
+        Adds the caller's approval (audited BREAK_GLASS_APPROVED); 200 with the grant while more approvals are required, 201 with the token (shown once) when this approval issues it (BREAK_GLASS_ISSUED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+
+        ``POST /admin/security/break-glass/grants/{grantId}/approve`` (operationId ``approveBreakGlassGrant``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/security/break-glass/grants/{seg(str(grant_id))}/approve")
+        return cast("M.BreakGlassGrant", self._c.json(req, options))
+
+    def reject_break_glass_grant(self, grant_id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> M.BreakGlassGrant:
+        """Reject a break-glass grant
+
+        Rejects a requested grant with a reason (audited BREAK_GLASS_REJECTED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+
+        ``POST /admin/security/break-glass/grants/{grantId}/reject`` (operationId ``rejectBreakGlassGrant``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/security/break-glass/grants/{seg(str(grant_id))}/reject")
+        req.body = body
+        return cast("M.BreakGlassGrant", self._c.json(req, options))
+
+    def review_break_glass_grant(self, grant_id: str, body: M.BreakGlassReview, *, options: Optional[RequestOptions] = None) -> M.BreakGlassGrant:
+        """Review a used break-glass grant
+
+        Records the post-use review (audited BREAK_GLASS_REVIEWED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+
+        ``POST /admin/security/break-glass/grants/{grantId}/review`` (operationId ``reviewBreakGlassGrant``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/security/break-glass/grants/{seg(str(grant_id))}/review")
+        req.body = body
+        return cast("M.BreakGlassGrant", self._c.json(req, options))
+
+    def install_module_defaults(self, body: M.ModuleDefaultsRequest, *, options: Optional[RequestOptions] = None) -> M.ModuleDefaultsResult:
+        """Install module role templates and self-service grants
+
+        Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
+
+        ``POST /admin/security/module-defaults`` (operationId ``installModuleDefaults``); permission ``tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/security/module-defaults")
+        req.body = body
+        return cast("M.ModuleDefaultsResult", self._c.json(req, options))
+
 class AnalyticsApi:
     """``Analytics`` (15 operations)."""
 
@@ -1286,6 +1345,53 @@ class AnalyticsApi:
         """
         req = ApiRequest("GET", f"/analytics/agents", query={"from": from_, "to": to})
         return cast("list[M.AgentUsage]", self._c.json(req, options))
+
+class ApiContractsApi:
+    """``ApiContracts`` (4 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def put_api_contract(self, id: str, contract_id: str, body: dict[str, Any], *, options: Optional[RequestOptions] = None) -> M.ApiContractSummary:
+        """Store a contract
+
+        Stores the OpenAPI 3.x or AsyncAPI 2.x / 3.x JSON document as the next version of the contract, or answers the stored version when the document is identical (same SHA-256). 400 VALIDATION_FAILED for an invalid contract id, a document that is not a JSON object, or another format or version.
+
+        ``PUT /packages/{id}/contracts/{contractId}`` (operationId ``putApiContract``); permission ``package.author``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/packages/{seg(str(id))}/contracts/{seg(str(contract_id))}")
+        req.body = body
+        return cast("M.ApiContractSummary", self._c.json(req, options))
+
+    def get_api_contract(self, id: str, contract_id: str, *, version: Optional[int] = None, options: Optional[RequestOptions] = None) -> M.ApiContract:
+        """Get a contract
+
+        One version (the latest when version is absent) with its document.
+
+        ``GET /packages/{id}/contracts/{contractId}`` (operationId ``getApiContract``); permission ``package.read``.
+        """
+        req = ApiRequest("GET", f"/packages/{seg(str(id))}/contracts/{seg(str(contract_id))}", query={"version": version})
+        return cast("M.ApiContract", self._c.json(req, options))
+
+    def list_api_contracts(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.ApiContractSummary]:
+        """Contracts of a package
+
+        The latest version of each contract of the package, by contract id, without documents.
+
+        ``GET /packages/{id}/contracts`` (operationId ``listApiContracts``); permission ``package.read``.
+        """
+        req = ApiRequest("GET", f"/packages/{seg(str(id))}/contracts")
+        return cast("list[M.ApiContractSummary]", self._c.json(req, options))
+
+    def list_api_contract_operations(self, id: str, contract_id: str, *, version: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[M.ContractOperation]:
+        """Operations of a contract
+
+        The operations of one version (the latest when version is absent), in document order, for the modeller's operation picker (sangam:operationRef = contractId[@version]#operationId).
+
+        ``GET /packages/{id}/contracts/{contractId}/operations`` (operationId ``listApiContractOperations``); permission ``package.read``.
+        """
+        req = ApiRequest("GET", f"/packages/{seg(str(id))}/contracts/{seg(str(contract_id))}/operations", query={"version": version})
+        return cast("list[M.ContractOperation]", self._c.json(req, options))
 
 class AuditApi:
     """``Audit`` (8 operations)."""
@@ -2644,7 +2750,7 @@ class CasesApi:
         return cast("M.CaseInstance", self._c.json(req, options))
 
 class CellApi:
-    """``Cell`` (12 operations)."""
+    """``Cell`` (15 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -2779,8 +2885,39 @@ class CellApi:
         _headers(req, {"X-Sangam-Export-Token": x_sangam_export_token})
         return self._c.raw(req, options, "application/octet-stream")
 
+    def list_parked_inbound(self, *, tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[M.PoisonInboundItem]:
+        """Parked inbound messages of this cell
+
+        Open POISON_INBOUND items of every tenant of this cell whose message was parked because the tenant moved or was purged, oldest first (PoisonInbound.listParked); `tenant` narrows the list to one tenant.
+
+        ``GET /admin/cell/parked-inbound`` (operationId ``listParkedInbound``); permission ``role CELL_ADMIN``.
+        """
+        req = ApiRequest("GET", f"/admin/cell/parked-inbound", query={"tenant": tenant})
+        return cast("list[M.PoisonInboundItem]", self._c.json(req, options))
+
+    def get_parked_inbound(self, item_id: str, *, options: Optional[RequestOptions] = None) -> M.PoisonInboundParked:
+        """View a parked inbound message
+
+        The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
+
+        ``GET /admin/cell/parked-inbound/{itemId}`` (operationId ``getParkedInbound``); permission ``role CELL_ADMIN``.
+        """
+        req = ApiRequest("GET", f"/admin/cell/parked-inbound/{seg(str(item_id))}")
+        return cast("M.PoisonInboundParked", self._c.json(req, options))
+
+    def replay_parked_inbound(self, item_id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> None:
+        """Replay a parked inbound message
+
+        Hands the message, with its original source, message id, event type and correlation key, to the tenant's current cell through the gateway (sangam.cell.gateway-url; the target inbox deduplicates on tenant, source and message id); then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over, or a target where the tenant is not ACTIVE, leaves the item open: 503 REPLAY_FAILED; 503 REPLAY_NOT_CONFIGURED without a gateway URL (PoisonInbound.replayParked).
+
+        ``POST /admin/cell/parked-inbound/{itemId}/replay`` (operationId ``replayParkedInbound``); permission ``role CELL_ADMIN``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/cell/parked-inbound/{seg(str(item_id))}/replay")
+        req.body = body
+        self._c.none(req, options)
+
 class ChannelsApi:
-    """``Channels`` (17 operations)."""
+    """``Channels`` (19 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -2849,14 +2986,15 @@ class ChannelsApi:
         _raw(req, body, "application/octet-stream", options)
         return cast("M.ChannelAttachment", self._c.json(req, options))
 
-    def stream_conversation(self, id: str, *, options: Optional[RequestOptions] = None) -> bytes:
+    def stream_conversation(self, id: str, *, last_event_id: Optional[str] = None, options: Optional[RequestOptions] = None) -> bytes:
         """Live message stream
 
-        Server-sent events, event name 'message'. Streams live on one node; reconnect and read history to catch up.
+        Server-sent events, event name 'message', event id = message id, data = ChannelMessage (M-040). Live across nodes: a message stored on any node reaches every open stream of the conversation. With Last-Event-ID the stream first replays the messages after that message, at least once (the client drops duplicates by message id), then goes live. A comment line heartbeat is sent at most every 30 s while idle.
 
         ``GET /channels/conversations/{id}/stream`` (operationId ``streamConversation``); permission ``channels.read``.
         """
         req = ApiRequest("GET", f"/channels/conversations/{seg(str(id))}/stream")
+        _headers(req, {"Last-Event-ID": last_event_id})
         return self._c.raw(req, options, "text/event-stream")
 
     def search_conversations(self, *, text: str, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[M.ChannelMessage]:
@@ -2924,7 +3062,7 @@ class ChannelsApi:
     def receive_whats_app_hook(self, tenant: str, body: dict[str, Any], *, options: Optional[RequestOptions] = None) -> M.ChannelHookResult:
         """WhatsApp webhook
 
-        Public: X-Hub-Signature-256 is verified on the raw body first.
+        Public: X-Hub-Signature-256 is verified on the raw body first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
 
         ``POST /hooks/channels/{tenant}/whatsapp`` (operationId ``receiveWhatsAppHook``).
         """
@@ -2942,21 +3080,44 @@ class ChannelsApi:
         req = ApiRequest("GET", f"/hooks/channels/{seg(str(tenant))}/wechat", query={"timestamp": timestamp, "nonce": nonce, "signature": signature, "echostr": echostr})
         return self._c.raw(req, options, "text/plain")
 
-    def receive_we_chat_hook(self, tenant: str, body: dict[str, Any], *, timestamp: str, nonce: str, signature: str, options: Optional[RequestOptions] = None) -> M.ChannelHookResult:
+    def receive_we_chat_hook(self, tenant: str, body: dict[str, Any], *, timestamp: str, nonce: str, signature: str, encrypt_type: Optional[str] = None, msg_signature: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ChannelHookResult:
         """WeChat webhook
 
-        Public: the signature is verified first.
+        Public: the signature is verified first. Security mode (encrypt_type=aes): msg_signature is verified over the Encrypt element and the message is decrypted with the tenant's EncodingAESKey (config sangam.channels.webhooks.<tenant>.wechat.encoding-aes-key-ref, a secret reference, and wechat.app-id, which must match the decrypted app id); plain mode as before. 401 WEBHOOK_SIGNATURE_INVALID on a bad signature. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
 
         ``POST /hooks/channels/{tenant}/wechat`` (operationId ``receiveWeChatHook``).
         """
-        req = ApiRequest("POST", f"/hooks/channels/{seg(str(tenant))}/wechat", query={"timestamp": timestamp, "nonce": nonce, "signature": signature})
+        req = ApiRequest("POST", f"/hooks/channels/{seg(str(tenant))}/wechat", query={"timestamp": timestamp, "nonce": nonce, "signature": signature, "encrypt_type": encrypt_type, "msg_signature": msg_signature})
+        req.body = body
+        return cast("M.ChannelHookResult", self._c.json(req, options))
+
+    def receive_slack_hook(self, tenant: str, body: dict[str, Any], *, x_slack_request_timestamp: str, x_slack_signature: str, options: Optional[RequestOptions] = None) -> M.ChannelSlackHookResult:
+        """Slack Events API webhook
+
+        Public: X-Slack-Signature (v0 HMAC-SHA256 over 'v0:<timestamp>:<raw body>' with the tenant's signing secret, config sangam.channels.webhooks.<tenant>.slack.signing-secret-ref) and the timestamp window are verified on the raw body first; 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Slack is not configured for the tenant. url_verification answers {challenge}; every other envelope answers the counts. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+
+        ``POST /hooks/channels/{tenant}/slack`` (operationId ``receiveSlackHook``).
+        """
+        req = ApiRequest("POST", f"/hooks/channels/{seg(str(tenant))}/slack")
+        _headers(req, {"X-Slack-Request-Timestamp": x_slack_request_timestamp, "X-Slack-Signature": x_slack_signature})
+        req.body = body
+        return cast("M.ChannelSlackHookResult", self._c.json(req, options))
+
+    def receive_matrix_transaction(self, tenant: str, txn_id: str, body: M.ReceiveMatrixTransactionRequest, *, access_token: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ChannelHookResult:
+        """Matrix application-service transaction
+
+        Public: the homeserver token (Authorization: Bearer <hs_token>, or the legacy access_token query parameter) is compared with the tenant's (config sangam.channels.webhooks.<tenant>.matrix.hs-token-ref, matrix.user-id); 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Matrix is not configured for the tenant. A repeated txnId is answered again without a second delivery (inbox deduplication). The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+
+        ``PUT /hooks/channels/{tenant}/matrix/transactions/{txnId}`` (operationId ``receiveMatrixTransaction``).
+        """
+        req = ApiRequest("PUT", f"/hooks/channels/{seg(str(tenant))}/matrix/transactions/{seg(str(txn_id))}", query={"access_token": access_token})
         req.body = body
         return cast("M.ChannelHookResult", self._c.json(req, options))
 
     def receive_teams_hook(self, tenant: str, body: dict[str, Any], *, options: Optional[RequestOptions] = None) -> M.ChannelHookResult:
         """Teams webhook
 
-        Public: the Bot Framework token is verified first.
+        Public: the Bot Framework token is verified first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
 
         ``POST /hooks/channels/{tenant}/teams`` (operationId ``receiveTeamsHook``).
         """
@@ -5386,7 +5547,7 @@ class ModellerApi:
     def publish_action_model(self, body: M.ActionModelPublish, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Publish an action
 
-        A new version for an existing key.
+        A new version for an existing key. target is the process key for BPMN and connectorId:operation (a registered connector and one of its operations) for REST; anything else is 400.
 
         ``POST /actions`` (operationId ``publishActionModel``); permission ``modeller.action.publish``; result stored atomically with the state change.
         """
@@ -5397,7 +5558,7 @@ class ModellerApi:
     def invoke_action_model(self, key: str, body: M.ActionModelInvoke, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Invoke an action
 
-        BPMN and connector targets run; SCRIPT targets are refused.
+        BPMN and connector targets run; SCRIPT targets are refused. The permission and the subject (targetRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call.
 
         ``POST /actions/{key}/invoke`` (operationId ``invokeActionModel``); permission ``modeller.action.invoke``; result stored atomically with the state change.
         """
@@ -5471,7 +5632,7 @@ class ModellerApi:
     def run_action_model(self, key: str, body: M.ModellerRunActionRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Run an action
 
-        Permission checked on the subject; idempotent per request key.
+        The permission and the subject (subjectRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call; idempotent per request key; a reason is recorded in the ACTION_INVOKED audit entry.
 
         ``POST /actions/{key}/run`` (operationId ``runActionModel``); permission ``modeller.action.invoke``; result stored atomically with the state change.
         """
@@ -6131,7 +6292,7 @@ class OpsJobsApi:
         return self._c.raw(req, options, "text/plain")
 
 class OpsReconciliationApi:
-    """``Ops /reconciliation`` (9 operations)."""
+    """``Ops /reconciliation`` (6 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -6197,37 +6358,6 @@ class OpsReconciliationApi:
         req = ApiRequest("POST", f"/ops/reconciliation/{seg(str(id))}/evidence")
         _multipart(req, body)
         return cast("M.Evidence", self._c.json(req, options))
-
-    def list_parked_inbound(self, *, options: Optional[RequestOptions] = None) -> list[M.PoisonInboundItem]:
-        """Parked inbound messages
-
-        Open POISON_INBOUND items of the caller's tenant whose message was parked because the tenant moved or was purged (PoisonInbound.listOpen, parked = true).
-
-        ``GET /ops/reconciliation/parked-inbound`` (operationId ``listParkedInbound``); permission ``ops.read``.
-        """
-        req = ApiRequest("GET", f"/ops/reconciliation/parked-inbound")
-        return cast("list[M.PoisonInboundItem]", self._c.json(req, options))
-
-    def get_parked_inbound(self, item_id: str, *, options: Optional[RequestOptions] = None) -> M.PoisonInboundParked:
-        """View a parked inbound message
-
-        The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
-
-        ``GET /ops/reconciliation/parked-inbound/{itemId}`` (operationId ``getParkedInbound``); permission ``ops.read``.
-        """
-        req = ApiRequest("GET", f"/ops/reconciliation/parked-inbound/{seg(str(item_id))}")
-        return cast("M.PoisonInboundParked", self._c.json(req, options))
-
-    def replay_parked_inbound(self, item_id: str, body: M.ReasonRequest, *, options: Optional[RequestOptions] = None) -> None:
-        """Replay a parked inbound message
-
-        Hands the message, with its original id, type and key, to the tenant's new cell; then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over leaves the item open; a repeat is deduplicated by the target inbox (PoisonInbound.replayParked).
-
-        ``POST /ops/reconciliation/parked-inbound/{itemId}/replay`` (operationId ``replayParkedInbound``); permission ``recon.resolve``; result stored atomically with the state change.
-        """
-        req = ApiRequest("POST", f"/ops/reconciliation/parked-inbound/{seg(str(item_id))}/replay")
-        req.body = body
-        self._c.none(req, options)
 
 class PackagesApi:
     """``Packages`` (22 operations)."""
@@ -6573,7 +6703,7 @@ class PluginsApi:
         return self._c.raw(req, options, "application/octet-stream")
 
 class PortalApi:
-    """``Portal`` (10 operations)."""
+    """``Portal`` (11 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -6587,6 +6717,16 @@ class PortalApi:
         """
         req = ApiRequest("GET", f"/portal/services")
         return cast("list[M.PortalService]", self._c.json(req, options))
+
+    def get_portal_service_form(self, key: str, *, options: Optional[RequestOptions] = None) -> M.FormVersion:
+        """Application form of a service
+
+        The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
+
+        ``GET /portal/services/{key}/form`` (operationId ``getPortalServiceForm``); permission ``portal.use``.
+        """
+        req = ApiRequest("GET", f"/portal/services/{seg(str(key))}/form")
+        return cast("M.FormVersion", self._c.json(req, options))
 
     def apply_for_service(self, body: M.ApplyRequest, *, options: Optional[RequestOptions] = None) -> M.Application:
         """Apply for a service
@@ -6996,7 +7136,7 @@ class ProcessesApi:
     def query_process_instance(self, id: str, name: str, body: Optional[M.InstanceQueryRequest] = None, *, options: Optional[RequestOptions] = None) -> M.InstanceQueryResult:
         """Run a named query
 
-        Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown handler; 422 VALIDATION_FAILED for missing or mistyped arguments; evaluation is bounded in time and size (R19).
+        Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown instance or handler name; 422 VALIDATION_FAILED for missing or mistyped arguments, HANDLER_EVALUATION_FAILED when the strict-mode FEEL evaluation fails, RESULT_TOO_LARGE when the result exceeds 10000 values or 32 levels; evaluation is bounded in time and size (R19).
 
         ``POST /process-instances/{id}/queries/{name}`` (operationId ``queryProcessInstance``); permission ``process.read``.
         """
@@ -7007,7 +7147,7 @@ class ProcessesApi:
     def update_process_instance(self, id: str, name: str, body: M.InstanceUpdateRequest, *, options: Optional[RequestOptions] = None) -> M.InstanceUpdateResult:
         """Run a named update
 
-        Validates the arguments against the handler, applies the declared changes in one command transaction and records the change (R42). A modification under R49: reason mandatory, permission re-checked, bound to payloadHash and caseVersion; obligations the change affects are re-evaluated. 404 unknown handler; 409 APPROVAL_INVALIDATED, REVISION_CONFLICT; 422 VALIDATION_FAILED, SOD_VIOLATION.
+        Validates the arguments against the handler, applies the declared changes in one command transaction and records the change (R42). A modification under R49: reason mandatory, permission re-checked, bound to payloadHash and caseVersion; obligations the change affects are re-evaluated. 400 REASON_REQUIRED without a reason; 404 unknown instance or handler name; 409 APPROVAL_INVALIDATED, REVISION_CONFLICT, STATE_INVALID when the handler declares activities and the instance is at none of them (E21); 422 VALIDATION_FAILED (arguments), HANDLER_EVALUATION_FAILED (strict FEEL failure), RESULT_TOO_LARGE (over 10000 values or 32 levels), SOD_VIOLATION.
 
         ``POST /process-instances/{id}/updates/{name}`` (operationId ``updateProcessInstance``); permission ``process.modify``; result stored atomically with the state change.
         """
@@ -7016,7 +7156,7 @@ class ProcessesApi:
         return cast("M.InstanceUpdateResult", self._c.json(req, options))
 
 class ProgrammesApi:
-    """``Programmes`` (24 operations)."""
+    """``Programmes`` (25 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -7031,6 +7171,16 @@ class ProgrammesApi:
         req = ApiRequest("PUT", f"/programme-config")
         req.body = body
         return cast("M.PgPublished", self._c.json(req, options))
+
+    def programme_current_config(self, *, options: Optional[RequestOptions] = None) -> M.PgCurrentConfig:
+        """The current programme configuration
+
+        The current published configuration, as it was published, with its version, content hash, publisher and time (prefill for the publish form). 404 NOT_FOUND when nothing is published yet.
+
+        ``GET /programme-config`` (operationId ``programmeCurrentConfig``); permission ``programme.admin``.
+        """
+        req = ApiRequest("GET", f"/programme-config")
+        return cast("M.PgCurrentConfig", self._c.json(req, options))
 
     def programme_config_history(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
         """Published configuration versions
@@ -11094,14 +11244,14 @@ class TasksApi:
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
 
-    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
+    def list_tasks(self, *, assignee: Optional[str] = None, mine: Optional[bool] = None, unassigned: Optional[bool] = None, candidate_group: Optional[str] = None, seat_id: Optional[str] = None, process_instance_id: Optional[str] = None, case_instance_id: Optional[str] = None, business_key: Optional[str] = None, process_definition_key: Optional[str] = None, task_definition_key: Optional[str] = None, state: Optional[str] = None, sort_by: Optional[str] = None, currency: Optional[str] = None, sort_order: Optional[str] = None, variable_names: Optional[list[str]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.Task]:
         """List tasks
 
         Tasks visible to the caller through the one authorization predicate (VI.4 rules 1–3, K2); BPMN user tasks and CMMN human tasks.
 
         ``GET /tasks`` (operationId ``listTasks``); permission ``task.read``.
         """
-        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "sortOrder": sort_order, "variableNames": variable_names, "page": page, "size": size})
+        req = ApiRequest("GET", f"/tasks", query={"assignee": assignee, "mine": mine, "unassigned": unassigned, "candidateGroup": candidate_group, "seatId": seat_id, "processInstanceId": process_instance_id, "caseInstanceId": case_instance_id, "businessKey": business_key, "processDefinitionKey": process_definition_key, "taskDefinitionKey": task_definition_key, "state": state, "sortBy": sort_by, "currency": currency, "sortOrder": sort_order, "variableNames": variable_names, "page": page, "size": size})
         return cast("Page[M.Task]", self._c.page(req, options, page, size))
 
     def get_task(self, id: str, *, options: Optional[RequestOptions] = None) -> M.TaskDetail:
@@ -11605,6 +11755,33 @@ class TenantOperationsApi:
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
+class TestModeApi:
+    """``TestMode`` (2 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def get_test_clock(self, *, options: Optional[RequestOptions] = None) -> M.TestClock:
+        """Read the test-mode clock
+
+        The clock the engine and the business calendar read. 404 unless test mode is on (sangam.test-mode.enabled).
+
+        ``GET /test-mode/clock`` (operationId ``getTestClock``); permission ``admin.read``.
+        """
+        req = ApiRequest("GET", f"/test-mode/clock")
+        return cast("M.TestClock", self._c.json(req, options))
+
+    def change_test_clock(self, body: M.TestClockChange, *, options: Optional[RequestOptions] = None) -> M.TestClock:
+        """Move the test-mode clock
+
+        Advances, sets or resets the engine and business clocks together (timers due by the new time fire on the next job acquisition). Each change is audited as TEST_CLOCK_CHANGED {action, previousOffsetMs, offsetMs, now, actor, reason} before it is answered; a failed audit write undoes it. 400 VALIDATION_FAILED for no action, several actions or a non-positive advanceBy; 404 unless test mode is on.
+
+        ``POST /test-mode/clock`` (operationId ``changeTestClock``); permission ``admin.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/test-mode/clock")
+        req.body = body
+        return cast("M.TestClock", self._c.json(req, options))
+
 class WorkApi:
     """``Work`` (11 operations)."""
 
@@ -11810,7 +11987,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1074 operations on 901 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)
@@ -11819,7 +11996,9 @@ class SangamApis:
         self.admin_assignments = AdminAssignmentsApi(calls)
         self.admin_org_units = AdminOrgUnitsApi(calls)
         self.admin_power_tables = AdminPowerTablesApi(calls)
+        self.admin_security = AdminSecurityApi(calls)
         self.analytics = AnalyticsApi(calls)
+        self.api_contracts = ApiContractsApi(calls)
         self.audit = AuditApi(calls)
         self.billing = BillingApi(calls)
         self.bulk_ingest = BulkIngestApi(calls)
@@ -11879,5 +12058,6 @@ class SangamApis:
         self.scim = SCIMApi(calls)
         self.tasks = TasksApi(calls)
         self.tenant_operations = TenantOperationsApi(calls)
+        self.test_mode = TestModeApi(calls)
         self.work = WorkApi(calls)
         self.workspace = WorkspaceApi(calls)

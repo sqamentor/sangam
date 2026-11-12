@@ -66,6 +66,18 @@ public interface SangamEngineAdapter extends EngineAdapter {
     /** VI.3.1 {@code LOCKED --cancel requested--> CANCEL_REQUESTED}; the next heartbeat reports it. */
     void requestCancel(String workId);
 
+    /**
+     * R37 / M-025: runs {@code work} on the engine's connection in one engine transaction, after the lease of
+     * {@code workId} is checked under its row lock against the caller's worker id and lock version on the engine clock
+     * (VI.3 fencing; a stale or missing lease throws as every fenced worker call does, and nothing runs). Lets a caller
+     * record worker-side state (a step journal row) atomically with the fence. {@code work} must be database work on the
+     * given connection only: a top-level call is retried on a retryable conflict, so it may run again after a rollback.
+     */
+    default <T> T inLeasedTransaction(String workId, String workerId, long lockVersion,
+                                      java.util.function.Function<java.sql.Connection, T> work) {
+        throw new UnsupportedOperationException("inLeasedTransaction is not supported by " + engineId());
+    }
+
     /** A-16: counts at most {@code cap + 1} rows; a result above {@code cap} means "more than cap". */
     long countTasksCapped(TaskQuery query, int cap);
 

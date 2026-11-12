@@ -96,6 +96,10 @@ public final class ComplianceAudit {
     public static final String BREACH_PLAN = "CMP_BREACH_NOTIFICATION_PLAN";
     public static final String BREACH_NOTIFICATION_SENT = "CMP_BREACH_NOTIFICATION_SENT";
     public static final String BREACH_DELAYED = "CMP_BREACH_LAW_ENFORCEMENT_DELAY";
+    /** M-078: a national identifier was placed in the data vault (payload: reference key, type, masked number). */
+    public static final String NATIONAL_ID_VAULTED = "CMP_NATIONAL_ID_VAULTED";
+    /** M-078: a vaulted national identifier was read back (payload adds the purpose and the actor). */
+    public static final String NATIONAL_ID_REVEALED = "CMP_NATIONAL_ID_REVEALED";
 
     private final AuditChain chain;
     private final Transactions denialTx;

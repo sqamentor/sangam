@@ -46,11 +46,12 @@ public class TaskController {
             @RequestParam(required = false) String taskDefinitionKey, @RequestParam(required = false) String state,
             @RequestParam(required = false) String sortBy, @RequestParam(required = false) String sortOrder,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) List<String> variableNames) {
+            @RequestParam(required = false) List<String> variableNames,
+            @RequestParam(required = false) String currency) {
         permissions.require(ctx, Permissions.TASK_READ);
         var filter = new TaskPort.TaskFilter(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId,
                 caseInstanceId, businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder,
-                variableNames);
+                variableNames, currency);
         return Lists.ok(tasks.list(ctx, filter, Lists.page(page, size)));
     }
 

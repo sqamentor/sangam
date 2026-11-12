@@ -45,6 +45,8 @@ public final class CommandState {
     private boolean lockScopeEntered;
     private final TreeSet<String> heldRoots = new TreeSet<>();
     private final Map<String, String> caseTaskOutcomes = new java.util.HashMap<>();
+    /** VI.4 rule 7 / C3-05: the system identity a job of this command runs as (set by JobIdentitySupport). */
+    private org.sangam.core.security.SecurityIdentity jobIdentity;
 
     private CommandState() {
     }
@@ -251,5 +253,18 @@ public final class CommandState {
     /** {@link #caseTaskOutcome} recorded in this command, or null. */
     public synchronized String caseTaskOutcome(String caseExecutionId) {
         return caseTaskOutcomes.get(caseExecutionId);
+    }
+
+    /** C3-05: the identity the job of this command runs as, or null outside a job. */
+    public synchronized org.sangam.core.security.SecurityIdentity jobIdentity() {
+        return jobIdentity;
+    }
+
+    /** C3-05: sets (or, with null, clears) the identity the job of this command runs as; returns the previous one. */
+    public synchronized org.sangam.core.security.SecurityIdentity jobIdentity(
+            org.sangam.core.security.SecurityIdentity identity) {
+        org.sangam.core.security.SecurityIdentity previous = jobIdentity;
+        jobIdentity = identity;
+        return previous;
     }
 }

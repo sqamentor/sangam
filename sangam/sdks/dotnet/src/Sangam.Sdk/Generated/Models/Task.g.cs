@@ -77,4 +77,22 @@ public sealed record Task
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("variables")]
     public global::System.Collections.Generic.Dictionary<string, object?>? Variables { get; init; }
+
+    /// <summary>
+    /// M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("amount")]
+    public long? Amount { get; init; }
+
+    /// <summary>
+    /// M-042 task index: ISO 4217 code of amount; absent or null with amount.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("currency")]
+    public string? Currency { get; init; }
+
+    /// <summary>
+    /// M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("reference")]
+    public string? Reference { get; init; }
 }

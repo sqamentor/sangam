@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- M-027: Spring Boot adapter of the Java SDK, a separate artifact so the SDK itself stays free of Spring. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+  <artifactId>sangam-sdk-spring-boot</artifactId>
+  <name>Sangam Java SDK - Spring Boot adapter</name>
+  <description>Auto-configuration that runs a Sangam external-task worker inside a Spring Boot application: client from
+    sangam.worker.* properties, handlers and sagas from beans, start and graceful stop with the application context.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-sdk-java</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- versions from the Spring Boot BOM managed by sangam-parent; the application brings Spring Boot itself -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-autoconfigure</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -34,6 +34,9 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $formKey
  * @property-read string|null $delegationState
  * @property-read array<string, mixed>|null $variables P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller.
+ * @property-read int|null $amount M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.
+ * @property-read string|null $currency M-042 task index: ISO 4217 code of amount; absent or null with amount.
+ * @property-read string|null $reference M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one.
  */
 final class Task implements \JsonSerializable
 {
@@ -60,6 +63,9 @@ final class Task implements \JsonSerializable
      * @param string|null $formKey
      * @param string|null $delegationState
      * @param array<string, mixed>|null $variables
+     * @param int|null $amount
+     * @param string|null $currency
+     * @param string|null $reference
      */
     public function __construct(
         public readonly ?string $id = null,
@@ -84,6 +90,9 @@ final class Task implements \JsonSerializable
         public readonly ?string $formKey = null,
         public readonly ?string $delegationState = null,
         public readonly ?array $variables = null,
+        public readonly ?int $amount = null,
+        public readonly ?string $currency = null,
+        public readonly ?string $reference = null,
     ) {
     }
 
@@ -113,6 +122,9 @@ final class Task implements \JsonSerializable
             Support::str($data['formKey'] ?? null),
             Support::str($data['delegationState'] ?? null),
             Support::arr($data['variables'] ?? null),
+            Support::int($data['amount'] ?? null),
+            Support::str($data['currency'] ?? null),
+            Support::str($data['reference'] ?? null),
         );
     }
 
@@ -184,6 +196,15 @@ final class Task implements \JsonSerializable
         }
         if ($this->variables !== null) {
             $out['variables'] = $this->variables;
+        }
+        if ($this->amount !== null) {
+            $out['amount'] = $this->amount;
+        }
+        if ($this->currency !== null) {
+            $out['currency'] = $this->currency;
+        }
+        if ($this->reference !== null) {
+            $out['reference'] = $this->reference;
         }
         return $out === [] ? new \stdClass() : $out;
     }

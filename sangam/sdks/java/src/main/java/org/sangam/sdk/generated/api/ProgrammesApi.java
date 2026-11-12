@@ -9,6 +9,7 @@ import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.PgAllocationRequest;
 import org.sangam.sdk.generated.model.PgCampaignRequest;
 import org.sangam.sdk.generated.model.PgCampaignResult;
+import org.sangam.sdk.generated.model.PgCurrentConfig;
 import org.sangam.sdk.generated.model.PgGeneratePeriodsRequest;
 import org.sangam.sdk.generated.model.PgMilestone;
 import org.sangam.sdk.generated.model.PgMilestoneRequest;
@@ -29,7 +30,7 @@ import org.sangam.sdk.generated.model.PgUpdateProgrammeRequest;
 import org.sangam.sdk.generated.model.ProgrammePublishConfigBody;
 
 /**
- * Typed operations of {@code Programmes} (24 operations), generated from
+ * Typed operations of {@code Programmes} (25 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -38,6 +39,7 @@ import org.sangam.sdk.generated.model.ProgrammePublishConfigBody;
 public final class ProgrammesApi {
 
     private static final TypeReference<PgPublished> R_programmePublishConfig = new TypeReference<>() { };
+    private static final TypeReference<PgCurrentConfig> R_programmeCurrentConfig = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_programmeConfigHistory = new TypeReference<>() { };
     private static final TypeReference<java.util.List<PgPeriod>> R_programmeGeneratePeriods = new TypeReference<>() { };
     private static final TypeReference<java.util.List<PgPeriod>> R_programmeListPeriods = new TypeReference<>() { };
@@ -80,6 +82,20 @@ public final class ProgrammesApi {
         ApiRequest req = ApiRequest.put("/programme-config");
         req.body(body);
         return call.json(req, options, R_programmePublishConfig);
+    }
+
+    /**
+     * The current programme configuration
+     *
+     * <p>The current published configuration, as it was published, with its version, content hash, publisher and time (prefill for the publish form). 404 NOT_FOUND when nothing is published yet.
+     *
+     * <p>{@code GET /programme-config} (operationId {@code programmeCurrentConfig}); permission {@code programme.admin}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public PgCurrentConfig programmeCurrentConfig(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/programme-config");
+        return call.json(req, options, R_programmeCurrentConfig);
     }
 
     /**

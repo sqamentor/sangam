@@ -26,6 +26,7 @@ import org.sangam.rest.port.PackagePort;
 import org.sangam.rest.port.Page;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
+import org.sangam.rest.support.PackageSigning;
 import org.sangam.rest.support.Permissions;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
@@ -34,11 +35,19 @@ import org.sangam.rest.support.TxSupport;
  * Executable packages (R43 / X.2.4, FLOWABLE-INTO-OPERATON FC-41 app bundles) persisted in the product table {@code PACKAGE_VERSION}:
  * one row per REST package, addressed by {@code package_id} (changeset 0016-05, indexed). Columns:
  * {@code package_key}; {@code version} = the per-key sequence number assigned at creation (the REST {@code revision}
- * counts the edits of that package); {@code package_hash} = the frozen content hash (32 zero bytes until submit);
+ * counts the edits of that package); {@code package_hash} = the frozen content hash (NULL until submit);
  * {@code state}; {@code author}, {@code reviewer}, {@code deployer}; {@code engine_deployment_id};
  * {@code created_at} / {@code state_changed_at}; {@code manifest_json} = name, revision, approver, environment,
  * activateAt, resource hashes, the resources themselves (base64), the transition history and the author's seat.
- * Signatures and environment promotion (X.2.4.5) are not produced by this adapter ({@code signature} stays null).
+ * The legacy {@code signature} column stays null: signatures live in {@code PACKAGE_SIGNATURE} (M-074, below).
+ *
+ * <p>M-074 (X.2.4.5, T70, owner Q-04): the content hash frozen at submit is {@code SHA-256(JCS(manifest))}
+ * ({@link PackageManifests}). With a package signing key ({@link PackageSigning}), submit signs the hash as
+ * {@code author} and approve as {@code approver}. Deploy recomputes the hash and verifies the approver signature
+ * against the trusted keys; an unsigned package is refused ({@code 422 PACKAGE_UNSIGNED}) unless this is a development
+ * environment that allows it. Activation needs an APPROVED {@code ENV_BINDING} in the package's environment for every
+ * name in the manifest's {@code envBindings} ({@code 409 ENV_BINDING_MISSING}). Export, verify and import move the same
+ * bytes between environments, with the source's signatures; the target verifies them the same way (air-gapped too).
  *
  * <p>Lifecycle (X.2.4.4): DRAFT → submit → IN_REVIEW → approve → APPROVED → deploy → DEPLOYED → activate → ACTIVE;
  * IN_REVIEW → reject → DRAFT (new revision); DRAFT → withdraw → WITHDRAWN; ACTIVE ⇄ SUSPENDED (suspend/resume);
@@ -62,14 +71,25 @@ public final class JdbcPackageAdapter implements PackagePort {
     private final PermissionPort permissions;
     private final AuditPort audit;
     private final RestProperties props;
+    private final PackageSigning signing;
+    private final JdbcEnvBindings bindings;
 
+    /** Without package signing configuration: unsigned packages are refused at deploy ({@link PackageSigning#strict}). */
     public JdbcPackageAdapter(TxSupport tx, DeploymentPort deployments, PermissionPort permissions, AuditPort audit,
                               RestProperties props) {
+        this(tx, deployments, permissions, audit, props, PackageSigning.strict());
+    }
+
+    /** @param signing this environment's package signing key, trusted keys and unsigned-package rule (M-074) */
+    public JdbcPackageAdapter(TxSupport tx, DeploymentPort deployments, PermissionPort permissions, AuditPort audit,
+                              RestProperties props, PackageSigning signing) {
         this.tx = tx;
         this.deployments = deployments;
         this.permissions = permissions;
         this.audit = audit;
         this.props = props;
+        this.signing = signing == null ? PackageSigning.strict() : signing;
+        this.bindings = new JdbcEnvBindings(tx, permissions, audit, this.signing, this::deployersUsing);
     }
 
     @Override
@@ -164,10 +184,11 @@ public final class JdbcPackageAdapter implements PackagePort {
                 if (e.resources.isEmpty()) {
                     throw ApiProblem.unprocessable("PACKAGE_EMPTY", "A package needs at least one resource");
                 }
-                String hash = packageHash(e.resources);
+                String hash = packageHash(p.key(), p.name(), e.resources);
                 e.pkg = copy(p, p.revision(), "IN_REVIEW", hash, hashes(e.resources), p.name(), null, null, null,
                         p.environment(), p.activateAt(), p.deploymentId(), now, append(p.history(),
                                 event(action, from, "IN_REVIEW", ctx, request.reason(), now)));
+                sign(ctx, hash, PackageManifests.ROLE_AUTHOR, now);
                 audit(ctx, e, "PACKAGE_SUBMITTED", request, from);
             }
             case "approve" -> {
@@ -177,6 +198,7 @@ public final class JdbcPackageAdapter implements PackagePort {
                 e.pkg = copy(p, p.revision(), "APPROVED", p.packageHash(), p.resourceHashes(), p.name(),
                         ctx.principalId(), ctx.principalId(), null, p.environment(), p.activateAt(), p.deploymentId(), now,
                         append(p.history(), event(action, from, "APPROVED", ctx, request.reason(), now)));
+                sign(ctx, p.packageHash(), PackageManifests.ROLE_APPROVER, now);
                 audit(ctx, e, "PACKAGE_APPROVED", request, from);
             }
             case "reject" -> {
@@ -193,12 +215,17 @@ public final class JdbcPackageAdapter implements PackagePort {
                 permissions.require(ctx, Permissions.PACKAGE_DEPLOY);
                 expect(p, action, "APPROVED");
                 separate(ctx, e, "deployer");
-                if (!p.packageHash().equals(packageHash(e.resources))) {
+                if (!p.packageHash().equals(packageHash(p.key(), p.name(), e.resources))) {
                     throw ApiProblem.conflict("PACKAGE_HASH_MISMATCH", "The package content no longer matches its approved hash");
                 }
-                DeploymentPort.Deployment d = deployments.deploy(ctx, new DeploymentPort.DeployRequest(
-                        "pkg:" + p.key() + ":" + p.packageHash(), "sangam-package", false, e.resources));
-                String env = request.environment() == null || request.environment().isBlank() ? "default" : request.environment();
+                String tenant = JdbcSupport.tenant(ctx);
+                requireSigned(tx.withConnection(c -> JdbcPackageSignatures.load(c, tenant, p.packageHash())),
+                        p.packageHash());
+                // M-068: the package's own deploy (pkg:<key>:<hash>, sangam-package) carries the engine's proof
+                DeploymentPort.Deployment d = deployments.deployPackage(ctx, p.key(), p.packageHash(),
+                        ScriptTaskDeployRewrite.rewrite(e.resources));
+                String env = request.environment() == null || request.environment().isBlank() ? defaultEnvironment()
+                        : request.environment();
                 e.pkg = copy(p, p.revision(), "DEPLOYED", p.packageHash(), p.resourceHashes(), p.name(), p.reviewer(),
                         p.approver(), ctx.principalId(), env, p.activateAt(), d.id(), now,
                         append(p.history(), event(action, from, "DEPLOYED", ctx, request.reason(), now)));
@@ -208,6 +235,7 @@ public final class JdbcPackageAdapter implements PackagePort {
                 permissions.require(ctx, Permissions.PACKAGE_DEPLOY);
                 expect(p, action, "DEPLOYED");
                 separate(ctx, e, "deployer");
+                requireBindings(ctx, e);
                 if (request.activateAt() != null && request.activateAt().isAfter(now)) {
                     e.pkg = copy(p, p.revision(), "DEPLOYED", p.packageHash(), p.resourceHashes(), p.name(), p.reviewer(),
                             p.approver(), p.deployer(), p.environment(), request.activateAt(), p.deploymentId(), now,
@@ -293,6 +321,236 @@ public final class JdbcPackageAdapter implements PackagePort {
         return out;
     }
 
+    // ------------------------------------------------------------------ M-074 signatures, promotion, ENV_BINDING
+
+    private static final java.util.Set<String> EXPORTABLE = java.util.Set.of("APPROVED", "DEPLOYED", "ACTIVE",
+            "SUSPENDED", "RETIRED", "ARCHIVED");
+
+    @Override
+    public List<PackageSignature> signatures(RequestContext ctx, String packageId) {
+        permissions.require(ctx, Permissions.PACKAGE_READ);
+        Package p = entry(ctx, packageId).pkg;
+        return p.packageHash() == null ? List.of()
+                : tx.withConnection(c -> JdbcPackageSignatures.load(c, JdbcSupport.tenant(ctx), p.packageHash()));
+    }
+
+    @Override
+    public PackageBundle export(RequestContext ctx, String packageId) {
+        permissions.require(ctx, Permissions.PACKAGE_DEPLOY);
+        Entry e = entry(ctx, packageId);
+        Package p = e.pkg;
+        if (!EXPORTABLE.contains(p.state())) {
+            throw ApiProblem.conflict("INVALID_TRANSITION", "Only an APPROVED (or later) package can be exported; it is "
+                    + p.state()).with("state", p.state());
+        }
+        if (signing.environment() == null) {
+            throw ApiProblem.conflict("PACKAGE_ENVIRONMENT_NOT_SET", "This environment has no label "
+                    + "(sangam.onboarding.environment); a bundle names the environment it comes from");
+        }
+        Map<String, Object> manifest = PackageManifests.manifest(p.key(), p.name(), e.resources);
+        if (!p.packageHash().equals(PackageManifests.hash(manifest))) {
+            throw ApiProblem.conflict("PACKAGE_HASH_MISMATCH", "The package content no longer matches its approved hash");
+        }
+        Map<String, String> artifacts = new TreeMap<>();
+        e.resources.forEach((k, v) -> artifacts.put(k, PackageManifests.encode(k, v)));
+        String tenant = JdbcSupport.tenant(ctx);
+        List<PackageSignature> sigs = tx.withConnection(c -> JdbcPackageSignatures.load(c, tenant, p.packageHash()));
+        Instant now = Instant.now();
+        audit.record(ctx, chain(e), "PACKAGE_EXPORTED", payload("packageId", p.id(), "key", p.key(),
+                "package_hash", p.packageHash(), "sourceEnvironment", signing.environment(), "signatures", sigs.size(),
+                "actor", ctx.actor()));
+        return new PackageBundle(PackageManifests.BUNDLE_FORMAT, p.packageHash(), manifest, Map.copyOf(artifacts),
+                sigs, signing.environment(), now);
+    }
+
+    @Override
+    public PackageVerification verify(RequestContext ctx, PackageBundle bundle) {
+        permissions.require(ctx, Permissions.PACKAGE_READ);
+        return tx.withConnection(c -> verification(c, JdbcSupport.tenant(ctx), bundle).result());
+    }
+
+    /** The verification and the artifact bytes it decoded (for the import). */
+    private record Verified(PackageVerification result, Map<String, byte[]> bytes, String key, String name) {
+    }
+
+    private Verified verification(java.sql.Connection c, String tenant, PackageBundle bundle) {
+        if (bundle == null || !Integer.valueOf(PackageManifests.BUNDLE_FORMAT).equals(bundle.format())
+                || bundle.manifest() == null || bundle.packageHash() == null || bundle.artifacts() == null) {
+            throw ApiProblem.badRequest("PACKAGE_BUNDLE_INVALID", "not a package bundle of format "
+                    + PackageManifests.BUNDLE_FORMAT + " (format, packageHash, manifest and artifacts are required)");
+        }
+        String key = PackageManifests.packageField(bundle.manifest(), "key");
+        if (key == null || !key.matches("[A-Za-z0-9._-]{1,128}")) {
+            throw ApiProblem.badRequest("PACKAGE_BUNDLE_INVALID", "the manifest names no valid package key");
+        }
+        String name = PackageManifests.packageField(bundle.manifest(), "name");
+        PackageManifests.ArtifactCheck art = PackageManifests.artifacts(bundle.manifest(), bundle.artifacts());
+        Map<String, Object> rebuilt = PackageManifests.manifest(key, name, art.bytes());
+        String recomputed = PackageManifests.hash(rebuilt);
+        boolean hashMatches = recomputed.equalsIgnoreCase(bundle.packageHash()) && art.mismatches().isEmpty()
+                && recomputed.equals(PackageManifests.hash(bundle.manifest()));
+        List<PackageSignature> sigs = bundle.signatures() == null ? List.of() : bundle.signatures();
+        List<SignatureCheck> checks = PackageManifests.check(bundle.packageHash(), sigs, signing.trusted(),
+                List.of(PackageManifests.ROLE_APPROVER));
+        String failure = signatureFailure(checks, sigs);
+        boolean signaturesOk = failure == null
+                || (signing.allowUnsigned() && !"PACKAGE_SIGNATURE_INVALID".equals(failure));
+        List<String> required = PackageManifests.envBindings(rebuilt);
+        java.util.Set<String> approved = JdbcEnvBindings.approvedNames(c, tenant, defaultEnvironment());
+        List<String> missing = required.stream().filter(n -> !approved.contains(n)).toList();
+        PackageVerification v = new PackageVerification(bundle.packageHash(), recomputed, hashMatches, !sigs.isEmpty(),
+                checks, art.mismatches(), required, missing, hashMatches && signaturesOk);
+        return new Verified(v, art.bytes(), key, name);
+    }
+
+    @Override
+    public synchronized Package importBundle(RequestContext ctx, PackageImportRequest request) {
+        permissions.require(ctx, Permissions.PACKAGE_DEPLOY);
+        PackageBundle bundle = request == null ? null : request.bundle();
+        String tenant = JdbcSupport.tenant(ctx);
+        return tx.inTx(() -> {
+            Verified v = tx.withConnection(c -> verification(c, tenant, bundle));
+            if (!v.result().hashMatches()) {
+                throw ApiProblem.unprocessable("PACKAGE_HASH_MISMATCH", "The bundle's bytes do not match its package hash")
+                        .with("artifactMismatches", v.result().artifactMismatches());
+            }
+            List<PackageSignature> sigs = bundle.signatures() == null ? List.of() : bundle.signatures();
+            requireSigned(sigs, bundle.packageHash());
+            String hash = v.result().recomputedHash();
+            if (tx.withConnection(c -> Jdbc.one(c, "SELECT package_id FROM PACKAGE_VERSION WHERE tenant_id=? AND"
+                    + " package_hash=?", rs -> rs.getString(1), tenant, hashBytes(hash))).isPresent()) {
+                throw ApiProblem.conflict("PACKAGE_EXISTS", "A package with this hash already exists in this tenant");
+            }
+            List<String> valid = v.result().signatures().stream().filter(SignatureCheck::valid)
+                    .map(SignatureCheck::role).toList();
+            PackageSignature author = role(sigs, PackageManifests.ROLE_AUTHOR, valid);
+            PackageSignature approver = role(sigs, PackageManifests.ROLE_APPROVER, valid);
+            Instant now = Instant.now();
+            Entry e = new Entry();
+            e.resources = new LinkedHashMap<>(v.bytes());
+            // Without a verified author signature (development: unsigned bundle) the importer answers for the content:
+            // they are recorded as its author, so separation of duties keeps them from deploying it.
+            boolean signedAuthor = author != null && author.principalId() != null;
+            e.authorSeat = signedAuthor ? author.seatId() : ctx.seatId();
+            String authoredBy = signedAuthor ? author.principalId() : ctx.principalId();
+            String approvedBy = approver == null ? null : approver.principalId();
+            String note = "from " + bundle.sourceEnvironment() + (request.reason() == null ? "" : ": " + request.reason());
+            e.pkg = new Package(JdbcSupport.newId(), v.key(), v.name() == null ? v.key() : v.name(), 1, "APPROVED", hash,
+                    hashes(e.resources), authoredBy, approvedBy, approvedBy, null, null, null, null, now, now,
+                    List.of(event("import", null, "APPROVED", ctx, note, now)), null);
+            insert(tenant, e);
+            tx.withConnection(c -> {
+                for (PackageSignature s : sigs) {
+                    if (s != null && valid.contains(s.role())) {
+                        JdbcPackageSignatures.put(c, tenant, new PackageSignature(hash, s.role(), s.principalId(),
+                                s.seatId(), s.alg(), s.keyId(), s.signature(), s.signedAt() == null ? now : s.signedAt()));
+                    }
+                }
+                return null;
+            });
+            audit.record(ctx, chain(e), "PACKAGE_IMPORTED", payload("packageId", e.pkg.id(), "key", e.pkg.key(),
+                    "package_hash", hash, "sourceEnvironment", bundle.sourceEnvironment(),
+                    "envBindingsMissing", v.result().envBindingsMissing(), "reason", request.reason(),
+                    "actor", ctx.actor()));
+            return view(e);
+        });
+    }
+
+    @Override
+    public List<EnvBinding> envBindings(RequestContext ctx, String env, String name, String state) {
+        return bindings.list(ctx, env, name, state);
+    }
+
+    @Override
+    public synchronized EnvBinding setEnvBinding(RequestContext ctx, String name, EnvBindingRequest request) {
+        return bindings.set(ctx, name, request);
+    }
+
+    @Override
+    public synchronized EnvBinding approveEnvBinding(RequestContext ctx, String name, EnvBindingApproval approval) {
+        return bindings.approve(ctx, name, approval);
+    }
+
+    private static PackageSignature role(List<PackageSignature> sigs, String role, List<String> validRoles) {
+        return !validRoles.contains(role) ? null : sigs.stream().filter(s -> s != null && role.equals(s.role()))
+                .findFirst().orElse(null);
+    }
+
+    /** Signs the frozen hash for {@code role} when this environment has a package signing key. */
+    private void sign(RequestContext ctx, String hash, String role, Instant now) {
+        if (signing.canSign()) {
+            PackageSignature s = PackageManifests.sign(signing.signer(), hash, role, ctx.principalId(), ctx.seatId(), now);
+            tx.withConnection(c -> {
+                JdbcPackageSignatures.put(c, JdbcSupport.tenant(ctx), s);
+                return null;
+            });
+        }
+    }
+
+    /**
+     * Deploy and import (X.2.4.5): a valid approver signature by a trusted key. A bad signature is refused everywhere;
+     * a missing or untrusted one only where unsigned packages are not allowed (outside development).
+     */
+    private void requireSigned(List<PackageSignature> sigs, String hash) {
+        List<SignatureCheck> checks = PackageManifests.check(hash, sigs, signing.trusted(),
+                List.of(PackageManifests.ROLE_APPROVER));
+        if (checks.stream().anyMatch(c -> "BAD_SIGNATURE".equals(c.reason()))) {
+            throw ApiProblem.unprocessable("PACKAGE_SIGNATURE_INVALID", "A package signature does not verify")
+                    .with("signatures", checks);
+        }
+        String failure = signatureFailure(checks, sigs);
+        if (failure != null && !signing.allowUnsigned()) {
+            throw ApiProblem.unprocessable(failure, "PACKAGE_KEY_UNKNOWN".equals(failure)
+                    ? "The package is signed by a key this environment does not trust"
+                    : "The package has no valid approver signature").with("signatures", checks);
+        }
+    }
+
+    /** Null when an approver signature verifies; otherwise the refusal code. */
+    private static String signatureFailure(List<SignatureCheck> checks, List<PackageSignature> sigs) {
+        if (checks.stream().anyMatch(c -> "BAD_SIGNATURE".equals(c.reason()))) {
+            return "PACKAGE_SIGNATURE_INVALID";
+        }
+        if (checks.stream().noneMatch(c -> "ROLE_MISSING".equals(c.reason()))) {
+            return null;
+        }
+        return checks.stream().anyMatch(c -> "UNKNOWN_KEY".equals(c.reason())) ? "PACKAGE_KEY_UNKNOWN"
+                : "PACKAGE_UNSIGNED";
+    }
+
+    /** Activation gate (X.2.4.5): every binding the manifest names is APPROVED in the package's environment. */
+    private void requireBindings(RequestContext ctx, Entry e) {
+        List<String> required = PackageManifests.envBindings(PackageManifests.authored(e.resources));
+        if (required.isEmpty()) {
+            return;
+        }
+        String env = e.pkg.environment() == null ? defaultEnvironment() : e.pkg.environment();
+        java.util.Set<String> approved = tx.withConnection(c -> JdbcEnvBindings.approvedNames(c, JdbcSupport.tenant(ctx), env));
+        List<String> missing = required.stream().filter(n -> !approved.contains(n)).toList();
+        if (!missing.isEmpty()) {
+            throw ApiProblem.conflict("ENV_BINDING_MISSING", "Activation needs an APPROVED environment binding in "
+                    + env + " for " + missing).with("env", env).with("missing", missing);
+        }
+    }
+
+    /** The deploy environment when the request names none: this environment's label, else {@code default}. */
+    private String defaultEnvironment() {
+        return signing.environment() == null ? "default" : signing.environment();
+    }
+
+    /** Deployers of the tenant's packages deployed in {@code env} whose manifest names {@code binding}. */
+    private java.util.Set<String> deployersUsing(String tenant, String env, String binding) {
+        java.util.Set<String> out = new java.util.TreeSet<>();
+        for (Entry o : load(tenant, null)) {
+            Package p = o.pkg;
+            if (p.deployer() != null && env.equals(p.environment())
+                    && PackageManifests.envBindings(PackageManifests.authored(o.resources)).contains(binding)) {
+                out.add(p.deployer());
+            }
+        }
+        return out;
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private Entry entry(RequestContext ctx, String id) {
@@ -373,13 +631,9 @@ public final class JdbcPackageAdapter implements PackagePort {
         return List.copyOf(l);
     }
 
-    private static final java.util.Set<String> TEXT_EXTENSIONS = java.util.Set.of(".bpmn", ".dmn", ".cmmn", ".form",
-            ".json", ".xml", ".yaml", ".yml", ".txt");
-
     /** Text resources (by extension) travel as UTF-8 text; everything else as base64 (PackagePort contract). */
     static boolean isText(String name) {
-        String n = name.toLowerCase(java.util.Locale.ROOT);
-        return TEXT_EXTENSIONS.stream().anyMatch(n::endsWith);
+        return PackageManifests.isText(name);
     }
 
     /** The stored package with its resource content attached ({@link Package#resources()}). */
@@ -515,22 +769,23 @@ public final class JdbcPackageAdapter implements PackagePort {
         return e;
     }
 
-    /** 32 zero bytes until the hash is frozen at submit (the column is NOT NULL). */
-    private static byte[] hashBytes(String hex) {
-        byte[] b = new byte[32];
+    /**
+     * The frozen hash as the 32 bytes of the unique PACKAGE_VERSION_HASH; NULL until submit freezes it, so any number
+     * of drafts share a tenant (decision 83, changeset 0043-10: the index covers frozen hashes only).
+     */
+    static byte[] hashBytes(String hex) {
         if (hex == null) {
-            return b;
+            return null;
         }
-        for (int i = 0; i < 32 && 2 * i + 1 < hex.length(); i++) {
-            b[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
+        byte[] b = PackageManifests.hashBytes(hex);
+        if (b == null) {
+            throw new IllegalStateException("package hash is not 64 hex characters: " + hex);
         }
         return b;
     }
 
-    /** sha256 over the sorted {@code name:sha256(content)} lines (X.2.4.5 hash addressing). */
-    static String packageHash(Map<String, byte[]> res) {
-        StringBuilder sb = new StringBuilder();
-        new TreeMap<>(hashes(res)).forEach((k, v) -> sb.append(k).append(':').append(v).append('\n'));
-        return Hashes.hex(Hashes.sha256(sb.toString().getBytes(StandardCharsets.UTF_8)));
+    /** {@code SHA-256(JCS(manifest))} of the package (X.2.4.5 hash addressing, {@link PackageManifests}). */
+    static String packageHash(String key, String name, Map<String, byte[]> res) {
+        return PackageManifests.hash(PackageManifests.manifest(key, name, res));
     }
 }

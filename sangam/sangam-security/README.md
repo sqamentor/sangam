@@ -125,7 +125,11 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 | `crypto/AesGcmFieldEncryptor.java` (port `sangam-core/.../core/security/FieldEncryptor.java`) | Tenant-key encryption of sensitive values and JSON at rest (DPDP, X.2.3.8): AES-256-GCM, envelope `sgmenc:v1:<tenant>/k<n>:<base64url>`, AAD = tenant + key id + caller context (cross-tenant and cross-purpose copies fail), canonical JSON, lazy `reencrypt` after rotation; `403 DECRYPTION_DENIED`, `410 KEY_DESTROYED` |
 | `crypto/TenantKeyStore.java`, `crypto/JdbcTenantKeyStore.java` | One data key per tenant, versioned key ids, `ACTIVE` / `DECRYPT_ONLY` / `DESTROYED` (crypto-shredding), rotation, keys stored only wrapped by a KEK (AES-GCM, AAD = key id), KEK rotation by `rewrapAll`, concurrent first use is safe |
 | `crypto/MasterKeyProvider.java` | KEKs from base64 secrets, a PKCS#12 key store, or an ephemeral development key (refused on production by `SangamSecurity.newFieldEncryptor`); HSM-pluggable |
-| `mask/FieldMaskService.java` | VI.4 rule 4 / K11: `READ_VARIABLE`/`READ_SENSITIVE` field masks, the same for lists and objects; `SENSITIVE_READ` audit |
+| `mask/FieldMaskService.java` | VI.4 rule 4 / K11: `READ_VARIABLE`/`READ_SENSITIVE` field masks, the same for lists and objects; `SENSITIVE_READ` audit. M-086: `maskAll` is set-based (one `PolicyCompiler.allowedIds` query per permission and 32 ids, same predicate as the object check); the jqwik property `FieldMaskSetEquivalencePropertiesTest` proves it equals the per-row result, audit included |
+| `crypto/FieldReencryptionJob.java`, `crypto/ReencryptionSource.java` | M-085: resumable, tenant-scoped re-encryption to the active key after a rotation. One transaction per batch with the cursor (`SEC_REENCRYPT_PROGRESS`), compare-and-set writes, a dry run, metric callback, `FIELD_REENCRYPTION_COMPLETED`. Scheduled by `sangam-server` `FieldReencryptionWiring` (`sangam.security.reencryption.*`, off by default) |
+| `breakglass/BreakGlassService.java`, `breakglass/BreakGlassAlarm.java` | M-084 (AJ-05 step 7): break-glass token classes from tenant config (`tokenClasses`, `breakGlass: true`), dual approval (requester and holder excluded), a time-boxed API token shown once, every use audited `BREAK_GLASS_USED` with `alarm=true` plus the alarm callback, and the review task (`review_status` PENDING). Off (404) without a configured class. REST: `sangam-server` `BreakGlassController` |
+| `oidc/ClaimsProfile.java`, `oidc/ClaimsProfileMapper.java` | M-077 (R50, AJ-05 step 3): configurable person link (sub, verified e-mail with allowed domains, or a named person-id claim), IdP roles and groups on or off, multi-factor required or not. Presets `default` and `verified-email`; no country or IdP default in code |
+| `saml/SamlProperties.java`, `saml/SamlAttributeMapper.java` | M-076: settings of the optional SAML SP adapter (off by default) and the assertion-to-identity mapping through the same claims profile (tenant from the registration, AuthnContextClassRef to `acr`) |
 
 ### Security audit (R42 audit part, X.2.3.2, X.2.3.3, X.4.0.3)
 
@@ -168,6 +172,7 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 | spring-context / spring-web (Boot BOM) | Apache-2.0 | compile |
 | jakarta.servlet-api 6.1.0 | EPL-2.0 OR GPL-2.0 WITH Classpath-exception (OSI) | provided |
 | operaton-engine / operaton-engine-dmn 2.2.0 | Apache-2.0 | provided (supplied by sangam-engine) |
+| jqwik 1.10.2 (version managed in the root pom) | EPL-2.0 | test (M-086 property test) |
 
 Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in this pom).
 
@@ -257,16 +262,22 @@ Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in t
 - **No tests yet** (phase rule). Planned: T13–T17, T37 (list/count/object property test per dialect), T38/D-55
   benchmark, and an H2 unit suite for the compiler and the services.
 - SCIM 2.0 provisioning (R67, Stage D) is not implemented.
-- SAML 2.0 / Parichay SSO (AJ-05) is configuration of the IdP (Keycloak brokers SAML). No SAML code is in this module.
+- SAML 2.0 (M-076, decisions 52, 73 and 99): in 0.1.0 a SAML IdP is connected only through Keycloak brokering
+  (`deploy/compose/keycloak/README.md`). There is no server-side SAML session; `sangam.security.saml.enabled=true`
+  refuses the start (`sangam-server` `SamlWiring`). The plain settings and assertion mapping (`saml/`) are kept for a
+  later release and are not called in 0.1.0.
+- The claims profile (M-077) is applied by the server's bearer-token path (`JwtPrincipalConverter`) when
+  `sangam.security.claims-profile.*` is set, through `ClaimsProfile.linkKey` and `KeycloakClaimsMapper.mfaShown`;
+  without it the token path links by its own claim settings, as before.
   IdP records (protocol, issuer, metadata URL, attribute mapping, MFA, session timeout) are managed outside this module,
   by sangam-rest `JdbcIdentityAdminAdapter`: create and update audit `IDP_CONFIGURED`, and any change puts the record
   back to DRAFT until it is tested again. The connection test covers OIDC discovery only; other protocols get a
   failed test result.
-- Break-glass accounts (AJ-05 step 7) are not implemented as a separate mechanism. A time-limited API token plus an
-  alert on use would cover them.
 - Merkle checkpoints of the audit chain (X.2.3.4 rule 4) are a core `AuditChain` gap, not handled here.
-- Field-mask checks are per resource: lists cost one object check per row and classified permission. A set-based
-  projection would be faster.
-- Field encryption has no scheduled re-encryption job; values move to the new key when rewritten (`reencrypt`).
+- Field re-encryption (M-085) covers every store that registers a `ReencryptionSource` bean; the REST document
+  (`REST_DOCUMENT.body`) and form draft (`FORM_DRAFT.data_ciphertext`) sources are in sangam-server
+  `RestStoreReencryptionSources`. Documents under the global tenant `*` move only when `*` is in
+  `sangam.security.reencryption.tenants`. Secret storage belongs to its own module. Idempotency responses are not swept
+  (owner decision 30); they expire.
 - R82 strategies are not in this module, which provides seat resolution and candidate exclusion only. The strategies
   (ROUND_ROBIN, LEAST_LOADED, SKILLS, PRIORITY) are the pack delegate `AssignmentStrategyDelegate` in sangam-packs.

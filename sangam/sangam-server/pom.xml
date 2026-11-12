@@ -158,6 +158,32 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
     </dependency>
+    <!-- M-076 SAML relying party, host side only (decision 73); off unless sangam.security.saml.enabled. Version from
+         the Spring Boot BOM; OpenSAML pinned in the root pom. -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-saml2-service-provider</artifactId>
+    </dependency>
+    <!-- M-064 / M-058 (W3-A REQUEST 13:19:36Z): broker clients that are optional in sangam-integration, present on the
+         server so MQTT and NATS channels and the NATS/Redis wake-up bus can be enabled. Paho EPL-2.0 OR EDL-1.0, jnats
+         Apache-2.0, jedis MIT (decision 56, DOWNLOADS-WAVE3). Versions managed in the root pom. -->
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>jnats</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+    </dependency>
+    <!-- M-081: lets the PDFBox renderer in sangam-integration load at runtime (it is optional there) -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-jdbc</artifactId>

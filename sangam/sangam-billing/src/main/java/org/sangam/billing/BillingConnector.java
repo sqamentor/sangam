@@ -13,6 +13,7 @@ import org.sangam.core.integration.SangamConnector;
 import org.sangam.core.layer.CapabilityClass;
 import org.sangam.ledger.AccountKey;
 import org.sangam.ledger.Balance;
+import org.sangam.ledger.LedgerPeriods;
 import org.sangam.ledger.LedgerService;
 
 import java.math.BigDecimal;
@@ -29,7 +30,8 @@ import java.util.function.BiFunction;
  * {@code billing.waive}. Tariffs come from the tenant profile ({@code tariffs:}); the account list of a cycle comes
  * from an {@link AccountSource} (the consumer / property / licence register of the deployment).
  *
- * <p>Common inputs: {@code ledgerId} (default {@code DEMAND}), {@code period} (invoice, penalty and waive; missing: the
+ * <p>Common inputs: {@code ledgerId} (default {@code DEMAND}), {@code period} or its alias {@code fiscalYear} (invoice,
+ * penalty and waive; the same keys as the ledger connector, {@link LedgerPeriods}; missing or {@code current}: the
  * tenant's current fiscal period from the period resolver, which refuses when no fiscal year is configured: the step
  * fails with {@code FISCAL_YEAR_NOT_CONFIGURED}, SL-127; never an invented calendar year), {@code consumer}, {@code cycle},
  * {@code tariffId}, {@code measures} (map) or {@code units}, {@code dueDays} (default 15), {@code amount},
@@ -66,17 +68,13 @@ public final class BillingConnector implements SangamConnector {
         this.clock = clock == null ? Clock.systemUTC() : clock;
     }
 
-    /** The step's {@code period}, else the tenant's current fiscal period; never an assumed calendar year (SL-127). */
+    /**
+     * The step's {@code period} (or its alias {@code fiscalYear}, as the ledger connector reads it), else the tenant's
+     * current fiscal period; never an assumed calendar year (SL-127). One rule with the ledger: {@link LedgerPeriods}
+     * (X1-08).
+     */
     private String period(ConnectorRequest r, String tenant, LocalDate today) {
-        String explicit = Tree.str(r.input().get("period"), null);
-        if (explicit != null && !explicit.isBlank() && !"current".equalsIgnoreCase(explicit)) {
-            return explicit;
-        }
-        if (periodResolver == null) {
-            throw new FiscalYearNotConfiguredException("no period resolver: billing step without a period for tenant "
-                    + tenant + " is refused");
-        }
-        return periodResolver.apply(tenant, today);
+        return LedgerPeriods.periodOr(r.input(), tenant, today, periodResolver);
     }
 
     @Override

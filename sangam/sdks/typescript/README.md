@@ -154,6 +154,56 @@ It reads `amount` as an exact Decimal and returns `paidAmount` as a typed Decima
 
 Run it with `npm run example:bill-payment`.
 
+### Durable steps (M-025, R37)
+
+`ctx.step(name, fn, options?)` (`src/steps.ts`) records each side effect of a handler in the server's step journal (`GET/PUT /work/{id}/steps/{name}`), keyed by the work's operationId. Every journal call is fenced by the current lease.
+
+```ts
+const ref = await ctx.step('charge', async (step) => {
+  const r = await bank.pay(amount, { idempotencyKey: step.idempotencyKey });   // operationId + ':charge'
+  step.providerRef = r.id;
+  return r.id;
+}, { lookup: async (step) => (await bank.find(step.idempotencyKey))?.id });
+```
+
+- A step that an earlier attempt recorded SUCCEEDED is not called again. Its recorded result is returned, with R33 typed values unwrapped as `ctx.variable` does.
+- The body throws `StepNoEffectError` when the call certainly had no effect: the step is recorded FAILED and may run again. Any other error leaves INTENT.
+- **NOT exactly-once for remote APIs.** INTENT is recorded before the call and SUCCEEDED after it. A crash in between leaves INTENT, and the next attempt then follows the call's capability class (R36):
+  - `lookup` (class b, asked first): a value is recorded SUCCEEDED and returned; `undefined`/`null` runs the call again.
+  - `idempotent: true` (class a): runs the call again with the same `step.idempotencyKey`.
+  - default (class c): throws `OutcomeUnknownError`, so the worker reports outcome-unknown and reconciliation decides.
+- A 409 STALE_LEASE or a 410 from the journal sets `ctx.leaseLost` and throws `TaskCancelledError`.
+- Names are 1-128 printable ASCII characters and unique within the operation.
+
+`SangamTestEngine` serves the journal with the server's transitions (`src/testing-steps.ts`).
+
+### Sagas (M-026)
+
+`Saga` (`src/saga.ts`) registers a forward action and its BPMN compensation handler (`isForCompensation="true"`) as two subscriptions:
+
+```ts
+Saga.step('charge')
+  .action('payment.charge', async (ctx) => { ctx.outcomeReference = await charge(ctx); return { charged: true }; })
+  .compensation('payment.refund', async (c) => { await refund(c.forwardProviderRef, c.idempotencyKey); })
+  .lockDurationMs(120_000).retries(3).irreversible(true)
+  .build()
+  .registerOn(worker);
+```
+
+- When the forward action completes, it adds the variable `sangamSaga_<name>` (`.` and `-` become `_`). The variable is an R33 Json value of `{step, operationId, providerRef, workId}`.
+- The compensation gets a `CompensationContext`:
+  - `task`
+  - `forward` (null without a record)
+  - `forwardOperationId`
+  - `forwardProviderRef`
+  - `idempotencyKey` = `forwardOperationId + ':compensate:' + name`, so compensating twice undoes once
+- Restricting `variables(...)` always fetches the record variable for the compensation.
+- The action and the compensation need their own topics.
+
+### Framework adapter (M-027)
+
+The NestJS adapter is the separate package `sdks/typescript-nestjs` (`@sangam/nestjs`). It starts the worker in `onModuleInit` and registers handlers and sagas from configuration or DI. It stops the worker gracefully with `SangamWorker.stop` on shutdown. This SDK gets no new dependency.
+
 ## Requirements covered, by file
 
 | File | Requirement ids |
@@ -166,6 +216,9 @@ Run it with `npm run example:bill-payment`.
 | `src/api.ts` | ARCHITECTURE §4 / sangam-api.yaml (typed API surface); FC-36 (consumer of the Sangam worker REST API); A-16 (capped counts); VI.3.2 rule 4 (outcome-unknown, reconciliation resolve); VI.5 (cancel with reason); R63 (ops repairs); R38 (CloudEvents) |
 | `src/client.ts` | R18 / ADR-D-4 (Tier-1 TypeScript SDK) |
 | `src/worker.ts` | R9 / VI.3 (lease lifecycle, heartbeat at lease/3, cancelRequested, release), A-1 (start only after LOCKED), A-2 (operationId vs attemptId), R20 / D-17 (fencing on every call, abandon on 409), D-18 (unlock carries owner + lockVersion), R36 (operationId forwarded as idempotency key), R41, R28 (no blind retries of irreversible effects, back-off), D-40 (long-poll fetch with back-off), AC-03 (outcome-unknown), R33 (typed getters), FC-37 / D-44 (worker client beyond Java) |
+| `src/steps.ts` | M-025, R37 (durable steps, step journal), R36 (capability classes, idempotency key) |
+| `src/saga.ts` | M-026, R36 (saga record, compensation idempotency key) |
+| `src/testing-steps.ts` | M-025 (step journal of the R18 test engine) |
 | `src/logger.ts` | ARCHITECTURE §1.8 (JSON logs with operationId and businessKey) |
 | `examples/bill-payment-worker.ts` | IX.4 P1, AC-01, AC-03, R36, R33 |
 
@@ -187,5 +240,5 @@ Run it with `npm run example:bill-payment`.
 - **Reconciliation.** The SDK is reconciled against `sangam-rest/api/sangam-api.yaml` 0.1.0, including `outcome-unknown` and `cancel-ack`, which are in the contract.
 - **Endpoints without typed wrappers.** These are reachable through `ResourceApi.action` / `getSub` or `client.transport`: task comments and attachments, activity tree, modify, migrate, packages, documents, links, history and batches.
 - **Admin and ops bodies.** These are JSON objects (`ResourceApi`). Only incident retry/resolve, job retries and outbox requeue/skip have typed request bodies.
-- **Tests.** Unit tests exist under `test/` (node:test, run with `npm test`; CI runs them in the `sdks.yml` typescript job): `worker.test.ts` (worker loop, stored-outcome completion, outcome mapping, report retries, fencing), `http.test.ts` (problem+json mapping, retryability, base-URL normalisation), `typed.test.ts` (R33 typed values) and `contract.test.ts` (drift guard of `src/models.ts` against `sangam-api.yaml`), with the in-process `fake-server.ts`. They have not been run on the current tree. Also: the R18 test engine `SangamTestEngine` (`src/testing.ts`, M-021), the contract tests T01–T04/T18 (`conformance.test.ts`), `trace.test.ts` (M-062 `traceContext` option, off by default) and `generated-surface.test.ts`. Typed surface: the whole contract is typed by the generated surface (M-020): `client.api` exposes every operation of `sangam-api.yaml` (one member per contract tag), generated by `sdks/codegen/generate_sdk_surface.py` and checked by the `codegen` job of `sdks.yml`; the hand-written groups below stay as they are.
+- **Tests.** Unit tests exist under `test/` (node:test, run with `npm test`; CI runs them in the `sdks.yml` typescript job): `worker.test.ts` (worker loop, stored-outcome completion, outcome mapping, report retries, fencing), `http.test.ts` (problem+json mapping, retryability, base-URL normalisation), `typed.test.ts` (R33 typed values) and `contract.test.ts` (drift guard of `src/models.ts` against `sangam-api.yaml`), with the in-process `fake-server.ts`. They have not been run on the current tree. The durable step and saga tests are `steps.test.ts`, `testing-steps.test.ts` and `saga.test.ts` (M-025, M-026); they are written but have not been run. Also: the R18 test engine `SangamTestEngine` (`src/testing.ts`, M-021), the contract tests T01–T04/T18 (`conformance.test.ts`), `trace.test.ts` (M-062 `traceContext` option, off by default) and `generated-surface.test.ts`. Typed surface: the whole contract is typed by the generated surface (M-020): `client.api` exposes every operation of `sangam-api.yaml` (one member per contract tag), generated by `sdks/codegen/generate_sdk_surface.py` and checked by the `codegen` job of `sdks.yml`; the hand-written groups below stay as they are.
 - **`cmmnTerminate`.** The Flowable CMMN worker result `cmmnTerminate` is not offered. In Sangam a CMMN external worker is modelled as processTask → BPMN external task (FC-11 pattern).

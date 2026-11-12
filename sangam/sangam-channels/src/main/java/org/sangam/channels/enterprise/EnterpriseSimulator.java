@@ -20,7 +20,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Loopback simulator of the public ServiceNow Table API shape ({@code /api/now/table/}) and of an OData service with a CSRF token
- * ({@code /odata/svc}), for the simulator profile. It models request shape and token handling, not vendor business rules. It uses
+ * ({@code /odata/svc}: create, then update and delete of {@code Set('n')} with {@code If-Match}), for the simulator profile.
+ * It models request shape and token handling, not vendor business rules. It uses
  * the JDK server directly because these exchanges need several methods on one path and custom response headers.
  */
 public final class EnterpriseSimulator implements AutoCloseable {
@@ -102,9 +103,29 @@ public final class EnterpriseSimulator implements AutoCloseable {
         String in = new String(x.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         boolean expired = expireNextToken.getAndSet(false);
         if (!expired && CSRF.equals(x.getRequestHeaders().getFirst("X-CSRF-Token")) && "sim-session=1".equals(x.getRequestHeaders().getFirst("Cookie"))) {
-            entities.add(Json.readMap(in));
-            x.getResponseHeaders().add("Location", baseUri() + x.getRequestURI().getPath() + "('" + entities.size() + "')");
-            reply(x, 201, in);
+            String method = x.getRequestMethod();
+            if (method.equals("POST")) {
+                entities.add(Json.readMap(in));
+                x.getResponseHeaders().add("Location", baseUri() + x.getRequestURI().getPath() + "('" + entities.size() + "')");
+                reply(x, 201, in);
+                return;
+            }
+            // update/delete address Set('n'), n being the 1-based position given in the create Location
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\('(\\d+)'\\)$").matcher(x.getRequestURI().getPath());
+            int i = m.find() ? Integer.parseInt(m.group(1)) - 1 : -1;
+            if (i < 0 || i >= entities.size() || entities.get(i) == null || x.getRequestHeaders().getFirst("If-Match") == null) {
+                reply(x, i < 0 || i >= entities.size() || entities.get(i) == null ? 404 : 428, "{\"error\":\"not found or no If-Match\"}");
+                return;
+            }
+            if (method.equals("DELETE")) {
+                entities.set(i, null);
+            } else {
+                Map<String, Object> e = method.equals("PUT") ? new LinkedHashMap<>() : new LinkedHashMap<>(entities.get(i));
+                e.putAll(Json.readMap(in));
+                entities.set(i, e);
+            }
+            x.sendResponseHeaders(204, -1);
+            x.close();
         } else {
             x.getResponseHeaders().add("X-CSRF-Token", "Required");
             reply(x, 403, "{\"error\":\"CSRF token validation failed\"}");
@@ -129,8 +150,9 @@ public final class EnterpriseSimulator implements AutoCloseable {
         return List.copyOf(records);
     }
 
+    /** OData entities by position; a deleted one is null. */
     public List<Map<String, Object>> entities() {
-        return List.copyOf(entities);
+        return java.util.Collections.unmodifiableList(new java.util.ArrayList<>(entities));
     }
 
     @Override

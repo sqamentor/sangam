@@ -132,10 +132,49 @@ public class SangamRestAutoConfiguration {
         return new JdbcIdempotencyAdapter(tx, props, encryptor.getIfAvailable());
     }
 
+    /**
+     * The group-only permission model, used only when no module supplies a {@link PermissionPort} (sangam-security off).
+     * Owner decision 75: production never changes its authorization model silently, so this fallback refuses the
+     * start-up unless development is explicit ({@link #requireDevelopmentWithoutSecurity}).
+     */
     @Bean
     @ConditionalOnMissingBean
-    public PermissionPort sangamPermissionPort() {
+    public PermissionPort sangamPermissionPort(org.springframework.core.env.Environment env) {
+        requireDevelopmentWithoutSecurity(env, "the REST permission model falls back to group permissions only"
+                + " (GroupPermissionAdapter: no object policies, no deny rules, no seats)");
         return new GroupPermissionAdapter();
+    }
+
+    /** Opt-in key for running without sangam-security (development only; default false). */
+    public static final String ALLOW_WITHOUT_SECURITY = "sangam.security.allow-without-security-module";
+    /** Profiles that count as an explicit development start (the convention of the server's key wiring). */
+    public static final java.util.Set<String> DEVELOPMENT_PROFILES = java.util.Set.of("dev", "h2");
+
+    /**
+     * Decision 75 (fail closed): a start without the security module is refused unless {@value #ALLOW_WITHOUT_SECURITY}
+     * is true or a development profile is active; when allowed, every start logs an ERROR line naming what is lost.
+     * Decision 92: in production ({@link org.sangam.core.security.ProductionMode}, the one production predicate) the
+     * start is refused whatever the flag or the profiles say.
+     */
+    public static void requireDevelopmentWithoutSecurity(org.springframework.core.env.Environment env, String consequence) {
+        if (org.sangam.core.security.ProductionMode.isProduction(
+                env.getProperty(org.sangam.core.security.ProductionMode.PROPERTY, Boolean.class, false),
+                java.util.List.of(env.getActiveProfiles()))) {
+            throw new IllegalStateException("sangam-security is not active, so " + consequence + ". Refusing to start:"
+                    + " this is a production start (" + org.sangam.core.security.ProductionMode.PROPERTY
+                    + " or a prod profile), where running without sangam-security is never allowed, not even with "
+                    + ALLOW_WITHOUT_SECURITY + "=true. Enable sangam.modules.security.enabled (the default).");
+        }
+        boolean flag = env.getProperty(ALLOW_WITHOUT_SECURITY, Boolean.class, false);
+        boolean devProfile = java.util.Arrays.stream(env.getActiveProfiles()).anyMatch(DEVELOPMENT_PROFILES::contains);
+        if (!flag && !devProfile) {
+            throw new IllegalStateException("sangam-security is not active, so " + consequence + ". Refusing to start:"
+                    + " enable sangam.modules.security.enabled (the default), or for development only set "
+                    + ALLOW_WITHOUT_SECURITY + "=true or a development profile " + DEVELOPMENT_PROFILES);
+        }
+        org.slf4j.LoggerFactory.getLogger(SangamRestAutoConfiguration.class).error(
+                "DEVELOPMENT MODE WITHOUT sangam-security ({}): {}. Never use this configuration in production.",
+                flag ? ALLOW_WITHOUT_SECURITY + "=true" : "profile " + String.join(",", env.getActiveProfiles()), consequence);
     }
 
     // ---------------------------------------------------------------- engine ports (Operaton Java API)
@@ -333,8 +372,12 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public PackagePort sangamPackagePort(TxSupport tx, DeploymentPort deployments, PermissionPort permissions,
-                                         AuditPort audit, RestProperties props) {
-        return new org.sangam.rest.adapter.jdbc.JdbcPackageAdapter(tx, deployments, permissions, audit, props);
+                                         AuditPort audit, RestProperties props,
+                                         ObjectProvider<org.sangam.rest.support.PackageSigning> signing) {
+        // M-074: the package signing key, trusted keys and unsigned rule (sangam-server PackageSigningWiring); strict
+        // (unsigned packages refused at deploy) when no wiring provides one
+        return new org.sangam.rest.adapter.jdbc.JdbcPackageAdapter(tx, deployments, permissions, audit, props,
+                signing.getIfAvailable(org.sangam.rest.support.PackageSigning::strict));
     }
 
     // ---------------------------------------------------------------- UI-proposal ports (workspace, ops console, admin tools)
@@ -394,6 +437,49 @@ public class SangamRestAutoConfiguration {
         return new org.sangam.rest.adapter.operaton.OperatonInstanceControlAdapter(engine.getRuntimeService(),
                 engine.getRepositoryService(), engine.getHistoryService(), engine.getExternalTaskService(),
                 engine.getTaskService(), processes, tx, audit, props, operationIds);
+    }
+
+    /** M-059: the named query/update handlers a process model declares (sangam:query / sangam:update). */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.port.InstanceHandlerPort sangamInstanceHandlerPort(ProcessEngine engine, TxSupport tx,
+                                                                               AuditPort audit) {
+        return new org.sangam.rest.adapter.operaton.OperatonInstanceHandlerAdapter(engine.getRuntimeService(),
+                new org.sangam.engine.handlers.InstanceHandlerRegistry(engine.getRepositoryService(),
+                        new org.sangam.engine.handlers.InstanceHandlerEvaluator()),
+                tx, audit, java.time.Clock.systemUTC());
+    }
+
+    // ---------------------------------------------------------------- decisions 87 and 98: field masks on variable reads
+
+    /** The one masking step of every variable read; masks nothing until the security module binds a VariableMaskPort. */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.support.VariableMasking sangamVariableMasking(
+            ObjectProvider<org.sangam.rest.port.VariableMaskPort> masks, ObjectProvider<ProcessEngine> engine) {
+        ProcessEngine e = engine.getIfAvailable();
+        return new org.sangam.rest.support.VariableMasking(masks::getIfAvailable,
+                e == null ? null : new org.sangam.rest.adapter.operaton.OperatonVariableOwners(e));
+    }
+
+    /**
+     * Wraps every TaskPort, ProcessPort, CasePort and HistoryPort bean (this configuration's or a module's override) in
+     * the masking proxy, and gives the M-059 handler adapter the masking for its query inputs. The masking bean is
+     * looked up per read, so this post-processor initialises nothing early.
+     */
+    @Bean
+    public static org.springframework.beans.factory.config.BeanPostProcessor sangamVariableMaskingPorts(
+            ObjectProvider<org.sangam.rest.support.VariableMasking> masking) {
+        return new org.springframework.beans.factory.config.BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                if (bean instanceof org.sangam.rest.adapter.operaton.OperatonInstanceHandlerAdapter a) {
+                    a.useVariableMasking(masking::getIfAvailable);
+                }
+                return org.sangam.rest.support.VariableMaskingPorts.applies(bean)
+                        ? org.sangam.rest.support.VariableMaskingPorts.wrap(bean, masking::getIfAvailable) : bean;
+            }
+        };
     }
 
     @Bean

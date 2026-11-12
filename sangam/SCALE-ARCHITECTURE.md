@@ -265,6 +265,11 @@ row updates → ~100,000 updates/s if projected naively on one DB: **too much fo
 (a) one roll-up per state/region (path prefix), national roll-up fed by their per-minute aggregates
 (`sangam.rollup.metric` events); (b) micro-batched ingest (arrays, already accepted) with in-memory pre-aggregation
 per (node, metric, day) within a batch before commit (gap, 12); (c) Kafka as transport (`KafkaPublisher` exists).
+Status (M-063, Wave 3): (a) and (b) are implemented. (a) `sangam.rollup.scope` plus `sangam.rollup.upstream.*`: a state roll-up emits explicit
+`sangam.rollup.metric` events through its outbox (guarded pending decrement, dedup at the upper tier). (b) `sangam.rollup.pre-aggregate`:
+one transaction per ingest array, deltas summed per node, metric and day. Measurement hooks: `sangam.rollup.ingest`,
+`sangam.rollup.batch.rows` and `.rows.naive`, `sangam.rollup.upstream.events`. The capacity figures above are still estimates until
+the test phase measures them (SG-15, T-SCALE-10).
 
 ---
 
@@ -338,7 +343,7 @@ is re-derived as 3,000 ÷ (measured × 0.7) cells; the cell architecture does no
 **Known gaps (left for later, listed honestly):**
 1. Cell-side wiring and endpoints are integration requests IR-1…IR-8 (`sangam-cell/README.md`); until IR-2/IR-3/IR-4
    are done, cells do not self-register, the roll-up gets no events, and tenant moves cannot run end to end.
-2. Roll-up micro-batch pre-aggregation and state-level roll-up tier (8.4) are designed, not built.
+2. Roll-up micro-batch pre-aggregation and the state-level roll-up tier (8.4) are coded (M-063, Wave 3) with measurement hooks; not yet measured.
 3. Control-plane ADMIN authentication is static tokens; OIDC (Parichay/state IdP) for operators is not wired.
 4. Gateway: no WebSocket/SSE upgrade proxying; no per-tenant rate limit across gateway nodes (cap is per node).
 5. Control-plane HA is active-active on one DB; multi-DC control plane (DR replica) follows deploy README 4.

@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Ingest ({@code POST /api/v1/ingest}: one structured CloudEvent or a JSON array of them) and dashboard queries
+ * Ingest ({@code POST /api/v1/ingest}: one structured CloudEvent or a JSON array of them; an array is projected as
+ * one pre-aggregated batch, M-063) and dashboard queries
  * ({@code /api/v1/rollup/**}). The hierarchy node is passed as {@code node=IN/RJ/RJ-JPR}. Day ranges are
  * {@code yyyyMMdd} UTC. Every query reads at most {@code shards x metrics x days} rows of one node (index range scan).
  */
@@ -54,22 +56,20 @@ public class RollupController {
         if (events.size() > props.maxBatch()) {
             throw new IllegalArgumentException("batch larger than " + props.maxBatch());
         }
-        int projected = 0;
-        int duplicates = 0;
-        int rejected = 0;
+        List<RollupEnvelope> envelopes = new ArrayList<>(events.size());
         for (String json : events) {
-            switch (projector.project(RollupEnvelope.parse(json))) {
-                case PROJECTED -> projected++;
-                case DUPLICATE -> duplicates++;
-                case REJECTED -> rejected++;
-            }
+            envelopes.add(RollupEnvelope.parse(json));
         }
+        // M-063: an array is one pre-aggregated transaction (sangam.rollup.pre-aggregate); TIER may send explicit metrics
+        RollupProjector.BatchResult counts = projector.projectAll(envelopes, RollupConfig.isTier(
+                SecurityContextHolder.getContext().getAuthentication()));
         Map<String, Object> r = new LinkedHashMap<>();
-        r.put("projected", projected);
-        r.put("duplicates", duplicates);
-        r.put("rejected", rejected);
+        r.put("projected", counts.projected());
+        r.put("duplicates", counts.duplicates());
+        r.put("rejected", counts.rejected());
         // a single rejected event is a poison event for the relay (4xx); a batch reports counts
-        HttpStatus status = events.size() == 1 && rejected == 1 ? HttpStatus.UNPROCESSABLE_CONTENT : HttpStatus.ACCEPTED;
+        HttpStatus status = events.size() == 1 && counts.rejected() == 1 ? HttpStatus.UNPROCESSABLE_CONTENT
+                : HttpStatus.ACCEPTED;
         return ResponseEntity.status(status).body(r);
     }
 

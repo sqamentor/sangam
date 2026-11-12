@@ -32,6 +32,7 @@
     "no": "No",
     "yes": "Yes",
     "open": "Open",
+    "openTrace": "Open trace {{id}} in the trace viewer (new tab)",
     "pageN": "Page {{n}}",
     "pageSize": "Rows per page",
     "pagination": "Pagination",
@@ -351,6 +352,10 @@
     "externalForm": "Open the external form",
     "thenSortBy": "Then sort by",
     "thenSortHint": "Orders ties on this page only.",
+    "currency": "Amount currency",
+    "currencyHint": "Shows only tasks with an amount in this currency. Amounts can be sorted.",
+    "amountSortNeedsCurrency": "Enter a currency code (for example EUR or INR) to sort by amount. Amounts in different currencies are never compared.",
+    "currencyInvalid": "Enter a three-letter ISO 4217 currency code, for example EUR or INR.",
     "filterSidebar": "Filters",
     "allWork": "All my work",
     "deleteFilter": "Delete filter {{name}}",
@@ -616,6 +621,7 @@
     "owner": "Owner",
     "package": "Package",
     "parent": "Parent instance",
+    "trace": "Trace",
     "partition": "Partition",
     "partitions": "Job partitions",
     "pauseTopic": "Pause topic",
@@ -2911,8 +2917,14 @@
       "jsonBody": "Additional details (JSON)",
       "jsonBodyHint": "Optional. Sent with the form fields.",
       "moreFields": "More fields",
+      "prefilled": "Filled in from what the server has now. Change what you need, then confirm.",
       "verifyAudit": "Verify audit trail",
-      "reasonAsciiOnly": "This reason travels in a request header, which carries plain ASCII text only. Write it with ASCII letters, digits and punctuation."
+      "purpose": "Purpose",
+      "purposeHint": "The registered purpose you need this for. Its code is sent and checked against the holder's consent.",
+      "purposeChoose": "Choose a purpose…",
+      "purposeCode": "Purpose code",
+      "purposeCodeHint": "The code of a registered processing purpose (ask your compliance officer), not a description.",
+      "purposeCodeInvalid": "Enter a purpose code: letters, digits and punctuation without spaces, at most 64 characters."
     },
     "compat": {
       "ack": "I have read the scan findings and wish to continue.",
@@ -3070,6 +3082,26 @@
       "part_seeds": "Seed data (JSON)",
       "part_compliance": "Compliance (JSON)",
       "part_goLive": "Go-live (JSON)"
+    },
+    "tclock": {
+      "tab": "Test clock",
+      "title": "Test-mode clock",
+      "desc": "Moves the engine and business clocks together, for tests only. Timers that are due by the new time fire on the next job run. Every change is audited.",
+      "off": "Test mode is off on this server, so the clock cannot be moved.",
+      "now": "Clock time",
+      "offset": "Offset from the real time",
+      "offsetMs": "{{n}} ms",
+      "action": "Change",
+      "modeAdvance": "Advance by a duration",
+      "modeSet": "Set to a time",
+      "modeReset": "Reset to the real time",
+      "advanceBy": "Advance by",
+      "advanceByHint": "An ISO-8601 duration, for example P3D (3 days) or PT2H (2 hours).",
+      "advanceByInvalid": "Enter an ISO-8601 duration such as P3D or PT2H.",
+      "setAt": "New clock time",
+      "reason": "Reason (optional)",
+      "apply": "Apply",
+      "changed": "The clock now reads {{now}}."
     },
     "op": {
       "account": "My account",
@@ -3378,6 +3410,8 @@
       "inboundDesc": "Last poll, poison items and cursor per channel.",
       "caseHint": "A conversation created here is linked to this case. Existing ones are found by search or id.",
       "attachHint": "An uploaded file is stored but not yet shown in the conversation.",
+      "live": "Live: new messages appear as they are sent.",
+      "polling": "Not live: messages are checked every 10 seconds.",
       "optInHint": "Matrix and Slack have no adapter. Existing opt-ins cannot be listed yet."
     },
     "modeller2": {
@@ -3533,7 +3567,7 @@
     "operationId": "Operation id",
     "targetType": "Target type",
     "target": "Target",
-    "targetHint": "BPMN: the process key to start. REST: a path on this server.",
+    "targetHint": "BPMN: the process key to start. REST: connectorId:operation (a registered connector and one of its operations).",
     "formKey": "Form key"
   },
   "cf": {
@@ -3764,6 +3798,16 @@
     "verifyButton": "Verify",
     "verified": "The seal is intact: package {{pkg}}, revision {{rev}}."
   },
+  "opref": {
+    "legend": "Pick an API operation",
+    "contract": "API contract",
+    "operation": "Operation",
+    "choose": "Choose…",
+    "none": "This package has no stored API contract. Store an OpenAPI or AsyncAPI document first, or type the reference.",
+    "noOperations": "This contract version has no operations.",
+    "followLatest": "Follow the latest contract version",
+    "followLatestHint": "Off: the reference stays on version {{version}}, whose operations are listed. On: the deployment pins the latest stored version."
+  },
   "tpl": {
     "appliesTo": "Applies to",
     "saveHint": "JSON content is the template document: {\"appliesTo\": [\"bpmn:ServiceTask\"], \"fields\": [{\"name\", \"binding\", \"required\", \"pattern\", \"default\", \"choices\"}]}.",
@@ -3778,6 +3822,15 @@
     "apply": "Apply template",
     "applied": "Template applied.",
     "manual": "These bindings need Operaton extension elements, which the editor does not write. Add them in the XML:",
+    "palette": "Template palette",
+    "paletteHint": "Pick a template, fill in its fields, then add it. The server checks the values first; the new element appears in the middle of the visible diagram.",
+    "paletteAdd": "Add {{name}} to the diagram",
+    "paletteAdded": "{{name}} added to the diagram.",
+    "components": "Form component templates",
+    "component": "Component template",
+    "componentInsert": "Insert into the form",
+    "componentInserted": "{{name}} inserted at the end of the form.",
+    "componentKeyConflict": "Not inserted: the form already uses these keys: {{keys}}. Rename the form's fields or use another template.",
     "err": {
       "required": "Required.",
       "pattern": "Does not match the template's pattern.",

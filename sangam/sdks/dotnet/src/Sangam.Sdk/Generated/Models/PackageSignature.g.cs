@@ -37,7 +37,7 @@ public sealed record PackageSignature
     public string? KeyId { get; init; }
 
     /// <summary>
-    /// Base64 signature over the raw 32-byte package hash
+    /// Base64 Ed25519 signature over the UTF-8 of JCS({packageHash, role, principalId, seatId, signedAt}), signedAt ISO-8601 UTC with at most millisecond precision; a signature relabelled to another role, signer, seat or time does not verify (BAD_SIGNATURE)
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("signature")]
     public string? Signature { get; init; }

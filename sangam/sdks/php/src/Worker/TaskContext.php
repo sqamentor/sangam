@@ -250,6 +250,37 @@ final class TaskContext
         return $this->client;
     }
 
+    /**
+     * Runs one side-effecting step of this work at most once per recorded outcome (M-025, R37 / E02), journalled under
+     * the work's operationId on GET/PUT /work/{id}/steps/{name} and fenced by this lease.
+     *
+     * $fn receives the Step: send Step::idempotencyKey() (operationId . ':' . name) to the remote API as its
+     * idempotency key and report the provider's reference with Step::setProviderRef(). Then:
+     * - $fn returns: the step is recorded SUCCEEDED with the returned value; a later attempt replays that value
+     *   (R33 typed values unwrapped like variable()) without calling $fn again;
+     * - $fn throws StepNoEffectException: the call certainly had no effect; the step is recorded FAILED and may run
+     *   again on a later attempt; the exception propagates;
+     * - $fn throws anything else: the outcome is uncertain; the step stays INTENT and the exception propagates.
+     *
+     * NOT exactly-once for remote APIs: a crash (or lost lease) between the remote call and the SUCCEEDED record
+     * leaves INTENT (the crash window of R37). A later attempt then asks the lookup of $options, runs again only
+     * for an idempotent call, or throws OutcomeUnknownException (the default, capability class (c)), so the worker
+     * reports outcome-unknown and reconciliation decides; it never re-issues the call blindly.
+     *
+     * @template T
+     * @param string $name 1-128 printable ASCII characters, unique within the work's operation
+     * @param callable(Step): T $fn
+     * @return T|mixed the value of $fn, or the recorded value on replay
+     * @throws \InvalidArgumentException a bad step name
+     * @throws OutcomeUnknownException   INTENT from an earlier attempt, neither looked up nor idempotent
+     * @throws StepNoEffectException     from $fn, after the FAILED record
+     * @throws TaskCancelledException    the lease was lost (409 STALE_LEASE / 410 from the journal)
+     */
+    public function step(string $name, callable $fn, ?StepOptions $options = null): mixed
+    {
+        return DurableSteps::run($this, $name, $fn, $options);
+    }
+
     // ---- runtime-internal state updates ----------------------------------------------------------------
 
     /** @internal */

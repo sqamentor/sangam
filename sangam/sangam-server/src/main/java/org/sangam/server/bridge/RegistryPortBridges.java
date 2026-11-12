@@ -27,15 +27,17 @@ import org.sangam.core.integration.SangamConnector;
 import org.sangam.core.layer.CanonicalJson;
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Outbox;
-import org.sangam.core.layer.SqlPredicate;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.ConnectorRegistry;
+import org.sangam.integration.document.pdf.PdfMarkup;
+import org.sangam.integration.document.pdf.PdfRendering;
 import org.sangam.integration.relay.OutboxWriter;
 import org.sangam.ports.content.ContentService;
 import org.sangam.ports.content.OutputTemplateRenderer;
 import org.sangam.registry.RegistryContext;
 import org.sangam.registry.RegistryPorts;
+import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.RegistryPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.TxSupport;
@@ -45,9 +47,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * sangam-registry port bindings (registry README "Integration notes" §3). Every port that runs inside a registry
- * command uses the connection of the current Spring transaction ({@link TxSupport#connection()}), which is the same
- * connection the engine and the registry service use, so outbox rows, audit and engine state commit together (P-1).
+ * sangam-registry port bindings (registry README "Integration notes" §3). Every port that touches the database works
+ * on the caller's connection, which the registry passes in (SL-169): visibility, privacy and consent read on it; the
+ * event, publish and system-of-record ports write their outbox rows on it. None of them uses
+ * {@link TxSupport#connection()}, which outside a Spring transaction borrowed a second, unclosed pool connection.
+ * Outbox rows, audit and engine state therefore commit together (P-1).
  * Remote calls (document-locker push, system-of-record push) are never made inside the command: they are written to
  * the outbox and delivered after commit by {@link PublishDelivery}.
  */
@@ -108,23 +112,33 @@ public final class RegistryPortBridges {
 
     // ---------------------------------------------------------------- VisibilityPort → VI.4 compiled predicate
 
+    /**
+     * SL-169: the policy is compiled on the caller's connection {@code c}, never on {@link TxSupport#connection()}.
+     * Outside a Spring transaction that call borrowed a second pool connection that nothing closed and that could not
+     * see the caller's uncommitted writes. {@code tx} stays in the signature so the wiring is unchanged.
+     */
     public static RegistryPorts.VisibilityPort visibility(SangamSecurity security, TxSupport tx) {
-        return (ctx, resourceType, alias) -> {
-            SqlPredicate p = security.authorization().visible(tx.connection(), identity(ctx), resourceType, "READ", alias);
-            return p;
-        };
+        return (c, ctx, resourceType, alias) -> security.authorization().visible(requireConnection(c), identity(ctx),
+                resourceType, "READ", alias);
+    }
+
+    private static Connection requireConnection(Connection c) {
+        if (c == null) {
+            throw new IllegalStateException("a registry port was called without the caller's connection (SL-169)");
+        }
+        return c;
     }
 
     // ---------------------------------------------------------------- PrivacyPort → security field masks
 
     public static RegistryPorts.PrivacyPort privacy(SangamSecurity security, TxSupport tx) {
-        return (ctx, resourceType, view, sensitiveFields) -> {
+        return (c, ctx, resourceType, view, sensitiveFields) -> {
             if (view == null || view.isEmpty()) {
                 return view;
             }
             Object id = view.get("id");
             String scope = ctx.purpose();
-            return security.masks().mask(tx.connection(), identity(ctx), resourceType,
+            return security.masks().mask(requireConnection(c), identity(ctx), resourceType,
                     id == null ? null : String.valueOf(id), scope, view);
         };
     }
@@ -140,13 +154,14 @@ public final class RegistryPortBridges {
     public static RegistryPorts.ConsentPort consent(SangamCompliance compliance, TxSupport tx) {
         return new RegistryPorts.ConsentPort() {
             @Override
-            public RegistryPorts.ConsentDecision check(RegistryContext ctx, String partyId, String purpose,
+            public RegistryPorts.ConsentDecision check(Connection c, RegistryContext ctx, String partyId, String purpose,
                                                        String processing) {
                 if (purpose == null || purpose.isBlank()) {
                     return RegistryPorts.ConsentDecision.permit(null);
                 }
                 Set<String> categories = processing == null ? Set.of() : Set.of(processing);
-                boolean ok = compliance.purposeBinding.allowed(tx.connection(), ctx.tenant(), partyId, purpose, categories);
+                boolean ok = compliance.purposeBinding.allowed(requireConnection(c), ctx.tenant(), partyId, purpose,
+                        categories);
                 return ok ? RegistryPorts.ConsentDecision.permit(purpose)
                         : RegistryPorts.ConsentDecision.deny("PURPOSE_NOT_BOUND");
             }
@@ -173,10 +188,18 @@ public final class RegistryPortBridges {
     /**
      * Template rendering with the flowable-ports {@code OutputTemplateRenderer} into the {@code ContentService}. The
      * template text comes from the REST template registry ({@code /admin/templates}, entry key = templateKey,
-     * {@code body.<lang>} or {@code body}), the same templates the document-generation endpoint uses. HTML output; a
-     * PDF/A rendering service is not bound (gap: rendered as HTML with content type text/html).
+     * {@code body.<lang>} or {@code body}), the same templates the document-generation endpoint uses. An entry with
+     * {@code format: PDFA} is written in the {@code PdfMarkup} text form and rendered to a validated PDF/A-2b + PDF/UA
+     * document through {@link PdfRendering} (M-081). Owner decision 69: while PDF output is unavailable such an entry
+     * is refused with {@code 422 FORMAT_NOT_AVAILABLE} naming the reason, the same as document generation and the
+     * audit export; there is no HTML fallback. A rendering that fails validation is refused with
+     * {@code 422 PDF_INVALID}. Other entries render as HTML.
      */
     public static RegistryPorts.DocumentPort documents(ContentService content, RegistryPort templates) {
+        return documents(content, templates, PdfRendering.installed());
+    }
+
+    public static RegistryPorts.DocumentPort documents(ContentService content, RegistryPort templates, PdfRendering pdf) {
         OutputTemplateRenderer renderer = new OutputTemplateRenderer(content);
         return (ctx, templateKey, model) -> {
             RequestContext sys = RequestContext.system(ctx.tenant(), ctx.actor());
@@ -190,11 +213,35 @@ public final class RegistryPortBridges {
             Object body = entry.get().get("body");
             String text = body instanceof Map<?, ?> m ? String.valueOf(m.values().stream().<Object>map(v -> v).findFirst().orElse(""))
                     : String.valueOf(body == null ? "" : body);
-            String html = renderer.render(text, model == null ? Map.of() : model, true, false);
-            byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
+            Map<String, Object> vars = model == null ? Map.of() : model;
             Object objectId = model == null ? null : model.get("objectId");
+            String scopeId = objectId == null ? null : String.valueOf(objectId);
+            boolean wantsPdf = "PDFA".equalsIgnoreCase(String.valueOf(entry.get().get("format")));
+            if (wantsPdf) {
+                if (!pdf.available()) {
+                    throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", "registry document template " + templateKey
+                            + " asks for PDF/A, but PDF/A rendering is off: " + pdf.unavailableReason());
+                }
+                String language = body instanceof Map<?, ?> m && !m.isEmpty() ? String.valueOf(m.keySet().iterator().next()) : "en";
+                String title = String.valueOf(entry.get().getOrDefault("name", templateKey));
+                PdfRendering.Rendered pdfOut;
+                try {
+                    pdfOut = pdf.render(PdfMarkup.parse(title, language, text,
+                            t -> renderer.render(t, vars, false, false)));
+                } catch (PdfRendering.Unavailable e) {
+                    throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", e.getMessage());
+                } catch (PdfRendering.Invalid e) {
+                    throw ApiProblem.unprocessable("PDF_INVALID", e.getMessage());
+                }
+                var item = content.create(ctx.tenant(), templateKey + ".pdf", PdfRendering.Rendered.CONTENT_TYPE,
+                        "registry-object", scopeId, null, new ByteArrayInputStream(pdfOut.content()), ctx.actor());
+                return Optional.of(new RegistryPorts.GeneratedDocument(item.id(), pdfOut.sha256(),
+                        PdfRendering.Rendered.CONTENT_TYPE));
+            }
+            String html = renderer.render(text, vars, true, false);
+            byte[] bytes = html.getBytes(StandardCharsets.UTF_8);
             var item = content.create(ctx.tenant(), templateKey + ".html", "text/html", "registry-object",
-                    objectId == null ? null : String.valueOf(objectId), null, new ByteArrayInputStream(bytes), ctx.actor());
+                    scopeId, null, new ByteArrayInputStream(bytes), ctx.actor());
             return Optional.of(new RegistryPorts.GeneratedDocument(item.id(), Hashes.hex(Hashes.sha256(bytes)),
                     "text/html"));
         };
@@ -216,7 +263,7 @@ public final class RegistryPortBridges {
     public static RegistryPorts.PublishPort publisher(TxSupport tx, String connectorId) {
         boolean configured = connectorId != null && !connectorId.isBlank();
         Outbox outbox = configured ? new Outbox(tx.dialect()) : null;
-        return (ctx, channel, objectId, documentRef, meta) -> {
+        return (c, ctx, channel, objectId, documentRef, meta) -> {
             if (!configured) {
                 throw new IllegalStateException("sangam.registry.publish.connector is not configured: cannot publish "
                         + objectId + " on " + channel + " (SL-104: there is no default publish connector)");
@@ -229,7 +276,7 @@ public final class RegistryPortBridges {
             p.put("documentRef", documentRef);
             p.put("meta", meta == null ? Map.of() : meta);
             p.put("actor", ctx.actor());
-            outbox.append(tx.connection(), ctx.tenant(), objectId, EVT_PUBLISH, CanonicalJson.write(jsonSafe(p)),
+            outbox.append(requireConnection(c), ctx.tenant(), objectId, EVT_PUBLISH, CanonicalJson.write(jsonSafe(p)),
                     List.of(Outbox.Destination.unordered(DEST_PUBLISH)));
             return Optional.empty();
         };
@@ -269,8 +316,8 @@ public final class RegistryPortBridges {
             }
 
             @Override
-            public void push(RegistryContext ctx, String typeKey, String objectId, String externalRef, String change,
-                             Map<String, Object> view) {
+            public void push(Connection c, RegistryContext ctx, String typeKey, String objectId, String externalRef,
+                             String change, Map<String, Object> view) {
                 String id = connectorForType.apply(typeKey);
                 if (id == null) {
                     return;
@@ -283,7 +330,7 @@ public final class RegistryPortBridges {
                 p.put("externalRef", externalRef);
                 p.put("change", change);
                 p.put("view", view == null ? Map.of() : view);
-                outbox.append(tx.connection(), ctx.tenant(), objectId, EVT_SOR_PUSH, CanonicalJson.write(jsonSafe(p)),
+                outbox.append(requireConnection(c), ctx.tenant(), objectId, EVT_SOR_PUSH, CanonicalJson.write(jsonSafe(p)),
                         List.of(Outbox.Destination.unordered(DEST_PUBLISH)));
             }
         };

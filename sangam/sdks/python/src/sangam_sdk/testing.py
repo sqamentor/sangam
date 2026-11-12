@@ -30,6 +30,9 @@ Semantics (mirrors sangam-rest OperatonWorkAdapter, sangam-core LeaseTable, ApiP
 * ``fetch-and-lock`` answers at once (no long-poll wait): work that is there is returned, otherwise ``[]`` after a
   pause of at most 10 ms, so a worker loop on the engine does not spin.
 
+Step journal (M-025, :mod:`sangam_sdk.testing_steps`): ``GET/PUT /work/{id}/steps/{name}`` and ``GET /work/{id}/steps``,
+with the server's transitions and fencing; :meth:`steps` lists the recorded steps of a work's operation.
+
 Steering: :meth:`advance`, :meth:`request_cancel`, :meth:`delete_instance`, :meth:`resolve_reconciliation`,
 :meth:`lose_next_response` (apply the call, then drop the connection without an answer). Inspection: :meth:`state`,
 :meth:`lock_version`, :meth:`completions`, :meth:`snapshot`, :attr:`calls`, :attr:`instances`,
@@ -44,12 +47,16 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Mapping, Optional
+from urllib.parse import parse_qsl, unquote
+
+from .testing_steps import EngineSteps
 
 DEFAULT_LOCK_MS = 5 * 60 * 1000
 MAX_LOCK_MS = 24 * 60 * 60 * 1000
 API_PREFIX = "/api/v1"
 TYPE_BASE = "https://sangam.dev/problems/"
-_TITLES = {400: "Bad request", 404: "Not found", 409: "Conflict", 410: "Gone", 422: "Unprocessable content"}
+_TITLES = {400: "Bad request", 404: "Not found", 405: "Method not allowed", 409: "Conflict", 410: "Gone",
+           422: "Unprocessable content"}
 RESULT_ACTIONS = ("complete", "fail", "bpmn-error", "outcome-unknown")
 
 
@@ -82,6 +89,12 @@ def _not_found(what: str, ident: str) -> EngineProblem:
 
 def _canonical(v: Any) -> str:
     return json.dumps(v, sort_keys=True, separators=(",", ":"))
+
+
+def _is_steps(path: str) -> bool:
+    """``/work/{id}/steps`` or ``/work/{id}/steps/{name}`` (M-025)."""
+    parts = [p for p in path.split("/") if p]
+    return len(parts) in (3, 4) and parts[0] == "work" and parts[2] == "steps"
 
 
 def _iso(ms: int) -> str:
@@ -143,6 +156,8 @@ class SangamTestEngine:
         self.reconciliation_items: list[dict[str, Any]] = []
         self._server: Optional[ThreadingHTTPServer] = None
         self._thread: Optional[threading.Thread] = None
+        #: the step journal (M-025): GET/PUT /work/{id}/steps/{name}, GET /work/{id}/steps
+        self._journal = EngineSteps(self._work, self._fence, lambda: _iso(self._now))
 
     # ------------------------------------------------------------------ lifecycle
 
@@ -276,6 +291,11 @@ class SangamTestEngine:
                     "completions": w.completions, "output": w.output, "errorCode": w.error_code,
                     "errorMessage": w.error_message}
 
+    def steps(self, work_id: str) -> list[dict[str, Any]]:
+        """The steps recorded for the work's operation, in recording order (M-025)."""
+        with self._lock:
+            return self._journal.rows(self._get(work_id).operation_id)
+
     def calls_of(self, action: str) -> list[tuple[str, str, Optional[str], Any]]:
         with self._lock:
             return [c for c in self.calls if c[1].rsplit("/", 1)[-1] == action]
@@ -288,17 +308,23 @@ class SangamTestEngine:
             raise KeyError(f"no work {work_id}")
         return w
 
-    def handle(self, method: str, path: str, key: Optional[str], body: Any) -> tuple[int, dict[str, str], Any, bool]:
-        """One request: (status, headers, JSON body or None, lose the response). Also used by tests directly."""
+    def handle(self, method: str, path: str, key: Optional[str], body: Any,
+               query: Optional[Mapping[str, Any]] = None) -> tuple[int, dict[str, str], Any, bool]:
+        """One request: (status, headers, JSON body or None, lose the response). Also used by tests directly.
+        ``query`` carries the query parameters (the fenced step GET reads workerId, lockVersion, attemptId)."""
         with self._lock:
             self.calls.append((method, path, key, body))
-            action = path.rsplit("/", 1)[-1]
+            action = "steps" if _is_steps(path) else path.rsplit("/", 1)[-1]
             lose = self._lose.get(action, 0) > 0
             if lose:
                 self._lose[action] -= 1
             try:
                 self._sweep()
-                status, headers, out = self._route(method, path, key, body if isinstance(body, dict) else {})
+                b = body if isinstance(body, dict) else {}
+                if _is_steps(path):
+                    status, headers, out = self._steps_route(method, path, query or {}, b)
+                else:
+                    status, headers, out = self._route(method, path, key, b)
             except EngineProblem as p:
                 return p.status, {"Content-Type": "application/problem+json"}, p.body(API_PREFIX + path), lose
             return status, headers, out, lose
@@ -331,6 +357,19 @@ class SangamTestEngine:
                 self._cancel_ack(wid, b)
                 return 204, {}, None
         raise EngineProblem(404, "NOT_FOUND", f"{method} {path} is not served by the test engine")
+
+    def _steps_route(self, method: str, path: str, query: Mapping[str, Any],
+                     b: dict[str, Any]) -> tuple[int, dict[str, str], Any]:
+        parts = [unquote(p) for p in path.split("/") if p]  # work, id, steps[, name]
+        wid = parts[1]
+        name = parts[3] if len(parts) > 3 else None
+        if name is None and method == "GET":
+            return 200, {}, self._journal.list_steps(wid)
+        if name is not None and method == "GET":
+            return 200, {}, self._journal.get(wid, name, query)
+        if name is not None and method == "PUT":
+            return 200, {}, self._journal.put(wid, name, b)
+        raise EngineProblem(405, "METHOD_NOT_ALLOWED", f"{method} {path} is not served by the test engine")
 
     # ------------------------------------------------------------------ lease table
 
@@ -369,9 +408,13 @@ class SangamTestEngine:
             raise _stale(w.id, "ATTEMPT_MISMATCH", f"attemptId {att} is not the current attempt")
 
     def _task(self, wid: str) -> _Work:
-        """requireTask: the external task exists while it is not finished (COMPLETED etc. are gone)."""
+        """requireTask: the external task exists until the work finished or was deleted (COMPLETED etc. are gone).
+
+        An incident or an outcome awaiting reconciliation keeps the task, so a call on such work reaches the fence
+        (409 STALE_LEASE: outcome-unknown ended the lease) as on both server work adapters (SL-174).
+        """
         w = self._work.get(wid)
-        if w is None or w.deleted or w.state not in ("AVAILABLE", "LOCKED"):
+        if w is None or w.deleted or w.state not in ("AVAILABLE", "LOCKED", "INCIDENT", "UNKNOWN_OUTCOME"):
             raise _not_found("external work", wid)
         return w
 
@@ -576,10 +619,12 @@ class _EngineHandler(BaseHTTPRequestHandler):
             body = json.loads(raw.decode("utf-8")) if raw else None
         except ValueError:
             body = None
-        path = self.path.split("?", 1)[0]
+        path, _, raw_query = self.path.partition("?")
+        query = dict(parse_qsl(raw_query, keep_blank_values=True))
         if path.startswith(API_PREFIX):
             path = path[len(API_PREFIX):]
-        status, headers, out, lose = self.engine.handle(method, path, self.headers.get("Idempotency-Key"), body)
+        status, headers, out, lose = self.engine.handle(method, path, self.headers.get("Idempotency-Key"), body,
+                                                        query)
         if lose:
             self.close_connection = True  # the effect is applied; the client gets no answer
             return
@@ -602,6 +647,9 @@ class _EngineHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:  # noqa: N802
         self._serve("GET")
+
+    def do_PUT(self) -> None:  # noqa: N802
+        self._serve("PUT")
 
 
 __all__ = ["DEFAULT_LOCK_MS", "MAX_LOCK_MS", "EngineProblem", "SangamTestEngine"]

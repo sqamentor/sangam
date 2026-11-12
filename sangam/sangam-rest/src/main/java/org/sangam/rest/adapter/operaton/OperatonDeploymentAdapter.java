@@ -14,6 +14,7 @@ import org.operaton.bpm.engine.RepositoryService;
 import org.operaton.bpm.engine.repository.DeploymentBuilder;
 import org.operaton.bpm.engine.repository.DeploymentQuery;
 import org.sangam.core.layer.Hashes;
+import org.sangam.engine.deploy.OperationRefPinning;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.DeploymentPort;
@@ -43,6 +44,37 @@ public class OperatonDeploymentAdapter implements DeploymentPort {
 
     @Override
     public Deployment deploy(RequestContext ctx, DeployRequest r) {
+        if (r != null && DeploymentPort.claimsPackageIdentity(r.name(), r.source())) {
+            throw reservedIdentity(r.name(), r.source());
+        }
+        return create(ctx, r);
+    }
+
+    /** The 422 for a raw deployment that claims the package deploy identity (the engine refuses it too). */
+    public static ApiProblem reservedIdentity(String name, String source) {
+        return ApiProblem.unprocessable("MODEL_INVALID", "The deployment name prefix " + PACKAGE_NAME_PREFIX
+                + " and the source " + PACKAGE_SOURCE + " are reserved for a package's own deploy (/packages); name '"
+                + name + "', source '" + source + "'");
+    }
+
+    /**
+     * M-068: the package's own deploy, run with the engine proof ({@link OperationRefPinning#asPackageDeploy}) for
+     * exactly this tenant, key and hash, so the engine accepts the reserved identity and may bind the package's
+     * contract operations.
+     */
+    @Override
+    public Deployment deployPackage(RequestContext ctx, String packageKey, String packageHash, Map<String, byte[]> resources) {
+        OperationRefPinning.PackageDeploy proof;
+        try {
+            proof = new OperationRefPinning.PackageDeploy(ctx.tenantId(), packageKey, packageHash);
+        } catch (IllegalArgumentException e) {
+            throw ApiProblem.unprocessable("MODEL_INVALID", "package deploy: " + e.getMessage());
+        }
+        DeployRequest r = new DeployRequest(proof.deploymentName(), OperationRefPinning.PACKAGE_SOURCE, false, resources);
+        return OperationRefPinning.asPackageDeploy(proof, () -> create(ctx, r));
+    }
+
+    private Deployment create(RequestContext ctx, DeployRequest r) {
         if (r == null || r.resources() == null || r.resources().isEmpty()) {
             throw ApiProblem.badRequest("RESOURCES_REQUIRED", "at least one resource is required");
         }

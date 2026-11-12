@@ -23,7 +23,7 @@ public class TenantRegistry {
 
     private static final Pattern CODE = Pattern.compile("[A-Z0-9][A-Z0-9_-]{0,63}");
     private static final String COLS = "tenant_code, parent_code, path, depth, level_kind, name, jurisdiction, residency,"
-            + " sector, expected_starts_per_sec, cell_id, status, route_epoch, created_at_ms, updated_at_ms";
+            + " sector, expected_starts_per_sec, cell_id, status, route_epoch, created_at_ms, updated_at_ms, isolation";
 
     static final RowMapper<Tenant> MAPPER = TenantRegistry::map;
 
@@ -36,7 +36,7 @@ public class TenantRegistry {
     }
 
     public record NewTenant(String tenantCode, String parentCode, String levelKind, String name, String jurisdiction,
-                            String residency, String sector, Double expectedStartsPerSec) {
+                            String residency, String sector, Double expectedStartsPerSec, String isolation) {
     }
 
     @Transactional
@@ -63,13 +63,16 @@ public class TenantRegistry {
         if (parent != null && !ResidencyRules.within(residency, parent.residency())) {
             throw new IllegalArgumentException("residency " + residency + " is not within the parent's " + parent.residency());
         }
+        String isolation = isolationOf(n.isolation());
         long now = System.currentTimeMillis();
-        jdbc.update("INSERT INTO CP_TENANT(" + COLS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        jdbc.update("INSERT INTO CP_TENANT(" + COLS + ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 code, parent == null ? null : parent.tenantCode(), path, depth,
                 n.levelKind() == null ? "ORG" : n.levelKind().toUpperCase(Locale.ROOT), n.name() == null ? code : n.name(),
                 jurisdiction.toUpperCase(Locale.ROOT), residency.toUpperCase(Locale.ROOT), n.sector(),
-                n.expectedStartsPerSec() == null ? 0.0 : n.expectedStartsPerSec(), null, Tenant.ACTIVE, 0L, now, now);
-        audit.record(actor, "TENANT_CREATED", "tenant:" + code, "path=" + path + " residency=" + residency);
+                n.expectedStartsPerSec() == null ? 0.0 : n.expectedStartsPerSec(), null, Tenant.ACTIVE, 0L, now, now,
+                isolation);
+        audit.record(actor, "TENANT_CREATED", "tenant:" + code, "path=" + path + " residency=" + residency
+                + " isolation=" + isolation);
         return get(code);
     }
 
@@ -94,6 +97,25 @@ public class TenantRegistry {
     /** All routable tenants changed after {@code sinceEpochMs} (gateway bulk cache refresh). */
     public List<Tenant> routesChangedSince(long sinceMs) {
         return jdbc.query("SELECT " + COLS + " FROM CP_TENANT WHERE updated_at_ms > ? AND cell_id IS NOT NULL", MAPPER, sinceMs);
+    }
+
+    /** Tenant isolation values ({@code CP_TENANT.isolation}, the cell tenant directory's values). */
+    public static final String SHARED = "SHARED";
+    public static final String SCHEMA = "SCHEMA";
+    public static final String DATABASE = "DATABASE";
+
+    /**
+     * M-016 (decision 51): the recorded isolation of a tenant, {@value #SHARED} when the column is empty. A
+     * {@value #DATABASE} tenant is placed only on the cell dedicated to it.
+     */
+    public String isolation(String code) {
+        List<String> l = jdbc.query("SELECT isolation FROM CP_TENANT WHERE tenant_code = ?", (rs, i) -> rs.getString(1),
+                normalise(code));
+        if (l.isEmpty()) {
+            throw new NotFound("tenant " + code + " not found");
+        }
+        String v = l.get(0);
+        return v == null || v.isBlank() ? SHARED : v.trim().toUpperCase(Locale.ROOT);
     }
 
     public double expectedLoadOnCell(String cellId) {
@@ -128,6 +150,22 @@ public class TenantRegistry {
         audit.record(actor, "TENANT_STATUS", "tenant:" + code, status);
     }
 
+    /** The value stored at create: SHARED when absent; SHARED, SCHEMA or DATABASE (any other value is refused, 400). */
+    static String isolationOf(String requested) {
+        if (requested == null || requested.isBlank()) {
+            return SHARED;
+        }
+        String v = requested.trim().toUpperCase(Locale.ROOT);
+        if (!List.of(SHARED, SCHEMA, DATABASE).contains(v)) {
+            throw new IllegalArgumentException("isolation must be SHARED, SCHEMA or DATABASE (got '" + requested + "')");
+        }
+        return v;
+    }
+
+    private static String isolationRead(String stored) {
+        return stored == null || stored.isBlank() ? SHARED : stored.trim().toUpperCase(Locale.ROOT);
+    }
+
     static String normalise(String code) {
         if (code == null) {
             throw new IllegalArgumentException("tenant code is required");
@@ -146,7 +184,7 @@ public class TenantRegistry {
     private static Tenant map(ResultSet rs, int i) throws SQLException {
         return new Tenant(rs.getString(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5),
                 rs.getString(6), rs.getString(7), rs.getString(8), rs.getString(9), rs.getDouble(10), rs.getString(11),
-                rs.getString(12), rs.getLong(13), rs.getLong(14), rs.getLong(15));
+                rs.getString(12), rs.getLong(13), rs.getLong(14), rs.getLong(15), isolationRead(rs.getString(16)));
     }
 
     /** 404 marker. */

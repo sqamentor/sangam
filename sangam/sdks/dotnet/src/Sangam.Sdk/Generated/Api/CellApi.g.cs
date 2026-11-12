@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Cell (12 operations).
+/// Typed operations of Cell (15 operations).
 /// </summary>
 public sealed class CellApi
 {
@@ -155,5 +155,40 @@ public sealed class CellApi
         var req = ApiRequest.Get($"/admin/cell/exports/{HttpTransport.Seg(GeneratedCalls.Str(exportId)!)}");
         req.WithHeader("X-Sangam-Export-Token", GeneratedCalls.Str(xSangamExportToken));
         return await _calls.BytesAsync(req, options, "application/octet-stream", cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Parked inbound messages of this cell
+    /// Open POISON_INBOUND items of every tenant of this cell whose message was parked because the tenant moved or was purged, oldest first (PoisonInbound.listParked); `tenant` narrows the list to one tenant.
+    /// GET /admin/cell/parked-inbound (operationId listParkedInbound); permission role CELL_ADMIN.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.PoisonInboundItem>?> ListParkedInboundAsync(string? tenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/admin/cell/parked-inbound");
+        req.WithQuery("tenant", GeneratedCalls.Q(tenant));
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.PoisonInboundItem>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// View a parked inbound message
+    /// The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
+    /// GET /admin/cell/parked-inbound/{itemId} (operationId getParkedInbound); permission role CELL_ADMIN.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.PoisonInboundParked?> GetParkedInboundAsync(string itemId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/admin/cell/parked-inbound/{HttpTransport.Seg(GeneratedCalls.Str(itemId)!)}");
+        return await _calls.JsonAsync<M.PoisonInboundParked?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Replay a parked inbound message
+    /// Hands the message, with its original source, message id, event type and correlation key, to the tenant's current cell through the gateway (sangam.cell.gateway-url; the target inbox deduplicates on tenant, source and message id); then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over, or a target where the tenant is not ACTIVE, leaves the item open: 503 REPLAY_FAILED; 503 REPLAY_NOT_CONFIGURED without a gateway URL (PoisonInbound.replayParked).
+    /// POST /admin/cell/parked-inbound/{itemId}/replay (operationId replayParkedInbound); permission role CELL_ADMIN; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task ReplayParkedInboundAsync(string itemId, M.ReasonRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/admin/cell/parked-inbound/{HttpTransport.Seg(GeneratedCalls.Str(itemId)!)}/replay");
+        if (body is not null) req.WithBody(body);
+        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

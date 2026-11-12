@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Programmes (24 operations). */
+/** Typed operations of Programmes (25 operations). */
 final class ProgrammesApi
 {
     public function __construct(private readonly Calls $calls)
@@ -36,6 +36,20 @@ final class ProgrammesApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\PgPublished::class);
+    }
+
+    /**
+     * The current programme configuration
+     *
+     * The current published configuration, as it was published, with its version, content hash, publisher and time (prefill for the publish form). 404 NOT_FOUND when nothing is published yet.
+     *
+     * GET /programme-config (operationId programmeCurrentConfig); permission programme.admin.
+     * @return Model\PgCurrentConfig|null
+     */
+    public function programmeCurrentConfig(?RequestOptions $options = null): ?Model\PgCurrentConfig
+    {
+        $req = ApiRequest::get('/programme-config');
+        return $this->calls->model($req, $options, Model\PgCurrentConfig::class);
     }
 
     /**

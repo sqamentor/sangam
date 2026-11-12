@@ -396,7 +396,7 @@ public final class InstrumentService {
             if (doc.isPresent()) {
                 docRef = doc.get().documentRef();
                 if (type.publishChannel() != null) {
-                    published = ports.publisher().publish(ctx, type.publishChannel(), o.id(), docRef,
+                    published = ports.publisher().publish(c, ctx, type.publishChannel(), o.id(), docRef,
                             Maps.of("number", o.number(), "typeKey", o.typeKey(), "holderPartyId", o.holderPartyId(),
                                     "purpose", purpose)).orElse(null);
                 }

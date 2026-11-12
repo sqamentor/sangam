@@ -47,6 +47,10 @@ public final class BotBridge {
         vars.put("botExternalId", m.externalId());
         vars.put("botPrincipal", m.principalId());
         vars.put("botInput", m.text());
+        if (m.attributes() != null && !m.attributes().isEmpty()) {
+            // inbound media after the scan: documentKey, fileName, contentType, sizeBytes, sha256
+            vars.put("botMedia", new LinkedHashMap<>(m.attributes()));
+        }
         if (engine.correlate(m.tenantId(), REPLY_MESSAGE, businessKey, vars)) {
             return;
         }

@@ -145,6 +145,45 @@ def attr_mapper(name, attr, claim, multi):
                        "introspection.token.claim": "true"}}
 
 
+# M-076 (owner decision 52): a SAML 2.0 identity provider is brokered by Keycloak by default. Keycloak validates the
+# assertion and issues the OIDC token the server already verifies; the server's optional SAML SP adapter
+# (sangam.security.saml.*) stays off. The broker below is DISABLED and carries placeholder endpoints (.invalid, RFC 2606):
+# an administrator imports the real IdP metadata (a file, so it works air-gapped) and enables it. See README.md.
+SAML_BROKER_ALIAS = "gov-sso-saml"
+SAML_OIDS = [  # (mapper name, SAML attribute name (standard OID), Keycloak user attribute)
+    ("email", "urn:oid:0.9.2342.19200300.100.1.3", "email"),
+    ("first-name", "urn:oid:2.5.4.42", "firstName"),
+    ("last-name", "urn:oid:2.5.4.4", "lastName"),
+]
+
+
+def saml_broker(tenant):
+    """Disabled SAML broker plus its mappers. Only the person's e-mail and name are imported; no roles or groups
+    (AJ-05 step 3: seats come from postings, not IdP groups). The tenant is fixed per broker (an IdP never chooses
+    the tenant). Signed and encrypted assertions are required."""
+    idp = {"alias": SAML_BROKER_ALIAS, "displayName": "Government single sign-on (SAML)", "providerId": "saml",
+           "enabled": False, "trustEmail": True, "storeToken": False, "addReadTokenRoleOnCreate": False,
+           "linkOnly": False, "hideOnLogin": False, "firstBrokerLoginFlowAlias": "first broker login",
+           "config": {"entityId": "http://localhost:8180/realms/sangam",
+                      "idpEntityId": "https://idp.invalid/saml2",
+                      "singleSignOnServiceUrl": "https://idp.invalid/saml2/sso",
+                      "singleLogoutServiceUrl": "https://idp.invalid/saml2/slo",
+                      "nameIDPolicyFormat": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+                      "principalType": "SUBJECT", "syncMode": "FORCE",
+                      "postBindingAuthnRequest": "true", "postBindingResponse": "true", "postBindingLogout": "true",
+                      "wantAuthnRequestsSigned": "true", "signatureAlgorithm": "RSA_SHA256",
+                      "validateSignature": "true", "wantAssertionsSigned": "true", "wantAssertionsEncrypted": "true",
+                      "allowedClockSkew": "60", "forceAuthn": "false", "loginHint": "false"}}
+    mappers = [{"name": f"{SAML_BROKER_ALIAS}-{n}", "identityProviderAlias": SAML_BROKER_ALIAS,
+                "identityProviderMapper": "saml-user-attribute-idp-mapper",
+                "config": {"syncMode": "INHERIT", "attribute.name": oid, "user.attribute": attr}}
+               for n, oid, attr in SAML_OIDS]
+    mappers.append({"name": f"{SAML_BROKER_ALIAS}-tenant", "identityProviderAlias": SAML_BROKER_ALIAS,
+                    "identityProviderMapper": "hardcoded-attribute-idp-mapper",
+                    "config": {"syncMode": "INHERIT", "attribute": "tenant", "attribute.value": tenant}})
+    return [idp], mappers
+
+
 def realm():
     roles = [{"name": n, "description": d} for n, d in PLATFORM_ROLES]
     for p, (title, rs) in PACKS.items():
@@ -277,6 +316,8 @@ def realm():
                     "displayDescription": "Attributes, which refer to user metadata"}],
     }
 
+    identity_providers, identity_provider_mappers = saml_broker("dept-finance")
+
     return {
         "realm": "sangam", "displayName": "Sangam (development)", "enabled": True,
         "sslRequired": "external", "registrationAllowed": False, "loginWithEmailAllowed": True,
@@ -290,6 +331,8 @@ def realm():
         "groups": groups,
         "users": users,
         "clients": clients,
+        "identityProviders": identity_providers,
+        "identityProviderMappers": identity_provider_mappers,
         "components": {"org.keycloak.userprofile.UserProfileProvider": [
             {"providerId": "declarative-user-profile", "subComponents": {},
              "config": {"kc.user.profile.config": [json.dumps(user_profile)]}}]},
@@ -313,6 +356,8 @@ def platform_realm(tenant_realm):
         user("platform.operator", "Platform", "Operator", ["sangam-operator", "sangam-user"], [], "dept-finance", []),
     ]
     r = dict(tenant_realm)
+    r.pop("identityProviders", None)        # M-076: the platform realm brokers no tenant identity provider
+    r.pop("identityProviderMappers", None)
     r.update({"realm": "sangam-platform", "displayName": "Sangam platform (development)",
               "roles": {"realm": [{"name": n, "description": d} for n, d in PLATFORM_REALM_ROLES]},
               "groups": [], "users": users, "clients": clients})

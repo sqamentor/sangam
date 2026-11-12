@@ -44,10 +44,12 @@ op("post", "/templates/{id}/apply", "applyElementTemplate", "Modeller", "Apply a
    params=[pp("id"), q("version", "int")], body="ElementTemplateApply", resp=(200, "object"), cmd="modeller.template.apply", perm="package.read")
 op("get", "/actions", "listActionModels", "Modeller", "Available actions", "Filtered by each action's own permission.", MR,
    params=[q("scope", required=True), q("scopeType"), q("targetRef")], resp=(200, "array:VariableMap"), perm="modeller.action.invoke")
-op("post", "/actions", "publishActionModel", "Modeller", "Publish an action", "A new version for an existing key.", MR,
+op("post", "/actions", "publishActionModel", "Modeller", "Publish an action", "A new version for an existing key. target is the process key for BPMN and "
+   "connectorId:operation (a registered connector and one of its operations) for REST; anything else is 400.", MR,
    body="ActionModelPublish", resp=(200, "object"), cmd="modeller.action.publish", perm="modeller.action.publish")
 op("post", "/actions/{key}/invoke", "invokeActionModel", "Modeller", "Invoke an action",
-   "BPMN and connector targets run; SCRIPT targets are refused.", MR, params=[pp("key")], body="ActionModelInvoke",
+   "BPMN and connector targets run; SCRIPT targets are refused. The permission and the subject (targetRef: the "
+   "case, process instance or task of the action's scope, visible to the caller) are checked on every call.", MR, params=[pp("key")], body="ActionModelInvoke",
    resp=(200, "object"), cmd="modeller.action.invoke", perm="modeller.action.invoke")
 op("get", "/packages/{id}/tests/reports", "listPackageTestReports", "Modeller", "Stored test reports", "Newest first.", MR,
    params=[pp("id")], resp=(200, "array:VariableMap"), perm="package.read")
@@ -65,7 +67,7 @@ _MOD = "sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ModellerContr
 _MOCKS = "sangam-rest/src/main/java/org/sangam/rest/modules/modeller/ServiceMocksController.java"
 op("get", "/templates/{key}", "getElementTemplate", "Modeller", "Get a template", "Latest version unless one is named.", MR, params=[pp("key"), q("version", "int")], resp=(200, "object"), perm="package.read")
 op("post", ML + "/acquire", "acquireModelLeaseUi", "Modeller", "Acquire the edit lease (console)", "Same as POST on the lease.", MR, params=[pp("file")], body=record_body(_MOD, "FenceRequest", False), resp=(200, "object"), cmd="modeller.lease.acquire.ui", perm="package.author")
-op("post", "/actions/{key}/run", "runActionModel", "Modeller", "Run an action", "Permission checked on the subject; idempotent per request key.", MR, params=[pp("key")], body=record_body(_MOD, "RunActionRequest"), resp=(200, "object"), cmd="modeller.action.run", perm="modeller.action.invoke")
+op("post", "/actions/{key}/run", "runActionModel", "Modeller", "Run an action", "The permission and the subject (subjectRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call; idempotent per request key; a reason is recorded in the ACTION_INVOKED audit entry.", MR, params=[pp("key")], body=record_body(_MOD, "RunActionRequest"), resp=(200, "object"), cmd="modeller.action.run", perm="modeller.action.invoke")
 op("delete", "/actions/{key}", "retireActionModel", "Modeller", "Retire an action", "Needs a reason; audited.", MR, params=[pp("key"), q("reason", required=True)], resp=(204, None), cmd="modeller.action.retire", perm="modeller.action.publish")
 op("get", "/service-mocks", "listServiceMocks", "Modeller", "List service mocks", "Not on a production profile.", MR, params=[q("page", "int"), q("size", "int")], resp=(200, _ML), perm="ops.read")
 op("post", "/service-mocks", "createServiceMock", "Modeller", "Add a service mock", "This node, until restart.", MR, body=record_body(_MOCKS, "CreateMock"), resp=(201, "object"), cmd="modeller.mock.create", perm="ops.write")

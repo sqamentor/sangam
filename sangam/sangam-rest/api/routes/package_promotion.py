@@ -10,7 +10,9 @@
 schema("PackageSignature", "A signature over the package hash by one lifecycle role (PACKAGE_SIGNATURE, X.2.4.5).",
        "packageHash role principalId seatId alg keyId signature signedAt:dt",
        enums={"role": ["author", "reviewer", "approver", "deployer"], "alg": ["Ed25519"]},
-       descs={"signature": "Base64 signature over the raw 32-byte package hash", "keyId": "Id of the signing key "
+       descs={"signature": "Base64 Ed25519 signature over the UTF-8 of JCS({packageHash, role, principalId, seatId, signedAt}), "
+              "signedAt ISO-8601 UTC with at most millisecond precision; a signature relabelled to another role, signer, seat "
+              "or time does not verify (BAD_SIGNATURE)", "keyId": "Id of the signing key "
               "(per purpose and environment, Q-04); the key itself never leaves the secret provider"})
 schema("PackageBundle", "A package exported for another environment or an air-gapped install (T50): the manifest, every "
                         "artifact by path and the signatures. The target recomputes the hash; nothing is rebuilt.",

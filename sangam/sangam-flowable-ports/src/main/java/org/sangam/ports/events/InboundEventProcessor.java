@@ -26,6 +26,11 @@ import java.util.Map;
  * problem code, never an exception, so a broker adapter acknowledges a poison message instead of redelivering it for
  * ever. Message ids, event keys, tenants and business keys longer than {@value #MAX_ID_CHARS} characters are rejected.
  * Infrastructure failures (database, I/O) still throw, so the broker redelivers.
+ *
+ * <p>Broker consumers call {@link #deliver} instead of {@link #receive} (SL-142, C3-06): after the pipeline resolved
+ * the tenant it asks the {@link InboundTenantAdmission} port, and answers {@link Disposition#ACK} (stored, duplicate,
+ * rejected or parked) or {@link Disposition#REDELIVER} (the tenant is FROZEN or IMPORTING, or a park failed: do not
+ * acknowledge). HTTP callers keep {@link #receive}; the HTTP path has its own cell tenant-state filter.
  */
 public class InboundEventProcessor {
 
@@ -46,6 +51,23 @@ public class InboundEventProcessor {
         }
     }
 
+    /** What a broker consumer does with the message after {@link #deliver}. */
+    public enum Disposition { ACK, REDELIVER }
+
+    /**
+     * Result of {@link #deliver}: {@code resultOrNull} is the inbox result when the message went through the pipeline
+     * and was admitted (or rejected), null when it was parked or must be redelivered; {@code reason} names the latter.
+     */
+    public record Delivery(Disposition disposition, Result resultOrNull, String reason) {
+        public boolean ack() {
+            return disposition == Disposition.ACK;
+        }
+
+        static Delivery of(Result r) {
+            return new Delivery(Disposition.ACK, r, null);
+        }
+    }
+
     /** What the inbox row carries (the dispatcher's input). */
     public record StoredEvent(String channelKey, String tenantId, String eventKey, String messageId, Map<String, Object> payload,
                               Map<String, Object> correlation, String businessKey) {
@@ -56,6 +78,7 @@ public class InboundEventProcessor {
     private final EventLog log;
     private final Transactions tx;
     private final int maxPayloadBytes;
+    private volatile InboundTenantAdmission admission = InboundTenantAdmission.ALL;
 
     public InboundEventProcessor(EventRegistry registry, Inbox inbox, EventLog log, Transactions tx) {
         this(registry, inbox, log, tx, DEFAULT_MAX_PAYLOAD_BYTES);
@@ -73,7 +96,27 @@ public class InboundEventProcessor {
         return maxPayloadBytes;
     }
 
+    /** The tenant admission {@link #deliver} applies (SL-142); null means admit every tenant. Returns this. */
+    public InboundEventProcessor withTenantAdmission(InboundTenantAdmission admissionOrNull) {
+        this.admission = admissionOrNull == null ? InboundTenantAdmission.ALL : admissionOrNull;
+        return this;
+    }
+
+    /** HTTP and in-process entry: runs the pipeline and stores the event (no tenant admission, see class comment). */
     public Result receive(String tenant, String channelKey, String raw, Map<String, String> headers, String transportMessageId) {
+        return process(tenant, channelKey, raw, headers, transportMessageId, false).resultOrNull();
+    }
+
+    /**
+     * Broker entry (SL-142, C3-06): like {@link #receive}, but the resolved tenant must be admitted first. A REJECTED
+     * payload is acknowledged as before (poison is never redelivered for ever). Infrastructure failures still throw.
+     */
+    public Delivery deliver(String tenant, String channelKey, String raw, Map<String, String> headers, String transportMessageId) {
+        return process(tenant, channelKey, raw, headers, transportMessageId, true);
+    }
+
+    private Delivery process(String tenant, String channelKey, String raw, Map<String, String> headers, String transportMessageId,
+                             boolean admit) {
         EventRegistry.DeployedChannel channel = registry.channel(tenant, channelKey)
                 .orElseThrow(() -> new IllegalArgumentException("unknown channel " + channelKey + " in tenant " + tenant));
         InboundEventPipeline pipeline = InboundEventPipeline.json(channel.definition(), tenant,
@@ -108,11 +151,26 @@ public class InboundEventProcessor {
                         raw != null && raw.length() <= maxPayloadBytes ? raw : null);
                 return null;
             });
-            return new Result(Outcome.REJECTED, null, transportId, reason);
+            return Delivery.of(new Result(Outcome.REJECTED, null, transportId, reason));
         }
         StoredEvent stored = new StoredEvent(channelKey, ev.tenantId(), ev.eventKey(), ev.messageId(), ev.payload(),
                 ev.correlationValues(), ev.businessKey());
         String json = Json.write(stored);
+        if (admit) {
+            InboundTenantAdmission.Verdict v;
+            try {
+                v = admission.admit(ev.tenantId(), new InboundTenantAdmission.Message(channelKey, SOURCE_PREFIX + channelKey,
+                        ev.messageId(), ev.eventKey(), ev.businessKey(), json));
+            } catch (RuntimeException e) {
+                v = InboundTenantAdmission.Verdict.REDELIVER;   // a failing check never drops and never stores
+            }
+            if (v == null || v == InboundTenantAdmission.Verdict.REDELIVER) {
+                return new Delivery(Disposition.REDELIVER, null, "TENANT_NOT_ADMITTED: tenant " + ev.tenantId());
+            }
+            if (v == InboundTenantAdmission.Verdict.PARKED) {
+                return new Delivery(Disposition.ACK, null, "PARKED: tenant " + ev.tenantId());
+            }
+        }
         Inbox.ReceiveResult r = tx.inTransaction(c -> {
             Inbox.ReceiveResult res = inbox.receive(c, ev.tenantId(), SOURCE_PREFIX + channelKey, ev.messageId(), ev.eventKey(),
                     json, Duration.ofSeconds(def.ttlOrDefault()));
@@ -120,7 +178,8 @@ public class InboundEventProcessor {
                     res.name(), null, json);
             return res;
         });
-        return new Result(r == Inbox.ReceiveResult.ACCEPTED ? Outcome.ACCEPTED : Outcome.DUPLICATE, ev.eventKey(), ev.messageId(), null);
+        return Delivery.of(new Result(r == Inbox.ReceiveResult.ACCEPTED ? Outcome.ACCEPTED : Outcome.DUPLICATE, ev.eventKey(),
+                ev.messageId(), null));
     }
 
     private void checkSize(String raw) {

@@ -39,16 +39,30 @@ import java.util.function.Function;
  */
 public final class KafkaPublisher implements Publisher, AutoCloseable {
 
+    /**
+     * Record key. {@link #ROOT} ({@code tenant:rootId}, the default) keeps per-root order on one partition;
+     * {@link #EVENT_ID} (M-057 history projection) keys each record by its outbox event id, so a compacted topic or a
+     * consumer upserting by key keeps exactly one record per event across relay redeliveries.
+     */
+    public enum Key { ROOT, EVENT_ID }
+
     private final KafkaProducer<String, String> producer;
     private final Function<String, String> topicOf;
     private final String source;
     private final Duration sendTimeout;
+    private final Key key;
 
     /**
      * @param config  producer properties ({@code bootstrap.servers}, security settings); idempotence and acks are forced
      * @param topicOf destination → topic (e.g. {@code kafka:payments} → {@code payments})
      */
     public KafkaPublisher(Map<String, Object> config, Function<String, String> topicOf, String source, Duration sendTimeout) {
+        this(config, topicOf, source, sendTimeout, Key.ROOT);
+    }
+
+    public KafkaPublisher(Map<String, Object> config, Function<String, String> topicOf, String source, Duration sendTimeout,
+                          Key key) {
+        this.key = key == null ? Key.ROOT : key;
         Properties p = new Properties();
         p.putAll(config);
         p.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
@@ -75,7 +89,7 @@ public final class KafkaPublisher implements Publisher, AutoCloseable {
         if (topic == null || topic.isBlank()) {
             throw new PermanentPublishException("no Kafka topic for destination " + destination);
         }
-        ProducerRecord<String, String> rec = new ProducerRecord<>(topic, event.tenantId() + ":" + event.rootId(), event.payload());
+        ProducerRecord<String, String> rec = new ProducerRecord<>(topic, recordKey(key, event), event.payload());
         CloudEvents.attributes(source, destination, event)
                 .forEach((k, v) -> rec.headers().add(new RecordHeader("ce_" + k, v.getBytes(StandardCharsets.UTF_8))));
         try {
@@ -89,6 +103,10 @@ public final class KafkaPublisher implements Publisher, AutoCloseable {
             }
             throw new IllegalStateException("Kafka send failed: " + (c == null ? e.getMessage() : c.getMessage()), c);
         }
+    }
+
+    static String recordKey(Key key, Outbox.OutboxEvent event) {
+        return key == Key.EVENT_ID ? event.eventId().toString() : event.tenantId() + ":" + event.rootId();
     }
 
     @Override

@@ -49,6 +49,19 @@ public final class AuthorizationService implements SecurityPorts.Authorization {
         return compiler.allow(c, identity, resourceType, permission, resourceId, attributes);
     }
 
+    /**
+     * The set form of {@link #allow(Connection, SecurityIdentity, String, Permission, String, Map)} with no attributes
+     * (M-086): the ids of {@code ids} the identity may act on, decided as the object check decides each one
+     * ({@link PolicyCompiler#allowedIds}). The system identity is allowed every id, as in the object check.
+     */
+    public java.util.Set<String> allowedIds(Connection c, SecurityIdentity identity, String resourceType, Permission permission,
+                                            java.util.Collection<String> ids) {
+        if (identity.system()) {
+            return new java.util.LinkedHashSet<>(ids);
+        }
+        return compiler.allowedIds(c, identity, resourceType, permission, ids);
+    }
+
     @Override
     public void require(Connection c, SecurityIdentity identity, String resourceType, String permission, String resourceId) {
         require(c, identity, resourceType, Permission.parse(permission), resourceId, Map.of());

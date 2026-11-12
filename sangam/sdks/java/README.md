@@ -117,6 +117,42 @@ Runtime guarantees:
 - **Runtime subscriptions.** Topics can be added or removed while the worker runs (`subscribe` / `unsubscribe`).
 - **Structured logging.** Plug in your logger through `SangamLogger`: `(level, event, message, fields, error)`. Events include `work.started`, `work.complete`, `work.lease.lost`, `work.abandoned` and `work.fetch.failed`. Fields are workerId, workId, topic, operationId, attemptId, lockVersion, businessKey and processInstanceId. The default implementation is `System.Logger`.
 
+## Durable steps (M-025, R37)
+
+`ctx.step(name, type, call)` records each side-effecting step of a work item under the work's stable operationId
+(journal routes `GET/PUT /work/{id}/steps/{stepName}`, fenced by the lease). A step that an earlier attempt recorded
+`SUCCEEDED` is not called again: its recorded result is replayed.
+
+```java
+String paymentId = ctx.step("charge", String.class, StepOptions.withLookup(s -> gateway.find(s.idempotencyKey())),
+        s -> {
+            String id = gateway.charge(amount, s.idempotencyKey());
+            s.providerRef(id);
+            return id;
+        });
+```
+
+**Not exactly-once for remote APIs.** The journal is written before (`INTENT`) and after (`SUCCEEDED`) the remote
+call. A crash between the two leaves `INTENT`, and the next attempt resolves it by the call's capability class (R36):
+a lookup (`StepOptions.withLookup`, classes a/b), a re-run with the same `Step.idempotencyKey()`
+(`StepOptions.idempotentCall()`, class a), or, by default (class c), `OutcomeUnknownException` so that
+reconciliation decides. A call that certainly had no effect throws `StepNoEffectException` (recorded `FAILED`, may run
+again); any other exception leaves the step `INTENT`. The test engine serves the same journal.
+
+## Sagas (M-026)
+
+`Saga.step(name).action(topic, handler).compensation(topic, handler).build().registerOn(worker)` registers a forward
+action and its BPMN compensation handler (`isForCompensation="true"`). The forward completion adds the variable
+`sangamSaga_<name>` (forward operationId, provider reference, work id); the compensation handler gets it in its
+`CompensationContext` and sends `idempotencyKey()` (`<forwardOperationId>:compensate:<name>`), so compensating the
+same action twice undoes it once. One record per step name and process scope.
+
+## Framework adapter (M-027)
+
+`sdks/java-spring-boot` (`org.sangam:sangam-sdk-spring-boot`): auto-configuration that builds the client from
+`sangam.worker.*`, subscribes every `TopicSubscription` and `Saga` bean, and starts and stops the worker with the
+application context (`SangamWorkerLifecycle`). The SDK itself stays free of Spring.
+
 ## Example: P1 bill payment
 
 `org.sangam.sdk.examples.BillPaymentWorker` serves topic `payment` (`wf1_payment` in the bill model).

@@ -102,10 +102,10 @@ export function Packages() {
   );
 }
 
-function ArtifactEditor({ artifact, onReady, onChange }: { artifact: ModelArtifact; onReady: (h: EditorHandle) => void; onChange: () => void }) {
+function ArtifactEditor({ artifact, onReady, onChange, packageId }: { artifact: ModelArtifact; onReady: (h: EditorHandle) => void; onChange: () => void; packageId?: string }) {
   switch (artifact.kind) {
     case 'BPMN':
-      return <BpmnEditor xml={artifact.content} onReady={onReady} onChange={onChange} />;
+      return <BpmnEditor xml={artifact.content} onReady={onReady} onChange={onChange} packageId={packageId} />;
     case 'DMN':
       return <DmnEditor xml={artifact.content} onReady={onReady} onChange={onChange} />;
     case 'FORM':
@@ -260,6 +260,7 @@ export function PackageWorkspace() {
                 <ArtifactEditor
                   key={art.id}
                   artifact={art}
+                  packageId={id}
                   onReady={(h) => {
                     handle.current = h;
                   }}

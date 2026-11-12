@@ -8,18 +8,15 @@ import org.sangam.integration.connector.HttpTransport;
 import org.sangam.integration.connector.Json;
 import org.sangam.integration.connector.SecretResolver;
 import org.sangam.integration.connector.file.FileTransport;
+import org.sangam.integration.publish.cloud.AzureSas;
 import org.sangam.ports.events.InboundEventProcessor;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -180,18 +177,9 @@ public final class PolledChannels {
         }
 
         private Map<String, String> auth() {
-            String resource = URLEncoder.encode(base(), StandardCharsets.UTF_8);
-            long expiry = tokenExpiry.apply(Instant.now()).getEpochSecond();
-            try {
-                Mac mac = Mac.getInstance("HmacSHA256");
-                mac.init(new SecretKeySpec(secrets.require(sasKeyRef).getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-                String sig = Base64.getEncoder().encodeToString(mac.doFinal((resource + "\n" + expiry).getBytes(StandardCharsets.UTF_8)));
-                Map<String, String> h = new LinkedHashMap<>();
-                h.put("Authorization", "SharedAccessSignature sr=" + resource + "&sig=" + URLEncoder.encode(sig, StandardCharsets.UTF_8) + "&se=" + expiry + "&skn=" + sasKeyName);
-                return h;
-            } catch (java.security.GeneralSecurityException e) {
-                throw new IllegalStateException(e);
-            }
+            Map<String, String> h = new LinkedHashMap<>();
+            h.put("Authorization", AzureSas.token(base(), sasKeyName, secrets.require(sasKeyRef), tokenExpiry.apply(Instant.now())));
+            return h;
         }
     }
 }

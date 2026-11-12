@@ -36,6 +36,8 @@ use Sangam\Sdk\SangamClient;
  * - R41 for POST /process-instances: same Idempotency-Key + same body -> the stored response with
  *   Idempotent-Replayed: true; same key + another body -> 422 IDEMPOTENCY_KEY_REUSED.
  * - fetch-and-lock answers at once (no long-poll wait); an empty answer comes after a pause of at most 10 ms.
+ * - Step journal (M-025, R37): GET/PUT /work/{id}/steps/{name} and GET /work/{id}/steps with the server's
+ *   transitions and fencing (EngineSteps).
  */
 final class SangamTestEngine implements HttpSender
 {
@@ -62,6 +64,8 @@ final class SangamTestEngine implements HttpSender
     /** @var array<string, array{0: string, 1: int, 2: array<string, mixed>}> */
     private array $idem = [];
     private int $reconSeq = 0;
+    /** M-025 step journal: GET/PUT /work/{id}/steps/{name}, GET /work/{id}/steps. */
+    private readonly EngineSteps $journal;
 
     /** @param list<string> $irreversibleTopics */
     public function __construct(array $irreversibleTopics = [], private readonly string $tenantId = 'test',
@@ -71,6 +75,13 @@ final class SangamTestEngine implements HttpSender
             $this->irreversible[$t] = true;
         }
         $this->now = $startMs ?? (int) floor(microtime(true) * 1000);
+        $this->journal = new EngineSteps(
+            fn(string $id): ?array => $this->work[$id] ?? null,
+            function (string $id, array $lease): void {
+                $this->fence($id, $lease);
+            },
+            fn(): string => self::iso($this->now),
+        );
     }
 
     /** A SangamClient on this engine (no transport retries unless given; the worker's own retries stay). */
@@ -220,7 +231,9 @@ final class SangamTestEngine implements HttpSender
         if ($payload !== null && $payload !== '') {
             $body = json_decode($payload, true, 512, JSON_BIGINT_AS_STRING);
         }
-        [$status, $outHeaders, $out, $lose] = $this->handle($method, $path, $key, $body);
+        $query = [];
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        [$status, $outHeaders, $out, $lose] = $this->handle($method, $path, $key, $body, $query);
         if ($this->onCall !== null) {
             ($this->onCall)(['method' => $method, 'path' => $path, 'idempotencyKey' => $key, 'body' => $body]);
         }
@@ -246,10 +259,11 @@ final class SangamTestEngine implements HttpSender
     /**
      * One request without HTTP.
      *
+     * @param array<string, mixed> $query decoded query parameters (the step journal's GET reads its fence from them)
      * @return array{0: int, 1: array<string, string>, 2: mixed, 3: bool} status, headers, JSON body (null = none),
      *                                                                    lose the answer
      */
-    public function handle(string $method, string $path, ?string $key, mixed $body): array
+    public function handle(string $method, string $path, ?string $key, mixed $body, array $query = []): array
     {
         $this->calls[] = ['method' => $method, 'path' => $path, 'idempotencyKey' => $key, 'body' => $body];
         $action = substr($path, (int) strrpos($path, '/') + 1);
@@ -260,7 +274,7 @@ final class SangamTestEngine implements HttpSender
         $b = is_array($body) && !array_is_list($body) ? $body : [];
         try {
             $this->sweep();
-            [$status, $headers, $out] = $this->route($method, $path, $key, $b);
+            [$status, $headers, $out] = $this->route($method, $path, $key, $b, $query);
             return [$status, $headers, $out, $lose];
         } catch (EngineProblem $p) {
             return [$p->status, ['Content-Type' => 'application/problem+json'], $p->body(self::API_PREFIX . $path), $lose];
@@ -269,11 +283,16 @@ final class SangamTestEngine implements HttpSender
 
     /**
      * @param array<string, mixed> $b
+     * @param array<string, mixed> $query
      * @return array{0: int, 1: array<string, string>, 2: mixed}
      */
-    private function route(string $method, string $path, ?string $key, array $b): array
+    private function route(string $method, string $path, ?string $key, array $b, array $query = []): array
     {
         $parts = array_values(array_filter(explode('/', $path), static fn(string $p): bool => $p !== ''));
+        if (count($parts) >= 3 && count($parts) <= 4 && $parts[0] === 'work' && $parts[2] === 'steps') {
+            return $this->journal->route($method, rawurldecode($parts[1]),
+                isset($parts[3]) ? rawurldecode($parts[3]) : null, $query, $b);
+        }
         if ($method === 'POST' && $parts === ['process-instances']) {
             return $this->start($key, $b);
         }
@@ -380,7 +399,10 @@ final class SangamTestEngine implements HttpSender
     private function task(string $wid): string
     {
         $w = $this->work[$wid] ?? null;
-        if ($w === null || $w['deleted'] || ($w['state'] !== 'AVAILABLE' && $w['state'] !== 'LOCKED')) {
+        // an incident or an outcome awaiting reconciliation keeps the external task, so a call on such work reaches the
+        // fence (409 STALE_LEASE: outcome-unknown ended the lease) as on both server work adapters (SL-174)
+        if ($w === null || $w['deleted']
+            || !in_array($w['state'], ['AVAILABLE', 'LOCKED', 'INCIDENT', 'UNKNOWN_OUTCOME'], true)) {
             throw EngineProblem::notFound('external work', $wid);
         }
         return $wid;

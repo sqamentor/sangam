@@ -26,11 +26,23 @@ public final class PerDefinitionHistoryLevel implements HistoryLevel {
 
     private final HistoryLevel base;
     private final Map<String, HistoryLevel> byKey;
+    private final ModelHistoryLevels models;
 
     public PerDefinitionHistoryLevel(HistoryLevel base, Map<String, String> levelByProcessKey) {
+        this(base, levelByProcessKey, null);
+    }
+
+    /**
+     * M-057 (decision 88): with {@code models} (opt-in {@code historyModelOverrides}), a model's own
+     * {@code sangam:historyLevel} applies where the operator configured nothing. Order, most specific first:
+     * settings {@code key#activity}, settings {@code key}, model {@code definitionId#activity}, model
+     * {@code definitionId}, the base level. The operator's settings win so a model can always be corrected.
+     */
+    public PerDefinitionHistoryLevel(HistoryLevel base, Map<String, String> levelByProcessKey, ModelHistoryLevels models) {
         this.base = base;
         this.byKey = new java.util.HashMap<>();
         levelByProcessKey.forEach((k, v) -> byKey.put(k, level(v)));
+        this.models = models;
     }
 
     static HistoryLevel level(String name) {
@@ -65,8 +77,33 @@ public final class PerDefinitionHistoryLevel implements HistoryLevel {
             if (l == null) {
                 l = byKey.get(key);
             }
+            if (l == null && models != null) {
+                String defId = definitionIdOf(entity);
+                if (defId != null) {
+                    String declared = activity != null ? models.get(defId + "#" + activity) : null;
+                    if (declared == null) {
+                        declared = models.get(defId);
+                    }
+                    l = declared == null ? null : level(declared);
+                }
+            }
         }
         return (l != null ? l : base).isHistoryEventProduced(eventType, entity);
+    }
+
+    private static String definitionIdOf(Object entity) {
+        if (entity instanceof ExecutionEntity e) {
+            return e.getProcessDefinitionId();
+        } else if (entity instanceof TaskEntity t) {
+            return t.getProcessDefinitionId();
+        } else if (entity instanceof VariableInstanceEntity v) {
+            return v.getProcessDefinitionId();
+        } else if (entity instanceof ExternalTaskEntity x) {
+            return x.getProcessDefinitionId();
+        } else if (entity instanceof JobEntity j) {
+            return j.getProcessDefinitionId();
+        }
+        return null;
     }
 
     private static String activityOf(Object entity) {

@@ -268,7 +268,7 @@ export class HttpTransport {
     if (actingFor) headers['X-Sangam-Acting-For-Seat'] = actingFor;
     let body: BodyInit | undefined;
     if (req.rawBody !== undefined) {
-      body = req.rawBody;
+      body = req.rawBody instanceof Uint8Array ? fetchBytes(req.rawBody) : req.rawBody;
       if (req.rawContentType && !(req.rawBody instanceof FormData)) headers['Content-Type'] = req.rawContentType;
     } else if (req.body !== undefined) {
       headers['Content-Type'] = 'application/json';
@@ -337,4 +337,13 @@ function retryAfterMs(resp: Response): number | undefined {
   if (!v) return undefined;
   const n = Number.parseInt(v.trim(), 10);
   return Number.isFinite(n) ? Math.min(60, n) * 1000 : undefined;
+}
+
+/**
+ * Bytes as a fetch body. WebIDL `BufferSource` (fetch's `BodyInit`) does not allow a view on a `SharedArrayBuffer`, so
+ * an `ArrayBuffer`-backed view is sent as is (same memory) and any other view is copied into a new `ArrayBuffer` first.
+ */
+function fetchBytes(bytes: Uint8Array): BodyInit {
+  const buffer = bytes.buffer;
+  return buffer instanceof ArrayBuffer ? new Uint8Array(buffer, bytes.byteOffset, bytes.byteLength) : new Uint8Array(bytes);
 }

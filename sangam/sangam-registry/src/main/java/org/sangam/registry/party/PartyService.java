@@ -326,7 +326,7 @@ public final class PartyService {
 
     /** The party row (visibility applied, no consent check); use {@link #view} for disclosure. */
     public Party get(Connection c, RegistryContext ctx, String id) {
-        SqlPredicate vis = ports.visibility().visible(ctx, RESOURCE, "p");
+        SqlPredicate vis = ports.visibility().visible(c, ctx, RESOURCE, "p");
         List<Object> params = new ArrayList<>(List.of(id, ctx.tenant()));
         params.addAll(vis.params());
         return Jdbc.one(c, "SELECT " + Party.COLUMNS + " FROM REG_PARTY p WHERE p.id=? AND p.tenant_id=? AND (" + vis.sql() + ")",
@@ -339,12 +339,12 @@ public final class PartyService {
      */
     public Map<String, Object> view(Connection c, RegistryContext ctx, String id) {
         Party p = get(c, ctx, id);
-        consent(ctx, id, "READ");
+        consent(c, ctx, id, "READ");
         Map<String, Object> v = new LinkedHashMap<>(p.toMap());
         v.put("identifiers", identifiers(c, ctx.tenant(), id, true).stream().map(this::publicIdentifier).toList());
         v.put("addresses", addressesOf(c, ctx.tenant(), id, true).stream().map(Address::toMap).toList());
         v.put("relationships", relationshipsOf(c, ctx.tenant(), id, true).stream().map(Relationship::toMap).toList());
-        return ports.privacy().mask(ctx, RESOURCE, v, SENSITIVE_VIEW_FIELDS);
+        return ports.privacy().mask(c, ctx, RESOURCE, v, SENSITIVE_VIEW_FIELDS);
     }
 
     /** Follows merged-into links to the surviving golden record. */
@@ -390,7 +390,7 @@ public final class PartyService {
             params.add(hash);
         }
         return Db.page(c, dialect, "SELECT " + Party.COLUMNS + " FROM REG_PARTY p", where.toString(), params,
-                ports.visibility().visible(ctx, RESOURCE, "p"), "p.display_name, p.id", page, size, Party::map);
+                ports.visibility().visible(c, ctx, RESOURCE, "p"), "p.display_name, p.id", page, size, Party::map);
     }
 
     public AuditChain.VerifyResult verifyAudit(Connection c, RegistryContext ctx, String id) {
@@ -424,7 +424,7 @@ public final class PartyService {
 
     public List<Map<String, Object>> listIdentifiers(Connection c, RegistryContext ctx, String partyId) {
         get(c, ctx, partyId);
-        consent(ctx, partyId, "READ");
+        consent(c, ctx, partyId, "READ");
         return identifiers(c, ctx.tenant(), partyId, false).stream().map(this::publicIdentifier).toList();
     }
 
@@ -435,7 +435,7 @@ public final class PartyService {
         }
         Identifier i = identifier(c, ctx.tenant(), identifierId);
         get(c, ctx, i.partyId());
-        consent(ctx, i.partyId(), "REVEAL_IDENTIFIER");
+        consent(c, ctx, i.partyId(), "REVEAL_IDENTIFIER");
         String value = i.vaultRef() == null ? i.value()
                 : ports.vault().reveal(ctx.tenant(), i.vaultRef(), ctx.purpose())
                 .orElseThrow(() -> RegistryException.notFound("vault token", i.vaultRef()));
@@ -554,7 +554,7 @@ public final class PartyService {
 
     public List<Relationship> relationships(Connection c, RegistryContext ctx, String partyId) {
         get(c, ctx, partyId);
-        consent(ctx, partyId, "READ");
+        consent(c, ctx, partyId, "READ");
         return relationshipsOf(c, ctx.tenant(), partyId, false);
     }
 
@@ -586,7 +586,7 @@ public final class PartyService {
 
     public List<Address> addresses(Connection c, RegistryContext ctx, String partyId) {
         get(c, ctx, partyId);
-        consent(ctx, partyId, "READ");
+        consent(c, ctx, partyId, "READ");
         return addressesOf(c, ctx.tenant(), partyId, false);
     }
 
@@ -627,7 +627,7 @@ public final class PartyService {
      */
     public Household household(Connection c, RegistryContext ctx, String partyId, List<String> types, int depth) {
         Party root = get(c, ctx, partyId);
-        consent(ctx, partyId, "READ");
+        consent(c, ctx, partyId, "READ");
         int max = Math.max(1, Math.min(depth <= 0 ? 1 : depth, 5));
         Instant now = Db.now(c, dialect);
         List<Map<String, Object>> members = new ArrayList<>();
@@ -662,7 +662,7 @@ public final class PartyService {
                 frontier.add(new String[]{other, Integer.toString(d + 1)});
             }
         }
-        Map<String, Object> masked = ports.privacy().mask(ctx, RESOURCE, Maps.of("members", members), SENSITIVE_VIEW_FIELDS);
+        Map<String, Object> masked = ports.privacy().mask(c, ctx, RESOURCE, Maps.of("members", members), SENSITIVE_VIEW_FIELDS);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> out = masked.get("members") instanceof List<?> l ? (List<Map<String, Object>>) l : members;
         return new Household(root.id(), out, out.size());
@@ -678,7 +678,7 @@ public final class PartyService {
             throw RegistryException.invalid("a snapshot needs a reference");
         }
         Party p = get(c, ctx, partyId);
-        consent(ctx, partyId, "SNAPSHOT");
+        consent(c, ctx, partyId, "SNAPSHOT");
         Map<String, Object> content = new LinkedHashMap<>();
         content.put("party", p.toMap());
         content.put("identifiers", identifiers(c, ctx.tenant(), partyId, true).stream()
@@ -795,7 +795,7 @@ public final class PartyService {
         if (ids.isEmpty()) {
             return out;
         }
-        SqlPredicate vis = ports.visibility().visible(ctx, RESOURCE, "p");
+        SqlPredicate vis = ports.visibility().visible(c, ctx, RESOURCE, "p");
         List<String> all = new ArrayList<>(ids);
         for (int i = 0; i < all.size(); i += 500) {
             List<String> chunk = all.subList(i, Math.min(all.size(), i + 500));
@@ -907,8 +907,8 @@ public final class PartyService {
      * listed, so cross-boundary candidates reach only a reviewer who can see both sides.
      */
     public List<Candidate> candidates(Connection c, RegistryContext ctx, String status, String partyId, int page, int size) {
-        SqlPredicate va = ports.visibility().visible(ctx, RESOURCE, "pa");
-        SqlPredicate vb = ports.visibility().visible(ctx, RESOURCE, "pb");
+        SqlPredicate va = ports.visibility().visible(c, ctx, RESOURCE, "pa");
+        SqlPredicate vb = ports.visibility().visible(c, ctx, RESOURCE, "pb");
         StringBuilder where = new StringBuilder("m.tenant_id=? AND m.status=?"
                 + " AND EXISTS (SELECT 1 FROM REG_PARTY pa WHERE pa.tenant_id=m.tenant_id AND pa.id=m.party_a AND (" + va.sql() + "))"
                 + " AND EXISTS (SELECT 1 FROM REG_PARTY pb WHERE pb.tenant_id=m.tenant_id AND pb.id=m.party_b AND (" + vb.sql() + "))");
@@ -1210,11 +1210,11 @@ public final class PartyService {
 
     // --------------------------------------------------------------------------------------------------- helpers
 
-    private void consent(RegistryContext ctx, String partyId, String processing) {
+    private void consent(Connection c, RegistryContext ctx, String partyId, String processing) {
         if (ctx.purpose() == null || ctx.purpose().isBlank()) {
             return;
         }
-        RegistryPorts.ConsentDecision d = ports.consent().check(ctx, partyId, ctx.purpose(), processing);
+        RegistryPorts.ConsentDecision d = ports.consent().check(c, ctx, partyId, ctx.purpose(), processing);
         if (!d.permitted()) {
             throw new RegistryException(RegistryException.Code.CONSENT_REQUIRED, "no consent for purpose " + ctx.purpose()
                     + " on party " + partyId + (d.reason() == null ? "" : ": " + d.reason()));

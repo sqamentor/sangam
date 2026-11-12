@@ -11,6 +11,7 @@ import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
 import org.sangam.core.quota.QuotaLimit;
 import org.sangam.core.quota.TenantQuotas;
+import org.sangam.core.security.SecurityIdentity;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * Bulk data ingest (SL-44): an asynchronous job per object type, filled by chunked uploads and applied row by row by a
@@ -180,6 +182,7 @@ public final class BulkIngest {
     private final Limits limits;
     private final String node;
     private final Map<String, Sink> sinks = new ConcurrentHashMap<>();
+    private volatile Supplier<Optional<SecurityIdentity>> boundIdentity = Optional::empty;
 
     public BulkIngest(Dialect dialect, Transactions tx, AuditChain audit, Limits limits, String node) {
         this.dialect = Objects.requireNonNull(dialect);
@@ -202,6 +205,15 @@ public final class BulkIngest {
         return this;
     }
 
+    /**
+     * The identity bound to the creating request (the server binds the security context), snapshotted for jobs of an
+     * {@link IdentitySink} (M-130).
+     */
+    public BulkIngest creatorIdentity(Supplier<Optional<SecurityIdentity>> bound) {
+        this.boundIdentity = Objects.requireNonNull(bound);
+        return this;
+    }
+
     public Optional<Sink> sink(String objectType) {
         return Optional.ofNullable(objectType == null ? null : sinks.get(objectType));
     }
@@ -221,10 +233,21 @@ public final class BulkIngest {
     // ------------------------------------------------------------------ jobs
 
     public Job create(String tenant, String objectType, Integer expectedChunks, String actor) {
+        return create(tenant, objectType, expectedChunks, actor, null);
+    }
+
+    /** A job created by {@code creator} outside a request (its snapshot is kept for an {@link IdentitySink}). */
+    public Job create(String tenant, String objectType, Integer expectedChunks, SecurityIdentity creator) {
+        return create(tenant, objectType, expectedChunks, creator.personId(), CreatorSnapshot.requireNotSystem(creator));
+    }
+
+    private Job create(String tenant, String objectType, Integer expectedChunks, String actor, SecurityIdentity creator) {
         requireTenant(tenant);
         if (sink(objectType).isEmpty()) {
             throw new BulkException(BulkException.Kind.INVALID, "UNKNOWN_OBJECT_TYPE", "no bulk sink for object type " + objectType);
         }
+        String snapshot = !(sinks.get(objectType) instanceof IdentitySink) ? null : CreatorSnapshot.write(creator != null
+                ? CreatorSnapshot.forJob(Optional.of(creator), tenant, actor) : CreatorSnapshot.forJob(boundIdentity.get(), tenant, actor));
         if (expectedChunks != null && (expectedChunks < 1 || expectedChunks > limits.maxChunksPerJob())) {
             throw new BulkException(BulkException.Kind.INVALID, "INVALID_EXPECTED_CHUNKS", "expectedChunks must be 1.." + limits.maxChunksPerJob());
         }
@@ -237,9 +260,9 @@ public final class BulkIngest {
                         "tenant has " + active + " open or processing bulk jobs (limit " + limits.maxActiveJobsPerTenant() + ")");
             }
             Jdbc.update(c, "INSERT INTO OPS_BULK_JOB(id, tenant_id, object_type, state, expected_chunks, chunk_count, total_rows,"
-                            + " created_by, created_at, updated_at, closed_at, completed_at) VALUES (?,?,?,'OPEN',?,0,0,?,"
+                            + " created_by, creator_identity, created_at, updated_at, closed_at, completed_at) VALUES (?,?,?,'OPEN',?,0,0,?,?,"
                             + dialect.now() + "," + dialect.now() + ",NULL,NULL)",
-                    id, tenant, objectType, expectedChunks, actor);
+                    id, tenant, objectType, expectedChunks, actor, snapshot);
             audit(c, tenant, id, "BULK_JOB_CREATED", Map.of("objectType", objectType, "actor", String.valueOf(actor)));
             return null;
         });
@@ -445,8 +468,8 @@ public final class BulkIngest {
                 if (row.isEmpty() || !RowState.RUNNING.name().equals(row.get()[0]) || !node.equals(row.get()[1])) {
                     return false; // recovered and re-claimed elsewhere meanwhile
                 }
-                Object[] job = Jdbc.one(c, "SELECT tenant_id, object_type, state, created_by FROM OPS_BULK_JOB WHERE id = ?",
-                        rs -> new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)}, jobId).orElseThrow();
+                Object[] job = Jdbc.one(c, "SELECT tenant_id, object_type, state, created_by, creator_identity FROM OPS_BULK_JOB WHERE id = ?",
+                        rs -> new Object[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)}, jobId).orElseThrow();
                 String tenant = (String) job[0];
                 String type = (String) job[1];
                 String ext = (String) row.get()[2];
@@ -476,7 +499,10 @@ public final class BulkIngest {
                         return true;
                     }
                 }
-                String ref = sink.apply(c, tenant, (String) job[3], ext, readMap((String) row.get()[3]), key.map(k -> (String) k[1]).orElse(null));
+                String existingRef = key.map(k -> (String) k[1]).orElse(null);
+                String ref = sink instanceof IdentitySink is // M-130: as the creator, so the target re-checks per object
+                        ? is.apply(c, CreatorSnapshot.forRow((String) job[4], tenant), ext, readMap((String) row.get()[3]), existingRef)
+                        : sink.apply(c, tenant, (String) job[3], ext, readMap((String) row.get()[3]), existingRef);
                 if (key.isPresent()) {
                     Jdbc.update(c, "UPDATE OPS_BULK_KEY SET payload_hash = ?, result_ref = ?, job_id = ?, chunk_seq = ?, row_seq = ?, updated_at = "
                                     + dialect.now() + " WHERE tenant_id = ? AND object_type = ? AND external_id = ?",

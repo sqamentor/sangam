@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Portal (10 operations). */
+/** Typed operations of Portal (11 operations). */
 final class PortalApi
 {
     public function __construct(private readonly Calls $calls)
@@ -32,6 +32,20 @@ final class PortalApi
     {
         $req = ApiRequest::get('/portal/services');
         return $this->calls->models($req, $options, Model\PortalService::class);
+    }
+
+    /**
+     * Application form of a service
+     *
+     * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
+     *
+     * GET /portal/services/{key}/form (operationId getPortalServiceForm); permission portal.use.
+     * @return Model\FormVersion|null
+     */
+    public function getPortalServiceForm(string $key, ?RequestOptions $options = null): ?Model\FormVersion
+    {
+        $req = ApiRequest::get('/portal/services/' . HttpTransport::seg((string) $key) . '/form');
+        return $this->calls->model($req, $options, Model\FormVersion::class);
     }
 
     /**

@@ -18,7 +18,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $seatId
  * @property-read string|null $alg  One of: Ed25519.
  * @property-read string|null $keyId Id of the signing key (per purpose and environment, Q-04); the key itself never leaves the secret provider
- * @property-read string|null $signature Base64 signature over the raw 32-byte package hash
+ * @property-read string|null $signature Base64 Ed25519 signature over the UTF-8 of JCS({packageHash, role, principalId, seatId, signedAt}), signedAt ISO-8601 UTC with at most millisecond precision; a signature relabelled to another role, signer, seat or time does not verify (BAD_SIGNATURE)
  * @property-read string|null $signedAt
  */
 final class PackageSignature implements \JsonSerializable

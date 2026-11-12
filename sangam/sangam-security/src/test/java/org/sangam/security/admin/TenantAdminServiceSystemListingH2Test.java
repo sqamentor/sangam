@@ -37,8 +37,9 @@ class TenantAdminServiceSystemListingH2Test {
         c = ds.getConnection();
         Jdbc.update(c, "CREATE TABLE SEC_TENANT (tenant_id VARCHAR(64) PRIMARY KEY, name_en VARCHAR(255), name_hi VARCHAR(255),"
                 + " name_local VARCHAR(255), hosting_profile VARCHAR(64), status VARCHAR(32), config TEXT, quotas TEXT,"
-                + " four_eyes INT)");
-        Jdbc.update(c, "INSERT INTO SEC_TENANT VALUES ('RJ','Rajasthan',NULL,NULL,'GOVERNMENT','ACTIVE','{}','{}',1),"
+                + " four_eyes INT, isolation VARCHAR(16) DEFAULT 'SHARED' NOT NULL)");
+        Jdbc.update(c, "INSERT INTO SEC_TENANT(tenant_id, name_en, name_hi, name_local, hosting_profile, status, config, quotas,"
+                + " four_eyes) VALUES ('RJ','Rajasthan',NULL,NULL,'GOVERNMENT','ACTIVE','{}','{}',1),"
                 + " ('MP','Madhya Pradesh',NULL,NULL,'GOVERNMENT','SUSPENDED','{}','{}',1),"
                 + " ('GJ','Gujarat',NULL,NULL,'STANDARD','CREATED','{\"secret\":\"admin-only\"}','{}',0)");
     }
@@ -54,8 +55,25 @@ class TenantAdminServiceSystemListingH2Test {
         assertEquals(List.of(new TenantAdminService.SystemTenant("GJ", "CREATED"),
                 new TenantAdminService.SystemTenant("MP", "SUSPENDED"),
                 new TenantAdminService.SystemTenant("RJ", "ACTIVE")), out);
-        assertEquals(2, TenantAdminService.SystemTenant.class.getRecordComponents().length,
-                "no admin data (names, config, quotas) in the system listing");
+        assertEquals(List.of("tenantId", "status", "isolation"),
+                java.util.Arrays.stream(TenantAdminService.SystemTenant.class.getRecordComponents())
+                        .map(java.lang.reflect.RecordComponent::getName).toList(),
+                "no admin data (names, config, quotas) in the system view: id, status and isolation only");
+    }
+
+    @Test
+    void theSystemViewCarriesTheRecordedIsolation() {
+        Jdbc.update(c, "UPDATE SEC_TENANT SET isolation = 'DATABASE' WHERE tenant_id = 'MP'");
+        SecurityIdentity sys = SecurityIdentity.system("default", "SYSTEM");
+        assertEquals("DATABASE", tenants.listForSystem(c, sys).get(1).isolation());
+        assertEquals(java.util.Optional.of(new TenantAdminService.SystemTenant("MP", "SUSPENDED", "DATABASE")),
+                tenants.findForSystem(c, sys, "MP"));
+        assertEquals(java.util.Optional.of(new TenantAdminService.SystemTenant("RJ", "ACTIVE", "SHARED")),
+                tenants.findForSystem(c, sys, "RJ"));
+        assertEquals(java.util.Optional.empty(), tenants.findForSystem(c, sys, "XX"));
+        assertThrows(SangamSecurityException.AccessDenied.class,
+                () -> tenants.findForSystem(c, user("RJ", TenantAdminService.PLATFORM_ADMIN_ROLE), "MP"),
+                "the one-tenant system read is for the system principal only");
     }
 
     @Test

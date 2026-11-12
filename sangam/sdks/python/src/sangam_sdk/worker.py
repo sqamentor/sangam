@@ -269,6 +269,19 @@ class TaskContext:
         if self.shutting_down:
             raise TaskCancelled("worker shutting down")
 
+    def step(self, name: str, fn: Callable[[Any], Any], *, idempotent: bool = False,
+             lookup: Optional[Callable[[Any], Any]] = None) -> Any:
+        """Durable step (M-025, R37): runs ``fn(step)`` once per operation and records its result in the step journal;
+        a later attempt replays the recorded result. ``fn`` sends ``step.idempotency_key`` to the remote API and may set
+        ``step.provider_ref``; raising :class:`~sangam_sdk.steps.StepNoEffectError` records FAILED (may run again).
+        NOT exactly-once for remote APIs: a crash between the call and its record leaves INTENT, which the next attempt
+        resolves by ``lookup`` (class b), a re-run when ``idempotent`` (class a), or else :class:`OutcomeUnknown`
+        (class c, the default). Lease loss on the journal raises :class:`TaskCancelled`. See :mod:`sangam_sdk.steps`.
+        """
+        from .steps import run_step
+
+        return run_step(self, name, fn, idempotent=idempotent, lookup=lookup)
+
 
 # --------------------------------------------------------------------------- worker
 

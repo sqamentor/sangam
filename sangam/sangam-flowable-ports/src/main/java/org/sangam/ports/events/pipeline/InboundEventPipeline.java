@@ -87,20 +87,26 @@ public final class InboundEventPipeline {
     public static InboundEventPipeline json(ChannelDefinition channel, String channelTenant,
                                             Function<String, EventDefinition> definitions) {
         String d = channel.deserializerType();
-        if (d != null && !"json".equalsIgnoreCase(d)) {
+        if (d != null && !"json".equalsIgnoreCase(d) && !CloudEventsFormat.TYPE.equalsIgnoreCase(d)) {
             throw new IllegalArgumentException("channel " + channel.key() + ": deserializer '" + d
-                    + "' is not supported (json only; XML and expression deserializers are not ported)");
+                    + "' is not supported (json or cloudevents; XML and expression deserializers are not ported)");
         }
         return new InboundEventPipeline(channel, channelTenant, definitions);
     }
 
     public EventInstance process(String raw, Map<String, String> headers, String transportMessageId) {
         Map<String, String> h = lower(headers);
-        JsonNode event = deserializer.deserialize(raw);
+        // M-065: a cloudevents channel takes structured or binary CloudEvents (detected per message, as the bindings
+        // require); the CloudEvent data is the event, type the default key, id the message id, sangamtenant a claim
+        CloudEventsFormat.Event ce = CloudEventsFormat.TYPE.equalsIgnoreCase(channel.deserializerType())
+                ? CloudEventsFormat.decode(raw, h) : null;
+        JsonNode event = ce == null ? deserializer.deserialize(raw)
+                : channel.payloadJsonPointer() == null ? ce.data() : Json.at(ce.data(), channel.payloadJsonPointer());
         if (event == null) {
             throw new IllegalArgumentException("channel " + channel.key() + ": payload pointer matched nothing");
         }
-        String key = keyDetector.detectEventDefinitionKey(event, h);
+        String key = ce != null && channel.channelEventKeyDetection() == null ? ce.type()
+                : keyDetector.detectEventDefinitionKey(event, h);
         if (key == null || key.isBlank()) {
             throw new IllegalArgumentException("channel " + channel.key() + ": no event key detected");
         }
@@ -108,7 +114,11 @@ public final class InboundEventPipeline {
         if (def == null) {
             throw new IllegalArgumentException("channel " + channel.key() + ": unknown event definition '" + key + "'");
         }
-        String tenant = resolveTenant(tenantDetector.detectTenantId(event, h));
+        String detected = tenantDetector.detectTenantId(event, h);
+        if ((detected == null || detected.isBlank()) && ce != null) {
+            detected = ce.attributes().get(CloudEventsFormat.TENANT_EXTENSION);
+        }
+        String tenant = resolveTenant(detected);
         Map<String, Object> payload = payloadExtractor.extractPayload(def, event);
         Map<String, Object> correlation = new LinkedHashMap<>();
         for (EventDefinition.Field f : def.correlationParameters()) {
@@ -129,7 +139,7 @@ public final class InboundEventPipeline {
             JsonNode bk = Json.at(event, def.businessKeyField());
             businessKey = bk == null || bk.isNull() ? null : bk.asText();
         }
-        String messageId = transportMessageId;
+        String messageId = ce != null ? ce.id() : transportMessageId;
         if (channel.messageIdJsonPointer() != null) {
             JsonNode id = Json.at(event, channel.messageIdJsonPointer());
             if (id != null && !id.isNull()) {

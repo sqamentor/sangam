@@ -66,8 +66,11 @@ public sealed class SangamTestEngine : HttpMessageHandler
     private readonly HashSet<string> _irreversible = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _lose = new(StringComparer.Ordinal);
     private readonly List<EngineCall> _calls = new();
+    private readonly EngineSteps _journal;
     private long _seq;
     private long _offsetTicks;
+
+    public SangamTestEngine() => _journal = new EngineSteps(_works, Fence, Now);
 
     /// <summary>Upper bound of a long-poll wait inside the engine (default 1 s).</summary>
     public TimeSpan LongPollCap { get; set; } = TimeSpan.FromSeconds(1);
@@ -237,7 +240,9 @@ public sealed class SangamTestEngine : HttpMessageHandler
         Answer a;
         try
         {
-            a = await DispatchAsync(request.Method.Method, apiPath, action, key, body, cancellationToken).ConfigureAwait(false);
+            a = EngineSteps.IsStepPath(apiPath)
+                ? Steps(request.Method.Method, apiPath, request.RequestUri.Query, body)
+                : await DispatchAsync(request.Method.Method, apiPath, action, key, body, cancellationToken).ConfigureAwait(false);
         }
         catch (ProblemException p)
         {
@@ -280,6 +285,16 @@ public sealed class SangamTestEngine : HttpMessageHandler
         }
         throw new ProblemException(501, "CAPABILITY_NOT_INSTALLED", null, $"{method} {apiPath} is not served by the SDK test engine")
             .With("capability", apiPath).With("module", "sangam-server");
+    }
+
+    /// <summary>Step journal routes (M-025, R37), served by <see cref="EngineSteps"/> under the lock after the expiry sweep.</summary>
+    private Answer Steps(string method, string apiPath, string? query, JsonNode? body)
+    {
+        lock (_gate)
+        {
+            SweepLocked(Now());
+            return _journal.Handle(method, apiPath, query, body);
+        }
     }
 
     // ------------------------------------------------------------------ R41 store (non-fenced mutations)
@@ -665,11 +680,11 @@ public sealed class SangamTestEngine : HttpMessageHandler
     private static ProblemException StaleLease(string workId, string reason, string detail) =>
         new ProblemException(409, "STALE_LEASE", "Stale lease", detail).With("workId", workId).With("reason", reason);
 
-    private static ProblemException Gone(string workId, string? item) =>
+    internal static ProblemException Gone(string workId, string? item) =>
         new ProblemException(410, "GONE_INSTANCE_DELETED", null, "The instance of this work was deleted; the result was recorded")
             .With("workId", workId).With("reconciliationItemId", item);
 
-    private static ProblemException NotFound(string what, string id) =>
+    internal static ProblemException NotFound(string what, string id) =>
         new ProblemException(404, "NOT_FOUND", null, $"{what} {id} was not found or is not visible to you").With("resource", what);
 
     private Work Require(string workId) =>

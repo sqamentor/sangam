@@ -14,10 +14,12 @@ import org.sangam.sdk.generated.model.ChannelHookResult;
 import org.sangam.sdk.generated.model.ChannelMessage;
 import org.sangam.sdk.generated.model.ChannelOptInRequest;
 import org.sangam.sdk.generated.model.ChannelSendMessage;
+import org.sangam.sdk.generated.model.ChannelSlackHookResult;
 import org.sangam.sdk.generated.model.ChannelStatus;
+import org.sangam.sdk.generated.model.ReceiveMatrixTransactionRequest;
 
 /**
- * Typed operations of {@code Channels} (17 operations), generated from
+ * Typed operations of {@code Channels} (19 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -35,6 +37,8 @@ public final class ChannelsApi {
     private static final TypeReference<java.util.List<ChannelStatus>> R_getChannelStatus = new TypeReference<>() { };
     private static final TypeReference<ChannelHookResult> R_receiveWhatsAppHook = new TypeReference<>() { };
     private static final TypeReference<ChannelHookResult> R_receiveWeChatHook = new TypeReference<>() { };
+    private static final TypeReference<ChannelSlackHookResult> R_receiveSlackHook = new TypeReference<>() { };
+    private static final TypeReference<ChannelHookResult> R_receiveMatrixTransaction = new TypeReference<>() { };
     private static final TypeReference<ChannelHookResult> R_receiveTeamsHook = new TypeReference<>() { };
 
     private final GeneratedCalls call;
@@ -149,15 +153,17 @@ public final class ChannelsApi {
     /**
      * Live message stream
      *
-     * <p>Server-sent events, event name 'message'. Streams live on one node; reconnect and read history to catch up.
+     * <p>Server-sent events, event name 'message', event id = message id, data = ChannelMessage (M-040). Live across nodes: a message stored on any node reaches every open stream of the conversation. With Last-Event-ID the stream first replays the messages after that message, at least once (the client drops duplicates by message id), then goes live. A comment line heartbeat is sent at most every 30 s while idle.
      *
      * <p>{@code GET /channels/conversations/{id}/stream} (operationId {@code streamConversation}); permission {@code channels.read}.
      * @param id path parameter {@code id}
+     * @param lastEventID header parameter {@code Last-Event-ID}, or null. Id of the last message the client received; the messages after it are replayed first
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public byte[] streamConversation(String id, RequestOptions options) {
+    public byte[] streamConversation(String id, String lastEventID, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/channels/conversations/" + HttpTransport.seg(String.valueOf(id)) + "/stream");
+        req.header("Last-Event-ID", lastEventID == null ? null : String.valueOf(lastEventID));
         return call.bytes(req, options, "text/event-stream");
     }
 
@@ -261,7 +267,7 @@ public final class ChannelsApi {
     /**
      * WhatsApp webhook
      *
-     * <p>Public: X-Hub-Signature-256 is verified on the raw body first.
+     * <p>Public: X-Hub-Signature-256 is verified on the raw body first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
      *
      * <p>{@code POST /hooks/channels/{tenant}/whatsapp} (operationId {@code receiveWhatsAppHook}).
      * @param tenant path parameter {@code tenant}
@@ -301,7 +307,7 @@ public final class ChannelsApi {
     /**
      * WeChat webhook
      *
-     * <p>Public: the signature is verified first.
+     * <p>Public: the signature is verified first. Security mode (encrypt_type=aes): msg_signature is verified over the Encrypt element and the message is decrypted with the tenant's EncodingAESKey (config sangam.channels.webhooks.&lt;tenant&gt;.wechat.encoding-aes-key-ref, a secret reference, and wechat.app-id, which must match the decrypted app id); plain mode as before. 401 WEBHOOK_SIGNATURE_INVALID on a bad signature. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
      *
      * <p>{@code POST /hooks/channels/{tenant}/wechat} (operationId {@code receiveWeChatHook}).
      * @param tenant path parameter {@code tenant}
@@ -309,22 +315,67 @@ public final class ChannelsApi {
      * @param timestamp query parameter {@code timestamp}
      * @param nonce query parameter {@code nonce}
      * @param signature query parameter {@code signature}
+     * @param encryptType query parameter {@code encrypt_type}, or null. 'aes' in security mode
+     * @param msgSignature query parameter {@code msg_signature}, or null. Signature over the Encrypt element (security mode)
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public ChannelHookResult receiveWeChatHook(String tenant, java.util.Map<String, Object> body, String timestamp, String nonce, String signature, RequestOptions options) {
+    public ChannelHookResult receiveWeChatHook(String tenant, java.util.Map<String, Object> body, String timestamp, String nonce, String signature, String encryptType, String msgSignature, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/hooks/channels/" + HttpTransport.seg(String.valueOf(tenant)) + "/wechat");
         req.body(body);
         req.query("timestamp", timestamp);
         req.query("nonce", nonce);
         req.query("signature", signature);
+        req.query("encrypt_type", encryptType);
+        req.query("msg_signature", msgSignature);
         return call.json(req, options, R_receiveWeChatHook);
+    }
+
+    /**
+     * Slack Events API webhook
+     *
+     * <p>Public: X-Slack-Signature (v0 HMAC-SHA256 over 'v0:&lt;timestamp&gt;:&lt;raw body&gt;' with the tenant's signing secret, config sangam.channels.webhooks.&lt;tenant&gt;.slack.signing-secret-ref) and the timestamp window are verified on the raw body first; 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Slack is not configured for the tenant. url_verification answers {challenge}; every other envelope answers the counts. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+     *
+     * <p>{@code POST /hooks/channels/{tenant}/slack} (operationId {@code receiveSlackHook}).
+     * @param tenant path parameter {@code tenant}
+     * @param body request body
+     * @param xSlackRequestTimestamp header parameter {@code X-Slack-Request-Timestamp}. Unix seconds of the request; stale requests are refused
+     * @param xSlackSignature header parameter {@code X-Slack-Signature}. v0=&lt;hex HMAC-SHA256&gt;
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public ChannelSlackHookResult receiveSlackHook(String tenant, java.util.Map<String, Object> body, String xSlackRequestTimestamp, String xSlackSignature, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/hooks/channels/" + HttpTransport.seg(String.valueOf(tenant)) + "/slack");
+        req.body(body);
+        req.header("X-Slack-Request-Timestamp", xSlackRequestTimestamp == null ? null : String.valueOf(xSlackRequestTimestamp));
+        req.header("X-Slack-Signature", xSlackSignature == null ? null : String.valueOf(xSlackSignature));
+        return call.json(req, options, R_receiveSlackHook);
+    }
+
+    /**
+     * Matrix application-service transaction
+     *
+     * <p>Public: the homeserver token (Authorization: Bearer &lt;hs_token&gt;, or the legacy access_token query parameter) is compared with the tenant's (config sangam.channels.webhooks.&lt;tenant&gt;.matrix.hs-token-ref, matrix.user-id); 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Matrix is not configured for the tenant. A repeated txnId is answered again without a second delivery (inbox deduplication). The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+     *
+     * <p>{@code PUT /hooks/channels/{tenant}/matrix/transactions/{txnId}} (operationId {@code receiveMatrixTransaction}).
+     * @param tenant path parameter {@code tenant}
+     * @param txnId path parameter {@code txnId}. homeserver transaction id
+     * @param body request body
+     * @param accessToken query parameter {@code access_token}, or null. Legacy homeserver token; prefer the Authorization header
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public ChannelHookResult receiveMatrixTransaction(String tenant, String txnId, ReceiveMatrixTransactionRequest body, String accessToken, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/hooks/channels/" + HttpTransport.seg(String.valueOf(tenant)) + "/matrix/transactions/" + HttpTransport.seg(String.valueOf(txnId)));
+        req.body(body);
+        req.query("access_token", accessToken);
+        return call.json(req, options, R_receiveMatrixTransaction);
     }
 
     /**
      * Teams webhook
      *
-     * <p>Public: the Bot Framework token is verified first.
+     * <p>Public: the Bot Framework token is verified first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
      *
      * <p>{@code POST /hooks/channels/{tenant}/teams} (operationId {@code receiveTeamsHook}).
      * @param tenant path parameter {@code tenant}

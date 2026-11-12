@@ -100,7 +100,8 @@ public class ControlPlaneController {
     @PostMapping("/admin/tenants")
     public ResponseEntity<Tenant> createTenant(@RequestBody CreateTenant body, Principal p) {
         Tenant t = registry.create(new TenantRegistry.NewTenant(body.tenantCode(), body.parentCode(), body.levelKind(),
-                body.name(), body.jurisdiction(), body.residency(), body.sector(), body.expectedStartsPerSec()), name(p));
+                body.name(), body.jurisdiction(), body.residency(), body.sector(), body.expectedStartsPerSec(),
+                body.isolation()), name(p));
         if (body.place() == null || body.place()) {
             t = placement.place(t.tenantCode(), name(p));
         }
@@ -108,7 +109,8 @@ public class ControlPlaneController {
     }
 
     public record CreateTenant(String tenantCode, String parentCode, String levelKind, String name, String jurisdiction,
-                               String residency, String sector, Double expectedStartsPerSec, Boolean place) {
+                               String residency, String sector, Double expectedStartsPerSec, Boolean place,
+                               String isolation) {
     }
 
     @GetMapping("/admin/tenants/{code}")

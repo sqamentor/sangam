@@ -35,7 +35,8 @@ public final class ElementTemplates {
     public record Applied(Map<String, Object> properties, List<String> errors) {
     }
 
-    private static final Set<String> BINDING_PREFIX = Set.of("operaton:", "bpmn:", "input:", "output:", "form:");
+    /** {@code sangam:} binds a Sangam extension attribute (e.g. {@code sangam:operationRef}, M-068). */
+    private static final Set<String> BINDING_PREFIX = Set.of("operaton:", "bpmn:", "input:", "output:", "form:", "sangam:");
 
     private final Dialect dialect;
     private final Transactions tx;
@@ -125,9 +126,33 @@ public final class ElementTemplates {
     @SuppressWarnings("unchecked")
     static List<String> validate(Kind kind, Map<String, Object> doc) {
         List<String> errors = new ArrayList<>();
+        if (kind == Kind.PALETTE) {
+            // owner decision 58: a palette entry reuses the ELEMENT format and creates exactly one BPMN element type
+            Object applies = doc.get("appliesTo");
+            if (!(applies instanceof List<?> a) || a.size() != 1 || !(a.get(0) instanceof String s) || !s.startsWith("bpmn:")) {
+                errors.add("a palette template must name exactly one bpmn: type in appliesTo");
+            }
+        }
+        if (kind == Kind.FORM_COMPONENT) {
+            // owner decision 58: {id, name, components[]}, each component an object with a string type
+            Object comps = doc.get("components");
+            if (!(comps instanceof List<?> l) || l.isEmpty()) {
+                errors.add("a form component template needs a non-empty components list");
+            } else {
+                for (Object c : l) {
+                    if (!(c instanceof Map<?, ?> m) || !(m.get("type") instanceof String t) || t.isBlank()) {
+                        errors.add("every component must be an object with a string type");
+                        break;
+                    }
+                }
+            }
+        }
         Object rawFields = doc.get("fields");
         if (!(rawFields instanceof List<?>)) {
-            return kind == Kind.ELEMENT ? List.of("fields must be a list") : errors;
+            if (kind == Kind.ELEMENT || kind == Kind.PALETTE) {
+                errors.add("fields must be a list");
+            }
+            return errors;
         }
         Set<String> names = new java.util.HashSet<>();
         for (Object o : (List<?>) rawFields) {
@@ -153,6 +178,17 @@ public final class ElementTemplates {
             }
         }
         return errors;
+    }
+
+    /** A template from a document without storing it (version 0 when the document has none); for previews and tests. */
+    public static Template of(Kind kind, Map<String, Object> document) {
+        List<String> errors = validate(kind, document);
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("; ", errors));
+        }
+        Map<String, Object> d = new LinkedHashMap<>(document);
+        d.putIfAbsent("version", 0);
+        return parse(kind, d);
     }
 
     @SuppressWarnings("unchecked")

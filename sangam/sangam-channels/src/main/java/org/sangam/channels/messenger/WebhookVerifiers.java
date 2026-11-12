@@ -69,6 +69,38 @@ public final class WebhookVerifiers {
     }
 
     /**
+     * Slack request signing: {@code X-Slack-Signature: v0=<hex HMAC-SHA256 of "v0:" + timestamp + ":" + raw body>} with the
+     * app's signing secret, and {@code X-Slack-Request-Timestamp} no more than five minutes from {@code now} (replay guard).
+     */
+    public static boolean slack(String signingSecret, byte[] rawBody, String timestampHeader, String signatureHeader, Instant now) {
+        if (timestampHeader == null || signatureHeader == null || !signatureHeader.startsWith("v0=") || !timestampHeader.matches("[0-9]{1,12}")) {
+            return false;
+        }
+        if (Math.abs(now.getEpochSecond() - Long.parseLong(timestampHeader)) > CLOCK_SKEW_SECONDS) {
+            return false;
+        }
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(signingSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            mac.update(("v0:" + timestampHeader + ":").getBytes(StandardCharsets.UTF_8));
+            byte[] want = mac.doFinal(rawBody);
+            return MessageDigest.isEqual(want, HexFormat.of().parseHex(signatureHeader.substring(3)));
+        } catch (GeneralSecurityException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Matrix application service: the homeserver sends {@code Authorization: Bearer <hs_token>} (older homeservers send the
+     * {@code access_token} query parameter instead; pass whichever is present). Compared in constant time.
+     */
+    public static boolean matrixAppService(String hsToken, String authorizationHeader, String accessTokenParam) {
+        String presented = authorizationHeader != null && authorizationHeader.startsWith("Bearer ") ? authorizationHeader.substring(7).trim() : accessTokenParam;
+        return hsToken != null && !hsToken.isEmpty() && presented != null
+                && MessageDigest.isEqual(hsToken.getBytes(StandardCharsets.UTF_8), presented.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
      * Teams / Bot Framework: {@code Authorization: Bearer <RS256 JWT>}. Checks the algorithm, the signature by key id, issuer
      * (see {@link #BOT_FRAMEWORK_ISSUER}), audience (the bot's app id), validity period with five minutes of clock skew, and that
      * the {@code serviceUrl} claim equals the {@code serviceUrl} of the activity in the request body. Keys come from

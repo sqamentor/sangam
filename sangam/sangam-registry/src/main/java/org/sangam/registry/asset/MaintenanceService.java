@@ -526,7 +526,7 @@ public final class MaintenanceService {
             params.add(workType.toUpperCase());
         }
         return Db.page(c, dialect, "SELECT " + prefixedWo() + " FROM REG_WORK_ORDER w JOIN REG_OBJECT o ON o.id = w.asset_id",
-                where.toString(), params, ports.visibility().visible(ctx, RegisteredObjectService.RESOURCE, "o"),
+                where.toString(), params, ports.visibility().visible(c, ctx, RegisteredObjectService.RESOURCE, "o"),
                 "w.reported_at DESC, w.id", page, size, WorkOrder::map);
     }
 

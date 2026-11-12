@@ -7,6 +7,7 @@ import { delay } from './http.js';
 import { withFields, type LogFields, type Logger } from './logger.js';
 import type { ExternalWork, TopicRequest, Variables, WorkOperation } from './models.js';
 import { fromTypedValue, isTypedValue } from './typed.js';
+import { runStep, type StepCall, type StepOptions } from './steps.js';
 
 // ---------------------------------------------------------------- handler outcomes
 
@@ -175,6 +176,11 @@ export class TaskContext {
   get signal(): AbortSignal { return this.abort.signal; }
   /** The server-recorded operation-ledger entry of `operationId` (SL-16); undefined from servers that do not send it. */
   get operation(): WorkOperation | undefined { return this.work.operation; }
+
+  /** Durable step (M-025, R37; `steps.ts`): a step recorded SUCCEEDED is replayed, not called again; send step.idempotencyKey.
+   * NOT exactly-once for remote APIs: INTENT is recorded before the call, SUCCEEDED after; a crash in between leaves INTENT, and
+   * the next attempt looks the outcome up, re-runs only an idempotent call or reports outcome-unknown (StepOptions; default (c)). */
+  step<T>(name: string, fn: StepCall<T>, options?: StepOptions<T>): Promise<T> { return runStep(this, name, fn, options); }
 
   /** Cooperative checkpoint. */
   throwIfCancelled(): void {

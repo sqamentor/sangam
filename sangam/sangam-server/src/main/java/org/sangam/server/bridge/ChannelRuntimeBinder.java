@@ -1,19 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.bridge;
 
+import java.net.URI;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
+import org.sangam.channels.enterprise.EnterpriseConnectors;
+import org.sangam.channels.enterprise.JcoRfcClient;
+import org.sangam.channels.enterprise.SapRfc;
 import org.sangam.channels.messenger.ChannelRuntime;
 import org.sangam.channels.messenger.OptInRegistry;
+import org.sangam.channels.messenger.ProviderTokens;
 import org.sangam.core.integration.ConnectorProfile;
 import org.sangam.core.integration.ConnectorRequest;
+import org.sangam.core.integration.SangamConnector;
 import org.sangam.integration.connector.ConnectorRegistry;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.HttpTransport;
@@ -26,18 +35,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 
 /**
  * Builds a running connector per {@code conversation-channels} registry entry and registers it for the tenant. Calls go
  * through a transport limited to {@code sangam.channels.egress.<tenant>} (host specs); with no rules the policy denies
- * everything, so nothing leaves until an operator allows it. Matrix and Slack entries have no adapter: they are reported
- * and logged, not accepted silently.
+ * everything, so nothing leaves until an operator allows it. Every channel the registry accepts (Teams, WhatsApp, WeChat,
+ * Matrix, Slack) is built by {@link ChannelRuntime}; one {@link ProviderTokens} per server keeps fetched provider tokens
+ * across refreshes.
+ *
+ * <p>Enterprise connectors (decision 76) are registered per tenant from
+ * {@code sangam.channels.enterprise.<tenant>.<id>.type}: {@code sap-odata} ({@code service-root}, {@code auth-ref}),
+ * {@code servicenow} ({@code instance}, {@code auth-ref}, {@code correlation-column}) and {@code sap-rfc} ({@code host},
+ * {@code system-number}, {@code client}, {@code user}, {@code password-ref}, optional {@code language}, {@code destination}
+ * and {@code properties.*} for extra non-secret JCo keys). Optional {@code profile=SIMULATOR}. SAP RFC runs through the
+ * customer's own JCo, loaded at run time; without it every call answers {@code SAP_JCO_NOT_AVAILABLE}. They use the same
+ * egress list and secret resolver as the channels.
  */
 public final class ChannelRuntimeBinder implements ChannelStatusSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChannelRuntimeBinder.class);
-    private static final Set<String> NO_ADAPTER = Set.of("MATRIX", "SLACK");
+    private static final Pattern ID = Pattern.compile("[A-Za-z0-9_-]{1,64}");
     private static final List<String> RECIPIENT_FIELDS = List.of("to", "recipientId", "touser", "openId", "conversationId");
 
     private final RegistryPort registry;
@@ -46,6 +65,8 @@ public final class ChannelRuntimeBinder implements ChannelStatusSource {
     private final SecretResolver secrets;
     private final Environment env;
     private final Map<String, List<ChannelStatus>> status = new ConcurrentHashMap<>();
+    private final ProviderTokens tokens = new ProviderTokens(Clock.systemUTC());
+    private final SapRfc.Client rfc = new JcoRfcClient();
 
     public ChannelRuntimeBinder(RegistryPort registry, ConnectorRegistry connectors, OptInRegistry optIns, SecretResolver secrets,
                                 Environment env) {
@@ -65,15 +86,9 @@ public final class ChannelRuntimeBinder implements ChannelStatusSource {
         for (Map<String, Object> doc : page.items()) {
             String key = String.valueOf(doc.get("key"));
             String channel = String.valueOf(doc.get("channel")).toUpperCase(Locale.ROOT);
-            if (NO_ADAPTER.contains(channel)) {
-                LOG.warn("conversation channel {} of tenant {} is {}: no adapter exists, nothing will be delivered", key, tenant, channel);
-                out.add(new ChannelStatus(key, channel, "NO_ADAPTER", "CHANNEL_ADAPTER_NOT_AVAILABLE"));
-                continue;
-            }
             try {
-                ConnectorProfile profile = "SIMULATOR".equalsIgnoreCase(String.valueOf(doc.get("profile")))
-                        ? ConnectorProfile.SIMULATOR : ConnectorProfile.LIVE;
-                connectors.register(tenant, ChannelRuntime.connector(doc, profile, transport, secrets, optedIn(tenant, channel)));
+                connectors.register(tenant, ChannelRuntime.connector(doc, profile(doc.get("profile")), transport, secrets, tokens,
+                        optedIn(tenant, channel)));
                 out.add(new ChannelStatus(key, channel, "ACTIVE", null));
             } catch (RuntimeException e) {
                 LOG.warn("conversation channel {} of tenant {} is invalid: {}", key, tenant, e.getMessage());
@@ -81,6 +96,68 @@ public final class ChannelRuntimeBinder implements ChannelStatusSource {
             }
         }
         status.put(tenant, List.copyOf(out));
+        enterprise(tenant).forEach((id, m) -> {
+            try {
+                connectors.register(tenant, enterpriseConnector(tenant, id, m, transport));
+            } catch (RuntimeException e) {
+                LOG.warn("enterprise connector {} of tenant {} is invalid: {}", id, tenant, e.getMessage());
+            }
+        });
+    }
+
+    /** The server's provider token cache, shared with the Graph mail sources. */
+    public ProviderTokens tokens() {
+        return tokens;
+    }
+
+    SangamConnector enterpriseConnector(String tenant, String id, Map<String, String> m, HttpTransport transport) {
+        if (!ID.matcher(id).matches()) {
+            throw new IllegalArgumentException("enterprise connector id must match " + ID.pattern());
+        }
+        ConnectorProfile profile = profile(m.get("profile"));
+        String type = required(m, "type").toLowerCase(Locale.ROOT);
+        return switch (type) {
+            case "sap-odata" -> EnterpriseConnectors.sapOData(id, profile, URI.create(required(m, "service-root")), required(m, "auth-ref"),
+                    transport, secrets);
+            case "servicenow" -> EnterpriseConnectors.serviceNow(id, profile, URI.create(required(m, "instance")), required(m, "auth-ref"),
+                    required(m, "correlation-column"), transport, secrets);
+            case "sap-rfc" -> {
+                Map<String, String> extra = new LinkedHashMap<>();
+                m.forEach((k, v) -> {
+                    if (k.startsWith("properties.")) {
+                        extra.put(k.substring("properties.".length()), v);
+                    }
+                });
+                SapRfc.Destination d = new SapRfc.Destination(m.getOrDefault("destination", "sangam-" + tenant + "-" + id),
+                        required(m, "host"), required(m, "system-number"), required(m, "client"), required(m, "user"),
+                        required(m, "password-ref"), m.getOrDefault("language", "EN"), Map.copyOf(extra));
+                yield SapRfc.connector(id, profile, d, rfc, egress(tenant), secrets);
+            }
+            default -> throw new IllegalArgumentException("unknown enterprise connector type " + type + " (sap-odata, sap-rfc, servicenow)");
+        };
+    }
+
+    private static ConnectorProfile profile(Object value) {
+        return "SIMULATOR".equalsIgnoreCase(String.valueOf(value)) ? ConnectorProfile.SIMULATOR : ConnectorProfile.LIVE;
+    }
+
+    private static String required(Map<String, String> m, String key) {
+        String v = m.get(key);
+        if (v == null || v.isBlank()) {
+            throw new IllegalArgumentException(key + " is required");
+        }
+        return v;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Map<String, String>> enterprise(String tenant) {
+        if (!ID.matcher(tenant).matches()) {
+            return Map.of();
+        }
+        ResolvableType inner = ResolvableType.forClassWithGenerics(Map.class, String.class, String.class);
+        ResolvableType outer = ResolvableType.forClassWithGenerics(Map.class, ResolvableType.forClass(String.class), inner);
+        return (Map<String, Map<String, String>>) Binder.get(env).bind("sangam.channels.enterprise." + tenant, Bindable.of(outer))
+                .orElse(Map.of());
     }
 
     @Override

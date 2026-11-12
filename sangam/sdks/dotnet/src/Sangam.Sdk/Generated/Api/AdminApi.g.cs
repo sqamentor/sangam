@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Admin (37 operations).
+/// Typed operations of Admin (36 operations).
 /// </summary>
 public sealed class AdminApi
 {
@@ -475,17 +475,5 @@ public sealed class AdminApi
         var req = ApiRequest.Post($"/admin/service-principals/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/revoke");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ServicePrincipal?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Install module role templates and self-service grants
-    /// Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
-    /// POST /admin/security/module-defaults (operationId installModuleDefaults); permission tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ModuleDefaultsResult?> InstallModuleDefaultsAsync(M.ModuleDefaultsRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/admin/security/module-defaults");
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<M.ModuleDefaultsResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

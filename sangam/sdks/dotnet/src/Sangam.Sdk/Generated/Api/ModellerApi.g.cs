@@ -160,7 +160,7 @@ public sealed class ModellerApi
 
     /// <summary>
     /// Publish an action
-    /// A new version for an existing key.
+    /// A new version for an existing key. target is the process key for BPMN and connectorId:operation (a registered connector and one of its operations) for REST; anything else is 400.
     /// POST /actions (operationId publishActionModel); permission modeller.action.publish; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> PublishActionModelAsync(M.ActionModelPublish body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -172,7 +172,7 @@ public sealed class ModellerApi
 
     /// <summary>
     /// Invoke an action
-    /// BPMN and connector targets run; SCRIPT targets are refused.
+    /// BPMN and connector targets run; SCRIPT targets are refused. The permission and the subject (targetRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call.
     /// POST /actions/{key}/invoke (operationId invokeActionModel); permission modeller.action.invoke; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> InvokeActionModelAsync(string key, M.ActionModelInvoke body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -254,7 +254,7 @@ public sealed class ModellerApi
 
     /// <summary>
     /// Run an action
-    /// Permission checked on the subject; idempotent per request key.
+    /// The permission and the subject (subjectRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call; idempotent per request key; a reason is recorded in the ACTION_INVOKED audit entry.
     /// POST /actions/{key}/run (operationId runActionModel); permission modeller.action.invoke; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RunActionModelAsync(string key, M.ModellerRunActionRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

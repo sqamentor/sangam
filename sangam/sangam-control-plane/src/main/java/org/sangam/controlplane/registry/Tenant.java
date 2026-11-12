@@ -7,10 +7,13 @@ package org.sangam.controlplane.registry;
  * is set for placed tenants; a pure grouping node (for example a nation) may have none.
  *
  * <p>Status: ACTIVE, DRAINING (a move is freezing it), MOVING (copy/verify running), RETIRED.
+ *
+ * <p>{@code isolation} (M-016, decisions 51 and 97): SHARED, SCHEMA or DATABASE, set at create. A DATABASE tenant is
+ * placed only on the cell dedicated to it.
  */
 public record Tenant(String tenantCode, String parentCode, String path, int depth, String levelKind, String name,
                      String jurisdiction, String residency, String sector, double expectedStartsPerSec, String cellId,
-                     String status, long routeEpoch, long createdAtMs, long updatedAtMs) {
+                     String status, long routeEpoch, long createdAtMs, long updatedAtMs, String isolation) {
 
     public static final String ACTIVE = "ACTIVE";
     public static final String DRAINING = "DRAINING";

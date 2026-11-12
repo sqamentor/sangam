@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Admin (37 operations). */
+/** Typed operations of Admin (36 operations). */
 final class AdminApi
 {
     public function __construct(private readonly Calls $calls)
@@ -680,23 +680,5 @@ final class AdminApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\ServicePrincipal::class);
-    }
-
-    /**
-     * Install module role templates and self-service grants
-     *
-     * Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
-     *
-     * POST /admin/security/module-defaults (operationId installModuleDefaults); permission tenant.admin; result stored atomically with the state change.
-     * @param Model\ModuleDefaultsRequest|array $body request body
-     * @return Model\ModuleDefaultsResult|null
-     */
-    public function installModuleDefaults(Model\ModuleDefaultsRequest|array $body, ?RequestOptions $options = null): ?Model\ModuleDefaultsResult
-    {
-        $req = ApiRequest::post('/admin/security/module-defaults');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return $this->calls->model($req, $options, Model\ModuleDefaultsResult::class);
     }
 }

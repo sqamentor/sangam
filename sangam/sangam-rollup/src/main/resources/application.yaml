@@ -25,6 +25,21 @@ sangam:
     dedup-retention: 30d
     per-definition-metrics: true
     max-batch: 500
+    # M-063 (SCALE-ARCHITECTURE 8.4 b): an ingest array is one transaction, deltas summed per (node, metric, day)
+    pre-aggregate: ${SANGAM_RU_PRE_AGGREGATE:true}
+    # M-063 (8.4 a) state-level tier: the node this instance serves (e.g. IN/RJ); empty = everything (national)
+    scope: ${SANGAM_RU_SCOPE:}
+    upstream:
+      # ingest URL of the upper roll-up; empty = this is the top tier
+      url: ${SANGAM_RU_UPSTREAM_URL:}
+      token: ${SANGAM_RU_UPSTREAM_TOKEN:}
+      instance-id: ${SANGAM_RU_INSTANCE_ID:}
+      # deepest level forwarded (0 = root); empty = one level below the scope
+      depth: ${SANGAM_RU_UPSTREAM_DEPTH:}
+      interval: ${SANGAM_RU_UPSTREAM_INTERVAL:PT1M}
+      send-interval: ${SANGAM_RU_UPSTREAM_SEND_INTERVAL:PT5S}
+      max-batch: 200
+      timeout: 10s
 
 management:
   server:

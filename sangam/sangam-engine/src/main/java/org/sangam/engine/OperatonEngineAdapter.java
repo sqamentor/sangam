@@ -59,7 +59,6 @@ import org.operaton.bpm.engine.runtime.ProcessInstantiationBuilder;
 import org.operaton.bpm.engine.task.Task;
 import org.sangam.core.api.ExpiryPolicy;
 import org.sangam.core.engine.ConflictRetryExhaustedException;
-import org.sangam.core.engine.OperationAwareExpiryPolicy;
 import org.sangam.core.engine.OperationIdentity;
 import org.sangam.core.engine.SangamClock;
 import org.sangam.core.engine.SangamEngineAdapter;
@@ -115,6 +114,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     private final String jdbcUrl;
     private final Runnable onClose;
     private volatile ExpiryPolicy expiryPolicy;
+    private final org.sangam.engine.lease.LeaseExpiry expiry;
     private final AtomicLong fetchGiveUps = new AtomicLong();
 
     private final RepositoryService repositoryService;
@@ -150,6 +150,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         this.managementService = engine.getManagementService();
         this.externalTaskService = engine.getExternalTaskService();
         this.caseService = engine.getCaseService();
+        this.expiry = new org.sangam.engine.lease.LeaseExpiry(leases, exclusive, clock, externalTaskService, () -> expiryPolicy);
     }
 
     /** The underlying engine (Operaton REST, Cockpit, experiments). */
@@ -574,13 +575,13 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                     + settings.getMaxLease());
         }
         if (Context.hasActiveCommandContext()) {
-            return once((cc, conn) -> fetchOnce(cc, conn, sweepExpired(conn), workerId, topic, maxItems, lockDuration, only));
+            return once((cc, conn) -> fetchOnce(cc, conn, expiry.sweep(conn, SWEEP_LIMIT), workerId, topic, maxItems, lockDuration, only));
         }
         try {
             return fetchRetrier.run("fetchAndLock", true, () -> {
                 Set<String> held = once((cc, conn) -> {
                     CommandState.of(cc).markAcquisition();
-                    return sweepExpired(conn);
+                    return expiry.sweep(conn, SWEEP_LIMIT);
                 });
                 return once((cc, conn) -> {
                     CommandState.of(cc).markAcquisition();
@@ -637,7 +638,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             }
             SangamLeaseTable.Row previous = leases.lock(conn, t.getId());
             if (previous != null && previous.held()) {
-                if (applyExpiry(conn, previous, workerId) == ExpiryPolicy.Decision.HOLD) {
+                if (expiry.apply(conn, previous, workerId) == ExpiryPolicy.Decision.HOLD) {
                     continue; // the engine re-offered it at its own lock expiry; the policy parked it
                 }
                 previous = leases.lock(conn, t.getId());
@@ -711,69 +712,6 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                 loop instanceof Number n ? n.intValue() : null, key == null ? null : String.valueOf(key));
     }
 
-    /** Expired held leases: the policy per lease, then the lease ends. Returns the ids the policy held. */
-    private Set<String> sweepExpired(Connection conn) {
-        Set<String> held = new HashSet<>();
-        for (SangamLeaseTable.Row row : leases.lockExpired(conn, clock.now().toEpochMilli(), SWEEP_LIMIT)) {
-            if (applyExpiry(conn, row, null) == ExpiryPolicy.Decision.HOLD) {
-                held.add(row.workId());
-            }
-        }
-        return held;
-    }
-
-    /**
-     * A-10 on one expired, row-locked lease: the policy decides, the lease ends (version + 1), the exclusive scope is
-     * released, and on HOLD the external task is parked with retries 0 (an incident {@code LEASE_EXPIRED_HELD}, visible
-     * in Cockpit and the reconciliation queue). An unacknowledged cancel always holds (VI.3.1). A lease whose
-     * external task is gone is removed without a policy call.
-     */
-    private ExpiryPolicy.Decision applyExpiry(Connection conn, SangamLeaseTable.Row row, String engineWorker) {
-        ExternalTask task = externalTaskService.createExternalTaskQuery().externalTaskId(row.workId()).singleResult();
-        long now = clock.now().toEpochMilli();
-        if (task == null) {
-            leases.remove(conn, row.workId());
-            releaseExclusive(conn, row);
-            return ExpiryPolicy.Decision.REOFFER;
-        }
-        ExpiryPolicy.ExpiredWork work = new ExpiryPolicy.ExpiredWork(row.workId(), row.workerId(), row.lockVersion(),
-                row.attemptId(), row.expiresAtMs() == null ? null : Instant.ofEpochMilli(row.expiresAtMs()),
-                task.getTopicName(), task.getProcessInstanceId(), task.getActivityId(), task.getActivityInstanceId());
-        ExpiryPolicy policy = expiryPolicy;
-        ExpiryPolicy.Decision decision;
-        if (policy instanceof OperationAwareExpiryPolicy oa) {
-            decision = oa.onExpired(work, new OperationAwareExpiryPolicy.Context(row.tenantId(), task.getBusinessKey(),
-                    row.rootId(), row.operationId() == null ? null : UUID.fromString(row.operationId()),
-                    row.capabilityClass(), row.attemptNo()), conn);
-        } else {
-            decision = policy.onExpired(work, conn);
-        }
-        if (row.state() == SangamLeaseTable.State.CANCEL_REQUESTED) {
-            decision = ExpiryPolicy.Decision.HOLD; // VI.3.1 / VI.5 rule 4: cancel never acknowledged
-        }
-        leases.end(conn, row.workId(), decision == ExpiryPolicy.Decision.HOLD
-                ? SangamLeaseTable.State.HELD : SangamLeaseTable.State.AVAILABLE, now);
-        releaseExclusive(conn, row);
-        if (decision == ExpiryPolicy.Decision.HOLD) {
-            String lockOwner = engineWorker != null ? engineWorker : task.getWorkerId();
-            String message = "LEASE_EXPIRED_HELD: lease " + row.lockVersion() + " of " + row.workerId() + " expired at "
-                    + work.expiredAt() + "; held by the expiry policy (A-10)";
-            if (lockOwner != null) {
-                externalTaskService.handleFailure(row.workId(), lockOwner, message, null, 0, 0L);
-            } else {
-                externalTaskService.setRetries(row.workId(), 0);
-            }
-        }
-        return decision;
-    }
-
-    private void releaseExclusive(Connection conn, SangamLeaseTable.Row row) {
-        if (row.exclusiveScope() != null) {
-            String[] ts = ExclusiveLeaseTable.decode(row.exclusiveScope());
-            exclusive.release(conn, ts[0], ts[1], row.workId());
-        }
-    }
-
     /** I-8: turns the engine's silently ignored external-task OLE in fetch into a command failure (W-9). */
     private static final OptimisticLockingListener FAIL_ON_EXTERNAL_TASK_CONFLICT = new OptimisticLockingListener() {
         @Override
@@ -818,6 +756,15 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         command("requestCancel", (cc, conn) -> leases.requestCancel(conn, workId, clock.now().toEpochMilli()));
     }
 
+    /** M-025: the fence and the caller's database work in one engine command (see the interface). */
+    @Override
+    public <T> T inLeasedTransaction(String workId, String workerId, long lockVersion, Function<Connection, T> work) {
+        return command("inLeasedTransaction", (cc, conn) -> {
+            leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
+            return work.apply(conn);
+        });
+    }
+
     /** L2 of the work's root before the lease row (L1 → L2 → L4), from an unlocked read of the lease. */
     private void lockRootOfWork(CommandContext cc, Connection conn, String workId) {
         leases.peek(conn, workId).ifPresent(r -> {
@@ -834,7 +781,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
             externalTaskService.complete(workId, workerId, variables);
             leases.remove(conn, workId);
-            releaseExclusive(conn, row);
+            expiry.releaseExclusive(conn, row);
             return null;
         });
     }
@@ -849,7 +796,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             externalTaskService.handleFailure(workId, workerId, errorMessage, retriesLeft,
                     retryBackoff == null ? 0L : retryBackoff.toMillis());
             leases.end(conn, workId, SangamLeaseTable.State.AVAILABLE, now);
-            releaseExclusive(conn, row);
+            expiry.releaseExclusive(conn, row);
             return null;
         });
     }
@@ -862,7 +809,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
             externalTaskService.handleBpmnError(workId, workerId, errorCode, null, variables);
             leases.remove(conn, workId);
-            releaseExclusive(conn, row);
+            expiry.releaseExclusive(conn, row);
             return null;
         });
     }
@@ -875,7 +822,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, now);
             externalTaskService.unlock(workId);
             leases.end(conn, workId, SangamLeaseTable.State.AVAILABLE, now);
-            releaseExclusive(conn, row);
+            expiry.releaseExclusive(conn, row);
             return null;
         });
     }
@@ -928,7 +875,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             for (String workId : workIds) {
                 SangamLeaseTable.Row row = leases.lock(conn, workId);
                 if (row != null) {
-                    releaseExclusive(conn, row);
+                    expiry.releaseExclusive(conn, row);
                     leases.remove(conn, workId);
                 }
             }
@@ -1130,7 +1077,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     public int executeDueJobs() {
         command("sweepLeases", (cc, conn) -> {
             CommandState.of(cc).markAcquisition();
-            return sweepExpired(conn);
+            return expiry.sweep(conn, SWEEP_LIMIT);
         });
         int executed = 0;
         Map<String, Integer> perDefinition = new HashMap<>();

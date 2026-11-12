@@ -199,6 +199,44 @@ export function fmtMoney(n?: number | null, currency?: string | null): string {
   return format(new Intl.NumberFormat(locale(), { maximumFractionDigits: 4 }), n);
 }
 
+const ISO_CURRENCY = /^[A-Z]{3}$/;
+
+/**
+ * M-042: money held as a whole number of minor units in an ISO 4217 currency (contract int64, e.g. Task.amount:
+ * 123456 in INR is ₹1,234.56). The scale is the currency's own minor digits (Intl: 2 for INR, 0 for JPY, 3 for BHD);
+ * whole and fraction are split with BigInt arithmetic, so no floating-point step ever touches the amount (MoneyGuard).
+ * Without a valid currency the scale is unknown and nothing is guessed. An amount beyond Number.MAX_SAFE_INTEGER has
+ * already lost digits when the JSON was parsed, so it is not shown either.
+ */
+export function fmtMinorMoney(minor?: number | null, currency?: string | null): string {
+  if (typeof minor !== 'number' || !Number.isSafeInteger(minor)) return '—';
+  const cur = currency?.trim().toUpperCase();
+  if (!cur || !ISO_CURRENCY.test(cur)) return '—';
+  let nf: Intl.NumberFormat;
+  try {
+    nf = new Intl.NumberFormat(locale(), { style: 'currency', currency: cur });
+  } catch {
+    return '—';
+  }
+  const digits = nf.resolvedOptions().maximumFractionDigits;
+  if (typeof digits !== 'number' || !Number.isInteger(digits) || digits < 0) return '—';
+  const abs = BigInt(Math.abs(minor));
+  const scale = BigInt(10) ** BigInt(digits);
+  // exact: a whole number no larger than |minor|, so it is a safe integer
+  const whole = Number(abs / scale);
+  const fraction = digits > 0 ? (abs % scale).toString().padStart(digits, '0') : '';
+  // An amount below one major unit and negative (whole 0) still needs the locale's minus sign: format -1, then put 0 back.
+  const parts = nf
+    .formatToParts(minor < 0 ? -(whole || 1) : whole)
+    .map((p) => (p.type === 'fraction' ? { ...p, value: fraction } : whole === 0 && p.type === 'integer' ? { ...p, value: '0' } : p));
+  return tenant.grouping ? regroup(parts) : parts.map((p) => p.value).join('');
+}
+
+/** Whether a value is an ISO 4217 code as the contract writes it (three upper-case letters). */
+export function isCurrencyCode(v?: string | null): v is string {
+  return !!v && ISO_CURRENCY.test(v);
+}
+
 /** Today's calendar date in the reader's zone (yyyy-MM-dd); toISOString() would give the UTC date instead. */
 export function todayIso(now: Date = new Date()): string {
   const p = (x: number) => String(x).padStart(2, '0');

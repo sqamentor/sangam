@@ -29,7 +29,15 @@ final class JobSideTablesDdl {
             "CREATE TABLE EXEC_SLOT (slot INTEGER NOT NULL, partition_id INTEGER NOT NULL, state VARCHAR(16) NOT NULL, "
                     + "from_partition INTEGER, move_started_at TIMESTAMP, map_epoch BIGINT NOT NULL, "
                     + "CONSTRAINT PK_EXEC_SLOT PRIMARY KEY (slot))",
-            "CREATE INDEX EXEC_SLOT_PARTITION ON EXEC_SLOT (partition_id, state)");
+            "CREATE INDEX EXEC_SLOT_PARTITION ON EXEC_SLOT (partition_id, state)",
+            // generate_changelogs.py 0039-03 / 0039-04 (coordinator_node widened by 0042-02)
+            "CREATE TABLE EXEC_MAP (cluster_id VARCHAR(64) NOT NULL, current_map_epoch BIGINT NOT NULL, "
+                    + "target_map_epoch BIGINT, state VARCHAR(32) NOT NULL, coordinator_node VARCHAR(255), "
+                    + "coordinator_epoch BIGINT DEFAULT 0 NOT NULL, coordinator_expires_at TIMESTAMP, "
+                    + "CONSTRAINT PK_EXEC_MAP PRIMARY KEY (cluster_id))",
+            "CREATE TABLE EXEC_NODE (node_id VARCHAR(64) NOT NULL, incarnation VARCHAR(64) NOT NULL, "
+                    + "started_at TIMESTAMP NOT NULL, heartbeat_at TIMESTAMP NOT NULL, draining SMALLINT DEFAULT 0 NOT NULL, "
+                    + "CONSTRAINT PK_EXEC_NODE PRIMARY KEY (node_id))");
 
     private JobSideTablesDdl() {
     }

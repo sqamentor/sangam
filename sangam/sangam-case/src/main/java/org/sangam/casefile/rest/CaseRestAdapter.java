@@ -686,7 +686,7 @@ public class CaseRestAdapter implements CaseFileRestPort, MeetingRestPort, Refer
     @Override
     public void acknowledgeNotice(ApiContext ctx, String noticeId) {
         tx(c -> {
-            m.meetings().acknowledgeNotice(c, ctx.tenant(), noticeId);
+            m.meetings().acknowledgeNotice(c, ctx.tenant(), noticeId, ctx.identity());
             return null;
         });
     }

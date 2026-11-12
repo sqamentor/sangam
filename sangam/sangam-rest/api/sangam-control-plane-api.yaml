@@ -715,6 +715,10 @@ components:
           format: int32
         version:
           type: string
+        dedicatedTenant:
+          type: string
+          description: 'M-016: tenant code this cell is dedicated to (database-per-tenant instance); absent = shared. A cell registered with it
+            hosts only that tenant, and the registration answer echoes it back (a dedicated cell never registers as a shared one)'
       required:
       - apiBaseUrl
       - jurisdiction
@@ -807,6 +811,10 @@ components:
         registeredAtMs:
           type: integer
           format: int64
+        dedicatedTenant:
+          type: string
+          description: 'M-016: tenant code this cell is dedicated to (database-per-tenant instance); absent = shared. A cell registered with it
+            hosts only that tenant, and the registration answer echoes it back (a dedicated cell never registers as a shared one)'
     CreateTenantRequest:
       type: object
       description: A new tenant node (ControlPlaneController.CreateTenant). jurisdiction and residency are inherited from the parent when absent
@@ -832,6 +840,14 @@ components:
           format: double
         place:
           type: boolean
+        isolation:
+          type: string
+          enum:
+          - SHARED
+          - SCHEMA
+          - DATABASE
+          description: 'M-016 (decision 97): SHARED (default), SCHEMA or DATABASE. A DATABASE tenant is placed only on the cell dedicated to it;
+            SHARED and SCHEMA tenants on shared cells'
       required:
       - tenantCode
     Tenant:
@@ -878,6 +894,14 @@ components:
         updatedAtMs:
           type: integer
           format: int64
+        isolation:
+          type: string
+          enum:
+          - SHARED
+          - SCHEMA
+          - DATABASE
+          description: 'M-016 (decision 97): SHARED (default), SCHEMA or DATABASE. A DATABASE tenant is placed only on the cell dedicated to it;
+            SHARED and SCHEMA tenants on shared cells'
     PlacementCandidate:
       type: object
       description: A cell that can host the tenant (PlacementService.Candidate), best first.

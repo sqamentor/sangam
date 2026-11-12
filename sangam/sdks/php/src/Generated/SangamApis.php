@@ -12,7 +12,9 @@ use Sangam\Sdk\Generated\Api\AdminApi;
 use Sangam\Sdk\Generated\Api\AdminAssignmentsApi;
 use Sangam\Sdk\Generated\Api\AdminOrgUnitsApi;
 use Sangam\Sdk\Generated\Api\AdminPowerTablesApi;
+use Sangam\Sdk\Generated\Api\AdminSecurityApi;
 use Sangam\Sdk\Generated\Api\AnalyticsApi;
+use Sangam\Sdk\Generated\Api\ApiContractsApi;
 use Sangam\Sdk\Generated\Api\AuditApi;
 use Sangam\Sdk\Generated\Api\BillingApi;
 use Sangam\Sdk\Generated\Api\BulkIngestApi;
@@ -72,11 +74,12 @@ use Sangam\Sdk\Generated\Api\RostersApi;
 use Sangam\Sdk\Generated\Api\SCIMApi;
 use Sangam\Sdk\Generated\Api\TasksApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsApi;
+use Sangam\Sdk\Generated\Api\TestModeApi;
 use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1074 operations on 901 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
@@ -86,7 +89,9 @@ final class SangamApis
     public readonly AdminAssignmentsApi $adminAssignments;
     public readonly AdminOrgUnitsApi $adminOrgUnits;
     public readonly AdminPowerTablesApi $adminPowerTables;
+    public readonly AdminSecurityApi $adminSecurity;
     public readonly AnalyticsApi $analytics;
+    public readonly ApiContractsApi $apiContracts;
     public readonly AuditApi $audit;
     public readonly BillingApi $billing;
     public readonly BulkIngestApi $bulkIngest;
@@ -146,6 +151,7 @@ final class SangamApis
     public readonly SCIMApi $sCIM;
     public readonly TasksApi $tasks;
     public readonly TenantOperationsApi $tenantOperations;
+    public readonly TestModeApi $testMode;
     public readonly WorkApi $work;
     public readonly WorkspaceApi $workspace;
 
@@ -157,7 +163,9 @@ final class SangamApis
         $this->adminAssignments = new AdminAssignmentsApi($calls);
         $this->adminOrgUnits = new AdminOrgUnitsApi($calls);
         $this->adminPowerTables = new AdminPowerTablesApi($calls);
+        $this->adminSecurity = new AdminSecurityApi($calls);
         $this->analytics = new AnalyticsApi($calls);
+        $this->apiContracts = new ApiContractsApi($calls);
         $this->audit = new AuditApi($calls);
         $this->billing = new BillingApi($calls);
         $this->bulkIngest = new BulkIngestApi($calls);
@@ -217,6 +225,7 @@ final class SangamApis
         $this->sCIM = new SCIMApi($calls);
         $this->tasks = new TasksApi($calls);
         $this->tenantOperations = new TenantOperationsApi($calls);
+        $this->testMode = new TestModeApi($calls);
         $this->work = new WorkApi($calls);
         $this->workspace = new WorkspaceApi($calls);
     }

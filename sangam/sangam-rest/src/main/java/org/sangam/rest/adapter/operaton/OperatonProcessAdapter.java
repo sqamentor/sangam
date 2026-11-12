@@ -202,7 +202,7 @@ public class OperatonProcessAdapter implements ProcessPort {
             }
         }
         q.orderByProcessInstanceStartTime().desc();
-        return OperatonSupport.page(q, page, props.getCountCap(), h -> fromHistory(h, List.of(), 0));
+        return ProcessTraceReads.fill(tx, OperatonSupport.page(q, page, props.getCountCap(), h -> fromHistory(h, List.of(), 0)));
     }
 
     @Override
@@ -228,10 +228,10 @@ public class OperatonProcessAdapter implements ProcessPort {
                     pi.getTenantId(), pi.isSuspended() ? "SUSPENDED" : "ACTIVE", false,
                     h == null ? null : OperatonSupport.instant(h.getStartTime()), null, active, version,
                     h == null ? stringOrNull(vars.get(OperatonTaskAdapter.INITIATOR)) : h.getStartUserId(),
-                    status == null ? null : String.valueOf(status),
-                    h == null ? null : h.getSuperProcessInstanceId(), pi.getRootProcessInstanceId());
+                    status == null ? null : String.valueOf(status), h == null ? null : h.getSuperProcessInstanceId(),
+                    pi.getRootProcessInstanceId(), ProcessTraceReads.of(tx, id));
         }
-        return fromHistory(h, List.of(), 0);
+        return fromHistory(h, List.of(), 0).withTraceId(ProcessTraceReads.of(tx, id));
     }
 
     private static ProcessInstance fromHistory(HistoricProcessInstance h, List<String> active, long version) {
@@ -246,7 +246,7 @@ public class OperatonProcessAdapter implements ProcessPort {
         return new ProcessInstance(h.getId(), h.getProcessDefinitionId(), h.getProcessDefinitionKey(),
                 h.getProcessDefinitionVersion(), h.getBusinessKey(), h.getTenantId(), state, ended,
                 OperatonSupport.instant(h.getStartTime()), OperatonSupport.instant(h.getEndTime()), active, version,
-                h.getStartUserId(), null, h.getSuperProcessInstanceId(), h.getRootProcessInstanceId());
+                h.getStartUserId(), null, h.getSuperProcessInstanceId(), h.getRootProcessInstanceId(), null);
     }
 
     @Override

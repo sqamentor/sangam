@@ -3,7 +3,7 @@
 // M-045 foundations (owner decision Q-06, register SL-147): English default and fallback, locale-aware number and
 // date formats, the currency from the record or the tenant locale (never a hard-coded INR). Written, not run.
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import i18n, { FALLBACK_LANG, fmtDate, fmtDuration, fmtMoney, fmtNumber, initI18n, locale, setTenantLocale, todayIso } from './index';
+import i18n, { FALLBACK_LANG, fmtDate, fmtDuration, fmtMinorMoney, fmtMoney, fmtNumber, initI18n, isCurrencyCode, locale, setTenantLocale, todayIso } from './index';
 
 beforeAll(() => {
   initI18n('en');
@@ -65,6 +65,51 @@ describe('fmtMoney', () => {
   it('keeps the dash for no amount', () => {
     expect(fmtMoney(undefined)).toBe('—');
     expect(fmtMoney(Number.NaN)).toBe('—');
+  });
+});
+
+describe('fmtMinorMoney (M-042: whole minor units, never floating point)', () => {
+  const nf = (cur: string) => new Intl.NumberFormat(locale(), { style: 'currency', currency: cur });
+  it('scales by the currency minor digits: 2, 0 and 3', () => {
+    expect(fmtMinorMoney(123456, 'EUR')).toBe(nf('EUR').format(1234.56));
+    expect(fmtMinorMoney(1234, 'JPY')).toBe(nf('JPY').format(1234));
+    expect(fmtMinorMoney(1234567, 'BHD')).toBe(nf('BHD').format(1234.567));
+  });
+  it('keeps leading zeros of the fraction and handles zero', () => {
+    expect(fmtMinorMoney(5, 'EUR')).toBe(nf('EUR').format(0.05));
+    expect(fmtMinorMoney(0, 'EUR')).toBe(nf('EUR').format(0));
+  });
+  it('keeps the minus sign below one major unit and above it', () => {
+    expect(fmtMinorMoney(-5, 'EUR')).toBe(nf('EUR').format(-0.05));
+    expect(fmtMinorMoney(-123456, 'EUR')).toBe(nf('EUR').format(-1234.56));
+  });
+  it('is exact for the largest safe amount, where dividing a double would lose the last digit', () => {
+    const s = fmtMinorMoney(Number.MAX_SAFE_INTEGER, 'EUR');
+    expect(s.replace(/\D/g, '')).toBe(String(Number.MAX_SAFE_INTEGER));
+    expect(s).toMatch(/\.91\b/);
+  });
+  it('accepts a lower-case currency code from a record', () => {
+    expect(fmtMinorMoney(100, 'eur')).toBe(nf('EUR').format(1));
+  });
+  it('guesses no scale: without a valid currency, or for a non-integer or unsafe amount, it shows the dash', () => {
+    setTenantLocale({ currency: 'GBP' });
+    expect(fmtMinorMoney(100)).toBe('—');
+    expect(fmtMinorMoney(100, 'TOKENS')).toBe('—');
+    expect(fmtMinorMoney(12.5, 'EUR')).toBe('—');
+    expect(fmtMinorMoney(Number.MAX_SAFE_INTEGER + 2, 'EUR')).toBe('—');
+    expect(fmtMinorMoney(null, 'EUR')).toBe('—');
+    expect(fmtMinorMoney(undefined, 'EUR')).toBe('—');
+  });
+  it('applies the tenant grouping {first: 3, rest: 2}', () => {
+    setTenantLocale({ grouping: { first: 3, rest: 2 } });
+    expect(fmtMinorMoney(1234567890, 'EUR')).toContain('1,23,45,678.90');
+  });
+  it('knows an ISO 4217 code only in the contract form', () => {
+    expect(isCurrencyCode('INR')).toBe(true);
+    expect(isCurrencyCode('inr')).toBe(false);
+    expect(isCurrencyCode('IN')).toBe(false);
+    expect(isCurrencyCode('')).toBe(false);
+    expect(isCurrencyCode(undefined)).toBe(false);
   });
 });
 

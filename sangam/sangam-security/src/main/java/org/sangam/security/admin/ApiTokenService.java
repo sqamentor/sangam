@@ -93,18 +93,47 @@ public final class ApiTokenService {
         String body = presented.substring(PREFIX.length());
         String id = body.substring(0, body.indexOf('.'));
         String secret = body.substring(body.indexOf('.') + 1);
-        Optional<String[]> row = Jdbc.one(c, "SELECT t.tenant_id, t.owner_person_id, t.secret_hash, t.scopes FROM SEC_API_TOKEN t"
+        Optional<String[]> row = Jdbc.one(c, "SELECT t.tenant_id, t.owner_person_id, t.secret_hash, t.scopes, t.name FROM SEC_API_TOKEN t"
                         + " JOIN SEC_PERSON p ON p.tenant_id=t.tenant_id AND p.person_id=t.owner_person_id"
                         + " WHERE t.token_id=? AND t.revoked_at IS NULL AND t.expires_at > " + dialect.now() + " AND p.status='ACTIVE'",
-                rs -> new String[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)}, id);
+                rs -> new String[]{rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)}, id);
         if (row.isEmpty() || !MessageDigest.isEqual(row.get()[2].getBytes(StandardCharsets.US_ASCII),
                 hash(secret).getBytes(StandardCharsets.US_ASCII))) {
             return Optional.empty();
         }
         Jdbc.update(c, "UPDATE SEC_API_TOKEN SET last_used_at=" + dialect.now() + " WHERE token_id=?", id);
         Set<String> roles = new LinkedHashSet<>(Sql.jsonList(row.get()[3]));
-        return Optional.of(new SecurityIdentity(row.get()[0], row.get()[1], "token:" + id, Set.of(), roles, Set.of(), Set.of(),
-                "API_KEY", clientIp, null, false, Map.of("token_id", id)));
+        SecurityIdentity identity = new SecurityIdentity(row.get()[0], row.get()[1], "token:" + id, Set.of(), roles, Set.of(),
+                Set.of(), "API_KEY", clientIp, null, false, Map.of("token_id", id));
+        BreakGlassUse hook = breakGlass;
+        String name = row.get()[4];
+        if (hook != null && name != null && name.startsWith(BREAK_GLASS_NAME_PREFIX)) {
+            // M-084: every use of a break-glass token is audited with an alarm; the grant row decides, not the name
+            Optional<Map<String, String>> grant = hook.used(c, row.get()[0], id, identity);
+            if (grant.isPresent()) {
+                Map<String, String> attrs = new java.util.LinkedHashMap<>(identity.attributes());
+                attrs.putAll(grant.get());
+                identity = new SecurityIdentity(row.get()[0], row.get()[1], "token:" + id, Set.of(), roles, Set.of(),
+                        Set.of(), "API_KEY", clientIp, null, false, Map.copyOf(attrs));
+            }
+        }
+        return Optional.of(identity);
+    }
+
+    /** Name prefix of break-glass tokens (M-084; {@code BreakGlassService.TOKEN_NAME_PREFIX} is this constant). */
+    public static final String BREAK_GLASS_NAME_PREFIX = "break-glass:";
+
+    /** The break-glass use recorder (M-084): {@code BreakGlassService#used}. */
+    @FunctionalInterface
+    public interface BreakGlassUse {
+        Optional<Map<String, String>> used(Connection c, String tenantId, String tokenId, SecurityIdentity holder);
+    }
+
+    private volatile BreakGlassUse breakGlass;
+
+    /** Binds the break-glass use recorder ({@code SangamSecurity} does this once at construction). */
+    public void useBreakGlass(BreakGlassUse breakGlass) {
+        this.breakGlass = breakGlass;
     }
 
     public void revoke(Connection c, SecurityIdentity actor, String tokenId) {

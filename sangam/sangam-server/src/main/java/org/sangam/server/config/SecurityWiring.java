@@ -86,7 +86,13 @@ public class SecurityWiring {
         Duration staleness = env.getProperty("sangam.security.max-staleness", Duration.class, Duration.ofSeconds(5));
         SangamSecurity.Options options = new SangamSecurity.Options(staleness, null, rest.getBatchFourEyesThreshold(),
                 denialTransactions(sangamSecurityAuditPool, sangamProductTransactions), null);
-        return new SangamSecurity(dialect, options);
+        SangamSecurity security = new SangamSecurity(dialect, options);
+        // decision 97 / M-016: a dedicated instance creates no tenant but its own (as DATABASE isolation)
+        String dedicated = env.getProperty(org.sangam.server.bridge.DedicatedTenant.PROPERTY);
+        if (dedicated != null) {
+            security.tenants().useDedicatedTenant(org.sangam.server.bridge.DedicatedTenant.of(dedicated).tenant());
+        }
+        return security;
     }
 
     /**
@@ -109,6 +115,12 @@ public class SecurityWiring {
      * denial chain (leaf pool) and answers 403 {@value #TOPIC_NOT_BOUND} naming the worker and the topic. Migration:
      * bind every worker principal to its topics (service principals are bound when created with their topics).
      */
+    /** Decisions 87 and 98: the field masks of every sangam-rest variable read (VariableMasking resolves it per read). */
+    @Bean
+    public org.sangam.rest.port.VariableMaskPort sangamVariableMaskPort(SangamSecurity security, TxSupport tx) {
+        return new org.sangam.server.bridge.VariableMaskBridge(security, tx);
+    }
+
     @Bean
     public org.sangam.rest.adapter.operaton.WorkerTopicGuard sangamWorkerTopicGuard(SangamSecurity security, TxSupport tx) {
         return workerTopicGuard(security, tx);

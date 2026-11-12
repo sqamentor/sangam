@@ -26,6 +26,10 @@ Typed REST client and external-worker runtime for the Sangam API (`/api/v1`). Ti
 | `src/Sangam.Sdk/Worker/SangamWorker.cs` | Worker runtime |
 | `src/Sangam.Sdk/Worker/TaskContext.cs` | Per-item context (identities, lease state, cancellation, logger) |
 | `src/Sangam.Sdk/Worker/Outcomes.cs` | `TaskHandler`, `TopicSubscription`, `Backoff`, `BpmnErrorException`, `OutcomeUnknownException`, `TaskFailedException` |
+| `src/Sangam.Sdk/Worker/DurableSteps.cs`, `Step*.cs` | M-025 durable steps (`TaskContext.StepAsync`, `Step`, `StepOptions<T>`, `StepLookupResult<T>`, `StepNoEffectException`) |
+| `src/Sangam.Sdk/Worker/Saga*.cs`, `CompensationContext.cs` | M-026 saga helper |
+| `src/Sangam.Sdk/Testing/EngineSteps.cs` | Step journal routes of the test engine |
+| `src/Sangam.Sdk.Hosting/` | M-027 hosted-service adapter (`AddSangamWorker`, `SangamWorkerHostedService`) |
 | `examples/BillPaymentWorker/` | P1 bill/payment worker for topic `payment` |
 
 ## Client
@@ -151,6 +155,62 @@ Logging: `ISangamLogger.Log(level, event, message, fields, error)`. Events inclu
 `work.fail`, `work.bpmn-error`, `work.outcome-unknown`, `work.abandoned`, `work.report.gave-up`, `worker.stopped`.
 Fields always include `workerId`, `workId`, `topic`, `operationId`, `attemptId`, `lockVersion`, `businessKey`.
 
+## Durable steps
+
+`ctx.StepAsync<T>(name, fn, options?, cancellationToken)` (M-025, R37) runs one side-effecting call per step name of the
+work's operation, journalled on `GET/PUT /work/{id}/steps/{name}` and fenced by the lease:
+
+```csharp
+var paymentId = await ctx.StepAsync("charge", async (step, ct) =>
+{
+    var r = await bank.ChargeAsync(amount, idempotencyKey: step.IdempotencyKey, ct);  // operationId + ":charge"
+    step.ProviderRef = r.PaymentId;
+    return r.PaymentId;
+}, StepOptions<string>.WithLookup(async (step, ct) =>
+    await bank.FindAsync(step.IdempotencyKey, ct) is { } p ? StepLookupResult<string>.Found(p.Id) : StepLookupResult<string>.NoEffect));
+```
+
+- Recorded `SUCCEEDED`: `fn` is not called; the recorded result is decoded to `T` (R33 typed values unwrapped).
+- Recorded `INTENT` (an earlier attempt crashed between the call and its record): the lookup decides (found: recorded
+  and returned; `NoEffect`: run again); else `StepOptions<T>.IdempotentCall()` runs again with the same key; else
+  (class (c), the default) `OutcomeUnknownException` is thrown and the worker reports outcome-unknown.
+- `fn` throws `StepNoEffectException`: recorded `FAILED` (a later attempt runs it again); any other exception leaves
+  `INTENT`. A 409 STALE_LEASE / 410 from the journal sets `IsLeaseLost` and throws `OperationCanceledException`.
+- **NOT exactly-once for remote APIs**: send `step.IdempotencyKey` to the remote system and give a lookup where it has one.
+- Step names: 1-128 printable ASCII, else `ArgumentException`. The test engine serves the journal (`Testing/EngineSteps.cs`).
+
+## Sagas
+
+`Saga` (M-026) registers a forward action and its BPMN compensation handler as two subscriptions. The forward completion
+adds `sangamSaga_<name>` (R33 `Json`: step, operationId, providerRef = `ctx.OutcomeReference`, workId); the compensation
+receives it in `CompensationContext` with `IdempotencyKey = forwardOperationId + ":compensate:" + name` (R36).
+
+```csharp
+Saga.Step("charge")
+    .Action("payment.charge", async (ctx, ct) => { ctx.OutcomeReference = await Charge(ctx, ct); return null; })
+    .Compensation("payment.refund", async (c, ct) => { await Refund(c.ForwardProviderRef, c.IdempotencyKey, ct); return null; })
+    .Build()
+    .RegisterOn(worker);
+```
+
+## Framework adapter
+
+`src/Sangam.Sdk.Hosting` (package `Sangam.Sdk.Hosting`, M-027) runs the worker as an `IHostedService` of the generic
+host / ASP.NET Core. It uses only the in-box `Microsoft.AspNetCore.App` shared framework; the core SDK gains no dependency.
+
+```csharp
+builder.Services.AddSingleton<SangamClient>(_ => new SangamClient(options));            // optional: else BaseUrl/Token
+builder.Services.AddSangamWorker(builder.Configuration.GetSection("Sangam:Worker"))   // SangamWorkerHostingOptions
+    .AddHandler<ChargeHandler>("payment.charge")                                        // ISangamTaskHandler, one DI scope per item
+    .AddHandler("audit", (ctx, ct) => Task.FromResult<IDictionary<string, object?>?>(null))
+    .AddSaga(sp => Saga.Step("charge").Action(...).Compensation(...).Build());
+```
+
+Start builds the worker from the registered client (or `BaseUrl`/`Token`), options and every subscription (builder
+registrations plus `TopicSubscription`/`Saga` services; one topic twice is an error). Stop calls
+`SangamWorker.StopAsync` (no new fetches, in-flight handlers finish within `ShutdownTimeout`, the rest are unlocked).
+SDK log lines go to Microsoft.Extensions.Logging (`MicrosoftSangamLogger`).
+
 ## Example: P1 bill payment
 
 `examples/BillPaymentWorker` handles topic `payment` (bill model `wf1_payment`). It sends the payment instruction with
@@ -211,7 +271,8 @@ third-party NOTICE entry is needed.
 
 ## Third-party dependencies
 
-None (BCL only).
+None (BCL only). The separate `Sangam.Sdk.Hosting` adapter references the `Microsoft.AspNetCore.App` shared framework
+(part of the .NET runtime, MIT), no NuGet package.
 
 ## Gaps
 

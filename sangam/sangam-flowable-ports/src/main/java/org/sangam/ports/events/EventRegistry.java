@@ -362,9 +362,10 @@ public class EventRegistry {
         // FW-42: only JSON is deserialised (XML / expression deserializers are not ported). Refuse at deploy: at
         // receive time the channel would fail every message, and a broker adapter would redeliver it for ever.
         String d = def.deserializerType();
-        if (def.direction() == ChannelDefinition.Direction.INBOUND && d != null && !"json".equalsIgnoreCase(d)) {
+        if (def.direction() == ChannelDefinition.Direction.INBOUND && d != null && !"json".equalsIgnoreCase(d)
+                && !org.sangam.ports.events.pipeline.CloudEventsFormat.TYPE.equalsIgnoreCase(d)) {
             throw new IllegalArgumentException("channel " + def.key() + ": deserializerType '" + d
-                    + "' is not supported (json only; XML and expression deserializers are not ported, FW-42)");
+                    + "' is not supported (json or cloudevents; XML and expression deserializers are not ported, FW-42)");
         }
         // Same rule outbound: an unknown serializerType deployed fine and then failed every publish, which the relay
         // retried for ever. OutboundEventSerializer.of is the single list of supported types.
@@ -385,18 +386,11 @@ public class EventRegistry {
                 throw new IllegalArgumentException("channel " + def.key() + ": timeoutMs is not a number: " + timeoutMs);
             }
         }
+        // M-064: the family rules (known type, direction, CloudEvents mode, required properties) have one home
+        org.sangam.ports.events.channel.ChannelAdapters.validate(def);
         String t = def.adapterType();
-        if (!List.of("http", "webhook", "jms", "kafka", "rabbitmq").contains(t)) {
-            throw new IllegalArgumentException("channel " + def.key() + ": unknown channelType '" + def.channelType() + "'");
-        }
-        if (def.direction() == ChannelDefinition.Direction.INBOUND && "http".equals(t)) {
-            throw new IllegalArgumentException("channel " + def.key() + ": inbound HTTP channels use channelType 'webhook'");
-        }
         if (def.direction() == ChannelDefinition.Direction.OUTBOUND && "webhook".equals(t) && def.url() == null) {
             throw new IllegalArgumentException("channel " + def.key() + ": outbound webhook needs a url");
-        }
-        if ("kafka".equals(t) && def.direction() == ChannelDefinition.Direction.INBOUND && def.topics().isEmpty()) {
-            throw new IllegalArgumentException("channel " + def.key() + ": inbound kafka channel needs topics");
         }
     }
 }

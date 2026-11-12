@@ -78,14 +78,27 @@ public final class KeycloakClaimsMapper {
         if (!props.getMfaRequiredTenants().contains(id.tenantId())) {
             return;
         }
-        String acr = id.attributes().getOrDefault("acr", "");
-        String amr = id.attributes().getOrDefault("amr", "");
-        boolean mfa = props.getMfaAcrValues().contains(acr)
-                || List.of(amr.split(",")).stream().anyMatch(a -> a.equals("mfa") || a.equals("otp") || a.equals("hwk")
-                || a.equals("sms") || a.equals("swk"));
-        if (!mfa) {
+        if (!mfaShown(id, props.getMfaAcrValues())) {
             throw new SangamSecurityException.Unauthenticated("MFA_REQUIRED", "this department requires multi-factor sign-in");
         }
+    }
+
+    /** Whether the identity's {@code acr} is one of {@code acrValues} or its {@code amr} names a second factor. */
+    static boolean mfaShown(SecurityIdentity id, Collection<String> acrValues) {
+        return mfaShown(id.attributes().getOrDefault("acr", ""), id.attributes().getOrDefault("amr", ""), acrValues);
+    }
+
+    /** {@link #mfaShown(SecurityIdentity, Collection)} on the token claims themselves (M-077 server token path). */
+    public static boolean mfaShown(Map<String, ?> claims, Collection<String> acrValues) {
+        Object acr = claims.get("acr");
+        Object amr = claims.get("amr");
+        return mfaShown(acr == null ? "" : acr.toString(), amr == null ? "" : String.join(",", strings(amr)), acrValues);
+    }
+
+    private static boolean mfaShown(String acr, String amr, Collection<String> acrValues) {
+        return acrValues.contains(acr)
+                || List.of(amr.split(",")).stream().anyMatch(a -> a.equals("mfa") || a.equals("otp") || a.equals("hwk")
+                || a.equals("sms") || a.equals("swk"));
     }
 
     private static Object nested(Map<String, Object> claims, String a, String b) {

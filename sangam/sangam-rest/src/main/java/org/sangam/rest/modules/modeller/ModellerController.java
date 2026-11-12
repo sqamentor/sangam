@@ -322,7 +322,10 @@ public class ModellerController {
                 target, ctx.principalId()));
     }
 
-    /** The console's form of invoke. The operation is idempotent per request key. */
+    /**
+     * The console's form of invoke. The operation is idempotent per request key. SL-167 / owner decision 62: the request's
+     * {@code reason} is recorded in the ACTION_INVOKED audit entry.
+     */
     @PostMapping("/actions/{key}/run")
     public ActionModels.Invocation runAction(RequestContext ctx, @PathVariable String key, @RequestBody RunActionRequest b) {
         permissions.require(ctx, ACTION_INVOKE);
@@ -330,7 +333,8 @@ public class ModellerController {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "subjectRef is required");
         }
         String clientKey = ctx.idempotencyKey() != null ? ctx.idempotencyKey() : java.util.UUID.randomUUID().toString();
-        return ModellerRequestScope.with(ctx, () -> actions.invoke(ctx.tenantId(), ctx.principalId(), key, b.subjectRef(), b.input() == null ? Map.of() : b.input(), clientKey));
+        return ModellerRequestScope.with(ctx, () -> actions.invoke(ctx.tenantId(), ctx.principalId(), key, b.subjectRef(),
+                b.input() == null ? Map.of() : b.input(), clientKey, b.reason()));
     }
 
     @DeleteMapping("/actions/{key}")

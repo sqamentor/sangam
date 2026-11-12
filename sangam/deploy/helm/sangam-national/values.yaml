@@ -55,11 +55,23 @@ rollup:
   database:
     jdbcUrl: ""
     existingSecret: ""
-  # Secret with key `tokens`: "<token>:CELL,<token>:DASHBOARD"
+  # Secret with key `tokens`: "<token>:CELL,<token>:DASHBOARD"; with state roll-ups add one "<token>:TIER" per state
   tokensSecret: ""
+  # M-063: an ingest array is projected as one pre-aggregated batch (SANGAM_RU_PRE_AGGREGATE, server default true)
+  preAggregate: true
   resources:
     requests: { cpu: "1", memory: 1Gi }
     limits: { memory: 2Gi }
+  # M-063 (SCALE-ARCHITECTURE 8.4): optional state roll-up tier, same image. Empty = a single national roll-up.
+  # Each item: name (DNS label), scope (tenant-path prefix, e.g. IN/RA), database {jdbcUrl, existingSecret},
+  # tokensSecret (keys: tokens = this state's <token>:CELL,<token>:DASHBOARD; upstreamToken = a national token with
+  # role TIER), optional instanceId, upstreamUrl (default this release's national ingest), replicaCount, resources.
+  # The cells of that state set SANGAM_ROLLUP_INGEST_URL to http://<release>-rollup-<name>:8095/api/v1/ingest.
+  states: []
+  #  - name: ra
+  #    scope: IN/RA
+  #    database: { jdbcUrl: "jdbc:postgresql://rollup-ra-db:5432/sangam_rollup", existingSecret: rollup-ra-db }
+  #    tokensSecret: rollup-ra-tokens
 
 # ---- cells: values passed to the `sangam` chart per cell. Add server.env SANGAM_CELL_ID / SANGAM_CELL_JURISDICTION /
 # SANGAM_CELL_RESIDENCY and

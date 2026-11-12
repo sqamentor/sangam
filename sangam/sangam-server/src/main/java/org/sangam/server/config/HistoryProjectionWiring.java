@@ -1,0 +1,140 @@
+// SPDX-License-Identifier: Apache-2.0
+package org.sangam.server.config;
+
+import java.net.URI;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.sangam.core.layer.Outbox;
+import org.sangam.integration.connector.EgressPolicy;
+import org.sangam.integration.connector.HttpTransport;
+import org.sangam.integration.connector.RetryPolicy;
+import org.sangam.integration.connector.SecretResolver;
+import org.sangam.integration.publish.KafkaPublisher;
+import org.sangam.integration.publish.history.SearchIndexPublisher;
+import org.sangam.integration.relay.PublisherRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+
+/**
+ * M-057 external history projector (owner decision 88: with {@code sangam.engine.history-external=true} the engine keeps
+ * {@code ACT_HI_*} at audit level and the history detail travels only as {@code sangam.history.*} outbox events). Each
+ * configured sink is an outbox destination fed every {@code sangam.history.*} event ({@code IntegrationWiring}
+ * {@code sangamOutboxWriter} routes them, as it does for the roll-up stream), delivered at least once by the relay and
+ * idempotent per outbox event id:
+ *
+ * <ul>
+ *   <li><b>{@value SearchIndexPublisher#DESTINATION}</b>: OpenSearch or Elasticsearch,
+ *       {@code PUT {url}/{index}/_doc/{event_id}}. Keys under {@code sangam.history.projection.search.}: {@code url},
+ *       {@code index} (default {@code sangam-history}; {@code {tenant}} for one index per tenant), {@code username} +
+ *       {@code password-ref} or {@code api-key-ref} (secret references), {@code allow-private} (default false). The
+ *       egress rule admits exactly the configured URL; production profiles require https.</li>
+ *   <li><b>{@value #KAFKA_DESTINATION}</b>: Kafka, record key = event id, idempotent producer. Keys under
+ *       {@code sangam.history.projection.kafka.}: {@code topic}, {@code bootstrap-servers}, {@code properties.*} (producer
+ *       settings; a value starting with {@code secret://} is resolved through the platform {@link SecretResolver}).</li>
+ * </ul>
+ * Nothing is configured by default: no sink, no routing, no outbound call.
+ */
+@Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "sangam.modules.integration.enabled", havingValue = "true", matchIfMissing = true)
+public class HistoryProjectionWiring {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HistoryProjectionWiring.class);
+    static final String PREFIX = "sangam.history.projection";
+    public static final String KAFKA_DESTINATION = "history-kafka";
+    /** Event types every projection sink receives. */
+    public static final String HISTORY_TYPES = "sangam.history.";
+
+    /** The destinations of the configured sinks (none = no history routing beyond what was there before). */
+    public static List<Outbox.Destination> destinations(Environment env) {
+        List<Outbox.Destination> out = new ArrayList<>();
+        if (!env.getProperty(PREFIX + ".search.url", "").isBlank()) {
+            out.add(Outbox.Destination.unordered(SearchIndexPublisher.DESTINATION));
+        }
+        if (!env.getProperty(PREFIX + ".kafka.topic", "").isBlank()) {
+            out.add(Outbox.Destination.unordered(KAFKA_DESTINATION));
+        }
+        return List.copyOf(out);
+    }
+
+    static SearchIndexPublisher.Settings searchSettings(Environment env, boolean production) {
+        String p = PREFIX + ".search.";
+        URI url = URI.create(env.getProperty(p + "url", "").trim());
+        if (production && !"https".equalsIgnoreCase(url.getScheme())) {
+            throw new IllegalStateException(p + "url: production profiles require https");
+        }
+        return new SearchIndexPublisher.Settings(url, env.getProperty(p + "index", "sangam-history"),
+                blankToNull(env.getProperty(p + "username")), blankToNull(env.getProperty(p + "password-ref")),
+                blankToNull(env.getProperty(p + "api-key-ref")));
+    }
+
+    /** One egress rule: the configured URL's scheme, host, port and path, any tenant. */
+    static HttpTransport searchTransport(SearchIndexPublisher.Settings s, boolean allowPrivate) {
+        URI u = s.url();
+        EgressPolicy.Rule rule = new EgressPolicy.Rule("*", u.getScheme(), u.getHost(), u.getPort(),
+                u.getPath() == null || u.getPath().isEmpty() ? "/" : u.getPath(), allowPrivate);
+        return new HttpTransport(EgressPolicy.of(List.of(rule), 0, 1024 * 1024), null, Duration.ofSeconds(10),
+                Duration.ofSeconds(30), RetryPolicy.none());
+    }
+
+    /** Producer settings: bootstrap servers and pass-through properties, {@code secret://} values resolved. */
+    static Map<String, Object> kafkaConfig(Environment env, SecretResolver secrets) {
+        String p = PREFIX + ".kafka.";
+        String servers = env.getProperty(p + "bootstrap-servers", "");
+        if (servers.isBlank()) {
+            throw new IllegalStateException(p + "bootstrap-servers is required with " + p + "topic");
+        }
+        Map<String, Object> config = new LinkedHashMap<>();
+        Binder.get(env).bind(p + "properties", Bindable.mapOf(String.class, String.class)).orElse(Map.of())
+                .forEach((k, v) -> config.put(k, v != null && v.startsWith("secret://") ? secrets.require(v) : v));
+        config.put("bootstrap.servers", servers.trim());
+        return config;
+    }
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnProperty(prefix = PREFIX + ".kafka", name = "topic")
+    public KafkaPublisher sangamHistoryKafkaPublisher(Environment env, ObjectProvider<SecretResolver> secrets) {
+        String topic = env.getProperty(PREFIX + ".kafka.topic", "").trim();
+        return new KafkaPublisher(kafkaConfig(env, secrets.getIfAvailable(SecretResolver::fromEnvironment)), d -> topic,
+                "urn:sangam:" + env.getProperty("sangam.installation.id", "sangam"), Duration.ofSeconds(30),
+                KafkaPublisher.Key.EVENT_ID);
+    }
+
+    @Bean
+    public InitializingBean sangamHistoryProjectionRegistration(PublisherRegistry publishers, Environment env,
+            ObjectProvider<SecretResolver> secrets, ObjectProvider<KafkaPublisher> kafka) {
+        return () -> {
+            List<String> sinks = new ArrayList<>();
+            if (!env.getProperty(PREFIX + ".search.url", "").isBlank()) {
+                SearchIndexPublisher.Settings s = searchSettings(env, ProductionEnvironment.isProduction(env));
+                publishers.register(SearchIndexPublisher.DESTINATION, new SearchIndexPublisher(
+                        searchTransport(s, env.getProperty(PREFIX + ".search.allow-private", Boolean.class, false)), s,
+                        secrets.getIfAvailable(SecretResolver::fromEnvironment)));
+                sinks.add(SearchIndexPublisher.DESTINATION);
+            }
+            KafkaPublisher k = kafka.getIfAvailable();
+            if (k != null) {
+                publishers.register(KAFKA_DESTINATION, k);
+                sinks.add(KAFKA_DESTINATION);
+            }
+            if (!sinks.isEmpty()) {
+                LOG.info("M-057 history projection sinks registered: {}", sinks);
+            }
+        };
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+}

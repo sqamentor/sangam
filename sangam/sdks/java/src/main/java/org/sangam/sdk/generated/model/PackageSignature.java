@@ -14,7 +14,7 @@ package org.sangam.sdk.generated.model;
  * @param seatId wire field {@code seatId}
  * @param alg wire field {@code alg}.  One of: Ed25519.
  * @param keyId wire field {@code keyId}. Id of the signing key (per purpose and environment, Q-04); the key itself never leaves the secret provider
- * @param signature wire field {@code signature}. Base64 signature over the raw 32-byte package hash
+ * @param signature wire field {@code signature}. Base64 Ed25519 signature over the UTF-8 of JCS({packageHash, role, principalId, seatId, signedAt}), signedAt ISO-8601 UTC with at most millisecond precision; a signature relabelled to another role, signer, seat or time does not verify (BAD_SIGNATURE)
  * @param signedAt wire field {@code signedAt}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

@@ -14,9 +14,11 @@ bk_opaque({
     ("GeoRestService.defineFence", "new Geofence"): "free-form fence attributes, stored as given",
     ("GeoRestService.putFeature", "new BoundaryDataLoader.FeatureInput"): "names by language and free-form feature "
                                                                           "properties, stored as given",
-    ("ExternalLayerGateway.query", "uuidV5"): "the whole input is hashed into the connector operation id",
-    ("ExternalLayerGateway.query", "new ConnectorRequest"): "forwarded as the input of the external layer's connector "
-                                                            "(WFS/WMS parameters such as bbox, count, styles); the "
-                                                            "connector is chosen per layer, so its parameters are not "
-                                                            "fixed here",
+    # requestInput copies the caller's map, overwrites baseUrl with the registered one (SSRF fix, W2-close) and returns
+    # the copy to query, which hashes it into the operation id and forwards it as the connector input.
+    ("ExternalLayerGateway.requestInput", "in"): "returned to ExternalLayerGateway.query, which hashes the whole input "
+                                                 "into the connector operation id and forwards it as the input of the "
+                                                 "external layer's connector (WFS/WMS parameters such as bbox, count, "
+                                                 "styles); the connector is chosen per layer, so its parameters are not "
+                                                 "fixed here, and a caller's baseUrl is always replaced",
 })

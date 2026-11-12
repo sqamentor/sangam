@@ -33,10 +33,20 @@ public final class OAuth2ClientCredentials implements HttpRestConnector.Authoriz
     private final String scope;
     private final HttpTransport transport;
     private final Clock clock;
+    private final boolean secretInBody;
     private final Map<String, Token> cache = new LinkedHashMap<>();
 
     public OAuth2ClientCredentials(URI tokenUri, String clientId, String clientSecret, String scope, HttpTransport transport,
                                    Clock clock) {
+        this(tokenUri, clientId, clientSecret, scope, transport, clock, false);
+    }
+
+    /**
+     * @param secretInBody true: {@code client_secret_post} (RFC 6749 §2.3.1, the client id and secret as form fields, as
+     *                     Microsoft Entra ID documents it); false: {@code client_secret_basic} (HTTP Basic, the default)
+     */
+    public OAuth2ClientCredentials(URI tokenUri, String clientId, String clientSecret, String scope, HttpTransport transport,
+                                   Clock clock, boolean secretInBody) {
         if (tokenUri == null || clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) {
             throw new IllegalArgumentException("oauth2 client credentials need token-url, client-id and a client secret");
         }
@@ -46,6 +56,7 @@ public final class OAuth2ClientCredentials implements HttpRestConnector.Authoriz
         this.scope = scope;
         this.transport = transport;
         this.clock = clock == null ? Clock.systemUTC() : clock;
+        this.secretInBody = secretInBody;
     }
 
     @Override
@@ -67,8 +78,13 @@ public final class OAuth2ClientCredentials implements HttpRestConnector.Authoriz
         Map<String, String> h = new LinkedHashMap<>();
         h.put("Content-Type", "application/x-www-form-urlencoded");
         h.put("Accept", "application/json");
-        h.put("Authorization", "Basic " + Base64.getEncoder().encodeToString((URLEncoder.encode(clientId, StandardCharsets.UTF_8)
-                + ":" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8)));
+        if (secretInBody) {
+            form.append("&client_id=").append(URLEncoder.encode(clientId, StandardCharsets.UTF_8))
+                    .append("&client_secret=").append(URLEncoder.encode(clientSecret, StandardCharsets.UTF_8));
+        } else {
+            h.put("Authorization", "Basic " + Base64.getEncoder().encodeToString((URLEncoder.encode(clientId, StandardCharsets.UTF_8)
+                    + ":" + URLEncoder.encode(clientSecret, StandardCharsets.UTF_8)).getBytes(StandardCharsets.UTF_8)));
+        }
         HttpTransport.Outcome o = transport.execute(tenantId, new HttpTransport.Call("POST", tokenUri, h,
                 form.toString().getBytes(StandardCharsets.UTF_8), Duration.ofSeconds(15), true), 0);
         if (!(o instanceof HttpTransport.Outcome.Response r) || !r.is2xx()) {

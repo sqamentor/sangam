@@ -8,7 +8,8 @@ app("sangam-rollup-api.yaml", "Sangam roll-up API",
     "The roll-up's REST API (port 8095, base path /api/v1). Cells post the roll-up stream (at least once; the roll-up "
     "deduplicates on the CloudEvents `id`); dashboards read totals, daily series, drill-downs and feed freshness. A "
     "hierarchy node is a tenant path such as `IN/RJ/RJ-JPR`; day ranges are `yyyyMMdd` UTC, both ends included.",
-    {"ADMIN": "everything", "CELL": "ingest", "DASHBOARD": "queries"},
+    {"ADMIN": "everything", "CELL": "ingest",
+     "TIER": "ingest, including explicit metric events of a lower roll-up tier (M-063)", "DASHBOARD": "queries"},
     [("Ingest", "The roll-up stream from the cells (IR-3)"), ("Queries", "Dashboard reads (counts and identifiers only)")],
     servers=[{"url": "/api/v1", "description": "Sangam roll-up"}],
     errors={"BadRequest": "Invalid request. A rule the input breaks (for example a batch larger than "
@@ -35,7 +36,10 @@ ERR_Q = ("BadRequest", "Unauthorized", "Forbidden")
 aop("post", "/ingest", "ingestRollupEvents", "Ingest", "Ingest roll-up events",
     "One structured CloudEvent or a JSON array of them. Each event is projected at most once (deduplicated on `id`). "
     "202 with the counts; a single event that is rejected answers 422 with the counts, which the cell's relay treats "
-    "as a poison event.", ("CELL", "ADMIN"),
+    "as a poison event. An array is projected as one pre-aggregated batch. A `sangam.rollup.metric` event with "
+    "`data.metric` (string, max 96), `data.day` (yyyyMMdd integer) and `data.delta` (integer, may be negative) is an "
+    "explicit metric event (M-063): it is accepted only from TIER or ADMIN and adds `delta` to that metric on that day "
+    "for the path and every prefix.", ("CELL", "TIER", "ADMIN"),
     body={"oneOf": [R("RollupCloudEvent"), {"type": "array", "items": R("RollupCloudEvent")}]},
     body_ct=("application/cloudevents+json", "application/json"), resp=(202, "IngestResult"), errors=ERR_Q,
     more={"422": {"description": "The single event was rejected (a required attribute is missing or too long)",

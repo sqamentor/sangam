@@ -73,6 +73,28 @@ class BillingConnectorPeriodTest {
         assertTrue(asked.isEmpty(), "resolver asked for " + asked);
     }
 
+    /** X1-08: billing reads the fiscalYear alias exactly as the ledger connector does (LedgerPeriods). */
+    @Test
+    void theFiscalYearAliasIsAnExplicitPeriodAsInTheLedger() {
+        List<String> asked = new ArrayList<>();
+        BillingConnector c = connector((t, d) -> {
+            asked.add(t);
+            throw FiscalYearNotConfiguredException.forSubject("profile T");
+        });
+        ConnectorResult waive = c.invoke(req("waive", Map.of("consumer", "C-1", "head", "WATER", "amount", "0",
+                "orderRef", "W-4", "fiscalYear", "2025-26")));
+        if (waive instanceof ConnectorResult.BusinessFailure f) {
+            assertNotEquals(FiscalYearNotConfiguredException.CODE, f.code(), f.message());
+        }
+        assertTrue(asked.isEmpty(), "resolver asked for " + asked);
+        // an alias of "current" asks the resolver like a missing period (fail closed); precedence: LedgerPeriodsTest
+        ConnectorResult current = c.invoke(req("waive", Map.of("consumer", "C-1", "head", "WATER", "amount", "0",
+                "orderRef", "W-5", "fiscalYear", "current")));
+        ConnectorResult.BusinessFailure f = assertInstanceOf(ConnectorResult.BusinessFailure.class, current);
+        assertEquals(FiscalYearNotConfiguredException.CODE, f.code(), f.message());
+        assertEquals(1, asked.size(), asked.toString());
+    }
+
     @Test
     void aStepWithoutAPeriodUsesTheResolversFiscalPeriod() {
         List<String> periods = new ArrayList<>();

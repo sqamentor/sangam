@@ -146,7 +146,13 @@ public final class SangamSchema {
             // M-056 partitioned executors (R39, X.2.1.3), off by default
             "EXEC_PARTITION", "EXEC_SLOT", "EXEC_MAP", "EXEC_NODE",
             // job side tables keyed by the engine job id (M-056 slots, M-062 trace links), off by default
-            "EXEC_JOB_SLOT", "JOB_TRACE_CONTEXT");
+            "EXEC_JOB_SLOT", "JOB_TRACE_CONTEXT",
+            // M-074 package signatures and environment bindings (sangam-rest JdbcPackageAdapter; changesets 0043-01/02)
+            "PACKAGE_SIGNATURE", "ENV_BINDING",
+            // M-078 national id vault (sangam-compliance ComplianceSchema; 0043-03)
+            "CMP_NATIONAL_ID_VAULT",
+            // M-084 break-glass grants, M-085 field re-encryption progress (sangam-security; 0043-04/05)
+            "SEC_BREAK_GLASS", "SEC_REENCRYPT_PROGRESS", "WORK_STEP", "CH_MESSAGE_GRAM", "API_CONTRACT", "PROCESS_TRACE");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,
@@ -162,10 +168,13 @@ public final class SangamSchema {
      * plus the SL-162 compliance alters CMP_BREACH risk/delay columns, CMP_BREACH.plan_process_instance_id,
      * CMP_PURPOSE.special_condition and CMP_RIGHTS_REQUEST extension/exception columns (0041-01..04); plus the
      * generator {@code WIDEN} changesets: executor node ids EXEC_PARTITION.owner_node, EXEC_MAP.coordinator_node and
-     * EXEC_NODE.node_id to 255 characters (0042-01..03).
+     * EXEC_NODE.node_id to 255 characters (0042-01..03); plus the M-130 alter OPS_BULK_JOB.creator_identity (0043-09) and the
+     * SEC_TENANT.isolation alter with CK_SEC_TENANT_ISOLATION (0043-11, decision 97) and the CH_INBOUND_SEEN identity and media-fetch alter + CH_INBOUND_SEEN_MEDIA (0043-13, W3-C); plus the
+     * generator {@code NULLABLE_UNIQUE} changeset: PACKAGE_VERSION.package_hash NULL for drafts, the unique
+     * PACKAGE_VERSION_HASH over frozen hashes only (0043-10, decision 83).
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 77;
+    public static final int ADDITIONAL_CHANGESETS = 81;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {

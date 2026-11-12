@@ -46,8 +46,11 @@ public class OutboxOnlyDbHistoryEventHandler extends DbHistoryEventHandler {
 
     private boolean outboxOnly(HistoryEvent e) {
         String key = e.getProcessDefinitionKey() != null ? e.getProcessDefinitionKey() : e.getCaseDefinitionKey();
-        return key != null && outboxOnlyKeys.contains(key);
+        return outboxOnlyKeys.contains(ALL) || key != null && outboxOnlyKeys.contains(key);
     }
+
+    /** M-057 {@code external} history mode: every definition is outbox-only. */
+    public static final String ALL = "*";
 
     /** Events the AUDIT history level keeps (Operaton HistoryLevelAudit = ACTIVITY + variable instances). */
     static boolean auditLevel(HistoryEvent e) {

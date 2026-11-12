@@ -58,14 +58,26 @@ public final class ChannelsSchema {
               updated_at   {ts} NOT NULL,
               PRIMARY KEY (tenant_id, channel, external_id)
             )""",
+            // the channel inbox; the media_* columns hold a webhook message's pending media (messenger.InboundMediaQueue)
             """
             CREATE TABLE CH_INBOUND_SEEN (
-              tenant_id  {str64} NOT NULL,
-              channel    {str} NOT NULL,
-              message_id {str} NOT NULL,
-              seen_at    {ts} NOT NULL,
+              tenant_id     {str64} NOT NULL,
+              channel       {str} NOT NULL,
+              message_id    {str} NOT NULL,
+              seen_at       {ts} NOT NULL,
+              external_id   {str},
+              principal_id  {str},
+              media_ref     {text},
+              media_state   {str64},
+              media_attempt {int},
+              media_next_at {ts},
+              media_owner   {str},
+              media_epoch   {long},
+              media_doc     {text},
+              media_error   {text},
               PRIMARY KEY (tenant_id, channel, message_id)
             )""",
+            "CREATE INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN (media_state, media_next_at)",
             """
             CREATE TABLE CH_POLL_CURSOR (
               tenant_id  {str64} NOT NULL,
@@ -73,7 +85,16 @@ public final class ChannelsSchema {
               cursor_val {str} NOT NULL,
               updated_at {ts} NOT NULL,
               PRIMARY KEY (tenant_id, channel)
-            )""");
+            )""",
+            // NG-12 search index: the distinct lower-cased trigrams of each message body as UTF-8 hex (ConversationService.search)
+            """
+            CREATE TABLE CH_MESSAGE_GRAM (
+              message_id {str64} NOT NULL,
+              tenant_id  {str64} NOT NULL,
+              gram       {str64} NOT NULL,
+              PRIMARY KEY (message_id, gram)
+            )""",
+            "CREATE INDEX CH_MESSAGE_GRAM_LOOKUP ON CH_MESSAGE_GRAM (tenant_id, gram, message_id)");
 
     public static void create(Connection c, Dialect d) throws SQLException {
         try (Statement s = c.createStatement()) {

@@ -62,6 +62,18 @@
       <version>${version.amqp}</version>
       <optional>true</optional>
     </dependency>
+    <!-- M-064: MQTT 3.1.1 (EPL-2.0 / EDL-1.0) and NATS JetStream (Apache-2.0); decision 56, DOWNLOADS-WAVE3 log.
+         Versions managed in the root pom. -->
+    <dependency>
+      <groupId>org.eclipse.paho</groupId>
+      <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>jnats</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.junit.jupiter</groupId>

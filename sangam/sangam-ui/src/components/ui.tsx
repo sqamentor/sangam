@@ -18,6 +18,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ApiError, type Page } from '../api/client';
 import type { ConsequencePreview } from '../api/types';
+import { traceUrl } from '../lib/trace';
 import { fmtNumber } from '../i18n';
 
 // ------------------------------------------------------------------ layout bits
@@ -108,6 +109,21 @@ export function Empty({ message, action }: { message: string; action?: ReactNode
   );
 }
 
+/**
+ * M-044: a trace id as text, linked to the configured trace viewer when there is one (lib/trace.ts). The link opens a
+ * new tab, says so in its accessible name, and sends no referrer or opener.
+ */
+export function TraceRef({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const url = traceUrl(id);
+  if (!url) return <code>{id}</code>;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" aria-label={t('common.openTrace', { id })}>
+      <code>{id}</code>
+    </a>
+  );
+}
+
 export function ProblemAlert({ error, onRetry }: { error?: Error | null; onRetry?: () => void }) {
   const { t } = useTranslation();
   if (!error) return null;
@@ -147,7 +163,7 @@ export function ProblemAlert({ error, onRetry }: { error?: Error | null; onRetry
       )}
       {ref && (
         <p className="muted small">
-          {t('error.reference')}: <code>{ref}</code>
+          {t('error.reference')}: <TraceRef id={ref} />
         </p>
       )}
       {onRetry && (

@@ -197,21 +197,47 @@ describe('M-038 test reports', () => {
   });
 });
 
-describe('M-039 engine: reason in a header, body fields from the row', () => {
-  it('sends the reason as X-Purpose, not in the body, and refuses non-ASCII header text', async () => {
+describe('M-039 engine: purpose code in a header, body fields from the row', () => {
+  // SL-166 (5), W3-M REQUEST 2026-11-12T12:04:42Z: X-Purpose is the purpose CODE (RegistryPortBridges.java:143-151,
+  // CMP_PURPOSE.purpose_code); the user picks it by its localized name, and no label or free text is ever sent.
+  const reveal = { id: 'reveal', label: 'act.reveal', path: '/registry/parties/identifiers/{identifierId}/reveal', purposeHeader: 'X-Purpose', noJson: true, showResult: true };
+  const confirmButton = () => within(dialog()).getByRole('button', { name: T('common.confirm') }) as HTMLButtonElement;
+
+  it('lists the purposes by name and sends the chosen code as X-Purpose, never the label, with no body reason', async () => {
+    api.get.mockImplementation(async (path: string) =>
+      path === '/compliance/purposes' ? [{ code: 'KYC_REVERIFY', names: { en: 'KYC re-verification', hi: 'केवाईसी पुनः सत्यापन' } }, { code: 'GRIEVANCE', names: { en: 'Grievance redressal' } }] : [],
+    );
     api.request.mockResolvedValue({ identifierId: 'i1', value: 'XXXX' });
-    render(<ActionDialog act={{ id: 'reveal', label: 'act.reveal', path: '/registry/parties/identifiers/{identifierId}/reveal', reason: 'body', reasonHeader: 'X-Purpose', noJson: true, showResult: true }} row={{ identifierId: 'i1' }} onClose={() => undefined} onDone={() => undefined} />);
-    const reason = within(dialog()).getByLabelText(new RegExp(T('common.reason')));
-    fireEvent.change(reason, { target: { value: 'सत्यापन हेतु' } });
-    expect(within(dialog()).getByText(T('mod.common.reasonAsciiOnly'))).toBeTruthy();
-    expect((within(dialog()).getByRole('button', { name: T('common.confirm') }) as HTMLButtonElement).disabled).toBe(true);
-    fireEvent.change(reason, { target: { value: 'KYC re-verification' } });
-    fireEvent.click(within(dialog()).getByRole('button', { name: T('common.confirm') }));
+    render(<ActionDialog act={reveal} row={{ identifierId: 'i1' }} onClose={() => undefined} onDone={() => undefined} />);
+    const select = (await within(dialog()).findByLabelText(new RegExp(T('mod.common.purpose')))) as HTMLSelectElement;
+    expect(within(select).getByRole('option', { name: 'KYC re-verification (KYC_REVERIFY)' })).toBeTruthy();
+    expect(within(dialog()).queryByLabelText(new RegExp(T('common.reason')))).toBeNull();
+    expect(confirmButton().disabled).toBe(true);
+    fireEvent.change(select, { target: { value: 'KYC_REVERIFY' } });
+    fireEvent.click(confirmButton());
     await waitFor(() => expect(api.request).toHaveBeenCalled());
-    const [method, path, opts] = api.request.mock.calls[0] as [string, string, { body: Record<string, unknown>; headers: Record<string, string> }];
+    const [method, path, opts] = api.request.mock.calls[0] as [string, string, { body?: Record<string, unknown>; headers: Record<string, string> }];
     expect([method, path]).toEqual(['POST', '/registry/parties/identifiers/i1/reveal']);
-    expect(opts.headers).toEqual({ 'X-Purpose': 'KYC re-verification' });
-    expect(opts.body.reason).toBeUndefined();
+    expect(opts.headers).toEqual({ 'X-Purpose': 'KYC_REVERIFY' });
+    expect(opts.body?.reason).toBeUndefined();
+    expect(api.get).toHaveBeenCalledWith('/compliance/purposes', undefined, expect.anything());
+  });
+
+  it('without compliance.read the code is typed, and a description or non-ASCII text is refused before any call', async () => {
+    api.get.mockRejectedValue(problem(403, 'FORBIDDEN'));
+    api.request.mockResolvedValue({ identifierId: 'i1', value: 'XXXX' });
+    render(<ActionDialog act={reveal} row={{ identifierId: 'i1' }} onClose={() => undefined} onDone={() => undefined} />);
+    const code = await within(dialog()).findByLabelText(new RegExp(T('mod.common.purposeCode')));
+    for (const bad of ['सत्यापन हेतु', 'KYC re-verification']) {
+      fireEvent.change(code, { target: { value: bad } });
+      expect(within(dialog()).getByText(T('mod.common.purposeCodeInvalid'))).toBeTruthy();
+      expect(confirmButton().disabled).toBe(true);
+    }
+    expect(within(dialog()).queryByRole('alert')).toBeNull();
+    fireEvent.change(code, { target: { value: 'KYC_REVERIFY' } });
+    fireEvent.click(confirmButton());
+    await waitFor(() => expect(api.request).toHaveBeenCalledTimes(1));
+    expect((api.request.mock.calls[0][2] as { headers: Record<string, string> }).headers).toEqual({ 'X-Purpose': 'KYC_REVERIFY' });
   });
   it('adds body fields taken from the row (milestoneId must equal the path id)', async () => {
     api.request.mockResolvedValue({});

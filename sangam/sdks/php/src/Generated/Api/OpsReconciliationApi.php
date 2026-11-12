@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Ops /reconciliation (9 operations). */
+/** Typed operations of Ops /reconciliation (6 operations). */
 final class OpsReconciliationApi
 {
     public function __construct(private readonly Calls $calls)
@@ -116,50 +116,5 @@ final class OpsReconciliationApi
         $req = ApiRequest::post('/ops/reconciliation/' . HttpTransport::seg((string) $id) . '/evidence');
         Support::multipart($req, $body);
         return $this->calls->model($req, $options, Model\Evidence::class);
-    }
-
-    /**
-     * Parked inbound messages
-     *
-     * Open POISON_INBOUND items of the caller's tenant whose message was parked because the tenant moved or was purged (PoisonInbound.listOpen, parked = true).
-     *
-     * GET /ops/reconciliation/parked-inbound (operationId listParkedInbound); permission ops.read.
-     * @return list<Model\PoisonInboundItem>
-     */
-    public function listParkedInbound(?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/ops/reconciliation/parked-inbound');
-        return $this->calls->models($req, $options, Model\PoisonInboundItem::class);
-    }
-
-    /**
-     * View a parked inbound message
-     *
-     * The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
-     *
-     * GET /ops/reconciliation/parked-inbound/{itemId} (operationId getParkedInbound); permission ops.read.
-     * @return Model\PoisonInboundParked|null
-     */
-    public function getParkedInbound(string $itemId, ?RequestOptions $options = null): ?Model\PoisonInboundParked
-    {
-        $req = ApiRequest::get('/ops/reconciliation/parked-inbound/' . HttpTransport::seg((string) $itemId));
-        return $this->calls->model($req, $options, Model\PoisonInboundParked::class);
-    }
-
-    /**
-     * Replay a parked inbound message
-     *
-     * Hands the message, with its original id, type and key, to the tenant's new cell; then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over leaves the item open; a repeat is deduplicated by the target inbox (PoisonInbound.replayParked).
-     *
-     * POST /ops/reconciliation/parked-inbound/{itemId}/replay (operationId replayParkedInbound); permission recon.resolve; result stored atomically with the state change.
-     * @param Model\ReasonRequest|array $body request body
-     */
-    public function replayParkedInbound(string $itemId, Model\ReasonRequest|array $body, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::post('/ops/reconciliation/parked-inbound/' . HttpTransport::seg((string) $itemId) . '/replay');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        $this->calls->none($req, $options);
     }
 }

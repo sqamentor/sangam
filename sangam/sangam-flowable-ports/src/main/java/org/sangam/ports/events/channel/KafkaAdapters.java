@@ -34,6 +34,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * backs off. Outbound: idempotent producer, {@code acks=all}, synchronous send so the relay marks the delivery done
  * only after the broker acknowledged it. Channel properties starting with {@code kafka.} are passed to the client
  * (e.g. {@code kafka.security.protocol}); secrets come from {@code secretRef}-style references only.
+ *
+ * <p>CloudEvents (M-065, Kafka protocol binding): binary mode writes {@code ce_<attr>} headers and
+ * {@code content-type} = the data content type; structured mode sets {@code content-type: application/cloudevents+json}.
+ * SL-142 (C3-06): a record of a tenant that may not be stored yet is not committed: the consumer seeks back and backs
+ * off ({@code retryBackoffMs}); a MOVED or PURGED tenant's record is parked, then committed.
  */
 final class KafkaAdapters {
 
@@ -78,13 +83,22 @@ final class KafkaAdapters {
 
         @Override
         public void send(String tenantId, String eventKey, String messageId, String body) throws Exception {
-            String key = ch.properties().getOrDefault("recordKey", "messageId").equals("tenant") ? tenantId : messageId;
-            ProducerRecord<String, String> r = new ProducerRecord<>(topic, key, body);
-            r.headers().add("message-id", messageId.getBytes(StandardCharsets.UTF_8));
-            r.headers().add("event-key", eventKey.getBytes(StandardCharsets.UTF_8));
-            if (tenantId != null) {
-                r.headers().add("tenant-id", tenantId.getBytes(StandardCharsets.UTF_8));
+            send(ChannelAdapters.Outgoing.json(tenantId, eventKey, messageId, body));
+        }
+
+        @Override
+        public void send(ChannelAdapters.Outgoing m) throws Exception {
+            String key = ch.properties().getOrDefault("recordKey", "messageId").equals("tenant") ? m.tenantId() : m.messageId();
+            ProducerRecord<String, String> r = new ProducerRecord<>(topic, key, m.body());
+            r.headers().add("message-id", m.messageId().getBytes(StandardCharsets.UTF_8));
+            r.headers().add("event-key", m.eventKey().getBytes(StandardCharsets.UTF_8));
+            if (m.tenantId() != null) {
+                r.headers().add("tenant-id", m.tenantId().getBytes(StandardCharsets.UTF_8));
             }
+            if (!"application/json".equals(m.contentType()) || m.binary()) {
+                r.headers().add("content-type", m.contentType().getBytes(StandardCharsets.UTF_8));
+            }
+            m.cloudEventsOrEmpty().forEach((k, v) -> r.headers().add("ce_" + k, v.getBytes(StandardCharsets.UTF_8)));
             producer.send(r).get(Long.parseLong(ch.property("sendTimeoutMs", "30000")), TimeUnit.MILLISECONDS);
         }
 
@@ -151,7 +165,12 @@ final class KafkaAdapters {
                                 headers.put(h.key(), h.value() == null ? null : new String(h.value(), StandardCharsets.UTF_8));
                             }
                             String id = headers.getOrDefault("message-id", rec.topic() + "-" + rec.partition() + "-" + rec.offset());
-                            processor.receive(tenant, ch.key(), rec.value(), headers, id);
+                            if (!ChannelAdapters.deliver(processor, tenant, ch, rec.value(), headers, id)) {
+                                // SL-142: not admitted yet (FROZEN, IMPORTING): re-read this record after the back-off
+                                c.seek(tp, rec.offset());
+                                sleep(Long.parseLong(ch.property("retryBackoffMs", "5000")));
+                                break;
+                            }
                             c.commitSync(Map.of(tp, new OffsetAndMetadata(rec.offset() + 1)));
                         } catch (RuntimeException e) {
                             LOG.warn("kafka channel {}: record {}-{}@{} not stored, retrying: {}", ch.key(), rec.topic(),

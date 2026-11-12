@@ -5,9 +5,12 @@
  * REQUIRED: without it every publish is refused (SL-125, ProgrammeConfig.java:221-235, no fiscal year assumed).
  * The other top-level keys (units, variance, physicalProgress) go through the form's "more fields" JSON.
  *
- * Not prefilled: the contract has no read of the current configuration. GET /programme-config/history returns only
- * version, contentHash, current, definedBy and definedAt (IndicatorRegistry.java:167-171). See the W2-C REQUEST on the
- * sync board.
+ * Not prefilled yet: the contract has no read of the current configuration. GET /programme-config/history returns only
+ * version, contentHash, current, definedBy and definedAt (IndicatorRegistry.java:167-171). C3-09: GET /programme-config
+ * is requested from W3-M (WAVE3-SYNC-BOARD 2026-11-12T11:28:00Z). The dialog side is ready (engine.tsx Act.load and
+ * prefillFrom, tested with these fields); once the route lands, the publish action gets
+ * load: { path: '/programme-config', omit: ['version', 'contentHash'] }. Until then a GET would answer 405 and show an
+ * error, so it is not wired.
  */
 import type { FormField } from '../api/types';
 import { fiscalStartDayField } from './fiscalDay';

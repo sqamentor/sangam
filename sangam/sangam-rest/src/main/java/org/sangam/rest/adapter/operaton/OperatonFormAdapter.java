@@ -151,16 +151,11 @@ public final class OperatonFormAdapter implements FormPort {
             errors.add(FormSchemaValidator.error("", "FORM_VERSION_STALE"));
         }
         JsonNode data = JSON.valueToTree(request.data() == null ? Map.of() : request.data());
-        List<org.sangam.rest.extension.TenantCustomFieldRegistry.FieldDefinition> custom = customFields.isEmpty()
-                ? List.of() : customFields.inForce(ctx.tenantId(),
-                        org.sangam.rest.extension.TenantCustomFieldRegistry.FORM_PREFIX + formKey, dates.today(ctx.tenantId()));
+        List<org.sangam.rest.extension.TenantCustomFieldRegistry.FieldDefinition> custom = customFieldsInForce(ctx, formKey);
         java.util.Set<String> customEditable = new java.util.HashSet<>();
         custom.stream().filter(f -> !f.readOnly()).forEach(f -> customEditable.add(f.key()));
         if (form.dataSchema() != null || !custom.isEmpty()) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> base = form.dataSchema() instanceof Map<?, ?> m ? (Map<String, Object>) m
-                    : form.dataSchema() == null ? null : JSON.convertValue(form.dataSchema(), Map.class);
-            JsonNode schema = JSON.valueToTree(org.sangam.rest.extension.TenantCustomFieldRegistry.extendSchema(base, custom));
+            JsonNode schema = JSON.valueToTree(mergedSchema(form, custom));
             errors.addAll(validator.validate(schema, data));
             if (form.dataSchema() == null && form.layout() != null) {
                 errors.addAll(validator.validateLayoutRequired(JSON.valueToTree(form.layout()), data));
@@ -172,6 +167,41 @@ public final class OperatonFormAdapter implements FormPort {
             errors.addAll(applyPolicy(JSON.valueToTree(form.fieldPolicy()), taskDefinitionKey, data, customEditable));
         }
         return new ValidationResult(errors.isEmpty(), form.versionHash(), List.copyOf(errors));
+    }
+
+    /**
+     * SL-166 f2 / owner decision 63: the ACTIVE version with the tenant's custom fields in force merged into the data
+     * schema by the same {@link #mergedSchema} that {@link #validate} uses, so what the portal renders is what the server
+     * accepts. The version hash is the form's own.
+     */
+    @Override
+    public FormVersion effective(RequestContext ctx, String formKey) {
+        return withCustomFields(get(ctx, formKey, null), customFieldsInForce(ctx, formKey));
+    }
+
+    private List<org.sangam.rest.extension.TenantCustomFieldRegistry.FieldDefinition> customFieldsInForce(RequestContext ctx,
+                                                                                                         String formKey) {
+        return customFields.isEmpty() ? List.of() : customFields.inForce(ctx.tenantId(),
+                org.sangam.rest.extension.TenantCustomFieldRegistry.FORM_PREFIX + formKey, dates.today(ctx.tenantId()));
+    }
+
+    /** The form's data schema extended with {@code custom} (shipped properties win); a form without a schema gets an object schema. */
+    @SuppressWarnings("unchecked")
+    static Map<String, Object> mergedSchema(FormVersion form,
+                                            List<org.sangam.rest.extension.TenantCustomFieldRegistry.FieldDefinition> custom) {
+        Map<String, Object> base = form.dataSchema() instanceof Map<?, ?> m ? (Map<String, Object>) m
+                : form.dataSchema() == null ? null : JSON.convertValue(form.dataSchema(), Map.class);
+        return org.sangam.rest.extension.TenantCustomFieldRegistry.extendSchema(base, custom);
+    }
+
+    /** {@code form} with {@code custom} merged into its data schema; unchanged when no custom field is in force. */
+    static FormVersion withCustomFields(FormVersion form,
+                                        List<org.sangam.rest.extension.TenantCustomFieldRegistry.FieldDefinition> custom) {
+        if (custom.isEmpty()) {
+            return form;
+        }
+        return new FormVersion(form.key(), form.versionHash(), form.dataSchemaHash(), form.layoutHash(), form.fieldPolicyHash(),
+                mergedSchema(form, custom), form.layout(), form.fieldPolicy(), form.i18n(), form.deploymentId(), form.state());
     }
 
     /** Default deny (X.2.5.1): a submitted top-level field must be listed as editable for this task / start form. */

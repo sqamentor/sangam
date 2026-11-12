@@ -70,7 +70,7 @@ SCHEMAS["Problem"] = {
                      "SEAT_NOT_HELD", "REASON_REQUIRED", "EVIDENCE_REQUIRED", "DEBUGGER_DISABLED", "LEGAL_HOLD",
                      "BULK_NOT_ALLOWED", "DOCUMENT_REJECTED", "FORMAT_NOT_AVAILABLE", "PRECONDITION_REQUIRED",
                      "PAYLOAD_TOO_LARGE", "INTERNAL_ERROR", "EVENT_IN_FLIGHT", "NOT_RETIRED",
-                     "INVALID_BATCH_STATE"]}, {"type": "string"}]},
+                     "INVALID_BATCH_STATE", "TENANT_MOVED", "TENANT_NOT_ON_INSTANCE"]}, {"type": "string"}]},
         "traceId": {"type": "string", "description": "W3C trace id of the request (R13)"},
     },
     "additionalProperties": True,
@@ -168,8 +168,14 @@ schema("CancelAckRequest", "Acknowledge CANCEL_REQUESTED (VI.5).", "workerId loc
 # Tasks
 schema("Task", "A BPMN user task or CMMN human task (FC-52 lifecycle fields included).",
        "id name description taskDefinitionKey processInstanceId processDefinitionKey caseInstanceId businessKey assignee owner "
-       "seatId tenantId created:dt due:dt followUp:dt lastUpdated:dt claimTime:dt state priority:int formKey delegationState variables:map",
-       descs={"variables": "P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller."})
+       "seatId tenantId created:dt due:dt followUp:dt lastUpdated:dt claimTime:dt state priority:int formKey delegationState variables:map "
+       "amount:long currency reference",
+       descs={"variables": "P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller.",
+              "amount": "M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.",
+              "currency": "M-042 task index: ISO 4217 code of amount; absent or null with amount.",
+              "reference": "M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one."})
+SCHEMAS["Task"]["properties"]["currency"]["pattern"] = "^[A-Z]{3}$"
+SCHEMAS["Task"]["properties"]["reference"]["maxLength"] = 255
 schema("TaskDetail", "Task plus the material payload hash the caller must send back on completion (VI.4 rule 5).",
        "task:Task variables:map payloadHash caseVersion:long formVersion materialFields:list:s allowedActions:list:s "
        "candidateUsers:list:s candidateGroups:list:s returnTargets:list:ReturnTarget sod:SodCheck candidates:list:CandidateSeat "
@@ -195,7 +201,10 @@ schema("StartProcessRequest", "Start a process by definition key. The tenant com
 schema("ProcessInstance", "A process instance (runtime or historic).",
        "id processDefinitionId processDefinitionKey processDefinitionVersion:int businessKey tenantId state ended:bool "
        "startTime:dt endTime:dt activeActivityIds:list:s caseVersion:long startedBy businessStatus superProcessInstanceId "
-       "rootProcessInstanceId", enums={"state": ["ACTIVE", "SUSPENDED", "COMPLETED", "CANCELLED", "DELETED", "EXTERNALLY_TERMINATED"]})
+       "rootProcessInstanceId traceId", enums={"state": ["ACTIVE", "SUSPENDED", "COMPLETED", "CANCELLED", "DELETED", "EXTERNALLY_TERMINATED"]},
+       descs={"traceId": "M-044 (decision 57): W3C trace id (32 lowercase hex) of the command that started the instance; "
+              "absent when none was recorded. The UI links it through config traceUrlTemplate."})
+SCHEMAS["ProcessInstance"]["properties"]["traceId"]["pattern"] = "^[0-9a-f]{32}$"
 schema("TerminateRequest", "Reason for cancel/delete (VI.5).", "reason reasonCode", ["reason"])
 schema("TerminationResult", "Outcome of cancel/delete; open external work goes to CANCEL_REQUESTED and is tombstoned on delete (VI.5).",
        "processInstanceId state openOperationIds:list:s cancelRequestedWork:int tombstones:int")
@@ -632,6 +641,7 @@ RESPONSES = {
     "Unprocessable": {"description": "Business rule: SOD_VIOLATION, POWER_LIMIT_EXCEEDED, IDEMPOTENCY_KEY_REUSED, IDEMPOTENCY_KEY_PRINCIPAL_MISMATCH, MODEL_INVALID, ENGINE_REJECTED, VALIDATION_FAILED", "content": PROBLEM},
     "ServiceUnavailable": {"description": "BACKPRESSURE (outbox ≥ 80 %, VI.2.4) or capability not installed", "headers": {"Retry-After": H("Retry-After")}, "content": PROBLEM},
     "NotImplemented": {"description": "CAPABILITY_NOT_INSTALLED: the providing module is not installed in this server", "content": PROBLEM},
+    "MisdirectedRequest": {"description": "421 Misdirected Request: TENANT_MOVED (the tenant left this cell; details.targetCell names its cell, SCALE IR-4) or TENANT_NOT_ON_INSTANCE (M-016: this instance does not serve the tenant: a dedicated instance bound to another tenant, or a shared instance asked for a SCHEMA or DATABASE isolated tenant; details.tenant only, the bound tenant is never named). Fail-closed, no data is read.", "content": PROBLEM},
 }
 
 # ---------------------------------------------------------------- operations
@@ -774,7 +784,8 @@ op("get", "/tasks", "listTasks", "Tasks", "List tasks",
    ["VI.4", "A-16", "R76"], list_=True, resp=(200, "array:Task"), perm="task.read", errors=STD_R,
    params=[q("assignee"), q("mine", "bool", "Assigned to me or I am a candidate"), q("unassigned", "bool"), q("candidateGroup"),
            q("seatId"), q("processInstanceId"), q("caseInstanceId"), q("businessKey"), q("processDefinitionKey"),
-           q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority or name; a comma-separated list sorts by several keys"), q("sortOrder", desc="asc or desc per key, comma-separated"),
+           q("taskDefinitionKey"), q("state"), q("sortBy", desc="created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering"),
+           dict(q("currency", desc="M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount"), schema={"type": "string", "pattern": "^[A-Z]{3}$"}), q("sortOrder", desc="asc or desc per key, comma-separated"),
              q("variableNames", "list:s", "P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated")])
 op("get", "/tasks/{id}", "getTask", "Tasks", "Get a task", "Task with variables (field masks applied, K11), the material payload hash and case version (VI.4 rule 5).",
    ["VI.4", "R47"], params=[ID], resp=(200, "TaskDetail"), perm="task.read", errors=GET_E)
@@ -1272,6 +1283,11 @@ op("get", "/history/external-task-log", "listExternalTaskLog", "History", "Exter
 PE = ("BadRequest", "Unauthorized", "Forbidden", "NotFound")
 op("get", "/portal/services", "listPortalServices", "Portal", "Citizen services", "Services the applicant can apply for (C01).",
    ["UP-22", "R54"], resp=(200, "array:PortalService"), perm="portal.use", errors=WS_E)
+op("get", "/portal/services/{key}/form", "getPortalServiceForm", "Portal", "Application form of a service",
+   "The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in "
+   "force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); "
+   "versionHash is the form's own. 404 for a service not in the catalogue or without a form.", ["UP-22", "R47", "C02"],
+   params=[pp("key", "service key")], resp=(200, "FormVersion"), perm="portal.use", errors=GET_E)
 op("post", "/portal/applications", "applyForService", "Portal", "Apply for a service",
    "Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6).", ["UP-22", "R41", "C02"],
    body="ApplyRequest", resp=(201, "Application"), cmd="portal.apply", perm="portal.use", created=True)
@@ -1856,6 +1872,11 @@ for _p, _item in PATHS.items():
                 _o["responses"].setdefault("409", RESP("Conflict"))
                 if "PACK_OPERATION_IN_PROGRESS" not in _o["description"]:
                     _o["description"] += " 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116)."
+# M-016: every operation can answer 421 (TENANT_MOVED from CellTenantStateFilter, TENANT_NOT_ON_INSTANCE from the
+# dedicated-tenant and shared-isolation filters, order 39, on /api/* and /engine-rest/*), before any data access.
+for _item in PATHS.values():
+    for _o in _item.values():
+        _o["responses"].setdefault("421", RESP("MisdirectedRequest"))
 # M-051: the Map-backed request bodies declared by the route files get schemas from the keys their services read
 for _kind, _one, _many, _d, _reqs in REG:
     map_body("act" + _one, "sangam-rest/src/main/java/org/sangam/rest/web/RegistryController.java",

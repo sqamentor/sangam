@@ -59,7 +59,8 @@ public final class TasksApi {
      * @param processDefinitionKey query parameter {@code processDefinitionKey}, or null
      * @param taskDefinitionKey query parameter {@code taskDefinitionKey}, or null
      * @param state query parameter {@code state}, or null
-     * @param sortBy query parameter {@code sortBy}, or null. created, due, priority or name; a comma-separated list sorts by several keys
+     * @param sortBy query parameter {@code sortBy}, or null. created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering
+     * @param currency query parameter {@code currency}, or null. M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount
      * @param sortOrder query parameter {@code sortOrder}, or null. asc or desc per key, comma-separated
      * @param variableNames query parameter {@code variableNames}, or null. P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated
      * @param page query parameter {@code page}, or null. 0-based page index
@@ -67,7 +68,7 @@ public final class TasksApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
-    public org.sangam.sdk.model.Page<Task> listTasks(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId, String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey, String taskDefinitionKey, String state, String sortBy, String sortOrder, java.util.List<String> variableNames, Long page, Long size, RequestOptions options) {
+    public org.sangam.sdk.model.Page<Task> listTasks(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId, String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey, String taskDefinitionKey, String state, String sortBy, String currency, String sortOrder, java.util.List<String> variableNames, Long page, Long size, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/tasks");
         req.query("assignee", assignee);
         req.query("mine", mine);
@@ -81,6 +82,7 @@ public final class TasksApi {
         req.query("taskDefinitionKey", taskDefinitionKey);
         req.query("state", state);
         req.query("sortBy", sortBy);
+        req.query("currency", currency);
         req.query("sortOrder", sortOrder);
         req.query("variableNames", variableNames);
         req.query("page", page);

@@ -5,7 +5,8 @@
  *
  * Contract fields: apiBase, oidc.issuer, oidc.clientId, defaultLocale, locales, environment.
  * Sangam UI extras (optional): authMode, devToken, oidc.scope, oidc.redirectPath, oidc.postLogoutPath,
- * fonts (per-tenant / state font override, see FONTS.md and src/fonts.ts).
+ * fonts (per-tenant / state font override, see FONTS.md and src/fonts.ts),
+ * traceUrlTemplate (M-044: the trace viewer's URL with {traceId}, e.g. https://traces.example/trace/{traceId}; empty = no links).
  * The API is called on the same origin (/api/v1, /engine-rest are proxied by the UI image).
  */
 import type { FontsConfig } from './fonts';
@@ -32,6 +33,8 @@ export interface SangamConfig {
   welcomeLinks: { url: string; label: { en: string; hi: string } }[];
   /** Per-tenant font override (state-government fonts first); FONTS.md. */
   fonts: FontsConfig;
+  /** M-044: trace-viewer URL template with the placeholder {traceId}; empty when no trace viewer is configured. */
+  traceUrlTemplate: string;
 }
 
 interface RawConfig {
@@ -46,6 +49,7 @@ interface RawConfig {
   locales?: string[] | string;
   welcomeLinks?: { url: string; label: { en: string; hi: string } }[];
   fonts?: FontsConfig;
+  traceUrlTemplate?: string;
 }
 
 const defaults: SangamConfig = {
@@ -64,6 +68,7 @@ const defaults: SangamConfig = {
   locales: ['en', 'hi'],
   welcomeLinks: [],
   fonts: {},
+  traceUrlTemplate: '',
 };
 
 let current: SangamConfig = defaults;
@@ -93,6 +98,7 @@ export function normalise(raw: RawConfig): SangamConfig {
     locales: locales.length ? locales : defaults.locales,
     welcomeLinks: raw.welcomeLinks ?? [],
     fonts: raw.fonts && typeof raw.fonts === 'object' ? raw.fonts : defaults.fonts,
+    traceUrlTemplate: typeof raw.traceUrlTemplate === 'string' ? raw.traceUrlTemplate.trim() : defaults.traceUrlTemplate,
   };
 }
 

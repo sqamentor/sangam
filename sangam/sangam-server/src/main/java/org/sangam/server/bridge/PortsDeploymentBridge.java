@@ -36,9 +36,31 @@ public final class PortsDeploymentBridge implements DeploymentPort {
 
     @Override
     public Deployment deploy(RequestContext ctx, DeployRequest request) {
+        if (request != null && DeploymentPort.claimsPackageIdentity(request.name(), request.source())) {
+            throw org.sangam.rest.adapter.operaton.OperatonDeploymentAdapter.reservedIdentity(request.name(),
+                    request.source());
+        }
         if (request == null || request.resources() == null || !isAppBundle(request.resources())) {
             return base.deploy(ctx, request);
         }
+        return deployApp(ctx, request);
+    }
+
+    /**
+     * M-068: a package's own deploy. A plain package goes to the base adapter's package deploy (with the engine proof);
+     * a package with event or channel models is deployed as an app bundle, as before, which carries no proof, so its
+     * contract operations are refused by the engine.
+     */
+    @Override
+    public Deployment deployPackage(RequestContext ctx, String packageKey, String packageHash, Map<String, byte[]> resources) {
+        if (resources == null || !isAppBundle(resources)) {
+            return base.deployPackage(ctx, packageKey, packageHash, resources);
+        }
+        return deployApp(ctx, new DeployRequest(PACKAGE_NAME_PREFIX + packageKey + ":" + packageHash, PACKAGE_SOURCE,
+                false, resources));
+    }
+
+    private Deployment deployApp(RequestContext ctx, DeployRequest request) {
         Map<String, byte[]> files = new LinkedHashMap<>(request.resources());
         if (files.keySet().stream().noneMatch(PortsDeploymentBridge::isManifest)) {
             String key = (request.name() == null ? "app" : request.name()).replaceAll("[^A-Za-z0-9_.-]", "_");

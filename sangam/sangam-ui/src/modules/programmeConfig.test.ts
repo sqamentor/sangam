@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import en from '../i18n/locales/en.json';
 import { validateForm } from '../components/FormRenderer';
-import { buildRequest } from './engine';
+import { buildRequest, prefillFrom } from './engine';
 import { MONTHS, programmeConfigFields } from './programmeConfig';
 
 type Tree = { [k: string]: string | Tree };
@@ -38,6 +38,33 @@ describe('X1-01 programme-config publish form', () => {
     expect(buildRequest(programmeConfigFields(), { fiscalYearStartMonth: '4', fiscalStartDay: 16, indicators: '[]' }, '').body).toEqual({ fiscalYearStartMonth: 4, fiscalStartDay: 16, indicators: [] });
     expect(buildRequest(programmeConfigFields(), { fiscalYearStartMonth: '1', indicators: '[]' }, '').body).not.toHaveProperty('fiscalStartDay');
     expect(validateForm({ components: programmeConfigFields() }, { fiscalYearStartMonth: '4', fiscalStartDay: 29, indicators: '[]' }, t).fiscalStartDay).toBe('form.max');
+  });
+
+  it('C3-09: a published configuration prefills the form and publishes back unchanged', () => {
+    const published = {
+      fiscalYearStartMonth: 4,
+      fiscalStartDay: 16,
+      indicators: [{ key: 'km', unit: 'km' }],
+      returns: [{ key: 'monthly' }],
+      programmeKinds: [{ kind: 'SCHEME' }],
+      units: ['km'],
+      variance: { warnPct: 10 },
+      version: 3,
+      contentHash: 'abc',
+    };
+    const { values, json } = prefillFrom(programmeConfigFields(), published, ['version', 'contentHash']);
+    expect(values.fiscalYearStartMonth).toBe('4');
+    expect(values.fiscalStartDay).toBe(16);
+    expect(JSON.parse(String(values.indicators))).toEqual(published.indicators);
+    expect(JSON.parse(json)).toEqual({ units: ['km'], variance: { warnPct: 10 } });
+    const config = Object.fromEntries(Object.entries(published).filter(([k]) => k !== 'version' && k !== 'contentHash'));
+    expect(buildRequest(programmeConfigFields(), values, json).body).toEqual(config);
+  });
+
+  it('C3-09: nothing to prefill from an empty or non-object answer', () => {
+    expect(prefillFrom(programmeConfigFields(), undefined)).toEqual({ values: {}, json: '' });
+    expect(prefillFrom(programmeConfigFields(), [1, 2])).toEqual({ values: {}, json: '' });
+    expect(prefillFrom(programmeConfigFields(), { fiscalStartDay: null })).toEqual({ values: {}, json: '' });
   });
 
   it('has an English label for every field and option', () => {

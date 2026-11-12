@@ -112,6 +112,12 @@ public final class AesGcmFieldEncryptor implements FieldEncryptor {
         return encrypt(tenantId, context, decrypt(tenantId, context, envelope));
     }
 
+    /** The key id new values of the tenant are encrypted under (M-085: the target of the re-encryption job). */
+    public String activeKeyId(String tenantId) {
+        requireTenant(tenantId);
+        return keys.active(tenantId).keyId();
+    }
+
     private static byte[] aad(String tenantId, String keyId, String context) {
         return ("sangam-field:v1|" + tenantId + "|" + keyId + "|" + (context == null ? "" : context))
                 .getBytes(StandardCharsets.UTF_8);

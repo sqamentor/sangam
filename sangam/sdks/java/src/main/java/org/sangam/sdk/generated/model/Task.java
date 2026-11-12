@@ -30,6 +30,9 @@ package org.sangam.sdk.generated.model;
  * @param formKey wire field {@code formKey}
  * @param delegationState wire field {@code delegationState}
  * @param variables wire field {@code variables}. P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller.
+ * @param amount wire field {@code amount}. M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.
+ * @param currency wire field {@code currency}. M-042 task index: ISO 4217 code of amount; absent or null with amount.
+ * @param reference wire field {@code reference}. M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one.
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record Task(
@@ -54,5 +57,8 @@ public record Task(
         @com.fasterxml.jackson.annotation.JsonProperty("priority") Integer priority,
         @com.fasterxml.jackson.annotation.JsonProperty("formKey") String formKey,
         @com.fasterxml.jackson.annotation.JsonProperty("delegationState") String delegationState,
-        @com.fasterxml.jackson.annotation.JsonProperty("variables") java.util.Map<String, Object> variables) {
+        @com.fasterxml.jackson.annotation.JsonProperty("variables") java.util.Map<String, Object> variables,
+        @com.fasterxml.jackson.annotation.JsonProperty("amount") Long amount,
+        @com.fasterxml.jackson.annotation.JsonProperty("currency") String currency,
+        @com.fasterxml.jackson.annotation.JsonProperty("reference") String reference) {
 }

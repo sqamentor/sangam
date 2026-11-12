@@ -93,6 +93,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
     private MandatoryAuditHistoryLevel auditLevel;
     /** IR-7 / M-054 / M-056 / M-062: the job executor setup of preInit, checked again in postInit. */
     private JobExecutorSetup jobSetup;
+    private org.sangam.engine.history.ModelHistoryLevels modelHistory;
 
     public SangamProcessEnginePlugin(SangamEngineComponents components) {
         this.components = components;
@@ -105,6 +106,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
     @Override
     public void preInit(ProcessEngineConfigurationImpl cfg) {
         SangamEngineSettings s = components.settings();
+        // M-021: test mode (clock steering) only on H2 and never with a production profile; refused before anything else
+        org.sangam.engine.clock.TestModeClock.requireAllowed(s.isTestMode(),
+                components.dialect() == org.sangam.engine.db.EngineDialect.H2, s.getActiveProfiles());
 
         // engine defaults
         cfg.setIdGenerator(new StrongUuidGenerator());
@@ -120,7 +124,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // IR-7: job executor sizing and acquisition (SCALE 3 defaults; SANGAM_JOB_* env); M-054 virtual threads and
         // bulkheads, M-056 partitioned acquisition, M-062 trace links: all opt-in, off = Operaton's executor as is
         jobSetup = new JobExecutorSetup(s, components.dialect(), () -> components.clock().now());
-        List<CommandInterceptor> jobSideRows = jobSetup.preInit(cfg);
+        List<java.util.function.Supplier<CommandInterceptor>> jobSideRows = jobSetup.preInit(cfg);
         cfg.setJobExecutorAcquireByDueDate(s.isJobAcquireByDueDate());
         cfg.setJobExecutorAcquireByPriority(s.isJobAcquireByPriority());
         cfg.setJobExecutorAcquireExclusiveOverProcessHierarchies(s.isJobExclusiveOverProcessHierarchies());
@@ -136,10 +140,21 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
                 new RollbackGuardInterceptor(flush)));
         // M-056 / M-062: job side rows (EXEC_JOB_SLOT, JOB_TRACE_CONTEXT) in the creating command; none when both are off
-        for (CommandInterceptor i : jobSideRows) {
-            cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(), i));
-            cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(), i));
+        for (java.util.function.Supplier<CommandInterceptor> i : jobSideRows) { // one object per chain
+            cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(), i.get()));
+            cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
+                    i.get()));
         }
+        // M-044: the starting trace id of every new process instance, in the creating command (PROCESS_TRACE)
+        org.sangam.engine.trace.ProcessTraceRecorder processTraces = new org.sangam.engine.trace.ProcessTraceRecorder(
+                s.getTraceIdSource() != null ? s.getTraceIdSource()
+                        : org.sangam.engine.trace.ProcessTraceRecorder.fromTracing(s.getTracing()),
+                () -> components.clock().now().toEpochMilli());
+        // one interceptor object per chain: an interceptor's next is set by the chain it is in
+        cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(),
+                processTraces.interceptor()));
+        cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
+                processTraces.interceptor()));
         // M-062 (R13): a span per command, covering flush and commit (pre interceptor); nothing when tracing is NONE
         if (s.getTracing() != EngineTracing.NONE) {
             cfg.setCustomPreCommandInterceptorsTxRequired(append(cfg.getCustomPreCommandInterceptorsTxRequired(),
@@ -193,6 +208,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         List<org.operaton.bpm.engine.impl.persistence.deploy.Deployer> preDeployers =
                 cfg.getCustomPreDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPreDeployers());
         preDeployers.add(new org.sangam.engine.feel.DmnModelLint.DeployRule()); // ADR-D-26: deploy-time DMN type rules
+        preDeployers.add(new org.sangam.engine.deploy.OperationRefPinning.DeployRule(s.getOperationRefPinner())); // M-068
         // SL-160 / TM-10: only reviewed Java classes and delegate beans in new BPMN / CMMN deployments
         preDeployers.add(new org.sangam.engine.deploy.ModelCodeAllowList.DeployRule(s.getDeployAllowedClasses(),
                 s.getDeployAllowedBeans()));
@@ -202,7 +218,8 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // deploy-time validation
         List<BpmnParseListener> bpmn = cfg.getCustomPostBPMNParseListeners() == null ? new ArrayList<>()
                 : new ArrayList<>(cfg.getCustomPostBPMNParseListeners());
-        bpmn.add(new SangamBpmnParseListener(s, components.timerPolicies()));
+        modelHistory = s.isHistoryModelOverrides() ? new org.sangam.engine.history.ModelHistoryLevels() : null; // M-057
+        bpmn.add(new SangamBpmnParseListener(s, components.timerPolicies(), modelHistory));
         cfg.setCustomPostBPMNParseListeners(bpmn);
         // SG-08 (a): scope compensated through its children triggers them one at a time (replaces "compensate")
         List<org.operaton.bpm.engine.impl.event.EventHandler> eventHandlers = cfg.getCustomEventHandlers() == null
@@ -224,10 +241,20 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         auditHandler = new SangamHistoryEventHandler(components.auditSink(), s.getEventSink(), s.getAuditedHistoryEvents(),
                 s.getPublishedHistoryEvents(), s.getDefaultTenantId());
         history.add(auditHandler);
-        if (!s.getOutboxOnlyHistoryKeys().isEmpty()) {
+        if (s.isHistoryExternal() && s.getEventSink() == org.sangam.core.engine.EngineEventSink.NONE) {
+            // M-057 external mode: the detail goes only to the outbox -> external projector; without a sink it is lost
+            throw new org.operaton.bpm.engine.ProcessEngineException("M-057: sangam.engine.history-external is on but no "
+                    + "EngineEventSink is bound; history detail would be written nowhere (refused at startup)");
+        }
+        if (!s.getOutboxOnlyHistoryKeys().isEmpty() || s.isHistoryExternal()) {
             // IR-5: Operaton's DB handler replaced by one that keeps only the audit level for the listed definitions
+            // (M-057 external mode: for every definition)
             cfg.setEnableDefaultDbHistoryEventHandler(false);
-            history.add(0, new OutboxOnlyDbHistoryEventHandler(s.getOutboxOnlyHistoryKeys()));
+            Set<String> keys = new LinkedHashSet<>(s.getOutboxOnlyHistoryKeys());
+            if (s.isHistoryExternal()) {
+                keys.add(OutboxOnlyDbHistoryEventHandler.ALL);
+            }
+            history.add(0, new OutboxOnlyDbHistoryEventHandler(keys));
             if (s.getEventSink() == org.sangam.core.engine.EngineEventSink.NONE) {
                 LOG.warn("IR-5: outbox-only history for {} but no EngineEventSink is bound: their history detail is "
                         + "written nowhere", s.getOutboxOnlyHistoryKeys());
@@ -240,10 +267,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         Set<String> mandatory = new LinkedHashSet<>(s.getAuditedHistoryEvents());
         List<HistoryLevel> levels = cfg.getCustomHistoryLevels() == null ? new ArrayList<>()
                 : new ArrayList<>(cfg.getCustomHistoryLevels());
-        if (!s.getHistoryLevelByProcessKey().isEmpty()) {
+        if (!s.getHistoryLevelByProcessKey().isEmpty() || modelHistory != null) {
             HistoryLevel base = PerDefinitionHistoryLevelBase.of(s.getHistory());
             levels.add(new MandatoryAuditHistoryLevel(
-                    new PerDefinitionHistoryLevel(base, s.getHistoryLevelByProcessKey()), mandatory));
+                    new PerDefinitionHistoryLevel(base, s.getHistoryLevelByProcessKey(), modelHistory), mandatory));
             cfg.setHistory(PerDefinitionHistoryLevel.NAME);
         }
         // Global "none" is not wrapped: it is refused at startup (owner decision 2026-11-12, refuseGlobalHistoryNone).
@@ -300,7 +327,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 components.metrics()));
         if (s.getJobIdentityBinder() == null) {
             LOG.warn("VI.4 rule 7: no JobIdentityBinder installed; jobs bind the tenant system identity only "
-                    + "engine-locally (JobIdentityBinder.current()). Install TenantContext::runAs in the server.");
+                    + "on the job's engine command (JobIdentitySupport.current()). Install TenantContext::runAs in the server.");
         }
         JobIdentitySupport identity = new JobIdentitySupport(s.getJobIdentityBinder(), s.getDefaultTenantId());
         Map<String, JobHandler<?>> handlers = cfg.getJobHandlers();
@@ -322,6 +349,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
             processEngine.close();
             throw e;
         }
+        // M-056 (C3-04): partition leases, only when partitioning is on; ownership audit + executor metrics
+        jobSetup.startLeases(processEngine, components.metrics(), components.auditSink(),
+                components.settings().getDefaultTenantId());
     }
 
     /**

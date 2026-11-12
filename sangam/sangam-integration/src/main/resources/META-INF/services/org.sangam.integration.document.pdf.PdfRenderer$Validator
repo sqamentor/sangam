@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-081 (owner decision 95): the validation step is veraPDF (optional dependency). Without the veraPDF library this
+# service cannot load and PdfRendering keeps PDF output off with that reason.
+org.sangam.integration.document.pdf.verapdf.VeraPdfValidator

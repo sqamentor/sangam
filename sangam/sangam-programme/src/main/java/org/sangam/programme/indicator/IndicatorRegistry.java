@@ -10,6 +10,7 @@ import org.sangam.programme.config.ReturnDefinition;
 import org.sangam.programme.support.Db;
 
 import java.sql.Connection;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +25,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class IndicatorRegistry {
 
     public record Published(int version, String contentHash, boolean changed) {
+    }
+
+    /**
+     * The current published configuration (C3-09, {@code GET /programme-config}): {@code config} is the object as it was
+     * published (the {@code PUT /programme-config} body, read back from {@code PG_CONFIG.config_json}).
+     */
+    public record Current(int version, String contentHash, String definedBy, Instant definedAt, Map<String, Object> config) {
     }
 
     private final Dialect dialect;
@@ -117,6 +125,14 @@ public final class IndicatorRegistry {
         ProgrammeConfig cfg = ProgrammeConfig.parse((String) cur.get()[1]);
         cache.put(t, new Cached(v, cfg));
         return cfg;
+    }
+
+    /** The current published configuration of the tenant, as published; empty when nothing is published yet. */
+    public Optional<Current> current(Connection c, String tenant) {
+        return Jdbc.one(c, "SELECT version, content_hash, defined_by, defined_at, config_json FROM PG_CONFIG"
+                        + " WHERE tenant_id=? AND current_flag=1",
+                rs -> new Current(rs.getInt("version"), rs.getString("content_hash"), rs.getString("defined_by"),
+                        Jdbc.instant(rs, "defined_at"), Db.map(rs.getString("config_json"))), Db.tenant(tenant));
     }
 
     public IndicatorDefinition indicator(Connection c, String tenant, String key) {

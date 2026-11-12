@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Channels (17 operations).
+/// Typed operations of Channels (19 operations).
 /// </summary>
 public sealed class ChannelsApi
 {
@@ -91,12 +91,13 @@ public sealed class ChannelsApi
 
     /// <summary>
     /// Live message stream
-    /// Server-sent events, event name 'message'. Streams live on one node; reconnect and read history to catch up.
+    /// Server-sent events, event name 'message', event id = message id, data = ChannelMessage (M-040). Live across nodes: a message stored on any node reaches every open stream of the conversation. With Last-Event-ID the stream first replays the messages after that message, at least once (the client drops duplicates by message id), then goes live. A comment line heartbeat is sent at most every 30 s while idle.
     /// GET /channels/conversations/{id}/stream (operationId streamConversation); permission channels.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<byte[]> StreamConversationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<byte[]> StreamConversationAsync(string id, string? lastEventID = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/channels/conversations/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/stream");
+        req.WithHeader("Last-Event-ID", GeneratedCalls.Str(lastEventID));
         return await _calls.BytesAsync(req, options, "text/event-stream", cancellationToken).ConfigureAwait(false);
     }
 
@@ -175,7 +176,7 @@ public sealed class ChannelsApi
 
     /// <summary>
     /// WhatsApp webhook
-    /// Public: X-Hub-Signature-256 is verified on the raw body first.
+    /// Public: X-Hub-Signature-256 is verified on the raw body first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
     /// POST /hooks/channels/{tenant}/whatsapp (operationId receiveWhatsAppHook).
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ChannelHookResult?> ReceiveWhatsAppHookAsync(string tenant, global::System.Collections.Generic.Dictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -202,22 +203,51 @@ public sealed class ChannelsApi
 
     /// <summary>
     /// WeChat webhook
-    /// Public: the signature is verified first.
+    /// Public: the signature is verified first. Security mode (encrypt_type=aes): msg_signature is verified over the Encrypt element and the message is decrypted with the tenant's EncodingAESKey (config sangam.channels.webhooks.&lt;tenant&gt;.wechat.encoding-aes-key-ref, a secret reference, and wechat.app-id, which must match the decrypted app id); plain mode as before. 401 WEBHOOK_SIGNATURE_INVALID on a bad signature. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
     /// POST /hooks/channels/{tenant}/wechat (operationId receiveWeChatHook).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.ChannelHookResult?> ReceiveWeChatHookAsync(string tenant, global::System.Collections.Generic.Dictionary<string, object?> body, string timestamp, string nonce, string signature, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.ChannelHookResult?> ReceiveWeChatHookAsync(string tenant, global::System.Collections.Generic.Dictionary<string, object?> body, string timestamp, string nonce, string signature, string? encryptType = null, string? msgSignature = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/hooks/channels/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/wechat");
         req.WithQuery("timestamp", GeneratedCalls.Q(timestamp));
         req.WithQuery("nonce", GeneratedCalls.Q(nonce));
         req.WithQuery("signature", GeneratedCalls.Q(signature));
+        req.WithQuery("encrypt_type", GeneratedCalls.Q(encryptType));
+        req.WithQuery("msg_signature", GeneratedCalls.Q(msgSignature));
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ChannelHookResult?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Slack Events API webhook
+    /// Public: X-Slack-Signature (v0 HMAC-SHA256 over 'v0:&lt;timestamp&gt;:&lt;raw body&gt;' with the tenant's signing secret, config sangam.channels.webhooks.&lt;tenant&gt;.slack.signing-secret-ref) and the timestamp window are verified on the raw body first; 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Slack is not configured for the tenant. url_verification answers {challenge}; every other envelope answers the counts. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+    /// POST /hooks/channels/{tenant}/slack (operationId receiveSlackHook).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ChannelSlackHookResult?> ReceiveSlackHookAsync(string tenant, global::System.Collections.Generic.Dictionary<string, object?> body, string xSlackRequestTimestamp, string xSlackSignature, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/hooks/channels/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/slack");
+        req.WithHeader("X-Slack-Request-Timestamp", GeneratedCalls.Str(xSlackRequestTimestamp));
+        req.WithHeader("X-Slack-Signature", GeneratedCalls.Str(xSlackSignature));
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ChannelSlackHookResult?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Matrix application-service transaction
+    /// Public: the homeserver token (Authorization: Bearer &lt;hs_token&gt;, or the legacy access_token query parameter) is compared with the tenant's (config sangam.channels.webhooks.&lt;tenant&gt;.matrix.hs-token-ref, matrix.user-id); 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Matrix is not configured for the tenant. A repeated txnId is answered again without a second delivery (inbox deduplication). The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+    /// PUT /hooks/channels/{tenant}/matrix/transactions/{txnId} (operationId receiveMatrixTransaction).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ChannelHookResult?> ReceiveMatrixTransactionAsync(string tenant, string txnId, M.ReceiveMatrixTransactionRequest body, string? accessToken = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Put($"/hooks/channels/{HttpTransport.Seg(GeneratedCalls.Str(tenant)!)}/matrix/transactions/{HttpTransport.Seg(GeneratedCalls.Str(txnId)!)}");
+        req.WithQuery("access_token", GeneratedCalls.Q(accessToken));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ChannelHookResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Teams webhook
-    /// Public: the Bot Framework token is verified first.
+    /// Public: the Bot Framework token is verified first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
     /// POST /hooks/channels/{tenant}/teams (operationId receiveTeamsHook).
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ChannelHookResult?> ReceiveTeamsHookAsync(string tenant, global::System.Collections.Generic.Dictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

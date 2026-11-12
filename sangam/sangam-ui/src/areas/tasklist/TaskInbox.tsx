@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import type { TaskAction, TaskSection, TaskSummary } from '../../api/types';
 import { useAction, useAsync, useInterval, usePaged, announce } from '../../lib/hooks';
-import { fmtDate, fmtMoney } from '../../i18n';
+import { fmtDate, fmtMinorMoney, isCurrencyCode } from '../../i18n';
 import { Badge, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, SearchBox, SelectField, Tabs, TextField } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
 
@@ -32,7 +32,22 @@ export interface InboxFilter {
   q: string;
   sla: string;
   packKey: string;
+  /** M-042: ISO 4217 currency filter (absent in filters saved before it existed). */
+  currency?: string;
   variables: CardVariable[];
+}
+
+/** Whether a sort key ('amount' or '-amount') orders by the M-042 task amount. */
+export const isAmountSort = (key: string) => key.replace(/^-/, '') === 'amount';
+
+/**
+ * M-042: the amount sort exists only inside one currency (GET /tasks needs currency with sortBy=amount; amounts in
+ * different currencies are never compared). Without a valid currency an amount key falls back: the primary sort to
+ * the SLA due date, the secondary to none.
+ */
+export function inboxSorts(sort: string, sort2: string, currency?: string): { sort: string; sort2: string } {
+  if (isCurrencyCode(currency)) return { sort, sort2 };
+  return { sort: isAmountSort(sort) ? 'slaDue' : sort, sort2: isAmountSort(sort2) ? '' : sort2 };
 }
 
 /** "amount:Amount, district" → [{amount, Amount}, {district, district}]; duplicates and blanks dropped. */
@@ -80,8 +95,11 @@ export function TaskInbox() {
   const [q, setQ] = useState('');
   const [sla, setSla] = useState('');
   const [packKey, setPackKey] = useState('');
-  const [sort, setSort] = useState('slaDue');
-  const [sort2, setSort2] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [sortChoice, setSort] = useState('slaDue');
+  const [sort2Choice, setSort2] = useState('');
+  const cur = isCurrencyCode(currency) ? currency : undefined;
+  const { sort, sort2 } = inboxSorts(sortChoice, sort2Choice, cur);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkResult, setBulkResult] = useState<string>();
   const [bulkComplete, setBulkComplete] = useState<TaskAction | null>(null);
@@ -94,9 +112,15 @@ export function TaskInbox() {
   const variableNames = cardVars.map((v) => v.name);
   const counts = useAsync(() => api.tasks.counts(), [seat?.seatId]);
   const list = usePaged(
-    (p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, packKey: packKey || undefined, variableNames, sort: sort2 ? `${sort},${sort2}` : sort }),
-    [section, q, sla, packKey, sort, sort2, seat?.seatId, variableNames.join(',')],
+    (p) => api.tasks.list({ ...p, section, q, slaState: sla || undefined, packKey: packKey || undefined, currency: cur, variableNames, sort: sort2 ? `${sort},${sort2}` : sort }),
+    [section, q, sla, packKey, cur, sort, sort2, seat?.seatId, variableNames.join(',')],
   );
+  // Leaving the currency drops an amount sort for good, so it does not come back silently with the next currency.
+  useEffect(() => {
+    if (cur) return;
+    setSort((s) => (isAmountSort(s) ? 'slaDue' : s));
+    setSort2((s) => (isAmountSort(s) ? '' : s));
+  }, [cur]);
 
   const applyFilter = (f?: InboxFilter) => {
     setActiveId(f?.id);
@@ -104,6 +128,7 @@ export function TaskInbox() {
     setQ(f?.q ?? '');
     setSla(f?.sla ?? '');
     setPackKey(f?.packKey ?? '');
+    setCurrency(f?.currency ?? '');
   };
   const storeFilters = (next: InboxFilter[]) => {
     setFilters(next);
@@ -111,7 +136,7 @@ export function TaskInbox() {
   };
   const saveCurrent = () => {
     if (!saving?.name.trim()) return;
-    const f: InboxFilter = { id: `f${Date.now().toString(36)}`, name: saving.name.trim(), section, q, sla, packKey, variables: parseCardVariables(saving.vars) };
+    const f: InboxFilter = { id: `f${Date.now().toString(36)}`, name: saving.name.trim(), section, q, sla, packKey, currency: cur, variables: parseCardVariables(saving.vars) };
     storeFilters([...filters, f]);
     setActiveId(f.id);
     setSaving(null);
@@ -123,7 +148,7 @@ export function TaskInbox() {
 
   useEffect(() => {
     setSelected(new Set());
-  }, [section, q, sla, packKey]);
+  }, [section, q, sla, packKey, cur]);
 
   useEffect(() => {
     if (counts.data) baseline.current = JSON.stringify(counts.data);
@@ -165,12 +190,20 @@ export function TaskInbox() {
       {
         key: 'reference',
         header: t('task.reference'),
+        sortable: true,
         render: (r: TaskSummary) => <Link to={`/tasks/${encodeURIComponent(r.id)}`}>{r.reference ?? r.businessKey ?? r.id}</Link>,
       },
       { key: 'subject', header: t('task.subject'), render: (r: TaskSummary) => r.subject ?? r.name },
       ...cardVars.map((v) => ({ key: `var:${v.name}`, header: v.label, render: (r: TaskSummary) => show(r.variables?.[v.name]) })),
       { key: 'packKey', header: t('task.pack'), render: (r: TaskSummary) => r.packKey ?? r.processDefinitionKey ?? '—' },
-      { key: 'amount', header: t('task.amount'), className: 'num', render: (r: TaskSummary) => (r.amount !== undefined ? fmtMoney(r.amount, r.currency) : '—') },
+      {
+        key: 'amount',
+        header: t('task.amount'),
+        className: 'num',
+        // M-042: sortable only inside one currency (the filter); minor units shown exactly (fmtMinorMoney)
+        sortable: !!cur,
+        render: (r: TaskSummary) => (r.amount !== undefined && r.amount !== null ? fmtMinorMoney(r.amount, r.currency) : '—'),
+      },
       {
         key: 'fromSeatName',
         header: t('task.fromSeat'),
@@ -206,7 +239,7 @@ export function TaskInbox() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, section, action.busy, cardVars],
+    [t, section, action.busy, cardVars, cur],
   );
 
   const countFor = (s: TaskSection) => {
@@ -271,13 +304,22 @@ export function TaskInbox() {
             options={['OK', 'WARNING', 'BREACHED', 'PAUSED'].map((v) => ({ value: v, label: t(`enum.${v}`) }))}
           />
           <TextField label={t('task.pack')} value={packKey} onChange={setPackKey} />
+          <TextField
+            label={t('task.currency')}
+            hint={cur ? t('task.currencyHint') : t('task.amountSortNeedsCurrency')}
+            error={currency && !cur ? t('task.currencyInvalid') : undefined}
+            value={currency}
+            onChange={(v) => setCurrency(v.trim().toUpperCase())}
+            maxLength={3}
+            autoComplete="off"
+          />
         </div>
         <SelectField
           label={t('task.thenSortBy')}
           value={sort2}
           onChange={setSort2}
           placeholder={t('common.no')}
-          options={['received', 'slaDue'].flatMap((k) => [{ value: k, label: t(`task.${k}`) + ' ▲' }, { value: `-${k}`, label: t(`task.${k}`) + ' ▼' }])}
+          options={['received', 'slaDue', ...(cur ? ['amount'] : []), 'reference'].flatMap((k) => [{ value: k, label: t(`task.${k}`) + ' ▲' }, { value: `-${k}`, label: t(`task.${k}`) + ' ▼' }])}
         />
         {newCount > 0 && (
           <Notice>
@@ -308,7 +350,7 @@ export function TaskInbox() {
         {list.loading && !list.data ? (
           <Loading slow={list.slow} onRetry={list.reload} />
         ) : list.data && list.data.items.length === 0 ? (
-          <Empty message={q || sla || packKey ? t('task.emptyFiltered') : t('task.emptySection', { seat: seat?.seatName ?? '' })} />
+          <Empty message={q || sla || packKey || cur ? t('task.emptyFiltered') : t('task.emptySection', { seat: seat?.seatName ?? '' })} />
         ) : (
           list.data && (
             <>

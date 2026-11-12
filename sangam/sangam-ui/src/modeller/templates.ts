@@ -102,6 +102,87 @@ export function namespacesFor(attrs: Record<string, string>): Record<string, str
   return ns;
 }
 
+// ------------------------------------------------------------------ PALETTE (owner decision 58, C3-14)
+
+/**
+ * A PALETTE template is the ELEMENT format whose appliesTo names exactly one BPMN type: the palette entry creates an
+ * element of that type, and its fields go through the same POST /templates/{id}/apply. A PALETTE document that names
+ * no type or several is not an entry (the server does not check this per kind yet; REQUEST to W3-B).
+ */
+export function paletteEntries(list: TemplateView[]): TemplateView[] {
+  return list.filter((t) => t.kind === 'PALETTE' && paletteType(t) !== undefined);
+}
+
+/** The BPMN type a PALETTE template creates, e.g. bpmn:ServiceTask; undefined when it does not name exactly one. */
+export function paletteType(t: TemplateView): string | undefined {
+  const a = t.appliesTo?.length ? t.appliesTo : Array.isArray(t.document?.appliesTo) ? (t.document!.appliesTo as unknown[]).map(String) : [];
+  return a.length === 1 && /^bpmn:[A-Za-z]+$/.test(a[0]) ? a[0] : undefined;
+}
+
+// ------------------------------------------------------------------ FORM_COMPONENT (owner decision 58, C3-14)
+
+/** A form-js component as stored in a form schema (only the parts Sangam reads; the rest is kept as is). */
+export type FormJsComponent = Record<string, unknown> & { id?: string; key?: string; type?: string; components?: FormJsComponent[] };
+
+/** FORM_COMPONENT document: {id, name, components: [form-js component JSON]}. */
+export interface FormComponentTemplate {
+  key: string;
+  name: string;
+  version: number;
+  components: FormJsComponent[];
+}
+
+export function formComponentTemplates(list: TemplateView[]): FormComponentTemplate[] {
+  return list.flatMap((t) => {
+    const c = t.document?.components;
+    if (t.kind !== 'FORM_COMPONENT' || !Array.isArray(c) || c.length === 0) return [];
+    if (!c.every((x) => !!x && typeof x === 'object' && !Array.isArray(x) && typeof (x as FormJsComponent).type === 'string')) return [];
+    return [{ key: t.key, name: t.name ?? t.key, version: t.version, components: c as FormJsComponent[] }];
+  });
+}
+
+function walk(cs: FormJsComponent[] | undefined, fn: (c: FormJsComponent) => void): void {
+  for (const c of cs ?? []) {
+    fn(c);
+    walk(c.components, fn);
+  }
+}
+
+export type InsertResult = { schema: Record<string, unknown>; conflicts: [] } | { schema?: undefined; conflicts: string[] };
+
+/**
+ * Appends a FORM_COMPONENT's components to a form-js schema. Ids are layout identity only, so each inserted component
+ * (nested ones included) gets a fresh id that is not in the form. Keys bind process variables, so they are never
+ * renamed: a key the form already uses is a conflict and nothing is inserted. The input schema is not changed.
+ */
+export function insertComponents(schema: Record<string, unknown>, components: FormJsComponent[], newId: () => string): InsertResult {
+  const current = (Array.isArray(schema.components) ? schema.components : []) as FormJsComponent[];
+  const ids = new Set<string>();
+  const keys = new Set<string>();
+  walk(current, (c) => {
+    if (c.id) ids.add(String(c.id));
+    if (c.key) keys.add(String(c.key));
+  });
+  const copy = JSON.parse(JSON.stringify(components)) as FormJsComponent[];
+  const conflicts: string[] = [];
+  const added = new Set<string>();
+  walk(copy, (c) => {
+    if (c.key) {
+      const k = String(c.key);
+      if (keys.has(k) || added.has(k)) conflicts.push(k);
+      added.add(k);
+    }
+  });
+  if (conflicts.length) return { conflicts: [...new Set(conflicts)] };
+  walk(copy, (c) => {
+    let id = newId();
+    while (ids.has(id)) id = newId();
+    ids.add(id);
+    c.id = id;
+  });
+  return { schema: { ...schema, components: [...current, ...copy] }, conflicts: [] };
+}
+
 /** Client hint of a field value before the server's apply (which stays the judge). */
 export function fieldError(f: TemplateField, v: string): 'required' | 'pattern' | 'choices' | null {
   if (!v) return f.required && (f.default === undefined || f.default === null || f.default === '') ? 'required' : null;

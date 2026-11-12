@@ -24,6 +24,7 @@ package org.sangam.sdk.generated.model;
  * @param businessStatus wire field {@code businessStatus}
  * @param superProcessInstanceId wire field {@code superProcessInstanceId}
  * @param rootProcessInstanceId wire field {@code rootProcessInstanceId}
+ * @param traceId wire field {@code traceId}. M-044 (decision 57): W3C trace id (32 lowercase hex) of the command that started the instance; absent when none was recorded. The UI links it through config traceUrlTemplate.
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ProcessInstance(
@@ -42,5 +43,6 @@ public record ProcessInstance(
         @com.fasterxml.jackson.annotation.JsonProperty("startedBy") String startedBy,
         @com.fasterxml.jackson.annotation.JsonProperty("businessStatus") String businessStatus,
         @com.fasterxml.jackson.annotation.JsonProperty("superProcessInstanceId") String superProcessInstanceId,
-        @com.fasterxml.jackson.annotation.JsonProperty("rootProcessInstanceId") String rootProcessInstanceId) {
+        @com.fasterxml.jackson.annotation.JsonProperty("rootProcessInstanceId") String rootProcessInstanceId,
+        @com.fasterxml.jackson.annotation.JsonProperty("traceId") String traceId) {
 }

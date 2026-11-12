@@ -192,9 +192,31 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
             boolean inline = t.getScript() != null && t.getScript().getTextContent() != null
                     && !t.getScript().getTextContent().isBlank();
             if (inline || t.getOperatonResource() != null) {
-                issues.add(new ValidationIssue("ERROR", name, t.getId(),
-                        "Scripts do not run in the engine (ADR-D-8): use an external task for the script worker",
-                        "SCRIPT_IN_ENGINE"));
+                // the engine rejects every script task (SangamBpmnParseListener); a package deploy rewrites the
+                // convertible ones for the script worker (ScriptTaskDeployRewrite, decision 89), the rest cannot run
+                String lang = scriptLanguage(t.getScriptFormat());
+                String resource = t.getOperatonResource();
+                boolean inPackage = inline || resource.startsWith("deployment://");
+                if (lang != null && inPackage) {
+                    issues.add(new ValidationIssue("INFO", name, t.getId(), "Runs in the script worker (ADR-D-8 script"
+                            + " sandbox): rewritten at deploy to an external task on topic " + SCRIPT_TOPIC_PREFIX + lang,
+                            "SCRIPT_REWRITTEN_AT_DEPLOY"));
+                } else {
+                    issues.add(new ValidationIssue("ERROR", name, t.getId(), lang == null
+                            ? "Scripts do not run in the engine (ADR-D-8 script sandbox): format " + t.getScriptFormat()
+                                    + " has no sandboxed runtime; use javascript, python, an external task or a delegate"
+                            : "Scripts do not run in the engine (ADR-D-8 script sandbox): script resource " + resource
+                                    + " is outside the package; inline it or use deployment://", "SCRIPT_IN_ENGINE"));
+                }
+            }
+        }
+        for (ServiceTask t : model.getModelElementsByType(ServiceTask.class)) {
+            String topic = t.getOperatonTopic();
+            if ("external".equals(t.getOperatonType()) && topic != null && topic.startsWith(SCRIPT_TOPIC_PREFIX)) {
+                String problem = scriptConventionProblem(topic, scriptInputs(t));
+                if (problem != null) {
+                    issues.add(new ValidationIssue("ERROR", name, t.getId(), problem, "SCRIPT_CONVENTION_INVALID"));
+                }
             }
         }
         for (ServiceTask t : model.getModelElementsByType(ServiceTask.class)) {
@@ -432,7 +454,14 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
                 rows.add(new AssessmentRow(file, id, "bpmn:adHocSubProcess", "PATTERN",
                         "ad-hoc via sangam-flowable-ports FLOWABLE-INTO-OPERATON FC-01"));
             } else if ("scriptTask".equals(local)) {
-                rows.add(new AssessmentRow(file, id, "bpmn:scriptTask", "PATTERN", "out-of-process script worker, ADR-D-8"));
+                String format = e.getAttribute("scriptFormat");
+                String lang = scriptLanguage(format);
+                rows.add(lang == null
+                        ? new AssessmentRow(file, id, "bpmn:scriptTask", "REJECTED", "script format "
+                                + (format.isEmpty() ? "(none)" : format) + " has no sandboxed runtime (ADR-D-8 script sandbox)")
+                        : new AssessmentRow(file, id, "bpmn:scriptTask", "MAPPED", "out-of-process script worker"
+                                + " (ADR-D-8 script sandbox): rewritten at deploy to an external task on topic "
+                                + SCRIPT_TOPIC_PREFIX + lang));
             } else if (SUPPORTED_BPMN.contains(local)) {
                 if (id != null) {
                     rows.add(new AssessmentRow(file, id, "bpmn:" + local, "SUPPORTED", null));
@@ -544,6 +573,57 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
         f.setXIncludeAware(false);
         f.setExpandEntityReferences(false);
         return f.newDocumentBuilder();
+    }
+
+    // ------------------------------------------------------------------ script convention (M-061, ADR-D-8 script sandbox)
+    // One source in this module: ScriptTaskDeployRewrite (the deploy-time rewrite, decision 89); the worker side is
+    // tools/sangam-script-worker ScriptTopics (a separate deployable; no dependency).
+
+    static final String SCRIPT_TOPIC_PREFIX = org.sangam.rest.adapter.jdbc.ScriptTaskDeployRewrite.TOPIC_PREFIX;
+    static final String SCRIPT_VAR_SOURCE = org.sangam.rest.adapter.jdbc.ScriptTaskDeployRewrite.VAR_SOURCE;
+    static final String SCRIPT_VAR_SHA256 = org.sangam.rest.adapter.jdbc.ScriptTaskDeployRewrite.VAR_SHA256;
+
+    /** The worker language of a BPMN scriptFormat, or null; engine dialects (nashorn, graal.js, jython) are not mapped. */
+    static String scriptLanguage(String scriptFormat) {
+        return org.sangam.rest.adapter.jdbc.ScriptTaskDeployRewrite.language(scriptFormat);
+    }
+
+    private static Map<String, String> scriptInputs(ServiceTask t) {
+        Map<String, String> out = new LinkedHashMap<>();
+        if (t.getExtensionElements() == null) {
+            return out;
+        }
+        for (ModelElementInstance x : t.getExtensionElements().getElements()) {
+            if (x instanceof org.operaton.bpm.model.bpmn.instance.operaton.OperatonInputOutput io) {
+                for (org.operaton.bpm.model.bpmn.instance.operaton.OperatonInputParameter p : io.getOperatonInputParameters()) {
+                    out.put(p.getOperatonName(), p.getTextContent());
+                }
+            }
+        }
+        return out;
+    }
+
+    /** Why an external task on a script topic would fail in the script worker, or null when it is well formed. */
+    static String scriptConventionProblem(String topic, Map<String, String> inputs) {
+        String lang = topic.substring(SCRIPT_TOPIC_PREFIX.length());
+        if (!"javascript".equals(lang) && !"python".equals(lang)) {
+            return "Topic " + topic + " names no script language the worker runs (javascript, python)";
+        }
+        String b64 = inputs.get(SCRIPT_VAR_SOURCE);
+        if (b64 == null || b64.isBlank()) {
+            return "Input parameter " + SCRIPT_VAR_SOURCE + " (the Base64 script) is missing";
+        }
+        byte[] source;
+        try {
+            source = Base64.getMimeDecoder().decode(b64.strip());
+        } catch (IllegalArgumentException e) {
+            return "Input parameter " + SCRIPT_VAR_SOURCE + " is not Base64";
+        }
+        String declared = inputs.get(SCRIPT_VAR_SHA256);
+        if (declared == null || !Hashes.hex(Hashes.sha256(source)).equalsIgnoreCase(declared.strip())) {
+            return "Input parameter " + SCRIPT_VAR_SHA256 + " does not match the script (integrity check)";
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------ helpers

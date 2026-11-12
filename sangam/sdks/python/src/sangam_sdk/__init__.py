@@ -6,6 +6,8 @@ from .errors import (GoneError, Problem, SangamApiError, SangamError, StaleLease
                      TransportError)
 from .http import RetryPolicy
 from .log import SangamLogger
+from .saga import CompensationContext, Saga, SagaBuilder, SagaRecord
+from .steps import Step, StepNoEffectError
 from .models import (AuditEntry, CaseInstance, CloudEvent, CompleteTaskResult, DecisionEvaluateResult, Deployment,
                      ExternalWork, LockState, MessageResult, OutcomeUnknownResult, Page, ProcessInstance,
                      PublishResult, ReconciliationItem, Task, TerminationResult, TopicRequest, WorkOperation)
@@ -23,4 +25,5 @@ __all__ = [
     "NoAuth", "OutcomeUnknown", "Page", "Problem", "RetryPolicy", "SangamApiError", "SangamClient", "SangamError",
     "SangamLogger", "StaleLeaseError", "StaticTokenProvider", "TaskCancelled", "TaskContext", "TaskFailed",
     "TokenError", "TokenProvider", "TopicRequest", "TopicSubscription", "TransportError", "Worker", "WorkOperation",
+    "CompensationContext", "Saga", "SagaBuilder", "SagaRecord", "Step", "StepNoEffectError",
 ]

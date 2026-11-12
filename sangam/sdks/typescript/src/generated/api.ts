@@ -512,7 +512,7 @@ export class AIApi {
   }
 }
 
-/** Typed operations of `Admin` (37 operations). */
+/** Typed operations of `Admin` (36 operations). */
 export class AdminApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -962,19 +962,6 @@ export class AdminApi {
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ServicePrincipal>(req, options);
   }
-
-  /**
-   * Install module role templates and self-service grants
-   *
-   * Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
-   *
-   * `POST /admin/security/module-defaults` (operationId `installModuleDefaults`); permission `tenant.admin`; result stored atomically with the state change.
-   */
-  async installModuleDefaults(body: M.ModuleDefaultsRequest, options?: RequestOptions): Promise<M.ModuleDefaultsResult> {
-    const req: ApiRequest = { method: 'POST', path: `/admin/security/module-defaults` };
-    if (body !== undefined) req.body = body;
-    return this.calls.json<M.ModuleDefaultsResult>(req, options);
-  }
 }
 
 /** Typed operations of `Admin /assignments` (7 operations). */
@@ -1257,6 +1244,87 @@ export class AdminPowerTablesApi {
   }
 }
 
+/** Typed operations of `Admin /security` (6 operations). */
+export class AdminSecurityApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Request a break-glass grant
+   *
+   * Records a grant in REQUESTED with its reason (audited BREAK_GLASS_REQUESTED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+   *
+   * `POST /admin/security/break-glass/grants` (operationId `requestBreakGlassGrant`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async requestBreakGlassGrant(body: M.BreakGlassRequest, options?: RequestOptions): Promise<M.BreakGlassGrant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/security/break-glass/grants` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.BreakGlassGrant>(req, options);
+  }
+
+  /**
+   * Break-glass grants
+   *
+   * Grants of the caller's tenant, filtered by status and review status. ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+   *
+   * `GET /admin/security/break-glass/grants` (operationId `listBreakGlassGrants`); permission `admin.read`.
+   */
+  async listBreakGlassGrants(params?: { status?: string; reviewStatus?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.BreakGlassGrant>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/security/break-glass/grants`, query: { status: params?.status, reviewStatus: params?.reviewStatus, page: params?.page, size: params?.size } };
+    return this.calls.page<M.BreakGlassGrant>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Approve a break-glass grant
+   *
+   * Adds the caller's approval (audited BREAK_GLASS_APPROVED); 200 with the grant while more approvals are required, 201 with the token (shown once) when this approval issues it (BREAK_GLASS_ISSUED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+   *
+   * `POST /admin/security/break-glass/grants/{grantId}/approve` (operationId `approveBreakGlassGrant`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async approveBreakGlassGrant(grantId: string, options?: RequestOptions): Promise<M.BreakGlassGrant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/security/break-glass/grants/${seg(String(grantId))}/approve` };
+    return this.calls.json<M.BreakGlassGrant>(req, options);
+  }
+
+  /**
+   * Reject a break-glass grant
+   *
+   * Rejects a requested grant with a reason (audited BREAK_GLASS_REJECTED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+   *
+   * `POST /admin/security/break-glass/grants/{grantId}/reject` (operationId `rejectBreakGlassGrant`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async rejectBreakGlassGrant(grantId: string, body: M.ReasonRequest, options?: RequestOptions): Promise<M.BreakGlassGrant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/security/break-glass/grants/${seg(String(grantId))}/reject` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.BreakGlassGrant>(req, options);
+  }
+
+  /**
+   * Review a used break-glass grant
+   *
+   * Records the post-use review (audited BREAK_GLASS_REVIEWED). ADMIN on API_TOKEN. 404 BREAK_GLASS_NOT_CONFIGURED when the tenant configuration has no break-glass token class.
+   *
+   * `POST /admin/security/break-glass/grants/{grantId}/review` (operationId `reviewBreakGlassGrant`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async reviewBreakGlassGrant(grantId: string, body: M.BreakGlassReview, options?: RequestOptions): Promise<M.BreakGlassGrant> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/security/break-glass/grants/${seg(String(grantId))}/review` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.BreakGlassGrant>(req, options);
+  }
+
+  /**
+   * Install module role templates and self-service grants
+   *
+   * Installs sangam-security's role templates for every registered module resource type and, with selfService, the person-conditioned self-service grants, for the caller's tenant. Idempotent; also run at tenant onboarding.
+   *
+   * `POST /admin/security/module-defaults` (operationId `installModuleDefaults`); permission `tenant.admin`; result stored atomically with the state change.
+   */
+  async installModuleDefaults(body: M.ModuleDefaultsRequest, options?: RequestOptions): Promise<M.ModuleDefaultsResult> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/security/module-defaults` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ModuleDefaultsResult>(req, options);
+  }
+}
+
 /** Typed operations of `Analytics` (15 operations). */
 export class AnalyticsApi {
   constructor(private readonly calls: GeneratedCalls) {}
@@ -1441,6 +1509,60 @@ export class AnalyticsApi {
   async getAgentUsage(params?: { from?: string; to?: string }, options?: RequestOptions): Promise<Array<M.AgentUsage>> {
     const req: ApiRequest = { method: 'GET', path: `/analytics/agents`, query: { from: params?.from, to: params?.to } };
     return this.calls.json<Array<M.AgentUsage>>(req, options);
+  }
+}
+
+/** Typed operations of `ApiContracts` (4 operations). */
+export class ApiContractsApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Store a contract
+   *
+   * Stores the OpenAPI 3.x or AsyncAPI 2.x / 3.x JSON document as the next version of the contract, or answers the stored version when the document is identical (same SHA-256). 400 VALIDATION_FAILED for an invalid contract id, a document that is not a JSON object, or another format or version.
+   *
+   * `PUT /packages/{id}/contracts/{contractId}` (operationId `putApiContract`); permission `package.author`; result stored atomically with the state change.
+   */
+  async putApiContract(id: string, contractId: string, body: Record<string, unknown>, options?: RequestOptions): Promise<M.ApiContractSummary> {
+    const req: ApiRequest = { method: 'PUT', path: `/packages/${seg(String(id))}/contracts/${seg(String(contractId))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ApiContractSummary>(req, options);
+  }
+
+  /**
+   * Get a contract
+   *
+   * One version (the latest when version is absent) with its document.
+   *
+   * `GET /packages/{id}/contracts/{contractId}` (operationId `getApiContract`); permission `package.read`.
+   */
+  async getApiContract(id: string, contractId: string, params?: { version?: number /* A stored version; the latest when absent */ }, options?: RequestOptions): Promise<M.ApiContract> {
+    const req: ApiRequest = { method: 'GET', path: `/packages/${seg(String(id))}/contracts/${seg(String(contractId))}`, query: { version: params?.version } };
+    return this.calls.json<M.ApiContract>(req, options);
+  }
+
+  /**
+   * Contracts of a package
+   *
+   * The latest version of each contract of the package, by contract id, without documents.
+   *
+   * `GET /packages/{id}/contracts` (operationId `listApiContracts`); permission `package.read`.
+   */
+  async listApiContracts(id: string, options?: RequestOptions): Promise<Array<M.ApiContractSummary>> {
+    const req: ApiRequest = { method: 'GET', path: `/packages/${seg(String(id))}/contracts` };
+    return this.calls.json<Array<M.ApiContractSummary>>(req, options);
+  }
+
+  /**
+   * Operations of a contract
+   *
+   * The operations of one version (the latest when version is absent), in document order, for the modeller's operation picker (sangam:operationRef = contractId[@version]#operationId).
+   *
+   * `GET /packages/{id}/contracts/{contractId}/operations` (operationId `listApiContractOperations`); permission `package.read`.
+   */
+  async listApiContractOperations(id: string, contractId: string, params?: { version?: number /* A stored version; the latest when absent */ }, options?: RequestOptions): Promise<Array<M.ContractOperation>> {
+    const req: ApiRequest = { method: 'GET', path: `/packages/${seg(String(id))}/contracts/${seg(String(contractId))}/operations`, query: { version: params?.version } };
+    return this.calls.json<Array<M.ContractOperation>>(req, options);
   }
 }
 
@@ -3043,7 +3165,7 @@ export class CasesApi {
   }
 }
 
-/** Typed operations of `Cell` (12 operations). */
+/** Typed operations of `Cell` (15 operations). */
 export class CellApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -3200,9 +3322,46 @@ export class CellApi {
     headersOf(req, { 'X-Sangam-Export-Token': params?.xSangamExportToken });
     return this.calls.bytes(req, options, 'application/octet-stream');
   }
+
+  /**
+   * Parked inbound messages of this cell
+   *
+   * Open POISON_INBOUND items of every tenant of this cell whose message was parked because the tenant moved or was purged, oldest first (PoisonInbound.listParked); `tenant` narrows the list to one tenant.
+   *
+   * `GET /admin/cell/parked-inbound` (operationId `listParkedInbound`); permission `role CELL_ADMIN`.
+   */
+  async listParkedInbound(params?: { tenant?: string /* Tenant code (optional filter) */ }, options?: RequestOptions): Promise<Array<M.PoisonInboundItem>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/cell/parked-inbound`, query: { tenant: params?.tenant } };
+    return this.calls.json<Array<M.PoisonInboundItem>>(req, options);
+  }
+
+  /**
+   * View a parked inbound message
+   *
+   * The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
+   *
+   * `GET /admin/cell/parked-inbound/{itemId}` (operationId `getParkedInbound`); permission `role CELL_ADMIN`.
+   */
+  async getParkedInbound(itemId: string, options?: RequestOptions): Promise<M.PoisonInboundParked> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/cell/parked-inbound/${seg(String(itemId))}` };
+    return this.calls.json<M.PoisonInboundParked>(req, options);
+  }
+
+  /**
+   * Replay a parked inbound message
+   *
+   * Hands the message, with its original source, message id, event type and correlation key, to the tenant's current cell through the gateway (sangam.cell.gateway-url; the target inbox deduplicates on tenant, source and message id); then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over, or a target where the tenant is not ACTIVE, leaves the item open: 503 REPLAY_FAILED; 503 REPLAY_NOT_CONFIGURED without a gateway URL (PoisonInbound.replayParked).
+   *
+   * `POST /admin/cell/parked-inbound/{itemId}/replay` (operationId `replayParkedInbound`); permission `role CELL_ADMIN`; result stored atomically with the state change.
+   */
+  async replayParkedInbound(itemId: string, body: M.ReasonRequest, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/cell/parked-inbound/${seg(String(itemId))}/replay` };
+    if (body !== undefined) req.body = body;
+    await this.calls.none(req, options);
+  }
 }
 
-/** Typed operations of `Channels` (17 operations). */
+/** Typed operations of `Channels` (19 operations). */
 export class ChannelsApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -3285,12 +3444,13 @@ export class ChannelsApi {
   /**
    * Live message stream
    *
-   * Server-sent events, event name 'message'. Streams live on one node; reconnect and read history to catch up.
+   * Server-sent events, event name 'message', event id = message id, data = ChannelMessage (M-040). Live across nodes: a message stored on any node reaches every open stream of the conversation. With Last-Event-ID the stream first replays the messages after that message, at least once (the client drops duplicates by message id), then goes live. A comment line heartbeat is sent at most every 30 s while idle.
    *
    * `GET /channels/conversations/{id}/stream` (operationId `streamConversation`); permission `channels.read`.
    */
-  async streamConversation(id: string, options?: RequestOptions): Promise<string> {
+  async streamConversation(id: string, params?: { lastEventID?: string /* Id of the last message the client received; the messages after it are replayed first */ }, options?: RequestOptions): Promise<string> {
     const req: ApiRequest = { method: 'GET', path: `/channels/conversations/${seg(String(id))}/stream` };
+    headersOf(req, { 'Last-Event-ID': params?.lastEventID });
     return this.calls.text(req, options, 'text/event-stream');
   }
 
@@ -3371,7 +3531,7 @@ export class ChannelsApi {
   /**
    * WhatsApp webhook
    *
-   * Public: X-Hub-Signature-256 is verified on the raw body first.
+   * Public: X-Hub-Signature-256 is verified on the raw body first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
    *
    * `POST /hooks/channels/{tenant}/whatsapp` (operationId `receiveWhatsAppHook`).
    */
@@ -3396,12 +3556,39 @@ export class ChannelsApi {
   /**
    * WeChat webhook
    *
-   * Public: the signature is verified first.
+   * Public: the signature is verified first. Security mode (encrypt_type=aes): msg_signature is verified over the Encrypt element and the message is decrypted with the tenant's EncodingAESKey (config sangam.channels.webhooks.<tenant>.wechat.encoding-aes-key-ref, a secret reference, and wechat.app-id, which must match the decrypted app id); plain mode as before. 401 WEBHOOK_SIGNATURE_INVALID on a bad signature. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
    *
    * `POST /hooks/channels/{tenant}/wechat` (operationId `receiveWeChatHook`).
    */
-  async receiveWeChatHook(tenant: string, body: Record<string, unknown>, params: { timestamp: string; nonce: string; signature: string }, options?: RequestOptions): Promise<M.ChannelHookResult> {
-    const req: ApiRequest = { method: 'POST', path: `/hooks/channels/${seg(String(tenant))}/wechat`, query: { timestamp: params?.timestamp, nonce: params?.nonce, signature: params?.signature } };
+  async receiveWeChatHook(tenant: string, body: Record<string, unknown>, params: { timestamp: string; nonce: string; signature: string; encrypt_type?: string /* 'aes' in security mode */; msg_signature?: string /* Signature over the Encrypt element (security mode) */ }, options?: RequestOptions): Promise<M.ChannelHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/channels/${seg(String(tenant))}/wechat`, query: { timestamp: params?.timestamp, nonce: params?.nonce, signature: params?.signature, encrypt_type: params?.encrypt_type, msg_signature: params?.msg_signature } };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ChannelHookResult>(req, options);
+  }
+
+  /**
+   * Slack Events API webhook
+   *
+   * Public: X-Slack-Signature (v0 HMAC-SHA256 over 'v0:<timestamp>:<raw body>' with the tenant's signing secret, config sangam.channels.webhooks.<tenant>.slack.signing-secret-ref) and the timestamp window are verified on the raw body first; 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Slack is not configured for the tenant. url_verification answers {challenge}; every other envelope answers the counts. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+   *
+   * `POST /hooks/channels/{tenant}/slack` (operationId `receiveSlackHook`).
+   */
+  async receiveSlackHook(tenant: string, body: Record<string, unknown>, params: { xSlackRequestTimestamp: string /* Unix seconds of the request; stale requests are refused */; xSlackSignature: string /* v0=<hex HMAC-SHA256> */ }, options?: RequestOptions): Promise<M.ChannelSlackHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/channels/${seg(String(tenant))}/slack` };
+    headersOf(req, { 'X-Slack-Request-Timestamp': params?.xSlackRequestTimestamp, 'X-Slack-Signature': params?.xSlackSignature });
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ChannelSlackHookResult>(req, options);
+  }
+
+  /**
+   * Matrix application-service transaction
+   *
+   * Public: the homeserver token (Authorization: Bearer <hs_token>, or the legacy access_token query parameter) is compared with the tenant's (config sangam.channels.webhooks.<tenant>.matrix.hs-token-ref, matrix.user-id); 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Matrix is not configured for the tenant. A repeated txnId is answered again without a second delivery (inbox deduplication). The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+   *
+   * `PUT /hooks/channels/{tenant}/matrix/transactions/{txnId}` (operationId `receiveMatrixTransaction`).
+   */
+  async receiveMatrixTransaction(tenant: string, txnId: string, body: M.ReceiveMatrixTransactionRequest, params?: { access_token?: string /* Legacy homeserver token; prefer the Authorization header */ }, options?: RequestOptions): Promise<M.ChannelHookResult> {
+    const req: ApiRequest = { method: 'PUT', path: `/hooks/channels/${seg(String(tenant))}/matrix/transactions/${seg(String(txnId))}`, query: { access_token: params?.access_token } };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ChannelHookResult>(req, options);
   }
@@ -3409,7 +3596,7 @@ export class ChannelsApi {
   /**
    * Teams webhook
    *
-   * Public: the Bot Framework token is verified first.
+   * Public: the Bot Framework token is verified first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
    *
    * `POST /hooks/channels/{tenant}/teams` (operationId `receiveTeamsHook`).
    */
@@ -6262,7 +6449,7 @@ export class ModellerApi {
   /**
    * Publish an action
    *
-   * A new version for an existing key.
+   * A new version for an existing key. target is the process key for BPMN and connectorId:operation (a registered connector and one of its operations) for REST; anything else is 400.
    *
    * `POST /actions` (operationId `publishActionModel`); permission `modeller.action.publish`; result stored atomically with the state change.
    */
@@ -6275,7 +6462,7 @@ export class ModellerApi {
   /**
    * Invoke an action
    *
-   * BPMN and connector targets run; SCRIPT targets are refused.
+   * BPMN and connector targets run; SCRIPT targets are refused. The permission and the subject (targetRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call.
    *
    * `POST /actions/{key}/invoke` (operationId `invokeActionModel`); permission `modeller.action.invoke`; result stored atomically with the state change.
    */
@@ -6363,7 +6550,7 @@ export class ModellerApi {
   /**
    * Run an action
    *
-   * Permission checked on the subject; idempotent per request key.
+   * The permission and the subject (subjectRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call; idempotent per request key; a reason is recorded in the ACTION_INVOKED audit entry.
    *
    * `POST /actions/{key}/run` (operationId `runActionModel`); permission `modeller.action.invoke`; result stored atomically with the state change.
    */
@@ -7138,7 +7325,7 @@ export class OpsJobsApi {
   }
 }
 
-/** Typed operations of `Ops /reconciliation` (9 operations). */
+/** Typed operations of `Ops /reconciliation` (6 operations). */
 export class OpsReconciliationApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -7214,43 +7401,6 @@ export class OpsReconciliationApi {
     const req: ApiRequest = { method: 'POST', path: `/ops/reconciliation/${seg(String(id))}/evidence` };
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.Evidence>(req, options);
-  }
-
-  /**
-   * Parked inbound messages
-   *
-   * Open POISON_INBOUND items of the caller's tenant whose message was parked because the tenant moved or was purged (PoisonInbound.listOpen, parked = true).
-   *
-   * `GET /ops/reconciliation/parked-inbound` (operationId `listParkedInbound`); permission `ops.read`.
-   */
-  async listParkedInbound(options?: RequestOptions): Promise<Array<M.PoisonInboundItem>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops/reconciliation/parked-inbound` };
-    return this.calls.json<Array<M.PoisonInboundItem>>(req, options);
-  }
-
-  /**
-   * View a parked inbound message
-   *
-   * The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
-   *
-   * `GET /ops/reconciliation/parked-inbound/{itemId}` (operationId `getParkedInbound`); permission `ops.read`.
-   */
-  async getParkedInbound(itemId: string, options?: RequestOptions): Promise<M.PoisonInboundParked> {
-    const req: ApiRequest = { method: 'GET', path: `/ops/reconciliation/parked-inbound/${seg(String(itemId))}` };
-    return this.calls.json<M.PoisonInboundParked>(req, options);
-  }
-
-  /**
-   * Replay a parked inbound message
-   *
-   * Hands the message, with its original id, type and key, to the tenant's new cell; then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over leaves the item open; a repeat is deduplicated by the target inbox (PoisonInbound.replayParked).
-   *
-   * `POST /ops/reconciliation/parked-inbound/{itemId}/replay` (operationId `replayParkedInbound`); permission `recon.resolve`; result stored atomically with the state change.
-   */
-  async replayParkedInbound(itemId: string, body: M.ReasonRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'POST', path: `/ops/reconciliation/parked-inbound/${seg(String(itemId))}/replay` };
-    if (body !== undefined) req.body = body;
-    await this.calls.none(req, options);
   }
 }
 
@@ -7656,7 +7806,7 @@ export class PluginsApi {
   }
 }
 
-/** Typed operations of `Portal` (10 operations). */
+/** Typed operations of `Portal` (11 operations). */
 export class PortalApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -7670,6 +7820,18 @@ export class PortalApi {
   async listPortalServices(options?: RequestOptions): Promise<Array<M.PortalService>> {
     const req: ApiRequest = { method: 'GET', path: `/portal/services` };
     return this.calls.json<Array<M.PortalService>>(req, options);
+  }
+
+  /**
+   * Application form of a service
+   *
+   * The form of one service of the caller's catalogue (its formKey), ACTIVE version, with the tenant's custom fields in force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); versionHash is the form's own. 404 for a service not in the catalogue or without a form.
+   *
+   * `GET /portal/services/{key}/form` (operationId `getPortalServiceForm`); permission `portal.use`.
+   */
+  async getPortalServiceForm(key: string, options?: RequestOptions): Promise<M.FormVersion> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/form` };
+    return this.calls.json<M.FormVersion>(req, options);
   }
 
   /**
@@ -8155,7 +8317,7 @@ export class ProcessesApi {
   /**
    * Run a named query
    *
-   * Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown handler; 422 VALIDATION_FAILED for missing or mistyped arguments; evaluation is bounded in time and size (R19).
+   * Evaluates the model's named query read-only over the instance state; nothing changes. 404 for an unknown instance or handler name; 422 VALIDATION_FAILED for missing or mistyped arguments, HANDLER_EVALUATION_FAILED when the strict-mode FEEL evaluation fails, RESULT_TOO_LARGE when the result exceeds 10000 values or 32 levels; evaluation is bounded in time and size (R19).
    *
    * `POST /process-instances/{id}/queries/{name}` (operationId `queryProcessInstance`); permission `process.read`.
    */
@@ -8168,7 +8330,7 @@ export class ProcessesApi {
   /**
    * Run a named update
    *
-   * Validates the arguments against the handler, applies the declared changes in one command transaction and records the change (R42). A modification under R49: reason mandatory, permission re-checked, bound to payloadHash and caseVersion; obligations the change affects are re-evaluated. 404 unknown handler; 409 APPROVAL_INVALIDATED, REVISION_CONFLICT; 422 VALIDATION_FAILED, SOD_VIOLATION.
+   * Validates the arguments against the handler, applies the declared changes in one command transaction and records the change (R42). A modification under R49: reason mandatory, permission re-checked, bound to payloadHash and caseVersion; obligations the change affects are re-evaluated. 400 REASON_REQUIRED without a reason; 404 unknown instance or handler name; 409 APPROVAL_INVALIDATED, REVISION_CONFLICT, STATE_INVALID when the handler declares activities and the instance is at none of them (E21); 422 VALIDATION_FAILED (arguments), HANDLER_EVALUATION_FAILED (strict FEEL failure), RESULT_TOO_LARGE (over 10000 values or 32 levels), SOD_VIOLATION.
    *
    * `POST /process-instances/{id}/updates/{name}` (operationId `updateProcessInstance`); permission `process.modify`; result stored atomically with the state change.
    */
@@ -8179,7 +8341,7 @@ export class ProcessesApi {
   }
 }
 
-/** Typed operations of `Programmes` (24 operations). */
+/** Typed operations of `Programmes` (25 operations). */
 export class ProgrammesApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -8194,6 +8356,18 @@ export class ProgrammesApi {
     const req: ApiRequest = { method: 'PUT', path: `/programme-config` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PgPublished>(req, options);
+  }
+
+  /**
+   * The current programme configuration
+   *
+   * The current published configuration, as it was published, with its version, content hash, publisher and time (prefill for the publish form). 404 NOT_FOUND when nothing is published yet.
+   *
+   * `GET /programme-config` (operationId `programmeCurrentConfig`); permission `programme.admin`.
+   */
+  async programmeCurrentConfig(options?: RequestOptions): Promise<M.PgCurrentConfig> {
+    const req: ApiRequest = { method: 'GET', path: `/programme-config` };
+    return this.calls.json<M.PgCurrentConfig>(req, options);
   }
 
   /**
@@ -12999,8 +13173,8 @@ export class TasksApi {
    *
    * `GET /tasks` (operationId `listTasks`); permission `task.read`.
    */
-  async listTasks(params?: { assignee?: string; mine?: boolean /* Assigned to me or I am a candidate */; unassigned?: boolean; candidateGroup?: string; seatId?: string; processInstanceId?: string; caseInstanceId?: string; businessKey?: string; processDefinitionKey?: string; taskDefinitionKey?: string; state?: string; sortBy?: string /* created, due, priority or name; a comma-separated list sorts by several keys */; sortOrder?: string /* asc or desc per key, comma-separated */; variableNames?: Array<string> /* P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Task>> {
-    const req: ApiRequest = { method: 'GET', path: `/tasks`, query: { assignee: params?.assignee, mine: params?.mine, unassigned: params?.unassigned, candidateGroup: params?.candidateGroup, seatId: params?.seatId, processInstanceId: params?.processInstanceId, caseInstanceId: params?.caseInstanceId, businessKey: params?.businessKey, processDefinitionKey: params?.processDefinitionKey, taskDefinitionKey: params?.taskDefinitionKey, state: params?.state, sortBy: params?.sortBy, sortOrder: params?.sortOrder, variableNames: params?.variableNames, page: params?.page, size: params?.size } };
+  async listTasks(params?: { assignee?: string; mine?: boolean /* Assigned to me or I am a candidate */; unassigned?: boolean; candidateGroup?: string; seatId?: string; processInstanceId?: string; caseInstanceId?: string; businessKey?: string; processDefinitionKey?: string; taskDefinitionKey?: string; state?: string; sortBy?: string /* created, due, priority, name, amount or reference (M-042 task index); a comma-separated list sorts by several keys. amount sorts within the currency filter and needs currency (400 VALIDATION_FAILED otherwise), so only tasks with an amount in that currency are listed; reference sorts by the indexed reference, tasks without one placed by the database's NULL ordering */; currency?: string /* M-042: only tasks whose indexed amount is in this ISO 4217 currency; required when sortBy contains amount */; sortOrder?: string /* asc or desc per key, comma-separated */; variableNames?: Array<string> /* P45 task-card variables: each task carries these variables (when set), read as GET /tasks/{id}/variables reads them; at most 20 names, repeated or comma-separated */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Task>> {
+    const req: ApiRequest = { method: 'GET', path: `/tasks`, query: { assignee: params?.assignee, mine: params?.mine, unassigned: params?.unassigned, candidateGroup: params?.candidateGroup, seatId: params?.seatId, processInstanceId: params?.processInstanceId, caseInstanceId: params?.caseInstanceId, businessKey: params?.businessKey, processDefinitionKey: params?.processDefinitionKey, taskDefinitionKey: params?.taskDefinitionKey, state: params?.state, sortBy: params?.sortBy, currency: params?.currency, sortOrder: params?.sortOrder, variableNames: params?.variableNames, page: params?.page, size: params?.size } };
     return this.calls.page<M.Task>(req, options, params?.page, params?.size);
   }
 
@@ -13601,6 +13775,36 @@ export class TenantOperationsApi {
   }
 }
 
+/** Typed operations of `TestMode` (2 operations). */
+export class TestModeApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Read the test-mode clock
+   *
+   * The clock the engine and the business calendar read. 404 unless test mode is on (sangam.test-mode.enabled).
+   *
+   * `GET /test-mode/clock` (operationId `getTestClock`); permission `admin.read`.
+   */
+  async getTestClock(options?: RequestOptions): Promise<M.TestClock> {
+    const req: ApiRequest = { method: 'GET', path: `/test-mode/clock` };
+    return this.calls.json<M.TestClock>(req, options);
+  }
+
+  /**
+   * Move the test-mode clock
+   *
+   * Advances, sets or resets the engine and business clocks together (timers due by the new time fire on the next job acquisition). Each change is audited as TEST_CLOCK_CHANGED {action, previousOffsetMs, offsetMs, now, actor, reason} before it is answered; a failed audit write undoes it. 400 VALIDATION_FAILED for no action, several actions or a non-positive advanceBy; 404 unless test mode is on.
+   *
+   * `POST /test-mode/clock` (operationId `changeTestClock`); permission `admin.write`; result stored atomically with the state change.
+   */
+  async changeTestClock(body: M.TestClockChange, options?: RequestOptions): Promise<M.TestClock> {
+    const req: ApiRequest = { method: 'POST', path: `/test-mode/clock` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.TestClock>(req, options);
+  }
+}
+
 /** Typed operations of `Work` (11 operations). */
 export class WorkApi {
   constructor(private readonly calls: GeneratedCalls) {}
@@ -13838,14 +14042,16 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1074 operations on 901 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly aI: AIApi;
   readonly admin: AdminApi;
   readonly adminAssignments: AdminAssignmentsApi;
   readonly adminOrgUnits: AdminOrgUnitsApi;
   readonly adminPowerTables: AdminPowerTablesApi;
+  readonly adminSecurity: AdminSecurityApi;
   readonly analytics: AnalyticsApi;
+  readonly apiContracts: ApiContractsApi;
   readonly audit: AuditApi;
   readonly billing: BillingApi;
   readonly bulkIngest: BulkIngestApi;
@@ -13905,6 +14111,7 @@ export class SangamApis {
   readonly sCIM: SCIMApi;
   readonly tasks: TasksApi;
   readonly tenantOperations: TenantOperationsApi;
+  readonly testMode: TestModeApi;
   readonly work: WorkApi;
   readonly workspace: WorkspaceApi;
 
@@ -13915,7 +14122,9 @@ export class SangamApis {
     this.adminAssignments = new AdminAssignmentsApi(calls);
     this.adminOrgUnits = new AdminOrgUnitsApi(calls);
     this.adminPowerTables = new AdminPowerTablesApi(calls);
+    this.adminSecurity = new AdminSecurityApi(calls);
     this.analytics = new AnalyticsApi(calls);
+    this.apiContracts = new ApiContractsApi(calls);
     this.audit = new AuditApi(calls);
     this.billing = new BillingApi(calls);
     this.bulkIngest = new BulkIngestApi(calls);
@@ -13975,6 +14184,7 @@ export class SangamApis {
     this.sCIM = new SCIMApi(calls);
     this.tasks = new TasksApi(calls);
     this.tenantOperations = new TenantOperationsApi(calls);
+    this.testMode = new TestModeApi(calls);
     this.work = new WorkApi(calls);
     this.workspace = new WorkspaceApi(calls);
   }

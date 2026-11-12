@@ -166,9 +166,11 @@ public class ComplianceWiring {
     public SangamCompliance sangamCompliance(TxSupport tx, ObjectProvider<EngineAdapter> engineAdapter,
             ComplianceConfigProvider config, ProcessEngine engine, ObjectProvider<ErasureService> erasure,
             ObjectProvider<OutboxWriter> outbox, ObjectProvider<ConnectorInvoker> invoker,
-            ObjectProvider<PublisherRegistry> publishers, Environment env, ComplianceAuditPool auditPool) {
-        EngineAdapter adapter = engineAdapter.getIfAvailable();
-        Transactions ctx = adapter != null ? Transactions.of(adapter) : joined(tx);
+            ObjectProvider<PublisherRegistry> publishers, Environment env, ComplianceAuditPool auditPool,
+            ObjectProvider<CompliancePorts.AdultIdentityVerifier> adultVerifier,
+            ObjectProvider<CompliancePorts.GuardianshipVerifier> guardianshipVerifier,
+            ObjectProvider<CompliancePorts.NationalIdVault> nationalIdVault) {
+        Transactions ctx = transactions(tx, engineAdapter);
 
         CompliancePorts.LegalHoldPort holds = new IntegrationLegalHoldAdapter(new LegalHoldStore(tx.dialect()));
         ErasureService erasureService = erasure.getIfAvailable();
@@ -197,16 +199,47 @@ public class ComplianceWiring {
                 null /* principals: owned by packs / sangam-security person directory */,
                 null /* authenticator: OTP / SSO against the published identifier */,
                 null /* personalData: owned by the packs */,
-                null /* adultVerifier: no DigiLocker identity-verification connector yet */,
-                null /* guardianshipVerifier */, null /* processors */,
+                // M-087 / M-072: any bean of the verifier ports (the DigiLocker requester publishes the adult verifier)
+                adultVerifier.getIfUnique(), guardianshipVerifier.getIfUnique(), null /* processors */,
                 new ComplianceWorkflowStarter(engine), authorities, authorities, archive,
-                null /* geo */, null /* nationalIdVault */, null /* securityEvidence */, null /* sntp: built-in client */);
+                null /* geo */, nationalIdVault.getIfUnique() /* M-078 */, null /* securityEvidence */,
+                null /* sntp: built-in client */);
         SangamCompliance compliance = new SangamCompliance(tx.dialect(), ctx, config, ports,
                 Transactions.of(auditPool.pool));
         ComplianceRuntime.install(compliance);
-        LOG.info("sangam-compliance installed (erasure: {}, notifier: {}, authorities: {})", erasurePort != null,
-                notifier != null, authorities != null);
+        LOG.info("sangam-compliance installed (erasure: {}, notifier: {}, authorities: {}, adult verifier: {},"
+                + " guardianship verifier: {}, national-id vault: {})", erasurePort != null, notifier != null,
+                authorities != null, ports.adultVerifier() != null, ports.guardianshipVerifier() != null,
+                ports.nationalIdVault() != null);
         return compliance;
+    }
+
+    /**
+     * M-078: the national-identifier data vault ({@code CMP_NATIONAL_ID_VAULT}), on when
+     * {@code sangam.compliance.national-id-vault.hmac-pepper} (base64, at least 16 bytes; a secret) is set. Numbers are
+     * encrypted with the tenant data keys of the {@code FieldEncryptor} bean, which must then exist.
+     */
+    @Bean
+    @ConditionalOnProperty(name = "sangam.compliance.national-id-vault.hmac-pepper")
+    public org.sangam.compliance.identity.EncryptedNationalIdVault sangamNationalIdVault(TxSupport tx,
+            ObjectProvider<EngineAdapter> engineAdapter, ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor,
+            ComplianceConfigProvider config, Environment env) {
+        org.sangam.core.security.FieldEncryptor enc = encryptor.getIfAvailable();
+        if (enc == null) {
+            throw new IllegalStateException("sangam.compliance.national-id-vault.hmac-pepper is set but no FieldEncryptor"
+                    + " bean exists to encrypt the numbers (sangam-security tenant data keys)");
+        }
+        byte[] pepper = java.util.Base64.getDecoder().decode(
+                env.getRequiredProperty("sangam.compliance.national-id-vault.hmac-pepper").trim());
+        return new org.sangam.compliance.identity.EncryptedNationalIdVault(tx.dialect(), transactions(tx, engineAdapter),
+                enc, pepper, new org.sangam.compliance.ComplianceAudit(new org.sangam.core.layer.AuditChain(tx.dialect())),
+                config);
+    }
+
+    /** Engine transactions when sangam-engine is on, else transactions joined to the current Spring one. */
+    static Transactions transactions(TxSupport tx, ObjectProvider<EngineAdapter> engineAdapter) {
+        EngineAdapter adapter = engineAdapter.getIfAvailable();
+        return adapter != null ? Transactions.of(adapter) : joined(tx);
     }
 
     /** Engine hooks: appended after the ports plugin by {@code EngineConfigurationCustomizer}. */

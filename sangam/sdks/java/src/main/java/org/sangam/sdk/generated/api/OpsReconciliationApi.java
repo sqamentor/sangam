@@ -8,14 +8,11 @@ import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.Evidence;
 import org.sangam.sdk.generated.model.LookupResult;
-import org.sangam.sdk.generated.model.PoisonInboundItem;
-import org.sangam.sdk.generated.model.PoisonInboundParked;
-import org.sangam.sdk.generated.model.ReasonRequest;
 import org.sangam.sdk.generated.model.ReconciliationItem;
 import org.sangam.sdk.generated.model.ReconciliationResolveRequest;
 
 /**
- * Typed operations of {@code Ops /reconciliation} (9 operations), generated from
+ * Typed operations of {@code Ops /reconciliation} (6 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -28,8 +25,6 @@ public final class OpsReconciliationApi {
     private static final TypeReference<ReconciliationItem> R_claimReconciliationItem = new TypeReference<>() { };
     private static final TypeReference<LookupResult> R_lookupReconciliationItem = new TypeReference<>() { };
     private static final TypeReference<Evidence> R_addReconciliationEvidence = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<PoisonInboundItem>> R_listParkedInbound = new TypeReference<>() { };
-    private static final TypeReference<PoisonInboundParked> R_getParkedInbound = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -136,50 +131,5 @@ public final class OpsReconciliationApi {
         ApiRequest req = ApiRequest.post("/ops/reconciliation/" + HttpTransport.seg(String.valueOf(id)) + "/evidence");
         GeneratedCalls.multipart(req, body, options);
         return call.json(req, options, R_addReconciliationEvidence);
-    }
-
-    /**
-     * Parked inbound messages
-     *
-     * <p>Open POISON_INBOUND items of the caller's tenant whose message was parked because the tenant moved or was purged (PoisonInbound.listOpen, parked = true).
-     *
-     * <p>{@code GET /ops/reconciliation/parked-inbound} (operationId {@code listParkedInbound}); permission {@code ops.read}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<PoisonInboundItem> listParkedInbound(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/reconciliation/parked-inbound");
-        return call.json(req, options, R_listParkedInbound);
-    }
-
-    /**
-     * View a parked inbound message
-     *
-     * <p>The original message with the tenant state, target cell and move id recorded at parking (PoisonInbound.parked). 409 NOT_PARKED for a poison message, 409 ALREADY_RESOLVED for a closed item.
-     *
-     * <p>{@code GET /ops/reconciliation/parked-inbound/{itemId}} (operationId {@code getParkedInbound}); permission {@code ops.read}.
-     * @param itemId path parameter {@code itemId}. reconciliation item id of the parked message (POISON_INBOUND)
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public PoisonInboundParked getParkedInbound(String itemId, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/reconciliation/parked-inbound/" + HttpTransport.seg(String.valueOf(itemId)));
-        return call.json(req, options, R_getParkedInbound);
-    }
-
-    /**
-     * Replay a parked inbound message
-     *
-     * <p>Hands the message, with its original id, type and key, to the tenant's new cell; then closes the item (REPLAYED, audited with the reason) and the dead letter (REQUEUED). A failed hand-over leaves the item open; a repeat is deduplicated by the target inbox (PoisonInbound.replayParked).
-     *
-     * <p>{@code POST /ops/reconciliation/parked-inbound/{itemId}/replay} (operationId {@code replayParkedInbound}); permission {@code recon.resolve}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param itemId path parameter {@code itemId}. reconciliation item id of the parked message (POISON_INBOUND)
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void replayParkedInbound(String itemId, ReasonRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/reconciliation/parked-inbound/" + HttpTransport.seg(String.valueOf(itemId)) + "/replay");
-        req.body(body);
-        call.none(req, options);
     }
 }

@@ -15,6 +15,7 @@ import java.io.UncheckedIOException;
 import java.sql.Connection;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,7 +28,8 @@ import java.util.function.BiPredicate;
  * In-app conversations with multimedia attachments, search, audit and live delivery. Only participants read, post or search
  * a conversation; adding a participant also passes the {@code mayJoin} policy check (R19). Hidden conversations do not
  * affect results. Sends are idempotent on (conversation, sender, clientKey). Message bodies are never in the audit trail,
- * only their hash. Retention classes are stored; {@link #purgeBefore} applies a class on request.
+ * only their hash. Retention classes are stored; {@link #purgeBefore} applies a class, on request or on the schedule of
+ * {@link ConversationRetention}. Search goes through a trigram index ({@code CH_MESSAGE_GRAM}).
  */
 public final class ConversationService {
 
@@ -157,6 +159,13 @@ public final class ConversationService {
             Instant now = Jdbc.dbNow(c, dialect);
             Jdbc.update(c, "INSERT INTO CH_MESSAGE(id,tenant_id,conversation_id,sender,body,attachments,client_key,created_at) VALUES (?,?,?,?,?,?,?,?)",
                     id, tenantId, conversationId, sender, body.isEmpty() ? null : body, Json.write(attachments), clientKey, now);
+            List<Object[]> grams = new ArrayList<>();
+            for (String g : SearchGrams.of(body)) {
+                grams.add(new Object[]{id, tenantId, g});
+            }
+            if (!grams.isEmpty()) {
+                Jdbc.batch(c, "INSERT INTO CH_MESSAGE_GRAM(message_id,tenant_id,gram) VALUES (?,?,?)", grams);
+            }
             audit.append(c, tenantId, chain(conversationId), "CONVERSATION_MESSAGE", Map.of("messageId", id, "sender", sender, "bodyHash", Hashes.hex(Hashes.sha256(body)),
                     "attachments", attachments.stream().map(Attachment::sha256).toList()));
             Set<String> to = Set.copyOf(Jdbc.query(c, "SELECT principal_id FROM CH_PARTICIPANT WHERE conversation_id=?", rs -> rs.getString(1), conversationId));
@@ -180,13 +189,72 @@ public final class ConversationService {
         });
     }
 
-    /** Case-insensitive substring search across the conversations the actor participates in. */
+    /**
+     * Messages after {@code afterMessageId}, oldest first, for an event-stream reconnect ({@code Last-Event-ID}, the event id
+     * being the message id). Message ids are random, so the only order is {@code created_at}: every message stored at or
+     * after that message's instant is returned except the message itself. A message stored at the same instant may come
+     * again (at least once, never lost); the client dedupes by id. A message whose transaction took its time before the
+     * Last-Event-ID message but committed after it is not replayed, so the client re-reads the history after a reconnect as
+     * well. An id that is not a message of this conversation (unknown, purged or from another conversation) returns the
+     * newest {@code limit} messages, oldest first.
+     */
+    public List<Message> since(String tenantId, String conversationId, String actor, String afterMessageId, int limit) {
+        return tx.inTransaction(c -> {
+            requireParticipant(c, tenantId, conversationId, actor);
+            Optional<Instant> at = afterMessageId == null ? Optional.empty()
+                    : Jdbc.one(c, "SELECT created_at FROM CH_MESSAGE WHERE id=? AND conversation_id=?", rs -> Jdbc.instant(rs, "created_at"), afterMessageId, conversationId);
+            List<Message> out;
+            if (at.isPresent()) {
+                out = Jdbc.query(c, SELECT + " WHERE conversation_id=? AND created_at >= ? AND id <> ? ORDER BY created_at, id",
+                        ConversationService::map, conversationId, at.get(), afterMessageId);
+                return List.copyOf(out.subList(0, Math.min(limit, out.size())));
+            }
+            out = new ArrayList<>(Jdbc.query(c, SELECT + " WHERE conversation_id=? ORDER BY created_at DESC, id", ConversationService::map, conversationId));
+            List<Message> newest = new ArrayList<>(out.subList(0, Math.min(limit, out.size())));
+            Collections.reverse(newest);
+            return List.copyOf(newest);
+        });
+    }
+
+    /**
+     * Messages stored at or after {@code fromInclusive} (database time; null = from the first message), oldest first, for a
+     * live catch-up across nodes (M-040). A message's time is taken before its transaction commits, so a reader that wants
+     * every message re-reads a window behind the newest time it has seen and drops ids it already has.
+     */
+    public List<Message> messagesFrom(String tenantId, String conversationId, String actor, Instant fromInclusive, int limit) {
+        return tx.inTransaction(c -> {
+            requireParticipant(c, tenantId, conversationId, actor);
+            List<Message> out = fromInclusive == null
+                    ? Jdbc.query(c, SELECT + " WHERE conversation_id=? ORDER BY created_at, id", ConversationService::map, conversationId)
+                    : Jdbc.query(c, SELECT + " WHERE conversation_id=? AND created_at >= ? ORDER BY created_at, id", ConversationService::map,
+                            conversationId, fromInclusive);
+            return List.copyOf(out.subList(0, Math.min(limit, out.size())));
+        });
+    }
+
+    /**
+     * Case-insensitive substring search across the conversations the actor participates in. A needle of three or more code
+     * points is answered through the trigram index {@code CH_MESSAGE_GRAM} ({@link SearchGrams}, NG-12), which only narrows
+     * the candidates: the substring condition still decides, so the result is the substring scan's.
+     */
     public List<Message> search(String tenantId, String actor, String text, int limit) {
         String needle = "%" + text.toLowerCase(Locale.ROOT).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        // COALESCE: an attachment-only message (NULL body, SL-87) still matches an empty search text, as '' did before
+        StringBuilder sql = new StringBuilder(SELECT).append(" WHERE tenant_id=? AND LOWER(COALESCE(body, '')) LIKE ? ESCAPE '\\' AND conversation_id IN ")
+                .append("(SELECT conversation_id FROM CH_PARTICIPANT WHERE principal_id=?)");
+        List<Object> params = new ArrayList<>(List.of(tenantId, needle, actor));
+        Set<String> grams = SearchGrams.forQuery(text);
+        if (!grams.isEmpty()) {
+            sql.append(" AND id IN (SELECT message_id FROM CH_MESSAGE_GRAM WHERE tenant_id=? AND gram IN (")
+                    .append(String.join(",", Collections.nCopies(grams.size(), "?")))
+                    .append(") GROUP BY message_id HAVING COUNT(DISTINCT gram)=?)");
+            params.add(tenantId);
+            params.addAll(grams);
+            params.add(grams.size());
+        }
+        sql.append(" ORDER BY created_at DESC, id");
         return tx.inTransaction(c -> {
-            // COALESCE: an attachment-only message (NULL body, SL-87) still matches an empty search text, as '' did before
-            List<Message> all = Jdbc.query(c, SELECT + " WHERE tenant_id=? AND LOWER(COALESCE(body, '')) LIKE ? ESCAPE '\\' AND conversation_id IN "
-                    + "(SELECT conversation_id FROM CH_PARTICIPANT WHERE principal_id=?) ORDER BY created_at DESC, id", ConversationService::map, tenantId, needle, actor);
+            List<Message> all = Jdbc.query(c, sql.toString(), ConversationService::map, params.toArray());
             return List.copyOf(all.subList(0, Math.min(limit, all.size())));
         });
     }
@@ -207,6 +275,7 @@ public final class ConversationService {
         return tx.inTransaction(c -> {
             int n = 0;
             for (Message m : old) {
+                Jdbc.update(c, "DELETE FROM CH_MESSAGE_GRAM WHERE message_id=?", m.id());
                 n += Jdbc.update(c, "DELETE FROM CH_MESSAGE WHERE id=?", m.id());
             }
             audit.append(c, tenantId, "conversations:" + tenantId, "CONVERSATION_PURGED", Map.of("class", retentionClass, "before", cutoff.toString(), "count", n, "actor", actor));

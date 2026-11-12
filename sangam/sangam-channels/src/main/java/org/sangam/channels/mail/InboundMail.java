@@ -33,8 +33,9 @@ import java.util.UUID;
 /**
  * Inbound email as a channel: reads unseen mail, stores raw text and attachments as documents (R74) after a malware scan, then
  * hands an event to the sink. Idempotent on (channel, Message-ID) in {@code CH_INBOUND_SEEN}. A message the sink or parser
- * refuses is recorded by {@link Poison} and not retried. {@link Imap} is the live source; {@link Simulated} serves the simulator
- * profile. Microsoft Graph polling is not implemented; IMAP access to the same mailbox is the supported route.
+ * refuses is recorded by {@link Poison} and not retried. The live sources are {@link Imap} and {@link GraphMailSource}
+ * (Microsoft Graph, NG-27); {@link Simulated} serves the simulator profile. An attachment whose content is null could not
+ * be read by its source, and the mail is recorded as poison.
  */
 public final class InboundMail {
 
@@ -141,6 +142,11 @@ public final class InboundMail {
     private List<StoredAttachment> store(String tenantId, String channel, Mail m) throws IOException {
         List<StoredAttachment> out = new ArrayList<>();
         for (Attachment a : m.attachments()) {
+            if (a.content() == null) {
+                // a source that cannot read an attachment's bytes (a Graph reference attachment) hands it over without
+                // content: the mail is recorded as poison rather than delivered with the attachment silently missing
+                throw new IllegalArgumentException("attachment content not available: " + a.name());
+            }
             if (!scanner.clean(a.name(), a.content())) {
                 throw new IllegalArgumentException("attachment refused by scanner: " + a.name());
             }

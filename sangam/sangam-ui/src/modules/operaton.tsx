@@ -21,6 +21,7 @@ import { announce, useAction, useAsync } from '../lib/hooks';
 import { fmtDate } from '../i18n';
 import { Badge, DataTable, Empty, KeyValues, Notice, PageHeader, ProblemAlert, Section, TextArea, TextField } from '../components/ui';
 import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
+import { TestClockPanel } from './testClock';
 
 const E = '/engine-rest';
 const MAX = { maxResults: 200 };
@@ -354,7 +355,7 @@ const telemetry: ScreenDef = {
 };
 
 export function EngineAdminPage() {
-  return <ModulePage title="mod.op.adminTitle" description="mod.op.adminDesc" screens={[engineUsers, engineGroups, engineTenants, authorizations, metrics, telemetry]} extra={[{ id: 'chart', label: 'mod.op2.metricsChart', node: <MetricsChart /> }, { id: 'general', label: 'mod.op.systemInfo', node: <SystemInfo /> }]} />;
+  return <ModulePage title="mod.op.adminTitle" description="mod.op.adminDesc" screens={[engineUsers, engineGroups, engineTenants, authorizations, metrics, telemetry]} extra={[{ id: 'chart', label: 'mod.op2.metricsChart', node: <MetricsChart /> }, { id: 'general', label: 'mod.op.systemInfo', node: <SystemInfo /> }, { id: 'testClock', label: 'mod.tclock.tab', node: <TestClockPanel /> }]} />;
 }
 
 function SystemInfo() {

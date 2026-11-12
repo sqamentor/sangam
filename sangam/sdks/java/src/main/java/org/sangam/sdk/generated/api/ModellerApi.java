@@ -257,7 +257,7 @@ public final class ModellerApi {
     /**
      * Publish an action
      *
-     * <p>A new version for an existing key.
+     * <p>A new version for an existing key. target is the process key for BPMN and connectorId:operation (a registered connector and one of its operations) for REST; anything else is 400.
      *
      * <p>{@code POST /actions} (operationId {@code publishActionModel}); permission {@code modeller.action.publish}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -273,7 +273,7 @@ public final class ModellerApi {
     /**
      * Invoke an action
      *
-     * <p>BPMN and connector targets run; SCRIPT targets are refused.
+     * <p>BPMN and connector targets run; SCRIPT targets are refused. The permission and the subject (targetRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call.
      *
      * <p>{@code POST /actions/{key}/invoke} (operationId {@code invokeActionModel}); permission {@code modeller.action.invoke}; result stored atomically with the state change (x-sangam-idempotent).
      * @param key path parameter {@code key}
@@ -386,7 +386,7 @@ public final class ModellerApi {
     /**
      * Run an action
      *
-     * <p>Permission checked on the subject; idempotent per request key.
+     * <p>The permission and the subject (subjectRef: the case, process instance or task of the action's scope, visible to the caller) are checked on every call; idempotent per request key; a reason is recorded in the ACTION_INVOKED audit entry.
      *
      * <p>{@code POST /actions/{key}/run} (operationId {@code runActionModel}); permission {@code modeller.action.invoke}; result stored atomically with the state change (x-sangam-idempotent).
      * @param key path parameter {@code key}

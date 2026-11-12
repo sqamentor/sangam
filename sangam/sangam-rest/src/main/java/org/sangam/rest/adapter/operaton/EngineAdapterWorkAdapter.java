@@ -335,10 +335,16 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         details.put("attemptId", r.attemptId());
         details.put("detail", r.detail());
         details.put("evidence", r.evidence() == null ? Map.of() : TypedVariables.toJson(r.evidence()));
-        // Fencing first: extend the lease to the maximum so the work is held (never re-offered) while it is reconciled;
-        // the ledger operation goes to UNKNOWN_OUTCOME with its reconciliation item in the same engine transaction.
+        // Fencing first: the engine keeps the work locked for the maximum so it is never re-offered while it is
+        // reconciled; then the worker's lease ends (as the Operaton adapter's LeaseTable.end), so every later call with
+        // the old lease (complete, fail, BPMN error, unlock, extend, step) is stale. The ledger operation goes to
+        // UNKNOWN_OUTCOME with its reconciliation item in the same engine transaction; only reconciliation moves it on.
         long item = fenced(workId, () -> engine.inEngineTransaction(c -> {
             engine.extendLock(workId, r.workerId(), r.lockVersion(), props.getMaxLockDuration());
+            if (engine instanceof org.sangam.engine.OperatonEngineAdapter o) {
+                org.sangam.engine.lease.SangamLeaseTable.endLease(c, workId,
+                        org.sangam.engine.lease.SangamLeaseTable.State.AVAILABLE, o.clock().now().toEpochMilli());
+            }
             Long recorded = ledger.onUnknown(c, op, r.lockVersion(), workId, details);
             return recorded != null ? recorded : reconciliation.open(c, ctx.tenantId(),
                     ReconciliationQueue.Kind.UNKNOWN_OUTCOME, null, null, workId, PayloadHash.canonical(details));
@@ -385,6 +391,52 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         Optional<Long> lv = engine.inEngineTransaction(c -> ledger.lockVersionOfAttempt(c, op, ctx.tenantId(), attemptId));
         return lv.orElseThrow(() -> ApiProblem.staleLease(workId, "STALE_VERSION",
                 "sangamAttemptId does not match the current attempt of " + workId));
+    }
+
+    /**
+     * M-025 (R37): the lease check of the Sangam engine adapter ({@code SangamEngineAdapter.inLeasedTransaction}: lease
+     * row lock, owner, lock version and expiry on the engine clock) and {@code work} in one engine transaction. Fencing
+     * on this path is by lock version, as for every other call here. A work item without a lease whose instance was
+     * deleted (tombstone) is 410; another tenant's work 404. Without a Sangam engine adapter the step journal is
+     * unavailable (the port default).
+     */
+    @Override
+    public <T> T inFencedWork(RequestContext ctx, String workId, String workerId, long lockVersion, String attemptId,
+                              FencedWork<T> work) {
+        if (!(engine instanceof SangamEngineAdapter s)) {
+            return WorkPort.super.inFencedWork(ctx, workId, workerId, lockVersion, attemptId, work);
+        }
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
+        if (workerId == null || workerId.isBlank()) {
+            throw ApiProblem.badRequest("WORKER_ID_REQUIRED", "workerId is required");
+        }
+        Optional<org.sangam.engine.lease.SangamLeaseTable.Row> lease = engine instanceof org.sangam.engine.OperatonEngineAdapter o
+                ? o.leaseOf(workId) : Optional.empty();
+        if (lease.isEmpty() && engine.inEngineTransaction(c -> tombstones.find(c, ctx.tenantId(), workId)).isPresent()) {
+            throw ApiProblem.gone("GONE_INSTANCE_DELETED", "The instance of this work was deleted").with("workId", workId);
+        }
+        UUID op = operationIdOf(workId);
+        if (op == null) {
+            throw ApiProblem.notFound("external work", workId);
+        }
+        // the caller's tenant (guardWork proved it owns the work), so GET /work/{id}/steps filters the same value
+        String tenant = ctx.tenantId() != null ? ctx.tenantId()
+                : lease.map(org.sangam.engine.lease.SangamLeaseTable.Row::tenantId).orElse(null);
+        FencedLease fl = new FencedLease(workId, tenant, op, workerId, lockVersion, attemptId);
+        return fenced(workId, () -> s.inLeasedTransaction(workId, workerId, lockVersion, c -> work.run(c, fl)));
+    }
+
+    /** M-025: the operationId stored with the lease of open work in the caller's tenant (no lease check). */
+    @Override
+    public Optional<UUID> operationIdOfWork(RequestContext ctx, String workId) {
+        if (!(engine instanceof org.sangam.engine.OperatonEngineAdapter o)) {
+            return Optional.empty();
+        }
+        Optional<org.sangam.engine.lease.SangamLeaseTable.Row> lease = o.leaseOf(workId);
+        if (lease.isEmpty() || !ownTenant(ctx, lease.get().tenantId())) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(operationIdOf(workId));
     }
 
     private volatile org.sangam.rest.support.WorkLongPoll.Settings longPollSettings =

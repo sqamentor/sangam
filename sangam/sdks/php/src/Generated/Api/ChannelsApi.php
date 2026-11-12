@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Channels (17 operations). */
+/** Typed operations of Channels (19 operations). */
 final class ChannelsApi
 {
     public function __construct(private readonly Calls $calls)
@@ -128,14 +128,16 @@ final class ChannelsApi
     /**
      * Live message stream
      *
-     * Server-sent events, event name 'message'. Streams live on one node; reconnect and read history to catch up.
+     * Server-sent events, event name 'message', event id = message id, data = ChannelMessage (M-040). Live across nodes: a message stored on any node reaches every open stream of the conversation. With Last-Event-ID the stream first replays the messages after that message, at least once (the client drops duplicates by message id), then goes live. A comment line heartbeat is sent at most every 30 s while idle.
      *
      * GET /channels/conversations/{id}/stream (operationId streamConversation); permission channels.read.
+     * @param string|null $lastEventID header Last-Event-ID
      * @return string
      */
-    public function streamConversation(string $id, ?RequestOptions $options = null): string
+    public function streamConversation(string $id, ?string $lastEventID = null, ?RequestOptions $options = null): string
     {
         $req = ApiRequest::get('/channels/conversations/' . HttpTransport::seg((string) $id) . '/stream');
+        $req->header('Last-Event-ID', Support::headerValue($lastEventID));
         return $this->calls->raw($req, $options, 'text/event-stream');
     }
 
@@ -242,7 +244,7 @@ final class ChannelsApi
     /**
      * WhatsApp webhook
      *
-     * Public: X-Hub-Signature-256 is verified on the raw body first.
+     * Public: X-Hub-Signature-256 is verified on the raw body first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
      *
      * POST /hooks/channels/{tenant}/whatsapp (operationId receiveWhatsAppHook).
      * @param array $body request body
@@ -282,21 +284,67 @@ final class ChannelsApi
     /**
      * WeChat webhook
      *
-     * Public: the signature is verified first.
+     * Public: the signature is verified first. Security mode (encrypt_type=aes): msg_signature is verified over the Encrypt element and the message is decrypted with the tenant's EncodingAESKey (config sangam.channels.webhooks.<tenant>.wechat.encoding-aes-key-ref, a secret reference, and wechat.app-id, which must match the decrypted app id); plain mode as before. 401 WEBHOOK_SIGNATURE_INVALID on a bad signature. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
      *
      * POST /hooks/channels/{tenant}/wechat (operationId receiveWeChatHook).
      * @param array $body request body
      * @param string $timestamp query timestamp
      * @param string $nonce query nonce
      * @param string $signature query signature
+     * @param string|null $encryptType query encrypt_type
+     * @param string|null $msgSignature query msg_signature
      * @return Model\ChannelHookResult|null
      */
-    public function receiveWeChatHook(string $tenant, array $body, string $timestamp, string $nonce, string $signature, ?RequestOptions $options = null): ?Model\ChannelHookResult
+    public function receiveWeChatHook(string $tenant, array $body, string $timestamp, string $nonce, string $signature, ?string $encryptType = null, ?string $msgSignature = null, ?RequestOptions $options = null): ?Model\ChannelHookResult
     {
         $req = ApiRequest::post('/hooks/channels/' . HttpTransport::seg((string) $tenant) . '/wechat');
         $req->query('timestamp', $timestamp);
         $req->query('nonce', $nonce);
         $req->query('signature', $signature);
+        $req->query('encrypt_type', $encryptType);
+        $req->query('msg_signature', $msgSignature);
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ChannelHookResult::class);
+    }
+
+    /**
+     * Slack Events API webhook
+     *
+     * Public: X-Slack-Signature (v0 HMAC-SHA256 over 'v0:<timestamp>:<raw body>' with the tenant's signing secret, config sangam.channels.webhooks.<tenant>.slack.signing-secret-ref) and the timestamp window are verified on the raw body first; 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Slack is not configured for the tenant. url_verification answers {challenge}; every other envelope answers the counts. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+     *
+     * POST /hooks/channels/{tenant}/slack (operationId receiveSlackHook).
+     * @param array $body request body
+     * @param string $xSlackRequestTimestamp header X-Slack-Request-Timestamp
+     * @param string $xSlackSignature header X-Slack-Signature
+     * @return Model\ChannelSlackHookResult|null
+     */
+    public function receiveSlackHook(string $tenant, array $body, string $xSlackRequestTimestamp, string $xSlackSignature, ?RequestOptions $options = null): ?Model\ChannelSlackHookResult
+    {
+        $req = ApiRequest::post('/hooks/channels/' . HttpTransport::seg((string) $tenant) . '/slack');
+        $req->header('X-Slack-Request-Timestamp', Support::headerValue($xSlackRequestTimestamp));
+        $req->header('X-Slack-Signature', Support::headerValue($xSlackSignature));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ChannelSlackHookResult::class);
+    }
+
+    /**
+     * Matrix application-service transaction
+     *
+     * Public: the homeserver token (Authorization: Bearer <hs_token>, or the legacy access_token query parameter) is compared with the tenant's (config sangam.channels.webhooks.<tenant>.matrix.hs-token-ref, matrix.user-id); 401 WEBHOOK_SIGNATURE_INVALID otherwise, 404 when Matrix is not configured for the tenant. A repeated txnId is answered again without a second delivery (inbox deduplication). The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
+     *
+     * PUT /hooks/channels/{tenant}/matrix/transactions/{txnId} (operationId receiveMatrixTransaction).
+     * @param Model\ReceiveMatrixTransactionRequest|array $body request body
+     * @param string|null $accessToken query access_token
+     * @return Model\ChannelHookResult|null
+     */
+    public function receiveMatrixTransaction(string $tenant, string $txnId, Model\ReceiveMatrixTransactionRequest|array $body, ?string $accessToken = null, ?RequestOptions $options = null): ?Model\ChannelHookResult
+    {
+        $req = ApiRequest::put('/hooks/channels/' . HttpTransport::seg((string) $tenant) . '/matrix/transactions/' . HttpTransport::seg((string) $txnId));
+        $req->query('access_token', $accessToken);
         if ($body !== null) {
             $req->body($body);
         }
@@ -306,7 +354,7 @@ final class ChannelsApi
     /**
      * Teams webhook
      *
-     * Public: the Bot Framework token is verified first.
+     * Public: the Bot Framework token is verified first. The delivery is verified, written to the inbox and acknowledged at once (within 3 s); attached media is downloaded, malware-scanned and stored afterwards by a worker, and the stored document key then reaches the conversation.
      *
      * POST /hooks/channels/{tenant}/teams (operationId receiveTeamsHook).
      * @param array $body request body

@@ -26,10 +26,18 @@ data:
   {{- with .Values.server.environment }}
   SANGAM_ONBOARDING_ENVIRONMENT: {{ . | quote }}
   {{- end }}
+  {{- with .Values.server.pdfFonts }}
+  # M-081: fonts the PDF/A and PDF/UA renderer embeds (image default /opt/sangam/fonts, SIL OFL 1.1)
+  SANGAM_PDF_FONTS: {{ . | quote }}
+  {{- end }}
   SANGAM_DB_POOL_SIZE: {{ .Values.database.pool.maximumPoolSize | quote }}
   SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: {{ .Values.database.pool.minimumIdle | quote }}
   SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT: {{ .Values.database.pool.connectionTimeoutMs | quote }}
   SPRING_DATASOURCE_HIKARI_MAX_LIFETIME: {{ .Values.database.pool.maxLifetimeMs | quote }}
+  # SL-168 / X1-05: leaf pools, each on top of SANGAM_DB_POOL_SIZE per pod (deploy/README.md section 1.6)
+  SANGAM_QUOTA_POOL_SIZE: {{ .Values.database.pool.leafPools.quota | quote }}
+  SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE: {{ .Values.database.pool.leafPools.securityDenialAudit | quote }}
+  SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE: {{ .Values.database.pool.leafPools.complianceDenialAudit | quote }}
   {{- with .Values.database.networkTimeout }}
   # SL-59: socket read bound on every pooled connection
   SANGAM_DB_NETWORK_TIMEOUT: {{ . | quote }}
@@ -76,6 +84,8 @@ data:
   SANGAM_CONTENT_MAX_REQUEST: {{ .Values.server.content.maxRequest | quote }}
   # Telemetry: off by default (R56); OTLP via the Spring Boot OpenTelemetry starter
   SANGAM_OTLP_ENABLED: {{ .Values.otel.enabled | quote }}
+  # SL-168 / M-062: engine spans (sangam.tracing.engine.enabled), exported only when OTLP is enabled
+  SANGAM_TRACING_ENGINE_ENABLED: {{ .Values.otel.engineTracing | quote }}
   {{- if .Values.otel.enabled }}
   SANGAM_OTLP_TRACES_ENDPOINT: {{ printf "%s/v1/traces" (trimSuffix "/" .Values.otel.endpoint) | quote }}
   MANAGEMENT_OTLP_METRICS_EXPORT_URL: {{ printf "%s/v1/metrics" (trimSuffix "/" .Values.otel.endpoint) | quote }}
@@ -113,6 +123,55 @@ data:
   SANGAM_CELL_EXPORT_DIR: /var/lib/sangam/cell-exports
   # Document content store (ContentService); on the shared state volume, never the read-only root filesystem
   SANGAM_CONTENT_ROOT: /var/lib/sangam/content
+  {{- $mw := .Values.malware }}
+  # M-082: upload malware scanning (sangam.malware.*); none = no scanner
+  SANGAM_MALWARE_SCANNER: {{ $mw.scanner | quote }}
+  SANGAM_MALWARE_FAIL_CLOSED: {{ $mw.failClosed | quote }}
+  SANGAM_MALWARE_TIMEOUT: {{ $mw.timeout | quote }}
+  SANGAM_MALWARE_MAX_BYTES: {{ $mw.maxBytes | quote }}
+  {{- if eq $mw.scanner "clamd" }}
+  {{- $clamdHost := $mw.clamd.host }}
+  {{- if and (not $clamdHost) $mw.clamav.enabled }}
+  {{- $clamdHost = printf "%s-clamav" (include "sangam.fullname" .) }}
+  {{- end }}
+  SANGAM_MALWARE_CLAMD_HOST: {{ required "malware.clamd.host is required with malware.scanner=clamd unless malware.clamav.enabled" $clamdHost | quote }}
+  SANGAM_MALWARE_CLAMD_PORT: {{ $mw.clamd.port | quote }}
+  {{- end }}
+  {{- if eq $mw.scanner "icap" }}
+  SANGAM_MALWARE_ICAP_URI: {{ required "malware.icap.uri is required with malware.scanner=icap" $mw.icap.uri | quote }}
+  {{- end }}
+  {{- $sec := .Values.secrets }}
+  {{- with $sec.providers }}
+  # M-075: platform secret providers (sangam.secrets.*); only rendered when providers is set (no bean otherwise)
+  SANGAM_SECRETS_PROVIDERS: {{ . | quote }}
+  {{- with $sec.cacheTtl }}
+  SANGAM_SECRETS_CACHE_TTL: {{ . | quote }}
+  {{- end }}
+  {{- with $sec.file.root }}
+  SANGAM_SECRETS_FILE_ROOT: {{ . | quote }}
+  {{- end }}
+  {{- range $k, $v := dict "URL" $sec.vault.url "MOUNT" $sec.vault.mount "PATH_PREFIX" $sec.vault.pathPrefix "NAMESPACE" $sec.vault.namespace "TOKEN_REF" $sec.vault.tokenRef }}
+  {{- if $v }}
+  SANGAM_SECRETS_VAULT_{{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{- end }}
+  SANGAM_SECRETS_VAULT_ALLOW_PRIVATE: {{ $sec.vault.allowPrivate | quote }}
+  {{- range $k, $v := dict "REGION" $sec.aws.region "ENDPOINT" $sec.aws.endpoint "NAME_PREFIX" $sec.aws.namePrefix "ACCESS_KEY_REF" $sec.aws.accessKeyRef "SECRET_KEY_REF" $sec.aws.secretKeyRef "SESSION_TOKEN_REF" $sec.aws.sessionTokenRef }}
+  {{- if $v }}
+  SANGAM_SECRETS_AWS_{{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{- end }}
+  {{- range $k, $v := dict "VAULT_URL" $sec.azure.vaultUrl "TENANT_ID" $sec.azure.tenantId "CLIENT_ID" $sec.azure.clientId "CLIENT_SECRET_REF" $sec.azure.clientSecretRef "AUTHORITY" $sec.azure.authority }}
+  {{- if $v }}
+  SANGAM_SECRETS_AZURE_{{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{- end }}
+  {{- range $k, $v := dict "PROJECT" $sec.gcp.project "SERVICE_ACCOUNT_KEY_REF" $sec.gcp.serviceAccountKeyRef "NAME_PREFIX" $sec.gcp.namePrefix "ENDPOINT" $sec.gcp.endpoint }}
+  {{- if $v }}
+  SANGAM_SECRETS_GCP_{{ $k }}: {{ $v | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
   {{- if $cell.id }}
   # SCALE cell (sangam-cell IR-1..IR-4). SANGAM_CELL_ID switches the cell on, so it is only rendered when set.
   SANGAM_CELL_ID: {{ $cell.id | quote }}

@@ -79,21 +79,29 @@ public final class ScheduleTenants {
 
     /** Non-suspended tenant ids of every directory page; stops at a short page or a page that adds no new tenant. */
     static List<String> directory(AdminPort port, RequestContext sys) {
+        return directory(port, sys, false);
+    }
+
+    /**
+     * The one directory reader. {@code includeSuspended=false}: the tenants a schedule runs for; {@code true}: every
+     * tenant id the database holds (M-016: a dedicated instance checks that its database holds no other tenant).
+     */
+    static List<String> directory(AdminPort port, RequestContext sys, boolean includeSuspended) {
         Set<String> seen = new LinkedHashSet<>();
-        List<String> active = new ArrayList<>();
+        List<String> out = new ArrayList<>();
         for (int p = 0; ; p++) {
             Page<AdminPort.Tenant> page = port.tenants(sys, ALL, new Page.PageRequest(p, PAGE_SIZE));
             boolean progressed = false;
             for (AdminPort.Tenant t : page.items()) {
                 if (seen.add(t.id())) {
                     progressed = true;
-                    if (!"SUSPENDED".equals(t.status())) {
-                        active.add(t.id());
+                    if (includeSuspended || !"SUSPENDED".equals(t.status())) {
+                        out.add(t.id());
                     }
                 }
             }
             if (page.items().size() < PAGE_SIZE || !progressed) {
-                return active;
+                return out;
             }
         }
     }

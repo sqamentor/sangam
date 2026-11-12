@@ -30,7 +30,13 @@ class ChannelAdaptersTest {
         assertTrue(ChannelAdapters.available("jms"), "jakarta.jms-api is on the test class path");
         assertTrue(ChannelAdapters.available("rabbitmq"), "amqp-client is on the test class path");
         assertTrue(ChannelAdapters.available("kafka"));
-        assertFalse(ChannelAdapters.available("mqtt"));
+        // M-064: Paho and jnats are optional dependencies of this module, so both families are available in tests;
+        // the cloud families need a provider on the Environment and are not available without one
+        assertTrue(ChannelAdapters.available("mqtt"), "paho is on the test class path");
+        assertTrue(ChannelAdapters.available("nats"), "jnats is on the test class path");
+        assertFalse(ChannelAdapters.available("sqs"));
+        assertFalse(ChannelAdapters.available("sqs", ChannelAdapters.Environment.of(java.util.Map.of(), java.util.Set.of())));
+        assertFalse(ChannelAdapters.available("carrier-pigeon"));
     }
 
     @Test
@@ -42,7 +48,7 @@ class ChannelAdaptersTest {
                 "webhooks have no consumer; the REST layer calls WebhookInboundEndpoint");
         assertThrows(IllegalArgumentException.class, () -> ChannelAdapters.inbound(ch("{\"key\":\"i\",\"channelType\":\"http\"}"), "acc", null, env));
         IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> ChannelAdapters.outbound(ch("{\"key\":\"o\",\"channelType\":\"mqtt\",\"type\":\"outbound\"}"), env));
+                () -> ChannelAdapters.outbound(ch("{\"key\":\"o\",\"channelType\":\"sqs\",\"type\":\"outbound\"}"), env));
         assertTrue(e.getMessage().contains("not available"));
     }
 

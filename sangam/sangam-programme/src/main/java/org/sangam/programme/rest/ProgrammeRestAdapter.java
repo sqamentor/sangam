@@ -89,6 +89,15 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
     }
 
     @Override
+    public IndicatorRegistry.Current publishedConfig(ApiContext ctx) {
+        return run(c -> {
+            require(c, ctx, PROGRAMME, "ADMIN", ALL);
+            return m.registry().current(c, ctx.tenant()).orElseThrow(() -> new ProgrammeException(
+                    ProgrammeException.Code.NOT_FOUND, "no programme configuration published for the tenant"));
+        });
+    }
+
+    @Override
     public List<Map<String, Object>> configHistory(ApiContext ctx) {
         return run(c -> {
             require(c, ctx, PROGRAMME, "ADMIN", ALL);

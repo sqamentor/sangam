@@ -18,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Placement policy (SCALE-ARCHITECTURE.md section 5.3), in order:
  * <ol>
+ *   <li><b>Dedication (M-016, decision 51):</b> a cell dedicated to one tenant's database hosts only that tenant, and a
+ *       tenant recorded with isolation DATABASE goes only to the cell dedicated to it ({@link #dedication}). Moves
+ *       obey the same rule (they use {@link #reject}).</li>
  *   <li><b>Hard filters:</b> cell UP, placement open, residency of the cell within the tenant's zone, projected
  *       expected load at most {@code targetUtilisation} x capacity, tenant count below capacity, outbox fill and DB
  *       pool usage below their limits.</li>
@@ -67,6 +70,11 @@ public class PlacementService {
 
     /** Null when the cell may host the tenant, else the reason. */
     public String reject(Cell c, Tenant t) {
+        String dedicated = dedication(cells.dedicatedTenant(c.cellId()).orElse(null), t.tenantCode(),
+                registry.isolation(t.tenantCode()));
+        if (dedicated != null) {
+            return dedicated;
+        }
         if (!Cell.UP.equals(c.status())) {
             return "cell status " + c.status();
         }
@@ -92,15 +100,38 @@ public class PlacementService {
         return null;
     }
 
+    /**
+     * M-016 dedication rule (decision 51), null when it allows the placement, else the reason:
+     * <ul>
+     *   <li>a cell dedicated to a tenant hosts that tenant only;</li>
+     *   <li>a tenant recorded with isolation {@value TenantRegistry#DATABASE} goes only to the cell dedicated to it.</li>
+     * </ul>
+     * {@value TenantRegistry#SHARED} and {@value TenantRegistry#SCHEMA} tenants go to shared cells as before (the
+     * meaning of SCHEMA is owner question Q-W3H-5). Tenant codes are compared upper-case, as the registry stores them.
+     */
+    public static String dedication(String cellDedicatedTenant, String tenantCode, String isolation) {
+        boolean dedicatedCell = cellDedicatedTenant != null && !cellDedicatedTenant.isBlank();
+        if (dedicatedCell && !cellDedicatedTenant.trim().equalsIgnoreCase(tenantCode)) {
+            return "cell dedicated to tenant " + cellDedicatedTenant.trim();
+        }
+        if (TenantRegistry.DATABASE.equals(isolation) && !dedicatedCell) {
+            return "tenant isolation DATABASE needs the cell dedicated to it";
+        }
+        return null;
+    }
+
     @Transactional
     public Tenant place(String tenantCode, String actor) {
         Tenant t = registry.get(tenantCode);
         if (t.cellId() != null) {
             return t;
         }
+        boolean database = TenantRegistry.DATABASE.equals(registry.isolation(t.tenantCode()));
         Candidate best = candidates(t, null).stream().findFirst()
-                .orElseThrow(() -> new NoCapacity("no cell can host " + tenantCode + " (residency " + t.residency()
-                        + "): add a cell in that zone"));
+                .orElseThrow(() -> new NoCapacity(database
+                        ? "no cell dedicated to " + t.tenantCode() + " can host it (isolation DATABASE): register the"
+                                + " tenant's dedicated cell (sangam.tenancy.dedicated-tenant=" + t.tenantCode() + ") first"
+                        : "no cell can host " + tenantCode + " (residency " + t.residency() + "): add a cell in that zone"));
         return registry.assignCell(t.tenantCode(), best.cell().cellId(), t.routeEpoch(), actor, "placement: " + best.reason());
     }
 

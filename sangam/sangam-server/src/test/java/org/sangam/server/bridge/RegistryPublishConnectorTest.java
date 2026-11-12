@@ -21,7 +21,7 @@ class RegistryPublishConnectorTest {
             // the TxSupport is never reached: the check comes first
             RegistryPorts.PublishPort p = RegistryPortBridges.publisher(null, unset);
             IllegalStateException e = assertThrows(IllegalStateException.class,
-                    () -> p.publish(null, "channel-1", "object-1", "doc-1", Map.of()));
+                    () -> p.publish(null, null, "channel-1", "object-1", "doc-1", Map.of()));
             assertTrue(e.getMessage().contains("sangam.registry.publish.connector"), e.getMessage());
         }
     }

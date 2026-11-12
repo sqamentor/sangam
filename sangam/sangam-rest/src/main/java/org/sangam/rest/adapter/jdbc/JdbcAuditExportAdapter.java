@@ -25,6 +25,8 @@ import java.util.zip.ZipOutputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.sangam.core.layer.Hashes;
+import org.sangam.integration.document.pdf.PdfDocument;
+import org.sangam.integration.document.pdf.PdfRendering;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditExportPort;
 import org.sangam.rest.port.AuditPort;
@@ -37,7 +39,10 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 
 /**
-
+ * Asynchronous audit exports (CSV, JSON, PDF/A) and evidence packs ({@link AuditExportPort}). Jobs are
+ * {@code REST_DOCUMENT} rows of kind {@value #JOB_KIND}; the file is a {@code REST_BLOB}. A PDF/A export (M-081) is a
+ * tagged table of the selected audit entries rendered and validated through {@link PdfRendering}; with no PDF renderer
+ * installed the job ends {@code FAILED} with {@code FORMAT_NOT_AVAILABLE} and the reason.
  */
 public class JdbcAuditExportAdapter implements AuditExportPort, AutoCloseable {
 
@@ -64,10 +69,19 @@ public class JdbcAuditExportAdapter implements AuditExportPort, AutoCloseable {
 
     private final org.sangam.rest.support.DocumentStore docs;
     private final org.sangam.rest.support.BlobStore blobs;
+    private final PdfRendering pdf;
 
+    /** PDF/A exports through the renderer installed on the class path ({@link PdfRendering#installed()}). */
     public JdbcAuditExportAdapter(AuditPort audit, ProcessPort processes, DocumentPort documents, TxSupport tx,
                                   RestProperties props, org.sangam.rest.support.DocumentStore docs,
                                   org.sangam.rest.support.BlobStore blobs) {
+        this(audit, processes, documents, tx, props, docs, blobs, PdfRendering.installed());
+    }
+
+    public JdbcAuditExportAdapter(AuditPort audit, ProcessPort processes, DocumentPort documents, TxSupport tx,
+                                  RestProperties props, org.sangam.rest.support.DocumentStore docs,
+                                  org.sangam.rest.support.BlobStore blobs, PdfRendering pdf) {
+        this.pdf = java.util.Objects.requireNonNull(pdf, "pdf");
         this.audit = audit;
         this.processes = processes;
         this.documents = documents;
@@ -144,17 +158,24 @@ public class JdbcAuditExportAdapter implements AuditExportPort, AutoCloseable {
         ExportJob v = view(doc);
         save(ctx, new ExportJob(id, "RUNNING", null, v.requestedAt(), v.format(), v.scope(), null), null, null, null);
         try {
-            if (v.format().equals("PDFA")) {
-                throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", "PDF/A rendering is provided by sangam-integration");
+            if (v.format().equals("PDFA") && !pdf.available()) {
+                throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", "PDF/A rendering is off: " + pdf.unavailableReason());
             }
             List<AuditPort.AuditEntry> entries = collect(ctx, v.scope());
-            byte[] content = v.format().equals("JSON") ? JSON.writeValueAsBytes(plain(entries)) : csv(entries);
+            byte[] content = switch (v.format()) {
+                case "JSON" -> JSON.writeValueAsBytes(plain(entries));
+                case "PDFA" -> pdfa(id, v.scope(), entries);
+                default -> csv(entries);
+            };
             if (content.length > MAX_BYTES) {
                 throw ApiProblem.unprocessable("EXPORT_TOO_LARGE", "the export is above 50 MB; narrow the scope");
             }
-            boolean json = v.format().equals("JSON");
-            String type = json ? "application/json" : "text/csv; charset=UTF-8";
-            String name = "audit-export-" + id + (json ? ".json" : ".csv");
+            String type = switch (v.format()) {
+                case "JSON" -> "application/json";
+                case "PDFA" -> PdfRendering.Rendered.CONTENT_TYPE;
+                default -> "text/csv; charset=UTF-8";
+            };
+            String name = "audit-export-" + id + "." + (v.format().equals("PDFA") ? "pdf" : v.format().toLowerCase(Locale.ROOT));
             tx.runInTx(() -> {
                 org.sangam.rest.support.BlobStore.BlobRef blob = blobs.put(ctx.tenantId(), BLOB_KIND, id, name, type,
                         content, ctx.principalId());
@@ -362,6 +383,34 @@ public class JdbcAuditExportAdapter implements AuditExportPort, AutoCloseable {
             return out;
         }
         return v.toString();
+    }
+
+    /**
+     * M-081: the PDF/A export. One tagged table (PDF/UA header cells) with the columns an auditor checks against the
+     * chain (sequence, time, type, actor, chain, event id, entry hash); payloads stay in the JSON and CSV formats.
+     */
+    byte[] pdfa(String id, Map<String, Object> scope, List<AuditPort.AuditEntry> entries) {
+        List<List<String>> rows = new ArrayList<>(entries.size());
+        for (AuditPort.AuditEntry e : entries) {
+            rows.add(java.util.Arrays.asList(str(e.seq()), str(e.occurredAt()), e.type(), e.actor(), e.chainId(),
+                    e.eventId(), e.entryHash()));
+        }
+        StringBuilder scopeText = new StringBuilder();
+        new java.util.TreeMap<>(scope).forEach((k, x) -> scopeText.append(scopeText.isEmpty() ? "" : "; ").append(k)
+                .append(" = ").append(x));
+        PdfDocument doc = new PdfDocument("Audit export " + id, "en", null, "Audit export", List.of(
+                new PdfDocument.Heading(1, "Audit export " + id),
+                new PdfDocument.Paragraph("Scope: " + scopeText),
+                new PdfDocument.Paragraph("Entries: " + entries.size()),
+                new PdfDocument.Table(List.of("Seq", "Occurred at", "Type", "Actor", "Chain", "Event id", "Entry hash"), rows)),
+                Map.of("exportId", id));
+        try {
+            return pdf.render(doc).content();
+        } catch (PdfRendering.Unavailable e) {
+            throw ApiProblem.unprocessable("FORMAT_NOT_AVAILABLE", e.getMessage());
+        } catch (PdfRendering.Invalid e) {
+            throw ApiProblem.unprocessable("PDF_INVALID", e.getMessage());
+        }
     }
 
     private static byte[] csv(List<AuditPort.AuditEntry> entries) throws IOException {

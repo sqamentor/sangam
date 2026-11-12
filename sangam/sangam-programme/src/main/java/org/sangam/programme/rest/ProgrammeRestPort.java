@@ -52,8 +52,11 @@ public interface ProgrammeRestPort {
                             BigDecimal committed, BigDecimal expended, String currency) {
     }
 
-    // configuration                      PUT /programme-config, GET /programme-config/history
+    // configuration                      PUT /programme-config, GET /programme-config, GET /programme-config/history
     IndicatorRegistry.Published publishConfig(ApiContext ctx, Map<String, Object> config);
+
+    /** The current published configuration (C3-09); {@code NOT_FOUND} when nothing is published yet. */
+    IndicatorRegistry.Current publishedConfig(ApiContext ctx);
 
     List<Map<String, Object>> configHistory(ApiContext ctx);
 

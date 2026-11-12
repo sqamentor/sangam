@@ -186,7 +186,7 @@ class RabbitAdaptersTest {
     private void startInbound(String extra) {
         ChannelDefinition ch = f.registry.deployChannel("acc", "{\"key\":\"rin\",\"channelType\":\"rabbitmq\",\"type\":\"inbound\","
                 + "\"queue\":\"orders\",\"channelEventKeyDetection\":{\"fixedValue\":\"order\"},"
-                + "\"properties\":{\"uriRef\":\"rabbit-uri\",\"prefetch\":\"7\"}" + extra + "}", null).definition();
+                + "\"properties\":{\"uriRef\":\"rabbit-uri\",\"prefetch\":\"7\",\"redeliverBackoffMs\":\"100\"}" + extra + "}", null).definition();
         inbound = new RabbitAdapters.Inbound(ch, "acc", f.processor, ENV, broker.connector);
         inbound.start();
         assertNotNull(broker.deliver);
@@ -235,6 +235,37 @@ class RabbitAdaptersTest {
         long again = deliver("m-9", "{\"qty\":1}");
         assertTrue(broker.calls.contains("ack " + again));
         assertEquals(List.of("m-9"), f.strings("SELECT message_id FROM INBOX"));
+    }
+
+    @Test
+    void aFrozenTenantsDeliveryIsRequeuedAndAParkedOneIsAcked() throws Exception {
+        // SL-142 / C3-06: FROZEN/IMPORTING -> not stored, nack with requeue after the back-off; MOVED/PURGED -> parked, ack
+        startInbound("");
+        java.util.concurrent.atomic.AtomicReference<org.sangam.ports.events.InboundTenantAdmission.Verdict> v =
+                new java.util.concurrent.atomic.AtomicReference<>(org.sangam.ports.events.InboundTenantAdmission.Verdict.REDELIVER);
+        f.processor.withTenantAdmission((tenant, m) -> v.get());
+        long frozen = deliver("m-z", "{\"qty\":1}");
+        assertTrue(broker.calls.contains("nack " + frozen + " requeue=true"));
+        assertTrue(broker.calls.stream().noneMatch(c -> c.equals("ack " + frozen)));
+        v.set(org.sangam.ports.events.InboundTenantAdmission.Verdict.PARKED);
+        long parked = deliver("m-z", "{\"qty\":1}");
+        assertTrue(broker.calls.contains("ack " + parked));
+        assertEquals(0, f.count("SELECT COUNT(*) FROM INBOX"), "neither attempt wrote an inbox row");
+        f.processor.withTenantAdmission(null);
+    }
+
+    @Test
+    void cloudEventsBinaryModeWritesTheAmqpBindingHeaders() throws Exception {
+        RabbitAdapters.Outbound out = new RabbitAdapters.Outbound(def("{\"key\":\"ro\",\"channelType\":\"rabbitmq\",\"type\":\"outbound\","
+                + "\"queue\":\"orders\",\"properties\":{\"uriRef\":\"rabbit-uri\"}}"), ENV, broker.connector);
+        out.send(new ChannelAdapters.Outgoing("acc", "paid", "m-3", "{\"a\":3}", "application/json",
+                Map.of("specversion", "1.0", "id", "m-3", "type", "paid", "source", "urn:sangam:channel:ro")));
+        Broker.Published p = broker.published.get(0);
+        assertEquals("1.0", String.valueOf(p.props().getHeaders().get("cloudEvents_specversion")));
+        assertEquals("m-3", String.valueOf(p.props().getHeaders().get("cloudEvents_id")));
+        assertEquals("paid", String.valueOf(p.props().getHeaders().get("cloudEvents_type")));
+        assertEquals("application/json", p.props().getContentType(), "AMQP content-type carries datacontenttype");
+        assertEquals("{\"a\":3}", p.body());
     }
 
     @Test

@@ -122,6 +122,7 @@ public final class SangamTestEngine implements AutoCloseable {
         @Override public Instant instant() { return Instant.now().plus(offset); }
     };
     private final EngineWorkCalls workCalls = new EngineWorkCalls(works, irreversible, clock, json, this::openRecon);
+    private final EngineSteps journal = new EngineSteps(works, workCalls, clock, json);
 
     private SangamTestEngine() throws IOException {
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
@@ -422,7 +423,9 @@ public final class SangamTestEngine implements AutoCloseable {
         calls.add(new Call(method, apiPath, action, key, body));
         Answer a;
         try {
-            a = dispatch(method, apiPath, action, key, body, path);
+            a = apiPath.matches("/work/[^/]+/steps(/[^/]+)?")
+                    ? steps(method, apiPath, ex.getRequestURI().getRawQuery(), body)
+                    : dispatch(method, apiPath, action, key, body, path);
         } catch (Problem p) {
             a = problem(p, path);
         } catch (RuntimeException e) {
@@ -660,6 +663,40 @@ public final class SangamTestEngine implements AutoCloseable {
         r.operationId = w.operationId;
         recon.put(r.id, r);
         return r.id;
+    }
+
+    // ------------------------------------------------------------------ step journal (M-025)
+
+    private Answer steps(String method, String apiPath, String rawQuery, JsonNode body) {
+        String[] seg = apiPath.split("/");   // "", "work", id, "steps"[, name]
+        String workId = java.net.URLDecoder.decode(seg[2], java.nio.charset.StandardCharsets.UTF_8);
+        String name = seg.length > 4 ? java.net.URLDecoder.decode(seg[4], java.nio.charset.StandardCharsets.UTF_8) : null;
+        Map<String, String> q = new LinkedHashMap<>();
+        if (rawQuery != null) {
+            for (String kv : rawQuery.split("&")) {
+                int i = kv.indexOf('=');
+                if (i > 0) {
+                    q.put(kv.substring(0, i), java.net.URLDecoder.decode(kv.substring(i + 1), java.nio.charset.StandardCharsets.UTF_8));
+                }
+            }
+        }
+        synchronized (lock) {
+            sweepLocked(clock.instant());
+            if (name == null && method.equals("GET")) return ok(200, journal.list(workId));
+            if (name != null && method.equals("GET")) {
+                long lv;
+                try {
+                    lv = Long.parseLong(q.getOrDefault("lockVersion", ""));
+                } catch (NumberFormatException e) {
+                    throw new Problem(400, "VALIDATION_FAILED", null, "lockVersion is required");
+                }
+                return ok(200, journal.get(workId, name, q.get("workerId"), lv, q.get("attemptId")));
+            }
+            if (name != null && method.equals("PUT")) {
+                return ok(200, journal.put(workId, name, body == null ? json.createObjectNode() : body));
+            }
+            throw new Problem(405, "METHOD_NOT_ALLOWED", null, method + " " + apiPath + " is not served by the SDK test engine");
+        }
     }
 
     // ------------------------------------------------------------------ worker calls

@@ -1,0 +1,9 @@
+# context = sangam/: the reactor poms, the Java SDK, the script worker and its entry point only
+**/target/**
+**/node_modules/**
+sangam-ui/**
+sdks/dotnet/**
+sdks/python/**
+sdks/typescript/**
+sdks/php/**
+deploy/airgap/out/**

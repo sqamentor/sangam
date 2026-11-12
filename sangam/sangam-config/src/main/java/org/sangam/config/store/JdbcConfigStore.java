@@ -116,17 +116,25 @@ public final class JdbcConfigStore implements ProfileRepository, MasterStore, Nu
     // which Oracle stores as NULL (SL-84: ORA-01400 at startup seeding).
     @Override
     public void put(MasterCode m) {
-        String from = m.validFrom() == null ? "0000-01-01" : m.validFrom().toString();
-        String parent = AbsentKey.encode(m.parentCode());
         inTx(c -> {
-            Jdbc.update(c, "DELETE FROM CFG_MASTER_CODE WHERE scope_id = ? AND scheme_id = ? AND segment_id = ? AND "
-                    + "parent_code = ? AND code = ? AND valid_from = ?", m.scope(), m.scheme(), m.segment(), parent, m.code(), from);
-            Jdbc.update(c, "INSERT INTO CFG_MASTER_CODE (scope_id, scheme_id, segment_id, parent_code, code, valid_from, "
-                            + "valid_to, name_json, flags_json, source_ref) VALUES (?,?,?,?,?,?,?,?,?,?)", m.scope(), m.scheme(),
-                    m.segment(), parent, m.code(), from, str(m.validTo()), CanonicalJson.write(m.name()),
-                    CanonicalJson.write(m.flags()), m.sourceRef());
+            put(c, m);
             return null;
         });
+    }
+
+    /**
+     * Upserts one master code on the caller's connection and transaction (M-130 bulk sink): replaces the row with the
+     * same key and {@code valid_from}, so a repeat is idempotent and commits or rolls back with the caller's work.
+     */
+    public void put(Connection c, MasterCode m) {
+        String from = m.validFrom() == null ? "0000-01-01" : m.validFrom().toString();
+        String parent = AbsentKey.encode(m.parentCode());
+        Jdbc.update(c, "DELETE FROM CFG_MASTER_CODE WHERE scope_id = ? AND scheme_id = ? AND segment_id = ? AND "
+                + "parent_code = ? AND code = ? AND valid_from = ?", m.scope(), m.scheme(), m.segment(), parent, m.code(), from);
+        Jdbc.update(c, "INSERT INTO CFG_MASTER_CODE (scope_id, scheme_id, segment_id, parent_code, code, valid_from, "
+                        + "valid_to, name_json, flags_json, source_ref) VALUES (?,?,?,?,?,?,?,?,?,?)", m.scope(), m.scheme(),
+                m.segment(), parent, m.code(), from, str(m.validTo()), CanonicalJson.write(m.name()),
+                CanonicalJson.write(m.flags()), m.sourceRef());
     }
 
     @Override

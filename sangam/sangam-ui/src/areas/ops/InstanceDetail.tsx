@@ -37,6 +37,7 @@ import {
   Tabs,
   TextArea,
   TextField,
+  TraceRef,
 } from '../../components/ui';
 
 const LOGS: HistoryLogKind[] = ['audit', 'jobs', 'external-tasks', 'variables', 'user-tasks', 'decisions', 'called'];
@@ -124,6 +125,8 @@ export function InstanceDetail() {
           [t('ops.started'), fmtDate(i.startTime)],
           [t('ops.ended'), fmtDate(i.endTime)],
           [t('ops.parent'), i.superInstanceId ? <Link key="p" to={`/ops/instances/${encodeURIComponent(i.superInstanceId)}`}>{i.superInstanceId}</Link> : undefined],
+          // M-044: the start command's trace, linked to the configured trace viewer
+          [t('ops.trace'), i.traceId ? <TraceRef key="tr" id={i.traceId} /> : undefined],
         ]}
       />
       {xml.data && (

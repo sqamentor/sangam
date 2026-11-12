@@ -15,6 +15,7 @@ import org.sangam.security.admin.WorkerBindingService;
 import org.sangam.security.approval.ApprovalBindingService;
 import org.sangam.security.assignment.SeatAssignmentResolver;
 import org.sangam.security.audit.SecurityAuditService;
+import org.sangam.security.breakglass.BreakGlassService;
 import org.sangam.security.delegation.DelegationOfPowersService;
 import org.sangam.security.delegation.DmnPowerEvaluator;
 import org.sangam.security.dialect.SecurityDialect;
@@ -84,6 +85,7 @@ public final class SangamSecurity {
     private final PrincipalResolver principals;
     private final SecurityDirectoryService directory;
     private final ModuleDefaults defaults;
+    private final BreakGlassService breakGlass;
 
     public SangamSecurity(SecurityDialect dialect, Options options) {
         Options o = options == null ? Options.defaults() : options;
@@ -115,6 +117,8 @@ public final class SangamSecurity {
         this.principals = new PrincipalResolver(dialect, persons, postings, memberships, tenants);
         this.directory = new SecurityDirectoryService(dialect, authorization);
         this.defaults = new ModuleDefaults(roles, policies, registry);
+        this.breakGlass = new BreakGlassService(dialect, authorization, audit, tenants, tokens);
+        this.tokens.useBreakGlass(breakGlass::used);
     }
 
     public SecurityDialect dialect() { return dialect; }
@@ -145,6 +149,8 @@ public final class SangamSecurity {
     public PrincipalResolver principals() { return principals; }
     public SecurityDirectoryService directory() { return directory; }
     public ModuleDefaults defaults() { return defaults; }
+    /** M-084 break-glass access; off unless the tenant config has a break-glass token class. */
+    public BreakGlassService breakGlass() { return breakGlass; }
 
     /**
      * Builds the tenant-key {@link org.sangam.core.security.FieldEncryptor} (AES-256-GCM, key per tenant, versioned key

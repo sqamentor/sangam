@@ -20,6 +20,12 @@ import java.util.Map;
  * triple licence; used under Apache-2.0). Connection URI from {@code properties.uriRef} (a secret reference, as it
  * carries credentials). Inbound: manual ack after the inbox write, nack with requeue otherwise; prefetch from
  * {@code properties.prefetch}. Outbound: publisher confirms, persistent messages.
+ *
+ * <p>CloudEvents (M-065, AMQP protocol binding): binary mode writes every attribute as an application property
+ * {@code cloudEvents_<attr>} and {@code content-type} = the data content type; structured mode sends
+ * {@code application/cloudevents+json}. SL-142 (C3-06): a delivery of a tenant that may not be stored yet (FROZEN,
+ * IMPORTING) is not acknowledged: after {@code properties.redeliverBackoffMs} it is nacked with requeue; a MOVED or
+ * PURGED tenant's delivery is parked, then acknowledged.
  */
 final class RabbitAdapters {
 
@@ -71,17 +77,23 @@ final class RabbitAdapters {
         }
 
         @Override
-        public synchronized void send(String tenantId, String eventKey, String messageId, String body) throws Exception {
+        public void send(String tenantId, String eventKey, String messageId, String body) throws Exception {
+            send(ChannelAdapters.Outgoing.json(tenantId, eventKey, messageId, body));
+        }
+
+        @Override
+        public synchronized void send(ChannelAdapters.Outgoing m) throws Exception {
             Map<String, Object> headers = new HashMap<>();
-            headers.put("event-key", eventKey);
-            if (tenantId != null) {
-                headers.put("tenant-id", tenantId);
+            headers.put("event-key", m.eventKey());
+            if (m.tenantId() != null) {
+                headers.put("tenant-id", m.tenantId());
             }
-            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().messageId(messageId).contentType("application/json")
+            m.cloudEventsOrEmpty().forEach((k, v) -> headers.put("cloudEvents_" + k, v));
+            AMQP.BasicProperties props = new AMQP.BasicProperties.Builder().messageId(m.messageId()).contentType(m.contentType())
                     .deliveryMode(2).headers(headers).build();
             String exchange = ch.exchange() == null ? "" : ch.exchange();
             String routingKey = ch.routingKey() != null ? ch.routingKey() : ch.queue() != null ? ch.queue() : ch.destination();
-            channel.basicPublish(exchange, routingKey, true, props, body.getBytes(StandardCharsets.UTF_8));
+            channel.basicPublish(exchange, routingKey, true, props, m.body().getBytes(StandardCharsets.UTF_8));
             channel.waitForConfirmsOrDie(Long.parseLong(ch.property("confirmTimeoutMs", "10000")));
         }
 
@@ -140,9 +152,17 @@ final class RabbitAdapters {
                 if (d.getProperties().getHeaders() != null) {
                     d.getProperties().getHeaders().forEach((k, v) -> headers.put(k, String.valueOf(v)));
                 }
+                if (d.getProperties().getContentType() != null) {
+                    headers.putIfAbsent("content-type", d.getProperties().getContentType());
+                }
                 String id = d.getProperties().getMessageId();
-                processor.receive(tenant, ch.key(), new String(d.getBody(), StandardCharsets.UTF_8), headers, id);
-                channel.basicAck(tag, false);
+                if (ChannelAdapters.deliver(processor, tenant, ch, new String(d.getBody(), StandardCharsets.UTF_8), headers, id)) {
+                    channel.basicAck(tag, false);
+                } else {
+                    // SL-142: the tenant may not take it yet; back off so a long freeze is not a hot redelivery loop
+                    ChannelAdapters.sleep(ChannelAdapters.redeliverBackoffMs(ch));
+                    channel.basicNack(tag, false, true);
+                }
             } catch (RuntimeException e) {
                 LOG.warn("rabbitmq channel {}: delivery not stored, requeue: {}", ch.key(), e.toString());
                 channel.basicNack(tag, false, true);

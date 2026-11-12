@@ -8,6 +8,7 @@ import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.Json;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,11 +36,23 @@ public final class ActionModels {
         Map<String, Object> dispatch(String tenantId, UUID operationId, Action action, String targetRef, Map<String, Object> input);
     }
 
-    /** Server-side check of the action's permission for this user and object. */
+    /**
+     * Server-side check of the action's permission for this user and object. SL-166 / owner decision 64: the check also gets
+     * the action's {@link Scope}, so a binding can verify that the subject ({@code targetRef}: the case, process instance or task)
+     * exists and is visible to the caller; {@link ActionModels} always calls the scoped form. A binding that only knows the
+     * permission implements the four-argument form, which the scoped form delegates to by default.
+     */
     @FunctionalInterface
     public interface Permission {
         boolean allowed(String tenantId, String user, String permission, String targetRef);
+
+        default boolean allowed(String tenantId, String user, String permission, Scope scope, String targetRef) {
+            return allowed(tenantId, user, permission, targetRef);
+        }
     }
+
+    /** SL-166 / owner decision 65: a REST target is {@code connectorId:operation}, the form {@link Dispatcher} bindings resolve. */
+    public static final String REST_TARGET_PATTERN = "[A-Za-z0-9_.-]{1,120}:[A-Za-z0-9_.-]{1,120}";
 
     public record Invocation(UUID operationId, Map<String, Object> result, boolean replayed) {
     }
@@ -64,8 +77,11 @@ public final class ActionModels {
         if (permission == null || permission.isBlank() || target == null || target.isBlank() || !key.matches("[A-Za-z0-9_.-]{1,120}")) {
             throw new IllegalArgumentException("an action needs a valid key, a permission and a target");
         }
-        if (type == TargetType.REST && !target.startsWith("/")) {
-            throw new IllegalArgumentException("a REST target is a path on this server");
+        if (scope == null || type == null) {
+            throw new IllegalArgumentException("an action needs a scope and a target type");
+        }
+        if (type == TargetType.REST && !target.matches(REST_TARGET_PATTERN)) {
+            throw new IllegalArgumentException("a REST target is connectorId:operation (a registered connector and one of its operations)");
         }
         return tx.inTransaction(c -> {
             int v = Jdbc.one(c, "SELECT COALESCE(MAX(version),0)+1 FROM MOD_ACTION WHERE tenant_id=? AND action_key=?", rs -> rs.getInt(1), tenantId, key).orElse(1);
@@ -81,25 +97,42 @@ public final class ActionModels {
     public List<Action> available(String tenantId, String user, Scope scope, String scopeType, String targetRef, Predicate<Action> extraFilter) {
         return tx.inTransaction(c -> Jdbc.query(c, "SELECT document FROM MOD_ACTION WHERE tenant_id=? AND active=1 ORDER BY action_key", rs -> Json.MAPPER.convertValue(Json.readMap(rs.getString(1)), Action.class), tenantId))
                 .stream().filter(a -> a.scope() == scope && (a.scopeType() == null || a.scopeType().equalsIgnoreCase(scopeType)))
-                .filter(a -> permissions.allowed(tenantId, user, a.permission(), targetRef)).filter(extraFilter).toList();
+                .filter(a -> permissions.allowed(tenantId, user, a.permission(), a.scope(), targetRef)).filter(extraFilter).toList();
+    }
+
+    /** {@link #invoke(String, String, String, String, Map, String, String)} without a reason. */
+    public Invocation invoke(String tenantId, String user, String key, String targetRef, Map<String, Object> input, String clientKey) {
+        return invoke(tenantId, user, key, targetRef, input, clientKey, null);
     }
 
     /**
      * Invokes the active version once per {@code clientKey}: a repeat returns the stored result. The row is claimed first, so concurrent
      * duplicates cannot both dispatch. A crash after the claim leaves a row with no result, reported as {@code ACTION_OUTCOME_UNKNOWN}.
+     * The permission and the subject ({@code targetRef} within the action's scope) are checked on every call, a replay included.
+     * SL-167 / owner decision 62: a non-blank {@code reason} is recorded in the {@code ACTION_INVOKED} audit entry.
      */
-    public Invocation invoke(String tenantId, String user, String key, String targetRef, Map<String, Object> input, String clientKey) {
+    public Invocation invoke(String tenantId, String user, String key, String targetRef, Map<String, Object> input, String clientKey,
+                             String reason) {
         Action action = tx.inTransaction(c -> Jdbc.one(c, "SELECT document FROM MOD_ACTION WHERE tenant_id=? AND action_key=? AND active=1", rs -> Json.MAPPER.convertValue(Json.readMap(rs.getString(1)), Action.class), tenantId, key))
                 .orElseThrow(() -> new IllegalArgumentException("ACTION_NOT_FOUND"));
-        if (!permissions.allowed(tenantId, user, action.permission(), targetRef)) {
+        if (!permissions.allowed(tenantId, user, action.permission(), action.scope(), targetRef)) {
             throw new SecurityException("ACTION_NOT_PERMITTED");
+        }
+        Map<String, Object> invoked = new LinkedHashMap<>();
+        invoked.put("key", key);
+        invoked.put("version", action.version());
+        invoked.put("target", targetRef);
+        invoked.put("actor", user);
+        if (reason != null && !reason.isBlank()) {
+            invoked.put("reason", reason.trim());
         }
         UUID op = Hashes.uuidV5(NS, String.join("|", tenantId, key, targetRef, user, clientKey));
         boolean claimed = tx.inTransaction(c -> {
             boolean first = Jdbc.insertIfAbsent(c, dialect, "INSERT INTO MOD_ACTION_RUN(operation_id,tenant_id,action_key,version,target_ref,actor,created_at) VALUES (?,?,?,?,?,?,?)",
                     op.toString(), tenantId, key, action.version(), targetRef, user, Jdbc.dbNow(c, dialect));
             if (first) {
-                audit.append(c, tenantId, "action:" + op, "ACTION_INVOKED", Map.of("key", key, "version", action.version(), "target", targetRef, "actor", user, "operationId", op.toString()));
+                invoked.put("operationId", op.toString());
+                audit.append(c, tenantId, "action:" + op, "ACTION_INVOKED", invoked);
             }
             return first;
         });

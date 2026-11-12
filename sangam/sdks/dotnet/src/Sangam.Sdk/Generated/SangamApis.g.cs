@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1074 operations on 901 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {
@@ -18,7 +18,9 @@ public sealed class SangamApis
         AdminAssignments = new AdminAssignmentsApi(calls);
         AdminOrgUnits = new AdminOrgUnitsApi(calls);
         AdminPowerTables = new AdminPowerTablesApi(calls);
+        AdminSecurity = new AdminSecurityApi(calls);
         Analytics = new AnalyticsApi(calls);
+        ApiContracts = new ApiContractsApi(calls);
         Audit = new AuditApi(calls);
         Billing = new BillingApi(calls);
         BulkIngest = new BulkIngestApi(calls);
@@ -78,6 +80,7 @@ public sealed class SangamApis
         SCIM = new SCIMApi(calls);
         Tasks = new TasksApi(calls);
         TenantOperations = new TenantOperationsApi(calls);
+        TestMode = new TestModeApi(calls);
         Work = new WorkApi(calls);
         Workspace = new WorkspaceApi(calls);
     }
@@ -87,7 +90,9 @@ public sealed class SangamApis
     public AdminAssignmentsApi AdminAssignments { get; }
     public AdminOrgUnitsApi AdminOrgUnits { get; }
     public AdminPowerTablesApi AdminPowerTables { get; }
+    public AdminSecurityApi AdminSecurity { get; }
     public AnalyticsApi Analytics { get; }
+    public ApiContractsApi ApiContracts { get; }
     public AuditApi Audit { get; }
     public BillingApi Billing { get; }
     public BulkIngestApi BulkIngest { get; }
@@ -147,6 +152,7 @@ public sealed class SangamApis
     public SCIMApi SCIM { get; }
     public TasksApi Tasks { get; }
     public TenantOperationsApi TenantOperations { get; }
+    public TestModeApi TestMode { get; }
     public WorkApi Work { get; }
     public WorkspaceApi Workspace { get; }
 }

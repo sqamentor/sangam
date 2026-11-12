@@ -281,7 +281,7 @@ class LiveHttpConnectorsTest {
     Path tmp;
 
     @ParameterizedTest
-    @EnumSource(LiveHttpConnectors.AuthType.class)
+    @EnumSource(value = LiveHttpConnectors.AuthType.class, names = {"NONE", "MTLS", "BASIC", "BEARER", "OAUTH2_CLIENT_CREDENTIALS"})
     void secretDefaultHeadersCarryTheSecretPortValueAndNeverTheAuthCredential(LiveHttpConnectors.AuthType type)
             throws Exception {
         HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
@@ -298,7 +298,7 @@ class LiveHttpConnectorsTest {
     }
 
     @ParameterizedTest
-    @EnumSource(LiveHttpConnectors.AuthType.class)
+    @EnumSource(value = LiveHttpConnectors.AuthType.class, names = {"NONE", "MTLS", "BASIC", "BEARER", "OAUTH2_CLIENT_CREDENTIALS"})
     void secretDefaultHeadersAreReadFromTheSecretPortOnEveryCall(LiveHttpConnectors.AuthType type) throws Exception {
         // SL-18 resolves at call time: a rotated edge service token is used by the next call, without a rebuild
         HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
@@ -314,7 +314,7 @@ class LiveHttpConnectorsTest {
     }
 
     @ParameterizedTest
-    @EnumSource(LiveHttpConnectors.AuthType.class)
+    @EnumSource(value = LiveHttpConnectors.AuthType.class, names = {"NONE", "MTLS", "BASIC", "BEARER", "OAUTH2_CLIENT_CREDENTIALS"})
     void anUnknownOrEmptyDefaultHeaderReferenceFailsTheBuildLikeAnAuthReference(LiveHttpConnectors.AuthType type)
             throws Exception {
         Map<String, String> unknown = Map.of("X-Edge-Client-Id", "secret://edge/missing", "X-Plain", "literal");
@@ -347,7 +347,7 @@ class LiveHttpConnectorsTest {
     }
 
     @ParameterizedTest
-    @EnumSource(LiveHttpConnectors.AuthType.class)
+    @EnumSource(value = LiveHttpConnectors.AuthType.class, names = {"NONE", "MTLS", "BASIC", "BEARER", "OAUTH2_CLIENT_CREDENTIALS"})
     void aDefaultHeaderSecretGoneAfterTheBuildMeansTheRequestIsNotSent(LiveHttpConnectors.AuthType type) throws Exception {
         // SL-61: the reference resolved when the connector was built; later the secret is deleted (or the vault is down)
         HttpRestConnector c = LiveHttpConnectors.build("t1", edgeSpec(base + "/pay", base + "/token", type, EDGE_HEADERS,
@@ -407,7 +407,7 @@ class LiveHttpConnectorsTest {
     }
 
     @ParameterizedTest
-    @EnumSource(LiveHttpConnectors.AuthType.class)
+    @EnumSource(value = LiveHttpConnectors.AuthType.class, names = {"NONE", "MTLS", "BASIC", "BEARER", "OAUTH2_CLIENT_CREDENTIALS"})
     void aDefaultHeaderSecretRotatedToAnUntidyValueMeansTheRequestIsNotSent(LiveHttpConnectors.AuthType type)
             throws Exception {
         // SL-65 at call time: the secret was tidy when the connector was built, then rotated with a trailing line break
@@ -453,6 +453,9 @@ class LiveHttpConnectorsTest {
             case BEARER -> new LiveHttpConnectors.Auth(type, "secret://t/token", null, null, null, null);
             case OAUTH2_CLIENT_CREDENTIALS -> new LiveHttpConnectors.Auth(type, null, tokenUrl, "client-1", "secret://t/cs",
                     "pay");
+            // the provider modes (M-067) carry their credential outside Authorization or sign the request; they have their
+            // own tests (ProviderAuthTest), so the header-isolation cases above run over the five classic modes only
+            default -> throw new IllegalArgumentException("not a classic auth mode: " + type);
         };
         // mtls: a loadable PKCS#12 client key store, its password by reference. The stub speaks plain HTTP, so there is
         // no handshake: this covers the builder's mtls branch, and the header assembly does not depend on TLS.
@@ -480,6 +483,7 @@ class LiveHttpConnectorsTest {
             case BASIC -> "Basic " + Base64.getEncoder().encodeToString(BASIC_CREDENTIAL.getBytes(StandardCharsets.UTF_8));
             case BEARER -> "Bearer bearer-token-7Fa";
             case OAUTH2_CLIENT_CREDENTIALS -> "Bearer tok-1";
+            default -> throw new IllegalArgumentException("not a classic auth mode: " + type);
         };
     }
 

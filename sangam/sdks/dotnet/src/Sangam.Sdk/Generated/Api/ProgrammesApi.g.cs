@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Programmes (24 operations).
+/// Typed operations of Programmes (25 operations).
 /// </summary>
 public sealed class ProgrammesApi
 {
@@ -25,6 +25,17 @@ public sealed class ProgrammesApi
         var req = ApiRequest.Put($"/programme-config");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.PgPublished?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The current programme configuration
+    /// The current published configuration, as it was published, with its version, content hash, publisher and time (prefill for the publish form). 404 NOT_FOUND when nothing is published yet.
+    /// GET /programme-config (operationId programmeCurrentConfig); permission programme.admin.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.PgCurrentConfig?> ProgrammeCurrentConfigAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/programme-config");
+        return await _calls.JsonAsync<M.PgCurrentConfig?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

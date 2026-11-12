@@ -47,6 +47,11 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
+    <!-- M-068 JSON-Schema validation of contract-bound requests (version managed in the root pom) -->
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -90,7 +95,35 @@
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-      <version>1.2.5</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- M-058 relay wake-up bus for databases without LISTEN/NOTIFY (broker/BrokerWakeupBus). Optional, owner decision
+         56, DOWNLOADS-WAVE3 log; versions managed in the root pom.
+         NATS client: Apache-2.0 (the same client as the flowable-ports NATS channels). Jedis: MIT. -->
+    <dependency>
+      <groupId>io.nats</groupId>
+      <artifactId>jnats</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- M-081 PDF/A-2b + PDF/UA-1 renderer (document/pdf/pdfbox, found by ServiceLoader). Apache PDFBox, Apache-2.0
+         (pulls fontbox, pdfbox-io, commons-logging; all Apache-2.0). Optional: a consumer without it gets
+         422 FORMAT_NOT_AVAILABLE for PDF output. Pinned here until the root pom manages it (owner decision 56). -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>3.0.8</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- M-081 PDF/A validation (document/pdf/verapdf/VeraPdfValidator, W3-E). veraPDF validation model (Jakarta);
+         licences recorded under owner decisions 94 and 102. Optional; version managed in the root pom. -->
+    <dependency>
+      <groupId>org.verapdf</groupId>
+      <artifactId>validation-model-jakarta</artifactId>
       <optional>true</optional>
     </dependency>
     <!-- Idempotency servlet filter. EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0. Provided by the servlet container. -->

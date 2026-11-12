@@ -164,6 +164,61 @@ FetchAndLockRequest.usePriority. `ExternalWork::$errorMessage` carries the previ
 `TopicSubscription::topicRequest()` returns the typed `Model\TopicRequest`; the array form
 `toTopicRequest()` is deprecated and kept only for compatibility.
 
+### Durable steps (M-025, R37)
+
+`$ctx->step($name, $fn, ?StepOptions $options)` journals one side-effecting call under the work's operationId
+(`GET/PUT /work/{id}/steps/{name}`, fenced by the lease). `$fn` gets a `Step`: send `$step->idempotencyKey()`
+(`operationId:name`) to the remote API and report its reference with `$step->setProviderRef()`.
+
+```php
+$paymentId = $ctx->step('charge', function (Step $step) use ($bank, $amount): string {
+    $r = $bank->charge($amount, idempotencyKey: $step->idempotencyKey());
+    $step->setProviderRef($r->id);
+    return $r->id;
+}, StepOptions::withLookup(fn(Step $s): ?string => $bank->findByKey($s->idempotencyKey())?->id));
+```
+
+- Recorded `SUCCEEDED`: the recorded result is returned (R33 typed values unwrapped) and `$fn` is not called.
+- `$fn` returns: `INTENT` then `SUCCEEDED`. `$fn` throws `StepNoEffectException`: `FAILED`, may run again later.
+  Any other exception: the step stays `INTENT` (uncertain) and the exception propagates.
+- `INTENT` left by an earlier attempt: the lookup is asked first (a value is recorded and returned, `null` means
+  no effect, so the step runs again); else `StepOptions::idempotentCall()` runs again with the same key; else
+  (the default, capability class c) `OutcomeUnknownException`, so the worker reports outcome-unknown.
+- 409 STALE_LEASE or 410 from the journal: the lease is marked lost and `TaskCancelledException` is thrown.
+
+NOT exactly-once for remote APIs: a crash between the remote call and the `SUCCEEDED` record leaves `INTENT`;
+the options above decide how a later attempt resolves it, never by a blind re-issue. The test engine serves the
+journal with the server's transitions (`src/Testing/EngineSteps.php`).
+
+### Sagas (M-026, R36)
+
+```php
+Saga::step('charge')
+    ->action('payment.charge', fn(TaskContext $ctx): array => ['chargeId' => charge($ctx)])
+    ->compensation('payment.refund', function (CompensationContext $c): array {
+        refund($c->forwardProviderRef(), $c->idempotencyKey());
+        return [];
+    })
+    ->build()
+    ->registerOn($worker);
+```
+
+Two subscriptions (options `lockDurationMs`, `retries`, `irreversible`, `variables`). The forward completion adds
+the variable `sangamSaga_<name>` (`.` and `-` as `_`): an R33 Json value `{step, operationId, providerRef, workId}`
+(providerRef = `$ctx->setOutcomeReference()`). The compensation (the BPMN compensation handler's service task) gets
+a `CompensationContext`: `task()`, `forward()` (null without a record), `forwardOperationId()`,
+`forwardProviderRef()` and `idempotencyKey()` = `forwardOperationId:compensate:name` (its own operationId without a
+record). The same topic for both is an error at build; restricted `variables` get the record variable added for the
+compensation.
+
+### Framework adapter (M-027)
+
+Not shipped yet: Laravel and Symfony adapters need `illuminate/*` and `symfony/*`, which are not installed here and
+must not become dependencies of this package. Planned as separate packages next to the SDK: a Laravel
+ServiceProvider plus the artisan command `sangam:work`, and a Symfony bundle plus the console command
+`sangam:work`, both registering handlers and sagas from configuration or the container and stopping the worker with
+`SangamWorker::stop()` on SIGTERM.
+
 ## Example
 
 `examples/bill-payment-worker.php`: P1 bill/payment worker for topic `payment` (`wf1_payment`), with treasury

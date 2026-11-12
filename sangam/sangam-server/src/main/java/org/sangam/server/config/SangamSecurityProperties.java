@@ -51,6 +51,38 @@ public class SangamSecurityProperties {
         return new org.sangam.server.security.PlatformIssuers(platformIssuer);
     }
 
+    /**
+     * M-077: {@code sangam.security.claims-profile.*} ({@code ClaimsProfile.of} keys, kebab or camel case). Empty = no
+     * profile: the token path keeps its configured principal claim and roles as before.
+     */
+    private java.util.Map<String, String> claimsProfile = new java.util.LinkedHashMap<>();
+    /**
+     * The {@code acr} values that show multi-factor sign-in ({@code sangam.security.mfa-acr-values}, the key and default
+     * of sangam-security's {@code SecurityProperties}, which reads the same key for R67).
+     */
+    private List<String> mfaAcrValues = new ArrayList<>(new org.sangam.security.oidc.SecurityProperties().getMfaAcrValues());
+
+    public java.util.Map<String, String> getClaimsProfile() {
+        return claimsProfile;
+    }
+
+    public void setClaimsProfile(java.util.Map<String, String> claimsProfile) {
+        this.claimsProfile = claimsProfile == null ? new java.util.LinkedHashMap<>() : claimsProfile;
+    }
+
+    public List<String> getMfaAcrValues() {
+        return mfaAcrValues;
+    }
+
+    public void setMfaAcrValues(List<String> mfaAcrValues) {
+        this.mfaAcrValues = mfaAcrValues == null ? new ArrayList<>() : mfaAcrValues;
+    }
+
+    /** The configured claims profile, or null when none is configured (the token path then applies none). */
+    public org.sangam.security.oidc.ClaimsProfile claimsProfileOrNull() {
+        return claimsProfile.isEmpty() ? null : org.sangam.security.oidc.ClaimsProfile.of(claimsProfile);
+    }
+
     /** Static bearer token for development only; refused on the {@code prod} profile. */
     public static class DevToken {
         private boolean enabled = false;

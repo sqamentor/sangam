@@ -269,5 +269,6 @@
   ],
   "noticeLint": ["waive", "waiver", "irrevocable", "shall not complain", "not approach the board", "give up the right", "cannot withdraw", "deemed consent", "pre-ticked", "अधित्याग", "अप्रतिसंहरणीय"],
   "noticeTemplates": "compliance/jurisdictions/IN/notices",
+  "processorAgreementTemplates": "compliance/jurisdictions/IN/agreements",
   "obligations": "compliance/jurisdictions/IN/obligations.tsv"
 }

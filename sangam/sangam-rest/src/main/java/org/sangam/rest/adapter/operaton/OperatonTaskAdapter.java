@@ -111,9 +111,8 @@ public class OperatonTaskAdapter implements TaskPort {
             if (ctx.seatId() != null && !candidateGroups.contains(ctx.seatId())) {
                 candidateGroups.add(ctx.seatId());
             }
-            // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object.
-            // (Applying them to q put the groups outside the OR and endOr() on the root, which the engine refuses:
-            // "cannot set endOr() before or()", so every non-supervisor list failed.)
+            // Operaton's or() returns the OR branch: every criterion of the branch and endOr() go on that object (on
+            // q, the engine refuses "cannot set endOr() before or()" and every non-supervisor list failed).
             TaskQuery any = q.or().taskAssignee(ctx.principalId()).taskCandidateUser(ctx.principalId());
             if (!candidateGroups.isEmpty()) {
                 any.taskCandidateGroupIn(candidateGroups);
@@ -155,7 +154,7 @@ public class OperatonTaskAdapter implements TaskPort {
             } else if ("ACTIVE".equalsIgnoreCase(f.state())) {
                 q.active();
             }
-            sort(q, f.sortBy(), f.sortOrder());
+            sort(TaskIndex.filter(q, f), f.sortBy(), f.sortOrder());
         } else {
             q.orderByTaskCreateTime().desc();
         }
@@ -163,10 +162,10 @@ public class OperatonTaskAdapter implements TaskPort {
         Page<org.operaton.bpm.engine.task.Task> raw = OperatonSupport.page(q, page, props.getCountCap(), t -> t);
         Map<String, String> businessKeys = businessKeys(raw.items());
         List<String> names = f == null ? List.of() : f.variableNames();
-        // P45 card variables: the same read as GET /tasks/{id}/variables (task scope and its parents) for rows the
-        // caller already sees through the visibility predicate above, so nothing unreadable is added
+        Map<String, TaskIndex.Values> index = TaskIndex.read(runtime, raw.items()); // M-042, one query per page
+        // P45 card variables: as GET /tasks/{id}/variables, for rows the caller already sees (nothing unreadable added)
         return raw.map(t -> {
-            Task row = map(t, businessKeys.get(t.getProcessInstanceId()), null);
+            Task row = TaskIndex.apply(index, map(t, businessKeys.get(t.getProcessInstanceId()), null));
             return names.isEmpty() ? row : row.withVariables(TypedVariables.toJson(
                     OperatonSupport.call(() -> tasks.getVariables(t.getId(), names))));
         });
@@ -186,6 +185,7 @@ public class OperatonTaskAdapter implements TaskPort {
             case "due" -> q.orderByDueDate();
             case "priority" -> q.orderByTaskPriority();
             case "name" -> q.orderByTaskName();
+            case "amount", "reference" -> TaskIndex.orderBy(q, b);
             default -> q.orderByTaskCreateTime();
         }
         if ("asc".equalsIgnoreCase(order)) {

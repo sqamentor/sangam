@@ -28,6 +28,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $businessStatus
  * @property-read string|null $superProcessInstanceId
  * @property-read string|null $rootProcessInstanceId
+ * @property-read string|null $traceId M-044 (decision 57): W3C trace id (32 lowercase hex) of the command that started the instance; absent when none was recorded. The UI links it through config traceUrlTemplate.
  */
 final class ProcessInstance implements \JsonSerializable
 {
@@ -48,6 +49,7 @@ final class ProcessInstance implements \JsonSerializable
      * @param string|null $businessStatus
      * @param string|null $superProcessInstanceId
      * @param string|null $rootProcessInstanceId
+     * @param string|null $traceId
      */
     public function __construct(
         public readonly ?string $id = null,
@@ -66,6 +68,7 @@ final class ProcessInstance implements \JsonSerializable
         public readonly ?string $businessStatus = null,
         public readonly ?string $superProcessInstanceId = null,
         public readonly ?string $rootProcessInstanceId = null,
+        public readonly ?string $traceId = null,
     ) {
     }
 
@@ -89,6 +92,7 @@ final class ProcessInstance implements \JsonSerializable
             Support::str($data['businessStatus'] ?? null),
             Support::str($data['superProcessInstanceId'] ?? null),
             Support::str($data['rootProcessInstanceId'] ?? null),
+            Support::str($data['traceId'] ?? null),
         );
     }
 
@@ -142,6 +146,9 @@ final class ProcessInstance implements \JsonSerializable
         }
         if ($this->rootProcessInstanceId !== null) {
             $out['rootProcessInstanceId'] = $this->rootProcessInstanceId;
+        }
+        if ($this->traceId !== null) {
+            $out['traceId'] = $this->traceId;
         }
         return $out === [] ? new \stdClass() : $out;
     }

@@ -3,6 +3,8 @@ package org.sangam.integration.sim;
 
 import org.sangam.integration.connector.file.LocalDirectoryTransport;
 import org.sangam.integration.sim.digilocker.DigiLockerPushSimulator;
+import org.sangam.integration.sim.digilocker.DigiLockerRequesterSimulator;
+import org.sangam.integration.sim.serverless.ServerlessSimulator;
 import org.sangam.integration.sim.dlt.DltSmsSimulator;
 import org.sangam.integration.sim.esign.EsignSimulator;
 import org.sangam.integration.sim.ifms.IfmsJitSimulator;
@@ -41,6 +43,8 @@ public final class SimulatorProfile implements AutoCloseable {
     public static final String IFMS_CLIENT_SECRET = "sim-secret";
     /** ASP id used against the eSign simulator. */
     public static final String ESIGN_ASP_ID = "SIM-ASP-001";
+    /** HMAC secret the serverless simulator signs its callbacks with (the inbound channel secret in tests). */
+    public static final String SERVERLESS_CALLBACK_SECRET = "sim-serverless-callback-secret";
     /** Issuer org id used against the DigiLocker simulator. */
     public static final String DIGILOCKER_ORG_ID = "in.gov.sangam.sim";
     /** Shared secret the payment gateway simulator signs callbacks with. */
@@ -58,6 +62,8 @@ public final class SimulatorProfile implements AutoCloseable {
     private IfmsJitSimulator ifms;
     private EsignSimulator esign;
     private DigiLockerPushSimulator digiLocker;
+    private DigiLockerRequesterSimulator digiLockerRequester;
+    private ServerlessSimulator serverless;
     private DltSmsSimulator dlt;
     private RestEchoSimulator rest;
     private SoapEchoSimulator soap;
@@ -102,6 +108,24 @@ public final class SimulatorProfile implements AutoCloseable {
             digiLocker = track(new DigiLockerPushSimulator()).start();
         }
         return digiLocker;
+    }
+
+    /** M-072: the DigiLocker requester (pull with consent) simulator. */
+    public synchronized DigiLockerRequesterSimulator digiLockerRequester() {
+        open();
+        if (digiLockerRequester == null) {
+            digiLockerRequester = track(new DigiLockerRequesterSimulator()).start();
+        }
+        return digiLockerRequester;
+    }
+
+    /** M-067: the serverless provider simulator (Lambda, Azure Functions, Cloud Run, Google token endpoint). */
+    public synchronized ServerlessSimulator serverless() {
+        open();
+        if (serverless == null) {
+            serverless = track(new ServerlessSimulator(SERVERLESS_CALLBACK_SECRET)).start();
+        }
+        return serverless;
     }
 
     /** The DLT SMS gateway; templates are registered by the DLT connector factory from its registry (R60). */

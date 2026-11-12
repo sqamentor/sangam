@@ -202,6 +202,40 @@ public class SangamEngineSettings {
     private boolean executorPartitioning = false;
     /** M-056: the cluster's fixed slot count S (X.2.1.2 rule 1), 1 to 65,536; never changed online. */
     private int executorSlots = org.sangam.engine.job.ExecutorSlots.DEFAULT_SLOTS;
+    /** M-056 (X.2.1.3, X.2.1.4, X.2.1.6): partitions of a new map, lease, safety margin, drain and recovery limits. */
+    /**
+     * M-057 (owner decision 88): honour {@code sangam:historyLevel} declared in models. OFF by default; on installs the
+     * per-definition history level (id 21 in {@code ACT_GE_PROPERTY}), so an existing database keeps its level until an
+     * operator turns this on (Operaton refuses a start whose level differs from the stored one).
+     */
+    private boolean historyModelOverrides = false;
+    /**
+     * M-021 {@code sangam.test-mode.enabled}: clock steering for test images. OFF by default; on, the engine refuses to
+     * start unless the database is H2 and none of {@link #activeProfiles} is a production profile.
+     */
+    private boolean testMode = false;
+    /** The host's active profiles (the server passes Spring's), for the M-021 production-profile refusal. */
+    private Set<String> activeProfiles = Set.of();
+    /**
+     * M-044: the current context's W3C trace id, recorded for each new process instance ({@code PROCESS_TRACE}); the
+     * server binds the current OpenTelemetry span. null = the trace id of {@link #getTracing()}'s current context.
+     */
+    private java.util.function.Supplier<String> traceIdSource;
+    /** M-068: pins {@code sangam:operationRef} at deployment (the server binds the API contract store); null = none. */
+    private org.sangam.engine.deploy.OperationRefPinning.Pinner operationRefPinner;
+    /**
+     * M-057 {@code external} history mode: {@code ACT_HI_*} keeps only the audit level for every definition and the
+     * full detail goes through the outbox to the external projector (OpenSearch/ES, Kafka, data lake; upsert by
+     * event id). OFF by default; refused at startup without an {@code EngineEventSink}. Class-B audit is unchanged.
+     */
+    private boolean historyExternal = false;
+    private int executorPartitions = 8;
+    private String executorClusterId = "sangam";
+    private Duration executorLeaseTtl = Duration.ofSeconds(15);
+    private Duration executorLeaseSafetyMargin = Duration.ofSeconds(3);
+    private Duration executorDrainTimeout = Duration.ofSeconds(30);
+    private int executorRecoveryBatch = 500;
+    private int executorMaxRecoveries = 3;
     /**
      * M-062 (R13): store the creating trace context of every new job and external task ({@code JOB_TRACE_CONTEXT}) so
      * job spans and worker spans can link to it. OFF by default; needs a bound {@link #tracing} implementation.
@@ -382,6 +416,40 @@ public class SangamEngineSettings {
     public void setExecutorPartitioning(boolean v) { mutable("executorPartitioning"); executorPartitioning = v; }
     public int getExecutorSlots() { return executorSlots; }
     public void setExecutorSlots(int v) { mutable("executorSlots"); executorSlots = v; }
+    public boolean isHistoryExternal() { return historyExternal; }
+    public void setHistoryExternal(boolean v) { mutable("historyExternal"); historyExternal = v; }
+    public org.sangam.engine.deploy.OperationRefPinning.Pinner getOperationRefPinner() { return operationRefPinner; }
+    public void setOperationRefPinner(org.sangam.engine.deploy.OperationRefPinning.Pinner v) { mutable("operationRefPinner"); operationRefPinner = v; }
+    public java.util.function.Supplier<String> getTraceIdSource() { return traceIdSource; }
+    public void setTraceIdSource(java.util.function.Supplier<String> v) { mutable("traceIdSource"); traceIdSource = v; }
+    public boolean isTestMode() { return testMode; }
+    public Set<String> getActiveProfiles() { return activeProfiles; }
+
+    /**
+     * M-021: the host's {@code sangam.test-mode.enabled} and its active profiles, set together. Deliberately not a bean
+     * setter, so no {@code sangam.engine.*} property can switch test mode on or blank the profile list.
+     */
+    public void enableTestMode(boolean enabled, java.util.Collection<String> hostProfiles) {
+        mutable("testMode");
+        testMode = enabled;
+        activeProfiles = hostProfiles == null ? Set.of() : Set.copyOf(hostProfiles);
+    }
+    public boolean isHistoryModelOverrides() { return historyModelOverrides; }
+    public void setHistoryModelOverrides(boolean v) { mutable("historyModelOverrides"); historyModelOverrides = v; }
+    public int getExecutorPartitions() { return executorPartitions; }
+    public void setExecutorPartitions(int v) { mutable("executorPartitions"); executorPartitions = v; }
+    public String getExecutorClusterId() { return executorClusterId; }
+    public void setExecutorClusterId(String v) { mutable("executorClusterId"); executorClusterId = v; }
+    public Duration getExecutorLeaseTtl() { return executorLeaseTtl; }
+    public void setExecutorLeaseTtl(Duration v) { mutable("executorLeaseTtl"); executorLeaseTtl = v; }
+    public Duration getExecutorLeaseSafetyMargin() { return executorLeaseSafetyMargin; }
+    public void setExecutorLeaseSafetyMargin(Duration v) { mutable("executorLeaseSafetyMargin"); executorLeaseSafetyMargin = v; }
+    public Duration getExecutorDrainTimeout() { return executorDrainTimeout; }
+    public void setExecutorDrainTimeout(Duration v) { mutable("executorDrainTimeout"); executorDrainTimeout = v; }
+    public int getExecutorRecoveryBatch() { return executorRecoveryBatch; }
+    public void setExecutorRecoveryBatch(int v) { mutable("executorRecoveryBatch"); executorRecoveryBatch = v; }
+    public int getExecutorMaxRecoveries() { return executorMaxRecoveries; }
+    public void setExecutorMaxRecoveries(int v) { mutable("executorMaxRecoveries"); executorMaxRecoveries = v; }
     public Map<String, Set<String>> getDeployAllowedClasses() { return deployAllowedClasses; }
     public void setDeployAllowedClasses(Map<String, Set<String>> v) { mutable("deployAllowedClasses"); deployAllowedClasses = v; }
     public Map<String, Set<String>> getDeployAllowedBeans() { return deployAllowedBeans; }

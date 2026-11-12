@@ -43,6 +43,12 @@ public final class PortsFormBridge implements FormPort {
                 "ACTIVE");
     }
 
+    /** SL-166 f2: a ports form is served as validated (its definition); any other form gets the base adapter's merge. */
+    @Override
+    public FormVersion effective(RequestContext ctx, String formKey) {
+        return find(ctx, formKey, null).isPresent() ? get(ctx, formKey, null) : base.effective(ctx, formKey);
+    }
+
     @Override
     public ValidationResult validate(RequestContext ctx, String formKey, ValidateRequest request) {
         Optional<SangamFormService.DeployedForm> f = find(ctx, formKey, null);

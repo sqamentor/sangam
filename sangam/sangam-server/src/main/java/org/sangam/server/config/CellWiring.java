@@ -35,6 +35,8 @@ import org.sangam.server.bridge.CellRegistrationService;
 import org.sangam.server.bridge.CellTenantMover;
 import org.sangam.server.bridge.CellTenantStateFilter;
 import org.sangam.server.bridge.CellTenantStateStore;
+import org.sangam.server.bridge.DedicatedTenant;
+import org.sangam.server.bridge.DedicatedTenantFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -101,18 +103,34 @@ public class CellWiring {
      * parked and then acked ({@link #inboundDecision}, SL-142). The state is read through the store's 2 s cache.
      */
     @Bean
-    public TenantAdmission sangamInboxTenantAdmission(CellTenantStateStore states) {
+    public TenantAdmission sangamInboxTenantAdmission(CellTenantStateStore states,
+                                                      ObjectProvider<DedicatedTenant> dedicated) {
+        DedicatedTenant binding = dedicated.getIfAvailable();
         return new TenantAdmission() {
             @Override
             public boolean admits(String tenant) {
-                return admitsInbound(states.get(tenant).state());
+                return (binding == null || binding.admits(tenant)) && admitsInbound(states.get(tenant).state());
             }
 
             @Override
             public Decision decide(String tenant) {
-                return inboundDecision(states.get(tenant));
+                return inboundDecision(binding, tenant, states::get);
             }
         };
+    }
+
+    /**
+     * M-016 (decision 51): on a cell dedicated to one tenant's database a message of any other tenant never belongs
+     * here, so it is parked (dead letter plus reconciliation item, then acked; SL-142) with the tenant state
+     * {@value DedicatedTenantFilter#CODE}, never stored in this database and never redelivered forever. Every other
+     * message takes the cell tenant-state decision ({@link #inboundDecision(CellTenantStateStore.TenantState)}).
+     */
+    static TenantAdmission.Decision inboundDecision(DedicatedTenant bindingOrNull, String tenant,
+            java.util.function.Function<String, CellTenantStateStore.TenantState> states) {
+        if (bindingOrNull != null && !bindingOrNull.admits(tenant)) {
+            return TenantAdmission.Decision.park(DedicatedTenantFilter.CODE, null, null);
+        }
+        return inboundDecision(states.apply(tenant));
     }
 
     /** Only an ACTIVE tenant takes broker messages; every move state keeps them in the broker (M-008). */
@@ -207,7 +225,8 @@ public class CellWiring {
     @Bean(destroyMethod = "close")
     public CellRegistrationService sangamCellRegistration(Environment env, ControlPlane controlPlane, TxSupport tx,
             DataSource dataSource, DocumentStore documents, RestProperties rest, ProcessEngine engine,
-            ObjectProvider<MeterRegistry> meters, ObjectProvider<OutboxCapacityMonitor> capacity) {
+            ObjectProvider<MeterRegistry> meters, ObjectProvider<OutboxCapacityMonitor> capacity,
+            ObjectProvider<DedicatedTenant> dedicated) {
         String cellId = env.getRequiredProperty("sangam.cell.id");
         String version = env.getProperty("sangam.version", CellWiring.class.getPackage().getImplementationVersion() == null
                 ? "0.1.0-SNAPSHOT" : CellWiring.class.getPackage().getImplementationVersion());
@@ -221,7 +240,8 @@ public class CellWiring {
                 dbVendor(dataSource),
                 env.getProperty("sangam.cell.capacity.starts-per-sec", Integer.class, 500),
                 env.getProperty("sangam.cell.capacity.tenants", Integer.class, 2000),
-                version);
+                version,
+                dedicatedTenantOf(dedicated.getIfAvailable()));
         LeaderElection leader = new LeaderElection(tx.dialect(), tx.newTransactions(), rest.getNode(),
                 Duration.ofSeconds(30));
         CellRegistrationService[] self = new CellRegistrationService[1];
@@ -235,6 +255,11 @@ public class CellWiring {
                 .toMillis());
         self[0] = service;
         return service;
+    }
+
+    /** M-016: the tenant the cell registers as dedicated to ({@link DedicatedTenantWiring}), or null for a shared cell. */
+    static String dedicatedTenantOf(DedicatedTenant bindingOrNull) {
+        return bindingOrNull == null ? null : bindingOrNull.tenant();
     }
 
     /**
