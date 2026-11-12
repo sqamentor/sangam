@@ -11,7 +11,7 @@ import org.sangam.core.engine.EngineMetrics;
 import org.sangam.engine.db.Conflicts;
 
 /**
- * {@code sangam_jobs_failed_total{cause,conflict}} (FLOWABLE-INTO-OPERATON D-39, R13): Operaton runs the failed-job
+ * {@code sangam_jobs_failed_total{cause,conflict}} (FLOWABLE-INTO-OPERATON D-39, R13 metric): Operaton runs the failed-job
  * command for every job execution that failed (in the handler, at flush or at commit), from the job executor and from
  * {@code ManagementService.executeJob} alike. This factory counts the failure and delegates to the engine's own
  * factory.

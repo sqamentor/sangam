@@ -148,7 +148,9 @@ public final class SangamSecurity {
 
     /**
      * Builds the tenant-key {@link org.sangam.core.security.FieldEncryptor} (AES-256-GCM, key per tenant, versioned key
-     * ids) on {@code SEC_TENANT_KEY}. {@code tx} must be the product data source; key transactions are short and separate.
+     * ids) on {@code SEC_TENANT_KEY}. {@code tx} must be a leaf pool on the product database, not the pool that
+     * business transactions hold: keys are read from inside those transactions (SL-161, the SL-43 pool-wait rule);
+     * key transactions are short and separate.
      * An ephemeral development KEK is refused when {@code production} is true.
      */
     public org.sangam.security.crypto.AesGcmFieldEncryptor newFieldEncryptor(Transactions tx,

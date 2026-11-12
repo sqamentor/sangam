@@ -373,6 +373,14 @@ public class HealthConnectorsProperties {
          * refuses every call). Fails at start-up when clients exist but {@code base-url} is not set.
          */
         public CdsClientVerifier clientVerifier() {
+            return clientVerifier(null);
+        }
+
+        /**
+         * As {@link #clientVerifier()}, with the {@code jti} replay guard of the verifier: SL-138 owner decision, the
+         * cluster-wide {@code JdbcReplayGuard} (null: the verifier's node-local guard, tests only).
+         */
+        public CdsClientVerifier clientVerifier(ClientJwtVerifier.ReplayGuard replay) {
             if (clients.isEmpty()) {
                 return null;
             }
@@ -380,7 +388,7 @@ public class HealthConnectorsProperties {
                 throw new IllegalStateException("sangam.connectors-health.cds-service.base-url is required with"
                         + " registered CDS clients (the public URL that clients put in aud)");
             }
-            ClientJwtVerifier verifier = new ClientJwtVerifier(verifierClients(), clockSkew, maxTokenLifetime, null, null);
+            ClientJwtVerifier verifier = new ClientJwtVerifier(verifierClients(), clockSkew, maxTokenLifetime, null, replay);
             return (token, endpointPath) -> {
                 try {
                     return verifier.verify(token, audience(endpointPath)).issuer();

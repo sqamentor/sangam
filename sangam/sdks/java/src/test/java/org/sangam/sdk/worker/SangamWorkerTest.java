@@ -64,6 +64,25 @@ class SangamWorkerTest {
     }
 
     @Test
+    void exposesTheTaskTraceContextOfTheWorkItem() throws Exception {
+        // M-062: ExternalWork.traceContext (sangam-api.yaml TraceContext) reaches the handler as ctx.traceparent()
+        try (FakeWorkServer server = new FakeWorkServer()) {
+            FakeWorkServer.Call r = runOne(server, sub(ctx -> Map.of("tp", ctx.traceparent(), "ts", ctx.tracestate())).build(),
+                    FakeWorkServer.work("\"traceContext\":{\"traceparent\":\"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\",\"tracestate\":\"congo=t61rcWkgMzE\"}"));
+            assertEquals(Map.of("tp", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01", "ts", "congo=t61rcWkgMzE"), r.body().get("variables"));
+        }
+    }
+
+    @Test
+    void traceContextIsNullWhenTheServerStoredNone() throws Exception {
+        try (FakeWorkServer server = new FakeWorkServer()) {
+            FakeWorkServer.Call r = runOne(server, sub(ctx -> Map.of("tp", String.valueOf(ctx.traceparent()),
+                    "ts", String.valueOf(ctx.tracestate()))).build(), FakeWorkServer.work(null));
+            assertEquals(Map.of("tp", "null", "ts", "null"), r.body().get("variables"));
+        }
+    }
+
+    @Test
     void anUnexpectedErrorFailsWithRetriesUnlessTheSubscriptionIsIrreversible() throws Exception {
         try (FakeWorkServer server = new FakeWorkServer()) {
             FakeWorkServer.Call r = runOne(server, sub(ctx -> {

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-// Fails when a translation key used in src/ is missing from en.json or hi.json, or when the two files differ.
+// English is the default and the fallback (owner decision Q-06, register SL-147). This check fails when:
+// - a translation key used in src/ is missing from en.json (English must be complete);
+// - another catalogue in src/i18n/locales/ (hi.json today) has a key en.json does not have (a stale key);
+// - such a catalogue has an empty entry, or an entry whose {{placeholders}} differ from the English one.
+// Other catalogues are optional: a key they lack is shown in English (i18next fallbackLng 'en'), so it is only counted.
 // Static keys: t('a.b'), label: 'a.b' (declarative CRUD fields). Dynamic keys (t(`enum.${x}`)) are covered by the
-// DYNAMIC list below, which names every value the code can produce.
+// DYNAMIC list in i18n-dynamic.json, which names every value the code can produce.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,8 +52,12 @@ function flatten(o, p = '', out = {}) {
   }
   return out;
 }
-const en = flatten(JSON.parse(readFileSync(join(src, 'i18n', 'locales', 'en.json'), 'utf8')));
-const hi = flatten(JSON.parse(readFileSync(join(src, 'i18n', 'locales', 'hi.json'), 'utf8')));
+const placeholders = (s) => (String(s).match(/\{\{\s*[\w.]+\s*\}\}/g) ?? []).map((x) => x.replace(/\s/g, '')).sort().join();
+
+const dir = join(src, 'i18n', 'locales');
+const read = (f) => flatten(JSON.parse(readFileSync(join(dir, f), 'utf8')));
+const en = read('en.json');
+const others = readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'en.json').sort();
 
 let bad = 0;
 const report = (msg, list) => {
@@ -58,9 +66,16 @@ const report = (msg, list) => {
     console.error(`${msg} (${list.length}):\n  ${list.sort().join('\n  ')}`);
   }
 };
-report('Missing in en.json', [...used].filter((k) => !(k in en)));
-report('Missing in hi.json', [...used].filter((k) => !(k in hi)));
-report('In en.json but not hi.json', Object.keys(en).filter((k) => !(k in hi)));
-report('In hi.json but not en.json', Object.keys(hi).filter((k) => !(k in en)));
+report('Missing in en.json (English must be complete)', [...used].filter((k) => !(k in en)));
+report('Empty in en.json', Object.keys(en).filter((k) => String(en[k]).trim() === ''));
+const notes = [];
+for (const f of others) {
+  const cat = read(f);
+  report(`In ${f} but not en.json (stale key)`, Object.keys(cat).filter((k) => !(k in en)));
+  report(`Empty in ${f} (remove it; English is the fallback)`, Object.keys(cat).filter((k) => k in en && String(cat[k]).trim() === ''));
+  report(`Placeholders differ from en.json in ${f}`, Object.keys(cat).filter((k) => k in en && placeholders(cat[k]) !== placeholders(en[k])));
+  const fallback = Object.keys(en).filter((k) => !(k in cat)).length;
+  notes.push(`${f}: ${Object.keys(cat).length} keys, ${fallback} shown in English`);
+}
 if (bad) process.exit(1);
-console.log(`i18n OK: ${used.size} keys used, ${Object.keys(en).length} keys per locale.`);
+console.log(`i18n OK: ${used.size} keys used, ${Object.keys(en).length} keys in en.json${notes.length ? `; ${notes.join('; ')}` : ''}.`);

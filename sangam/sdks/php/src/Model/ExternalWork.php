@@ -41,6 +41,8 @@ final class ExternalWork
          * complete from storedOutcome without calling the downstream again. Null from older servers.
          */
         public readonly ?WorkOperation $operation = null,
+        /** M-062: W3C trace context the engine stored for the task; null when none was stored. */
+        public readonly ?TraceContext $traceContext = null,
     ) {
     }
 
@@ -67,6 +69,7 @@ final class ExternalWork
             $i('priority'),
             $s('errorMessage'),
             isset($d['operation']) && is_array($d['operation']) ? WorkOperation::fromArray($d['operation']) : null,
+            isset($d['traceContext']) && is_array($d['traceContext']) ? TraceContext::fromArray($d['traceContext']) : null,
         );
     }
 

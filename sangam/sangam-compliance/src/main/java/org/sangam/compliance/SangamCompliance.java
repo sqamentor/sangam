@@ -131,7 +131,8 @@ public final class SangamCompliance {
         incidents = new IncidentReportingService(dialect, audit, config, contacts, p.incidentAuthority(), p.workflows());
         breaches = new BreachIncidentService(dialect, audit, config, p.supervisoryAuthority(), p.notifier(), p.principals(), holds, incidents,
                 contacts, templates, p.workflows());
-        breachPlans = new org.sangam.compliance.breach.BreachNotificationPlanner(dialect, audit, config, breaches);
+        breachPlans = new org.sangam.compliance.breach.BreachNotificationPlanner(dialect, audit, config, breaches, p.workflows());
+        breaches.plans(breachPlans);
         restrictions = new org.sangam.compliance.rights.RestrictionService(dialect, audit);
         rights.restrictions(restrictions);
         disclosures.restrictionCheck((c, t, pr, rec, pc) -> restrictions.blocking(c, t, pr, rec, pc).map(x -> x.restrictionId()));

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# openapi-generator "go" options for the Tier-2 Go client (M-022). Run through generate_tier2.py.
+packageName: sangam
+packageVersion: 0.1.0
+gitHost: github.com
+gitUserId: sqamentor
+gitRepoId: sangam-go
+withGoMod: true
+enumClassPrefix: true
+generateInterfaces: true
+isGoSubmodule: false

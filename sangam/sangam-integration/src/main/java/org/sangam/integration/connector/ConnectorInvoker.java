@@ -10,6 +10,7 @@ import org.sangam.core.layer.CanonicalJson;
 import org.sangam.core.layer.CapabilityClass;
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.OperationLedger;
+import org.sangam.core.layer.PendingAuditDrainer;
 import org.sangam.core.layer.Transactions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -38,6 +40,13 @@ import java.util.UUID;
  *       an unknown outcome is looked up once for (a)/(b), otherwise {@code markUnknown} opens the reconciliation
  *       item.</li>
  * </ol>
+ *
+ * <p><b>Audit (R42).</b> {@code OPERATION_DISPATCHED}, {@code OPERATION_OUTCOME} and {@code OPERATION_UNKNOWN} are
+ * written in the same transaction as the ledger change they describe. By default they are appended to the root's
+ * chain directly. A caller that runs while its own transaction holds the root's {@code ROOT_SEQ} lock (a JavaDelegate
+ * inside a job) must use {@link #deferringAudit}: appending there would wait for its own lock (SL-133). The deferring
+ * invoker records the events as durable pending rows instead, still atomically with the ledger, and the drain appends
+ * them to the chain once the job's transaction has ended.
  */
 public final class ConnectorInvoker {
 
@@ -108,14 +117,38 @@ public final class ConnectorInvoker {
     private final ConnectorCallJournal journal;
     private final ConnectorRegistry registry;
     private final AuditChain audit;
+    /** SL-133: when set, audit events go to its pending store and the drain is signalled after each call. */
+    private final PendingAuditDrainer deferred;
 
     public ConnectorInvoker(Transactions tx, OperationLedger ledger, ConnectorCallJournal journal, ConnectorRegistry registry,
                             AuditChain auditOrNull) {
+        this(tx, ledger, journal, registry, auditOrNull, null);
+    }
+
+    private ConnectorInvoker(Transactions tx, OperationLedger ledger, ConnectorCallJournal journal, ConnectorRegistry registry,
+                             AuditChain auditOrNull, PendingAuditDrainer deferred) {
         this.tx = tx;
         this.ledger = ledger;
         this.journal = journal;
         this.registry = registry;
         this.audit = auditOrNull;
+        this.deferred = deferred;
+    }
+
+    /**
+     * SL-133: this invoker for callers whose own transaction holds the root's {@code ROOT_SEQ} lock while they call it
+     * (a JavaDelegate in a job, through {@code IntegrationBridge.delegateInvoker()}). Same ledger, journal and
+     * registry; each audit event is recorded as a durable pending row in the transaction that writes the ledger (no
+     * root lock taken), and after every call the drainer is signalled to append the rows to the root's chain on its own
+     * thread, which waits for the job's transaction to end.
+     */
+    public ConnectorInvoker deferringAudit(PendingAuditDrainer drainer) {
+        return new ConnectorInvoker(tx, ledger, journal, registry, audit, Objects.requireNonNull(drainer, "drainer"));
+    }
+
+    /** Whether audit events of this invoker go through the pending store (SL-133). */
+    public boolean defersAudit() {
+        return deferred != null;
     }
 
     public ConnectorRegistry registry() {
@@ -132,6 +165,19 @@ public final class ConnectorInvoker {
     }
 
     public Outcome invoke(Invocation inv) {
+        if (deferred == null) {
+            return invokeOnce(inv);
+        }
+        try {
+            return invokeOnce(inv);
+        } finally {
+            // after every commit of this call (and after a failure, for the rows already committed); a drain of a root
+            // without pending rows returns without waiting for the root lock
+            deferred.signal(inv.tenantId(), inv.rootId());
+        }
+    }
+
+    private Outcome invokeOnce(Invocation inv) {
         SangamConnector connector = registry.require(inv.tenantId(), inv.connectorId());
         CapabilityClass cls = connector.capabilityClass();
         UUID op = inv.operationId();
@@ -147,9 +193,7 @@ public final class ConnectorInvoker {
         Decision d;
         try {
             d = tx.inTransaction(c -> {
-                if (audit != null) {
-                    audit.append(c, inv.tenantId(), inv.rootId(), "OPERATION_DISPATCHED", auditPayload(inv, op, cls, null));
-                }
+                audit(c, inv, "OPERATION_DISPATCHED", auditPayload(inv, op, cls, null));
                 OperationLedger.Intent intent = ledger.recordIntent(c, op, inv.ref(), cls, fp, inv.attemptId(), inv.lockVersion());
                 // the ledger key has no tenant part: never replay or settle another tenant's row (ids minted without a tenant)
                 ledger.find(c, op).filter(e -> !inv.tenantId().equals(e.tenantId())).ifPresent(e -> {
@@ -272,11 +316,9 @@ public final class ConnectorInvoker {
     private Outcome settleSuccess(Invocation inv, UUID op, Map<String, Object> output, String providerRef, boolean duplicate) {
         String outcome = successJson(output, providerRef, duplicate);
         tx.inTransaction(c -> {
-            if (audit != null) {
-                Map<String, Object> p = auditPayload(inv, op, null, "SUCCEEDED");
-                p.put("providerRef", providerRef);
-                audit.append(c, inv.tenantId(), inv.rootId(), "OPERATION_OUTCOME", p);
-            }
+            Map<String, Object> p = auditPayload(inv, op, null, "SUCCEEDED");
+            p.put("providerRef", providerRef);
+            audit(c, inv, "OPERATION_OUTCOME", p);
             ledger.recordOutcome(c, op, inv.lockVersion(), true, outcome);
             journal.recordResult(c, op, ConnectorCallJournal.LastResult.SUCCESS, providerRef, null);
             return null;
@@ -287,11 +329,9 @@ public final class ConnectorInvoker {
     private Outcome settleFailure(Invocation inv, UUID op, String code, String message, Map<String, Object> output) {
         String outcome = failureJson(code, message, output);
         tx.inTransaction(c -> {
-            if (audit != null) {
-                Map<String, Object> p = auditPayload(inv, op, null, "FAILED");
-                p.put("code", code);
-                audit.append(c, inv.tenantId(), inv.rootId(), "OPERATION_OUTCOME", p);
-            }
+            Map<String, Object> p = auditPayload(inv, op, null, "FAILED");
+            p.put("code", code);
+            audit(c, inv, "OPERATION_OUTCOME", p);
             ledger.recordOutcome(c, op, inv.lockVersion(), false, outcome);
             journal.recordResult(c, op, ConnectorCallJournal.LastResult.BUSINESS_FAILURE, null, code + ": " + message);
             return null;
@@ -301,16 +341,26 @@ public final class ConnectorInvoker {
 
     private Outcome markUnknown(Invocation inv, UUID op, String reason) {
         long item = tx.inTransaction(c -> {
-            if (audit != null) {
-                Map<String, Object> p = auditPayload(inv, op, null, "UNKNOWN_OUTCOME");
-                p.put("reason", reason);
-                audit.append(c, inv.tenantId(), inv.rootId(), "OPERATION_UNKNOWN", p);
-            }
+            Map<String, Object> p = auditPayload(inv, op, null, "UNKNOWN_OUTCOME");
+            p.put("reason", reason);
+            audit(c, inv, "OPERATION_UNKNOWN", p);
             long id = ledger.markUnknown(c, op, inv.lockVersion(), reason);
             journal.recordResult(c, op, ConnectorCallJournal.LastResult.UNKNOWN, null, reason);
             return id;
         });
         return new Unknown(op, reason, item);
+    }
+
+    /**
+     * One audit event in the caller's transaction {@code c}: a pending row when deferring (SL-133, no root lock), else
+     * appended to the root's chain; nothing without an audit chain.
+     */
+    private void audit(Connection c, Invocation inv, String eventType, Map<String, Object> payload) {
+        if (deferred != null) {
+            deferred.pending().record(c, inv.tenantId(), inv.rootId(), eventType, payload);
+        } else if (audit != null) {
+            audit.append(c, inv.tenantId(), inv.rootId(), eventType, payload);
+        }
     }
 
     private static LookupResult safeLookup(SangamConnector connector, ConnectorRequest request) {

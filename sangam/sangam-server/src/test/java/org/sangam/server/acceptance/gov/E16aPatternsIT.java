@@ -37,6 +37,28 @@ class E16aPatternsIT extends GovABase {
     @org.springframework.beans.factory.annotation.Autowired
     org.sangam.engine.SangamEngineSettings settings;
 
+    /** GP-06's synthetic working-day calendar, registered by name as a {@code WorkCalendar} bean (see {@link Calendars}). */
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.beans.factory.annotation.Qualifier(Calendars.GOVA_WORKING_DAYS)
+    GovACal govaWorkingDays;
+
+    /**
+     * Test beans added to the server context (a nested {@code @TestConfiguration} is used in addition to the
+     * application's configuration). The engine settings are frozen once the engine is built (M-098), so a calendar is
+     * never added to {@code settings.getWorkCalendars()} at run time: like a pack, the test registers a
+     * {@code WorkCalendar} bean by name, and the engine customizer copies every such bean into the settings before the
+     * engine starts ({@code EngineConfigurationCustomizer.applyModulePorts}).
+     */
+    @org.springframework.boot.test.context.TestConfiguration(proxyBeanMethods = false)
+    static class Calendars {
+        static final String GOVA_WORKING_DAYS = "gova-working-days";
+
+        @org.springframework.context.annotation.Bean(GOVA_WORKING_DAYS)
+        GovACal govaWorkingDays() {
+            return new GovACal(Set.of(LocalDate.parse("2026-11-09"))); // SYNTHETIC holiday (Mon 9 Nov 2026)
+        }
+    }
+
     private String start(String key, String bk, Object... kv) {
         return a.startProcess(null, key, bk, vars(kv));
     }
@@ -270,11 +292,13 @@ class E16aPatternsIT extends GovABase {
                     "boundary timer non-interrupting timeDate ${slaDue} (due date computed by the product calendar)",
                     "boundary timer non-interrupting timeDuration P3D on a working-day business calendar",
                     "escalation user task");
-            GovACal cal = new GovACal(Set.of(LocalDate.parse("2026-11-09")));
+            GovACal cal = govaWorkingDays;
             // Sangam replacement (SANGAM.md R31): instead of replacing Operaton's engine-wide 'duration' calendar (the
             // spike's workaround), Sangam keeps it and lets a timer name a WorkCalendar: cal:<name>:P3D. A pack
-            // registers WorkCalendar beans by name; this test registers its synthetic calendar the same way, by name.
-            settings.getWorkCalendars().put("gova-working-days", cal);
+            // registers WorkCalendar beans by name; this test registers its synthetic calendar the same way, by name
+            // (Calendars), before the engine starts: the frozen settings (M-098) refuse a calendar added at run time.
+            r.check(settings.getWorkCalendars().get(Calendars.GOVA_WORKING_DAYS) == cal,
+                    "the WorkCalendar bean reached the engine settings by name before start-up");
             r.variant("Sangam R31 tagged duration: <timeDuration>cal:gova-working-days:P3D</timeDuration>");
             String bpmn = defs("<process id=\"gp06\" isExecutable=\"true\"><startEvent id=\"s\"/>" + flow("f1", "s", "app")
                     + userTask("app", "${pioSeat}") + flow("f2", "app", "e") + "<endEvent id=\"e\"/>"

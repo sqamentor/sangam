@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_fuzz" targetNamespace="http://sangam.org/packs">
+  <process id="fuzz-main" isExecutable="true" operaton:historyTimeToLive="30">
+    <startEvent id="s"/>
+    <userTask id="u"><extensionElements><operaton:properties><operaton:property name="sangam.maxCardinality" value="five"/></operaton:properties></extensionElements><multiInstanceLoopCharacteristics isSequential="false"><loopCardinality>3</loopCardinality></multiInstanceLoopCharacteristics></userTask>
+    <endEvent id="e"/>
+    <sequenceFlow id="f1" sourceRef="s" targetRef="u"/>
+    <sequenceFlow id="f2" sourceRef="u" targetRef="e"/>
+  </process>
+</definitions>

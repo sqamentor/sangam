@@ -43,13 +43,14 @@ public class EngineAdapterWorkAdapter implements WorkPort {
     private final Tombstones tombstones;
     private final ReconciliationQueue reconciliation;
     private final WorkLedger ledger;
+    private final AuditChain chain;
 
     public EngineAdapterWorkAdapter(EngineAdapter engine, TxSupport tx, AuditPort audit, RestProperties props) {
         this.engine = engine;
         this.tx = tx;
         this.audit = audit;
         this.props = props;
-        AuditChain chain = new AuditChain(tx.dialect());
+        this.chain = new AuditChain(tx.dialect());
         this.reconciliation = new ReconciliationQueue(tx.dialect(), chain);
         this.tombstones = new Tombstones(tx.dialect(), reconciliation, chain);
         this.ledger = new WorkLedger(tx.dialect(), reconciliation);
@@ -63,11 +64,15 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         if (r.topics() == null || r.topics().isEmpty()) {
             throw ApiProblem.badRequest("TOPICS_REQUIRED", "at least one topic is required");
         }
+        for (TopicRequest t : r.topics()) {
+            guardTopic(ctx, t.name());   // R26 (SL-158): every requested topic, before anything is leased
+        }
         int max = r.maxTasks() == null ? 1 : Math.max(1, Math.min(100, r.maxTasks()));
         long wait = Math.min(r.asyncResponseTimeoutMs() == null ? 0 : Math.max(0, r.asyncResponseTimeoutMs()),
                 props.getMaxAsyncResponseTimeout().toMillis());
         long deadline = System.currentTimeMillis() + wait;
-        long sleep = 100;
+        org.sangam.rest.support.WorkLongPoll.Settings backoff = longPollSettings;
+        long sleep = backoff.firstInterval().toMillis();
         while (true) {
             List<ExternalWork> out = new ArrayList<>();
             for (TopicRequest t : r.topics()) {
@@ -77,11 +82,17 @@ public class EngineAdapterWorkAdapter implements WorkPort {
                 int room = max - out.size();
                 if (engine instanceof SangamEngineAdapter s) {
                     List<SangamEngineAdapter.LeasedWork> got = fenced("fetch", () ->
-                            s.fetchAndLockWork(r.workerId(), t.name(), room, lockDuration(t.lockDurationMs())));
+                            fetchOwnTenant(ctx, s, r.workerId(), t.name(), room, lockDuration(t.lockDurationMs())));
                     for (SangamEngineAdapter.LeasedWork lw : got) {
-                        WorkOperation operation = recordIntent(r.workerId(), lw);
-                        if (operation != null) {
-                            out.add(map(ctx, lw.work(), lw.businessKey(), operation));
+                        if (!ownTenant(ctx, lw.tenantId())) {
+                            // SL-157: never hand out (or record an intent for) another tenant's work; give it back
+                            engine.unlockExternal(lw.work().id(), r.workerId(), lw.work().lockVersion());
+                            continue;
+                        }
+                        Intent intent = recordIntent(r.workerId(), lw);
+                        if (intent != null) {
+                            out.add(map(ctx, lw.work(), lw.businessKey(), intent.operation())
+                                    .withTraceContext(intent.traceContext()));
                         }
                     }
                 } else {
@@ -101,7 +112,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
                 Thread.currentThread().interrupt();
                 return List.of();
             }
-            sleep = Math.min(1000, sleep * 2);
+            sleep = backoff.nextIntervalMillis(sleep);   // X1-07: the one back-off rule
         }
     }
 
@@ -111,15 +122,16 @@ public class EngineAdapterWorkAdapter implements WorkPort {
      * re-offers: nothing was dispatched). Work whose operation awaits reconciliation, or that the ledger refuses, is
      * parked (retries 0, incident) instead of being handed out; returns null then.
      */
-    private WorkOperation recordIntent(String workerId, SangamEngineAdapter.LeasedWork lw) {
+    private Intent recordIntent(String workerId, SangamEngineAdapter.LeasedWork lw) {
         EngineAdapter.ExternalWork w = lw.work();
         WorkLedger.Lease lease = new WorkLedger.Lease(lw.operationId(), lw.tenantId(), lw.rootId(), w.activityInstanceId(),
                 lw.capabilityClass(), w.id(), w.attemptId(), w.lockVersion());
         String refusal;
         try {
-            WorkOperation op = engine.inEngineTransaction(c -> ledger.onLease(c, lease));
-            if (!OperationLedger.State.UNKNOWN_OUTCOME.name().equals(op.state())) {
-                return op;
+            // M-062: the creating trace context is read in the same engine transaction (no extra commit)
+            Intent intent = engine.inEngineTransaction(c -> new Intent(ledger.onLease(c, lease), traceContext(c, w.id())));
+            if (!OperationLedger.State.UNKNOWN_OUTCOME.name().equals(intent.operation().state())) {
+                return intent;
             }
             refusal = "OPERATION_UNKNOWN_OUTCOME: operation " + lw.operationId() + " awaits reconciliation";
         } catch (OperationLedger.StaleLeaseException | IllegalStateException | IllegalArgumentException e) {
@@ -134,6 +146,32 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         }
         engine.failExternal(w.id(), workerId, w.lockVersion(), refusal, 0, Duration.ZERO);
         return null;
+    }
+
+    /** The ledger state of a leased item and its stored creating trace context (null: none, or trace links off). */
+    private record Intent(WorkOperation operation, WorkPort.TraceContext traceContext) {
+    }
+
+    private volatile boolean traceLinks;
+
+    /**
+     * M-062: when on (the engine's {@code trace-links} setting, off by default), every fetched item carries the trace
+     * context stored when the engine created it ({@code JobTraceContexts}, W2-D), so the worker's span links back to
+     * that command. Off: no read, and fetch is unchanged.
+     */
+    public void setTraceLinks(boolean traceLinks) {
+        this.traceLinks = traceLinks;
+    }
+
+    /** The stored creating context of work {@code workId}, on the caller's connection; null when off or none stored. */
+    private WorkPort.TraceContext traceContext(java.sql.Connection c, String workId) {
+        if (!traceLinks || !(engine instanceof org.sangam.engine.OperatonEngineAdapter)) {
+            return null;
+        }
+        return org.sangam.engine.trace.JobTraceContexts.read(c, workId)
+                .map(t -> new WorkPort.TraceContext(t.traceparent(),
+                        t.tracestate() == null || t.tracestate().isBlank() ? null : t.tracestate()))
+                .orElse(null);
     }
 
     private ExternalWork map(RequestContext ctx, EngineAdapter.ExternalWork w, String leasedBusinessKey,
@@ -160,6 +198,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     @Override
     public LockState extendLock(RequestContext ctx, String workId, ExtendLockRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         boolean cancelRequested = engine.inEngineTransaction(c -> tombstones.find(c, ctx.tenantId(), workId)
                 .map(t -> t.state() == Tombstones.State.CANCEL_REQUESTED).orElse(false));
         Duration d = lockDuration(r.newDurationMs());
@@ -172,31 +211,78 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     @Override
     public void complete(RequestContext ctx, String workId, CompleteRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.COMPLETE, true, r.variables());
         Map<String, Object> vars = TypedVariables.fromJson(r.variables());
         if (r.localVariables() != null) {
             vars.putAll(TypedVariables.fromJson(r.localVariables()));
         }
-        UUID op = operationIdOf(workId);
         String outcome = WorkLedger.successJson(r.variables(), r.outcome());
+        Map<String, Object> acknowledged = workPayload(workId, r.workerId(), r.lockVersion(), r.attemptId(), Map.of());
         try {
-            // SL-16: the ledger outcome commits with the engine completion (one engine transaction)
-            engine.inEngineTransaction(c -> {
-                engine.completeExternal(workId, r.workerId(), r.lockVersion(), vars);
-                ledger.onComplete(c, op, r.lockVersion(), outcome);
-                return null;
-            });
+            // SG-15: the operation id stored with the lease is read in the completion transaction by one plain SQL read
+            // (no engine query, so no engine entity is cached before completeExternal takes the root lock, SG-11). Only
+            // a lease without a stored id needs the derived one: that attempt is rolled back before any effect and the
+            // id is derived in its own transaction first, exactly as before.
+            if (!complete(ctx, workId, r, vars, outcome, acknowledged, null)) {
+                complete(ctx, workId, r, vars, outcome, acknowledged, Optional.ofNullable(operationIdOf(workId)));
+            }
         } catch (StaleLeaseException | OperationLedger.StaleLeaseException e) {
             if (engine.inEngineTransaction(c -> ledger.isRepeatedCompletion(c, workId, r.lockVersion(), outcome))) {
                 return;   // the same completion again (a retried request): answered as the first one
             }
             throw fenceProblem(workId, e);
         }
-        auditAfter(ctx, workId, "EXT_OP_ACKNOWLEDGED", r.workerId(), r.lockVersion(), r.attemptId(), Map.of());
+    }
+
+    /** Signals that the lease has no stored operation id; thrown before any effect, so the attempt rolls back clean. */
+    private static final class NoStoredOperationId extends RuntimeException {
+        NoStoredOperationId() {
+            super(null, null, false, false);
+        }
+    }
+
+    /**
+     * One completion transaction: the engine completion, the SL-16 ledger outcome and the EXT_OP_ACKNOWLEDGED audit
+     * commit together. {@code knownOp} null: the operation id is the one stored with the lease, read here on the
+     * transaction's connection; returns false (nothing done) when the lease stores none. Otherwise {@code knownOp} is
+     * the derived id (empty: no Sangam operation id, as for a non-Sangam engine).
+     */
+    private boolean complete(RequestContext ctx, String workId, CompleteRequest r, Map<String, Object> vars,
+                             String outcome, Map<String, Object> acknowledged, Optional<UUID> knownOp) {
+        try {
+            engine.inEngineTransaction(c -> {
+                UUID op = knownOp != null ? knownOp.orElse(null) : storedOperationId(c, workId);
+                engine.completeExternal(workId, r.workerId(), r.lockVersion(), vars);
+                ledger.onComplete(c, op, r.lockVersion(), outcome);
+                chain.append(c, ctx.tenantId(), workChain(workId), "EXT_OP_ACKNOWLEDGED",
+                        org.sangam.rest.adapter.jdbc.JdbcAuditAdapter.eventPayload(ctx, acknowledged));
+                return null;
+            });
+            return true;
+        } catch (NoStoredOperationId e) {
+            return false;
+        }
+    }
+
+    /**
+     * The operation id stored with the lease ({@code SangamLeaseTable.storedOperationIdOf}, W2-D); null without a Sangam
+     * engine adapter (as {@link #operationIdOf}); throws {@link NoStoredOperationId} when the lease stores none.
+     */
+    private UUID storedOperationId(java.sql.Connection c, String workId) {
+        if (!(engine instanceof SangamEngineAdapter)) {
+            return null;
+        }
+        if (!(engine instanceof org.sangam.engine.OperatonEngineAdapter)) {
+            throw new NoStoredOperationId();   // another Sangam adapter: derive it as before
+        }
+        return org.sangam.engine.lease.SangamLeaseTable.storedOperationIdOf(c, workId)
+                .orElseThrow(NoStoredOperationId::new);
     }
 
     @Override
     public void fail(RequestContext ctx, String workId, FailRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.FAIL, false, null);
         int retries = r.retries() == null ? 0 : Math.max(0, r.retries());
         Duration backoff = Duration.ofMillis(r.retryTimeoutMs() == null ? 0 : Math.max(0, r.retryTimeoutMs()));
@@ -212,6 +298,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     @Override
     public void bpmnError(RequestContext ctx, String workId, BpmnErrorRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         if (r.errorCode() == null || r.errorCode().isBlank()) {
             throw ApiProblem.badRequest("ERROR_CODE_REQUIRED", "errorCode is required");
         }
@@ -229,6 +316,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     @Override
     public void unlock(RequestContext ctx, String workId, UnlockRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         fenced(workId, () -> {
             engine.unlockExternal(workId, r.workerId(), r.lockVersion());
             return null;
@@ -238,6 +326,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     @Override
     public OutcomeUnknownResult outcomeUnknown(RequestContext ctx, String workId, OutcomeUnknownRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         rejectIfTombstoned(ctx, workId, r.lockVersion(), Tombstones.ResultKind.OUTCOME_UNKNOWN, true, r.evidence());
         UUID op = operationIdOf(workId);
         Map<String, Object> details = new LinkedHashMap<>();
@@ -261,6 +350,7 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     @Override
     public void cancelAck(RequestContext ctx, String workId, CancelAckRequest r) {
+        guardWork(ctx, workId);   // SL-157 tenant, SL-158 topic binding
         Optional<Tombstones.Tombstone> t = engine.inEngineTransaction(c -> tombstones.find(c, ctx.tenantId(), workId));
         if (t.isEmpty()) {
             throw ApiProblem.notFound("cancel request for work", workId);
@@ -295,6 +385,70 @@ public class EngineAdapterWorkAdapter implements WorkPort {
         Optional<Long> lv = engine.inEngineTransaction(c -> ledger.lockVersionOfAttempt(c, op, ctx.tenantId(), attemptId));
         return lv.orElseThrow(() -> ApiProblem.staleLease(workId, "STALE_VERSION",
                 "sangamAttemptId does not match the current attempt of " + workId));
+    }
+
+    private volatile org.sangam.rest.support.WorkLongPoll.Settings longPollSettings =
+            org.sangam.rest.support.WorkLongPoll.Settings.defaults();
+
+    /**
+     * X1-07: the in-thread fallback wait (no long-poll bean, or above its waiter bound) uses the long-poll's schedule,
+     * so the back-off is defined once ({@code WorkLongPoll.Settings}); default {@code Settings.defaults()}.
+     */
+    public void setLongPollSettings(org.sangam.rest.support.WorkLongPoll.Settings settings) {
+        this.longPollSettings = java.util.Objects.requireNonNull(settings, "settings");
+    }
+
+    // ------------------------------------------------------------------ tenant and topic (SL-157, SL-158)
+
+    private volatile WorkerTopicGuard topicGuard;
+
+    /** R26 (SL-158): binds the topic-binding check; without it every caller past the endpoint gate may use any topic. */
+    public void setTopicGuard(WorkerTopicGuard topicGuard) {
+        this.topicGuard = topicGuard;
+    }
+
+    private void guardTopic(RequestContext ctx, String topic) {
+        WorkerTopicGuard g = topicGuard;
+        if (g != null) {
+            g.requireTopic(ctx, topic);
+        }
+    }
+
+    /**
+     * Before a worker call on one item: the item's lease must belong to the caller's tenant (SL-157; otherwise it is
+     * reported as not found, so no other tenant's work id is confirmed), and the caller must be bound to its topic
+     * (SL-158). An item without a lease row is left to the fenced call, which refuses it ({@code NO_LEASE}).
+     */
+    private void guardWork(RequestContext ctx, String workId) {
+        if (!(engine instanceof org.sangam.engine.OperatonEngineAdapter o)) {
+            return;   // the lease row (tenant, topic) is known only to the Sangam engine adapter
+        }
+        Optional<org.sangam.engine.lease.SangamLeaseTable.Row> lease = o.leaseOf(workId);
+        if (lease.isEmpty()) {
+            return;
+        }
+        if (!ownTenant(ctx, lease.get().tenantId())) {
+            throw ApiProblem.notFound("work", workId);
+        }
+        guardTopic(ctx, lease.get().topic());
+    }
+
+    /** The caller's tenant as it appears on leased work (a null tenant is the engine's default tenant). */
+    private boolean ownTenant(RequestContext ctx, String workTenant) {
+        String mine = engine instanceof org.sangam.engine.OperatonEngineAdapter o
+                ? o.leaseTenant(ctx.tenantId()) : ctx.tenantId();
+        return java.util.Objects.equals(mine, workTenant);
+    }
+
+    /** SL-157: the fetch itself limited to the caller's tenant where the engine adapter supports it. */
+    private static List<SangamEngineAdapter.LeasedWork> fetchOwnTenant(RequestContext ctx, SangamEngineAdapter s,
+            String workerId, String topic, int room, Duration lockDuration) {
+        if (s instanceof org.sangam.engine.OperatonEngineAdapter o) {
+            List<String> tenants = new ArrayList<>();
+            tenants.add(ctx.tenantId());   // null: the default tenant
+            return o.fetchAndLockWork(workerId, topic, room, lockDuration, tenants);
+        }
+        return s.fetchAndLockWork(workerId, topic, room, lockDuration);
     }
 
     // ------------------------------------------------------------------ helpers
@@ -337,6 +491,12 @@ public class EngineAdapterWorkAdapter implements WorkPort {
 
     private void auditAfter(RequestContext ctx, String workId, String type, String workerId, long lockVersion,
                             String attemptId, Map<String, ?> extra) {
+        Map<String, Object> p = workPayload(workId, workerId, lockVersion, attemptId, extra);
+        tx.runInTx(() -> audit.record(ctx, workChain(workId), type, p));
+    }
+
+    private static Map<String, Object> workPayload(String workId, String workerId, long lockVersion, String attemptId,
+                                                   Map<String, ?> extra) {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("work_id", workId);
         p.put("worker_id", workerId);
@@ -345,8 +505,14 @@ public class EngineAdapterWorkAdapter implements WorkPort {
             p.put("attempt_id", attemptId);
         }
         p.putAll(extra);
-        // The core contract does not expose the root of a work item after completion, so worker-call events go to
-        // the per-work chain "work:<workId>".
-        tx.runInTx(() -> audit.record(ctx, "work:" + workId, type, p));
+        return p;
+    }
+
+    /**
+     * The core contract does not expose the root of a work item after completion, so worker-call events go to the
+     * per-work chain "work:<workId>".
+     */
+    private static String workChain(String workId) {
+        return "work:" + workId;
     }
 }

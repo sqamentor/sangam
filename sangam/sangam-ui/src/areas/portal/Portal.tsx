@@ -9,6 +9,8 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
+import { http } from '../../api/client';
+import { NoticeView, type RenderedNotice } from '../../modules/compliance';
 import type { FormSchema } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtMoney } from '../../i18n';
@@ -23,6 +25,9 @@ export function PortalHome() {
     <>
       <PageHeader title={t('portal.title')} description={t('portal.description')} />
       <Notice>{t('portal.assisted')}</Notice>
+      <p>
+        <Link to="/privacy">{t('privacy.publicTitle')}</Link>
+      </p>
       <ProblemAlert error={services.error} onRetry={services.reload} />
       {services.loading && <Loading />}
       {services.data?.length === 0 && <Empty message={t('portal.noServices')} />}
@@ -349,5 +354,27 @@ export function PortalGrievances() {
         </form>
       </Section>
     </>
+  );
+}
+
+/**
+ * M-033 (public): the tenant's privacy policy for anyone, signed in or not. A DPDP notice is public by nature, and the
+ * server serves it without authentication (GET /compliance/privacy-policy, security: [] in sangam-api.yaml;
+ * SecurityConfig.java:80-81). The tenant is the signed-in caller's, else the :tenant path segment or ?tenant=
+ * (ComplianceController.java:84-95, publicTenant). The language follows the UI; the server falls back and says so.
+ */
+export function PublicPrivacy() {
+  const { t, i18n } = useTranslation();
+  const { tenant: pathTenant } = useParams();
+  const queryTenant = new URLSearchParams(window.location.search).get('tenant') ?? undefined;
+  const tenant = pathTenant ?? queryTenant;
+  const policy = useAsync((signal) => http.get<RenderedNotice>('/compliance/privacy-policy', { lang: i18n.language, tenant }, signal), [i18n.language, tenant]);
+  return (
+    <main className="public-page">
+      <PageHeader title={t('privacy.publicTitle')} description={t('privacy.publicDesc')} />
+      <ProblemAlert error={policy.error} onRetry={policy.reload} />
+      {policy.loading && <Loading />}
+      {policy.data && <NoticeView notice={policy.data} />}
+    </main>
   );
 }

@@ -17,3 +17,14 @@ v2_spring_routes(_V2_RESOURCES_DIR, "Queues", "queues", "resources", "resources.
                  _V2_RESOURCES_REQS, files=["QueueController.java"])
 v2_spring_routes(_V2_RESOURCES_DIR, "Rosters", "rosters", "resources", "resources.read", "resources.write",
                  _V2_RESOURCES_REQS, files=["RosterController.java"])
+# M-051: the Map-backed request bodies above are typed from the keys the resources services read (_v2_bodykeys.py).
+# These are the uses of a whole map that read no key; each nested map named here stays an open object in the contract.
+bk_opaque_target({
+    "Sql.toJson": "serialised whole into an event payload; no member is read",
+})
+bk_opaque({
+    ("ResourcesContext.event", "record"): "the event payload is forwarded whole to the audit port; no member is read",
+    ("ResourceType.fromMap", "new ResourceType"): "free-form extra settings of the resource type, stored as given",
+    ("AvailabilityCalendar.fromMap", "hm.entrySet"): "opening hours keyed by day (MONDAY ... SUNDAY, ALL or DAILY), "
+                                                     "each a list of HH:mm-HH:mm windows",
+})

@@ -349,3 +349,12 @@ op('post', '/references/{id}/follow-ups', 'caseReferenceFollowUp', 'CaseFiles', 
    params=[pp('id')], body='CfFollowUpRequest', resp=(200, 'CfReference'), cmd='case-reference.follow-up', perm='case.write')
 op('post', '/references/{id}/close', 'caseReferenceClose', 'CaseFiles', 'Close the reference with a reason', 'Close the reference with a reason.', ['N04', 'N16', 'VI.4', 'R41', 'R42'],
    params=[pp('id')], body='CfReferenceControllerReasonBody', resp=(200, 'CfReference'), cmd='case-reference.close', perm='case.write')
+
+# M-051: the published configuration body is typed from the keys sangam-case reads (_v2_bodykeys.py).
+map_body('caseFilePublishConfig', 'sangam-rest/src/main/java/org/sangam/rest/modules/cases/CaseFileController.java',
+         'CaseFileController.publishConfig', 'body')
+bk_opaque({
+    ("CaseConfig.caseType", "new CaseType"): "the whole definition is also kept as given (CaseType.raw)",
+    ("CaseConfig.referenceKind", "new ReferenceKind"): "the whole definition is also kept as given (ReferenceKind.raw)",
+    ("CaseConfig.committeeKind", "new CommitteeKind"): "the whole definition is also kept as given (CommitteeKind.raw)",
+})

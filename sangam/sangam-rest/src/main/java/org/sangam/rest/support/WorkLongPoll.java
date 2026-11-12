@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /**
- * The waiting half of the worker long-poll without a parked request thread (M-053; R9, CF-3, D-40, R22).
+ * The waiting half of the worker long-poll without a parked request thread (M-053; R9, CF-3, FLOWABLE-INTO-OPERATON D-40, R22).
  *
  * <p>Before, {@code fetch-and-lock} slept in the servlet thread for up to {@code asyncResponseTimeoutMs} (30 s), so
  * every waiting worker held a request thread. Now the controller makes the first attempt in the request thread and,
@@ -79,6 +79,14 @@ public final class WorkLongPoll implements AutoCloseable {
         /** The old loop's schedule (100 ms doubling to 1 s), 1000 waiters, 4 poll threads. */
         public static Settings defaults() {
             return new Settings(1000, 4, Duration.ofMillis(100), Duration.ofSeconds(1));
+        }
+
+        /**
+         * X1-07: the one back-off rule of every worker wait (this long-poll and the adapters' in-thread fallback):
+         * the next poll interval after {@code currentMs}, doubling up to {@code maxInterval}.
+         */
+        public long nextIntervalMillis(long currentMs) {
+            return Math.min(maxInterval.toMillis(), Math.max(1, currentMs) * 2);
         }
     }
 
@@ -325,7 +333,7 @@ public final class WorkLongPoll implements AutoCloseable {
                 // the old loop's schedule: 100, 200, 400, 800 ms, then every 1 s (R1), never past the deadline
                 long delay;
                 synchronized (this) {
-                    interval = Math.min(settings.maxInterval().toMillis(), interval * 2);
+                    interval = settings.nextIntervalMillis(interval);
                     delay = Math.min(interval, left);
                 }
                 schedule(delay);

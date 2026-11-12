@@ -55,7 +55,8 @@ export function KeyValues({ items }: { items: [string, ReactNode][] }) {
       {items.map(([k, v]) => (
         <div key={k}>
           <dt>{k}</dt>
-          <dd>{v ?? '—'}</dd>
+          {/* dir=auto: data in a right-to-left script (e.g. an Urdu name) keeps its own direction in the English UI */}
+          <dd dir="auto">{v ?? '—'}</dd>
         </div>
       ))}
     </dl>
@@ -400,7 +401,7 @@ export function DataTable<T>({
                   </td>
                 )}
                 {columns.map((c) => (
-                  <td key={c.key} className={c.className}>
+                  <td key={c.key} className={c.className} dir="auto">
                     {c.render ? c.render(r) : String((r as Record<string, unknown>)[c.key] ?? '—')}
                   </td>
                 ))}

@@ -48,9 +48,17 @@ public final class HttpTransport {
     private final SangamLogger log;
     private final String userAgent;
     private final java.util.Map<String, String> defaultHeaders;
+    private final TraceContext trace;
 
     public HttpTransport(HttpClient http, URI baseUrl, TokenProvider tokens, RetryPolicy retryPolicy,
                          Duration requestTimeout, SangamLogger log, String userAgent, java.util.Map<String, String> defaultHeaders) {
+        this(http, baseUrl, tokens, retryPolicy, requestTimeout, log, userAgent, defaultHeaders, null);
+    }
+
+    /** As above, plus the caller's W3C trace context (M-062); null sends no trace headers (R56). */
+    public HttpTransport(HttpClient http, URI baseUrl, TokenProvider tokens, RetryPolicy retryPolicy,
+                         Duration requestTimeout, SangamLogger log, String userAgent, java.util.Map<String, String> defaultHeaders,
+                         TraceContext trace) {
         this.http = Objects.requireNonNull(http);
         String b = baseUrl.toString();
         while (b.endsWith("/")) b = b.substring(0, b.length() - 1);
@@ -62,6 +70,7 @@ public final class HttpTransport {
         this.log = log == null ? SangamLogger.noop() : log;
         this.userAgent = userAgent == null ? "sangam-sdk-java/" + SDK_VERSION : userAgent;
         this.defaultHeaders = defaultHeaders == null ? java.util.Map.of() : java.util.Map.copyOf(defaultHeaders);
+        this.trace = trace;
         this.json = defaultMapper();
     }
 
@@ -144,6 +153,7 @@ public final class HttpTransport {
         if (authorization != null) b.header("Authorization", authorization);
         if (idemKey != null) b.header("Idempotency-Key", idemKey);
         defaultHeaders.forEach((k, v) -> { if (!req.headers.containsKey(k)) b.header(k, v); });
+        traceHeaders(req).forEach(b::header);
         req.headers.forEach(b::header);
         HttpRequest.BodyPublisher publisher;
         if (req.rawBody != null) {
@@ -180,6 +190,30 @@ public final class HttpTransport {
             }
         }
         return URI.create(sb.toString());
+    }
+
+    /**
+     * The W3C trace headers for this request (M-062): empty without a {@link TraceContext}, when the request sets its
+     * own traceparent, when the provider has no valid one, or when the provider fails (tracing never fails a call).
+     */
+    java.util.Map<String, String> traceHeaders(ApiRequest req) {
+        if (trace == null || hasHeader(req, "traceparent")) return java.util.Map.of();
+        try {
+            String tp = trace.traceparent();
+            if (!TraceContext.validTraceparent(tp)) return java.util.Map.of();
+            String ts = trace.tracestate();
+            return TraceContext.validTracestate(ts) && !hasHeader(req, "tracestate")
+                    ? java.util.Map.of("traceparent", tp, "tracestate", ts) : java.util.Map.of("traceparent", tp);
+        } catch (RuntimeException e) {
+            log.debug("trace.context", "trace context provider failed; request sent without trace headers: " + e,
+                    Map.of("method", req.method, "path", req.path));
+            return java.util.Map.of();
+        }
+    }
+
+    private static boolean hasHeader(ApiRequest req, String name) {
+        for (String k : req.headers.keySet()) if (k.equalsIgnoreCase(name)) return true;
+        return false;
     }
 
     /** Percent-encodes one path segment (ids, keys, channel names). */

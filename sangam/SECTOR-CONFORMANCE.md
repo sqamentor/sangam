@@ -113,9 +113,10 @@ This is a re-verification of the documents' rows against code and tests. Rows we
 
 ### Contradictions
 
-- **C12, SLA and business calendar "Built".** Packs still run on the fixed `WorkingDayCalendar`
-  (`sangam-server … PacksWiring.java:142`), so tenant holidays do not reach pack SLAs. The register's own
-  §4.2 #8 agrees. Tracked as SL-34.
+- **C12, SLA and business calendar "Built".** Resolved in code (SL-34; class moved by M-011, 2026-11-12): `PacksWiring`
+  installs `org.sangam.packs.calendar.WorkingDayCalendar` over the tenant's profile calendar (`ProfileWorkingDays`,
+  `sangam.packs.calendar`), so tenant holidays reach pack SLAs. Only without a `ProfileResolver` bean do the packs fall
+  back to the default working days. Tests not run yet.
 - **TRACEABILITY-REGISTER and PREMIUM-GAP-RECHECK disagree** on NG-01…47: 34 implemented in one, 31 MISSING
   in the other. NG-23 says there is no CLI, but `tools/sangam-cli` exists. Both documents need re-baselining
   (documentation fix, SL-36).

@@ -44,13 +44,21 @@ public final class Hashes {
         return new UUID(bb.getLong(), bb.getLong());
     }
 
-    private static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
-
-    /** RFC 9562 UUIDv7: 48-bit Unix milliseconds, version 7, random tail (roughly time-ordered event ids). */
+    /**
+     * RFC 9562 UUIDv7 now, from {@link IdSource#SYSTEM} (wall clock, {@code SecureRandom} tail). Code that can take an
+     * {@link IdSource} should call {@link IdSource#timeOrderedUuid()} on the injected one instead (D11, M-097).
+     */
     public static UUID uuidV7() {
-        long ms = System.currentTimeMillis();
-        long msb = (ms << 16) | 0x7000L | (RANDOM.nextInt() & 0x0fffL);
-        long lsb = (RANDOM.nextLong() & 0x3fffffffffffffffL) | 0x8000000000000000L;
+        return IdSource.SYSTEM.timeOrderedUuid();
+    }
+
+    /**
+     * RFC 9562 UUIDv7: 48-bit Unix milliseconds {@code epochMillis}, version 7, 12 + 62 random bits from {@code random}
+     * (roughly time-ordered event ids). A pure function of its arguments.
+     */
+    public static UUID uuidV7(long epochMillis, java.util.random.RandomGenerator random) {
+        long msb = (epochMillis << 16) | 0x7000L | (random.nextInt() & 0x0fffL);
+        long lsb = (random.nextLong() & 0x3fffffffffffffffL) | 0x8000000000000000L;
         return new UUID(msb, lsb);
     }
 

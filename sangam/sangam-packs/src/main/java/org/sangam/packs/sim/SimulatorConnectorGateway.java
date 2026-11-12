@@ -292,7 +292,9 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
                 d.put("confidence", 0.82d);
                 d.put("extracted", true);
             }
-            case "court.limbs" -> d.put("nextHearing", java.time.LocalDate.now().plusDays(30).toString());
+            // SL-149: the pack's business date (scenario clock, tenant zone), not the JVM's date and zone
+            case "court.limbs" -> d.put("nextHearing",
+                    org.sangam.packs.core.Vars.today(r.tenantId()).plusDays(30).toString());
             // sangam-config's contract (ConfigConnector), simulated: a result only from the contract's inputs, so a
             // process that does not send them is not validated by the simulator either
             case "config.documentType" -> {

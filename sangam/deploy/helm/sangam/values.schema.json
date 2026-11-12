@@ -56,7 +56,174 @@
         "jobExecutor": {
           "type": "object",
           "properties": {
-            "exclusiveOverProcessHierarchies": { "type": "boolean" }
+            "exclusiveOverProcessHierarchies": { "type": "boolean" },
+            "virtualThreads": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "ingress": {
+      "$comment": "SG-39 / Q-09: with private.enabled=true the public className is refused, a class is required, the user annotations cannot select a public load balancer, and every cloud preset carries its internal-load-balancer annotation.",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "annotations": { "$ref": "#/definitions/annotations" },
+        "host": { "type": "string", "minLength": 1 },
+        "tls": {
+          "type": "object",
+          "properties": { "enabled": { "type": "boolean" }, "secretName": { "type": "string" } }
+        },
+        "private": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "className", "preset", "presets"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "className": { "type": "string", "not": { "$ref": "#/definitions/publicIngressClass" } },
+            "preset": { "type": "string", "enum": ["", "aws", "azure", "gcp"] },
+            "presets": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["aws", "azure", "gcp"],
+              "properties": {
+                "aws": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["className", "annotations"],
+                  "properties": {
+                    "className": { "type": "string", "minLength": 1 },
+                    "annotations": {
+                      "allOf": [
+                        { "$ref": "#/definitions/annotations" },
+                        {
+                          "required": ["alb.ingress.kubernetes.io/scheme"],
+                          "properties": { "alb.ingress.kubernetes.io/scheme": { "const": "internal" } }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "azure": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["className", "annotations"],
+                  "properties": {
+                    "className": { "type": "string", "minLength": 1 },
+                    "annotations": {
+                      "allOf": [
+                        { "$ref": "#/definitions/annotations" },
+                        {
+                          "required": ["appgw.ingress.kubernetes.io/use-private-ip"],
+                          "properties": { "appgw.ingress.kubernetes.io/use-private-ip": { "const": "true" } }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "gcp": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["className", "annotations"],
+                  "properties": {
+                    "className": { "const": "" },
+                    "annotations": {
+                      "allOf": [
+                        { "$ref": "#/definitions/annotations" },
+                        {
+                          "required": ["kubernetes.io/ingress.class"],
+                          "properties": { "kubernetes.io/ingress.class": { "const": "gce-internal" } }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "enabled": { "const": true }, "preset": { "const": "" } } },
+              "then": { "properties": { "className": { "minLength": 1 } } }
+            },
+            {
+              "if": { "properties": { "preset": { "const": "gcp" } } },
+              "then": { "properties": { "className": { "const": "" } } }
+            }
+          ]
+        }
+      },
+      "if": {
+        "required": ["private"],
+        "properties": { "private": { "required": ["enabled"], "properties": { "enabled": { "const": true } } } }
+      },
+      "then": {
+        "required": ["enabled", "className"],
+        "properties": {
+          "enabled": { "const": true },
+          "className": { "const": "" },
+          "annotations": {
+            "properties": {
+              "alb.ingress.kubernetes.io/scheme": { "const": "internal" },
+              "appgw.ingress.kubernetes.io/use-private-ip": { "const": "true" },
+              "kubernetes.io/ingress.class": { "not": { "$ref": "#/definitions/publicIngressClass" } }
+            }
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "serviceMonitor": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "interval": { "type": "string" },
+            "labels": { "$ref": "#/definitions/annotations" }
+          }
+        },
+        "prometheusRule": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "labels", "thresholds", "certManager"],
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "labels": { "$ref": "#/definitions/annotations" },
+            "thresholds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["outboxOldestAgeSeconds", "outboxCapacityRatio", "outboxParked", "relayLastCycleAgeSeconds", "rootLockWaitSeconds", "incidentsOpen", "reconciliationOpen", "certExpiryDays"],
+              "properties": {
+                "outboxOldestAgeSeconds": { "type": "integer", "minimum": 1 },
+                "outboxCapacityRatio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+                "outboxParked": { "type": "integer", "minimum": 0 },
+                "relayLastCycleAgeSeconds": { "type": "integer", "minimum": 1 },
+                "rootLockWaitSeconds": { "type": "number", "exclusiveMinimum": 0 },
+                "incidentsOpen": { "type": "integer", "minimum": 0 },
+                "reconciliationOpen": { "type": "integer", "minimum": 0 },
+                "certExpiryDays": { "type": "integer", "minimum": 1 }
+              }
+            },
+            "certManager": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["enabled", "selector"],
+              "properties": { "enabled": { "type": "boolean" }, "selector": { "type": "string", "pattern": "^[^'{}]*$" } }
+            }
+          }
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "ingressFrom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cidrs"],
+          "properties": {
+            "cidrs": { "type": "array", "items": { "$ref": "#/definitions/cidr" } }
           }
         }
       }
@@ -71,6 +238,18 @@
           "properties": { "destinationType": { "type": "string", "enum": ["DISK", "URL"] } }
         }
       }
+    }
+  },
+  "definitions": {
+    "cidr": {
+      "$comment": "An IPv4 or IPv6 CIDR (address/prefix), as a NetworkPolicy ipBlock.cidr takes it.",
+      "type": "string",
+      "pattern": "^([0-9]{1,3}([.][0-9]{1,3}){3}/([0-9]|[12][0-9]|3[0-2])|[0-9A-Fa-f:]*:[0-9A-Fa-f:.]*/([0-9]|[1-9][0-9]|1[01][0-9]|12[0-8]))$"
+    },
+    "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+    "publicIngressClass": {
+      "$comment": "Classes that only ever provision a public load balancer: GKE 'gce' (external Application Load Balancer).",
+      "enum": ["gce"]
     }
   }
 }

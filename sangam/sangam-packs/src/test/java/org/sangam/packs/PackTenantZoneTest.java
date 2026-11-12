@@ -20,10 +20,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.operaton.bpm.engine.delegate.DelegateExecution;
 import org.sangam.core.time.BusinessClock;
+import org.sangam.packs.calendar.WorkingDayCalendar;
 import org.sangam.packs.core.Vars;
 import org.sangam.packs.gov.HearingScheduleDelegate;
 import org.sangam.packs.port.PackRuntime;
-import org.sangam.packs.sim.WorkingDayCalendar;
 
 /**
  * SL-104 (ADR-D-20): pack time is the tenant's business zone from {@link BusinessClock#system()} (the server installs
@@ -72,6 +72,17 @@ class PackTenantZoneTest {
     void aFixedZoneCalendarIsUnchanged() {
         WorkingDayCalendar cal = new WorkingDayCalendar(PROFILE_ZONE);
         assertFalse(cal.isWorkingDay("no-profile", FRI_2000Z), "an explicit zone wins over the business clock");
+    }
+
+    /**
+     * M-011: sangam-server installs this calendar over the tenant profile calendar, so it is production code. It lives
+     * outside the simulator package (and so outside the {@code sim/} exemption of the SL-104 domain-neutrality guard)
+     * and is still the default calendar port.
+     */
+    @Test
+    void theWorkingDayCalendarIsProductionCodeOutsideTheSimulator() {
+        assertEquals("org.sangam.packs.calendar", WorkingDayCalendar.class.getPackageName());
+        assertTrue(PackRuntime.defaults().calendar() instanceof WorkingDayCalendar, "the default calendar port");
     }
 
     @Test

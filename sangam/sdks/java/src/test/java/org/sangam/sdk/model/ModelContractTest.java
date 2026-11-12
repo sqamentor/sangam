@@ -38,6 +38,7 @@ class ModelContractTest {
     static Stream<Arguments> covered() {
         return Stream.of(
                 Arguments.of("ExternalWork", ExternalWork.class),
+                Arguments.of("TraceContext", TraceContext.class),
                 Arguments.of("WorkOperation", WorkOperation.class),
                 Arguments.of("WorkOutcome", WorkOutcome.class),
                 Arguments.of("LockState", ExtendLockResult.class),

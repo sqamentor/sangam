@@ -49,8 +49,21 @@ public final class ExternalLayerGateway {
         if (conn == null) {
             throw new GeoException("NO_CONNECTOR", "connector " + x.connectorId() + " is not configured");
         }
+        Map<String, Object> in = requestInput(x, input);
+        String op = operation == null ? (x.protocol() == ExternalLayer.Protocol.WFS ? "getFeature" : "getMapUrl") : operation;
+        UUID opId = Hashes.uuidV5(NS, tenantId + "|" + layerRef + "|" + op + "|" + new java.util.TreeMap<>(in));
+        return conn.invoke(new ConnectorRequest(tenantId, opId, "geo-" + opId, 1, "geo:external:" + layerRef, layerRef, op, in,
+                Instant.now().plusSeconds(60)));
+    }
+
+    /**
+     * The connector input for one query: the caller's parameters plus the layer's own defaults. The egress URL is always
+     * the registered {@code baseUrl}; a caller-supplied {@code baseUrl} is replaced, never used, so no caller can pick
+     * where the server connects (the GIS host allow-list in {@code GisHttp.egressCheck} stays the second line).
+     */
+    static Map<String, Object> requestInput(ExternalLayer x, Map<String, Object> input) {
         Map<String, Object> in = new LinkedHashMap<>(input == null ? Map.of() : input);
-        in.putIfAbsent("baseUrl", x.baseUrl());
+        in.put("baseUrl", x.baseUrl());
         if (x.protocol() == ExternalLayer.Protocol.WFS) {
             in.putIfAbsent("typeName", x.remoteName());
             in.putIfAbsent("outputFormat", x.outputFormat());
@@ -58,10 +71,7 @@ public final class ExternalLayerGateway {
             in.putIfAbsent("layers", x.remoteName());
             in.putIfAbsent("format", x.outputFormat());
         }
-        String op = operation == null ? (x.protocol() == ExternalLayer.Protocol.WFS ? "getFeature" : "getMapUrl") : operation;
-        UUID opId = Hashes.uuidV5(NS, tenantId + "|" + layerRef + "|" + op + "|" + new java.util.TreeMap<>(in));
-        return conn.invoke(new ConnectorRequest(tenantId, opId, "geo-" + opId, 1, "geo:external:" + layerRef, layerRef, op, in,
-                Instant.now().plusSeconds(60)));
+        return in;
     }
 
     /**

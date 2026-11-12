@@ -15,8 +15,11 @@ import java.util.Base64;
  *       issues a {@code queueKeyId} label at registration for rotation tracking; it never holds the key.</li>
  *   <li><b>Entry.</b> Each queued packet is the JSON of a {@code CapturePacket} with {@code packetHash} already set,
  *       encrypted with AES-256-GCM, 96-bit random IV, 128-bit tag. AAD = UTF-8 of
- *       {@code tenantId + "|" + deviceId + "|" + operationId}, so an entry cannot be moved between devices or replayed
- *       under another operation id.</li>
+ *       {@code tenantId + "|" + deviceId + "|" + operationId + "|" + userId} ({@link #aad}), so an entry cannot be moved
+ *       between tenants or devices, replayed under another operation id, or opened for another user. {@code userId} is
+ *       the signed-in user who captured the entry (SL-129, owner decision 2026-11-12: one queue key per device, the
+ *       user bound into every entry). Under any other login the GCM tag fails: the entry stays encrypted, hidden and
+ *       unreplayed, and survives logout until the same user signs in again and syncs it.</li>
  *   <li><b>Envelope.</b> {@code {"v":1,"kid":queueKeyId,"op":operationId,"iv":b64,"ct":b64,"createdAt":iso}};
  *       {@link Envelope} is the server-side shape.</li>
  *   <li><b>operationId.</b> Stable from the moment of capture: UUIDv5(namespace = deviceId UUID, name = deviceSeq) or a
@@ -26,8 +29,8 @@ import java.util.Base64;
  *       CONFLICT and REJECTED entries are kept and surfaced to the user until the server resolves them.</li>
  *   <li><b>Revocation.</b> If a sync or pull answers DEVICE_REVOKED and the policy says {@code wipeOnRevoke}, the
  *       client destroys the queue key (crypto-erase) and every entry with it.</li>
- *   <li><b>Media.</b> Photo bytes are stored encrypted the same way (AAD adds {@code "|" + evidenceId}); the packet
- *       carries their SHA-256, which is computed before encryption.</li>
+ *   <li><b>Media.</b> Photo bytes are stored encrypted the same way (AAD = the entry AAD above followed by
+ *       {@code "|" + evidenceId}); the packet carries their SHA-256, which is computed before encryption.</li>
  * </ol>
  */
 public final class LocalQueueContract {
@@ -55,7 +58,19 @@ public final class LocalQueueContract {
         }
     }
 
-    public static String aad(String tenantId, String deviceId, String operationId) {
-        return tenantId + "|" + deviceId + "|" + operationId;
+    /**
+     * The AAD of one queue entry: {@code tenantId|deviceId|operationId|userId}. Every part is required: an entry
+     * without a user binding would open under any login.
+     */
+    public static String aad(String tenantId, String deviceId, String operationId, String userId) {
+        return require(tenantId, "tenantId") + "|" + require(deviceId, "deviceId") + "|" + require(operationId, "operationId")
+                + "|" + require(userId, "userId");
+    }
+
+    private static String require(String part, String name) {
+        if (part == null || part.isEmpty()) {
+            throw new FieldException("INVALID_BINDING", "queue entry AAD needs " + name);
+        }
+        return part;
     }
 }

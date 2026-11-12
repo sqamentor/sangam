@@ -10,9 +10,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 import org.sangam.core.api.StaleLeaseException.Reason;
+import org.sangam.core.layer.IdSource;
 
 /**
  * Adapter-owned fencing table for worker leases (VI.3.2 rule 2), shared by every {@link EngineAdapter}
@@ -185,7 +185,12 @@ public final class LeaseTable {
      * duplicate key when the row already exists.
      */
     public static Lease grant(Connection c, String workId, String workerId, Instant expiresAt) {
-        String attemptId = UUID.randomUUID().toString();
+        return grant(c, workId, workerId, expiresAt, IdSource.SYSTEM);
+    }
+
+    /** {@link #grant(Connection, String, String, Instant)} with the source of the new attemptId (D11, M-097). */
+    public static Lease grant(Connection c, String workId, String workerId, Instant expiresAt, IdSource ids) {
+        String attemptId = ids.randomUuid().toString();
         long exp = expiresAt.toEpochMilli();
         Dialect d = Dialect.detect(c);
         // MERGE: target alias t, source alias s (Oracle, SQL Server, H2)

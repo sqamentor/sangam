@@ -206,7 +206,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     }
 
     /** A root to lock: id, tenant and the definition key for the wait metric. */
-    private record RootRef(String rootId, String tenant, String definitionKey) {
+    record RootRef(String rootId, String tenant, String definitionKey) {
     }
 
     private String tenant(String t) {
@@ -542,12 +542,39 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
      */
     @Override
     public List<LeasedWork> fetchAndLockWork(String workerId, String topic, int maxItems, Duration lockDuration) {
+        return fetchAndLockWork(workerId, topic, maxItems, lockDuration, null);
+    }
+
+    /**
+     * SL-157 (TM-5): {@link #fetchAndLockWork(String, String, int, Duration)} limited to work of {@code tenantIds}
+     * (a null tenant is the default tenant, as on every leased item). Two tenants may use the same topic name; a worker
+     * of one must never lease, see or hold the other's work.
+     * <ul>
+     *   <li>The engine query is filtered by tenant ({@code tenantIdIn}) when no allowed tenant is the default tenant;
+     *       otherwise it cannot be (untenanted work belongs to the default tenant, and Operaton's fetch takes either
+     *       tenant ids or "without tenant", not both), and the check below alone applies.</li>
+     *   <li>In the fetch command, before any lease row is touched, an item of another tenant is unlocked again and
+     *       skipped (as an item held by the sweep is), so it is never granted, returned or committed as locked.</li>
+     * </ul>
+     *
+     * @param tenantIds the caller's tenants; null = no tenant limit (engine-internal callers)
+     */
+    public List<LeasedWork> fetchAndLockWork(String workerId, String topic, int maxItems, Duration lockDuration,
+                                             java.util.Collection<String> tenantIds) {
+        Set<String> allowed = null;
+        if (tenantIds != null) {
+            allowed = new HashSet<>();
+            for (String t : tenantIds) {
+                allowed.add(tenant(t));
+            }
+        }
+        final Set<String> only = allowed;
         if (lockDuration.compareTo(settings.getMaxLease()) > 0) {
             throw new IllegalArgumentException("VI.3 rule 3: lease " + lockDuration + " exceeds the maximum "
                     + settings.getMaxLease());
         }
         if (Context.hasActiveCommandContext()) {
-            return once((cc, conn) -> fetchOnce(cc, conn, sweepExpired(conn), workerId, topic, maxItems, lockDuration));
+            return once((cc, conn) -> fetchOnce(cc, conn, sweepExpired(conn), workerId, topic, maxItems, lockDuration, only));
         }
         try {
             return fetchRetrier.run("fetchAndLock", true, () -> {
@@ -557,7 +584,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                 });
                 return once((cc, conn) -> {
                     CommandState.of(cc).markAcquisition();
-                    return fetchOnce(cc, conn, held, workerId, topic, maxItems, lockDuration);
+                    return fetchOnce(cc, conn, held, workerId, topic, maxItems, lockDuration, only);
                 });
             });
         } catch (ConflictRetryExhaustedException e) {
@@ -567,23 +594,45 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         }
     }
 
+    /**
+     * SL-157 / SL-158: the lease row of a work item (its tenant and topic, read by SQL, no engine entity cached), or
+     * empty when the item has no lease. Callers check the caller's tenant and topic binding against it before a
+     * worker call; the fenced call itself still checks owner and lock version.
+     */
+    public Optional<SangamLeaseTable.Row> leaseOf(String workId) {
+        return inEngineTransaction(conn -> leases.peek(conn, workId));
+    }
+
+    /** The tenant id work of {@code tenantId} carries on its lease (a null tenant is the default tenant). */
+    public String leaseTenant(String tenantId) {
+        return tenant(tenantId);
+    }
+
     /** Fetches that returned nothing after all conflicting attempts. */
     public long fetchGiveUps() {
         return fetchGiveUps.get();
     }
 
     private List<LeasedWork> fetchOnce(CommandContext cc, Connection conn, Set<String> heldBySweep, String workerId,
-                                       String topic, int maxItems, Duration lockDuration) {
+                                       String topic, int maxItems, Duration lockDuration, Set<String> tenants) {
         leases.lockFetch(conn, topic);
-        List<LockedExternalTask> locked = externalTaskService.fetchAndLock(maxItems, workerId)
-                .topic(topic, lockDuration.toMillis()).includeExtensionProperties()
-                .enableCustomObjectDeserialization().execute(); // JSON map/list variables arrive deserialized
+        org.operaton.bpm.engine.externaltask.ExternalTaskQueryTopicBuilder fetch = externalTaskService
+                .fetchAndLock(maxItems, workerId).topic(topic, lockDuration.toMillis()).includeExtensionProperties()
+                .enableCustomObjectDeserialization(); // JSON map/list variables arrive deserialized
+        if (tenants != null && !tenants.contains(settings.getDefaultTenantId())) {
+            fetch = fetch.tenantIdIn(tenants.toArray(new String[0]));   // SL-157: only the caller's tenants
+        }
+        List<LockedExternalTask> locked = fetch.execute();
         cc.getDbEntityManager().registerOptimisticLockingListener(FAIL_ON_EXTERNAL_TASK_CONFLICT);
         long now = clock.now().toEpochMilli();
         List<LeasedWork> out = new ArrayList<>(locked.size());
         for (LockedExternalTask t : locked) {
             if (heldBySweep.contains(t.getId())) {
                 externalTaskService.unlock(t.getId()); // held in this same command: keep it parked
+                continue;
+            }
+            if (tenants != null && !tenants.contains(tenant(t.getTenantId()))) {
+                externalTaskService.unlock(t.getId()); // SL-157: another tenant's work, never leased to this caller
                 continue;
             }
             SangamLeaseTable.Row previous = leases.lock(conn, t.getId());
@@ -605,7 +654,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             Long fence = null;
             String exclusiveDecl = ext.get("sangam:exclusive");
             if (exclusiveDecl != null && !exclusiveDecl.isBlank() && !"state".equals(exclusiveDecl.trim())) {
-                String scopeKey = exclusiveScope(exclusiveDecl.trim(), rootId, t);
+                String scopeKey = ExclusiveScope.of(exclusiveDecl.trim(), rootId, t);
                 if (scopeKey == null) {
                     externalTaskService.handleFailure(t.getId(), workerId, "VI.6: exclusive scope '" + exclusiveDecl
                             + "' cannot be evaluated (missing variable)", null, 0, 0L);
@@ -638,19 +687,6 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                     fence, false));
         }
         return out;
-    }
-
-    /** {@code execution:<group>} → {@code root:group}; {@code resource:<variable>} → {@code res:<value>}. */
-    private static String exclusiveScope(String decl, String rootId, LockedExternalTask t) {
-        if (decl.startsWith("execution")) {
-            String group = decl.contains(":") ? decl.substring(decl.indexOf(':') + 1) : t.getActivityId();
-            return rootId + ":" + group;
-        }
-        if (decl.startsWith("resource:")) {
-            Object v = t.getVariables().get(decl.substring("resource:".length()).trim());
-            return v == null ? null : "res:" + v;
-        }
-        throw new ProcessEngineException("VI.6: unknown sangam:exclusive mode '" + decl + "'");
     }
 
     /**
@@ -1023,16 +1059,8 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
     }
 
     /**
-     * FLOWABLE-INTO-OPERATON D-32: tx 1 moves every timer due date and task due date of the instance tree by the paused time while it is
-     * still suspended (re-dating and activating in one transaction fails with ENGINE-03005); tx 2 activates it.
-     */
-    /**
-     * <b>ADR-D-25 recovery</b> of an {@code AMBIGUOUS_ROUTE} / {@code NO_MATCHING_ROUTE} incident, in one command
-     * under L2: object check {@code PROCESS_INSTANCE / MODIFY} for {@code actor} (fail closed when no authorization
-     * port is bound), the corrected variables are set, every execution parked at a strict exclusive gateway of the
-     * instance is re-routed by the shared policy, and a {@code ROUTE_CORRECTED} audit event records who corrected
-     * what (variable names, not values) and the flow taken. If any gateway still does not route, the whole correction
-     * rolls back and {@link org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.RoutingException} carries the code.
+     * <b>ADR-D-25 recovery</b> of an {@code AMBIGUOUS_ROUTE} / {@code NO_MATCHING_ROUTE} incident, in one command under
+     * L2; the correction itself is {@link RouteCorrection#apply}.
      *
      * @return the ids of the re-routed gateways
      */
@@ -1040,44 +1068,16 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
                                      Map<String, Object> variables, String reason) {
         return command("correctRoute", (cc, conn) -> {
             RootRef root = rootOfInstance(processInstanceId);
-            if (root == null) {
-                throw new ProcessEngineException("no running process instance " + processInstanceId);
-            }
-            lock(cc, root);
-            var authz = settings.getRouteCorrectionAuthorization();
-            if (authz == null) {
-                throw new org.sangam.core.security.SangamSecurityException.AccessDenied(
-                        "ADR-D-25: no authorization port bound for route corrections", 0);
-            }
-            authz.require(conn, actor, "PROCESS_INSTANCE", "MODIFY", processInstanceId);
-            List<String> parked = Jdbc.query(conn, "SELECT EXECUTION_ID_ FROM ACT_RU_INCIDENT WHERE PROC_INST_ID_ = ? "
-                    + "AND INCIDENT_TYPE_ = ?", rs -> rs.getString(1), processInstanceId,
-                    org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.INCIDENT_TYPE);
-            if (parked.isEmpty()) {
-                throw new ProcessEngineException("instance " + processInstanceId + " has no routing incident");
-            }
-            if (variables != null && !variables.isEmpty()) {
-                runtimeService.setVariables(processInstanceId, variables);
-            }
-            List<String> taken = new ArrayList<>();
-            for (String executionId : parked) {
-                String gateway = Jdbc.one(conn, "SELECT ACT_ID_ FROM ACT_RU_EXECUTION WHERE ID_ = ?",
-                        rs -> rs.getString(1), executionId).orElse(null);
-                runtimeService.signal(executionId); // re-runs the shared policy; RoutingException rolls everything back
-                taken.add(gateway);
-            }
-            Map<String, Object> audit = new LinkedHashMap<>();
-            audit.put("processInstanceId", processInstanceId);
-            audit.put("actorPersonId", actor.personId());
-            audit.put("actorSubject", actor.subject());
-            audit.put("reason", reason);
-            audit.put("correctedVariables", variables == null ? List.of() : new ArrayList<>(new java.util.TreeSet<>(variables.keySet())));
-            audit.put("gateways", taken);
-            c.auditSink().append(conn, root.tenant(), root.rootId(), "ROUTE_CORRECTED", audit);
-            return taken;
+            lock(cc, root);   // no root: nothing to lock, RouteCorrection refuses it first
+            return RouteCorrection.apply(conn, runtimeService, settings.getRouteCorrectionAuthorization(), c.auditSink(),
+                    root, actor, processInstanceId, variables, reason);
         });
     }
 
+    /**
+     * FLOWABLE-INTO-OPERATON D-32: tx 1 moves every timer due date and task due date of the instance tree by the paused time while it is
+     * still suspended (re-dating and activating in one transaction fails with ENGINE-03005); tx 2 activates it.
+     */
     @Override
     public void resumeInstance(String processInstanceId, String actor) {
         List<String> tree = command("resumeInstance.redate", (cc, conn) -> {

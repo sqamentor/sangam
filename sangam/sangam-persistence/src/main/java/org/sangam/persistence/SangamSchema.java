@@ -134,7 +134,19 @@ public final class SangamSchema {
             "CMP_NOTICE_DELIVERY", "CMP_CONSENT", "CMP_CONSENT_PURPOSE", "CMP_GUARDIAN_VERIFICATION",
             "CMP_RETENTION_ITEM", "CMP_RIGHTS_REQUEST", "CMP_NOMINATION", "CMP_INCIDENT", "CMP_BREACH",
             "CMP_BREACH_NOTICE", "CMP_BREACH_ROOT", "CMP_LOG_SEGMENT", "CMP_LOG_SOURCE", "CMP_NTP_CHECK",
-            "CMP_TRANSFER_DECISION", "CMP_REPORT");
+            "CMP_TRANSFER_DECISION", "CMP_REPORT",
+            // SL-133 pending audit of the JavaDelegate connector path (sangam-core PendingAudit)
+            "AUDIT_PENDING",
+            // SL-138 cluster-wide CDS client jti replay guard (sangam-security JdbcReplayGuard)
+            "SEC_CLIENT_JTI",
+            // SL-130 follow-up: durable series.next reservations (sangam-config JdbcConfigStore)
+            "CFG_SERIES_RESERVATION",
+            // M-073 signed Merkle checkpoints (sangam-core AuditCheckpoints); the leaves are AUDIT_CHECKPOINT rows
+            "AUDIT_MERKLE_CHECKPOINT",
+            // M-056 partitioned executors (R39, X.2.1.3), off by default
+            "EXEC_PARTITION", "EXEC_SLOT", "EXEC_MAP", "EXEC_NODE",
+            // job side tables keyed by the engine job id (M-056 slots, M-062 trace links), off by default
+            "EXEC_JOB_SLOT", "JOB_TRACE_CONTEXT");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,
@@ -145,10 +157,15 @@ public final class SangamSchema {
      * generator {@code DATA} changesets: CFG_MASTER_CODE root parent_code and RES_TOKEN_SEQ no-series key '' to '-'
      * (0033-01..02, SL-84); plus the generator {@code NULLABLE} changesets: CH_MESSAGE.body, AI_AGENT_RUN.input_text,
      * OPS_BULK_ROW.external_id (0035-01..03, SL-87); plus the generator {@code SHARED_TENANT} changesets: tenant_id ''
-     * to the reserved shared key '-' in 53 tables, each after a collision preflight (0036-01..53, SL-86).
+     * to the reserved shared key '-' in 53 tables, each after a collision preflight (0036-01..53, SL-86); plus the
+     * M-073 alters AUDIT_CHECKPOINT.checkpoint_no + AUDIT_CHECKPOINT_NO and the AUDIT_EVENT_TIME index (0038-05..06);
+     * plus the SL-162 compliance alters CMP_BREACH risk/delay columns, CMP_BREACH.plan_process_instance_id,
+     * CMP_PURPOSE.special_condition and CMP_RIGHTS_REQUEST extension/exception columns (0041-01..04); plus the
+     * generator {@code WIDEN} changesets: executor node ids EXEC_PARTITION.owner_node, EXEC_MAP.coordinator_node and
+     * EXEC_NODE.node_id to 255 characters (0042-01..03).
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 68;
+    public static final int ADDITIONAL_CHANGESETS = 77;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {

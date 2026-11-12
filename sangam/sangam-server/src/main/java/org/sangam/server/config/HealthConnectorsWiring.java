@@ -33,7 +33,10 @@ import org.sangam.integration.connector.SecretResolver;
 import org.sangam.integration.inbox.ChannelBinding;
 import org.sangam.integration.inbox.InboxService;
 import org.sangam.integration.packs.PackConnectorBindings;
+import org.sangam.rest.modules.connectorshealth.CdsClientVerifier;
 import org.sangam.rest.modules.connectorshealth.HealthHooksPort;
+import org.sangam.rest.support.TxSupport;
+import org.sangam.security.oidc.JdbcReplayGuard;
 import org.sangam.server.bridge.ConfigConnectorBinder;
 import org.sangam.server.bridge.HealthHooksBridge;
 import org.sangam.server.bridge.HealthRenamedConnector;
@@ -83,6 +86,19 @@ public class HealthConnectorsWiring {
     @Bean
     public CdsHooksService sangamCdsHooksService() {
         return new CdsHooksService();
+    }
+
+    /**
+     * M-006 / SL-138: the CDS Hooks client check of {@code /cds-services} ({@code HealthHooksController}), from
+     * {@code sangam.connectors-health.cds-service.*}. Without a registered client the method returns null (a null bean:
+     * the controller's {@code ObjectProvider.getIfAvailable()} gives null) and the controller refuses every call with
+     * 401 {@code CDS_CLIENT_NOT_CONFIGURED}; clients without {@code base-url} fail the start-up. The {@code jti} guard
+     * is cluster-wide (SL-138 owner decision): {@link JdbcReplayGuard} over {@code SEC_CLIENT_JTI}, the first insert
+     * on any node wins, each check in its own short transaction.
+     */
+    @Bean
+    public CdsClientVerifier sangamCdsClientVerifier(HealthConnectorsProperties p, TxSupport tx) {
+        return p.getCdsService().clientVerifier(new JdbcReplayGuard(tx.newTransactions(), tx.dialect(), null));
     }
 
     /** The in-process health simulator, started only when a tenant uses mode {@code simulator}. */

@@ -25,6 +25,7 @@ import 'dmn-js/dist/assets/dmn-font/css/dmn-embedded.css';
 import '@bpmn-io/form-js-editor/dist/assets/form-js-editor.css';
 import '@bpmn-io/form-js-viewer/dist/assets/form-js.css';
 import { ProblemAlert } from './ui';
+import { ElementTemplatePanel, type ModelerLike, type Selected } from './ElementTemplatePanel';
 
 export interface EditorHandle {
   getContent: () => Promise<string>;
@@ -61,9 +62,18 @@ export function BpmnEditor({ xml, onReady, onChange, height = 560 }: { xml: stri
   const [err, setErr] = useState<Error>();
   const changeRef = useRef(onChange);
   changeRef.current = onChange;
+  // M-036: the selected element, for the element-template panel
+  const [modeler, setModeler] = useState<ModelerLike | null>(null);
+  const [selected, setSelected] = useState<Selected | null>(null);
   useEffect(() => {
     if (!host.current) return;
     const m = new BpmnModeler({ container: host.current, keyboard: { bindTo: host.current } });
+    setModeler(m as unknown as ModelerLike);
+    setSelected(null);
+    (m.get('eventBus') as { on: (e: string, cb: (ev: { newSelection?: { id: string; businessObject?: { $type?: string } }[] }) => void) => void }).on('selection.changed', (ev) => {
+      const el = ev.newSelection?.length === 1 ? ev.newSelection[0] : undefined;
+      setSelected(el?.businessObject?.$type ? { id: el.id, type: el.businessObject.$type } : null);
+    });
     m.importXML(xml || EMPTY_BPMN)
       .then(() => {
         (m.get('canvas') as { zoom: (z: string) => void }).zoom('fit-viewport');
@@ -79,6 +89,7 @@ export function BpmnEditor({ xml, onReady, onChange, height = 560 }: { xml: stri
       <ProblemAlert error={err} />
       <div ref={host} className="bpmn-host" style={{ height }} tabIndex={0} aria-label={t('modeller.bpmnCanvas')} />
       <p className="hint">{t('modeller.editorKeyboardHint')}</p>
+      <ElementTemplatePanel modeler={modeler} selected={selected} />
     </div>
   );
 }

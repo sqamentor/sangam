@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Regenerates the sangam-packs resources and README.
+"""Regenerates the sangam-packs resources and README, and the sangam-compliance BPMN models (compliance.py, M-010b).
 
 Usage (from any directory):
-  python sangam-packs/tools/packgen/main.py            write into src/main/resources and README.md
+  python sangam-packs/tools/packgen/main.py            write into src/main/resources and README.md, and the
+                                                       compliance BPMN into sangam-compliance (packs/compliance)
   python sangam-packs/tools/packgen/main.py --check    generate into a temporary directory and compare with the
                                                        committed files; exit 1 on any difference or stale file
-  python sangam-packs/tools/packgen/main.py --out DIR  write into DIR/resources and DIR/README.md
+  python sangam-packs/tools/packgen/main.py --out DIR  write into DIR/resources, DIR/README.md and DIR/compliance
 """
 import argparse
 import filecmp
@@ -29,11 +30,17 @@ import billing_pack  # noqa: E402
 import universal  # noqa: E402
 import sector  # noqa: E402
 import readme  # noqa: E402
+import compliance  # noqa: E402
 
 GENERATED_ROOTS = ('packs', os.path.join('META-INF', 'sangam'))
+# packgen owns the BPMN models of the compliance pack (ADR-D-20 single source); the other files of that pack directory
+# (pack.json, seed.json, forms/) are not generated, so only *.bpmn directly in it is compared.
+COMPLIANCE = os.path.normpath(os.path.join(MODULE, '..', 'sangam-compliance', 'src', 'main', 'resources', 'packs',
+                                           'compliance'))
+COMPLIANCE_REL = 'sangam-compliance/src/main/resources/packs/compliance'
 
 
-def generate(resources, readme_path):
+def generate(resources, readme_path, compliance_dir):
     core.build()
     for mod in (gov1, gov2, gov3, gov_ifms, gov_intl, universal, billing_pack, sector):
         mod.build()
@@ -44,6 +51,25 @@ def generate(resources, readme_path):
     print('packs:', len(packs.ALL), 'processes:', sum(len(p.procs) for p in packs.ALL),
           'dmn:', sum(len(p.dmns) for p in packs.ALL) + sum(len(p.overrides) for p in packs.ALL),
           'cmmn:', sum(len(p.cmmns) for p in packs.ALL))
+    print('compliance processes:', len(compliance.write_all(compliance_dir)))
+
+
+def compliance_files(directory):
+    """The BPMN models directly in the compliance pack directory (the files packgen owns there)."""
+    if not os.path.isdir(directory):
+        return set()
+    return {f for f in os.listdir(directory) if f.endswith('.bpmn') and os.path.isfile(os.path.join(directory, f))}
+
+
+def compare_compliance(generated, committed):
+    """Problems between the generated compliance BPMN and the committed ones, in the format of check()."""
+    new, old = compliance_files(generated), compliance_files(committed)
+    problems = [f'missing in repo: {COMPLIANCE_REL}/{f}' for f in sorted(new - old)]
+    problems += [f'stale in repo (not generated): {COMPLIANCE_REL}/{f}' for f in sorted(old - new)]
+    for f in sorted(new & old):
+        if not filecmp.cmp(os.path.join(generated, f), os.path.join(committed, f), shallow=False):
+            problems.append(f'differs: {COMPLIANCE_REL}/{f}')
+    return problems, len(new)
 
 
 def files_under(root):
@@ -60,7 +86,8 @@ def check():
     tmp = tempfile.mkdtemp(prefix='packgen-')
     try:
         res = os.path.join(tmp, 'resources')
-        generate(res, os.path.join(tmp, 'README.md'))
+        cmp_dir = os.path.join(tmp, 'compliance')
+        generate(res, os.path.join(tmp, 'README.md'), cmp_dir)
         committed_res = os.path.join(MODULE, 'src', 'main', 'resources')
         new, old = files_under(res), files_under(committed_res)
         problems = [f'missing in repo: {f}' for f in sorted(new - old)]
@@ -70,11 +97,14 @@ def check():
                 problems.append(f'differs: {f}')
         if not filecmp.cmp(os.path.join(tmp, 'README.md'), os.path.join(MODULE, 'README.md'), shallow=False):
             problems.append('differs: README.md')
+        cmp_problems, ncmp = compare_compliance(cmp_dir, COMPLIANCE)
+        problems += cmp_problems
         if problems:
             print('\n'.join(problems))
             print(f'{len(problems)} difference(s)')
             return 1
-        print(f'OK: {len(new) + 1} generated files identical to the repository')
+        print(f'OK: {len(new) + 1 + ncmp} generated files identical to the repository '
+              f'({ncmp} of them in {COMPLIANCE_REL})')
         return 0
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -88,9 +118,9 @@ def main():
     if a.check:
         sys.exit(check())
     if a.out:
-        generate(os.path.join(a.out, 'resources'), os.path.join(a.out, 'README.md'))
+        generate(os.path.join(a.out, 'resources'), os.path.join(a.out, 'README.md'), os.path.join(a.out, 'compliance'))
     else:
-        generate(os.path.join(MODULE, 'src', 'main', 'resources'), os.path.join(MODULE, 'README.md'))
+        generate(os.path.join(MODULE, 'src', 'main', 'resources'), os.path.join(MODULE, 'README.md'), COMPLIANCE)
 
 
 if __name__ == '__main__':

@@ -116,16 +116,12 @@ public final class ComplianceAudit {
 
     /** Per-principal chain id: no personal data in {@code chain_id} (VARCHAR(64)). */
     public static String principalChain(String tenantId, String principalRef) {
-        return "cmp:p:" + principalHash(tenantId, principalRef);
+        return AuditChain.hashedChain("cmp:p:", tenantId, principalRef);   // X1-06: the one chain-id formula
     }
 
     /** Per-principal denial chain id ({@link #denial}); never appended to in a caller's transaction. */
     public static String denialChain(String tenantId, String principalRef) {
-        return "cmp:d:" + principalHash(tenantId, principalRef);
-    }
-
-    private static String principalHash(String tenantId, String principalRef) {
-        return Hashes.hex(Hashes.sha256(tenantId + "\u0000" + principalRef)).substring(0, 32);
+        return AuditChain.hashedChain("cmp:d:", tenantId, principalRef);
     }
 
     /** Reference to a principal used in audit payloads: a hash, so the chain can be kept after erasure. */

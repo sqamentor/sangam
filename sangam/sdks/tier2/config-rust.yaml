@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# openapi-generator "rust" options for the Tier-2 Rust client (M-022). Run through generate_tier2.py.
+packageName: sangam-client
+packageVersion: 0.1.0
+library: reqwest
+supportAsync: true
+preferUnsignedInt: false

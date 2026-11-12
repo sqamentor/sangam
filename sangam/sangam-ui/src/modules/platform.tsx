@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Screens for sangam-ai, sangam-channels, sangam-modeller and sangam-ops, from their README integration notes.
- * The REST routes are not in the contract yet (WS-REST wiring in progress), so every path below except
- * POST /packages/{id}/tests/run is an assumption to reconcile; README "New module routes" lists them.
+ * Screens for sangam-ai, sangam-channels, sangam-modeller and sangam-ops.
+ * Every path below is a contract operation of sangam-rest/api/sangam-api.yaml (checked 2026-11-12 against the yaml
+ * path list, W1-J follow-up of M-110); request fields follow the operation's request schema or, for a Map-backed body,
+ * the keys the server reads (M-051). The server authorises every call (X.4.7).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { http, request } from '../api/client';
 import { useAction, useAsync, useInterval } from '../lib/hooks';
 import { BpmnDiagram } from '../components/BpmnDiagram';
+import { fmtNumber } from '../i18n';
 import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, Section, TextArea, TextField } from '../components/ui';
 import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
 
@@ -260,17 +262,23 @@ export function LeaseBanner({ packageId, file, onState }: { packageId: string; f
 
 const templates: ScreenDef = {
   id: 'templates', title: 'mod.modeller2.templates', description: 'mod.modeller2.templatesDesc', list: '/templates',
-  filters: [f.select('kind', ['PROCESS', 'ELEMENT', 'FORM_COMPONENT', 'DMN'])],
-  columns: [c('key'), c('name'), c('kind'), c('version')], rowKey: ['key', 'id'], detail: '/templates/{key}',
-  create: { id: 'save', label: 'mod.modeller2.saveTemplate', path: '/templates', fields: [f.text('key', undefined, true), f.text('name', undefined, true), f.select('kind', ['PROCESS', 'ELEMENT', 'FORM_COMPONENT', 'DMN'], undefined, true), f.area('content', 'fld.body', true)] },
+  // Kind: ELEMENT, PALETTE, FORM_COMPONENT, PROCESS, DMN (ElementTemplates.java:27); body TemplateRequest(kind, document,
+  // key, name, content) (ModellerController.java:112, :261-279)
+  filters: [f.select('kind', ['PROCESS', 'ELEMENT', 'PALETTE', 'FORM_COMPONENT', 'DMN'])],
+  columns: [c('key'), c('name'), c('kind'), c('version'), c('appliesTo', 'tpl.appliesTo')], rowKey: ['key', 'id'], detail: '/templates/{key}',
+  create: { id: 'save', label: 'mod.modeller2.saveTemplate', path: '/templates', fields: [f.text('key', undefined, true), f.text('name', undefined, true), f.select('kind', ['PROCESS', 'ELEMENT', 'PALETTE', 'FORM_COMPONENT', 'DMN'], undefined, true), f.area('content', 'fld.body', true)], hint: 'tpl.saveHint' },
+  actions: [{ id: 'apply', label: 'tpl.tryApply', path: '/templates/{key}/apply', fields: [f.text('elementType', 'tpl.elementType', true), f.json('values', 'tpl.values')], noJson: true, showResult: true, hint: 'tpl.tryApplyHint' }],
 };
 const actionsAdmin: ScreenDef = {
   id: 'actions', title: 'mod.modeller2.actions', list: '/actions',
-  filters: [f.text('scope')],
-  columns: [c('key'), c('name'), c('scope'), c('permission'), c('active')], rowKey: ['key', 'id'],
-  create: { id: 'save', label: 'act.create', path: '/actions', fields: [f.text('key', undefined, true), f.text('name', undefined, true), f.text('scope', undefined, true), f.text('permission'), f.text('processKey'), f.json('form')] },
+  filters: [f.select('scope', ['CASE', 'PROCESS', 'TASK'])],
+  columns: [c('key'), c('label', 'cf.label'), c('scope'), c('scopeType'), c('permission'), c('targetType', 'actions.targetType'), c('target', 'actions.target')], rowKey: ['key', 'id'],
+  // M-051: ActionModelPublish / PublishActionRequest (ModellerController.java:118-119, :310-324); required key, label,
+  // scope, permission, targetType, target (sangam-api.yaml); targetType BPMN | REST | SCRIPT (ActionModels.java:27)
+  create: { id: 'save', label: 'act.create', path: '/actions', noJson: true, fields: [f.text('key', undefined, true), f.text('label', 'cf.label', true), f.select('scope', ['CASE', 'PROCESS', 'TASK'], undefined, true), f.text('scopeType'), f.text('permission', undefined, true), f.select('targetType', ['BPMN', 'REST', 'SCRIPT'], 'actions.targetType', true), f.text('target', 'actions.target', true, { description: 'actions.targetHint' }), f.text('formKey', 'actions.formKey')] },
   actions: [
-    { id: 'run', label: 'act.runNow', path: '/actions/{key}/run', fields: [f.text('subjectRef', undefined, true), f.json('input')], reason: 'body', showResult: true },
+    // RunActionRequest.reason is not read by the server (ModellerController.java:326-334), so no reason is asked here
+    { id: 'run', label: 'act.runNow', path: '/actions/{key}/run', fields: [f.text('subjectRef', undefined, true), f.json('input')], noJson: true, showResult: true },
     { id: 'delete', label: 'common.delete', method: 'DELETE', path: '/actions/{key}', reason: 'query', danger: true, noJson: true },
   ],
 };
@@ -291,23 +299,167 @@ export function ModellerToolsPage() {
   return <ModulePage title="mod.modeller2.title" screens={[templates, actionsAdmin, mocks, catalogue]} extra={[{ id: 'land', label: 'mod.modeller2.landscape', node: <Landscape /> }]} />;
 }
 
-/** Bulk test report: non-deterministic (judge) results are kept apart and never affect the pass count. */
+/** One case of a run (PackageToolsPort.TestRun) or of a stored report (BulkModelTests.CaseResult, :30). */
+export type TestCaseRow = { name: string; status: string; deterministic: boolean; message?: string; millis?: number };
+/** A stored report (BulkModelTests.Report, BulkModelTests.java:33), newest first from GET .../tests/reports (:74-76). */
+export type TestReport = { runId: string; packageId?: string; passed: number; failed: number; notJudged: number; cases: { caseId: string; status: string; deterministic: boolean; millis?: number; message?: string }[] };
+
+/**
+ * A run's results as rows. A case whose name starts with "judge:" is not deterministic: the server stores it so
+ * (ModellerWiring.java:225) and never counts it as passed or failed.
+ */
+export function runRows(runs: { name: string; passed?: boolean; message?: string; durationMs?: number; deterministic?: boolean; status?: string }[]): TestCaseRow[] {
+  return runs.map((r) => ({
+    name: r.name,
+    status: r.status ?? (r.passed ? 'PASSED' : 'FAILED'),
+    deterministic: r.deterministic ?? !r.name.startsWith('judge:'),
+    message: r.message,
+    millis: r.durationMs,
+  }));
+}
+
+export function reportRows(r: TestReport): TestCaseRow[] {
+  return (r.cases ?? []).map((x) => ({ name: x.caseId, status: x.status, deterministic: x.deterministic, message: x.message, millis: x.millis }));
+}
+
+function CaseTables({ rows }: { rows: TestCaseRow[] }) {
+  const { t } = useTranslation();
+  const det = rows.filter((r) => r.deterministic);
+  const judge = rows.filter((r) => !r.deterministic);
+  const table = (rs: TestCaseRow[], cap: string) => (
+    <DataTable
+      caption={cap}
+      rows={rs}
+      rowKey={(r) => r.name}
+      columns={[
+        { key: 'name', header: t('common.name') },
+        { key: 's', header: t('admin.status'), render: (r) => <Badge value={r.status} /> },
+        { key: 'ms', header: t('tests.millis'), className: 'num', render: (r) => (r.millis !== undefined ? fmtNumber(r.millis) : '—') },
+        { key: 'm', header: t('ops.message'), render: (r) => r.message ?? '—' },
+      ]}
+    />
+  );
+  return (
+    <>
+      {det.length > 0 && table(det, t('mod.modeller2.deterministic'))}
+      {judge.length > 0 && (
+        <>
+          {table(judge, t('mod.modeller2.judged'))}
+          <Notice>{t('mod.modeller2.judgedHint')}</Notice>
+        </>
+      )}
+    </>
+  );
+}
+
+/**
+ * M-038 (NG-32, R80): bulk model tests of a package. Run them (POST /packages/{id}/tests/run, package.author,
+ * PackageToolsController.java:49-52), list the stored reports (GET /packages/{id}/tests/reports, package.read,
+ * ModellerController.java:368-372) with a report's cases, judge results kept apart and outside the counts, export a
+ * sealed bundle of test cases and mocks (POST /packages/{id}/tests/export, package.author, :374-380; format
+ * sangam-test-bundle-v1 with sha256, BulkModelTests.java:79-89) and verify one (POST /packages/tests/verify-bundle,
+ * package.read, :382-386; a changed bundle is refused with TEST_BUNDLE_INVALID, BulkModelTests.java:92-97).
+ */
 export function BulkTestReport({ packageId }: { packageId: string }) {
   const { t } = useTranslation();
-  type R = { name: string; status?: string; passed?: boolean; deterministic?: boolean; message?: string; durationMs?: number };
-  const [rep, setRep] = useState<{ passed?: number; failed?: number; results?: R[]; reportId?: string } | R[]>();
+  const pid = encodeURIComponent(packageId);
+  const [run, setRun] = useState<TestCaseRow[]>();
+  const [open, setOpen] = useState<string | null>(null);
+  const [cases, setCases] = useState('[]');
+  const [mocks, setMocks] = useState('[]');
+  const [bundleText, setBundleText] = useState('');
+  const [verified, setVerified] = useState<Row>();
+  const [jsonErr, setJsonErr] = useState(false);
   const act = useAction();
-  const results: R[] = Array.isArray(rep) ? rep : rep?.results ?? [];
-  const det = results.filter((r) => r.deterministic !== false);
-  const judge = results.filter((r) => r.deterministic === false);
-  const statusOf = (r: R) => r.status ?? (r.passed ? 'PASS' : 'FAIL');
-  const table = (rows: R[], cap: string) => <DataTable caption={cap} rows={rows} rowKey={(r) => r.name} columns={[{ key: 'name', header: t('common.name') }, { key: 's', header: t('admin.status'), render: (r) => <Badge value={statusOf(r)} /> }, { key: 'm', header: t('ops.message'), render: (r) => r.message ?? '—' }]} />;
+  const reports = useAsync((signal) => http.get<TestReport[]>(`/packages/${pid}/tests/reports`, undefined, signal), [pid]);
+  const shown = (reports.data ?? []).find((r) => r.runId === open);
+  const exportBundle = () => {
+    let body: { cases: unknown; mocks: unknown };
+    try {
+      body = { cases: JSON.parse(cases), mocks: JSON.parse(mocks) };
+      if (!Array.isArray(body.cases) || !Array.isArray(body.mocks)) throw new Error('arrays');
+    } catch {
+      setJsonErr(true);
+      return;
+    }
+    setJsonErr(false);
+    void act.run(() => http.post<{ bundle: string }>(`/packages/${pid}/tests/export`, body)).then((r) => {
+      if (!r) return;
+      setBundleText(r.bundle);
+      const url = URL.createObjectURL(new Blob([r.bundle], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${packageId}-tests.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    });
+  };
   return (
     <Section title={t('mod.modeller2.bulkTests')}>
-      <button type="button" className="primary" disabled={act.busy} onClick={() => void act.run(() => http.post<typeof rep>(`/packages/${encodeURIComponent(packageId)}/tests/run`)).then((r) => r && setRep(r))}>{t('modeller.runTests')}</button>
+      <button
+        type="button"
+        className="primary"
+        disabled={act.busy}
+        onClick={() => void act.run(() => http.post<Parameters<typeof runRows>[0]>(`/packages/${pid}/tests/run`)).then((r) => { if (r) { setRun(runRows(r)); reports.reload(); } })}
+      >
+        {t('modeller.runTests')}
+      </button>
       <ProblemAlert error={act.error} />
-      {det.length > 0 && table(det, t('mod.modeller2.deterministic'))}
-      {judge.length > 0 && <>{table(judge, t('mod.modeller2.judged'))}<Notice>{t('mod.modeller2.judgedHint')}</Notice></>}
+      {run && <CaseTables rows={run} />}
+
+      <h3>{t('tests.reports')}</h3>
+      <ProblemAlert error={reports.error} onRetry={reports.reload} />
+      {reports.data && reports.data.length === 0 && <Empty message={t('tests.noReports')} />}
+      {reports.data && reports.data.length > 0 && (
+        <DataTable
+          caption={t('tests.reports')}
+          captionHidden
+          rows={reports.data}
+          rowKey={(r) => r.runId}
+          columns={[
+            { key: 'runId', header: t('fld.runId'), render: (r) => <button type="button" className="link" aria-pressed={open === r.runId} onClick={() => setOpen(open === r.runId ? null : r.runId)}>{r.runId}</button> },
+            { key: 'passed', header: t('tests.passed'), className: 'num', render: (r) => fmtNumber(r.passed) },
+            { key: 'failed', header: t('tests.failed'), className: 'num', render: (r) => fmtNumber(r.failed) },
+            { key: 'notJudged', header: t('tests.notJudged'), className: 'num', render: (r) => fmtNumber(r.notJudged) },
+          ]}
+        />
+      )}
+      {shown && (
+        <>
+          <h4>{t('tests.report', { id: shown.runId })}</h4>
+          <CaseTables rows={reportRows(shown)} />
+          <button type="button" onClick={() => setCases(JSON.stringify(shown.cases.map((x) => ({ id: x.caseId, processKey: packageId, definition: {} })), null, 2))}>
+            {t('tests.casesFromReport')}
+          </button>
+        </>
+      )}
+
+      <h3>{t('tests.export')}</h3>
+      <p className="hint">{t('tests.exportHint')}</p>
+      <TextArea label={t('tests.cases')} className="code" rows={4} value={cases} onChange={setCases} />
+      <TextArea label={t('tests.mocks')} className="code" rows={3} value={mocks} onChange={setMocks} />
+      {jsonErr && <Notice tone="bad">{t('mod.common.invalidJson')}</Notice>}
+      <button type="button" disabled={act.busy} onClick={exportBundle}>
+        {t('tests.exportButton')}
+      </button>
+
+      <h3>{t('tests.verify')}</h3>
+      <div className="field">
+        <label htmlFor="bundle-file">{t('tests.bundleFile')}</label>
+        <input id="bundle-file" type="file" accept=".json,application/json" onChange={(e) => void e.target.files?.[0]?.text().then((x) => (setBundleText(x), setVerified(undefined)))} />
+      </div>
+      <TextArea label={t('tests.bundle')} className="code" rows={3} value={bundleText} onChange={(x) => (setBundleText(x), setVerified(undefined))} />
+      <button type="button" disabled={act.busy || !bundleText.trim()} onClick={() => void act.run(() => http.post<Row>('/packages/tests/verify-bundle', { bundle: bundleText })).then((r) => r && setVerified(r))}>
+        {t('tests.verifyButton')}
+      </button>
+      {verified && (
+        <>
+          <Notice tone="ok">{t('tests.verified', { pkg: String(verified.packageId ?? ''), rev: String(verified.packageRevision ?? '') })}</Notice>
+          <JsonView value={verified} />
+        </>
+      )}
     </Section>
   );
 }

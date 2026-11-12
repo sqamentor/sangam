@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- M-014: Sangam embedded in a Spring Boot 4.1 application. One dependency brings the engine, the product layer and
+     the server's wiring (the same *Wiring classes as the standalone server, from sangam-server's "plain" library jar)
+     as auto-configuration, with Sangam's defaults at the lowest precedence. Import sangam-bom first in the host's
+     dependencyManagement (before the Spring Boot BOM). The host brings its own JDBC driver: every driver the server
+     ships at runtime is excluded here (LIC-4/LIC-5: the LGPL MariaDB driver is never bundled). -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.sangam</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-spring-boot-starter</artifactId>
+  <name>Sangam Spring Boot starter (embedded mode)</name>
+  <description>Auto-configuration of Sangam in a Spring Boot 4.1 host: the server's product wiring, reused, with
+    core modules on and packs/domain modules opt-in.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.sangam</groupId>
+      <artifactId>sangam-server</artifactId>
+      <version>${project.version}</version>
+      <classifier>plain</classifier>
+      <exclusions>
+        <exclusion>
+          <groupId>com.h2database</groupId>
+          <artifactId>h2</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.postgresql</groupId>
+          <artifactId>postgresql</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.microsoft.sqlserver</groupId>
+          <artifactId>mssql-jdbc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mariadb.jdbc</groupId>
+          <artifactId>mariadb-java-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- tests: the bean-set equality of the server with and without the starter, and a sample host (H2 in memory) -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

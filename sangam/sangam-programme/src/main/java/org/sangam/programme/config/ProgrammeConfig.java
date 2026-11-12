@@ -21,6 +21,7 @@ import java.util.Set;
  * <pre>
  * {
  *   "fiscalYearStartMonth": 4,
+ *   "fiscalStartDay": 1,                      (optional, 1..28; absent means the 1st, X1-03)
  *   "units": ["count", "percent", "km", "currency"],
  *   "programmeKinds": [{"kind": "PROGRAMME"}, {"kind": "SCHEME", "parents": ["PROGRAMME"]}, {"kind": "PROJECT", "parents": ["SCHEME"]}],
  *   "variance": {"warnPct": 10, "criticalPct": 25},
@@ -37,13 +38,25 @@ import java.util.Set;
  */
 public record ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map<String, Set<String>> programmeKinds,
                               BigDecimal varianceWarnPct, BigDecimal varianceCriticalPct, String physicalProgressBasis,
-                              Map<String, IndicatorDefinition> indicators, Map<String, ReturnDefinition> returns) {
+                              Map<String, IndicatorDefinition> indicators, Map<String, ReturnDefinition> returns,
+                              int fiscalStartDay) {
 
     public ProgrammeConfig {
+        if (fiscalStartDay < 1 || fiscalStartDay > 28) {
+            throw cfg("fiscalStartDay must be 1..28, was " + fiscalStartDay);
+        }
         units = Set.copyOf(units);
         programmeKinds = Map.copyOf(programmeKinds);
         indicators = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(indicators));
         returns = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(returns));
+    }
+
+    /** A configuration whose fiscal year starts on the 1st of {@code fiscalYearStartMonth}. */
+    public ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map<String, Set<String>> programmeKinds,
+                           BigDecimal varianceWarnPct, BigDecimal varianceCriticalPct, String physicalProgressBasis,
+                           Map<String, IndicatorDefinition> indicators, Map<String, ReturnDefinition> returns) {
+        this(fiscalYearStartMonth, units, programmeKinds, varianceWarnPct, varianceCriticalPct, physicalProgressBasis,
+                indicators, returns, 1);
     }
 
     public static ProgrammeConfig parse(String json) {
@@ -82,7 +95,7 @@ public record ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map
         if (!"MILESTONES".equals(basis) && !"INDICATORS".equals(basis)) {
             throw cfg("physicalProgress must be MILESTONES or INDICATORS");
         }
-        ProgrammeConfig c = new ProgrammeConfig(fy, units, kinds, warn, crit, basis, inds, rets);
+        ProgrammeConfig c = new ProgrammeConfig(fy, units, kinds, warn, crit, basis, inds, rets, fiscalStartDay(m));
         c.validate();
         return c;
     }
@@ -233,6 +246,24 @@ public record ProgrammeConfig(Month fiscalYearStartMonth, Set<String> units, Map
             throw cfg("fiscalYearStartMonth must be 1..12, was " + month);
         }
         return Month.of(month);
+    }
+
+    /** X1-03: the optional day of the start month on which the fiscal year starts (1..28); absent means the 1st. */
+    private static int fiscalStartDay(Map<String, Object> m) {
+        Object v = m.get("fiscalStartDay");
+        if (v == null || v.toString().isBlank()) {
+            return 1;
+        }
+        int day;
+        try {
+            day = v instanceof Number n ? n.intValue() : Integer.parseInt(v.toString().trim());
+        } catch (NumberFormatException e) {
+            throw cfg("fiscalStartDay must be a day number 1..28, was '" + v + "'");
+        }
+        if (day < 1 || day > 28) {
+            throw cfg("fiscalStartDay must be 1..28, was " + day);
+        }
+        return day;
     }
 
     private static ProgrammeException cfg(String message) {

@@ -183,3 +183,11 @@ op('get', '/programmes/{id}/dashboard', 'programmeDashboard', 'Programmes', 'The
    params=[pp('id'), q('periodId', 's', required=True), q('orgUnit', 's', required=True)], resp=(200, 'PgSnapshot'), perm='programme.read')
 op('get', '/programmes/{id}/dashboard/children', 'programmeDashboardChildren', 'Programmes', 'Dashboard snapshots of the child org units', 'Dashboard snapshots of the child org units.', ['N15', 'VI.4', 'R41', 'R42'],
    params=[pp('id'), q('periodId', 's', required=True), q('orgUnit', 's', required=True)], resp=(200, 'array:PgSnapshot'), perm='programme.read')
+
+# M-051: the programme configuration body is typed from the keys sangam-programme reads (_v2_bodykeys.py).
+map_body('programmePublishConfig', 'sangam-rest/src/main/java/org/sangam/rest/modules/programme/ProgrammeController.java',
+         'ProgrammeController.publishConfig', 'body')
+bk_opaque_target({
+    "Db.json": "serialised whole as the stored configuration version; no member is read",
+    "Db.hashOf": "hashed whole into the configuration content hash; no member is read",
+})

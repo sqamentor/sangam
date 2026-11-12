@@ -18,12 +18,10 @@
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
-      <version>3.9.2</version>
     </dependency>
     <dependency>
       <groupId>jakarta.jms</groupId>
       <artifactId>jakarta.jms-api</artifactId>
-      <version>3.1.0</version>
     </dependency>
     <!-- Generic modules wired in config/*Wiring (final integration wave) -->
     <dependency>
@@ -262,6 +260,31 @@
 
   <build>
     <plugins>
+      <!-- M-014: the server's classes as a library for sangam-spring-boot-starter (classifier "plain"). The runnable
+           fat jar below stays the main artifact with its file name unchanged (sangam-server-<v>.jar); every jar
+           consumer (Dockerfiles, CI, licence check) already skips *-plain.jar. The server's own application*.yaml
+           are left out of the library jar: on a host's class path they would be read as the host's configuration
+           (classpath:/application.yaml); a host gets Sangam's defaults from the starter instead. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>plain-library-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>plain</classifier>
+              <excludes>
+                <exclude>application.yaml</exclude>
+                <exclude>application-*.yaml</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

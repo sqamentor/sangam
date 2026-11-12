@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_breach_incident" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+<!-- Personal data breach. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_breach_incident" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
   <process id="sangam-breach-incident" name="Personal data breach" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>Breach handling: initial notification to the supervisory authority and notice to each affected data subject without delay (parallel), detailed report by the pack deadline (IN: DPDP r.7, 72 hours) with warning and overdue timers. The linked incident report runs in sangam-incident-report.</documentation>
     <startEvent id="start" name="Breach registered"/>
     <parallelGateway id="fork"/>
-    <userTask id="u_facts" name="Confirm facts for the authority notification" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/breach-facts"></userTask>
+    <userTask id="u_facts" name="Confirm facts for the authority notification" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:compliance/breach-facts"/>
     <serviceTask id="s_authority" name="Notify supervisory authority" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.notifyAuthority</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_notice" name="Approve notice to affected data subjects" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/breach-subject-notice"></userTask>
+    <userTask id="u_notice" name="Approve notice to affected data subjects" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:compliance/breach-subject-notice"/>
     <serviceTask id="s_subjects" name="Notify affected data subjects" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.notifySubjects</operaton:string></operaton:field></extensionElements></serviceTask>
     <parallelGateway id="join"/>
-    <userTask id="u_report" name="Prepare detailed report" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/breach-report"></userTask>
+    <userTask id="u_report" name="Prepare detailed report" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:compliance/breach-report"/>
     <boundaryEvent id="t_warn" name="Report deadline approaching" attachedToRef="u_report" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${reportWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
-    <userTask id="u_warn" name="Escalation: detailed report deadline approaching" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/breach-escalation"></userTask>
+    <userTask id="u_warn" name="Escalation: detailed report deadline approaching" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:compliance/breach-escalation"/>
     <endEvent id="end_warn" name="Escalated"/>
     <boundaryEvent id="t_due" name="Report deadline" attachedToRef="u_report" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${reportDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <serviceTask id="s_overdue" name="Record overdue report" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.overdue</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="end_due" name="Overdue recorded"/>
     <serviceTask id="s_report" name="Submit detailed report" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.submitReport</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_close" name="Close breach after remediation" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/breach-close"></userTask>
+    <userTask id="u_close" name="Close breach after remediation" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:compliance/breach-close"/>
     <serviceTask id="s_close" name="Close breach and release evidence holds" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.close</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="end" name="Closed"/>
     <sequenceFlow id="f1" sourceRef="start" targetRef="fork"/>
@@ -39,4 +39,42 @@
     <sequenceFlow id="f_d1" sourceRef="t_due" targetRef="s_overdue"/>
     <sequenceFlow id="f_d2" sourceRef="s_overdue" targetRef="end_due"/>
   </process>
+  <bpmndi:BPMNDiagram id="breach_incident_diagram">
+    <bpmndi:BPMNPlane id="breach_incident_plane" bpmnElement="sangam-breach-incident">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="fork_di" bpmnElement="fork"><dc:Bounds x="210" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_facts_di" bpmnElement="u_facts"><dc:Bounds x="350" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_authority_di" bpmnElement="s_authority"><dc:Bounds x="515" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_notice_di" bpmnElement="u_notice"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_subjects_di" bpmnElement="s_subjects"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="join_di" bpmnElement="join"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_report_di" bpmnElement="u_report"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_warn_di" bpmnElement="u_warn"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_warn_di" bpmnElement="end_warn"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_overdue_di" bpmnElement="s_overdue"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_due_di" bpmnElement="end_due"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_report_di" bpmnElement="s_report"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_close_di" bpmnElement="u_close"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_close_di" bpmnElement="s_close"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_warn_di" bpmnElement="t_warn"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_due_di" bpmnElement="t_due"><dc:Bounds x="883" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="88" y="70"/><di:waypoint x="210" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="260" y="70"/><di:waypoint x="305" y="70"/><di:waypoint x="305" y="195"/><di:waypoint x="350" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="450" y="195"/><di:waypoint x="515" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="615" y="195"/><di:waypoint x="660" y="195"/><di:waypoint x="660" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="260" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9"><di:waypoint x="945" y="70"/><di:waypoint x="977" y="70"/><di:waypoint x="977" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10"><di:waypoint x="1110" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f11_di" bpmnElement="f11"><di:waypoint x="1275" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f12_di" bpmnElement="f12"><di:waypoint x="1440" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_w1_di" bpmnElement="f_w1"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_w2_di" bpmnElement="f_w2"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_d1_di" bpmnElement="f_d1"><di:waypoint x="901" y="128"/><di:waypoint x="901" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_d2_di" bpmnElement="f_d2"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </definitions>

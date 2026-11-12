@@ -47,7 +47,41 @@ class SlaServiceH2Test {
     void setUp() {
         h2 = PortsH2Engine.start(null);
         tx = EngineTx.transactions(h2.engine);
-        sla = new SlaService(Dialect.POSTGRESQL, tx, new Outbox(Dialect.POSTGRESQL), name -> "skip-a-day".equals(name) ? PLUS_ONE_DAY : null);
+        sla = new SlaService(Dialect.POSTGRESQL, tx, SUBSCRIBED, name -> "skip-a-day".equals(name) ? PLUS_ONE_DAY : null);
+    }
+
+    /** SL-146: a sink as the server's OutboxWriter behaves with one subscribed destination: an outbox row in {@code c}. */
+    static final SlaService.EventSink SUBSCRIBED = (c, tenant, root, type, payload) -> new Outbox(Dialect.POSTGRESQL)
+            .append(c, tenant, root, type, org.sangam.ports.support.Json.write(payload), List.of(Outbox.Destination.unordered("sla-subscriber")));
+
+    /** SL-146: with no subscriber nothing is written, and the clock states still move exactly as before. */
+    @Test
+    void withoutASubscriberNothingIsWrittenAndTheClocksStillMove() throws SQLException {
+        sla = new SlaService(Dialect.POSTGRESQL, tx, SlaService.EventSink.NONE, name -> null);
+        String breached = start("t1", def("b", "PT0S", null), "pi-none");
+        assertEquals(1, sla.sweep(100));
+        assertEquals(State.BREACHED, clock(breached).state());
+        assertTrue(events("t1").isEmpty(), "no outbox row without a subscriber (no parked deliveries)");
+        assertEquals(0, sla.sweep(100), "raised once even without a subscriber");
+    }
+
+    /** SL-146: the sink gets the event in the sweep's transaction, with the clock reference as payload. */
+    @Test
+    void theSinkGetsTheEventWithTheClockReference() {
+        List<Map<String, Object>> got = new ArrayList<>();
+        sla = new SlaService(Dialect.POSTGRESQL, tx, (c, tenant, root, type, payload) -> {
+            assertNotNull(c, "inside the sweep's transaction");
+            assertEquals("t1", tenant);
+            assertEquals("pi-sink", root);
+            assertEquals("sangam.sla.breached", type);
+            got.add(payload);
+        }, name -> null);
+        String id = start("t1", def("s", "PT0S", null), "pi-sink");
+        assertEquals(1, sla.sweep(100));
+        assertEquals(1, got.size());
+        assertEquals(id, got.get(0).get("slaId"));
+        assertEquals("s", got.get(0).get("slaKey"));
+        assertEquals("pi-sink", got.get(0).get("scopeId"));
     }
 
     @AfterEach

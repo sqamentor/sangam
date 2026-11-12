@@ -268,7 +268,7 @@ class DomainNeutralityGuardTest {
         assertTrue(hits.stream().noneMatch(h -> h.line() >= 10), "comments are ignored: " + hits);
         assertTrue(hits.stream().noneMatch(h -> h.text().equals("ALL") || h.text().equals("XXX")), "neutral codes: " + hits);
         assertTrue(allowListed("sangam-integration/src/main/java/org/sangam/integration/connector/gov/EsignConnector.java"));
-        assertTrue(allowListed("sangam-packs/src/main/java/org/sangam/packs/sim/WorkingDayCalendar.java"));
+        assertTrue(allowListed("sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java"));
         assertTrue(allowListed("sangam-connectors-health/src/main/java/org/sangam/connectors/health/fhir/Fhir.java"));
     }
 }

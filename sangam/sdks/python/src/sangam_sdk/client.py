@@ -2,12 +2,15 @@
 """Entry point: :class:`SangamClient`, a typed client for ``/api/v1``. Thread-safe; share one instance."""
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping
 
 from .api import AdminApi, AuditApi, DecisionsApi, OpsApi, ProcessesApi, RepositoryApi, TasksApi, WorkApi
 from .auth import StaticTokenProvider, TokenProvider
-from .http import ApiRequest, HttpTransport, RetryPolicy
+from .http import ApiRequest, HttpTransport, RetryPolicy, TraceContext
 from .log import SangamLogger
+
+if TYPE_CHECKING:
+    from .generated import SangamApis
 
 
 class SangamClient:
@@ -20,13 +23,17 @@ class SangamClient:
 
     ``seat`` / ``acting_for_seat`` become the default ``X-Sangam-Seat`` / ``X-Sangam-Acting-For-Seat`` headers
     (IX.5 rules 1 and 4). The tenant always comes from the token.
+
+    ``trace_context`` (R13, M-062) returns the caller's current ``(traceparent, tracestate)``; every request then
+    carries them so server spans join the caller's trace. Off by default (R56).
     """
 
     def __init__(self, base_url: str, *, token_provider: TokenProvider | None = None, token: str | None = None,
                  seat: str | None = None, acting_for_seat: str | None = None,
                  retry_policy: RetryPolicy | None = None, request_timeout: float = 30.0,
                  logger: SangamLogger | None = None, user_agent: str | None = None,
-                 default_headers: Mapping[str, str] | None = None) -> None:
+                 default_headers: Mapping[str, str] | None = None,
+                 trace_context: TraceContext | None = None) -> None:
         if token_provider is None and token is not None:
             token_provider = StaticTokenProvider(token)
         headers = dict(default_headers or {})
@@ -36,7 +43,7 @@ class SangamClient:
             headers["X-Sangam-Acting-For-Seat"] = acting_for_seat
         self.logger = logger or SangamLogger()
         self.transport = HttpTransport(base_url, token_provider, retry_policy, request_timeout, self.logger,
-                                       user_agent, headers)
+                                       user_agent, headers, trace_context)
         self.work = WorkApi(self.transport)
         self.tasks = TasksApi(self.transport)
         self.processes = ProcessesApi(self.transport)
@@ -45,6 +52,18 @@ class SangamClient:
         self.admin = AdminApi(self.transport)
         self.ops = OpsApi(self.transport)
         self.repository = RepositoryApi(self.transport)
+        self._api: SangamApis | None = None
+
+    @property
+    def api(self) -> SangamApis:
+        """The typed surface generated from sangam-api.yaml (M-020): every operation of the contract, one attribute per
+        contract tag, on this client's transport, e.g. ``client.api.work.fetch_and_lock({...})``. Imported on first use.
+        """
+        if self._api is None:
+            from .generated import SangamApis
+
+            self._api = SangamApis(self.transport)
+        return self._api
 
     def me(self) -> dict[str, Any]:
         """``GET /me``: the authenticated caller (tenantId, principalId, groups, seatId, permissions, ...)."""

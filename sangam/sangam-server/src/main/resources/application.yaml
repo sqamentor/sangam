@@ -30,6 +30,12 @@ spring:
       connection-timeout: ${SANGAM_DB_CONNECTION_TIMEOUT_MS:2000}
       validation-timeout: ${SANGAM_DB_VALIDATION_TIMEOUT_MS:1000}
       pool-name: sangam
+      # Leaf pools (X1-05): three small pools on this pool's database and settings (ComplianceWiring.leafPool), whose
+      # connections are never held while another connection is requested, so the SL-43 pool deadlock cannot form.
+      # Each comes ON TOP of maximum-pool-size on every node; count them in the database's connection budget:
+      #   sangam.quotas.pool.maximum-size                      sangam-quota            (default 4, quota counting)
+      #   sangam.security.denial-audit.pool.maximum-size       sangam-security-audit   (default 2, SL-132, SL-161)
+      #   sangam.compliance.denial-audit.pool.maximum-size     sangam-compliance-audit (default 2, SL-137)
   # OIDC: activate the 'oidc' profile with SANGAM_OIDC_ISSUER (application-oidc.yaml), or set
   # spring.security.oauth2.resourceserver.jwt.issuer-uri / jwk-set-uri directly. Left unset here on purpose: an empty
   # issuer would make Spring Boot try to build a JWT decoder.
@@ -85,7 +91,10 @@ sangam:
     trusted-proxies: ${SANGAM_TRUSTED_PROXIES:}
     # Client-IP headers in priority order, read only from a trusted proxy (an edge's connecting-IP header may be added).
     client-ip-headers: ${SANGAM_CLIENT_IP_HEADERS:X-Forwarded-For}
-  # Module wiring (config/*Wiring); false = the sangam-rest defaults stay active for that module.
+  # Module wiring (config/*Wiring); false = the sangam-rest defaults stay active for that module. The standalone
+  # server sets every module flag here explicitly (all on), so it never depends on a default: an application that
+  # embeds Sangam through sangam-spring-boot-starter gets the core on and the packs and domain modules off until it
+  # enables them (M-014, owner decision 2026-11-12).
   modules:
     engine:
       enabled: ${SANGAM_MODULE_ENGINE:true}
@@ -95,6 +104,44 @@ sangam:
       enabled: ${SANGAM_MODULE_INTEGRATION:true}
     compliance:
       enabled: ${SANGAM_MODULE_COMPLIANCE:true}
+    ports:
+      enabled: ${SANGAM_MODULE_PORTS:true}
+    pipelines:
+      enabled: ${SANGAM_MODULE_PIPELINES:true}
+    telemetry:
+      enabled: ${SANGAM_MODULE_TELEMETRY:true}
+    config:
+      enabled: ${SANGAM_MODULE_CONFIG:true}
+    packs:
+      enabled: ${SANGAM_MODULE_PACKS:true}
+    onboarding:
+      enabled: ${SANGAM_MODULE_ONBOARDING:true}
+    ledger:
+      enabled: ${SANGAM_MODULE_LEDGER:true}
+    billing:
+      enabled: ${SANGAM_MODULE_BILLING:true}
+    registry:
+      enabled: ${SANGAM_MODULE_REGISTRY:true}
+    resources:
+      enabled: ${SANGAM_MODULE_RESOURCES:true}
+    case:
+      enabled: ${SANGAM_MODULE_CASE:true}
+    programme:
+      enabled: ${SANGAM_MODULE_PROGRAMME:true}
+    geo:
+      enabled: ${SANGAM_MODULE_GEO:true}
+    field:
+      enabled: ${SANGAM_MODULE_FIELD:true}
+    connectors-health:
+      enabled: ${SANGAM_MODULE_CONNECTORS_HEALTH:true}
+    channels:
+      enabled: ${SANGAM_MODULE_CHANNELS:true}
+    ai:
+      enabled: ${SANGAM_MODULE_AI:true}
+    ops:
+      enabled: ${SANGAM_MODULE_OPS:true}
+    modeller:
+      enabled: ${SANGAM_MODULE_MODELLER:true}
   # sangam-compliance (DPDP Act 2023 / Rules 2025, CERT-In). Every key below sangam.compliance is passed to
   # ComplianceConfig (organisation-name, sector, entity-attributes, sla.*, retention.*, logs.*, ntp.*, hosting.*,
   # transfer.*, links.*, authority.<code>.recipients ...). Per tenant: sangam.compliance.tenant.<tenant>.<key>.
@@ -116,6 +163,20 @@ sangam:
     schedule:
       enabled: ${SANGAM_COMPLIANCE_SCHEDULE:true}
       retention-batch: 500
+    # SL-137 / M-009: denial audits (AUTH_DENIED and the other refusals recorded while the caller's transaction rolls
+    # back) commit on their own leaf pool (ComplianceWiring, pool name sangam-compliance-audit): same database and
+    # settings as the main pool, never held while another connection is requested. These connections come on top of
+    # SANGAM_DB_POOL_SIZE on every node; count them in the database's connection budget.
+    denial-audit:
+      pool:
+        maximum-size: ${SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE:2}
+    # M-010c: the seats the compliance processes route their tasks to, one per role, no default (fail closed: a rights
+    # request, breach or incident that needs a missing seat is refused with 409 INVALID_STATE naming the property).
+    # Roles DPO, GRIEVANCE-OFFICER, RECORDS-OFFICER, PRIVACY-OFFICER, CISO, CISO-HEAD; per tenant
+    # sangam.compliance.tenant.<tenant>.seats.<ROLE>. For example:
+    #   seats:
+    #     DPO: <seat id>
+    #     CISO-HEAD: <seat id>
   history:
     # Exactly one writer of history events to the outbox: integration (OutboxHistoryEventHandler, default) | engine
     # (sangam-engine EngineEventSink) | none. sangam-flowable-ports' PortsHistoryEventHandler only feeds the read model.
@@ -125,6 +186,55 @@ sangam:
     # sangam-engine settings (SangamEngineSettings); the server runs Liquibase, so no product schema from the engine
     apply-product-schema: false
     apply-engine-patches: true
+    # M-054: job executor options, both off (the Operaton starter's executor is used). Either one switches to
+    # SangamJobExecutor (EngineWiring.sangamJobExecutor), sized by the SANGAM_JOB_* settings above.
+    # job-virtual-threads: pool threads are JDK virtual threads (env SANGAM_JOB_VIRTUAL_THREADS wins over this key).
+    job-virtual-threads: false
+    # job-bulkheads.<job handler type>: most concurrent executions of that type on this node, for example
+    #   job-bulkheads.timer-transition: 4 (none by default).
+    # job-bulkhead-wait: the longest a job waits for its bulkhead before it is handed back unexecuted.
+    job-bulkhead-wait: 10s
+    # M-062: store each new job's and external task's creating trace context (JOB_TRACE_CONTEXT) so job and worker
+    # spans link to it; needs sangam.tracing.engine.enabled. Off by default.
+    trace-links: false
+    # SL-160 / TM-10 (model code allow-list, new deployments only): a model may name only Sangam's own delegate and
+    # listener classes and beans, and its expressions are checked on the JUEL parse tree (codes SL160-EXPR-*,
+    # SL160-SCRIPT). A tenant approves more, keyed by tenant id or * for every tenant; anything else is refused at
+    # deploy and runs as an external worker instead:
+    #   deploy-allowed-classes:
+    #     <tenant>: [com.example.ApprovedDelegate]
+    #   deploy-allowed-beans:
+    #     '*': [myBean, otherBean.member]      # 'bean' or 'bean.member'
+  # M-062 (R13, R56): engine spans (one per command; jobs as root spans) over the server's OpenTelemetry. Off by
+  # default; spans leave the server only where the OTLP export below is configured.
+  tracing:
+    engine:
+      enabled: ${SANGAM_TRACING_ENGINE_ENABLED:false}
+  audit:
+    # SL-133 (M-003): connector audit events of the JavaDelegate path are written as AUDIT_PENDING rows with the
+    # connector ledger and appended to the root chain by the drainer after the job transaction ends. workers drain in
+    # parallel (each holds at most one pool connection while it waits for a root lock); the sweep catches rows whose
+    # drain signal was lost (sweep-interval 0 = no sweep).
+    pending:
+      workers: ${SANGAM_AUDIT_PENDING_WORKERS:2}
+      sweep-interval: 30s
+      sweep-min-age: 10s
+      sweep-batch: 200
+    # M-073 (owner Q-04): signed Merkle checkpoints over the audit chains, every interval or every max-entries events
+    # per tenant; overlap must exceed the longest transaction. Switched on by private-key-ref (deliberately not set
+    # here: the custodian is named later, and an empty value would count as set). Keys are secret references only,
+    # one Ed25519 key per purpose and environment:
+    #   private-key-ref: secret://audit/checkpoint-<env>-private   (base64 PKCS#8)
+    #   public-key-ref:  secret://audit/checkpoint-<env>-public    (base64 X.509)
+    #   export-dir: /var/lib/sangam/audit-checkpoints   (optional; storage under another administrative account)
+    # Verification (every node, AuditVerifyWiring): with trusted-public-key-refs set, audit verify also checks the
+    # signed checkpoints. A comma list of secret references to base64 X.509 Ed25519 public keys: the current key and
+    # the retired ones still trusted, for example
+    #   trusted-public-key-refs: secret://audit/checkpoint-<env>-public,secret://audit/checkpoint-<env>-public-2025
+    checkpoint:
+      interval: 1h
+      max-entries: 10000
+      overlap: 1h
   integration:
     simulators:
       enabled: false
@@ -139,12 +249,26 @@ sangam:
     webhooks:
       disable-after: ${SANGAM_WEBHOOKS_DISABLE_AFTER:50}
       hold-while-disabled: ${SANGAM_WEBHOOKS_HOLD_WHILE_DISABLED:72h}
+  connectors-health:
+    # M-006 / SL-138: the CDS Hooks clients (EHRs) allowed to call /cds-services (HealthConnectorsProperties
+    # CdsService). Each client calls with a JWT signed by its own key and is verified against its registered JWKS
+    # (iss allow-list, aud = base-url + the endpoint path, exp/iat within clock-skew, lifetime at most
+    # max-token-lifetime, jti not replayed). Register clients as clients.<name>.issuer plus jwks-uri or jwks (and
+    # optionally algorithms). Without a client every /cds-services call is refused (401 CDS_CLIENT_NOT_CONFIGURED);
+    # with clients, base-url (the public URL the clients put in aud) is required at start-up.
+    cds-service:
+      base-url: ${SANGAM_CDS_BASE_URL:}
+      clock-skew: 60s
+      max-token-lifetime: 5m
   # SL-43 per-tenant quotas (QuotaWiring). Over a rate limit: 429 TENANT_QUOTA_EXCEEDED + Retry-After; over a size
   # limit: 413 TENANT_QUOTA_EXCEEDED. Per-tenant overrides: the same keys in the tenant's quotas (onboarding
   # tenant.quotas). Negative = unlimited.
   quotas:
     enabled: ${SANGAM_QUOTAS_ENABLED:true}
     override-ttl: 30s
+    # the quota leaf pool sangam-quota (see spring.datasource.hikari above)
+    pool:
+      maximum-size: ${SANGAM_QUOTA_POOL_SIZE:4}
     defaults:
       startsPerSecond: ${SANGAM_QUOTA_STARTS_PER_SECOND:50}
       apiCallsPerMinute: ${SANGAM_QUOTA_API_CALLS_PER_MINUTE:6000}
@@ -192,6 +316,18 @@ sangam:
   security:
     dev-token:
       enabled: false
+    # SL-132: security denial audits (AUTH_DENIED, SOD_VIOLATION_BLOCKED, ...) commit on their own leaf pool
+    # sangam-security-audit (SecurityAuditPoolWiring), never on a second main-pool connection. These connections come
+    # on top of SANGAM_DB_POOL_SIZE on every node; count them in the database's connection budget.
+    denial-audit:
+      pool:
+        maximum-size: ${SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE:2}
+    # SL-161: the tenant data-key store (field and idempotency-response encryption) also works on this leaf pool.
+    # SL-158 (R26, enforced since 0.1.0): a worker fetches, completes and fails work only on topics it is bound to
+    # (WORK on WORKER_TOPIC/<topic>); any other call is 403 WORKER_TOPIC_NOT_BOUND naming the worker and the topic.
+    # Migration from an earlier build: bind every worker principal to its topics before upgrading, either by creating
+    # the worker as a service principal with its topics (POST /api/v1/admin/service-principals, topics: [...]) or by
+    # binding an existing worker; a role that grants WORK on WORKER_TOPIC/* (an administrator) needs no binding.
     # SL-70: issuer(s) of the PLATFORM realm, comma-separated. Only their tokens are platform identities (sangam-admin
     # = platform administrator); sangam-admin in any other token is the tenant administrator of its tenant. It must be
     # a realm separate from the tenant issuer (refused at startup otherwise). Empty = nobody is platform administrator.

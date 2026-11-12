@@ -30,3 +30,8 @@ sangam/sangam-rollup/src/main/resources/db/changelog/rollup/*/ru-0001-baseline.s
 # deploy/compose/keycloak/generate_realm.py (both realms and the Grafana dashboard):
 sangam/deploy/compose/keycloak/realm/*.json text eol=lf
 sangam/deploy/compose/observability/grafana/dashboards/sangam-overview.json text eol=lf
+sangam/sangam-compliance/src/main/resources/packs/compliance/*.bpmn text eol=lf
+sangam/sdks/**/generated/** text eol=lf
+sangam/sdks/dotnet/src/Sangam.Sdk/Generated/** text eol=lf
+sangam/sdks/codegen/surface-manifest.json text eol=lf
+sangam/sdks/php/src/Generated/** text eol=lf

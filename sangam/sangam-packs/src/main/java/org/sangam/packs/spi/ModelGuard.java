@@ -18,8 +18,9 @@ import org.operaton.bpm.model.xml.instance.ModelElementInstance;
 /**
  * Deploy-time checks for pack BPMN (ARCHITECTURE.md section 1.6, GP-09):
  * <ul>
- *   <li>every multi-instance activity must declare {@code sangam.maxCardinality} (an {@code operaton:property}) no
- *       larger than {@link #MAX_MULTI_INSTANCE}; large sets use one instance per item plus aggregation
+ *   <li>every multi-instance activity must declare {@code sangam.maxCardinality} (an {@code operaton:property}) as a
+ *       whole number from 1 to {@link #MAX_MULTI_INSTANCE}; a missing value, a non-number or a value outside that
+ *       range is reported as a violation, never thrown (SL-148); large sets use one instance per item plus aggregation
  *       ({@link org.sangam.packs.core.BatchDelegate}), because multi-instance cost grows with n squared;</li>
  *   <li>every executable process must set {@code historyTimeToLive} (Operaton 2.2 rejects deployments without it
  *       when enforcement is on; government retention is governed by R61, not by the engine TTL).</li>
@@ -40,10 +41,27 @@ public final class ModelGuard {
         for (MultiInstanceLoopCharacteristics mi : model.getModelElementsByType(MultiInstanceLoopCharacteristics.class)) {
             ModelElementInstance parent = mi.getParentElement();
             String id = parent instanceof BaseElement b ? b.getId() : "?";
-            Integer max = declaredMax(parent);
-            if (max == null) {
+            Declared declared = declaredMax(parent);
+            if (declared == null) {
                 out.add(resourceName + ": multi-instance activity " + id
                         + " has no sangam.maxCardinality (GP-09: use one instance per item plus aggregation)");
+                continue;
+            }
+            // SL-148: a missing or non-numeric value is a model violation reported like the others, never an exception
+            if (declared.raw() == null || declared.raw().isBlank()) {
+                out.add(resourceName + ": multi-instance activity " + id
+                        + " declares sangam.maxCardinality without a value (GP-09: a whole number 1.." + MAX_MULTI_INSTANCE
+                        + ")");
+                continue;
+            }
+            Integer max = parse(declared.raw());
+            if (max == null) {
+                out.add(resourceName + ": multi-instance activity " + id + " declares sangam.maxCardinality '"
+                        + declared.raw().trim() + "', which is not a whole number (GP-09: 1.." + MAX_MULTI_INSTANCE + ")");
+            } else if (max < 1) {
+                // the declared bound is the most instances the activity creates; below 1 it creates none
+                out.add(resourceName + ": multi-instance activity " + id + " declares sangam.maxCardinality " + max
+                        + " < 1 (GP-09: 1.." + MAX_MULTI_INSTANCE + ")");
             } else if (max > MAX_MULTI_INSTANCE) {
                 out.add(resourceName + ": multi-instance activity " + id + " declares sangam.maxCardinality " + max
                         + " > " + MAX_MULTI_INSTANCE + " (GP-09)");
@@ -57,7 +75,20 @@ public final class ModelGuard {
         return out;
     }
 
-    private static Integer declaredMax(ModelElementInstance activity) {
+    /** The {@code sangam.maxCardinality} property as written; {@code raw} is null when it has no value. */
+    private record Declared(String raw) {
+    }
+
+    /** A whole number in int range, or null (not a number, a fraction, or out of range). */
+    private static Integer parse(String raw) {
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static Declared declaredMax(ModelElementInstance activity) {
         if (!(activity instanceof BaseElement b)) {
             return null;
         }
@@ -68,7 +99,7 @@ public final class ModelGuard {
         for (OperatonProperties props : ext.getElementsQuery().filterByType(OperatonProperties.class).list()) {
             for (OperatonProperty p : props.getOperatonProperties()) {
                 if ("sangam.maxCardinality".equals(p.getOperatonName())) {
-                    return Integer.parseInt(p.getOperatonValue().trim());
+                    return new Declared(p.getOperatonValue());
                 }
             }
         }

@@ -51,6 +51,21 @@ public final class LifecyclePorts {
         DocumentEraser NONE = (t, i, r) -> 0;
     }
 
+    /**
+     * Further audit chains that hold events of one chain and are erased with it (SL-132): the denial-only chain of a
+     * root ({@code sec:d:...}). The chain naming belongs to the module that writes those chains (sangam-security
+     * {@code SecurityAuditService.denialChain}); the server supplies it, so the formula exists once and sangam-integration
+     * gains no dependency on sangam-security.
+     */
+    @FunctionalInterface
+    public interface RelatedAuditChains {
+        /** The chains whose events belong to {@code chainId} of {@code tenantId}; never null. */
+        List<String> of(String tenantId, String chainId);
+
+        /** No related chains. */
+        RelatedAuditChains NONE = (tenant, chain) -> List.of();
+    }
+
     /** Permission check per operation: {@code CANCEL_INSTANCE}, {@code DELETE_INSTANCE}, {@code ERASE_DATA} (R23). */
     @FunctionalInterface
     public interface Authorizer {

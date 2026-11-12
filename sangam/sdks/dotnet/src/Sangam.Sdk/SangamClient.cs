@@ -54,7 +54,14 @@ public sealed class SangamClient : IDisposable
         Admin = new AdminApi(Transport);
         Ops = new OpsApi(Transport);
         Repository = new RepositoryApi(Transport);
+        Api = new global::Sangam.Sdk.Generated.SangamApis(Transport);
     }
+
+    /// <summary>
+    /// The typed surface generated from sangam-api.yaml (M-020): every operation of the contract, one property per
+    /// contract tag, on this client's transport, e.g. <c>client.Api.Work.FetchAndLockAsync(request)</c>.
+    /// </summary>
+    public global::Sangam.Sdk.Generated.SangamApis Api { get; }
 
     /// <summary>Shortcut: base URL plus a static token (dev profile) or none.</summary>
     public SangamClient(string baseUrl, string? token = null) : this(new SangamClientOptions

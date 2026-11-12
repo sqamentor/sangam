@@ -24,6 +24,7 @@ import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.history.HistoricActivityInstance;
 import org.operaton.bpm.engine.history.HistoricProcessInstance;
 import org.sangam.core.layer.AuditChain;
+import org.sangam.core.layer.AuditCheckpoints;
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.rest.port.ApiProblem;
@@ -39,9 +40,10 @@ import org.sangam.rest.support.TxSupport;
  * (tables AUDIT_EVENT / AUDIT_PAYLOAD). Timelines may merge class-A Operaton history, marked {@code evidence=false}
  * (rule D-0). Every read is itself audited ({@code AUDIT_VIEWED}) and every export writes {@code AUDIT_EXPORTED} on the
  * tenant security chain {@code sec:<tenant>}, each in its own transaction; verification writes {@code AUDIT_VERIFIED}
- * (X.2.3.4 rule 5).
+ * (X.2.3.4 rule 5). The timeline, export and verification of a business key also read the denial chain of each of its
+ * chains ({@link DenialAudit}, SL-132); a search by {@code chainId} reads exactly that chain.
  */
-public class JdbcAuditAdapter implements AuditPort {
+public class JdbcAuditAdapter implements AuditPort, ChainViews {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final TypeReference<Map<String, Object>> MAP = new TypeReference<>() {
@@ -63,6 +65,26 @@ public class JdbcAuditAdapter implements AuditPort {
         this.chain = new AuditChain(tx.dialect());
     }
 
+    /** Name of the tenant-level checkpoint entry in a verification result (M-073). */
+    public static final String CHECKPOINTS_PREFIX = "checkpoints:";
+
+    private volatile AuditCheckpoints checkpoints;
+    private volatile AuditCheckpoints.KeyLookup checkpointKeys;
+
+    /**
+     * M-073: binds the signed Merkle checkpoints to {@link #verify} (additive; without them verification is the link
+     * check alone, as before). Every chain that verifies is also checked against the head its latest checkpoint sealed
+     * ({@link AuditCheckpoints#verifyChain}); with {@code keys} (the trusted public keys) the result also carries one
+     * entry {@code checkpoints:<tenant>} for the tenant's checkpoints ({@link AuditCheckpoints#verifyCheckpoints}).
+     *
+     * @param checkpoints a verify-only instance is enough ({@code new AuditCheckpoints(tx, dialect, null, null)})
+     * @param keys        trusted checkpoint keys ({@link AuditCheckpoints#ed25519Keys}); null = no checkpoint entry
+     */
+    public void setCheckpoints(AuditCheckpoints checkpoints, AuditCheckpoints.KeyLookup keys) {
+        this.checkpoints = checkpoints;
+        this.checkpointKeys = keys;
+    }
+
     // ------------------------------------------------------------------ write
 
     @Override
@@ -70,13 +92,23 @@ public class JdbcAuditAdapter implements AuditPort {
         if (chainId == null || chainId.isBlank()) {
             throw new IllegalArgumentException("audit chain id is required");
         }
+        Map<String, Object> p = eventPayload(ctx, payload);
+        String tenant = ctx.tenantId();
+        return tx.withConnection(c -> chain.append(c, tenant, chainId, eventType, p).eventId());
+    }
+
+    /**
+     * The stored payload of a REST audit event: the caller's values, sanitised for canonical JSON, plus the actor.
+     * Writers that append on a connection they already hold (an engine transaction, a denial leaf transaction) use it
+     * so their events have exactly the shape {@link #record} writes.
+     */
+    public static Map<String, Object> eventPayload(RequestContext ctx, Map<String, ?> payload) {
         Map<String, Object> p = new LinkedHashMap<>();
         if (payload != null) {
             payload.forEach((k, v) -> p.put(k, sanitize(v)));
         }
         p.put("actor", sanitize(ctx.actor()));
-        String tenant = ctx.tenantId();
-        return tx.withConnection(c -> chain.append(c, tenant, chainId, eventType, p).eventId());
+        return p;
     }
 
     private void securityEvent(RequestContext ctx, String type, Map<String, Object> payload) {
@@ -92,8 +124,9 @@ public class JdbcAuditAdapter implements AuditPort {
             throw ApiProblem.badRequest("BUSINESS_KEY_REQUIRED", "businessKey is required");
         }
         List<String> rootIds = rootIds(ctx, businessKey);
-        Set<String> chains = new LinkedHashSet<>(rootIds);
-        chains.add(businessKey);
+        Set<String> roots = new LinkedHashSet<>(rootIds);
+        roots.add(businessKey);
+        Set<String> chains = withDenialChains(ctx.tenantId(), roots);
         int limit = (int) Math.min(Integer.MAX_VALUE, Math.max(props.getCountCap(), page.firstResult() + page.size()) + 1);
         List<AuditEntry> all = new ArrayList<>(tx.withConnection(c -> readChains(c, ctx.tenantId(), chains, limit)));
         if (includeHistory) {
@@ -169,19 +202,44 @@ public class JdbcAuditAdapter implements AuditPort {
         Instant now = Instant.now();
         List<ChainVerification> results = tx.withConnection(c -> {
             Set<String> chains = new LinkedHashSet<>();
+            Set<String> denialChains = Set.of();
             if (chainId != null) {
                 chains.add(chainId);
             } else if (businessKey != null) {
                 chains.addAll(rootIds(ctx, businessKey));
                 chains.add(businessKey);
+                Set<String> all = withDenialChains(tenant, chains);
+                denialChains = new LinkedHashSet<>(all);
+                denialChains.removeAll(chains);
+                chains = all;
             } else {
                 chains.addAll(limited(c, "SELECT DISTINCT chain_id FROM AUDIT_EVENT WHERE tenant_id=?", MAX_CHAINS,
                         rs -> rs.getString(1), tenant));
             }
             List<ChainVerification> out = new ArrayList<>();
+            AuditCheckpoints cps = checkpoints;
             for (String ch : chains) {
                 AuditChain.VerifyResult r = chain.verify(c, tenant, ch);
-                out.add(new ChainVerification(ch, r.ok(), r.eventsChecked(), r.firstBadSeq(), r.reason()));
+                if (denialChains.contains(ch) && r.ok() && r.eventsChecked() == 0) {
+                    continue;   // SL-132: a root without denials has no denial chain; it is not listed
+                }
+                ChainVerification v = new ChainVerification(ch, r.ok(), r.eventsChecked(), r.firstBadSeq(), r.reason());
+                if (r.ok() && cps != null) {
+                    // M-073: the links verify; the head the latest checkpoint sealed must still be there (a chain
+                    // rewritten or truncated as a whole, head included, passes the link check alone)
+                    AuditCheckpoints.ChainCheck cc = cps.verifyChain(c, tenant, ch);
+                    if (!cc.ok()) {
+                        v = new ChainVerification(ch, false, r.eventsChecked(), cc.sealedSeq(), cc.reason());
+                    }
+                }
+                out.add(v);
+            }
+            AuditCheckpoints.KeyLookup keys = checkpointKeys;
+            if (cps != null && keys != null) {
+                // M-073: the tenant's signed checkpoints themselves (numbering, links, signatures, Merkle roots)
+                AuditCheckpoints.Verification cv = cps.verifyCheckpoints(c, tenant, keys);
+                out.add(new ChainVerification(CHECKPOINTS_PREFIX + tenant, cv.ok(), cv.checkpointsChecked(),
+                        cv.firstBadCheckpoint(), cv.reason()));
             }
             return out;
         });
@@ -206,8 +264,9 @@ public class JdbcAuditAdapter implements AuditPort {
             throw ApiProblem.badRequest("UNSUPPORTED_FORMAT", "format must be json or csv");
         }
         List<String> rootIds = rootIds(ctx, businessKey);
-        Set<String> chains = new LinkedHashSet<>(rootIds);
-        chains.add(businessKey);
+        Set<String> roots = new LinkedHashSet<>(rootIds);
+        roots.add(businessKey);
+        Set<String> chains = withDenialChains(ctx.tenantId(), roots);
         int limit = (int) Math.min(Integer.MAX_VALUE, props.getCountCap());
         List<AuditEntry> entries = tx.withConnection(c -> readChains(c, ctx.tenantId(), chains, limit));
         byte[] content = fmt.equals("json") ? json(entries) : csv(entries);
@@ -222,7 +281,49 @@ public class JdbcAuditAdapter implements AuditPort {
                 "audit-" + safe + "." + fmt, content);
     }
 
+    @Override
+    public Map<String, List<AuditEntry>> viewChains(RequestContext ctx, List<String> chainIds, int perChainLimit,
+                                                    Map<String, ?> view) {
+        Map<String, List<AuditEntry>> out = new LinkedHashMap<>();
+        if (chainIds == null || chainIds.isEmpty()) {
+            return out;
+        }
+        String sql = "SELECT e.chain_id, e.seq, e.event_id, e.event_type, e.occurred_at, e.hash, e.prev_hash, e.envelope,"
+                + " p.payload, p.erased_at FROM AUDIT_EVENT e LEFT JOIN AUDIT_PAYLOAD p ON p.event_id = e.event_id"
+                + " WHERE e.tenant_id=? AND e.chain_id=? ORDER BY e.occurred_at DESC, e.seq DESC";
+        List<String> ids = new ArrayList<>(new LinkedHashSet<>(chainIds));
+        tx.withConnection(c -> {
+            for (String id : ids) {
+                // the same rows and order as search(chainId) over its first pages (newest first), then oldest first
+                List<AuditEntry> rows = new ArrayList<>(limited(c, sql, perChainLimit, JdbcAuditAdapter::auditRow,
+                        ctx.tenantId(), id));
+                rows.sort(Comparator.comparing(AuditEntry::occurredAt, Comparator.nullsFirst(Comparator.naturalOrder())));
+                out.put(id, rows);
+            }
+            return null;
+        });
+        Map<String, Object> viewed = new LinkedHashMap<>();
+        if (view != null) {
+            view.forEach((k, v) -> viewed.put(k, v));
+        }
+        viewed.put("chainIds", ids);
+        securityEvent(ctx, "AUDIT_VIEWED", viewed);
+        return out;
+    }
+
     // ------------------------------------------------------------------ helpers
+
+    /**
+     * SL-132: the chains plus the denial chain of each ({@link DenialAudit#chainOf}). Denials of a root are kept on
+     * their own chain (they commit while the refused caller rolls back), so every view of a root's audit reads both.
+     */
+    static Set<String> withDenialChains(String tenant, Collection<String> chains) {
+        Set<String> all = new LinkedHashSet<>(chains);
+        for (String ch : chains) {
+            all.add(DenialAudit.chainOf(tenant, ch));
+        }
+        return all;
+    }
 
     private List<String> rootIds(RequestContext ctx, String businessKey) {
         var q = historyService.createHistoricProcessInstanceQuery().processInstanceBusinessKey(businessKey);

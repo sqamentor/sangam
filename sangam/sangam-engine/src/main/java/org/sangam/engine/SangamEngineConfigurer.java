@@ -56,8 +56,10 @@ public final class SangamEngineConfigurer {
      * RCSI, MySQL server identity: FLOWABLE-INTO-OPERATON D-05) and, when enabled, applies the product changelog (R12).
      */
     public DataSource prepare(DataSource raw) {
-        if (settings.isApplyEnvironment()) {
-            settings.applyEnvironment(System.getenv()); // IR-7 SANGAM_JOB_* overrides
+        // IR-7 SANGAM_JOB_* overrides. Frozen settings (M-098: a configure() already ran on them) had the overrides
+        // applied by that run's prepare, before the freeze, and must not change again.
+        if (settings.isApplyEnvironment() && !settings.isFrozen()) {
+            settings.applyEnvironment(System.getenv());
         }
         // SL-59: the guard also bounds socket reads on every checked-out connection without a network timeout
         DataSource ds = raw instanceof IsolationGuardDataSource ? raw
@@ -126,6 +128,8 @@ public final class SangamEngineConfigurer {
         }
         cfg.setProcessEnginePlugins(plugins);
         SangamClockHolder.set(components.clock()); // other modules read the engine clock through the holder
+        // M-098: bootstrap is complete for the settings; the plugin reads them during the build, unchanged from here
+        settings.freeze();
     }
 
     /** After the engine build: engine schema patches (MySQL P-1/P-2) and the adapter. */

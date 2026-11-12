@@ -16,3 +16,289 @@
 policy:
   minimumSupportDays: 365
 deprecations: []
+
+# Contract corrections (not deprecations): a released shape that never matched what the server accepts, corrected in
+# both sangam-api.yaml and the baseline with an owner decision. No working client can depend on the old shape. Not read
+# by gen_openapi.py or DeprecationHeadersFilter; kept here so the baseline edit is on record next to the registry
+# that OpenApiCompatibilityTest uses.
+corrections:
+  - method: PUT
+    path: /registry/parties/config/identifier-types
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody application/json: {type: object, additionalProperties: true}"
+    to: "requestBody application/json: {type: array, items: RegistryPartySaveIdentifierTypesBody}"
+    reason: "PartyController.saveIdentifierTypes binds @RequestBody List<Map<String, Object>>; a JSON object was always rejected (400)"
+    decision: "owner, 2026-11-12 (0.1.0 unreleased; M-051 / SL-145)"
+  - method: POST
+    path: /geo/layers
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "GeoController.defineLayer answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /geo/layers/{layer}/features
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "GeoController.putFeature answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /geo/fences
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "GeoController.defineFence answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/custody/items
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "CustodyController.register answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/custody/items/{id}/transfers
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "CustodyController.initiate answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/custody/items/{id}/handover
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "CustodyController.handover answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/custody/items/{id}/disposal-orders
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "CustodyController.orderDisposal answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/instruments
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "InstrumentController.issue answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/instruments/{id}/endorsements
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "InstrumentController.endorse answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/parties
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "PartyController.create answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/parties/{id}/identifiers
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "PartyController.addIdentifier answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/parties/{id}/relationships
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "PartyController.addRelationship answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/parties/{id}/addresses
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "PartyController.addAddress answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/parties/{id}/snapshots
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "PartyController.snapshot answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/registers/{registerKey}/entries
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RegisterController.append answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/registers/books/{bookId}/entries/{entryNo}/corrections
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RegisterController.correct answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/registers/books/{bookId}/extracts
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RegisterController.extract answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/types
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RegistryController.publishType answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/objects
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RegistryController.create answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /registry/number-series/{seriesKey}/allocate
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RegistryController.allocate answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/items
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.createResource answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/blackouts
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.addBlackout answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/bookings/hold
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.hold answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/bookings/hold-series
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.holdSeries answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/waitlist
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.enqueue answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/draws
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.draw answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/allotments
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.allot answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /resources/allotments/next
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "ResourcesController.allotNext answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /queues/service-points/{servicePointId}/tokens
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "QueueController.issueToken answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /rosters/periods
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RosterController.createPeriod answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /rosters/periods/{periodId}/demand
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RosterController.addDemand answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /rosters/periods/{periodId}/assignments
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RosterController.assign answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /rosters/periods/{periodId}/on-call
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RosterController.markOnCall answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /rosters/swaps
+    corrected: 2026-11-12
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "success response 200"
+    to: "success response 201"
+    reason: "RosterController.requestSwap answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
+    decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"

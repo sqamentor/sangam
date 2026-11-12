@@ -12,6 +12,7 @@ import { addHeaderProvider, setTokenProvider, setUnauthenticatedHandler, ApiErro
 import { api } from '../api/endpoints';
 import type { Me, Role, SeatHolding } from '../api/types';
 import { config } from '../config';
+import { setTenantLocale } from '../i18n';
 
 type Status = 'loading' | 'anonymous' | 'authenticated' | 'error';
 
@@ -115,10 +116,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) {
       setStatus('anonymous');
       setMe(null);
+      setTenantLocale(null);
       return;
     }
     try {
       const m = await api.me.get();
+      // M-045: money and digit grouping follow the tenant locale (no currency is assumed when it is absent)
+      setTenantLocale(m.locale);
       const claimRoles = rolesFromClaims(decodeClaims(token));
       setMe({ ...m, roles: m.roles?.length ? m.roles : claimRoles, seats: m.seats ?? [] });
       setError(null);

@@ -13,8 +13,6 @@
 
   <properties>
     <!-- Versions owned by this module (not in the parent dependencyManagement). Licences: see README. -->
-    <version.kafka>3.9.2</version.kafka>
-    <version.jms>3.1.0</version.jms>
     <version.sshd>2.15.0</version.sshd>
     <version.angus-mail>2.0.4</version.angus-mail>
     <version.servlet>6.0.0</version.servlet>
@@ -80,14 +78,12 @@
     <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka-clients</artifactId>
-      <version>${version.kafka}</version>
       <optional>true</optional>
     </dependency>
     <!-- EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 -->
     <dependency>
       <groupId>jakarta.jms</groupId>
       <artifactId>jakarta.jms-api</artifactId>
-      <version>${version.jms}</version>
       <optional>true</optional>
     </dependency>
     <!-- N12 MQTT telemetry consumer: Eclipse Paho MQTT v3. EPL-2.0 OR EDL-1.0 (BSD-3-Clause). -->

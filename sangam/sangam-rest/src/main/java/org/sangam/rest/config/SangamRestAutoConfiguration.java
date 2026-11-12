@@ -120,10 +120,16 @@ public class SangamRestAutoConfiguration {
         return new JdbcAuditAdapter(tx, engine.getHistoryService(), engine.getRuntimeService(), props);
     }
 
+    /**
+     * SL-139 (M-007, X.2.2.3): with sangam-security's {@code FieldEncryptor} bound, stored idempotency response bodies
+     * are encrypted at rest under the tenant key and decrypted before a replay; rows written without an encryptor stay
+     * readable (no marker). Without an encryptor the bodies are stored as before.
+     */
     @Bean
     @ConditionalOnMissingBean
-    public IdempotencyPort sangamIdempotencyPort(TxSupport tx, RestProperties props) {
-        return new JdbcIdempotencyAdapter(tx, props);
+    public IdempotencyPort sangamIdempotencyPort(TxSupport tx, RestProperties props,
+            ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor) {
+        return new JdbcIdempotencyAdapter(tx, props, encryptor.getIfAvailable());
     }
 
     @Bean
@@ -149,29 +155,75 @@ public class SangamRestAutoConfiguration {
         return ids;
     }
 
-    /** The hardened sangam-engine {@link EngineAdapter} is preferred when present; else Operaton directly. */
+    /**
+     * The hardened sangam-engine {@link EngineAdapter} is preferred when present; else Operaton directly. SL-158 (R26,
+     * owner decision: enforce): with a {@code WorkerTopicGuard} bound (the server binds sangam-security's worker
+     * bindings), a worker fetches and settles work only on topics it is bound to.
+     */
     @Bean
     @ConditionalOnMissingBean
     public WorkPort sangamWorkPort(ObjectProvider<EngineAdapter> engineAdapter, ProcessEngine engine, TxSupport tx,
                                    AuditPort audit, RestProperties props, org.sangam.rest.support.DocumentStore store,
-                                   org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds) {
+                                   org.sangam.rest.adapter.operaton.OperatonOperationIds operationIds,
+                                   ObjectProvider<org.sangam.rest.adapter.operaton.WorkerTopicGuard> topicGuard,
+                                   ObjectProvider<org.sangam.rest.support.WorkLongPoll> longPoll,
+                                   org.springframework.core.env.Environment env) {
         EngineAdapter adapter = engineAdapter.getIfAvailable();
-        WorkPort raw = adapter != null
-                ? new EngineAdapterWorkAdapter(adapter, tx, audit, props)
-                : new OperatonWorkAdapter(engine.getExternalTaskService(), engine.getRuntimeService(), tx, audit, props,
-                        operationIds);
+        org.sangam.rest.adapter.operaton.WorkerTopicGuard guard = topicGuard.getIfAvailable();
+        org.sangam.rest.support.WorkLongPoll poll = longPoll.getIfAvailable();
+        WorkPort raw;
+        if (adapter != null) {
+            EngineAdapterWorkAdapter work = new EngineAdapterWorkAdapter(adapter, tx, audit, props);
+            if (guard != null) {
+                work.setTopicGuard(guard);
+            }
+            if (poll != null) {
+                work.setLongPollSettings(poll.settings());   // X1-07: one back-off definition
+            }
+            // M-062: the engine's trace-links setting (SangamEngineSettings binds the same key, default off)
+            work.setTraceLinks(traceLinks(env));
+            raw = work;
+        } else {
+            OperatonWorkAdapter work = new OperatonWorkAdapter(engine.getExternalTaskService(), engine.getRuntimeService(),
+                    tx, audit, props, operationIds);
+            if (guard != null) {
+                work.setTopicGuard(guard);   // SL-158 on this path too (engine module off)
+            }
+            if (poll != null) {
+                work.setLongPollSettings(poll.settings());
+            }
+            raw = work;
+        }
         // Worker/topic tracking and persisted topic pause for the ops console (O06).
         return new org.sangam.rest.adapter.operaton.TrackingWorkPort(raw, store);
     }
 
+    /** M-062: {@code sangam.engine.trace-links}, bound as {@code SangamEngineSettings} binds it (default false). */
+    static boolean traceLinks(org.springframework.core.env.Environment env) {
+        return org.springframework.boot.context.properties.bind.Binder.get(env)
+                .bind("sangam.engine.trace-links", Boolean.class).orElse(false);
+    }
+
+    /**
+     * SG-15: task.list and task.get run their engine reads in one transaction ({@code ReadTransactions}). SL-132: the
+     * SoD refusal audit ({@code SOD_VIOLATION_BLOCKED}) commits through the bound {@code DenialAudit} (the server binds
+     * one on its {@code sangam-security-audit} leaf pool); without one, the adapter's main-pool fallback.
+     */
     @Bean
     @ConditionalOnMissingBean
-    public TaskPort sangamTaskPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props) {
+    public TaskPort sangamTaskPort(ProcessEngine engine, TxSupport tx, AuditPort audit, RestProperties props,
+            PlatformTransactionManager txManager,
+            ObjectProvider<org.sangam.rest.adapter.jdbc.DenialAudit> denialAudit) {
         OperatonTaskAdapter adapter = new OperatonTaskAdapter(engine.getTaskService(), engine.getRuntimeService(),
                 engine.getHistoryService(), engine.getFormService(), tx, audit, props);
         // SL-77: required fields of the task's Sangam form are enforced on completion.
         adapter.setFormRequirements(new org.sangam.rest.adapter.operaton.TaskFormRequirements(
                 engine.getRepositoryService()));
+        adapter.setReadTransactions(new org.sangam.rest.adapter.operaton.ReadTransactions(txManager));
+        org.sangam.rest.adapter.jdbc.DenialAudit denials = denialAudit.getIfAvailable();
+        if (denials != null) {
+            adapter.setDenialAudit(denials);
+        }
         return adapter;
     }
 
@@ -299,11 +351,39 @@ public class SangamRestAutoConfiguration {
     public org.sangam.rest.port.WorkspacePort sangamWorkspacePort(TaskPort tasks, ProcessEngine engine,
             AdminPort admin, PermissionPort permissions, AuditPort audit, RestProperties props,
             org.sangam.rest.support.DocumentStore store,
-            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
-        return new org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter(tasks, engine.getTaskService(),
+            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock,
+            org.springframework.beans.factory.BeanFactory beans) {
+        org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter adapter =
+                new org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter(tasks, engine.getTaskService(),
                 engine.getRuntimeService(), engine.getHistoryService(), engine.getRepositoryService(),
                 engine.getFormService(), admin, permissions, audit, props, store,
                 new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable));
+        // M-045: /me carries the tenant's resolved profile locale (currency, zone, grouping) when sangam-config's
+        // ProfileResolver is present; without it /me has no locale, as before
+        if (org.springframework.util.ClassUtils.isPresent(ProfileLocales.RESOLVER, getClass().getClassLoader())) {
+            ProfileLocales.bind(adapter, beans);
+        }
+        return adapter;
+    }
+
+    /**
+     * Touches sangam-config's {@code ProfileResolver} only when the class is present (sangam-config is an optional
+     * dependency of sangam-rest): this holder is loaded only then.
+     */
+    static final class ProfileLocales {
+        static final String RESOLVER = "org.sangam.config.profile.ProfileResolver";
+
+        private ProfileLocales() {
+        }
+
+        static void bind(org.sangam.rest.adapter.operaton.OperatonWorkspaceAdapter adapter,
+                         org.springframework.beans.factory.BeanFactory beans) {
+            org.sangam.config.profile.ProfileResolver profiles =
+                    beans.getBeanProvider(org.sangam.config.profile.ProfileResolver.class).getIfAvailable();
+            if (profiles != null) {
+                adapter.setProfiles(profiles);
+            }
+        }
     }
 
     @Bean

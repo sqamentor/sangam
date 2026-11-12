@@ -78,6 +78,7 @@ export function readInterface(source: string, name: string): Shape {
 const COVERED: Record<string, string> = {
   ExternalWork: 'ExternalWork',
   WorkOperation: 'WorkOperation',
+  TraceContext: 'WorkTraceContext',
   WorkOutcome: 'WorkOutcome',
   LockState: 'LockState',
   OutcomeUnknownResult: 'OutcomeUnknownResult',

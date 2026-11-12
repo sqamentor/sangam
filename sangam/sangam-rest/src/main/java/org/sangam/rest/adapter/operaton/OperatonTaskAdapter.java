@@ -68,6 +68,7 @@ public class OperatonTaskAdapter implements TaskPort {
     private final TxSupport tx;
     private final AuditPort audit;
     private final RestProperties props;
+    private final TaskAuditExtras extras;
 
     public OperatonTaskAdapter(TaskService tasks, RuntimeService runtime, HistoryService history, TxSupport tx,
                                AuditPort audit, RestProperties props) {
@@ -85,12 +86,21 @@ public class OperatonTaskAdapter implements TaskPort {
         this.tx = tx;
         this.audit = audit;
         this.props = props;
+        this.extras = new TaskAuditExtras(audit);
     }
 
     // ------------------------------------------------------------------ reads
 
+    /**
+     * SG-15: the page, its cap probe, the count, the business keys and the card variables are engine reads; they run in
+     * one {@linkplain ReadTransactions read transaction} (one commit instead of one per read).
+     */
     @Override
     public Page<Task> list(RequestContext ctx, TaskFilter f, Page.PageRequest page) {
+        return reads(() -> listPage(ctx, f, page));
+    }
+
+    private Page<Task> listPage(RequestContext ctx, TaskFilter f, Page.PageRequest page) {
         TaskQuery q = tasks.createTaskQuery();
         if (ctx.tenantId() != null) {
             q.tenantIdIn(ctx.tenantId());
@@ -185,8 +195,43 @@ public class OperatonTaskAdapter implements TaskPort {
         }
     }
 
+    /** The task detail a user opens: exactly one {@code AUDIT_VIEWED} for its audit extras (SG-15, owner 2026-11-12). */
     @Override
     public TaskDetail get(RequestContext ctx, String taskId) {
+        return detail(ctx, taskId, true);
+    }
+
+    /**
+     * The task detail. SG-15:
+     * <ol>
+     *   <li>The engine reads (task, variables, identity links, business key, return targets, SoD mode) run in one
+     *       {@linkplain ReadTransactions read transaction}, committed before any audit work. The audit read and its
+     *       {@code AUDIT_VIEWED} write never run inside it: the write is a new transaction, and a new transaction
+     *       while the read transaction holds its connection would be the SL-43 pool-deadlock pattern.</li>
+     *   <li>With {@code auditView}, the audit extras ({@code changedSinceLastSeen}, {@code ruleEvidence}) are read from
+     *       the instance and business-key chains in one audited read: one {@code AUDIT_VIEWED} for the request, not
+     *       one per chain and page. Without it (an internal lookup by another adapter, which shows no audit) no audit
+     *       is read and nothing is written; both extras are empty.</li>
+     * </ol>
+     */
+    public TaskDetail detail(RequestContext ctx, String taskId, boolean auditView) {
+        TaskDetail engine = reads(() -> engineDetail(ctx, taskId));
+        if (!auditView) {
+            return engine;
+        }
+        String pi = engine.task().processInstanceId();
+        String bk = engine.task().businessKey();
+        Map<String, List<AuditPort.AuditEntry>> events = extras.read(ctx, taskId, pi, bk);
+        List<WorkspacePort.FieldChange> changed = TaskAuditExtras.changedSinceLastSeen(ctx, events, pi);
+        List<RuleEvidence> evidence = TaskAuditExtras.ruleEvidence(events, bk);
+        return new TaskDetail(engine.task(), engine.variables(), engine.payloadHash(), engine.caseVersion(),
+                engine.formVersion(), engine.materialFields(), engine.allowedActions(), engine.candidateUsers(),
+                engine.candidateGroups(), engine.returnTargets(), engine.sod(), engine.candidates(),
+                engine.rejectReasons(), engine.returnReasons(), changed, evidence, engine.delegatedFrom());
+    }
+
+    /** Every engine read of {@link #detail}; the audit extras are left empty. */
+    private TaskDetail engineDetail(RequestContext ctx, String taskId) {
         org.operaton.bpm.engine.task.Task t = requireVisible(ctx, taskId);
         Map<String, Object> vars = OperatonSupport.call(() -> tasks.getVariables(taskId));
         List<String> users = new ArrayList<>();
@@ -223,7 +268,22 @@ public class OperatonTaskAdapter implements TaskPort {
                 formVersion == null ? null : String.valueOf(formVersion), PayloadHash.materialFields(vars), actions,
                 users, groups, returnTargets(t, vars), sodCheck(ctx, t, vars), candidates,
                 codedReasons(vars.get(REJECT_REASONS)), codedReasons(vars.get(RETURN_REASONS)),
-                changedSinceLastSeen(ctx, t), ruleEvidence(ctx, bk), delegatedFrom);
+                List.of(), List.of(), delegatedFrom);
+    }
+
+    private volatile ReadTransactions readTransactions;
+
+    /**
+     * SG-15: binds the read transaction of {@link #list} and {@link #detail}. Without it each engine read commits on
+     * its own, as before.
+     */
+    public void setReadTransactions(ReadTransactions readTransactions) {
+        this.readTransactions = readTransactions;
+    }
+
+    private <T> T reads(java.util.function.Supplier<T> work) {
+        ReadTransactions r = readTransactions;
+        return r == null ? work.get() : r.inReadTx(work);
     }
 
     // ------------------------------------------------------------------ TaskDetail extras (UI S08/S09/S10)
@@ -314,86 +374,6 @@ public class OperatonTaskAdapter implements TaskPort {
                 }
             }
         }
-        return out;
-    }
-
-    /**
-     * Fields changed since the caller last acted on this case: the material changes recorded by every
-     * CASE_RESUBMITTED / CASE_RETURNED event after the caller's last TASK_COMPLETED on this chain (or all of them when
-     * the caller has not acted yet). From/to values come from the {@code old_values}/{@code new_values} the resubmit
-     * records for material fields.
-     */
-    List<WorkspacePort.FieldChange> changedSinceLastSeen(RequestContext ctx, org.operaton.bpm.engine.task.Task t) {
-        if (t.getProcessInstanceId() == null) {
-            return List.of();
-        }
-        List<AuditPort.AuditEntry> events = chainEvents(ctx, t.getProcessInstanceId());
-        int start = 0;
-        for (int i = 0; i < events.size(); i++) {
-            AuditPort.AuditEntry e = events.get(i);
-            if ("TASK_COMPLETED".equals(e.type()) && ctx.principalId().equals(e.actor())) {
-                start = i + 1;
-            }
-        }
-        Map<String, WorkspacePort.FieldChange> changes = new LinkedHashMap<>();
-        for (AuditPort.AuditEntry e : events.subList(start, events.size())) {
-            if (!"CASE_RESUBMITTED".equals(e.type()) && !"CASE_RETURNED".equals(e.type())) {
-                continue;
-            }
-            fieldChanges(e, changes);
-        }
-        return new ArrayList<>(changes.values());
-    }
-
-    /** Folds one CASE_RESUBMITTED / CASE_RETURNED event into the field changes (keeps the first "from", last "to"). */
-    static void fieldChanges(AuditPort.AuditEntry e, Map<String, WorkspacePort.FieldChange> into) {
-        Map<String, Object> p = e.payload() == null ? Map.of() : e.payload();
-        Map<?, ?> oldValues = p.get("old_values") instanceof Map<?, ?> m ? m : Map.of();
-        Map<?, ?> newValues = p.get("new_values") instanceof Map<?, ?> m ? m : Map.of();
-        for (String f : listOf(p.get("changed_fields"))) {
-            WorkspacePort.FieldChange prev = into.get(f);
-            into.put(f, new WorkspacePort.FieldChange(f, f, prev != null ? prev.from() : oldValues.get(f),
-                    newValues.get(f), e.actor(), e.occurredAt()));
-        }
-    }
-
-    /** Routing / authority decisions recorded on the business-key chain (X.2.3.2 decision_ref). */
-    List<RuleEvidence> ruleEvidence(RequestContext ctx, String businessKey) {
-        if (businessKey == null) {
-            return List.of();
-        }
-        List<RuleEvidence> out = new ArrayList<>();
-        for (AuditPort.AuditEntry e : chainEvents(ctx, businessKey)) {
-            if (!"ROUTING_DECISION".equals(e.type()) && !"AUTHORITY_DECISION".equals(e.type())) {
-                continue;
-            }
-            Map<String, Object> p = e.payload() == null ? Map.of() : e.payload();
-            Object key = p.get("decision_key") != null ? p.get("decision_key") : p.get("decisionKey");
-            Object version = p.get("decision_version") != null ? p.get("decision_version") : p.get("version");
-            Object result = p.get("output_digest") != null ? p.get("output_digest") : p.get("outputDigest");
-            out.add(new RuleEvidence(key == null ? e.type() : String.valueOf(key),
-                    version == null ? null : String.valueOf(version), result == null ? null : String.valueOf(result)));
-        }
-        return out;
-    }
-
-    /** All class-B events of one chain, oldest first (bounded at 10 pages). An unreadable audit yields no extras. */
-    List<AuditPort.AuditEntry> chainEvents(RequestContext ctx, String chainId) {
-        List<AuditPort.AuditEntry> out = new ArrayList<>();
-        try {
-            for (int pageNo = 0; pageNo < 10; pageNo++) {
-                Page<AuditPort.AuditEntry> p = audit.search(ctx, new AuditPort.AuditFilter(chainId, null, null, null,
-                        null), new Page.PageRequest(pageNo, Page.PageRequest.MAX_SIZE));
-                out.addAll(p.items());
-                if (p.items().size() < Page.PageRequest.MAX_SIZE) {
-                    break;
-                }
-            }
-        } catch (ApiProblem e) {
-            return List.of();
-        }
-        out.sort(java.util.Comparator.comparing(AuditPort.AuditEntry::occurredAt,
-                java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())));
         return out;
     }
 
@@ -532,6 +512,21 @@ public class OperatonTaskAdapter implements TaskPort {
             locals.put("presentedPayloadHash", presentedPayloadHash);
         }
         OperatonSupport.run(() -> tasks.setVariablesLocal(taskId, locals));
+    }
+
+    private volatile org.sangam.rest.adapter.jdbc.DenialAudit denialAudit;
+
+    /**
+     * SL-132: binds the denial-audit writer on the leaf pool. Without it a denial commits in a new main-pool
+     * transaction ({@link org.sangam.rest.adapter.jdbc.DenialAudit#mainPool}), still on the denial chain.
+     */
+    public void setDenialAudit(org.sangam.rest.adapter.jdbc.DenialAudit denialAudit) {
+        this.denialAudit = denialAudit;
+    }
+
+    private org.sangam.rest.adapter.jdbc.DenialAudit denials() {
+        org.sangam.rest.adapter.jdbc.DenialAudit d = denialAudit;
+        return d != null ? d : org.sangam.rest.adapter.jdbc.DenialAudit.mainPool(tx);
     }
 
     private volatile TaskFormRequirements formRequirements;
@@ -818,7 +813,12 @@ public class OperatonTaskAdapter implements TaskPort {
             violation = true;
         }
         if (violation) {
-            tx.inNewTx(() -> audit.record(ctx, root(t), "SOD_VIOLATION_BLOCKED", taskPayload(ctx, t, Map.of())));
+            // SL-132: the refusal rolls the completion back, so the denial commits on its own: on the root's denial
+            // chain (no wait for the root chain's ROOT_SEQ row this transaction may hold) through the denial-audit
+            // leaf pool (no second main-pool connection while this transaction holds one).
+            Map<String, Object> extra = new LinkedHashMap<>();
+            extra.put("processInstanceId", t.getProcessInstanceId());
+            denials().record(ctx, root(t), "SOD_VIOLATION_BLOCKED", taskPayload(ctx, t, extra));
             throw ApiProblem.unprocessable("SOD_VIOLATION",
                     "You acted earlier on this case and cannot act on this step (segregation of duties)");
         }

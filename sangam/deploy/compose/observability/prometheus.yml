@@ -2,6 +2,10 @@
 global:
   scrape_interval: 15s
   evaluation_interval: 30s
+# M-091: Sangam alert rules. docker-compose.yml mounts ./observability/rules at /etc/prometheus/rules; a glob
+# that matches no file loads no rules and is not an error.
+rule_files:
+  - /etc/prometheus/rules/*.yml
 scrape_configs:
   - job_name: sangam-server
     metrics_path: /actuator/prometheus

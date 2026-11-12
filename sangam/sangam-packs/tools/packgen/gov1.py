@@ -409,9 +409,9 @@ def p3():
         'caseType=GRANT;routingDecisionKey=p3-sanction-authority;powersDecisionKey=sangam-core-powers;'
         'signatureRequired=true;executionConnector=pfms.dbt;executionOperation=submitDbtRecord;executionStep=dbt;'
         'reconcileRequired=true;reconcileConnector=bank.statement;outputTemplate=disbursement-record;'
-        'issueOutput=true;appealAllowed=true;appealWindow=P30D;appellateSeat=APPELLATE-DIR;instalmentNo=0;'
-        'instalmentInterval=P90D;retentionCategory=C;retentionYears=10;amount=0;'
-        'executionPayloadFields=beneficiaryId,bankAccount,ifsc,instalmentAmount,instalmentNo,schemeId;'
+        'issueOutput=true;appealAllowed=true;appealWindow=P30D;appellateSeat=APPELLATE-DIR;'
+        'duplicateSeat=DOCVERIFIER-A2;instalmentNo=0;instalmentInterval=P90D;retentionCategory=C;retentionYears=10;'
+        'amount=0;executionPayloadFields=beneficiaryId,bankAccount,ifsc,instalmentAmount,instalmentNo,schemeId;'
         'entitlementOverride=null;childApplicant=false;scrutinySla=7WD;sanctionSla=5WD;'
         'correctedAccount=null;correctedIfsc=null'))
     cg = s.xgw('p3_childGw', 'Child applicant?')
@@ -438,7 +438,10 @@ def p3():
     s.flow(reg, rg)
     vseat = s.svc('p3_verifierSeat', 'Verifier seat for the block', C['SEAT'],
                   {'op': 'ROLE', 'role': 'DOCVERIFIER', 'targetVar': 'scrutinySeat'})
-    dupt = s.user('p3_duplicate', 'Possible duplicate beneficiary | संभावित दोहरा लाभार्थी', 'DOCVERIFIER',
+    # M-010d: its own seat (pack default duplicateSeat, the district verifier pool), never the scrutiny seat of the
+    # block: sc_scrutiny's segregation of duties refuses an earlier actor's seat, so the same seat would block
+    # every 'proceed' at scrutiny with 422 SOD_VIOLATION
+    dupt = s.user('p3_duplicate', 'Possible duplicate beneficiary | संभावित दोहरा लाभार्थी', '${duplicateSeat}',
                   form='p3-grant-sanction/duplicate', decision=('dupDecision', ['proceed', 'reject']),
                   fields=['remarks*'], sod=True)
     reg_unconfirmed, reg_found = check_conditions([('reg', ['regDuplicate'])], 'regDuplicate')

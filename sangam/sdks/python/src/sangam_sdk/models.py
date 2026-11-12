@@ -90,11 +90,23 @@ class ExternalWork(_Model):
     #: WorkOperation (SL-16): server-recorded ledger entry of ``operation_id``. ``may_dispatch`` False with state
     #: SUCCEEDED: complete from ``stored_outcome`` ({output, providerRef, duplicate}) without calling the downstream.
     operation: Optional["WorkOperation"] = None
+    #: M-062: W3C trace context the engine stored for the task (``TraceContext``); None when none was stored
+    trace_context: Optional["TraceContext"] = None
     _times = ("lock_expires_at",)
 
     def __post_init__(self) -> None:
         if isinstance(self.operation, Mapping):
             self.operation = WorkOperation.from_dict(self.operation)
+        if isinstance(self.trace_context, Mapping):
+            self.trace_context = TraceContext.from_dict(self.trace_context)
+
+
+@dataclass
+class TraceContext(_Model):
+    """W3C Trace Context of the request that created the work (R13, M-062). ``traceparent`` is required."""
+
+    traceparent: str
+    tracestate: Optional[str] = None
 
 
 @dataclass

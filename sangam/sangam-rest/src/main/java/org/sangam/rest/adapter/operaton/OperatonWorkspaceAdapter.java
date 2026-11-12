@@ -108,6 +108,15 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         this.props = props;
     }
 
+    /**
+     * A task detail looked up inside another operation (bulk completion, candidate seats, a field visit), which shows
+     * no audit to the user: on the Operaton task adapter it reads no audit and writes no {@code AUDIT_VIEWED} (SG-15,
+     * owner decision 2026-11-12: internal lookups write no extra event). Visibility is checked as by {@code get}.
+     */
+    private TaskPort.TaskDetail internalDetail(RequestContext ctx, String taskId) {
+        return taskPort instanceof OperatonTaskAdapter a ? a.detail(ctx, taskId, false) : taskPort.get(ctx, taskId);
+    }
+
     // ------------------------------------------------------------------ me
 
     @Override
@@ -119,9 +128,18 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             // tenant not registered in the admin store (development): name unknown
         }
         Set<String> perms = permissions.permissions(ctx);
+        TenantLocales l = locales;
         return new Me(ctx.tenantId(), tenantName, ctx.principalId(), ctx.principalId(), ctx.principalId(),
                 new ArrayList<>(new TreeSet<>(ctx.groups())), roles(ctx, perms), seats(ctx), ctx.seatId(),
-                ctx.actingForSeatId(), ctx.authMethod(), new ArrayList<>(new TreeSet<>(perms)), null);
+                ctx.actingForSeatId(), ctx.authMethod(), new ArrayList<>(new TreeSet<>(perms)), null,
+                l == null ? null : l.of(ctx.tenantId()));
+    }
+
+    private volatile TenantLocales locales;
+
+    /** M-045: binds the profile resolver; {@code /me} then carries the tenant's locale (absent without one). */
+    public void setProfiles(org.sangam.config.profile.ProfileResolver profiles) {
+        this.locales = profiles == null ? null : new TenantLocales(profiles::resolve, dates::today);
     }
 
     private static List<String> roles(RequestContext ctx, Set<String> perms) {
@@ -274,7 +292,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
         List<Map<String, Object>> failures = new ArrayList<>();
         for (String id : request.ids()) {
             try {
-                TaskPort.TaskDetail d = taskPort.get(ctx, id);
+                TaskPort.TaskDetail d = internalDetail(ctx, id);
                 if (!Boolean.TRUE.equals(asBoolean(d.variables().get(BULK_ALLOWED)))) {
                     throw ApiProblem.unprocessable("BULK_NOT_ALLOWED",
                             "This task must be decided individually (sangamBulkAllowed is not set)");
@@ -316,7 +334,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     @Override
     public List<CandidateSeat> candidates(RequestContext ctx, String taskId, String action) {
-        TaskPort.TaskDetail d = taskPort.get(ctx, taskId);
+        TaskPort.TaskDetail d = internalDetail(ctx, taskId);
         Object proposed = rawVariable(taskId, PROPOSED_SEAT);
         String proposedSeat = proposed == null ? null : String.valueOf(proposed);
         List<String> currentSeats = d.candidateGroups();
@@ -388,7 +406,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
             }
             long v = longOf(e.payload() == null ? null : e.payload().get("version"));
             if (v > fromVersion && v <= toVersion) {
-                OperatonTaskAdapter.fieldChanges(e, changes);
+                TaskAuditExtras.fieldChanges(e, changes);
             }
         }
         return new ArrayList<>(changes.values());
@@ -733,7 +751,7 @@ public class OperatonWorkspaceAdapter implements WorkspacePort {
 
     @Override
     public void recordVisit(RequestContext ctx, String visitId, VisitRecord r) {
-        TaskPort.TaskDetail d = taskPort.get(ctx, visitId);
+        TaskPort.TaskDetail d = internalDetail(ctx, visitId);
         if (!Boolean.TRUE.equals(asBoolean(rawVariable(visitId, FIELD_VISIT)))) {
             throw ApiProblem.unprocessable("NOT_A_FIELD_VISIT", "Task " + visitId + " is not a field visit");
         }

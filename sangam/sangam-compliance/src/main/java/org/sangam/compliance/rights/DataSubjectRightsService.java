@@ -58,6 +58,22 @@ public final class DataSubjectRightsService {
 
     public enum Status { RECEIVED, IN_PROGRESS, RESOLVED, PARTIALLY_RESOLVED, REJECTED }
 
+    /**
+     * M-010c: the compliance roles whose seats each rights process routes its user tasks to (variables
+     * {@code <role>Seat}, {@link ComplianceConfig#seatVariable}). ComplianceSeatModelTest checks it against the
+     * shipped BPMN, so a process and its starter cannot drift apart.
+     */
+    public static final Map<String, List<String>> SEAT_ROLES = Map.of(
+            "sangam-dsr-access", List.of("DPO"),
+            "sangam-dsr-rectification", List.of("DPO"),
+            "sangam-dsr-erasure", List.of("RECORDS-OFFICER"),
+            "sangam-dsr-grievance", List.of("GRIEVANCE-OFFICER", "DPO"),
+            "sangam-dsr-nomination", List.of("DPO"),
+            "sangam-dsr-accounting", List.of("PRIVACY-OFFICER"),
+            "sangam-dsr-automated-decision", List.of("DPO"),
+            "sangam-dsr-objection", List.of("DPO"),
+            "sangam-dsr-restriction", List.of("PRIVACY-OFFICER"));
+
     public record Submission(String principalRef, String right, String identifierType, String identifierValue, Map<String, String> proof,
                              String nomineeRef, String channel, Map<String, Object> details) {
     }
@@ -151,6 +167,8 @@ public final class DataSubjectRightsService {
             }
             due = now.plus(Duration.ofDays(days));
         }
+        // M-010c: the process routes its tasks to the tenant's configured seats; without one, nothing is written
+        Map<String, Object> seats = workflows == WorkflowStarter.NONE ? Map.of() : seatVariables(cfg, right.processKey());
         String id = Sql.newId();
         Jdbc.update(c, "INSERT INTO CMP_RIGHTS_REQUEST(tenant_id, request_id, principal_ref, right_code, category, status, identifier_type,"
                         + " channel, acting_nominee_ref, received_at, due_at, closed_at, process_instance_id, details_json, outcome, outcome_hash,"
@@ -169,11 +187,22 @@ public final class DataSubjectRightsService {
         vars.put("rightCode", right.code());
         vars.put("dueAt", due.toString());
         vars.put("warnAt", now.plus(Duration.ofDays(Math.max(1, days * 3L / 4))).toString());
+        vars.putAll(seats);
         String pi = workflows.start(c, tenantId, right.processKey(), id, vars);
         if (pi != null) {
             Jdbc.update(c, "UPDATE CMP_RIGHTS_REQUEST SET process_instance_id=? WHERE tenant_id=? AND request_id=?", pi, tenantId, id);
         }
         return get(c, tenantId, id);
+    }
+
+    /** The seat variables of {@code processKey}; a process without a seat mapping is refused (fail closed). */
+    static Map<String, Object> seatVariables(ComplianceConfig cfg, String processKey) {
+        List<String> roles = SEAT_ROLES.get(processKey);
+        if (roles == null) {
+            throw new ComplianceException(Code.INVALID_STATE, "process " + processKey + " has no compliance seat mapping"
+                    + " (DataSubjectRightsService.SEAT_ROLES)");
+        }
+        return cfg.seatVariables(roles);
     }
 
     public void markInProgress(Connection c, String tenantId, String requestId, String actor) {

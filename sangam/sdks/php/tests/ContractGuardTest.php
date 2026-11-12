@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Sangam\Sdk\Http\RetryPolicy;
 use Sangam\Sdk\Log\CallbackLogger;
 use Sangam\Sdk\Model\ExternalWork;
+use Sangam\Sdk\Model\TraceContext;
 use Sangam\Sdk\Model\LockState;
 use Sangam\Sdk\Model\TopicRequest;
 use Sangam\Sdk\Model\WorkOperation;
@@ -107,7 +108,7 @@ final class ContractGuardTest extends TestCase
     public function testResponseModelsHaveExactlyTheContractProperties(): void
     {
         foreach ([ExternalWork::class => 'ExternalWork', WorkOperation::class => 'WorkOperation',
-                     LockState::class => 'LockState'] as $class => $schema) {
+                     LockState::class => 'LockState', TraceContext::class => 'TraceContext'] as $class => $schema) {
             self::assertSame(self::sorted(self::schema($schema)['properties']), self::sorted(self::params($class)), $schema);
         }
     }
@@ -130,7 +131,8 @@ final class ContractGuardTest extends TestCase
         // same rule as the Java, Python, TypeScript and .NET guards: a member is non-nullable exactly when the
         // contract requires it, so an optional member is never invented or defaulted
         foreach ([ExternalWork::class => 'ExternalWork', WorkOperation::class => 'WorkOperation',
-                     LockState::class => 'LockState', TopicRequest::class => 'TopicRequest'] as $class => $schema) {
+                     LockState::class => 'LockState', TopicRequest::class => 'TopicRequest',
+                     TraceContext::class => 'TraceContext'] as $class => $schema) {
             self::assertSame(self::sorted(self::schema($schema)['required']), self::sorted(self::nonNullable($class)), $schema);
         }
     }
@@ -142,6 +144,16 @@ final class ContractGuardTest extends TestCase
                 self::assertNull($value, get_class($model) . '::$' . $name . ' was defaulted');
             }
         }
+    }
+
+    public function testWorkItemCarriesTheEngineTraceContext(): void
+    {
+        // M-062: ExternalWork.traceContext; absent when the engine stored none
+        $tp = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01';
+        $w = ExternalWork::fromArray(['id' => 'wk-1', 'traceContext' => ['traceparent' => $tp, 'tracestate' => 'congo=t61rcWkgMzE']]);
+        self::assertSame($tp, $w->traceContext?->traceparent);
+        self::assertSame('congo=t61rcWkgMzE', $w->traceContext?->tracestate);
+        self::assertNull(ExternalWork::fromArray(['id' => 'wk-1'])->traceContext);
     }
 
     public function testTopicRequestMatchesTheContract(): void

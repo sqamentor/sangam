@@ -114,6 +114,40 @@ metrics:
     enabled: false
     interval: 30s
     labels: {}
+  # M-091: PrometheusRule (Prometheus Operator CRD) with the Sangam alert rules. The same rules, with these defaults,
+  # are in deploy/compose/observability/rules/sangam-alerts.yml (PrometheusAlertRulesTraceTest keeps them equal).
+  prometheusRule:
+    enabled: false
+    # Extra labels, e.g. the ruleSelector of the Prometheus instance (release: kube-prometheus-stack).
+    labels: {}
+    thresholds:
+      # Oldest undelivered outbox event (sangam_outbox_oldest_age_seconds): relay stalled, destination down or an
+      # ordered delivery PARKED (VI.2.3; PARKED rows count as undelivered).
+      outboxOldestAgeSeconds: 300
+      # Outbox used bytes / outboxMaxBytes (sangam_outbox_capacity_used_ratio): R40 alerts at 50%. The BACKPRESSURE
+      # rule at 0.8 is fixed: it is the level at which the server starts refusing (OutboxCapacityMonitor).
+      outboxCapacityRatio: 0.5
+      # PARKED ordered deliveries (sangam_outbox_parked) above this count; each blocks its line until repaired.
+      outboxParked: 0
+      # Per-pod relay heartbeat (sangam_relay_last_cycle_age_seconds). A healthy cycle ends within the 30 s claim
+      # lease (Relay.Config) and the next starts within the 1 s poll interval (OutboxRelayService.Settings): 2 x lease.
+      relayLastCycleAgeSeconds: 60
+      # Worst root-lock wait per process definition (sangam_engine_root_lock_wait_seconds_max): half of the 2 s
+      # lock_timeout (R3, VI.1 hot roots).
+      rootLockWaitSeconds: 1
+      # Open Operaton incidents (sangam_incidents_open) above this count.
+      incidentsOpen: 0
+      # OPEN reconciliation items (sangam_reconciliation_items{state="OPEN"}) above this count.
+      reconciliationOpen: 0
+      # Days before a cert-manager Certificate in the release namespace expires.
+      certExpiryDays: 14
+    # Certificate expiry from cert-manager's certmanager_certificate_expiration_timestamp_seconds (deploy README:
+    # TLS is renewed by cert-manager). Without cert-manager the rule has no series and never fires.
+    certManager:
+      enabled: true
+      # PromQL label matchers that narrow the certificates, e.g. namespace="sangam" (or exported_namespace="sangam"
+      # when the scrape renames cert-manager's own namespace label). Empty = every certificate Prometheus sees.
+      selector: ""
 
 # ------------------------------------------------------------------------------------------------ server
 server:
@@ -145,6 +179,9 @@ server:
     # SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES (SANGAM.md 4.3 item 3, on by default): exclusive jobs are grouped
     # per root instance (the whole call-activity tree); false = Operaton's per-instance rule
     exclusiveOverProcessHierarchies: true
+    # SANGAM_JOB_VIRTUAL_THREADS (M-054, off by default): job executor pool threads are JDK virtual threads; pool size,
+    # queue and rejection unchanged. Keep false until the soak evidence (R30) supports a change.
+    virtualThreads: false
   content:             # upload limits (sangam.content.max-bytes = multipart max-file-size)
     maxBytes: "268435456"
     maxFile: 256MB
@@ -321,6 +358,7 @@ ui:
 # ------------------------------------------------------------------------------------------------ ingress
 ingress:
   enabled: false
+  # The public ingress class. With private.enabled=true it must stay empty: the schema and the template refuse it.
   className: ""
   annotations: {}
   host: sangam.example.gov.in
@@ -328,6 +366,33 @@ ingress:
     enabled: true
     secretName: ""
   # UI at /, API at /api and /engine-rest (server). With ui.enabled=false everything goes to the server.
+  # SG-39 (owner decision Q-09): private ingress. With private.enabled=true (and enabled=true) the Ingress uses the
+  # internal class and the internal-load-balancer annotations of the chosen preset; ingress.className is refused.
+  private:
+    enabled: false
+    # Internal IngressClass. Empty = the preset's className. Required with preset "" (e.g. an internal nginx class).
+    className: ""
+    # "" (no cloud preset), aws, azure or gcp.
+    preset: ""
+    # Schema-validated: each preset's internal-load-balancer annotation is fixed to its internal value, and the
+    # preset annotations replace the same keys in ingress.annotations.
+    presets:
+      aws:
+        # AWS Load Balancer Controller: an internal ALB (scheme internal is its default; set explicitly).
+        className: alb
+        annotations:
+          alb.ingress.kubernetes.io/scheme: internal
+      azure:
+        # Application Gateway Ingress Controller: listen on the gateway's private IP.
+        className: azure-application-gateway
+        annotations:
+          appgw.ingress.kubernetes.io/use-private-ip: "true"
+      gcp:
+        # GKE Ingress takes its class only from this annotation (not spec.ingressClassName); gce-internal is the
+        # internal Application Load Balancer. An Ingress without it is external.
+        className: ""
+        annotations:
+          kubernetes.io/ingress.class: gce-internal
 
 serviceAccount:
   create: true
@@ -345,6 +410,11 @@ networkPolicy:
   # Pods (any namespace in clientNamespaces, or this namespace) labelled sangam.io/api-client=true may call the API
   # (external-task workers, integrations).
   clientNamespaces: []
+  # Source CIDRs of an edge load balancer that reaches the pods directly, not through a controller pod in
+  # ingressControllerNamespace: e.g. the subnets of an AWS ALB in IP target mode, or an internal load balancer's
+  # subnet. Allowed on the ports the Ingress serves (server or gateway, UI). Empty = none.
+  ingressFrom:
+    cidrs: []
   dns:
     namespace: kube-system
     podLabels: { k8s-app: kube-dns }

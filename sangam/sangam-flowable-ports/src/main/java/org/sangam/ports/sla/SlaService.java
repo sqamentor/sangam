@@ -4,9 +4,7 @@ package org.sangam.ports.sla;
 import org.sangam.core.engine.WorkCalendar;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
-import org.sangam.core.layer.Outbox;
 import org.sangam.core.layer.Transactions;
-import org.sangam.ports.support.Json;
 import org.sangam.ports.support.Paging;
 
 import java.sql.Connection;
@@ -27,8 +25,13 @@ import java.util.function.Function;
  * an optional warning threshold and a working calendar (WS-ENGINE's {@link WorkCalendar}, FLOWABLE-INTO-OPERATON FC-23). Pause/resume moves
  * the deadline by the paused time (the SLA half of FLOWABLE-INTO-OPERATON D-32; pausing the <em>instance</em> itself is WS-ENGINE's
  * {@code pauseInstance/resumeInstance}). {@link #sweep} raises {@code sangam.sla.warning} and
- * {@code sangam.sla.breached} outbox events exactly once per clock (flag + state in the same transaction).
+ * {@code sangam.sla.breached} events exactly once per clock (flag + state in the same transaction).
  * Times are database time (A-1). Table {@code SLA_INSTANCE}.
+ *
+ * <p>SL-146 (owner decision 2026-11-12): the events go to an {@link EventSink} inside the sweep's transaction, not to a
+ * fixed outbox destination. The server passes the integration {@code OutboxWriter}, so they reach the destinations
+ * subscribed to them and nothing is written when nobody subscribes. (A fixed {@code "notifications"} destination had no
+ * publisher, so every delivery parked.)
  */
 public class SlaService {
 
@@ -51,15 +54,28 @@ public class SlaService {
                            Instant dueAt, Instant warnAt, Instant pausedAt, long pausedMillis, boolean warned, Instant breachedAt) {
     }
 
+    /**
+     * Where the SLA events go, in the caller's transaction ({@code c}): the integration {@code OutboxWriter.append} in
+     * the server, which writes to the subscribed destinations only. The payload is a JSON-able map of strings.
+     */
+    @FunctionalInterface
+    public interface EventSink {
+        void emit(Connection c, String tenantId, String rootId, String eventType, Map<String, Object> payload);
+
+        /** No subscriber machinery (integration disabled): nothing is written. */
+        EventSink NONE = (c, tenant, root, type, payload) -> { };
+    }
+
     private final Dialect dialect;
     private final Transactions tx;
-    private final Outbox outbox;
+    private final EventSink events;
     private final Function<String, WorkCalendar> calendars;
 
-    public SlaService(Dialect dialect, Transactions tx, Outbox outbox, Function<String, WorkCalendar> calendars) {
+    /** @param events where warning and breach events go; null writes nothing ({@link EventSink#NONE}) */
+    public SlaService(Dialect dialect, Transactions tx, EventSink events, Function<String, WorkCalendar> calendars) {
         this.dialect = dialect;
         this.tx = tx;
-        this.outbox = outbox;
+        this.events = events == null ? EventSink.NONE : events;
         this.calendars = calendars;
     }
 
@@ -267,7 +283,7 @@ public class SlaService {
         p.put("scopeType", s.scopeType());
         p.put("scopeId", s.scopeId());
         p.put("dueAt", s.dueAt().toString());
-        outbox.append(c, s.tenantId(), s.scopeId(), type, Json.write(p), List.of(Outbox.Destination.unordered("notifications")));
+        events.emit(c, s.tenantId(), s.scopeId(), type, p);
     }
 
     private Instant add(String calendar, Instant start, String iso, ZoneId zone) {

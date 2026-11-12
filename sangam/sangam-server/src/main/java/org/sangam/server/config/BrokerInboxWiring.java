@@ -21,6 +21,7 @@ import org.sangam.integration.inbox.JmsInboxListener;
 import org.sangam.integration.inbox.KafkaInboxConsumer;
 import org.sangam.integration.inbox.PoisonInbound;
 import org.sangam.integration.relay.DeadLetterStore;
+import org.sangam.integration.relay.TenantAdmission;
 import org.sangam.rest.support.TxSupport;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,6 +35,11 @@ import org.springframework.context.annotation.Configuration;
  * Every channel names its binding (source, tenant, principal); the tenant comes only from there. Multi-node delivery
  * uses Kafka consumer groups and JMS queues or shared durable topic subscriptions, so no leader election is needed.
  * JMS needs a {@link ConnectionFactory} bean from the site's customer-supplied broker client.
+ *
+ * <p>SL-142 (M-008, ADR-D-21 IR-4/IR-6): both consumers take the cell's {@link TenantAdmission} ({@code CellWiring},
+ * present with {@code sangam.cell.id}), read once when the bean is created: a message of a tenant that is not ACTIVE
+ * in this cell is not stored here but takes the consumer's admission path ({@code KafkaInboxConsumer},
+ * {@code JmsInboxListener}). Without cells there is no admission bean and every tenant is admitted.
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sangam.modules.integration.enabled", havingValue = "true", matchIfMissing = true)
@@ -101,49 +107,61 @@ public class BrokerInboxWiring {
     @Bean
     @ConditionalOnProperty(name = "sangam.integration.kafka.enabled", havingValue = "true")
     public SmartLifecycle sangamKafkaInbox(@org.springframework.beans.factory.annotation.Qualifier("sangamKafkaInboxSettings") Settings s,
-                                           InboxService inbox, PoisonInbound poison) {
-        return new Consumers("sangam-kafka-inbox", () -> {
-            List<Runnable> out = new ArrayList<>();
-            for (Channel ch : s.channels) {
-                if (ch.topics.isEmpty()) {
-                    throw new IllegalStateException("Kafka inbox channel " + ch.source + " needs topics");
-                }
-                Map<String, Object> config = new HashMap<>(s.config);
-                // a group per channel: nodes share partitions, so each record is taken by one node
-                config.put("group.id", ch.groupId != null ? ch.groupId : "sangam-" + ch.source);
-                for (int i = 0; i < ch.concurrency; i++) {
-                    out.add(new KafkaInboxConsumer(config, ch.topics, ch.binding(),
-                            KafkaInboxConsumer.cloudEventsOrOffset(ch.eventType), inbox, poison));
-                }
+                                           InboxService inbox, PoisonInbound poison, ObjectProvider<TenantAdmission> admission) {
+        TenantAdmission tenants = admission.getIfAvailable();
+        return new Consumers("sangam-kafka-inbox", () -> kafkaConsumers(s, inbox, poison, tenants));
+    }
+
+    /** The Kafka consumers of every channel, each with the cell's tenant admission (null: every tenant). */
+    static List<Runnable> kafkaConsumers(Settings s, InboxService inbox, PoisonInbound poison, TenantAdmission tenants) {
+        List<Runnable> out = new ArrayList<>();
+        for (Channel ch : s.channels) {
+            if (ch.topics.isEmpty()) {
+                throw new IllegalStateException("Kafka inbox channel " + ch.source + " needs topics");
             }
-            return out;
-        });
+            Map<String, Object> config = new HashMap<>(s.config);
+            // a group per channel: nodes share partitions, so each record is taken by one node
+            config.put("group.id", ch.groupId != null ? ch.groupId : "sangam-" + ch.source);
+            for (int i = 0; i < ch.concurrency; i++) {
+                out.add(new KafkaInboxConsumer(config, ch.topics, ch.binding(),
+                        KafkaInboxConsumer.cloudEventsOrOffset(ch.eventType), inbox, poison, tenants));
+            }
+        }
+        return out;
     }
 
     @Bean
     @ConditionalOnProperty(name = "sangam.integration.jms.enabled", havingValue = "true")
     public SmartLifecycle sangamJmsInbox(@org.springframework.beans.factory.annotation.Qualifier("sangamJmsInboxSettings") Settings s,
-                                         ObjectProvider<ConnectionFactory> factory, InboxService inbox, PoisonInbound poison) {
+                                         ObjectProvider<ConnectionFactory> factory, InboxService inbox, PoisonInbound poison,
+                                         ObjectProvider<TenantAdmission> admission) {
+        TenantAdmission tenants = admission.getIfAvailable();
         return new Consumers("sangam-jms-inbox", () -> {
             ConnectionFactory cf = factory.getIfAvailable();
             if (cf == null) {
                 throw new IllegalStateException("sangam.integration.jms.enabled=true needs a jakarta.jms.ConnectionFactory bean");
             }
-            List<Runnable> out = new ArrayList<>();
-            for (Channel ch : s.channels) {
-                boolean topic = ch.topic != null && !ch.topic.isBlank();
-                if (topic == (ch.queue != null && !ch.queue.isBlank())) {
-                    throw new IllegalStateException("JMS inbox channel " + ch.source + " needs exactly one of queue or topic");
-                }
-                ConnectionFactory use = topic
-                        ? sharedSubscription(cf, ch.subscription != null ? ch.subscription : "sangam-" + ch.source) : cf;
-                for (int i = 0; i < ch.concurrency; i++) {
-                    out.add(new JmsInboxListener(use, sess -> destination(sess, ch), ch.binding(),
-                            JmsInboxListener.cloudEventsOrJmsId(ch.eventType), inbox, poison));
-                }
-            }
-            return out;
+            return jmsListeners(s, cf, inbox, poison, tenants);
         });
+    }
+
+    /** The JMS listeners of every channel, each with the cell's tenant admission (null: every tenant). */
+    static List<Runnable> jmsListeners(Settings s, ConnectionFactory cf, InboxService inbox, PoisonInbound poison,
+                                       TenantAdmission tenants) {
+        List<Runnable> out = new ArrayList<>();
+        for (Channel ch : s.channels) {
+            boolean topic = ch.topic != null && !ch.topic.isBlank();
+            if (topic == (ch.queue != null && !ch.queue.isBlank())) {
+                throw new IllegalStateException("JMS inbox channel " + ch.source + " needs exactly one of queue or topic");
+            }
+            ConnectionFactory use = topic
+                    ? sharedSubscription(cf, ch.subscription != null ? ch.subscription : "sangam-" + ch.source) : cf;
+            for (int i = 0; i < ch.concurrency; i++) {
+                out.add(new JmsInboxListener(use, sess -> destination(sess, ch), ch.binding(),
+                        JmsInboxListener.cloudEventsOrJmsId(ch.eventType), inbox, poison, tenants));
+            }
+        }
+        return out;
     }
 
     private static Destination destination(Session s, Channel ch) {

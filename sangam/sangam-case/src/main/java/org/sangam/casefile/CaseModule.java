@@ -50,7 +50,7 @@ public final class CaseModule {
         /**
          * The business zone of a tenant: case numbers (year/month periods) and deadline arithmetic use the tenant's own
          * zone. Default: the tenant's profile zone through {@link org.sangam.core.time.BusinessClock#system()} (UTC
-         * without a profile). SL-104 (ADR-D-20): there is no deployment-wide or country zone.
+         * without a profile). SL-104 (ADR-D-20, generic configuration): no deployment-wide or country zone.
          */
         public java.util.function.Function<String, ZoneId> zones = t -> org.sangam.core.time.BusinessClock.system().zone(t);
         public CaseFilePorts.Notifier notifier = CaseFilePorts.Notifier.NONE;

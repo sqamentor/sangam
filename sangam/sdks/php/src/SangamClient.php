@@ -32,6 +32,7 @@ final class SangamClient
 {
     private readonly HttpTransport $transport;
     private readonly Log $log;
+    private ?\Sangam\Sdk\Generated\SangamApis $api = null;
 
     public function __construct(
         string $baseUrl,
@@ -44,6 +45,7 @@ final class SangamClient
         ?string $seat = null,
         ?string $actingForSeat = null,
         ?HttpSender $sender = null,
+        ?\Closure $traceContext = null,
     ) {
         // the curl requirement applies only to the default sender; an injected HttpSender brings its own wire
         if ($sender === null && !extension_loaded('curl')) {
@@ -52,7 +54,7 @@ final class SangamClient
         $tokens = is_string($auth) ? new StaticTokenProvider($auth) : $auth;
         $this->log = new Log($logger ?? new StderrJsonLogger());
         $this->transport = new HttpTransport($baseUrl, $tokens, $retryPolicy, $requestTimeoutMs, $connectTimeoutMs,
-            $this->log, $userAgent, $seat, $actingForSeat, $sender);
+            $this->log, $userAgent, $seat, $actingForSeat, $sender, $traceContext);
     }
 
     /**
@@ -123,6 +125,15 @@ final class SangamClient
     public function repository(): RepositoryApi
     {
         return new RepositoryApi($this->transport);
+    }
+
+    /**
+     * The typed surface generated from sangam-api.yaml (M-020): every operation of the contract, one property per
+     * contract tag, on this client's transport, e.g. $client->api()->work->completeWork($id, $body).
+     */
+    public function api(): \Sangam\Sdk\Generated\SangamApis
+    {
+        return $this->api ??= new \Sangam\Sdk\Generated\SangamApis($this->transport);
     }
 
     /** Low-level transport for endpoints not yet wrapped. */

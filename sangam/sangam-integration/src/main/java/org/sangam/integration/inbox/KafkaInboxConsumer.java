@@ -32,9 +32,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the two commits is dropped by the inbox key. Under back-pressure (503) the consumer pauses its partitions and seeks
  * back, so nothing is acked that was not stored. A record the mapper rejects is committed and logged (poison).
  *
- * <p>M-008 (ADR-D-21, IR-4/IR-6): a record of a tenant that the {@link TenantAdmission} does not admit (a cell tenant
- * that is FROZEN, IMPORTING, MOVED or PURGED) takes the same back-pressure path: not committed, the partition is
- * paused and re-read later. It is never dropped and never acked.
+ * <p>M-008 (ADR-D-21, IR-4/IR-6): a record of a tenant that the {@link TenantAdmission} answers REDELIVER for (a cell
+ * tenant that is FROZEN or IMPORTING) takes the same back-pressure path: not committed, the partition is paused and
+ * re-read later. SL-142: a record of a tenant answered PARK for (MOVED or PURGED: it is never taken here again) is
+ * parked through {@link PoisonInbound#park} (dead letter plus reconciliation item, for an operator replay to the
+ * tenant's new cell) and then committed; if the park write fails, or no dead-letter store is configured, it is not
+ * committed. A record is never dropped.
  */
 public final class KafkaInboxConsumer implements Runnable, AutoCloseable {
 
@@ -62,7 +65,8 @@ public final class KafkaInboxConsumer implements Runnable, AutoCloseable {
 
     /**
      * @param poisonOrNull    dead-letter path for records that can never be stored (null: log and drop)
-     * @param admissionOrNull per-tenant admission (M-008); null admits every tenant
+     * @param admissionOrNull per-tenant admission (M-008); null admits every tenant. A PARK decision (SL-142) needs
+     *                        {@code poisonOrNull}; without it the record is not acked
      */
     public KafkaInboxConsumer(Map<String, Object> config, List<String> topics, ChannelBinding binding,
                               InboundMapper<ConsumerRecord<String, String>> mapper, InboxService inbox, PoisonInbound poisonOrNull,
@@ -140,10 +144,14 @@ public final class KafkaInboxConsumer implements Runnable, AutoCloseable {
         if (m == null) {
             return true;
         }
-        if (!admitted(m)) {
+        Admission a = admissionOf(m);
+        if (a.decision().action() == TenantAdmission.Action.REDELIVER) {
             LOG.debug("Kafka record {}-{}@{}: tenant not admitted (cell tenant state); not acked, re-read later",
                     r.topic(), r.partition(), r.offset());
             return false;
+        }
+        if (a.decision().action() == TenantAdmission.Action.PARK) {
+            return park(a.tenant(), m, a.decision(), r);
         }
         try {
             inbox.receive(binding, m);
@@ -162,24 +170,50 @@ public final class KafkaInboxConsumer implements Runnable, AutoCloseable {
         }
     }
 
+    /** The resolved tenant and the admission's decision for it. */
+    private record Admission(String tenant, TenantAdmission.Decision decision) {
+    }
+
     /**
-     * M-008: whether the message's tenant is admitted now. The tenant is resolved from the binding exactly as
-     * {@link InboxService#receive} does; a claim the binding refuses is left to {@code receive}, which refuses it as before.
-     * A failing admission check counts as not admitted (redeliver, never drop).
+     * M-008: the admission decision for the message's tenant now. The tenant is resolved from the binding exactly as
+     * {@link InboxService#receive} does; a claim the binding refuses is left to {@code receive}, which refuses it as
+     * before (ADMIT here). A failing or empty admission check counts as REDELIVER (never drop).
      */
-    private boolean admitted(InboundMessage m) {
+    private Admission admissionOf(InboundMessage m) {
         String tenant;
         try {
             tenant = binding.tenantFor(m.claimedTenant());
         } catch (SecurityException e) {
-            return true;
+            return new Admission(null, TenantAdmission.Decision.ADMIT);
         }
         try {
-            return admission.admits(tenant);
+            TenantAdmission.Decision d = admission.decide(tenant);
+            return new Admission(tenant, d == null ? TenantAdmission.Decision.REDELIVER : d);
         } catch (RuntimeException e) {
             LOG.warn("tenant admission check for {} failed; the record is re-read later: {}", tenant, e.toString());
+            return new Admission(tenant, TenantAdmission.Decision.REDELIVER);
+        }
+    }
+
+    /**
+     * SL-142: a record of a tenant that left this cell for good (MOVED, PURGED) is parked (dead letter plus
+     * reconciliation item) and then acked. Without a dead-letter store, or when the park write fails, it is not acked
+     * and is re-read later: never dropped.
+     */
+    private boolean park(String tenant, InboundMessage m, TenantAdmission.Decision d, ConsumerRecord<String, String> r) {
+        if (poison == null) {
+            LOG.warn("Kafka record {}-{}@{}: tenant {} is {} but no dead-letter store is configured; not acked",
+                    r.topic(), r.partition(), r.offset(), tenant, d.tenantState());
             return false;
         }
+        long item = poison.park(binding, tenant, m, d);
+        if (item < 0) {
+            sleep(1000);
+            return false;
+        }
+        LOG.info("Kafka record {} of tenant {} ({}) parked (reconciliation item {}); acked", m.messageId(), tenant,
+                d.tenantState(), item);
+        return true;
     }
 
     /** Poison: dead letter + POISON_INBOUND item, then ack (commit the offset); not acked if even that write failed. */

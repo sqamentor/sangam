@@ -1,0 +1,19 @@
+{
+  "description": "T18 (SANGAM.md II §16, R18, R33): Decimal, large integer, date and null values that every Tier-1 SDK must carry with the identical business value. Each vector is one VariableMap entry as it travels on the wire (R33 TypedValue, or a plain JSON null). An SDK passes when decoding 'wire' gives the business value named in 'value', and encoding that value again decodes to the same business value (Date: the same instant; Decimal: the same number including scale).",
+  "vectors": [
+    {"name": "money", "wire": {"type": "Decimal", "value": "1234.50"}, "value": "1234.50", "kind": "decimal"},
+    {"name": "money-scale-zero", "wire": {"type": "Decimal", "value": "125000"}, "value": "125000", "kind": "decimal"},
+    {"name": "money-negative", "wire": {"type": "Decimal", "value": "-0.01"}, "value": "-0.01", "kind": "decimal"},
+    {"name": "decimal-beyond-double", "wire": {"type": "Decimal", "value": "12345678901234567890.123456789"}, "value": "12345678901234567890.123456789", "kind": "decimal"},
+    {"name": "big-integer", "wire": {"type": "BigInteger", "value": "123456789012345678901234567890"}, "value": "123456789012345678901234567890", "kind": "biginteger"},
+    {"name": "long-max", "wire": {"type": "Long", "value": "9223372036854775807"}, "value": "9223372036854775807", "kind": "long"},
+    {"name": "long-beyond-2^53", "wire": {"type": "Long", "value": "9007199254740993"}, "value": "9007199254740993", "kind": "long"},
+    {"name": "integer", "wire": {"type": "Integer", "value": 2147483647}, "value": "2147483647", "kind": "integer"},
+    {"name": "boolean-false", "wire": {"type": "Boolean", "value": false}, "value": "false", "kind": "boolean"},
+    {"name": "string-unicode", "wire": {"type": "String", "value": "भुगतान ₹ 1,25,000 — 支付"}, "value": "भुगतान ₹ 1,25,000 — 支付", "kind": "string"},
+    {"name": "date-utc", "wire": {"type": "Date", "value": "2026-03-31T18:30:00.000Z"}, "value": "2026-03-31T18:30:00Z", "kind": "date"},
+    {"name": "date-offset", "wire": {"type": "Date", "value": "2026-04-01T00:00:00+05:30"}, "value": "2026-03-31T18:30:00Z", "kind": "date"},
+    {"name": "local-date", "wire": {"type": "LocalDate", "value": "2026-03-31"}, "value": "2026-03-31", "kind": "localdate"},
+    {"name": "null", "wire": null, "value": null, "kind": "null"}
+  ]
+}

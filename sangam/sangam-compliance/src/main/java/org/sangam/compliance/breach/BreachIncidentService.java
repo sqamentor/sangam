@@ -44,6 +44,9 @@ public final class BreachIncidentService {
 
     public enum Status { REGISTERED, AUTHORITY_NOTIFIED, REPORTED, CLOSED }
 
+    /** M-010c: the compliance roles whose seats {@code sangam-breach-incident} routes its user tasks to. */
+    public static final List<String> SEAT_ROLES = List.of("DPO", "CISO");
+
     public record Breach(String breachId, Status status, Instant detectedAt, Instant awareAt, Instant reportDueAt, Instant extensionUntil,
                          Instant authorityNotifiedAt, Instant reportedAt, boolean reportLate, long subjectsAffected, long subjectsNotified,
                          List<String> incidentIds) {
@@ -66,6 +69,12 @@ public final class BreachIncidentService {
     private final ContactDirectory contacts;
     private final NoticeTemplate.Catalogues templates;
     private final WorkflowStarter workflows;
+    private volatile BreachNotificationPlanner plans;
+
+    /** The planner whose process this registration starts for each new breach (SangamCompliance wires it). */
+    public void plans(BreachNotificationPlanner plans) {
+        this.plans = plans;
+    }
 
     public BreachIncidentService(Dialect dialect, ComplianceAudit audit, ComplianceConfig.Provider config, SupervisoryAuthorityGateway authority,
                                  PrincipalNotifier notifier, PrincipalDirectory principals, LegalHoldPort holds, IncidentReportingService incidents,
@@ -95,6 +104,14 @@ public final class BreachIncidentService {
         Instant now = Sql.now(c, dialect);
         Instant aware = awareAt == null ? now : awareAt;
         Instant due = cfg.breachReportHours > 0 ? aware.plus(Duration.ofHours(cfg.breachReportHours)) : null;
+        // M-010c: every seat this registration routes to (the breach process and its linked incident reports) is
+        // checked before anything is written; a missing one refuses the registration
+        Map<String, Object> seats = workflows == WorkflowStarter.NONE ? Map.of() : cfg.seatVariables(SEAT_ROLES);
+        if ((incidentType != null ? incidentType : rules.linkedIncidentType()) != null) {
+            incidents.requireSeats(cfg);
+        }
+        BreachNotificationPlanner planner = plans;
+        Map<String, Object> planSeats = planner == null ? Map.of() : planner.requireSeats(cfg);
         String id = Sql.newId();
         Jdbc.update(c, "INSERT INTO CMP_BREACH(tenant_id, breach_id, detected_at, aware_at, facts_json, status, authority_notified_at,"
                         + " authority_ref, report_due_at, extension_until, extension_ref, reported_at, report_ref, report_late,"
@@ -134,9 +151,13 @@ public final class BreachIncidentService {
         Instant d = due == null ? aware.plus(Duration.ofDays(30)) : due;
         vars.put("reportDueAt", d.toString());
         vars.put("reportWarnAt", aware.plus(Duration.between(aware, d).multipliedBy(2).dividedBy(3)).toString());
+        vars.putAll(seats);
         String pi = workflows.start(c, tenantId, "sangam-breach-incident", id, vars);
         if (pi != null) {
             Jdbc.update(c, "UPDATE CMP_BREACH SET process_instance_id=? WHERE tenant_id=? AND breach_id=?", pi, tenantId, id);
+        }
+        if (planner != null) {
+            planner.start(c, tenantId, id, planSeats); // once: this registration created the breach id (owner decision (a))
         }
         return get(c, tenantId, id);
     }

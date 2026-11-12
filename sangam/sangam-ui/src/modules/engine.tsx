@@ -14,6 +14,7 @@ import { http, request, type Query } from '../api/client';
 import type { FormField, FormSchema } from '../api/types';
 import { announce, useAction, useAsync, usePaged } from '../lib/hooks';
 import { fmtDate } from '../i18n';
+import { truncate } from '../lib/text';
 import { FormRenderer, validateForm, type FormValues } from '../components/FormRenderer';
 import { Badge, DataTable, Dialog, Empty, JsonView, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, Section, TabPanel, Tabs, TextArea, type Column } from '../components/ui';
 
@@ -34,6 +35,13 @@ export interface Act {
   fields?: FormField[];
   /** Ask for a reason; sent as body.reason, or as ?reason= for DELETE / reason: 'query'. */
   reason?: 'body' | 'query';
+  /**
+   * Send the reason in this request header instead (e.g. X-Purpose of a registry identifier reveal,
+   * PartyController.java:29, :119-124). An HTTP header carries printable ASCII only, so other text is refused here.
+   */
+  reasonHeader?: string;
+  /** Body fields taken from the selected row (e.g. an id the server wants in the body as well as in the path). */
+  bodyFromRow?: (r: Row) => Row;
   danger?: boolean;
   /** Hide the JSON "more fields" editor (actions with a fixed body). */
   noJson?: boolean;
@@ -87,7 +95,7 @@ const STATUS_KEYS = /^(status|state|kind|severity|result|outcome|stage|priority|
 
 export function rowId(r: Row, keys: string[]): string {
   for (const k of keys) if (r[k] !== undefined && r[k] !== null && r[k] !== '') return String(r[k]);
-  return JSON.stringify(r).slice(0, 80);
+  return truncate(JSON.stringify(r), 80);
 }
 
 export function fill(path: string, ...sources: (Row | FormValues | undefined)[]): string {
@@ -108,7 +116,7 @@ export function cell(v: unknown, key = ''): ReactNode {
   if (typeof v === 'object' && v && 'type' in (v as Row) && 'value' in (v as Row)) return String((v as Row).value);
   if (typeof v === 'object') {
     const s = JSON.stringify(v);
-    return <code className="small">{s.length > 80 ? `${s.slice(0, 80)}…` : s}</code>;
+    return <code className="small">{truncate(s, 80)}</code>;
   }
   return String(v);
 }
@@ -211,6 +219,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
   const [jsonErr, setJsonErr] = useState<string>();
   const run = useAction();
   const method = act.method ?? 'POST';
+  const headerReasonBad = !!act.reasonHeader && /[^\x20-\x7e]/.test(reason.trim());
   const submit = () => {
     const errs = validateForm(schema, values, t);
     setErrors(errs);
@@ -221,10 +230,12 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
       return;
     }
     setJsonErr(undefined);
-    Object.assign(req.body, act.bodyExtra ?? {});
+    Object.assign(req.body, act.bodyExtra ?? {}, row && act.bodyFromRow ? act.bodyFromRow(row) : {});
     for (const k of act.sendNulls ?? []) if (req.body[k] === undefined) req.body[k] = null;
+    const headers: Record<string, string> = {};
     if (act.reason) {
-      if (method === 'DELETE' || act.reason === 'query') req.query.reason = reason;
+      if (act.reasonHeader) headers[act.reasonHeader] = reason.trim();
+      else if (method === 'DELETE' || act.reason === 'query') req.query.reason = reason;
       else req.body.reason = reason;
     }
     if (method === 'GET') {
@@ -235,7 +246,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
     void run
       .run(async (k) => {
         const hasBody = method !== 'DELETE' && method !== 'GET' && (Object.keys(req.body).length > 0 || method !== 'POST' || fields.length > 0 || !!json.trim());
-        const r = await request<unknown>(method, path, { query: req.query, body: hasBody ? req.body : method === 'POST' ? {} : undefined, idempotencyKey: k });
+        const r = await request<unknown>(method, path, { query: req.query, body: hasBody ? req.body : method === 'POST' ? {} : undefined, idempotencyKey: k, headers });
         return { r };
       })
       .then((x) => {
@@ -261,7 +272,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
             <button type="button" onClick={onClose}>
               {t('common.cancel')}
             </button>
-            <button type="button" className={act.danger ? 'danger' : 'primary'} disabled={run.busy || (!!act.reason && reason.trim().length < 5)} onClick={submit}>
+            <button type="button" className={act.danger ? 'danger' : 'primary'} disabled={run.busy || (!!act.reason && reason.trim().length < 5) || headerReasonBad} onClick={submit}>
               {run.busy ? t('common.working') : t('common.confirm')}
             </button>
           </>
@@ -284,6 +295,7 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
             </details>
           )}
           {act.reason && <TextArea label={t('common.reason')} hint={t('common.reasonHint')} required value={reason} onChange={setReason} />}
+          {headerReasonBad && <Notice tone="bad">{t('mod.common.reasonAsciiOnly')}</Notice>}
           {jsonErr && <Notice tone="bad">{jsonErr}</Notice>}
           <ProblemAlert error={run.error} />
         </>

@@ -21,7 +21,37 @@ public interface WorkspacePort {
     /** {@code GET /me}. roles are UI personas (TASK_USER, OPERATOR, ADMIN, MODELLER, REVIEWER, AUDITOR, ...). */
     record Me(String tenantId, String tenantName, String principalId, String userId, String displayName,
               List<String> groups, List<String> roles, List<SeatHolding> seats, String seatId, String actingForSeatId,
-              String authMethod, List<String> permissions, String preferredLanguage) {
+              String authMethod, List<String> permissions, String preferredLanguage,
+              @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+              MeLocale locale) {
+
+        /** Without a locale (M-045: the field is then absent from the response). */
+        public Me(String tenantId, String tenantName, String principalId, String userId, String displayName,
+                  List<String> groups, List<String> roles, List<SeatHolding> seats, String seatId, String actingForSeatId,
+                  String authMethod, List<String> permissions, String preferredLanguage) {
+            this(tenantId, tenantName, principalId, userId, displayName, groups, roles, seats, seatId, actingForSeatId,
+                    authMethod, permissions, preferredLanguage, null);
+        }
+    }
+
+    /**
+     * M-045: money and number formatting of the tenant's resolved profile ({@code locale} section). Each part is absent
+     * when the profile does not declare it.
+     *
+     * @param currency ISO 4217 code of the tenant's money
+     * @param zone     IANA time zone of the tenant
+     * @param grouping digit grouping of the integer part
+     */
+    record MeLocale(@com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                    String currency,
+                    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                    String zone,
+                    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                    NumberGrouping grouping) {
+    }
+
+    /** Digit grouping: the first group (from the right) and every further group, e.g. {@code {3, 2}} gives 12,34,567. */
+    record NumberGrouping(int first, int rest) {
     }
 
     /** category: GOVERNMENT_MESSAGE | TASK | SYSTEM. */

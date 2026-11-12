@@ -43,6 +43,7 @@ final class HttpTransport
         ?string $seat = null,
         ?string $actingForSeat = null,
         ?HttpSender $sender = null,
+        private readonly ?\Closure $traceContext = null,
     ) {
         $this->sender = $sender ?? new CurlSender();
         $b = rtrim($baseUrl, '/');
@@ -69,6 +70,49 @@ final class HttpTransport
         if ($actingForSeat !== null) {
             $this->defaultHeaders['X-Sangam-Acting-For-Seat'] = $actingForSeat;
         }
+    }
+
+    /** A well-formed version-00 traceparent whose trace-id and parent-id are not all zero (W3C Trace Context). */
+    public static function validTraceparent(mixed $v): bool
+    {
+        return is_string($v) && preg_match('/^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/D', $v) === 1
+            && substr($v, 3, 32) !== str_repeat('0', 32) && substr($v, 36, 16) !== str_repeat('0', 16);
+    }
+
+    /** A tracestate of printable ASCII, at most 512 characters. */
+    public static function validTracestate(mixed $v): bool
+    {
+        return is_string($v) && preg_match('/^[\x20-\x7e]{1,512}$/D', $v) === 1;
+    }
+
+    /**
+     * The W3C trace headers for this request (R13, M-062): none without a trace context, when the request sets its
+     * own traceparent, when the context has no valid one, or when the provider throws (tracing never fails a call).
+     * The trace context returns ['traceparent' => ..., 'tracestate' => ...] or null.
+     *
+     * @return array<string, string>
+     */
+    public function traceHeaders(ApiRequest $req): array
+    {
+        $own = array_map('strtolower', array_keys($req->headers));
+        if ($this->traceContext === null || in_array('traceparent', $own, true)) {
+            return [];
+        }
+        try {
+            $ctx = ($this->traceContext)();
+        } catch (\Throwable $e) {
+            $this->log->debug('trace.context', 'trace context provider failed; request sent without trace headers: '
+                . $e->getMessage(), ['method' => $req->method, 'path' => $req->path]);
+            return [];
+        }
+        if (!is_array($ctx) || !self::validTraceparent($ctx['traceparent'] ?? null)) {
+            return [];
+        }
+        $out = ['traceparent' => (string) $ctx['traceparent']];
+        if (self::validTracestate($ctx['tracestate'] ?? null) && !in_array('tracestate', $own, true)) {
+            $out['tracestate'] = (string) $ctx['tracestate'];
+        }
+        return $out;
     }
 
     /** The last successful response of this transport (status, headers incl. Idempotent-Replayed). */
@@ -146,7 +190,7 @@ final class HttpTransport
         if ($idemKey !== null) {
             $headers['Idempotency-Key'] = $idemKey;
         }
-        foreach (array_merge($this->defaultHeaders, $req->headers) as $k => $v) {
+        foreach (array_merge($this->defaultHeaders, $this->traceHeaders($req), $req->headers) as $k => $v) {
             $headers[$k] = $v;
         }
         $payload = null;

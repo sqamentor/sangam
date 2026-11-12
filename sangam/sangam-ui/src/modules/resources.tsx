@@ -12,7 +12,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { http } from '../api/client';
 import { announce, useAction, useAsync, useInterval } from '../lib/hooks';
-import { fmtDate } from '../i18n';
+import { fmtDate, locale } from '../i18n';
 import { Badge, Empty, Loading, Notice, ProblemAlert, Section, TextField } from '../components/ui';
 import { ActionDialog, ModulePage, c, f, type Act, type Row, type ScreenDef } from './engine';
 
@@ -25,7 +25,9 @@ const resTypes: ScreenDef = {
   unpaged: true,
   columns: [c('typeId'), c('name'), c('bookable'), c('approvalRequired')],
   rowKey: ['typeId', 'id'],
-  create: { id: 'define', label: 'act.defineType', path: '/resources/types', fields: [f.text('typeId', undefined, true), f.text('name', undefined, true), f.bool('bookable'), f.bool('approvalRequired'), f.json('rules')] },
+  // M-051: Map body read by ResourceType.fromMap (ResourceType.java:112-139; bookingMode SLOT | ALLOTMENT | BOTH | NONE, :58-66).
+  // Further keys (refundTiers, attributes, decisions, limits) go in "More fields".
+  create: { id: 'define', label: 'act.defineType', path: '/resources/types', fields: [f.text('typeId', undefined, true), f.text('name', undefined, true), f.text('kind'), f.select('bookingMode', ['SLOT', 'ALLOTMENT', 'BOTH', 'NONE'], 'fld.bookingMode'), f.num('slotMinutes', 'fld.slotMinutes'), f.num('defaultCapacity', 'fld.defaultCapacity'), f.bool('requiresApproval', 'fld.requiresApproval'), f.text('approvalProcessKey', 'fld.approvalProcessKey'), f.text('currency')] },
   actions: [{ id: 'retire', label: 'act.retire', method: 'DELETE', path: '/resources/types/{typeId}', reason: 'query', danger: true }],
 };
 
@@ -41,14 +43,18 @@ const resItems: ScreenDef = {
   sections: [{ id: 'children', label: 'mod.registry.children', path: '/resources/items/{resourceId}/children' }],
   create: { id: 'create', label: 'act.create', path: '/resources/items', fields: [f.text('typeId', undefined, true), f.text('name', undefined, true), f.num('capacity'), f.text('parentId'), f.text('orgUnitId'), f.text('locationId'), f.text('calendarId'), f.json('attributes')] },
   toolbar: [
-    { id: 'calendar', label: 'act.saveCalendar', method: 'PUT', path: '/resources/calendars/{calendarId}', fields: [f.text('calendarId', undefined, true), f.json('workingHours', undefined, true), f.json('holidays')], hint: 'mod.resources.calendarHint' },
+    // M-051: {name, zone, businessCalendarId, closedOnHolidays, hours: {MONDAY: ["09:00-17:00"]}} (AvailabilityCalendar.java:58-79)
+    { id: 'calendar', label: 'act.saveCalendar', method: 'PUT', path: '/resources/calendars/{calendarId}', fields: [f.path(f.text('calendarId', undefined, true)), f.text('name'), f.text('zone', 'fld.zone'), f.json('hours', 'fld.openingHours', true), f.text('businessCalendarId', 'fld.businessCalendarId'), f.bool('closedOnHolidays', 'fld.closedOnHolidays')], hint: 'mod.resources.calendarHint' },
     { id: 'blackout', label: 'act.addBlackout', path: '/resources/blackouts', fields: [f.text('resourceId', undefined, true), f.dt('from', undefined, true), f.dt('to', undefined, true)], reason: 'body' },
-    { id: 'slots', label: 'act.saveSlotTemplate', method: 'PUT', path: '/resources/slot-templates', fields: [f.text('resourceId', undefined, true), f.text('slotLength', undefined, true), f.json('days')], hint: 'mod.resources.slotHint' },
-    { id: 'search', label: 'act.searchAvailable', path: '/resources/search-available', fields: [f.text('typeId'), f.dt('from', undefined, true), f.dt('to', undefined, true), f.num('capacity')], showResult: true },
+    // M-051: SlotTemplate(templateId, resourceId, weekdays, from, to, slotMinutes, unitsPerSlot, validFrom, validTo, attributes) (CalendarService.java:51-54)
+    { id: 'slots', label: 'act.saveSlotTemplate', method: 'PUT', path: '/resources/slot-templates', fields: [f.text('templateId', 'fld.templateId'), f.text('resourceId', undefined, true), f.json('weekdays', 'fld.weekdays', true), f.text('from', 'fld.fromTime', true), f.text('to', 'fld.toTime', true), f.num('slotMinutes', 'fld.slotMinutes', true), f.num('unitsPerSlot', 'fld.unitsPerSlot'), f.date('validFrom'), f.date('validTo')], hint: 'mod.resources.slotHint' },
+    // M-051: AvailableSearchRequest(filter, from, to, quantity) (ResourcesController.java:66); filter is Resource.Query (Resource.java:40)
+    { id: 'search', label: 'act.searchAvailable', path: '/resources/search-available', fields: [f.text('filter.typeId', 'fld.typeId'), f.num('filter.minCapacity', 'fld.minCapacity'), f.dt('from', undefined, true), f.dt('to', undefined, true), f.num('quantity', 'fld.quantity')], showResult: true },
   ],
   actions: [
     { id: 'status', label: 'act.setStatus', path: '/resources/items/{resourceId}/status', fields: [f.select('status', ['ACTIVE', 'MAINTENANCE', 'INACTIVE'], undefined, true)], reason: 'body' },
-    { id: 'move', label: 'act.move', path: '/resources/items/{resourceId}/move', fields: [f.text('parentId'), f.text('locationId')], reason: 'body' },
+    // M-051: MoveRequest(newParentId) (ResourcesController.java:63, :162)
+    { id: 'move', label: 'act.move', path: '/resources/items/{resourceId}/move', fields: [f.text('newParentId', 'fld.newParentId', true)], reason: 'body' },
   ],
 };
 
@@ -62,13 +68,17 @@ const bookings: ScreenDef = {
   detail: '/resources/bookings/{bookingId}',
   sections: [{ id: 'history', label: 'mod.common.history', path: '/resources/history/booking/{bookingId}' }],
   toolbar: [
-    { id: 'quote', label: 'act.quote', path: '/resources/bookings/quote', fields: [f.text('resourceId', undefined, true), f.dt('from', undefined, true), f.dt('to', undefined, true)], showResult: true },
-    { id: 'hold', label: 'act.hold', path: '/resources/bookings/hold', fields: [f.text('resourceId', undefined, true), f.dt('from', undefined, true), f.dt('to', undefined, true), f.text('purpose'), f.num('attendees')], showResult: true },
-    { id: 'series', label: 'act.holdSeries', path: '/resources/bookings/hold-series', fields: [f.text('resourceId', undefined, true), f.dt('from', undefined, true), f.dt('to', undefined, true), f.text('rrule', undefined, true), f.text('purpose')], showResult: true },
+    // M-051: HoldRequest(resourceId, startsAt, endsAt, quantity, requesterId, beneficiaryId, partyRef, purpose, ...) (BookingModel.java:60-63)
+    { id: 'quote', label: 'act.quote', path: '/resources/bookings/quote', fields: [f.text('resourceId', undefined, true), f.dt('startsAt', 'fld.startsAt', true), f.dt('endsAt', undefined, true), f.num('quantity', 'fld.quantity')], showResult: true },
+    { id: 'hold', label: 'act.hold', path: '/resources/bookings/hold', fields: [f.text('resourceId', undefined, true), f.dt('startsAt', 'fld.startsAt', true), f.dt('endsAt', undefined, true), f.num('quantity', 'fld.quantity'), f.text('purpose'), f.text('requesterId'), f.text('beneficiaryId', 'fld.beneficiaryId')], showResult: true },
+    // M-051: SeriesRequest(first: HoldRequest, recurrence: Recurrence(frequency DAILY|WEEKLY|MONTHLY, interval, byDays, count, until, allOrNothing))
+    // (ResourcesController.java:69; BookingModel.java:74-77)
+    { id: 'series', label: 'act.holdSeries', path: '/resources/bookings/hold-series', fields: [f.text('first.resourceId', 'fld.resourceId', true), f.dt('first.startsAt', 'fld.startsAt', true), f.dt('first.endsAt', 'fld.endsAt', true), f.text('first.purpose', 'fld.purpose'), f.select('recurrence.frequency', ['DAILY', 'WEEKLY', 'MONTHLY'], 'fld.frequency', true), f.num('recurrence.interval', 'fld.interval', true), f.json('recurrence.byDays', 'fld.byDays'), f.num('recurrence.count', 'fld.count'), f.date('recurrence.until', 'fld.until'), f.bool('recurrence.allOrNothing', 'fld.allOrNothing')], showResult: true },
   ],
   actions: [
     { id: 'confirm', label: 'act.confirm', path: '/resources/bookings/{bookingId}/confirm' },
-    { id: 'approval', label: 'act.decideApproval', path: '/resources/bookings/{bookingId}/approval', fields: [f.select('decision', ['APPROVE', 'REJECT'], undefined, true)], reason: 'body' },
+    // M-051: ApprovalRequest(approved, reason) (ResourcesController.java:72, :286)
+    { id: 'approval', label: 'act.decideApproval', path: '/resources/bookings/{bookingId}/approval', fields: [f.bool('approved', 'fld.approved')], reason: 'body' },
     { id: 'checkIn', label: 'act.checkIn', path: '/resources/bookings/{bookingId}/check-in' },
     { id: 'checkOut', label: 'act.checkOut', path: '/resources/bookings/{bookingId}/check-out' },
     { id: 'bump', label: 'act.bump', path: '/resources/bookings/{bookingId}/bump', reason: 'body', danger: true },
@@ -83,7 +93,9 @@ const waitlist: ScreenDef = {
   filters: [f.text('scopeKey'), f.text('state')],
   columns: [c('entryId'), c('scopeKey'), c('applicantId'), c('position'), c('state')],
   rowKey: ['entryId', 'id'],
-  create: { id: 'enqueue', label: 'act.enqueue', path: '/resources/waitlist', fields: [f.text('scopeKey', undefined, true), f.text('applicantId', undefined, true), f.num('priority')] },
+  // M-051: WaitlistRequest(typeId, resourceId, requesterId, beneficiaryId, category, priorityLevel, seniorityAt, wantedFrom, wantedTo, quantity,
+  // attributes) (BookingModel.java:112-115; ResourcesController.java:328)
+  create: { id: 'enqueue', label: 'act.enqueue', path: '/resources/waitlist', fields: [f.text('typeId'), f.text('resourceId'), f.text('requesterId'), f.text('beneficiaryId', 'fld.beneficiaryId'), f.text('category'), f.num('priorityLevel', 'fld.priorityLevel'), f.dt('seniorityAt', 'fld.seniorityAt'), f.dt('wantedFrom', 'fld.wantedFrom'), f.dt('wantedTo', 'fld.wantedTo'), f.num('quantity', 'fld.quantity')] },
   actions: [
     { id: 'accept', label: 'act.acceptOffer', path: '/resources/waitlist/{entryId}/accept-offer' },
     { id: 'withdraw', label: 'act.withdraw', path: '/resources/waitlist/{entryId}/withdraw', reason: 'body' },
@@ -99,17 +111,22 @@ const allotments: ScreenDef = {
   columns: [c('allotmentId'), c('resourceId'), c('holderId'), c('from'), c('to'), c('state')],
   rowKey: ['allotmentId', 'id'],
   detail: '/resources/allotments/{allotmentId}',
-  create: { id: 'allot', label: 'act.allot', path: '/resources/allotments', fields: [f.text('resourceId', undefined, true), f.text('holderId', undefined, true), f.date('from', undefined, true), f.date('to')] },
+  // M-051: AllotRequest(resourceId, unitNo, holderId, beneficiaryId, validFrom, validTo, orderRef, waitlistId, entitlementClass, attributes)
+  // (BookingModel.java:133-136; instants)
+  create: { id: 'allot', label: 'act.allot', path: '/resources/allotments', fields: [f.text('resourceId', undefined, true), f.num('unitNo', 'fld.unitNo'), f.text('holderId', undefined, true), f.text('beneficiaryId', 'fld.beneficiaryId'), f.dt('validFrom', 'fld.validFrom', true), f.dt('validTo', 'fld.validTo'), f.text('orderRef'), f.text('waitlistId', 'fld.waitlistId')] },
   toolbar: [
     { id: 'next', label: 'act.allotNext', path: '/resources/allotments/next', fields: [f.text('scopeKey', undefined, true), f.text('resourceId', undefined, true)], showResult: true },
-    { id: 'draw', label: 'act.draw', path: '/resources/draws', fields: [f.text('scopeKey', undefined, true), f.num('count', undefined, true), f.text('seedCommitment')], showResult: true, hint: 'mod.resources.drawHint' },
-    { id: 'verifyDraw', label: 'act.verifyDraw', path: '/resources/draws/verify', fields: [f.text('drawId', undefined, true), f.text('seed', undefined, true)], showResult: true },
+    // M-051: DrawRequest(scopeKey, seed) and DrawVerifyRequest(entryIds, seed) (ResourcesController.java:84, :87)
+    { id: 'draw', label: 'act.draw', path: '/resources/draws', fields: [f.text('scopeKey', undefined, true), f.text('seed', undefined, true)], showResult: true, hint: 'mod.resources.drawHint' },
+    { id: 'verifyDraw', label: 'act.verifyDraw', path: '/resources/draws/verify', fields: [f.json('entryIds', 'fld.entryIds', true), f.text('seed', undefined, true)], showResult: true },
     { id: 'overdue', label: 'act.overdue', method: 'GET', path: '/resources/allotments/overdue', showResult: true, noJson: true },
   ],
   actions: [
-    { id: 'notice', label: 'act.noticeToVacate', path: '/resources/allotments/{allotmentId}/notice-to-vacate', fields: [f.date('vacateBy', undefined, true)], reason: 'body' },
+    // M-051: NoticeRequest(dueAt, reason, authorityRef) (ResourcesController.java:93)
+    { id: 'notice', label: 'act.noticeToVacate', path: '/resources/allotments/{allotmentId}/notice-to-vacate', fields: [f.dt('dueAt', undefined, true), f.text('authorityRef', 'fld.authorityRef')], reason: 'body' },
     { id: 'vacate', label: 'act.vacate', path: '/resources/allotments/{allotmentId}/vacate' },
-    { id: 'extend', label: 'act.extend', path: '/resources/allotments/{allotmentId}/extend', fields: [f.date('to', undefined, true)], reason: 'body' },
+    // M-051: ExtendRequest(newValidTo, long version, reason) (ResourcesController.java:99, :426-431)
+    { id: 'extend', label: 'act.extend', path: '/resources/allotments/{allotmentId}/extend', fields: [f.dt('newValidTo', 'fld.newValidTo', true), f.num('version', undefined, true)], defaults: (r) => ({ version: r?.version as number }), reason: 'body' },
     { id: 'cancel', label: 'act.cancel', path: '/resources/allotments/{allotmentId}/cancel', reason: 'body', danger: true },
   ],
 };
@@ -124,7 +141,7 @@ interface Slot {
 
 /** Week view: one column per day, one row per slot start; free slots can be held directly. */
 export function BookingCalendar() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation(); // re-renders on a language change, so locale() below is current
   const [resourceId, setResourceId] = useState('');
   const [active, setActive] = useState('');
   const [weekStart, setWeekStart] = useState(() => {
@@ -145,7 +162,7 @@ export function BookingCalendar() {
   const byCell = new Map<string, Slot>();
   for (const s of list) byCell.set(`${s.from.slice(0, 10)} ${new Date(s.from).toTimeString().slice(0, 5)}`, s);
   const bookedAt = (s: Slot) => (books.data?.items ?? []).find((b) => String(b.from) <= s.from && String(b.to) >= s.to && b.state !== 'CANCELLED');
-  const fmtDay = new Intl.DateTimeFormat(i18n.language === 'hi' ? 'hi-IN' : 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const fmtDay = new Intl.DateTimeFormat(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
   return (
     <Section title={t('mod.resources.calendar')}>
       <form
@@ -261,11 +278,17 @@ const servicePoints: ScreenDef = {
     { id: 'tokens', label: 'mod.queues.tokens', path: '/queues/service-points/{servicePointId}/tokens' },
     { id: 'stats', label: 'mod.queues.stats', path: '/queues/service-points/{servicePointId}/stats' },
     { id: 'sla', label: 'mod.queues.slaBreaches', path: '/queues/service-points/{servicePointId}/sla-breaches' },
+    // M-039: the call log (GET .../call-events, resources.read, QueueController.java:215-220; after / limit default on the server)
+    { id: 'calls', label: 'mod.queues.callEvents', path: '/queues/service-points/{servicePointId}/call-events', columns: [c('eventId'), c('kind'), c('tokenId'), c('counterId'), c('actorId'), c('at')] },
   ],
-  toolbar: [{ id: 'define', label: 'act.defineServicePoint', method: 'PUT', path: '/queues/service-points/{servicePointId}', fields: [f.text('servicePointId', undefined, true), f.text('name', undefined, true), f.json('services'), f.num('slaMinutes')] }],
+  // M-051: ServicePointRequest(name, resourceId, calendarId, tokenPrefix, slaMinutes, priorityDecision, routingDecision, config) (QueueRestPort.java:52-54)
+  toolbar: [{ id: 'define', label: 'act.defineServicePoint', method: 'PUT', path: '/queues/service-points/{servicePointId}', fields: [f.path(f.text('servicePointId', undefined, true)), f.text('name', undefined, true), f.text('resourceId'), f.text('calendarId'), f.text('tokenPrefix', 'fld.tokenPrefix'), f.num('slaMinutes'), f.text('priorityDecision', 'fld.priorityDecision'), f.text('routingDecision', 'fld.routingDecision'), f.json('config', 'fld.queueConfig')] }],
   actions: [
-    { id: 'counter', label: 'act.defineCounter', method: 'PUT', path: '/queues/service-points/{servicePointId}/counters/{counterId}', fields: [f.text('counterId', undefined, true), f.text('name', undefined, true), f.json('services')] },
-    { id: 'token', label: 'act.issueToken', path: '/queues/service-points/{servicePointId}/tokens', fields: [f.text('service'), f.select('category', ['GENERAL', 'SENIOR', 'DIVYANG', 'APPOINTMENT'])], showResult: true },
+    // M-051: CounterRequest(name, skills) (QueueRestPort.java:56)
+    { id: 'counter', label: 'act.defineCounter', method: 'PUT', path: '/queues/service-points/{servicePointId}/counters/{counterId}', fields: [f.path(f.text('counterId', undefined, true)), f.text('name', undefined, true), f.json('skills')] },
+    // M-051: IssueTokenRequest(channel, bookingId, partyId, priorityClass, skill, routingKey, attributes) (QueueRestPort.java:59-60); channel is
+    // QueueModel.Channel (QueueModel.java:28); priority classes are the service point's configuration (QueueService.java:352-361)
+    { id: 'token', label: 'act.issueToken', path: '/queues/service-points/{servicePointId}/tokens', fields: [f.select('channel', ['WALK_IN', 'KIOSK', 'SMS', 'QR', 'APPOINTMENT', 'TRANSFER', 'COUNTER']), f.text('priorityClass', 'fld.priorityClass'), f.text('skill', 'fld.skill'), f.text('routingKey', 'fld.routingKey'), f.text('partyId'), f.text('bookingId', 'fld.bookingId')], showResult: true },
     { id: 'status', label: 'act.setStatus', path: '/queues/service-points/{servicePointId}/status', fields: [f.select('status', ['OPEN', 'PAUSED', 'CLOSED'], undefined, true)], reason: 'body' },
     { id: 'sweep', label: 'act.noShowSweep', path: '/queues/service-points/{servicePointId}/no-show-sweep', showResult: true },
   ],
@@ -391,7 +414,8 @@ const shifts: ScreenDef = {
   list: '/rosters/shifts',
   columns: [c('shiftId'), c('name'), c('start'), c('end'), c('minStaff')],
   rowKey: ['shiftId', 'id'],
-  create: { id: 'save', label: 'act.saveShift', method: 'PUT', path: '/rosters/shifts', fields: [f.text('shiftId', undefined, true), f.text('name', undefined, true), f.text('start', 'fld.startTime', true), f.text('end', 'fld.endTime', true), f.num('minStaff')] },
+  // M-051: ShiftRequest(shiftId, code, name, fromTime, durationMinutes, night, skills, zoneId, attributes) (RosterRestPort.java:72-73)
+  create: { id: 'save', label: 'act.saveShift', method: 'PUT', path: '/rosters/shifts', fields: [f.text('shiftId', undefined, true), f.text('code'), f.text('name', undefined, true), f.text('fromTime', 'fld.startTime', true), f.num('durationMinutes', 'fld.durationMinutes', true), f.bool('night', 'fld.nightShift'), f.json('skills'), f.text('zoneId', 'fld.zone')] },
   actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/rosters/shifts/{shiftId}', danger: true }],
 };
 
@@ -401,7 +425,8 @@ const rotations: ScreenDef = {
   list: '/rosters/rotations',
   columns: [c('rotationId'), c('name'), c('pattern')],
   rowKey: ['rotationId', 'id'],
-  create: { id: 'save', label: 'act.saveRotation', method: 'PUT', path: '/rosters/rotations', fields: [f.text('rotationId', undefined, true), f.text('name', undefined, true), f.json('pattern', undefined, true)] },
+  // M-051: RotationRequest(rotationId, name, cycle) (RosterRestPort.java:76)
+  create: { id: 'save', label: 'act.saveRotation', method: 'PUT', path: '/rosters/rotations', fields: [f.text('rotationId', undefined, true), f.text('name', undefined, true), f.json('cycle', undefined, true)] },
   actions: [{ id: 'delete', label: 'common.delete', method: 'DELETE', path: '/rosters/rotations/{rotationId}', danger: true }],
 };
 
@@ -418,14 +443,24 @@ const periods: ScreenDef = {
     { id: 'demand', label: 'mod.rosters.demand', path: '/rosters/periods/{periodId}/demand' },
     { id: 'onDuty', label: 'mod.rosters.onDuty', path: '/rosters/periods/{periodId}/on-duty' },
   ],
-  create: { id: 'create', label: 'act.create', path: '/rosters/periods', fields: [f.text('unitId', undefined, true), f.date('from', undefined, true), f.date('to', undefined, true), f.text('rotationId')] },
+  // M-051: PeriodRequest(unitId, name, firstDay, lastDay, constraints) (RosterRestPort.java:79-80)
+  create: { id: 'create', label: 'act.create', path: '/rosters/periods', fields: [f.text('unitId', undefined, true), f.text('name'), f.date('firstDay', 'fld.firstDay', true), f.date('lastDay', 'fld.lastDay', true), f.json('constraints')] },
   actions: [
-    { id: 'member', label: 'act.setMember', method: 'PUT', path: '/rosters/periods/{periodId}/members/{personId}', fields: [f.text('personId', undefined, true), f.json('skills'), f.num('maxShifts')] },
-    { id: 'demand', label: 'act.addDemand', path: '/rosters/periods/{periodId}/demand', fields: [f.date('date', undefined, true), f.text('shiftId', undefined, true), f.num('count', undefined, true)] },
-    { id: 'constraints', label: 'act.constraints', method: 'PUT', path: '/rosters/periods/{periodId}/constraints', fields: [f.num('version', undefined, true, ), f.json('constraints', undefined, true)] },
+    // M-051: MemberRequest(seatId, skills, rotationId, rotationOffset, attributes) (RosterRestPort.java:83-84); personId is the path
+    { id: 'member', label: 'act.setMember', method: 'PUT', path: '/rosters/periods/{periodId}/members/{personId}', fields: [f.path(f.text('personId', undefined, true)), f.text('seatId'), f.json('skills'), f.text('rotationId'), f.num('rotationOffset', 'fld.rotationOffset')] },
+    // M-051: DemandRequest(shiftId, skill, weekdays, dutyDay, requiredCount, dutySeatId, locationId) (RosterRestPort.java:87-88)
+    { id: 'demand', label: 'act.addDemand', path: '/rosters/periods/{periodId}/demand', fields: [f.text('shiftId', undefined, true), f.date('dutyDay', 'fld.dutyDay'), f.json('weekdays', 'fld.weekdays'), f.num('requiredCount', 'fld.requiredCount', true), f.text('skill', 'fld.skill'), f.text('dutySeatId', 'fld.dutySeatId'), f.text('locationId')] },
+    // M-051: ?version plus the constraints map itself (RosterController.java:116-118), keys read by RosterConstraints.from (RosterModel.java:140-155)
+    { id: 'constraints', label: 'act.constraints', method: 'PUT', path: '/rosters/periods/{periodId}/constraints', fields: [f.q(f.num('version', undefined, true)), f.num('minRestMinutes', 'fld.minRestMinutes'), f.num('maxMinutesPerDay', 'fld.maxMinutesPerDay'), f.num('maxMinutesPerWeek', 'fld.maxMinutesPerWeek'), f.num('weeklyOffDays', 'fld.weeklyOffDays'), f.num('maxConsecutiveDays', 'fld.maxConsecutiveDays'), f.num('maxConsecutiveNights', 'fld.maxConsecutiveNights'), f.bool('requireSkill', 'fld.requireSkill'), f.text('constraintsDecision', 'fld.constraintsDecision'), f.text('approvalProcessKey', 'fld.approvalProcessKey'), f.text('swapApprovalProcessKey', 'fld.swapApprovalProcessKey')] },
     { id: 'leave', label: 'act.applyLeave', path: '/rosters/periods/{periodId}/apply-leave', showResult: true },
     { id: 'attendance', label: 'act.reconcileAttendance', path: '/rosters/periods/{periodId}/reconcile-attendance', showResult: true },
     { id: 'close', label: 'act.closePeriod', path: '/rosters/periods/{periodId}/close', fields: [f.q(f.num('version', undefined, true))], reason: 'body' },
+    // M-039: mark on call {personId, shiftId, day} (OnCallRequest, RosterController.java:50, :238-243; resources.admin)
+    { id: 'onCall', label: 'act.markOnCall', path: '/rosters/periods/{periodId}/on-call', fields: [f.text('personId', undefined, true), f.text('shiftId', undefined, true), f.date('day', undefined, true)], noJson: true },
+  ],
+  toolbar: [
+    // M-039: one person's duties in a window (GET ?from &to, ISO instants, RosterController.java:257-265)
+    { id: 'duties', label: 'act.personDuties', method: 'GET', path: '/rosters/people/{personId}/duties', fields: [f.path(f.text('personId', undefined, true)), f.dt('from', undefined, true), f.dt('to', undefined, true)], noJson: true, showResult: true },
   ],
 };
 
@@ -436,10 +471,12 @@ const swaps: ScreenDef = {
   filters: [f.text('periodId')],
   columns: [c('swapId'), c('fromPersonId'), c('toPersonId'), c('state'), c('version')],
   rowKey: ['swapId', 'id'],
-  create: { id: 'request', label: 'act.requestSwap', path: '/rosters/swaps', fields: [f.text('assignmentId', undefined, true), f.text('toPersonId', undefined, true)], reason: 'body' },
+  // M-051: SwapCreateRequest(assignmentId, counterpartId, counterpartAssignmentId, reason) (RosterRestPort.java:101)
+  create: { id: 'request', label: 'act.requestSwap', path: '/rosters/swaps', fields: [f.text('assignmentId', undefined, true), f.text('counterpartId', 'fld.counterpartId', true), f.text('counterpartAssignmentId', 'fld.counterpartAssignmentId')], reason: 'body' },
   actions: [
     { id: 'accept', label: 'act.accept', path: '/rosters/swaps/{swapId}/accept', fields: [f.q(f.num('version', undefined, true))] },
-    { id: 'decide', label: 'act.decide', path: '/rosters/swaps/{swapId}/decision', fields: [f.select('decision', ['APPROVE', 'REJECT'], undefined, true)], reason: 'body' },
+    // M-051: DecisionRequest(version, approved, reason) (RosterRestPort.java:98)
+    { id: 'decide', label: 'act.decide', path: '/rosters/swaps/{swapId}/decision', fields: [f.bool('approved', 'fld.approved'), f.num('version')], defaults: (r) => ({ version: r?.version as number }), reason: 'body' },
     { id: 'cancel', label: 'act.cancel', path: '/rosters/swaps/{swapId}/cancel', fields: [f.q(f.num('version', undefined, true))] },
   ],
 };

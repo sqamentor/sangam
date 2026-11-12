@@ -29,7 +29,37 @@ public interface WorkPort {
                         String activityId, String activityInstanceId, String businessKey,
                         Map<String, Object> variables, long lockVersion, String attemptId, String operationId,
                         Instant lockExpiresAt, Integer retries, Long priority, String errorMessage,
-                        WorkOperation operation) {
+                        WorkOperation operation,
+                        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                        TraceContext traceContext) {
+
+        /** Without a trace context (M-062: the field is then absent from the response). */
+        public ExternalWork(String id, String topic, String tenantId, String processInstanceId,
+                            String processDefinitionKey, String activityId, String activityInstanceId, String businessKey,
+                            Map<String, Object> variables, long lockVersion, String attemptId, String operationId,
+                            Instant lockExpiresAt, Integer retries, Long priority, String errorMessage,
+                            WorkOperation operation) {
+            this(id, topic, tenantId, processInstanceId, processDefinitionKey, activityId, activityInstanceId,
+                    businessKey, variables, lockVersion, attemptId, operationId, lockExpiresAt, retries, priority,
+                    errorMessage, operation, null);
+        }
+
+        /** The same work item with the engine's stored creating trace context (null: none stored). */
+        public ExternalWork withTraceContext(TraceContext ctx) {
+            return new ExternalWork(id, topic, tenantId, processInstanceId, processDefinitionKey, activityId,
+                    activityInstanceId, businessKey, variables, lockVersion, attemptId, operationId, lockExpiresAt,
+                    retries, priority, errorMessage, operation, ctx);
+        }
+    }
+
+    /**
+     * M-062 (R13): the W3C trace context of the command that created the work item ({@code JOB_TRACE_CONTEXT}, kind
+     * {@code EXTERNAL_TASK}), so a worker's span can link back to it. {@code traceparent} is version 00 (55 characters);
+     * {@code tracestate} is optional and absent when none was stored.
+     */
+    record TraceContext(String traceparent,
+                        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                        String tracestate) {
     }
 
     /**

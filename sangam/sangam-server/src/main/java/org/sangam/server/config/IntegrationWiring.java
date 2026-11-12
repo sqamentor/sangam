@@ -19,6 +19,8 @@ import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.OperationLedger;
 import org.sangam.core.layer.Outbox;
+import org.sangam.core.layer.PendingAudit;
+import org.sangam.core.layer.PendingAuditDrainer;
 import org.sangam.core.layer.ReconciliationQueue;
 import org.sangam.core.layer.Tombstones;
 import org.sangam.core.layer.Transactions;
@@ -272,9 +274,44 @@ public class IntegrationWiring {
         return new ConnectorInvoker(productTx(ds), ledger, journal, registry, sangamIntegrationAuditChain);
     }
 
+    /**
+     * SL-133 (M-003): the durable pending audit ({@code AUDIT_PENDING}) of callers that hold the root's
+     * {@code ROOT_SEQ} lock. Plain product transactions, never the engine transaction.
+     */
     @Bean
-    public IntegrationBridge sangamIntegrationBridge(ConnectorInvoker invoker, OutboxWriter writer, Environment env) {
-        IntegrationBridge bridge = new IntegrationBridge(invoker, writer, defaultTenant(env));
+    public PendingAudit sangamPendingAudit(TxSupport tx, DataSource ds, AuditChain sangamIntegrationAuditChain) {
+        return new PendingAudit(productTx(ds), tx.dialect(), sangamIntegrationAuditChain);
+    }
+
+    /**
+     * SL-133: appends the pending rows to the root chains on its own threads, after the job transaction that holds the
+     * root lock has ended, plus a periodic sweep. {@code sangam.audit.pending.workers} (2),
+     * {@code .sweep-interval} (30s; 0 = no sweep), {@code .sweep-min-age} (10s), {@code .sweep-batch} (200).
+     */
+    @Bean(destroyMethod = "close")
+    public PendingAuditDrainer sangamPendingAuditDrainer(PendingAudit sangamPendingAudit, Environment env) {
+        return new PendingAuditDrainer(sangamPendingAudit, pendingAuditSettings(env)).start();
+    }
+
+    static PendingAuditDrainer.Settings pendingAuditSettings(Environment env) {
+        PendingAuditDrainer.Settings d = PendingAuditDrainer.Settings.defaults();
+        return new PendingAuditDrainer.Settings(
+                env.getProperty("sangam.audit.pending.workers", Integer.class, d.workers()),
+                env.getProperty("sangam.audit.pending.sweep-interval", Duration.class, d.sweepInterval()),
+                env.getProperty("sangam.audit.pending.sweep-min-age", Duration.class, d.sweepMinAge()),
+                env.getProperty("sangam.audit.pending.sweep-batch", Integer.class, d.sweepBatch()));
+    }
+
+    /**
+     * The JavaDelegate path ({@code SangamConnectorDelegate} through {@link IntegrationBridge#delegateInvoker()}) runs
+     * inside the job transaction that holds the root's lock, so its invoker defers the audit (SL-133): pending rows
+     * written with the ledger, appended by the drainer. The other users of {@link ConnectorInvoker} keep direct audit.
+     */
+    @Bean
+    public IntegrationBridge sangamIntegrationBridge(ConnectorInvoker invoker, PendingAuditDrainer sangamPendingAuditDrainer,
+                                                     OutboxWriter writer, Environment env) {
+        IntegrationBridge bridge = new IntegrationBridge(invoker.deferringAudit(sangamPendingAuditDrainer), writer,
+                defaultTenant(env));
         IntegrationBridge.install(bridge);
         return bridge;
     }
@@ -354,7 +391,17 @@ public class IntegrationWiring {
             LifecyclePorts.Authorizer authorizer) {
         Dialect d = tx.dialect();
         return new ErasureService(d, engineTx(adapter, tx), sangamIntegrationAuditChain, new LegalHoldStore(d), journal,
-                deadLetters, ports, ports, documents.getIfAvailable(() -> LifecyclePorts.DocumentEraser.NONE), authorizer);
+                deadLetters, ports, ports, documents.getIfAvailable(() -> LifecyclePorts.DocumentEraser.NONE), authorizer,
+                denialChains());
+    }
+
+    /**
+     * SL-132: an erased instance's denial audits sit on its denial chain ({@code sec:d:...}, the one formula of
+     * sangam-core's {@link AuditChain#denialChain}), so erasure covers that chain with the instance's own.
+     * {@code cmp:d:} chains are per principal and hold no personal data of the instance.
+     */
+    static LifecyclePorts.RelatedAuditChains denialChains() {
+        return (tenant, chain) -> List.of(AuditChain.denialChain(tenant, chain));
     }
 
     // ---------------------------------------------------------------- relay, reconciliation, maintenance, worker

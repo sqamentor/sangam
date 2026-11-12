@@ -64,6 +64,8 @@ class EngineInternalsPinTest {
         SangamEngineSettings s = new SangamEngineSettings();
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
+        // SL-160: the test delegate is tenant-approved, as a deployment would approve it
+        s.getDeployAllowedClasses().put("*", java.util.Set.of(FailingDelegate.class.getName()));
         try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2")) {
             test.accept(a);
         }

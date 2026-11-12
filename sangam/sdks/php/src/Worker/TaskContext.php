@@ -75,6 +75,18 @@ final class TaskContext
         return $this->work->processInstanceId;
     }
 
+    /** W3C traceparent the engine stored for this task (ExternalWork.traceContext, M-062), or null. */
+    public function traceparent(): ?string
+    {
+        return $this->work->traceContext?->traceparent;
+    }
+
+    /** W3C tracestate of the task's trace context, or null. */
+    public function tracestate(): ?string
+    {
+        return $this->work->traceContext?->tracestate;
+    }
+
     public function workerId(): string
     {
         return $this->workerId;

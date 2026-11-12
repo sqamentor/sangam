@@ -73,3 +73,17 @@ op('post', '/ai/knowledge-bases/{key}/retire', 'aiUiRetireKb', 'AI', 'Retire a k
 op('get', '/ai/drafts', 'aiUiListDrafts', 'AI', 'List drafts', 'Own drafts; all of the tenant with ai.review. Filter by status or packageId.', _R, params=[q('status'), q('packageId')] + _P, resp=(200, _LIST), perm='ai.use')
 op('get', '/ai/classifications', 'aiUiListClassifications', 'AI', 'List classifications', 'The tenant only.', _R, params=[q('status')] + _P, resp=(200, _LIST), perm='ai.review')
 op('post', '/ai/classifications/{id}/review', 'aiUiReviewClassification', 'AI', 'Review a classification', 'ACCEPT or RETURN.', _R, params=[pp('id')], body=record_body(_AIUI, 'ReviewRequest'), resp=(200, _ANY), cmd='ai.classification.review', perm='ai.review')
+
+# M-051: the JSON-RPC bodies are bound as strings and parsed by the MCP and A2A servers; their contract types come from
+# the members those servers read (_v2_bodykeys.py).
+map_body('aiMcp', 'sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java', 'McpServer.handle', 'req',
+         via='AiController.mcp',
+         also=[('sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java', 'McpServer.validateHttpHeaders', 'req')])
+map_body('aiA2a', 'sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java', 'A2a.Server.handle', 'req', via='AiController.a2a')
+bk_opaque({
+    ("McpServer.result", "put"): "the JSON-RPC id is echoed in the response as given",
+    ("McpServer.error", "put"): "the JSON-RPC id is echoed in the response as given",
+    ("McpServer.errorWithData", "put"): "the JSON-RPC id is echoed in the response as given",
+    ("A2a.Server.ok", "put"): "the JSON-RPC id is echoed in the response as given",
+    ("A2a.Server.err", "put"): "the JSON-RPC id is echoed in the response as given",
+})

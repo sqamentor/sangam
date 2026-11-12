@@ -43,6 +43,7 @@ public final class SangamClient {
     private final AdminApi admin;
     private final OpsApi ops;
     private final RepositoryApi repository;
+    private final org.sangam.sdk.generated.SangamApis api;
 
     private SangamClient(Builder b) {
         HttpClient http = b.httpClient != null ? b.httpClient : HttpClient.newBuilder()
@@ -50,7 +51,7 @@ public final class SangamClient {
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .build();
         this.transport = new HttpTransport(http, Objects.requireNonNull(b.baseUrl, "baseUrl"), b.tokenProvider,
-                b.retryPolicy, b.requestTimeout, b.logger, b.userAgent, b.seatHeaders());
+                b.retryPolicy, b.requestTimeout, b.logger, b.userAgent, b.seatHeaders(), b.traceContext);
         this.work = new WorkApi(transport);
         this.tasks = new TasksApi(transport);
         this.processes = new ProcessesApi(transport);
@@ -59,6 +60,7 @@ public final class SangamClient {
         this.admin = new AdminApi(transport);
         this.ops = new OpsApi(transport);
         this.repository = new RepositoryApi(transport);
+        this.api = new org.sangam.sdk.generated.SangamApis(transport);
     }
 
     public static Builder builder() {
@@ -89,6 +91,12 @@ public final class SangamClient {
         return r.body();
     }
 
+    /**
+     * The typed surface generated from sangam-api.yaml (M-020): every operation of the contract, one accessor per
+     * contract tag, on this client's transport. Example: {@code client.api().work().fetchAndLock(request, null)}.
+     */
+    public org.sangam.sdk.generated.SangamApis api() { return api; }
+
     /** Low-level transport for endpoints not yet wrapped. */
     public HttpTransport transport() { return transport; }
     public SangamLogger logger() { return transport.logger(); }
@@ -104,6 +112,7 @@ public final class SangamClient {
         private String userAgent;
         private String seat;
         private String actingForSeat;
+        private org.sangam.sdk.http.TraceContext traceContext;
 
         /** Server root, for example {@code https://host:8080}; a trailing {@code /api/v1} is accepted. */
         public Builder baseUrl(String v) { this.baseUrl = URI.create(v); return this; }
@@ -121,6 +130,11 @@ public final class SangamClient {
         public Builder seat(String v) { this.seat = v; return this; }
         /** Default {@code X-Sangam-Acting-For-Seat}: acting authority for a substituted seat (IX.5 rule 4). */
         public Builder actingForSeat(String v) { this.actingForSeat = v; return this; }
+        /**
+         * The caller's W3C trace context (R13, M-062): every request then carries {@code traceparent}/{@code tracestate}
+         * so server spans join the caller's trace. Off by default (R56).
+         */
+        public Builder traceContext(org.sangam.sdk.http.TraceContext v) { this.traceContext = v; return this; }
 
         java.util.Map<String, String> seatHeaders() {
             java.util.Map<String, String> h = new java.util.LinkedHashMap<>();

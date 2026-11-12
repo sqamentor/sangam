@@ -13,6 +13,7 @@ import { useMemo, useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { http } from '../api/client';
 import { useAsync } from '../lib/hooks';
+import { codePointLength } from '../lib/text';
 import type { FieldChange, FormField, FormSchema } from '../api/types';
 
 export type FormValues = Record<string, unknown>;
@@ -59,8 +60,10 @@ export function validateForm(schema: FormSchema, values: FormValues, t: (k: stri
       if (val.max !== undefined && v > val.max) errs[f.key] = t('form.max', { n: val.max });
     }
     if (typeof v === 'string') {
-      if (val.minLength !== undefined && v.length < val.minLength) errs[f.key] = t('form.minLength', { n: val.minLength });
-      if (val.maxLength !== undefined && v.length > val.maxLength) errs[f.key] = t('form.maxLength', { n: val.maxLength });
+      // Code points, as the server's form validator counts them (FormSchemaValidator.java:117), not UTF-16 units
+      const len = codePointLength(v);
+      if (val.minLength !== undefined && len < val.minLength) errs[f.key] = t('form.minLength', { n: val.minLength });
+      if (val.maxLength !== undefined && len > val.maxLength) errs[f.key] = t('form.maxLength', { n: val.maxLength });
       if (val.pattern) {
         try {
           if (!new RegExp(`^(?:${val.pattern})$`).test(v)) errs[f.key] = t('form.pattern');

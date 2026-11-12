@@ -21,6 +21,7 @@ public sealed class ContractGuardTests
     {
         ["ExternalWork"] = typeof(ExternalWork),
         ["WorkOperation"] = typeof(WorkOperation),
+        ["TraceContext"] = typeof(TraceContext),
         ["WorkOutcome"] = typeof(WorkOutcome),
         ["LockState"] = typeof(LockState),
         ["OutcomeUnknownResult"] = typeof(OutcomeUnknownResult),

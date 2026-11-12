@@ -46,8 +46,9 @@ import org.springframework.core.env.Environment;
  *       contract: configurable OIDC claims, dev token, {@code SEAT_NOT_HELD}, problem+json). sangam-security's
  *       {@code SangamResourceServerConfiguration} is not imported; its API-token filter and an identity-resolution
  *       filter ({@link SecurityIdentityFilter}) are added to the server chain through {@link SecurityChainContributions}.</li>
- *   <li><b>Beans:</b> {@link SangamSecurity}, the product {@link Transactions} (independent JDBC transactions, also the
- *       denial-audit transaction so {@code AUTH_DENIED}/{@code SOD_VIOLATION_BLOCKED} survive a rollback),
+ *   <li><b>Beans:</b> {@link SangamSecurity}, the product {@link Transactions} (independent short JDBC transactions of
+ *       the module), the denial-audit transaction on the {@code sangam-security-audit} leaf pool
+ *       ({@link SecurityAuditPoolWiring}, SL-132) so {@code AUTH_DENIED}/{@code SOD_VIOLATION_BLOCKED} survive a rollback,
  *       {@link SecurityProperties} bound to {@code sangam.security} (no field clash with the server's
  *       {@code SangamSecurityProperties}), {@link SangamSecurityEnginePlugin} (seat assignment, tenant id provider,
  *       Operaton authorization off), and {@link IdentityExtrasPort} for sangam-flowable-ports.</li>
@@ -74,7 +75,8 @@ public class SecurityWiring {
 
     @Bean
     public SangamSecurity sangamSecurity(DataSource dataSource, Transactions sangamProductTransactions,
-                                         RestProperties rest, Environment env) {
+                                         RestProperties rest, Environment env,
+                                         SecurityAuditPoolWiring.SecurityAuditPool sangamSecurityAuditPool) {
         SecurityDialect dialect;
         try (var c = dataSource.getConnection()) {
             dialect = SecurityDialect.detect(c);
@@ -83,8 +85,49 @@ public class SecurityWiring {
         }
         Duration staleness = env.getProperty("sangam.security.max-staleness", Duration.class, Duration.ofSeconds(5));
         SangamSecurity.Options options = new SangamSecurity.Options(staleness, null, rest.getBatchFourEyesThreshold(),
-                sangamProductTransactions, null);
+                denialTransactions(sangamSecurityAuditPool, sangamProductTransactions), null);
         return new SangamSecurity(dialect, options);
+    }
+
+    /**
+     * SL-132: denial audits commit on the {@code sangam-security-audit} leaf pool (never a second main-pool connection
+     * while the refused caller holds one: SL-43); without a leaf pool (main pool not HikariCP), on the product
+     * transactions as before.
+     */
+    static Transactions denialTransactions(SecurityAuditPoolWiring.SecurityAuditPool pool, Transactions product) {
+        Transactions leaf = pool.transactionsOrNull();
+        return leaf != null ? leaf : product;
+    }
+
+    /** The 403 code of a worker call on a topic the worker is not bound to (SL-158). */
+    static final String TOPIC_NOT_BOUND = "WORKER_TOPIC_NOT_BOUND";
+
+    /**
+     * SL-158 (R26, owner decision 2026-11-12: enforced in 0.1.0): a worker fetches, completes or fails work only on
+     * topics it is bound to (WORK on {@code WORKER_TOPIC/<topic>}: a worker binding, or a grant of an administrator
+     * role). The check runs on the caller's transaction connection; a refusal records {@code AUTH_DENIED} on the
+     * denial chain (leaf pool) and answers 403 {@value #TOPIC_NOT_BOUND} naming the worker and the topic. Migration:
+     * bind every worker principal to its topics (service principals are bound when created with their topics).
+     */
+    @Bean
+    public org.sangam.rest.adapter.operaton.WorkerTopicGuard sangamWorkerTopicGuard(SangamSecurity security, TxSupport tx) {
+        return workerTopicGuard(security, tx);
+    }
+
+    static org.sangam.rest.adapter.operaton.WorkerTopicGuard workerTopicGuard(SangamSecurity security, TxSupport tx) {
+        return (ctx, topic) -> {
+            try {
+                tx.withConnection(c -> {
+                    security.workers().requireTopic(c, org.sangam.server.bridge.SecurityIdentities.of(ctx), topic);
+                    return null;
+                });
+            } catch (org.sangam.core.security.SangamSecurityException.AccessDenied e) {
+                throw new org.sangam.rest.port.ApiProblem(403, TOPIC_NOT_BOUND, "worker '" + ctx.principalId()
+                        + "' is not bound to topic '" + topic + "': bind the worker to the topic (WORK on WORKER_TOPIC/"
+                        + topic + "; POST /api/v1/admin/service-principals with topics, or a worker binding)")
+                        .with("topic", topic);
+            }
+        };
     }
 
     @Bean

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_dsr_nomination" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+<!-- Nomination by a data subject. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_dsr_nomination" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
   <process id="sangam-dsr-nomination" name="Nomination by a data subject" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>Nomination (IN: DPDP s.14, r.14(4)). Invocation on death or incapacity is a separate officer action (NominationService.invoke).</documentation>
     <startEvent id="start" name="Nomination requested"/>
     <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_verify" name="Verify nominee particulars" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/nomination-verify"></userTask>
+    <userTask id="u_verify" name="Verify nominee particulars" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:compliance/nomination-verify"/>
     <boundaryEvent id="t_due" name="Due date" attachedToRef="u_verify" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <serviceTask id="s_register" name="Register nomination" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>nomination.register</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="end" name="Registered"/>
@@ -19,4 +19,22 @@
     <sequenceFlow id="f_esc1" sourceRef="t_due" targetRef="esc"/>
     <sequenceFlow id="f_esc2" sourceRef="esc" targetRef="end_esc"/>
   </process>
+  <bpmndi:BPMNDiagram id="dsr_nomination_diagram">
+    <bpmndi:BPMNPlane id="dsr_nomination_plane" bpmnElement="sangam-dsr-nomination">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_start_di" bpmnElement="s_start"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_verify_di" bpmnElement="u_verify"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_register_di" bpmnElement="s_register"><dc:Bounds x="515" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="esc_di" bpmnElement="esc"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_esc_di" bpmnElement="end_esc"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_due_di" bpmnElement="t_due"><dc:Bounds x="358" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="450" y="70"/><di:waypoint x="482" y="70"/><di:waypoint x="482" y="195"/><di:waypoint x="515" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="615" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_esc1_di" bpmnElement="f_esc1"><di:waypoint x="376" y="128"/><di:waypoint x="376" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_esc2_di" bpmnElement="f_esc2"><di:waypoint x="615" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </definitions>

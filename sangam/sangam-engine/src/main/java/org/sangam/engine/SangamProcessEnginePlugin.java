@@ -19,7 +19,6 @@ import org.operaton.bpm.engine.impl.history.HistoryLevel;
 import org.operaton.bpm.engine.impl.history.handler.HistoryEventHandler;
 import org.operaton.bpm.engine.impl.incident.IncidentHandler;
 import org.operaton.bpm.engine.impl.interceptor.CommandInterceptor;
-import org.operaton.bpm.engine.impl.jobexecutor.DefaultJobExecutor;
 import org.operaton.bpm.engine.impl.jobexecutor.JobHandler;
 import org.operaton.bpm.engine.impl.persistence.StrongUuidGenerator;
 import org.operaton.bpm.engine.impl.variable.serializer.TypedValueSerializer;
@@ -41,10 +40,13 @@ import org.sangam.engine.incident.SangamIncidentHandler;
 import org.sangam.engine.job.CountingFailedJobCommandFactory;
 import org.sangam.engine.job.GuardedJobHandler;
 import org.sangam.engine.job.JobIdentitySupport;
+import org.sangam.engine.job.JobExecutorSetup;
 import org.sangam.engine.job.JobMetricsInterceptor;
 import org.sangam.engine.lock.RootLockFlushListener;
 import org.sangam.engine.timer.DstSafeCycleBusinessCalendar;
 import org.sangam.engine.timer.TaggedDurationBusinessCalendar;
+import org.sangam.engine.trace.EngineTracing;
+import org.sangam.engine.trace.TracingCommandInterceptor;
 import org.sangam.engine.tx.RollbackGuardInterceptor;
 import org.sangam.engine.variables.JsonValueSerializer;
 import org.sangam.engine.variables.LargeStringValueSerializer;
@@ -89,6 +91,8 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
     /** M-012: the wrappers registered for the global activity / audit levels (also used for history=variable). */
     private MandatoryAuditHistoryLevel activityLevel;
     private MandatoryAuditHistoryLevel auditLevel;
+    /** IR-7 / M-054 / M-056 / M-062: the job executor setup of preInit, checked again in postInit. */
+    private JobExecutorSetup jobSetup;
 
     public SangamProcessEnginePlugin(SangamEngineComponents components) {
         this.components = components;
@@ -113,24 +117,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         cfg.setJobExecutorAcquireWithSkipLocked(s.isJobAcquireWithSkipLocked());
         cfg.setJobExecutorPreferTimerJobs(s.isJobPreferTimers());
         cfg.setProducePrioritizedJobs(true);
-        // IR-7: job executor sizing and acquisition (SCALE 3 defaults; SANGAM_JOB_* env)
-        if (cfg.getJobExecutor() == null) {
-            DefaultJobExecutor je = new DefaultJobExecutor();
-            je.setCorePoolSize(s.getJobCorePoolSize());
-            je.setMaxPoolSize(s.getJobMaxPoolSize());
-            je.setQueueSize(s.getJobQueueCapacity());
-            je.setMaxJobsPerAcquisition(s.getJobMaxJobsPerAcquisition());
-            je.setWaitTimeInMillis(s.getJobWaitTimeInMillis());
-            je.setWaitIncreaseFactor(s.getJobWaitIncreaseFactor());
-            je.setMaxWait(s.getJobMaxWait());
-            je.setLockTimeInMillis(s.getJobLockTimeInMillis());
-            je.setBackoffTimeInMillis(s.getJobBackoffTimeInMillis());
-            je.setMaxBackoff(s.getJobMaxBackoff());
-            if (s.getJobLockOwner() != null) {
-                je.setLockOwner(s.getJobLockOwner());
-            }
-            cfg.setJobExecutor(je);
-        }
+        // IR-7: job executor sizing and acquisition (SCALE 3 defaults; SANGAM_JOB_* env); M-054 virtual threads and
+        // bulkheads, M-056 partitioned acquisition, M-062 trace links: all opt-in, off = Operaton's executor as is
+        jobSetup = new JobExecutorSetup(s, components.dialect(), () -> components.clock().now());
+        List<CommandInterceptor> jobSideRows = jobSetup.preInit(cfg);
         cfg.setJobExecutorAcquireByDueDate(s.isJobAcquireByDueDate());
         cfg.setJobExecutorAcquireByPriority(s.isJobAcquireByPriority());
         cfg.setJobExecutorAcquireExclusiveOverProcessHierarchies(s.isJobExclusiveOverProcessHierarchies());
@@ -145,6 +135,18 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 new RollbackGuardInterceptor(flush)), new JobMetricsInterceptor(components.metrics())));
         cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
                 new RollbackGuardInterceptor(flush)));
+        // M-056 / M-062: job side rows (EXEC_JOB_SLOT, JOB_TRACE_CONTEXT) in the creating command; none when both are off
+        for (CommandInterceptor i : jobSideRows) {
+            cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(), i));
+            cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(), i));
+        }
+        // M-062 (R13): a span per command, covering flush and commit (pre interceptor); nothing when tracing is NONE
+        if (s.getTracing() != EngineTracing.NONE) {
+            cfg.setCustomPreCommandInterceptorsTxRequired(append(cfg.getCustomPreCommandInterceptorsTxRequired(),
+                    new TracingCommandInterceptor(s.getTracing())));
+            cfg.setCustomPreCommandInterceptorsTxRequiresNew(append(cfg.getCustomPreCommandInterceptorsTxRequiresNew(),
+                    new TracingCommandInterceptor(s.getTracing())));
+        }
 
         // SL-45: deployments and batches of a tenant-scoped engine identity belong to its tenant (Operaton has no
         // tenant check for either; the batch's jobs then run, and are checked, as that tenant); SL-73: so do its
@@ -191,6 +193,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         List<org.operaton.bpm.engine.impl.persistence.deploy.Deployer> preDeployers =
                 cfg.getCustomPreDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPreDeployers());
         preDeployers.add(new org.sangam.engine.feel.DmnModelLint.DeployRule()); // ADR-D-26: deploy-time DMN type rules
+        // SL-160 / TM-10: only reviewed Java classes and delegate beans in new BPMN / CMMN deployments
+        preDeployers.add(new org.sangam.engine.deploy.ModelCodeAllowList.DeployRule(s.getDeployAllowedClasses(),
+                s.getDeployAllowedBeans()));
         cfg.setCustomPreDeployers(preDeployers);
         cfg.setDmnEngineConfiguration(dmn);
 
@@ -285,6 +290,10 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         if (auditHandler != null && cfg.getHistoryEventHandler() != null
                 && !(cfg.getHistoryEventHandler() instanceof MandatoryAuditHistoryEventHandler)) {
             cfg.setHistoryEventHandler(new MandatoryAuditHistoryEventHandler(cfg.getHistoryEventHandler(), auditHandler));
+        }
+        // M-056: partitioned acquisition still installed and its configuration supported (fail closed)
+        if (jobSetup != null) {
+            jobSetup.postInit(cfg);
         }
         // sangam_jobs_failed_total: every failed job execution goes through the failed-job command factory
         cfg.setFailedJobCommandFactory(new CountingFailedJobCommandFactory(cfg.getFailedJobCommandFactory(),

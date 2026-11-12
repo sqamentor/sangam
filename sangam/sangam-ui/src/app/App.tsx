@@ -43,6 +43,7 @@ const mComp = () => import('../modules/compliance');
 const mCfg = () => import('../modules/config');
 const mCompat = () => import('../modules/compat');
 const mOp = () => import('../modules/operaton');
+const mBulk = () => import('../modules/bulk');
 const RegistryPage = named(mReg, 'RegistryPage');
 const PublicVerify = named(mReg, 'PublicVerify');
 const ResourcesPage = named(mRes, 'ResourcesPage');
@@ -60,6 +61,9 @@ const GeoPage = named(mFG, 'GeoPage');
 const CompliancePage = named(mComp, 'CompliancePage');
 const ConfigPage = named(mCfg, 'ConfigPage');
 const OnboardingWizard = named(mCfg, 'OnboardingWizard');
+const PackLifecycle = named(mCfg, 'PackLifecycle');
+const CustomFieldsPage = named(mCfg, 'CustomFieldsPage');
+const BulkIngestPage = named(mBulk, 'BulkIngestPage');
 const CompatibilityMatrix = named(mCompat, 'CompatibilityMatrix');
 const OperatonOpsPage = named(mOp, 'OperatonOpsPage');
 const TaskFiltersPage = named(mOp, 'TaskFiltersPage');
@@ -127,6 +131,7 @@ const Templates = named(ad, 'Templates');
 const ConversationalChannels = named(ad, 'ConversationalChannels');
 const AgentDefinitions = named(ad, 'AgentDefinitions');
 const RetentionClasses = named(ad, 'RetentionClasses');
+const ModuleSecurityDefaults = named(ad, 'ModuleSecurityDefaults');
 const Packages = named(md, 'Packages');
 const PackageWorkspace = named(md, 'PackageWorkspace');
 const ReviewQueue = named(md, 'ReviewQueue');
@@ -148,6 +153,7 @@ const PortalApply = named(po, 'PortalApply');
 const PortalApplications = named(po, 'PortalApplications');
 const PortalApplication = named(po, 'PortalApplication');
 const PortalGrievances = named(po, 'PortalGrievances');
+const PublicPrivacy = named(po, 'PublicPrivacy');
 const Accessibility = named(hp, 'Accessibility');
 const About = named(hp, 'About');
 
@@ -203,7 +209,12 @@ function AuthedRoutes() {
           <Route path="/ops/task-dashboard" element={g(['PLATFORM_OPERATOR'], <TaskDashboard />)} />
           <Route path="/admin/engine" element={g(['PLATFORM_ADMIN'], <EngineAdminPage />)} />
           <Route path="/admin/config" element={g(ADMIN, <ConfigPage />)} />
-          <Route path="/admin/onboarding" element={g(ADMIN, <OnboardingWizard />)} />
+          {m('/admin/onboarding', <OnboardingWizard />)}
+          {m('/admin/packs', <PackLifecycle />)}
+          {m('/admin/custom-fields', <CustomFieldsPage />)}
+          {m('/admin/bulk', <BulkIngestPage />)}
+          {m('/admin/security-defaults', <ModuleSecurityDefaults />)}
+          <Route path="/privacy/:tenant?" element={<PublicPrivacy />} />
           <Route path="/modeller/compatibility" element={g(MODEL, <CompatibilityMatrix />)} />
           {m('/m/registry', <RegistryPage />)}
           {m('/m/resources', <ResourcesPage />)}
@@ -314,6 +325,8 @@ function Gate() {
   // Public page: certificate verification (QR).
   if (loc.pathname.startsWith('/verify')) return <Suspense fallback={<Loading />}><Routes><Route path="/verify/:tenant?" element={<PublicVerify />} /></Routes></Suspense>;
   if (status === 'loading') return <Loading />;
+  // M-033: the privacy policy is public (SecurityConfig.java:80-81); signed-in callers see it inside the app chrome.
+  if (status !== 'authenticated' && loc.pathname.startsWith('/privacy')) return <Suspense fallback={<Loading />}><Routes><Route path="/privacy/:tenant?" element={<PublicPrivacy />} /></Routes></Suspense>;
   if (status !== 'authenticated') return <SignIn />;
   // Hall display: signed-in kiosk account, no navigation chrome.
   if (loc.pathname.startsWith('/display/queue/')) return <Suspense fallback={<Loading />}><Routes><Route path="/display/queue/:servicePointId" element={<QueueDisplay />} /></Routes></Suspense>;

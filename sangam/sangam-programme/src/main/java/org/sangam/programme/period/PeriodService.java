@@ -3,6 +3,7 @@ package org.sangam.programme.period;
 
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.time.FiscalYears;
 import org.sangam.programme.ProgrammeException;
 import org.sangam.programme.config.IndicatorDefinition.Frequency;
 import org.sangam.programme.support.Db;
@@ -45,22 +46,43 @@ public final class PeriodService {
         return f.name() + ":" + start;
     }
 
-    /** Fiscal year label {@code FY<start>} or {@code FY<start>-<end yy>} when the year does not start in January. */
+    /** Without a configured {@code fiscalStartDay} the fiscal year starts on the 1st of its start month. */
+    private static final int FISCAL_START_DAY = 1;
+
+    /**
+     * Fiscal year label {@code FY<start>} or {@code FY<start>-<end yy>} when the year does not start in January:
+     * {@code "FY"} + {@link FiscalYears.LabelFormat#START_END2} (X1-03).
+     */
     public static String fiscalYearLabel(int startYear, Month startMonth) {
-        return startMonth == Month.JANUARY ? "FY" + startYear : "FY" + startYear + "-" + String.format("%02d", (startYear + 1) % 100);
+        return fiscalYearLabel(startYear, startMonth, FISCAL_START_DAY);
     }
 
-    /** Start of the fiscal year containing {@code d}. */
+    /** {@link #fiscalYearLabel(int, Month)} for a year that starts on {@code startDay} (1..28) of its month. */
+    public static String fiscalYearLabel(int startYear, Month startMonth, int startDay) {
+        return "FY" + FiscalYears.label(startYear, startMonth.getValue(), startDay, FiscalYears.LabelFormat.START_END2);
+    }
+
+    /** Start of the fiscal year containing {@code d} ({@link FiscalYears}). */
     public static LocalDate fiscalYearStart(LocalDate d, Month startMonth) {
-        LocalDate s = LocalDate.of(d.getYear(), startMonth, 1);
-        return d.isBefore(s) ? s.minusYears(1) : s;
+        return fiscalYearStart(d, startMonth, FISCAL_START_DAY);
+    }
+
+    /** {@link #fiscalYearStart(LocalDate, Month)} for a year that starts on {@code startDay} (1..28) of its month. */
+    public static LocalDate fiscalYearStart(LocalDate d, Month startMonth, int startDay) {
+        int m = startMonth.getValue();
+        return FiscalYears.start(FiscalYears.startYearOf(d, m, startDay), m, startDay);
     }
 
     /** Computes (without storing) the periods of one fiscal year. */
     public static List<Period> compute(Frequency f, int fiscalStartYear, Month startMonth, int dueOffsetDays) {
-        LocalDate yStart = LocalDate.of(fiscalStartYear, startMonth, 1);
-        LocalDate yEnd = yStart.plusYears(1).minusDays(1);
-        String fy = fiscalYearLabel(fiscalStartYear, startMonth);
+        return compute(f, fiscalStartYear, startMonth, FISCAL_START_DAY, dueOffsetDays);
+    }
+
+    /** {@link #compute(Frequency, int, Month, int)} for a year that starts on {@code startDay} (1..28) of its month. */
+    public static List<Period> compute(Frequency f, int fiscalStartYear, Month startMonth, int startDay, int dueOffsetDays) {
+        LocalDate yStart = FiscalYears.start(fiscalStartYear, startMonth.getValue(), startDay);
+        LocalDate yEnd = FiscalYears.end(fiscalStartYear, startMonth.getValue(), startDay);
+        String fy = fiscalYearLabel(fiscalStartYear, startMonth, startDay);
         List<Period> out = new ArrayList<>();
         LocalDate s = yStart;
         int seq = 1;
@@ -90,15 +112,21 @@ public final class PeriodService {
 
     /** Stores the periods of a fiscal year; existing periods are kept unchanged. Returns all periods of the year. */
     public List<Period> generate(Connection c, String tenant, Frequency f, int fiscalStartYear, Month startMonth, int dueOffsetDays) {
+        return generate(c, tenant, f, fiscalStartYear, startMonth, FISCAL_START_DAY, dueOffsetDays);
+    }
+
+    /** {@link #generate(Connection, String, Frequency, int, Month, int)} for a year that starts on {@code startDay}. */
+    public List<Period> generate(Connection c, String tenant, Frequency f, int fiscalStartYear, Month startMonth, int startDay,
+                                 int dueOffsetDays) {
         String t = Db.tenant(tenant);
-        for (Period p : compute(f, fiscalStartYear, startMonth, dueOffsetDays)) {
+        for (Period p : compute(f, fiscalStartYear, startMonth, startDay, dueOffsetDays)) {
             Jdbc.insertIfAbsent(c, dialect, "INSERT INTO PG_PERIOD(tenant_id, period_id, frequency, starts_on, ends_on, label, fiscal_year,"
                             + " seq_in_year, due_on, state) VALUES (?,?,?,?,?,?,?,?,?,?)",
                     t, p.id(), f.name(), Db.sqlDate(p.startsOn()), Db.sqlDate(p.endsOn()), p.label(), p.fiscalYear(), p.seqInYear(),
                     Db.sqlDate(p.dueOn()), State.OPEN.name());
         }
         return Jdbc.query(c, "SELECT * FROM PG_PERIOD WHERE tenant_id=? AND frequency=? AND fiscal_year=? ORDER BY starts_on",
-                PeriodService::map, t, f.name(), fiscalYearLabel(fiscalStartYear, startMonth));
+                PeriodService::map, t, f.name(), fiscalYearLabel(fiscalStartYear, startMonth, startDay));
     }
 
     public Period get(Connection c, String tenant, String periodId) {

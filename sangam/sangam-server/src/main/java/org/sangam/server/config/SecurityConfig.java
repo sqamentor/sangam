@@ -26,6 +26,9 @@ import org.springframework.security.oauth2.server.resource.web.DefaultBearerToke
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -85,8 +88,12 @@ public class SecurityConfig {
                         // Channel webhooks: public only because the controller verifies the provider signature first
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/channels/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/hooks/channels/**").permitAll()
-                        // CDS Hooks discovery and services (HL7 CDS Hooks paths, outside /api/v1): signed-in callers
-                        .requestMatchers("/cds-services", "/cds-services/**").authenticated()
+                        // CDS Hooks discovery and services (HL7 CDS Hooks paths, outside /api/v1). M-006 / SL-138: the
+                        // caller is a CDS client (an EHR) with a JWT signed by its own key, which no Sangam decoder
+                        // knows; HealthHooksController verifies it against the client's registered JWKS (iss, aud,
+                        // exp, jti) and refuses every call when no client is registered. The bearer resolver hands
+                        // no token from these paths to the Sangam JWT decoder (bearerResolver).
+                        .requestMatchers(CDS_SERVICES_PATHS).permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/compliance/rights-requests",
                                 "/api/v1/compliance/consent-managers/*/artefacts").permitAll()
                         .requestMatchers("/engine-rest/**")
@@ -187,10 +194,24 @@ public class SecurityConfig {
         return new DevTokenFilter(cfg, props.platformIssuers());
     }
 
-    /** Keeps the dev token away from the JWT decoder when both modes are on. */
-    private static BearerTokenResolver bearerResolver(DevTokenFilter devToken) {
+    /** The HL7 CDS Hooks routes (server root): authenticated by the CDS client's own JWT in the controller (M-006). */
+    static final String[] CDS_SERVICES_PATHS = {"/cds-services", "/cds-services/**"};
+
+    private static final RequestMatcher CDS_SERVICES = new OrRequestMatcher(
+            java.util.Arrays.stream(CDS_SERVICES_PATHS)
+                    .map(p -> (RequestMatcher) PathPatternRequestMatcher.pathPattern(p)).toList());
+
+    /**
+     * Keeps the dev token away from the JWT decoder when both modes are on. SL-138: on the CDS Hooks paths no token
+     * goes to the decoder: the {@code Authorization} header there carries a CDS client's JWT, checked by the
+     * controller's {@code CdsClientVerifier}; decoding it as a Sangam token would answer 401 before the controller.
+     */
+    static BearerTokenResolver bearerResolver(DevTokenFilter devToken) {
         DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
         return (HttpServletRequest request) -> {
+            if (CDS_SERVICES.matches(request)) {
+                return null;
+            }
             String token = delegate.resolve(request);
             if (token == null || token.startsWith(API_TOKEN_PREFIX)) {
                 return null; // sangam-security API tokens are not JWTs (handled by its ApiTokenFilter)

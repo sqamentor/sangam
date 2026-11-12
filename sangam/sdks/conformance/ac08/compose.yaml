@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# AC-08 server (M-023): one sangam-server on the H2 profile with the development token (application-h2.yaml:22-31),
+# for the cross-language harness run_ac08.py. Development and CI only; the dev token is refused on the prod profile.
+#
+#   (cd sangam && mvn -B -ntp -pl sangam-server -am -DskipTests package)
+#   docker compose -f sdks/conformance/ac08/compose.yaml up -d --build     # run from sangam/; run_ac08.py waits for /api/v1/me
+#   python sdks/conformance/ac08/run_ac08.py --base-url http://localhost:18080 --token ac08-dev-token --require-all
+#   docker compose -f sdks/conformance/ac08/compose.yaml down -v
+name: sangam-ac08
+
+services:
+  sangam-server:
+    build:
+      context: ../../..
+      dockerfile: deploy/docker/server.Dockerfile
+      target: runtime
+      args:
+        APP_MODULE: sangam-server
+        JAR_SOURCE: prebuilt
+        PREBUILT_JAR: sangam-server/target/sangam-server-0.1.0-SNAPSHOT.jar
+    environment:
+      TZ: UTC
+      SPRING_PROFILES_ACTIVE: h2
+      SANGAM_DEV_TOKEN: ac08-dev-token
+      SANGAM_TENANT_DEFAULT: ac08
+    ports:
+      - "127.0.0.1:18080:8080"

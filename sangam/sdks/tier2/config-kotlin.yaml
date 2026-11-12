@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# openapi-generator "kotlin" options for the Tier-2 Kotlin client (M-022). Run through generate_tier2.py.
+# Kotlin also uses the Java SDK directly (worker runtime, test engine); sdks/kotlin adds Kotlin extensions on top.
+groupId: org.sangam
+artifactId: sangam-client-kotlin
+artifactVersion: 0.1.0
+packageName: org.sangam.client
+library: jvm-okhttp4
+serializationLibrary: jackson
+dateLibrary: java8
+enumPropertyNaming: original

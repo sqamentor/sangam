@@ -11,8 +11,9 @@ import {
   WorkApi,
 } from './api.js';
 import { StaticTokenProvider, type TokenProvider } from './auth.js';
-import { HttpTransport, type RetryPolicy } from './http.js';
+import { HttpTransport, type RetryPolicy, type TraceContext } from './http.js';
 import { consoleJsonLogger, type Logger } from './logger.js';
+import { SangamApis } from './generated/api.js';
 
 export interface SangamClientOptions {
   /** Server root, e.g. `https://host:8080`; a trailing `/api/v1` is accepted. */
@@ -29,6 +30,12 @@ export interface SangamClientOptions {
   seat?: string;
   /** Default `X-Sangam-Acting-For-Seat` (IX.5 rule 4); part of the R41 fingerprint. */
   actingForSeat?: string;
+  /**
+   * The caller's W3C trace context (R13, M-062): every request then carries `traceparent`/`tracestate` so server spans
+   * join the caller's trace. Off by default (R56). With OpenTelemetry:
+   * `() => { const c = trace.getActiveSpan()?.spanContext(); return c ? { traceparent: `00-${c.traceId}-${c.spanId}-0${c.traceFlags}` } : undefined; }`
+   */
+  traceContext?: TraceContext;
 }
 
 /**
@@ -52,6 +59,11 @@ export class SangamClient {
   readonly repository: RepositoryApi;
   /** `GET /me`. */
   readonly me: MeApi;
+  /**
+   * The typed surface generated from sangam-api.yaml (M-020): every operation of the contract, one member per
+   * contract tag, on this client's transport, e.g. `client.api.work.fetchAndLock({...})`.
+   */
+  readonly api: SangamApis;
 
   constructor(options: SangamClientOptions) {
     if (!options.baseUrl) throw new TypeError('baseUrl is required');
@@ -66,6 +78,7 @@ export class SangamClient {
       fetch: options.fetch,
       seat: options.seat,
       actingForSeat: options.actingForSeat,
+      traceContext: options.traceContext,
     });
     this.work = new WorkApi(this.transport);
     this.tasks = new TasksApi(this.transport);
@@ -76,6 +89,7 @@ export class SangamClient {
     this.ops = new OpsApi(this.transport);
     this.repository = new RepositoryApi(this.transport);
     this.me = new MeApi(this.transport);
+    this.api = new SangamApis(this.transport);
   }
 
   get logger(): Logger {

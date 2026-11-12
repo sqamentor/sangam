@@ -5593,6 +5593,156 @@ CREATE TABLE BIL_DOCUMENT (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 --rollback DROP TABLE BIL_DOCUMENT;
 
+--changeset sangam:0038-01-audit_pending dbms:mysql
+--comment: pending audit events of the JavaDelegate connector path, drained into the root chain (SL-133)
+CREATE TABLE AUDIT_PENDING (
+  pending_id BIGINT AUTO_INCREMENT,
+  tenant_id VARCHAR(64) NOT NULL,
+  chain_id VARCHAR(64) NOT NULL,
+  event_type VARCHAR(64) NOT NULL,
+  payload LONGTEXT NOT NULL,
+  recorded_at DATETIME(6) NOT NULL,
+  attempts INT NOT NULL,
+  last_error VARCHAR(255),
+  CONSTRAINT PK_AUDIT_PENDING PRIMARY KEY (pending_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX AUDIT_PENDING_CHAIN ON AUDIT_PENDING (tenant_id, chain_id, pending_id);
+CREATE INDEX AUDIT_PENDING_DUE ON AUDIT_PENDING (recorded_at);
+--rollback DROP TABLE AUDIT_PENDING;
+
+--changeset sangam:0038-02-sec_client_jti dbms:mysql
+--comment: used CDS client token ids (iss, jti) until they expire, shared by every node (SL-138)
+CREATE TABLE SEC_CLIENT_JTI (
+  replay_key VARBINARY(32) NOT NULL,
+  issuer VARCHAR(1000) NOT NULL,
+  expires_at DATETIME(6) NOT NULL,
+  first_used_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_SEC_CLIENT_JTI PRIMARY KEY (replay_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX SEC_CLIENT_JTI_EXPIRY ON SEC_CLIENT_JTI (expires_at);
+--rollback DROP TABLE SEC_CLIENT_JTI;
+
+--changeset sangam:0038-03-cfg_series_reservation dbms:mysql
+--comment: number-series reservations by caller ref or operationId, committed with the counter (SL-130)
+CREATE TABLE CFG_SERIES_RESERVATION (
+  scope_id VARCHAR(64) NOT NULL,
+  series_id VARCHAR(64) NOT NULL,
+  res_key VARCHAR(255) NOT NULL,
+  unit_id VARCHAR(64),
+  period VARCHAR(64),
+  number_no BIGINT NOT NULL,
+  display VARCHAR(255),
+  created_at DATETIME(6) NOT NULL,
+  CONSTRAINT PK_CFG_SERIES_RESERVATION PRIMARY KEY (scope_id, series_id, res_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE CFG_SERIES_RESERVATION;
+
+--changeset sangam:0038-04-audit_merkle_checkpoint dbms:mysql
+--comment: signed Merkle checkpoints over the tenant's audit chains, chained by hash (M-073, X.2.3.4 rule 4)
+CREATE TABLE AUDIT_MERKLE_CHECKPOINT (
+  tenant_id VARCHAR(64) NOT NULL,
+  checkpoint_no BIGINT NOT NULL,
+  window_from DATETIME(6),
+  period_end DATETIME(6) NOT NULL,
+  merkle_root VARBINARY(32) NOT NULL,
+  chains_count INT NOT NULL,
+  prev_checkpoint_hash VARBINARY(32),
+  signed_statement LONGTEXT NOT NULL,
+  checkpoint_hash VARBINARY(32) NOT NULL,
+  sig_algorithm VARCHAR(64) NOT NULL,
+  key_id VARCHAR(64) NOT NULL,
+  signature LONGBLOB NOT NULL,
+  created_at DATETIME(6) NOT NULL,
+  exported_at DATETIME(6),
+  exported_to VARCHAR(255),
+  CONSTRAINT PK_AUDIT_MERKLE_CHECKPOINT PRIMARY KEY (tenant_id, checkpoint_no)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE AUDIT_MERKLE_CHECKPOINT;
+
+--changeset sangam:0039-01-exec_partition dbms:mysql
+--comment: R39 executor partitions: owner, fencing epoch and lease (X.2.1.3, X.2.1.4); off by default
+CREATE TABLE EXEC_PARTITION (
+  partition_id INT NOT NULL,
+  owner_node VARCHAR(64),
+  owner_incarnation VARCHAR(64),
+  owner_epoch BIGINT DEFAULT 0 NOT NULL,
+  lease_expires_at DATETIME(6),
+  state VARCHAR(32) NOT NULL,
+  drain_deadline DATETIME(6),
+  map_epoch BIGINT NOT NULL,
+  CONSTRAINT PK_EXEC_PARTITION PRIMARY KEY (partition_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE EXEC_PARTITION;
+
+--changeset sangam:0039-02-exec_slot dbms:mysql
+--comment: R39 slot to partition map; every slot in exactly one row, STABLE or MOVING (X.2.1.2 I-1)
+CREATE TABLE EXEC_SLOT (
+  slot INT NOT NULL,
+  partition_id INT NOT NULL,
+  state VARCHAR(32) NOT NULL,
+  from_partition INT,
+  move_started_at DATETIME(6),
+  map_epoch BIGINT NOT NULL,
+  CONSTRAINT PK_EXEC_SLOT PRIMARY KEY (slot)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX EXEC_SLOT_PARTITION ON EXEC_SLOT (partition_id, state, slot);
+--rollback DROP TABLE EXEC_SLOT;
+
+--changeset sangam:0039-03-exec_map dbms:mysql
+--comment: R39 versioned slot map and the fenced rebalance coordinator lease (X.2.1.6, X.2.1.7)
+CREATE TABLE EXEC_MAP (
+  cluster_id VARCHAR(64) NOT NULL,
+  current_map_epoch BIGINT NOT NULL,
+  target_map_epoch BIGINT,
+  state VARCHAR(32) NOT NULL,
+  coordinator_node VARCHAR(64),
+  coordinator_epoch BIGINT DEFAULT 0 NOT NULL,
+  coordinator_expires_at DATETIME(6),
+  CONSTRAINT PK_EXEC_MAP PRIMARY KEY (cluster_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE EXEC_MAP;
+
+--changeset sangam:0039-04-exec_node dbms:mysql
+--comment: R39 executor nodes: a fresh incarnation per process start, heartbeat and drain flag (X.2.1.3)
+CREATE TABLE EXEC_NODE (
+  node_id VARCHAR(64) NOT NULL,
+  incarnation VARCHAR(64) NOT NULL,
+  started_at DATETIME(6) NOT NULL,
+  heartbeat_at DATETIME(6) NOT NULL,
+  draining SMALLINT DEFAULT 0 NOT NULL,
+  CONSTRAINT PK_EXEC_NODE PRIMARY KEY (node_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE EXEC_NODE;
+
+--changeset sangam:0040-01-exec_job_slot dbms:mysql
+--comment: M-056 R39 job slot side table: slot of a job (fixed at creation), owning partition and epoch, recoveries
+CREATE TABLE EXEC_JOB_SLOT (
+  job_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  root_id VARCHAR(64) NOT NULL,
+  slot INT NOT NULL,
+  owner_partition INT,
+  owner_epoch BIGINT,
+  recoveries INT DEFAULT 0 NOT NULL,
+  created_at_ms BIGINT NOT NULL,
+  CONSTRAINT PK_EXEC_JOB_SLOT PRIMARY KEY (job_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX EXEC_JOB_SLOT_SLOT ON EXEC_JOB_SLOT (slot);
+CREATE INDEX EXEC_JOB_SLOT_OWNER ON EXEC_JOB_SLOT (owner_partition, owner_epoch);
+--rollback DROP TABLE EXEC_JOB_SLOT;
+
+--changeset sangam:0040-02-job_trace_context dbms:mysql
+--comment: M-062 R13 creating trace context (W3C traceparent/tracestate) of a job or external task, by engine id
+CREATE TABLE JOB_TRACE_CONTEXT (
+  job_id VARCHAR(64) NOT NULL,
+  kind VARCHAR(16) NOT NULL,
+  traceparent VARCHAR(55) NOT NULL,
+  tracestate VARCHAR(512),
+  created_at_ms BIGINT NOT NULL,
+  CONSTRAINT PK_JOB_TRACE_CONTEXT PRIMARY KEY (job_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+--rollback DROP TABLE JOB_TRACE_CONTEXT;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);
@@ -5657,6 +5807,43 @@ CREATE INDEX HRM_PI_QUERY ON HRM_PROCESS_INSTANCE (tenant_id, scope_type, defini
 --comment: history read-model query index: tasks (FC-25)
 CREATE INDEX HRM_TASK_QUERY ON HRM_TASK (tenant_id, process_instance_id, task_def_key);
 --rollback DROP INDEX HRM_TASK_QUERY ON HRM_TASK;
+
+--changeset sangam:0038-05-audit_checkpoint-alter dbms:mysql
+--comment: M-073 per-chain checkpoint rows are the leaves of a numbered tenant Merkle checkpoint
+ALTER TABLE AUDIT_CHECKPOINT ADD COLUMN checkpoint_no BIGINT;
+CREATE INDEX AUDIT_CHECKPOINT_NO ON AUDIT_CHECKPOINT (tenant_id, checkpoint_no);
+--rollback DROP INDEX AUDIT_CHECKPOINT_NO ON AUDIT_CHECKPOINT; ALTER TABLE AUDIT_CHECKPOINT DROP COLUMN checkpoint_no;
+
+--changeset sangam:0038-06-audit_event-alter dbms:mysql
+--comment: M-073 audit events by tenant and time (checkpoint window and entry count)
+CREATE INDEX AUDIT_EVENT_TIME ON AUDIT_EVENT (tenant_id, occurred_at);
+--rollback DROP INDEX AUDIT_EVENT_TIME ON AUDIT_EVENT;
+
+--changeset sangam:0041-01-cmp_breach-alter dbms:mysql
+--comment: SL-162 CMP_BREACH risk assessment and law-enforcement delay (BreachNotificationPlanner)
+ALTER TABLE CMP_BREACH ADD COLUMN risk_outcome VARCHAR(64);
+ALTER TABLE CMP_BREACH ADD COLUMN risk_json LONGTEXT;
+ALTER TABLE CMP_BREACH ADD COLUMN high_risk SMALLINT DEFAULT 0 NOT NULL;
+ALTER TABLE CMP_BREACH ADD COLUMN delay_until DATETIME(6);
+ALTER TABLE CMP_BREACH ADD COLUMN delay_ref VARCHAR(255);
+--rollback ALTER TABLE CMP_BREACH DROP COLUMN risk_outcome; ALTER TABLE CMP_BREACH DROP COLUMN risk_json; ALTER TABLE CMP_BREACH DROP COLUMN high_risk; ALTER TABLE CMP_BREACH DROP COLUMN delay_until; ALTER TABLE CMP_BREACH DROP COLUMN delay_ref;
+
+--changeset sangam:0041-02-cmp_breach-alter dbms:mysql
+--comment: breach notification plan instance, claimed once by a conditional UPDATE (second-start guard, M-010c)
+ALTER TABLE CMP_BREACH ADD COLUMN plan_process_instance_id VARCHAR(64);
+--rollback ALTER TABLE CMP_BREACH DROP COLUMN plan_process_instance_id;
+
+--changeset sangam:0041-03-cmp_purpose-alter dbms:mysql
+--comment: SL-162 CMP_PURPOSE special condition of a legitimate use (LegitimateUseRegistry)
+ALTER TABLE CMP_PURPOSE ADD COLUMN special_condition VARCHAR(64);
+--rollback ALTER TABLE CMP_PURPOSE DROP COLUMN special_condition;
+
+--changeset sangam:0041-04-cmp_rights_request-alter dbms:mysql
+--comment: SL-162 CMP_RIGHTS_REQUEST one extension and the access exception (DataSubjectRightsService)
+ALTER TABLE CMP_RIGHTS_REQUEST ADD COLUMN extended SMALLINT DEFAULT 0 NOT NULL;
+ALTER TABLE CMP_RIGHTS_REQUEST ADD COLUMN extension_reason LONGTEXT;
+ALTER TABLE CMP_RIGHTS_REQUEST ADD COLUMN access_exception VARCHAR(64);
+--rollback ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extended; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extension_reason; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN access_exception;
 
 --changeset sangam:0033-01-cfg_master_code-data dbms:mysql
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
@@ -6039,3 +6226,18 @@ UPDATE HRM_ACTIVITY_INSTANCE SET tenant_id = '-' WHERE tenant_id = '' OR tenant_
 --comment: SL-86 shared rows of HRM_TASK: tenant_id '' becomes the reserved shared key '-'
 UPDATE HRM_TASK SET tenant_id = '-' WHERE tenant_id = '' OR tenant_id IS NULL;
 --rollback UPDATE HRM_TASK SET tenant_id = '' WHERE tenant_id = '-';
+
+--changeset sangam:0042-01-exec_partition-owner_node-widen dbms:mysql
+--comment: R39 partition owner node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)
+ALTER TABLE EXEC_PARTITION MODIFY COLUMN owner_node VARCHAR(255) NULL;
+--rollback ALTER TABLE EXEC_PARTITION MODIFY COLUMN owner_node VARCHAR(64) NULL;
+
+--changeset sangam:0042-02-exec_map-coordinator_node-widen dbms:mysql
+--comment: R39 rebalance coordinator node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)
+ALTER TABLE EXEC_MAP MODIFY COLUMN coordinator_node VARCHAR(255) NULL;
+--rollback ALTER TABLE EXEC_MAP MODIFY COLUMN coordinator_node VARCHAR(64) NULL;
+
+--changeset sangam:0042-03-exec_node-node_id-widen dbms:mysql
+--comment: R39 executor node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)
+ALTER TABLE EXEC_NODE MODIFY COLUMN node_id VARCHAR(255) NOT NULL;
+--rollback ALTER TABLE EXEC_NODE MODIFY COLUMN node_id VARCHAR(64) NOT NULL;

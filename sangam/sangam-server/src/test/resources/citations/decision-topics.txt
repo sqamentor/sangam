@@ -61,3 +61,4 @@ FIO:D-55=count|membership|index
 FIO:D-56=read committed|read_committed|isolation|repeatable
 ADR:D-25=routing|route|exclusive|xor|gateway|ambiguous|priority|first-match
 ADR:D-26=feel|dmn|decision|number|double|float|strict|null|exact|bigdecimal|money|deployment
+ADR:D-27=utc|time zone|timezone|timer-zone|dst

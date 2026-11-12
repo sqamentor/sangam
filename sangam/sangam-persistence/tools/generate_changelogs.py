@@ -20,7 +20,7 @@ DIALECTS = {
     "postgresql": {
         "{vc80}": "VARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "NUMERIC(24,6)", "{num12_6}": "NUMERIC(12,6)",
-        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{asciistr}": "VARCHAR(255)",
+        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{asciistr}": "VARCHAR(255)",
         "{str}": "VARCHAR(255)", "{str64}": "VARCHAR(64)", "{str32}": "VARCHAR(32)", "{str1k}": "VARCHAR(1000)",
         "{text}": "TEXT", "{blob}": "BYTEA", "{bytes32}": "BYTEA", "{long}": "BIGINT", "{int}": "INTEGER",
         "{small}": "SMALLINT", "{money}": "BIGINT", "{dec}": "NUMERIC(19,4)", "{ts}": "TIMESTAMP WITH TIME ZONE",
@@ -29,7 +29,7 @@ DIALECTS = {
     "oracle": {
         "{vc80}": "VARCHAR2(80 CHAR)",
         "{date}": "DATE", "{num24_6}": "NUMBER(24,6)", "{num12_6}": "NUMBER(12,6)",
-        "{vc8}": "VARCHAR2(8 CHAR)", "{vc16}": "VARCHAR2(16 CHAR)", "{vc40}": "VARCHAR2(40 CHAR)", "{asciistr}": "VARCHAR2(255 CHAR)",
+        "{vc8}": "VARCHAR2(8 CHAR)", "{vc16}": "VARCHAR2(16 CHAR)", "{vc40}": "VARCHAR2(40 CHAR)", "{vc55}": "VARCHAR2(55 CHAR)", "{vc512}": "VARCHAR2(512 CHAR)", "{asciistr}": "VARCHAR2(255 CHAR)",
         "{str}": "VARCHAR2(255 CHAR)", "{str64}": "VARCHAR2(64 CHAR)", "{str32}": "VARCHAR2(32 CHAR)",
         "{str1k}": "VARCHAR2(1000 CHAR)", "{text}": "CLOB", "{blob}": "BLOB", "{bytes32}": "RAW(32)",
         "{long}": "NUMBER(19)", "{int}": "NUMBER(10)", "{small}": "NUMBER(5)", "{money}": "NUMBER(19)", "{dec}": "NUMBER(19,4)",
@@ -38,7 +38,7 @@ DIALECTS = {
     "mssql": {
         "{vc80}": "NVARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "DECIMAL(24,6)", "{num12_6}": "DECIMAL(12,6)",
-        "{vc8}": "NVARCHAR(8)", "{vc16}": "NVARCHAR(16)", "{vc40}": "NVARCHAR(40)", "{asciistr}": "NVARCHAR(255)",
+        "{vc8}": "NVARCHAR(8)", "{vc16}": "NVARCHAR(16)", "{vc40}": "NVARCHAR(40)", "{vc55}": "NVARCHAR(55)", "{vc512}": "NVARCHAR(512)", "{asciistr}": "NVARCHAR(255)",
         "{str}": "NVARCHAR(255)", "{str64}": "NVARCHAR(64)", "{str32}": "NVARCHAR(32)", "{str1k}": "NVARCHAR(1000)",
         "{text}": "NVARCHAR(MAX)", "{blob}": "VARBINARY(MAX)", "{bytes32}": "VARBINARY(32)", "{long}": "BIGINT",
         "{int}": "INT", "{small}": "SMALLINT", "{money}": "BIGINT", "{dec}": "DECIMAL(19,4)", "{ts}": "DATETIMEOFFSET",
@@ -49,7 +49,7 @@ DIALECTS = {
     "mysql": {
         "{vc80}": "VARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "DECIMAL(24,6)", "{num12_6}": "DECIMAL(12,6)",
-        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)",
+        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)",
         "{asciistr}": "VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin",
         "{str}": "VARCHAR(255)", "{str64}": "VARCHAR(64)", "{str32}": "VARCHAR(32)", "{str1k}": "VARCHAR(1000)",
         "{text}": "LONGTEXT", "{blob}": "LONGBLOB", "{bytes32}": "VARBINARY(32)", "{long}": "BIGINT", "{int}": "INT",
@@ -59,7 +59,7 @@ DIALECTS = {
     "h2": {
         "{vc80}": "VARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "NUMERIC(24,6)", "{num12_6}": "NUMERIC(12,6)",
-        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{asciistr}": "VARCHAR(255)",
+        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{asciistr}": "VARCHAR(255)",
         "{str}": "VARCHAR(255)", "{str64}": "VARCHAR(64)", "{str32}": "VARCHAR(32)", "{str1k}": "VARCHAR(1000)",
         "{text}": "CHARACTER LARGE OBJECT", "{blob}": "BINARY LARGE OBJECT", "{bytes32}": "VARBINARY(32)", "{long}": "BIGINT", "{int}": "INTEGER",
         "{small}": "SMALLINT", "{money}": "BIGINT", "{dec}": "NUMERIC(19,4)", "{ts}": "TIMESTAMP WITH TIME ZONE",
@@ -1044,6 +1044,88 @@ TABLES = [
         ("series_key", "{str64}", "NOT NULL"), ("doc_number", "{str}", ""), ("plan_json", "{text}", ""),
         ("created_at", "{ts}", "NOT NULL"), ("created_by", "{str}", ""),
     ], ["tenant_id", "doc_type", "doc_key"], []),
+    # SL-133 (M-003) durable pending audit (sangam-core PendingAudit): the JavaDelegate connector path records its
+    # OPERATION_* audit events here, in the connector's own transaction and atomically with the operation ledger, without
+    # the ROOT_SEQ lock that the job's transaction holds. A drain appends them to the root's chain after that transaction
+    # ends (lock first, then rows in recorded_at, pending_id order) and deletes them in the same transaction.
+    ("0038-01", "pending audit events of the JavaDelegate connector path, drained into the root chain (SL-133)",
+     "AUDIT_PENDING", [
+        ("pending_id", "{identity}", ""), ("tenant_id", "{str64}", "NOT NULL"), ("chain_id", "{str64}", "NOT NULL"),
+        ("event_type", "{str64}", "NOT NULL"), ("payload", "{text}", "NOT NULL"), ("recorded_at", "{ts}", "NOT NULL"),
+        ("attempts", "{int}", "NOT NULL"), ("last_error", "{str}", ""),
+    ], ["pending_id"], [("AUDIT_PENDING_CHAIN", False, ["tenant_id", "chain_id", "pending_id"]),
+                        ("AUDIT_PENDING_DUE", False, ["recorded_at"])]),
+    # SL-138 (M-006) cluster-wide CDS client jti replay guard (sangam-security JdbcReplayGuard): one row per used
+    # (issuer, jti), keyed by SHA-256(issuer NUL jti) so any issuer or jti length fits the key; kept until expires_at.
+    ("0038-02", "used CDS client token ids (iss, jti) until they expire, shared by every node (SL-138)",
+     "SEC_CLIENT_JTI", [
+        ("replay_key", "{bytes32}", "NOT NULL"), ("issuer", "{str1k}", "NOT NULL"), ("expires_at", "{ts}", "NOT NULL"),
+        ("first_used_at", "{ts}", "NOT NULL"),
+    ], ["replay_key"], [("SEC_CLIENT_JTI_EXPIRY", False, ["expires_at"])]),
+    # SL-130 follow-up: sangam-config ConfigConnector series.next reserves its number durably. Key: the caller's ref
+    # ('ref:' prefix), else the operationId ('op:'). The row is written in the transaction that advances CFG_SERIES, so a
+    # retry (any node, after a restart) returns the same number and burns none. display is the formatted number (NULL
+    # when the call had no format).
+    ("0038-03", "number-series reservations by caller ref or operationId, committed with the counter (SL-130)",
+     "CFG_SERIES_RESERVATION", [
+        ("scope_id", "{str64}", "NOT NULL"), ("series_id", "{str64}", "NOT NULL"), ("res_key", "{str}", "NOT NULL"),
+        ("unit_id", "{str64}", ""), ("period", "{str64}", ""), ("number_no", "{long}", "NOT NULL"),
+        ("display", "{str}", ""), ("created_at", "{ts}", "NOT NULL"),
+    ], ["scope_id", "series_id", "res_key"], []),
+    # M-073 (R42, X.2.3.4 rule 4) signed Merkle checkpoints (sangam-core AuditCheckpoints), per tenant and numbered:
+    # the Merkle root over (chain_id, last_seq, last_hash) of every chain sealed by the checkpoint, chained to the
+    # previous checkpoint by its hash, signed with the audit-checkpoint Ed25519 key (Q-04: its own key per purpose and
+    # environment). signed_statement is the exact signed canonical JSON; the leaves are AUDIT_CHECKPOINT rows (0038-05).
+    ("0038-04", "signed Merkle checkpoints over the tenant's audit chains, chained by hash (M-073, X.2.3.4 rule 4)",
+     "AUDIT_MERKLE_CHECKPOINT", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("checkpoint_no", "{long}", "NOT NULL"), ("window_from", "{ts}", ""),
+        ("period_end", "{ts}", "NOT NULL"), ("merkle_root", "{bytes32}", "NOT NULL"), ("chains_count", "{int}", "NOT NULL"),
+        ("prev_checkpoint_hash", "{bytes32}", ""), ("signed_statement", "{text}", "NOT NULL"),
+        ("checkpoint_hash", "{bytes32}", "NOT NULL"), ("sig_algorithm", "{str64}", "NOT NULL"), ("key_id", "{str64}", "NOT NULL"),
+        ("signature", "{blob}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"), ("exported_at", "{ts}", ""),
+        ("exported_to", "{str}", ""),
+    ], ["tenant_id", "checkpoint_no"], []),
+    # M-056 (R39, X.2.1.3) partitioned executors: ownership tables only; off by default (sangam.executor.partitioning =
+    # off), so nothing reads or writes them until the engine part is enabled. No tenant column: with DB-per-tenant each
+    # tenant database has its own EXEC_* tables (X.2.1.8 rule 4). Lease times use the engine database clock (A-1).
+    ("0039-01", "R39 executor partitions: owner, fencing epoch and lease (X.2.1.3, X.2.1.4); off by default",
+     "EXEC_PARTITION", [
+        ("partition_id", "{int}", "NOT NULL"), ("owner_node", "{str64}", ""), ("owner_incarnation", "{str64}", ""),
+        ("owner_epoch", "{long}", "DEFAULT 0 NOT NULL"), ("lease_expires_at", "{ts}", ""), ("state", "{str32}", "NOT NULL"),
+        ("drain_deadline", "{ts}", ""), ("map_epoch", "{long}", "NOT NULL"),
+    ], ["partition_id"], []),
+    ("0039-02", "R39 slot to partition map; every slot in exactly one row, STABLE or MOVING (X.2.1.2 I-1)",
+     "EXEC_SLOT", [
+        ("slot", "{int}", "NOT NULL"), ("partition_id", "{int}", "NOT NULL"), ("state", "{str32}", "NOT NULL"),
+        ("from_partition", "{int}", ""), ("move_started_at", "{ts}", ""), ("map_epoch", "{long}", "NOT NULL"),
+    ], ["slot"], [("EXEC_SLOT_PARTITION", False, ["partition_id", "state", "slot"])]),
+    ("0039-03", "R39 versioned slot map and the fenced rebalance coordinator lease (X.2.1.6, X.2.1.7)",
+     "EXEC_MAP", [
+        ("cluster_id", "{str64}", "NOT NULL"), ("current_map_epoch", "{long}", "NOT NULL"),
+        ("target_map_epoch", "{long}", ""), ("state", "{str32}", "NOT NULL"), ("coordinator_node", "{str64}", ""),
+        ("coordinator_epoch", "{long}", "DEFAULT 0 NOT NULL"), ("coordinator_expires_at", "{ts}", ""),
+    ], ["cluster_id"], []),
+    ("0039-04", "R39 executor nodes: a fresh incarnation per process start, heartbeat and drain flag (X.2.1.3)",
+     "EXEC_NODE", [
+        ("node_id", "{str64}", "NOT NULL"), ("incarnation", "{str64}", "NOT NULL"), ("started_at", "{ts}", "NOT NULL"),
+        ("heartbeat_at", "{ts}", "NOT NULL"), ("draining", "{small}", "DEFAULT 0 NOT NULL"),
+    ], ["node_id"], []),
+    # Job side tables (owner decision 2026-11-12; contract sangam-handoff/W2-JOB-SIDE-TABLES-CONTRACT.md, W2-D): Sangam
+    # data about Operaton jobs lives here, keyed by the engine id; ACT_RU_JOB / ACT_RU_EXT_TASK are never altered. No
+    # foreign key (Operaton's bulk deletes must not fail; orphans are ignored and swept). OFF by default: the engine
+    # writes nothing here unless sangam.engine.executor-partitioning / trace-links are on.
+    ("0040-01", "M-056 R39 job slot side table: slot of a job (fixed at creation), owning partition and epoch, recoveries",
+     "EXEC_JOB_SLOT", [
+        ("job_id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("root_id", "{str64}", "NOT NULL"),
+        ("slot", "{int}", "NOT NULL"), ("owner_partition", "{int}", ""), ("owner_epoch", "{long}", ""),
+        ("recoveries", "{int}", "DEFAULT 0 NOT NULL"), ("created_at_ms", "{long}", "NOT NULL"),
+    ], ["job_id"], [("EXEC_JOB_SLOT_SLOT", False, ["slot"]),
+                    ("EXEC_JOB_SLOT_OWNER", False, ["owner_partition", "owner_epoch"])]),
+    ("0040-02", "M-062 R13 creating trace context (W3C traceparent/tracestate) of a job or external task, by engine id",
+     "JOB_TRACE_CONTEXT", [
+        ("job_id", "{str64}", "NOT NULL"), ("kind", "{vc16}", "NOT NULL"), ("traceparent", "{vc55}", "NOT NULL"),
+        ("tracestate", "{vc512}", ""), ("created_at_ms", "{long}", "NOT NULL"),
+    ], ["job_id"], []),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).
@@ -1075,6 +1157,26 @@ ALTERS = [
      [], [("HRM_PI_QUERY", False, ["tenant_id", "scope_type", "definition_key", "start_time"])]),
     ("0017-06", "history read-model query index: tasks (FC-25)", "HRM_TASK",
      [], [("HRM_TASK_QUERY", False, ["tenant_id", "process_instance_id", "task_def_key"])]),
+    # M-073: AUDIT_CHECKPOINT (0006-03, one row per chain and sealed seq) holds the leaves of the numbered tenant
+    # checkpoint in AUDIT_MERKLE_CHECKPOINT; rows written before M-073 cannot exist (nothing wrote the table).
+    ("0038-05", "M-073 per-chain checkpoint rows are the leaves of a numbered tenant Merkle checkpoint",
+     "AUDIT_CHECKPOINT", [("checkpoint_no", "{long}", "")], [("AUDIT_CHECKPOINT_NO", False, ["tenant_id", "checkpoint_no"])]),
+    # M-073: the checkpointer finds the chains that changed since the previous checkpoint by event time, off the hot path
+    ("0038-06", "M-073 audit events by tenant and time (checkpoint window and entry count)", "AUDIT_EVENT",
+     [], [("AUDIT_EVENT_TIME", False, ["tenant_id", "occurred_at"])]),
+    # SL-162: compliance columns that sangam-compliance ComplianceSchema declares and its code reads and writes, but the
+    # 0018 changesets never created, so those statements failed on every real database. Types equal ComplianceSchema;
+    # ComplianceChangelogParityH2Test (sangam-server) compares every CMP_* table of the changelog with it.
+    ("0041-01", "SL-162 CMP_BREACH risk assessment and law-enforcement delay (BreachNotificationPlanner)", "CMP_BREACH",
+     [("risk_outcome", "{str64}", ""), ("risk_json", "{text}", ""), ("high_risk", "{small}", "DEFAULT 0 NOT NULL"),
+      ("delay_until", "{ts}", ""), ("delay_ref", "{str}", "")], []),
+    ("0041-02", "breach notification plan instance, claimed once by a conditional UPDATE (second-start guard, M-010c)",
+     "CMP_BREACH", [("plan_process_instance_id", "{str64}", "")], []),
+    ("0041-03", "SL-162 CMP_PURPOSE special condition of a legitimate use (LegitimateUseRegistry)", "CMP_PURPOSE",
+     [("special_condition", "{str64}", "")], []),
+    ("0041-04", "SL-162 CMP_RIGHTS_REQUEST one extension and the access exception (DataSubjectRightsService)",
+     "CMP_RIGHTS_REQUEST", [("extended", "{small}", "DEFAULT 0 NOT NULL"), ("extension_reason", "{text}", ""),
+                            ("access_exception", "{str64}", "")], []),
 ]
 
 # Data changesets, applied after every table and alter changeset:
@@ -1135,6 +1237,20 @@ SHARED_TENANT = (
 )
 SHARED_TENANT_FIRST_ID = 1  # changesets 0036-01 .. 0036-NN, in list order
 
+# Columns widened in place, applied last: (changeset id, comment, table, column, old type token, new type token).
+# Nullability and primary-key membership come from TABLES, and the statement keeps them in each dialect's own form.
+# SQL Server cannot ALTER COLUMN a primary-key column: the key constraint is dropped and added back around it.
+WIDEN = [
+    # W2-D 2026-11-12: an executor node identity is the job executor's lock owner: Operaton's UUID, 'sangam-async-'
+    # + UUID, or the free-text SANGAM_JOB_LOCK_OWNER (a Kubernetes pod name reaches 253); Operaton keeps the same value
+    # in ACT_RU_JOB.LOCK_OWNER_ varchar(255). Every EXEC_* column holding it gets that width.
+    ("0042-01", "R39 partition owner node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)", "EXEC_PARTITION", "owner_node",
+     "{str64}", "{str}"),
+    ("0042-02", "R39 rebalance coordinator node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)", "EXEC_MAP", "coordinator_node",
+     "{str64}", "{str}"),
+    ("0042-03", "R39 executor node id up to 255 chars (= ACT_RU_JOB.LOCK_OWNER_)", "EXEC_NODE", "node_id", "{str64}", "{str}"),
+]
+
 
 # Column names of module reference DDL that are reserved words on one dialect. They are created QUOTED there so the
 # changelog applies everywhere; the owning module must rename them (reported to the integrator), because unquoted SQL
@@ -1156,7 +1272,7 @@ def q(dbms, name):
 
 
 # SQL Server key-size budget: clustered keys <= 900 bytes, nonclustered <= 1700 bytes (NVARCHAR = 2 bytes/char).
-MSSQL_BYTES = {"{vc80}": 160, "{date}": 3, "{num24_6}": 13, "{num12_6}": 9, "{vc8}": 16, "{vc16}": 32, "{vc40}": 80, "{asciistr}": 510, "{text}": 0, "{str}": 510, "{str64}": 128, "{str32}": 64, "{str1k}": 2000, "{long}": 8, "{int}": 4, "{small}": 2,
+MSSQL_BYTES = {"{vc80}": 160, "{date}": 3, "{num24_6}": 13, "{num12_6}": 9, "{vc8}": 16, "{vc16}": 32, "{vc40}": 80, "{vc55}": 110, "{vc512}": 1024, "{asciistr}": 510, "{text}": 0, "{str}": 510, "{str64}": 128, "{str32}": 64, "{str1k}": 2000, "{long}": 8, "{int}": 4, "{small}": 2,
                "{bytes32}": 32, "{identity}": 8, "{ts}": 10, "{dec}": 9, "{money}": 8}
 
 
@@ -1238,7 +1354,43 @@ def render(dbms):
         out.append("")
     for n, (table, include_null) in enumerate(SHARED_TENANT, start=SHARED_TENANT_FIRST_ID):
         out.extend(shared_tenant_changeset(dbms, f"0036-{n:02d}", table, include_null))
+    for cs_id, comment, table, column, old, new in WIDEN:
+        out.append(f"--changeset sangam:{cs_id}-{table.lower()}-{column.lower()}-widen dbms:{dbms}")
+        out.append(f"--comment: {comment}")
+        out.append(widen_sql(dbms, table, column, new))
+        out.append("--rollback " + widen_sql(dbms, table, column, old))
+        out.append("")
     return "\n".join(out)
+
+
+def widen_sql(dbms, table, column, token):
+    """Changes the type of one catalogued column to token, keeping its nullability (and its primary key)."""
+    for _, _, t, cols, pk, _ in TABLES:
+        if t == table:
+            break
+    else:
+        raise SystemExit(f"WIDEN: {table} is not in TABLES")
+    col = dict((c[0], c) for c in cols)[column]
+    not_null = "NOT NULL" in (col[2] or "")
+    if "DEFAULT" in (col[2] or ""):
+        raise SystemExit(f"WIDEN: {table}.{column} has a default; extend widen_sql first")
+    t = DIALECTS[dbms][token]
+    null = " NOT NULL" if not_null else " NULL"
+    if dbms == "postgresql":
+        return f"ALTER TABLE {table} ALTER COLUMN {column} TYPE {t};"
+    if dbms == "h2":
+        return f"ALTER TABLE {table} ALTER COLUMN {column} SET DATA TYPE {t};"
+    if dbms == "oracle":
+        return f"ALTER TABLE {table} MODIFY ({column} {t});"
+    if dbms == "mysql":
+        return f"ALTER TABLE {table} MODIFY COLUMN {column} {t}{null};"
+    # mssql: ALTER COLUMN restates nullability; a key column needs its constraint dropped and re-added
+    alter = f"ALTER TABLE {table} ALTER COLUMN {column} {t}{null};"
+    if column not in pk:
+        return alter
+    name = f"PK_{table[:27]}"
+    return (f"ALTER TABLE {table} DROP CONSTRAINT {name}; " + alter
+            + f" ALTER TABLE {table} ADD CONSTRAINT {name} PRIMARY KEY ({', '.join(pk)});")
 
 
 def table_meta(table):
@@ -1325,7 +1477,7 @@ def main():
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "sangam-0001-baseline.sql"), "w", encoding="utf-8", newline="\n") as f:
             f.write(render(dbms))
-    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant changesets x {len(DIALECTS)} dialects written under "
+    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant + {len(WIDEN)} widen changesets x {len(DIALECTS)} dialects written under "
           f"{os.path.normpath(base)}")
 
 

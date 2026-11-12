@@ -2,7 +2,8 @@
 {{- if .Values.networkPolicy.enabled }}
 {{- $fullname := include "sangam.fullname" . -}}
 {{- $np := .Values.networkPolicy -}}
-# Server: API from the UI, the ingress controller and labelled API clients; management from monitoring.
+# Server: API from the UI, the ingress controller (and networkPolicy.ingressFrom.cidrs) and labelled API clients;
+# management from monitoring.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -23,6 +24,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: {{ $np.ingressControllerNamespace }}
+        {{- range $np.ingressFrom.cidrs }}
+        - ipBlock: { cidr: {{ . }} }
+        {{- end }}
         - podSelector:
             matchLabels:
               sangam.io/api-client: "true"
@@ -87,7 +91,7 @@ spec:
     {{- end }}
 {{- if .Values.ui.enabled }}
 ---
-# UI: from the ingress controller only; to the server only.
+# UI: from the ingress controller (and networkPolicy.ingressFrom.cidrs) only; to the server only.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -105,6 +109,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: {{ $np.ingressControllerNamespace }}
+        {{- range $np.ingressFrom.cidrs }}
+        - ipBlock: { cidr: {{ . }} }
+        {{- end }}
       ports:
         - { protocol: TCP, port: 8080 }
   egress:

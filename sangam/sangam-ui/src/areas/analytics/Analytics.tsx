@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import type { AlertRule } from '../../api/types';
 import { useAction, useAsync } from '../../lib/hooks';
-import { fmtDate, fmtDuration, fmtNumber } from '../../i18n';
+import { fmtDate, fmtDuration, fmtNumber, todayIso } from '../../i18n';
 import { BarChart, LineChart, StackedBar, Stat } from '../../components/Charts';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import { Badge, Checkbox, DataTable, Dialog, Empty, Loading, Notice, PageHeader, ProblemAlert, Section, SelectField, TextField } from '../../components/ui';
@@ -18,8 +18,8 @@ import { Badge, Checkbox, DataTable, Dialog, Empty, Loading, Notice, PageHeader,
 function useFilters() {
   const today = new Date();
   const monthAgo = new Date(today.getTime() - 30 * 86400000);
-  const [from, setFrom] = useState(monthAgo.toISOString().slice(0, 10));
-  const [to, setTo] = useState(today.toISOString().slice(0, 10));
+  const [from, setFrom] = useState(todayIso(monthAgo));
+  const [to, setTo] = useState(todayIso(today));
   const [definitionKey, setKey] = useState('');
   const [bucket, setBucket] = useState('day');
   return { from, setFrom, to, setTo, definitionKey, setKey, bucket, setBucket, q: { from, to, definitionKey: definitionKey || undefined, bucket } };

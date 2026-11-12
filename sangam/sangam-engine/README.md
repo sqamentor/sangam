@@ -122,7 +122,7 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
 | D-54 per-DB SQL scripts | Liquibase (persistence) |
 | D-55 auth count | persistence indexes + `countTasksCapped` |
 | D-56 REPEATABLE READ | isolation guard + start-up check |
-| FC-24 job executor | config route done (SKIP LOCKED, timers first, priorities); hand-off / separate timer acquisition patch = Stage D |
+| FC-24 job executor | config route done here (SKIP LOCKED, timers first, priorities); the job hand-off and the separate timer acquisition are done without an engine patch in `sangam-flowable-ports` (`SplitJobExecutors`, `FilteredAcquireJobsCmd`, `AsyncJobHandOffInterceptor`; `PATCHES.md`, M-106 evidence) |
 | FC-28 JSON variables | own serializer (no Spin dependency) |
 | FC-43 typed events | `EngineEventSink` |
 | FC-46 validator | parse/transform listeners |
@@ -219,27 +219,70 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
     `SANGAM_JOB_WAIT_INCREASE_FACTOR`, `SANGAM_JOB_MAX_WAIT`, `SANGAM_JOB_LOCK_TIME_IN_MILLIS`,
     `SANGAM_JOB_BACKOFF_TIME_IN_MILLIS`, `SANGAM_JOB_MAX_BACKOFF`, `SANGAM_JOB_ACQUIRE_BY_DUE_DATE`,
     `SANGAM_JOB_ACQUIRE_BY_PRIORITY`, `SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES`, `SANGAM_JOB_LOCK_OWNER`,
-    `SANGAM_JOB_EXECUTOR_ACTIVATE`. Separate executor pods: `SANGAM_JOB_EXECUTOR_ACTIVATE=true` there, `false` on API
+    `SANGAM_JOB_EXECUTOR_ACTIVATE`, `SANGAM_JOB_VIRTUAL_THREADS` (M-054, note 25). Separate executor pods: `SANGAM_JOB_EXECUTOR_ACTIVATE=true` there, `false` on API
     pods. A job executor already set on the configuration (Spring) is kept; only the acquisition flags are applied.
 21. **IR-8 history partitioning.** `settings.partitionedHistory=true` (env `SANGAM_PARTITIONED_HISTORY=true`) runs
     `SangamSchema.applyHistoryPartitioning` after the engine build on PostgreSQL, Oracle and SQL Server (warning only on
     MySQL/H2). Limits per dialect: sangam-persistence README "History partitioning".
 22. **R2 acquisition SQL that Sangam cannot change without an engine patch** (Operaton 2.2.0 MyBatis mappings):
     - `Job.xml selectNextJobsToExecute` (job executor): with `jobExecutorAcquireWithSkipLocked=true` (set by Sangam)
-      PostgreSQL/H2/MySQL use `FOR UPDATE SKIP LOCKED`, SQL Server `WITH (UPDLOCK, READPAST)`, DB2 `SKIP LOCKED DATA`;
-      **Oracle has no row-limited SKIP LOCKED branch** (no two-step), so concurrent acquirers on Oracle rely on the
-      lock update's optimistic `REV_` check; then `AcquireJobsCmd` locks each job by `UPDATE … WHERE ID_ = ? AND REV_ = ?`.
+      PostgreSQL/H2/MySQL use `FOR UPDATE SKIP LOCKED`, SQL Server `WITH (UPDLOCK, ROWLOCK, READPAST)`, DB2 `FOR UPDATE
+      WITH RS USE AND KEEP UPDATE LOCKS SKIP LOCKED DATA`, and Oracle its own statement
+      `selectNextJobsToExecute_oracle` with `FOR UPDATE SKIP LOCKED`. On Oracle and DB2 the skip-locked branch has no row
+      limit (ROWNUM would be applied before lock-skipping); `JobManager.selectNextJobsToExecuteWithSkipLocked` stops
+      reading after `maxJobsPerAcquisition` rows (checked in the `Job.xml` of the operaton-engine 2.2.0 jar). Then
+      `AcquireJobsCmd` locks each job by `UPDATE … WHERE ID_ = ? AND REV_ = ?`.
     - `ExternalTask.xml selectExternalTasksForTopics` (external-task fetch): **no `FOR UPDATE` / `SKIP LOCKED` on any
       dialect**; concurrent fetches compete through optimistic locking on `REV_`. Sangam's mitigation is the per-topic
       `SANGAM_FETCH_LOCK` row lock (a deliberately **blocking**, bounded wait: it serializes fetches of one topic
       with the engine's query; starvation is bounded by `lockTimeout`) plus the OLE→THROW listener (W-9, D-19).
-    - Both acquisitions run in their own command and never take L2 (acquisition mark above). A real SKIP LOCKED /
-      Oracle two-step in these mappings is the engine patch D-19 (Stage D, upstream PR).
+    - Both acquisitions run in their own command and never take L2 (acquisition mark above). A real SKIP LOCKED in the
+      external-task mapping is FIO D-19 (Stage D; the M-106 evidence found a per-engine statement-mapping extension
+      point, so it needs no engine source patch).
 23. **R10 models.** Mark routing decisions with `operaton:properties` `sangam:routing=true` and mandatory outputs with
     `sangam:requiredOutputs=out1,out2` on the business rule task (an `operaton:resultVariable` is then required).
     After a FEEL engine upgrade, decisions of models deployed under the old engine fail with an R10 message until the
     model is redeployed (re-validated); the start-up log lists them.
 24. **LockScope**: connectors (WS-INTEGRATION) call `LockScope.assertNoLockHeld("http …")` before remote calls.
+25. **M-054 job executor options (both opt-in, off by default).** `sangam.engine.job-virtual-threads` (env
+    `SANGAM_JOB_VIRTUAL_THREADS`) runs the job executor's pool on JDK virtual threads; the pool size, queue and rejection
+    stay as configured. `sangam.engine.job-bulkheads` (job handler type → concurrent executions on this node, for
+    example `async-continuation: 8`) with `sangam.engine.job-bulkhead-wait` (default 10 s): a job whose type is at its
+    limit waits up to that long on the executor thread, outside any transaction, and is then handed back unexecuted
+    (lock released, retries unchanged). With either option on (or with `trace-links`, note 28), `job/JobExecutorSetup` installs
+    `job/SangamJobExecutor`; with all of them off Operaton's `DefaultJobExecutor` is kept. If the host already set a job executor that is not a `SangamJobExecutor`,
+    the build fails (fail closed). Tests: `SangamJobExecutorTest`, `JobBulkheadsTest`, `JobBulkheadH2Test`.
+26. **M-062 engine tracing (off by default).** `SangamEngineSettings.tracing` takes a `trace/EngineTracing`
+    implementation (for example over OpenTelemetry, bound by the host). The default `EngineTracing.NONE` installs no
+    interceptor; otherwise `TracingCommandInterceptor` opens one span per command (a job run by the executor is a root
+    span) covering flush and commit. Span names are command class names, never ids or variables; an exception from the
+    tracing port never changes engine behaviour (R13). Outbound telemetry stays off by default (R56). Test:
+    `TracingCommandInterceptorTest`.
+27. **M-098 frozen settings.** `SangamEngineConfigurer.configure` calls `SangamEngineSettings.freeze()` once it has
+    applied the settings and registered the plugin. After that every setter and `applyEnvironment` throw
+    `IllegalStateException`, and the map and set getters return unmodifiable copies, so a running engine cannot drift
+    from the settings it was built with. Before the freeze (binding, host wiring, tests) the bean is mutable as before.
+    Test: `SangamEngineSettingsFreezeTest`.
+28. **M-056 partitioned executors and M-062 trace links (all off by default).** `sangam.engine.executor-partitioning`
+    (default false; gated by T54, SANGAM.md X.2.1.1): off, the engine never reads or writes `EXEC_*` rows; on, new jobs
+    get an `EXEC_JOB_SLOT` row and this node's job acquisition is filtered by the slots it owns (through
+    `setAcquireJobsCmdFactory`). With partitioning on, a later plugin that replaces the acquisition factory (for example
+    the `sangam-flowable-ports` split executors) is refused at start-up. `sangam.engine.executor-slots` is the cluster's
+    fixed slot count (default 4096, 1 to 65,536, never changed online). `sangam.engine.trace-links` (default false;
+    needs a bound `tracing`) stores the creating trace context of every new job and external task in
+    `JOB_TRACE_CONTEXT`, so job spans and worker spans can link to it; `trace/JobTraceContexts.read` returns it for a
+    fetched external task. The tables follow the handoff contract `W2-JOB-SIDE-TABLES-CONTRACT.md` (owner decision: job
+    side data lives in Sangam side tables).
+29. **SL-160 / TM-10 model code allow-list at deploy (owner decisions 2026-11-12).** `deploy/ModelCodeAllowList` checks
+    every **new** BPMN or CMMN deployment (a deployment already in the database is re-parsed unchanged, so running
+    instances never break on restart). Part A: a Java class named by a task or listener must be one of Sangam's own
+    reviewed classes or tenant-approved in `sangam.engine.deploy-allowed-classes.<tenant or *>` (`SL160-CLASS`); a
+    `delegateExpression` must be exactly `${bean}` for a reviewed bean or one in `sangam.engine.deploy-allowed-beans`
+    (`SL160-DELEGATE`). Part B: every expression in the model passes `deploy/ExpressionPolicy` on Operaton's own JUEL
+    parse tree: the execution context exposes only variable access and identity fields, other names only a reviewed
+    list of safe methods, beans only when approved, no EL functions and no reflective members (`SL160-EXPR-*`); a
+    script in a listener, condition or input/output parameter must be inline JUEL and pass the same rules
+    (`SL160-SCRIPT`). Anything else runs as an external worker. Script tasks stay under the ADR-D-8 parse rule.
 
 ## Third-party dependencies
 
@@ -253,7 +296,8 @@ Ports added to `sangam-core/src/main/java/org/sangam/core/engine/` (engine-neutr
 
 ## Not done, and why
 
-- Engine source patches (FIO D-19 SKIP LOCKED mapping, FIO D-10 per-engine clock, FC-24 job hand-off, FIO D-27, FIO D-52; "FIO D-n" are the ids of section D "Operaton weaknesses" in `spike/results/FLOWABLE-INTO-OPERATON.md`, not ADRs): Stage D by
+- Engine source patches (FIO D-19 SKIP LOCKED mapping, FIO D-10 per-engine clock, FIO D-27, FIO D-52; FC-24 is no
+  longer in this list, because its hand-off and timer acquisition are done in `sangam-flowable-ports`; "FIO D-n" are the ids of section D "Operaton weaknesses" in `spike/results/FLOWABLE-INTO-OPERATON.md`, not ADRs): Stage D by
   the plan; the interim extension-point routes are in place.
 - OFFERED/ack state (VI.3.1 stream offers): REST-first (ADR-D-5) — a fetch returns LOCKED work; OFFERED belongs to the
   worker API (WS-REST).

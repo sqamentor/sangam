@@ -50,11 +50,18 @@
       <dependency><groupId>org.sangam</groupId><artifactId>sangam-ops</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>org.sangam</groupId><artifactId>sangam-modeller</artifactId><version>${project.version}</version></dependency>
       <dependency><groupId>org.sangam</groupId><artifactId>sangam-onboarding</artifactId><version>${project.version}</version></dependency>
+      <!-- M-014: embedded mode. The starter depends on sangam-server's library jar (classifier plain); the runnable
+           server is the main artifact. -->
+      <dependency><groupId>org.sangam</groupId><artifactId>sangam-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>org.sangam</groupId><artifactId>sangam-server</artifactId><version>${project.version}</version><classifier>plain</classifier></dependency>
       <!-- SG-33: the whole Jackson 2.x line at the version the FEEL closure (jackson-module-scala 2.22.3 below) accepts.
            A consumer's INHERITED dependencyManagement still wins over this import, so a parent pom that manages another
            jackson-databind must also set jackson.version / import jackson-bom 2.22.3; JacksonCompatibilityGuard (called by
            SangamFeel.install) fails fast with that fix when it does not. -->
       <dependency><groupId>com.fasterxml.jackson</groupId><artifactId>jackson-bom</artifactId><version>2.22.3</version><type>pom</type><scope>import</scope></dependency>
+      <!-- M-014: the broker clients the server is built with (the Spring Boot BOM manages kafka-clients 4.x) -->
+      <dependency><groupId>org.apache.kafka</groupId><artifactId>kafka-clients</artifactId><version>3.9.2</version></dependency>
+      <dependency><groupId>jakarta.jms</groupId><artifactId>jakarta.jms-api</artifactId><version>3.1.0</version></dependency>
       <!-- LIC-7 / D-7: Liquibase 4.x only (5.x is FSL) -->
       <dependency><groupId>org.liquibase</groupId><artifactId>liquibase-core</artifactId><version>4.33.0</version></dependency>
       <!-- SG-28: Operaton's StrongUuidGenerator needs it at run time (operaton-engine declares it provided) -->

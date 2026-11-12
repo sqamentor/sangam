@@ -151,7 +151,8 @@ public final class Vars {
     /**
      * The business zone of {@code tenantId}: the tenant's resolved profile ({@code locale.zone}) through the
      * process-wide {@link org.sangam.core.time.BusinessClock}, which the server installs; a tenant without a profile is
-     * in UTC (the documented fallback, logged once per tenant). SL-104 (ADR-D-20): never a fixed country zone.
+     * in UTC (the documented fallback, logged once per tenant). SL-104 (ADR-D-20): the zone is tenant configuration,
+     * never a fixed country zone.
      */
     public static java.time.ZoneId zone(String tenantId) {
         return org.sangam.core.time.BusinessClock.system().zone(tenantId);

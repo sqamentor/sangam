@@ -43,9 +43,12 @@ public class ReturnCampaignDelegate extends DelegateSupport implements JavaDeleg
             ReturnDefinition def = m.registry().returnDefinition(c, t, key);
             LocalDate asOf = asOf(asOfDate, ex);
             int offset = Integer.parseInt(input(periodOffset, ex, "periodOffset", "-1"));
-            LocalDate fy = PeriodService.fiscalYearStart(asOf, cfg.fiscalYearStartMonth());
-            m.periods().generate(c, t, def.frequency(), fy.getYear(), cfg.fiscalYearStartMonth(), def.dueOffsetDays());
-            m.periods().generate(c, t, def.frequency(), fy.getYear() - 1, cfg.fiscalYearStartMonth(), def.dueOffsetDays());
+            // X1-03: the fiscal year starts on the configured day of the start month (the 1st when not configured)
+            LocalDate fy = PeriodService.fiscalYearStart(asOf, cfg.fiscalYearStartMonth(), cfg.fiscalStartDay());
+            m.periods().generate(c, t, def.frequency(), fy.getYear(), cfg.fiscalYearStartMonth(), cfg.fiscalStartDay(),
+                    def.dueOffsetDays());
+            m.periods().generate(c, t, def.frequency(), fy.getYear() - 1, cfg.fiscalYearStartMonth(), cfg.fiscalStartDay(),
+                    def.dueOffsetDays());
             PeriodService.Period p = m.periods().containing(c, t, def.frequency(), asOf)
                     .orElseThrow(() -> new ProcessEngineException("no period contains " + asOf));
             for (int i = 0; i > offset; i--) {

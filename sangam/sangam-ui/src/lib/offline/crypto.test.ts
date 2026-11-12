@@ -51,6 +51,16 @@ describe('M-001 queue crypto', () => {
     expect(await open(c.subtle, await newQueueKey(c.subtle), who, env)).toBeNull();
   });
 
+  it('opens the independent AES-GCM vector the server pins (LocalQueueCipherTest VECTOR_IV / VECTOR_CT)', async () => {
+    // Key 00..1f, IV 00..0b, AAD "t1|d1|op-1|u1", plaintext {"secret":"नोट"} (sangam-field LocalQueueCipherTest.java:115-117).
+    // A change on either side (AAD order, IV size, tag length, encoding) fails this test or the Java one.
+    const raw = new Uint8Array(32).map((_, i) => i);
+    const key = await c.subtle.importKey('raw', raw, { name: 'AES-GCM' }, false, ['decrypt']);
+    const env = { v: 1, kid: 'qk-1', op: 'op-1', iv: 'AAECAwQFBgcICQoL', ct: 'PCClfqaXp2+ve7VrFUGYyAg2I6vSBu3HjGhP5Qq6HvYjKPLVXM0=', createdAt: '2026-11-12T10:00:00.000Z' };
+    expect(await open(c.subtle, key, who, env)).toBe('{"secret":"नोट"}');
+    expect(await open(c.subtle, key, { ...who, userId: 'u2' }, env)).toBeNull();
+  });
+
   it('validates the envelope as LocalQueueContract.Envelope.validate does', () => {
     expect(() => validate({ v: 2, kid: 'k', op: 'o', iv: btoa('x'.repeat(12)), ct: '', createdAt: '' })).toThrow(/version/);
     expect(() => validate({ v: 1, kid: 'k', op: '', iv: btoa('x'.repeat(12)), ct: '', createdAt: '' })).toThrow(/op/);

@@ -38,9 +38,16 @@ public final class Outbox {
     }
 
     private final Dialect dialect;
+    private final IdSource ids;
 
     public Outbox(Dialect dialect) {
+        this(dialect, IdSource.SYSTEM);
+    }
+
+    /** With the source of the {@code event_id}s (UUIDv7, D11): {@link IdSource#SYSTEM} in production. */
+    public Outbox(Dialect dialect, IdSource ids) {
         this.dialect = dialect;
+        this.ids = java.util.Objects.requireNonNull(ids, "ids");
     }
 
     public Appended append(Connection c, String tenant, String rootId, String eventType, String payloadJson,
@@ -52,7 +59,7 @@ public final class Outbox {
             }
         }
         long rootSeq = RootSeq.nextOutboxSeq(c, dialect, tenant, rootId);
-        UUID eventId = Hashes.uuidV7();
+        UUID eventId = ids.timeOrderedUuid();
         long id = Jdbc.insertReturningId(c, dialect,
                 "INSERT INTO OUTBOX(tenant_id, root_id, root_seq, event_type, event_id, payload, created_at) VALUES (?,?,?,?,?,?,"
                         + dialect.now() + ")",

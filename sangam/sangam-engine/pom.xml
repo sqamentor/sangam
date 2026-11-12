@@ -36,6 +36,13 @@
       <version>${version.java-uuid-generator}</version>
     </dependency>
 
+    <!-- SL-160: ExpressionPolicy (ModelCodeAllowList) walks the JUEL parse tree (org.operaton.bpm.impl.juel). Declared
+         directly, not left to operaton-engine's transitive dependency; version from operaton-bom (operaton-only-bom). -->
+    <dependency>
+      <groupId>org.operaton.bpm.juel</groupId>
+      <artifactId>operaton-juel</artifactId>
+    </dependency>
+
     <!-- Operaton 2.2.0 (Apache-2.0), versions from operaton-bom. BPMN + CMMN; DMN/FEEL come with the engine. -->
     <dependency>
       <groupId>org.operaton.bpm</groupId>

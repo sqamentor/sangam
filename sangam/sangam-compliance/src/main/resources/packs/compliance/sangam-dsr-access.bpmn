@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_dsr_access" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+<!-- Data-subject access request. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_dsr_access" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
   <process id="sangam-dsr-access" name="Data-subject access request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>Access right (IN: DPDP s.11). Due date from the pack SLA; non-interrupting escalation at the due date.</documentation>
     <startEvent id="start" name="Request received"/>
     <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_compile" name="Verify identity and compile data summary" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/access-compile"></userTask>
+    <userTask id="u_compile" name="Verify identity and compile data summary" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:compliance/access-compile"/>
     <serviceTask id="s_summary" name="Build access summary" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.accessSummary</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_release" name="Review and release summary" operaton:candidateGroups="DPO" operaton:formKey="sangam:compliance/access-release"></userTask>
+    <userTask id="u_release" name="Review and release summary" operaton:candidateGroups="${dpoSeat}" operaton:formKey="sangam:compliance/access-release"/>
     <boundaryEvent id="t_due" name="Due date" attachedToRef="u_release" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <serviceTask id="s_close" name="Close request" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.closeAccess</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="end" name="Answered"/>
@@ -23,4 +23,26 @@
     <sequenceFlow id="f_esc1" sourceRef="t_due" targetRef="esc"/>
     <sequenceFlow id="f_esc2" sourceRef="esc" targetRef="end_esc"/>
   </process>
+  <bpmndi:BPMNDiagram id="dsr_access_diagram">
+    <bpmndi:BPMNPlane id="dsr_access_plane" bpmnElement="sangam-dsr-access">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_start_di" bpmnElement="s_start"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_compile_di" bpmnElement="u_compile"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_summary_di" bpmnElement="s_summary"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_release_di" bpmnElement="u_release"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_close_di" bpmnElement="s_close"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="esc_di" bpmnElement="esc"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_esc_di" bpmnElement="end_esc"><dc:Bounds x="1042" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_due_di" bpmnElement="t_due"><dc:Bounds x="688" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="780" y="70"/><di:waypoint x="812" y="70"/><di:waypoint x="812" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="945" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_esc1_di" bpmnElement="f_esc1"><di:waypoint x="706" y="128"/><di:waypoint x="706" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_esc2_di" bpmnElement="f_esc2"><di:waypoint x="945" y="70"/><di:waypoint x="1042" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </definitions>

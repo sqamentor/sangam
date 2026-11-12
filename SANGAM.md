@@ -47,7 +47,7 @@
 | Government compliance | GOV-1…GOV-12 final: 8 VERIFIED, 4 VERIFIED with a parked sub-item, 0 blocking (IX.7e) → R50–R62 |
 | Commercial | Implementation services, AMC/support, managed hosting on empanelled cloud, workflow packs + training, plus anything government policy requires (ADR-D-11) |
 
-### Decision register (28 decisions)
+### Decision register (29 decisions)
 
 | ADR | Decision | Status |
 |---|---|---|
@@ -79,6 +79,7 @@
 | D-26 | Strict, exact DMN/FEEL evaluation: numbers exact (BigDecimal/Long, never Double); evaluation failure and unmatched null input are errors, not null or catch-all; typeRef "number"; money doubles refused at deploy (X.0g) | DECIDED |
 | D-27 | The engine JVM runs in UTC; the business zone comes from configuration, never from the JVM (X.0h). Owner's words: "b: engine JVM in UTC" | DECIDED |
 | D-28 | Modules beyond the original boundary (billing, geo, field, programme, resources, ai, channels, modeller, onboarding, cli) are approved generic capabilities (X.0i) | DECIDED |
+| D-29 | The React 18 `sangam-ui` replaces Operaton webapps-neo (Preact) as the base of the Sangam UI (X.0j) | DECIDED |
 
 ### Where the current specification lives (read only these)
 
@@ -4351,6 +4352,41 @@ The FEEL engine is kept as pinned (feel-scala 1.22.1 behind operaton-engine-dmn 
 | What this does not change | ADR-D-22 still holds for the systems Sangam integrates with: the full clinical record and the full general ledger stay in their own systems. A module listed here may not hard-code a country, government, sector or regulation (ADR-D-20; guarded by `DomainNeutralityGuardTest`, SL-104). |
 | Status | Decision: DECIDED (owner, 2026-11-12). Delivery: the modules are coded (Part XII.1); their tests are written for some modules and the test phase has not run. |
 
+## X.0j ADR-D-29: the React 18 UI replaces the webapps-neo base (DECIDED 2026-11-12)
+
+> **Context (M-112, P1-S16).** Part I §8 says the UI is "built on **Operaton webapps-neo** (Preact, Vite, bpmn-js,
+> dmn-js, form-js, i18next, Playwright, a11y checks)", and LIC-6 (X.3a) says the UI is based on webapps-neo only. The
+> code is different: `sangam-ui` is one React 18 + TypeScript + Vite single-page app written for Sangam (Part XII.1).
+> Until now no decision recorded that change, so §8 contradicted the code.
+
+| Topic | Rule |
+|---|---|
+| Decision | Owner question Q-17, option (A): record an ADR that the React 18 `sangam-ui` replaces the webapps-neo base (owner decision 2026-11-12, recorded in the integrator's Wave 2 rules). |
+| What the UI is (evidence: `sangam/sangam-ui/package.json`) | React and React DOM 18.3.1, `react-router-dom` 7.18.5, TypeScript 5.6.3, Vite 6.4.5, Vitest 4.1.12, i18next 23.16.8 with `react-i18next`, `oidc-client-ts` 3.1.0; the editors are bpmn-js 17.11.1, dmn-js 16.8.2 and form-js 1.12.0. No webapps-neo source is copied: `sangam-ui/src` has no webapps-neo or Preact code. Preact 10.29.8 is installed only as a runtime dependency of `@bpmn-io/form-js-viewer`, `@bpmn-io/form-js-editor` and `@bpmn-io/diagram-js-ui` (`package-lock.json`). |
+| Scope kept from §8 | The functional scope of §8 stays the target: cockpit (operations console), tasklist, admin, modeller and embeddable components. `sangam-ui/OPERATON-UI-PARITY.md` maps every page, plugin and action of Operaton's webapps and webapps-neo to a Sangam screen. |
+| What still holds | LIC-6: the legacy AngularJS webapps are not shipped. The bpmn.io licence: the bpmn.io watermark stays visible in the editors (§8 licence note, X.3.3). The UI quality requirement of Part I (WCAG 2.2 AA, axe/pa11y in CI) still applies; `package.json` has no axe, pa11y or Playwright today, so the accessibility audit and the browser test suite are open UI gaps in XII.9. |
+| Consequences | Fixes and features of upstream webapps-neo are not inherited; parity is tracked in `OPERATON-UI-PARITY.md` instead. The UI is upgraded on its own dependency line (React, Vite, bpmn.io), with the licence check `npm run licences` and the no-CDN check. |
+| Status | Decision: DECIDED (owner, 2026-11-12). Delivery: the React UI exists (Part XII.1); its tests are written for some areas and have not been run in the current phase. The superseded statements are listed in X.5.3. |
+
+## X.0k Owner decisions, batch 2026-11-12 (Wave 2)
+
+Recorded in the X.0 format. The owner gave these on 2026-11-12; the integrator relayed them to the lanes. None of them
+has its own ADR number.
+
+| Topic | Decision | Status | Consequences |
+|---|---|---|---|
+| **Job side data** | Data that Sangam keeps about engine jobs lives in **Sangam side tables** keyed by job id (`EXEC_JOB_SLOT` for M-056 slots, `JOB_TRACE_CONTEXT` for M-062 trace links, changesets `0040-01` and `0040-02`, contract `W2-JOB-SIDE-TABLES-CONTRACT.md` in the handoff folder), not in new columns of Operaton's tables | **DECIDED** by the owner; tables and engine side coded, off by default (`sangam.engine.executor-partitioning`, `sangam.engine.trace-links`) | Consistent with ADR-D-16 (Operaton as a dependency, extended through plugins): Operaton's `ACT_*` tables keep their upstream shape, and Sangam's job data is created by `generate_changelogs.py` like every other product table |
+| **Model code in the engine (SL-160, threat model TM-10)** | An **allow-list at deploy**: only reviewed delegate classes and expression functions (Sangam's own plus tenant-approved) are deployable; anything else is refused at deploy with a clear error, and external code runs as external workers | **DECIDED** by the owner; part A coded (`deploy/ModelCodeAllowList`: classes and delegate beans, `sangam.engine.deploy-allowed-classes` / `-beans`) | Extends the ADR-D-8 rule "no scripts in the engine" to Java delegates and expressions; only new deployments are checked |
+| **Model code, part B (SL-160)** | In every expression: execution context = **variables and identity only**; methods on values = **a reviewed safe list**; beans **only if approved**, in any expression; scripts in listeners, conditions and parameters = **JUEL only**, checked by the same rules | **DECIDED** by the owner; coded (`deploy/ExpressionPolicy`, codes `SL160-EXPR-*`, `SL160-SCRIPT`) | Other script code runs in the out-of-process script worker (ADR-D-8, M-061). Tests whose models use unapproved beans or methods are changed by their lanes |
+| **Embedded starter (M-014)** | A plain library jar (classifier `plain`) beside the fat jar, which keeps its name; the core modules are on and the domain modules opt-in; the defaults are shipped; JDBC drivers are excluded (the host brings its own) | **DECIDED** by the owner; coded (module `sangam-spring-boot-starter`, `sangam-server` jar classifier `plain`) | Host guide: `sangam-spring-boot-starter/README.md`. Oracle's driver stays customer-supplied (LIC-2) |
+| **Deliveries without a publisher (SL-146)** | Events go **through subscriptions**, not to a fixed outbox destination: they reach the destinations subscribed to their type, and nothing is written when nobody subscribes | **DECIDED** by the owner; coded (`SlaService` writes to an `EventSink`; `RegistryPortBridges` fallback) | The fixed destinations `notifications` and `sangam.registry.events`, which had no publisher, are no longer written |
+| **AUDIT_VIEWED (SG-15)** | `AUDIT_VIEWED` is written **only when audit is read**: one per user-visible request that shows audit; internal lookups write none | **DECIDED** by the owner; coded (`OperatonTaskAdapter.detail(ctx, taskId, auditView)`, `ChainViews`) | A task detail that shows its audit extras writes exactly one `AUDIT_VIEWED`; a lookup by another adapter reads no audit and writes nothing |
+| **Worker topic binding (SL-158, R26)** | **Enforce** in 0.1.0: a worker must be bound to its topics | **DECIDED** by the owner; coded (`SecurityWiring.sangamWorkerTopicGuard`) | An unbound call is 403 `WORKER_TOPIC_NOT_BOUND` naming the worker and the topic. Migration: bind every worker principal before upgrading (sangam-server README) |
+| **Breach notification plan (M-010c)** | Started by a **separate start** once, right after the breach is registered (seat bound, one per breach id), and **only where the jurisdiction defines notification rules**; the plan stays a process step | **DECIDED** by the owner; coded (`BreachNotificationPlanner.start`, `applies`) | EU-GDPR and US-HIPAA get the plan; IN keeps its fixed-step flow and needs no Privacy Officer seat. A missing seat refuses the registration (409) |
+| **Fiscal year (X1-03)** | **One** sangam-core helper for the fiscal-year calculation (year of a date, start and end, start day), used by `FiscalCalendar`, `NumberSeriesDefinition`, `ValidityRule` and `PeriodService`; each keeps its own start-month source; one documented label format per purpose; the start day honoured everywhere | **DECIDED** by the owner; owner lane to be assigned | Today the logic exists four times with three label formats, and only one copy honours the start day (audit X1-03) |
+| **Purpose basis** | The lawful bases of purposes come **from the jurisdiction pack**, with no fixed list in code | **DECIDED** by the owner | Applies ADR-D-20 (domain knowledge only as data) |
+| **Queue priority classes** | Token and queue priority classes come **from tenant configuration**, with no India defaults in code | **DECIDED** by the owner | Applies ADR-D-20 and the SL-104 rule |
+
 ## X.1 Normative requirements R1–R62
 
 > **Purpose (M01, VIII.7 #1):** one authoritative statement per requirement, so an implementer does not have to reconcile Parts I–IX.
@@ -5549,19 +5585,21 @@ Every event is written in the **same transaction** as the state change it record
 
 | Group | Events |
 |---|---|
-| Identity | `AUTH_LOGIN`, `AUTH_LOGOUT`, `SESSION_EXPIRED`, `SEAT_CONTEXT_SELECTED`, `AUTH_DENIED` (action, reason, policy_version) |
-| Case lifecycle (IX.3) | `CASE_CREATED`, `CASE_DRAFT_SAVED`, `CASE_SUBMITTED`, `CASE_RETURNED` (to level, reason), `CASE_RESUBMITTED` (version n→n+1, diff hash), `CLARIFICATION_SOUGHT`, `CLARIFICATION_RECEIVED`, `CASE_REJECTED` (reasons), `CASE_WITHDRAWN`, `CASE_APPROVED`, `CASE_ACKNOWLEDGED`, `CASE_RECONCILED`, `CASE_CLOSED`, `APPEAL_FILED` |
-| Tasks | `TASK_CREATED`, `TASK_ASSIGNED` (assignmentId, seat, person, selection basis), `TASK_CLAIMED`, `TASK_UNCLAIMED`, `TASK_REASSIGNED`, `TASK_COMPLETED` (decision), `TASK_MARKED_OUT_OF_HIERARCHY` |
-| Authority | `APPROVAL_RECORDED` (payload_hash, task version, rule version, power limit), `APPROVAL_INVALIDATED` (changed fields), `ACTED_FOR` (substitute, seat, delegation id), `SOD_EXCEPTION_GRANTED`, `SOD_VIOLATION_BLOCKED`, `POWER_LIMIT_EXCEEDED` |
+| Identity | `AUTH_LOGIN`, `AUTH_LOGOUT`, `SESSION_EXPIRED`, `SEAT_CONTEXT_SELECTED`, `AUTH_DENIED` (action, reason, policy_version), `LOGIN_BATCH` (logins batched per 1 s, X.2.3.3 rule 2), `LOGIN_FAILED`, `API_TOKEN_ISSUED`, `API_TOKEN_REVOKED`, `USER_PROVISIONED`, `USER_UPDATED`, `USER_DISABLED`, `DIRECTORY_SYNCED` |
+| Case lifecycle (IX.3) | `CASE_CREATED`, `CASE_DRAFT_SAVED`, `CASE_SUBMITTED`, `CASE_RETURNED` (to level, reason), `CASE_RESUBMITTED` (version n→n+1, diff hash), `CLARIFICATION_SOUGHT`, `CLARIFICATION_RECEIVED`, `CASE_REJECTED` (reasons), `CASE_WITHDRAWN`, `CASE_APPROVED`, `CASE_ACKNOWLEDGED`, `CASE_RECONCILED`, `CASE_CLOSED`, `APPEAL_FILED`, `CASE_IN_SCRUTINY`, `CASE_IN_RECOMMENDATION`, `CASE_IN_SANCTION`, `CASE_IN_EXECUTION` (entering the IX.3 state of that name) |
+| Tasks | `TASK_CREATED`, `TASK_ASSIGNED` (assignmentId, seat, person, selection basis), `TASK_CLAIMED`, `TASK_UNCLAIMED`, `TASK_REASSIGNED`, `TASK_COMPLETED` (decision), `TASK_MARKED_OUT_OF_HIERARCHY`, `TASK_ACTED_FOR` |
+| Authority | `APPROVAL_RECORDED` (payload_hash, task version, rule version, power limit), `APPROVAL_INVALIDATED` (changed fields), `ACTED_FOR` (substitute, seat, delegation id), `SOD_EXCEPTION_GRANTED`, `SOD_VIOLATION_BLOCKED`, `POWER_LIMIT_EXCEEDED`, `SOD_EXCEPTION_REQUESTED`, `SOD_EXCEPTION_REJECTED`, `AUTHORITY_DECISION`, `ROUTING_DECISION` |
 | Rules / signing | `RULE_EVALUATED` (DMN key, version, inputs digest, output), `SIGNATURE_REQUESTED`, `SIGNATURE_APPLIED` (cert serial, hash, ESP/DSC, timestamp token), `SIGNATURE_FAILED` |
 | External effects (VI.3) | `EXT_OP_REQUESTED` (operationId, attemptId, capability class), `EXT_OP_ACKNOWLEDGED`, `EXT_OP_FAILED`, `EXT_OP_UNKNOWN`, `RECON_ITEM_OPENED`, `RECON_ITEM_CLAIMED`, `RECON_ITEM_RESOLVED` (action, evidence), `LATE_RESULT_AFTER_DELETE`, `CANCEL_REQUESTED`, `CANCEL_ACKED` |
-| Operations (VI.5) | `INCIDENT_OPENED`, `INCIDENT_RETRIED`, `INCIDENT_RESOLVED`, `INSTANCE_CANCELLED`, `INSTANCE_DELETED` (open operationIds), `INSTANCE_MODIFIED`, `OUTBOX_REQUEUED`, `OUTBOX_SKIPPED` |
+| Operations (VI.5) | `INCIDENT_OPENED`, `INCIDENT_RETRIED`, `INCIDENT_RESOLVED`, `INSTANCE_CANCELLED`, `INSTANCE_DELETED` (open operationIds), `INSTANCE_MODIFIED`, `OUTBOX_REQUEUED`, `OUTBOX_SKIPPED`, `POISON_INBOUND_RECEIVED` (dead letter plus reconciliation item), `POISON_INBOUND_RESOLVED` (action, actor), `INBOUND_PARKED` (tenant state, target cell; SL-142) |
 | SLA (R31) | `SLA_STARTED`, `SLA_PAUSED`, `SLA_RESUMED`, `SLA_WARNING`, `SLA_BREACHED`, `ESCALATED`, `DEEMED_DECISION` |
 | Notifications (R60) | `NOTIFICATION_QUEUED`, `NOTIFICATION_SENT`, `NOTIFICATION_DELIVERED`, `NOTIFICATION_FAILED` (DLT reason), `NOTIFICATION_SUPPRESSED_DUPLICATE` |
 | Documents | `DOCUMENT_UPLOADED` (scan result), `DOCUMENT_FETCHED` (DigiLocker URI, issuer), `DOCUMENT_ISSUED`, `DOCUMENT_PUSHED` |
 | Records (R61) | `RETENTION_CLASSIFIED`, `LEGAL_HOLD_SET`, `LEGAL_HOLD_RELEASED`, `RECORD_REVIEWED`, `RECORD_TRANSFERRED_NAI`, `RTI_REQUEST_LINKED`, `DATA_ERASED` (fields, copies scrubbed) |
-| Admin | `TENANT_CREATED`, `TENANT_CONFIGURED`, `TENANT_ACTIVATED`, `SEAT_CREATED`, `SEAT_MOVED`, `POSTING_EFFECTIVE`, `ADDITIONAL_CHARGE_GRANTED`, `DELEGATION_GRANTED`/`_EXPIRED`, `GRANT_CHANGED` (policy_version), `IDP_CONFIGURED`, `PACKAGE_SUBMITTED_FOR_REVIEW`, `PACKAGE_APPROVED`, `PACKAGE_PUBLISHED`, `PACKAGE_RETIRED`, `DLT_TEMPLATE_REGISTERED` |
-| Security | `SEC_INCIDENT_OPENED` (noticed_at), `SEC_INCIDENT_CLASSIFIED` (Annexure I type), `SEC_REPORT_SUBMITTED` (reference), `SEC_INCIDENT_CLOSED`, `DPDP_BREACH_REPORTED`, `AUDIT_EXPORTED`, `AUDIT_VIEWED` |
+| Admin | `TENANT_CREATED`, `TENANT_CONFIGURED`, `TENANT_ACTIVATED`, `SEAT_CREATED`, `SEAT_MOVED`, `POSTING_EFFECTIVE`, `ADDITIONAL_CHARGE_GRANTED`, `DELEGATION_GRANTED`/`_EXPIRED`, `GRANT_CHANGED` (policy_version), `IDP_CONFIGURED`, `PACKAGE_SUBMITTED_FOR_REVIEW`, `PACKAGE_APPROVED`, `PACKAGE_PUBLISHED`, `PACKAGE_RETIRED`, `DLT_TEMPLATE_REGISTERED`, `DENY_CHANGED`, `MEMBERSHIP_CHANGED`, `SEAT_HOLDER_CHANGED`, `PRIVILEGE_CHANGED`, `POLICY_CHANGE_PENDING`, `TENANT_SUSPENDED`, `SEAT_ABOLISHED`, `ORG_UNIT_CREATED`, `ORG_UNIT_MOVED`, `ORG_UNIT_RENAMED`, `POSTING_ENDED`, `LEAVE_RECORDED`, `WORKER_BOUND`, `WORKER_UNBOUND`, `BULK_OPERATION_APPROVED`, `OPERATOR_ACTION`, `TENANT_QUOTA_EXCEEDED` (SL-43, chain quota:tenant) |
+| Security | `SEC_INCIDENT_OPENED` (noticed_at), `SEC_INCIDENT_CLASSIFIED` (Annexure I type), `SEC_REPORT_SUBMITTED` (reference), `SEC_INCIDENT_CLOSED`, `DPDP_BREACH_REPORTED`, `AUDIT_EXPORTED`, `AUDIT_VIEWED`, `SENSITIVE_READ`, `EXPORT`, `READ_AUDIT` |
+
+Change control (X.5.2), Wave 2, 2026-11-12: the names after the original entries in the Identity, Case lifecycle, Tasks, Authority, Admin and Security rows are the 33 names of `org.sangam.security.audit.SecurityEventType` and the 4 `org.sangam.packs.core.CaseState` audit names that the code already wrote. They were listed under `x-sangam-pending-change-control` in `sangam-events.asyncapi.yaml` and are now part of this catalogue. The last three names of the Operations row (`POISON_INBOUND_RECEIVED`, `POISON_INBOUND_RESOLVED`, `INBOUND_PARKED`) are written by `org.sangam.integration.inbox.PoisonInbound` on the tenant security chain and were added the same day.
 
 #### X.4.0.4 Error and status codes used by the screens
 
@@ -6359,7 +6397,10 @@ The error codes and audit event names first proposed in X.4 (and adopted in X.4a
 | `sangam-ui/OPERATON-UI-PARITY.md` (known limits) | Operaton embedded-form `cam-script` logic and external forms in an iframe | **Out by design:** the UI CSP is `script-src 'self'` (`sangam-ui/index.html`) and **ADR-D-8** keeps scripts out of the engine. Embedded forms are parsed into Sangam forms without their scripts; external forms are a link |
 | `sangam-field` and `sangam-geo` READMEs (known gaps) | Road-network ETA; heavy GIS topology (buffers, unions, cadastral editing) | **External worker or connector:** ETA stays straight-line distance × road factor; heavy topology goes to an external GIS worker (no JTS, so no EPL/EDL dependency) |
 
-The last four rows were recorded on 2026-11-12 (master backlog M-111). Two of them supersede module-document statements rather than Parts I–IV text.
+| I §8 ("Built on Operaton webapps-neo"); the other Part I statements that name webapps-neo as the UI base (the base comparison table, the ported-from-Operaton list, the `ui/` layout line, the effort row "Fork webapps-neo"); X.3.3 legacy-stack row "Base the Sangam UI on webapps-neo"; LIC-6 "The UI is based on webapps-neo only" | webapps-neo (Preact) as the base of the Sangam UI | **ADR-D-29 (X.0j)**: the React 18 `sangam-ui` replaces that base. LIC-6's rule that the legacy AngularJS webapps are not shipped still holds |
+| X.1 R54; X.4.0.2 G-LANG; X.4 language row; XII.9 "Languages beyond English and Hindi" | Hindi + English UI, forms and output templates plus a state language, for the first release | **SL-147 (owner decision Q-06, 2026-11-12)**: release 0.1.0 is **English only**; the language content is deferred (XII.9). R54 stays the target for a later release |
+
+The four rows before the last two were recorded on 2026-11-12 (master backlog M-111). Two of them supersede module-document statements rather than Parts I–IV text. The last two rows were recorded on 2026-11-12 in Wave 2 (M-112 and SL-147).
 
 ## X.6 Parked items (ADR-D-13: none of these blocks development)
 
@@ -6673,14 +6714,14 @@ The register is [`spike/results/TRACEABILITY-REGISTER.md`](spike/results/TRACEAB
 | # | Rank | Item | Ids |
 |---|---|---|---|
 | 1 | Blocker | No behaviour test has run on the Tier-1 databases. The full clean build passed on 2026-11-08; AC-01…AC-11, the Stage B re-runs and AT-1…AT-7 are pending | T01–T89, AC-*, AT-* |
-| 2 | Must-fix | Idempotency response body not encrypted (cleanup is now scheduled); no signed / Merkle audit checkpoints | R41, R42 |
-| 3 | Must-fix | Compliance: denial audits roll back with the caller; no adult-identity verifier; BPMN without DI layout or seat routing | R42, CMP-*, IX.5 |
-| 4 | Must-fix | Languages: en/hi only (GDPR and HIPAA packs in English only); accessibility not verified | GOV-1, GOV-2, R54, R55 |
-| 5 | Must-fix | Packs still use `WorkingDayCalendar`; `PackagePort` produces no signatures or promotion; billing redraws numbers on retry | R31, R43, N09 |
-| 6 | Must-fix | Worker long-poll blocks a servlet thread; no malware scanner bound | R9, R22, R74 |
-| 7 | Must-fix | SCALE: read replica unused; broker consumers ignore tenant freeze | IR-4, IR-6 |
-| 8 | Must-fix | SDKs have no in-memory test engine; PWA has no offline queue; no break-glass; CDS Hooks client JWT not verified | R18, N05, AJ-05 |
-| 9 | Must-fix | Contract: `/cells`, `/routes` (control plane) and `/rollup` have code but no OpenAPI contract; the plugin asset `{path}` contains slashes | R16, D-5 |
+| 2 | Must-fix | Idempotency response body not encrypted (cleanup is now scheduled); no signed / Merkle audit checkpoints. **Status 2026-11-12:** the encryption is coded and wired (SL-139: `IdempotencyStore` seals the body with the tenant key, `SangamRestAutoConfiguration` passes the `FieldEncryptor`; tests written, not run). The Merkle checkpoints (M-073) are coded in Wave 2 (`AuditCheckpoints`, table `AUDIT_MERKLE_CHECKPOINT`, `AuditCheckpointWiring`, active when `sangam.audit.checkpoint.private-key-ref` is set; tests written, not run) | R41, R42 |
+| 3 | Must-fix | Compliance: denial audits roll back with the caller; no adult-identity verifier; BPMN without DI layout or seat routing. **Status 2026-11-12:** denial audits are coded (SL-137: `cmp:d:` chain on the leaf pool `sangam-compliance-audit`); the 12 BPMN files have DI (M-010b) and route to seat variables set by `sangam.compliance.seats.<ROLE>`, fail closed (M-010c); tests written, not run. The adult-identity verifier was not re-checked in this pass | R42, CMP-*, IX.5 |
+| 4 | Must-fix | Languages: en/hi only (GDPR and HIPAA packs in English only); accessibility not verified. **Scope 2026-11-12 (SL-147):** 0.1.0 is English only; the language content is deferred, the i18n foundations stay (XII.9). Accessibility stays open | GOV-1, GOV-2, R54, R55 |
+| 5 | Must-fix | Packs still use `WorkingDayCalendar`; `PackagePort` produces no signatures or promotion; billing redraws numbers on retry. **Status 2026-11-12:** billing no longer redraws (SL-130/SL-131: `RegistryDocumentNumbers` keyed by document identity in `BIL_DOCUMENT`, wired by `BillingWiring`; tests written, not run). `WorkingDayCalendar` moved from `packs.sim` to `org.sangam.packs.calendar` (M-011, Wave 2), so production code no longer uses a simulator class. Package signatures and promotion stay open (M-074) | R31, R43, N09 |
+| 6 | Must-fix | Worker long-poll blocks a servlet thread; no malware scanner bound. **Status 2026-11-12:** the long-poll waits as an async response (SL-141, `WorkLongPoll`, `sangam.work.long-poll.*`); tests written, not run. The malware scanner was not re-checked in this pass | R9, R22, R74 |
+| 7 | Must-fix | SCALE: read replica unused; broker consumers ignore tenant freeze. **Status 2026-11-12:** the Kafka and JMS consumers take the cell's tenant admission (M-008 / SL-142, `BrokerInboxWiring`): ACTIVE is stored, FROZEN and IMPORTING are redelivered, MOVED and PURGED are parked with a reconciliation item and then acked (`CellWiring.sangamInboxTenantAdmission`); tests written, not run. The read replica was not re-checked in this pass | IR-4, IR-6 |
+| 8 | Must-fix | SDKs have no in-memory test engine; PWA has no offline queue; no break-glass; CDS Hooks client JWT not verified. **Status 2026-11-12:** the PWA offline queue is coded (SL-129); CDS client JWTs are verified per client with a cluster-wide `jti` replay guard (SL-138, `CdsClientVerifier`, `JdbcReplayGuard`, `SEC_CLIENT_JTI`); a `SangamTestEngine` exists in the Java, .NET and PHP SDKs (M-021, Wave 2). Tests written, not run. Break-glass was not re-checked in this pass | R18, N05, AJ-05 |
+| 9 | Must-fix | Contract: `/cells`, `/routes` (control plane) and `/rollup` have code but no OpenAPI contract; the plugin asset `{path}` contains slashes. **Status 2026-11-12:** coded (SL-145): `sangam-control-plane-api.yaml`, `sangam-rollup-api.yaml` and `sangam-gateway-api.yaml` are generated by `gen_openapi.py` with 0.1.0 baselines; the asset route is `/{id}/assets/{*path}`, decoded per segment; tests written, not run | R16, D-5 |
 | 10 | Must-fix | Synthetic DMN and seed values; real government wire formats on request (PK-05) | GP-01, R58 |
 
 ## XII.5 Test plan entry point
@@ -6786,8 +6827,17 @@ items and designs none of them.
 - Screens for bulk ingest (SL-44), pack uninstall and rollback, tenant custom fields, module security defaults, the
   privacy policy and onboarding promotions.
 - The modeller parts listed as not built in the `sangam-ui` README.
-- Languages beyond English and Hindi.
+- Languages beyond English and Hindi: deferred by SL-147 (below).
 - A route guard on the `/m/*` routes, which today are only hidden in the menu.
+
+**Language scope of 0.1.0 (owner decision Q-06, register SL-147, 2026-11-12).** The initial release is **English
+only**. No UI language content is added or translated: new UI strings go into `en.json` only, and other locales fall
+back to English. Deferred to a later release: Hindi and other translations, BHASHINI, translation-review workflows,
+ten or more locales, diglot templates and RTL. Kept in 0.1.0: externalized strings with stable keys, Unicode, locale-aware
+formatting (currency from the tenant locale instead of an INR default), English as default and fallback, and the
+existing i18n infrastructure (`hi.json` is not removed). `check-i18n` requires English to be complete and treats
+other locales as optional. Hindi and other Unicode names, documents and data must still be accepted, stored and
+displayed correctly. Reassess before a State-facing pilot.
 
 **0.2:** only items not yet known or recorded.
 
@@ -6810,6 +6860,13 @@ authoritative: its §1 gives each item's wave, §3 the lanes and file owners per
 
 Some items are split across waves (for example evidence in one wave, code in the next); the backlog's wave column says
 so per item.
+
+**Wave 2 (2026-11-12, from checkpoint commit `0e53f91b`).** Lanes W2-A…W2-N code the carried wiring (billing,
+idempotency encryption, CDS client verification, broker tenant admission), the SDK, UI, engine, persistence and audit
+items, the contracts, the acceptance harnesses, the packs and the docs. The docs lane recorded in this document: the 33
+`SecurityEventType` and 4 `CaseState` audit names in X.4.0.3 (change control, X.5.2), ADR-D-29 (X.0j), the English-only
+scope of 0.1.0 (SL-147, XII.9) and the XII.4 #2/#4/#5 status. The per-component STRIDE model and the glossary are in
+`sangam/docs/`. As in Wave 1, the code is written and compiled; the tests are written and not run.
 
 # Appendix A — PDF Report, Full Extracted Text (raw)
 

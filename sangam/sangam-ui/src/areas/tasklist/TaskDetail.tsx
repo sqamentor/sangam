@@ -20,6 +20,8 @@ import { classifyFormKey, externalFormUrl, taskFormToSchema } from '../../compon
 import { PluginSlot } from '../../plugins/host';
 import { AddVariables, TaskDates } from '../../modules/operaton3';
 import { FormRenderer, schemaFromVariables, validateForm, type FormValues } from '../../components/FormRenderer';
+import { useWithCustomFields } from '../../api/customFields';
+import { ActionMenu } from '../../components/ActionMenu';
 import {
   Badge,
   Checkbox,
@@ -68,7 +70,9 @@ export function TaskDetail() {
   const formKind = d?.form ? 'other' : classifyFormKey(d?.formKey);
   // Deployed HTML is read as data (Sangam API, task-level check, SL-37) and parsed inertly; its scripts never run.
   const embedded = useAsync(async () => taskFormToSchema(await api.tasks.form(id)), [id, d?.formKey], formKind === 'embedded');
-  const schema = useMemo(() => d?.form ?? embedded.data?.schema ?? (d ? schemaFromVariables(d.variables) : { components: [] }), [d, embedded.data]);
+  const shipped = useMemo(() => d?.form ?? embedded.data?.schema ?? (d ? schemaFromVariables(d.variables) : { components: [] }), [d, embedded.data]);
+  // M-031: a Sangam form also shows the tenant's custom fields in force today (objectType form:<formKey>)
+  const schema = useWithCustomFields(shipped, d?.form?.key);
   const externalUrl = d?.formKey && formKind === 'external' ? externalFormUrl(d.formKey, id) : null;
   const isMine = !!d && (d.assignee === me?.userId || d.section === 'MY_SEAT' || d.section === 'ACTING_FOR' || d.section === 'RETURNED');
   const canAct = isMine && !stale;
@@ -187,6 +191,8 @@ export function TaskDetail() {
               </button>
             )}
             {d.businessKey && <Link to={`/audit/timeline/${encodeURIComponent(d.businessKey)}`}>{t('task.viewTimeline')}</Link>}
+            {/* M-037: the actions the server lets this caller run on this task */}
+            <ActionMenu scope="TASK" subjectRef={d.id} />
           </>
         }
       />

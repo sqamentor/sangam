@@ -73,6 +73,19 @@ public final class TaskContext {
         return operationId();
     }
 
+    /**
+     * W3C {@code traceparent} the engine stored when it created this task (ExternalWork.traceContext, M-062, R13), or
+     * null when none was stored. Link the handler's span to it.
+     */
+    public String traceparent() {
+        return work.traceContext() == null ? null : work.traceContext().traceparent();
+    }
+
+    /** W3C {@code tracestate} of the task's trace context, or null. */
+    public String tracestate() {
+        return work.traceContext() == null ? null : work.traceContext().tracestate();
+    }
+
     /** Changes per lease (A-2). Useful for downstream request ids that must differ per attempt. */
     public String attemptId() { return work.attemptId(); }
 

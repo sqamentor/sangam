@@ -10,6 +10,9 @@ import { api } from '../../api/endpoints';
 import type { CasePlanItem, FormSchema } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
+import { textIncludes } from '../../lib/text';
+import { useWithCustomFields } from '../../api/customFields';
+import { ActionMenu } from '../../components/ActionMenu';
 import { FormRenderer, validateForm, type FormValues } from '../../components/FormRenderer';
 import { AddVariables } from '../../modules/operaton3';
 import { ConversationPanel } from '../../modules/platform';
@@ -29,7 +32,7 @@ export function StartCatalog() {
       {!chosen && <TextField label={t('common.search')} value={search} onChange={setSearch} />}
       {!chosen && (
         <ul className="cards">
-          {cat.data?.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())).map((c) => (
+          {cat.data?.filter((c) => textIncludes(c.name, search)).map((c) => (
             <li key={c.key} className="card">
               <h2>{c.name}</h2>
               <p className="muted">{c.description}</p>
@@ -46,10 +49,14 @@ export function StartCatalog() {
   );
 }
 
+const NO_FORM: FormSchema = { components: [] };
+
 function StartForm({ item, onCancel }: { item: { key: string; name: string; kind: 'PROCESS' | 'CASE'; formKey?: string }; onCancel: () => void }) {
   const { t } = useTranslation();
   const nav = useNavigate();
   const form = useAsync(() => (item.formKey ? api.forms.get(item.formKey) : Promise.resolve<FormSchema>({ components: [] })), [item.formKey]);
+  // M-031: the tenant's custom fields of this form, in force today, appended to the shipped fields
+  const schema = useWithCustomFields(form.data ?? NO_FORM, item.formKey);
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [businessKey, setBusinessKey] = useState('');
@@ -59,7 +66,7 @@ function StartForm({ item, onCancel }: { item: { key: string; name: string; kind
       {form.loading && <Loading />}
       <ProblemAlert error={form.error ?? act.error} />
       <TextField label={t('start.businessKey')} hint={t('start.businessKeyHint')} value={businessKey} onChange={setBusinessKey} />
-      {form.data && <FormRenderer schema={form.data} values={values} onChange={setValues} errors={errors} />}
+      {form.data && <FormRenderer schema={schema} values={values} onChange={setValues} errors={errors} />}
       <AddVariables values={values} onChange={setValues} />
       <div className="toolbar">
         <button type="button" onClick={onCancel}>
@@ -71,7 +78,7 @@ function StartForm({ item, onCancel }: { item: { key: string; name: string; kind
           disabled={act.busy}
           onClick={() => {
             if (form.data) {
-              const errs = validateForm(form.data, values, t);
+              const errs = validateForm(schema, values, t);
               setErrors(errs);
               if (Object.keys(errs).length) return;
             }
@@ -207,6 +214,8 @@ export function CaseWorkspace() {
         actions={
           <>
             {c.data.businessKey && <Link to={`/audit/timeline/${encodeURIComponent(c.data.businessKey)}`}>{t('task.viewTimeline')}</Link>}
+            {/* M-037: the actions the server lets this caller run on this case */}
+            <ActionMenu scope="CASE" subjectRef={c.data.id} />
             {(c.data.state === 'COMPLETED' || c.data.state === 'CLOSED' || c.data.state === 'TERMINATED') && (
               <button type="button" onClick={() => setPending({ a: 'reactivate' })}>
                 {t('case.reactivate')}

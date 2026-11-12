@@ -13,11 +13,22 @@ import java.util.Map;
  * so none is a primitive; the worker starts an item only when id, attemptId and lockVersion are present (A-1).
  * Irreversibility is not a work field: it is configured on the subscription (and server side, irreversibleTopics).
  * {@code operation} is the server-recorded ledger entry of {@code operationId} (SL-16; null from servers before it).
+ * {@code traceContext} is the W3C trace context the engine stored for the task (M-062); absent when none was stored.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ExternalWork(
         String id, String topic, String tenantId, String processInstanceId, String processDefinitionKey, String activityId,
         String activityInstanceId, String businessKey, Map<String, Object> variables, Long lockVersion, String attemptId,
         String operationId, Instant lockExpiresAt, Integer retries, Long priority, String errorMessage,
-        WorkOperation operation) {
+        WorkOperation operation, TraceContext traceContext) {
+
+    /** The shape before M-062 (no trace context); kept so existing callers compile unchanged. */
+    public ExternalWork(String id, String topic, String tenantId, String processInstanceId, String processDefinitionKey,
+                        String activityId, String activityInstanceId, String businessKey, Map<String, Object> variables,
+                        Long lockVersion, String attemptId, String operationId, Instant lockExpiresAt, Integer retries,
+                        Long priority, String errorMessage, WorkOperation operation) {
+        this(id, topic, tenantId, processInstanceId, processDefinitionKey, activityId, activityInstanceId, businessKey,
+                variables, lockVersion, attemptId, operationId, lockExpiresAt, retries, priority, errorMessage, operation,
+                null);
+    }
 }

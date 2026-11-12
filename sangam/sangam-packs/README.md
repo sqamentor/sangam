@@ -12,8 +12,10 @@ src/main/java/org/sangam/packs/
   spi/       SangamPack, PackDescriptor, ManifestPack, PackRegistry, PackDeployer, ModelGuard, PackMigrator
   port/      ConnectorGateway (+ request/result), SeatDirectory, BusinessCalendar, PackAuditSink, BatchLedger,
              LedgerStore, PackRuntime (port holder with simulator defaults)
-  sim/       SimulatorConnectorGateway, InMemorySeatDirectory, WorkingDayCalendar, LoggingAuditSink,
-             InMemoryBatchLedger, InMemoryLedgerStore
+  calendar/  WorkingDayCalendar (BusinessCalendar: working days and zone from the tenant, the default port
+             and the one sangam-server installs over the profile calendar)
+  sim/       SimulatorConnectorGateway, InMemorySeatDirectory, LoggingAuditSink, InMemoryBatchLedger,
+             InMemoryLedgerStore
   core/      delegates and listeners of the approval core (used by every pack)
   gov/       domain delegates (merit list, waitlist, scroll / stock matching, hearings)
   universal/ EventWindowDelegate

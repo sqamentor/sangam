@@ -116,6 +116,7 @@ public final class ComplianceSchema {
               reported_at {ts}, report_ref {str}, report_late {small} NOT NULL, subjects_affected {long} NOT NULL, subjects_notified {long} NOT NULL,
               incident_ids_json {text}, registered_by {str}, registered_at {ts} NOT NULL, closed_at {ts}, process_instance_id {str64},
               risk_outcome {str64}, risk_json {text}, high_risk {small} DEFAULT 0 NOT NULL, delay_until {ts}, delay_ref {str},
+              plan_process_instance_id {str64},
               PRIMARY KEY (tenant_id, breach_id))""",
             """
             CREATE TABLE CMP_BREACH_NOTICE (tenant_id {str64} NOT NULL, breach_id {str64} NOT NULL, principal_ref {str} NOT NULL, delivery_ref {str},

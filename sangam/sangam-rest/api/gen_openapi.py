@@ -114,8 +114,16 @@ schema("SeatHolding", "A seat held by the caller on the action date (IX.5 rules 
        enums={"kind": ["SUBSTANTIVE", "ADDITIONAL_CHARGE", "LEAVE_SUBSTITUTE"]})
 schema("Me", "The authenticated caller: identity, tenant, personas (roles), seats held, current seat context and permissions (K1, S02).",
        "tenantId tenantName principalId userId displayName groups:list:s roles:list:s seats:list:SeatHolding seatId actingForSeatId "
-       "authMethod permissions:list:s preferredLanguage",
-       descs={"roles": "UI personas: TASK_USER, OPERATOR, PLATFORM_OPERATOR, ADMIN, PLATFORM_ADMIN, MODELLER, REVIEWER, ANALYST, AUDITOR, INTEGRATION, CITIZEN"})
+       "authMethod permissions:list:s preferredLanguage locale:MeLocale",
+       descs={"roles": "UI personas: TASK_USER, OPERATOR, PLATFORM_OPERATOR, ADMIN, PLATFORM_ADMIN, MODELLER, REVIEWER, ANALYST, AUDITOR, INTEGRATION, CITIZEN",
+              "locale": "M-045: money and number formatting of the tenant's resolved profile (locale section); absent when "
+                        "the tenant has no resolved locale"})
+schema("NumberGrouping", "Digit grouping of the integer part: the first group (from the right) and every further group, "
+                         "e.g. {first: 3, rest: 2} gives 12,34,567.", "first:int rest:int", ["first", "rest"])
+schema("MeLocale", "The tenant's resolved profile locale (sangam-config LocaleSettings): currency, zone and digit grouping.",
+       "currency zone grouping:NumberGrouping",
+       descs={"currency": "ISO 4217 code of the tenant's money (e.g. INR); amounts in other currencies carry their own",
+              "zone": "IANA time zone of the tenant (e.g. Asia/Kolkata)"})
 # Work
 schema("TopicRequest", "Topic subscription for fetch-and-lock. Lease default 5 min, maximum 24 h (VI.3 rule 3).",
        "name lockDurationMs:long variables:list:s localVariables:bool processDefinitionKey businessKey", ["name"])
@@ -123,8 +131,17 @@ schema("FetchAndLockRequest", "Long-poll fetch-and-lock (VI.3, FC-36).",
        "workerId topics:list:TopicRequest maxTasks:int asyncResponseTimeoutMs:long usePriority:bool", ["workerId", "topics"])
 schema("ExternalWork", "A locked unit of external work. operationId = UUIDv5(tenant, root, activityInstanceId, loop) is stable across retries, redelivery and lease expiry; forward it downstream as the idempotency key (VI.3 rule 4, R36).",
        "id topic tenantId processInstanceId processDefinitionKey activityId activityInstanceId businessKey variables:map "
-       "lockVersion:long attemptId operationId lockExpiresAt:dt retries:int priority:long errorMessage operation:WorkOperation",
-       descs={"operation": "Ledger state of operationId, recorded by the server when it leased the work (intent before dispatch, R37). mayDispatch=false with state SUCCEEDED: complete from storedOutcome without calling the downstream again (SL-16)."})
+       "lockVersion:long attemptId operationId lockExpiresAt:dt retries:int priority:long errorMessage operation:WorkOperation "
+       "traceContext:TraceContext",
+       descs={"traceContext": "M-062 (R13): the trace context stored when the engine created the task (JOB_TRACE_CONTEXT, "
+                              "kind EXTERNAL_TASK); a worker links its span to it. Absent when none was stored.",
+              "operation": "Ledger state of operationId, recorded by the server when it leased the work (intent before dispatch, R37). mayDispatch=false with state SUCCEEDED: complete from storedOutcome without calling the downstream again (SL-16)."})
+schema("TraceContext", "W3C Trace Context (R13) of the request that created the work.", "traceparent tracestate", ["traceparent"],
+       descs={"traceparent": "W3C traceparent, version 00: 2-32-16-2 lower-case hex with dashes (55 characters)",
+              "tracestate": "W3C tracestate, at most 512 characters"})
+SCHEMAS["TraceContext"]["properties"]["traceparent"].update({"pattern": "^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$",
+                                                             "maxLength": 55})
+SCHEMAS["TraceContext"]["properties"]["tracestate"]["maxLength"] = 512
 schema("WorkOperation", "Operation-ledger entry of a leased work item (VI.3 rules 4-5, R37, A-8). attempts > 1 is a repeat attempt (class B: look the outcome up first).",
        "state attempts:int capabilityClass mayDispatch:bool storedOutcome:obj",
        enums={"state": ["INTENT", "SUCCEEDED", "FAILED", "UNKNOWN_OUTCOME"],
@@ -487,8 +504,12 @@ schema("DurationReportRow", "Instance duration report row (PF-07).", "period cou
 schema("AlertRule", "KPI threshold alert (R65).", "id name kpi operator threshold:num channel recipients:list:s active:bool",
        ["name", "kpi", "operator", "threshold", "channel"],
        enums={"operator": [">", "<", ">=", "<="], "channel": ["IN_APP", "EMAIL", "WEBHOOK"]})
-schema("AgentUsage", "Agent usage and budgets (R72).",
-       "agent runs:long tokens:long costUnits:num budget:num guardrailBlocks:long humanReviews:long")
+schema("AgentUsage", "Agent usage and budgets (R72). costUnits and budget are AI usage units derived from tokens, not "
+                     "money: they carry no currency and no amount is billed from them (InsightsPort.AgentUsage; money "
+                     "follows MoneyAmount).",
+       "agent runs:long tokens:long costUnits:num budget:num guardrailBlocks:long humanReviews:long",
+       descs={"costUnits": "Usage in AI cost units (dimensionless, from tokens); not a currency amount",
+              "budget": "The agent's budget in the same cost units, when one is set; not a currency amount"})
 # Audit exports
 schema("AuditExportJob", "Asynchronous audit export (U02).", "id status rowCount:long requestedAt:dt format scope:obj error",
        enums={"status": ["QUEUED", "RUNNING", "READY", "FAILED"], "format": ["CSV", "JSON", "PDFA"]})
@@ -1819,6 +1840,27 @@ import os as _os
 for _route_file in sorted(_glob.glob(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "routes", "*.py"))):
     with open(_route_file, encoding="utf-8") as _f:
         exec(compile(_f.read(), _route_file, "exec"), globals())
+# Platform administration (W2-C 2026-11-12): the onboarding, promotion, pack lifecycle and plugin controllers of
+# sangam-server require membership of the platform group sangam-admin (ctx.inGroup at OnboardingController.java:72,
+# PromotionController.java:70, PackLifecycleController.java:53, PluginAdminController.java:32), and answer
+# 501 CAPABILITY_NOT_INSTALLED when the providing module is absent (ApiProblem.notInstalled; not for plugins). Pack
+# uninstall and rollback answer 409 PACK_OPERATION_IN_PROGRESS while another operation holds the pack (SL-116,
+# PackOperationTxLock).
+for _p, _item in PATHS.items():
+    if _p.startswith(("/onboarding/", "/packs/", "/admin/plugins")):
+        for _m, _o in _item.items():
+            _o["x-sangam-groups"] = ["sangam-admin"]
+            if not _p.startswith("/admin/plugins"):
+                _o["responses"].setdefault("501", RESP("NotImplemented"))
+            if _p.startswith("/packs/") and _m == "post":
+                _o["responses"].setdefault("409", RESP("Conflict"))
+                if "PACK_OPERATION_IN_PROGRESS" not in _o["description"]:
+                    _o["description"] += " 409 PACK_OPERATION_IN_PROGRESS while another operation on the pack runs (SL-116)."
+# M-051: the Map-backed request bodies declared by the route files get schemas from the keys their services read
+for _kind, _one, _many, _d, _reqs in REG:
+    map_body("act" + _one, "sangam-rest/src/main/java/org/sangam/rest/web/RegistryController.java",
+             "RegistryController.action", "body")
+_bk_apply()
 
 # ---------------------------------------------------------------- API lifecycle (SL-38, API-LIFECYCLE-POLICY.md)
 # api/sangam-api-deprecations.yaml is the single deprecation registry: the server's DeprecationHeadersFilter reads the

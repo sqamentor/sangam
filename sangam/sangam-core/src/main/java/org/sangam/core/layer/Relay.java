@@ -59,6 +59,7 @@ public final class Relay implements OutboxRepair {
     private final AuditChain audit;
 
     private final RepairHook repairHook;
+    private final IdSource random;
 
     public Relay(Dialect dialect, Transactions tx, Publisher publisher, Config config, AuditChain auditOrNull) {
         this(dialect, tx, publisher, config, auditOrNull, null);
@@ -66,12 +67,19 @@ public final class Relay implements OutboxRepair {
 
     public Relay(Dialect dialect, Transactions tx, Publisher publisher, Config config, AuditChain auditOrNull,
                  RepairHook repairHookOrNull) {
+        this(dialect, tx, publisher, config, auditOrNull, repairHookOrNull, IdSource.SYSTEM);
+    }
+
+    /** With the source of the backoff jitter ({@link IdSource#unitRandom()}, D11): {@link IdSource#SYSTEM} in production. */
+    public Relay(Dialect dialect, Transactions tx, Publisher publisher, Config config, AuditChain auditOrNull,
+                 RepairHook repairHookOrNull, IdSource random) {
         this.dialect = dialect;
         this.tx = tx;
         this.publisher = publisher;
         this.config = config;
         this.audit = auditOrNull;
         this.repairHook = repairHookOrNull;
+        this.random = java.util.Objects.requireNonNull(random, "random");
     }
 
     /** Claim, publish, mark. */
@@ -154,7 +162,7 @@ public final class Relay implements OutboxRepair {
         String lastError = exhausted && !cl.ordered()
                 ? "GAP: skipped after " + attempts + " attempts: " + error
                 : error;
-        long backoff = backoffMillis(config, attempts, java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+        long backoff = backoffMillis(config, attempts, random.unitRandom());
         return tx.inTransaction(c -> {
             if (exhausted && audit != null) {
                 RootSeq.lock(c, dialect, cl.event().tenantId(), cl.event().rootId());

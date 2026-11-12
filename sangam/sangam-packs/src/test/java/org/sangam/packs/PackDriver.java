@@ -20,6 +20,8 @@ final class PackDriver {
 
     private final ProcessEngine engine;
     private long offsetMillis;
+    /** The process-wide business clock in place before the scenario clock first moved; null while it has not. */
+    private org.sangam.core.time.BusinessClock outerBusinessClock;
     private org.sangam.packs.worker.EmbeddedWorkerRunner workers;
 
     /**
@@ -162,8 +164,11 @@ final class PackDriver {
     }
 
     /**
-     * The scenario clock (SL-32 {@code advance}): moves the engine clock (timer due dates, job execution) and, through
-     * {@link #clock()}, the pack clock (SLA plans, deadlines) forward by {@code by}, cumulatively.
+     * The scenario clock (SL-32 {@code advance}, M-116): moves the engine clock (timer due dates, job execution) and,
+     * through {@link #clock()}, the pack clock (SLA plans, deadlines) forward by {@code by}, cumulatively. On its first
+     * move it also installs, as the process-wide {@link org.sangam.core.time.BusinessClock#system()}, a business clock
+     * on the same instant source, keeping the tenant zones of the one in place; so every business date of the case
+     * ({@code today}, {@code now} of a tenant) moves with the timers. {@link #resetClock()} puts the previous one back.
      */
     void advance(java.time.Duration by) {
         if (by.isNegative()) {
@@ -171,12 +176,21 @@ final class PackDriver {
         }
         offsetMillis += by.toMillis();
         ClockUtil.offset(offsetMillis);
+        if (outerBusinessClock == null) {
+            org.sangam.core.time.BusinessClock outer = org.sangam.core.time.BusinessClock.system();
+            org.sangam.core.time.BusinessClock.install(org.sangam.core.time.BusinessClock.of(clock(), outer::zone));
+            outerBusinessClock = outer;
+        }
     }
 
-    /** Back to the system time (end of a scenario). */
+    /** Back to the system time (end of a scenario), and back to the business clock in place before the scenario. */
     void resetClock() {
         offsetMillis = 0;
         ClockUtil.reset();
+        if (outerBusinessClock != null) {
+            org.sangam.core.time.BusinessClock.install(outerBusinessClock);
+            outerBusinessClock = null;
+        }
     }
 
     long offsetMillis() {

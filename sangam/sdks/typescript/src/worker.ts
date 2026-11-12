@@ -133,6 +133,10 @@ export class TaskContext {
   get idempotencyKey(): string { return this.operationId; }
   /** Changes per lease (A-2). */
   get attemptId(): string { return this.work.attemptId!; }
+  /** W3C `traceparent` the engine stored for this task (ExternalWork.traceContext, M-062), or undefined. */
+  get traceparent(): string | undefined { return this.work.traceContext?.traceparent; }
+  /** W3C `tracestate` of the task's trace context, or undefined. */
+  get tracestate(): string | undefined { return this.work.traceContext?.tracestate; }
   /** Current fencing token. */
   get lockVersion(): number { return this.lockVersionValue; }
   get lockExpiresAt(): Date | undefined { return this.lockExpiresAtMs === undefined ? undefined : new Date(this.lockExpiresAtMs); }

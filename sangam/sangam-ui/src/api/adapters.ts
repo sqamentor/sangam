@@ -77,6 +77,7 @@ export function normMe(m: Any): T.Me {
     seats,
     permissions: m.permissions,
     preferredLanguage: m.preferredLanguage,
+    locale: m.locale && typeof m.locale === 'object' ? m.locale : undefined,
   };
 }
 

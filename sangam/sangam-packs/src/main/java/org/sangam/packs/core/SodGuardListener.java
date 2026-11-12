@@ -63,9 +63,9 @@ public class SodGuardListener implements TaskListener {
     /**
      * True when {@code person} already completed another instance of the same round of the parallel step
      * {@code current} (the {@code round} of {@link ActorRecorderListener}): one person is one approval of a joint
-     * approval, even through two seats held by additional charge or delegation (IFMS R-102: one seat, or one person,
-     * must not count as two approvals). Another person on another seat of the round, and the same person in a later
-     * round (after a return), are not refused.
+     * approval, even through two seats held by additional charge or delegation (the joint-approval rule: one seat, or
+     * one person, must not count as two approvals). Another person on another seat of the round, and the same person
+     * in a later round (after a return), are not refused.
      */
     static boolean actedInRound(String person, String current, String round, List<Map<String, Object>> log) {
         if (round == null || person == null) {

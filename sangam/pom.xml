@@ -58,6 +58,8 @@
     <module>sangam-modeller</module>
     <module>tools/sangam-cli</module>
     <module>sangam-onboarding</module>
+    <!-- M-014: embedded mode (auto-configuration over sangam-server's plain library jar) -->
+    <module>sangam-spring-boot-starter</module>
   </modules>
 
   <properties>
@@ -88,6 +90,10 @@
     <version.hikari>6.3.0</version.hikari>
     <version.slf4j>2.0.17</version.slf4j>
     <version.h2>2.3.232</version.h2>
+    <!-- broker clients (R38 inbound, ports channels): one version for every module, also for hosts (M-014); the
+         Spring Boot BOM would otherwise resolve a different kafka-clients for a module that gets it transitively -->
+    <version.kafka>3.9.2</version.kafka>
+    <version.jakarta-jms>3.1.0</version.jakarta-jms>
     <!-- The one Spring line for every module: the Boot version operaton-bpm-spring-boot-starter 2.2.0 is built
          against (operaton-root 2.2.0: Spring Boot 4.1.2, Spring Framework 7.0.10, Spring Security 7.1.2). -->
     <version.spring-boot>4.1.2</version.spring-boot>
@@ -187,6 +193,16 @@
         <groupId>com.h2database</groupId>
         <artifactId>h2</artifactId>
         <version>${version.h2}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>${version.kafka}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.jms</groupId>
+        <artifactId>jakarta.jms-api</artifactId>
+        <version>${version.jakarta-jms}</version>
       </dependency>
       <dependency>
         <groupId>com.zaxxer</groupId>
@@ -309,6 +325,21 @@
         <version>${version.cucumber}</version>
         <scope>test</scope>
       </dependency>
+      <!-- Cucumber 8.0.4 asks for these two as version ranges (messages [32.0.0,35.0.0), query [15.0.0,17.0.0)). A range
+           is resolved from repository metadata, so the result depends on the day of the build and an offline build
+           fails. Pinned to the versions of the approved batch-1 download, inside both ranges. -->
+      <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>messages</artifactId>
+        <version>34.2.1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>query</artifactId>
+        <version>16.1.1</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -343,8 +374,9 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>3.5.3</version>
           <configuration>
-            <!-- same as surefire: the JDK's Windows selector pipe (AF_UNIX) fails in some user temp folders; UTC (SL-53) -->
-            <argLine>"-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=UTC</argLine>
+            <!-- same as surefire: the JDK's Windows selector pipe (AF_UNIX) fails in some user temp folders; UTC (SL-53);
+                 @{argLine} carries the JaCoCo agent of -Psangam-coverage into the integration tests too (X1-10) -->
+            <argLine>@{argLine} "-Djdk.net.unixdomain.tmpdir=${project.build.directory}" -Duser.timezone=UTC</argLine>
           </configuration>
         </plugin>
         <plugin>
@@ -562,7 +594,7 @@
       </build>
     </profile>
 
-    <!-- M-095 coverage, REPORT-ONLY: -Psangam-coverage attaches the JaCoCo agent to the surefire run (@{argLine}) and
+    <!-- M-095 coverage, REPORT-ONLY: -Psangam-coverage attaches the JaCoCo agent to the surefire and failsafe runs (@{argLine}) and
          writes target*/site/jacoco at verify. The SANGAM.md target (85% line coverage on core) is a check with
          haltOnFailure=false: it reports, never fails. -->
     <profile>

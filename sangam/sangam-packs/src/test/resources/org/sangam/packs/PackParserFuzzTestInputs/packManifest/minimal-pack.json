@@ -1,0 +1,6 @@
+{"id":"fuzz.pack","version":"1.0.0","name":{"en":"Fuzz pack"},"domain":"test","mainProcesses":["fuzz-main"],
+ "resources":[{"kind":"BPMN","path":"fuzz/main.bpmn"}],"seed":"fuzz/pack.json",
+ "connectors":[{"id":"c1","capabilityClass":"a","simulatorBinding":{"connector":"sim.c1","operation":""}}],
+ "workers":[{"topic":"t1","connector":"c1","operation":"op"}],
+ "acceptance":[{"id":"F-1","title":"t","refs":["X"],"startVariables":{"a":1,"b":null,"c":[1,2],"d":1.5,"e":true,"f":"x"},"expectState":"DONE"}],
+ "tenantOverrides":[{"tenant":"t1","path":"p"}],"placeholders":[{"decision":"d1"}],"dependsOn":["sangam.core"]}

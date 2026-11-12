@@ -46,7 +46,8 @@ public class SecurityKeysWiring {
     private static final Logger LOG = LoggerFactory.getLogger(SecurityKeysWiring.class);
 
     @Bean
-    public FieldEncryptor sangamFieldEncryptor(SangamSecurity security, DataSource dataSource, Environment env) {
+    public FieldEncryptor sangamFieldEncryptor(SangamSecurity security, DataSource dataSource, Environment env,
+            SecurityAuditPoolWiring.SecurityAuditPool sangamSecurityAuditPool) {
         boolean production = ProductionEnvironment.isProduction(env); // SL-109
         boolean dev = Arrays.stream(env.getActiveProfiles()).anyMatch(p -> p.equals("h2") || p.equals("dev"));
         MasterKeyProvider kek = masterKey(env);
@@ -59,7 +60,18 @@ public class SecurityKeysWiring {
             LOG.warn("Using the ephemeral DEVELOPMENT key-encryption key: encrypted data does not survive a restart");
             kek = MasterKeyProvider.ephemeralForDevelopment();
         }
-        return security.newFieldEncryptor(Transactions.of(dataSource), kek, production);
+        return security.newFieldEncryptor(keyStoreTransactions(sangamSecurityAuditPool, dataSource), kek, production);
+    }
+
+    /**
+     * SL-161: the tenant key store reads (and on first use creates) data keys while the caller holds a main-pool
+     * connection (an idempotency completion inside the command transaction, a document write). On the main pool that
+     * is the SL-43 second-connection pattern; on the {@code sangam-security-audit} leaf pool a key-store transaction
+     * never waits for another connection. Without a leaf pool (main pool not HikariCP) the main pool, as before.
+     */
+    static Transactions keyStoreTransactions(SecurityAuditPoolWiring.SecurityAuditPool pool, DataSource dataSource) {
+        Transactions leaf = pool.transactionsOrNull();
+        return leaf != null ? leaf : Transactions.of(dataSource);
     }
 
     static MasterKeyProvider masterKey(Environment env) {

@@ -19,7 +19,7 @@ import pytest
 from sangam_sdk import SangamClient
 from sangam_sdk.http import ApiRequest, ApiResponse
 from sangam_sdk.models import (AuditEntry, CompleteTaskResult, ExternalWork, LockState, OutcomeUnknownResult, Task,
-                               TopicRequest, WorkOperation, camel)
+                               TopicRequest, TraceContext, WorkOperation, camel)
 
 CONTRACT = Path(__file__).resolve().parents[3] / "sangam-rest" / "api" / "sangam-api.yaml"
 _SECTION = re.compile(r"^ {6}(\w+):")
@@ -54,7 +54,7 @@ def read_schema(name: str) -> tuple[set[str], set[str]]:
 # ------------------------------------------------------------------ response models (dataclasses)
 
 RESPONSES = {
-    "ExternalWork": ExternalWork, "WorkOperation": WorkOperation, "LockState": LockState,
+    "ExternalWork": ExternalWork, "WorkOperation": WorkOperation, "TraceContext": TraceContext, "LockState": LockState,
     "OutcomeUnknownResult": OutcomeUnknownResult, "Task": Task, "CompleteTaskResult": CompleteTaskResult,
     "AuditEntry": AuditEntry, "TopicRequest": TopicRequest,
 }

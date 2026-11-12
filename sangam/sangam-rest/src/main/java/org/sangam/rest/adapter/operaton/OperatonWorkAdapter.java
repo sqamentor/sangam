@@ -67,6 +67,51 @@ public class OperatonWorkAdapter implements WorkPort {
         this.ledger = new WorkLedger(tx.dialect(), reconciliation);
     }
 
+    private volatile org.sangam.rest.support.WorkLongPoll.Settings longPollSettings =
+            org.sangam.rest.support.WorkLongPoll.Settings.defaults();
+
+    /**
+     * X1-07: the in-thread fallback wait (no long-poll bean, or above its waiter bound) uses the long-poll's schedule,
+     * so the back-off is defined once ({@code WorkLongPoll.Settings}); default {@code Settings.defaults()}.
+     */
+    public void setLongPollSettings(org.sangam.rest.support.WorkLongPoll.Settings settings) {
+        this.longPollSettings = java.util.Objects.requireNonNull(settings, "settings");
+    }
+
+    // ------------------------------------------------------------------ topic binding (SL-158)
+
+    private volatile WorkerTopicGuard topicGuard;
+
+    /**
+     * R26 (SL-158): binds the topic-binding check, as on {@code EngineAdapterWorkAdapter}; without it every caller past
+     * the endpoint gate may use any topic.
+     */
+    public void setTopicGuard(WorkerTopicGuard topicGuard) {
+        this.topicGuard = topicGuard;
+    }
+
+    private void guardTopic(RequestContext ctx, String topic) {
+        WorkerTopicGuard g = topicGuard;
+        if (g != null) {
+            g.requireTopic(ctx, topic);
+        }
+    }
+
+    /**
+     * Before a call on one item: the caller must be bound to the item's topic. An unknown item, or one of another
+     * tenant, is left to the call itself, which answers 404 as before (the guard never confirms another tenant's id).
+     */
+    private void guardWork(RequestContext ctx, String workId) {
+        if (topicGuard == null) {
+            return;
+        }
+        ExternalTask t = task(workId);
+        if (t == null || (ctx.tenantId() != null && t.getTenantId() != null && !ctx.tenantId().equals(t.getTenantId()))) {
+            return;
+        }
+        guardTopic(ctx, t.getTopicName());
+    }
+
     // ------------------------------------------------------------------ fetch
 
     @Override
@@ -77,12 +122,18 @@ public class OperatonWorkAdapter implements WorkPort {
         if (r.topics() == null || r.topics().isEmpty()) {
             throw ApiProblem.badRequest("TOPICS_REQUIRED", "at least one topic is required");
         }
+        for (TopicRequest t : r.topics()) {
+            if (t != null && t.name() != null) {
+                guardTopic(ctx, t.name());   // R26 (SL-158): every requested topic, before anything is leased
+            }
+        }
         ensureLeaseTable();
         int max = r.maxTasks() == null ? 1 : Math.max(1, Math.min(100, r.maxTasks()));
         long wait = Math.min(r.asyncResponseTimeoutMs() == null ? 0 : Math.max(0, r.asyncResponseTimeoutMs()),
                 props.getMaxAsyncResponseTimeout().toMillis());
         long deadline = System.currentTimeMillis() + wait;
-        long sleep = 100;
+        org.sangam.rest.support.WorkLongPoll.Settings backoff = longPollSettings;
+        long sleep = backoff.firstInterval().toMillis();
         while (true) {
             List<ExternalWork> locked = tx.inTx(() -> fetchOnce(ctx, r, max));
             if (!locked.isEmpty() || System.currentTimeMillis() >= deadline) {
@@ -94,7 +145,7 @@ public class OperatonWorkAdapter implements WorkPort {
                 Thread.currentThread().interrupt();
                 return List.of();
             }
-            sleep = Math.min(1000, sleep * 2);
+            sleep = backoff.nextIntervalMillis(sleep);   // X1-07: the one back-off rule
         }
     }
 
@@ -174,6 +225,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public LockState extendLock(RequestContext ctx, String workId, ExtendLockRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         return tx.inTx(() -> {
             Connection c = tx.connection();
@@ -198,6 +250,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public void complete(RequestContext ctx, String workId, CompleteRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         tx.runInTx(() -> {
             Connection c = tx.connection();
@@ -220,6 +273,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public void fail(RequestContext ctx, String workId, FailRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         ExternalTask probe = task(workId);
         if (probe != null && props.getIrreversibleTopics().contains(probe.getTopicName())
@@ -253,6 +307,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public void bpmnError(RequestContext ctx, String workId, BpmnErrorRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         if (r.errorCode() == null || r.errorCode().isBlank()) {
             throw ApiProblem.badRequest("ERROR_CODE_REQUIRED", "errorCode is required");
@@ -277,6 +332,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public void unlock(RequestContext ctx, String workId, UnlockRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         tx.runInTx(() -> {
             Connection c = tx.connection();
@@ -291,6 +347,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public OutcomeUnknownResult outcomeUnknown(RequestContext ctx, String workId, OutcomeUnknownRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         return tx.inTx(() -> {
             Connection c = tx.connection();
@@ -325,6 +382,7 @@ public class OperatonWorkAdapter implements WorkPort {
 
     @Override
     public void cancelAck(RequestContext ctx, String workId, CancelAckRequest r) {
+        guardWork(ctx, workId);   // R26 (SL-158)
         ensureLeaseTable();
         tx.runInTx(() -> {
             Connection c = tx.connection();

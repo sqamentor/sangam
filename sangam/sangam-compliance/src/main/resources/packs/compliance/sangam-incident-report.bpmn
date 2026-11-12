@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_incident_report" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+<!-- Cyber incident report to an incident authority. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_incident_report" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
   <process id="sangam-incident-report" name="Cyber incident report to an incident authority" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>Incident reporting with the authority deadline from the pack (IN: CERT-In 6 hours from noticing, Annexure I types). Unknown details are reported as such and followed up.</documentation>
     <startEvent id="start" name="Incident registered"/>
-    <userTask id="u_prepare" name="Prepare and approve incident report" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/incident-prepare"></userTask>
+    <userTask id="u_prepare" name="Prepare and approve incident report" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:compliance/incident-prepare"/>
     <boundaryEvent id="t_warn" name="Deadline approaching" attachedToRef="u_prepare" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${incidentWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
-    <userTask id="u_warn" name="Escalation: incident report deadline approaching" operaton:candidateGroups="CISO-HEAD" operaton:formKey="sangam:compliance/incident-escalation"></userTask>
+    <userTask id="u_warn" name="Escalation: incident report deadline approaching" operaton:candidateGroups="${cisoHeadSeat}" operaton:formKey="sangam:compliance/incident-escalation"/>
     <endEvent id="end_warn" name="Escalated"/>
     <boundaryEvent id="t_due" name="Deadline" attachedToRef="u_prepare" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${incidentDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <serviceTask id="s_overdue" name="Record overdue report" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.overdue</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="end_due" name="Overdue recorded"/>
     <serviceTask id="s_submit" name="Submit to the authority and secondary recipients" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.submit</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_follow" name="Follow up with remaining details or close" operaton:candidateGroups="CISO" operaton:formKey="sangam:compliance/incident-follow-up"></userTask>
+    <userTask id="u_follow" name="Follow up with remaining details or close" operaton:candidateGroups="${cisoSeat}" operaton:formKey="sangam:compliance/incident-follow-up"/>
     <exclusiveGateway id="g_follow" name="Follow-up needed?" default="f_close"/>
     <serviceTask id="s_follow" name="Send follow-up" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.followUp</operaton:string></operaton:field></extensionElements></serviceTask>
     <serviceTask id="s_close" name="Close incident" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>incident.close</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -31,4 +31,34 @@
     <sequenceFlow id="f_d1" sourceRef="t_due" targetRef="s_overdue"/>
     <sequenceFlow id="f_d2" sourceRef="s_overdue" targetRef="end_due"/>
   </process>
+  <bpmndi:BPMNDiagram id="incident_report_diagram">
+    <bpmndi:BPMNPlane id="incident_report_plane" bpmnElement="sangam-incident-report">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_prepare_di" bpmnElement="u_prepare"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_warn_di" bpmnElement="u_warn"><dc:Bounds x="350" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_warn_di" bpmnElement="end_warn"><dc:Bounds x="547" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_overdue_di" bpmnElement="s_overdue"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_due_di" bpmnElement="end_due"><dc:Bounds x="547" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_submit_di" bpmnElement="s_submit"><dc:Bounds x="350" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_follow_di" bpmnElement="u_follow"><dc:Bounds x="515" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_follow_di" bpmnElement="g_follow"><dc:Bounds x="705" y="295" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_follow_di" bpmnElement="s_follow"><dc:Bounds x="845" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_close_di" bpmnElement="s_close"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="1042" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_warn_di" bpmnElement="t_warn"><dc:Bounds x="193" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_due_di" bpmnElement="t_due"><dc:Bounds x="223" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="285" y="70"/><di:waypoint x="317" y="70"/><di:waypoint x="317" y="320"/><di:waypoint x="350" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="450" y="320"/><di:waypoint x="515" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="615" y="320"/><di:waypoint x="705" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_more_di" bpmnElement="f_more"><di:waypoint x="755" y="320"/><di:waypoint x="800" y="320"/><di:waypoint x="800" y="445"/><di:waypoint x="845" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="895" y="485"/><di:waypoint x="895" y="510"/><di:waypoint x="565" y="510"/><di:waypoint x="565" y="360"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_close_di" bpmnElement="f_close"><di:waypoint x="755" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="945" y="320"/><di:waypoint x="1042" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_w1_di" bpmnElement="f_w1"><di:waypoint x="211" y="128"/><di:waypoint x="211" y="195"/><di:waypoint x="350" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_w2_di" bpmnElement="f_w2"><di:waypoint x="450" y="195"/><di:waypoint x="547" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_d1_di" bpmnElement="f_d1"><di:waypoint x="241" y="128"/><di:waypoint x="241" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_d2_di" bpmnElement="f_d2"><di:waypoint x="450" y="70"/><di:waypoint x="547" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </definitions>

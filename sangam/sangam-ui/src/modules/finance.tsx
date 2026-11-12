@@ -16,7 +16,7 @@ import { BarChart } from '../components/Charts';
 import { Empty, ProblemAlert, Section, TextField } from '../components/ui';
 import { ModulePage, c, f, type Row, type ScreenDef } from './engine';
 
-const money = (key: string) => c(key, `fld.${key}`, (r: Row) => (r[key] === undefined || r[key] === null ? '—' : <span className="num">{fmtMoney(Number(r[key]), String(r.currency ?? 'INR'))}</span>));
+const money = (key: string) => c(key, `fld.${key}`, (r: Row) => (r[key] === undefined || r[key] === null ? '—' : <span className="num">{fmtMoney(Number(r[key]), r.currency ? String(r.currency) : undefined)}</span>));
 const ledgerFilter = f.text('ledger', 'fld.ledgerId', true, { description: 'mod.ledger.ledgerHint' });
 const accountFields = [f.text('period'), f.text('line', 'fld.headOfAccount', true), f.text('holder'), f.text('stage'), f.text('sub')];
 
@@ -67,7 +67,8 @@ const accounts: ScreenDef = {
       showResult: true,
       hint: 'mod.ledger.operationHint',
     },
-    { id: 'close', label: 'act.closePeriod', path: '/ledger/{ledger}/periods/{period}/close', fields: [f.text('period', undefined, true), f.text('nextPeriod'), f.date('asOf')], showResult: true, danger: true, hint: 'mod.ledger.closeHint' },
+    // M-051: CloseRequest(nextPeriod, asOf) (LedgerController.java:108); the period is the path only
+    { id: 'close', label: 'act.closePeriod', path: '/ledger/{ledger}/periods/{period}/close', fields: [f.path(f.text('period', undefined, true)), f.text('nextPeriod'), f.date('asOf')], showResult: true, danger: true, hint: 'mod.ledger.closeHint' },
     { id: 'reconcile', label: 'act.reconcile', path: '/ledger/{ledger}/reconcile', fields: [f.text('period', undefined, true)], showResult: true },
   ],
 };
@@ -128,7 +129,8 @@ export function LedgerChain() {
       {rows.map((r) => {
         const k = (r.key ?? {}) as Row;
         const label = [k.period, k.line, k.holder, k.stage].filter((x) => x && x !== '-').join(' / ') || String(r.accountId);
-        const cur = String(r.currency ?? 'INR');
+        // M-045: the account's currency, else the tenant's (fmtMoney); never a hard-coded one
+        const cur = r.currency ? String(r.currency) : undefined;
         return (
           <BarChart
             key={String(r.accountId)}

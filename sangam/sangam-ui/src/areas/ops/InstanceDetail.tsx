@@ -13,6 +13,7 @@ import { api, historyFilterable } from '../../api/endpoints';
 import type { ActivityInstance, ActivitySelection, ActivityState, ConsequencePreview, HistoryLogKind, ModificationInstruction, ModificationKind } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
+import { textIncludes } from '../../lib/text';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import { http } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
@@ -234,7 +235,7 @@ function toggle(cur: ActivitySelection | undefined, next: ActivitySelection, onS
 
 function ActivityTree({ node, q = '', selected, onSelect, depth = 0 }: { node: ActivityInstance; q?: string; selected?: ActivitySelection; onSelect?: Select; depth?: number }) {
   const { t } = useTranslation();
-  const hit = (n: ActivityInstance): boolean => `${n.activityName ?? ''} ${n.activityId}`.toLowerCase().includes(q.toLowerCase()) || (n.children ?? []).some(hit);
+  const hit = (n: ActivityInstance): boolean => textIncludes(`${n.activityName ?? ''} ${n.activityId}`, q) || (n.children ?? []).some(hit);
   if (q && !hit(node)) return null;
   const label = node.activityName ?? node.activityId;
   const pick: ActivitySelection = { activityInstanceId: node.id, activityId: node.activityId, activityType: node.activityType, label, root: depth === 0 };
@@ -262,7 +263,7 @@ function ActivityTree({ node, q = '', selected, onSelect, depth = 0 }: { node: A
 function ActivityStateList({ instanceId, state, q, selected, onSelect }: { instanceId: string; state: ActivityState; q: string; selected?: ActivitySelection; onSelect: Select }) {
   const { t } = useTranslation();
   const list = usePaged((p) => api.processes.activityHistory(instanceId, { ...p, state }), [instanceId, state]);
-  const rows = (list.data?.items ?? []).filter((a) => `${a.activityName ?? ''} ${a.activityId}`.toLowerCase().includes(q.toLowerCase()));
+  const rows = (list.data?.items ?? []).filter((a) => textIncludes(`${a.activityName ?? ''} ${a.activityId}`, q));
   return (
     <>
       <ProblemAlert error={list.error} onRetry={list.reload} />

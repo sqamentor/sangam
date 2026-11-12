@@ -43,6 +43,9 @@ public final class IncidentReportingService {
         Map<String, Object> describe(Connection c, String tenantId);
     }
 
+    /** M-010c: the compliance roles whose seats {@code sangam-incident-report} routes its user tasks to. */
+    public static final List<String> SEAT_ROLES = List.of("CISO", "CISO-HEAD");
+
     /** Contact role the pack uses for the authority's point of contact: {@code <AUTHORITY>_POC} with dashes removed. */
     public static String pocRole(String authorityCode) {
         return authorityCode.replace("-", "_") + "_POC";
@@ -70,10 +73,20 @@ public final class IncidentReportingService {
         this.evidence = context;
     }
 
+    /**
+     * M-010c: the seat variables {@code sangam-incident-report} routes its user tasks to, from the tenant's
+     * {@code sangam.compliance.seats.<ROLE>}; refused with {@code INVALID_STATE} when one is missing. Empty without a
+     * workflow starter (no process is started, so no task is routed). Callers check it before they write anything.
+     */
+    public Map<String, Object> requireSeats(ComplianceConfig cfg) {
+        return workflows == WorkflowStarter.NONE ? Map.of() : cfg.seatVariables(SEAT_ROLES);
+    }
+
     /** Registers an incident for every pack authority of role INCIDENT whose catalogue has the type; returns them. */
     public List<Incident> registerAll(Connection c, String tenantId, String type, Instant occurredAt, Instant noticedAt,
                                       List<String> affectedSystems, Map<String, Object> indicators, String description, String breachId,
                                       String actor) {
+        requireSeats(config.forTenant(tenantId)); // before the first incident row (M-010c)
         List<Incident> out = new ArrayList<>();
         for (JurisdictionPack.Authority a : config.forTenant(tenantId).pack.authoritiesWithRole("INCIDENT")) {
             if (a.incidentType(type).isPresent()) {
@@ -94,6 +107,7 @@ public final class IncidentReportingService {
         Instant noticed = noticedAt == null ? now : noticedAt;
         Instant due = a.deadlineHours() > 0 ? noticed.plus(Duration.ofHours(a.deadlineHours())) : null;
         Instant warn = a.warnHours() > 0 ? noticed.plus(Duration.ofHours(a.warnHours())) : due;
+        Map<String, Object> seats = requireSeats(cfg);
         String id = Sql.newId();
         Jdbc.update(c, "INSERT INTO CMP_INCIDENT(tenant_id, incident_id, authority, incident_type, occurred_at, noticed_at, due_at, warn_at,"
                         + " status, reported_at, late, systems_json, description, indicators_json, actions_taken, breach_id, report_refs_json,"
@@ -108,6 +122,7 @@ public final class IncidentReportingService {
         vars.put("incidentId", id);
         vars.put("incidentDueAt", (due == null ? now.plus(Duration.ofDays(1)) : due).toString());
         vars.put("incidentWarnAt", (warn == null ? now.plus(Duration.ofHours(12)) : warn).toString());
+        vars.putAll(seats);
         String pi = workflows.start(c, tenantId, "sangam-incident-report", id, vars);
         if (pi != null) {
             Jdbc.update(c, "UPDATE CMP_INCIDENT SET process_instance_id=? WHERE tenant_id=? AND incident_id=?", pi, tenantId, id);

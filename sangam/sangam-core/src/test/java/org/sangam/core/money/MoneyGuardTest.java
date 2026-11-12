@@ -64,6 +64,9 @@ class MoneyGuardTest {
         FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonInsightsAdapter.java", 1); // AI token cost units (not money)
         FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/port/InsightsPort.java", 1);                 // AI token cost units / budget (not money)
         FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/port/OpsPort.java", 1);                      // outbox used percent
+        // X2-06 (owner 2026-11-12): AI usage cost units, not money. Generated SDK model of InsightsPort.AgentUsage
+        // (InsightsPort.java:36, no currency field): Double costUnits and Double budget (both cost units).
+        FLOAT_ALLOWED.put("sdks/java/src/main/java/org/sangam/sdk/generated/model/AgentUsage.java", 2);
         // --- rule 2: decimal columns whose names look like money but are not, or are pending conversion ---
         COLUMN_ALLOWED.put("REG_METER_READING.delta", "meter reading increment (kWh, litres, km), not money");
     }

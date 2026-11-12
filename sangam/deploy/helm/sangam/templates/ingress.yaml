@@ -3,18 +3,37 @@
 {{- $fullname := include "sangam.fullname" . -}}
 {{- /* With the SCALE gateway enabled, API traffic enters through it (tenant -> cell routing). */ -}}
 {{- $api := ternary (printf "%s-gateway" $fullname) (printf "%s-server" $fullname) .Values.scale.gateway.enabled -}}
+{{- $className := .Values.ingress.className -}}
+{{- $annotations := deepCopy (.Values.ingress.annotations | default dict) -}}
+{{- /* SG-39 / Q-09: private ingress. values.schema.json refuses the same cases before rendering; these fail calls keep
+       the refusal when schema validation is skipped. The preset annotations replace the same user keys. */ -}}
+{{- $private := .Values.ingress.private -}}
+{{- if $private.enabled }}
+{{- if .Values.ingress.className }}
+{{- fail "ingress.className is the public ingress class and is refused with ingress.private.enabled=true: set ingress.private.className (SG-39)" }}
+{{- end }}
+{{- $preset := dict -}}
+{{- with $private.preset }}
+{{- $preset = index $private.presets . | default dict -}}
+{{- end }}
+{{- $className = default ($preset.className | default "") $private.className -}}
+{{- $annotations = mergeOverwrite $annotations (deepCopy ($preset.annotations | default dict)) -}}
+{{- if not (or $className (hasKey $annotations "kubernetes.io/ingress.class")) }}
+{{- fail "ingress.private.enabled=true needs an internal class: ingress.private.className or ingress.private.preset (SG-39)" }}
+{{- end }}
+{{- end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $fullname }}
   labels:
     {{- include "sangam.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- with $annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- with .Values.ingress.className }}
+  {{- with $className }}
   ingressClassName: {{ . }}
   {{- end }}
   {{- if .Values.ingress.tls.enabled }}

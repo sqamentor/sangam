@@ -65,6 +65,12 @@ public sealed class TaskContext
     /// <summary>The server-recorded operation-ledger entry of <see cref="OperationId"/> (SL-16); null from older servers.</summary>
     public WorkOperation? Operation => Work.Operation;
 
+    /// <summary>W3C <c>traceparent</c> the engine stored for this task (ExternalWork.traceContext, M-062), or null.</summary>
+    public string? Traceparent => Work.TraceContext?.Traceparent;
+
+    /// <summary>W3C <c>tracestate</c> of the task's trace context, or null.</summary>
+    public string? Tracestate => Work.TraceContext?.Tracestate;
+
     /// <summary>
     /// Downstream reference of this work's effect (for example a payment reference). Set it in the handler; it is sent
     /// as <c>outcome.reference</c> on complete and recorded as the operation-ledger providerRef (SL-16).

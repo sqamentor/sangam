@@ -41,6 +41,9 @@ export const COMPLIANCE_READERS: Role[] = ['OPERATOR', 'AUDITOR', 'ADMIN', 'PLAT
 
 const moduleRead = (perm: string): Access => ({ roles: MODULE_READERS, perms: [perm] });
 
+/** Platform administrators only: the server checks the group sangam-admin, which only PLATFORM_ADMIN reflects. */
+export const PLATFORM_ADMIN_ONLY: Access = { roles: ['PLATFORM_ADMIN'], perms: [] };
+
 /**
  * Route → requirement, for the routes whose screens call module APIs. The permission is the one the server checks
  * on the screen's first call (the first tab's list):
@@ -76,6 +79,23 @@ export const ROUTE_ACCESS: Record<string, Access> = {
   '/m/geo': moduleRead('geo.read'),
   // GET /compliance/purposes: ComplianceController.java:122,124,80 → compliance.read (Permissions.java:61)
   '/m/compliance': { roles: COMPLIANCE_READERS, perms: ['compliance.read'] },
+  // M-029 GET /bulk/jobs lists only the types the caller may load (BulkController.java:58-69); the one sink, ops.variable,
+  // needs ops.tenant.admin (OpsWiring.java:170, OpsController.java:45), a MODULE_ADMIN permission (Permissions.java:74)
+  // held by sangam-tenant-admin (:128, role ADMIN) and sangam-admin ("*").
+  '/admin/bulk': { roles: ['ADMIN', 'PLATFORM_ADMIN'], perms: ['ops.tenant.admin'] },
+  // M-030 /packs/**: tenant.admin AND the group sangam-admin (PackLifecycleController.java:51-61); the group gives
+  // PLATFORM_ADMIN (OperatonWorkspaceAdapter roles), and no permission grant can stand in for it.
+  '/admin/packs': PLATFORM_ADMIN_ONLY,
+  // M-034/M-035 /onboarding/**: tenant.admin AND sangam-admin (OnboardingController.java:70-73,
+  // PromotionController.java:68-72).
+  '/admin/onboarding': PLATFORM_ADMIN_ONLY,
+  // M-031 GET /custom-fields: form.read (TenantCustomFieldController.java:170); held by USER_BASE groups (TASK_USER,
+  // OPERATOR, Permissions.java:113-123), sangam-model-author (MODELLER, :134) and sangam-admin. Defining and retiring need
+  // tenant.admin (:190, :212); the server refuses them to a holder of form.read alone.
+  '/admin/custom-fields': { roles: ['PLATFORM_ADMIN'], perms: ['form.read'] },
+  // M-032 POST /admin/security/module-defaults: tenant.admin (SecurityDefaultsController.java:48), held by
+  // sangam-tenant-admin (Permissions.java:128, role ADMIN) and sangam-admin.
+  '/admin/security-defaults': { roles: ['ADMIN', 'PLATFORM_ADMIN'], perms: ['tenant.admin'] },
 };
 
 /**

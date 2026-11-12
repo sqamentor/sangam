@@ -65,7 +65,11 @@ export const NAV: NavArea[] = [
     label: 'nav.admin',
     roles: ['ADMIN', 'PLATFORM_ADMIN'],
     items: [
-      { to: '/admin/onboarding', label: 'nav.onboarding' },
+      { to: '/admin/onboarding', label: 'nav.onboarding', access: ROUTE_ACCESS['/admin/onboarding'] },
+      { to: '/admin/packs', label: 'nav.packs', access: ROUTE_ACCESS['/admin/packs'] },
+      { to: '/admin/custom-fields', label: 'nav.customFields', access: ROUTE_ACCESS['/admin/custom-fields'] },
+      { to: '/admin/bulk', label: 'nav.bulk', access: ROUTE_ACCESS['/admin/bulk'] },
+      { to: '/admin/security-defaults', label: 'nav.securityDefaults', access: ROUTE_ACCESS['/admin/security-defaults'] },
       { to: '/admin/tenants', label: 'nav.tenants' },
       { to: '/admin/org', label: 'nav.org' },
       { to: '/admin/seats', label: 'nav.seats' },

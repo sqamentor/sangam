@@ -8,6 +8,8 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Map;
 
+import org.sangam.core.time.FiscalYears;
+
 /**
  * A fiscal-year calendar from configuration: any start month and day, any time zone, any label pattern. Examples:
  * April-March (start month 4), January-December (1), July-June (7), October-September (10).
@@ -23,16 +25,15 @@ import java.util.Map;
 public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String labelFormat, int adjustmentPeriods) {
 
     /** The label formats {@link FiscalYear#label()} knows. */
-    public static final java.util.Set<String> LABEL_FORMATS = java.util.Set.of("START-END2", "START", "END", "START/END");
+    public static final java.util.Set<String> LABEL_FORMATS = java.util.Arrays.stream(FiscalYears.LabelFormat.values())
+            .map(FiscalYears.LabelFormat::code).collect(java.util.stream.Collectors.toUnmodifiableSet());
 
     /**
      * SL-125 (fail closed): no part of a fiscal calendar is assumed. The start month, start day and label format are
      * always stated; only the zone may be inherited (from the locale zone, by {@link #from}).
      */
     public FiscalCalendar {
-        if (startMonth < 1 || startMonth > 12 || startDay < 1 || startDay > 28) {
-            throw new IllegalArgumentException("fiscal start must be month 1..12, day 1..28");
-        }
+        FiscalYears.requireStart(startMonth, startDay);
         if (zone == null) {
             throw new IllegalArgumentException("fiscal calendar needs a zone");
         }
@@ -85,10 +86,9 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
         return v.toString().trim();
     }
 
-    /** The fiscal year containing a date, identified by the calendar year in which it starts. */
+    /** The fiscal year containing a date, identified by the calendar year in which it starts ({@link FiscalYears}). */
     public FiscalYear yearOf(LocalDate d) {
-        LocalDate startThisYear = LocalDate.of(d.getYear(), startMonth, startDay);
-        return new FiscalYear(this, d.isBefore(startThisYear) ? d.getYear() - 1 : d.getYear());
+        return new FiscalYear(this, FiscalYears.startYearOf(d, startMonth, startDay));
     }
 
     public FiscalYear yearOf(Instant i) {
@@ -111,11 +111,11 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
     public record FiscalYear(FiscalCalendar calendar, int startYear) implements Comparable<FiscalYear> {
 
         public LocalDate start() {
-            return LocalDate.of(startYear, calendar.startMonth, calendar.startDay);
+            return FiscalYears.start(startYear, calendar.startMonth, calendar.startDay);
         }
 
         public LocalDate end() {
-            return start().plusYears(1).minusDays(1);
+            return FiscalYears.end(startYear, calendar.startMonth, calendar.startDay);
         }
 
         public boolean contains(LocalDate d) {
@@ -163,14 +163,10 @@ public record FiscalCalendar(int startMonth, int startDay, ZoneId zone, String l
             return new FiscalYear(calendar, startYear - 1);
         }
 
+        /** The label in the calendar's format ({@link FiscalYears#label}). */
         public String label() {
-            int end = end().getYear();
-            return switch (calendar.labelFormat) {
-                case "START" -> Integer.toString(startYear);
-                case "END" -> Integer.toString(end);
-                case "START/END" -> startYear + "/" + end;
-                default -> startYear == end ? Integer.toString(startYear) : startYear + "-" + String.format("%02d", end % 100);
-            };
+            return FiscalYears.label(startYear, calendar.startMonth, calendar.startDay,
+                    FiscalYears.LabelFormat.of(calendar.labelFormat));
         }
 
         @Override

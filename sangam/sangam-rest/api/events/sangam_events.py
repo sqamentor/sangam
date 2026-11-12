@@ -174,44 +174,37 @@ WEBHOOK_MESSAGES = [
 
 # ---------------------------------------------------------------- audit event names (X.4.0.3, normative per X.5.2)
 # Written to the audit chain in the command transaction, never through the outbox (AuditChain), so they are not
-# messages; R16 / X.5.2 make this document their published list. Copied from SANGAM.md X.4.0.3 group by group;
-# AsyncApiConsistencyTest compares it with the SANGAM.md table.
-AUDIT_EVENTS = [
-    ("Identity", "AUTH_LOGIN AUTH_LOGOUT SESSION_EXPIRED SEAT_CONTEXT_SELECTED AUTH_DENIED"),
-    ("Case lifecycle", "CASE_CREATED CASE_DRAFT_SAVED CASE_SUBMITTED CASE_RETURNED CASE_RESUBMITTED CLARIFICATION_SOUGHT "
-                       "CLARIFICATION_RECEIVED CASE_REJECTED CASE_WITHDRAWN CASE_APPROVED CASE_ACKNOWLEDGED CASE_RECONCILED "
-                       "CASE_CLOSED APPEAL_FILED"),
-    ("Tasks", "TASK_CREATED TASK_ASSIGNED TASK_CLAIMED TASK_UNCLAIMED TASK_REASSIGNED TASK_COMPLETED TASK_MARKED_OUT_OF_HIERARCHY"),
-    ("Authority", "APPROVAL_RECORDED APPROVAL_INVALIDATED ACTED_FOR SOD_EXCEPTION_GRANTED SOD_VIOLATION_BLOCKED "
-                  "POWER_LIMIT_EXCEEDED"),
-    ("Rules / signing", "RULE_EVALUATED SIGNATURE_REQUESTED SIGNATURE_APPLIED SIGNATURE_FAILED"),
-    ("External effects", "EXT_OP_REQUESTED EXT_OP_ACKNOWLEDGED EXT_OP_FAILED EXT_OP_UNKNOWN RECON_ITEM_OPENED "
-                         "RECON_ITEM_CLAIMED RECON_ITEM_RESOLVED LATE_RESULT_AFTER_DELETE CANCEL_REQUESTED CANCEL_ACKED"),
-    ("Operations", "INCIDENT_OPENED INCIDENT_RETRIED INCIDENT_RESOLVED INSTANCE_CANCELLED INSTANCE_DELETED "
-                   "INSTANCE_MODIFIED OUTBOX_REQUEUED OUTBOX_SKIPPED"),
-    ("SLA", "SLA_STARTED SLA_PAUSED SLA_RESUMED SLA_WARNING SLA_BREACHED ESCALATED DEEMED_DECISION"),
-    ("Notifications", "NOTIFICATION_QUEUED NOTIFICATION_SENT NOTIFICATION_DELIVERED NOTIFICATION_FAILED "
-                      "NOTIFICATION_SUPPRESSED_DUPLICATE"),
-    ("Documents", "DOCUMENT_UPLOADED DOCUMENT_FETCHED DOCUMENT_ISSUED DOCUMENT_PUSHED"),
-    ("Records", "RETENTION_CLASSIFIED LEGAL_HOLD_SET LEGAL_HOLD_RELEASED RECORD_REVIEWED RECORD_TRANSFERRED_NAI "
-                "RTI_REQUEST_LINKED DATA_ERASED"),
-    ("Admin", "TENANT_CREATED TENANT_CONFIGURED TENANT_ACTIVATED SEAT_CREATED SEAT_MOVED POSTING_EFFECTIVE "
-              "ADDITIONAL_CHARGE_GRANTED DELEGATION_GRANTED DELEGATION_EXPIRED GRANT_CHANGED IDP_CONFIGURED "
-              "PACKAGE_SUBMITTED_FOR_REVIEW PACKAGE_APPROVED PACKAGE_PUBLISHED PACKAGE_RETIRED DLT_TEMPLATE_REGISTERED"),
-    ("Security", "SEC_INCIDENT_OPENED SEC_INCIDENT_CLASSIFIED SEC_REPORT_SUBMITTED SEC_INCIDENT_CLOSED DPDP_BREACH_REPORTED "
-                 "AUDIT_EXPORTED AUDIT_VIEWED"),
-]
-# Names the code writes that X.4.0.3 does not list (org.sangam.security.audit.SecurityEventType,
-# org.sangam.packs.core.CaseState). They need change control (X.5.2) before 0.1.0: added to X.4, or renamed.
-AUDIT_EVENTS_PENDING = [
-    ("SecurityEventType", "LOGIN_BATCH LOGIN_FAILED API_TOKEN_ISSUED API_TOKEN_REVOKED USER_PROVISIONED USER_UPDATED "
-                          "USER_DISABLED DIRECTORY_SYNCED TASK_ACTED_FOR SOD_EXCEPTION_REQUESTED SOD_EXCEPTION_REJECTED "
-                          "AUTHORITY_DECISION ROUTING_DECISION DENY_CHANGED MEMBERSHIP_CHANGED SEAT_HOLDER_CHANGED "
-                          "PRIVILEGE_CHANGED POLICY_CHANGE_PENDING SENSITIVE_READ EXPORT READ_AUDIT TENANT_SUSPENDED "
-                          "SEAT_ABOLISHED ORG_UNIT_CREATED ORG_UNIT_MOVED ORG_UNIT_RENAMED POSTING_ENDED LEAVE_RECORDED "
-                          "WORKER_BOUND WORKER_UNBOUND BULK_OPERATION_APPROVED OPERATOR_ACTION TENANT_QUOTA_EXCEEDED"),
-    ("CaseState", "CASE_IN_SCRUTINY CASE_IN_RECOMMENDATION CASE_IN_SANCTION CASE_IN_EXECUTION"),
-]
+# messages; R16 / X.5.2 make this document their published list. Read from the SANGAM.md X.4.0.3 table (the single
+# source), row by row in table order: the group is the first cell without its parenthesised reference, the names are
+# the backticked upper-case words of the second cell, and `A_B`/`_C` (a name starting with _) replaces the last word of
+# the name before it (A_C). AsyncApiConsistencyTest reads the table with the same rules.
+def _audit_events():
+    import re as _re
+    with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "..", "..", "SANGAM.md"),
+              encoding="utf-8") as f:
+        md = f.read()
+    start = md.index("#### X.4.0.3")
+    out = []
+    for line in md[start:md.index("#### X.4.0.4", start)].split("\n"):
+        cells = line.split("|")
+        if not line.startswith("| ") or len(cells) < 3 or cells[1].strip() == "Group":
+            continue
+        names, previous = [], None
+        for n in _re.findall(r"`(_?[A-Z][A-Z_]*|_[A-Z_]+)`", cells[2]):
+            if n.startswith("_") and previous is not None:
+                n = previous[:previous.rindex("_")] + n
+            names.append(n)
+            previous = n
+        out.append((_re.sub(r"\s*\(.*\)\s*$", "", cells[1].strip()), " ".join(names)))
+    assert out, "SANGAM.md X.4.0.3 has no event rows"
+    return out
+
+
+AUDIT_EVENTS = _audit_events()
+# Names the code writes (org.sangam.security.audit.SecurityEventType, org.sangam.packs.core.CaseState) that X.4.0.3 does
+# not list; each needs change control (X.5.2) before 0.1.0. Empty since SANGAM.md X.4.0.3 took the 33 SecurityEventType
+# and 4 CaseState names (Wave 2, 2026-11-12); EventContractTest fails when the code writes a name missing from both.
+AUDIT_EVENTS_PENDING = []
 EVENTS_SCHEMAS["AuditEventName"] = {
     "type": "string",
     "description": "Audit event names (SANGAM.md X.4.0.3, normative per X.5.2 / R42). Audit events are written to the "

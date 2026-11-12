@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.sangam.core.engine.SangamClock;
+
 /**
  * One call of a connector.
  *
@@ -58,12 +60,23 @@ public record ConnectorRequest(String tenantId, UUID operationId, String attempt
         return v instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
     }
 
-    /** Remaining time until the deadline in milliseconds, or {@code fallbackMillis} when there is no deadline. */
+    /**
+     * Remaining time until the deadline in milliseconds on the JVM wall clock ({@link SangamClock#SYSTEM}), or
+     * {@code fallbackMillis} when there is no deadline.
+     */
     public long remainingMillis(long fallbackMillis) {
+        return remainingMillis(fallbackMillis, SangamClock.SYSTEM);
+    }
+
+    /**
+     * Remaining time until the deadline in milliseconds on {@code clock} (D11, M-097: the caller passes the clock the
+     * deadline was set on), or {@code fallbackMillis} when there is no deadline; never negative.
+     */
+    public long remainingMillis(long fallbackMillis, SangamClock clock) {
         if (deadline == null) {
             return fallbackMillis;
         }
-        return Math.max(0, deadline.toEpochMilli() - System.currentTimeMillis());
+        return Math.max(0, deadline.toEpochMilli() - clock.now().toEpochMilli());
     }
 
     public ConnectorRequest withInput(Map<String, Object> newInput) {

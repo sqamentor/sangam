@@ -45,8 +45,15 @@ export interface ApiRequest {
   path: string;
   query?: Record<string, QueryValue>;
   body?: unknown;
-  /** Pre-encoded body (multipart); `Content-Type` is then set by fetch. */
-  rawBody?: FormData;
+  /**
+   * Pre-encoded body: FormData (multipart; `Content-Type` is then set by fetch), or bytes/text sent with
+   * `rawContentType`.
+   */
+  rawBody?: FormData | Uint8Array | string;
+  /** `Content-Type` of a bytes/text `rawBody`. */
+  rawContentType?: string;
+  /** `bytes` or `text`: return the success body undecoded (non-JSON media such as CSV, XML, PDF or ZIP). */
+  responseType?: 'json' | 'bytes' | 'text';
   /** Idempotency-Key (R41). On a mutation without one, a key is generated per logical call. */
   idempotencyKey?: string;
   timeoutMs?: number;
@@ -79,6 +86,23 @@ export interface TransportOptions {
   seat?: string;
   /** Default `X-Sangam-Acting-For-Seat` sent on every call. */
   actingForSeat?: string;
+  /** The caller's W3C trace context (R13, M-062); unset sends no trace headers (R56). */
+  traceContext?: TraceContext;
+}
+
+/** The caller's current W3C trace context, or undefined outside a trace. */
+export type TraceContext = () => { traceparent?: string; tracestate?: string } | undefined;
+
+const TRACEPARENT = /^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/;
+
+/** A well-formed version-00 `traceparent` whose trace-id and parent-id are not all zero. */
+export function validTraceparent(v: string | undefined | null): v is string {
+  return typeof v === 'string' && TRACEPARENT.test(v) && !/^0+$/.test(v.substring(3, 35)) && !/^0+$/.test(v.substring(36, 52));
+}
+
+/** A `tracestate` of printable ASCII, at most 512 characters. */
+export function validTracestate(v: string | undefined | null): v is string {
+  return typeof v === 'string' && v.length > 0 && v.length <= 512 && /^[ -~]+$/.test(v);
 }
 
 const sleep = (ms: number, signal?: AbortSignal): Promise<void> =>
@@ -128,6 +152,7 @@ export class HttpTransport {
   private readonly fetchImpl: typeof fetch;
   private readonly seat?: string;
   private readonly actingForSeat?: string;
+  private readonly traceContext?: TraceContext;
 
   constructor(opts: TransportOptions) {
     let b = trimTrailingSlashes(opts.baseUrl);
@@ -141,6 +166,28 @@ export class HttpTransport {
     this.fetchImpl = opts.fetch ?? fetch;
     this.seat = opts.seat;
     this.actingForSeat = opts.actingForSeat;
+    this.traceContext = opts.traceContext;
+  }
+
+  /**
+   * The W3C trace headers for this request (M-062): none without a trace context, when the request sets its own
+   * `traceparent`, when the context has no valid one, or when the provider throws (tracing never fails a call).
+   */
+  traceHeaders(req: ApiRequest): Record<string, string> {
+    const own = Object.keys(req.headers ?? {}).map((k) => k.toLowerCase());
+    if (!this.traceContext || own.includes('traceparent')) return {};
+    try {
+      const t = this.traceContext();
+      if (!t || !validTraceparent(t.traceparent)) return {};
+      return validTracestate(t.tracestate) && !own.includes('tracestate')
+        ? { traceparent: t.traceparent, tracestate: t.tracestate }
+        : { traceparent: t.traceparent };
+    } catch (e) {
+      this.logger.log('debug', 'trace.context', `trace context provider failed; request sent without trace headers: ${String(e)}`, {
+        method: req.method, path: req.path,
+      });
+      return {};
+    }
   }
 
   async execute<T>(req: ApiRequest): Promise<ApiResponse<T>> {
@@ -175,7 +222,8 @@ export class HttpTransport {
         continue;
       }
       if (resp.ok) {
-        const body = (await this.decode(resp)) as T;
+        const body = (req.responseType === 'bytes' ? new Uint8Array(await resp.arrayBuffer())
+          : req.responseType === 'text' ? await resp.text() : await this.decode(resp)) as T;
         return { status: resp.status, headers: resp.headers, body };
       }
       const err = await this.toError(req, resp);
@@ -221,6 +269,7 @@ export class HttpTransport {
     let body: BodyInit | undefined;
     if (req.rawBody !== undefined) {
       body = req.rawBody;
+      if (req.rawContentType && !(req.rawBody instanceof FormData)) headers['Content-Type'] = req.rawContentType;
     } else if (req.body !== undefined) {
       headers['Content-Type'] = 'application/json';
       body = JSON.stringify(req.body, jsonReplacer);
@@ -228,6 +277,7 @@ export class HttpTransport {
       headers['Content-Type'] = 'application/json';
       body = '{}';
     }
+    Object.assign(headers, this.traceHeaders(req));
     Object.assign(headers, req.headers);
     const timeout = AbortSignal.timeout(req.timeoutMs ?? this.timeoutMs);
     const signal = req.signal ? AbortSignal.any([timeout, req.signal]) : timeout;

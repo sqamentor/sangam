@@ -34,7 +34,7 @@
     "external-worker"
   ],
   "devDependencies": {
-    "@types/node": "^20.17.0",
+    "@types/node": "20.19.43",
     "typescript": "^5.6.3"
   }
 }

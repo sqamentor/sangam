@@ -30,8 +30,8 @@ No Operaton UI code was copied; screens are written from the REST contract. Ever
 
 | Item | Limit |
 |---|---|
-| Embedded forms | Parsed into Sangam forms; `cam-script` logic does not run |
-| External forms | Link only, no iframe |
+| Embedded forms | Out by design (SANGAM.md X.5.3): parsed into Sangam forms; `cam-script` logic does not run, because the UI CSP is `script-src 'self'` (`index.html`) and ADR-D-8 keeps scripts out of the engine |
+| External forms | Out by design (SANGAM.md X.5.3): a link, never an iframe (same CSP and ADR-D-8) |
 | Multi-key sort | Server keys: created, due, priority, name. Amount and reference are not sortable: `TaskQuery` has no business-key order, and amount is a process variable whose type differs by process |
 | Membership fields | Searchable list of ids; a typed id is still accepted |
 | Matched rules | Depends on the rule id in `/history/decisions` and dmn-js `data-row-id`, both unverified |

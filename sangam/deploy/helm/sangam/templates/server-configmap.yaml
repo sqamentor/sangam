@@ -50,6 +50,8 @@ data:
   SANGAM_JOB_MAX_JOBS_PER_ACQUISITION: {{ .Values.server.jobExecutor.maxJobsPerAcquisition | quote }}
   # M-055 / SANGAM.md 4.3 item 3: exclusive jobs grouped per root instance (false = per process instance)
   SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES: {{ .Values.server.jobExecutor.exclusiveOverProcessHierarchies | quote }}
+  # M-054: job executor pool on JDK virtual threads (default false)
+  SANGAM_JOB_VIRTUAL_THREADS: {{ .Values.server.jobExecutor.virtualThreads | quote }}
   # OIDC (profile "oidc"): SANGAM_OIDC_ISSUER is the iss the tokens carry; jwk-set-uri optional (internal JWKS URL)
   SANGAM_OIDC_ISSUER: {{ required "oidc.issuerUri is required" .Values.oidc.issuerUri | quote }}
   {{- with .Values.oidc.jwkSetUri }}

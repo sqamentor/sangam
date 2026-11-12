@@ -93,6 +93,8 @@ class StrictExclusiveRoutingH2Test {
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setRouteCorrectionAuthorization(new RoleAuthorization());
+        // SL-160: the test delegate is tenant-approved, as a deployment would approve it
+        s.getDeployAllowedClasses().put("*", Set.of(Posting.class.getName()));
         try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2")) {
             a.inEngineTransaction(c -> Jdbc.update(c,
                     "CREATE TABLE TEST_POSTING(instance_id VARCHAR(64), route VARCHAR(64))"));

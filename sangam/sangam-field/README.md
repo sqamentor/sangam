@@ -106,6 +106,10 @@ no library.
 
 - ETA uses straight-line distance × road factor. Road-network routing is out of scope and needs a connector.
 - EXIF is read only from JPEG. HEIC and PNG evidence gets hash, duplicate and fix checks but no EXIF checks.
-- The PWA client in sangam-ui does not yet implement the encrypted queue contract (`LocalQueueContract`). It uses the
-  online `record` call with Idempotency-Key.
+- **Offline queue (SL-129), coded on both sides 2026-11-12, tests not run.** The PWA (`sangam-ui/src/lib/offline/`:
+  `crypto.ts`, `storage.ts`, `fieldSync.ts`) implements `LocalQueueContract`: one non-extractable AES-256-GCM queue key
+  per device installation, the v1 envelope, and the AAD `tenantId|deviceId|operationId|userId`. The server reference
+  (`LocalQueueContract.aad`, `LocalQueueCipher`) builds the same AAD, so an entry opens only for the user who captured
+  it; under another login it stays encrypted and is not replayed. `LocalQueueCipherTest` reads the PWA's pinned vectors
+  from `crypto.test.ts` and `canonical.test.ts`, so a change on either side fails there.
 - No tests were run in this phase. The phase rule is code first, tests last.

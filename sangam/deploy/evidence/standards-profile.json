@@ -1,0 +1,931 @@
+{
+  "profile": "sangam-standards-profile",
+  "version": "0.1.0",
+  "inputs": {
+    "compatibility": "sangam-ui/src/modeller/compatibility.json",
+    "compatibilityGeneratedAt": "2026-11-04T22:29:11.468Z",
+    "feelPolicy": "SANGAM.md X.0g (ADR-D-26)"
+  },
+  "notations": [
+    {
+      "notation": "BPMN",
+      "standard": "BPMN 2.0.2 (ISO/IEC 19510)",
+      "counts": {
+        "SUPPORTED": 25,
+        "SUPPORTED_WITH_RULES": 7,
+        "PORTED": 1,
+        "NOT_EXECUTABLE": 4,
+        "REJECTED": 1,
+        "UNSUPPORTED": 3
+      }
+    },
+    {
+      "notation": "DMN",
+      "standard": "DMN 1.3",
+      "counts": {
+        "SUPPORTED": 8,
+        "SUPPORTED_WITH_RULES": 0,
+        "PORTED": 2,
+        "NOT_EXECUTABLE": 1,
+        "REJECTED": 0,
+        "UNSUPPORTED": 6
+      }
+    },
+    {
+      "notation": "CMMN",
+      "standard": "CMMN 1.1",
+      "counts": {
+        "SUPPORTED": 9,
+        "SUPPORTED_WITH_RULES": 3,
+        "PORTED": 0,
+        "NOT_EXECUTABLE": 0,
+        "REJECTED": 2,
+        "UNSUPPORTED": 0
+      }
+    }
+  ],
+  "constructs": [
+    {
+      "notation": "BPMN",
+      "construct": "BoundaryEvent",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "boundaryEvent"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "CancelEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "cancelEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "CompensateEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "compensateEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ConditionalEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Also covers Flowable variable-listener events on import (FC-05).",
+      "source": "Operaton BpmnParse",
+      "xml": [
+        "conditionalEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "EndEvent",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "endEvent"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ErrorEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "errorEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "EscalationEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "escalationEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "EventBasedGateway",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "eventBasedGateway"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ExclusiveGateway",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "exclusiveGateway"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "InclusiveGateway",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "inclusiveGateway"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "IntermediateCatchEvent",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "intermediateCatchEvent"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "IntermediateThrowEvent",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "intermediateThrowEvent"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "LinkEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton BpmnParse",
+      "xml": [
+        "linkEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ManualTask",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "manualTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ParallelGateway",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "parallelGateway"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ReceiveTask",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "receiveTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "SendTask",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "sendTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ServiceTask",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "serviceTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "SignalEventDefinition",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "signalEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "StartEvent",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "startEvent"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "SubProcess",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "subProcess"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "SubProcess.triggeredByEvent",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "Event sub-process (interrupting and non-interrupting).",
+      "source": "Operaton BpmnParse",
+      "xml": []
+    },
+    {
+      "notation": "BPMN",
+      "construct": "Task",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "task"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "Transaction",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Cancel end / boundary events with compensation.",
+      "source": "Operaton BpmnParse",
+      "xml": [
+        "transaction"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "UserTask",
+      "status": "SUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton parser",
+      "xml": [
+        "userTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "BusinessRuleTask",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Needs operaton:decisionRefBinding (deployment); a missing binding is rejected (D-12).",
+      "source": "sangam-engine SangamBpmnParseListener",
+      "xml": [
+        "businessRuleTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "CallActivity",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Without calledElementBinding the call binds to the deployment, not latest (D-12).",
+      "source": "sangam-engine SangamBpmnParseListener",
+      "xml": [
+        "callActivity"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "MessageEventDefinition",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Early messages are buffered by the Sangam inbox (D-33, R38); sangam:eventType links to the event registry (FC-02).",
+      "source": "FLOWABLE-INTO-OPERATON FC-02, D-33",
+      "xml": [
+        "messageEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "MultiInstanceLoopCharacteristics",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "Literal loopCardinality above multiInstanceMaxCardinality is rejected; a runtime guard checks collections (GP-09, D-23).",
+      "source": "sangam-engine SangamBpmnParseListener",
+      "xml": [
+        "multiInstanceLoopCharacteristics"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "Participant",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Only the executable process of one pool is deployed; message flows between pools are not executed (D-52).",
+      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "xml": [
+        "participant"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "TerminateEventDefinition",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Terminates the enclosing scope; terminateAll is a Stage E port (FC-22).",
+      "source": "FLOWABLE-INTO-OPERATON FC-22",
+      "xml": [
+        "terminateEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "TimerEventDefinition",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "UTC due dates; sangam:catchUp FIRE_ONCE | FIRE_ALL | SKIP_MISSED; business calendar tag (R31, D-01, FC-23).",
+      "source": "sangam-engine SangamBpmnParseListener",
+      "xml": [
+        "timerEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "AdHocSubProcess",
+      "status": "PORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Rejected by Operaton (ENGINE-09005); Sangam port with start/complete API (FC-01).",
+      "source": "spike FLOWABLE-INTO-OPERATON FC-01; contract /process-instances/{id}/ad-hoc",
+      "xml": [
+        "adHocSubProcess"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "DataObjectReference",
+      "status": "NOT_EXECUTABLE",
+      "modeller": "PALETTE",
+      "engineParses": false,
+      "note": "Documentation only; use process variables or R78 data objects.",
+      "source": "SANGAM II §3.2",
+      "xml": [
+        "dataObjectReference"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "DataStoreReference",
+      "status": "NOT_EXECUTABLE",
+      "modeller": "PALETTE",
+      "engineParses": false,
+      "note": "Documentation only; data stores are not executed (D-52).",
+      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "xml": [
+        "dataStoreReference"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "Group",
+      "status": "NOT_EXECUTABLE",
+      "modeller": "PALETTE",
+      "engineParses": false,
+      "note": "Diagram annotation.",
+      "source": "BPMN 2.0.2",
+      "xml": [
+        "group"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "TextAnnotation",
+      "status": "NOT_EXECUTABLE",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Diagram annotation.",
+      "source": "BPMN 2.0.2",
+      "xml": [
+        "textAnnotation"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ScriptTask",
+      "status": "REJECTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": true,
+      "note": "Rejected at deploy; scripts run in the out-of-process script worker (D-46, R6, D-8).",
+      "source": "sangam-engine SangamBpmnParseListener",
+      "xml": [
+        "scriptTask"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "ComplexGateway",
+      "status": "UNSUPPORTED",
+      "modeller": "REPLACE_MENU",
+      "engineParses": false,
+      "note": "Parsed but no runtime join semantics in either engine (D-52).",
+      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "xml": [
+        "complexGateway"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "MultipleEventDefinition",
+      "status": "UNSUPPORTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "Multiple / parallel-multiple events are not executed (D-52).",
+      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "xml": [
+        "multipleEventDefinition"
+      ]
+    },
+    {
+      "notation": "BPMN",
+      "construct": "StandardLoopCharacteristics",
+      "status": "UNSUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Standard loop is not executed (D-52); use multi-instance or a gateway loop.",
+      "source": "FLOWABLE-INTO-OPERATON D-52",
+      "xml": [
+        "standardLoopCharacteristics"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "Decision",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "Decision table and literal expression.",
+      "source": "Operaton engine-dmn",
+      "xml": [
+        "decision"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.ANY",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton engine-dmn",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.COLLECT",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "Including SUM, MIN, MAX, COUNT aggregations.",
+      "source": "Operaton engine-dmn",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.FIRST",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton engine-dmn",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.RULE ORDER",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton engine-dmn",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.UNIQUE",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton engine-dmn",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "InputData",
+      "status": "SUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "Requirement only; values come from variables.",
+      "source": "Operaton engine-dmn",
+      "xml": [
+        "inputData"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "LiteralExpression",
+      "status": "SUPPORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": true,
+      "note": "FEEL (feel-scala) per the R33 type contract.",
+      "source": "Operaton engine-dmn",
+      "xml": [
+        "literalExpression"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.OUTPUT ORDER",
+      "status": "PORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Sangam hit-policy handler (FC-54).",
+      "source": "FLOWABLE-INTO-OPERATON FC-54",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "HitPolicy.PRIORITY",
+      "status": "PORTED",
+      "modeller": "PROPERTIES",
+      "engineParses": false,
+      "note": "Sangam hit-policy handler (FC-54).",
+      "source": "FLOWABLE-INTO-OPERATON FC-54",
+      "xml": []
+    },
+    {
+      "notation": "DMN",
+      "construct": "KnowledgeSource",
+      "status": "NOT_EXECUTABLE",
+      "modeller": "PALETTE",
+      "engineParses": true,
+      "note": "Documentation of authority (for example the delegation order).",
+      "source": "DMN 1.3",
+      "xml": [
+        "knowledgeSource"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "BusinessKnowledgeModel",
+      "status": "UNSUPPORTED",
+      "modeller": "PALETTE",
+      "engineParses": false,
+      "note": "BKM invocation is not executed by Operaton's DMN engine; R8 DMN SPI at Stage D.",
+      "source": "SANGAM II §3.3",
+      "xml": [
+        "businessKnowledgeModel"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "Context",
+      "status": "UNSUPPORTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "Boxed context expressions are not executed.",
+      "source": "SANGAM II §3.3",
+      "xml": [
+        "context"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "DecisionService",
+      "status": "UNSUPPORTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "Decision services need the R8 DMN SPI (FC-53, Stage D).",
+      "source": "FLOWABLE-INTO-OPERATON FC-53",
+      "xml": [
+        "decisionService"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "FunctionDefinition",
+      "status": "UNSUPPORTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "Boxed function definition is not executed.",
+      "source": "SANGAM II §3.3",
+      "xml": [
+        "functionDefinition"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "Invocation",
+      "status": "UNSUPPORTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "Boxed invocation is not executed.",
+      "source": "SANGAM II §3.3",
+      "xml": [
+        "invocation"
+      ]
+    },
+    {
+      "notation": "DMN",
+      "construct": "Relation",
+      "status": "UNSUPPORTED",
+      "modeller": "IMPORT_ONLY",
+      "engineParses": false,
+      "note": "Boxed relation is not executed.",
+      "source": "SANGAM II §3.3",
+      "xml": [
+        "relation"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "CasePlanModel",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton DefaultCmmnElementHandlerRegistry",
+      "xml": [
+        "casePlanModel"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "CaseTask",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton DefaultCmmnElementHandlerRegistry",
+      "xml": [
+        "caseTask"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "DecisionTask",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton DefaultCmmnElementHandlerRegistry",
+      "xml": [
+        "decisionTask"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "DiscretionaryItem",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "Planning table with manual start.",
+      "source": "Operaton CmmnTransform",
+      "xml": [
+        "discretionaryItem"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "ManualActivationRule",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton CmmnTransform",
+      "xml": [
+        "manualActivationRule"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "Milestone",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton DefaultCmmnElementHandlerRegistry",
+      "xml": [
+        "milestone"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "RequiredRule",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton CmmnTransform",
+      "xml": [
+        "requiredRule"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "Sentry",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "Entry and exit criteria with if-part conditions.",
+      "source": "Operaton CmmnTransform",
+      "xml": [
+        "sentry"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "Stage",
+      "status": "SUPPORTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "",
+      "source": "Operaton DefaultCmmnElementHandlerRegistry",
+      "xml": [
+        "stage"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "HumanTask",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "Completed tasks are audited as COMPLETED, not terminated (D-25).",
+      "source": "sangam-engine SangamCmmnTransformListener",
+      "xml": [
+        "humanTask"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "ProcessTask",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "Exit or terminate cancels the called process (D-26); use it for service, HTTP and external work (FC-11, FC-58).",
+      "source": "sangam-engine SangamCmmnTransformListener",
+      "xml": [
+        "processTask"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "RepetitionRule",
+      "status": "SUPPORTED_WITH_RULES",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": true,
+      "note": "Condition-based repetition only; collections and max count are Stage E (FC-57).",
+      "source": "FLOWABLE-INTO-OPERATON FC-57",
+      "xml": [
+        "repetitionRule"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "TimerEventListener",
+      "status": "REJECTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": false,
+      "note": "Rejected at deploy: Operaton registers no handler, so it never fires (D-08); FC-55 at Stage E.",
+      "source": "sangam-engine SangamCmmnTransformListener",
+      "xml": [
+        "timerEventListener"
+      ]
+    },
+    {
+      "notation": "CMMN",
+      "construct": "UserEventListener",
+      "status": "REJECTED",
+      "modeller": "SOURCE_EDITOR",
+      "engineParses": false,
+      "note": "Rejected at deploy (D-08); FC-55 at Stage E.",
+      "source": "sangam-engine SangamCmmnTransformListener",
+      "xml": [
+        "userEventListener"
+      ]
+    }
+  ],
+  "feel": [
+    {
+      "topic": "Exact numbers (SG-33)",
+      "rule": "`SangamValueMapper` maps FEEL numbers to `Long` when whole, otherwise to `BigDecimal`, never to `Double`. `BigDecimal` and `Money` (exact major amount) go in unchanged. `typeRef=\"number\"` is registered as an exact type (`NumberDataTypeTransformer`)."
+    },
+    {
+      "topic": "Money types at deploy (SG-33, R44)",
+      "rule": "A `.dmn` input, output or variable with `typeRef=\"double\"`/`\"float\"` whose name, label or expression is money (amount, value, cost, fee, limit, budget, price, charge, …) is **refused**. Other doubles get a warning recommending `number`. Money uses `long` (minor units) or `number`. All 176 shipped pack files were migrated from `double` to `number`, so no justified doubles remain."
+    },
+    {
+      "topic": "Strict evaluation (SG-34)",
+      "rule": "A FEEL failure or suppressed failure fails the decision with `SANGAM-FEEL-STRICT`. This covers a missing variable, a null or mistyped operand, division by zero, an unknown function, an invalid literal date/time/duration/number, and a null condition. Native FEEL would return null, take the else branch, or fire a catch-all rule. A value that is genuinely null is still a value: `x = null` and `x != null` work."
+    },
+    {
+      "topic": "Null decision-table input (SG-34)",
+      "rule": "A null input is an error (`SANGAM-DMN-NULL-INPUT`) unless at least one rule tests that input with `null`. A catch-all `-` never catches a null. With an explicit null rule, a null input matches only the null tests."
+    },
+    {
+      "topic": "Failure handling",
+      "rule": "The check runs inside the engine command, before the result reaches the process. No rule's output is used and the command rolls back. On an async business rule task the result is an incident on the task. After the data is corrected, a job retry evaluates again and resolves the incident."
+    },
+    {
+      "topic": "Date-time equality (SG-35)",
+      "rule": "DMN 1.3 compares date-times on the time line (OMG issue DMN13-35, resolved in DMN 1.3: `=` is the same instant). The pinned engine's `=` also compares the zone (feel-scala issue #767), and an operator cannot be overridden without changing the engine, which the SG-27 pin forbids. **Policy: the spec semantics, same instant.** Until the engine is upgraded, the deploy-time lint `SANGAM-DMN-DATETIME-EQ` warns on `=`/`!=`, and on a bare input entry, against a zoned date-time literal. Models compare instants with `<`, `>`, ranges, or `a - b = duration(\"PT0S\")`. This is a documented gap, not a silent rule."
+    },
+    {
+      "topic": "Known residual",
+      "rule": "A built-in conversion (`date(x)`, `duration(x)`, …) whose argument is a **variable** holding an invalid string still yields null in the pinned engine (built-ins cannot be overridden). Literal arguments are refused. A null that reaches a later operator, a decision-table input or a required output is still caught (strict evaluation, null-input rule, R10 `requiredOutputs`)."
+    },
+    {
+      "topic": "Status",
+      "rule": "Decision: DECIDED (SG-33/34/35 root-cause fixes, 2026-11-08). Delivery: IMPLEMENTED (`sangam-engine` `org.sangam.engine.feel`). Tests: `FeelBehaviourH2Test`, `DmnModelLintTest`."
+    }
+  ]
+}

@@ -585,6 +585,14 @@ components:
       - SESSION_EXPIRED
       - SEAT_CONTEXT_SELECTED
       - AUTH_DENIED
+      - LOGIN_BATCH
+      - LOGIN_FAILED
+      - API_TOKEN_ISSUED
+      - API_TOKEN_REVOKED
+      - USER_PROVISIONED
+      - USER_UPDATED
+      - USER_DISABLED
+      - DIRECTORY_SYNCED
       - CASE_CREATED
       - CASE_DRAFT_SAVED
       - CASE_SUBMITTED
@@ -599,6 +607,10 @@ components:
       - CASE_RECONCILED
       - CASE_CLOSED
       - APPEAL_FILED
+      - CASE_IN_SCRUTINY
+      - CASE_IN_RECOMMENDATION
+      - CASE_IN_SANCTION
+      - CASE_IN_EXECUTION
       - TASK_CREATED
       - TASK_ASSIGNED
       - TASK_CLAIMED
@@ -606,12 +618,17 @@ components:
       - TASK_REASSIGNED
       - TASK_COMPLETED
       - TASK_MARKED_OUT_OF_HIERARCHY
+      - TASK_ACTED_FOR
       - APPROVAL_RECORDED
       - APPROVAL_INVALIDATED
       - ACTED_FOR
       - SOD_EXCEPTION_GRANTED
       - SOD_VIOLATION_BLOCKED
       - POWER_LIMIT_EXCEEDED
+      - SOD_EXCEPTION_REQUESTED
+      - SOD_EXCEPTION_REJECTED
+      - AUTHORITY_DECISION
+      - ROUTING_DECISION
       - RULE_EVALUATED
       - SIGNATURE_REQUESTED
       - SIGNATURE_APPLIED
@@ -634,6 +651,9 @@ components:
       - INSTANCE_MODIFIED
       - OUTBOX_REQUEUED
       - OUTBOX_SKIPPED
+      - POISON_INBOUND_RECEIVED
+      - POISON_INBOUND_RESOLVED
+      - INBOUND_PARKED
       - SLA_STARTED
       - SLA_PAUSED
       - SLA_RESUMED
@@ -673,6 +693,23 @@ components:
       - PACKAGE_PUBLISHED
       - PACKAGE_RETIRED
       - DLT_TEMPLATE_REGISTERED
+      - DENY_CHANGED
+      - MEMBERSHIP_CHANGED
+      - SEAT_HOLDER_CHANGED
+      - PRIVILEGE_CHANGED
+      - POLICY_CHANGE_PENDING
+      - TENANT_SUSPENDED
+      - SEAT_ABOLISHED
+      - ORG_UNIT_CREATED
+      - ORG_UNIT_MOVED
+      - ORG_UNIT_RENAMED
+      - POSTING_ENDED
+      - LEAVE_RECORDED
+      - WORKER_BOUND
+      - WORKER_UNBOUND
+      - BULK_OPERATION_APPROVED
+      - OPERATOR_ACTION
+      - TENANT_QUOTA_EXCEEDED
       - SEC_INCIDENT_OPENED
       - SEC_INCIDENT_CLASSIFIED
       - SEC_REPORT_SUBMITTED
@@ -680,6 +717,9 @@ components:
       - DPDP_BREACH_REPORTED
       - AUDIT_EXPORTED
       - AUDIT_VIEWED
+      - SENSITIVE_READ
+      - EXPORT
+      - READ_AUDIT
       x-sangam-groups:
         Identity:
         - AUTH_LOGIN
@@ -687,6 +727,14 @@ components:
         - SESSION_EXPIRED
         - SEAT_CONTEXT_SELECTED
         - AUTH_DENIED
+        - LOGIN_BATCH
+        - LOGIN_FAILED
+        - API_TOKEN_ISSUED
+        - API_TOKEN_REVOKED
+        - USER_PROVISIONED
+        - USER_UPDATED
+        - USER_DISABLED
+        - DIRECTORY_SYNCED
         Case lifecycle:
         - CASE_CREATED
         - CASE_DRAFT_SAVED
@@ -702,6 +750,10 @@ components:
         - CASE_RECONCILED
         - CASE_CLOSED
         - APPEAL_FILED
+        - CASE_IN_SCRUTINY
+        - CASE_IN_RECOMMENDATION
+        - CASE_IN_SANCTION
+        - CASE_IN_EXECUTION
         Tasks:
         - TASK_CREATED
         - TASK_ASSIGNED
@@ -710,6 +762,7 @@ components:
         - TASK_REASSIGNED
         - TASK_COMPLETED
         - TASK_MARKED_OUT_OF_HIERARCHY
+        - TASK_ACTED_FOR
         Authority:
         - APPROVAL_RECORDED
         - APPROVAL_INVALIDATED
@@ -717,6 +770,10 @@ components:
         - SOD_EXCEPTION_GRANTED
         - SOD_VIOLATION_BLOCKED
         - POWER_LIMIT_EXCEEDED
+        - SOD_EXCEPTION_REQUESTED
+        - SOD_EXCEPTION_REJECTED
+        - AUTHORITY_DECISION
+        - ROUTING_DECISION
         Rules / signing:
         - RULE_EVALUATED
         - SIGNATURE_REQUESTED
@@ -742,6 +799,9 @@ components:
         - INSTANCE_MODIFIED
         - OUTBOX_REQUEUED
         - OUTBOX_SKIPPED
+        - POISON_INBOUND_RECEIVED
+        - POISON_INBOUND_RESOLVED
+        - INBOUND_PARKED
         SLA:
         - SLA_STARTED
         - SLA_PAUSED
@@ -786,37 +846,11 @@ components:
         - PACKAGE_PUBLISHED
         - PACKAGE_RETIRED
         - DLT_TEMPLATE_REGISTERED
-        Security:
-        - SEC_INCIDENT_OPENED
-        - SEC_INCIDENT_CLASSIFIED
-        - SEC_REPORT_SUBMITTED
-        - SEC_INCIDENT_CLOSED
-        - DPDP_BREACH_REPORTED
-        - AUDIT_EXPORTED
-        - AUDIT_VIEWED
-      x-sangam-pending-change-control:
-        SecurityEventType:
-        - LOGIN_BATCH
-        - LOGIN_FAILED
-        - API_TOKEN_ISSUED
-        - API_TOKEN_REVOKED
-        - USER_PROVISIONED
-        - USER_UPDATED
-        - USER_DISABLED
-        - DIRECTORY_SYNCED
-        - TASK_ACTED_FOR
-        - SOD_EXCEPTION_REQUESTED
-        - SOD_EXCEPTION_REJECTED
-        - AUTHORITY_DECISION
-        - ROUTING_DECISION
         - DENY_CHANGED
         - MEMBERSHIP_CHANGED
         - SEAT_HOLDER_CHANGED
         - PRIVILEGE_CHANGED
         - POLICY_CHANGE_PENDING
-        - SENSITIVE_READ
-        - EXPORT
-        - READ_AUDIT
         - TENANT_SUSPENDED
         - SEAT_ABOLISHED
         - ORG_UNIT_CREATED
@@ -829,11 +863,18 @@ components:
         - BULK_OPERATION_APPROVED
         - OPERATOR_ACTION
         - TENANT_QUOTA_EXCEEDED
-        CaseState:
-        - CASE_IN_SCRUTINY
-        - CASE_IN_RECOMMENDATION
-        - CASE_IN_SANCTION
-        - CASE_IN_EXECUTION
+        Security:
+        - SEC_INCIDENT_OPENED
+        - SEC_INCIDENT_CLASSIFIED
+        - SEC_REPORT_SUBMITTED
+        - SEC_INCIDENT_CLOSED
+        - DPDP_BREACH_REPORTED
+        - AUDIT_EXPORTED
+        - AUDIT_VIEWED
+        - SENSITIVE_READ
+        - EXPORT
+        - READ_AUDIT
+      x-sangam-pending-change-control: {}
   messages:
     WebhookCaseFileEvent:
       name: CaseFileEvent

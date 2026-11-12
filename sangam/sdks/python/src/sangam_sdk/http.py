@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 import socket
 import time
 import urllib.error
@@ -17,7 +18,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from decimal import Decimal
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping, Optional, Tuple
 
 from .auth import NoAuth, TokenProvider
 from .errors import GoneError, Problem, SangamApiError, StaleLeaseError, TransportError
@@ -25,6 +26,22 @@ from .log import SangamLogger, noop_logger
 
 API_PREFIX = "/api/v1"
 SDK_VERSION = "0.1.0"
+
+#: The caller's current W3C trace context as (traceparent, tracestate), or None outside a trace (M-062).
+TraceContext = Callable[[], Optional[Tuple[Optional[str], Optional[str]]]]
+_TRACEPARENT = re.compile(r"^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$")
+_TRACESTATE = re.compile(r"^[ -~]{1,512}$")
+
+
+def valid_traceparent(v: Any) -> bool:
+    """A well-formed version-00 ``traceparent`` whose trace-id and parent-id are not all zero."""
+    return (isinstance(v, str) and _TRACEPARENT.match(v) is not None and v[3:35] != "0" * 32
+            and v[36:52] != "0" * 16)
+
+
+def valid_tracestate(v: Any) -> bool:
+    """A ``tracestate`` of printable ASCII, at most 512 characters."""
+    return isinstance(v, str) and _TRACESTATE.match(v) is not None
 
 
 @dataclass(frozen=True)
@@ -59,6 +76,8 @@ class ApiRequest:
     timeout: float | None = None
     retry: bool = True
     headers: dict[str, str] = field(default_factory=dict)
+    #: return the response body as bytes, undecoded (non-JSON media such as CSV, XML, PDF or ZIP)
+    raw_response: bool = False
 
     @property
     def is_mutation(self) -> bool:
@@ -112,7 +131,8 @@ class HttpTransport:
     def __init__(self, base_url: str, token_provider: TokenProvider | None = None,
                  retry_policy: RetryPolicy | None = None, request_timeout: float = 30.0,
                  logger: SangamLogger | None = None, user_agent: str | None = None,
-                 default_headers: Mapping[str, str] | None = None) -> None:
+                 default_headers: Mapping[str, str] | None = None,
+                 trace_context: TraceContext | None = None) -> None:
         b = base_url.rstrip("/")
         if b.endswith(API_PREFIX):
             b = b[: -len(API_PREFIX)]
@@ -125,6 +145,27 @@ class HttpTransport:
         #: sent on every request unless the request overrides them (e.g. X-Sangam-Seat, X-Sangam-Acting-For-Seat)
         self.default_headers: dict[str, str] = {k: v for k, v in (default_headers or {}).items() if v is not None}
         self._opener = urllib.request.build_opener(_NoRedirect())
+        #: the caller's W3C trace context (R13, M-062); None sends no trace headers (R56)
+        self.trace_context = trace_context
+
+    def trace_headers(self, req: ApiRequest) -> dict[str, str]:
+        """The W3C trace headers for this request (M-062): none without a trace context, when the request sets its own
+        ``traceparent``, when the context has no valid one, or when the provider raises (tracing never fails a call)."""
+        own = {k.lower() for k in req.headers}
+        if self.trace_context is None or "traceparent" in own:
+            return {}
+        try:
+            ctx = self.trace_context()
+        except Exception as e:  # noqa: BLE001 - a tracer failure must not fail the call
+            self.log.debug("trace.context", f"trace context provider failed; request sent without trace headers: {e}",
+                           {"method": req.method, "path": req.path})
+            return {}
+        if not ctx or not valid_traceparent(ctx[0]):
+            return {}
+        out = {"traceparent": str(ctx[0])}
+        if len(ctx) > 1 and valid_tracestate(ctx[1]) and "tracestate" not in own:
+            out["tracestate"] = str(ctx[1])
+        return out
 
     def execute(self, req: ApiRequest) -> ApiResponse:
         key = req.idempotency_key
@@ -152,7 +193,7 @@ class HttpTransport:
                 attempt -= 1  # an auth refresh does not consume a retry
                 continue
             if 200 <= status < 300:
-                return ApiResponse(status, headers, _decode(body))
+                return ApiResponse(status, headers, body if req.raw_response else _decode(body))
             err = self._to_error(req, status, body)
             if err.retryable and attempt < max_attempts:
                 d = _retry_after(headers)
@@ -188,6 +229,7 @@ class HttpTransport:
         if key is not None:
             headers["Idempotency-Key"] = key
         headers.update(self.default_headers)
+        headers.update(self.trace_headers(req))
         headers.update(req.headers)
         data: bytes | None
         if req.raw_body is not None:

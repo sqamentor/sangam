@@ -171,6 +171,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: {{ $.Values.networkPolicy.ingressControllerNamespace }}
+        {{- range $.Values.networkPolicy.ingressFrom.cidrs }}
+        - ipBlock: { cidr: {{ . }} }
+        {{- end }}
       ports:
         - { protocol: TCP, port: {{ $v.port }} }
     - from:

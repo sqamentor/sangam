@@ -132,7 +132,7 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 | File | Covers |
 |---|---|
 | `audit/SecurityEventType.java` | Normative event names (X.5.2) |
-| `audit/SecurityAuditService.java` | Class-B events through core `AuditChain` in the caller's transaction. The root chain holds case events; the tenant security chain `sec:<tenant>` holds the rest. The envelope actor carries `principal_id`, `seat_id`, `acted_for_seat_id` ("acted for"), `on_behalf_of`, `auth_method`, `client_ip` and `policy_version`. Denial events can go through a separate transaction so they survive the rollback |
+| `audit/SecurityAuditService.java` | Class-B events through core `AuditChain` in the caller's transaction. The root chain holds case events; the tenant security chain `sec:<tenant>` holds the rest. The envelope actor carries `principal_id`, `seat_id`, `acted_for_seat_id` ("acted for"), `on_behalf_of`, `auth_method`, `client_ip` and `policy_version`. Denial events (SL-132) go to the `sec:d:` denial chain of their chain in a separate leaf-pool transaction (`Options.denialTx`), so they survive the rollback; see integration note 6 |
 | `audit/LoginEventBatcher.java` | Logins and login failures batched per 1 s into `LOGIN_BATCH` (X.2.3.3 rule 2) |
 
 ### Other files
@@ -213,10 +213,18 @@ Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in t
 5. **Spring beans** that sangam-server must provide for `SangamResourceServerConfiguration`: `SangamSecurity`,
    `Transactions` (product DataSource) and `SecurityProperties` bound with `@ConfigurationProperties("sangam.security")`.
    For production, set `sangam.security.production=true`; the dev token filter then refuses to start.
-6. **Denial audit transaction.** Pass `Transactions.of(dataSource)` as `Options.denialTx`, so that `AUTH_DENIED`,
-   `SOD_VIOLATION_BLOCKED` and `POWER_LIMIT_EXCEEDED` survive the command rollback. The separate transaction waits if
-   the command already appended to the same chain (it holds that chain's `ROOT_SEQ` row lock), and the two then
-   deadlock. Services run their checks before they write; callers must keep that order (check, then write).
+6. **Denial audit transaction (SL-132).** Pass a leaf-pool `Transactions` as `Options.denialTx`; denials go to the
+   `sec:d:` denial chain of their chain and never wait for the caller's `ROOT_SEQ` row. `SecurityAuditService.denial`
+   writes `AUTH_DENIED`, `SOD_VIOLATION_BLOCKED` and `POWER_LIMIT_EXCEEDED` to `denialChain(tenant, chainId)` (`sec:d:`
+   plus the first 32 hex digits of SHA-256(tenant NUL chainId), where `chainId` is the root id or `sec:<tenant>`) and
+   commits them on their own through `denialTx`, so they survive the command rollback. Only denial writers append to a
+   denial chain, so its `ROOT_SEQ` row is never held by a caller. The pool must be a leaf pool (its connections are never
+   held while another connection is requested); a second connection from the caller's pool is the SL-43 pool deadlock.
+   With `denialTx` null the denial is written in-line and rolls back with the caller. The REST adapters use the same
+   chain id (`org.sangam.rest.adapter.jdbc.DenialAudit`), and the audit timeline, export and verify read the denial
+   chains with their chains. In the server, `SecurityWiring` passes the leaf pool `sangam-security-audit`
+   (`SecurityAuditPoolWiring`, `sangam.security.denial-audit.pool.maximum-size`, default 2) as `denialTx`; only when
+   that pool is absent does `SecurityWiring.denialTransactions` fall back to the product transactions.
 7. **ArchUnit rule** (sangam-server, R19 / D-15): forbid `TaskService.createTaskQuery`, `HistoryService.create*Query`
    and native engine queries for protected types outside `AuthorizedQueryBuilder`.
 8. **H2** must run with `MODE=PostgreSQL` (the core `AuditChain` uses `ON CONFLICT DO NOTHING`).

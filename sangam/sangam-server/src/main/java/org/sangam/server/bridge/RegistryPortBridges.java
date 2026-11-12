@@ -56,8 +56,6 @@ public final class RegistryPortBridges {
     private static final Logger LOG = LoggerFactory.getLogger(RegistryPortBridges.class);
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    /** Outbox destination of registry domain events (unordered; subscribers via the integration subscriptions). */
-    public static final String DEST_EVENTS = "sangam.registry.events";
     /** Outbox destination for document-locker pushes and system-of-record pushes (unordered, after commit). */
     public static final String DEST_PUBLISH = "sangam.registry.publish";
     public static final String EVT_PUBLISH = "REGISTRY_PUBLISH";
@@ -88,21 +86,23 @@ public final class RegistryPortBridges {
 
     // ---------------------------------------------------------------- EventPort → outbox (same transaction)
 
-    /** Registry events to the integration outbox (subscriptions), else straight to {@value #DEST_EVENTS}. */
+    /**
+     * Registry events to the integration outbox through its subscriptions ({@link OutboxWriter}): written only to the
+     * destinations subscribed to the event type, nothing when none is. SL-146 (owner decision 2026-11-12): without an
+     * {@code OutboxWriter} (integration disabled) there is no relay and no subscriber, so nothing is written; the former
+     * fallback wrote to a fixed {@code sangam.registry.events} destination that no publisher served.
+     */
     public static RegistryPorts.EventPort events(OutboxWriter writer, TxSupport tx) {
-        Outbox core = new Outbox(tx.dialect());
+        if (writer == null) {
+            return (c, ctx, rootId, eventType, payload) -> LOG.trace("registry event {} not written: no outbox writer", eventType);
+        }
         return (c, ctx, rootId, eventType, payload) -> {
             Map<String, Object> p = new LinkedHashMap<>(payload == null ? Map.of() : payload);
             p.put("actor", ctx.actor());
             if (ctx.operationId() != null) {
                 p.put("operationId", ctx.operationId());
             }
-            if (writer != null) {
-                writer.append(c, ctx.tenant(), rootId, eventType, p);
-            } else {
-                core.append(c, ctx.tenant(), rootId, eventType, CanonicalJson.write(jsonSafe(p)),
-                        List.of(Outbox.Destination.unordered(DEST_EVENTS)));
-            }
+            writer.append(c, ctx.tenant(), rootId, eventType, p);
         };
     }
 
@@ -209,8 +209,9 @@ public final class RegistryPortBridges {
      * the integration call journal and ledger.
      */
     /**
-     * Publishes through the connector {@code sangam.registry.publish.connector}. SL-104 (ADR-D-20): there is no default
-     * connector; publishing without one fails in the publishing transaction, naming the property.
+     * Publishes through the connector {@code sangam.registry.publish.connector}. SL-104 (ADR-D-20, generic: no
+     * built-in default in code or config): there is no default connector; publishing without one fails in the
+     * publishing transaction, naming the property.
      */
     public static RegistryPorts.PublishPort publisher(TxSupport tx, String connectorId) {
         boolean configured = connectorId != null && !connectorId.isBlank();

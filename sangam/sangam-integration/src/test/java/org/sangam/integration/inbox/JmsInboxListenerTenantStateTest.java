@@ -27,9 +27,10 @@ import org.junit.jupiter.api.Test;
 import org.sangam.integration.relay.TenantAdmission;
 
 /**
- * M-008: a JMS message of a tenant that is not admitted (cell tenant FROZEN, IMPORTING, MOVED or PURGED) is not stored
- * and the transacted session rolls back (the existing back-pressure path), so the broker redelivers it. Never dropped,
- * never acked. An admitted tenant is stored and committed as before.
+ * M-008: a JMS message of a tenant the admission answers REDELIVER for (a yes/no admission that says no; the cell's
+ * FROZEN or IMPORTING) is not stored and the transacted session rolls back (the existing back-pressure path), so the
+ * broker redelivers it. Never dropped, never acked. An admitted tenant is stored and committed as before. MOVED and
+ * PURGED tenants are parked and then acked (SL-142): see {@link InboxParkThenAckTest}.
  */
 class JmsInboxListenerTenantStateTest {
 

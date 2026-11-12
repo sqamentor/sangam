@@ -41,8 +41,9 @@ def _v2_param_list(sig):
 # ---------------------------------------------------------------- request records (M-051)
 # A @RequestBody whose Java type is a record gets a typed schema derived from the record's source: one property per
 # component, in declaration order. Typing is additive (0.1.0): no `required`, and additionalProperties stays true
-# (Jackson ignores unknown members, and SL-40 custom fields travel as extra members). Map, String and other bodies stay
-# open objects. RequestBodyContractTest checks every record body of the contract against the compiled record.
+# (Jackson ignores unknown members, and SL-40 custom fields travel as extra members). A Map body is typed from the keys
+# its service reads (_v2_bodykeys.py, MapRequestBodyContractTest). RequestBodyContractTest checks every record body of
+# the contract against the compiled record.
 _V2_SCALAR = {"String": "s", "char": "s", "Character": "s", "int": "int", "Integer": "int", "short": "int",
               "Short": "int", "long": "long", "Long": "long", "double": "num", "Double": "num", "float": "num",
               "Float": "num", "boolean": "bool", "Boolean": "bool", "Instant": "dt", "OffsetDateTime": "dt",
@@ -178,6 +179,81 @@ def record_body(java_file, record, required=True):
     return {"required": required, "content": {"application/json": {"schema": R(name)}}}
 
 
+# ---------------------------------------------------------------- permissions, status, headers (W2-C 2026-11-12)
+# The contract takes these from the controller source too: the permission a method checks (directly, or through a
+# helper such as admin(ctx) that calls permissions.require), 201 when it answers created, and its @RequestHeader
+# parameters. A method that checks nothing keeps the route file's read/write default.
+_V2_SKIP_HEADERS = {"Idempotency-Key", "X-Sangam-Seat", "X-Sangam-Acting-For-Seat"}
+
+
+def _v2_block(src, i):
+    """Text of the brace block that starts at or after i."""
+    j = src.index("{", i)
+    k, depth = j + 1, 1
+    while depth and k < len(src):
+        depth += {"{": 1, "}": -1}.get(src[k], 0)
+        k += 1
+    return src[j:k]
+
+
+def _v2_constant(src_path, src, ref):
+    """The string value of a constant: NAME in src, or Type.NAME in Type's source."""
+    text, name = src, ref
+    if "." in ref:
+        cls_, name = ref.rsplit(".", 1)
+        f = _v2_class_file(src_path, cls_)
+        if not f:
+            return None
+        text = open(f, encoding="utf-8").read()
+    m = _v2_re.search(r"\b" + name + r'\s*=\s*"([^"]*)"', text)
+    return m.group(1) if m else None
+
+
+def _v2_guards(src_path, src):
+    """{helper method name: permission} for private helpers (RequestContext ctx) that call x.require(ctx, PERM)."""
+    out = {}
+    for h in _v2_re.finditer(r"(?:private|protected|static)[\w<>\s.,?]*?\s(\w+)\(\s*RequestContext\s+\w+\s*\)\s*\{", src):
+        req = _v2_re.search(r"\.require\(\s*\w+\s*,\s*([\w.]+)\s*\)", _v2_block(src, h.end() - 1))
+        if req:
+            value = _v2_constant(src_path, src, req.group(1))
+            if value:
+                out[h.group(1)] = value
+    return out
+
+
+def _v2_method_permission(src_path, src, body, guards):
+    direct = _v2_re.search(r"\.require\(\s*\w+\s*,\s*([\w.]+)\s*\)", body)
+    found = []
+    if direct:
+        v = _v2_constant(src_path, src, direct.group(1))
+        if v:
+            found.append((direct.start(), v))
+    for name, perm in guards.items():
+        hm = _v2_re.search(r"(?<![\w.])" + name + r"\(\s*\w+\s*\)", body)
+        if hm:
+            found.append((hm.start(), perm))
+    return min(found)[1] if found else None
+
+
+def _v2_header_param(src_path, src, p):
+    an = _v2_re.search(r"@RequestHeader(\(([^)]*)\))?", p)
+    a = an.group(2) or ""
+    lit = _v2_re.search(r'(?:value|name)\s*=\s*"([^"]+)"', a) or _v2_re.match(r'\s*"([^"]+)"', a)
+    if lit:
+        name = lit.group(1)
+    else:
+        ref = _v2_re.search(r"(?:value|name)\s*=\s*([\w.]+)", a) or _v2_re.match(r"\s*([A-Za-z_][\w.]*)\s*$", a)
+        name = _v2_constant(src_path, src, ref.group(1)) if ref else None
+    if not name or name in _V2_SKIP_HEADERS:
+        return None
+    h = {"name": name, "in": "header", "schema": {"type": "string"}}
+    if "required = false" not in a and "defaultValue" not in a:
+        h["required"] = True
+    if name == "If-Match":
+        h["description"] = "Revision the change is based on (409 on mismatch)"
+    return h
+
+
 def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm_write, reqs, no_cmd=(),
                      public_paths=(), files=None):
     """Adds every @XxxMapping of the controllers in rel_java_dir (relative to sangam/). Returns the operation count."""
@@ -185,7 +261,9 @@ def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm
     count = 0
     names = files or sorted(f for f in _v2_os.listdir(base_dir) if f.endswith("Controller.java"))
     for fname in names:
-        src = open(_v2_os.path.join(base_dir, fname), encoding="utf-8").read()
+        src_path = _v2_os.path.join(base_dir, fname)
+        src = open(src_path, encoding="utf-8").read()
+        guards = _v2_guards(src_path, src)
         cls = fname[:-5]
         head = src.split(" class ")[0]
         bm = _v2_re.search(r'@RequestMapping\(\s*(?:value\s*=\s*|path\s*=\s*)?"([^"]*)"', head)
@@ -220,6 +298,17 @@ def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm
                     params.append(q(pname, _V2_JTYPES.get(jt, "s"), required=required))
                 elif "@RequestPart" in p:
                     body = "multipart"
+                elif "@RequestHeader" in p:
+                    hp = _v2_header_param(src_path, src, p)
+                    if hp:
+                        params.append(hp)
+            mbody = _v2_block(src, i)
+            lead = src[max(0, src.rfind("\n\n", 0, m.start())):m.start()]     # annotations above the mapping
+            created = "@ResponseStatus(HttpStatus.CREATED)" in m.group(0) + lead or _v2_re.search(
+                r"Lists\.created\(|ResponseEntity\.created\(|HttpStatus\.CREATED|\.status\(\s*201\s*\)", mbody) is not None
+            mixed = created and _v2_re.search(r"\.ok\(|okRef\(|ResponseEntity\.status\(\s*200", mbody) is not None
+            assert not mixed, "%s.%s answers both 200 and 201: declare it by hand" % (cls, jname)
+            checked = _v2_method_permission(src_path, src, mbody, guards)
             for v in _v2_re.findall(r"\{(\w+)(?::[^}]*)?\}", path):
                 params.insert(0, pp(v))
             path = _v2_re.sub(r"\{(\w+):[^}]*\}", r"{\1}", path)
@@ -235,6 +324,8 @@ def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm
                 resp = (200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}})
             else:
                 resp = (200, {"application/json": {"schema": _V2_OBJECT}})
+            if created and resp[0] == 200:
+                resp = (201, resp[1])
             if body == "multipart":
                 bspec = {"required": True, "content": {"multipart/form-data": {"schema": _V2_OBJECT}}}
             elif body:
@@ -243,9 +334,20 @@ def v2_spring_routes(rel_java_dir, tag, opid_prefix, cmd_prefix, perm_read, perm
             else:
                 bspec = None
             opid = opid_prefix + cls.replace("Controller", "") + jname[0].upper() + jname[1:]
+            if body is True:
+                # a Map body (or a list of maps) is typed from the keys the service reads (_v2_bodykeys.py, M-051)
+                bp = _v2_re.sub(r"@[\w.]+(\([^)]*\))?\s*", "", body_param).replace("final ", "").strip()
+                bm_ = _v2_re.match(r"(.+?)\s+(\w+)$", bp)
+                # A List<Map> body is a JSON array of such objects (owner decision 2026-11-12: the 0.1.0 contract and
+                # baseline said object for PartyController.saveIdentifierTypes; corrected, see the corrections section
+                # of sangam-api-deprecations.yaml).
+                if _v2_re.match(r"(?:java\.util\.)?Map\s*<", bm_.group(1)):
+                    map_body(opid, rel_java_dir + "/" + fname, cls + "." + jname, bm_.group(2))
+                elif _v2_re.match(r"(?:java\.util\.)?List\s*<\s*Map\s*<", bm_.group(1)):
+                    map_body(opid, rel_java_dir + "/" + fname, cls + "." + jname, bm_.group(2), array=True)
             op(method, path, opid, tag, _v2_camel_words(jname).capitalize(),
                f"{cls}.{jname} ({rel_java_dir.split('/')[0]}).", reqs, params=params, body=bspec, resp=resp, cmd=cmd,
-               perm=None if path in public_paths else (perm_read if not mutation else perm_write))
+               perm=None if path in public_paths else (checked or (perm_read if not mutation else perm_write)))
             if path in public_paths:
                 public(path, method)
             count += 1

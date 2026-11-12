@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_breach_notification_plan" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.2.0">
+<!-- Breach risk assessment and notification plan. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_breach_notification_plan" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.2.0">
   <process id="sangam-breach-notification-plan" name="Breach risk assessment and notification plan" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>Threshold-driven notifications (US-HIPAA 164.402-414: four-factor assessment, individuals 60 days, media more than 500 in a State, HHS contemporaneous or annual; EU-GDPR Arts 33-34: authority 72 hours, subjects if high risk). Start with breachId after BreachIncidentService.register.</documentation>
     <startEvent id="start" name="Breach registered"/>
-    <userTask id="u_assess" name="Document the risk assessment" operaton:candidateGroups="PRIVACY-OFFICER" operaton:formKey="sangam:compliance/breach-risk-assessment"></userTask>
+    <userTask id="u_assess" name="Document the risk assessment" operaton:candidateGroups="${privacyOfficerSeat}" operaton:formKey="sangam:compliance/breach-risk-assessment"/>
     <serviceTask id="s_assess" name="Record risk assessment" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.assessRisk</operaton:string></operaton:field></extensionElements></serviceTask>
     <exclusiveGateway id="g_n" name="Notifiable?" default="f_yes"/>
     <endEvent id="end_no" name="Not notifiable (documented)"/>
     <serviceTask id="s_plan" name="Build notification plan" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.plan</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_send" name="Send planned notifications and record each" operaton:candidateGroups="PRIVACY-OFFICER" operaton:formKey="sangam:compliance/breach-plan-send"></userTask>
+    <userTask id="u_send" name="Send planned notifications and record each" operaton:candidateGroups="${privacyOfficerSeat}" operaton:formKey="sangam:compliance/breach-plan-send"/>
     <boundaryEvent id="t_first" name="First notification due" attachedToRef="u_send" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${firstNotificationDueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <serviceTask id="s_overdue" name="Record overdue notification" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>breach.planOverdue</operaton:string></operaton:field></extensionElements></serviceTask>
     <endEvent id="end_due" name="Overdue recorded"/>
@@ -25,4 +25,28 @@
     <sequenceFlow id="f_d1" sourceRef="t_first" targetRef="s_overdue"/>
     <sequenceFlow id="f_d2" sourceRef="s_overdue" targetRef="end_due"/>
   </process>
+  <bpmndi:BPMNDiagram id="breach_notification_plan_diagram">
+    <bpmndi:BPMNPlane id="breach_notification_plan_plane" bpmnElement="sangam-breach-notification-plan">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_assess_di" bpmnElement="u_assess"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_assess_di" bpmnElement="s_assess"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_n_di" bpmnElement="g_n"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_no_di" bpmnElement="end_no"><dc:Bounds x="712" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_plan_di" bpmnElement="s_plan"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_send_di" bpmnElement="u_send"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_overdue_di" bpmnElement="s_overdue"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_due_di" bpmnElement="end_due"><dc:Bounds x="1207" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="1042" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_first_di" bpmnElement="t_first"><dc:Bounds x="853" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_no_di" bpmnElement="f_no"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="195"/><di:waypoint x="712" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_yes_di" bpmnElement="f_yes"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="945" y="70"/><di:waypoint x="993" y="70"/><di:waypoint x="993" y="195"/><di:waypoint x="1042" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_d1_di" bpmnElement="f_d1"><di:waypoint x="871" y="128"/><di:waypoint x="871" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_d2_di" bpmnElement="f_d2"><di:waypoint x="1110" y="70"/><di:waypoint x="1207" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </definitions>

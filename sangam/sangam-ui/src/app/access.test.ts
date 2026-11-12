@@ -11,15 +11,15 @@ import type { Role } from '../api/types';
 const me = (roles: Role[], permissions?: string[]) => ({ roles, permissions });
 
 /** Routes in App.tsx's authenticated table, and whether each is wrapped in a guard (g(...) or m(...)). */
-function routes(): { path: string; guarded: boolean }[] {
-  const out: { path: string; guarded: boolean }[] = [];
+function routes(): { path: string; guarded: boolean; byAccess?: boolean }[] {
+  const out: { path: string; guarded: boolean; byAccess?: boolean }[] = [];
   const table = appSource.slice(appSource.indexOf('function AuthedRoutes'), appSource.indexOf('function NotFound'));
   expect(table.length).toBeGreaterThan(0);
   for (const line of table.split(/\r?\n/)) {
     const route = /<Route path="([^"]+)" element=\{(.*)\} \/>/.exec(line);
     if (route) out.push({ path: route[1], guarded: /^g\(|<Guard /.test(route[2]) });
     const mod = /\{m\('([^']+)', /.exec(line);
-    if (mod) out.push({ path: mod[1], guarded: true });
+    if (mod) out.push({ path: mod[1], guarded: true, byAccess: true });
   }
   return out;
 }
@@ -33,14 +33,16 @@ describe('M-028 route guards', () => {
       expect(r.guarded, r.path).toBe(true);
       expect(ROUTE_ACCESS[r.path], r.path).toBeDefined();
     }
-    expect(Object.keys(ROUTE_ACCESS).sort()).toEqual(modules.map((r) => r.path).sort());
+    // every m(...) route (the 15 modules plus the W2-C admin screens) has its entry, and every entry is a real m(...) route
+    expect(Object.keys(ROUTE_ACCESS).sort()).toEqual(all.filter((r) => r.byAccess).map((r) => r.path).sort());
   });
 
   it('leaves unguarded only the routes the server opens to every signed-in caller', () => {
     // '/', '*': redirect and not-found; /welcome, /account, /help/*: no module call (Account's engine calls are made
     // for platform users only, inside the screen). /pages/:key (lowcode.read, LowCodeController.java:53) is outside
     // M-028 and unchanged.
-    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', ...SIGNED_IN_ROUTES]);
+    // /privacy/:tenant? (M-033): the privacy policy is public on the server (security: [], SecurityConfig.java:80-81).
+    const open = new Set(['/', '*', '/welcome', '/account', '/pages/:key', '/help/accessibility', '/help/about', '/privacy/:tenant?', ...SIGNED_IN_ROUTES]);
     const unguarded = routes().filter((r) => !r.guarded).map((r) => r.path);
     expect(unguarded.filter((p) => !open.has(p))).toEqual([]);
     for (const p of SIGNED_IN_ROUTES) expect(unguarded).toContain(p);
@@ -85,5 +87,32 @@ describe('M-028 route guards', () => {
     expect(modules?.roles).toEqual(MODULE_READERS);
     for (const i of modules?.items ?? []) expect(i.access, i.to).toBe(ROUTE_ACCESS[i.to]);
     for (const a of Object.values(ROUTE_ACCESS)) for (const r of a.roles) expect(MODULE_READERS).toContain(r);
+  });
+});
+
+describe('W2-C admin screens follow the server gates', () => {
+  it('packs and onboarding: platform administrators only (group sangam-admin), never a permission alone', () => {
+    for (const r of ['/admin/packs', '/admin/onboarding']) {
+      expect(canAccess(me(['ADMIN', 'PLATFORM_ADMIN']), ROUTE_ACCESS[r]), r).toBe(true);
+      expect(canAccess(me(['ADMIN']), ROUTE_ACCESS[r]), r).toBe(false);
+      expect(canAccess(me([], ['tenant.admin']), ROUTE_ACCESS[r]), r).toBe(false);
+    }
+  });
+  it('bulk ingest: the ops.variable sink permission (ops.tenant.admin) or a tenant administrator', () => {
+    expect(canAccess(me(['ADMIN']), ROUTE_ACCESS['/admin/bulk'])).toBe(true);
+    expect(canAccess(me([], ['ops.tenant.admin']), ROUTE_ACCESS['/admin/bulk'])).toBe(true);
+    expect(canAccess(me(['OPERATOR']), ROUTE_ACCESS['/admin/bulk'])).toBe(false);
+  });
+  it('custom fields: form.read for the list; module defaults: tenant.admin', () => {
+    expect(canAccess(me([], ['form.read']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(true);
+    expect(canAccess(me(['AUDITOR']), ROUTE_ACCESS['/admin/custom-fields'])).toBe(false);
+    expect(canAccess(me(['ADMIN']), ROUTE_ACCESS['/admin/security-defaults'])).toBe(true);
+    expect(canAccess(me(['TASK_USER']), ROUTE_ACCESS['/admin/security-defaults'])).toBe(false);
+  });
+  it('the menu uses the same requirement as the route', () => {
+    const admin = NAV.find((a) => a.id === 'admin')!;
+    for (const r of ['/admin/onboarding', '/admin/packs', '/admin/custom-fields', '/admin/bulk', '/admin/security-defaults']) {
+      expect(admin.items.find((i) => i.to === r)?.access, r).toBe(ROUTE_ACCESS[r]);
+    }
   });
 });

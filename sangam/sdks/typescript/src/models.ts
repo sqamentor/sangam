@@ -38,6 +38,17 @@ export interface ExternalWork {
   errorMessage?: string;
   /** Server-recorded ledger entry of `operationId` (SL-16); absent from older servers. */
   operation?: WorkOperation;
+  /** M-062: W3C trace context the engine stored for the task; absent when none was stored. */
+  traceContext?: WorkTraceContext;
+}
+
+/**
+ * Contract schema `TraceContext` (R13, M-062): the W3C trace context of the request that created the work. Named
+ * WorkTraceContext here because `TraceContext` is the client's trace-context provider type (http.ts).
+ */
+export interface WorkTraceContext {
+  traceparent: string;
+  tracestate?: string;
 }
 
 /**

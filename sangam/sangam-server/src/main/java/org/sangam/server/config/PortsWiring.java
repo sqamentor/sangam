@@ -484,14 +484,25 @@ public class PortsWiring {
                 security.getIfAvailable(), tx, props.getCountCap());
     }
 
-    /** SLA clocks and aggregates (EC-08, R79); working calendars are the engine's {@code WorkCalendar} beans by name. */
+    /**
+     * SLA clocks and aggregates (EC-08, R79); working calendars are the engine's {@code WorkCalendar} beans by name.
+     * SL-146 (owner decision 2026-11-12): warning and breach events go through the integration {@link
+     * org.sangam.integration.relay.OutboxWriter} subscriptions, so nothing is written for an event type nobody
+     * subscribed to; without sangam-integration nothing is written ({@code EventSink.NONE}).
+     */
     @Bean
     public org.sangam.ports.sla.SlaService sangamSlaService(TxSupport tx,
-            org.springframework.beans.factory.ListableBeanFactory beans) {
+            org.springframework.beans.factory.ListableBeanFactory beans,
+            ObjectProvider<org.sangam.integration.relay.OutboxWriter> outboxWriter) {
         Map<String, org.sangam.core.engine.WorkCalendar> calendars =
                 beans.getBeansOfType(org.sangam.core.engine.WorkCalendar.class);
-        return new org.sangam.ports.sla.SlaService(tx.dialect(), tx.newTransactions(), new Outbox(tx.dialect()),
-                calendars::get);
+        return new org.sangam.ports.sla.SlaService(tx.dialect(), tx.newTransactions(),
+                slaEvents(outboxWriter.getIfAvailable()), calendars::get);
+    }
+
+    /** The SLA event sink over the outbox writer's subscriptions, or {@code NONE} without one (SL-146). */
+    static org.sangam.ports.sla.SlaService.EventSink slaEvents(org.sangam.integration.relay.OutboxWriter writerOrNull) {
+        return writerOrNull == null ? org.sangam.ports.sla.SlaService.EventSink.NONE : writerOrNull::append;
     }
 
     @Bean

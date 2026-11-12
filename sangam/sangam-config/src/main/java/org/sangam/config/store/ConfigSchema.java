@@ -17,6 +17,8 @@ import java.util.List;
  *   <li>{@code CFG_CHANGE}: append-only change register;</li>
  *   <li>{@code CFG_MASTER_CODE}: master codes by (scope, scheme, segment, parent, code, valid_from);</li>
  *   <li>{@code CFG_SERIES}: number-series counters by (scope, series, unit, period), allocated under a row lock;</li>
+ *   <li>{@code CFG_SERIES_RESERVATION}: the number reserved for a caller key (its {@code ref}, else the operationId)
+ *       per (scope, series), written with the counter step so a retry returns it (SL-130 follow-up);</li>
  *   <li>{@code CFG_CASE_BINDING}: the profile binding stored per case (root id → binding) for audit.</li>
  * </ul>
  */
@@ -75,6 +77,18 @@ public final class ConfigSchema {
               period         {str64} NOT NULL,
               last_no     {long} NOT NULL,
               PRIMARY KEY (scope_id, series_id, unit_id, period)
+            )""",
+            """
+            CREATE TABLE CFG_SERIES_RESERVATION (
+              scope_id       {str64} NOT NULL,
+              series_id      {str64} NOT NULL,
+              res_key        {str} NOT NULL,
+              unit_id        {str64},
+              period         {str64},
+              number_no      {long} NOT NULL,
+              display        {str},
+              created_at     {ts} NOT NULL,
+              PRIMARY KEY (scope_id, series_id, res_key)
             )""",
             """
             CREATE TABLE CFG_CASE_BINDING (

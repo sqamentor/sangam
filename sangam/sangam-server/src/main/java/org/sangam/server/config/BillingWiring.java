@@ -7,17 +7,19 @@ import java.util.Map;
 
 import org.sangam.billing.BillingConnector;
 import org.sangam.billing.BillingService;
+import org.sangam.billing.DocumentNumbers;
 import org.sangam.billing.TariffEngine;
+import org.sangam.billing.numbering.RegistryDocumentNumbers;
 import org.sangam.billing.party.RegistryPayeeDirectory;
 import org.sangam.config.api.PayeeConnector;
 import org.sangam.config.profile.ProfileResolver;
-import org.sangam.config.store.JdbcConfigStore;
 import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.ConnectorRegistry;
 import org.sangam.integration.packs.PackConnectorBindings;
 import org.sangam.ledger.LedgerPorts;
 import org.sangam.ledger.LedgerService;
 import org.sangam.registry.RegistryContext;
+import org.sangam.registry.numbering.NumberingService;
 import org.sangam.registry.party.PartyService;
 import org.sangam.rest.modules.ledger.LedgerTenantDefinitions;
 import org.sangam.rest.support.TxSupport;
@@ -37,8 +39,9 @@ import org.springframework.core.env.Environment;
  * Wires sangam-billing (README: tariffs, invoices, collection, receipts, refunds, penalties on RECEIVABLE ledgers):
  * <ul>
  *   <li>{@link TariffEngine} with the ledger's DMN {@code DecisionPort}; {@link BillingService} on the ledger, the
- *       config number series ({@code CFG_SERIES}) and {@link BillingPaymentPort} (payment gateway / bank / counter
- *       connectors through the connector ledger).</li>
+ *       registry numbering ({@link RegistryDocumentNumbers}: GAP_FREE {@code INVOICE} / {@code RECEIPT} series, one
+ *       {@code BIL_DOCUMENT} row per document, SL-130 / SL-131) and {@link BillingPaymentPort} (payment gateway /
+ *       bank / counter connectors through the connector ledger).</li>
  *   <li>{@link BillingConnector} (registry id {@code billing}) for the pack ids {@code billing.accounts},
  *       {@code .invoice}, {@code .generate} (= invoice), {@code .collect}, {@code .arrears}, {@code .penalty},
  *       {@code .waive}; accounts from {@link BillingAccountSource}.</li>
@@ -46,15 +49,15 @@ import org.springframework.core.env.Environment;
  *       exposed as the {@code registry.party} connector ({@link PayeeConnector}: {@code payee.resolve},
  *       {@code payee.register}).</li>
  * </ul>
- * Requires the config and ledger modules. Properties: {@code sangam.modules.billing.enabled},
+ * Requires the config, ledger and registry modules. Properties: {@code sangam.modules.billing.enabled},
  * {@code sangam.billing.channels.<channel>.connector|verify-operation|refund-operation},
  * {@code sangam.billing.trusted-channels} (default {@code counter,cash}),
  * {@code sangam.billing.payee.identifier-type} (default {@code BANK_ACCOUNT}), {@code sangam.billing.payee.zone}
- * (default {@code Asia/Kolkata}).
+ * (optional override; default: the tenant's zone).
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnExpression("${sangam.modules.billing.enabled:true} and ${sangam.modules.ledger.enabled:true}"
-        + " and ${sangam.modules.config.enabled:true}")
+        + " and ${sangam.modules.config.enabled:true} and ${sangam.modules.registry.enabled:true}")
 public class BillingWiring {
 
     private static final Logger LOG = LoggerFactory.getLogger(BillingWiring.class);
@@ -69,11 +72,24 @@ public class BillingWiring {
         return new BillingPaymentPort(invoker.getIfAvailable(), env);
     }
 
+    /**
+     * SL-130 / SL-131 (M-002): invoice and receipt numbers are issued by the registry {@link NumberingService}
+     * (GAP_FREE, the allocation recorded with the document as ref_type / ref_id) through {@code BIL_DOCUMENT}, keyed
+     * by the document identity, so a retried or concurrent call gets the stored number and receipt plan instead of a
+     * second number or a second allocation. {@code newTransactions()}: each issue commits on its own, as the counter,
+     * the allocation and the document row must.
+     */
     @Bean
-    public BillingService sangamBillingService(LedgerService ledger, TariffEngine tariffs, JdbcConfigStore series,
+    public BillingService sangamBillingService(LedgerService ledger, TariffEngine tariffs, TxSupport tx,
+                                               NumberingService numberingService,
                                                BillingService.PaymentPort payments,
                                                org.sangam.core.time.BusinessClock businessClock) {
-        return new BillingService(ledger, tariffs, series, payments, businessClock);
+        return new BillingService(ledger, tariffs, documentNumbers(tx, numberingService), payments, businessClock);
+    }
+
+    /** The durable document numbers of {@link #sangamBillingService} (package-private for the wiring test). */
+    static DocumentNumbers documentNumbers(TxSupport tx, NumberingService numberingService) {
+        return new RegistryDocumentNumbers(tx.newTransactions(), tx.dialect(), numberingService);
     }
 
     @Bean

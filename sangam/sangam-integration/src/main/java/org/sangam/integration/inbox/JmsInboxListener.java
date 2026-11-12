@@ -30,9 +30,12 @@ import java.util.function.Function;
  * message the mapper rejects is committed (dropped) and logged. Message id: CloudEvents id property if present, else
  * {@code JMSMessageID}.
  *
- * <p>M-008 (ADR-D-21, IR-4/IR-6): a message of a tenant that the {@link TenantAdmission} does not admit (a cell tenant
- * that is FROZEN, IMPORTING, MOVED or PURGED) takes the same path as back-pressure: the session rolls back and the
- * broker redelivers it later. It is never dropped and never acked.
+ * <p>M-008 (ADR-D-21, IR-4/IR-6): a message of a tenant that the {@link TenantAdmission} answers REDELIVER for (a cell
+ * tenant that is FROZEN or IMPORTING) takes the same path as back-pressure: the session rolls back and the broker
+ * redelivers it later. SL-142: a message of a tenant answered PARK for (MOVED or PURGED: it is never taken here again)
+ * is parked through {@link PoisonInbound#park} (dead letter plus reconciliation item, for an operator replay to the
+ * tenant's new cell) and then the session commits; if the park write fails, or no dead-letter store is configured, the
+ * session rolls back. A message is never dropped.
  */
 public final class JmsInboxListener implements Runnable, AutoCloseable {
 
@@ -60,7 +63,8 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
 
     /**
      * @param poisonOrNull    dead-letter path for messages that can never be stored (null: log and drop)
-     * @param admissionOrNull per-tenant admission (M-008); null admits every tenant
+     * @param admissionOrNull per-tenant admission (M-008); null admits every tenant. A PARK decision (SL-142) needs
+     *                        {@code poisonOrNull}; without it the session rolls back
      */
     public JmsInboxListener(ConnectionFactory factory, Function<Session, Destination> destination, ChannelBinding binding,
                             InboundMapper<Message> mapper, InboxService inbox, PoisonInbound poisonOrNull,
@@ -147,9 +151,13 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
         if (im == null) {
             return true;
         }
-        if (!admitted(im)) {
+        Admission a = admissionOf(im);
+        if (a.decision().action() == TenantAdmission.Action.REDELIVER) {
             LOG.debug("JMS message {}: tenant not admitted (cell tenant state); rolled back for redelivery", jmsId);
             return false;
+        }
+        if (a.decision().action() == TenantAdmission.Action.PARK) {
+            return park(a.tenant(), im, a.decision(), jmsId);
         }
         try {
             inbox.receive(binding, im);
@@ -167,24 +175,49 @@ public final class JmsInboxListener implements Runnable, AutoCloseable {
         }
     }
 
+    /** The resolved tenant and the admission's decision for it. */
+    private record Admission(String tenant, TenantAdmission.Decision decision) {
+    }
+
     /**
-     * M-008: whether the message's tenant is admitted now. The tenant is resolved from the binding exactly as
-     * {@link InboxService#receive} does; a claim the binding refuses is left to {@code receive}, which refuses it as before.
-     * A failing admission check counts as not admitted (redeliver, never drop).
+     * M-008: the admission decision for the message's tenant now. The tenant is resolved from the binding exactly as
+     * {@link InboxService#receive} does; a claim the binding refuses is left to {@code receive}, which refuses it as
+     * before (ADMIT here). A failing or empty admission check counts as REDELIVER (never drop).
      */
-    private boolean admitted(InboundMessage m) {
+    private Admission admissionOf(InboundMessage m) {
         String tenant;
         try {
             tenant = binding.tenantFor(m.claimedTenant());
         } catch (SecurityException e) {
-            return true;
+            return new Admission(null, TenantAdmission.Decision.ADMIT);
         }
         try {
-            return admission.admits(tenant);
+            TenantAdmission.Decision d = admission.decide(tenant);
+            return new Admission(tenant, d == null ? TenantAdmission.Decision.REDELIVER : d);
         } catch (RuntimeException e) {
             LOG.warn("tenant admission check for {} failed; the message is redelivered later: {}", tenant, e.toString());
+            return new Admission(tenant, TenantAdmission.Decision.REDELIVER);
+        }
+    }
+
+    /**
+     * SL-142: a message of a tenant that left this cell for good (MOVED, PURGED) is parked (dead letter plus
+     * reconciliation item) and then acked (session commit). Without a dead-letter store, or when the park write fails,
+     * the session rolls back and the broker redelivers it: never dropped.
+     */
+    private boolean park(String tenant, InboundMessage m, TenantAdmission.Decision d, String jmsId) {
+        if (poison == null) {
+            LOG.warn("JMS message {}: tenant {} is {} but no dead-letter store is configured; rolled back", jmsId, tenant,
+                    d.tenantState());
             return false;
         }
+        long item = poison.park(binding, tenant, m, d);
+        if (item < 0) {
+            return false;
+        }
+        LOG.info("JMS message {} of tenant {} ({}) parked (reconciliation item {}); acked", m.messageId(), tenant,
+                d.tenantState(), item);
+        return true;
     }
 
     /** Text, or a bytes message decoded as UTF-8; other message types are poison. */

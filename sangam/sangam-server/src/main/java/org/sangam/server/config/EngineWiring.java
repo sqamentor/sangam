@@ -34,7 +34,8 @@ public class EngineWiring {
 
     @Bean
     @ConfigurationProperties("sangam.engine")
-    public SangamEngineSettings sangamEngineSettings(Environment env, ObjectProvider<MeterRegistry> meters) {
+    public SangamEngineSettings sangamEngineSettings(Environment env, ObjectProvider<MeterRegistry> meters,
+            ObjectProvider<io.opentelemetry.api.OpenTelemetry> otel) {
         SangamEngineSettings s = new SangamEngineSettings();
         s.setApplyProductSchema(false);
         s.setApplyEnginePatches(true);
@@ -49,7 +50,88 @@ public class EngineWiring {
         if (env.getProperty("sangam.modules.security.enabled", Boolean.class, true)) {
             s.setJobIdentityBinder(org.sangam.security.tenant.TenantContext::runAs);
         }
+        s.setTracing(tracing(env, otel.getIfAvailable()));
         return s;
+    }
+
+    /**
+     * M-062 (R13, R56): engine spans over OpenTelemetry only with {@code sangam.tracing.engine.enabled=true}
+     * (default off: the engine installs no tracing interceptor). Enabled without an {@code OpenTelemetry} bean fails
+     * the start-up rather than tracing nothing silently.
+     */
+    static org.sangam.engine.trace.EngineTracing tracing(Environment env, io.opentelemetry.api.OpenTelemetry otelOrNull) {
+        if (!env.getProperty(TRACING_PROPERTY, Boolean.class, false)) {
+            return org.sangam.engine.trace.EngineTracing.NONE;
+        }
+        if (otelOrNull == null) {
+            throw new IllegalStateException(TRACING_PROPERTY + "=true needs an OpenTelemetry bean"
+                    + " (spring-boot-starter-opentelemetry on the class path)");
+        }
+        return new OpenTelemetryEngineTracing(otelOrNull);
+    }
+
+    // not under sangam.engine.*: that prefix binds onto SangamEngineSettings, whose "tracing" is the port itself
+    static final String TRACING_PROPERTY = "sangam.tracing.engine.enabled";
+
+    /**
+     * M-054: with {@code sangam.engine.job-virtual-threads} (or env {@code SANGAM_JOB_VIRTUAL_THREADS}) or any
+     * {@code sangam.engine.job-bulkheads.<type>} set, the job executor must be Sangam's: this bean replaces the
+     * Operaton starter's {@code JobExecutor} (its bean is {@code @ConditionalOnMissingBean(JobExecutor.class)}), sized
+     * from the same settings as {@code SangamProcessEnginePlugin} sizes its own. With both options off there is no such
+     * bean and the starter's executor stays exactly as before.
+     */
+    @Bean
+    @org.springframework.context.annotation.Conditional(JobExecutorOptionsCondition.class)
+    public org.operaton.bpm.engine.impl.jobexecutor.JobExecutor sangamJobExecutor(SangamEngineSettings sangamEngineSettings) {
+        if (sangamEngineSettings.isApplyEnvironment() && !sangamEngineSettings.isFrozen()) {
+            // the same SANGAM_JOB_* values the configurer applies again at bootstrap (idempotent)
+            sangamEngineSettings.applyEnvironment(System.getenv());
+        }
+        return jobExecutor(sangamEngineSettings);
+    }
+
+    /** A {@code SangamJobExecutor} with the options and the IR-7 sizing of {@code settings}. */
+    static org.sangam.engine.job.SangamJobExecutor jobExecutor(SangamEngineSettings s) {
+        org.sangam.engine.job.SangamJobExecutor je = new org.sangam.engine.job.SangamJobExecutor(s.isJobVirtualThreads(),
+                s.getJobBulkheads(), s.getJobBulkheadWait());
+        je.setCorePoolSize(s.getJobCorePoolSize());
+        je.setMaxPoolSize(s.getJobMaxPoolSize());
+        je.setQueueSize(s.getJobQueueCapacity());
+        je.setMaxJobsPerAcquisition(s.getJobMaxJobsPerAcquisition());
+        je.setWaitTimeInMillis(s.getJobWaitTimeInMillis());
+        je.setWaitIncreaseFactor(s.getJobWaitIncreaseFactor());
+        je.setMaxWait(s.getJobMaxWait());
+        je.setLockTimeInMillis(s.getJobLockTimeInMillis());
+        je.setBackoffTimeInMillis(s.getJobBackoffTimeInMillis());
+        je.setMaxBackoff(s.getJobMaxBackoff());
+        if (s.getJobLockOwner() != null) {
+            je.setLockOwner(s.getJobLockOwner());
+        }
+        return je;
+    }
+
+    /** True when an M-054 executor option is set, read as the engine settings read it (properties, then env). */
+    static final class JobExecutorOptionsCondition implements org.springframework.context.annotation.Condition {
+        @Override
+        public boolean matches(org.springframework.context.annotation.ConditionContext context,
+                               org.springframework.core.type.AnnotatedTypeMetadata metadata) {
+            return optionsOn(context.getEnvironment(), System.getenv());
+        }
+
+        static boolean optionsOn(Environment env, java.util.Map<String, String> osEnv) {
+            org.springframework.boot.context.properties.bind.Binder binder =
+                    org.springframework.boot.context.properties.bind.Binder.get(env);
+            boolean virtual = binder.bind("sangam.engine.job-virtual-threads", Boolean.class).orElse(false);
+            boolean applyEnv = binder.bind("sangam.engine.apply-environment", Boolean.class).orElse(true);
+            String v = osEnv.get("SANGAM_JOB_VIRTUAL_THREADS");
+            if (applyEnv && v != null && !v.isBlank()) {
+                virtual = Boolean.parseBoolean(v.trim());
+            }
+            boolean bulkheads = !binder.bind("sangam.engine.job-bulkheads",
+                    org.springframework.boot.context.properties.bind.Bindable.mapOf(String.class, Integer.class))
+                    .orElse(java.util.Map.of()).isEmpty();
+            return virtual || bulkheads;
+        }
     }
 
     @Bean

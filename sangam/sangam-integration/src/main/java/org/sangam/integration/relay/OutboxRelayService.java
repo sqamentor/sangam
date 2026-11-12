@@ -41,6 +41,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *       {@link DeferPublishException} (e.g. a webhook's {@code Retry-After}, or a disabled webhook in its hold
  *       period).</li>
  *   <li><b>Wake-up.</b> One payload-free {@link WakeupNotifier} call per cycle that published (R1).</li>
+ *   <li><b>Heartbeat</b> (M-091). {@link #lastCycleCompletedAt()} is the time this node's relay last completed a
+ *       cycle (claim done, every claimed delivery attempted); a cycle whose claim fails does not move it. The
+ *       {@code sangam.relay.last.cycle.age} gauge reads it, per node.</li>
  * </ul>
  */
 public final class OutboxRelayService implements AutoCloseable, org.sangam.core.layer.OutboxRepair {
@@ -77,6 +80,9 @@ public final class OutboxRelayService implements AutoCloseable, org.sangam.core.
     private final AtomicLong fenced = new AtomicLong();
     private final AtomicLong deferred = new AtomicLong();
     private volatile long lastSweep;
+    /** Epoch millis of the start of the loop and of the last completed cycle; 0 = not yet (M-091 heartbeat). */
+    private volatile long startedAtMillis;
+    private volatile long lastCycleCompletedMillis;
 
     public OutboxRelayService(Dialect dialect, Transactions tx, PublisherRegistry publishers, Settings settings,
                               AuditChain auditOrNull, DeadLetterStore deadLetters, CircuitBreaker breaker, WakeupNotifier wakeup) {
@@ -107,6 +113,7 @@ public final class OutboxRelayService implements AutoCloseable, org.sangam.core.
     /** Starts the relay loop. Idempotent. */
     public void start() {
         if (running.compareAndSet(false, true)) {
+            startedAtMillis = System.currentTimeMillis();
             loop.execute(this::loopOnce);
         }
     }
@@ -142,6 +149,7 @@ public final class OutboxRelayService implements AutoCloseable, org.sangam.core.
         cycles.incrementAndGet();
         claimed.addAndGet(batch.size());
         if (batch.isEmpty()) {
+            lastCycleCompletedMillis = System.currentTimeMillis();
             return 0;
         }
         List<Future<Boolean>> futures = new ArrayList<>(batch.size());
@@ -172,7 +180,20 @@ public final class OutboxRelayService implements AutoCloseable, org.sangam.core.
         if (ok > 0) {
             wakeup.cycleCompleted(ok);
         }
+        lastCycleCompletedMillis = System.currentTimeMillis();
         return batch.size();
+    }
+
+    /** M-091 heartbeat: when this node's relay last completed a cycle; empty before the first one. */
+    public java.util.Optional<java.time.Instant> lastCycleCompletedAt() {
+        long t = lastCycleCompletedMillis;
+        return t == 0 ? java.util.Optional.empty() : java.util.Optional.of(java.time.Instant.ofEpochMilli(t));
+    }
+
+    /** When {@link #start()} started this node's relay loop; empty when it was never started (background disabled). */
+    public java.util.Optional<java.time.Instant> startedAt() {
+        long t = startedAtMillis;
+        return t == 0 ? java.util.Optional.empty() : java.util.Optional.of(java.time.Instant.ofEpochMilli(t));
     }
 
     /** Publishes one claimed delivery; true when it was published and marked DONE. */

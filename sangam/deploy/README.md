@@ -209,8 +209,17 @@ Chart behaviour worth knowing:
 - These guards are coded and their tests are written (`ProductionGuardsTest`, `ProductionModeTest`,
   `ProductionPredicateGuardTest`, `ProductionDatabaseCredentialsTest`, `PromotionControllerTest`); they have not yet
   been run.
-- **Private exposure.** `ingress.enabled` is `false` by default (no public inbound). For a private ingress set
-  `ingress.className` to an internal controller and its internal-load-balancer annotations in `ingress.annotations`.
+- **Private exposure (SG-39, Q-09).** `ingress.enabled` is `false` by default (no public inbound). A private ingress is
+  `ingress.enabled=true` plus `ingress.private.enabled=true` and either `ingress.private.preset` (`aws`, `azure` or
+  `gcp`) or `ingress.private.className` (an internal class, required with no preset). The presets set the internal
+  class and internal-load-balancer annotation (`alb` with `alb.ingress.kubernetes.io/scheme: internal`;
+  `azure-application-gateway` with `appgw.ingress.kubernetes.io/use-private-ip: "true"`; GKE
+  `kubernetes.io/ingress.class: gce-internal`), and they replace the same keys in `ingress.annotations`. With
+  private=true a public `ingress.className` is refused twice: by `values.schema.json` and by a `fail` in
+  `templates/ingress.yaml` (which also holds when schema validation is skipped). With an AWS ALB in IP target mode the
+  load balancer reaches the pods directly from its subnets, not from `networkPolicy.ingressControllerNamespace`: list
+  those subnet CIDRs in `networkPolicy.ingressFrom.cidrs` (default empty), which the server and UI NetworkPolicies
+  admit as `ipBlock` sources next to the ingress controller namespace (or use instance mode).
   Management (8081) is a separate ClusterIP Service and is never routed by the ingress; NetworkPolicy admits it only
   from `networkPolicy.monitoringNamespace`. Egress is an allow-list (`networkPolicy.extraEgress`).
 - **Service tokens to an edge.** An outbound HTTP connector's default header whose value is a secret reference
@@ -342,7 +351,16 @@ of one round trip and `t_db` the database work. By Little's law a node serving `
 
     pool = ceil( X × (R × t_rt + t_db) × 1.3 )        (1.3 = headroom for bursts)
 
-and the database must allow `nodes × pool + admin/replication slots` connections (`max_connections`). Read `R`
+and the database must allow `nodes × (pool + leaf pools) + admin/replication slots` connections (`max_connections`).
+The leaf pools are separate HikariCP pools on the same database, derived from the main pool's settings: the quota pool
+(SL-43, `sangam.quotas.pool.maximum-size`, default 4, while `sangam.quotas.enabled` is true) and the compliance
+denial-audit pool `sangam-compliance-audit` (SL-137, `sangam.compliance.denial-audit.pool.maximum-size`, env
+`SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE`, default 2, while the compliance module is enabled). The security
+denial-audit pool `sangam-security-audit` is the third (SL-132, `sangam.security.denial-audit.pool.maximum-size`, env
+`SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE`, default 2; `SecurityAuditPoolWiring`): sangam-security writes `AUTH_DENIED`,
+`SOD_VIOLATION_BLOCKED` and `POWER_LIMIT_EXCEEDED` to their `sec:d:` denial chains through it (`Options.denialTx`), and
+the tenant data-key store uses it too (SL-161). With the defaults that is 8 connections per node on top of `pool`; a
+read replica pool counts against the replica's own limit. Read `R`
 from the T-SCALE probe (`jdbc_round_trips_per_op` in `report.txt` of `TScaleLoadIT`, `-Dsangam.tscale=true`) and
 `t_rt` from `hikaricp.connections.usage` divided by `R`. More connections than about 2–4 × the database's cores
 add no throughput (PostgreSQL contends on WAL and locks); above that, lower `R` or add nodes.
@@ -732,6 +750,28 @@ Third-party images in the bundle are separate, unmodified programs:
   - stale-lease rejections.
 
   The 24 h soak gate (R30) watches heap, cache metrics and these panels.
+- **Alerting (M-091).** Compose: `observability/rules/sangam-alerts.yml` is mounted at `/etc/prometheus/rules` and
+  loaded by `prometheus.yml` (`rule_files`). Helm: `metrics.prometheusRule.enabled` (default `false`) renders the same
+  rules as a `PrometheusRule`, which needs the Prometheus Operator CRD (like `metrics.serviceMonitor`); add the
+  Prometheus `ruleSelector` labels in `metrics.prometheusRule.labels`. `PrometheusAlertRulesTraceTest` keeps the two
+  rule sets equal. Thresholds (`metrics.prometheusRule.thresholds`; the compose file has the same literals):
+
+  | Alert | Fires when | Default threshold | For |
+  |---|---|---|---|
+  | `SangamServerDown` | the scrape of a server fails (`up == 0`) | none | 5 m |
+  | `SangamOutboxDeliveryStale` | `max(sangam_outbox_oldest_age_seconds)` is above `outboxOldestAgeSeconds` (PARKED rows count) | 300 s | 5 m |
+  | `SangamOutboxCapacityHigh` | `max(sangam_outbox_capacity_used_ratio)` is at or above `outboxCapacityRatio` (R40) | 0.5 | 5 m |
+  | `SangamOutboxBackpressure` | `max(sangam_outbox_capacity_used_ratio)` is at or above 0.8, where the server starts refusing new submissions | fixed 0.8 | 1 m |
+  | `SangamOutboxDeliveryParked` | `max(sangam_outbox_parked)` is above `outboxParked` (each PARKED delivery blocks its line) | 0 | 1 m |
+  | `SangamRelayStalled` | a pod's `sangam_relay_last_cycle_age_seconds` is above `relayLastCycleAgeSeconds` (2 x the 30 s claim lease) | 60 s | 2 m |
+  | `SangamRootLockWaitHigh` | `max by (process)` of `sangam_engine_root_lock_wait_seconds_max` is above `rootLockWaitSeconds` | 1 s | 5 m |
+  | `SangamIncidentsOpen` | `max(sangam_incidents_open)` is above `incidentsOpen` | 0 | 15 m |
+  | `SangamReconciliationItemsOpen` | `max(sangam_reconciliation_items{state="OPEN"})` is above `reconciliationOpen` | 0 | 15 m |
+  | `SangamCertificateExpiring` (Helm only, `certManager.enabled`, default `true`) | a cert-manager certificate expires in less than `certExpiryDays` | 14 days | 1 h |
+
+  The database-read gauges report the same value on every pod, so those rules take `max()`; the relay heartbeat is
+  per pod and is checked per pod. The gauge names are a contract with `PrometheusAlertRulesTraceTest`. Without
+  cert-manager the certificate rule has no series and never fires; `certManager.selector` narrows the certificates.
 - **Logs.** JSON logs (ECS) go to stdout. Ship them to an India-resident store with **≥ 180 days** retention (R51, CERT-In).
 - **Time.** Nodes sync time with NIC/NPL NTP.
 

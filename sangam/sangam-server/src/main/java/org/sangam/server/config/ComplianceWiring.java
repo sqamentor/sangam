@@ -125,18 +125,36 @@ public class ComplianceWiring {
 
     /** A pool on the main pool's database and settings, separate from it (never the pool the callers hold). */
     static HikariDataSource leafPool(DataSource ds, int maximumSize) {
+        if (!isHikari(ds)) {
+            throw new IllegalStateException("M-009 compliance denial audits need a HikariCP main pool to derive their"
+                    + " own pool from (found " + ds.getClass().getName() + "); or set"
+                    + " sangam.modules.compliance.enabled=false");
+        }
+        return leafPool(ds, maximumSize, AUDIT_POOL_NAME);
+    }
+
+    /** Whether {@code ds} is (or wraps) a HikariCP pool that a leaf pool can be derived from. */
+    static boolean isHikari(DataSource ds) {
+        try {
+            return ds.isWrapperFor(HikariDataSource.class);
+        } catch (java.sql.SQLException e) {
+            return false;
+        }
+    }
+
+    /**
+     * A leaf pool named {@code poolName}: the main HikariCP pool's database and settings, its own connections
+     * ({@code maximumSize}, at least 1), auto-commit. Shared by the compliance (SL-137) and security (SL-132) denial
+     * audits.
+     */
+    static HikariDataSource leafPool(DataSource ds, int maximumSize, String poolName) {
         HikariConfig cfg = new HikariConfig();
         try {
-            if (!ds.isWrapperFor(HikariDataSource.class)) {
-                throw new IllegalStateException("M-009 compliance denial audits need a HikariCP main pool to derive their"
-                        + " own pool from (found " + ds.getClass().getName() + "); or set"
-                        + " sangam.modules.compliance.enabled=false");
-            }
             ds.unwrap(HikariDataSource.class).copyStateTo(cfg);
         } catch (java.sql.SQLException e) {
-            throw new IllegalStateException("cannot derive the compliance audit pool from the main DataSource", e);
+            throw new IllegalStateException("cannot derive the " + poolName + " pool from the main DataSource", e);
         }
-        cfg.setPoolName(AUDIT_POOL_NAME);
+        cfg.setPoolName(poolName);
         int size = Math.max(1, maximumSize);
         cfg.setMaximumPoolSize(size);
         cfg.setMinimumIdle(Math.min(1, size));

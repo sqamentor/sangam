@@ -8,15 +8,26 @@ TAGS.append(("Plugins", "Signed plugin drop-in: list, enable or disable (effecti
 ONB = ["ADR-D-20", "ADR-D-24", "X.0e"]
 RUN = pp("id", "onboarding run id")
 
+
+def _onb_rec(name):
+    """Schema name of a nested record of org.sangam.onboarding.api.OnboardingRequest, typed from its source (M-051;
+    ServerRequestBodyContractTest checks the request bodies against the records)."""
+    f = _v2_find_type(_v2_os.path.join(_V2_SANGAM, "sangam-onboarding", "src", "main", "java", "org", "sangam", "onboarding",
+                                       "api", "OnboardingRequest.java"), "OnboardingRequest." + name)
+    return _v2_record_schema(f[0], f[2], f[3], "onboarding.py OnboardingRequest." + name)
+
+
 schema("OnboardingProblem", "One finding.", "severity code step subject message",
        enums={"severity": ["ERROR", "WARNING", "INFO"]})
 schema("OnboardingSecurity", "Security set-up. orgLevels: the tenant's org level types, top first; when empty the "
        "resolved profile's default security.orgLevels is used. They are defined before pack seats are seeded (levels are "
        "fixed once the first org unit exists); the dry run refuses a seat whose level is missing or not among them.",
-       "moduleDefaults:bool selfService:bool roles:list:obj tenantAdmins:list:obj orgLevels:list:s")
+       "moduleDefaults:bool selfService:bool roles:list:" + _onb_rec("RoleSpec") + " tenantAdmins:list:"
+       + _onb_rec("AdminSpec") + " orgLevels:list:s")
 schema("OnboardingRequest", "Everything a new tenant needs, as data. See org.sangam.onboarding.api.OnboardingRequest.",
-       "tenant:obj profile:obj packs:obj connectors:list:obj security:OnboardingSecurity seeds:obj compliance:obj dmnOverrides:smap "
-       "goLive:obj", ["tenant"])
+       "tenant:%s profile:%s packs:%s connectors:list:%s security:OnboardingSecurity seeds:%s compliance:%s dmnOverrides:smap "
+       "goLive:%s" % tuple(_onb_rec(r) for r in ("TenantSpec", "ProfileSpec", "PackSpec", "ConnectorBindingSpec", "SeedSpec",
+                                                 "ComplianceSpec", "GoLiveSpec")), ["tenant"])
 schema("OnboardingReadiness", "The go-live checklist; the checker approves `hash`.",
        "ready:bool problems:list:OnboardingProblem checks:smap hash checkedAt:dt revision:int")
 schema("OnboardingDryRun", "Every problem and the plan; nothing was changed.",
@@ -36,7 +47,8 @@ schema("PackResolution", "Dependency closure, order, requirements, upgrades and 
        "problems:list:OnboardingProblem")
 schema("TenantBundle", "A signed tenant configuration bundle.", "format:int body:obj signature:obj", ["format", "body"])
 schema("BundleImportRequest", "Import a bundle as another tenant, or dry-run it.",
-       "bundle:TenantBundle targetTenant name names:smap parentId profileOverrides:obj goLive:obj dryRun:bool",
+       "bundle:TenantBundle targetTenant name names:smap parentId profileOverrides:obj goLive:" + _onb_rec("GoLiveSpec")
+       + " dryRun:bool",
        ["bundle", "targetTenant"])
 schema("BundleImportResult", "The dry-run report or the started run.", "dryRun:OnboardingDryRun run:OnboardingRun")
 schema("BundleDiffRequest", "Two bundles.", "left:TenantBundle right:TenantBundle", ["left", "right"])

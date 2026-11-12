@@ -14,8 +14,12 @@ rents, licence fees and premiums are configurations.
 | `BillingConnector.java` | In-process connector for the pack connector ids `billing.accounts`, `billing.invoice`, `billing.collect`, `billing.arrears`, `billing.penalty`, `billing.waive` (pack `universal.billing-cycle`); `AccountSource` port for the account register |
 | `party/RegistryPayeeDirectory.java` | `PayeeDirectory` (sangam-config) over the sangam-registry party registry: resolve by party or by bank-account identifier, several beneficiaries on one account, register idempotent on the account (GA-12) |
 
-Integration notes: bind the `billing.*` ids to `new BillingConnector(billingService, ledgerService, profileResolver,
-accountSource, clock)` with a RECEIVABLE ledger definition `DEMAND` (stage `DEMAND`) in the tenant profile; implement
+Integration notes: build `new BillingService(ledger, tariffs, documentNumbers, payments, businessClock)` with the
+registry-backed `RegistryDocumentNumbers` in production (the `NumberSeries` constructors are the single-node form for
+tests and tools), and bind the `billing.*` ids to `new BillingConnector(billingService, ledgerService, profileResolver,
+accountSource, periodResolver, clock)`, where `periodResolver` gives the tenant's current fiscal period label and
+throws `FiscalYearNotConfiguredException` when no fiscal year is set (null: a step without an explicit `period` is
+refused; SL-127). Both are wired so in `sangam-server` `BillingWiring`. Use a RECEIVABLE ledger definition `DEMAND` (stage `DEMAND`) in the tenant profile; implement
 `PaymentPort` over the ConnectorGateway; bind `registry.party` as described in sangam-config. Dependencies:
 sangam-config, sangam-ledger, sangam-registry (optional, Apache-2.0).
 

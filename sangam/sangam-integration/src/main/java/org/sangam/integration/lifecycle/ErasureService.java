@@ -26,7 +26,10 @@ import java.util.Map;
  *   <tr><td>{@code INBOX}</td><td>{@code payload} of messages correlated to the erased business keys</td><td>dedup key, state</td></tr>
  *   <tr><td>{@code IDEMPOTENCY_RECORD}</td><td>{@code response_body} where {@code resource_ref} is an erased instance</td><td>fingerprint, status, resource_ref</td></tr>
  *   <tr><td>{@code CONNECTOR_CALL}, dead letters</td><td>request input / payload copy</td><td>operation identity, provider reference</td></tr>
- *   <tr><td>Audit chain</td><td>event payload + salt ({@code AuditChain.erasePayload}); the chain still verifies</td><td>envelope, hashes</td></tr>
+ *   <tr><td>Audit chain</td><td>event payload + salt ({@code AuditChain.erasePayload}) of each instance's chain and of its
+ *       related chains (port {@link LifecyclePorts.RelatedAuditChains}: the {@code sec:d:} denial chain, SL-132); the
+ *       chains still verify. Compliance per-principal chains ({@code cmp:p:}, {@code cmp:d:}) are not instance chains
+ *       and hold references and purpose codes, not personal data, so they are kept</td><td>envelope, hashes</td></tr>
  *   <tr><td>Document store</td><td>objects (port {@link LifecyclePorts.DocumentEraser})</td><td>—</td></tr>
  *   <tr><td>{@code RECONCILIATION_ITEM}, {@code OPERATION_LEDGER}</td><td><b>nothing</b>: an open reconciliation item is never deleted</td><td>all</td></tr>
  * </table>
@@ -56,6 +59,7 @@ public final class ErasureService {
     private final LifecyclePorts.EngineInstancePort engine;
     private final LifecyclePorts.EngineDataEraser engineData;
     private final LifecyclePorts.DocumentEraser documents;
+    private final LifecyclePorts.RelatedAuditChains relatedChains;
     private final LifecyclePorts.Authorizer authorizer;
 
     public ErasureService(Dialect dialect, Transactions engineTx, AuditChain audit, LegalHoldStore holds,
@@ -72,6 +76,44 @@ public final class ErasureService {
         this.engineData = engineData;
         this.documents = documents == null ? LifecyclePorts.DocumentEraser.NONE : documents;
         this.authorizer = authorizer;
+        this.relatedChains = LifecyclePorts.RelatedAuditChains.NONE;
+    }
+
+    /**
+     * As above, plus the audit chains that hold events of each erased chain (SL-132: the root's {@code sec:d:} denial
+     * chain); their payloads are erased with the root's.
+     */
+    public ErasureService(Dialect dialect, Transactions engineTx, AuditChain audit, LegalHoldStore holds,
+                          ConnectorCallJournal journal, DeadLetterStore deadLetters, LifecyclePorts.EngineInstancePort engine,
+                          LifecyclePorts.EngineDataEraser engineData, LifecyclePorts.DocumentEraser documents,
+                          LifecyclePorts.Authorizer authorizer, LifecyclePorts.RelatedAuditChains relatedChains) {
+        this.dialect = dialect;
+        this.engineTx = engineTx;
+        this.audit = audit;
+        this.holds = holds;
+        this.journal = journal;
+        this.deadLetters = deadLetters;
+        this.engine = engine;
+        this.engineData = engineData;
+        this.documents = documents == null ? LifecyclePorts.DocumentEraser.NONE : documents;
+        this.authorizer = authorizer;
+        this.relatedChains = relatedChains == null ? LifecyclePorts.RelatedAuditChains.NONE : relatedChains;
+    }
+
+    /** The audit chains erased for {@code tree}: each instance's chain, followed by its related chains (SL-132). */
+    List<String> auditChains(String tenantId, List<String> tree) {
+        List<String> chains = new ArrayList<>();
+        for (String id : tree) {
+            if (!chains.contains(id)) {
+                chains.add(id);
+            }
+            for (String related : relatedChains.of(tenantId, id)) {
+                if (!chains.contains(related)) {
+                    chains.add(related);
+                }
+            }
+        }
+        return chains;
     }
 
     /**
@@ -94,7 +136,7 @@ public final class ErasureService {
             Map<String, Integer> n = new LinkedHashMap<>();
             // audit chain events of the tree (payload + salt), before the new DATA_ERASED event is appended
             int auditErased = 0;
-            for (String chain : tree) {
+            for (String chain : auditChains(tenantId, tree)) {
                 List<String> events = Jdbc.query(c, "SELECT e.event_id FROM AUDIT_EVENT e JOIN AUDIT_PAYLOAD p ON p.event_id = e.event_id"
                         + " WHERE e.tenant_id=? AND e.chain_id=? AND p.erased_at IS NULL", rs -> rs.getString(1), tenantId, chain);
                 for (String ev : events) {

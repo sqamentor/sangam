@@ -2,7 +2,7 @@
 package org.sangam.core.layer;
 
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
+import java.nio.ByteBuffer;
 import java.sql.Connection;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Minimal class-B audit hash chain per root (SANGAM.md X.2.3.3–X.2.3.4).
@@ -24,8 +26,13 @@ import java.util.Map;
  *       {@code prev_hash_0 = SHA-256("sangam-audit-v1:" || tenant || ":" || chain)}.</li>
  *   <li>Written synchronously in the command transaction (L5 insert), never through the outbox.</li>
  * </ul>
- * Not implemented in the spike: signed Merkle checkpoints and their export (X.2.3.4 rule 4). Without them a DBA
- * who rewrites a whole chain <i>and</i> the {@code ROOT_SEQ} head is not detected.
+ * Signed Merkle checkpoints and their export (X.2.3.4 rule 4, M-073) are {@link AuditCheckpoints}: they read committed
+ * chain heads off the hot path, so a DBA who rewrites a whole chain <i>and</i> the {@code ROOT_SEQ} head is detected
+ * against the last signed checkpoint. A writer whose own transaction holds the root's {@code ROOT_SEQ} lock on another
+ * connection must not append here; it records through {@link PendingAudit} (SL-133).
+ *
+ * <p>Event ids and payload salts come from an {@link IdSource} (D11, M-097): {@link IdSource#SYSTEM} by default, a
+ * deterministic source in tests. The salt is the 16 bytes of a random (version 4) UUID of that source.
  */
 public final class AuditChain {
 
@@ -42,15 +49,43 @@ public final class AuditChain {
         }
     }
 
-    private static final SecureRandom RANDOM = new SecureRandom();
     private final Dialect dialect;
+    private final IdSource ids;
 
     public AuditChain(Dialect dialect) {
+        this(dialect, IdSource.SYSTEM);
+    }
+
+    /** @param ids the source of event ids (version 7) and payload salts (version 4 bytes) */
+    public AuditChain(Dialect dialect, IdSource ids) {
         this.dialect = dialect;
+        this.ids = Objects.requireNonNull(ids, "ids");
     }
 
     public static byte[] genesis(String tenant, String chainId) {
         return Hashes.sha256("sangam-audit-v1:" + tenant + ":" + chainId);
+    }
+
+    /** Prefix of every denial chain; it starts with {@code sec:}, so the envelope carries no {@code root_id}. */
+    public static final String DENIAL_PREFIX = "sec:d:";
+
+    /**
+     * The one denial-chain id (SL-132): {@code "sec:d:"} followed by the first 32 hex characters of
+     * SHA-256(tenant NUL chainId), where {@code chainId} is the root's chain (or {@code sec:<tenant>} without a root).
+     * Denials of a chain are kept on this separate chain. sangam-security {@code SecurityAuditService.denialChain} and
+     * sangam-rest {@code DenialAudit.chainOf} must return exactly this value.
+     */
+    public static String denialChain(String tenant, String chainId) {
+        return hashedChain(DENIAL_PREFIX, tenant, chainId);
+    }
+
+    /**
+     * X1-06: the one formula of every derived chain id: {@code prefix} followed by the first 32 hex characters of
+     * SHA-256(tenant NUL key). {@link #denialChain} is {@code hashedChain("sec:d:", ...)}; sangam-compliance's
+     * {@code cmp:p:} (principal) and {@code cmp:d:} (principal denial) chains are the same formula with their prefixes.
+     */
+    public static String hashedChain(String prefix, String tenant, String key) {
+        return prefix + Hashes.hex(Hashes.sha256(tenant + "\u0000" + key)).substring(0, 32);
     }
 
     /** Appends one event to the root's chain inside the caller's transaction. */
@@ -60,9 +95,8 @@ public final class AuditChain {
         long seq = head.nextAuditSeq();
         byte[] prev = seq == 1 ? genesis(tenant, rootId) : head.auditHeadHash();
         Instant occurredAt = locked.dbNow().truncatedTo(ChronoUnit.MICROS);
-        String eventId = Hashes.uuidV7().toString();
-        byte[] salt = new byte[16];
-        RANDOM.nextBytes(salt);
+        String eventId = ids.timeOrderedUuid().toString();
+        byte[] salt = salt(ids.randomUuid());
         String payloadText = CanonicalJson.write(payload == null ? Map.of() : payload);
         byte[] payloadDigest = Hashes.sha256(salt, payloadText.getBytes(StandardCharsets.UTF_8));
         String envelope = envelope(eventId, tenant, rootId, seq, eventType, 1, occurredAt, payloadDigest, prev);
@@ -87,6 +121,10 @@ public final class AuditChain {
         Jdbc.update(c, insertPayload, eventId, salt, payloadText);
         RootSeq.advanceAudit(c, tenant, rootId, seq + 1, hash);
         return new AuditEvent(eventId, rootId, seq, hash);
+    }
+
+    private static byte[] salt(UUID u) {
+        return ByteBuffer.allocate(16).putLong(u.getMostSignificantBits()).putLong(u.getLeastSignificantBits()).array();
     }
 
     /** Erasure (X.2.3.8): deletes the payload and its salt; the chain still verifies. */

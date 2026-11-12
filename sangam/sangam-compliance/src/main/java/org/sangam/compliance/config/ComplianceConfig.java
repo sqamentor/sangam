@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.compliance.config;
 
+import org.sangam.compliance.ComplianceException;
 import org.sangam.compliance.jurisdiction.JurisdictionPack;
 import org.sangam.compliance.jurisdiction.JurisdictionRegistry;
 
@@ -8,12 +9,15 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,6 +42,11 @@ public final class ComplianceConfig {
     public static final String MIN_RETENTION = "minimumRetentionDays";
     public static final String LAWFUL_REQUEST_MAX = "lawfulRequestMaxHours";
     public static final String CHILD_AGE = "childAgeYears";
+    /**
+     * M-010c: {@code sangam.compliance.seats.<ROLE>} names the seat that works the tasks of compliance role
+     * {@code <ROLE>} (a role code of the compliance pack seed, e.g. {@code DPO}, {@code CISO-HEAD}).
+     */
+    public static final String SEATS = "seats.";
 
     /** Entity attribute meaning a public authority / instrumentality of the State. */
     public static final String PUBLIC_SECTOR = "public-sector";
@@ -93,9 +102,12 @@ public final class ComplianceConfig {
     public final String withdrawConsentUrl;
     public final String authorityComplaintUrl;
     public final String privacyPolicyUrl;
+    /** The tenant's own properties only: a seat is never taken from a pack or region default (M-010c). */
+    private final Function<String, String> seatProperties;
 
     private ComplianceConfig(JurisdictionPack pack, Function<String, String> props) {
         this.pack = pack;
+        this.seatProperties = props;
         String regionCode = props.apply("region");
         this.region = regionCode == null || regionCode.isBlank() ? null : pack.region(regionCode).orElseThrow(() ->
                 new IllegalArgumentException("region " + regionCode + " is not defined by pack " + pack.code()));
@@ -218,6 +230,68 @@ public final class ComplianceConfig {
             }
         }
         return l;
+    }
+
+    /**
+     * The seat configured for compliance role {@code role}: {@code sangam.compliance.seats.<ROLE>} of the tenant
+     * (the role code as written, else in lower case, the form an environment variable binds to). There is no pack,
+     * region or role default: an absent or blank value is empty.
+     */
+    public Optional<String> seat(String role) {
+        Objects.requireNonNull(role, "role");
+        String v = seatProperties.apply(SEATS + role);
+        if (v == null) {
+            v = seatProperties.apply(SEATS + role.toLowerCase(Locale.ROOT));
+        }
+        return v == null || v.isBlank() ? Optional.empty() : Optional.of(v.trim());
+    }
+
+    /** The seat of {@code role}; refuses with {@code INVALID_STATE} naming the property when none is configured. */
+    public String requireSeat(String role) {
+        return seat(role).orElseThrow(() -> missingSeats(List.of(role)));
+    }
+
+    /**
+     * The process variables {@code <role>Seat} (see {@link #seatVariable}) that route the user tasks of a compliance
+     * process, one per role in {@code roles}. Every missing seat is named in one {@code INVALID_STATE} refusal; a
+     * task is never routed to the role code instead (no silent fallback).
+     */
+    public Map<String, Object> seatVariables(Collection<String> roles) {
+        Map<String, Object> vars = new LinkedHashMap<>();
+        List<String> missing = new ArrayList<>();
+        for (String role : roles) {
+            Optional<String> s = seat(role);
+            if (s.isPresent()) {
+                vars.put(seatVariable(role), s.get());
+            } else {
+                missing.add(role);
+            }
+        }
+        if (!missing.isEmpty()) {
+            throw missingSeats(missing);
+        }
+        return vars;
+    }
+
+    /** The process variable of a role's seat: {@code DPO} -> {@code dpoSeat}, {@code CISO-HEAD} -> {@code cisoHeadSeat}. */
+    public static String seatVariable(String role) {
+        StringBuilder b = new StringBuilder();
+        for (String part : role.trim().toLowerCase(Locale.ROOT).split("[-_ ]+")) {
+            if (part.isEmpty()) {
+                continue;
+            }
+            b.append(b.length() == 0 ? part : Character.toUpperCase(part.charAt(0)) + part.substring(1));
+        }
+        if (b.length() == 0) {
+            throw new IllegalArgumentException("role code is blank");
+        }
+        return b.append("Seat").toString();
+    }
+
+    private static ComplianceException missingSeats(List<String> roles) {
+        return new ComplianceException(ComplianceException.Code.INVALID_STATE, "no seat is configured for compliance role(s) "
+                + String.join(", ", roles) + ": set " + roles.stream().map(r -> PREFIX + SEATS + r).collect(Collectors.joining(", "))
+                + " (the process routes these tasks to the configured seat; it never falls back to the role)");
     }
 
     public boolean has(String attribute) {

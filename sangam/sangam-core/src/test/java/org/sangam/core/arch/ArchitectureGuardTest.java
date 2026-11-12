@@ -44,6 +44,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@link #CLASS_SIZE_ALLOWED} with their exact line count, as a ratchet: a listed file that grows fails, one that
  *       shrinks fails until its ceiling is lowered to the new count, and one back at or under the limit fails until
  *       its entry is removed. The list only ever gets shorter.</li>
+ *   <li><b>Determinism in the core</b> (M-097, SANGAM.md D11: no hidden clocks, randomness or thread-locals in the
+ *       core; time and ids come from injectable providers): no {@code sangam-core} main source line outside a comment
+ *       matches {@link #NONDETERMINISTIC} (system clock reads such as {@code System.currentTimeMillis}, {@code new Date()},
+ *       {@code Instant.now}, {@code Clock.systemUTC}; system entropy such as {@code UUID.randomUUID},
+ *       {@code new SecureRandom}, {@code ThreadLocalRandom}; and {@code ThreadLocal}). Core code takes
+ *       {@code SangamClock}, {@code BusinessClock} or {@code IdSource} instead. {@link #DETERMINISM_PROVIDERS} holds the
+ *       production defaults of those providers, {@link #DETERMINISM_ALLOWED} the remaining debt (target: empty), both
+ *       with exact line counts as a ratchet: a new file or a higher count fails, and a lower count fails until the
+ *       entry is lowered (or removed, at 0). Neither list may gain an entry or a higher count.</li>
  * </ol>
  */
 class ArchitectureGuardTest {
@@ -85,6 +94,62 @@ class ArchitectureGuardTest {
         CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonProcessAdapter.java", 832);
         CLASS_SIZE_ALLOWED.put("sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineRunner.java", 825);
         CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 821);
+    }
+
+    /**
+     * M-097 / D11: hidden time, entropy and thread-local state, as written in Java source (calls and method references).
+     * Time: {@code System.currentTimeMillis/nanoTime}, {@code <java.time type>.now}, {@code Clock.system*},
+     * {@code new Date()}, {@code Date::new}, {@code Calendar.getInstance}. Entropy: {@code UUID.randomUUID},
+     * {@code new Random/SplittableRandom/SecureRandom(...)}, {@code SecureRandom.getInstance*},
+     * {@code ThreadLocalRandom.current}, {@code Math.random}, {@code RandomGenerator.getDefault/of}. Thread-locals:
+     * {@code ThreadLocal}, {@code InheritableThreadLocal}.
+     */
+    static final Pattern NONDETERMINISTIC = Pattern.compile(
+            "\\bSystem\\s*(?:\\.|::)\\s*(?:currentTimeMillis|nanoTime)\\b"
+                    + "|\\b(?:Instant|LocalDate|LocalDateTime|LocalTime|ZonedDateTime|OffsetDateTime|OffsetTime|Year|YearMonth|MonthDay)"
+                    + "\\s*(?:\\.|::)\\s*now\\b"
+                    + "|\\bClock\\s*(?:\\.|::)\\s*system(?:UTC|DefaultZone)?\\b"
+                    + "|\\bnew\\s+(?:java\\.util\\.)?Date\\s*\\(\\s*\\)|\\bDate\\s*::\\s*new\\b"
+                    + "|\\bCalendar\\s*(?:\\.|::)\\s*getInstance\\b"
+                    + "|\\b(?:Inheritable)?ThreadLocal\\b"
+                    + "|\\bUUID\\s*(?:\\.|::)\\s*randomUUID\\b"
+                    + "|\\bnew\\s+(?:java\\.util\\.)?(?:Random|SplittableRandom)\\s*\\(|\\bnew\\s+(?:java\\.security\\.)?SecureRandom\\s*\\("
+                    + "|\\bSecureRandom\\s*(?:\\.|::)\\s*getInstance\\w*\\b"
+                    + "|\\bThreadLocalRandom\\s*(?:\\.|::)\\s*current\\b"
+                    + "|\\bMath\\s*(?:\\.|::)\\s*random\\b"
+                    + "|\\bRandomGenerator\\s*(?:\\.|::)\\s*(?:getDefault|of)\\b");
+
+    /**
+     * M-097: the production defaults of the D11 providers, the only sangam-core main sources that may read the system
+     * clock or system entropy (reactor-relative path -> exact number of matching lines, 2026-11-12). Never add one: a
+     * new source of time or ids is an implementation of {@code SangamClock} or {@code IdSource} outside sangam-core.
+     */
+    static final Map<String, Integer> DETERMINISM_PROVIDERS = new TreeMap<>();
+
+    static {
+        // SangamClock.SYSTEM = Instant::now (the engine registers OperatonClock through SangamClockHolder)
+        DETERMINISM_PROVIDERS.put("sangam-core/src/main/java/org/sangam/core/engine/SangamClock.java", 1);
+        // BusinessClock.system() before the server installs the tenant-profile clock: utc(Clock.systemUTC())
+        DETERMINISM_PROVIDERS.put("sangam-core/src/main/java/org/sangam/core/time/BusinessClock.java", 1);
+        // IdSource.SYSTEM: UUID.randomUUID, new SecureRandom (UUIDv7 tail), System.currentTimeMillis (UUIDv7 time),
+        // ThreadLocalRandom.current (relay jitter)
+        DETERMINISM_PROVIDERS.put("sangam-core/src/main/java/org/sangam/core/layer/IdSource.java", 4);
+    }
+
+    /**
+     * M-097 ratchet: remaining hidden state in sangam-core main code (reactor-relative path -> exact number of matching
+     * lines, 2026-11-12). The target is an empty list; each entry names the lane that owns the fix. Remove or lower an
+     * entry when its line goes; never add one or raise a count.
+     */
+    static final Map<String, Integer> DETERMINISM_ALLOWED = new TreeMap<>();
+
+    static {
+        // JobIdentityBinder.CURRENT: the engine-local job identity; sangam-engine JobIdentitySupport sets and reads the
+        // public field, so explicit context passing is an engine change (W2-D, sangam-engine).
+        DETERMINISM_ALLOWED.put("sangam-core/src/main/java/org/sangam/core/engine/JobIdentityBinder.java", 1);
+        // LockScope.DEPTH: VI.1 rule 5 marker (L2 root lock held), entered/exited by sangam-engine CommandState and read by
+        // connector and HTTP clients; replacing it is an engine plus integration change (W2-D, W2-N/W3-B).
+        DETERMINISM_ALLOWED.put("sangam-core/src/main/java/org/sangam/core/engine/LockScope.java", 1);
     }
 
     static Path root() {
@@ -171,6 +236,53 @@ class ArchitectureGuardTest {
                 out.add(e.getKey() + ": grew from " + e.getValue() + " to " + now + " lines (the ceiling never rises: split the class)");
             } else if (now < e.getValue()) {
                 out.add(e.getKey() + ": shrank from " + e.getValue() + " to " + now + " lines (lower its CLASS_SIZE_ALLOWED ceiling to " + now + ")");
+            }
+        }
+        return out;
+    }
+
+    /**
+     * {@code path:line: text} for every line of {@code text} that matches {@code pattern} and is not a comment line (its
+     * stripped text starts with {@code *}, {@code //} or {@code /*}), as in {@code BusinessDateGuardTest}.
+     */
+    static List<String> codeHits(String rel, String text, Pattern pattern) {
+        List<String> out = new ArrayList<>();
+        String[] lines = text.split("\n", -1);
+        for (int i = 0; i < lines.length; i++) {
+            String code = lines[i].strip();
+            if (code.startsWith("*") || code.startsWith("//") || code.startsWith("/*")) {
+                continue;
+            }
+            if (pattern.matcher(lines[i]).find()) {
+                out.add(rel + ":" + (i + 1) + ": " + code);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * M-097 ratchet check over {@code main source -> matching lines}: every violation against the providers plus the
+     * allow-list, worded with the fix it needs. An entry whose file no longer matches counts as 0 and is reported.
+     */
+    static List<String> determinismViolations(Map<String, Integer> found, Map<String, Integer> providers,
+                                              Map<String, Integer> allowed) {
+        Map<String, Integer> ceilings = new TreeMap<>(allowed);
+        ceilings.putAll(providers);
+        List<String> out = new ArrayList<>();
+        for (Map.Entry<String, Integer> e : new TreeMap<>(found).entrySet()) {
+            Integer ceiling = ceilings.get(e.getKey());
+            if (ceiling == null) {
+                out.add(e.getKey() + ": " + e.getValue() + " line(s) of hidden time, entropy or thread-local state"
+                        + " (inject SangamClock, BusinessClock or IdSource)");
+            } else if (e.getValue() > ceiling) {
+                out.add(e.getKey() + ": grew from " + ceiling + " to " + e.getValue() + " line(s) (the ceiling never rises)");
+            }
+        }
+        for (Map.Entry<String, Integer> e : ceilings.entrySet()) {
+            int now = found.getOrDefault(e.getKey(), 0);
+            if (now < e.getValue()) {
+                out.add(e.getKey() + ": shrank from " + e.getValue() + " to " + now + " line(s) ("
+                        + (now == 0 ? "remove its entry" : "lower its entry to " + now) + ")");
             }
         }
         return out;
@@ -318,6 +430,87 @@ class ArchitectureGuardTest {
             assertTrue(e.getValue() > MAX_CLASS_LINES, "a ceiling at or under the limit is not an exception: " + e.getKey());
             assertTrue(isMain(e.getKey()) && e.getKey().endsWith(".java"), "entries are main Java sources: " + e.getKey());
         }
+    }
+
+    @Test
+    void coreIsDeterministic() throws IOException {
+        Path root = root();
+        Map<String, Integer> counts = new TreeMap<>();
+        List<String> lines = new ArrayList<>();
+        int scanned = 0;
+        for (Path p : files(root)) {
+            String r = rel(root, p);
+            if (!r.startsWith("sangam-core/src/main/") || !r.endsWith(".java")) {
+                continue;
+            }
+            String text = read(p);
+            if (text == null) {
+                continue;
+            }
+            scanned++;
+            List<String> h = codeHits(r, text, NONDETERMINISTIC);
+            if (!h.isEmpty()) {
+                counts.put(r, h.size());
+                lines.addAll(h);
+            }
+        }
+        assertTrue(scanned > 50, "scanned sangam-core main sources (" + scanned + ")");
+        List<String> violations = determinismViolations(counts, DETERMINISM_PROVIDERS, DETERMINISM_ALLOWED);
+        assertTrue(violations.isEmpty(), "M-097 / D11 determinism in sangam-core: " + violations + "; matching lines: " + lines);
+    }
+
+    @Test
+    void determinismRatchetReportsEveryCase() {
+        Map<String, Integer> providers = new TreeMap<>(Map.of("Clock.java", 1));
+        Map<String, Integer> allowed = new TreeMap<>(Map.of("Debt.java", 2, "Shrunk.java", 2, "Grown.java", 1, "Gone.java", 1));
+        Map<String, Integer> found = new TreeMap<>(Map.of("Clock.java", 1, "Debt.java", 2, "Shrunk.java", 1,
+                "Grown.java", 2, "New.java", 1));
+        List<String> v = determinismViolations(found, providers, allowed);
+        assertEquals(4, v.size(), v.toString());
+        assertTrue(v.contains("New.java: 1 line(s) of hidden time, entropy or thread-local state"
+                + " (inject SangamClock, BusinessClock or IdSource)"), v.toString());
+        assertTrue(v.contains("Grown.java: grew from 1 to 2 line(s) (the ceiling never rises)"), v.toString());
+        assertTrue(v.contains("Shrunk.java: shrank from 2 to 1 line(s) (lower its entry to 1)"), v.toString());
+        assertTrue(v.contains("Gone.java: shrank from 1 to 0 line(s) (remove its entry)"), v.toString());
+        assertTrue(determinismViolations(Map.of("Clock.java", 2), providers, Map.of()).contains(
+                "Clock.java: grew from 1 to 2 line(s) (the ceiling never rises)"), "a provider is ratcheted too");
+        assertTrue(determinismViolations(Map.of(), Map.of(), Map.of()).isEmpty());
+        for (String path : DETERMINISM_PROVIDERS.keySet()) {
+            assertFalse(DETERMINISM_ALLOWED.containsKey(path), "a provider is not also debt: " + path);
+        }
+        for (Map<String, Integer> m : List.of(DETERMINISM_PROVIDERS, DETERMINISM_ALLOWED)) {
+            for (Map.Entry<String, Integer> e : m.entrySet()) {
+                assertTrue(e.getValue() > 0, "an entry at 0 is removed, not kept: " + e.getKey());
+                assertTrue(e.getKey().startsWith("sangam-core/src/main/java/") && e.getKey().endsWith(".java"),
+                        "entries are sangam-core main Java sources: " + e.getKey());
+            }
+        }
+        assertEquals(3, DETERMINISM_PROVIDERS.size(), "the D11 providers are SangamClock, BusinessClock and IdSource");
+        assertTrue(DETERMINISM_ALLOWED.size() <= 3, "M-097 debt only shrinks (3 entries on 2026-11-12)");
+    }
+
+    @Test
+    void determinismPatternMatchesWhatItBans() {
+        for (String s : List.of("long t = System.currentTimeMillis();", "System.nanoTime()", "LongSupplier s = System::currentTimeMillis;",
+                "Instant.now()", "java.time.Instant.now()", "SangamClock SYSTEM = Instant::now;", "LocalDateTime.now(clock)",
+                "OffsetDateTime.now()", "Clock.systemUTC()", "Clock.systemDefaultZone()", "Clock.system(zone)",
+                "new Date()", "new java.util.Date( )", "Supplier<Date> d = Date::new;", "Calendar.getInstance()",
+                "new ThreadLocal<>()", "ThreadLocal.withInitial(() -> 1)", "InheritableThreadLocal<String> x;",
+                "UUID.randomUUID()", "new Random(42)", "new java.util.Random()", "new SplittableRandom()",
+                "new SecureRandom()", "new java.security.SecureRandom()", "SecureRandom.getInstanceStrong()",
+                "ThreadLocalRandom.current().nextDouble()", "Math.random()", "RandomGenerator.getDefault()")) {
+            assertTrue(NONDETERMINISTIC.matcher(s).find(), s);
+        }
+        for (String s : List.of("dialect.now()", "clock.now()", "SangamClockHolder.now()", "businessClock.now(tenant)",
+                "Instant.ofEpochMilli(ms)", "Clock.fixed(i, ZoneOffset.UTC)", "new Date(ms)", "Date.from(instant)",
+                "UUID.fromString(s)", "UUID.nameUUIDFromBytes(b)", "ids.randomUuid()", "ids.timeOrderedUuid()",
+                "random.unitRandom()", "import java.util.concurrent.ThreadLocalRandom;", "import java.security.SecureRandom;",
+                "SecureRandom tail;", "Hashes.uuidV7(ms, random)", "Math.max(0, x)", "long nowMillis = clock.now().toEpochMilli();")) {
+            assertFalse(NONDETERMINISTIC.matcher(s).find(), s);
+        }
+        String text = "// Instant.now() in a comment\n * UUID.randomUUID() in javadoc\n/* new Date() */\n"
+                + "    long t = System.currentTimeMillis(); // code\n";
+        assertEquals(List.of("A.java:4: long t = System.currentTimeMillis(); // code"), codeHits("A.java", text, NONDETERMINISTIC));
     }
 
     @Test

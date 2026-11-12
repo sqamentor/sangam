@@ -6,6 +6,7 @@ import org.sangam.compliance.ComplianceException;
 import org.sangam.compliance.ComplianceException.Code;
 import org.sangam.compliance.config.ComplianceConfig;
 import org.sangam.compliance.jurisdiction.JurisdictionPack;
+import org.sangam.compliance.ports.CompliancePorts.WorkflowStarter;
 import org.sangam.compliance.support.Sql;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
@@ -37,6 +38,13 @@ import java.util.Map;
  *       most the pack's {@code oralMaxDays} (164.412: 30 days). Due dates move by the delay.</li>
  * </ul>
  * The IN pack keeps its fixed-step flow in {@link BreachIncidentService}; it can use plans too.
+ *
+ * <p>Process (owner decision 2026-11-12, M-010c): {@code sangam-breach-notification-plan} is started once per breach by
+ * {@link BreachIncidentService#register}, right after the breach row, when the tenant's jurisdiction defines breach
+ * notification rules or risk factors ({@link #applies}). Its user tasks go to the PRIVACY-OFFICER seat
+ * ({@code privacyOfficerSeat}), checked by {@link #requireSeats} before the registration writes anything. The process
+ * then calls {@link #assessRisk} and {@link #plan} as its own steps; {@link #start} is package-private, so the
+ * registration is its only caller and runs it once for the new breach id (its business key).
  */
 public final class BreachNotificationPlanner {
 
@@ -50,12 +58,73 @@ public final class BreachNotificationPlanner {
     private final ComplianceAudit audit;
     private final ComplianceConfig.Provider config;
     private final BreachIncidentService breaches;
+    private final WorkflowStarter workflows;
 
+    /** The process the planner starts for a breach (business key: the breach id). */
+    public static final String PROCESS_KEY = "sangam-breach-notification-plan";
+    /** M-010c: the compliance roles whose seats {@link #PROCESS_KEY} routes its user tasks to. */
+    public static final List<String> SEAT_ROLES = List.of("PRIVACY-OFFICER");
+    /** Value of {@code CMP_BREACH.plan_process_instance_id} between the claim and the engine's instance id. */
+    static final String PLAN_CLAIMED = "CLAIMED";
+
+    /** Without a workflow starter: plans are built by callers, no process is started. */
     public BreachNotificationPlanner(Dialect dialect, ComplianceAudit audit, ComplianceConfig.Provider config, BreachIncidentService breaches) {
+        this(dialect, audit, config, breaches, null);
+    }
+
+    public BreachNotificationPlanner(Dialect dialect, ComplianceAudit audit, ComplianceConfig.Provider config, BreachIncidentService breaches,
+                                     WorkflowStarter workflows) {
         this.dialect = dialect;
         this.audit = audit;
         this.config = config;
         this.breaches = breaches;
+        this.workflows = workflows == null ? WorkflowStarter.NONE : workflows;
+    }
+
+    /** True when the tenant's jurisdiction (pack or region) defines breach notification rules or risk factors. */
+    public static boolean applies(ComplianceConfig cfg) {
+        return !cfg.breachRules().isEmpty() || !cfg.pack.breachRiskFactors().isEmpty();
+    }
+
+    /**
+     * The seat variables of {@link #PROCESS_KEY} when a registration in this tenant will start it; empty when it will
+     * not (no workflow starter, or no plan in the jurisdiction). Refuses with {@code INVALID_STATE} when a seat is
+     * missing, so {@link BreachIncidentService#register} calls it before it writes anything.
+     */
+    public Map<String, Object> requireSeats(ComplianceConfig cfg) {
+        return workflows == WorkflowStarter.NONE || !applies(cfg) ? Map.of() : cfg.seatVariables(SEAT_ROLES);
+    }
+
+    /**
+     * Starts {@link #PROCESS_KEY} for the breach just registered, with {@code seats} from {@link #requireSeats}; does
+     * nothing when those are empty. Package-private: the registration of a new breach id is the only caller.
+     *
+     * <p>Once per breach, stored: before the engine is asked, the breach row's {@code plan_process_instance_id} is
+     * claimed by a conditional UPDATE (only while it is NULL). A second start for the same breach finds it set and is
+     * refused with {@code INVALID_STATE}; two concurrent starts serialise on the row and the second one is refused.
+     */
+    String start(Connection c, String tenantId, String breachId, Map<String, Object> seats) {
+        if (seats.isEmpty()) {
+            return null;
+        }
+        int claimed = Jdbc.update(c, "UPDATE CMP_BREACH SET plan_process_instance_id=? WHERE tenant_id=? AND breach_id=?"
+                + " AND plan_process_instance_id IS NULL", PLAN_CLAIMED, tenantId, breachId);
+        if (claimed != 1) {
+            breaches.get(c, tenantId, breachId); // NOT_FOUND for an unknown breach
+            throw new ComplianceException(Code.INVALID_STATE, "the notification plan process of breach " + breachId
+                    + " was already started; it is started once per breach");
+        }
+        Map<String, Object> vars = new LinkedHashMap<>();
+        vars.put("sangamTenantId", tenantId);
+        vars.put("sangamBusinessKey", breachId);
+        vars.put("breachId", breachId);
+        vars.putAll(seats);
+        String pi = workflows.start(c, tenantId, PROCESS_KEY, breachId, vars);
+        if (pi != null) {
+            Jdbc.update(c, "UPDATE CMP_BREACH SET plan_process_instance_id=? WHERE tenant_id=? AND breach_id=?", pi, tenantId,
+                    breachId);
+        }
+        return pi;
     }
 
     public Outcome assessRisk(Connection c, String tenantId, String breachId, Map<String, String> factorFindings,

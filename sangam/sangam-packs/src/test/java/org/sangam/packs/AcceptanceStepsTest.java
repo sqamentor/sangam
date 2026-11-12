@@ -236,4 +236,37 @@ class AcceptanceStepsTest {
         driver.resetClock();
         assertEquals(0, driver.offsetMillis());
     }
+
+    /**
+     * M-116: the scenario clock is also the process-wide business clock ({@code BusinessClock.system()}), so a business
+     * date read through it moves with the timers; the tenant zones stay those of the clock in place before the
+     * scenario, and the reset puts that very clock back.
+     */
+    @Test
+    void advanceAlsoMovesTheProcessWideBusinessClockAndResetRestoresIt() {
+        java.time.ZoneId tenantZone = java.time.ZoneId.of("America/New_York");
+        org.sangam.core.time.BusinessClock outer = org.sangam.core.time.BusinessClock.of(java.time.Clock.systemUTC(),
+                t -> "t-zone".equals(t) ? tenantZone : null);
+        org.sangam.core.time.BusinessClock before = org.sangam.core.time.BusinessClock.install(outer);
+        try {
+            Instant start = PackDriver.clock().instant();
+            driver.advance(Duration.ofDays(3));
+            org.sangam.core.time.BusinessClock during = org.sangam.core.time.BusinessClock.system();
+            assertTrue(during != outer, "the scenario installs its own business clock");
+            assertTrue(!during.clock().instant().isBefore(start.plus(Duration.ofDays(3))),
+                    "business time moved with the engine clock");
+            assertEquals(tenantZone, during.zone("t-zone"), "the tenant zone of the outer clock is kept");
+            assertEquals(java.time.ZoneOffset.UTC, during.zone("other"), "and so is its fallback");
+            driver.advance(Duration.ofDays(1));
+            assertTrue(during == org.sangam.core.time.BusinessClock.system(), "installed once per scenario");
+            assertTrue(!during.clock().instant().isBefore(start.plus(Duration.ofDays(4))), "cumulative");
+            driver.resetClock();
+            assertTrue(outer == org.sangam.core.time.BusinessClock.system(), "the reset puts the outer clock back");
+            driver.resetClock();
+            assertTrue(outer == org.sangam.core.time.BusinessClock.system(), "a second reset changes nothing");
+        } finally {
+            driver.resetClock();
+            org.sangam.core.time.BusinessClock.install(before);
+        }
+    }
 }

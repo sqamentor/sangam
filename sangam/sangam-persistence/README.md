@@ -47,13 +47,13 @@ from the owner's reference DDL (integrator decision: the consuming code wins).
 | `OPERATION_LEDGER` | operation_id | VI.3 rule 4 / R36 ledger (core `OperationLedger` columns) + **`engine_work_id` (A-14)**, `business_key`, `topic` | integration (core) / engine sets engine_work_id |
 | `RECONCILIATION_ITEM` | id | reconciliation queue (core `ReconciliationQueue`) + `engine_work_id` | integration |
 | `SANGAM_ENGINE_INCIDENT` | incident_id | engine incidents (failedJob, failedExternalTask, LEASE_EXPIRED_HELD) with operation_id join, state OPEN/RESOLVED/DELETED | engine writes, integration/UI read |
-| `IDEMPOTENCY_RECORD` | tenant, command_type, idem_key | X.2.2.3 (core columns + `response_headers`) | rest/integration |
+| `IDEMPOTENCY_RECORD` | tenant, command_type, idem_key | X.2.2.3 (core columns + `response_headers`). SL-139: with a `FieldEncryptor` bound (passed by `SangamRestAutoConfiguration` to `JdbcIdempotencyAdapter`), `response_body` is stored encrypted under the tenant key with the inline marker `sgm-idem1:` and the context `idempotency:<commandType>:<key>` (`IdempotencyStore`); plain rows written without an encryptor stay readable, and an encrypted row read without one fails `ENCRYPTION_UNAVAILABLE`. No column change | rest/integration |
 | `ROOT_SEQ` | tenant, root_id | outbox/audit counters; **its row lock is L2** (A-11) for engine and product | engine + core |
 | `OUTBOX`, `OUTBOX_DELIVERY` | id; outbox_id+destination | VI.2.1 outbox with `root_seq`, claim epochs | integration |
 | `INBOX` | tenant, source, message_id | VI.2.6 inbox with claim epochs, TTL | integration |
 | `TOMBSTONE` | tenant, task_id | VI.5.2 (+ lease_expires_at) | engine writes on delete, integration reads |
 | `AUDIT_EVENT`, `AUDIT_PAYLOAD` | tenant, chain_id, seq; event_id | X.2.3 hash chain, erasable payloads | core / engine history hook |
-| `AUDIT_CHECKPOINT` | tenant, chain_id, up_to_seq | signed Merkle checkpoints (X.2.3.4 rule 4) | integration/security |
+| `AUDIT_CHECKPOINT` | tenant, chain_id, up_to_seq | per-chain checkpoint rows (X.2.3.4 rule 4). Since M-073 (changeset `0038-05`, column `checkpoint_no`, index `AUDIT_CHECKPOINT_NO`) each row is a leaf of the numbered tenant checkpoint in `AUDIT_MERKLE_CHECKPOINT` | core `AuditCheckpoints` |
 | `AUTH_EFFECTIVE` **(ref)** | tenant, principal, type, resource, deny_flag, **cond_key** | VI.4 effective grants; A-16 indexes `(tenant,type,resource,principal,deny)` and `(tenant,principal,type)` | security |
 | `AUTH_POLICY_VERSION` | tenant | VI.4 rule 5 | security |
 | `AUTH_GRANT_SOURCE` **(ref)** | AUTH_EFFECTIVE key + source_key; source_id column | grant sources (perms = OR) | security |
@@ -122,7 +122,7 @@ X.2.5.4) both stay, as different concepts. WS-PORTS changes its code to match.
 
 134 tables were converted by script (`tools/import_module_schemas.py <sangam root> <block out> <report out>`, which
 parses the modules' `*Schema.java` with `tools/import_java_ddl.py` and checks reserved words and key sizes) from: `sangam-config` ConfigSchema (CFG_*, 5), `sangam-ledger` LedgerSchema (LDG_*, 5;
-`sangam-billing` has no tables of its own, it books on LDG_*), `sangam-registry` RegistrySchema (REG_* incl.
+`sangam-billing` books on LDG_*; its one table, `BIL_DOCUMENT`, came later, see "Module tables added after the first conversion"), `sangam-registry` RegistrySchema (REG_* incl.
 REG_PARTY_CONFIG, 33), `sangam-resources` ResourcesSchema (RES_*, 28), `sangam-geo` GeoSchema (GEO_*, 6), `sangam-field`
 FieldSchema (FLD_*, 17), `sangam-case` CaseFileSchema (CF_*, 25), `sangam-programme` ProgrammeSchema (PG_*, 15).
 `sangam-connectors-health` and `sangam-cell` define no tables; `sangam-control-plane` and `sangam-rollup` keep their own
@@ -189,6 +189,12 @@ Exact columns are in each owner's `*Schema.java`; the generator mirrors them.
 | `OPS_RETENTION_RUN` | sangam-ops | executed retention purges with their reason |
 | `SANGAM_FEEL_BINDING` | sangam-engine | R10 FEEL engine per model version |
 | `ONB_RUN` | onboarding (`sangam-0002-onboarding.sql`) | onboarding run state |
+| `AUDIT_PENDING` | sangam-core `PendingAudit` (changeset `0038-01`) | SL-133 (M-003): audit events of the JavaDelegate connector path, written in the connector's own transaction together with the operation ledger and without the `ROOT_SEQ` lock; a drain appends them to the root chain after the job's transaction ends and deletes them in the same transaction |
+| `SEC_CLIENT_JTI` | sangam-security `JdbcReplayGuard` (changeset `0038-02`) | SL-138 (M-006): used CDS client token ids, keyed by SHA-256(issuer NUL jti), kept until `expires_at`; shared by every node (cluster-wide replay guard) |
+| `CFG_SERIES_RESERVATION` | sangam-config `JdbcConfigStore` / `ConfigSchema` (changeset `0038-03`) | ConfigConnector `series.next` reservations, keyed by the caller's `ref` (`ref:`), else the operationId (`op:`); written in the transaction that advances `CFG_SERIES`, so a retry returns the same number and burns none |
+| `AUDIT_MERKLE_CHECKPOINT` | sangam-core `AuditCheckpoints` (changeset `0038-04`) | M-073 (R42, X.2.3.4 rule 4): signed Merkle checkpoints per tenant, numbered (`checkpoint_no`), each chained to the previous by its hash; `signed_statement` is the exact signed canonical JSON; the leaves are `AUDIT_CHECKPOINT` rows. Index `AUDIT_EVENT_TIME` (`0038-06`) finds the chains changed since the previous checkpoint |
+| `EXEC_PARTITION`, `EXEC_SLOT`, `EXEC_MAP`, `EXEC_NODE` | partitioned executors (M-056, R39; changesets `0039-01`…`0039-04`) | Ownership tables: partitions with owner, fencing epoch and lease; the slot-to-partition map; the versioned map and rebalance coordinator lease; executor nodes with incarnation, heartbeat and drain flag. Today only the tables exist: no main code reads or writes them. The engine part of M-056 is to use them behind a switch that is off by default (the generator comment names it `sangam.executor.partitioning`). No tenant column (with DB-per-tenant each tenant database has its own) |
+| `BIL_DOCUMENT` | sangam-billing `RegistryDocumentNumbers` (changeset `0037-01`) | SL-130 / SL-131 (M-002): one row per billing document identity (invoice: ledger + consumer + cycle; receipt: paymentRef), primary key (`tenant_id`, `doc_type`, `doc_key`), with the number drawn from the registry GAP_FREE series (`series_key`, `doc_number`) and, for a receipt, its allocation plan (`plan_json`). A retry returns the stored number and plan and draws nothing |
 
 ## Requirements covered, file by file
 

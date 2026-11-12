@@ -84,6 +84,25 @@ public final class SangamLeaseTable {
                 SangamLeaseTable::row, workId).orElse(null);
     }
 
+    /**
+     * SG-15 (W2-L): the {@code operation_id} stored with the lease of {@code workId}, by one plain SQL read on the
+     * caller's connection: no engine query, no engine entity cache, no row lock, no engine command. Meant for callers
+     * that already hold the root lock in the same transaction (for example {@code completeExternal}), so the lookup
+     * folds into that transaction instead of opening a command of its own.
+     *
+     * @return the stored id; empty when there is no lease row or its {@code operation_id} is null (the caller then
+     *         falls back to deriving the id, as {@code OperatonEngineAdapter.operationIdOf} does)
+     * @throws IllegalArgumentException when the stored value is not a UUID
+     */
+    public static Optional<UUID> storedOperationIdOf(Connection c, String workId) {
+        // the mapper wraps the column so a NULL operation_id is "empty", not Jdbc.one's NULL-row error
+        return Jdbc.one(c, "SELECT operation_id FROM SANGAM_LEASE WHERE work_id = ?",
+                        rs -> Optional.ofNullable(rs.getString(1)), workId)
+                .flatMap(s -> s)
+                .filter(s -> !s.isBlank())
+                .map(UUID::fromString);
+    }
+
     /** The lease row without a lock (root resolution before L2). */
     public Optional<Row> peek(Connection c, String workId) {
         return Jdbc.one(c, "SELECT " + COLUMNS + " FROM SANGAM_LEASE WHERE work_id = ?", SangamLeaseTable::row, workId);

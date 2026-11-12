@@ -1,0 +1,1 @@
+[{"at":"wait","advance":"PT2H"},{"at":"inbox","action":"correlate","vars":{"resolution":"OK"},"refused":"X"},{"at":"level","action":"complete","n":2,"vars":{"decision":"again"},"person":"q"},{"at":"inbox","action":"start","pack":"test.pack","key":"app-1","vars":{"campaignId":"@case"}},{"at":"pay","case":"b","action":"set","vars":{"amount":480}}]

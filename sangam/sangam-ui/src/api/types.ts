@@ -3,6 +3,7 @@
  * Domain types for the Sangam API. Written against ARCHITECTURE §4 while sangam-rest/api/sangam-api.yaml was not yet
  * published; see README "API reconciliation" for the list of paths and fields to check against the OpenAPI file.
  */
+import type { TenantLocale } from '../i18n';
 
 export type Id = string;
 export type Iso = string;
@@ -46,6 +47,11 @@ export interface Me {
   seats: SeatHolding[];
   permissions?: string[];
   preferredLanguage?: 'en' | 'hi';
+  /**
+   * M-045: the tenant's locale (resolved profile `locale`: currency, zone, grouping). Requested as an additive `/me`
+   * field (WorkspacePort.Me has none yet); while absent, money shows the record's own currency or a plain number.
+   */
+  locale?: TenantLocale;
 }
 
 // ---------------------------------------------------------------- tasks (S03, S08, S09, R47, VI.4 rule 5)

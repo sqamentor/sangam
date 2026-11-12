@@ -13,7 +13,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.sangam.config.locale.BusinessCalendar;
-import org.sangam.packs.sim.WorkingDayCalendar;
+import org.sangam.packs.calendar.WorkingDayCalendar;
 
 /** SL-34: pack SLAs count the working days of the tenant's profile calendar (zone, weekend, holidays). */
 class ProfileWorkingDaysTest {

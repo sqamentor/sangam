@@ -23,7 +23,6 @@ import org.sangam.programme.target.TargetService;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.LocalDate;
-import java.time.Month;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -103,8 +102,10 @@ public final class ProgrammeRestAdapter implements ProgrammeRestPort {
     public List<PeriodService.Period> generatePeriods(ApiContext ctx, IndicatorDefinition.Frequency frequency, int fiscalStartYear, int dueOffsetDays) {
         return run(c -> {
             require(c, ctx, PROGRAMME, "ADMIN", ALL);
-            Month start = m.registry().config(c, ctx.tenant()).fiscalYearStartMonth();
-            return m.periods().generate(c, ctx.tenant(), frequency, fiscalStartYear, start, dueOffsetDays);
+            // X1-03: start month and the optional start day of the published configuration
+            ProgrammeConfig cfg = m.registry().config(c, ctx.tenant());
+            return m.periods().generate(c, ctx.tenant(), frequency, fiscalStartYear, cfg.fiscalYearStartMonth(),
+                    cfg.fiscalStartDay(), dueOffsetDays);
         });
     }
 

@@ -25,8 +25,10 @@ import java.util.List;
  *   <li>MySQL: every table is InnoDB, utf8mb4, {@code utf8mb4_bin} (ids and keys compare case-sensitively, as on
  *       the other dialects); the widest key stays under InnoDB's 3072-byte index limit (see {@link Dialect#MYSQL}).</li>
  *   <li>{@code TOMBSTONE} adds {@code lease_expires_at} (needed for VI.5 rule 4) next to {@code expires_at}.</li>
- *   <li>{@code IDEMPOTENCY_RECORD} keeps the X.2.2.3 columns except {@code response_headers}; {@code response_body}
- *       is stored unencrypted (production: tenant-key encryption, ≤ 64 KiB, else a reference).</li>
+ *   <li>{@code IDEMPOTENCY_RECORD} keeps the X.2.2.3 columns except {@code response_headers}. {@code response_body} is
+ *       encrypted under the tenant key when {@link IdempotencyStore} has a {@code FieldEncryptor} (M-007, SL-139:
+ *       {@link IdempotencyStore#ENCRYPTED_BODY_MARKER} plus the envelope, in the same column); rows written without
+ *       one hold the plain JSON body. The X.2.2.3 size rule (≤ 64 KiB, else a reference) is not applied.</li>
  * </ul>
  */
 public final class Schema {

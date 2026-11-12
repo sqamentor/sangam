@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Sangam compliance pack (jurisdiction-neutral). Timelines arrive as process variables computed from the jurisdiction pack. No diagram layout yet: open in the Sangam modeller and auto-layout. -->
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" id="defs_sangam_dsr_erasure" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
+<!-- Data-subject erasure request. Sangam compliance pack (jurisdiction-neutral): timelines arrive as process variables computed from the jurisdiction pack. Generated with its diagram layout by sangam-packs/tools/packgen (compliance.py): change the generator, then regenerate. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sangam_dsr_erasure" targetNamespace="http://sangam.org/packs/compliance" exporter="sangam-compliance" exporterVersion="0.1.0">
   <process id="sangam-dsr-erasure" name="Data-subject erasure request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
     <documentation>Erasure right (IN: DPDP s.12(3)). Erasure runs through sangam-integration ErasureService; legal holds and retention required by law are respected; the records officer approves.</documentation>
     <startEvent id="start" name="Request received"/>
     <serviceTask id="s_start" name="Mark in progress" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.start</operaton:string></operaton:field></extensionElements></serviceTask>
-    <userTask id="u_approve" name="Check retention obligations and approve erasure" operaton:candidateGroups="RECORDS-OFFICER" operaton:formKey="sangam:compliance/erasure-approve"></userTask>
+    <userTask id="u_approve" name="Check retention obligations and approve erasure" operaton:candidateGroups="${recordsOfficerSeat}" operaton:formKey="sangam:compliance/erasure-approve"/>
     <boundaryEvent id="t_due" name="Due date" attachedToRef="u_approve" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${dueAt}</timeDate></timerEventDefinition></boundaryEvent>
     <exclusiveGateway id="g_decision" name="Approved?" default="f_reject"/>
     <serviceTask id="s_erase" name="Erase (holds and legal retention respected)" operaton:class="org.sangam.compliance.bpmn.ComplianceStepDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="step"><operaton:string>rights.erase</operaton:string></operaton:field></extensionElements></serviceTask>
@@ -25,4 +25,28 @@
     <sequenceFlow id="f_esc1" sourceRef="t_due" targetRef="esc"/>
     <sequenceFlow id="f_esc2" sourceRef="esc" targetRef="end_esc"/>
   </process>
+  <bpmndi:BPMNDiagram id="dsr_erasure_diagram">
+    <bpmndi:BPMNPlane id="dsr_erasure_plane" bpmnElement="sangam-dsr-erasure">
+      <bpmndi:BPMNShape id="start_di" bpmnElement="start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_start_di" bpmnElement="s_start"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="u_approve_di" bpmnElement="u_approve"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="g_decision_di" bpmnElement="g_decision"><dc:Bounds x="540" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_erase_di" bpmnElement="s_erase"><dc:Bounds x="680" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="s_reject_di" bpmnElement="s_reject"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_di" bpmnElement="end"><dc:Bounds x="877" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_rej_di" bpmnElement="end_rej"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="esc_di" bpmnElement="esc"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="end_esc_di" bpmnElement="end_esc"><dc:Bounds x="712" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_due_di" bpmnElement="t_due"><dc:Bounds x="358" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="450" y="70"/><di:waypoint x="495" y="70"/><di:waypoint x="495" y="195"/><di:waypoint x="540" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_ok_di" bpmnElement="f_ok"><di:waypoint x="590" y="195"/><di:waypoint x="635" y="195"/><di:waypoint x="635" y="320"/><di:waypoint x="680" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_reject_di" bpmnElement="f_reject"><di:waypoint x="590" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="780" y="320"/><di:waypoint x="877" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="780" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_esc1_di" bpmnElement="f_esc1"><di:waypoint x="376" y="128"/><di:waypoint x="376" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f_esc2_di" bpmnElement="f_esc2"><di:waypoint x="615" y="70"/><di:waypoint x="712" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </definitions>

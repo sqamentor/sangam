@@ -43,7 +43,10 @@ jobs:
         run: |
           python sangam/sangam-packs/tools/packgen/main.py
           git diff --exit-code -- sangam/sangam-packs/src/main/resources/packs \
+            sangam/sangam-compliance/src/main/resources/packs/compliance \
             || { echo "Pack files differ from tools/packgen output: change the generator, then regenerate."; exit 1; }
+          # packgen's own unit tests (compliance BPMN takeover, SL-134)
+          python -I -m unittest discover -s sangam/sangam-packs/tools/packgen -p "test_*.py"
       - uses: actions/setup-python@v5
         if: matrix.java == '25'
         with:

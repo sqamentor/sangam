@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * {@link TenantKeyStore} on table {@code SEC_TENANT_KEY}: random AES-256 data keys, stored only wrapped (AES-256-GCM
  * under a KEK from {@link MasterKeyProvider}, AAD = the key id). Key-store transactions are short and separate from
- * business transactions. Unwrapped keys are cached in memory; the active key id is re-read after
+ * business transactions, on a leaf pool (SL-161, see {@link #active}). Unwrapped keys are cached in memory; the active key id is re-read after
  * {@code activeTtl} so a rotation on another node takes effect quickly (old envelopes stay readable either way).
  */
 public final class JdbcTenantKeyStore implements TenantKeyStore {
@@ -42,6 +42,7 @@ public final class JdbcTenantKeyStore implements TenantKeyStore {
     private final Duration activeTtl;
     private final Map<String, SecretKey> unwrapped = new ConcurrentHashMap<>();
     private final Map<String, Active> active = new ConcurrentHashMap<>();
+    private final Map<String, Object> refreshLocks = new ConcurrentHashMap<>();
 
     public JdbcTenantKeyStore(Transactions tx, SecurityDialect dialect, MasterKeyProvider kek, Duration activeTtl) {
         this.tx = tx;
@@ -50,23 +51,47 @@ public final class JdbcTenantKeyStore implements TenantKeyStore {
         this.activeTtl = activeTtl == null ? Duration.ofSeconds(60) : activeTtl;
     }
 
+    /**
+     * The tenant's active key. Within {@code activeTtl} it is served from memory; after it, one caller per tenant re-reads
+     * it (single flight: concurrent callers wait for that read and then use its result, so a refresh is one key-store
+     * transaction, not one per caller).
+     *
+     * <p>SL-161: this runs inside business transactions (an encrypted idempotency response or document is written in
+     * the command's transaction), so {@code tx} must not be the pool those callers hold: a key-store connection
+     * requested while the caller holds one of the same pool is the SL-43 pool-deadlock pattern. The server passes a leaf
+     * pool, whose connections are never held while another is requested.
+     */
     @Override
     public TenantKey active(String tenantId) {
         Active a = active.get(tenantId);
-        if (a != null && System.nanoTime() - a.loadedAtNanos() < activeTtl.toNanos()) {
+        if (fresh(a)) {
             return a.key();
         }
-        TenantKey k = tx.inTransaction(c -> {
-            Optional<String> id = activeId(c, tenantId);
-            if (id.isEmpty()) {
-                create(c, tenantId, 1);
-                id = activeId(c, tenantId);
+        synchronized (refreshLock(tenantId)) {
+            a = active.get(tenantId);
+            if (fresh(a)) {
+                return a.key();   // another caller refreshed it while this one waited
             }
-            String keyId = id.orElseThrow();
-            return new TenantKey(keyId, load(c, tenantId, keyId).orElseThrow());
-        });
-        active.put(tenantId, new Active(k, System.nanoTime()));
-        return k;
+            TenantKey k = tx.inTransaction(c -> {
+                Optional<String> id = activeId(c, tenantId);
+                if (id.isEmpty()) {
+                    create(c, tenantId, 1);
+                    id = activeId(c, tenantId);
+                }
+                String keyId = id.orElseThrow();
+                return new TenantKey(keyId, load(c, tenantId, keyId).orElseThrow());
+            });
+            active.put(tenantId, new Active(k, System.nanoTime()));
+            return k;
+        }
+    }
+
+    private boolean fresh(Active a) {
+        return a != null && System.nanoTime() - a.loadedAtNanos() < activeTtl.toNanos();
+    }
+
+    private Object refreshLock(String tenantId) {
+        return refreshLocks.computeIfAbsent(tenantId, t -> new Object());
     }
 
     @Override

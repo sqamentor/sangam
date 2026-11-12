@@ -28,7 +28,6 @@ import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 /**
@@ -92,23 +91,19 @@ public class QuotaWiring {
 
     @Bean
     public QuotaPool sangamQuotaPool(DataSource ds, Environment env) {
-        HikariConfig cfg = new HikariConfig();
-        try {
-            if (!ds.isWrapperFor(HikariDataSource.class)) {
-                throw new IllegalStateException("SL-43 quotas need a HikariCP main pool to derive the quota pool from"
-                        + " (found " + ds.getClass().getName() + "); or set sangam.quotas.enabled=false");
-            }
-            ds.unwrap(HikariDataSource.class).copyStateTo(cfg);
-        } catch (java.sql.SQLException e) {
-            throw new IllegalStateException("cannot derive the quota pool from the main DataSource", e);
-        }
-        cfg.setPoolName("sangam-quota");
-        int size = Math.max(1, env.getProperty("sangam.quotas.pool.maximum-size", Integer.class, 4));
-        cfg.setMaximumPoolSize(size);
-        cfg.setMinimumIdle(Math.min(1, size));
-        cfg.setAutoCommit(true);
-        return new QuotaPool(new HikariDataSource(cfg));
+        return new QuotaPool(quotaPool(ds, env.getProperty("sangam.quotas.pool.maximum-size", Integer.class, 4)));
     }
+
+    /** The quota leaf pool, derived as every Sangam leaf pool ({@link ComplianceWiring#leafPool}; X1-05). */
+    static HikariDataSource quotaPool(DataSource ds, int maximumSize) {
+        if (!ComplianceWiring.isHikari(ds)) {
+            throw new IllegalStateException("SL-43 quotas need a HikariCP main pool to derive the quota pool from"
+                    + " (found " + ds.getClass().getName() + "); or set sangam.quotas.enabled=false");
+        }
+        return ComplianceWiring.leafPool(ds, maximumSize, QUOTA_POOL_NAME);
+    }
+
+    static final String QUOTA_POOL_NAME = "sangam-quota";
 
     @Bean
     public JdbcTenantQuotas sangamTenantQuotas(TxSupport tx, DataSource ds, QuotaPool pool,

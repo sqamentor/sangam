@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.registry.kernel;
 
+import org.sangam.core.time.FiscalYears;
 import org.sangam.registry.RegistryException;
 import org.sangam.registry.support.Maps;
 
@@ -18,7 +19,8 @@ import java.util.Map;
  *       the end date);</li>
  *   <li>{@code alignTo}: {@code NONE}, {@code END_OF_MONTH}, {@code END_OF_YEAR} or {@code FISCAL_YEAR_END}
  *       (with {@code fiscalStartMonth}, 1..12, REQUIRED: no fiscal year is assumed, SL-125) moves the end date to the
- *       end of that period;</li>
+ *       end of that period; {@code fiscalStartDay} (1..28, optional, absent = the 1st) is the day of that month on
+ *       which the fiscal year starts (X1-03);</li>
  *   <li>{@code renewalWindow}: how long before the end the renewal becomes due (and allowed);</li>
  *   <li>{@code grace}: how long after the end a renewal is still allowed (late renewal), otherwise a fresh issue;</li>
  *   <li>{@code renewalPeriod} (default {@code period}), {@code maxRenewals} (null = unlimited), {@code renewFrom}
@@ -30,7 +32,7 @@ import java.util.Map;
  */
 public record ValidityRule(String mode, Period period, String alignTo, Integer fiscalStartMonth, Period renewalWindow,
                            Period grace, Period renewalPeriod, Integer maxRenewals, String renewFrom,
-                           String deemedRenewalDecision) {
+                           String deemedRenewalDecision, Integer fiscalStartDay) {
 
     public static final ValidityRule NONE = new ValidityRule("NONE", null, "NONE", null, Period.ZERO, Period.ZERO, null,
             null, "PREVIOUS_END", null);
@@ -40,10 +42,20 @@ public record ValidityRule(String mode, Period period, String alignTo, Integer f
         if (fiscalStartMonth != null && (fiscalStartMonth < 1 || fiscalStartMonth > 12)) {
             throw RegistryException.invalid("validity: fiscalStartMonth must be 1..12");
         }
+        if (fiscalStartDay != null && (fiscalStartDay < 1 || fiscalStartDay > 28)) {
+            throw RegistryException.invalid("validity: fiscalStartDay must be 1..28");
+        }
         if ("FISCAL_YEAR_END".equals(alignTo) && fiscalStartMonth == null) {
             throw RegistryException.invalid("validity: alignTo FISCAL_YEAR_END needs fiscalStartMonth (1..12);"
                     + " no fiscal year is assumed");
         }
+    }
+
+    /** A rule whose fiscal year (if any) starts on the 1st of {@code fiscalStartMonth} (no {@code fiscalStartDay}). */
+    public ValidityRule(String mode, Period period, String alignTo, Integer fiscalStartMonth, Period renewalWindow,
+                        Period grace, Period renewalPeriod, Integer maxRenewals, String renewFrom, String deemedRenewalDecision) {
+        this(mode, period, alignTo, fiscalStartMonth, renewalWindow, grace, renewalPeriod, maxRenewals, renewFrom,
+                deemedRenewalDecision, null);
     }
 
     public static ValidityRule from(Map<String, Object> m) {
@@ -60,12 +72,13 @@ public record ValidityRule(String mode, Period period, String alignTo, Integer f
         return new ValidityRule(mode, p, Maps.str(m, "alignTo", "NONE").toUpperCase(), fsm,
                 orZero(period(Maps.str(m, "renewalWindow"))), orZero(period(Maps.str(m, "grace"))), rp == null ? p : rp,
                 Maps.integer(m, "maxRenewals"), Maps.str(m, "renewFrom", "PREVIOUS_END").toUpperCase(),
-                Maps.str(m, "deemedRenewalDecision"));
+                Maps.str(m, "deemedRenewalDecision"), Maps.integer(m, "fiscalStartDay"));
     }
 
     public Map<String, Object> toMap() {
         return Maps.of("mode", mode, "period", period == null ? null : period.toString(), "alignTo", alignTo,
-                "fiscalStartMonth", fiscalStartMonth, "renewalWindow", renewalWindow.toString(), "grace", grace.toString(),
+                "fiscalStartMonth", fiscalStartMonth, "fiscalStartDay", fiscalStartDay, "renewalWindow", renewalWindow.toString(),
+                "grace", grace.toString(),
                 "renewalPeriod", renewalPeriod == null ? null : renewalPeriod.toString(), "maxRenewals", maxRenewals,
                 "renewFrom", renewFrom, "deemedRenewalDecision", deemedRenewalDecision);
     }
@@ -145,13 +158,9 @@ public record ValidityRule(String mode, Period period, String alignTo, Integer f
         return switch (alignTo) {
             case "END_OF_MONTH" -> lastDay.withDayOfMonth(lastDay.lengthOfMonth());
             case "END_OF_YEAR" -> LocalDate.of(lastDay.getYear(), 12, 31);
-            case "FISCAL_YEAR_END" -> {
-                LocalDate fyStart = LocalDate.of(lastDay.getYear(), fiscalStartMonth, 1);
-                if (lastDay.isBefore(fyStart)) {
-                    yield fyStart.minusDays(1);
-                }
-                yield fyStart.plusYears(1).minusDays(1);
-            }
+            // X1-03: the fiscal year is computed once, in FiscalYears; an absent fiscalStartDay is the 1st
+            case "FISCAL_YEAR_END" -> FiscalYears.endOfYearContaining(lastDay, fiscalStartMonth,
+                    fiscalStartDay == null ? 1 : fiscalStartDay);
             default -> lastDay;
         };
     }

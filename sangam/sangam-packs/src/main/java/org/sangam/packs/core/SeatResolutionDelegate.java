@@ -131,7 +131,8 @@ public class SeatResolutionDelegate implements JavaDelegate {
     /**
      * The seats in order, keeping only the first seat of each current holder ({@code holder.apply(seat)}; a seat
      * without a holder today stays): one person holding two joint seats (additional charge, delegation) is one
-     * approval, so gets one instance (IFMS R-102). Pure, so that the rule is tested without an engine.
+     * approval, so gets one instance (joint-approval rule: one seat, or one person, never counts as two approvals).
+     * Pure, so that the rule is tested without an engine.
      */
     static List<String> firstSeatPerHolder(List<String> seats, Function<String, Optional<String>> holder) {
         List<String> out = new ArrayList<>();

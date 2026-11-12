@@ -345,6 +345,15 @@ Then they ack it, so it is not redelivered forever. If even that write fails, th
 
 Operators resolve an item with `PoisonInbound.reprocess` (corrected payload, original message id) or `discard`. Both are audited.
 
+### Cell tenant states on the broker path (`relay/TenantAdmission.java`, M-008, SL-142)
+
+Both consumers ask the cell's `TenantAdmission` before they store a message:
+- **ACTIVE**: stored and acked.
+- **FROZEN, IMPORTING**: not acked. Kafka seeks back and pauses the partition; JMS rolls the session back. The broker redelivers it.
+- **MOVED, PURGED**: the tenant will never take it in this cell again. `PoisonInbound.park` writes, in one transaction, a dead letter with the full message, a `POISON_INBOUND` item with `"parked":true`, the tenant state, target cell and move id, and `INBOUND_PARKED` on `sec:<tenant>`. Only then is the message acked. If the park write fails, or no `PoisonInbound` is configured, it is not acked.
+
+An operator replays a parked message to the tenant's new cell with `PoisonInbound.replayParked(itemId, transport, actor, reason)`: the original message id is kept, so the target inbox deduplicates a repeat. `reprocess` refuses a parked item; `discard` closes it. A failing admission check counts as redeliver. A message is never dropped.
+
 ### Requested change in sangam-core
 
 - None open. `POISON_INBOUND` is now in `ReconciliationQueue.Kind`. Resolve these items through `PoisonInbound`, because the core queue's actions do not close the dead letter.
@@ -354,7 +363,7 @@ Operators resolve an item with `PoisonInbound.reprocess` (corrected payload, ori
 ## 5. Known gaps and limits
 
 - **No tests run yet** (phase rule). Every class compiles. Behaviour still needs to be verified with the simulators and Testcontainers in the testing phase.
-- **JavaDelegate path**: its invoker runs without the audit chain (`auditOrNull = null`), to avoid a ROOT_SEQ self-deadlock with the surrounding job transaction. Dispatch audit is therefore only complete on the external-task path.
+- **JavaDelegate path** (SL-133): the job transaction holds the root's `ROOT_SEQ` row while the delegate calls the invoker on a second connection, so appending to the root chain there would self-deadlock. In deferred mode (`ConnectorInvoker.deferringAudit(drainer)`) the invoker writes its audit events as `AUDIT_PENDING` rows (`PendingAudit`), atomically with the ledger and without the `ROOT_SEQ` lock. `PendingAuditDrainer` then appends them to the root chain after the job transaction ends: root lock first, `pending_id` order, original time, delete in the same commit, plus a periodic sweep as a backstop. No event is lost on rollback. Direct mode is unchanged for the other paths. It is live once the server wires the `PendingAudit`, drainer and bridge beans.
 - **DNS pinning** is check-then-connect plus a re-check of pinned addresses. The JDK `HttpClient` cannot connect to a pre-resolved IP while keeping SNI, so a very short rebinding window remains.
 - **Capacity sampling is per node.** Each node's `BackpressureGate` acts on its own last sample.
 - **Oracle**: the relay and inbox claims inherit the core `ROWNUM` skip-locked caveat (core `Dialect` comment).

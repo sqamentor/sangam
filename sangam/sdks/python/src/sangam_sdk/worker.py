@@ -183,6 +183,18 @@ class TaskContext:
         return self.work.business_key
 
     @property
+    def traceparent(self) -> Optional[str]:
+        """W3C ``traceparent`` the engine stored for this task (ExternalWork.traceContext, M-062), or None."""
+        tc = self.work.trace_context
+        return tc.traceparent if tc is not None else None
+
+    @property
+    def tracestate(self) -> Optional[str]:
+        """W3C ``tracestate`` of the task's trace context, or None."""
+        tc = self.work.trace_context
+        return tc.tracestate if tc is not None else None
+
+    @property
     def process_instance_id(self) -> Optional[str]:
         return self.work.process_instance_id
 

@@ -48,7 +48,8 @@ import org.springframework.web.bind.annotation.RestController;
  * request schema in {@code api/sangam-api.yaml}: exactly the record's components (JSON names), with compatible JSON
  * types, recursively through nested records and lists. The schemas come from the records (gen_openapi.py,
  * routes/_v2_spring.py {@code _v2_body_schema} and {@code record_body}); a record change without a regenerated contract,
- * or a contract property the record does not have, fails here. Map and String bodies stay open objects (not checked).
+ * or a contract property the record does not have, fails here. Map-backed bodies (and JSON strings the service parses)
+ * are typed from the keys the service reads and checked by {@code MapRequestBodyContractTest}.
  */
 class RequestBodyContractTest {
 

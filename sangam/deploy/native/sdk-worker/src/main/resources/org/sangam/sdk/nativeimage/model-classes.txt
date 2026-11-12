@@ -32,6 +32,7 @@ org.sangam.sdk.model.StartProcessRequest
 org.sangam.sdk.model.TaskView
 org.sangam.sdk.model.TerminateRequest
 org.sangam.sdk.model.TerminationResult
+org.sangam.sdk.model.TraceContext
 org.sangam.sdk.model.TypedValue
 org.sangam.sdk.model.UnlockRequest
 org.sangam.sdk.model.WorkOperation

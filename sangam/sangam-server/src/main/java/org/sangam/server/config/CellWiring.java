@@ -96,18 +96,41 @@ public class CellWiring {
 
     /**
      * M-008 (ADR-D-21, IR-4/IR-6): broker inbox consumers store and ack a message only for an ACTIVE tenant of this
-     * cell; for FROZEN, IMPORTING, MOVED and PURGED the message is not acked and the broker redelivers it (the
-     * consumers' back-pressure path), the broker-side counterpart of {@link CellTenantStateFilter}. The state is read
-     * through the store's 2 s cache.
+     * cell; for FROZEN and IMPORTING the message is not acked and the broker redelivers it (the consumers'
+     * back-pressure path), the broker-side counterpart of {@link CellTenantStateFilter}; for MOVED and PURGED it is
+     * parked and then acked ({@link #inboundDecision}, SL-142). The state is read through the store's 2 s cache.
      */
     @Bean
     public TenantAdmission sangamInboxTenantAdmission(CellTenantStateStore states) {
-        return tenant -> admitsInbound(states.get(tenant).state());
+        return new TenantAdmission() {
+            @Override
+            public boolean admits(String tenant) {
+                return admitsInbound(states.get(tenant).state());
+            }
+
+            @Override
+            public Decision decide(String tenant) {
+                return inboundDecision(states.get(tenant));
+            }
+        };
     }
 
     /** Only an ACTIVE tenant takes broker messages; every move state keeps them in the broker (M-008). */
     static boolean admitsInbound(CellTenantStateStore.State state) {
         return state == CellTenantStateStore.State.ACTIVE;
+    }
+
+    /**
+     * SL-142 (owner decision 2026-11-12): ACTIVE is admitted; MOVED and PURGED never take the message in this cell
+     * again, so it is parked (dead letter plus reconciliation item naming the target cell and move) and then acked;
+     * IMPORTING and FROZEN are redelivered by the broker.
+     */
+    static TenantAdmission.Decision inboundDecision(CellTenantStateStore.TenantState s) {
+        return switch (s.state()) {
+            case ACTIVE -> TenantAdmission.Decision.ADMIT;
+            case MOVED, PURGED -> TenantAdmission.Decision.park(s.state().name(), s.targetCell(), s.moveId());
+            case IMPORTING, FROZEN -> TenantAdmission.Decision.REDELIVER;
+        };
     }
 
     @Bean

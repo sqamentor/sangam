@@ -172,7 +172,7 @@ public class PacksWiring {
     static org.sangam.packs.port.BusinessCalendar packCalendar(org.sangam.config.profile.ProfileResolver profiles,
             ObjectProvider<org.sangam.core.time.BusinessClock> clocks, String calendarName) {
         // SL-104: a tenant without a profile calendar falls back to its business zone (BusinessClock: UTC, logged once)
-        return new org.sangam.packs.sim.WorkingDayCalendar(
+        return new org.sangam.packs.calendar.WorkingDayCalendar(
                 new org.sangam.server.bridge.ProfileWorkingDays(tenant -> profiles.resolve(tenant,
                         ConfigWiring.businessClock(clocks).today(tenant)).locale().calendar(calendarName)));
     }

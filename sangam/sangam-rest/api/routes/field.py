@@ -106,3 +106,19 @@ op('post', '/field/trips', 'fieldWorkStartTrip', 'Field', 'Start a trip', 'Start
    body={"required": True, "content": {"application/json": {"schema": typ('obj')}}}, resp=(200, {"application/json": {"schema": {"type": "object", "additionalProperties": True}}}), cmd='field.start-trip', perm='dispatch.operate')
 op('post', '/field/trips/{id}/{action}', 'fieldWorkTripAction', 'Field', 'Trip action: waypoint, pause, end, ', 'Trip action: waypoint, pause, end, ...', ['N13', 'N17', 'S15', 'EC-16', 'R41'],
    params=[pp('id'), pp('action')], body={"required": True, "content": {"application/json": {"schema": typ('obj')}}}, resp=(200, {"application/json": {"schema": {"type": "object", "additionalProperties": True}}}), cmd='field.trip-action', perm='dispatch.operate')
+
+# M-051: the Map-backed request bodies of FieldWorkController are typed from the keys sangam-field reads (_v2_bodykeys.py).
+_FW = 'sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java'
+for _opid, _m in [('fieldWorkPublishTemplate', 'publishTemplate'), ('fieldWorkCreateAssignment', 'createAssignment'),
+                  ('fieldWorkReassign', 'reassign'), ('fieldWorkTransition', 'transition'), ('fieldWorkReview', 'review'),
+                  ('fieldWorkRoute', 'route'), ('fieldWorkDefineSchedule', 'defineSchedule'), ('fieldWorkSelect', 'select'),
+                  ('fieldWorkRegisterDevice', 'registerDevice'), ('fieldWorkDeviceStatus', 'deviceStatus'),
+                  ('fieldWorkDevicePolicy', 'devicePolicy'), ('fieldWorkResolveConflict', 'resolveConflict'),
+                  ('fieldWorkUpsertUnit', 'upsertUnit'), ('fieldWorkUnitStatus', 'unitStatus'), ('fieldWorkPing', 'ping'),
+                  ('fieldWorkCreateJob', 'createJob'), ('fieldWorkJobAction', 'jobAction'),
+                  ('fieldWorkRespondOffer', 'respondOffer'), ('fieldWorkStartTrip', 'startTrip'),
+                  ('fieldWorkTripAction', 'tripAction')]:
+    map_body(_opid, _FW, 'FieldWorkController.' + _m, 'body')
+bk_opaque({
+    ("FieldRestService.createJob", "new DispatchService.JobInput"): "free-form job attributes, stored as given",
+})

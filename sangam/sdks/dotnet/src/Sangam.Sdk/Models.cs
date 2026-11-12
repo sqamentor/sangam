@@ -75,7 +75,13 @@ public sealed record ExternalWork(
 {
     /// <summary>SL-16: server-recorded ledger entry of <c>OperationId</c>; null from older servers.</summary>
     public WorkOperation? Operation { get; init; }
+
+    /// <summary>M-062: W3C trace context the engine stored for the task; null when none was stored.</summary>
+    public TraceContext? TraceContext { get; init; }
 }
+
+/// <summary>W3C Trace Context of the request that created the work (R13, M-062); <c>Traceparent</c> is required in the schema.</summary>
+public sealed record TraceContext(string? Traceparent, string? Tracestate);
 
 /// <summary>
 /// Operation-ledger entry of a leased work item (SL-16, R37). <c>MayDispatch</c> false with state SUCCEEDED: complete
