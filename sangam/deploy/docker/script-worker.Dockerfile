@@ -83,7 +83,7 @@ RUN test -n "${NSJAIL_COMMIT}" || { echo "NSJAIL_COMMIT is required (the approve
  && printf 'nsjail %s %s\nkafel %s (submodule of nsjail)\n' "${NSJAIL_TAG}" "${NSJAIL_COMMIT}" "${KAFEL_COMMIT}" \
         > /licenses/nsjail/COMMITS
 
-FROM node:22.18.0-bookworm-slim@sha256:752ea8a2f758c34002a0461bd9f1cee4f9a3c36d48494586f60ffce1fc708e0e AS node
+FROM node:26.13.1-bookworm-slim@sha256:5df79989ed685e09f0a98019db4cebfb22fb9df1a53c0161664a011f7ff6b0f1 AS node
 
 # Stage 3: runtime.
 FROM eclipse-temurin:26.0.2.1_1-jre-noble@sha256:adfd44c114916dc79fa9a24087fbac34252096edb9892d1c2d9d82db3f8947b3 AS runtime

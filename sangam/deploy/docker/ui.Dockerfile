@@ -18,7 +18,7 @@
 # build | prebuilt
 ARG DIST_SOURCE=build
 
-FROM node:22.18.0-alpine3.22@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS build
+FROM node:26.3.0-alpine3.22@sha256:c7932b9e5e337b0e733d6e16abc1b0e104759e8b05e59ed56586cce967d26dfe AS build
 WORKDIR /src
 COPY sangam-ui/package.json sangam-ui/package-lock.json* ./
 # npm ci honours an offline mirror through NPM_CONFIG_REGISTRY / .npmrc (see deploy/README.md "Offline builds").
@@ -36,7 +36,7 @@ COPY sangam-ui/ ./
 COPY deploy/fonts/*.ttf deploy/fonts/OFL-*.txt deploy/fonts/README.md /deploy/fonts/
 RUN npm run build && test -f dist/index.html && mkdir -p /out && cp -r dist/. /out/
 
-FROM node:22.18.0-alpine3.22@sha256:1b2479dd35a99687d6638f5976fd235e26c5b37e8122f786fcd5fe231d63de5b AS prebuilt
+FROM node:26.3.0-alpine3.22@sha256:c7932b9e5e337b0e733d6e16abc1b0e104759e8b05e59ed56586cce967d26dfe AS prebuilt
 COPY sangam-ui/dist/ /out/
 
 FROM ${DIST_SOURCE} AS dist
