@@ -44,7 +44,7 @@ jobs:
       matrix:
         java: ["25", "21", "27"]   # R5: 25 LTS baseline, 21 supported minimum, 27 current (SG-06; deploy/SUPPORT-MATRIX.md)
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Generated packs match their generator (no hand edits that a regeneration would undo)
         working-directory: .
         run: |
@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: server-jar
@@ -228,7 +228,7 @@ jobs:
       run:
         working-directory: sangam/deploy
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: docker compose config (every DB profile)
         working-directory: sangam/deploy/compose
         run: |
