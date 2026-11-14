@@ -165,7 +165,7 @@
     <version.verapdf>1.30.4</version.verapdf>
     <!-- M-080 PAdES/CMS signing and RFC 3161 time-stamps (W4-H): Bouncy Castle licence (MIT-style), allowed by
          licence-policy.json; one version for bcprov, bcpkix and bcutil. -->
-    <version.bouncycastle>1.84</version.bouncycastle>
+    <version.bouncycastle>1.85</version.bouncycastle>
     <!-- M-100 package Git sync (W4-H, optional in sangam-integration): Eclipse JGit, EDL-1.0 (S-22); decision 183 also
          names this version for the HAPI closure. -->
     <version.jgit>7.8.0.202609011348-r</version.jgit>
