@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param personId wire field {@code personId}. Sangam person id (read-only; set by the server)
  * @param orgUnitId wire field {@code orgUnitId}
- * @param postings wire field {@code postings}. Seats held; replacing the list ends postings not listed (validTo = today) and creates new ones
+ * @param postings wire field {@code postings}. Seats held (IX.5), read-only (decision 154): a request that changes them gets 400 scimType mutability (an unchanged echo of the current list is accepted); postings change only through the admin API
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ScimSangamUser(

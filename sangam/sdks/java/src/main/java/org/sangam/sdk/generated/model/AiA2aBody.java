@@ -9,13 +9,13 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code AiA2aBody} of sangam-api.yaml 0.1.0.
  *
  * @param id wire field {@code id}
- * @param method wire field {@code method}
  * @param params wire field {@code params}
+ * @param method wire field {@code method}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */
 public record AiA2aBody(
         @com.fasterxml.jackson.annotation.JsonProperty("id") Object id,
-        @com.fasterxml.jackson.annotation.JsonProperty("method") String method,
         @com.fasterxml.jackson.annotation.JsonProperty("params") AiA2aBodyParams params,
+        @com.fasterxml.jackson.annotation.JsonProperty("method") String method,
         @com.fasterxml.jackson.annotation.JsonAnySetter @com.fasterxml.jackson.annotation.JsonAnyGetter java.util.Map<String, Object> additionalProperties) {
 }

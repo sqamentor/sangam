@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "REVIEW-BODY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "COMPLAINT-REVIEW",
+      "role": "COMPLAINTREVIEW",
+      "office": "REVIEW-BODY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Complaint review officer",
+        "hi": "शिकायत समीक्षा अधिकारी"
+      }
+    },
+    {
+      "id": "PROCURING-ENTITY",
+      "role": "PROCURINGENTITY",
+      "office": "REVIEW-BODY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "COMPLAINT-REVIEW",
+      "name": {
+        "en": "Procuring entity officer",
+        "hi": "प्रापण इकाई अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "COMPLAINT-REVIEW",
+      "person": "ipc.complaint-review",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "PROCURING-ENTITY",
+      "person": "ipc.procuring-entity",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "COMPLAINTREVIEW",
+      "name": {
+        "en": "Complaint review officer",
+        "hi": "शिकायत समीक्षा अधिकारी"
+      }
+    },
+    {
+      "code": "PROCURINGENTITY",
+      "name": {
+        "en": "Procuring entity officer",
+        "hi": "प्रापण इकाई अधिकारी"
+      }
+    }
+  ]
+}

@@ -37,7 +37,8 @@ spec:
     spec:
       {{- include "sangam.imagePullSecrets" . | nindent 6 }}
       serviceAccountName: {{ include "sangam.serviceAccountName" . }}
-      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- /* decision 155: the backup console calls the Kubernetes API with the server's service account token */}}
+      automountServiceAccountToken: {{ or (eq (include "sangam.backup.consoleEnabled" .) "true") .Values.serviceAccount.automountServiceAccountToken }}
       terminationGracePeriodSeconds: {{ .Values.server.terminationGracePeriodSeconds }}
       securityContext:
         {{- toYaml .Values.server.podSecurityContext | nindent 8 }}
@@ -73,6 +74,17 @@ spec:
                   fieldPath: metadata.name
             - name: SPRING_CONFIG_ADDITIONAL_LOCATION
               value: optional:file:/opt/sangam/config/
+            {{- with include "sangam.sidecars.serverEnv" . | trim }}
+            # M-081 / M-103: this release's PDF validator and OCR sidecars (owner decision 153)
+            {{- . | nindent 12 }}
+            {{- end }}
+            {{- if eq (include "sangam.backup.consoleEnabled" .) "true" }}
+            # decision 155: backup console over the Kubernetes API (Role {{ $fullname }}-backup-console)
+            - name: SANGAM_BACKUP_CONSOLE_KUBERNETES_ENABLED
+              value: "true"
+            - name: SANGAM_BACKUP_CONSOLE_KUBERNETES_SELECTOR
+              value: {{ printf "app.kubernetes.io/component=backup,app.kubernetes.io/instance=%s" .Release.Name | quote }}
+            {{- end }}
             {{- with .Values.server.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -128,6 +140,9 @@ spec:
               mountPath: {{ required "secrets.file.root is required with secrets.file.existingSecret" .Values.secrets.file.root }}
               readOnly: true
             {{- end }}
+            {{- with include "sangam.sidecars.serverMounts" . | trim }}
+            {{- . | nindent 12 }}
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir:
@@ -150,6 +165,9 @@ spec:
           secret:
             secretName: {{ . }}
             defaultMode: 0440
+        {{- end }}
+        {{- with include "sangam.sidecars.serverVolumes" . | trim }}
+        {{- . | nindent 8 }}
         {{- end }}
       {{- if .Values.server.topologySpread }}
       topologySpreadConstraints:

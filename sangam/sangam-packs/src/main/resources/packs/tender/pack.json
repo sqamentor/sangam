@@ -6,7 +6,7 @@
     "hi": "निविदा / ई-प्रापण"
   },
   "domain": "Procurement",
-  "description": "NIT approval and publication (CPPP / GePNIC), corrigendum extending the bid date on the running case, bid opening not before the opening time, two-envelope opening by committee, technical evaluation by quorum, financial opening, L1 by rule, negotiation and retender loops, award sanction, EMD refund by compensation (D-TENDER).",
+  "description": "NIT approval and publication (CPPP / GePNIC), corrigendum extending the bid date on the running case, bid opening not before the opening time, two-envelope opening by committee, technical evaluation by quorum, financial opening, L1 by rule, negotiation and retender loops, award sanction, EMD refund by compensation (D-TENDER). The case records the procurement mode of its value and department class (procurementMode, ruleRef) and stores only that mode; no step branches on it (decision 225).",
   "mainProcesses": [
     "sangam-tender"
   ],
@@ -22,6 +22,10 @@
     {
       "kind": "DMN",
       "path": "packs/tender/tender-l1-acceptability.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/tender/ifms-procurement-mode.dmn"
     },
     {
       "kind": "FORM",
@@ -46,6 +50,10 @@
     {
       "kind": "SEED",
       "path": "packs/tender/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/tender/pack.json"
     }
   ],
   "seed": "packs/tender/seed.json",
@@ -73,6 +81,12 @@
       "capabilityClass": "a",
       "govTag": "G-PG",
       "purpose": "EMD refund to bidders"
+    },
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
     }
   ],
   "covers": [
@@ -100,6 +114,28 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "placeholders": [
+    {
+      "decision": "ifms-procurement-mode",
+      "rule": "GOI procurement-mode bands (profilegen skeletons.GOI_PROC, status P)",
+      "reason": "deploy the government's own table from its profile (delegation.tables ifms-procurement-mode) as the tenant table"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "td_nitApproval": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "TENDER_NIT"
+    },
+    "td_award": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "TENDER_AWARD"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

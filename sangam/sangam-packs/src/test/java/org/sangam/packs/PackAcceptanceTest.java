@@ -62,8 +62,9 @@ class PackAcceptanceTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine).withWorkers(); // external tasks too: the simulator stands in for the worker
     }
 
@@ -235,7 +236,7 @@ class PackAcceptanceTest {
         Map<String, Object> vars = AllPacksSmokeTest.bag();
         vars.putAll(JSON.convertValue(s.node().path("startVariables"), Map.class));
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(vars)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         FormAnswers base = new FormAnswers(engine);
         Map<String, Integer> seen = new HashMap<>();
         JsonNode answers = run.path("answers");

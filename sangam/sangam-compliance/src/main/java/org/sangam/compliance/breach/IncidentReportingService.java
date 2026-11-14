@@ -114,6 +114,14 @@ public final class IncidentReportingService {
                         + " follow_ups, registered_by, registered_at) VALUES (?,?,?,?,?,?,?,?,?,NULL,0,?,?,?,NULL,?,'[]',0,?,?)",
                 tenantId, id, a.code(), type, occurredAt, noticed, due, warn, Status.OPEN, Sql.jsonList(affectedSystems), description,
                 Sql.json(indicators == null ? Map.of() : indicators), breachId, actor, now);
+        // decision 299, OJ-06 steps 1 and 2: the incident is opened with noticed_at fixed, and classified against the
+        // authority's catalogue (checked above); a breach link means personal data is involved
+        JurisdictionPack.IncidentType classified = a.incidentType(type).orElseThrow();
+        audit.organisation(c, tenantId, ComplianceAudit.SEC_INCIDENT_OPENED, Sql.kv("incident", id, "authority", a.code(),
+                "noticedAt", noticed.toString(), "dueAt", due == null ? null : due.toString(), "breach", breachId, "actor", actor));
+        audit.organisation(c, tenantId, ComplianceAudit.SEC_INCIDENT_CLASSIFIED, Sql.kv("incident", id, "authority", a.code(),
+                "type", classified.code(), "label", classified.label(), "personalDataLikely", classified.personalDataLikely(),
+                "personalData", breachId != null, "breach", breachId, "actor", actor));
         audit.organisation(c, tenantId, ComplianceAudit.INCIDENT_REGISTERED, Sql.kv("incident", id, "authority", a.code(), "type", type,
                 "noticedAt", noticed.toString(), "dueAt", due == null ? null : due.toString(), "breach", breachId, "actor", actor));
         Map<String, Object> vars = new LinkedHashMap<>();
@@ -184,6 +192,9 @@ public final class IncidentReportingService {
         boolean late = i.dueAt() != null && now.isAfter(i.dueAt());
         Jdbc.update(c, "UPDATE CMP_INCIDENT SET status=?, reported_at=?, late=?, report_refs_json=? WHERE tenant_id=? AND incident_id=?",
                 Status.REPORTED, now, late, Sql.jsonList(refs), tenantId, incidentId);
+        // decision 299, OJ-06 step 6: submission time and references recorded
+        audit.organisation(c, tenantId, ComplianceAudit.SEC_REPORT_SUBMITTED, Sql.kv("incident", incidentId, "authority", a.code(),
+                "references", refs, "submittedAt", now.toString(), "late", late, "actor", actor));
         audit.organisation(c, tenantId, ComplianceAudit.INCIDENT_REPORTED, Sql.kv("incident", incidentId, "authority", a.code(), "late", late,
                 "recipients", recipients(cfg, a), "formHash", Sql.evidenceHash(form), "actor", actor));
         return refs;
@@ -205,8 +216,51 @@ public final class IncidentReportingService {
         audit.organisation(c, tenantId, ComplianceAudit.INCIDENT_FOLLOW_UP, Sql.kv("incident", incidentId, "formHash", Sql.evidenceHash(form), "actor", actor));
     }
 
-    public void close(Connection c, String tenantId, String incidentId, String actor) {
-        Jdbc.update(c, "UPDATE CMP_INCIDENT SET status=? WHERE tenant_id=? AND incident_id=? AND status=?", Status.CLOSED, tenantId, incidentId, Status.REPORTED);
+    /**
+     * Closes a reported incident (SANGAM.md OJ-06 step 8: closure requires the root cause and the lessons learned). Both
+     * are required non-blank text; without them the close is refused with {@code INCIDENT_CLOSURE_INCOMPLETE} (422)
+     * before anything is written. They are stored on the incident ({@code root_cause}, {@code lessons_learned},
+     * {@code closed_at}, {@code closed_by}) and carried by {@code SEC_INCIDENT_CLOSED} (decision 299), written in the
+     * same transaction only when this call changed the incident from REPORTED to CLOSED (a repeated or early close
+     * changes nothing and writes nothing).
+     */
+    public void close(Connection c, String tenantId, String incidentId, String rootCause, String lessonsLearned, String actor) {
+        List<String> missing = missingClosureFields(rootCause, lessonsLearned);
+        if (!missing.isEmpty()) {
+            throw new ComplianceException(Code.INCIDENT_CLOSURE_INCOMPLETE, closureRefusal(incidentId, missing));
+        }
+        Instant now = Sql.now(c, dialect);
+        if (Jdbc.update(c, "UPDATE CMP_INCIDENT SET status=?, root_cause=?, lessons_learned=?, closed_at=?, closed_by=? WHERE tenant_id=?"
+                + " AND incident_id=? AND status=?", Status.CLOSED, rootCause, lessonsLearned, now, actor, tenantId, incidentId, Status.REPORTED) == 1) {
+            audit.organisation(c, tenantId, ComplianceAudit.SEC_INCIDENT_CLOSED, Sql.kv("incident", incidentId, "rootCause", rootCause,
+                    "lessonsLearned", lessonsLearned, "closedAt", now.toString(), "actor", actor));
+        }
+    }
+
+    /** Request field names of the closure rule (OJ-06 step 8), as named in the contract (W4-M ACK 2026-11-13T07:51:04Z). */
+    public static final String ROOT_CAUSE = "rootCause";
+    public static final String LESSONS_LEARNED = "lessonsLearned";
+
+    /**
+     * The one closure rule (OJ-06 step 8), shared by {@link #close} and the follow-up task guard
+     * ({@code org.sangam.compliance.bpmn.IncidentClosureGuardListener}): the names of the missing or blank fields, in
+     * order; empty when the incident may be closed.
+     */
+    public static List<String> missingClosureFields(Object rootCause, Object lessonsLearned) {
+        List<String> missing = new ArrayList<>();
+        if (rootCause == null || rootCause.toString().isBlank()) {
+            missing.add(ROOT_CAUSE);
+        }
+        if (lessonsLearned == null || lessonsLearned.toString().isBlank()) {
+            missing.add(LESSONS_LEARNED);
+        }
+        return missing;
+    }
+
+    /** Detail text of an {@code INCIDENT_CLOSURE_INCOMPLETE} refusal. */
+    public static String closureRefusal(String incidentId, List<String> missing) {
+        return "closing incident " + incidentId + " needs " + missing
+                + " (SANGAM.md OJ-06 step 8: closure requires the root cause and the lessons learned)";
     }
 
     public List<Incident> overdue(Connection c, String tenantId) {

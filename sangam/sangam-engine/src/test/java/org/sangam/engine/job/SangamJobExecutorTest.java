@@ -43,6 +43,7 @@ class SangamJobExecutorTest {
 
     private static SangamEngineSettings settings() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false); // a SANGAM_JOB_* variable on the build host must not decide the test
@@ -66,13 +67,16 @@ class SangamJobExecutorTest {
     @Test
     void bothOptionsAreOffByDefault() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         assertFalse(s.isJobVirtualThreads());
         assertTrue(s.getJobBulkheads().isEmpty());
         assertEquals(Duration.ofSeconds(10), s.getJobBulkheadWait());
         SangamEngineSettings env = new SangamEngineSettings();
+        env.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         env.applyEnvironment(Map.of("SANGAM_JOB_VIRTUAL_THREADS", "true"));
         assertTrue(env.isJobVirtualThreads(), "SANGAM_JOB_VIRTUAL_THREADS=true switches it on");
         SangamEngineSettings blank = new SangamEngineSettings();
+        blank.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         blank.applyEnvironment(Map.of("SANGAM_JOB_VIRTUAL_THREADS", " "));
         assertFalse(blank.isJobVirtualThreads(), "a blank value keeps the default");
     }

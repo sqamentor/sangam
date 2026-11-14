@@ -218,7 +218,7 @@ public final class OutboxRelayService implements AutoCloseable, org.sangam.core.
             failed.incrementAndGet();
             String err = e.getClass().getSimpleName() + ": " + e.getMessage();
             boolean exhausted = cl.attempts() + 1 >= settings.relay().maxAttempts();
-            if (!relay.markFailed(cl, err)) {
+            if (!relay.markFailed(cl, err, e)) {   // decision 303: the cause gives the parked incident its errorClass
                 fenced.incrementAndGet();
             } else if (exhausted) {
                 deadLetter(cl, err);

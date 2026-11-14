@@ -58,6 +58,18 @@ class StandardsProfileTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             g.profile(bad, [], "0.1.0")
 
+    def test_out_dir_writes_the_tag_version_and_leaves_the_committed_files(self):
+        import tempfile
+        before = {p: open(p, "rb").read() for p in (g.OUT_JSON, g.OUT_MD) if os.path.exists(p)}
+        with tempfile.TemporaryDirectory() as d:
+            self.assertEqual(0, g.main(["--version", "9.8.7-rc1", "--out-dir", d]))
+            with open(os.path.join(d, "standards-profile.json"), encoding="utf-8") as f:
+                self.assertEqual("9.8.7-rc1", json.load(f)["version"])
+            self.assertTrue(os.path.exists(os.path.join(d, "STANDARDS-PROFILE.md")))
+        self.assertEqual(before, {p: open(p, "rb").read() for p in (g.OUT_JSON, g.OUT_MD) if os.path.exists(p)})
+        with self.assertRaises(SystemExit):
+            g.main(["--check", "--out-dir", "x"])
+
     def test_version_drops_snapshot(self):
         pom = "<project><artifactId>sangam-parent</artifactId>\n  <version>0.1.0-SNAPSHOT</version></project>"
         self.assertEqual("0.1.0", g.version_from_pom(pom))

@@ -19,6 +19,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $instance
  * @property-read string|null $code Stable machine code (X.4.0.4, X.2.2.6). Clients must accept unknown codes.
  * @property-read string|null $traceId W3C trace id of the request (R13)
+ * @property-read PowerLimitDecision|null $powerLimit Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142)
  */
 final class Problem implements \JsonSerializable
 {
@@ -30,6 +31,7 @@ final class Problem implements \JsonSerializable
      * @param string|null $instance
      * @param string|null $code
      * @param string|null $traceId
+     * @param PowerLimitDecision|null $powerLimit
      * @param array<string, mixed> $additionalProperties members not named in the schema
      */
     public function __construct(
@@ -40,6 +42,7 @@ final class Problem implements \JsonSerializable
         public readonly ?string $instance = null,
         public readonly ?string $code = null,
         public readonly ?string $traceId = null,
+        public readonly ?PowerLimitDecision $powerLimit = null,
         public readonly array $additionalProperties = [],
     ) {
     }
@@ -47,7 +50,7 @@ final class Problem implements \JsonSerializable
     /** @param array<string, mixed> $data decoded JSON object */
     public static function fromArray(array $data): self
     {
-        $extra = array_diff_key($data, array_flip(['type', 'title', 'status', 'detail', 'instance', 'code', 'traceId']));
+        $extra = array_diff_key($data, array_flip(['type', 'title', 'status', 'detail', 'instance', 'code', 'traceId', 'powerLimit']));
         return new self(
             Support::str($data['type'] ?? null),
             Support::str($data['title'] ?? null),
@@ -56,6 +59,7 @@ final class Problem implements \JsonSerializable
             Support::str($data['instance'] ?? null),
             Support::str($data['code'] ?? null),
             Support::str($data['traceId'] ?? null),
+            Support::model($data['powerLimit'] ?? null, PowerLimitDecision::class),
             $extra,
         );
     }
@@ -83,6 +87,9 @@ final class Problem implements \JsonSerializable
         }
         if ($this->traceId !== null) {
             $out['traceId'] = $this->traceId;
+        }
+        if ($this->powerLimit !== null) {
+            $out['powerLimit'] = $this->powerLimit;
         }
         return $out === [] ? new \stdClass() : $out;
     }

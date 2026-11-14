@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "PAYER",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "INTEROP-ANALYST",
+      "role": "INTEROP",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "MEMBER-SERVICES",
+      "name": {
+        "en": "Interoperability analyst",
+        "es": "Analista de interoperabilidad"
+      }
+    },
+    {
+      "id": "MEMBER-SERVICES",
+      "role": "MEMBERSVC",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Member services",
+        "es": "Servicios al afiliado"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "INTEROP-ANALYST",
+      "person": "upv.interop-analyst",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "MEMBER-SERVICES",
+      "person": "upv.member-services",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "INTEROP",
+      "name": {
+        "en": "Interoperability analyst",
+        "es": "Analista de interoperabilidad"
+      }
+    },
+    {
+      "code": "MEMBERSVC",
+      "name": {
+        "en": "Member services",
+        "es": "Servicios al afiliado"
+      }
+    }
+  ]
+}

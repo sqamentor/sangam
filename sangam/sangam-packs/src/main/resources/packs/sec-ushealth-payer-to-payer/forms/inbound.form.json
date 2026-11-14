@@ -1,0 +1,63 @@
+{
+  "key": "sec-ushealth-payer-to-payer/inbound",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.payer-to-payer",
+  "title": {
+    "en": "Request from the new payer",
+    "es": "Solicitud del nuevo pagador"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerProgram",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer program (MA, MEDICAID, CHIP, QHP_FFE, COMMERCIAL, MEDICARE_FFS)",
+        "es": "Programa del pagador (MA, MEDICAID, CHIP, QHP_FFE, COMERCIAL, MEDICARE_FFS)"
+      }
+    },
+    {
+      "id": "requestingPayerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Requesting payer ID",
+        "es": "Identificador del pagador solicitante"
+      }
+    },
+    {
+      "id": "optInAttested",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Requesting payer attests the patient opted in",
+        "es": "El pagador solicitante certifica la aceptación del paciente"
+      }
+    }
+  ]
+}

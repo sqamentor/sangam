@@ -44,7 +44,9 @@ public final class AuthorizationService implements SecurityPorts.Authorization {
     public boolean allow(Connection c, SecurityIdentity identity, String resourceType, Permission permission,
                          String resourceId, Map<String, ?> attributes) {
         if (identity.system()) {
-            return true;    // tenant isolation still applies: the system identity is bound to one tenant
+            // tenant isolation still applies: the system identity is bound to one tenant. Decision 141: it never holds
+            // an explicit-only permission (packs, jobs and connectors run as system and never accept unverified payments)
+            return !permission.explicitOnly();
         }
         return compiler.allow(c, identity, resourceType, permission, resourceId, attributes);
     }
@@ -57,7 +59,7 @@ public final class AuthorizationService implements SecurityPorts.Authorization {
     public java.util.Set<String> allowedIds(Connection c, SecurityIdentity identity, String resourceType, Permission permission,
                                             java.util.Collection<String> ids) {
         if (identity.system()) {
-            return new java.util.LinkedHashSet<>(ids);
+            return permission.explicitOnly() ? new java.util.LinkedHashSet<>() : new java.util.LinkedHashSet<>(ids);
         }
         return compiler.allowedIds(c, identity, resourceType, permission, ids);
     }

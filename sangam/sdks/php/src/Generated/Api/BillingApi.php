@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Billing (7 operations). */
+/** Typed operations of Billing (11 operations). */
 final class BillingApi
 {
     public function __construct(private readonly Calls $calls)
@@ -57,7 +57,7 @@ final class BillingApi
     /**
      * Record a collection
      *
-     * Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt.
+     * Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
      *
      * POST /billing/{ledger}/collections (operationId recordBillingCollection); permission billing.write; result stored atomically with the state change.
      * @param Model\BillingCollectionRequest|array $body request body
@@ -138,5 +138,81 @@ final class BillingApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\BillingRefundResult::class);
+    }
+
+    /**
+     * Accept a payment unverified
+     *
+     * Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
+     *
+     * POST /billing/{ledger}/unverified-payments (operationId acceptUnverifiedPayment); permission billing.accept-unverified; result stored atomically with the state change.
+     * @param Model\UnverifiedPaymentRequest|array $body request body
+     * @return Model\UnverifiedPayment|null
+     */
+    public function acceptUnverifiedPayment(string $ledger, Model\UnverifiedPaymentRequest|array $body, ?RequestOptions $options = null): ?Model\UnverifiedPayment
+    {
+        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\UnverifiedPayment::class);
+    }
+
+    /**
+     * Unverified payments
+     *
+     * Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
+     *
+     * GET /billing/{ledger}/unverified-payments (operationId listUnverifiedPayments); permission billing.read.
+     * @param string|null $state query state
+     * @param string|null $channel query channel
+     * @param string|null $office query office
+     * @param int|null $minAgeDays query minAgeDays
+     * @param int|null $page query page
+     * @param int|null $size query size
+     * @return Page<Model\UnverifiedPayment>
+     */
+    public function listUnverifiedPayments(string $ledger, ?string $state = null, ?string $channel = null, ?string $office = null, ?int $minAgeDays = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    {
+        $req = ApiRequest::get('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments');
+        $req->query('state', $state);
+        $req->query('channel', $channel);
+        $req->query('office', $office);
+        $req->query('minAgeDays', $minAgeDays);
+        $req->query('page', $page);
+        $req->query('size', $size);
+        return $this->calls->page($req, $options, Model\UnverifiedPayment::class, $page, $size);
+    }
+
+    /**
+     * An unverified payment
+     *
+     * One record with its resolution.
+     *
+     * GET /billing/{ledger}/unverified-payments/{id} (operationId getUnverifiedPayment); permission billing.read.
+     * @return Model\UnverifiedPayment|null
+     */
+    public function getUnverifiedPayment(string $ledger, string $id, ?RequestOptions $options = null): ?Model\UnverifiedPayment
+    {
+        $req = ApiRequest::get('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments/' . HttpTransport::seg((string) $id));
+        return $this->calls->model($req, $options, Model\UnverifiedPayment::class);
+    }
+
+    /**
+     * Resolve an unverified payment
+     *
+     * Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
+     *
+     * POST /billing/{ledger}/unverified-payments/{id}/resolution (operationId resolveUnverifiedPayment); permission billing.resolve-unverified; result stored atomically with the state change.
+     * @param Model\UnverifiedPaymentResolveRequest|array $body request body
+     * @return Model\UnverifiedPayment|null
+     */
+    public function resolveUnverifiedPayment(string $ledger, string $id, Model\UnverifiedPaymentResolveRequest|array $body, ?RequestOptions $options = null): ?Model\UnverifiedPayment
+    {
+        $req = ApiRequest::post('/billing/' . HttpTransport::seg((string) $ledger) . '/unverified-payments/' . HttpTransport::seg((string) $id) . '/resolution');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\UnverifiedPayment::class);
     }
 }

@@ -40,6 +40,7 @@ public class SangamEngineSettings {
     private String processEngineName = "sangam";
     /** Tenant used for L2 / audit rows of instances deployed without a tenant id. */
     private String defaultTenantId = "default";
+    private String systemAuditScope;
     private String history = "full";
     private boolean jobExecutorActivate = false;
     /**
@@ -61,6 +62,8 @@ public class SangamEngineSettings {
     private String mysqlDatabaseType = "mysql";
     /** FLOWABLE-INTO-OPERATON D-56 / R84: SQL Server must run with READ_COMMITTED_SNAPSHOT ON. */
     private boolean requireSqlServerRcsi = true;
+    /** Decisions 156 and 205: allow an experimental CockroachDB server (never supported, never silent); env SANGAM_EXPERIMENTAL_COCKROACHDB. */
+    private boolean experimentalCockroachDb = false;
     /** FLOWABLE-INTO-OPERATON D-06: MySQL JDBC statement timeout in seconds (also applied on the other databases; 0 = off). */
     private int jdbcStatementTimeoutSeconds = 30;
     /**
@@ -216,6 +219,10 @@ public class SangamEngineSettings {
     private boolean testMode = false;
     /** The host's active profiles (the server passes Spring's), for the M-021 production-profile refusal. */
     private Set<String> activeProfiles = Set.of();
+    /** Decision 151: the replay capture listener; null = off (every production engine). */
+    private org.sangam.engine.replay.CaptureListener captureListener;
+    /** Decision 151: the host's production resolution given with the listener; null = not stated (capture refused). */
+    private Boolean captureProduction;
     /**
      * M-044: the current context's W3C trace id, recorded for each new process instance ({@code PROCESS_TRACE}); the
      * server binds the current OpenTelemetry span. null = the trace id of {@link #getTracing()}'s current context.
@@ -276,6 +283,14 @@ public class SangamEngineSettings {
         }
         defaultTenantId = v;
     }
+    /**
+     * Decision 144 (owner 197): the system audit scope ({@code system:<name>}) that untenanted engine work is attributed
+     * to: registered shared deployments, incidents whose tenant could not be resolved, executor and shared-deployment
+     * audit. No default; every engine start refuses a missing or invalid value
+     * ({@code SystemAuditScope.validate}, setting {@code sangam.engine.system-audit-scope}).
+     */
+    public String getSystemAuditScope() { return systemAuditScope; }
+    public void setSystemAuditScope(String v) { mutable("systemAuditScope"); systemAuditScope = v; }
     public String getHistory() { return history; }
     public void setHistory(String v) { mutable("history"); history = v; }
     public String getEngineSchemaUpdate() { return engineSchemaUpdate; }
@@ -294,6 +309,8 @@ public class SangamEngineSettings {
     public void setMysqlDatabaseType(String v) { mutable("mysqlDatabaseType"); mysqlDatabaseType = v; }
     public boolean isRequireSqlServerRcsi() { return requireSqlServerRcsi; }
     public void setRequireSqlServerRcsi(boolean v) { mutable("requireSqlServerRcsi"); requireSqlServerRcsi = v; }
+    public boolean isExperimentalCockroachDb() { return experimentalCockroachDb; }
+    public void setExperimentalCockroachDb(boolean v) { mutable("experimentalCockroachDb"); experimentalCockroachDb = v; }
     public int getJdbcStatementTimeoutSeconds() { return jdbcStatementTimeoutSeconds; }
     public void setJdbcStatementTimeoutSeconds(int v) { mutable("jdbcStatementTimeoutSeconds"); jdbcStatementTimeoutSeconds = v; }
     public Duration getNetworkTimeout() { return networkTimeout; }
@@ -434,6 +451,20 @@ public class SangamEngineSettings {
         testMode = enabled;
         activeProfiles = hostProfiles == null ? Set.of() : Set.copyOf(hostProfiles);
     }
+    public org.sangam.engine.replay.CaptureListener getCaptureListener() { return captureListener; }
+    public Boolean getCaptureProduction() { return captureProduction; }
+
+    /**
+     * Decision 151: registers the replay capture listener of a test or replay engine (null = off) with the host's own
+     * production resolution ({@code ProductionEnvironment} / {@code EnvironmentPolicy}). Deliberately not a bean
+     * setter, so no {@code sangam.engine.*} property can switch capture on; the engine refuses to start with a
+     * listener in production ({@link org.sangam.engine.replay.CaptureListener#requireAllowed}).
+     */
+    public void enableReplayCapture(org.sangam.engine.replay.CaptureListener listener, boolean production) {
+        mutable("captureListener");
+        captureListener = listener;
+        captureProduction = production;
+    }
     public boolean isHistoryModelOverrides() { return historyModelOverrides; }
     public void setHistoryModelOverrides(boolean v) { mutable("historyModelOverrides"); historyModelOverrides = v; }
     public int getExecutorPartitions() { return executorPartitions; }
@@ -539,6 +570,7 @@ public class SangamEngineSettings {
         jobExecutorActivate = boolEnv(env, "SANGAM_JOB_EXECUTOR_ACTIVATE", jobExecutorActivate);
         jobVirtualThreads = boolEnv(env, "SANGAM_JOB_VIRTUAL_THREADS", jobVirtualThreads);
         partitionedHistory = boolEnv(env, "SANGAM_PARTITIONED_HISTORY", partitionedHistory);
+        experimentalCockroachDb = boolEnv(env, "SANGAM_EXPERIMENTAL_COCKROACHDB", experimentalCockroachDb);
         String owner = env.get("SANGAM_JOB_LOCK_OWNER");
         if (owner != null && !owner.isBlank()) {
             jobLockOwner = owner.trim();

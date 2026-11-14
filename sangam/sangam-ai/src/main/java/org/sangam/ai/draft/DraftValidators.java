@@ -6,6 +6,7 @@ import org.operaton.bpm.model.bpmn.Bpmn;
 import org.operaton.bpm.model.bpmn.instance.Process;
 import org.operaton.bpm.model.dmn.Dmn;
 import org.sangam.ai.expr.ExpressionPlayground;
+import org.sangam.feel.Dmn16Support;
 import org.sangam.integration.connector.Json;
 
 import java.io.ByteArrayInputStream;
@@ -54,7 +55,8 @@ public final class DraftValidators {
 
     static List<String> dmn(String xml) {
         try {
-            Dmn.validateModel(Dmn.readModelFromStream(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))));
+            // DMN 1.1 to 1.6 as the engine deploys it (decision 158); unsupported 1.6 content is refused with its code
+            Dmn.validateModel(Dmn16Support.readModel(xml.getBytes(StandardCharsets.UTF_8)));
             return List.of();
         } catch (RuntimeException e) {
             return List.of("DMN: " + e.getMessage());

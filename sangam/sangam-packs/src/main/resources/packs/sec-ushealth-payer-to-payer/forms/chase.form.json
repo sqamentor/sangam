@@ -1,0 +1,47 @@
+{
+  "key": "sec-ushealth-payer-to-payer/chase",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.payer-to-payer",
+  "title": {
+    "en": "Previous payer did not answer in time: chase or close",
+    "es": "El pagador anterior no respondió a tiempo: insistir o cerrar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "interopNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Interoperability follow-up notes",
+        "es": "Notas de seguimiento de interoperabilidad"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "chaseDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "retry",
+        "label": {
+          "en": "Retry",
+          "es": "Reintentar"
+        }
+      },
+      {
+        "value": "closeUnanswered",
+        "label": {
+          "en": "Close: no data received",
+          "es": "Cerrar: no se recibieron datos"
+        }
+      }
+    ]
+  }
+}

@@ -36,6 +36,7 @@ class EngineSchemaUpdateTest {
 
     private static SangamEngineSettings settings() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         return s;
     }

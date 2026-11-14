@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Procurement complaint. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_procurement_com" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-procurement-complaint" name="Procurement complaint" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-procurement-complaint</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>tenderId,complainantName,complaintGrounds</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pc_start" name="Complaint lodged" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-procurement-complaint/complaint"></startEvent>
+    <serviceTask id="pc_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>reviewSeat=COMPLAINT-REVIEW;procuringSeat=PROCURING-ENTITY</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="pc_cfg" name="Complaint periods (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-complaint-rules</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="pc_clock" name="Regulatory clock: complaintDecision" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>complaintDecision</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${complaintDecisionSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_admissibility" name="Admissibility of the complaint" operaton:candidateGroups="${reviewSeat}" operaton:formKey="sangam:gov-intl-pfm-procurement-complaint/admissibility" operaton:dueDate="${complaintDecisionDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>admissibleDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="pc_admissibleGw" name="" default="intl_pfm_procurement_com_f8"></exclusiveGateway>
+    <serviceTask id="pc_inadmissibleDoc" name="Inadmissibility decision" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>complaint-decision</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_endInadmissible" name="Not admissible"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>INADMISSIBLE</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <exclusiveGateway id="pc_suspendRuleGw" name="Suspend the award?" default="intl_pfm_procurement_com_f22"></exclusiveGateway>
+    <serviceTask id="pc_suspend_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>suspensionRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_suspend" name="Suspend the award" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>procurement.suspend</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>suspend</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>tenderId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>suspension</operaton:string></operaton:field><operaton:field name="step"><operaton:string>suspend</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_suspendGw" name="Suspend the award?" default="intl_pfm_procurement_com_f23"></exclusiveGateway>
+    <userTask id="pc_suspendHold" name="Suspension not confirmed: confirm with the e-procurement system" operaton:candidateGroups="${reviewSeat}" operaton:formKey="sangam:gov-intl-pfm-procurement-complaint/suspendHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_response_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_response</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${entityResponseSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="pc_response" name="Answer the complaint (procuring entity)" operaton:candidateGroups="${procuringSeat}" operaton:formKey="sangam:gov-intl-pfm-procurement-complaint/response" operaton:dueDate="${pc_responseDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_response_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_response</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>procuringSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pc_response_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="pc_response_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>pc_response</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>procuringSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_response_breachGw" name="Deemed?" default="intl_pfm_procurement_com_f18"></exclusiveGateway>
+    <exclusiveGateway id="pc_response_done" name=""></exclusiveGateway>
+    <userTask id="pc_decide" name="Decide the complaint with reasons" operaton:candidateGroups="${reviewSeat}" operaton:formKey="sangam:gov-intl-pfm-procurement-complaint/decision" operaton:dueDate="${complaintDecisionDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>pc_response</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>complaintDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pc_decisionDoc" name="Complaint decision" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>complaint-decision</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pc_notify" name="Decision to the procuring entity" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>complaint-decided</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>procuringSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pc_outcomeGw" name="" default="intl_pfm_procurement_com_f29"></exclusiveGateway>
+    <endEvent id="pc_endUpheld" name="Complaint upheld"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>UPHELD</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['remedy']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="pc_endDismissed" name="Complaint dismissed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>DISMISSED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="pc_response_warn" name="SLA warning (75%)" attachedToRef="pc_response" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_responseWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="pc_response_breach" name="SLA breached" attachedToRef="pc_response" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${pc_responseDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="intl_pfm_procurement_com_f1" sourceRef="pc_start" targetRef="pc_defaults"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f2" sourceRef="pc_defaults" targetRef="pc_cfg"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f3" sourceRef="pc_cfg" targetRef="pc_clock"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f4" sourceRef="pc_clock" targetRef="pc_admissibility"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f5" sourceRef="pc_admissibility" targetRef="pc_admissibleGw"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f6" name="not admissible" sourceRef="pc_admissibleGw" targetRef="pc_inadmissibleDoc"><conditionExpression xsi:type="tFormalExpression">${admissibleDecision == 'inadmissible'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_procurement_com_f7" sourceRef="pc_inadmissibleDoc" targetRef="pc_endInadmissible"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f8" name="admissible" sourceRef="pc_admissibleGw" targetRef="pc_suspendRuleGw"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f9" sourceRef="pc_suspend_clear" targetRef="pc_suspend"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f10" sourceRef="pc_suspend" targetRef="pc_suspendGw"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f11" sourceRef="pc_suspendHold" targetRef="pc_suspend_clear"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f12" name="not confirmed" sourceRef="pc_suspendGw" targetRef="pc_suspendHold"><conditionExpression xsi:type="tFormalExpression">${suspensionStatus != 'COMPLETED' || suspensionRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_procurement_com_f13" sourceRef="pc_response_warn" targetRef="pc_response_warnNotify"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f14" sourceRef="pc_response_warnNotify" targetRef="pc_response_warnEnd"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f15" sourceRef="pc_response_breach" targetRef="pc_response_breachAct"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f16" sourceRef="pc_response_breachAct" targetRef="pc_response_breachGw"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f17" name="deemed" sourceRef="pc_response_breachGw" targetRef="pc_response_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_procurement_com_f18" name="escalated" sourceRef="pc_response_breachGw" targetRef="pc_response_slaPlan"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f19" sourceRef="pc_response_slaPlan" targetRef="pc_response"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f20" sourceRef="pc_response" targetRef="pc_response_done"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f21" name="suspend" sourceRef="pc_suspendRuleGw" targetRef="pc_suspend_clear"><conditionExpression xsi:type="tFormalExpression">${suspendAward}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_procurement_com_f22" name="no suspension" sourceRef="pc_suspendRuleGw" targetRef="pc_response_slaPlan"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f23" name="suspended" sourceRef="pc_suspendGw" targetRef="pc_response_slaPlan"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f24" sourceRef="pc_response_done" targetRef="pc_decide"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f25" sourceRef="pc_decide" targetRef="pc_decisionDoc"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f26" sourceRef="pc_decisionDoc" targetRef="pc_notify"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f27" sourceRef="pc_notify" targetRef="pc_outcomeGw"/>
+    <sequenceFlow id="intl_pfm_procurement_com_f28" name="upheld" sourceRef="pc_outcomeGw" targetRef="pc_endUpheld"><conditionExpression xsi:type="tFormalExpression">${complaintDecision == 'uphold'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_procurement_com_f29" name="dismissed" sourceRef="pc_outcomeGw" targetRef="pc_endDismissed"/>
+    <subProcess id="pc_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pc_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pc_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pc_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pc_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_procurement_com_f30" sourceRef="pc_withdrawStart" targetRef="pc_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_procurement_com_f31" sourceRef="pc_withdrawKind" targetRef="pc_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_procurement_com_f32" sourceRef="pc_withdrawCall" targetRef="pc_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pc_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pc_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pc_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pc_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pc_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_procurement_com_f33" sourceRef="pc_cancelStart" targetRef="pc_cancelKind"/>
+      <sequenceFlow id="intl_pfm_procurement_com_f34" sourceRef="pc_cancelKind" targetRef="pc_cancelCall"/>
+      <sequenceFlow id="intl_pfm_procurement_com_f35" sourceRef="pc_cancelCall" targetRef="pc_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_procurement_com_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_procurement_com_plane" bpmnElement="sangam-intl-pfm-procurement-complaint">
+      <bpmndi:BPMNShape id="pc_start_di" bpmnElement="pc_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_defaults_di" bpmnElement="pc_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_cfg_di" bpmnElement="pc_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_clock_di" bpmnElement="pc_clock"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_admissibility_di" bpmnElement="pc_admissibility"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_admissibleGw_di" bpmnElement="pc_admissibleGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_inadmissibleDoc_di" bpmnElement="pc_inadmissibleDoc"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_endInadmissible_di" bpmnElement="pc_endInadmissible"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_suspendRuleGw_di" bpmnElement="pc_suspendRuleGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_suspend_clear_di" bpmnElement="pc_suspend_clear"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_suspend_di" bpmnElement="pc_suspend"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_suspendGw_di" bpmnElement="pc_suspendGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_suspendHold_di" bpmnElement="pc_suspendHold"><dc:Bounds x="1670" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_slaPlan_di" bpmnElement="pc_response_slaPlan"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_di" bpmnElement="pc_response"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_warnNotify_di" bpmnElement="pc_response_warnNotify"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_warnEnd_di" bpmnElement="pc_response_warnEnd"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_breachAct_di" bpmnElement="pc_response_breachAct"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_breachGw_di" bpmnElement="pc_response_breachGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_done_di" bpmnElement="pc_response_done"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_decide_di" bpmnElement="pc_decide"><dc:Bounds x="2495" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_decisionDoc_di" bpmnElement="pc_decisionDoc"><dc:Bounds x="2660" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_notify_di" bpmnElement="pc_notify"><dc:Bounds x="2825" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_outcomeGw_di" bpmnElement="pc_outcomeGw"><dc:Bounds x="3015" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_endUpheld_di" bpmnElement="pc_endUpheld"><dc:Bounds x="3187" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_endDismissed_di" bpmnElement="pc_endDismissed"><dc:Bounds x="3187" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_warn_di" bpmnElement="pc_response_warn"><dc:Bounds x="1843" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_response_breach_di" bpmnElement="pc_response_breach"><dc:Bounds x="1873" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_withdraw_di" bpmnElement="pc_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_withdrawStart_di" bpmnElement="pc_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_withdrawKind_di" bpmnElement="pc_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_withdrawCall_di" bpmnElement="pc_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_withdrawEnd_di" bpmnElement="pc_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_cancel_di" bpmnElement="pc_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_cancelStart_di" bpmnElement="pc_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_cancelKind_di" bpmnElement="pc_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_cancelCall_di" bpmnElement="pc_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pc_cancelEnd_di" bpmnElement="pc_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f1_di" bpmnElement="intl_pfm_procurement_com_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f2_di" bpmnElement="intl_pfm_procurement_com_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f3_di" bpmnElement="intl_pfm_procurement_com_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f4_di" bpmnElement="intl_pfm_procurement_com_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f5_di" bpmnElement="intl_pfm_procurement_com_f5"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f6_di" bpmnElement="intl_pfm_procurement_com_f6"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f7_di" bpmnElement="intl_pfm_procurement_com_f7"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f8_di" bpmnElement="intl_pfm_procurement_com_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f9_di" bpmnElement="intl_pfm_procurement_com_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f10_di" bpmnElement="intl_pfm_procurement_com_f10"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f11_di" bpmnElement="intl_pfm_procurement_com_f11"><di:waypoint x="1720" y="235"/><di:waypoint x="1720" y="267"/><di:waypoint x="1225" y="267"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f12_di" bpmnElement="intl_pfm_procurement_com_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1625" y="70"/><di:waypoint x="1625" y="195"/><di:waypoint x="1670" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f13_di" bpmnElement="intl_pfm_procurement_com_f13"><di:waypoint x="1861" y="128"/><di:waypoint x="1861" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f14_di" bpmnElement="intl_pfm_procurement_com_f14"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f15_di" bpmnElement="intl_pfm_procurement_com_f15"><di:waypoint x="1891" y="128"/><di:waypoint x="1891" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f16_di" bpmnElement="intl_pfm_procurement_com_f16"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f17_di" bpmnElement="intl_pfm_procurement_com_f17"><di:waypoint x="2240" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f18_di" bpmnElement="intl_pfm_procurement_com_f18"><di:waypoint x="2215" y="95"/><di:waypoint x="2215" y="135"/><di:waypoint x="1720" y="135"/><di:waypoint x="1720" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f19_di" bpmnElement="intl_pfm_procurement_com_f19"><di:waypoint x="1770" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f20_di" bpmnElement="intl_pfm_procurement_com_f20"><di:waypoint x="1935" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f21_di" bpmnElement="intl_pfm_procurement_com_f21"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f22_di" bpmnElement="intl_pfm_procurement_com_f22"><di:waypoint x="1085" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f23_di" bpmnElement="intl_pfm_procurement_com_f23"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f24_di" bpmnElement="intl_pfm_procurement_com_f24"><di:waypoint x="2405" y="70"/><di:waypoint x="2495" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f25_di" bpmnElement="intl_pfm_procurement_com_f25"><di:waypoint x="2595" y="70"/><di:waypoint x="2660" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f26_di" bpmnElement="intl_pfm_procurement_com_f26"><di:waypoint x="2760" y="70"/><di:waypoint x="2825" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f27_di" bpmnElement="intl_pfm_procurement_com_f27"><di:waypoint x="2925" y="70"/><di:waypoint x="3015" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f28_di" bpmnElement="intl_pfm_procurement_com_f28"><di:waypoint x="3065" y="70"/><di:waypoint x="3126" y="70"/><di:waypoint x="3126" y="195"/><di:waypoint x="3187" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f29_di" bpmnElement="intl_pfm_procurement_com_f29"><di:waypoint x="3065" y="70"/><di:waypoint x="3187" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f30_di" bpmnElement="intl_pfm_procurement_com_f30"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f31_di" bpmnElement="intl_pfm_procurement_com_f31"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f32_di" bpmnElement="intl_pfm_procurement_com_f32"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f33_di" bpmnElement="intl_pfm_procurement_com_f33"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f34_di" bpmnElement="intl_pfm_procurement_com_f34"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_procurement_com_f35_di" bpmnElement="intl_pfm_procurement_com_f35"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,68 @@
+{
+  "id": "gov.intl.pfm-do-not-pay",
+  "version": "1.0.0",
+  "name": {
+    "en": "Do-Not-Pay payee screening (worldwide PFM)",
+    "hi": "भुगतान निषेध सूची जाँच (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Payee integrity before payment (PFM-049): the payee is screened against the exclusion lists the country binds to the payee.exclusion connector (debarment, deceased persons, other do-not-pay sources); no match clears the payee; a match is adjudicated by the screening officer with evidence and confirmed by a second officer, and a confirmed match blocks the payment. An unconfirmed screening holds the case: the payment is never cleared without an answer.",
+  "mainProcesses": [
+    "sangam-intl-pfm-do-not-pay"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-do-not-pay/sangam-intl-pfm-do-not-pay.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-do-not-pay/forms/payment.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-do-not-pay/forms/screenHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-do-not-pay/forms/adjudicate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-do-not-pay/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-do-not-pay/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-do-not-pay/seed.json",
+  "connectors": [
+    {
+      "id": "payee.exclusion",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Exclusion lists (do-not-pay sources)"
+    }
+  ],
+  "covers": [
+    "PFM-049",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

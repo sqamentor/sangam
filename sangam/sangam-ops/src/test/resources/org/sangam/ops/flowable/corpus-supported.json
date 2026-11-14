@@ -1,0 +1,82 @@
+{
+  "_comment": "M-135 synthetic Flowable runtime corpus (decision 169): SUPPORTED states only. Not real data. Times are wall-clock in Europe/Berlin. The deployed source model declares only create and assignment task listeners (nothing that ending an instance fires). j3 and j7 are timers written before Flowable 6.5.0.1 (no ELEMENT_ID_): j3 with the JSON handler configuration, j7 with the legacy plain activity id.",
+  "tables": {
+    "ACT_RE_PROCDEF": [
+      {"ID_": "order:1:100", "KEY_": "order", "VERSION_": 1, "TENANT_ID_": "acme", "DEPLOYMENT_ID_": "dep-100", "RESOURCE_NAME_": "order.bpmn20.xml"},
+      {"ID_": "order:1:200", "KEY_": "order", "VERSION_": 1, "TENANT_ID_": "beta"}
+    ],
+    "ACT_RU_EXECUTION": [
+      {"ID_": "s1", "PROC_INST_ID_": "s1", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-1", "IS_ACTIVE_": false, "IS_SCOPE_": true, "IS_MI_ROOT_": false, "IS_EVENT_SCOPE_": false, "SUSPENSION_STATE_": 1},
+      {"ID_": "s1-e1", "PARENT_ID_": "s1", "PROC_INST_ID_": "s1", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "IS_SCOPE_": false, "IS_MI_ROOT_": false, "IS_EVENT_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s2", "PROC_INST_ID_": "s2", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-2", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s2-e1", "PARENT_ID_": "s2", "PROC_INST_ID_": "s2", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "waitPayment", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s3", "PROC_INST_ID_": "s3", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-3", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s3-e1", "PARENT_ID_": "s3", "PROC_INST_ID_": "s3", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "cooling", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s4", "PROC_INST_ID_": "s4", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-4", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s4-e1", "PARENT_ID_": "s4", "PROC_INST_ID_": "s4", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "approve", "IS_ACTIVE_": true, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s4-e2", "PARENT_ID_": "s4", "PROC_INST_ID_": "s4", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "approveTimeout", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s5", "PROC_INST_ID_": "s5", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-5", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s5-e1", "PARENT_ID_": "s5", "PROC_INST_ID_": "s5", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "dispatch", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s6", "PROC_INST_ID_": "s6", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-6", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s6-e1", "PARENT_ID_": "s6", "PROC_INST_ID_": "s6", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "ship", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s7", "PROC_INST_ID_": "s7", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-7", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "s7-e1", "PARENT_ID_": "s7", "PROC_INST_ID_": "s7", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "choose", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "s8", "PROC_INST_ID_": "s8", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "BUSINESS_KEY_": "ORD-8", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 2},
+      {"ID_": "s8-e1", "PARENT_ID_": "s8", "PROC_INST_ID_": "s8", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 2},
+
+      {"ID_": "b1", "PROC_INST_ID_": "b1", "PROC_DEF_ID_": "order:1:200", "TENANT_ID_": "beta", "BUSINESS_KEY_": "OTHER-1", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "b1-e1", "PARENT_ID_": "b1", "PROC_INST_ID_": "b1", "PROC_DEF_ID_": "order:1:200", "TENANT_ID_": "beta", "ACT_ID_": "review", "IS_ACTIVE_": true, "IS_SCOPE_": false, "SUSPENSION_STATE_": 1}
+    ],
+    "ACT_RU_TASK": [
+      {"ID_": "t1", "EXECUTION_ID_": "s1-e1", "PROC_INST_ID_": "s1", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "ASSIGNEE_": "bob", "OWNER_": "carol", "DELEGATION_": "PENDING", "PRIORITY_": 70, "DUE_DATE_": "2026-12-15T09:00:00", "SCOPE_TYPE_": null},
+      {"ID_": "t4", "EXECUTION_ID_": "s4-e1", "PROC_INST_ID_": "s4", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "approve", "NAME_": "Approve order", "ASSIGNEE_": "dave", "PRIORITY_": 50},
+      {"ID_": "t8", "EXECUTION_ID_": "s8-e1", "PROC_INST_ID_": "s8", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "tb1", "EXECUTION_ID_": "b1-e1", "PROC_INST_ID_": "b1", "PROC_DEF_ID_": "order:1:200", "TENANT_ID_": "beta", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-alone", "TENANT_ID_": "acme", "NAME_": "Call the customer", "ASSIGNEE_": "erin", "PRIORITY_": 50}
+    ],
+    "ACT_RU_IDENTITYLINK": [
+      {"ID_": "il1", "TYPE_": "candidate", "USER_ID_": "alice", "TASK_ID_": "t1"},
+      {"ID_": "il2", "TYPE_": "candidate", "GROUP_ID_": "clerks", "TASK_ID_": "t1"},
+      {"ID_": "il3", "TYPE_": "participant", "USER_ID_": "bob", "PROC_INST_ID_": "s1"},
+      {"ID_": "il4", "TYPE_": "candidate", "GROUP_ID_": "clerks", "TASK_ID_": "t8"}
+    ],
+    "ACT_RU_VARIABLE": [
+      {"ID_": "v1", "NAME_": "amount", "TYPE_": "long", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "LONG_": 1250},
+      {"ID_": "v2", "NAME_": "customer", "TYPE_": "string", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "TEXT_": "Rao & Sons"},
+      {"ID_": "v3", "NAME_": "approved", "TYPE_": "boolean", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "LONG_": 0},
+      {"ID_": "v4", "NAME_": "orderedAt", "TYPE_": "date", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "LONG_": 1767225600000},
+      {"ID_": "v5", "NAME_": "ref", "TYPE_": "uuid", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "TEXT_": "1b4e28ba-2fa1-11d2-883f-0016d3cca427"},
+      {"ID_": "v6", "NAME_": "rate", "TYPE_": "double", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "DOUBLE_": 12.5},
+      {"ID_": "v7", "NAME_": "note", "TYPE_": "string", "EXECUTION_ID_": "s1-e1", "PROC_INST_ID_": "s1", "TASK_ID_": "t1", "TEXT_": "check stock"},
+      {"ID_": "v8", "NAME_": "count", "TYPE_": "integer", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1", "LONG_": 3},
+      {"ID_": "v9", "NAME_": "empty", "TYPE_": "null", "EXECUTION_ID_": "s1", "PROC_INST_ID_": "s1"},
+      {"ID_": "v10", "NAME_": "paymentRef", "TYPE_": "string", "EXECUTION_ID_": "s2", "PROC_INST_ID_": "s2", "TEXT_": "PAY-2"}
+    ],
+    "ACT_RU_EVENT_SUBSCR": [
+      {"ID_": "es2", "EVENT_TYPE_": "message", "EVENT_NAME_": "PaymentReceived", "EXECUTION_ID_": "s2-e1", "PROC_INST_ID_": "s2", "ACTIVITY_ID_": "waitPayment", "TENANT_ID_": "acme"},
+      {"ID_": "es7", "EVENT_TYPE_": "message", "EVENT_NAME_": "CancelOrder", "EXECUTION_ID_": "s7-e1", "PROC_INST_ID_": "s7", "ACTIVITY_ID_": "cancelMsg", "TENANT_ID_": "acme"}
+    ],
+    "ACT_RU_JOB": [
+      {"ID_": "j5", "TYPE_": "message", "PROCESS_INSTANCE_ID_": "s5", "EXECUTION_ID_": "s5-e1", "ELEMENT_ID_": "dispatch", "RETRIES_": 3, "HANDLER_TYPE_": "async-continuation", "TENANT_ID_": "acme"}
+    ],
+    "ACT_RU_TIMER_JOB": [
+      {"ID_": "j3", "TYPE_": "timer", "PROCESS_INSTANCE_ID_": "s3", "EXECUTION_ID_": "s3-e1", "ELEMENT_ID_": null, "RETRIES_": 3, "DUEDATE_": "2026-12-01T10:00:00", "HANDLER_TYPE_": "trigger-timer", "HANDLER_CFG_": "{\"activityId\":\"cooling\"}", "TENANT_ID_": "acme"},
+      {"ID_": "j4", "TYPE_": "timer", "PROCESS_INSTANCE_ID_": "s4", "EXECUTION_ID_": "s4-e2", "ELEMENT_ID_": "approveTimeout", "RETRIES_": 3, "DUEDATE_": "2026-05-01T10:00:00", "HANDLER_TYPE_": "trigger-timer", "TENANT_ID_": "acme"},
+      {"ID_": "j7", "TYPE_": "timer", "PROCESS_INSTANCE_ID_": "s7", "EXECUTION_ID_": "s7-e1", "RETRIES_": 3, "DUEDATE_": "2026-12-02T10:00:00", "HANDLER_TYPE_": "trigger-timer", "HANDLER_CFG_": "chooseTimer", "TENANT_ID_": "acme"},
+      {"ID_": "j-def", "TYPE_": "timer", "ELEMENT_ID_": "nightlyStart", "RETRIES_": 3, "DUEDATE_": "2026-06-02T01:00:00", "HANDLER_TYPE_": "timer-start-event", "TENANT_ID_": "acme"}
+    ],
+    "ACT_RU_EXTERNAL_JOB": [
+      {"ID_": "j6", "TYPE_": "externalWorker", "PROCESS_INSTANCE_ID_": "s6", "EXECUTION_ID_": "s6-e1", "ELEMENT_ID_": "ship", "RETRIES_": 3, "HANDLER_TYPE_": "external-worker-complete", "TENANT_ID_": "acme"}
+    ]
+  },
+  "resources": {
+    "dep-100/order.bpmn20.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:flowable=\"http://flowable.org/bpmn\" targetNamespace=\"urn:sangam:test:flowable-source\"><process id=\"order\" isExecutable=\"true\"><startEvent id=\"start\"/><userTask id=\"review\" name=\"Review order\"><extensionElements><flowable:taskListener event=\"create\" class=\"org.example.NotifyReviewer\"/></extensionElements></userTask><userTask id=\"approve\" name=\"Approve order\"><extensionElements><flowable:taskListener event=\"assignment\" class=\"org.example.NotifyApprover\"/></extensionElements></userTask><endEvent id=\"end\"/></process></definitions>"
+  }
+}

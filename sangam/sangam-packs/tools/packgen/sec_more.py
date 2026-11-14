@@ -5,6 +5,8 @@ licensing, OT scheduling, blood bank, GST TCS, TCCCPR, SIM swap, e-way bill, MRP
 meter-to-cash, disconnection, payroll with PF / ESI, appraisal, private litigation). Values marked SYNTHETIC or
 "verify" are DMN entries listed in the verify-before-go-live register of SECTOR-WORKFLOWS.md."""
 from lib import C, q
+import payroll
+import rounding
 from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from common import core, outcome, end_ok, rejection, reject_with, batch_loop, checked_query, check_conditions, \
     unconfirmed_hold
@@ -129,8 +131,8 @@ def nbfc_dlg():
                defaults='dlgProvider=LSP-1;portfolioAmount=100000000;dlgAmount=4000000;dlgForm=FIXED_DEPOSIT;'
                         'daysOverdue=90;amount=@dlgAmount;caseType=DLG;routingDecisionKey=sec-nbfc-dlg-authority;'
                         'powersDecisionKey=sec-nbfc-dlg-powers;appealAllowed=false;dlgTenure=P365D')
-    pc = s.expr('dg_pct', 'Cover as % of the portfolio',
-                "${execution.setVariable('dlgPct', dlgAmount * 100 / portfolioAmount)}")
+    pc = s.ratio_calc('dg_pct', 'Cover as % of the portfolio (exact ratio)', 'dlgPct',
+                      'dlgAmount * 100 / portfolioAmount')
     r = s.rule('dg_cap', 'Cap and form (DMN)', 'sec-nbfc-dlg-cap')
     g = s.xgw('dg_capGw', 'Within the cap?')
     s.seq(st, d, pc, r, g)
@@ -646,7 +648,8 @@ def ecom_gst_tcs():
                             'net', ['netSupplies'])
     ng = s.xgw('gt_suppliesGw', 'Net supplies confirmed?')
     r = s.rule('gt_rate', 'TCS rate (DMN)', 'sec-ecom-tcs-rate')
-    cp = s.expr('gt_compute', 'TCS amount', "${execution.setVariable('tcsAmount', netSupplies * tcsRatePct / 100)}")
+    cp = s.money_calc('gt_compute', 'TCS amount (decision 139 policy)', 'tcsAmount', 'netSupplies * tcsRatePct / 100',
+                      rounding.declare(pk, 'sec-ecom-tcs-rounding'))
     re_, rd = s.sla_task('gt_review', 'Review TCS by seller (deposit by the 10th) | विक्रेतावार टीसीएस की समीक्षा', 'taxSeat',
                          form='sec-ecom-gst-tcs/review', decision=None, fields=['remarks'], spec='7D', on_breach='ESCALATE')
     s.seq(t, d, nse)
@@ -999,7 +1002,8 @@ def util_billing():
     s.flow(g, vx, read_abnormal, 'zero / abnormal / defective')
     s.flow(g, tr, None, 'normal', default=True)
     s.flow(vx, tr)
-    cp = s.expr('bl_compute', 'Bill amount', "${execution.setVariable('billAmount', fixedCharge + units * energyRate)}")
+    cp = s.money_calc('bl_compute', 'Bill amount (decision 139 policy)', 'billAmount', 'fixedCharge + units * energyRate',
+                      rounding.declare(pk, 'sec-util-bill-rounding'))
     gb = s.conn('bl_bill', 'Generate and deliver bill', 'billing.generate', 'bill', 'submit',
                 'key,consumer,units,billAmount,tariffId,cycle', 'bill',
                 step='bill')
@@ -1022,7 +1026,8 @@ def util_billing():
     rg = s.xgw('bl_revGw')
     s.flow(rv, rg)
     sp = s.setv('bl_superseded', 'Amount of the bill being replaced', values='supersededAmount=@billAmount')
-    rc = s.expr('bl_recompute', 'Revised bill amount', "${execution.setVariable('billAmount', fixedCharge + units * energyRate)}")
+    rc = s.money_calc('bl_recompute', 'Revised bill amount (decision 139 policy)', 'billAmount',
+                      'fixedCharge + units * energyRate', rounding.declare(pk, 'sec-util-bill-rounding'))
     rb = s.conn('bl_reviseBill', 'Issue revised bill', 'billing.revise', 'revise', 'submit',
                 'key,consumer,units,tariffId,cycle,head,supersededAmount', 'rev', step='revise')
     s.flow(rg, sp, "disputeDecision == 'customer'", 'upheld')
@@ -1090,8 +1095,8 @@ def util_disconnection():
 # ============================================================================================ HR
 def hr_payroll():
     pk = spack('hr', 'payroll', 'Monthly payroll with PF and ESI returns', 'पीएफ एवं ईएसआई विवरणी सहित मासिक वेतन', 'HR',
-               'Monthly: inputs frozen, payroll computed with PF (12 % on wages up to the ceiling) and ESI (0.75 % / '
-               '3.25 % up to the wage limit) by rule, maker-checker approval, wages paid by the 7th (Code on Wages '
+               'Monthly: inputs and the wage register frozen, PF (12 % on wages up to the ceiling) and ESI (0.75 % / '
+               '3.25 % for employees within the wage limit) computed per employee by rule, maker-checker approval, wages paid by the 7th (Code on Wages '
                's.17), PF ECR and ESI contributions filed and paid by the 15th, payslips issued.',
                ['SEC-HR-005', 'GP-01', 'GP-30', 'GP-12', 'UP-05'],
                [('hris.inputs', 'a', '', 'Attendance and inputs'), ('bank.transfer', 'c', '', 'Salary payment file'),
@@ -1101,18 +1106,21 @@ def hr_payroll():
     s = p.root
     t = s.start('pr_timer', '25th of the month', timer_cycle='0 0 6 25 * ?', initiator=None)
     d = s.setv('pr_defaults', 'Configuration',
-               defaults='period=CURRENT;grossWages=1000000;pfWages=600000;esiWages=200000;amount=@grossWages;caseType=PAYROLL;'
+               defaults='period=CURRENT;caseType=PAYROLL;'
                         'routingDecisionKey=sec-hr-payroll-authority;powersDecisionKey=sec-hr-payroll-powers;'
                         'executionConnector=bank.transfer;executionStep=salary;reconcileRequired=true;'
                         'executionPayloadFields=period,grossWages;appealAllowed=false;payrollSeat=PAYROLL-MAKER')
-    inp = s.conn('pr_inputs', 'Freeze attendance and inputs', 'hris.inputs', 'freeze', 'query', None, 'inputs')
+    # decision 223: the frozen wage register (per employee) is the only PF / ESI wage source; every share is computed,
+    # rounded by its own decision 139 policy and capped / made eligible per employee, then summed exactly
+    inp = payroll.register_call(s, 'pr_inputs', 'Freeze attendance, inputs and the wage register')
+    # decision 223: gross wages per employee from the frozen register, summed exactly; the payroll amount is that sum
+    gw = payroll.gross(s)
+    am = s.setv('pr_amount', 'Payroll amount (the gross wages of the register)', values='amount=@grossWages')
     r = s.rule('pr_rates', 'PF / ESI rates (DMN)', 'sec-hr-statutory')
-    cp = s.expr('pr_compute', 'Contributions',
-                "${execution.setVariable('pfAmount', pfWages * (pfEmployeePct + pfEmployerPct) / 100)}")
-    ce = s.expr('pr_esiCalc', 'ESI', "${execution.setVariable('esiAmount', esiWages * (esiEmployeePct + esiEmployerPct) / 100)}")
+    shares = payroll.contributions(s, pk)
     mk = s.user('pr_make', 'Review payroll register (maker) | वेतन रजिस्टर की समीक्षा', '${payrollSeat}', form='sec-hr-payroll/make',
-                decision=None, fields=['grossWages*', 'remarks'])
-    s.seq(t, d, inp, r, cp, ce, mk)
+                decision=None, fields=['remarks'])
+    s.seq(t, d, inp, gw, am, r, *shares, mk)
     san = core(s, 'pr_approve', 'Approve payroll (core sanction)', 'sanction')
     s.flow(mk, san)
     pay = core(s, 'pr_pay', 'Pay salaries by the 7th (core execution)', 'execution')
@@ -1134,9 +1142,9 @@ def hr_payroll():
     pk.dmn('sec-hr-statutory', 'PF and ESI rates (EPF Scheme / ESI Act; verify current notifications)', 'FIRST',
            [('Period', 'period', 'string')],
            [('pfEmployeePct', 'PF employee %', 'number'), ('pfEmployerPct', 'PF employer %', 'number'),
-            ('esiEmployeePct', 'ESI employee %', 'number'), ('esiEmployerPct', 'ESI employer %', 'number'),
-            ('pfWageCeiling', 'PF wage ceiling', 'money'), ('esiWageLimit', 'ESI wage limit', 'money')],
-           [(['-'], ['12', '12', '0.75', '3.25', '15000', '21000'], 'PF ceiling Rs 15,000; ESI limit Rs 21,000 (verify)')])
+            ('esiEmployeePct', 'ESI employee %', 'number'), ('esiEmployerPct', 'ESI employer %', 'number')],
+           [(['-'], ['12', '12', '0.75', '3.25'], 'rates (verify); the PF ceiling and ESI limit are the versioned '
+                                                  'rules sec-hr-wage-rules (decision 223)')])
     authority(pk, 'sec-hr-payroll-authority', 'Payroll approver', [('-', 'HRHEAD', '')])
     powers(pk, 'sec-hr-payroll-powers', [('HRHEAD', 10000000000, '')])
     simple_seeds(pk, 'PAYROLL', [('PAYROLL-MAKER', 'PAYROLL', 'HR-HEAD', 'Payroll executive', 'वेतन कार्यकारी'),

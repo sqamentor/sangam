@@ -17,8 +17,8 @@ import java.util.regex.Pattern;
 import org.operaton.bpm.dmn.feel.impl.FeelException;
 import org.operaton.bpm.engine.variable.VariableMap;
 import org.operaton.bpm.engine.variable.Variables;
-import org.sangam.engine.feel.JacksonCompatibilityGuard;
-import org.sangam.engine.feel.SangamFeelEngine;
+import org.sangam.feel.JacksonCompatibilityGuard;
+import org.sangam.feel.SangamFeelEngine;
 
 /**
  * M-059 (L6; R19, R25; ADR-D-26): checks and evaluates handler expressions with Sangam's strict FEEL engine (exact

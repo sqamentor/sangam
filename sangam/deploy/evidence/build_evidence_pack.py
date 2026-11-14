@@ -2,7 +2,7 @@
 """Assembles the per-release audit evidence pack (SANGAM.md R52, GOV-3: CERT-In-empanelled audit).
 
 Standard library only. Input: a directory per evidence area (see AREAS). Output:
-  <out>/sangam-evidence-<version>/  01-sbom/ ... 08-native-profile/, MANIFEST.json, INDEX.md, SHA256SUMS
+  <out>/sangam-evidence-<version>/  01-sbom/ ... 10-standards-profile/, MANIFEST.json, INDEX.md, SHA256SUMS
   <out>/sangam-evidence-<version>.tar.gz
 Signing SHA256SUMS is a separate step (release.yml: cosign sign-blob), so this script also runs air-gapped.
 
@@ -32,6 +32,8 @@ AREAS = {
     "compliance": ("06-compliance", True, "sangam-compliance evidence report", "DPDP / CERT-In obligation status"),
     "config": ("07-config", True, "Configuration and version manifest", "Default chart values, support matrix"),
     "native": ("08-native-profile", False, "Native-light profile build evidence", "R7 smoke result"),
+    "procurement": ("09-procurement", False, "Procurement readiness (R62, GOV-12)", "SKU catalogue template and local-content dossier generator; drafts only, the owner signs at listing"),
+    "standards": ("10-standards-profile", True, "Standards profile (R44, CF-8; M-052)", "Supported BPMN, DMN and CMMN constructs and the FEEL policy of this release, generated from the compat data the deploy check enforces"),
 }
 
 SCOPE_NOTE = """## Scope and limits

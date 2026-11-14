@@ -47,9 +47,22 @@ public interface PdfRenderer {
      * The validation step (M-081 acceptance): checks rendered bytes against the required conformance levels. An
      * implementation may validate with its own parser or delegate to a separate validator; it must not trust its own
      * claim without reading the bytes back.
+     *
+     * <p>Owner decision 114: the server validates through a separate validator service. An implementation that cannot
+     * get an answer (not configured, timeout, unreachable, an answer it cannot read) throws
+     * {@link PdfRendering.Unavailable}, which callers map to {@code 422 FORMAT_NOT_AVAILABLE}; it never returns a
+     * passing report it did not receive. A failing report means the bytes were checked and refused.
      */
     interface Validator {
         Report validate(byte[] pdf, Set<Conformance> required);
+
+        /**
+         * Why this validator cannot validate now (for example no validator service is configured), or {@code null}
+         * when it is ready. {@link PdfRendering} reports the reason instead of rendering.
+         */
+        default String notReadyReason() {
+            return null;
+        }
     }
 
     /** @param findings rule id and message per failed check; empty when {@code ok} */

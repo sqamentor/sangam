@@ -1,0 +1,49 @@
+{
+  "key": "gov-intl-pfm-debt-operation/above-limit",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-debt-operation",
+  "title": {
+    "en": "Above the remaining authority: record the outcome",
+    "hi": "प्राधिकार से अधिक"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "debtAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (pack currency)",
+        "hi": "राशि"
+      }
+    },
+    {
+      "id": "authorityRemainingLimit",
+      "type": "readonly",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Remaining authority (debt system)",
+        "hi": "शेष प्राधिकार"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

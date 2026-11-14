@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Budget-document bundle. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_budget_document" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <process id="sangam-intl-pfm-budget-document-bundle" name="Budget-document bundle" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-budget-preparation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>budgetYear,spendingUnit,requestAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="bb_start" name="Bundle requested" operaton:initiator="initiator"></startEvent>
+    <serviceTask id="bb_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>budgetOfficeSeat=BUDGET-OFFICE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bb_proposal" name="Budget proposal" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>budget-proposal</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bb_annexes" name="Annexes by classification" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>budget-annexes</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bb_fiscalRisk" name="Fiscal-risk statement" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>fiscal-risk-statement</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bb_citizens" name="Citizens' budget" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>citizens-budget</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bb_check" name="Check the bundle: complete and consistent with the data" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/bundle-check"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>bundleDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bb_checkGw" name="" default="intl_pfm_budget_document_f9"></exclusiveGateway>
+    <endEvent id="bb_endReturned" name="Bundle returned"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>RETURNED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="bb_end" name="Bundle ready"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>BUNDLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_budget_document_f1" sourceRef="bb_start" targetRef="bb_defaults"/>
+    <sequenceFlow id="intl_pfm_budget_document_f2" sourceRef="bb_defaults" targetRef="bb_proposal"/>
+    <sequenceFlow id="intl_pfm_budget_document_f3" sourceRef="bb_proposal" targetRef="bb_annexes"/>
+    <sequenceFlow id="intl_pfm_budget_document_f4" sourceRef="bb_annexes" targetRef="bb_fiscalRisk"/>
+    <sequenceFlow id="intl_pfm_budget_document_f5" sourceRef="bb_fiscalRisk" targetRef="bb_citizens"/>
+    <sequenceFlow id="intl_pfm_budget_document_f6" sourceRef="bb_citizens" targetRef="bb_check"/>
+    <sequenceFlow id="intl_pfm_budget_document_f7" sourceRef="bb_check" targetRef="bb_checkGw"/>
+    <sequenceFlow id="intl_pfm_budget_document_f8" name="returned" sourceRef="bb_checkGw" targetRef="bb_endReturned"><conditionExpression xsi:type="tFormalExpression">${bundleDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_document_f9" name="complete" sourceRef="bb_checkGw" targetRef="bb_end"/>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_budget_document_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_budget_document_plane" bpmnElement="sangam-intl-pfm-budget-document-bundle">
+      <bpmndi:BPMNShape id="bb_start_di" bpmnElement="bb_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_defaults_di" bpmnElement="bb_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_proposal_di" bpmnElement="bb_proposal"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_annexes_di" bpmnElement="bb_annexes"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_fiscalRisk_di" bpmnElement="bb_fiscalRisk"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_citizens_di" bpmnElement="bb_citizens"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_check_di" bpmnElement="bb_check"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_checkGw_di" bpmnElement="bb_checkGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_endReturned_di" bpmnElement="bb_endReturned"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bb_end_di" bpmnElement="bb_end"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f1_di" bpmnElement="intl_pfm_budget_document_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f2_di" bpmnElement="intl_pfm_budget_document_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f3_di" bpmnElement="intl_pfm_budget_document_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f4_di" bpmnElement="intl_pfm_budget_document_f4"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f5_di" bpmnElement="intl_pfm_budget_document_f5"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f6_di" bpmnElement="intl_pfm_budget_document_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f7_di" bpmnElement="intl_pfm_budget_document_f7"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f8_di" bpmnElement="intl_pfm_budget_document_f8"><di:waypoint x="1250" y="70"/><di:waypoint x="1311" y="70"/><di:waypoint x="1311" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_document_f9_di" bpmnElement="intl_pfm_budget_document_f9"><di:waypoint x="1250" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

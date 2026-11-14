@@ -1,0 +1,36 @@
+{
+  "key": "gov-intl-pfm-cash-plan/period",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-cash-plan",
+  "title": {
+    "en": "Cash plan period",
+    "hi": "नकद योजना अवधि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "planPeriod",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Plan period",
+        "hi": "योजना अवधि"
+      }
+    },
+    {
+      "id": "ledgerId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Ledger",
+        "hi": "लेजर"
+      }
+    }
+  ]
+}

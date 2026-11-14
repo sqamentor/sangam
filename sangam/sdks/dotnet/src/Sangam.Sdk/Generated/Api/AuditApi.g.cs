@@ -31,10 +31,10 @@ public sealed class AuditApi
 
     /// <summary>
     /// Search audit events
-    /// Auditor search (U01).
+    /// Auditor search (U01). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
     /// GET /audit/events (operationId searchAuditEvents); permission audit.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.AuditEntry>> SearchAuditEventsAsync(string? chainId = null, string? type = null, string? actor = null, global::System.DateTimeOffset? from = null, global::System.DateTimeOffset? to = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.AuditEntry>> SearchAuditEventsAsync(string? chainId = null, string? type = null, string? actor = null, global::System.DateTimeOffset? from = null, global::System.DateTimeOffset? to = null, string? scope = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/audit/events");
         req.WithQuery("chainId", GeneratedCalls.Q(chainId));
@@ -42,6 +42,7 @@ public sealed class AuditApi
         req.WithQuery("actor", GeneratedCalls.Q(actor));
         req.WithQuery("from", GeneratedCalls.Q(from));
         req.WithQuery("to", GeneratedCalls.Q(to));
+        req.WithQuery("scope", GeneratedCalls.Q(scope));
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<M.AuditEntry>(req, options, page, size, cancellationToken).ConfigureAwait(false);
@@ -49,14 +50,15 @@ public sealed class AuditApi
 
     /// <summary>
     /// Verify hash chains
-    /// Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5).
+    /// Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
     /// GET /audit/verify (operationId verifyAudit); permission audit.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.AuditVerifyResult?> VerifyAuditAsync(string? chainId = null, string? businessKey = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.AuditVerifyResult?> VerifyAuditAsync(string? chainId = null, string? businessKey = null, string? scope = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/audit/verify");
         req.WithQuery("chainId", GeneratedCalls.Q(chainId));
         req.WithQuery("businessKey", GeneratedCalls.Q(businessKey));
+        req.WithQuery("scope", GeneratedCalls.Q(scope));
         return await _calls.JsonAsync<M.AuditVerifyResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 

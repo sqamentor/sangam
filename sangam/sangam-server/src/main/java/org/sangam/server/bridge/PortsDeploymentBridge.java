@@ -9,10 +9,14 @@ import java.util.Map;
 
 import org.sangam.ports.app.AppBundle;
 import org.sangam.ports.app.AppDeploymentService;
+import org.sangam.ports.events.model.ChannelDefinition;
+import org.sangam.ports.support.Json;
+import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.DeploymentPort;
 import org.sangam.rest.port.Page;
 import org.sangam.rest.port.RequestContext;
+import org.sangam.server.config.AddonGuardWiring;
 
 /**
  * {@link DeploymentPort} with app bundles (FLOWABLE-INTO-OPERATON FC-41): a deployment that carries a {@code sangam-app.json} / Flowable
@@ -69,6 +73,7 @@ public final class PortsDeploymentBridge implements DeploymentPort {
             }
             files.put("sangam-app.json", ("{\"key\":\"" + key + "\",\"name\":\"" + key + "\"}").getBytes(StandardCharsets.UTF_8));
         }
+        requireChannelClients(files, AddonGuardWiring.natsPresent(PortsDeploymentBridge.class.getClassLoader()));
         AppBundle bundle = PortsErrors.call(() -> AppBundle.of(files));
         AppDeploymentService.AppDeployment d = PortsErrors.call(() -> apps.deploy(ctx.tenantId(), bundle, ctx.principalId()));
         Map<String, Object> p = new LinkedHashMap<>();
@@ -103,6 +108,32 @@ public final class PortsDeploymentBridge implements DeploymentPort {
     @Override
     public void delete(RequestContext ctx, String deploymentId, boolean cascade, String reason) {
         base.delete(ctx, deploymentId, cascade, reason);
+    }
+
+    /**
+     * Owner decision 232: a deployment that carries a {@code nats} channel needs the NATS add-on; without it the route
+     * answers 501 CAPABILITY_NOT_INSTALLED before anything is written (a channel that does not parse is left to the app
+     * deployment's own validation).
+     */
+    static void requireChannelClients(Map<String, byte[]> files, boolean natsPresent) {
+        if (natsPresent) {
+            return;
+        }
+        for (Map.Entry<String, byte[]> f : files.entrySet()) {
+            if (AppBundle.kind(f.getKey()) != AppBundle.Kind.CHANNEL || f.getValue() == null) {
+                continue;
+            }
+            String type;
+            try {
+                type = Json.read(new String(f.getValue(), StandardCharsets.UTF_8), ChannelDefinition.class).adapterType();
+            } catch (RuntimeException e) {
+                continue;
+            }
+            if ("nats".equals(type)) {
+                throw ApiProblem.notInstalled("nats channels", AddonGuardWiring.NATS_ADDON)
+                        .with("resource", f.getKey());
+            }
+        }
     }
 
     static boolean isAppBundle(Map<String, byte[]> resources) {

@@ -38,7 +38,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       {@code web/} and {@code modules/}, the Spring configuration package {@code config/}, and in {@code compliance/}
  *       and {@code lifecycle/} only the controller, the problem advice and the servlet filter. Every other
  *       {@code sangam-rest} package ({@code adapter/}, {@code support/}, {@code port/}, {@code extension/} and the
- *       compliance and lifecycle services) is not a host, so its Spring files stay on the ratchet;</li>
+ *       compliance and lifecycle services) is not a host, so its Spring files stay on the ratchet. Since decision 285
+ *       the ports, adapters, support classes and extension SPI live in {@code sangam-rest-core} (same packages),
+ *       which is never a host;</li>
  *   <li>the SDK framework-adapter packages (decision 74, M-027): the Spring Boot, Python-framework and NestJS
  *       adapters.</li>
  * </ul>
@@ -72,6 +74,9 @@ class HostFrameworkBoundaryTest {
     /** The REST host area of sangam-rest (decision 72): packages end with a slash, single files with .java. */
     static final String REST = "sangam-rest/src/main/java/org/sangam/rest/";
 
+    /** Decision 285: the ports, default adapters, support classes and extension SPI of sangam-rest; never a host. */
+    static final String REST_CORE = "sangam-rest-core/src/main/java/org/sangam/rest/";
+
     /**
      * Hosts (reactor-relative prefixes, forward slashes): the only places that may use a host framework. A folder ends
      * with a slash; a single file is named in full.
@@ -104,30 +109,11 @@ class HostFrameworkBoundaryTest {
     static final Set<String> HOST_FRAMEWORK_ALLOWED = new TreeSet<>();
 
     static {
-        // sangam-field: 1 file(s)
-        HOST_FRAMEWORK_ALLOWED.add("sangam-field/src/main/java/org/sangam/field/web/FieldController.java");
-        // sangam-geo: 1 file(s)
-        HOST_FRAMEWORK_ALLOWED.add("sangam-geo/src/main/java/org/sangam/geo/web/GeoController.java");
-        // sangam-registry: 7 file(s)
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-registry/src/main/java/org/sangam/registry/rest/RegistryExceptionHandler.java");
-        // sangam-rest: 4 file(s)
-        HOST_FRAMEWORK_ALLOWED.add("sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAuditExportAdapter.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/ReadTransactions.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-rest/src/main/java/org/sangam/rest/support/TxSupport.java");
-        // sangam-security: 6 file(s)
-        HOST_FRAMEWORK_ALLOWED.add("sangam-security/src/main/java/org/sangam/security/oidc/ClientJwtVerifier.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-security/src/main/java/org/sangam/security/oidc/IdentityResolutionFilter.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-security/src/main/java/org/sangam/security/oidc/SangamAuthenticationToken.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-security/src/main/java/org/sangam/security/oidc/SangamResourceServerConfiguration.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-security/src/main/java/org/sangam/security/oidc/SecurityWebSupport.java");
-        HOST_FRAMEWORK_ALLOWED.add("sangam-security/src/main/java/org/sangam/security/oidc/TokenAuthenticationFilters.java");
+        // sangam-field, sangam-geo, sangam-registry: 0 file(s) since M-141d (their Spring controllers moved to the REST
+        // host area of sangam-rest, modules/geo/web and modules/registry/web; the unregistered field adapter was removed)
+        // sangam-rest: 0 file(s) since M-141c (TxSupport and ReadTransactions are plain Java; their Spring
+        // implementations SpringTxSupport and SpringReadTransactions live in the REST host area, config/)
+        // sangam-security: 0 file(s) since M-141a (its 6 Spring files moved to the Spring host, sangam-server)
     }
 
     static boolean isHost(String rel) {
@@ -181,11 +167,34 @@ class HostFrameworkBoundaryTest {
     @Test
     void coreAndEngineNeverUseAHostFramework() throws IOException {
         Map<String, List<String>> found = scan(ArchitectureGuardTest.root());
-        for (String module : List.of("sangam-core/", "sangam-persistence/", "sangam-engine/")) {
+        // M-144: the plain-Java assembly layer and the host conformance kit are never a host either
+        for (String module : List.of("sangam-core/", "sangam-persistence/", "sangam-engine/", "sangam-assembly/",
+                "sangam-host-conformance/", "sangam-field/", "sangam-geo/", "sangam-registry/",
+                // decision 285: the Spring-free ports and default adapters moved out of sangam-rest
+                "sangam-rest-core/")) {
             List<String> hits = found.keySet().stream().filter(k -> k.startsWith(module)).toList();
             assertTrue(hits.isEmpty(), module + " must stay free of Spring and Quarkus: " + hits);
             assertFalse(HOST_FRAMEWORK_ALLOWED.stream().anyMatch(k -> k.startsWith(module)),
                     module + " may never be on the ratchet");
+        }
+    }
+
+    /**
+     * M-141a (decisions 72-75): the security jar is plain Java. No main source names a host framework, it is never on
+     * the ratchet, and its pom declares no Spring or servlet dependency (the Spring Security adapters live in the host).
+     */
+    @Test
+    void securityJarStaysFrameworkFree() throws IOException {
+        Path root = ArchitectureGuardTest.root();
+        List<String> hits = scan(root).keySet().stream().filter(k -> k.startsWith("sangam-security/")).toList();
+        assertTrue(hits.isEmpty(), "sangam-security must stay free of host frameworks (M-141a): " + hits);
+        assertFalse(HOST_FRAMEWORK_ALLOWED.stream().anyMatch(k -> k.startsWith("sangam-security/")),
+                "sangam-security may never be on the ratchet again (M-141a)");
+        String pom = ArchitectureGuardTest.read(root.resolve("sangam-security/pom.xml"));
+        assertTrue(pom != null, "sangam-security/pom.xml not found under " + root);
+        for (String banned : List.of("<groupId>org.springframework", "<groupId>jakarta.servlet",
+                "<groupId>io.quarkus")) {
+            assertFalse(pom.contains(banned), "sangam-security/pom.xml declares " + banned + " (M-141a)");
         }
     }
 
@@ -242,8 +251,8 @@ class HostFrameworkBoundaryTest {
         assertTrue(isHost(REST + "compliance/ComplianceController.java"));
         for (String service : List.of(REST + "compliance/ComplianceRestService.java",
                 REST + "compliance/ComplianceApiImpl.java", REST + "lifecycle/ApiDeprecationRegistry.java",
-                REST + "support/TxSupport.java", REST + "adapter/operaton/OperatonOpsAdapter.java",
-                REST + "port/AdminPort.java", "sangam-security/src/main/java/org/sangam/security/SangamSecurity.java")) {
+                REST_CORE + "support/TxSupport.java", REST_CORE + "adapter/operaton/OperatonOpsAdapter.java",
+                REST_CORE + "port/AdminPort.java", "sangam-security/src/main/java/org/sangam/security/SangamSecurity.java")) {
             assertFalse(isHost(service), "the services and ports stay framework-free: " + service);
         }
         for (String h : HOSTS) {

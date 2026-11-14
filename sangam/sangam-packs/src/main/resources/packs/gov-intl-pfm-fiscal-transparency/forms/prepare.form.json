@@ -1,0 +1,45 @@
+{
+  "key": "gov-intl-pfm-fiscal-transparency/prepare",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-fiscal-transparency",
+  "title": {
+    "en": "Prepare the publication",
+    "hi": "प्रकाशन तैयार करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "extractDatasetRef",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Report data set (ledger extract)",
+        "hi": "रिपोर्ट डेटा सेट"
+      }
+    },
+    {
+      "id": "publicationNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Publication: content, machine-readable formats, no personal data",
+        "hi": "प्रकाशन टिप्पणी"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

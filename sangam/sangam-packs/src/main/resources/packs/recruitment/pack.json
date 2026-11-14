@@ -54,6 +54,10 @@
     {
       "kind": "SEED",
       "path": "packs/recruitment/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/recruitment/pack.json"
     }
   ],
   "seed": "packs/recruitment/seed.json",
@@ -464,6 +468,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "rc2_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "RECRUITMENT"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

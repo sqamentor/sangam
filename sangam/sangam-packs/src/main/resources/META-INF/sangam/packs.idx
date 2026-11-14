@@ -45,6 +45,19 @@ packs/ifms-year-end-closing/pack.json
 packs/ifms-scheme-appraisal/pack.json
 packs/ifms-audit-para-settlement/pack.json
 packs/gov-intl-pfm-execution/pack.json
+packs/gov-intl-pfm-breach-case/pack.json
+packs/gov-intl-pfm-suspense-ageing/pack.json
+packs/gov-intl-pfm-budget-preparation/pack.json
+packs/gov-intl-pfm-standard-reports/pack.json
+packs/gov-intl-pfm-cash-plan/pack.json
+packs/gov-intl-pfm-transfer-deadline/pack.json
+packs/gov-intl-pfm-budget-accounting-reconciliation/pack.json
+packs/gov-intl-pfm-replenishment/pack.json
+packs/gov-intl-pfm-do-not-pay/pack.json
+packs/gov-intl-pfm-fiscal-transparency/pack.json
+packs/gov-intl-pfm-procurement-complaint/pack.json
+packs/gov-intl-pfm-debt-operation/pack.json
+packs/gov-intl-pfm-pefa-evidence/pack.json
 packs/up01-stp-order/pack.json
 packs/up02-saga/pack.json
 packs/up03-event-correlation/pack.json
@@ -130,4 +143,6 @@ packs/sec-ushealth-discharge/pack.json
 packs/sec-ushealth-access-request/pack.json
 packs/sec-ushealth-breach/pack.json
 packs/sec-ushealth-baa/pack.json
+packs/sec-ushealth-payer-to-payer/pack.json
+packs/sec-ushealth-provider-access/pack.json
 packs/sec-eu-gdpr-dsr/pack.json

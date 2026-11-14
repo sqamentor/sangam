@@ -76,18 +76,42 @@ public final class PortsDocumentBridge implements DocumentPort {
         ContentService.ContentItem item = PortsErrors.call(() -> content.create(ctx.tenantId(), r.name(), r.contentType(),
                 s.type(), s.id(), r.taskId(), new ByteArrayInputStream(r.content()), ctx.principalId()));
         Document d = map(item);
-        audit.record(ctx, chain(s), "DOCUMENT_UPLOADED", payload(d));
+        audit.record(ctx, chain(s), "DOCUMENT_UPLOADED", slotted(payload(d), r));
         return d;
     }
 
     @Override
     public Document newVersion(RequestContext ctx, String documentId, UploadRequest r) {
+        return addVersion(ctx, documentId, null, r);
+    }
+
+    /** Owner decision 228: {@link ContentService#addVersion(String, int, InputStream, String)} is the atomic check. */
+    @Override
+    public Document newVersion(RequestContext ctx, String documentId, int expectedVersion, UploadRequest r) {
+        return addVersion(ctx, documentId, expectedVersion, r);
+    }
+
+    private Document addVersion(RequestContext ctx, String documentId, Integer expectedVersion, UploadRequest r) {
         ContentService.ContentItem item = visible(ctx, documentId);
         check(new UploadRequest(r.name() != null ? r.name() : item.name(),
                 r.contentType() != null ? r.contentType() : item.mimeType(), r.content(), null, null, null, null));
-        PortsErrors.call(() -> content.addVersion(documentId, new ByteArrayInputStream(r.content()), ctx.principalId()));
+        if (expectedVersion == null) {
+            PortsErrors.call(() -> content.addVersion(documentId, new ByteArrayInputStream(r.content()),
+                    ctx.principalId()));
+        } else {
+            PortsErrors.call(() -> {
+                try {
+                    return content.addVersion(documentId, expectedVersion, new ByteArrayInputStream(r.content()),
+                            ctx.principalId());
+                } catch (ContentService.VersionConflict e) {
+                    throw ApiProblem.conflict(VERSION_CONFLICT, "document " + documentId
+                            + " is no longer at version " + expectedVersion);
+                }
+            });
+        }
         Document d = map(visible(ctx, documentId));
-        audit.record(ctx, chain(new Scope(item.scopeType(), item.scopeId())), "DOCUMENT_VERSION_ADDED", payload(d));
+        audit.record(ctx, chain(new Scope(item.scopeType(), item.scopeId())), "DOCUMENT_VERSION_ADDED",
+                slotted(payload(d), r));
         return d;
     }
 
@@ -285,6 +309,19 @@ public final class PortsDocumentBridge implements DocumentPort {
         if (!ALLOWED.contains(ct)) {
             throw ApiProblem.unprocessable("DOCUMENT_REJECTED", "Content type '" + ct + "' is not allowed (K12)");
         }
+    }
+
+    /**
+     * Owner decision 267: a document written into a DSC slot (org.sangam.rest.support.DocumentSlots) names the type
+     * and the slot in its audit event.
+     */
+    static Map<String, Object> slotted(Map<String, Object> p, UploadRequest r) {
+        Map<String, Object> m = r == null ? null : r.metadata();
+        if (m != null && m.get(org.sangam.rest.support.DocumentSlots.META_SLOT) != null) {
+            p.put("document_type", m.get(org.sangam.rest.support.DocumentSlots.META_DOCUMENT_TYPE));
+            p.put("slot", m.get(org.sangam.rest.support.DocumentSlots.META_SLOT));
+        }
+        return p;
     }
 
     private static Map<String, Object> payload(Document d) {

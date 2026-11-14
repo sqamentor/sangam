@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.bridge;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -54,7 +55,7 @@ class VariableMaskBridgeH2Test {
                     T, VariableMaskPort.PROCESS_INSTANCE, Permission.READ.bit() | Permission.READ_SENSITIVE.bit());
         }
         bridge = new VariableMaskBridge(security,
-                new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)));
+                new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)));
     }
 
     static Map<String, Object> vars() {

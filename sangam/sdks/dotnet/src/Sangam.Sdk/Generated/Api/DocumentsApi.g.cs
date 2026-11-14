@@ -17,7 +17,7 @@ public sealed class DocumentsApi
 
     /// <summary>
     /// Upload a document
-    /// Stores an immutable version with SHA-256 checksum and scan hook (R74, K12).
+    /// Stores an immutable version with SHA-256 checksum and scan hook (R74, K12). A slot applies when processInstanceId is given, or taskId names a task of a process instance; never for a caseInstanceId. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
     /// POST /documents (operationId uploadDocument); permission document.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.Document?> UploadDocumentAsync(global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -81,7 +81,7 @@ public sealed class DocumentsApi
 
     /// <summary>
     /// New document version
-    /// Adds an immutable version (R74).
+    /// Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
     /// POST /documents/{id}/versions (operationId addDocumentVersion); permission document.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.Document?> AddDocumentVersionAsync(string id, global::System.Collections.Generic.IReadOnlyDictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

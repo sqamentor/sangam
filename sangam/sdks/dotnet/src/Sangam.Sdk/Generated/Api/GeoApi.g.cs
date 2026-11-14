@@ -17,7 +17,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Layers
-    /// GeoController.layers (sangam-geo).
+    /// GeoController.layers (sangam-rest).
     /// GET /geo/layers (operationId geoGeoLayers); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GeoGeoLayersAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -28,7 +28,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Define layer
-    /// GeoController.defineLayer (sangam-geo).
+    /// GeoController.defineLayer (sangam-rest).
     /// POST /geo/layers (operationId geoGeoDefineLayer); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoDefineLayerAsync(M.GeoGeoDefineLayerBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Layer
-    /// GeoController.layer (sangam-geo).
+    /// GeoController.layer (sangam-rest).
     /// GET /geo/layers/{layer} (operationId geoGeoLayer); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoLayerAsync(string layer, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -51,7 +51,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Import boundaries
-    /// GeoController.importBoundaries (sangam-geo).
+    /// GeoController.importBoundaries (sangam-rest).
     /// POST /geo/layers/{layer}/import (operationId geoGeoImportBoundaries); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoImportBoundariesAsync(string layer, M.GeoGeoImportBoundariesBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Features
-    /// GeoController.features (sangam-geo).
+    /// GeoController.features (sangam-rest).
     /// GET /geo/layers/{layer}/features (operationId geoGeoFeatures); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> GeoGeoFeaturesAsync(string layer, string? level = null, string? parentId = null, bool? history = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -79,7 +79,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Put feature
-    /// GeoController.putFeature (sangam-geo).
+    /// GeoController.putFeature (sangam-rest).
     /// POST /geo/layers/{layer}/features (operationId geoGeoPutFeature); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoPutFeatureAsync(string layer, M.GeoGeoPutFeatureBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -91,7 +91,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Feature
-    /// GeoController.feature (sangam-geo).
+    /// GeoController.feature (sangam-rest).
     /// GET /geo/features/{id} (operationId geoGeoFeature); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoFeatureAsync(string id, bool? geometry = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -103,7 +103,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Retire
-    /// GeoController.retire (sangam-geo).
+    /// GeoController.retire (sangam-rest).
     /// DELETE /geo/features/{id} (operationId geoGeoRetire); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task GeoGeoRetireAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -114,7 +114,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Lineage
-    /// GeoController.lineage (sangam-geo).
+    /// GeoController.lineage (sangam-rest).
     /// GET /geo/features/{id}/lineage (operationId geoGeoLineage); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GeoGeoLineageAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -125,7 +125,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Resolve
-    /// GeoController.resolve (sangam-geo).
+    /// GeoController.resolve (sangam-rest).
     /// GET /geo/resolve (operationId geoGeoResolve); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoResolveAsync(string layer, double lat, double lon, string? level = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -140,7 +140,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Nearest
-    /// GeoController.nearest (sangam-geo).
+    /// GeoController.nearest (sangam-rest).
     /// GET /geo/nearest (operationId geoGeoNearest); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GeoGeoNearestAsync(double lat, double lon, string? layer = null, string? objectType = null, int? n = null, double? maxKm = null, string? tags = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -158,7 +158,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Overlaps
-    /// GeoController.overlaps (sangam-geo).
+    /// GeoController.overlaps (sangam-rest).
     /// POST /geo/overlaps (operationId geoGeoOverlaps); permission geo.write.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GeoGeoOverlapsAsync(M.GeoGeoOverlapsBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -170,7 +170,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Define fence
-    /// GeoController.defineFence (sangam-geo).
+    /// GeoController.defineFence (sangam-rest).
     /// POST /geo/fences (operationId geoGeoDefineFence); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoDefineFenceAsync(M.GeoGeoDefineFenceBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -182,7 +182,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Fence
-    /// GeoController.fence (sangam-geo).
+    /// GeoController.fence (sangam-rest).
     /// GET /geo/fences/{id} (operationId geoGeoFence); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoFenceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -193,7 +193,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Deactivate fence
-    /// GeoController.deactivateFence (sangam-geo).
+    /// GeoController.deactivateFence (sangam-rest).
     /// DELETE /geo/fences/{id} (operationId geoGeoDeactivateFence); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task GeoGeoDeactivateFenceAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -204,7 +204,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Check fence
-    /// GeoController.checkFence (sangam-geo).
+    /// GeoController.checkFence (sangam-rest).
     /// POST /geo/fences/{id}/check (operationId geoGeoCheckFence); permission geo.write.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoCheckFenceAsync(string id, M.GeoGeoCheckFenceBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -216,7 +216,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Put object geometry
-    /// GeoController.putObjectGeometry (sangam-geo).
+    /// GeoController.putObjectGeometry (sangam-rest).
     /// PUT /geo/objects/{type}/{id}/geometry (operationId geoGeoPutObjectGeometry); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoPutObjectGeometryAsync(string type, string id, M.GeoGeoPutObjectGeometryBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -228,7 +228,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Object geometry
-    /// GeoController.objectGeometry (sangam-geo).
+    /// GeoController.objectGeometry (sangam-rest).
     /// GET /geo/objects/{type}/{id}/geometry (operationId geoGeoObjectGeometry); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoObjectGeometryAsync(string type, string id, string? attribute = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -240,7 +240,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// External layers
-    /// GeoController.externalLayers (sangam-geo).
+    /// GeoController.externalLayers (sangam-rest).
     /// GET /geo/external-layers (operationId geoGeoExternalLayers); permission geo.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GeoGeoExternalLayersAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -251,7 +251,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Register external
-    /// GeoController.registerExternal (sangam-geo).
+    /// GeoController.registerExternal (sangam-rest).
     /// POST /geo/external-layers (operationId geoGeoRegisterExternal); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoRegisterExternalAsync(M.GeoGeoRegisterExternalBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -263,7 +263,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Query external
-    /// GeoController.queryExternal (sangam-geo).
+    /// GeoController.queryExternal (sangam-rest).
     /// POST /geo/external-layers/{ref}/query (operationId geoGeoQueryExternal); permission geo.write.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoQueryExternalAsync(string @ref, M.GeoGeoQueryExternalBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -275,7 +275,7 @@ public sealed class GeoApi
 
     /// <summary>
     /// Import external
-    /// GeoController.importExternal (sangam-geo).
+    /// GeoController.importExternal (sangam-rest).
     /// POST /geo/external-layers/{ref}/import (operationId geoGeoImportExternal); permission geo.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> GeoGeoImportExternalAsync(string @ref, M.GeoGeoImportExternalBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

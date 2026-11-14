@@ -27,7 +27,10 @@ x-cell: &cell
 
 x-cell-env: &cell-env
   TZ: UTC
-  SPRING_PROFILES_ACTIVE: postgres
+  # Decisions 143 and 198: this local two-cell example uses development tokens, which only the DEVELOPMENT mode allows:
+  # the switch false plus a dev profile. Never copy these two lines to a real deployment (there: true, no dev profile).
+  SANGAM_SECURITY_PRODUCTION: "false"
+  SPRING_PROFILES_ACTIVE: postgres,dev
   SANGAM_LIQUIBASE_MODE: startup
   SANGAM_SECURITY_DEV_TOKEN_ENABLED: "true"
   SANGAM_CONTROL_PLANE_URL: http://control-plane:8090

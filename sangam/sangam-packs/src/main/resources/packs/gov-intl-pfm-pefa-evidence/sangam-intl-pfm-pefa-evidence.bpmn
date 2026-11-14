@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- PEFA evidence pack. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_pefa_evidence" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-pefa-evidence" name="PEFA evidence pack" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-pefa-evidence</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>assessmentRef,reportPeriod,indicatorSet</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pf_start" name="Evidence requested" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-pefa-evidence/request"></startEvent>
+    <serviceTask id="pf_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ledgerId=BUDGET;indicatorSet=PI-1..PI-31;coordinatorSeat=PEFA-COORDINATOR;reviewerSeat=ACCOUNTING-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pf_extract_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>extractDatasetRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pf_extract" name="Ledger report set" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>pefaEvidence</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,indicatorSet,reportPeriod</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>extract</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pf_extractGw" name="Ledger report set?" default="intl_pfm_pefa_evidence_f7"></exclusiveGateway>
+    <userTask id="pf_extractHold" name="Ledger report set not confirmed: check the ledger" operaton:candidateGroups="${coordinatorSeat}" operaton:formKey="sangam:gov-intl-pfm-pefa-evidence/extractHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="pf_compile" name="Compile the evidence by indicator" operaton:candidateGroups="${coordinatorSeat}" operaton:formKey="sangam:gov-intl-pfm-pefa-evidence/compile"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="pf_review" name="Review the evidence pack (not the compiler)" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:gov-intl-pfm-pefa-evidence/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>pf_compile</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="pf_reviewGw" name="" default="intl_pfm_pefa_evidence_f11"></exclusiveGateway>
+    <serviceTask id="pf_doc" name="PEFA evidence pack" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>pefa-evidence-pack</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="pf_end" name="Evidence pack issued"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>ISSUED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['extractDatasetRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f1" sourceRef="pf_extract_clear" targetRef="pf_extract"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f2" sourceRef="pf_extract" targetRef="pf_extractGw"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f3" sourceRef="pf_extractHold" targetRef="pf_extract_clear"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f4" name="not confirmed" sourceRef="pf_extractGw" targetRef="pf_extractHold"><conditionExpression xsi:type="tFormalExpression">${extractStatus != 'COMPLETED' || extractDatasetRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f5" sourceRef="pf_start" targetRef="pf_defaults"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f6" sourceRef="pf_defaults" targetRef="pf_extract_clear"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f7" name="confirmed" sourceRef="pf_extractGw" targetRef="pf_compile"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f8" sourceRef="pf_compile" targetRef="pf_review"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f9" sourceRef="pf_review" targetRef="pf_reviewGw"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f10" name="returned" sourceRef="pf_reviewGw" targetRef="pf_compile"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f11" name="approved" sourceRef="pf_reviewGw" targetRef="pf_doc"/>
+    <sequenceFlow id="intl_pfm_pefa_evidence_f12" sourceRef="pf_doc" targetRef="pf_end"/>
+    <subProcess id="pf_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pf_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pf_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pf_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pf_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_pefa_evidence_f13" sourceRef="pf_withdrawStart" targetRef="pf_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_pefa_evidence_f14" sourceRef="pf_withdrawKind" targetRef="pf_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_pefa_evidence_f15" sourceRef="pf_withdrawCall" targetRef="pf_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pf_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pf_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pf_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pf_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pf_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_pefa_evidence_f16" sourceRef="pf_cancelStart" targetRef="pf_cancelKind"/>
+      <sequenceFlow id="intl_pfm_pefa_evidence_f17" sourceRef="pf_cancelKind" targetRef="pf_cancelCall"/>
+      <sequenceFlow id="intl_pfm_pefa_evidence_f18" sourceRef="pf_cancelCall" targetRef="pf_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_pefa_evidence_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_pefa_evidence_plane" bpmnElement="sangam-intl-pfm-pefa-evidence">
+      <bpmndi:BPMNShape id="pf_start_di" bpmnElement="pf_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_defaults_di" bpmnElement="pf_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_extract_clear_di" bpmnElement="pf_extract_clear"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_extract_di" bpmnElement="pf_extract"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_extractGw_di" bpmnElement="pf_extractGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_extractHold_di" bpmnElement="pf_extractHold"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_compile_di" bpmnElement="pf_compile"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_review_di" bpmnElement="pf_review"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_reviewGw_di" bpmnElement="pf_reviewGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_doc_di" bpmnElement="pf_doc"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_end_di" bpmnElement="pf_end"><dc:Bounds x="1537" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_withdraw_di" bpmnElement="pf_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_withdrawStart_di" bpmnElement="pf_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_withdrawKind_di" bpmnElement="pf_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_withdrawCall_di" bpmnElement="pf_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_withdrawEnd_di" bpmnElement="pf_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_cancel_di" bpmnElement="pf_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_cancelStart_di" bpmnElement="pf_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_cancelKind_di" bpmnElement="pf_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_cancelCall_di" bpmnElement="pf_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pf_cancelEnd_di" bpmnElement="pf_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f1_di" bpmnElement="intl_pfm_pefa_evidence_f1"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f2_di" bpmnElement="intl_pfm_pefa_evidence_f2"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f3_di" bpmnElement="intl_pfm_pefa_evidence_f3"><di:waypoint x="895" y="235"/><di:waypoint x="895" y="267"/><di:waypoint x="400" y="267"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f4_di" bpmnElement="intl_pfm_pefa_evidence_f4"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f5_di" bpmnElement="intl_pfm_pefa_evidence_f5"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f6_di" bpmnElement="intl_pfm_pefa_evidence_f6"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f7_di" bpmnElement="intl_pfm_pefa_evidence_f7"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f8_di" bpmnElement="intl_pfm_pefa_evidence_f8"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f9_di" bpmnElement="intl_pfm_pefa_evidence_f9"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f10_di" bpmnElement="intl_pfm_pefa_evidence_f10"><di:waypoint x="1225" y="95"/><di:waypoint x="1225" y="135"/><di:waypoint x="895" y="135"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f11_di" bpmnElement="intl_pfm_pefa_evidence_f11"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f12_di" bpmnElement="intl_pfm_pefa_evidence_f12"><di:waypoint x="1440" y="70"/><di:waypoint x="1537" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f13_di" bpmnElement="intl_pfm_pefa_evidence_f13"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f14_di" bpmnElement="intl_pfm_pefa_evidence_f14"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f15_di" bpmnElement="intl_pfm_pefa_evidence_f15"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f16_di" bpmnElement="intl_pfm_pefa_evidence_f16"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f17_di" bpmnElement="intl_pfm_pefa_evidence_f17"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_pefa_evidence_f18_di" bpmnElement="intl_pfm_pefa_evidence_f18"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

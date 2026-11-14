@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-090: the Sangam operator in one namespace (apply the CRDs in ../crds first). Namespaced Role only: the operator
+# manages the SangamInstallation / SangamCell resources of its own namespace. Replace the image with the released
+# sangam-operator image, pinned by digest.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sangam-operator
+  labels: { app.kubernetes.io/name: sangam-operator }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sangam-operator
+  labels: { app.kubernetes.io/name: sangam-operator }
+rules:
+  - apiGroups: [sangam.io]
+    resources: [sangaminstallations, sangamcells]
+    verbs: [get, list, watch]
+  - apiGroups: [sangam.io]
+    resources: [sangaminstallations/status, sangamcells/status]
+    verbs: [get, patch]
+  # ownerReferences with blockOwnerDeletion on the objects below
+  - apiGroups: [sangam.io]
+    resources: [sangaminstallations/finalizers]
+    verbs: [update]
+  - apiGroups: [batch]
+    resources: [jobs]
+    verbs: [get, list, create]
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, create, patch]
+  - apiGroups: [""]
+    resources: [services, configmaps]
+    verbs: [get, create, patch]
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims]
+    verbs: [get, create]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sangam-operator
+  labels: { app.kubernetes.io/name: sangam-operator }
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: sangam-operator }
+subjects:
+  - { kind: ServiceAccount, name: sangam-operator }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sangam-operator
+  labels: { app.kubernetes.io/name: sangam-operator }
+spec:
+  # One replica is enough: every write is idempotent, so the short overlap of a Recreate rollout is harmless.
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app.kubernetes.io/name: sangam-operator }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: sangam-operator }
+    spec:
+      serviceAccountName: sangam-operator
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: operator
+          image: ghcr.io/sqamentor/sangam-operator:0.1.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: SANGAM_OPERATOR_RESYNC_SECONDS, value: "15" }
+            - { name: SANGAM_OPERATOR_HEALTH_PORT, value: "8081" }
+          ports:
+            - { name: health, containerPort: 8081 }
+          livenessProbe:
+            httpGet: { path: /healthz, port: health }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 16Mi }

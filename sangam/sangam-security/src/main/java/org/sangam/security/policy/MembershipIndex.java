@@ -26,6 +26,11 @@ import java.util.Set;
 public final class MembershipIndex {
 
     public static final String SOURCE_IDP = "idp";
+    /**
+     * Decision 152: groups and roles of a development identity (static development token), synthetic provenance,
+     * never presented as verified IdP claims.
+     */
+    public static final String SOURCE_DEV_STATIC = "dev-static";
 
     private final SecurityDialect dialect;
     private final AuthEffectiveMaintainer maintainer;
@@ -84,12 +89,25 @@ public final class MembershipIndex {
      * large-principal join path sees exactly the token's memberships. Bumps the policy version only on change.
      */
     public void syncIdp(Connection c, String tenant, String personId, Set<String> groups, Set<String> roles) {
+        sync(c, tenant, personId, groups, roles, SOURCE_IDP);
+    }
+
+    /**
+     * Decision 152: the same synchronisation for a development identity, under source {@link #SOURCE_DEV_STATIC}, so
+     * its synthetic memberships stay apart from (and never replace) the person's verified IdP memberships.
+     */
+    public void syncDevStatic(Connection c, String tenant, String personId, Set<String> groups, Set<String> roles) {
+        sync(c, tenant, personId, groups, roles, SOURCE_DEV_STATIC);
+    }
+
+    private void sync(Connection c, String tenant, String personId, Set<String> groups, Set<String> roles,
+                      String source) {
         String member = SecurityIdentity.USER + personId;
         Set<String> wanted = new LinkedHashSet<>();
         groups.forEach(g -> wanted.add(SecurityIdentity.GROUP + g));
         roles.forEach(r -> wanted.add(SecurityIdentity.ROLE + r));
         Set<String> current = new LinkedHashSet<>(Jdbc.query(c, "SELECT principal_id FROM AUTH_MEMBERSHIP WHERE tenant_id=?"
-                + " AND member_id=? AND source_id=?", rs -> rs.getString(1), tenant, member, SOURCE_IDP));
+                + " AND member_id=? AND source_id=?", rs -> rs.getString(1), tenant, member, source));
         if (current.equals(wanted)) {
             return;
         }
@@ -98,12 +116,12 @@ public final class MembershipIndex {
         removed.removeAll(wanted);
         for (String p : removed) {
             Jdbc.update(c, "DELETE FROM AUTH_MEMBERSHIP WHERE tenant_id=? AND member_id=? AND principal_id=? AND source_id=?",
-                    tenant, member, p, SOURCE_IDP);
+                    tenant, member, p, source);
         }
         for (String p : wanted) {
             if (!current.contains(p)) {
                 Sql.insertIfAbsent(c, dialect, "INSERT INTO AUTH_MEMBERSHIP(tenant_id, member_id, principal_id, source_id,"
-                        + " valid_from, valid_to) VALUES (?,?,?,?,?,NULL)", tenant, member, p, SOURCE_IDP, Instant.EPOCH);
+                        + " valid_from, valid_to) VALUES (?,?,?,?,?,NULL)", tenant, member, p, source, Instant.EPOCH);
             }
         }
     }

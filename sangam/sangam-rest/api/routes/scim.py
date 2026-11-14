@@ -7,9 +7,12 @@
 #   - lists use startIndex (1-based) and count, and filter (eq, co, sw on userName, externalId, displayName);
 #   - the caller is an IdP service principal (R26) holding its own permission, scim.provision (a security surface with
 #     its own role, backlog M-099); every change is audited (USER_PROVISIONED, USER_UPDATED, USER_DISABLED,
-#     MEMBERSHIP_CHANGED, SEAT_HOLDER_CHANGED; X.4.0.3).
-# Seats and postings travel in the Sangam extension schema; a posting change goes through the same effective-dated
-# assignment rules as the admin API (IX.5 rules 1 and 4).
+#     MEMBERSHIP_CHANGED; X.4.0.3).
+# Owner decision 154 (W4Q-07): SCIM manages persons, groups and group memberships only. Postings (seats held, IX.5)
+# are shown read-only in the Sangam extension schema; postings and seats are read-only in SCIM: a request that changes
+# them (POST, PUT or PATCH) is 400 with scimType mutability and changes nothing (an unchanged echo of the current list
+# is accepted). Groups hold persons only (no nested groups). Postings change only through the admin API (IX.5 rules 1 and 4). SCIM keeps
+# its own table (W4-G generator); the code is in sangam-security.
 TAGS.append(("SCIM", "SCIM 2.0 user and group provisioning from an identity provider, mapped to persons, seats and "
                      "postings (R67; RFC 7643, RFC 7644)"))
 _SCIM_CT = "application/scim+json"
@@ -39,13 +42,18 @@ SCHEMAS["ScimError"] = {"type": "object", "description": "SCIM error (RFC 7644 s
 schema("ScimName", "User name parts.", "formatted familyName givenName middleName")
 schema("ScimMultiValue", "A multi-valued attribute entry (emails, phoneNumbers).", "value type primary:bool display")
 schema("ScimGroupRef", "A group the user belongs to (read-only on User).", "value display $ref")
-schema("ScimPosting", "A seat held by the person (IX.5): effective-dated; kind as in Assignment.",
+schema("ScimPosting", "A seat held by the person (IX.5): effective-dated; kind as in Assignment. Read-only in SCIM.",
        "seatId kind validFrom:date validTo:date", ["seatId"],
        enums={"kind": ["SUBSTANTIVE", "ADDITIONAL_CHARGE", "LEAVE_SUBSTITUTE", "ACTING"]})
 schema("ScimSangamUser", "Sangam extension (" + _SCIM_EXT + "): person and postings.",
        "personId orgUnitId postings:list:ScimPosting",
        descs={"personId": "Sangam person id (read-only; set by the server)",
-              "postings": "Seats held; replacing the list ends postings not listed (validTo = today) and creates new ones"})
+              "postings": "Seats held (IX.5), read-only (decision 154): a request that changes them gets 400 scimType "
+                          "mutability (an unchanged echo of the current list is accepted); postings change only through "
+                          "the admin API"})
+SCHEMAS["ScimSangamUser"]["properties"]["personId"]["readOnly"] = True
+SCHEMAS["ScimSangamUser"]["properties"]["orgUnitId"]["readOnly"] = True
+SCHEMAS["ScimSangamUser"]["properties"]["postings"]["readOnly"] = True
 SCHEMAS["ScimUser"] = {
     "type": "object", "description": "SCIM User (urn:ietf:params:scim:schemas:core:2.0:User) mapped to a Sangam person.",
     "required": ["schemas", "userName"], "additionalProperties": True,
@@ -56,7 +64,8 @@ SCHEMAS["ScimUser"] = {
                    "phoneNumbers": {"type": "array", "items": R("ScimMultiValue")},
                    "groups": {"type": "array", "readOnly": True, "items": R("ScimGroupRef")},
                    _SCIM_EXT: R("ScimSangamUser"), "meta": R("ScimMeta")}}
-schema("ScimMember", "A group member.", "value display $ref type", ["value"], enums={"type": ["User", "Group"]})
+schema("ScimMember", "A group member: a person (User). A member of type Group is 400 invalidValue (no nested groups).",
+       "value display $ref type", ["value"], enums={"type": ["User", "Group"]})
 SCHEMAS["ScimGroup"] = {
     "type": "object", "description": "SCIM Group (urn:ietf:params:scim:schemas:core:2.0:Group) mapped to a Sangam group "
                                      "(role membership; R67).",
@@ -74,7 +83,8 @@ SCHEMAS["ScimUserList"] = _scim_list("ScimUser")
 SCHEMAS["ScimGroupList"] = _scim_list("ScimGroup")
 _SCIM_OBJ = {"type": "object", "additionalProperties": True,
              "description": "SCIM discovery document (RFC 7643 sections 5-7); its shape is fixed by the RFC"}
-RESPONSES["ScimError"] = {"description": "SCIM error: 400 invalidFilter/invalidValue/invalidSyntax, 401, 403, 404, "
+RESPONSES["ScimError"] = {"description": "SCIM error: 400 invalidFilter/invalidValue/invalidSyntax, 400 mutability (a write of "
+                                         "read-only postings, decision 154), 401, 403, 404, "
                                          "409 uniqueness, 412 version mismatch (If-Match)",
                           "content": {_SCIM_CT: {"schema": R("ScimError")}}}
 
@@ -109,18 +119,20 @@ for _res, _one in (("Users", "User"), ("Groups", "Group")):
     _scim("get", "/scim/v2/" + _res, "scimList" + _res, "List " + _res.lower(), "Filtered, paged list of the tenant's "
           + _res.lower() + ".", resp="Scim%sList" % _one, params=_SCIM_LIST_P)
     _scim("post", "/scim/v2/" + _res, "scimCreate" + _one, "Create a " + _one.lower(),
-          "Creates the " + ("person (USER_PROVISIONED) and its postings" if _one == "User" else "group") +
+          "Creates the " + ("person (USER_PROVISIONED); 400 mutability when postings are sent" if _one == "User" else "group") +
           "; 409 uniqueness on userName / externalId.", body="Scim" + _one, resp="Scim" + _one, status=201,
           cmd="scim." + _one.lower() + ".create")
     _scim("get", "/scim/v2/" + _res + "/{id}", "scimGet" + _one, "Get a " + _one.lower(), "One resource; ETag in meta.version.",
           resp="Scim" + _one, params=[_SID, q("attributes"), q("excludedAttributes")])
     _scim("put", "/scim/v2/" + _res + "/{id}", "scimReplace" + _one, "Replace a " + _one.lower(),
           "Full replacement (If-Match honoured, 412 on a stale version)." +
-          (" active=false disables the person (USER_DISABLED) and ends the postings." if _one == "User" else ""),
+          (" active=false disables the person (USER_DISABLED) and revokes its API tokens; postings are not "
+           "touched (400 mutability when the request changes them)." if _one == "User" else ""),
           body="Scim" + _one, resp="Scim" + _one, params=[_SID], cmd="scim." + _one.lower() + ".replace")
     _scim("patch", "/scim/v2/" + _res + "/{id}", "scimPatch" + _one, "Patch a " + _one.lower(),
           "RFC 7644 PATCH (add, remove, replace)" + (" of members (MEMBERSHIP_CHANGED)" if _one == "Group" else "") + ".",
           body="ScimPatchRequest", resp="Scim" + _one, params=[_SID], cmd="scim." + _one.lower() + ".patch")
     _scim("delete", "/scim/v2/" + _res + "/{id}", "scimDelete" + _one, "Delete a " + _one.lower(),
-          ("Deactivates the person (history is kept, X.2.3), ends the postings" if _one == "User" else "Removes the group")
+          ("Deactivates the person (history kept, X.2.3) and removes its SCIM group memberships; postings are "
+           "not touched" if _one == "User" else "Removes the group")
           + "; 204.", status=204, params=[_SID], cmd="scim." + _one.lower() + ".delete")

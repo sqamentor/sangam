@@ -4,7 +4,7 @@
 profile:
   id: AN
   layer: government
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2026-04-01'
   extends:
   - IN
@@ -14,6 +14,9 @@ profile:
     hi: अंडमान और निकोबार
   source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources AN1, accessed 2026-11-04)
 placeholders:
+- path: procurement.scientificDepartment
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (the State''s
+    scientific-department list was not read)'
 - path: chartOfAccounts
   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
     structure not found)'

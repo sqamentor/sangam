@@ -35,8 +35,9 @@ class PilotScenarioTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -53,10 +54,10 @@ class PilotScenarioTest {
         return Answer.of(person, seat, kv);
     }
 
-    /** Starts the shared (tenant-less) definition; tenant deployments of the same key exist in this engine. */
+    /** Starts the definition of the test tenant; another tenant's deployments of the same key exist in this engine. */
     static void start(String key, String bk, Map<String, Object> v) {
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
     }
 
     static Map<String, Object> vars(Object... kv) {
@@ -161,7 +162,7 @@ class PilotScenarioTest {
                 "officeId", office, "actingSeat", "AE-WK", "initiator", "wk.ae-wk");
         var b = engine.getRuntimeService().createProcessInstanceByKey("sangam-works-project").businessKey(bk)
                 .setVariables(v);
-        b = tenant != null ? b.processDefinitionTenantId(tenant) : b.processDefinitionWithoutTenantId();
+        b = tenant != null ? b.processDefinitionTenantId(tenant) : b.processDefinitionTenantId(PackTestTenant.ID);
         String root = b.execute().getId();
         driver.run(bk, t -> "sc_scrutiny".equals(t.getTaskDefinitionKey())
                 ? Answer.of("wk.da-wk", "DA-WK", "scrutinyDecision", "accept") : null, 20);

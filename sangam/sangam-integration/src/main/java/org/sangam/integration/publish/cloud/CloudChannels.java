@@ -26,7 +26,8 @@ import org.sangam.ports.events.model.ChannelDefinition;
 /**
  * The cloud event-gateway channel families (M-064), plugged into the flowable-ports {@link ChannelAdapters} through
  * its {@link ChannelAdapters.Provider} seam: AWS {@code sqs} (in/out), {@code sns} and {@code eventbridge} (out), Azure
- * {@code servicebus} (in/out) and {@code eventgrid} namespace topics (out), Google {@code pubsub} (in/out). Each speaks
+ * {@code servicebus} (in/out) and {@code eventgrid} namespace topics (out; inbound is a push channel served by
+ * {@link EventGridInboundEndpoint}, decision 189), Google {@code pubsub} (in/out). Each speaks
  * the provider's public HTTPS API with no vendor SDK (so no gRPC: REST first), through the connector {@link HttpTransport}
  * (egress allow-list with DNS pinning and the private-address block) and the product's one signer of each kind:
  * SigV4 ({@code AwsRequestSigner} over {@code AwsSigV4}), {@link AzureSas}, and {@code GcpTokens}.

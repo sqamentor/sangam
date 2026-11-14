@@ -87,7 +87,10 @@ class RegistryPartyBulkSinkH2Test {
             }
             return new SqlPredicate(alias + ".tenant_id = ? AND " + alias + ".created_by = ?", List.of(rc.tenant(), id.personId()));
         };
-        RegistryModule module = new RegistryModule(D, RegistryPorts.defaults().withVisibility(visibility), null, List.of("test"));
+        // decision 143: a test installation (switch false plus the test profile), resolved by the shared policy
+        RegistryModule module = new RegistryModule(D, RegistryPorts.defaults().withVisibility(visibility), null,
+                org.sangam.core.security.EnvironmentPolicy.resolve("false", "test",
+                        Map.of("test", org.sangam.core.security.EnvironmentPolicy.Signal.DEVELOPMENT)));
         parties = module.parties();
         sink = new RegistryPartyBulkSink(parties, KEY);
     }

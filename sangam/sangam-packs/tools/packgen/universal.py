@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Universal (non-government) packs for UP-01..UP-22 (PREMIUM-AND-UNIVERSAL-SCOPE.md section 3.1)."""
 from lib import C, q
+import rounding
 from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
 from common import core, outcome, end_ok, rejection, batch_loop, broadcast, checked_query, check_conditions
@@ -551,8 +552,9 @@ def up13():
     s.seq(pu, rcv, ins)
     ig = s.xgw('u13_ig')
     s.flow(ins, ig)
-    calc = s.expr('u13_calc', 'Refund on accepted quantity',
-                  "${execution.setVariable('refundDue', refundAmount * acceptedQty / returnQty * (1 - restockingFeePct / 100))}")
+    calc = s.money_calc('u13_calc', 'Refund on accepted quantity (decision 139 policy)', 'refundDue',
+                        'refundAmount * acceptedQty / returnQty * (1 - restockingFeePct / 100)',
+                        rounding.declare(pk, 'up13-refund-rounding'))
     s.flow(ig, calc, "returnDecision == 'accept'", 'accept')
     s.flow(ig, s.end('u13_endRejected', 'Return rejected'), None, 'reject', default=True)
     ex = core(s, 'u13_refund', 'Refund once (core execution)', 'execution')

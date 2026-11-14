@@ -1,0 +1,47 @@
+{
+  "key": "gov-intl-pfm-budget-preparation/bundle-check",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-budget-preparation",
+  "title": {
+    "en": "Check the bundle: complete and consistent with the data",
+    "hi": "बजट दस्तावेज़ जाँच"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "bundleDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

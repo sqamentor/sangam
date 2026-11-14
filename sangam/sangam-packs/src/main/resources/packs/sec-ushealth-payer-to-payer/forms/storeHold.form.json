@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-payer-to-payer/storeHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.payer-to-payer",
+  "title": {
+    "en": "Storing the received data not confirmed: check the member record",
+    "es": "Almacenamiento no confirmado: revisar el registro del afiliado"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "interopNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Interoperability follow-up notes",
+        "es": "Notas de seguimiento de interoperabilidad"
+      }
+    }
+  ]
+}

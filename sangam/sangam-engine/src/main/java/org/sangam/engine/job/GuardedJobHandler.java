@@ -20,8 +20,8 @@ import org.sangam.engine.tx.CommandState;
 
 /**
  * Wraps every Operaton {@link JobHandler} (timers, async continuations, batch, history cleanup, ...) so that job
- * execution follows VI.1 like adapter commands do, <b>as the system identity of the instance's tenant</b> (VI.4 rule
- * 7, {@link JobIdentitySupport}):
+ * execution follows VI.1 like adapter commands do, <b>as the system identity of the job's resolved tenant</b> (VI.4
+ * rule 7, decision 144, {@link JobIdentitySupport}):
  * <ol>
  *   <li>bounded lock waits (VI.1 rule 6);</li>
  *   <li>the <b>L2 root lock first</b> (A-11, VI.1 rule 4: acquisition never takes L2, execution takes it before it
@@ -43,13 +43,26 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
     private final EngineMetrics metrics;
     private final java.time.Duration lockTimeout;
     private final java.time.Duration statementTimeout;
-    private final String defaultTenant;
+    /** The L2 root-lock key of an untenanted root, as the adapter and RootLockFlushListener use it (a lock namespace). */
+    private final String lockTenant;
     private final JobIdentitySupport identity;
+    private final org.sangam.engine.replay.CapturePoints capture;
 
     public GuardedJobHandler(JobHandler<T> delegate, EngineDialect dialect, RootLock rootLock, TimerGuard timerGuard,
                              TimerPolicies policies, SangamClock clock, EngineMetrics metrics,
-                             java.time.Duration lockTimeout, java.time.Duration statementTimeout, String defaultTenant,
+                             java.time.Duration lockTimeout, java.time.Duration statementTimeout, String lockTenant,
                              JobIdentitySupport identity) {
+        this(delegate, dialect, rootLock, timerGuard, policies, clock, metrics, lockTimeout, statementTimeout,
+                lockTenant, identity, org.sangam.engine.replay.CapturePoints.NONE);
+    }
+
+    /** @param capture decision 151: a timer that takes effect is reported as {@code TIMER_FIRED} */
+    public GuardedJobHandler(JobHandler<T> delegate, EngineDialect dialect, RootLock rootLock, TimerGuard timerGuard,
+                             TimerPolicies policies, SangamClock clock, EngineMetrics metrics,
+                             java.time.Duration lockTimeout, java.time.Duration statementTimeout, String lockTenant,
+                             JobIdentitySupport identity, org.sangam.engine.replay.CapturePoints capture) {
+        this.lockTenant = lockTenant;
+        this.capture = capture == null ? org.sangam.engine.replay.CapturePoints.NONE : capture;
         this.delegate = delegate;
         this.identity = identity;
         this.dialect = dialect;
@@ -60,7 +73,6 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
         this.metrics = metrics;
         this.lockTimeout = lockTimeout;
         this.statementTimeout = statementTimeout;
-        this.defaultTenant = defaultTenant;
     }
 
     public JobHandler<T> delegate() {
@@ -74,7 +86,9 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
 
     @Override
     public void execute(T configuration, ExecutionEntity execution, CommandContext cc, String tenantId) {
-        identity.runAs(cc, identity.identityFor(cc.getCurrentJob(), execution, tenantId), () -> {
+        // decision 144: resolved before anything runs; an unresolved tenant throws here and the job is not executed
+        org.sangam.core.security.SecurityIdentity id = identity.identityFor(cc, cc.getCurrentJob(), execution, tenantId);
+        identity.runAs(cc, id, () -> {
             executeGuarded(configuration, execution, cc, tenantId);
             return null;
         });
@@ -87,8 +101,9 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
         // SL-99: session-scoped lock waits are restored when the job's transaction ends
         CommandState.applyLockTimeouts(cc, dialect, lockTimeout, longRunning ? java.time.Duration.ZERO : statementTimeout);
         if (execution != null && execution.getRootProcessInstanceId() != null) {
-            String tenant = tenantId != null ? tenantId : defaultTenant;
-            rootLock.lock(cc, Map.of(execution.getRootProcessInstanceId(), tenant),
+            // the lock key, not an attribution: the same key every other L2 site takes for this root
+            String key = tenantId != null ? tenantId : lockTenant;
+            rootLock.lock(cc, Map.of(execution.getRootProcessInstanceId(), key),
                     keyOf(execution.getProcessDefinitionId()));
         }
         JobEntity job = cc.getCurrentJob();
@@ -100,6 +115,9 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
                 metrics.timerSuppressed(timer.getProcessDefinitionKey(), v.name());
                 return;
             }
+        }
+        if (job instanceof TimerEntity timer) {
+            capture.timerFired(timer); // decision 151: after the guard said FIRE, before the timer's effect
         }
         delegate.execute(configuration, execution, cc, tenantId);
     }
@@ -145,12 +163,23 @@ public final class GuardedJobHandler<T extends JobHandlerConfiguration> implemen
     public static JobHandler<?> wrap(JobHandler<?> handler, EngineDialect dialect, RootLock rootLock, TimerGuard guard,
                                      TimerPolicies policies, SangamClock clock, EngineMetrics metrics,
                                      java.time.Duration lockTimeout, java.time.Duration statementTimeout,
-                                     String defaultTenant, JobIdentitySupport identity) {
+                                     String lockTenant, JobIdentitySupport identity) {
+        return wrap(handler, dialect, rootLock, guard, policies, clock, metrics, lockTimeout, statementTimeout,
+                lockTenant, identity, org.sangam.engine.replay.CapturePoints.NONE);
+    }
+
+    /** As above, with the decision 151 capture points. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static JobHandler<?> wrap(JobHandler<?> handler, EngineDialect dialect, RootLock rootLock, TimerGuard guard,
+                                     TimerPolicies policies, SangamClock clock, EngineMetrics metrics,
+                                     java.time.Duration lockTimeout, java.time.Duration statementTimeout,
+                                     String lockTenant, JobIdentitySupport identity,
+                                     org.sangam.engine.replay.CapturePoints capture) {
         if (handler instanceof GuardedJobHandler || handler instanceof GuardedBatchJobHandler) {
             return handler;
         }
         GuardedJobHandler guarded = new GuardedJobHandler((JobHandler) handler, dialect, rootLock, guard, policies, clock,
-                metrics, lockTimeout, statementTimeout, defaultTenant, identity);
+                metrics, lockTimeout, statementTimeout, lockTenant, identity, capture);
         // Operaton's BatchBuilder casts the job-handler map entry to BatchJobHandler: a batch handler must stay one.
         if (handler instanceof org.operaton.bpm.engine.impl.batch.BatchJobHandler<?> batch) {
             return new GuardedBatchJobHandler(batch, guarded);

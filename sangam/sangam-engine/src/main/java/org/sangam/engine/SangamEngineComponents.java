@@ -37,10 +37,15 @@ public final class SangamEngineComponents {
     private final AuditSink auditSink;
     private final IncidentSink incidentSink;
     private final ExpiryPolicy expiryPolicy;
+    private final org.sangam.engine.replay.CapturePoints capture;
+    private final org.sangam.engine.tenant.WorkTenants workTenants;
+    private volatile org.sangam.engine.job.PartitionResize partitionResize;
 
     public SangamEngineComponents(SangamEngineSettings settings, EngineDialect dialect) {
         // SL-53: every way of wiring a Sangam engine passes here; it never runs outside a UTC JVM
         EngineTimeZone.requireUtcJvm();
+        // decision 144 (owner 197): no engine starts without a valid system audit scope (refused here, before anything)
+        this.workTenants = new org.sangam.engine.tenant.WorkTenants(settings.getSystemAuditScope());
         this.settings = settings;
         this.dialect = dialect;
         this.metrics = settings.getMetrics();
@@ -58,6 +63,27 @@ public final class SangamEngineComponents {
         this.incidentSink = settings.getIncidentSink() != null ? settings.getIncidentSink() : new JdbcIncidentSink(clock);
         this.expiryPolicy = settings.getExpiryPolicy() != null ? settings.getExpiryPolicy()
                 : new CapabilityClassExpiryPolicy(dialect.coreDialect(), metrics);
+        this.capture = org.sangam.engine.replay.CapturePoints.of(settings.getCaptureListener(), clock::now);
+    }
+
+    /** Decision 151: the replay capture points; {@code CapturePoints.NONE} without a capture listener. */
+    public org.sangam.engine.replay.CapturePoints capture() { return capture; }
+
+    /** Decision 144: tenant resolution of untenanted engine work and the validated system audit scope. */
+    public org.sangam.engine.tenant.WorkTenants workTenants() { return workTenants; }
+
+    /**
+     * Decision 146: the engine's one partition resize service, built after the engine build on every node (partitioning
+     * on or off; with no executor map its calls answer {@code NOT_INITIALISED}); {@code null} before the build.
+     */
+    public org.sangam.engine.job.PartitionResize partitionResize() { return partitionResize; }
+
+    /** Set once by the plugin after the engine build. */
+    public void partitionResize(org.sangam.engine.job.PartitionResize resize) {
+        if (this.partitionResize != null) {
+            throw new IllegalStateException("decision 146: the partition resize service is set once per engine");
+        }
+        this.partitionResize = resize;
     }
 
     public SangamEngineSettings settings() { return settings; }

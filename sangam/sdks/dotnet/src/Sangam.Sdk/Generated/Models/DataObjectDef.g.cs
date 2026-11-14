@@ -25,11 +25,14 @@ public sealed record DataObjectDef
     public string? Name { get; init; }
 
     /// <summary>
-    /// One of: DB, REST. Required.
+    /// DB: records are rows in the Sangam database (create answers 201). REST: records live in an external system reached through the connector named by endpointRef (create answers 202 with an operation, decision 265); needs sangam-integration, otherwise the record routes answer 501 CAPABILITY_NOT_INSTALLED One of: DB, REST. Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("backing")]
     public string? Backing { get; init; }
 
+    /// <summary>
+    /// REST backing only: the connector id. The connector provides two named operations (decisions 265 and 266): create, input the record, run through the operation ledger with the operationId as idempotency key and its outcome read by lookup; and list, a query operation with input {q, offset, limit} that answers output.records (an array of objects) and optionally output.total (the full match count). Records the connector returns are validated against fields: unknown fields are dropped and sensitive fields masked, as for DB backing
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("endpointRef")]
     public string? EndpointRef { get; init; }
 

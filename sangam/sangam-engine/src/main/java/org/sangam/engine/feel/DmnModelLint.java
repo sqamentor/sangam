@@ -31,6 +31,8 @@ import org.w3c.dom.NodeList;
  *       time line (OMG issue DMN13-35), but the pinned feel-scala engine's {@code =} also compares the zone, so
  *       the same instant in two zones is "not equal". Compare instants with {@code <}, {@code >}, a range, or
  *       subtraction ({@code a - b = duration("PT0S")}).</li>
+ *   <li><b>Decision 158 warning</b> {@code SANGAM-DMN-TIME-IANA}: a time literal with an IANA zone id, deprecated as
+ *       of DMN 1.6.</li>
  * </ul>
  */
 public final class DmnModelLint {
@@ -45,6 +47,13 @@ public final class DmnModelLint {
     private static final Pattern ZONED_DT_EQ = Pattern.compile(
             "(?i)(=|!=)\\s*(date and time\\(\\s*\"[^\"]*(Z|[+-]\\d\\d:\\d\\d|@[^\"]+)\"|@\"[^\"]*(Z|[+-]\\d\\d:\\d\\d|@[^\"]+)\")"
             + "|(date and time\\(\\s*\"[^\"]*(Z|[+-]\\d\\d:\\d\\d|@[^\"]+)\"\\s*\\)|@\"[^\"]*(Z|[+-]\\d\\d:\\d\\d|@[^\"]+)\")\\s*(=|!=)");
+
+    /**
+     * Decision 158: a time literal (no date part) whose zone is an IANA id, {@code time("10:30:00@Europe/Paris")} or
+     * {@code @"10:30:00@Europe/Paris"}; deprecated as of DMN 1.6 (date-time literals with IANA ids are not).
+     */
+    static final Pattern TIME_IANA = Pattern.compile(
+            "(?i)(time\\(\\s*\"|@\")\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?@[A-Za-z][A-Za-z0-9_+\\-]*(/[A-Za-z0-9_+\\-]+)*\"");
 
     private DmnModelLint() {
     }
@@ -88,6 +97,12 @@ public final class DmnModelLint {
                     out.add(new Finding(false, "SANGAM-DMN-DATETIME-EQ", resource, owner, "equality on a zoned date "
                             + "and time also compares the zone in the pinned FEEL engine; compare instants with < > "
                             + "or subtraction (ADR-D-26, DMN13-35)"));
+                }
+                if (t != null && TIME_IANA.matcher(t).find()) {
+                    String owner = n.getParentNode() instanceof Element p ? p.getAttribute("id") : "";
+                    out.add(new Finding(false, "SANGAM-DMN-TIME-IANA", resource, owner, "a time literal with an IANA "
+                            + "zone id is deprecated as of DMN 1.6 (clause 10.3.4.1); use date and time(date, time, "
+                            + "timezone) or a zone offset (decision 158)"));
                 }
             }
         }

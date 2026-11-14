@@ -74,6 +74,11 @@ export interface TemplateItem {
   label?: Record<string, string>;
   required?: boolean;
   options?: { value: string; label?: Record<string, string> }[];
+  /** NUMBER bounds, inclusive, as canonical decimal text (owner decision 230; FieldTemplate.Bound writes a JSON string). */
+  min?: string | null;
+  max?: string | null;
+  /** NUMBER only, optional (owner decision 242): the most decimal places an answer may have, 0..10. */
+  scale?: number | null;
 }
 
 /** SyncService.PullResult (SyncService.java:60-63). */

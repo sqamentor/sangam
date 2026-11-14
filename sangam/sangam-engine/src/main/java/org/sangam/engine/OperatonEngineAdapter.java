@@ -150,7 +150,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         this.managementService = engine.getManagementService();
         this.externalTaskService = engine.getExternalTaskService();
         this.caseService = engine.getCaseService();
-        this.expiry = new org.sangam.engine.lease.LeaseExpiry(leases, exclusive, clock, externalTaskService, () -> expiryPolicy);
+        this.expiry = new org.sangam.engine.lease.LeaseExpiry(leases, exclusive, clock, externalTaskService, () -> expiryPolicy, c.capture());
     }
 
     /** The underlying engine (Operaton REST, Cockpit, experiments). */
@@ -369,6 +369,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             if (variables != null) {
                 b.setVariables(variables);
             }
+            c.capture().messageStart(roots.isEmpty(), messageName, businessKey, variables); // decision 151
             MessageCorrelationResult r = b.correlateWithResult();
             return r.getResultType() == MessageCorrelationResultType.ProcessDefinition
                     ? r.getProcessInstance().getId() : r.getExecution().getProcessInstanceId();
@@ -683,7 +684,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             ExternalWork work = new ExternalWork(t.getId(), t.getTopicName(), t.getProcessInstanceId(), t.getActivityId(),
                     t.getActivityInstanceId(), t.getRetries() == null ? -1 : t.getRetries(),
                     Instant.ofEpochMilli(expiresAt), lease.lockVersion(), lease.attemptId(),
-                    new HashMap<>(t.getVariables()), operationId.toString());
+                    new HashMap<>(t.getVariables()), operationId.toString(), org.sangam.engine.deploy.WorkProperties.of(configuration, t, ext));
             out.add(new LeasedWork(work, tenant, t.getBusinessKey(), rootId, operationId, lease.attemptNo(), capability,
                     fence, false));
         }
@@ -779,6 +780,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         command("completeExternal", (cc, conn) -> {
             lockRootOfWork(cc, conn, workId);
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
+            c.capture().externalResult(workId, row.attemptNo(), "SUCCESS", null, variables, null, null); // decision 151
             externalTaskService.complete(workId, workerId, variables);
             leases.remove(conn, workId);
             expiry.releaseExclusive(conn, row);
@@ -793,6 +795,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             lockRootOfWork(cc, conn, workId);
             long now = clock.now().toEpochMilli();
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, now);
+            c.capture().externalResult(workId, row.attemptNo(), "FAILURE", retriesLeft, null, "errorMessage", errorMessage);
             externalTaskService.handleFailure(workId, workerId, errorMessage, retriesLeft,
                     retryBackoff == null ? 0L : retryBackoff.toMillis());
             leases.end(conn, workId, SangamLeaseTable.State.AVAILABLE, now);
@@ -807,6 +810,7 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         command("bpmnErrorExternal", (cc, conn) -> {
             lockRootOfWork(cc, conn, workId);
             SangamLeaseTable.Row row = leases.check(conn, workId, workerId, lockVersion, clock.now().toEpochMilli());
+            c.capture().externalResult(workId, row.attemptNo(), "BPMN_ERROR", null, variables, "errorCode", errorCode);
             externalTaskService.handleBpmnError(workId, workerId, errorCode, null, variables);
             leases.remove(conn, workId);
             expiry.releaseExclusive(conn, row);
@@ -907,16 +911,11 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
         });
     }
 
+    /** The external tasks of the instance tree, instance by instance in {@link #collectInstanceTree} (pre-)order. */
     private void collectExternalTaskIds(String processInstanceId, List<String> out, int depth) {
-        if (depth > 64) {
-            throw new IllegalStateException("sub-process nesting deeper than 64 under " + processInstanceId);
-        }
-        externalTaskService.createExternalTaskQuery().processInstanceId(processInstanceId).list()
-                .forEach(t -> out.add(t.getId()));
-        for (ProcessInstance sub : runtimeService.createProcessInstanceQuery()
-                .superProcessInstanceId(processInstanceId).list()) {
-            collectExternalTaskIds(sub.getId(), out, depth + 1);
-        }
+        List<String> tree = new ArrayList<>();
+        collectInstanceTree(processInstanceId, tree, depth);
+        tree.forEach(p -> externalTaskService.createExternalTaskQuery().processInstanceId(p).list().forEach(t -> out.add(t.getId())));
     }
 
     private void collectInstanceTree(String processInstanceId, List<String> out, int depth) {

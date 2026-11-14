@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Build + unit tests (H2, no Testcontainers), image build check, and deploy-config lint (compose + Helm).
 # Owner: WS-DEPLOY (sangam/deploy). The Maven reactor lives in sangam/.
+# W4-C (CR-01, CR-11, CR-16; decisions 129, 133): no silent pass. A missing server jar fails the build instead of
+# skipping the build-time-tools check; tools are pinned release assets with a committed SHA-256 (fetch_tool.py; the
+# vendor cosign signature of the checksum file is verified first where the vendor publishes one, decision 179);
+# image and posture scans are report-only on pull requests (decision 133) and record NOT-RUN, never PASS.
 name: build
 
 on:
@@ -21,6 +25,9 @@ concurrency:
 env:
   MAVEN_ARGS: -B -ntp -Dstyle.color=always
   TZ: UTC
+  LEDGER: ${{ github.workspace }}/results
+  RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
+  FETCH: python3 -I ${{ github.workspace }}/sangam/deploy/licence/fetch_tool.py
 
 defaults:
   run:
@@ -37,7 +44,7 @@ jobs:
       matrix:
         java: ["25", "21", "27"]   # R5: 25 LTS baseline, 21 supported minimum, 27 current (SG-06; deploy/SUPPORT-MATRIX.md)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Generated packs match their generator (no hand edits that a regeneration would undo)
         working-directory: .
         run: |
@@ -47,10 +54,10 @@ jobs:
             || { echo "Pack files differ from tools/packgen output: change the generator, then regenerate."; exit 1; }
           # packgen's own unit tests (compliance BPMN takeover, SL-134)
           python -I -m unittest discover -s sangam/sangam-packs/tools/packgen -p "test_*.py"
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         if: matrix.java == '25'
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
       - name: Other generated files match their generators (SL-106)
         # profilegen, generate_changelogs, generate_scale_changelogs and gen_openapi (packgen above, realm in
         # deploy-lint, native metadata in sdks.yml). Each output is LF (.gitattributes SL-56), so the check is bytewise.
@@ -58,7 +65,9 @@ jobs:
         working-directory: .
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check -q pyyaml==6.0.3
+          # PyYAML for the python -I generators, pinned by hash into this setup-python interpreter (not --user)
+          python -m pip install --disable-pip-version-check -q --require-hashes --no-deps \
+            -r sangam/deploy/licence/ci-python-requirements.txt
           python -I sangam/sangam-packs/tools/profilegen/main.py
           python -I sangam/sangam-persistence/tools/generate_changelogs.py
           python -I sangam/sangam-control-plane/tools/generate_scale_changelogs.py
@@ -66,7 +75,7 @@ jobs:
           cmp "$RUNNER_TEMP/sangam-api.yaml" sangam/sangam-rest/api/sangam-api.yaml \
             || { echo "::error::sangam-api.yaml differs from gen_openapi.py output: change the generator, then regenerate."; exit 1; }
           # the same run writes the SCALE app contracts (M-017) and the AsyncAPI events contract (M-050) next to its output
-          for name in sangam-control-plane-api.yaml sangam-rollup-api.yaml sangam-gateway-api.yaml sangam-events.asyncapi.yaml; do
+          for name in sangam-control-plane-api.yaml sangam-rollup-api.yaml sangam-gateway-api.yaml sangam-pdf-validator-api.yaml sangam-events.asyncapi.yaml; do
             cmp "$RUNNER_TEMP/$name" "sangam/sangam-rest/api/$name" \
               || { echo "::error::$name differs from gen_openapi.py output: change the generator, then regenerate."; exit 1; }
           done
@@ -76,7 +85,7 @@ jobs:
           git diff --exit-code -- $outputs \
             || { echo "::error::generated files differ from their generator output: change the generator, then regenerate."; exit 1; }
           # shellcheck disable=SC2086
-          untracked=$(git status --porcelain --untracked-files=all -- $outputs | grep '^??' || true)
+          untracked=$(git status --porcelain --untracked-files=all -- $outputs | grep '^??' || true)  # guard-allow: grep exits 1 when nothing is untracked; the result is tested below
           if [ -n "$untracked" ]; then echo "::error::generator wrote files that are not in git:"; echo "$untracked"; exit 1; fi
       - name: No source file hidden by .gitignore (SG-21)
         working-directory: .
@@ -85,9 +94,9 @@ jobs:
           # Tracked files must never match an ignore rule (catches a new rule that would hide sources).
           # The same check for untracked files runs before every commit: tools/check-ignored-sources.sh
           hidden=$(git ls-files -z | git check-ignore --no-index -z --stdin | tr '\0' '\n' \
-            | grep -E '(^|/)src/' || true)
+            | grep -E '(^|/)src/' || true)  # guard-allow: grep exits 1 when no source is hidden; the result is tested below
           if [ -n "$hidden" ]; then echo "Tracked sources matched by .gitignore:"; echo "$hidden"; exit 1; fi
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -110,35 +119,36 @@ jobs:
         run: python3 -I -m unittest discover -s tools/provenance -v
       - name: Test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unit-test-reports-jdk${{ matrix.java }}
           path: |
             sangam/**/target/surefire-reports/
             sangam/target/run-provenance/
-          if-no-files-found: ignore
           retention-days: 14
       - name: Stage server jar and MariaDB driver (LIC-5 separate jar)
         if: matrix.java == '25'
         run: |
           set -euo pipefail
           mkdir -p ../dist/lib-ext
-          jar=$(ls sangam-server/target/sangam-server-*.jar 2>/dev/null | grep -v -e '\.original$' -e '-plain\.jar$' -e '-sources\.jar$' | head -n1 || true)
-          if [ -z "$jar" ]; then echo "::warning::no sangam-server jar produced yet"; exit 0; fi
+          jar=$(find sangam-server/target -maxdepth 1 -name 'sangam-server-*.jar' ! -name '*-plain.jar' ! -name '*-sources.jar' | head -n1)
+          # CR-16: the build must produce the jar; a missing jar fails here instead of skipping the check below
+          [ -n "$jar" ] || { echo "::error::the build produced no sangam-server fat jar"; exit 1; }
           cp "$jar" ../dist/sangam-server.jar
           mariadb=$(mvn -q -DforceStdout help:evaluate -Dexpression=version.mariadb -N)
           mvn $MAVEN_ARGS -q dependency:copy -Dartifact=org.mariadb.jdbc:mariadb-java-client:$mariadb -DoutputDirectory=../dist/lib-ext
-      - name: Build-time tools never shipped (owner 2026-11-12, licence-policy.json build_time_tools)
-        if: matrix.java == '25' && hashFiles('dist/sangam-server.jar') != ''
+      - name: Build-time tools never shipped (CR-16, licence-policy.json build_time_tools)
+        if: matrix.java == '25'
         run: |
-          python3 -I ../.github/scripts/build_tools_not_shipped.py --policy deploy/licence/licence-policy.json \
-            --jar ../dist/sangam-server.jar --tree ../dist/lib-ext
-      - uses: actions/upload-artifact@v4
+          $RL run --check build-tools-not-shipped --ledger-dir "$LEDGER" --expect ../dist/sangam-server.jar --expect ../dist/lib-ext -- \
+            python3 -I ../.github/scripts/build_tools_not_shipped.py --policy deploy/licence/licence-policy.json \
+              --jar ../dist/sangam-server.jar --tree ../dist/lib-ext
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: matrix.java == '25'
         with:
           name: server-jar
           path: dist/
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 7
 
   image:
@@ -147,27 +157,19 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: server-jar
           path: dist
-        continue-on-error: true
       - name: Stage prebuilt jar
-        id: stage
         run: |
-          if [ -f ../dist/sangam-server.jar ]; then
-            mkdir -p sangam-server/target deploy/docker/lib-ext
-            cp ../dist/sangam-server.jar sangam-server/target/sangam-server.jar
-            cp ../dist/lib-ext/*.jar deploy/docker/lib-ext/ 2>/dev/null || true
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
-      - uses: docker/setup-buildx-action@v3
-        if: steps.stage.outputs.present == 'true'
+          set -euo pipefail
+          mkdir -p sangam-server/target deploy/docker/lib-ext
+          cp ../dist/sangam-server.jar sangam-server/target/sangam-server.jar
+          cp ../dist/lib-ext/*.jar deploy/docker/lib-ext/
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Build sangam-server (temurin + distroless targets)
-        if: steps.stage.outputs.present == 'true'
         run: |
           for target in runtime runtime-distroless; do
             docker buildx build -f deploy/docker/server.Dockerfile --target "$target" \
@@ -175,38 +177,47 @@ jobs:
               --load -t "sangam-server:ci-$target" .
           done
           docker image ls sangam-server
-      # M-094 image scans (owner download batch 1). REPORT-ONLY: exit code 0 on findings, continue-on-error on outage.
+      # M-094 image scans. Report-only on pull requests (decision 133): the ledger line is NOT-RUN, never PASS. The
+      # release gate (release.yml, image-vuln-scan) fails on a critical vulnerability with a fix.
       - name: Trivy image scan (report-only)
-        if: steps.stage.outputs.present == 'true'
-        continue-on-error: true
-        uses: aquasecurity/trivy-action@v0.36.0
+        id: trivy
+        continue-on-error: true  # guard-allow: decision 133 report-only on pull requests; the next step records NOT-RUN with the outcome, never PASS
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           version: v0.76.2
           scan-type: image
           image-ref: sangam-server:ci-runtime
           format: sarif
           output: trivy-server.sarif
-          exit-code: "0"
-      - name: Grype image scan (report-only)
-        if: steps.stage.outputs.present == 'true'
-        continue-on-error: true
+          exit-code: "1"
+          severity: CRITICAL
+          ignore-unfixed: true
+      - name: Record the Trivy result (report-only)
+        if: always()
         run: |
-          set -euo pipefail
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/v0.121.3/install.sh | sh -s -- -b "$RUNNER_TEMP/bin" v0.121.3
+          $RL record --check image-scan-trivy --ledger-dir "$LEDGER" --status NOT-RUN \
+            --reason "report-only on pull requests (decision 133): trivy step outcome ${{ steps.trivy.outcome }}"
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
+        with:
+          cosign-release: v2.5.2
+      - name: grype 0.121.3 (vendor cosign signature of the checksum file, then SHA-256 pin; CR-11, decision 179)
+        run: $FETCH grype --bin "$RUNNER_TEMP/bin"
+      - name: Grype image scan (report-only)
+        run: |
           for target in runtime runtime-distroless; do
-            "$RUNNER_TEMP/bin/grype" "docker:sangam-server:ci-$target" -o table --file "../grype-$target.txt"
+            $RL run --check "image-scan-grype-$target" --report-only --ledger-dir "$LEDGER" --tool-version grype-0.121.3 -- \
+              bash -c "\"$RUNNER_TEMP/bin/grype\" docker:sangam-server:ci-$target -o table --file ../grype-$target.txt --fail-on critical --only-fixed"
             echo "### Grype sangam-server:ci-$target (report-only)" >> "$GITHUB_STEP_SUMMARY"
-            tail -n 5 "../grype-$target.txt" >> "$GITHUB_STEP_SUMMARY" || true
+            tail -n 5 "../grype-$target.txt" >> "$GITHUB_STEP_SUMMARY"
           done
-      - uses: actions/upload-artifact@v4
-        if: steps.stage.outputs.present == 'true'
-        continue-on-error: true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
         with:
           name: image-scan-reports
           path: |
             trivy-server.sarif
             grype-*.txt
-          if-no-files-found: ignore
+            results/
           retention-days: 14
 
   deploy-lint:
@@ -217,7 +228,7 @@ jobs:
       run:
         working-directory: sangam/deploy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: docker compose config (every DB profile)
         working-directory: sangam/deploy/compose
         run: |
@@ -230,7 +241,7 @@ jobs:
         run: |
           python3 -I compose/keycloak/generate_realm.py
           git diff --exit-code -- compose/keycloak/realm compose/observability/grafana/dashboards
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: v3.18.4
       - name: helm lint + template (every example values file)
@@ -245,6 +256,8 @@ jobs:
             helm template sangam helm/sangam --kube-version 1.30.0 $extra -f "$f" --namespace sangam > "/tmp/$(basename "$f" .yaml).rendered.yaml"
           done
           helm template sangam helm/sangam --kube-version 1.30.0 -f helm/sangam/examples/values-postgres.yaml --set liquibase.mode=startup --set networkPolicy.enabled=false > /dev/null
+      - name: Backup images have no default and are required (decision 129, RM-34)
+        run: python3 -I helm/backup_image_guard.py helm/sangam
       - name: SG-38 production settings and database.existingSecret reach the pods (rendered chart)
         # The same path is checked on the chart text by sangam-server HelmProductionSettingsTraceTest.
         run: |
@@ -263,33 +276,29 @@ jobs:
           render server-deployment.yaml | grep -q -- "name: sangam-server-env$" || { echo "::error::server pods do not load the server-env ConfigMap"; exit 1; }
           render server-configmap.yaml | grep -q -- 'SANGAM_SECURITY_PRODUCTION: "true"$' || { echo "::error::chart default is not production"; exit 1; }
           echo "server-env ConfigMap: SANGAM_SECURITY_PRODUCTION=true: OK"
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1
+        with:
+          cosign-release: v2.5.2
+      - name: kubeconform 0.7.0 (SHA-256 pin only, no vendor signature) and kubescape 4.0.20 (cosign signature, decision 179)
+        run: |
+          $FETCH kubeconform --bin "$RUNNER_TEMP/bin"
+          $FETCH kubescape --bin "$RUNNER_TEMP/bin"
       - name: Validate rendered manifests (kubeconform)
         run: |
-          set -euo pipefail
-          curl -sSfL -o /tmp/kc.tgz https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz
-          tar -C /tmp -xzf /tmp/kc.tgz kubeconform
-          /tmp/kubeconform -strict -summary -skip ServiceMonitor -kubernetes-version 1.30.0 /tmp/*.rendered.yaml
-      - name: Helm chart CIS / NSA posture (Kubescape 4.0.20, report-only)
-        # M-094. Scans the manifests rendered above; no --compliance-threshold, so findings never fail the job.
-        continue-on-error: true
+          "$RUNNER_TEMP/bin/kubeconform" -strict -summary -skip ServiceMonitor -kubernetes-version 1.30.0 /tmp/*.rendered.yaml
+      - name: Helm chart CIS / NSA posture (Kubescape, report-only)
+        # M-094. Scans the manifests rendered above; findings are reported, the ledger line is NOT-RUN (report-only).
         run: |
-          set -euo pipefail
-          v=4.0.20; base="https://github.com/kubescape/kubescape/releases/download/v$v"
-          curl -sSfL -o /tmp/kubescape.tgz "$base/kubescape_${v}_linux_amd64.tar.gz"
-          curl -sSfL -o /tmp/kubescape.sha256 "$base/checksums.sha256"
-          sum=$(sha256sum /tmp/kubescape.tgz | cut -d' ' -f1)
-          grep -Eq "^${sum}[[:space:]]+\*?kubescape_${v}_linux_amd64\.tar\.gz\$" /tmp/kubescape.sha256 \
-            || { echo "::error::kubescape_${v}_linux_amd64.tar.gz does not match checksums.sha256"; exit 1; }
-          tar -C /tmp -xzf /tmp/kubescape.tgz kubescape
-          /tmp/kubescape scan framework cis-v1.23-t1.0.1,nsa /tmp/*.rendered.yaml --format sarif --output /tmp/kubescape.sarif
-          /tmp/kubescape scan framework cis-v1.23-t1.0.1,nsa /tmp/*.rendered.yaml --format pretty-printer | tail -n 40 >> "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@v4
+          $RL run --check kubescape --report-only --ledger-dir "$LEDGER" --tool-version kubescape-4.0.20 -- \
+            "$RUNNER_TEMP/bin/kubescape" scan framework cis-v1.23-t1.0.1,nsa /tmp/*.rendered.yaml --format sarif --output /tmp/kubescape.sarif
+          "$RUNNER_TEMP/bin/kubescape" scan framework cis-v1.23-t1.0.1,nsa /tmp/*.rendered.yaml --format pretty-printer | tail -n 40 >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
-        continue-on-error: true
         with:
           name: kubescape-report
-          path: /tmp/kubescape.sarif
-          if-no-files-found: ignore
+          path: |
+            /tmp/kubescape.sarif
+            results/
           retention-days: 14
       - name: ShellCheck deploy scripts
         run: shellcheck -S warning airgap/*.sh

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -9,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,7 +48,7 @@ class BillingWiringTest {
         ds.setURL("jdbc:h2:mem:billwiring" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
         ds.setUser("sa");
         ds.setPassword("");
-        tx = new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
         tx.newTransactions().inTransaction(c -> {
             Schema.create(c, Dialect.POSTGRESQL);
             RegistrySchema.create(c, Dialect.POSTGRESQL);
@@ -62,7 +62,10 @@ class BillingWiringTest {
             }
             return null;
         });
-        numbering = new RegistryModule(Dialect.POSTGRESQL, RegistryPorts.defaults(), null, List.of("test")).numbering();
+        // decision 143: a test installation (switch false plus the test profile), resolved by the shared policy
+        numbering = new RegistryModule(Dialect.POSTGRESQL, RegistryPorts.defaults(), null,
+                org.sangam.core.security.EnvironmentPolicy.resolve("false", "test",
+                        Map.of("test", org.sangam.core.security.EnvironmentPolicy.Signal.DEVELOPMENT))).numbering();
     }
 
     static DocumentNumbers.Request receipt(String paymentRef) {

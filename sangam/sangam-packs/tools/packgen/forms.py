@@ -27,6 +27,8 @@ L = {
     'sodExceptionId': ('SoD exception order (if granted)', 'कर्तव्य-पृथक्करण अपवाद आदेश (यदि दिया गया)', 'string'),
     'presentedPayloadHash': ('Shown payload hash', 'प्रदर्शित विवरण का हैश', 'hidden'),
     'signMethod': ('Signature method (eSign / DSC)', 'हस्ताक्षर विधि (ई-साइन / डीएससी)', 'select'),
+    # set by the client after the DSC agent signed at this task; the server's verification decides (DscSignatureGuard)
+    'dscDocumentId': ('Document signed with DSC', 'डीएससी से हस्ताक्षरित दस्तावेज़', 'hidden'),
     'espId': ('eSign service provider', 'ई-साइन सेवा प्रदाता', 'string'),
     'documents': ('Documents', 'दस्तावेज़', 'attachments'),
     'applicantName': ('Applicant name', 'आवेदक का नाम', 'string'),

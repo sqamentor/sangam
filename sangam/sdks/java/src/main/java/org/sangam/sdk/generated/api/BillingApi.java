@@ -12,9 +12,12 @@ import org.sangam.sdk.generated.model.BillingPenaltyRequest;
 import org.sangam.sdk.generated.model.BillingRefundRequest;
 import org.sangam.sdk.generated.model.BillingRefundResult;
 import org.sangam.sdk.generated.model.BillingWaiverRequest;
+import org.sangam.sdk.generated.model.UnverifiedPayment;
+import org.sangam.sdk.generated.model.UnverifiedPaymentRequest;
+import org.sangam.sdk.generated.model.UnverifiedPaymentResolveRequest;
 
 /**
- * Typed operations of {@code Billing} (7 operations), generated from
+ * Typed operations of {@code Billing} (11 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -29,6 +32,9 @@ public final class BillingApi {
     private static final TypeReference<java.util.Map<String, Object>> R_levyBillingPenalties = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_recordBillingWaiver = new TypeReference<>() { };
     private static final TypeReference<BillingRefundResult> R_refundBillingCollection = new TypeReference<>() { };
+    private static final TypeReference<UnverifiedPayment> R_acceptUnverifiedPayment = new TypeReference<>() { };
+    private static final TypeReference<UnverifiedPayment> R_getUnverifiedPayment = new TypeReference<>() { };
+    private static final TypeReference<UnverifiedPayment> R_resolveUnverifiedPayment = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -73,7 +79,7 @@ public final class BillingApi {
     /**
      * Record a collection
      *
-     * <p>Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt.
+     * <p>Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
      *
      * <p>{@code POST /billing/{ledger}/collections} (operationId {@code recordBillingCollection}); permission {@code billing.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
@@ -153,5 +159,83 @@ public final class BillingApi {
         ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/refunds");
         req.body(body);
         return call.json(req, options, R_refundBillingCollection);
+    }
+
+    /**
+     * Accept a payment unverified
+     *
+     * <p>Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
+     *
+     * <p>{@code POST /billing/{ledger}/unverified-payments} (operationId {@code acceptUnverifiedPayment}); permission {@code billing.accept-unverified}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public UnverifiedPayment acceptUnverifiedPayment(String ledger, UnverifiedPaymentRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments");
+        req.body(body);
+        return call.json(req, options, R_acceptUnverifiedPayment);
+    }
+
+    /**
+     * Unverified payments
+     *
+     * <p>Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
+     *
+     * <p>{@code GET /billing/{ledger}/unverified-payments} (operationId {@code listUnverifiedPayments}); permission {@code billing.read}.
+     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * @param state query parameter {@code state}, or null.  One of: PAYMENT_ACCEPTED_UNVERIFIED, VERIFIED, REJECTED, REVERSED.
+     * @param channel query parameter {@code channel}, or null
+     * @param office query parameter {@code office}, or null
+     * @param minAgeDays query parameter {@code minAgeDays}, or null. Only payments pending at least this many days
+     * @param page query parameter {@code page}, or null. 0-based page index
+     * @param size query parameter {@code size}, or null. Page size
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response with the A-16 count headers
+     */
+    public org.sangam.sdk.model.Page<UnverifiedPayment> listUnverifiedPayments(String ledger, String state, String channel, String office, Integer minAgeDays, Long page, Long size, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments");
+        req.query("state", state);
+        req.query("channel", channel);
+        req.query("office", office);
+        req.query("minAgeDays", minAgeDays);
+        req.query("page", page);
+        req.query("size", size);
+        return call.page(req, options, UnverifiedPayment.class, page, size);
+    }
+
+    /**
+     * An unverified payment
+     *
+     * <p>One record with its resolution.
+     *
+     * <p>{@code GET /billing/{ledger}/unverified-payments/{id}} (operationId {@code getUnverifiedPayment}); permission {@code billing.read}.
+     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * @param id path parameter {@code id}
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public UnverifiedPayment getUnverifiedPayment(String ledger, String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments/" + HttpTransport.seg(String.valueOf(id)));
+        return call.json(req, options, R_getUnverifiedPayment);
+    }
+
+    /**
+     * Resolve an unverified payment
+     *
+     * <p>Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
+     *
+     * <p>{@code POST /billing/{ledger}/unverified-payments/{id}/resolution} (operationId {@code resolveUnverifiedPayment}); permission {@code billing.resolve-unverified}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param ledger path parameter {@code ledger}. receivable ledger id (e.g. DEMAND)
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public UnverifiedPayment resolveUnverifiedPayment(String ledger, String id, UnverifiedPaymentResolveRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/billing/" + HttpTransport.seg(String.valueOf(ledger)) + "/unverified-payments/" + HttpTransport.seg(String.valueOf(id)) + "/resolution");
+        req.body(body);
+        return call.json(req, options, R_resolveUnverifiedPayment);
     }
 }

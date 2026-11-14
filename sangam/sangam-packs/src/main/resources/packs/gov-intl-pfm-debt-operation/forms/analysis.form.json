@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-debt-operation/analysis",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-debt-operation",
+  "title": {
+    "en": "Sustainability and cost-risk analysis (debt office)",
+    "hi": "ऋण विश्लेषण"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "termsNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Terms: maturity, interest, fees, conditions",
+        "hi": "शर्तें"
+      }
+    },
+    {
+      "id": "authorityRemainingLimit",
+      "type": "readonly",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Remaining authority (debt system)",
+        "hi": "शेष प्राधिकार"
+      }
+    },
+    {
+      "id": "debtSustainabilityNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Debt sustainability and cost-risk analysis",
+        "hi": "ऋण स्थिरता एवं लागत-जोखिम विश्लेषण"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

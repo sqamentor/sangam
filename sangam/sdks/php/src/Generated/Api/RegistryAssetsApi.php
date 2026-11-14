@@ -23,7 +23,7 @@ final class RegistryAssetsApi
     /**
      * Define class
      *
-     * AssetController.defineClass (sangam-registry).
+     * AssetController.defineClass (sangam-rest).
      *
      * POST /registry/assets/classes (operationId registryAssetDefineClass); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetDefineClassBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryAssetsApi
     /**
      * Classes
      *
-     * AssetController.classes (sangam-registry).
+     * AssetController.classes (sangam-rest).
      *
      * GET /registry/assets/classes (operationId registryAssetClasses); permission registry.read.
      * @return list<array<string, mixed>>
@@ -55,7 +55,7 @@ final class RegistryAssetsApi
     /**
      * Get class
      *
-     * AssetController.getClass (sangam-registry).
+     * AssetController.getClass (sangam-rest).
      *
      * GET /registry/assets/classes/{classKey} (operationId registryAssetGetClass); permission registry.read.
      * @param bool|null $resolved query resolved
@@ -71,7 +71,7 @@ final class RegistryAssetsApi
     /**
      * Register
      *
-     * AssetController.register (sangam-registry).
+     * AssetController.register (sangam-rest).
      *
      * POST /registry/assets (operationId registryAssetRegister); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetRegisterBody|array $body request body
@@ -89,7 +89,7 @@ final class RegistryAssetsApi
     /**
      * List
      *
-     * AssetController.list (sangam-registry).
+     * AssetController.list (sangam-rest).
      *
      * GET /registry/assets (operationId registryAssetList); permission registry.read.
      * @param string|null $classKey query classKey
@@ -117,7 +117,7 @@ final class RegistryAssetsApi
     /**
      * Get
      *
-     * AssetController.get (sangam-registry).
+     * AssetController.get (sangam-rest).
      *
      * GET /registry/assets/{id} (operationId registryAssetGet); permission registry.read.
      * @return array<string, mixed>
@@ -131,7 +131,7 @@ final class RegistryAssetsApi
     /**
      * Update details
      *
-     * AssetController.updateDetails (sangam-registry).
+     * AssetController.updateDetails (sangam-rest).
      *
      * PATCH /registry/assets/{id} (operationId registryAssetUpdateDetails); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetUpdateDetailsBody|array $body request body
@@ -151,7 +151,7 @@ final class RegistryAssetsApi
     /**
      * By tag
      *
-     * AssetController.byTag (sangam-registry).
+     * AssetController.byTag (sangam-rest).
      *
      * GET /registry/assets/by-tag/{tag} (operationId registryAssetByTag); permission registry.read.
      * @return array<string, mixed>
@@ -165,7 +165,7 @@ final class RegistryAssetsApi
     /**
      * Move
      *
-     * AssetController.move (sangam-registry).
+     * AssetController.move (sangam-rest).
      *
      * POST /registry/assets/{id}/move (operationId registryAssetMove); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetMoveBody|array $body request body
@@ -183,7 +183,7 @@ final class RegistryAssetsApi
     /**
      * Movements
      *
-     * AssetController.movements (sangam-registry).
+     * AssetController.movements (sangam-rest).
      *
      * GET /registry/assets/{id}/movements (operationId registryAssetMovements); permission registry.read.
      * @return list<array<string, mixed>>
@@ -197,7 +197,7 @@ final class RegistryAssetsApi
     /**
      * Reparent
      *
-     * AssetController.reparent (sangam-registry).
+     * AssetController.reparent (sangam-rest).
      *
      * POST /registry/assets/{id}/reparent (operationId registryAssetReparent); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetReparentBody|array $body request body
@@ -215,7 +215,7 @@ final class RegistryAssetsApi
     /**
      * Children
      *
-     * AssetController.children (sangam-registry).
+     * AssetController.children (sangam-rest).
      *
      * GET /registry/assets/{id}/children (operationId registryAssetChildren); permission registry.read.
      * @return list<array<string, mixed>>
@@ -229,7 +229,7 @@ final class RegistryAssetsApi
     /**
      * Ancestors
      *
-     * AssetController.ancestors (sangam-registry).
+     * AssetController.ancestors (sangam-rest).
      *
      * GET /registry/assets/{id}/ancestors (operationId registryAssetAncestors); permission registry.read.
      * @return list<array<string, mixed>>
@@ -243,7 +243,7 @@ final class RegistryAssetsApi
     /**
      * Subtree
      *
-     * AssetController.subtree (sangam-registry).
+     * AssetController.subtree (sangam-rest).
      *
      * GET /registry/assets/{id}/subtree (operationId registryAssetSubtree); permission registry.read.
      * @return list<array<string, mixed>>
@@ -257,7 +257,7 @@ final class RegistryAssetsApi
     /**
      * Dispose
      *
-     * AssetController.dispose (sangam-registry).
+     * AssetController.dispose (sangam-rest).
      *
      * POST /registry/assets/{id}/dispose (operationId registryAssetDispose); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetDisposeBody|array $body request body
@@ -275,7 +275,7 @@ final class RegistryAssetsApi
     /**
      * Depreciation
      *
-     * AssetController.depreciation (sangam-registry).
+     * AssetController.depreciation (sangam-rest).
      *
      * GET /registry/assets/{id}/depreciation (operationId registryAssetDepreciation); permission registry.read.
      * @return list<array<string, mixed>>
@@ -289,7 +289,7 @@ final class RegistryAssetsApi
     /**
      * Book value
      *
-     * AssetController.bookValue (sangam-registry).
+     * AssetController.bookValue (sangam-rest).
      *
      * GET /registry/assets/{id}/book-value (operationId registryAssetBookValue); permission registry.read.
      * @param string|null $asOf query asOf
@@ -305,7 +305,7 @@ final class RegistryAssetsApi
     /**
      * Meters
      *
-     * AssetController.meters (sangam-registry).
+     * AssetController.meters (sangam-rest).
      *
      * GET /registry/assets/{id}/meters (operationId registryAssetMeters); permission registry.read.
      * @return list<array<string, mixed>>
@@ -319,7 +319,7 @@ final class RegistryAssetsApi
     /**
      * Add meter
      *
-     * AssetController.addMeter (sangam-registry).
+     * AssetController.addMeter (sangam-rest).
      *
      * POST /registry/assets/{id}/meters (operationId registryAssetAddMeter); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetAddMeterBody|array $body request body
@@ -337,7 +337,7 @@ final class RegistryAssetsApi
     /**
      * Record reading
      *
-     * AssetController.recordReading (sangam-registry).
+     * AssetController.recordReading (sangam-rest).
      *
      * POST /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetRecordReading); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetRecordReadingBody|array $body request body
@@ -355,7 +355,7 @@ final class RegistryAssetsApi
     /**
      * Readings
      *
-     * AssetController.readings (sangam-registry).
+     * AssetController.readings (sangam-rest).
      *
      * GET /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetReadings); permission registry.read.
      * @param int|null $page query page
@@ -373,7 +373,7 @@ final class RegistryAssetsApi
     /**
      * Correct reading
      *
-     * AssetController.correctReading (sangam-registry).
+     * AssetController.correctReading (sangam-rest).
      *
      * POST /registry/assets/readings/{readingId}/correct (operationId registryAssetCorrectReading); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetCorrectReadingBody|array $body request body
@@ -391,7 +391,7 @@ final class RegistryAssetsApi
     /**
      * Reject reading
      *
-     * AssetController.rejectReading (sangam-registry).
+     * AssetController.rejectReading (sangam-rest).
      *
      * POST /registry/assets/readings/{readingId}/reject (operationId registryAssetRejectReading); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetRejectReadingBody|array $body request body
@@ -409,7 +409,7 @@ final class RegistryAssetsApi
     /**
      * Plans
      *
-     * AssetController.plans (sangam-registry).
+     * AssetController.plans (sangam-rest).
      *
      * GET /registry/assets/{id}/plans (operationId registryAssetPlans); permission registry.read.
      * @return list<array<string, mixed>>
@@ -423,7 +423,7 @@ final class RegistryAssetsApi
     /**
      * Add plan
      *
-     * AssetController.addPlan (sangam-registry).
+     * AssetController.addPlan (sangam-rest).
      *
      * POST /registry/assets/{id}/plans (operationId registryAssetAddPlan); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetAddPlanBody|array $body request body
@@ -441,7 +441,7 @@ final class RegistryAssetsApi
     /**
      * Update plan
      *
-     * AssetController.updatePlan (sangam-registry).
+     * AssetController.updatePlan (sangam-rest).
      *
      * PATCH /registry/assets/plans/{planId} (operationId registryAssetUpdatePlan); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetUpdatePlanBody|array $body request body
@@ -461,7 +461,7 @@ final class RegistryAssetsApi
     /**
      * Plan status
      *
-     * AssetController.planStatus (sangam-registry).
+     * AssetController.planStatus (sangam-rest).
      *
      * POST /registry/assets/plans/{planId}/status (operationId registryAssetPlanStatus); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetPlanStatusBody|array $body request body
@@ -479,7 +479,7 @@ final class RegistryAssetsApi
     /**
      * Trigger condition
      *
-     * AssetController.triggerCondition (sangam-registry).
+     * AssetController.triggerCondition (sangam-rest).
      *
      * POST /registry/assets/plans/{planId}/trigger (operationId registryAssetTriggerCondition); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetTriggerConditionBody|array $body request body
@@ -497,7 +497,7 @@ final class RegistryAssetsApi
     /**
      * Create work order
      *
-     * AssetController.createWorkOrder (sangam-registry).
+     * AssetController.createWorkOrder (sangam-rest).
      *
      * POST /registry/assets/work-orders (operationId registryAssetCreateWorkOrder); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryAssetCreateWorkOrderBody|array $body request body
@@ -515,7 +515,7 @@ final class RegistryAssetsApi
     /**
      * Work orders
      *
-     * AssetController.workOrders (sangam-registry).
+     * AssetController.workOrders (sangam-rest).
      *
      * GET /registry/assets/work-orders (operationId registryAssetWorkOrders); permission registry.read.
      * @param string|null $assetId query assetId
@@ -539,7 +539,7 @@ final class RegistryAssetsApi
     /**
      * Work order
      *
-     * AssetController.workOrder (sangam-registry).
+     * AssetController.workOrder (sangam-rest).
      *
      * GET /registry/assets/work-orders/{woId} (operationId registryAssetWorkOrder); permission registry.read.
      * @return array<string, mixed>
@@ -553,7 +553,7 @@ final class RegistryAssetsApi
     /**
      * Generate due
      *
-     * AssetController.generateDue (sangam-registry).
+     * AssetController.generateDue (sangam-rest).
      *
      * POST /registry/assets/work-orders/generate-due (operationId registryAssetGenerateDue); permission registry.write; result stored atomically with the state change.
      * @return list<array<string, mixed>>
@@ -570,7 +570,7 @@ final class RegistryAssetsApi
     /**
      * Step
      *
-     * AssetController.step (sangam-registry).
+     * AssetController.step (sangam-rest).
      *
      * POST /registry/assets/work-orders/{woId}/{step} (operationId registryAssetStep); permission registry.write; result stored atomically with the state change.
      * @param int|null $expectedVersion query expectedVersion
@@ -589,7 +589,7 @@ final class RegistryAssetsApi
     /**
      * Reliability
      *
-     * AssetController.reliability (sangam-registry).
+     * AssetController.reliability (sangam-rest).
      *
      * GET /registry/assets/{id}/reliability (operationId registryAssetReliability); permission registry.read.
      * @param string|null $from query from

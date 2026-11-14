@@ -26,7 +26,8 @@ import com.fasterxml.jackson.core.JsonToken;
  *       {@code versionTag} to a process or decision of the same content (pins to other packs are left alone);</li>
  *   <li>DMN: {@code versionTag} of every {@code <decision>}; {@code exporterVersion} when it names the source
  *       version;</li>
- *   <li>forms ({@code .form.json}, {@code .form}): the top-level {@code "version"} when it is the source version.</li>
+ *   <li>forms ({@code .form.json}, {@code .form}) and the deployed pack manifest ({@code pack.json}, decision 193): the
+ *       top-level {@code "version"} when it is the source version.</li>
  * </ul>
  *
  * Every other resource, and every other byte, is unchanged.
@@ -68,7 +69,9 @@ public final class PackVersionRewriter {
             } else if (n.endsWith(".dmn")) {
                 String x = replaceInTags(DECISION, utf8(b), t -> setVersionTag(t, to));
                 b = bytes(replaceInTags(DEFINITIONS, x, t -> replaceAttr(t, "exporterVersion", from, to)));
-            } else if (n.endsWith(".form.json") || n.endsWith(".form")) {
+            } else if (n.endsWith(".form.json") || n.endsWith(".form") || n.equals("pack.json")
+                    || n.endsWith("/pack.json")) {
+                // decision 193: a deployed manifest names its own version, which PackPowers matches to the deployment
                 b = bytes(formVersion(utf8(b), from, to));
             }
             out.put(e.getKey(), b);

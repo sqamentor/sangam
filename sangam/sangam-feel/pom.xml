@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-feel</artifactId>
+  <name>Sangam FEEL and DMN policies (ADR-D-26: exact numbers, strict evaluation, strict null input, DMN 1.6)</name>
+  <description>
+    The one FEEL setup of every Sangam DMN engine (integrator ruling on W4-K REQUEST 2026-11-12T19:41:49Z, option A):
+    sangam-engine installs it on process engines, sangam-packs on its test engines, so pack tests evaluate DMN exactly
+    as production does. No process-engine dependency.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-core</artifactId>
+    </dependency>
+    <!-- Operaton 2.2.0 DMN engine and its FEEL integration (versions from operaton-bom); the feel-engine closure is
+         pinned in the root pom (SG-27). -->
+    <dependency>
+      <groupId>org.operaton.bpm.dmn</groupId>
+      <artifactId>operaton-engine-dmn</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.operaton.bpm.dmn</groupId>
+      <artifactId>operaton-engine-feel-scala</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-procurement-complaint/admissibility",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-procurement-complaint",
+  "title": {
+    "en": "Admissibility of the complaint",
+    "hi": "शिकायत की ग्राह्यता"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "complaintGrounds",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Grounds of the complaint",
+        "hi": "शिकायत के आधार"
+      }
+    },
+    {
+      "id": "admissibilityNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Admissibility: time limit, standing, grounds",
+        "hi": "ग्राह्यता"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "admissibleDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "admissible",
+        "label": {
+          "en": "Admissible",
+          "hi": "ग्राह्य"
+        }
+      },
+      {
+        "value": "inadmissible",
+        "label": {
+          "en": "Not admissible",
+          "hi": "अग्राह्य"
+        }
+      }
+    ]
+  }
+}

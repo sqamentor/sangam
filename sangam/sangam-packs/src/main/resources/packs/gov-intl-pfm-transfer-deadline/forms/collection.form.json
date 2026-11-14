@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-transfer-deadline/collection",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-transfer-deadline",
+  "title": {
+    "en": "Collection",
+    "hi": "संग्रह"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "collectionChannel",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Collection channel (agent bank, portal)",
+        "hi": "संग्रह माध्यम"
+      }
+    },
+    {
+      "id": "collectionRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Collection reference",
+        "hi": "संग्रह संदर्भ"
+      }
+    },
+    {
+      "id": "collectionAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount collected",
+        "hi": "संग्रहित राशि"
+      }
+    },
+    {
+      "id": "collectedOn",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date of collection",
+        "hi": "संग्रह तिथि"
+      }
+    }
+  ]
+}

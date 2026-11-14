@@ -30,6 +30,7 @@ import org.sangam.core.integration.ConnectorResult;
 import org.sangam.core.integration.LookupResult;
 import org.sangam.core.integration.SangamConnector;
 import org.sangam.core.layer.CapabilityClass;
+import org.sangam.integration.connector.AuditedConnector;
 import org.sangam.integration.connector.HttpTransport;
 import org.sangam.integration.connector.Json;
 import org.sangam.integration.connector.SecretResolver;
@@ -58,7 +59,7 @@ import org.sangam.integration.sim.digilocker.DigiLockerRequesterSimulator;
  * new consent when the code was used). A refused code is the business failure {@code CONSENT_INVALID}. Every call goes
  * through the connector's {@link HttpTransport} (egress allow-list, R27); the client secret is a reference.
  */
-public final class DigiLockerRequesterConnector implements SangamConnector {
+public final class DigiLockerRequesterConnector implements SangamConnector, AuditedConnector {
 
     public static final String TYPE = "digilocker-requester";
     public static final String OP_VERIFY_ADULT = "verify-adult";
@@ -225,6 +226,44 @@ public final class DigiLockerRequesterConnector implements SangamConnector {
             // a read: nothing happened downstream, so a lost answer is transient (never UNKNOWN_OUTCOME)
             return new ConnectorResult.TransientFailure("DigiLocker: " + e.getMessage(), false, null);
         }
+    }
+
+    /**
+     * Owner decision 299: one {@code DOCUMENT_FETCHED} per file a {@code pull} fetched (X.4.0.3: DigiLocker URI and
+     * issuer), with the issued-list entry's issuer and doc type, and the file's SHA-256, size and content type. A file
+     * that came back with an error was not fetched. {@code verify-adult} fetches no document.
+     */
+    @Override
+    public List<AuditedConnector.Event> auditEvents(String operation, Map<String, Object> input, Map<String, Object> output) {
+        if (!OP_PULL.equals(operation) || !(output.get("files") instanceof List<?> files)) {
+            return List.of();
+        }
+        Map<String, Map<?, ?>> issued = new LinkedHashMap<>();
+        if (output.get("issued") instanceof List<?> items) {
+            for (Object o : items) {
+                if (o instanceof Map<?, ?> m && m.get("uri") != null) {
+                    issued.putIfAbsent(String.valueOf(m.get("uri")), m);
+                }
+            }
+        }
+        List<AuditedConnector.Event> events = new ArrayList<>();
+        for (Object o : files) {
+            if (!(o instanceof Map<?, ?> f) || f.get("uri") == null || f.get("error") != null) {
+                continue;
+            }
+            String uri = String.valueOf(f.get("uri"));
+            Map<?, ?> item = issued.getOrDefault(uri, Map.of());
+            Map<String, Object> p = new LinkedHashMap<>();
+            p.put("source", "DigiLocker");
+            p.put("uri", uri);
+            p.put("issuer", item.get("issuer") == null ? null : String.valueOf(item.get("issuer")));
+            p.put("docType", item.get("doctype") == null ? null : String.valueOf(item.get("doctype")));
+            p.put("sha256", f.get("sha256"));
+            p.put("size", f.get("size"));
+            p.put("contentType", f.get("contentType"));
+            events.add(new AuditedConnector.Event("DOCUMENT_FETCHED", p));
+        }
+        return events;
     }
 
     /** A read has no downstream effect to find: "not found" lets the invoker retry safely. */

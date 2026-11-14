@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_intl_pfm_transfer_deadline" name="Transfer deadline by channel (SYNTHETIC; per country)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- SYNTHETIC: country law or policy. Deploy the confirmed table as a tenant override. -->
+  <decision id="intl-pfm-transfer-deadline" name="Transfer deadline by channel (SYNTHETIC; per country)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="intl-pfm-transfer-deadline_t" hitPolicy="FIRST">
+      <input id="intl-pfm-transfer-deadline_i0" label="Collection channel"><inputExpression id="intl-pfm-transfer-deadline_ie0" typeRef="string"><text>collectionChannel</text></inputExpression></input>
+      <output id="intl-pfm-transfer-deadline_o0" label="Transfer within" name="transferSpec" typeRef="string"/>
+      <rule id="intl-pfm-transfer-deadline_r0"><description>SYNTHETIC</description>
+        <inputEntry id="intl-pfm-transfer-deadline_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="intl-pfm-transfer-deadline_r0_o0"><text>"1WD"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

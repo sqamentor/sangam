@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * RFC 9457 mapping of sangam-rest's {@link ApiProblem} (permission interceptor, R41 problems) for the registry module's
  * controllers; the module's own {@code RegistryExceptionHandler} keeps mapping {@code RegistryException}.
  */
-@RestControllerAdvice(basePackages = "org.sangam.registry.rest")
+@RestControllerAdvice(basePackages = "org.sangam.rest.modules.registry.web")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class RegistryApiProblemAdvice {
 

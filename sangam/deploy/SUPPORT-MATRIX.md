@@ -28,7 +28,7 @@ Bytecode level: the parent pom still sets `maven.compiler.release=21`, so JDK 25
 | Operaton | 2.2.0 | Engine, as a dependency (ADR-D-16) |
 | Spring Boot | 4.1.2 | Fixed by the Operaton starter |
 | Liquibase | 4.33.0 | Below 5.0 (LIC-7) |
-| Jackson (jackson-databind / jackson-bom) | 2.22.x (pinned 2.22.3) | Licence gate floor; 2.22.x only, because the FEEL closure's jackson-module-scala 2.22.3 refuses any other databind minor. `SangamFeel.install` fails fast outside 2.22.x (SG-33): import `org.sangam:sangam-bom` and set `jackson.version` / import `jackson-bom` 2.22.3 in your own parent pom |
+| Jackson (jackson-databind / jackson-bom) | 2.22.x (pinned 2.22.3) | Licence gate floor; 2.22.x only, because the FEEL closure's jackson-module-scala 2.22.3 refuses any other databind minor. `SangamFeel.install` fails fast outside 2.22.x (SG-33): import `io.github.sqamentor:sangam-bom` and set `jackson.version` / import `jackson-bom` 2.22.3 in your own parent pom |
 | Node (UI build only) | 22 | Not a runtime dependency |
 
 ## 3. Databases and drivers (R17, CF-11)
@@ -84,7 +84,7 @@ When SDK model records change, run `generate_native_config.py`. CI fails if the 
 
 | Application | Image | Ports (app / management) | Database | Helm |
 |---|---|---|---|---|
-| Server (includes config, ledger, registry, billing, case, programme, resources, geo, field, compliance, connectors-health, cell as libraries) | `sangam-server` | 8080 / 8081 | Tier 1 | Always |
+| Server (includes config, ledger, registry, billing, case, programme, resources, geo, field, compliance, cell as libraries; connectors-health is optional and off by default, decision 187: `sangam.modules.connectors-health.enabled=true`, HAPI profile validation only with the build profile `sangam-health-validation`, decision 183; eSign signing only with `sangam-esign`, decision 217) | `sangam-server` | 8080 / 8081 | Tier 1 | Always |
 | Control plane | `sangam-control-plane` | 8090 / 8091 | Own | `scale.controlPlane.enabled` |
 | Gateway | `sangam-gateway` | 8000 / 8001 | None | `scale.gateway.enabled` |
 | Roll-up | `sangam-rollup` | 8095 / 8096 | Own | `scale.rollup.enabled` |

@@ -170,6 +170,9 @@ sangam:
     # sangam-engine settings (SangamEngineSettings); the server runs Liquibase, so no product schema from the engine
     apply-product-schema: false
     apply-engine-patches: true
+    # Decision 144: the audit scope (system:<name>) of engine work no tenant owns; the engine refuses to start
+    # without a valid one. Overridable (Helm server.systemAuditScope and compose pass the same variable).
+    system-audit-scope: ${SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE:system:platform}
     # M-054: job executor options, both off (the Operaton starter's executor is used). Either one switches to
     # SangamJobExecutor (EngineWiring.sangamJobExecutor), sized by the SANGAM_JOB_* settings above.
     # job-virtual-threads: pool threads are JDK virtual threads (env SANGAM_JOB_VIRTUAL_THREADS wins over this key).

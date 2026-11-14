@@ -21,8 +21,9 @@ use Sangam\Sdk\Generated\Support;
  * @property-read bool|null $critical
  * @property-read int|null $minPhotos
  * @property-read FieldTemplateVisibleIf|null $visibleIf
- * @property-read float|null $min
- * @property-read float|null $max
+ * @property-read string|null $min Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242)
+ * @property-read string|null $max Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242)
+ * @property-read int|null $scale NUMBER items only, optional (decision 242): the most decimal places allowed. min, max and every answer to the item may not have more decimal places than scale; absent means no limit beyond decision 230
  * @property-read mixed|null $expected
  * @property-read string|null $findingCode
  * @property-read string|null $severity
@@ -40,8 +41,9 @@ final class FieldTemplateItem implements \JsonSerializable
      * @param bool|null $critical
      * @param int|null $minPhotos
      * @param FieldTemplateVisibleIf|null $visibleIf
-     * @param float|null $min
-     * @param float|null $max
+     * @param string|null $min
+     * @param string|null $max
+     * @param int|null $scale
      * @param mixed|null $expected
      * @param string|null $findingCode
      * @param string|null $severity
@@ -58,8 +60,9 @@ final class FieldTemplateItem implements \JsonSerializable
         public readonly ?bool $critical = null,
         public readonly ?int $minPhotos = null,
         public readonly ?FieldTemplateVisibleIf $visibleIf = null,
-        public readonly ?float $min = null,
-        public readonly ?float $max = null,
+        public readonly ?string $min = null,
+        public readonly ?string $max = null,
+        public readonly ?int $scale = null,
         public readonly mixed $expected = null,
         public readonly ?string $findingCode = null,
         public readonly ?string $severity = null,
@@ -71,7 +74,7 @@ final class FieldTemplateItem implements \JsonSerializable
     /** @param array<string, mixed> $data decoded JSON object */
     public static function fromArray(array $data): self
     {
-        $extra = array_diff_key($data, array_flip(['id', 'type', 'label', 'required', 'options', 'weight', 'critical', 'minPhotos', 'visibleIf', 'min', 'max', 'expected', 'findingCode', 'severity', 'attributes']));
+        $extra = array_diff_key($data, array_flip(['id', 'type', 'label', 'required', 'options', 'weight', 'critical', 'minPhotos', 'visibleIf', 'min', 'max', 'scale', 'expected', 'findingCode', 'severity', 'attributes']));
         return new self(
             Support::str($data['id'] ?? null),
             Support::str($data['type'] ?? null),
@@ -82,8 +85,9 @@ final class FieldTemplateItem implements \JsonSerializable
             Support::bool($data['critical'] ?? null),
             Support::int($data['minPhotos'] ?? null),
             Support::model($data['visibleIf'] ?? null, FieldTemplateVisibleIf::class),
-            Support::float($data['min'] ?? null),
-            Support::float($data['max'] ?? null),
+            Support::str($data['min'] ?? null),
+            Support::str($data['max'] ?? null),
+            Support::int($data['scale'] ?? null),
             $data['expected'] ?? null,
             Support::str($data['findingCode'] ?? null),
             Support::str($data['severity'] ?? null),
@@ -127,6 +131,9 @@ final class FieldTemplateItem implements \JsonSerializable
         }
         if ($this->max !== null) {
             $out['max'] = $this->max;
+        }
+        if ($this->scale !== null) {
+            $out['scale'] = $this->scale;
         }
         if ($this->expected !== null) {
             $out['expected'] = $this->expected;

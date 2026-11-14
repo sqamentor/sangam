@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-quarkus-extension</artifactId>
+  <name>Sangam optional Quarkus host</name>
+  <description>M-143 (owner decision 186): the optional Quarkus host, a thin adapter over the plain-Java assembly
+    (sangam-assembly). It supplies five host seams (config source, lifecycle, scheduling, security context, shared JTA
+    transaction); every other required capability is CAPABILITY_MISSING and start-up refuses. Built only by the opt-in
+    reactor profile; no other module depends on Quarkus (decision 137, OptionalHosts, HostFrameworkBoundaryTest).
+    Deployment approval: NOT APPROVED (decision 137).
+  </description>
+
+  <properties>
+    <!-- Operaton 2.2.0 pins Quarkus 3.40.1.1 (operaton-root-2.2.0.pom version.quarkus); D-5 evaluated this version -->
+    <version.quarkus>3.40.1.1</version.quarkus>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- decision 137 / licence-policy min_versions: jackson-databind at least 2.22.3; Quarkus 3.40.1.1 alone would
+           bring 2.21.7. Listed before the Quarkus BOM so the project Jackson wins. -->
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${version.jackson}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- The product closure keeps the versions the default reactor resolves for sangam-assembly (checked with
+           dependency:list against sangam-assembly, 2026-11-12): the Quarkus BOM would move these three. -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-text</artifactId>
+        <version>1.13.1</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.19.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jspecify</groupId>
+        <artifactId>jspecify</artifactId>
+        <version>1.0.1</version>
+      </dependency>
+      <!-- the project's JUnit (the Quarkus BOM would move the tests to another JUnit) -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${version.junit}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- The test closure of sangam-host-conformance (through sangam-rest) keeps the Micrometer the default reactor
+           resolves (1.17.2, from spring-boot-dependencies; checked against dependency:list of sangam-host-conformance,
+           2026-11-13). The Quarkus BOM would move it to 1.17.1. Micrometer is in neither Quarkus closure, so this moves
+           no reviewed Quarkus version; scala-library 2.13.16 and slf4j-api 2.0.18 stay at the reviewed main closure. -->
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-bom</artifactId>
+        <version>1.17.2</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Owner decision 275: the quarkus-junit test closure (quarkus-devservices-deployment, testcontainers,
+           docker-java-transport-zerodep) would bring jna 5.8.0, whose licence the review flagged; 5.17.0 is the version
+           licence-policy.json already elects (Apache-2.0, decision 117). Test scope only; no Quarkus main dependency
+           uses jna. -->
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna</artifactId>
+        <version>5.17.0</version>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkus</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${version.quarkus}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- the host SPI and the host-neutral engine assembly (sangam-engine already excludes Spring, D-38) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-assembly</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- Operaton's Quarkus engine extension (runtime part; the deployer's own build runs the Quarkus augmentation) -->
+    <dependency>
+      <groupId>org.operaton.bpm.quarkus</groupId>
+      <artifactId>operaton-bpm-quarkus-engine</artifactId>
+      <version>${version.operaton}</version>
+      <exclusions>
+        <!-- coordinator order D-5 (3) and D-38: Spring is used only by the engine's XML (beans) configuration, which
+             the Quarkus engine never calls; EngineWithoutSpringTest proves the engine builds without it -->
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-beans</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
+        </exclusion>
+        <!-- LIC-1, as in sangam-engine: never bundle GraalJS -->
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>js</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.polyglot</groupId>
+          <artifactId>polyglot</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.graalvm.js</groupId>
+          <artifactId>js-scriptengine</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-arc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-agroal</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-narayana-jta</artifactId>
+    </dependency>
+    <!-- No JDBC driver extension: the deployer picks the database (quarkus-jdbc-h2 3.40.1.1 brings h2 2.4.240 and
+         jts-core 1.19.0, both held by the D-5 licence review). -->
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- M-150 on Quarkus: the host conformance kit, run from this host's own test sources. The kit reaches the
+         framework-free ports (org.sangam.rest.port) through sangam-rest, which also carries the Spring host area;
+         Spring never reaches this module's class path. -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-host-conformance</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- Quarkus' test bootstrap (QuarkusBootstrap); its test closure, deployment artefacts included, was reviewed
+         and downloaded under D-5 and owner decision 229 (jdk-classfile-backport and the two sisu jars: test scope
+         only, never shipped) -->
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- h2 2.3.232, the project's elected version (licence-policy decision 117), for the plain engine and JTA tests -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>${version.h2}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

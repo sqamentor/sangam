@@ -28,7 +28,8 @@ import org.springframework.core.env.Environment;
  * {@code username}, {@code passwordRef}, {@code channel}). Credentials are references resolved through the platform
  * {@link SecretResolver} (or its environment fallback); a literal secret is never read from these keys. The broker
  * clients are optional dependencies: opting in without the client on the classpath fails start-up with a clear
- * message instead of a late {@code NoClassDefFoundError}.
+ * message instead of a late {@code NoClassDefFoundError}. Owner decision 232: jnats is not in the server; {@code nats}
+ * needs the NATS add-on ({@link AddonGuardWiring#NATS_ADDON}).
  */
 @Configuration(proxyBeanMethods = false)
 public class BrokerWakeupWiring {
@@ -47,7 +48,7 @@ public class BrokerWakeupWiring {
         String kind = env.getProperty(PREFIX + ".bus", "").trim().toLowerCase(Locale.ROOT);
         return switch (kind) {
             case "nats" -> {
-                requireClient("io.nats.client.Connection", "nats", "io.nats:jnats");
+                requireClient(AddonGuardWiring.NATS_CLASS, "nats", AddonGuardWiring.NATS_ADDON);
                 yield BrokerWakeupBus.nats(settings(env, "nats"), secrets::resolve, node, listener);
             }
             case "redis" -> {
@@ -67,8 +68,9 @@ public class BrokerWakeupWiring {
         try {
             Class.forName(className, false, BrokerWakeupWiring.class.getClassLoader());
         } catch (ClassNotFoundException | LinkageError e) {
-            throw new IllegalStateException(PREFIX + ".bus=" + kind + " needs the optional client " + artifact
-                    + " on the server classpath", e);
+            throw new IllegalStateException(PREFIX + ".bus=" + kind + " needs " + (artifact.startsWith("the ")
+                    ? artifact : "the optional client " + artifact) + " on the server classpath (" + className
+                    + " not found)", e);
         }
     }
 }

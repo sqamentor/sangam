@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TRANSPARENCY-OFFICER",
+      "role": "TRANSPARENCYOFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Fiscal transparency officer",
+        "hi": "राजकोषीय पारदर्शिता अधिकारी"
+      }
+    },
+    {
+      "id": "ACCOUNTING-OFFICER",
+      "role": "ACCOUNTING-OFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TRANSPARENCY-OFFICER",
+      "person": "ift.transparency-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ACCOUNTING-OFFICER",
+      "person": "ift.accounting-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "TRANSPARENCYOFFICER",
+      "name": {
+        "en": "Fiscal transparency officer",
+        "hi": "राजकोषीय पारदर्शिता अधिकारी"
+      }
+    },
+    {
+      "code": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ]
+}

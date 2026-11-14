@@ -47,6 +47,17 @@ spec:
             {{- include "sangam.server.env" . | nindent 12 }}
             - name: SANGAM_LIQUIBASE_MODE
               value: migrate-only
+            # A pre-install hook runs before the server ConfigMap exists, so the settings the migrate-only start needs
+            # are set here from the same values: the explicit production switch (decisions 143, 198; a missing value
+            # refuses the start), the system audit scope (decision 144) and the vector index (decision 247: with
+            # oracle this Job checks for 23ai or later and applies the oracle-vector changelog, which validating
+            # server pods never do).
+            - name: SANGAM_SECURITY_PRODUCTION
+              value: {{ .Values.server.production | quote }}
+            - name: SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE
+              value: {{ required "server.systemAuditScope is required (decision 144)" .Values.server.systemAuditScope | quote }}
+            - name: SANGAM_AI_KB_VECTOR_INDEX
+              value: {{ .Values.server.aiKbVectorIndex | quote }}
             - name: SANGAM_JOB_EXECUTOR_ENABLED
               value: "false"
             - name: SANGAM_COMPLIANCE_SCHEDULE

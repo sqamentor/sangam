@@ -78,6 +78,7 @@ class DstFoldTimerH2Test {
 
     private static SangamEngineSettings settings(ZoneId timerZone) {
         SangamEngineSettings settings = new SangamEngineSettings();
+        settings.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         settings.setAllowMultipleEnginesPerJvm(true);
         settings.setEngineSchemaUpdate("true");
         settings.setJobExecutorActivate(false);
@@ -104,8 +105,8 @@ class DstFoldTimerH2Test {
     /** Starts the model at {@code start}, moves the engine clock in {@code step}s to {@code end}; one entry per tick. */
     private List<Instant> fires(String model, Instant start, Instant end, Duration step) {
         a.setClock(start);
-        a.deploy(null, "cycle", Map.of("cycle.bpmn", model.getBytes(StandardCharsets.UTF_8)));
-        String pid = a.startProcess(null, "cycle", "D-" + step.toMinutes(), Map.of());
+        a.deploy("t1", "cycle", Map.of("cycle.bpmn", model.getBytes(StandardCharsets.UTF_8)));
+        String pid = a.startProcess("t1", "cycle", "D-" + step.toMinutes(), Map.of());
         List<Instant> fires = new ArrayList<>();
         Instant now = start;
         while (now.isBefore(end)) {
@@ -207,9 +208,9 @@ class DstFoldTimerH2Test {
         engine(BERLIN);
         Instant start = Instant.parse("2026-10-24T10:00:00Z"); // 12:00 CEST
         a.setClock(start);
-        a.deploy(null, "cycle", Map.of("cycle.bpmn", model(
+        a.deploy("t1", "cycle", Map.of("cycle.bpmn", model(
                 "<timeDuration xsi:type=\"tFormalExpression\">P1DT1H</timeDuration>", true).getBytes(StandardCharsets.UTF_8)));
-        String pid = a.startProcess(null, "cycle", "D-1", Map.of());
+        String pid = a.startProcess("t1", "cycle", "D-1", Map.of());
         Instant due = a.processEngine().getManagementService().createJobQuery().processInstanceId(pid).timers()
                 .singleResult().getDuedate().toInstant();
         // one Berlin calendar day (12:00 CEST -> 12:00 CET, 25 h) plus one elapsed hour
@@ -228,8 +229,8 @@ class DstFoldTimerH2Test {
     /** Starts {@code timer} at {@code t0}; returns the instance id. */
     private String start(String timer, Instant t0) {
         a.setClock(t0);
-        a.deploy(null, "cycle", Map.of("cycle.bpmn", model(timer, false).getBytes(StandardCharsets.UTF_8)));
-        return a.startProcess(null, "cycle", "IST-1", Map.of());
+        a.deploy("t1", "cycle", Map.of("cycle.bpmn", model(timer, false).getBytes(StandardCharsets.UTF_8)));
+        return a.startProcess("t1", "cycle", "IST-1", Map.of());
     }
 
     /** Fires the instance's timer exactly at its due instant and checks the next due instant. */
@@ -277,6 +278,7 @@ class DstFoldTimerH2Test {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:dst" + System.nanoTime() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setJobExecutorActivate(false);

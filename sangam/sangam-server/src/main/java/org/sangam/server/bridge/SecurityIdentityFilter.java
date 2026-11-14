@@ -18,7 +18,7 @@ import org.sangam.core.security.SecurityIdentity;
 import org.sangam.rest.port.SangamPrincipal;
 import org.sangam.security.SangamSecurity;
 import org.sangam.security.audit.LoginEventBatcher;
-import org.sangam.security.oidc.SangamAuthenticationToken;
+import org.sangam.security.spring.SangamAuthenticationToken;
 import org.sangam.security.oidc.SecurityProperties;
 import org.sangam.security.tenant.TenantContext;
 import org.sangam.server.security.PlatformIssuers;
@@ -61,14 +61,44 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
         }
     });
 
+    /** Decision 152: whether development identities (static development tokens) are accepted at all. */
+    private final boolean developmentIdentitiesAllowed;
+
+    /**
+     * @param developmentIdentitiesAllowed true only in a validated development environment (decision 143,
+     *                                     {@code ProductionEnvironment.developmentDefaultsAllowed}); otherwise every
+     *                                     development identity, on any authentication path, is refused with 401
+     */
     public SecurityIdentityFilter(Transactions tx, SangamSecurity security, SecurityProperties props,
-                                  LoginEventBatcher logins) {
+                                  LoginEventBatcher logins, boolean developmentIdentitiesAllowed) {
+        this.developmentIdentitiesAllowed = developmentIdentitiesAllowed;
         this.tx = tx;
         this.security = security;
         this.props = props;
         this.logins = logins;
         // SG-15: exact per-token cache, validated against the database on every request (see the class)
         this.identities = new org.sangam.security.identity.ResolvedIdentityCache(security.dialect(), security.principals());
+    }
+
+    /** Problem code of a refused development identity (decision 152). */
+    public static final String DEVELOPMENT_IDENTITY_REFUSED = "DEVELOPMENT_IDENTITY_REFUSED";
+
+    /** Problem code of an identity whose tenant is a reserved id (decision 144). */
+    public static final String RESERVED_TENANT_REFUSED = "RESERVED_TENANT_REFUSED";
+
+    /**
+     * Decision 144: an authenticated identity whose tenant is the shared key or a system audit scope
+     * ({@link org.sangam.core.tenant.SystemAuditScope#isReserved}). The system identity is internal and never arrives
+     * here from a token.
+     */
+    public static boolean reservedTenant(SecurityIdentity raw) {
+        return raw != null && org.sangam.core.tenant.SystemAuditScope.isReserved(raw.tenantId());
+    }
+
+    /** A static development token's identity, or any token naming the development token issuer. */
+    public static boolean isDevelopmentIssued(SecurityIdentity raw) {
+        return org.sangam.security.identity.PrincipalResolver.isDevelopmentIdentity(raw)
+                || (raw.attributes() != null && PlatformIssuers.DEV_TOKEN_ISSUER.equals(raw.attributes().get("iss")));
     }
 
     @Override
@@ -92,6 +122,26 @@ public final class SecurityIdentityFilter extends OncePerRequestFilter {
             platform = PlatformIssuers.isPlatformIdentity(p.groups());
         } else {
             chain.doFilter(req, res);
+            return;
+        }
+        if (!developmentIdentitiesAllowed && isDevelopmentIssued(raw)) {
+            // decision 152: production (and staging) reject development-issued identities on any path
+            if (logins != null) {
+                logins.failed(raw.tenantId(), raw.subject(), raw.authMethod(), req.getRemoteAddr(),
+                        DEVELOPMENT_IDENTITY_REFUSED);
+            }
+            ProblemResponses.write(req, res, 401, DEVELOPMENT_IDENTITY_REFUSED, "Authentication refused",
+                    "development identities are accepted only in a development environment");
+            return;
+        }
+        if (reservedTenant(raw)) {
+            // decision 144: the shared key and every system audit scope are never a caller's tenant, so no request
+            // runs as (or reads audit of) the system scope through a tenant path. No login event: it would be written
+            // into the reserved scope itself; the refusal is logged without the tenant value.
+            org.slf4j.LoggerFactory.getLogger(SecurityIdentityFilter.class).warn(
+                    "{}: {} identity with a reserved tenant id refused", RESERVED_TENANT_REFUSED, raw.authMethod());
+            ProblemResponses.write(req, res, 401, RESERVED_TENANT_REFUSED, "Authentication refused",
+                    "the identity's tenant is a reserved id");
             return;
         }
         SecurityIdentity resolved;

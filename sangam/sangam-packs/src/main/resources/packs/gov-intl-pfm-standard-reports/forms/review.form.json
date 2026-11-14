@@ -1,0 +1,65 @@
+{
+  "key": "gov-intl-pfm-standard-reports/review",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-standard-reports",
+  "title": {
+    "en": "Approve the report (not the preparer)",
+    "hi": "रिपोर्ट का अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "extractDatasetRef",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Report data set (ledger extract)",
+        "hi": "रिपोर्ट डेटा सेट"
+      }
+    },
+    {
+      "id": "varianceNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Variances: original, revised and outturn explained",
+        "hi": "अंतर की व्याख्या"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

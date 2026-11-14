@@ -56,7 +56,7 @@ public final class GeoApi {
     /**
      * Layers
      *
-     * <p>GeoController.layers (sangam-geo).
+     * <p>GeoController.layers (sangam-rest).
      *
      * <p>{@code GET /geo/layers} (operationId {@code geoGeoLayers}); permission {@code geo.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -70,7 +70,7 @@ public final class GeoApi {
     /**
      * Define layer
      *
-     * <p>GeoController.defineLayer (sangam-geo).
+     * <p>GeoController.defineLayer (sangam-rest).
      *
      * <p>{@code POST /geo/layers} (operationId {@code geoGeoDefineLayer}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -86,7 +86,7 @@ public final class GeoApi {
     /**
      * Layer
      *
-     * <p>GeoController.layer (sangam-geo).
+     * <p>GeoController.layer (sangam-rest).
      *
      * <p>{@code GET /geo/layers/{layer}} (operationId {@code geoGeoLayer}); permission {@code geo.read}.
      * @param layer path parameter {@code layer}
@@ -101,7 +101,7 @@ public final class GeoApi {
     /**
      * Import boundaries
      *
-     * <p>GeoController.importBoundaries (sangam-geo).
+     * <p>GeoController.importBoundaries (sangam-rest).
      *
      * <p>{@code POST /geo/layers/{layer}/import} (operationId {@code geoGeoImportBoundaries}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param layer path parameter {@code layer}
@@ -118,7 +118,7 @@ public final class GeoApi {
     /**
      * Features
      *
-     * <p>GeoController.features (sangam-geo).
+     * <p>GeoController.features (sangam-rest).
      *
      * <p>{@code GET /geo/layers/{layer}/features} (operationId {@code geoGeoFeatures}); permission {@code geo.read}.
      * @param layer path parameter {@code layer}
@@ -143,7 +143,7 @@ public final class GeoApi {
     /**
      * Put feature
      *
-     * <p>GeoController.putFeature (sangam-geo).
+     * <p>GeoController.putFeature (sangam-rest).
      *
      * <p>{@code POST /geo/layers/{layer}/features} (operationId {@code geoGeoPutFeature}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param layer path parameter {@code layer}
@@ -160,7 +160,7 @@ public final class GeoApi {
     /**
      * Feature
      *
-     * <p>GeoController.feature (sangam-geo).
+     * <p>GeoController.feature (sangam-rest).
      *
      * <p>{@code GET /geo/features/{id}} (operationId {@code geoGeoFeature}); permission {@code geo.read}.
      * @param id path parameter {@code id}
@@ -177,7 +177,7 @@ public final class GeoApi {
     /**
      * Retire
      *
-     * <p>GeoController.retire (sangam-geo).
+     * <p>GeoController.retire (sangam-rest).
      *
      * <p>{@code DELETE /geo/features/{id}} (operationId {@code geoGeoRetire}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -191,7 +191,7 @@ public final class GeoApi {
     /**
      * Lineage
      *
-     * <p>GeoController.lineage (sangam-geo).
+     * <p>GeoController.lineage (sangam-rest).
      *
      * <p>{@code GET /geo/features/{id}/lineage} (operationId {@code geoGeoLineage}); permission {@code geo.read}.
      * @param id path parameter {@code id}
@@ -206,7 +206,7 @@ public final class GeoApi {
     /**
      * Resolve
      *
-     * <p>GeoController.resolve (sangam-geo).
+     * <p>GeoController.resolve (sangam-rest).
      *
      * <p>{@code GET /geo/resolve} (operationId {@code geoGeoResolve}); permission {@code geo.read}.
      * @param layer query parameter {@code layer}
@@ -228,7 +228,7 @@ public final class GeoApi {
     /**
      * Nearest
      *
-     * <p>GeoController.nearest (sangam-geo).
+     * <p>GeoController.nearest (sangam-rest).
      *
      * <p>{@code GET /geo/nearest} (operationId {@code geoGeoNearest}); permission {@code geo.read}.
      * @param lat query parameter {@code lat}
@@ -256,7 +256,7 @@ public final class GeoApi {
     /**
      * Overlaps
      *
-     * <p>GeoController.overlaps (sangam-geo).
+     * <p>GeoController.overlaps (sangam-rest).
      *
      * <p>{@code POST /geo/overlaps} (operationId {@code geoGeoOverlaps}); permission {@code geo.write}.
      * @param body request body
@@ -272,7 +272,7 @@ public final class GeoApi {
     /**
      * Define fence
      *
-     * <p>GeoController.defineFence (sangam-geo).
+     * <p>GeoController.defineFence (sangam-rest).
      *
      * <p>{@code POST /geo/fences} (operationId {@code geoGeoDefineFence}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -288,7 +288,7 @@ public final class GeoApi {
     /**
      * Fence
      *
-     * <p>GeoController.fence (sangam-geo).
+     * <p>GeoController.fence (sangam-rest).
      *
      * <p>{@code GET /geo/fences/{id}} (operationId {@code geoGeoFence}); permission {@code geo.read}.
      * @param id path parameter {@code id}
@@ -303,7 +303,7 @@ public final class GeoApi {
     /**
      * Deactivate fence
      *
-     * <p>GeoController.deactivateFence (sangam-geo).
+     * <p>GeoController.deactivateFence (sangam-rest).
      *
      * <p>{@code DELETE /geo/fences/{id}} (operationId {@code geoGeoDeactivateFence}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -317,7 +317,7 @@ public final class GeoApi {
     /**
      * Check fence
      *
-     * <p>GeoController.checkFence (sangam-geo).
+     * <p>GeoController.checkFence (sangam-rest).
      *
      * <p>{@code POST /geo/fences/{id}/check} (operationId {@code geoGeoCheckFence}); permission {@code geo.write}.
      * @param id path parameter {@code id}
@@ -334,7 +334,7 @@ public final class GeoApi {
     /**
      * Put object geometry
      *
-     * <p>GeoController.putObjectGeometry (sangam-geo).
+     * <p>GeoController.putObjectGeometry (sangam-rest).
      *
      * <p>{@code PUT /geo/objects/{type}/{id}/geometry} (operationId {@code geoGeoPutObjectGeometry}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param type path parameter {@code type}
@@ -352,7 +352,7 @@ public final class GeoApi {
     /**
      * Object geometry
      *
-     * <p>GeoController.objectGeometry (sangam-geo).
+     * <p>GeoController.objectGeometry (sangam-rest).
      *
      * <p>{@code GET /geo/objects/{type}/{id}/geometry} (operationId {@code geoGeoObjectGeometry}); permission {@code geo.read}.
      * @param type path parameter {@code type}
@@ -370,7 +370,7 @@ public final class GeoApi {
     /**
      * External layers
      *
-     * <p>GeoController.externalLayers (sangam-geo).
+     * <p>GeoController.externalLayers (sangam-rest).
      *
      * <p>{@code GET /geo/external-layers} (operationId {@code geoGeoExternalLayers}); permission {@code geo.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -384,7 +384,7 @@ public final class GeoApi {
     /**
      * Register external
      *
-     * <p>GeoController.registerExternal (sangam-geo).
+     * <p>GeoController.registerExternal (sangam-rest).
      *
      * <p>{@code POST /geo/external-layers} (operationId {@code geoGeoRegisterExternal}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -400,7 +400,7 @@ public final class GeoApi {
     /**
      * Query external
      *
-     * <p>GeoController.queryExternal (sangam-geo).
+     * <p>GeoController.queryExternal (sangam-rest).
      *
      * <p>{@code POST /geo/external-layers/{ref}/query} (operationId {@code geoGeoQueryExternal}); permission {@code geo.write}.
      * @param ref path parameter {@code ref}
@@ -417,7 +417,7 @@ public final class GeoApi {
     /**
      * Import external
      *
-     * <p>GeoController.importExternal (sangam-geo).
+     * <p>GeoController.importExternal (sangam-rest).
      *
      * <p>{@code POST /geo/external-layers/{ref}/import} (operationId {@code geoGeoImportExternal}); permission {@code geo.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param ref path parameter {@code ref}

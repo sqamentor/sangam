@@ -31,7 +31,9 @@ import org.sangam.packs.port.ReconciliationRequest;
  *   <li>{@code PENDING_THEN_COMPLETED}, {@code PENDING_THEN_FAILED:<REASON>}: the status lookup after the
  *       acknowledgement window finds the second outcome;</li>
  *   <li>for queries, any {@code key=value} pairs separated by {@code ;} are returned as data
- *       (for example {@code available=310000} for J-P1-E11, {@code duplicate=true} for J-P1-E03);</li>
+ *       (for example {@code available=310000} for J-P1-E11, {@code duplicate=true} for J-P1-E03); a value
+ *       {@code [k:v,k:v][k:v,k:v]} is a list of records ({@link #records}, decision 223: the frozen wage register of
+ *       {@code hris.inputs});</li>
  *   <li>any directive followed by {@value #SELECT} and business-key suffixes ({@code |}-separated) applies only to
  *       the requests of those cases, for example {@code FAILED:ACCOUNT_CLOSED @ :1:ITEM-00002|:1:ITEM-00004} for two
  *       batch items in round 1 (GP-49); batch children receive the parent's directives (BatchDelegate FAN_OUT);
@@ -80,18 +82,49 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
     private record Stored(String payloadHash, ConnectorResult first, String directive, String connector) {
     }
 
+    /** The configuration-profile connector (sangam-config ConfigConnector); its directive pairs are profile values. */
+    static final String PROFILE = "config.profile";
+
+    /**
+     * Decision 225: a simulated {@code config.profile} answers in the connector's own shape. The directive's
+     * {@code path=value} pairs are the simulated profile's values; {@code profile.get} returns {@code values} with every
+     * requested path ({@code paths}, comma list), a path the simulated profile does not hold with a null value, as the
+     * real connector does. Other operations get no data from those pairs (they are profile values, not answer fields).
+     */
+    static Map<String, Object> profileAnswer(ConnectorRequest r, Map<String, Object> profileValues) {
+        Map<String, Object> out = new java.util.LinkedHashMap<>();
+        if (!"profile.get".equals(r.operation())) {
+            return out;
+        }
+        Map<String, Object> values = new java.util.LinkedHashMap<>();
+        Object paths = r.payload().get("paths");
+        for (String p : paths == null ? new String[0] : paths.toString().split(",")) {
+            if (!p.isBlank()) {
+                values.put(p.trim(), profileValues.get(p.trim()));
+            }
+        }
+        out.put("values", values);
+        out.put("binding", "SIMULATOR");
+        return out;
+    }
+
     @Override
     public ConnectorResult query(ConnectorRequest r) {
         journal.add(r);
         String directive = directive(r);
         Map<String, Object> data = new HashMap<>(defaultsFor(r));
         if (directive != null && directive.contains("=")) {
+            Map<String, Object> pairs = new HashMap<>();
             for (String pair : directive.split(";")) {
                 int eq = pair.indexOf('=');
                 if (eq > 0) {
-                    data.put(pair.substring(0, eq).trim(), coerce(pair.substring(eq + 1).trim()));
+                    pairs.put(pair.substring(0, eq).trim(), coerce(pair.substring(eq + 1).trim()));
                 }
             }
+            if (PROFILE.equals(r.connector())) {
+                return ConnectorResult.completed("SIM-Q-" + shortId(), profileAnswer(r, pairs));
+            }
+            data.putAll(pairs);
             return ConnectorResult.completed("SIM-Q-" + shortId(), data);
         }
         if (directive != null && directive.startsWith("FAILED")) {
@@ -386,7 +419,75 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
         return c < 0 ? "SIMULATED_FAILURE" : directive.substring(c + 1);
     }
 
+    private static final java.util.regex.Pattern RECORDS = java.util.regex.Pattern.compile("(\\[[^\\[\\]]*\\])+");
+    private static final java.util.regex.Pattern RECORD = java.util.regex.Pattern.compile("\\[([^\\[\\]]*)\\]");
+    private static final java.util.regex.Pattern FIELD = java.util.regex.Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+    private static final java.util.regex.Pattern WHOLE = java.util.regex.Pattern.compile("-?(0|[1-9][0-9]*)");
+
+    /**
+     * Decision 223: the list-of-records value of a directive pair, {@code name=[k:v,k:v][k:v,k:v]} (one bracketed
+     * record per item, {@code []} for an empty list), for example
+     * {@code register=[employeeId:E001,pfWages:1500000][employeeId:E002,pfWages:3000000]}. Parsed exactly: a field is
+     * {@code <name>:<value>} split at the first {@code :}, the name an identifier, the value non-empty and taken as is
+     * (no trimming); {@code true} / {@code false} is a boolean, a whole number without a leading zero is a
+     * {@link Long} (amounts are integer minor units), anything else is text (so an identifier such as {@code 007}
+     * stays text). A number with a fraction, a repeated field, an empty record or field and any text outside the
+     * brackets are refused. A value cannot contain {@code ; , [ ]} (the directive's own separators). Backward
+     * compatible: before this format no directive value began with {@code [} and ended with {@code ]}.
+     */
+    public static List<Map<String, Object>> records(String v) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        if (v.equals("[]")) {
+            return out;
+        }
+        if (!RECORDS.matcher(v).matches()) {
+            throw new IllegalArgumentException("simulator list value is [k:v,...][k:v,...], not " + v);
+        }
+        java.util.regex.Matcher m = RECORD.matcher(v);
+        while (m.find()) {
+            String body = m.group(1);
+            if (body.isEmpty()) {
+                throw new IllegalArgumentException("simulator list value with an empty record: " + v);
+            }
+            Map<String, Object> rec = new java.util.LinkedHashMap<>();
+            for (String field : body.split(",", -1)) {
+                int c = field.indexOf(':');
+                String name = c < 0 ? field : field.substring(0, c);
+                String value = c < 0 ? "" : field.substring(c + 1);
+                if (!FIELD.matcher(name).matches() || value.isEmpty()) {
+                    throw new IllegalArgumentException("simulator list field must be name:value, not '" + field + "'");
+                }
+                if (rec.containsKey(name)) {
+                    throw new IllegalArgumentException("simulator list record repeats field " + name + ": " + v);
+                }
+                rec.put(name, item(value));
+            }
+            out.add(rec);
+        }
+        return out;
+    }
+
+    private static Object item(String value) {
+        if (value.equals("true") || value.equals("false")) {
+            return Boolean.parseBoolean(value);
+        }
+        if (WHOLE.matcher(value).matches()) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("simulator list number beyond a long: " + value);
+            }
+        }
+        if (value.matches("-?[0-9]*\\.[0-9]+")) {
+            throw new IllegalArgumentException("simulator list amount " + value + " is not whole minor units");
+        }
+        return value;
+    }
+
     private static Object coerce(String v) {
+        if (v.startsWith("[") && v.endsWith("]")) {
+            return records(v);
+        }
         if ("true".equalsIgnoreCase(v) || "false".equalsIgnoreCase(v)) {
             return Boolean.parseBoolean(v);
         }

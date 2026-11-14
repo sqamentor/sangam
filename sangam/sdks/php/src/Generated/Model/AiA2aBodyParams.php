@@ -14,17 +14,32 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read AiA2aBodyParamsMessage|null $message
  * @property-read string|null $id
+ * @property-read int|null $pageSize
+ * @property-read string|null $status
+ * @property-read string|null $contextId
+ * @property-read string|null $statusTimestampAfter
+ * @property-read string|null $pageToken
  */
 final class AiA2aBodyParams implements \JsonSerializable
 {
     /**
      * @param AiA2aBodyParamsMessage|null $message
      * @param string|null $id
+     * @param int|null $pageSize
+     * @param string|null $status
+     * @param string|null $contextId
+     * @param string|null $statusTimestampAfter
+     * @param string|null $pageToken
      * @param array<string, mixed> $additionalProperties members not named in the schema
      */
     public function __construct(
         public readonly ?AiA2aBodyParamsMessage $message = null,
         public readonly ?string $id = null,
+        public readonly ?int $pageSize = null,
+        public readonly ?string $status = null,
+        public readonly ?string $contextId = null,
+        public readonly ?string $statusTimestampAfter = null,
+        public readonly ?string $pageToken = null,
         public readonly array $additionalProperties = [],
     ) {
     }
@@ -32,10 +47,15 @@ final class AiA2aBodyParams implements \JsonSerializable
     /** @param array<string, mixed> $data decoded JSON object */
     public static function fromArray(array $data): self
     {
-        $extra = array_diff_key($data, array_flip(['message', 'id']));
+        $extra = array_diff_key($data, array_flip(['message', 'id', 'pageSize', 'status', 'contextId', 'statusTimestampAfter', 'pageToken']));
         return new self(
             Support::model($data['message'] ?? null, AiA2aBodyParamsMessage::class),
             Support::str($data['id'] ?? null),
+            Support::int($data['pageSize'] ?? null),
+            Support::str($data['status'] ?? null),
+            Support::str($data['contextId'] ?? null),
+            Support::str($data['statusTimestampAfter'] ?? null),
+            Support::str($data['pageToken'] ?? null),
             $extra,
         );
     }
@@ -48,6 +68,21 @@ final class AiA2aBodyParams implements \JsonSerializable
         }
         if ($this->id !== null) {
             $out['id'] = $this->id;
+        }
+        if ($this->pageSize !== null) {
+            $out['pageSize'] = $this->pageSize;
+        }
+        if ($this->status !== null) {
+            $out['status'] = $this->status;
+        }
+        if ($this->contextId !== null) {
+            $out['contextId'] = $this->contextId;
+        }
+        if ($this->statusTimestampAfter !== null) {
+            $out['statusTimestampAfter'] = $this->statusTimestampAfter;
+        }
+        if ($this->pageToken !== null) {
+            $out['pageToken'] = $this->pageToken;
         }
         return $out === [] ? new \stdClass() : $out;
     }

@@ -14,16 +14,20 @@ import org.sangam.sdk.generated.model.HistoricJobLog;
 import org.sangam.sdk.generated.model.HistoricProcessInstance;
 import org.sangam.sdk.generated.model.HistoricTask;
 import org.sangam.sdk.generated.model.HistoricVariable;
+import org.sangam.sdk.generated.model.HistoryInstanceMigrationRequest;
+import org.sangam.sdk.generated.model.HistoryInstanceMigrationResult;
 import org.sangam.sdk.generated.model.UserOperation;
 
 /**
- * Typed operations of {@code History} (9 operations), generated from
+ * Typed operations of {@code History} (10 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
  */
 @SuppressWarnings("unused")
 public final class HistoryApi {
+
+    private static final TypeReference<HistoryInstanceMigrationResult> R_migrateHistoricProcessInstance = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -381,5 +385,22 @@ public final class HistoryApi {
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, ExternalTaskLogEntry.class, page, size);
+    }
+
+    /**
+     * Move an ended instance's history to a later version
+     *
+     * <p>Rewrites only the process-definition id and key of the ended instance's history rows (ACT_HI_PROCINST, ACTINST, TASKINST, VARINST, DETAIL, INCIDENT, OP_LOG, EXT_TASK_LOG, DECINST, JOB_LOG, and IDENTITYLINK through the instance's history tasks) to the target definition, in one transaction under the root lock, together with the audit event PROCESS_HISTORY_MIGRATED (actor, reason, old and new definition and version, rows per table). Activity ids and everything that ran stay as recorded; called instances keep their own definitions. Operaton migration moves running instances only; this is for history. A retry with the same Idempotency-Key returns the same result. An instance of another tenant is 404 (no existence leak); untenanted history is visible only to a platform identity. Needs history.migrate (decision 258): tenant-scoped, held by the tenant administrator among the tenant roles (a TENANT ADMIN grant, not a history grant); the platform administrator reaches untenanted history. A replay of the stored response re-checks it.
+     *
+     * <p>{@code POST /admin/history/process-instances/{id}/migrate} (operationId {@code migrateHistoricProcessInstance}); permission {@code history.migrate}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. Process instance id (history), 1..64 characters
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public HistoryInstanceMigrationResult migrateHistoricProcessInstance(String id, HistoryInstanceMigrationRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/admin/history/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/migrate");
+        req.body(body);
+        return call.json(req, options, R_migrateHistoricProcessInstance);
     }
 }

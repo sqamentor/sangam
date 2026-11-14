@@ -8,6 +8,7 @@ import org.sangam.core.integration.ConnectorResult;
 import org.sangam.core.integration.LookupResult;
 import org.sangam.core.integration.SangamConnector;
 import org.sangam.core.layer.CapabilityClass;
+import org.sangam.integration.connector.AuditedConnector;
 import org.sangam.integration.connector.HttpTransport;
 import org.sangam.integration.sim.SimulatorProfile;
 import org.sangam.integration.sim.digilocker.DigiLockerPushSimulator;
@@ -41,7 +42,7 @@ import java.util.Objects;
  * earlier push had happened; {@code duplicate=false} means it had not and has now happened. Both answer
  * "found, succeeded". {@code URI_CONFLICT} → found, failed.
  */
-public final class DigiLockerPushConnector implements SangamConnector {
+public final class DigiLockerPushConnector implements SangamConnector, AuditedConnector {
 
     public static final String TYPE = "digilocker";
     public static final String OP_PUSH = "push";
@@ -151,6 +152,25 @@ public final class DigiLockerPushConnector implements SangamConnector {
             return ConnectorResult.OutcomeUnknown.of("DigiLocker: unexpected " + e.getClass().getSimpleName() + ": "
                     + e.getMessage());
         }
+    }
+
+    /**
+     * Owner decision 299: one {@code DOCUMENT_PUSHED} per successful push, from the call or from a lookup that confirmed
+     * (or made) it: issuer organisation, URI, doc type and whether DigiLocker already held it. The holder's DigiLocker id
+     * is not written (data minimisation).
+     */
+    @Override
+    public List<AuditedConnector.Event> auditEvents(String operation, Map<String, Object> input, Map<String, Object> output) {
+        if (!OP_PUSH.equals(operation) || output.get("uri") == null) {
+            return List.of();
+        }
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("target", "DigiLocker");
+        p.put("issuerOrgId", config.orgId());
+        p.put("uri", String.valueOf(output.get("uri")));
+        p.put("docType", output.get("docType") == null ? null : String.valueOf(output.get("docType")));
+        p.put("duplicate", Boolean.TRUE.equals(output.get("duplicate")));
+        return List.of(new AuditedConnector.Event("DOCUMENT_PUSHED", p));
     }
 
     @Override

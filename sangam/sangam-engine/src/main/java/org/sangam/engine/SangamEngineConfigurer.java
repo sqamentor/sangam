@@ -64,7 +64,8 @@ public final class SangamEngineConfigurer {
         // SL-59: the guard also bounds socket reads on every checked-out connection without a network timeout
         DataSource ds = raw instanceof IsolationGuardDataSource ? raw
                 : new IsolationGuardDataSource(raw, settings.getNetworkTimeout());
-        findings = DatabaseGuard.check(ds, settings.isRequireSqlServerRcsi(), settings.getMysqlDatabaseType());
+        findings = DatabaseGuard.check(ds, settings.isRequireSqlServerRcsi(), settings.getMysqlDatabaseType(),
+                settings.isExperimentalCockroachDb());
         if (findings.dialect() == EngineDialect.H2) {
             DatabaseGuard.prepareH2(ds);
         }

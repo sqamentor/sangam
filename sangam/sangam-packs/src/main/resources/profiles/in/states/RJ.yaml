@@ -4,7 +4,7 @@
 profile:
   id: RJ
   layer: government
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2026-04-01'
   extends:
   - IN
@@ -26,6 +26,9 @@ placeholders:
 - path: budgetControl.bcoTransfer
   reason: '[U] UNKNOWN: the competent level approving a BCO -> BCO transfer (FD circular 10724 dt 06-05-2022 para 3) and its
     seats (an open consumer question)'
+- path: procurement.scientificDepartment
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (the State''s
+    scientific-department list was not read)'
 - path: locale.documentLanguages
   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (budget-document
     language)'

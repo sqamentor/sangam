@@ -18,6 +18,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import hi from './locales/hi.json';
+import { MONEY_AMOUNT, decimalParts, decimalText, formatDecimalText, type DecimalValue } from '../lib/decimal';
 
 export type Lang = 'en' | 'hi';
 export const LANGS: { code: Lang; label: string }[] = [
@@ -39,8 +40,12 @@ function stored(): Lang | null {
   }
 }
 
-export function initI18n(defaultLang: Lang): typeof i18n {
-  const lng = stored() ?? defaultLang;
+/**
+ * `embedded` (M-043 web components): the host application owns its page, so its `<html lang>` and its stored language
+ * are left alone; the component's own element carries `lang` instead.
+ */
+export function initI18n(defaultLang: Lang, opts: { embedded?: boolean } = {}): typeof i18n {
+  const lng = opts.embedded ? defaultLang : (stored() ?? defaultLang);
   void i18n.use(initReactI18next).init({
     resources: { en: { translation: en }, hi: { translation: hi } },
     lng,
@@ -50,7 +55,7 @@ export function initI18n(defaultLang: Lang): typeof i18n {
     // An empty entry in an optional catalogue falls back to English instead of showing nothing.
     returnEmptyString: false,
   });
-  document.documentElement.lang = lng;
+  if (!opts.embedded) document.documentElement.lang = lng;
   return i18n;
 }
 
@@ -176,6 +181,12 @@ export function fmtDate(iso?: string | null, withTime = true): string {
   return new Intl.DateTimeFormat(locale(), opts).format(d);
 }
 
+/** Decision 138: decimal text (or a DecimalValue) shown with the locale's separators and every digit it has. */
+export function fmtDecimal(v?: string | DecimalValue | null): string {
+  const text = v === undefined || v === null ? undefined : decimalText(v);
+  return text === undefined ? '—' : formatDecimalText(text, locale());
+}
+
 export function fmtNumber(n?: number | null, digits = 0): string {
   if (n === undefined || n === null || Number.isNaN(n)) return '—';
   return format(new Intl.NumberFormat(locale(), { maximumFractionDigits: digits }), n);
@@ -185,9 +196,22 @@ export function fmtNumber(n?: number | null, digits = 0): string {
  * Money in the given ISO 4217 currency, else the tenant's. Without either, the amount is shown as a number (up to
  * four decimals, the precision money fields accept); no currency is ever assumed.
  */
-export function fmtMoney(n?: number | null, currency?: string | null): string {
-  if (n === undefined || n === null || Number.isNaN(n)) return '—';
+export function fmtMoney(n?: number | string | DecimalValue | null, currency?: string | null): string {
+  if (n === undefined || n === null || (typeof n === 'number' && Number.isNaN(n))) return '—';
   const cur = (currency && currency.trim()) || tenant.currency;
+  if (typeof n !== 'number') {
+    // Decision 138: decimal text is formatted from its digits, never through a float.
+    const text = decimalText(n);
+    if (text === undefined) return '—';
+    if (cur) {
+      try {
+        return formatDecimalText(text, locale(), cur);
+      } catch {
+        return `${formatDecimalText(text, locale())} ${cur}`;
+      }
+    }
+    return formatDecimalText(text, locale());
+  }
   if (cur) {
     try {
       return format(new Intl.NumberFormat(locale(), { style: 'currency', currency: cur }), n);
@@ -202,14 +226,14 @@ export function fmtMoney(n?: number | null, currency?: string | null): string {
 const ISO_CURRENCY = /^[A-Z]{3}$/;
 
 /**
- * M-042: money held as a whole number of minor units in an ISO 4217 currency (contract int64, e.g. Task.amount:
- * 123456 in INR is ₹1,234.56). The scale is the currency's own minor digits (Intl: 2 for INR, 0 for JPY, 3 for BHD);
- * whole and fraction are split with BigInt arithmetic, so no floating-point step ever touches the amount (MoneyGuard).
- * Without a valid currency the scale is unknown and nothing is guessed. An amount beyond Number.MAX_SAFE_INTEGER has
- * already lost digits when the JSON was parsed, so it is not shown either.
+ * M-042 task amount, owner decisions 138 and 211: contract MoneyAmount, a decimal string in MAJOR units of the ISO
+ * 4217 currency next to it (Task.amount "1234.56" with currency "INR" is shown as 1,234.56 in rupees). The text is
+ * formatted from its own digits through src/lib/decimal.ts (decimalParts), never through a float, with the tenant
+ * grouping. Fraction digits are padded to the currency's minor digits and never cut. Nothing is guessed: without a
+ * valid currency, for a JSON number (the old int64 minor-unit form) or for text that is not a MoneyAmount, the dash.
  */
-export function fmtMinorMoney(minor?: number | null, currency?: string | null): string {
-  if (typeof minor !== 'number' || !Number.isSafeInteger(minor)) return '—';
+export function fmtMoneyAmount(amount?: string | null, currency?: string | null): string {
+  if (typeof amount !== 'string' || !MONEY_AMOUNT.test(amount)) return '—';
   const cur = currency?.trim().toUpperCase();
   if (!cur || !ISO_CURRENCY.test(cur)) return '—';
   let nf: Intl.NumberFormat;
@@ -218,17 +242,8 @@ export function fmtMinorMoney(minor?: number | null, currency?: string | null): 
   } catch {
     return '—';
   }
-  const digits = nf.resolvedOptions().maximumFractionDigits;
-  if (typeof digits !== 'number' || !Number.isInteger(digits) || digits < 0) return '—';
-  const abs = BigInt(Math.abs(minor));
-  const scale = BigInt(10) ** BigInt(digits);
-  // exact: a whole number no larger than |minor|, so it is a safe integer
-  const whole = Number(abs / scale);
-  const fraction = digits > 0 ? (abs % scale).toString().padStart(digits, '0') : '';
-  // An amount below one major unit and negative (whole 0) still needs the locale's minus sign: format -1, then put 0 back.
-  const parts = nf
-    .formatToParts(minor < 0 ? -(whole || 1) : whole)
-    .map((p) => (p.type === 'fraction' ? { ...p, value: fraction } : whole === 0 && p.type === 'integer' ? { ...p, value: '0' } : p));
+  const sep = new Intl.NumberFormat(locale()).formatToParts(1.5).find((x) => x.type === 'decimal')?.value ?? '.';
+  const parts = decimalParts(amount, nf, sep);
   return tenant.grouping ? regroup(parts) : parts.map((p) => p.value).join('');
 }
 

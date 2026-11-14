@@ -383,15 +383,21 @@ final class AIApi
     /**
      * MCP endpoint
      *
-     * JSON-RPC. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins; MCP-Protocol-Version, Mcp-Method and Mcp-Name must match the body (400).
+     * MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, and server/discover is served. A header that does not match the body is 400 HeaderMismatch (-32020); an unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType input_required with inputRequests and an integrity-protected requestState bound to the principal, a time limit and the originating request, and the client repeats the request with a new id, inputResponses and the echoed requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins (403 otherwise).
      *
      * POST /ai/mcp (operationId aiMcp); permission ai.use.
      * @param Model\AiMcpBody|array $body request body
+     * @param string $mCPProtocolVersion header MCP-Protocol-Version
+     * @param string $mcpMethod header Mcp-Method
+     * @param string|null $mcpName header Mcp-Name
      * @return array<string, mixed>
      */
-    public function aiMcp(Model\AiMcpBody|array $body, ?RequestOptions $options = null): array
+    public function aiMcp(Model\AiMcpBody|array $body, string $mCPProtocolVersion, string $mcpMethod, ?string $mcpName = null, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/ai/mcp');
+        $req->header('MCP-Protocol-Version', Support::headerValue($mCPProtocolVersion));
+        $req->header('Mcp-Method', Support::headerValue($mcpMethod));
+        $req->header('Mcp-Name', Support::headerValue($mcpName));
         if ($body !== null) {
             $req->body($body);
         }
@@ -415,15 +421,17 @@ final class AIApi
     /**
      * A2A endpoint
      *
-     * JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
+     * A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
      *
      * POST /ai/a2a/{agent} (operationId aiA2a); permission ai.use.
      * @param Model\AiMcpBody|array $body request body
+     * @param string|null $a2AVersion header A2A-Version
      * @return array<string, mixed>
      */
-    public function aiA2a(string $agent, Model\AiMcpBody|array $body, ?RequestOptions $options = null): array
+    public function aiA2a(string $agent, Model\AiMcpBody|array $body, ?string $a2AVersion = null, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/ai/a2a/' . HttpTransport::seg((string) $agent));
+        $req->header('A2A-Version', Support::headerValue($a2AVersion));
         if ($body !== null) {
             $req->body($body);
         }

@@ -29,7 +29,9 @@ import java.util.regex.Pattern;
  *       ({@code CONTENT_MISMATCH});</li>
  *   <li>every URL starts with a whitelisted fixed part ({@code URL_NOT_WHITELISTED}).</li>
  * </ul>
- * A message whose template or URL is not registered fails validation (R60 acceptance). Thread-safe.
+ * A message whose template or URL is not registered fails validation (R60 acceptance). Thread-safe. In a server the
+ * registrations are stored per tenant and loaded from {@code DltRegistrationStore} (decision 305); building a tenant
+ * here directly is for tests and simulators.
  */
 public final class DltRegistry {
 
@@ -142,6 +144,17 @@ public final class DltRegistry {
     /** The tenant's registration, created empty on first use. */
     public Tenant forTenant(String tenantId) {
         return tenants.computeIfAbsent(Objects.requireNonNull(tenantId, "tenantId"), Tenant::new);
+    }
+
+    /**
+     * Replaces a tenant's whole registration at once with one built by {@code build} (the stored registry,
+     * {@code DltRegistrationStore}, decision 305): a reader sees the old registration or the new one, never a mix.
+     */
+    public Tenant replaceTenant(String tenantId, java.util.function.Consumer<Tenant> build) {
+        Tenant t = new Tenant(Objects.requireNonNull(tenantId, "tenantId"));
+        build.accept(t);
+        tenants.put(tenantId, t);
+        return t;
     }
 
     public Optional<Tenant> find(String tenantId) {

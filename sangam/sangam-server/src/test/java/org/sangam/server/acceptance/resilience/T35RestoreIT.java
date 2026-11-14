@@ -177,7 +177,10 @@ class T35RestoreIT {
         String unixTmp = System.getProperty("jdk.net.unixdomain.tmpdir", owned.toString());
         List<String> cmd = new ArrayList<>(List.of(javaBin, "-Duser.timezone=UTC", "-Dfile.encoding=UTF-8",
                 "-Djava.io.tmpdir=" + owned, "-Djdk.net.unixdomain.tmpdir=" + unixTmp, "-jar", bootJar().toString(),
-                "--spring.profiles.active=postgres",
+                // decision 143: the boot jar has no test class path, so the run states its environment itself: a test
+                // installation (switch false plus the test profile), where the security bootstrap below is allowed
+                "--spring.profiles.active=postgres,test",
+                "--sangam.security.production=false",
                 "--server.port=" + port,
                 "--management.server.port=" + managementPort,
                 "--spring.datasource.url=" + jdbcUrl(),

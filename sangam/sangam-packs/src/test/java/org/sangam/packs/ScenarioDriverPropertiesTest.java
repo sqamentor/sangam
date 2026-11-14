@@ -64,6 +64,7 @@ class ScenarioDriverPropertiesTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
         driver = new PackDriver(engine);
     }
@@ -250,7 +251,7 @@ class ScenarioDriverPropertiesTest {
                     : b.userTask("u" + i);
         }
         BpmnModelInstance m = b.endEvent().done();
-        engine.getRepositoryService().createDeployment().addModelInstance(key + ".bpmn", m).deploy();
+        engine.getRepositoryService().createDeployment().tenantId(PackTestTenant.ID).addModelInstance(key + ".bpmn", m).deploy();
         return key;
     }
 

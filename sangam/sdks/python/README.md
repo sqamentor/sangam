@@ -149,9 +149,9 @@ Saga.step("charge") \
 
 ## Framework adapter
 
-FastAPI / Starlette: the separate distribution `sangam/sdks/python-frameworks/fastapi` (`sangam_sdk_fastapi`,
-M-027) starts the worker in the app lifespan and stops it gracefully on shutdown. Django: not provided in 0.1.0
-(Django is not installed in the build environment; adapter pending approval of the dependency).
+FastAPI / Starlette: the source of a separate distribution `sangam/sdks/python-frameworks/fastapi`
+(`sangam_sdk_fastapi`, M-027) starts the worker in the app lifespan and stops it gracefully on shutdown. It is deferred
+past 0.1.0 (owner decision 131): not built, tested in CI or published. Django: not provided in 0.1.0 (owner decision 96).
 
 ## Example
 

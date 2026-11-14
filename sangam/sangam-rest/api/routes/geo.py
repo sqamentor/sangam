@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-# sangam-geo: the module's GeoController under /api/v1/geo (geo README §2), registered by sangam-rest's
-# GeoRestConfiguration. Operations are derived from the controller source (_v2_spring.py).
+# sangam-geo: GeoController under /api/v1/geo (geo README §2), in the REST host since M-141d (sangam-rest
+# modules/geo/web), registered by GeoRestConfiguration. Operations are derived from the controller source (_v2_spring.py).
 TAGS.append(("Geo", "Jurisdiction layers and boundaries, geofences, nearest and overlap queries, object geometry and "
                     "external WFS/WMS layers (sangam-geo)"))
-v2_spring_routes("sangam-geo/src/main/java/org/sangam/geo/web", "Geo", "geo", "geo", "geo.read", "geo.write",
+v2_spring_routes("sangam-rest/src/main/java/org/sangam/rest/modules/geo/web", "Geo", "geo", "geo", "geo.read", "geo.write",
                  ["R19", "R41"], no_cmd=("overlaps", "checkFence", "queryExternal"))
 # M-051: the Map-backed request bodies above are typed from the keys the geo services read (_v2_bodykeys.py). These are
 # the uses of a whole map that read no key; each nested map named here stays an open object in the contract.

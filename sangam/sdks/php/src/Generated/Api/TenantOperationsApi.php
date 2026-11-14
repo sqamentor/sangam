@@ -13,11 +13,63 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Tenant operations (36 operations). */
+/** Typed operations of Tenant operations (21 operations). */
 final class TenantOperationsApi
 {
     public function __construct(private readonly Calls $calls)
     {
+    }
+
+    /**
+     * Backup targets
+     *
+     * The deployment's backup targets with schedule and last run times. Platform operators.
+     *
+     * GET /ops/backup/targets (operationId listBackupTargets); permission ops.read.
+     * @return list<Model\BackupTarget>
+     */
+    public function listBackupTargets(?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::get('/ops/backup/targets');
+        return $this->calls->models($req, $options, Model\BackupTarget::class);
+    }
+
+    /**
+     * Back up now
+     *
+     * Starts one run of the target now (a Job from its CronJob, or one execution of its configured backup command) and answers 202 with it. 400 REASON_REQUIRED without a reason; 404 for an unknown target; 409 BACKUP_RUNNING while a run of the target is active; 502 BACKUP_TRIGGER_FAILED when the run could not be started (Kubernetes refused or failed the Job creation, or the backup command could not be started). BACKUP_TRIGGERED is audited before the run is started. Platform operators.
+     *
+     * POST /ops/backup/targets/{id}/runs (operationId triggerBackup); permission ops.write; result stored atomically with the state change.
+     * @param Model\BackupTriggerRequest|array $body request body
+     * @return Model\BackupRun|null
+     */
+    public function triggerBackup(string $id, Model\BackupTriggerRequest|array $body, ?RequestOptions $options = null): ?Model\BackupRun
+    {
+        $req = ApiRequest::post('/ops/backup/targets/' . HttpTransport::seg((string) $id) . '/runs');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\BackupRun::class);
+    }
+
+    /**
+     * Backup run history
+     *
+     * Runs still known to the cluster (scheduled and manual), newest first. Platform operators.
+     *
+     * GET /ops/backup/runs (operationId listBackupRuns); permission ops.read.
+     * @param string|null $target query target
+     * @param int|null $page query page
+     * @param int|null $size query size
+     * @return Page<Model\BackupRun>
+     */
+    public function listBackupRuns(?string $target = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    {
+        $req = ApiRequest::get('/ops/backup/runs');
+        $req->query('target', $target);
+        $req->query('page', $page);
+        $req->query('size', $size);
+        return $this->calls->page($req, $options, Model\BackupRun::class, $page, $size);
     }
 
     /**
@@ -74,108 +126,6 @@ final class TenantOperationsApi
         $req->query('activityId', $activityId);
         $req->query('minSamples', $minSamples);
         return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Scoped variables
-     *
-     * Platform values overlaid with the tenant values.
-     *
-     * GET /ops-admin/variables (operationId opsVariables); permission ops.tenant.read.
-     * @return array<string, mixed>
-     */
-    public function opsVariables(?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/ops-admin/variables');
-        return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Tenant variable entries
-     *
-     * Tenant scope with version, last writer and reason.
-     *
-     * GET /ops-admin/variables/entries (operationId opsVariableEntries); permission ops.tenant.read.
-     * @return list<mixed>
-     */
-    public function opsVariableEntries(?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/ops-admin/variables/entries');
-        return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Set a tenant variable
-     *
-     * Secret-like names are refused.
-     *
-     * PUT /ops-admin/variables/{name} (operationId opsSetVariable); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param Model\OpsValue|array $body request body
-     */
-    public function opsSetVariable(string $name, Model\OpsValue|array $body, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::put('/ops-admin/variables/' . HttpTransport::seg((string) $name));
-        if ($body !== null) {
-            $req->body($body);
-        }
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Delete a tenant variable
-     *
-     * Removes the tenant value.
-     *
-     * DELETE /ops-admin/variables/{name} (operationId opsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
-     */
-    public function opsDeleteVariable(string $name, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::delete('/ops-admin/variables/' . HttpTransport::seg((string) $name));
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * List secrets
-     *
-     * Names and versions; values are never returned.
-     *
-     * GET /ops-admin/secrets (operationId opsSecrets); permission ops.tenant.admin.
-     * @return list<mixed>
-     */
-    public function opsSecrets(?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/ops-admin/secrets');
-        return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Store a secret
-     *
-     * Encrypted at rest; write-only.
-     *
-     * PUT /ops-admin/secrets/{ref} (operationId opsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param Model\OpsSecret|array $body request body
-     */
-    public function opsPutSecret(string $ref, Model\OpsSecret|array $body, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::put('/ops-admin/secrets/' . HttpTransport::seg((string) $ref));
-        if ($body !== null) {
-            $req->body($body);
-        }
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Delete a secret
-     *
-     * Removes the secret.
-     *
-     * DELETE /ops-admin/secrets/{ref} (operationId opsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
-     */
-    public function opsDeleteSecret(string $ref, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::delete('/ops-admin/secrets/' . HttpTransport::seg((string) $ref));
-        $this->calls->none($req, $options);
     }
 
     /**
@@ -256,56 +206,6 @@ final class TenantOperationsApi
     }
 
     /**
-     * Retention plan
-     *
-     * Whole trees due; excludes definitions with a history time to live and held roots.
-     *
-     * GET /ops-admin/retention/plan (operationId opsRetentionPlan); permission ops.tenant.read.
-     * @param int|null $limit query limit
-     * @return list<mixed>
-     */
-    public function opsRetentionPlan(?int $limit = null, ?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/ops-admin/retention/plan');
-        $req->query('limit', $limit);
-        return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Execute retention
-     *
-     * Re-plans on the server and purges due trees.
-     *
-     * POST /ops-admin/retention/execute (operationId opsRetentionExecute); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param Model\OpsReason|array $body request body
-     * @param int|null $limit query limit
-     * @return Model\OpsPurge|null
-     */
-    public function opsRetentionExecute(Model\OpsReason|array $body, ?int $limit = null, ?RequestOptions $options = null): ?Model\OpsPurge
-    {
-        $req = ApiRequest::post('/ops-admin/retention/execute');
-        $req->query('limit', $limit);
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return $this->calls->model($req, $options, Model\OpsPurge::class);
-    }
-
-    /**
-     * Retention runs
-     *
-     * Executed purges with plan hash, reason and actor.
-     *
-     * GET /ops-admin/retention/runs (operationId opsRetentionRuns); permission ops.tenant.read.
-     * @return list<mixed>
-     */
-    public function opsRetentionRuns(?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::get('/ops-admin/retention/runs');
-        return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
      * Migration status
      *
      * Checkpoints of history migration jobs (copied, failed, mismatched, status); platform operators only.
@@ -373,110 +273,6 @@ final class TenantOperationsApi
         $req->query('processDefinitionKey', $processDefinitionKey);
         $req->query('activityId', $activityId);
         return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Tenant variables
-     *
-     * As rows.
-     *
-     * GET /ops/variables (operationId uiOpsVariables); permission ops.tenant.read.
-     * @param string|null $scope query scope
-     * @param string|null $name query name
-     * @param int|null $page query page
-     * @param int|null $size query size
-     * @return Page<mixed>
-     */
-    public function uiOpsVariables(?string $scope = null, ?string $name = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
-    {
-        $req = ApiRequest::get('/ops/variables');
-        $req->query('scope', $scope);
-        $req->query('name', $name);
-        $req->query('page', $page);
-        $req->query('size', $size);
-        return $this->calls->page($req, $options, null, $page, $size);
-    }
-
-    /**
-     * Set a variable
-     *
-     * TENANT scope only.
-     *
-     * PUT /ops/variables (operationId uiOpsSetVariable); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param Model\OpsUiVariableRequest|array $body request body
-     */
-    public function uiOpsSetVariable(Model\OpsUiVariableRequest|array $body, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::put('/ops/variables');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Delete a variable
-     *
-     * Needs a reason.
-     *
-     * DELETE /ops/variables/{id} (operationId uiOpsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param string $reason query reason
-     */
-    public function uiOpsDeleteVariable(string $id, string $reason, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::delete('/ops/variables/' . HttpTransport::seg((string) $id));
-        $req->query('reason', $reason);
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Secrets
-     *
-     * Metadata only.
-     *
-     * GET /ops/secrets (operationId uiOpsSecrets); permission ops.tenant.admin.
-     * @param int|null $page query page
-     * @param int|null $size query size
-     * @return Page<mixed>
-     */
-    public function uiOpsSecrets(?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
-    {
-        $req = ApiRequest::get('/ops/secrets');
-        $req->query('page', $page);
-        $req->query('size', $size);
-        return $this->calls->page($req, $options, null, $page, $size);
-    }
-
-    /**
-     * Set a secret
-     *
-     * The value is write-only.
-     *
-     * PUT /ops/secrets/{name} (operationId uiOpsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param Model\OpsUiSecretRequest|array $body request body
-     */
-    public function uiOpsPutSecret(string $name, Model\OpsUiSecretRequest|array $body, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::put('/ops/secrets/' . HttpTransport::seg((string) $name));
-        if ($body !== null) {
-            $req->body($body);
-        }
-        $this->calls->none($req, $options);
-    }
-
-    /**
-     * Delete a secret
-     *
-     * Needs a reason.
-     *
-     * DELETE /ops/secrets/{name} (operationId uiOpsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param string $reason query reason
-     */
-    public function uiOpsDeleteSecret(string $name, string $reason, ?RequestOptions $options = null): void
-    {
-        $req = ApiRequest::delete('/ops/secrets/' . HttpTransport::seg((string) $name));
-        $req->query('reason', $reason);
-        $this->calls->none($req, $options);
     }
 
     /**
@@ -567,52 +363,16 @@ final class TenantOperationsApi
     }
 
     /**
-     * Preview retention
+     * Schema status
      *
-     * With a hash of the plan.
+     * Applied product changesets, the engine schema version and the Liquibase lock; read only. Platform operators.
      *
-     * GET /ops/retention/plan (operationId uiOpsRetentionPlan); permission ops.tenant.read.
-     * @return array<string, mixed>
+     * GET /ops/schema-status (operationId getSchemaStatus); permission ops.read.
+     * @return Model\SchemaStatus|null
      */
-    public function uiOpsRetentionPlan(?RequestOptions $options = null): array
+    public function getSchemaStatus(?RequestOptions $options = null): ?Model\SchemaStatus
     {
-        $req = ApiRequest::get('/ops/retention/plan');
-        return Support::arr($this->calls->json($req, $options)) ?? [];
-    }
-
-    /**
-     * Retention runs
-     *
-     * Executed purges of the caller tenant, with plan hash, reason and actor.
-     *
-     * GET /ops/retention/runs (operationId uiOpsRetentionRuns); permission ops.tenant.read.
-     * @param int|null $page query page
-     * @param int|null $size query size
-     * @return Page<mixed>
-     */
-    public function uiOpsRetentionRuns(?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
-    {
-        $req = ApiRequest::get('/ops/retention/runs');
-        $req->query('page', $page);
-        $req->query('size', $size);
-        return $this->calls->page($req, $options, null, $page, $size);
-    }
-
-    /**
-     * Execute retention
-     *
-     * Refused when the plan changed since the preview.
-     *
-     * POST /ops/retention/execute (operationId uiOpsRetentionExecute); permission ops.tenant.admin; result stored atomically with the state change.
-     * @param Model\OpsUiRetentionExecute|array $body request body
-     * @return array<string, mixed>
-     */
-    public function uiOpsRetentionExecute(Model\OpsUiRetentionExecute|array $body, ?RequestOptions $options = null): array
-    {
-        $req = ApiRequest::post('/ops/retention/execute');
-        if ($body !== null) {
-            $req->body($body);
-        }
-        return Support::arr($this->calls->json($req, $options)) ?? [];
+        $req = ApiRequest::get('/ops/schema-status');
+        return $this->calls->model($req, $options, Model\SchemaStatus::class);
     }
 }

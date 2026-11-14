@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -46,7 +47,10 @@ import java.util.UUID;
  * chain directly. A caller that runs while its own transaction holds the root's {@code ROOT_SEQ} lock (a JavaDelegate
  * inside a job) must use {@link #deferringAudit}: appending there would wait for its own lock (SL-133). The deferring
  * invoker records the events as durable pending rows instead, still atomically with the ledger, and the drain appends
- * them to the chain once the job's transaction has ended.
+ * them to the chain once the job's transaction has ended. An {@link AuditedConnector}'s own catalogued events (for
+ * example {@code DOCUMENT_FETCHED}, decision 299) are written with the successful {@code OPERATION_OUTCOME}, in the
+ * same transaction and the same way; an operation confirmed by reconciliation instead writes them through
+ * {@link #writeConfirmedEvents}, so they are written once whichever path confirms it.
  */
 public final class ConnectorInvoker {
 
@@ -315,15 +319,67 @@ public final class ConnectorInvoker {
 
     private Outcome settleSuccess(Invocation inv, UUID op, Map<String, Object> output, String providerRef, boolean duplicate) {
         String outcome = successJson(output, providerRef, duplicate);
+        List<AuditedConnector.Event> events = connectorEvents(inv, output);
         tx.inTransaction(c -> {
             Map<String, Object> p = auditPayload(inv, op, null, "SUCCEEDED");
             p.put("providerRef", providerRef);
             audit(c, inv, "OPERATION_OUTCOME", p);
+            for (AuditedConnector.Event e : events) {
+                Map<String, Object> ep = new LinkedHashMap<>(e.payload());
+                ep.put("operationId", op.toString());
+                audit(c, inv, e.type(), ep);
+            }
             ledger.recordOutcome(c, op, inv.lockVersion(), true, outcome);
             journal.recordResult(c, op, ConnectorCallJournal.LastResult.SUCCESS, providerRef, null);
             return null;
         });
         return new Completed(op, output, providerRef, duplicate, false);
+    }
+
+    /** Decision 299: the catalogued events of an {@link AuditedConnector}'s successful operation (empty otherwise). */
+    private List<AuditedConnector.Event> connectorEvents(Invocation inv, Map<String, Object> output) {
+        return connectorEvents(inv.tenantId(), inv.connectorId(), inv.operation(), inv.input(), output);
+    }
+
+    private List<AuditedConnector.Event> connectorEvents(String tenantId, String connectorId, String operation,
+                                                         Map<String, Object> input, Map<String, Object> output) {
+        if (audit == null && deferred == null) {
+            return List.of();
+        }
+        return registry.find(tenantId, connectorId)
+                .filter(AuditedConnector.class::isInstance)
+                .map(c -> ((AuditedConnector) c).auditEvents(operation, input == null ? Map.of() : input,
+                        output == null ? Map.of() : output))
+                .orElse(List.of());
+    }
+
+    /**
+     * An operation confirmed outside this invoker (a reconciliation {@code CONFIRM_SUCCESS}) writes its connector's
+     * catalogued events ({@link AuditedConnector}) exactly as a confirmation here does: same payload plus
+     * {@code operationId}, on the call's root chain, through this invoker's audit path, in the caller's transaction
+     * {@code c}. The caller writes them only when the ledger moves to SUCCEEDED in {@code c}, so each confirmed
+     * operation has them once whichever path confirmed it. A deferring invoker records pending rows; call
+     * {@link #afterConfirmedEvents} after the commit.
+     *
+     * @return the number of events written
+     */
+    public int writeConfirmedEvents(Connection c, ConnectorCallJournal.Call call, Map<String, Object> output) {
+        Objects.requireNonNull(call, "call");
+        Map<String, Object> input = call.requestJson() == null ? Map.of() : Json.readMap(call.requestJson());
+        List<AuditedConnector.Event> events = connectorEvents(call.tenantId(), call.connectorId(), call.operation(), input, output);
+        for (AuditedConnector.Event e : events) {
+            Map<String, Object> ep = new LinkedHashMap<>(e.payload());
+            ep.put("operationId", call.operationId().toString());
+            audit(c, call.tenantId(), call.rootId(), e.type(), ep);
+        }
+        return events.size();
+    }
+
+    /** After the commit of {@link #writeConfirmedEvents}: a deferring invoker signals the drain of the root. */
+    public void afterConfirmedEvents(String tenantId, String rootId) {
+        if (deferred != null) {
+            deferred.signal(tenantId, rootId);
+        }
     }
 
     private Outcome settleFailure(Invocation inv, UUID op, String code, String message, Map<String, Object> output) {
@@ -356,10 +412,14 @@ public final class ConnectorInvoker {
      * appended to the root's chain; nothing without an audit chain.
      */
     private void audit(Connection c, Invocation inv, String eventType, Map<String, Object> payload) {
+        audit(c, inv.tenantId(), inv.rootId(), eventType, payload);
+    }
+
+    private void audit(Connection c, String tenantId, String rootId, String eventType, Map<String, Object> payload) {
         if (deferred != null) {
-            deferred.pending().record(c, inv.tenantId(), inv.rootId(), eventType, payload);
+            deferred.pending().record(c, tenantId, rootId, eventType, payload);
         } else if (audit != null) {
-            audit.append(c, inv.tenantId(), inv.rootId(), eventType, payload);
+            audit.append(c, tenantId, rootId, eventType, payload);
         }
     }
 

@@ -54,6 +54,7 @@ class SangamEngineH2SmokeTest {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:smoke;MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings settings = new SangamEngineSettings();
+        settings.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         settings.setAllowMultipleEnginesPerJvm(true);
         settings.setEngineSchemaUpdate("true"); // empty in-memory database owned by this test
         try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, settings, "h2")) {

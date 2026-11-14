@@ -61,6 +61,7 @@ class JobIdentitySupportH2Test {
         SEEN_IN_JOB.clear();
         AtomicReference<SecurityIdentity> boundByBinder = new AtomicReference<>();
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);
@@ -90,10 +91,7 @@ class JobIdentitySupportH2Test {
         }
     }
 
-    @Test
-    void identityResolutionOrderIsUnchanged() {
-        JobIdentitySupport support = new JobIdentitySupport(null, "dflt");
-        assertEquals("tx", support.identityFor(null, null, "tx").tenantId(), "the tenant id passed by the engine first");
-        assertEquals("dflt", support.identityFor(null, null, null).tenantId(), "the engine default tenant last");
-    }
+    // identityResolutionOrderIsUnchanged (engine tenant, then the sangamTenantId variable, then defaultTenantId) was
+    // removed with decision 144 (owner 197): the variable is an untrusted claim and the attribution default no longer
+    // applies to untenanted work. The new rules are tested in org.sangam.engine.tenant.WorkTenantsH2Test.
 }

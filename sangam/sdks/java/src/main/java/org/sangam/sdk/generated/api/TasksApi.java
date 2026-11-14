@@ -12,13 +12,17 @@ import org.sangam.sdk.generated.model.CompleteTaskRequest;
 import org.sangam.sdk.generated.model.CompleteTaskResult;
 import org.sangam.sdk.generated.model.DelegateTaskRequest;
 import org.sangam.sdk.generated.model.Document;
+import org.sangam.sdk.generated.model.DscCompleteRequest;
+import org.sangam.sdk.generated.model.DscCompleteResponse;
+import org.sangam.sdk.generated.model.DscPrepareRequest;
+import org.sangam.sdk.generated.model.DscPrepareResponse;
 import org.sangam.sdk.generated.model.ReturnTaskRequest;
 import org.sangam.sdk.generated.model.Task;
 import org.sangam.sdk.generated.model.TaskDetail;
 import org.sangam.sdk.generated.model.TaskForm;
 
 /**
- * Typed operations of {@code Tasks} (13 operations), generated from
+ * Typed operations of {@code Tasks} (15 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -35,6 +39,8 @@ public final class TasksApi {
     private static final TypeReference<Comment> R_addTaskComment = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Document>> R_listTaskAttachments = new TypeReference<>() { };
     private static final TypeReference<Document> R_addTaskAttachment = new TypeReference<>() { };
+    private static final TypeReference<DscPrepareResponse> R_prepareDscSignature = new TypeReference<>() { };
+    private static final TypeReference<DscCompleteResponse> R_completeDscSignature = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -166,7 +172,7 @@ public final class TasksApi {
     /**
      * Complete a task with a decision
      *
-     * <p>Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6).
+     * <p>Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6). A step that needs a DSC signature (decisions 236, 237 and 241) completes only over a verified signature of the required document by the completing person at this task: otherwise 422 DSC_SIGNATURE_NOT_VERIFIED, or 422 DSC_ENROLMENT_REVOKED when the person did sign it but the certificate enrolment that signature was bound to was revoked afterwards (also after a re-approval); the signature evidence stays recorded and the person signs again with the currently approved certificate. Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up choice is close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step 8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.
      *
      * <p>{@code POST /tasks/{id}/complete} (operationId {@code completeTask}); permission {@code task.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -275,5 +281,39 @@ public final class TasksApi {
         ApiRequest req = ApiRequest.post("/tasks/" + HttpTransport.seg(String.valueOf(id)) + "/attachments");
         GeneratedCalls.multipart(req, body, options);
         return call.json(req, options, R_addTaskAttachment);
+    }
+
+    /**
+     * Prepare a DSC signature
+     *
+     * <p>Step 1 of a DSC signature (decision 165). Needs task.write and document.read. The document must be a PDF attached to the task or its process instance, scanned clean, with a recorded SHA-256 that matches its content, at most 50 MiB. The signer is matched by the enrolled certificate (decision 227): the signer certificate of the chain must be the caller's own enrolment, APPROVED by an admin other than the caller (me/dsc/certificates); the display name and the certificate CN are not used to bind the signer. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+     *
+     * <p>{@code POST /tasks/{id}/dsc/prepare} (operationId {@code prepareDscSignature}); permission {@code task.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public DscPrepareResponse prepareDscSignature(String id, DscPrepareRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/tasks/" + HttpTransport.seg(String.valueOf(id)) + "/dsc/prepare");
+        req.body(body);
+        return call.json(req, options, R_prepareDscSignature);
+    }
+
+    /**
+     * Complete a DSC signature
+     *
+     * <p>Step 2 of a DSC signature (decision 165). Needs task.write and document.write. Consumes the prepare once (by the same caller, for the same task, before it expires), embeds and verifies the signature and answers the outcome. A wrong chain, signature or algorithm is answered 200 with outcome VERIFIED_INVALID or INDETERMINATE, not as an error; the prepare is used up either way. The enrolment is checked again: if it was revoked after prepare the outcome is VERIFIED_INVALID CERTIFICATE_NOT_ENROLLED. Only VERIFIED_VALID stores the signed PDF as the document's next version, by a compare-and-set on the prepared version (decision 228): when the document changed meanwhile nothing is stored, the outcome is recorded as INDETERMINATE and the answer is 409 DOCUMENT_CHANGED (prepare and sign again). Completing the task is a separate call. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+     *
+     * <p>{@code POST /tasks/{id}/dsc/complete} (operationId {@code completeDscSignature}); permission {@code task.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public DscCompleteResponse completeDscSignature(String id, DscCompleteRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/tasks/" + HttpTransport.seg(String.valueOf(id)) + "/dsc/complete");
+        req.body(body);
+        return call.json(req, options, R_completeDscSignature);
     }
 }

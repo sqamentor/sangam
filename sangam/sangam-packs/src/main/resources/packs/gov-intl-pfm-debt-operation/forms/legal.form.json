@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-debt-operation/legal",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-debt-operation",
+  "title": {
+    "en": "Legal opinion",
+    "hi": "विधिक राय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "termsNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Terms: maturity, interest, fees, conditions",
+        "hi": "शर्तें"
+      }
+    },
+    {
+      "id": "legalOpinion",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Legal opinion",
+        "hi": "विधिक राय"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "legalDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

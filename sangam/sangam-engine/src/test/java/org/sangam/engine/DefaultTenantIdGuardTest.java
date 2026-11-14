@@ -16,6 +16,7 @@ class DefaultTenantIdGuardTest {
     @Test
     void nullOrBlankIsRefusedAndTheDefaultIsKept() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         for (String bad : new String[]{null, "", " ", "\t"}) {
             assertThrows(IllegalArgumentException.class, () -> s.setDefaultTenantId(bad), "refused: [" + bad + "]");
         }
@@ -25,6 +26,7 @@ class DefaultTenantIdGuardTest {
     @Test
     void aRealTenantIdIsAccepted() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setDefaultTenantId("RJ");
         assertEquals("RJ", s.getDefaultTenantId());
     }

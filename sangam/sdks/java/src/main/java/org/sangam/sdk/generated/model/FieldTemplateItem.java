@@ -17,8 +17,9 @@ package org.sangam.sdk.generated.model;
  * @param critical wire field {@code critical}
  * @param minPhotos wire field {@code minPhotos}
  * @param visibleIf wire field {@code visibleIf}
- * @param min wire field {@code min}
- * @param max wire field {@code max}
+ * @param min wire field {@code min}. Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242)
+ * @param max wire field {@code max}. Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242)
+ * @param scale wire field {@code scale}. NUMBER items only, optional (decision 242): the most decimal places allowed. min, max and every answer to the item may not have more decimal places than scale; absent means no limit beyond decision 230
  * @param expected wire field {@code expected}
  * @param findingCode wire field {@code findingCode}
  * @param severity wire field {@code severity}
@@ -35,8 +36,9 @@ public record FieldTemplateItem(
         @com.fasterxml.jackson.annotation.JsonProperty("critical") Boolean critical,
         @com.fasterxml.jackson.annotation.JsonProperty("minPhotos") Integer minPhotos,
         @com.fasterxml.jackson.annotation.JsonProperty("visibleIf") FieldTemplateVisibleIf visibleIf,
-        @com.fasterxml.jackson.annotation.JsonProperty("min") Double min,
-        @com.fasterxml.jackson.annotation.JsonProperty("max") Double max,
+        @com.fasterxml.jackson.annotation.JsonProperty("min") String min,
+        @com.fasterxml.jackson.annotation.JsonProperty("max") String max,
+        @com.fasterxml.jackson.annotation.JsonProperty("scale") Integer scale,
         @com.fasterxml.jackson.annotation.JsonProperty("expected") Object expected,
         @com.fasterxml.jackson.annotation.JsonProperty("findingCode") String findingCode,
         @com.fasterxml.jackson.annotation.JsonProperty("severity") String severity,

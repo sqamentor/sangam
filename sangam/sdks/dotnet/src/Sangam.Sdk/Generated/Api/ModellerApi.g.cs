@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Modeller (26 operations).
+/// Typed operations of Modeller (28 operations).
 /// </summary>
 public sealed class ModellerApi
 {
@@ -36,6 +36,18 @@ public sealed class ModellerApi
         var req = ApiRequest.Post($"/models/token-walk");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Semantic model diff
+    /// Compares two versions of a BPMN, DMN, CMMN or form file by meaning (elements, flows, expressions, properties), not by text; reads only, nothing is stored (M-125). 400 MODEL_UNREADABLE when a side is not XML/JSON, has a DOCTYPE, or the two sides are of different formats.
+    /// POST /models/diff (operationId diffModels); permission package.read; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ModelDiffReport?> DiffModelsAsync(M.ModelDiffRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/models/diff");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ModelDiffReport?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -105,6 +117,17 @@ public sealed class ModellerApi
         var req = ApiRequest.Post($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/lease/takeover");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ModelEditLease?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Model presence stream
+    /// Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
+    /// GET /models/{file}/presence/stream (operationId streamModelPresence); permission package.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<byte[]> StreamModelPresenceAsync(string file, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/models/{HttpTransport.Seg(GeneratedCalls.Str(file)!)}/presence/stream");
+        return await _calls.BytesAsync(req, options, "text/event-stream", cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

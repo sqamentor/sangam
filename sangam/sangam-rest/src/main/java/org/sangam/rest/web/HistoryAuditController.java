@@ -4,6 +4,8 @@ package org.sangam.rest.web;
 import java.time.Instant;
 import java.util.List;
 
+import org.sangam.core.tenant.SystemAuditScope;
+import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.HistoryPort;
 import org.sangam.rest.port.PermissionPort;
@@ -119,16 +121,38 @@ public class HistoryAuditController {
             @RequestParam(required = false) String actor,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
-            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-        permissions.require(ctx, Permissions.AUDIT_READ);
-        return Lists.ok(audit.search(ctx, new AuditPort.AuditFilter(chainId, type, actor, from, to), Lists.page(page, size)));
+            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) String scope) {
+        RequestContext reader = reader(ctx, scope);
+        return Lists.ok(audit.search(reader, new AuditPort.AuditFilter(chainId, type, actor, from, to),
+                Lists.page(page, size)));
     }
 
     @GetMapping("/audit/verify")
     public AuditPort.VerifyResult verify(RequestContext ctx, @RequestParam(required = false) String chainId,
-                                         @RequestParam(required = false) String businessKey) {
-        permissions.require(ctx, Permissions.AUDIT_READ);
-        return audit.verify(ctx, chainId, businessKey);
+                                         @RequestParam(required = false) String businessKey,
+                                         @RequestParam(required = false) String scope) {
+        return audit.verify(reader(ctx, scope), chainId, businessKey);
+    }
+
+    /**
+     * Decision 144: without {@code scope}, the caller's tenant with audit.read, as before. With it, the caller needs
+     * {@link Permissions#AUDIT_SYSTEM_READ} (platform-only), the scope must be a well-formed system audit scope
+     * ({@code system:<name>}, else 400 VALIDATION_FAILED), and the read (and the AUDIT_VIEWED or AUDIT_VERIFIED it
+     * writes) runs on that scope instead of the caller's tenant; the caller's identity is otherwise unchanged.
+     */
+    RequestContext reader(RequestContext ctx, String scope) {
+        if (scope == null) {
+            permissions.require(ctx, Permissions.AUDIT_READ);
+            return ctx;
+        }
+        permissions.require(ctx, Permissions.AUDIT_SYSTEM_READ);
+        if (!SystemAuditScope.isSystemScope(scope)) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "scope must be a system audit scope " + SystemAuditScope.PREFIX
+                    + "<name> (lower-case letters, digits, '.', '_', '-'; at most 48)");
+        }
+        return new RequestContext(scope, ctx.principalId(), ctx.groups(), ctx.seatId(), ctx.actingForSeatId(),
+                ctx.idempotencyKey(), ctx.traceId(), ctx.clientIp(), ctx.authMethod());
     }
 
     @GetMapping("/audit/export")

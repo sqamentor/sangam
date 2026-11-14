@@ -30,6 +30,8 @@ import java.util.UUID;
  *       for {@code sign}); with a pending cancel also {@code sangam.cancelAck} carrying the final status.</li>
  *   <li>Retryable failure → exception, the relay retries with back-off; after {@code maxAttempts} the operation becomes
  *       UNKNOWN_OUTCOME with a reconciliation item (no endless blind retry, R28).</li>
+ *   <li>A settle that finds the row already final (a reconciliation resolution won the race) changes nothing and
+ *       delivers nothing (decision 289: one settlement per operation).</li>
  * </ul>
  */
 public final class PackDispatchPublisher implements Publisher {
@@ -124,10 +126,18 @@ public final class PackDispatchPublisher implements Publisher {
     }
 
     private void settle(PackOperationStore.Row r, PackOperationStore.Status status, String reason, String ref, Map<String, Object> data) {
-        boolean cancelRequested = tx.inTransaction(c -> {
-            store.settle(c, r.tenantId(), r.operationId(), status, reason, ref, data == null ? null : Json.write(data));
-            return store.find(c, r.tenantId(), r.operationId()).map(PackOperationStore.Row::cancelRequested).orElse(false);
+        Optional<Boolean> settled = tx.inTransaction(c -> {
+            if (!store.settle(c, r.tenantId(), r.operationId(), status, reason, ref, data == null ? null : Json.write(data))) {
+                return Optional.<Boolean>empty();
+            }
+            return Optional.of(store.find(c, r.tenantId(), r.operationId()).map(PackOperationStore.Row::cancelRequested).orElse(false));
         });
+        if (settled.isEmpty()) {
+            // decision 289: another path (a reconciliation resolution) settled the row first and delivered its own result
+            LOG.info("pack operation {} was already settled; {} not applied", r.operationId(), status);
+            return;
+        }
+        boolean cancelRequested = settled.get();
         if ("sign".equals(r.operation())) {
             messages.signatureResult(r, status.name(), data, reason);
         } else {

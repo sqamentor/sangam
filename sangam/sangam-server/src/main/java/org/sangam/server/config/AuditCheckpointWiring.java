@@ -55,6 +55,24 @@ public class AuditCheckpointWiring {
                 env.getProperty(PREFIX + "overlap", Duration.class, d.overlap()));
     }
 
+    /**
+     * Decision 126 part 1 (C-11, B-05): signed audit checkpoints are required for every tenant in production. This
+     * wiring is on only with {@code private-key-ref}, and once on its scheduler checkpoints every tenant that has audit
+     * events ({@link AuditCheckpoints#runDue()}), so production without that key is refused. No waiver exists. Called
+     * from an always-on bean ({@code SecurityConfig}), because this configuration is absent exactly when the key is.
+     */
+    static void requireInProduction(Environment env) {
+        if (!ProductionEnvironment.isProduction(env)) {
+            return;
+        }
+        String ref = env.getProperty(PREFIX + "private-key-ref");
+        if (ref == null || ref.isBlank()) {
+            throw new IllegalStateException("signed audit checkpoints are required for every tenant in production"
+                    + " (decision 126): set " + PREFIX + "private-key-ref and " + PREFIX + "public-key-ref"
+                    + " (secret references, secret://...)");
+        }
+    }
+
     /** The value behind a key reference; refuses a literal (keys are never configuration values). */
     static String key(SecretResolver secrets, Environment env, String property) {
         String ref = env.getProperty(PREFIX + property);

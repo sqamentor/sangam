@@ -23,7 +23,7 @@ final class GeoApi
     /**
      * Layers
      *
-     * GeoController.layers (sangam-geo).
+     * GeoController.layers (sangam-rest).
      *
      * GET /geo/layers (operationId geoGeoLayers); permission geo.read.
      * @return list<array<string, mixed>>
@@ -37,7 +37,7 @@ final class GeoApi
     /**
      * Define layer
      *
-     * GeoController.defineLayer (sangam-geo).
+     * GeoController.defineLayer (sangam-rest).
      *
      * POST /geo/layers (operationId geoGeoDefineLayer); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoDefineLayerBody|array $body request body
@@ -55,7 +55,7 @@ final class GeoApi
     /**
      * Layer
      *
-     * GeoController.layer (sangam-geo).
+     * GeoController.layer (sangam-rest).
      *
      * GET /geo/layers/{layer} (operationId geoGeoLayer); permission geo.read.
      * @return array<string, mixed>
@@ -69,7 +69,7 @@ final class GeoApi
     /**
      * Import boundaries
      *
-     * GeoController.importBoundaries (sangam-geo).
+     * GeoController.importBoundaries (sangam-rest).
      *
      * POST /geo/layers/{layer}/import (operationId geoGeoImportBoundaries); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoImportBoundariesBody|array $body request body
@@ -87,7 +87,7 @@ final class GeoApi
     /**
      * Features
      *
-     * GeoController.features (sangam-geo).
+     * GeoController.features (sangam-rest).
      *
      * GET /geo/layers/{layer}/features (operationId geoGeoFeatures); permission geo.read.
      * @param string|null $level query level
@@ -111,7 +111,7 @@ final class GeoApi
     /**
      * Put feature
      *
-     * GeoController.putFeature (sangam-geo).
+     * GeoController.putFeature (sangam-rest).
      *
      * POST /geo/layers/{layer}/features (operationId geoGeoPutFeature); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoPutFeatureBody|array $body request body
@@ -129,7 +129,7 @@ final class GeoApi
     /**
      * Feature
      *
-     * GeoController.feature (sangam-geo).
+     * GeoController.feature (sangam-rest).
      *
      * GET /geo/features/{id} (operationId geoGeoFeature); permission geo.read.
      * @param bool|null $geometry query geometry
@@ -145,7 +145,7 @@ final class GeoApi
     /**
      * Retire
      *
-     * GeoController.retire (sangam-geo).
+     * GeoController.retire (sangam-rest).
      *
      * DELETE /geo/features/{id} (operationId geoGeoRetire); permission geo.write; result stored atomically with the state change.
      */
@@ -158,7 +158,7 @@ final class GeoApi
     /**
      * Lineage
      *
-     * GeoController.lineage (sangam-geo).
+     * GeoController.lineage (sangam-rest).
      *
      * GET /geo/features/{id}/lineage (operationId geoGeoLineage); permission geo.read.
      * @return list<array<string, mixed>>
@@ -172,7 +172,7 @@ final class GeoApi
     /**
      * Resolve
      *
-     * GeoController.resolve (sangam-geo).
+     * GeoController.resolve (sangam-rest).
      *
      * GET /geo/resolve (operationId geoGeoResolve); permission geo.read.
      * @param string $layer query layer
@@ -194,7 +194,7 @@ final class GeoApi
     /**
      * Nearest
      *
-     * GeoController.nearest (sangam-geo).
+     * GeoController.nearest (sangam-rest).
      *
      * GET /geo/nearest (operationId geoGeoNearest); permission geo.read.
      * @param float $lat query lat
@@ -222,7 +222,7 @@ final class GeoApi
     /**
      * Overlaps
      *
-     * GeoController.overlaps (sangam-geo).
+     * GeoController.overlaps (sangam-rest).
      *
      * POST /geo/overlaps (operationId geoGeoOverlaps); permission geo.write.
      * @param Model\GeoGeoOverlapsBody|array $body request body
@@ -240,7 +240,7 @@ final class GeoApi
     /**
      * Define fence
      *
-     * GeoController.defineFence (sangam-geo).
+     * GeoController.defineFence (sangam-rest).
      *
      * POST /geo/fences (operationId geoGeoDefineFence); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoDefineFenceBody|array $body request body
@@ -258,7 +258,7 @@ final class GeoApi
     /**
      * Fence
      *
-     * GeoController.fence (sangam-geo).
+     * GeoController.fence (sangam-rest).
      *
      * GET /geo/fences/{id} (operationId geoGeoFence); permission geo.read.
      * @return array<string, mixed>
@@ -272,7 +272,7 @@ final class GeoApi
     /**
      * Deactivate fence
      *
-     * GeoController.deactivateFence (sangam-geo).
+     * GeoController.deactivateFence (sangam-rest).
      *
      * DELETE /geo/fences/{id} (operationId geoGeoDeactivateFence); permission geo.write; result stored atomically with the state change.
      */
@@ -285,7 +285,7 @@ final class GeoApi
     /**
      * Check fence
      *
-     * GeoController.checkFence (sangam-geo).
+     * GeoController.checkFence (sangam-rest).
      *
      * POST /geo/fences/{id}/check (operationId geoGeoCheckFence); permission geo.write.
      * @param Model\GeoGeoCheckFenceBody|array $body request body
@@ -303,7 +303,7 @@ final class GeoApi
     /**
      * Put object geometry
      *
-     * GeoController.putObjectGeometry (sangam-geo).
+     * GeoController.putObjectGeometry (sangam-rest).
      *
      * PUT /geo/objects/{type}/{id}/geometry (operationId geoGeoPutObjectGeometry); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoPutObjectGeometryBody|array $body request body
@@ -321,7 +321,7 @@ final class GeoApi
     /**
      * Object geometry
      *
-     * GeoController.objectGeometry (sangam-geo).
+     * GeoController.objectGeometry (sangam-rest).
      *
      * GET /geo/objects/{type}/{id}/geometry (operationId geoGeoObjectGeometry); permission geo.read.
      * @param string|null $attribute query attribute
@@ -337,7 +337,7 @@ final class GeoApi
     /**
      * External layers
      *
-     * GeoController.externalLayers (sangam-geo).
+     * GeoController.externalLayers (sangam-rest).
      *
      * GET /geo/external-layers (operationId geoGeoExternalLayers); permission geo.read.
      * @return list<array<string, mixed>>
@@ -351,7 +351,7 @@ final class GeoApi
     /**
      * Register external
      *
-     * GeoController.registerExternal (sangam-geo).
+     * GeoController.registerExternal (sangam-rest).
      *
      * POST /geo/external-layers (operationId geoGeoRegisterExternal); permission geo.write; result stored atomically with the state change.
      * @param Model\GeoGeoRegisterExternalBody|array $body request body
@@ -369,7 +369,7 @@ final class GeoApi
     /**
      * Query external
      *
-     * GeoController.queryExternal (sangam-geo).
+     * GeoController.queryExternal (sangam-rest).
      *
      * POST /geo/external-layers/{ref}/query (operationId geoGeoQueryExternal); permission geo.write.
      * @return array<string, mixed>
@@ -386,7 +386,7 @@ final class GeoApi
     /**
      * Import external
      *
-     * GeoController.importExternal (sangam-geo).
+     * GeoController.importExternal (sangam-rest).
      *
      * POST /geo/external-layers/{ref}/import (operationId geoGeoImportExternal); permission geo.write; result stored atomically with the state change.
      * @return array<string, mixed>

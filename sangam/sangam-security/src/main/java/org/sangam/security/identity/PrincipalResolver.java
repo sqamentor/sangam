@@ -28,7 +28,8 @@ import java.util.Set;
  *       and of its seats), all effective at the database time;</li>
  *   <li>seats = seats the person can act for now (regular, or acting via leave substitution / additional charge).</li>
  * </ol>
- * IdP groups and roles are mirrored into {@code AUTH_MEMBERSHIP} (source {@code idp}) for the large-principal join path.
+ * IdP groups and roles are mirrored into {@code AUTH_MEMBERSHIP} (source {@code idp}) for the large-principal join path;
+ * an API key's scopes never are (SL-175), and a development identity's go to source {@code dev-static} (decision 152).
  */
 public final class PrincipalResolver {
 
@@ -72,8 +73,32 @@ public final class PrincipalResolver {
             }
             personId = person.personId();
         }
-        memberships.syncIdp(c, tenant, personId, tokenIdentity.groups(), tokenIdentity.roles());
+        if (isDevelopmentIdentity(tokenIdentity)) {
+            memberships.syncDevStatic(c, tenant, personId, tokenIdentity.groups(), tokenIdentity.roles());
+        } else if (mirrorsIdpMemberships(tokenIdentity)) {
+            memberships.syncIdp(c, tenant, personId, tokenIdentity.groups(), tokenIdentity.roles());
+        }
         return enrich(c, tokenIdentity.withPerson(personId), Sql.dbNow(c, dialect));
+    }
+
+    /** Authentication methods of development identities (static development tokens, decision 152). */
+    public static final Set<String> DEVELOPMENT_AUTH_METHODS = Set.of("DEV_TOKEN", "DEV_STATIC");
+
+    /** True for an identity authenticated by a static development token (decision 152). */
+    public static boolean isDevelopmentIdentity(SecurityIdentity identity) {
+        return identity != null && identity.authMethod() != null
+                && DEVELOPMENT_AUTH_METHODS.contains(identity.authMethod());
+    }
+
+    /**
+     * SL-175, decision 152: only a real login's groups and roles are mirrored as IdP memberships (source {@code idp}).
+     * An API key's scopes are not IdP claims, so they are never written; nor are a system identity's. A development
+     * identity's synthetic groups go to source {@code dev-static} instead ({@link MembershipIndex#SOURCE_DEV_STATIC}):
+     * marked as synthetic, and never replacing the person's verified IdP memberships.
+     */
+    static boolean mirrorsIdpMemberships(SecurityIdentity tokenIdentity) {
+        return !tokenIdentity.system() && !"API_KEY".equals(tokenIdentity.authMethod())
+                && !isDevelopmentIdentity(tokenIdentity);
     }
 
     /** Adds Sangam groups, roles and current seats (also used for worker and system identities). */

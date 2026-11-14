@@ -115,6 +115,15 @@ F = {
     'cureNotes': ('Material breach: cure steps or termination', 'Incumplimiento material: medidas de subsanación o terminación',
                   'text'),
     'phiDisposition': ('PHI returned or destroyed (certificate)', 'PHI devuelta o destruida (certificado)', 'attachments'),
+    # M-133 payer APIs (CMS-0057-F, decision 107)
+    'previousPayerId': ('Previous payer ID', 'Identificador del pagador anterior', 'string'),
+    'previousMemberId': ('Member ID at the previous payer', 'Número de afiliado en el pagador anterior', 'string'),
+    'p2pOptIn': ('Patient opted in to the payer-to-payer exchange', 'El paciente aceptó el intercambio entre pagadores',
+                 'boolean'),
+    'requestingPayerId': ('Requesting payer ID', 'Identificador del pagador solicitante', 'string'),
+    'optInAttested': ('Requesting payer attests the patient opted in', 'El pagador solicitante certifica la aceptación del '
+                      'paciente', 'boolean'),
+    'interopNotes': ('Interoperability follow-up notes', 'Notas de seguimiento de interoperabilidad', 'text'),
 }
 
 O = {
@@ -134,6 +143,7 @@ O = {
     'needsPlan': ('Discharge plan needed', 'Se necesita un plan de alta'), 'noPlan': ('No plan needed', 'No se necesita plan'),
     'renew': ('Renew', 'Renovar'), 'terminate': ('Terminate', 'Terminar'),
     'cured': ('Breach cured', 'Incumplimiento subsanado'),
+    'closeUnanswered': ('Close: no data received', 'Cerrar: no se recibieron datos'),
 }
 
 LOCALES['es'] = ({k: v[1] for k, v in F.items()}, {k: v[1] for k, v in O.items()}, 'Detalles del caso')
@@ -1038,6 +1048,218 @@ def baa():
         ('COUNSEL', 'COUNSEL', 'PRIVACY-OFFICE', 'Legal counsel', 'Asesor jurídico')], 'uba')
 
 
+# ============================================================================================ payer APIs (CMS-0057-F)
+# M-133, owner decision 107: the CMS-0057-F payer APIs are in 0.1.0 (the No Surprises Act items stay traceability
+# only). These packs are the payer-side workflows behind the FHIR APIs: the API itself is the payer's FHIR server,
+# reached through ConnectorGateway (sangam-connectors-health FhirConnector, Bulk Data through its operation call).
+# The 1-business-day response time (US-HLT-064) and the 5-year look-back (US-HLT-063) are DMN outputs, so a tenant
+# overrides them without touching the models; US-HLT-064 is marked (verify) in the source.
+
+def p2p_config(pk, key):
+    pk.dmn(key, 'Payer API timeframes (CMS-0057-F; tenant overridable)', 'FIRST',
+           [('Payer program', 'payerProgram', 'string')],
+           [('p2pLookback', 'Look-back period of the data exchanged', 'string'),
+            ('p2pResponseSpec', 'Response due within', 'string'),
+            ('p2pRetryAfter', 'Retry after (other payer unavailable)', 'string')],
+           [(['-'], [q('P5Y'), q('1WD'), q('PT4H')], 'US-HLT-063 five years of data; US-HLT-064 one business day '
+                                                     '(verify in the rule text)')],
+           doc='US-HLT-063, US-HLT-064 (verify). Override per tenant or payer program.')
+
+
+def payer_to_payer():
+    pk = upack('payer-to-payer', 'Payer-to-Payer data exchange (CMS-0057-F)',
+               'Intercambio de datos entre pagadores (CMS-0057-F)',
+               'New payer: the patient opt-in is recorded first and nothing is requested without it; the member is '
+               'matched at the previous payer, the data of the look-back period (DMN, five years) is requested with the '
+               'response clock from DMN and stored in the member record; an unanswered request is chased or closed by '
+               'the interoperability analyst. Previous payer: a request is answered only with the requesting payer\'s '
+               'opt-in attestation and a confirmed member match, within the response clock.',
+               ['US-HLT-063', 'US-HLT-064', 'US-HLT-067'] + SIDE,
+               [('payer.memberMatch', 'a', '', 'Member match at the other payer ($member-match)'),
+                ('payer.p2pData', 'b', '', 'Payer-to-Payer data request and response (FHIR Bulk Data)'),
+                ('payer.memberRecord', 'b', '', 'Member record of this payer (FHIR)')])
+    p = pk.proc('sangam-sec-ushealth-p2p-request', 'Payer-to-Payer: request data from the previous payer', '',
+                start={'materialFields': 'memberId,previousPayerId,p2pOptIn'})
+    s = p.root
+    st = sform(p, s, 'pq_start', 'New member enrolled', 'sec-ushealth-payer-to-payer/enrol',
+               'New member | Nuevo afiliado',
+               ['patientName*', 'memberId*', 'payerProgram*', 'previousPayerId*', 'previousMemberId', 'p2pOptIn*'])
+    d = s.setv('pq_defaults', 'Configuration',
+               defaults='patientName=@customerId;memberId=@customerId;payerProgram=MA;previousPayerId=SIMPAYER;'
+                        'p2pOptIn=false;interopSeat=INTEROP-ANALYST;memberSeat=MEMBER-SERVICES')
+    r = s.rule('pq_cfg', 'Payer API timeframes (DMN)', 'sec-ushealth-p2p-config')
+    s.seq(st, d, r)
+    og = s.xgw('pq_optGw', 'Patient opted in?')
+    s.flow(r, og)
+    # no exchange without the patient's opt-in (US-HLT-063); the default false makes a missing answer a refusal
+    s.flow(og, end_ok(p, s, 'pq_endNoOptIn', 'No opt-in: nothing requested', outcome='NOT_OPTED_IN'), None,
+           'not opted in', default=True)
+    me, m = checked_query(s, 'pq_match', 'Member match at the previous payer ($member-match)', 'payer.memberMatch',
+                          'match', 'memberId,previousPayerId,previousMemberId,patientName', 'match', ['matchPatientId'])
+    s.flow(og, me, 'p2pOptIn == true', 'opted in')
+    mg = s.xgw('pq_matchGw', 'Member matched?')
+    s.flow(m, mg)
+    match_unconfirmed, _ = check_conditions([('match', ['matchPatientId'])])
+    s.flow(mg, unconfirmed_hold(p, s, 'pq_matchHold', 'No confirmed member match: correct the member data | '
+                                'Sin coincidencia confirmada: corregir los datos del afiliado', '${memberSeat}', me,
+                                fields=('previousPayerId*', 'previousMemberId', 'remarks*')),
+           match_unconfirmed, 'not matched')
+    dl = clock(s, 'pq_deadline', 'p2pResponse', '${p2pResponseSpec}')
+    s.flow(mg, dl, None, 'matched', default=True)
+    re_, rq = checked_query(s, 'pq_request', 'Request the member data of the look-back period (Bulk Data)',
+                            'payer.p2pData', 'request', 'matchPatientId,previousPayerId,p2pLookback', 'p2pData',
+                            ['p2pDataBundleRef'])
+    s.flow(dl, re_)
+    rg = s.xgw('pq_dataGw', 'Data received?')
+    s.flow(rq, rg)
+    data_unconfirmed, _ = check_conditions([('p2pData', ['p2pDataBundleRef'])])
+    w = s.egw('pq_wait', 'Data ready, or the response time passed')
+    s.flow(rg, w, data_unconfirmed, 'not received yet')
+    ready = s.catch_msg('pq_ready', 'Data ready at the previous payer', 'sangam.ushealth.p2pDataReady')
+    late = s.catch_timer('pq_late', 'Response time passed', date='${p2pResponseDueAt}')
+    s.flow(w, ready)
+    s.flow(w, late)
+    s.flow(ready, re_)
+    chase = s.user('pq_chase', 'Previous payer did not answer in time: chase or close | '
+                   'El pagador anterior no respondió a tiempo: insistir o cerrar', '${interopSeat}',
+                   form='sec-ushealth-payer-to-payer/chase', decision=('chaseDecision', ['retry', 'closeUnanswered']),
+                   fields=['interopNotes*'])
+    s.flow(late, chase)
+    cg = s.xgw('pq_chaseGw')
+    s.flow(chase, cg)
+    s.flow(cg, re_, "chaseDecision == 'retry'", 'retry')
+    s.flow(cg, end_ok(p, s, 'pq_endUnanswered', 'Closed: no data received', outcome='NOT_RECEIVED'), None, 'close',
+           default=True)
+    ie, ing = checked_query(s, 'pq_store', 'Store the received data in the member record', 'payer.memberRecord',
+                            'ingest', 'memberId,p2pDataBundleRef', 'store', ['storeRecordRef'], mode='submit',
+                            step='p2p-store')
+    s.flow(rg, ie, None, 'received', default=True)
+    sg = s.xgw('pq_storeGw', 'Stored?')
+    s.flow(ing, sg)
+    store_unconfirmed, _ = check_conditions([('store', ['storeRecordRef'])])
+    s.flow(sg, unconfirmed_hold(p, s, 'pq_storeHold', 'Storing the received data not confirmed: check the member record | '
+                                'Almacenamiento no confirmado: revisar el registro del afiliado', '${interopSeat}', ie,
+                                fields=('interopNotes*',)), store_unconfirmed, 'not confirmed')
+    s.flow(sg, end_ok(p, s, 'pq_end', 'Data received and stored', outcome='RECEIVED', data=['storeRecordRef']), None,
+           'stored', default=True)
+    s.side_exits('pq')
+
+    p = pk.proc('sangam-sec-ushealth-p2p-respond', 'Payer-to-Payer: answer a request from the new payer', '',
+                start={'materialFields': 'memberId,requestingPayerId,optInAttested'})
+    s = p.root
+    st = sform(p, s, 'pr_start', 'Request received from the new payer', 'sec-ushealth-payer-to-payer/inbound',
+               'Request from the new payer | Solicitud del nuevo pagador',
+               ['patientName*', 'memberId*', 'payerProgram*', 'requestingPayerId*', 'optInAttested*'])
+    d = s.setv('pr_defaults', 'Configuration',
+               defaults='patientName=@customerId;memberId=@customerId;payerProgram=MA;requestingPayerId=SIMPAYER;'
+                        'optInAttested=false;interopSeat=INTEROP-ANALYST;memberSeat=MEMBER-SERVICES')
+    r = s.rule('pr_cfg', 'Payer API timeframes (DMN)', 'sec-ushealth-p2p-config')
+    dl = clock(s, 'pr_deadline', 'p2pResponse', '${p2pResponseSpec}')
+    s.seq(st, d, r, dl)
+    og = s.xgw('pr_optGw', 'Opt-in attested?')
+    s.flow(dl, og)
+    s.flow(og, s.end('pr_endNoOptIn', 'Refused: no opt-in attestation',
+                     listeners=[p.item_listener('REJECTED')]), None, 'no attestation', default=True)
+    me, m = checked_query(s, 'pr_match', 'Match the member in this payer\'s records', 'payer.memberRecord', 'match',
+                          'memberId,patientName', 'local', ['localPatientId'])
+    s.flow(og, me, 'optInAttested == true', 'attested')
+    mg = s.xgw('pr_matchGw', 'Member matched?')
+    s.flow(m, mg)
+    local_unconfirmed, _ = check_conditions([('local', ['localPatientId'])])
+    s.flow(mg, unconfirmed_hold(p, s, 'pr_matchHold', 'No confirmed member match: establish it before any data leaves | '
+                                'Sin coincidencia confirmada: establecerla antes de enviar datos', '${memberSeat}', me,
+                                fields=('remarks*',)), local_unconfirmed, 'not matched')
+    xe, x = checked_query(s, 'pr_export', 'Export the member data of the look-back period (Bulk Data)',
+                          'payer.memberRecord', 'export', 'localPatientId,p2pLookback', 'export', ['exportBundleRef'])
+    s.flow(mg, xe, None, 'matched', default=True)
+    xg = s.xgw('pr_exportGw', 'Export ready?')
+    s.flow(x, xg)
+    export_unconfirmed, _ = check_conditions([('export', ['exportBundleRef'])])
+    s.flow(xg, unconfirmed_hold(p, s, 'pr_exportHold', 'Export not confirmed: check the member record | '
+                                'Exportación no confirmada: revisar el registro del afiliado', '${interopSeat}', xe,
+                                fields=('interopNotes*',)), export_unconfirmed, 'not confirmed')
+    se, sd = checked_query(s, 'pr_send', 'Send the data to the new payer', 'payer.p2pData', 'respond',
+                           'requestingPayerId,memberId,exportBundleRef', 'sent', ['sentReceiptRef'], mode='submit',
+                           step='p2p-send')
+    s.flow(xg, se, None, 'ready', default=True)
+    sg = s.xgw('pr_sendGw', 'Sent?')
+    s.flow(sd, sg)
+    sent_unconfirmed, _ = check_conditions([('sent', ['sentReceiptRef'])])
+    s.flow(sg, unconfirmed_hold(p, s, 'pr_sendHold', 'Sending not confirmed: check with the new payer | '
+                                'Envío no confirmado: verificar con el nuevo pagador', '${interopSeat}', se,
+                                fields=('interopNotes*',)), sent_unconfirmed, 'not confirmed')
+    s.flow(sg, end_ok(p, s, 'pr_end', 'Data sent', outcome='SENT', data=['sentReceiptRef']), None, 'sent', default=True)
+    s.side_exits('pr')
+    p2p_config(pk, 'sec-ushealth-p2p-config')
+    useeds(pk, 'PAYER', [
+        ('INTEROP-ANALYST', 'INTEROP', 'MEMBER-SERVICES', 'Interoperability analyst', 'Analista de interoperabilidad'),
+        ('MEMBER-SERVICES', 'MEMBERSVC', None, 'Member services', 'Servicios al afiliado')], 'upp')
+
+
+def provider_access():
+    pk = upack('provider-access', 'Provider Access request (CMS-0057-F)', 'Solicitud de acceso del proveedor (CMS-0057-F)',
+               'An in-network provider asks for a patient\'s data: the treatment relationship (attribution) and the '
+               'patient\'s opt-out are both checked at their source before anything is exported; an unconfirmed check '
+               'holds the request for a person and never releases data; the answer is due within the response clock '
+               'from DMN (one business day, to verify).',
+               ['US-HLT-062', 'US-HLT-064', 'US-HLT-067'] + SIDE,
+               [('payer.attribution', 'a', '', 'Provider attribution (treatment relationship)'),
+                ('payer.memberRecord', 'a', '', 'Member record and opt-out of this payer (FHIR)'),
+                ('payer.providerAccess', 'b', '', 'Provider Access answer (FHIR Bulk Data)')])
+    p = pk.proc('sangam-sec-ushealth-provider-access', 'Provider Access request', '',
+                start={'materialFields': 'memberId,providerNpi'})
+    s = p.root
+    st = sform(p, s, 'pv_start', 'Provider request received', 'sec-ushealth-provider-access/request',
+               'Provider request | Solicitud del proveedor', ['patientName*', 'memberId*', 'payerProgram*', 'providerNpi*'])
+    d = s.setv('pv_defaults', 'Configuration',
+               defaults='patientName=@customerId;memberId=@customerId;payerProgram=MA;providerNpi=1234567893;'
+                        'interopSeat=INTEROP-ANALYST;memberSeat=MEMBER-SERVICES')
+    r = s.rule('pv_cfg', 'Payer API timeframes (DMN)', 'sec-ushealth-provider-access-config')
+    dl = clock(s, 'pv_deadline', 'p2pResponse', '${p2pResponseSpec}')
+    s.seq(st, d, r, dl)
+    ae, at = checked_query(s, 'pv_attr', 'Check the treatment relationship (attribution)', 'payer.attribution', 'check',
+                           'memberId,providerNpi', 'attr', ['attrAttributed'])
+    oe, oo = checked_query(s, 'pv_optOut', 'Check the patient\'s opt-out', 'payer.memberRecord', 'optOut', 'memberId',
+                           'optout', ['optoutOptedOut'])
+    s.flow(dl, ae)
+    s.flow(at, oe)
+    g = s.xgw('pv_checkGw', 'Data may be shared?')
+    s.flow(oo, g)
+    unconfirmed, adverse = check_conditions([('attr', ['attrAttributed']), ('optout', ['optoutOptedOut'])],
+                                            '!attrAttributed || optoutOptedOut')
+    s.flow(g, unconfirmed_hold(p, s, 'pv_checkHold', 'Attribution or opt-out not confirmed: confirm at the source | '
+                               'Atribución o exclusión no confirmada: confirmar en la fuente', '${memberSeat}', ae,
+                               fields=('remarks*',)), unconfirmed, 'not confirmed')
+    s.flow(g, s.end('pv_endRefused', 'Refused: no treatment relationship, or the patient opted out',
+                    listeners=[p.item_listener('REJECTED')]), adverse, 'not attributed / opted out')
+    xe, x = checked_query(s, 'pv_export', 'Export the permitted data (Bulk Data)', 'payer.memberRecord', 'export',
+                          'memberId,providerNpi', 'export', ['exportBundleRef'])
+    s.flow(g, xe, None, 'may share', default=True)
+    xg = s.xgw('pv_exportGw', 'Export ready?')
+    s.flow(x, xg)
+    export_unconfirmed, _ = check_conditions([('export', ['exportBundleRef'])])
+    s.flow(xg, unconfirmed_hold(p, s, 'pv_exportHold', 'Export not confirmed: check the member record | '
+                                'Exportación no confirmada: revisar el registro del afiliado', '${interopSeat}', xe,
+                                fields=('interopNotes*',)), export_unconfirmed, 'not confirmed')
+    se, sd = checked_query(s, 'pv_send', 'Answer the provider', 'payer.providerAccess', 'respond',
+                           'providerNpi,memberId,exportBundleRef', 'sent', ['sentReceiptRef'], mode='submit',
+                           step='provider-send')
+    s.flow(xg, se, None, 'ready', default=True)
+    sg = s.xgw('pv_sendGw', 'Answered?')
+    s.flow(sd, sg)
+    sent_unconfirmed, _ = check_conditions([('sent', ['sentReceiptRef'])])
+    s.flow(sg, unconfirmed_hold(p, s, 'pv_sendHold', 'Answer not confirmed: check with the provider | '
+                                'Respuesta no confirmada: verificar con el proveedor', '${interopSeat}', se,
+                                fields=('interopNotes*',)), sent_unconfirmed, 'not confirmed')
+    s.flow(sg, end_ok(p, s, 'pv_end', 'Provider answered', outcome='SENT', data=['sentReceiptRef']), None, 'answered',
+           default=True)
+    s.side_exits('pv')
+    p2p_config(pk, 'sec-ushealth-provider-access-config')
+    useeds(pk, 'PAYER', [
+        ('INTEROP-ANALYST', 'INTEROP', 'MEMBER-SERVICES', 'Interoperability analyst', 'Analista de interoperabilidad'),
+        ('MEMBER-SERVICES', 'MEMBERSVC', None, 'Member services', 'Servicios al afiliado')], 'upv')
+
+
 def build():
     eligibility()
     prior_auth()
@@ -1047,3 +1269,5 @@ def build():
     access()
     breach()
     baa()
+    payer_to_payer()
+    provider_access()

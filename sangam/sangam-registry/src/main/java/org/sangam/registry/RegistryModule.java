@@ -3,6 +3,8 @@ package org.sangam.registry;
 
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Transactions;
+import org.sangam.core.security.EnvironmentPolicy;
+import org.sangam.core.security.ProductionMode;
 import org.sangam.registry.asset.AssetService;
 import org.sangam.registry.asset.MaintenanceService;
 import org.sangam.registry.custody.CustodyService;
@@ -44,37 +46,66 @@ public final class RegistryModule {
     private final MaintenanceService maintenance;
     private final CustodyService custody;
 
-    /** Profiles on which the development-only defaults (ephemeral key, random pepper) are allowed. */
-    public static final Set<String> DEVELOPMENT_PROFILES = Set.of("dev", "h2", "test", "local");
+    /**
+     * Profile names the deprecated profile-list constructors treat as development (the host adapters own the real
+     * classification, decision 143).
+     */
+    @Deprecated(forRemoval = true)
+    public static final Set<String> DEVELOPMENT_PROFILES = EnvironmentPolicy.DEVELOPMENT_PROFILES;
 
     /**
      * Wiring with the active profiles read from {@code spring.profiles.active} / {@code sangam.profile} (system
-     * properties) or {@code SPRING_PROFILES_ACTIVE} / {@code SANGAM_PROFILE} (environment). No profile counts as
-     * non-development.
+     * properties) or {@code SPRING_PROFILES_ACTIVE} / {@code SANGAM_PROFILE} (environment), and the production switch
+     * from {@code sangam.security.production} / {@code SANGAM_SECURITY_PRODUCTION}; a missing switch refuses the start
+     * (decision 143).
      *
      * @param sideTransactions independent short transactions (a plain pool) for unique-only number blocks; may be null
+     * @deprecated embedding without a host adapter; pass the resolved environment
+     *             ({@link #RegistryModule(Dialect, RegistryPorts, Transactions, EnvironmentPolicy.Resolution)})
      */
+    @Deprecated(forRemoval = true)
     public RegistryModule(Dialect dialect, RegistryPorts ports, Transactions sideTransactions) {
         this(dialect, ports, sideTransactions, activeProfilesFromEnvironment());
     }
 
     /**
-     * Wiring with explicit active profiles (the integrator passes Spring's {@code Environment.getActiveProfiles()}).
+     * Wiring with explicit profile names. The production switch is not invented (decision 143: development-only
+     * defaults need a development profile <em>and</em> an explicit non-production switch; a missing switch refuses the
+     * start): it is read from trusted deployment configuration, the system property {@code sangam.security.production}
+     * or the environment variable {@code SANGAM_SECURITY_PRODUCTION}, and resolved by {@link EnvironmentPolicy}.
      *
-     * @throws IllegalStateException on a non-development profile when a development-only default is bound (the
-     *                               ephemeral Ed25519 signer or the random-pepper identifier vault): nothing signed
-     *                               or hashed with them would survive a restart
+     * @deprecated tests and embeddings only; hosts pass the resolution of their adapter
+     *             ({@link #RegistryModule(Dialect, RegistryPorts, Transactions, EnvironmentPolicy.Resolution)})
      */
+    @Deprecated(forRemoval = true)
     public RegistryModule(Dialect dialect, RegistryPorts ports, Transactions sideTransactions,
                           Collection<String> activeProfiles) {
+        this(dialect, ports, sideTransactions, legacy(activeProfiles));
+    }
+
+    /**
+     * Wiring with the platform's resolved environment (decision 143, RM-06): the host adapter resolves it once from
+     * trusted deployment configuration ({@code ProductionEnvironment.resolve(env)} in sangam-server).
+     *
+     * <p>Development-only defaults (the ephemeral signer, the random-pepper vault, the permit-all consent port) are
+     * allowed only when {@link EnvironmentPolicy.Resolution#developmentDefaultsAllowed()}: a recognised development or
+     * test profile and an explicit non-production switch. Production, staging (non-production without a development
+     * profile) and any unresolved configuration refuse them.
+     *
+     * @param environment the resolved environment; null is refused like a production one
+     * @throws IllegalStateException when a development-only default is bound outside a development environment
+     */
+    public RegistryModule(Dialect dialect, RegistryPorts ports, Transactions sideTransactions,
+                          EnvironmentPolicy.Resolution environment) {
         RegistryPorts p = ports == null ? RegistryPorts.defaults() : ports;
-        boolean dev = activeProfiles != null && activeProfiles.stream()
-                .anyMatch(x -> x != null && DEVELOPMENT_PROFILES.contains(x.trim().toLowerCase()));
         List<String> reasons = p.developmentOnlyReasons();
-        if (!dev && !reasons.isEmpty()) {
-            throw new IllegalStateException("sangam-registry refuses to start on profile(s) " + activeProfiles
+        if (!reasons.isEmpty() && (environment == null || !environment.developmentDefaultsAllowed())) {
+            throw new IllegalStateException("sangam-registry refuses to start "
+                    + (environment == null ? "without a resolved environment"
+                    : environment.production() ? "in production" : "outside a development environment")
                     + " with development-only defaults: " + String.join("; ", reasons)
-                    + ". Allowed only on profiles " + DEVELOPMENT_PROFILES + ".");
+                    + ". Allowed only in a development or test environment (decision 143"
+                    + (environment == null ? "" : "; " + environment.describe()) + ").");
         }
         this.dialect = dialect;
         this.ports = p;
@@ -89,6 +120,27 @@ public final class RegistryModule {
         this.assets = new AssetService(dialect, objects, audit, this.ports);
         this.maintenance = new MaintenanceService(dialect, assets, objects, audit, this.ports);
         this.custody = new CustodyService(dialect, objects, audit, this.ports);
+    }
+
+    /** Environment variable form of {@link ProductionMode#PROPERTY} (what the Helm chart and the image set). */
+    static final String SWITCH_ENV = "SANGAM_SECURITY_PRODUCTION";
+
+    /** The deprecated profile-list path: the switch from deployment configuration, never invented (decision 143). */
+    private static EnvironmentPolicy.Resolution legacy(Collection<String> profiles) {
+        String property = System.getProperty(ProductionMode.PROPERTY);
+        if (property != null && !property.isBlank()) {
+            return legacy(profiles, property, "system property " + ProductionMode.PROPERTY);
+        }
+        String variable = System.getenv(SWITCH_ENV);
+        return legacy(profiles, variable, variable == null ? null : "environment variable " + SWITCH_ENV);
+    }
+
+    /**
+     * The resolution of the profile-list path for a given switch: a missing, invalid or contradictory switch throws
+     * {@link EnvironmentPolicy.ConfigurationError} (an {@link IllegalStateException}), so the start is refused.
+     */
+    static EnvironmentPolicy.Resolution legacy(Collection<String> profiles, String rawSwitch, String switchSource) {
+        return EnvironmentPolicy.resolve(rawSwitch, switchSource, EnvironmentPolicy.signals(profiles));
     }
 
     static List<String> activeProfilesFromEnvironment() {

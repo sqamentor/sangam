@@ -39,11 +39,23 @@ public sealed record FieldTemplateItem
     [global::System.Text.Json.Serialization.JsonPropertyName("visibleIf")]
     public FieldTemplateVisibleIf? VisibleIf { get; init; }
 
+    /// <summary>
+    /// Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242)
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("min")]
-    public double? Min { get; init; }
+    public string? Min { get; init; }
 
+    /// <summary>
+    /// Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242)
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("max")]
-    public double? Max { get; init; }
+    public string? Max { get; init; }
+
+    /// <summary>
+    /// NUMBER items only, optional (decision 242): the most decimal places allowed. min, max and every answer to the item may not have more decimal places than scale; absent means no limit beyond decision 230
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("scale")]
+    public int? Scale { get; init; }
 
     [global::System.Text.Json.Serialization.JsonPropertyName("expected")]
     public object? Expected { get; init; }

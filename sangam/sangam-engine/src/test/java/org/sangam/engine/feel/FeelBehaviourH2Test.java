@@ -222,6 +222,7 @@ class FeelBehaviourH2Test {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:feelsg27;MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings settings = new SangamEngineSettings();
+        settings.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         settings.setAllowMultipleEnginesPerJvm(true);
         settings.setEngineSchemaUpdate("true"); // empty in-memory database owned by this test
         Map<String, DmnFunctionProvider.DmnFunction> fns = new LinkedHashMap<>();

@@ -1,0 +1,75 @@
+{
+  "id": "gov.intl.pfm-budget-accounting-reconciliation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Budget-to-accounting reconciliation (worldwide PFM)",
+    "hi": "बजट-लेखा मिलान (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "The budget outturn of the period (ledger, budget basis) is reconciled with the expense of the financial statements (accounting basis) (PFM-055; IPSAS 24 comparison of budget and actual): the difference is computed exactly, a non-zero difference is explained by basis, timing and entity differences, a different officer approves, and the reconciliation statement is issued.",
+  "mainProcesses": [
+    "sangam-intl-pfm-budget-accounting-reconciliation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-budget-accounting-reconciliation/sangam-intl-pfm-budget-accounting-reconciliation.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-accounting-reconciliation/forms/period.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-accounting-reconciliation/forms/hold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-accounting-reconciliation/forms/explain.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-accounting-reconciliation/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-budget-accounting-reconciliation/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-budget-accounting-reconciliation/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.outturn",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Budget outturn of the period (budget basis)"
+    },
+    {
+      "id": "accounts.statement",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Expense of the period (accounting basis)"
+    }
+  ],
+  "covers": [
+    "PFM-055"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "accountingAmount",
+      "differenceAmount",
+      "outturnAmount"
+    ]
+  }
+}

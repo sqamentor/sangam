@@ -65,7 +65,7 @@ class BillingRetryTest {
     void aReInvoiceKeepsTheNumberAndDrawsNone() {
         CountingSeries series = new CountingSeries();
         LedgerService l = BillingServiceTest.ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), series, null, BusinessClock.utc(AT));
+        BillingService b = new BillingService(l, new TariffEngine(null), series, TestRails.settling(), BusinessClock.utc(AT));
         LocalDate due = LocalDate.parse("2026-11-01");
         BillingService.Invoice first = b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", FLAT, Map.of(), Map.of(), due, "sys");
         BillingService.Invoice again = b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", FLAT, Map.of(), Map.of(), due, "sys");
@@ -84,7 +84,7 @@ class BillingRetryTest {
     void aRetriedCollectionKeepsTheReceiptNumber() {
         CountingSeries series = new CountingSeries();
         LedgerService l = BillingServiceTest.ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), series, null, BusinessClock.utc(AT));
+        BillingService b = new BillingService(l, new TariffEngine(null), series, TestRails.settling(), BusinessClock.utc(AT));
         b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", FLAT, Map.of(), Map.of(), LocalDate.parse("2026-11-01"), "sys");
         BillingService.Receipt first = b.collect("T", "DEMAND", "C-1", "COUNTER", "PAY-1", inr("40"), "cashier");
         BillingService.Receipt retry = b.collect("T", "DEMAND", "C-1", "COUNTER", "PAY-1", inr("40"), "cashier");
@@ -105,7 +105,7 @@ class BillingRetryTest {
     @Test
     void aRetriedCollectionReplaysItsPlanAndNeverConsumesTheNextDemand() {
         LedgerService l = BillingServiceTest.ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), null,
+        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), TestRails.settling(),
                 BusinessClock.utc(AT));
         b.invoice("T", "DEMAND", "2026", "C-1", "2026-09", FLAT, Map.of(), Map.of(), LocalDate.parse("2026-10-01"), "sys");
         b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", FLAT, Map.of(), Map.of(), LocalDate.parse("2026-11-01"), "sys");
@@ -124,7 +124,7 @@ class BillingRetryTest {
     @Test
     void theSamePaymentForAnotherAmountOrConsumerIsRefused() {
         LedgerService l = BillingServiceTest.ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), null,
+        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), TestRails.settling(),
                 BusinessClock.utc(AT));
         b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", FLAT, Map.of(), Map.of(), LocalDate.parse("2026-11-01"), "sys");
         b.collect("T", "DEMAND", "C-1", "COUNTER", "PAY-1", inr("40"), "cashier");
@@ -136,7 +136,7 @@ class BillingRetryTest {
     @Test
     void theAdvanceIsPartOfTheStoredPlan() {
         LedgerService l = BillingServiceTest.ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), null,
+        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), TestRails.settling(),
                 BusinessClock.utc(AT));
         b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", FLAT, Map.of(), Map.of(), LocalDate.parse("2026-11-01"), "sys");
         BillingService.Receipt first = b.collect("T", "DEMAND", "C-1", "COUNTER", "PAY-1", inr("130"), "cashier");

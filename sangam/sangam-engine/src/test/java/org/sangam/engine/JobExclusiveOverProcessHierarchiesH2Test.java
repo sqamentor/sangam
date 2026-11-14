@@ -60,6 +60,7 @@ class JobExclusiveOverProcessHierarchiesH2Test {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:m055" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false); // a SANGAM_JOB_* variable on the build host must not decide the test
@@ -121,14 +122,17 @@ class JobExclusiveOverProcessHierarchiesH2Test {
     @Test
     void environmentOverrideStaysAvailable() {
         SangamEngineSettings off = new SangamEngineSettings();
+        off.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         off.applyEnvironment(Map.of("SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES", "false"));
         assertFalse(off.isJobExclusiveOverProcessHierarchies(), "false switches it off");
 
         SangamEngineSettings blank = new SangamEngineSettings();
+        blank.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         blank.applyEnvironment(Map.of("SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES", " "));
         assertTrue(blank.isJobExclusiveOverProcessHierarchies(), "a blank value keeps the default");
 
         SangamEngineSettings on = new SangamEngineSettings();
+        on.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         on.setJobExclusiveOverProcessHierarchies(false);
         on.applyEnvironment(Map.of("SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES", "true"));
         assertTrue(on.isJobExclusiveOverProcessHierarchies(), "true switches it back on");

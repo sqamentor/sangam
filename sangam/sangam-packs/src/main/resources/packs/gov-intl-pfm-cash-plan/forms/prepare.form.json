@@ -1,0 +1,45 @@
+{
+  "key": "gov-intl-pfm-cash-plan/prepare",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-cash-plan",
+  "title": {
+    "en": "Set the release plan from the forecast",
+    "hi": "निर्मुक्ति योजना"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "forecastRef",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Cash forecast (ledger)",
+        "hi": "नकद पूर्वानुमान"
+      }
+    },
+    {
+      "id": "releasePlanNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Release plan: monthly / weekly releases and borrowing need",
+        "hi": "निर्मुक्ति योजना"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

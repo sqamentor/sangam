@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/up18-capa/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up18-capa/pack.json"
     }
   ],
   "seed": "packs/up18-capa/seed.json",
@@ -58,6 +62,15 @@
   "calls": [
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "u18_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "CAPA"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

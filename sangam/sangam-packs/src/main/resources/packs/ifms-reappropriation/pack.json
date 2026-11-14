@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/ifms-reappropriation/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/ifms-reappropriation/pack.json"
     }
   ],
   "seed": "packs/ifms-reappropriation/seed.json",
@@ -122,6 +126,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "ra_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "ifms-reapp-powers",
+      "ruleCaseType": "REAPPROPRIATION"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

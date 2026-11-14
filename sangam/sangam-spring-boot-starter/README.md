@@ -18,13 +18,13 @@ Sangam's wiring: it imports the standalone server's own `*Wiring` classes, bridg
 ```xml
 <dependencyManagement>
   <dependencies>
-    <dependency><groupId>org.sangam</groupId><artifactId>sangam-bom</artifactId><version>0.1.0</version>
+    <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-bom</artifactId><version>0.1.0</version>
                 <type>pom</type><scope>import</scope></dependency>
     <!-- then the Spring Boot BOM -->
   </dependencies>
 </dependencyManagement>
 <dependencies>
-  <dependency><groupId>org.sangam</groupId><artifactId>sangam-spring-boot-starter</artifactId></dependency>
+  <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-spring-boot-starter</artifactId></dependency>
   <dependency><groupId>org.postgresql</groupId><artifactId>postgresql</artifactId><scope>runtime</scope></dependency>
 </dependencies>
 ```

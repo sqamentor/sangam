@@ -10,6 +10,7 @@ import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.ProcessEngineServices;
 import org.operaton.bpm.engine.RepositoryService;
 import org.operaton.bpm.engine.repository.DecisionDefinition;
+import org.operaton.bpm.engine.repository.Deployment;
 
 /**
  * DMN evaluation with tenant override (GP-37: a department's own table wins over the shared one) and version
@@ -43,23 +44,32 @@ public final class Decisions {
     }
 
     /**
-     * Evaluates {@code key}. With a {@code deploymentId} (GP-19 "deployment" binding) the decision deployed together
-     * with the calling process version is used, so in-flight cases keep the rule they started under; otherwise, or
-     * when that deployment has no such decision, the latest shared version. A tenant's own deployed table always wins
-     * (GP-37 department-specific override).
+     * Evaluates {@code key} (owner decision 202, GP-19 with GP-37):
+     * <ol>
+     *   <li>the tenant's own table deployed separately from the pack (a deployment of the tenant whose source is not
+     *       {@link org.sangam.packs.spi.PackDeployer#SOURCE}), latest version: a department-specific override wins
+     *       also over the rule a running case started with;</li>
+     *   <li>with a {@code deploymentId} ("deployment" binding), the decision deployed together with the calling process
+     *       version, so a running case keeps the rule version it started with; a newer pack version deployed for the
+     *       tenant never reaches it (ChangeAdoptionTest);</li>
+     *   <li>otherwise, or when that deployment has no such decision: the tenant's latest version, then the latest
+     *       shared version.</li>
+     * </ol>
      */
     public static Evaluation evaluate(ProcessEngineServices services, String tenantId, String key,
                                       Map<String, Object> variables, String deploymentId) {
         RepositoryService repo = services.getRepositoryService();
         DecisionDefinition def = null;
         if (tenantId != null) {
-            // a department's own table wins (GP-37)
-            def = repo.createDecisionDefinitionQuery().decisionDefinitionKey(key).tenantIdIn(tenantId)
-                    .latestVersion().singleResult();
+            def = tenantOwnTable(repo, tenantId, key);
         }
         if (def == null && deploymentId != null) {
             def = repo.createDecisionDefinitionQuery().decisionDefinitionKey(key).deploymentId(deploymentId)
                     .singleResult();
+        }
+        if (def == null && tenantId != null) {
+            def = repo.createDecisionDefinitionQuery().decisionDefinitionKey(key).tenantIdIn(tenantId)
+                    .latestVersion().singleResult();
         }
         if (def == null) {
             def = repo.createDecisionDefinitionQuery().decisionDefinitionKey(key).withoutTenantId()
@@ -71,5 +81,22 @@ public final class Decisions {
         DecisionService ds = services.getDecisionService();
         DmnDecisionResult r = ds.evaluateDecisionById(def.getId()).variables(variables).evaluate();
         return new Evaluation(key, def.getVersion(), def.getId(), r);
+    }
+
+    /**
+     * The latest version of {@code key} the tenant deployed separately from the pack, or null. A pack deployment (source
+     * {@link org.sangam.packs.spi.PackDeployer#SOURCE}), including a department-specific table shipped inside the
+     * tenant's pack deployment, is bound per case instead and never counts here.
+     */
+    static DecisionDefinition tenantOwnTable(RepositoryService repo, String tenantId, String key) {
+        List<DecisionDefinition> versions = repo.createDecisionDefinitionQuery().decisionDefinitionKey(key)
+                .tenantIdIn(tenantId).orderByDecisionDefinitionVersion().desc().list();
+        for (DecisionDefinition d : versions) {
+            Deployment dep = repo.createDeploymentQuery().deploymentId(d.getDeploymentId()).singleResult();
+            if (dep != null && !org.sangam.packs.spi.PackDeployer.SOURCE.equals(dep.getSource())) {
+                return d;
+            }
+        }
+        return null;
     }
 }

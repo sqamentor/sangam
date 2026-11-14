@@ -650,10 +650,41 @@ public class IntegrationWiring {
                 Duration.ofSeconds(30));
     }
 
+    /**
+     * Decision 290: automatic re-dispatches of an operation with no process instance are bounded by
+     * {@value #MAX_REDISPATCHES_PROPERTY} (default {@link PackReconciliationHooks#DEFAULT_MAX_REDISPATCHES}); past the
+     * bound a human decides.
+     */
     @Bean
     public PackReconciliationHooks sangamPackReconciliationHooks(DataSource ds, PackOperationStore store,
-            IntegrationConnectorGateway gateway, PackMessages messages) {
-        return new PackReconciliationHooks(productTx(ds), store, gateway, messages);
+            IntegrationConnectorGateway gateway, PackMessages messages, Environment env) {
+        return new PackReconciliationHooks(productTx(ds), store, gateway, messages, maxRedispatches(env));
+    }
+
+    /** The bound of automatic re-dispatches (decision 290). */
+    public static final String MAX_REDISPATCHES_PROPERTY = "sangam.integration.reconciliation.max-redispatches";
+
+    /**
+     * {@value #MAX_REDISPATCHES_PROPERTY}: unset gives {@link PackReconciliationHooks#DEFAULT_MAX_REDISPATCHES}; any
+     * value that is not a positive integer refuses the start, naming the property (fail closed, never a silent
+     * default).
+     */
+    static int maxRedispatches(Environment env) {
+        String raw = env.getProperty(MAX_REDISPATCHES_PROPERTY);
+        if (raw == null) {
+            return PackReconciliationHooks.DEFAULT_MAX_REDISPATCHES;
+        }
+        int value;
+        try {
+            value = Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            value = 0;
+        }
+        if (value < 1) {
+            throw new IllegalStateException(MAX_REDISPATCHES_PROPERTY + " must be a positive integer (found '" + raw
+                    + "'); decision 290");
+        }
+        return value;
     }
 
     /**

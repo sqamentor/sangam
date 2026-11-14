@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "MINISTRY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SPENDING-UNIT",
+      "role": "SPENDINGUNIT",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BUDGET-OFFICE",
+      "name": {
+        "en": "Spending unit budget officer",
+        "hi": "व्यय इकाई बजट अधिकारी"
+      }
+    },
+    {
+      "id": "BUDGET-OFFICE",
+      "role": "BUDGETOFFICE",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "FINANCE-MINISTER",
+      "name": {
+        "en": "Budget office",
+        "hi": "बजट कार्यालय"
+      }
+    },
+    {
+      "id": "FINANCE-MINISTER",
+      "role": "MINISTER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Minister of finance (executive approval)",
+        "hi": "वित्त मंत्री"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SPENDING-UNIT",
+      "person": "ibp.spending-unit",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BUDGET-OFFICE",
+      "person": "ibp.budget-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FINANCE-MINISTER",
+      "person": "ibp.finance-minister",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SPENDINGUNIT",
+      "name": {
+        "en": "Spending unit budget officer",
+        "hi": "व्यय इकाई बजट अधिकारी"
+      }
+    },
+    {
+      "code": "BUDGETOFFICE",
+      "name": {
+        "en": "Budget office",
+        "hi": "बजट कार्यालय"
+      }
+    },
+    {
+      "code": "MINISTER",
+      "name": {
+        "en": "Minister of finance (executive approval)",
+        "hi": "वित्त मंत्री"
+      }
+    }
+  ]
+}

@@ -122,7 +122,7 @@ Mutations carry `Idempotency-Key` (R41), which the REST layer's idempotency stor
 
 | Dependency | Scope | Licence |
 |---|---|---|
-| `org.sangam:sangam-core`, `org.sangam:sangam-flowable-ports` (Paging, EngineTx) | compile | Apache-2.0 |
+| `io.github.sqamentor:sangam-core`, `io.github.sqamentor:sangam-flowable-ports` (Paging, EngineTx) | compile | Apache-2.0 |
 | `org.operaton.bpm:operaton-engine` 2.2.0 (BOM) | compile | Apache-2.0 |
 | `com.fasterxml.jackson.core:jackson-databind` (BOM 2.22.3) | compile | Apache-2.0 |
 | `org.slf4j:slf4j-api` | compile | MIT |

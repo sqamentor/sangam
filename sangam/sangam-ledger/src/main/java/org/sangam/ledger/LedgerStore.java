@@ -29,6 +29,25 @@ public interface LedgerStore {
 
     PostResult post(Entry entry);
 
+    /**
+     * Posts {@code entry} with the accounting entries it produces. A store that {@linkplain #journals journals} writes
+     * the posting's audit row and these entries in the posting's own transaction (RM-04); any other store posts the
+     * entry alone and the caller hands the effects to its after-commit sinks.
+     */
+    default PostResult post(Entry entry, List<LedgerPorts.AccountingEntry> accounting) {
+        return post(entry);
+    }
+
+    /** True when {@link #post(Entry, List)} writes the audit and accounting rows atomically with the posting. */
+    default boolean journals() {
+        return false;
+    }
+
+    /** Exports accounting entries that belong to no posting (revaluation); only for a {@linkplain #journals journaling} store. */
+    default void exportAccounting(List<LedgerPorts.AccountingEntry> entries) {
+        throw new UnsupportedOperationException("this ledger store has no posting journal");
+    }
+
     Optional<Balance> get(AccountKey key);
 
     /** Accounts of a ledger in a tenant whose line / holder start with the given prefixes (null = any). */

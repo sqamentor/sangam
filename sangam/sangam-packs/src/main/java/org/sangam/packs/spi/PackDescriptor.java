@@ -29,13 +29,26 @@ import java.util.Map;
  *                        blocks go-live of a tenant that enables the pack until it overrides the named decision
  * @param workers        external-task topics the pack declares with the gateway connector that serves them
  *                        (SL-104: pack data, not product code)
+ * @param documentSlots  decision 269: the documentType-to-slot pairs of the pack's DSC steps (manifest
+ *                        {@code documentSlots}); the server's document route reads them, there is no server table
  */
 public record PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
                              List<String> mainProcesses, List<PackResource> resources, List<SeedRole> roles,
                              List<SeedSeat> seats, List<ConnectorUse> connectors, List<String> covers,
                              List<AcceptanceScenario> acceptance, List<String> dependsOn,
                              Map<String, List<String>> tenantOverrides, List<Placeholder> placeholders,
-                             List<WorkerUse> workers) {
+                             List<WorkerUse> workers, List<DocumentSlot> documentSlots) {
+
+    /** Descriptor without DSC document slots. */
+    public PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
+                          List<String> mainProcesses, List<PackResource> resources, List<SeedRole> roles,
+                          List<SeedSeat> seats, List<ConnectorUse> connectors, List<String> covers,
+                          List<AcceptanceScenario> acceptance, List<String> dependsOn,
+                          Map<String, List<String>> tenantOverrides, List<Placeholder> placeholders,
+                          List<WorkerUse> workers) {
+        this(id, version, name, domain, description, mainProcesses, resources, roles, seats, connectors, covers,
+                acceptance, dependsOn, tenantOverrides, placeholders, workers, List.of());
+    }
 
     /** Descriptor without declared workers. */
     public PackDescriptor(String id, String version, Map<String, String> name, String domain, String description,
@@ -70,6 +83,36 @@ public record PackDescriptor(String id, String version, Map<String, String> name
         tenantOverrides = tenantOverrides == null ? Map.of() : Map.copyOf(tenantOverrides);
         placeholders = placeholders == null ? List.of() : List.copyOf(placeholders);
         workers = workers == null ? List.of() : List.copyOf(workers);
+        documentSlots = documentSlots == null ? List.of() : List.copyOf(documentSlots);
+        java.util.Set<String> types = new java.util.HashSet<>();
+        java.util.Set<String> slots = new java.util.HashSet<>();
+        for (DocumentSlot s : documentSlots) {
+            if (!types.add(s.documentType()) || !slots.add(s.slot())) {
+                throw new IllegalArgumentException("documentSlots: " + s.documentType() + "=" + s.slot()
+                        + " repeats a document type or a slot");
+            }
+        }
+    }
+
+    /** Decision 269: the slot (case variable) of a DSC step's document type, empty when the pack declares none. */
+    public java.util.Optional<String> slotFor(String documentType) {
+        return documentSlots.stream().filter(s -> s.documentType().equals(documentType)).map(DocumentSlot::slot)
+                .findFirst();
+    }
+
+    /**
+     * Decision 269: a DSC step's required document. The document route fills {@code slot} (a case variable) with the id
+     * of an uploaded PDF whose metadata documentType is {@code documentType} (decision 267).
+     *
+     * @param documentType document type, for example {@code NOTING} or {@code SANCTION_NOTE}
+     * @param slot         case variable the DSC gate reads, for example {@code notingDocumentId}
+     */
+    public record DocumentSlot(String documentType, String slot) {
+        public DocumentSlot {
+            if (documentType == null || documentType.isBlank() || slot == null || slot.isBlank()) {
+                throw new IllegalArgumentException("documentSlots[] needs documentType and slot");
+            }
+        }
     }
 
     /**

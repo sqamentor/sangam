@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Owner decision 247 (decisions 170 and 207): OPTIONAL Oracle AI Vector Search column AI_KB_CHUNK.embedding_vec of type
+  VECTOR (any dimension and format, nullable, no vector index), read and written by sangam-ai NativeVectorSql.ORACLE.
+
+  * NOT included in sangam-master.xml: Liquibase runs context-tagged changesets when no context is given, so a plain
+    `update` of the master must never reach this, and Oracle 19c and 21c have no VECTOR type. Run it explicitly, after
+    the product changelog, only where sangam.ai.kb.vector-index=oracle on Oracle AI Database 23ai or later:
+      SangamSchema.applyOracleVector(dataSource), or
+      liquibase update -changelog-file=db/changelog/sangam-oracle-vector.xml -contexts=oracle-vector
+  * The changeset is generated (tools/generate_changelogs.py, ORACLE_VECTOR_OPTIONAL) and also carries context
+    oracle-vector and dbms:oracle.
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.33.xsd">
+
+  <preConditions onFail="HALT" onFailMessage="decision 247: the oracle-vector changelog applies to Oracle only (sangam.ai.kb.vector-index=oracle)">
+    <dbms type="oracle"/>
+  </preConditions>
+
+  <include file="oracle-vector/oracle.sql" relativeToChangelogFile="true" context="oracle-vector"/>
+
+</databaseChangeLog>

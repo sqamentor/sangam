@@ -1,7 +1,6 @@
 # sangam-registry (M4: registered-object kernel)
 
-Owner: GENERIC-REGISTRY workstream. Package `org.sangam.registry`. Depends on `sangam-core` only, plus Jackson,
-spring-web (annotations) and the Operaton delegate API (`provided`). No new third-party dependency. Ed25519 and
+Owner: GENERIC-REGISTRY workstream. Package `org.sangam.registry`. Depends on `sangam-core` only, plus Jackson and\nthe Operaton delegate API (`provided`); no host framework (M-141d). No new third-party dependency. Ed25519 and
 HMAC-SHA256 come from the JDK.
 
 There are no country, department or sector names in the code (SANGAM.md X.0e). Types, lifecycles, validity rules,
@@ -27,7 +26,7 @@ data that packs supply (ADR-D-20).
 | `asset/*` | N03: asset classes with inheritance; hierarchy; location/custodian moves; depreciation (straight line, declining balance, units of production, sum of years; conventions); meters and readings with rollover; time/meter/condition maintenance plans; idempotent due work-order generation; work-order state machine (calibration findings, parts, cost, downtime); MTBF/MTTR/availability |
 | `custody/*` | N18: tracked items; per-item hash-chained custody events plus AuditChain; two-step transfer and handover with both signatures; seal, break and reseal; inspection; nesting containers with cascade; receipts (series and document); disposal order and execution by different persons; gap check |
 | `bpmn/RegistryDelegate`, `PartyDelegate`, `AssetDelegate`, `CustodyDelegate`, `DelegateSupport` | BPMN building blocks. They run on the engine command's connection (same transaction). Registry errors become BPMN errors `REGISTRY_<CODE>`; operationId = UUIDv5 (T35) |
-| `rest/*` | REST under `/api/v1/registry` (section below); problem+json; `Idempotency-Key` used as the operationId; `If-Match` / `expectedVersion` for optimistic concurrency |
+| `rest/RegistryRestSupport` (plain Java); the Spring controllers are in sangam-rest `modules/registry/web` (REST host area, M-141d) | REST under `/api/v1/registry` (section below); problem+json; `Idempotency-Key` used as the operationId; `If-Match` / `expectedVersion` for optimistic concurrency |
 | `support/*` | JSON/maps helpers, DB clock (A-1), paging (capped at 1,000, R28), verification codes and check digits, Ed25519 signer, HMAC vault, audit plus event writer |
 
 ## REST endpoints
@@ -103,7 +102,7 @@ Base `/custody`.
 2. **Wiring.** In sangam-server:
    - Build `new RegistryModule(dialect, ports, Transactions.of(plainPool)).install()`.
    - Expose its services as beans.
-   - Register the controllers in `rest/` and `RegistryRestSupport` (with `Transactions.of(engine)` or the pool, and a `CallerResolver` over `SecurityIdentity`).
+   - sangam-rest's `RegistryRestConfiguration` registers the controllers of `org.sangam.rest.modules.registry.web` and `RegistryRestSupport` (with `Transactions.of(engine)` or the pool, and a `CallerResolver` over `SecurityIdentity`).
    - Register `RegistryExceptionHandler`.
    - Public verification endpoints (`/instruments/public/**`, `/registers/public/**`) must be permitted without authentication and rate-limited.
 3. **Ports to bind:**

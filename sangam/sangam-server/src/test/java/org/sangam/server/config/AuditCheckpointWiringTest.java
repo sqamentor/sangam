@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -91,7 +92,7 @@ class AuditCheckpointWiringTest {
         MockEnvironment env = env().withProperty("sangam.audit.checkpoint.private-key-ref", "secret://audit/cp-private")
                 .withProperty("sangam.audit.checkpoint.public-key-ref", "secret://audit/cp-public")
                 .withProperty("sangam.audit.checkpoint.export-dir", exportDir.toString());
-        TxSupport tx = new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
         org.springframework.beans.factory.support.DefaultListableBeanFactory bf =
                 new org.springframework.beans.factory.support.DefaultListableBeanFactory();
         bf.registerSingleton("secrets", secrets);

@@ -79,6 +79,12 @@
       }
     },
     {
+      "code": "DEPARTMENT_CLASS_NOT_CONFIRMED",
+      "label": {
+        "en": "Whether the department is scientific could not be confirmed from the bound configuration profile: the read failed or the profile has no value"
+      }
+    },
+    {
       "code": "DLG_ABOVE_CAP_OR_FORM",
       "label": {
         "en": "Default loss guarantee above the cap or not in an allowed form"

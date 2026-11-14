@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of History (9 operations). */
+/** Typed operations of History (10 operations). */
 final class HistoryApi
 {
     public function __construct(private readonly Calls $calls)
@@ -370,5 +370,23 @@ final class HistoryApi
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\ExternalTaskLogEntry::class, $page, $size);
+    }
+
+    /**
+     * Move an ended instance's history to a later version
+     *
+     * Rewrites only the process-definition id and key of the ended instance's history rows (ACT_HI_PROCINST, ACTINST, TASKINST, VARINST, DETAIL, INCIDENT, OP_LOG, EXT_TASK_LOG, DECINST, JOB_LOG, and IDENTITYLINK through the instance's history tasks) to the target definition, in one transaction under the root lock, together with the audit event PROCESS_HISTORY_MIGRATED (actor, reason, old and new definition and version, rows per table). Activity ids and everything that ran stay as recorded; called instances keep their own definitions. Operaton migration moves running instances only; this is for history. A retry with the same Idempotency-Key returns the same result. An instance of another tenant is 404 (no existence leak); untenanted history is visible only to a platform identity. Needs history.migrate (decision 258): tenant-scoped, held by the tenant administrator among the tenant roles (a TENANT ADMIN grant, not a history grant); the platform administrator reaches untenanted history. A replay of the stored response re-checks it.
+     *
+     * POST /admin/history/process-instances/{id}/migrate (operationId migrateHistoricProcessInstance); permission history.migrate; result stored atomically with the state change.
+     * @param Model\HistoryInstanceMigrationRequest|array $body request body
+     * @return Model\HistoryInstanceMigrationResult|null
+     */
+    public function migrateHistoricProcessInstance(string $id, Model\HistoryInstanceMigrationRequest|array $body, ?RequestOptions $options = null): ?Model\HistoryInstanceMigrationResult
+    {
+        $req = ApiRequest::post('/admin/history/process-instances/' . HttpTransport::seg((string) $id) . '/migrate');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\HistoryInstanceMigrationResult::class);
     }
 }

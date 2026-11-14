@@ -50,7 +50,7 @@ class BusinessDateGuardTest {
         allow("sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java", 2);
         allow("sangam-registry/src/main/java/org/sangam/registry/numbering/NumberingService.java", 1);
         allow("sangam-registry/src/main/java/org/sangam/registry/register/RegisterBookService.java", 1);
-        allow("sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java", 1);
+        allow("sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/AssetController.java", 1);
         // Onboarding plans a tenant that has no profile yet: the documented fallback (UTC on the injected clock).
         allow("sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingService.java", 2);
     }

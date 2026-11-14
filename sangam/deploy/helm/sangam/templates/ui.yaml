@@ -63,6 +63,14 @@ spec:
             # M-044: trace viewer link template with {traceId} (/config.json traceUrlTemplate); empty = no links
             - name: SANGAM_TRACE_URL_TEMPLATE
               value: {{ .Values.ui.traceUrlTemplate | quote }}
+            # Decision 213: Teams personal tab (/teams.html); false = unframeable; empty ancestors = built-in Microsoft list
+            - name: SANGAM_TEAMS_ENABLED
+              value: {{ ternary "true" "false" (eq (toString .Values.ui.teams.enabled) "true") | quote }}
+            - name: SANGAM_TEAMS_FRAME_ANCESTORS
+              value: {{ .Values.ui.teams.frameAncestors | quote }}
+            # Decision 165: DSC loopback agent origin; empty = DSC not set up
+            - name: SANGAM_DSC_AGENT_ORIGIN
+              value: {{ .Values.ui.dscAgentOrigin | quote }}
           livenessProbe:
             httpGet: { path: /healthz, port: http }
             periodSeconds: 10

@@ -23,7 +23,7 @@ final class RegistryApi
     /**
      * Publish type
      *
-     * RegistryController.publishType (sangam-registry).
+     * RegistryController.publishType (sangam-rest).
      *
      * POST /registry/types (operationId registryRegistryPublishType); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryPublishTypeBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryApi
     /**
      * List types
      *
-     * RegistryController.listTypes (sangam-registry).
+     * RegistryController.listTypes (sangam-rest).
      *
      * GET /registry/types (operationId registryRegistryListTypes); permission registry.read.
      * @param string|null $kind query kind
@@ -57,7 +57,7 @@ final class RegistryApi
     /**
      * Current type
      *
-     * RegistryController.currentType (sangam-registry).
+     * RegistryController.currentType (sangam-rest).
      *
      * GET /registry/types/{typeKey} (operationId registryRegistryCurrentType); permission registry.read.
      * @return array<string, mixed>
@@ -71,7 +71,7 @@ final class RegistryApi
     /**
      * Type version
      *
-     * RegistryController.typeVersion (sangam-registry).
+     * RegistryController.typeVersion (sangam-rest).
      *
      * GET /registry/types/{typeKey}/versions/{version} (operationId registryRegistryTypeVersion); permission registry.read.
      * @return array<string, mixed>
@@ -85,7 +85,7 @@ final class RegistryApi
     /**
      * Retire type
      *
-     * RegistryController.retireType (sangam-registry).
+     * RegistryController.retireType (sangam-rest).
      *
      * POST /registry/types/{typeKey}/versions/{version}/retire (operationId registryRegistryRetireType); permission registry.write; result stored atomically with the state change.
      */

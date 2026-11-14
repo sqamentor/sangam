@@ -17,7 +17,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Create
-    /// PartyController.create (sangam-registry).
+    /// PartyController.create (sangam-rest).
     /// POST /registry/parties (operationId registryPartyCreate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyCreateAsync(M.RegistryPartyCreateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// List
-    /// PartyController.list (sangam-registry).
+    /// PartyController.list (sangam-rest).
     /// GET /registry/parties (operationId registryPartyList); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryPartyListAsync(string? kind = null, string? status = null, string? name = null, string? idType = null, string? idValue = null, int? page = null, int? size = null, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -48,7 +48,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Get
-    /// PartyController.get (sangam-registry).
+    /// PartyController.get (sangam-rest).
     /// GET /registry/parties/{id} (operationId registryPartyGet); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyGetAsync(string id, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -60,7 +60,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Update
-    /// PartyController.update (sangam-registry).
+    /// PartyController.update (sangam-rest).
     /// PATCH /registry/parties/{id} (operationId registryPartyUpdate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyUpdateAsync(string id, M.RegistryPartyUpdateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -72,7 +72,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Deactivate
-    /// PartyController.deactivate (sangam-registry).
+    /// PartyController.deactivate (sangam-rest).
     /// POST /registry/parties/{id}/deactivate (operationId registryPartyDeactivate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyDeactivateAsync(string id, M.RegistryPartyDeactivateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -84,7 +84,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Reactivate
-    /// PartyController.reactivate (sangam-registry).
+    /// PartyController.reactivate (sangam-rest).
     /// POST /registry/parties/{id}/reactivate (operationId registryPartyReactivate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyReactivateAsync(string id, M.RegistryPartyReactivateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -96,7 +96,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Resolve
-    /// PartyController.resolve (sangam-registry).
+    /// PartyController.resolve (sangam-rest).
     /// GET /registry/parties/{id}/resolve (operationId registryPartyResolve); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyResolveAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -107,7 +107,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Verify audit
-    /// PartyController.verifyAudit (sangam-registry).
+    /// PartyController.verifyAudit (sangam-rest).
     /// GET /registry/parties/{id}/audit/verify (operationId registryPartyVerifyAudit); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyVerifyAuditAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -118,7 +118,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Identifiers
-    /// PartyController.identifiers (sangam-registry).
+    /// PartyController.identifiers (sangam-rest).
     /// GET /registry/parties/{id}/identifiers (operationId registryPartyIdentifiers); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyIdentifiersAsync(string id, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -130,7 +130,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Add identifier
-    /// PartyController.addIdentifier (sangam-registry).
+    /// PartyController.addIdentifier (sangam-rest).
     /// POST /registry/parties/{id}/identifiers (operationId registryPartyAddIdentifier); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyAddIdentifierAsync(string id, M.RegistryPartyAddIdentifierBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -142,7 +142,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Retire identifier
-    /// PartyController.retireIdentifier (sangam-registry).
+    /// PartyController.retireIdentifier (sangam-rest).
     /// POST /registry/parties/identifiers/{identifierId}/retire (operationId registryPartyRetireIdentifier); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyRetireIdentifierAsync(string identifierId, M.RegistryPartyRetireIdentifierBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -154,7 +154,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Reveal
-    /// PartyController.reveal (sangam-registry).
+    /// PartyController.reveal (sangam-rest).
     /// POST /registry/parties/identifiers/{identifierId}/reveal (operationId registryPartyReveal); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyRevealAsync(string identifierId, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -166,7 +166,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Relationships
-    /// PartyController.relationships (sangam-registry).
+    /// PartyController.relationships (sangam-rest).
     /// GET /registry/parties/{id}/relationships (operationId registryPartyRelationships); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyRelationshipsAsync(string id, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -178,7 +178,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Add relationship
-    /// PartyController.addRelationship (sangam-registry).
+    /// PartyController.addRelationship (sangam-rest).
     /// POST /registry/parties/{id}/relationships (operationId registryPartyAddRelationship); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyAddRelationshipAsync(string id, M.RegistryPartyAddRelationshipBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -190,7 +190,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// End relationship
-    /// PartyController.endRelationship (sangam-registry).
+    /// PartyController.endRelationship (sangam-rest).
     /// POST /registry/parties/relationships/{relationshipId}/end (operationId registryPartyEndRelationship); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyEndRelationshipAsync(string relationshipId, M.RegistryPartyEndRelationshipBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -202,7 +202,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Addresses
-    /// PartyController.addresses (sangam-registry).
+    /// PartyController.addresses (sangam-rest).
     /// GET /registry/parties/{id}/addresses (operationId registryPartyAddresses); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyAddressesAsync(string id, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -214,7 +214,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Add address
-    /// PartyController.addAddress (sangam-registry).
+    /// PartyController.addAddress (sangam-rest).
     /// POST /registry/parties/{id}/addresses (operationId registryPartyAddAddress); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyAddAddressAsync(string id, M.RegistryPartyAddAddressBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -226,7 +226,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Retire address
-    /// PartyController.retireAddress (sangam-registry).
+    /// PartyController.retireAddress (sangam-rest).
     /// POST /registry/parties/addresses/{addressId}/retire (operationId registryPartyRetireAddress); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyRetireAddressAsync(string addressId, M.RegistryPartyRetireAddressBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -238,7 +238,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Household
-    /// PartyController.household (sangam-registry).
+    /// PartyController.household (sangam-rest).
     /// GET /registry/parties/{id}/household (operationId registryPartyHousehold); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyHouseholdAsync(string id, string? types = null, int? depth = null, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -252,7 +252,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Snapshot
-    /// PartyController.snapshot (sangam-registry).
+    /// PartyController.snapshot (sangam-rest).
     /// POST /registry/parties/{id}/snapshots (operationId registryPartySnapshot); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartySnapshotAsync(string id, M.RegistryPartySnapshotBody body, string? xPurpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -265,7 +265,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Snapshots
-    /// PartyController.snapshots (sangam-registry).
+    /// PartyController.snapshots (sangam-rest).
     /// GET /registry/parties/snapshots (operationId registryPartySnapshots); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartySnapshotsAsync(string? reference = null, string? partyId = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -278,7 +278,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Get snapshot
-    /// PartyController.getSnapshot (sangam-registry).
+    /// PartyController.getSnapshot (sangam-rest).
     /// GET /registry/parties/snapshots/{snapshotId} (operationId registryPartyGetSnapshot); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyGetSnapshotAsync(string snapshotId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -289,7 +289,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Verify snapshot
-    /// PartyController.verifySnapshot (sangam-registry).
+    /// PartyController.verifySnapshot (sangam-rest).
     /// GET /registry/parties/snapshots/{snapshotId}/verify (operationId registryPartyVerifySnapshot); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyVerifySnapshotAsync(string snapshotId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -300,7 +300,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Match
-    /// PartyController.match (sangam-registry).
+    /// PartyController.match (sangam-rest).
     /// POST /registry/parties/match (operationId registryPartyMatch); permission registry.write.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyMatchAsync(M.RegistryPartyMatchBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -312,7 +312,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Rematch
-    /// PartyController.rematch (sangam-registry).
+    /// PartyController.rematch (sangam-rest).
     /// POST /registry/parties/{id}/match (operationId registryPartyRematch); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyRematchAsync(string id, bool? record = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -324,7 +324,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Candidates
-    /// PartyController.candidates (sangam-registry).
+    /// PartyController.candidates (sangam-rest).
     /// GET /registry/parties/candidates (operationId registryPartyCandidates); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryPartyCandidatesAsync(string? status = null, string? partyId = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -339,7 +339,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Confirm
-    /// PartyController.confirm (sangam-registry).
+    /// PartyController.confirm (sangam-rest).
     /// POST /registry/parties/candidates/{candidateId}/confirm (operationId registryPartyConfirm); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyConfirmAsync(string candidateId, M.RegistryPartyConfirmBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -351,7 +351,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Reject
-    /// PartyController.reject (sangam-registry).
+    /// PartyController.reject (sangam-rest).
     /// POST /registry/parties/candidates/{candidateId}/reject (operationId registryPartyReject); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyRejectAsync(string candidateId, M.RegistryPartyRejectBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -363,7 +363,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Merge
-    /// PartyController.merge (sangam-registry).
+    /// PartyController.merge (sangam-rest).
     /// POST /registry/parties/merge (operationId registryPartyMerge); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyMergeAsync(M.RegistryPartyMergeBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -375,7 +375,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Unmerge
-    /// PartyController.unmerge (sangam-registry).
+    /// PartyController.unmerge (sangam-rest).
     /// POST /registry/parties/merges/{mergeEventId}/unmerge (operationId registryPartyUnmerge); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyUnmergeAsync(string mergeEventId, M.RegistryPartyUnmergeBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -387,7 +387,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Merges
-    /// PartyController.merges (sangam-registry).
+    /// PartyController.merges (sangam-rest).
     /// GET /registry/parties/{id}/merges (operationId registryPartyMerges); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyMergesAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -398,7 +398,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Identifier types
-    /// PartyController.identifierTypes (sangam-registry).
+    /// PartyController.identifierTypes (sangam-rest).
     /// GET /registry/parties/config/identifier-types (operationId registryPartyIdentifierTypes); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartyIdentifierTypesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -409,7 +409,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Save identifier types
-    /// PartyController.saveIdentifierTypes (sangam-registry).
+    /// PartyController.saveIdentifierTypes (sangam-rest).
     /// PUT /registry/parties/config/identifier-types (operationId registryPartySaveIdentifierTypes); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryPartySaveIdentifierTypesAsync(global::System.Collections.Generic.List<M.RegistryPartySaveIdentifierTypesBody> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -421,7 +421,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Match config
-    /// PartyController.matchConfig (sangam-registry).
+    /// PartyController.matchConfig (sangam-rest).
     /// GET /registry/parties/config/match (operationId registryPartyMatchConfig); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartyMatchConfigAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -432,7 +432,7 @@ public sealed class RegistryPartiesApi
 
     /// <summary>
     /// Save match config
-    /// PartyController.saveMatchConfig (sangam-registry).
+    /// PartyController.saveMatchConfig (sangam-rest).
     /// PUT /registry/parties/config/match (operationId registryPartySaveMatchConfig); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryPartySaveMatchConfigAsync(M.RegistryPartySaveMatchConfigBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

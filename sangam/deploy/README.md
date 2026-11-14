@@ -46,8 +46,8 @@ deploy/
 ├─ docker/
 │  ├─ server.Dockerfile        Spring Boot server
 │  │                           targets: runtime (Temurin JRE 25, uid 10001), runtime-distroless (distroless java25, uid 65532);
-│  │                           JDK 21 variant: --build-arg JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble
-│  │                           --build-arg DISTROLESS_IMAGE=gcr.io/distroless/java21-debian12:nonroot
+│  │                           JDK 21 variant: --build-arg JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble@sha256:20e7f7288e1c18eebe8f06a442c9f7183342d9b022d3b9a9677cae2b558ddddd
+│  │                           --build-arg DISTROLESS_IMAGE=gcr.io/distroless/java21-debian12:nonroot@sha256:7e37784d94dccbf5ccb195c73b295f5ad00cd266512dfbac12eb9c3c28f8077d
 │  ├─ ui.Dockerfile            Vite build served by nginx-unprivileged (uid 101, :8080, runtime /config.json)
 │  ├─ simulators.Dockerfile    government-system simulators (dev/test only)
 │  ├─ server/                  SOURCE-OFFER.txt (MariaDB, LIC-5), drivers README (bring your own driver, LIC-2/3/4)
@@ -78,9 +78,36 @@ cp .env.example .env             # change every password
 docker compose --profile postgres up -d --build
 # or: --profile oracle (put ojdbc11.jar into ./drivers first), --profile sqlserver, --profile mysql
 # add-ons: --profile simulators   --profile observability (and set OTEL_COLLECTOR_CONFIG=collector-observability.yaml)
+# PDF validator and OCR sidecars: add -f docker-compose.sidecars.yml --profile pdf --profile ocr
 ```
 
 Choose exactly **one** database profile at a time. Each profile starts its own `server-<db>` service, all under the network alias `sangam-server`.
+
+**Production switch (decisions 143 and 198).** `SANGAM_SECURITY_PRODUCTION` is always set explicitly; a missing or
+invalid value stops the server. `docker-compose.yml` defaults it to `true`, which turns every production guard on
+(https and non-loopback endpoints, no dev tokens; a dev profile is ignored with a warning). The compose defaults use
+`http://localhost:8180` for Keycloak, which a production server refuses, so on a developer laptop set
+`SANGAM_SECURITY_PRODUCTION=false` in `.env` (non-production: guards off, dev defaults such as dev tokens still
+refused). Dev defaults need `false` plus a dev profile (`dev`, `h2`, `test` or `local`), as
+`docker-compose.cells.yml` does. Never set `false` on a real deployment.
+
+**System audit scope (decision 144).** `SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE` (`sangam.engine.system-audit-scope`) is
+the audit scope of shared and system-owned engine work. It is required and has the form `system:<name>`, the whole
+value matching `system:[a-z0-9][a-z0-9._-]{0,47}` (lower-case letters, digits, `.`, `_`, `-`; at most 48 characters
+after the prefix). A missing, empty or invalid value stops the server. `docker-compose.yml` and `.env.example`
+default it to `system:platform`, the same as the server's `application.yaml`. It can never be a customer tenant:
+tenant ids have no `:`, and an identity whose tenant is a system scope is refused.
+
+**PDF validator and OCR sidecars (M-081, M-103; decisions 114, 153, 167).** `--profile pdf` and `--profile ocr` start
+`pdf-validator` (port 8085) and `ocr` (port 8086, built with `UBUNTU_SNAPSHOT` from
+`deploy/licence/ocr-build-args.env`). The one-shot `sidecar-secrets-init` (`sidecar-secrets-init.sh`) makes demo
+secrets at start into named volumes: a random token and a PKCS#12 key store (self-signed certificate for the service
+name) per sidecar, and for the server a copy of each token and a trust store (the JRE CA list plus both
+certificates). Nothing is committed; existing secrets are kept, delete the volumes to renew them. The sidecars are
+read-only containers on the internal `sangam-sidecars` network (no outbound network, ports not published).
+`-f docker-compose.sidecars.yml` wires the server: `SANGAM_PDF_VALIDATOR_URL`/`SANGAM_OCR_URL` (https),
+`*_TOKEN_FILE`, `*_TRANSPORT=tls` and the trust store through `JDK_JAVA_OPTIONS`. With only one profile, set the other
+URL empty in `.env` (that feature stays off, fail closed).
 
 | URL | What |
 |---|---|
@@ -185,6 +212,14 @@ Chart behaviour worth knowing:
   signer (`sangam.registry.signer.private-key` PKCS#8 + `.public-key` X.509, Ed25519, base64) and the identifier-vault
   pepper (`sangam.registry.vault.hmac-pepper`, base64). Supply them as env from a Secret (`server.envFrom`), never in
   values.
+- **Explicit production switch (decisions 143 and 198).** The chart always renders `SANGAM_SECURITY_PRODUCTION` from
+  `server.production` (default `true`, boolean in the schema); a missing or invalid value stops the server. With
+  `true` a dev profile in `server.springProfiles` is ignored with a warning; `false` together with a production
+  profile is refused as contradictory. Keep `true` on every cluster install.
+- **System audit scope (decision 144).** The chart always renders `SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE` from
+  `server.systemAuditScope` (default `system:platform`). The schema enforces the pattern
+  `^system:[a-z0-9][a-z0-9._-]{0,47}$`, so an invalid value fails at `helm install`/`helm template`; the server
+  refuses a missing or invalid value at start as well. It can never be a customer tenant.
 - **One production predicate (SL-109).** The server is in production mode when `sangam.security.production=true`
   (Helm `server.production: true`, env `SANGAM_SECURITY_PRODUCTION`) **or** a Spring profile containing `prod` is
   active (`org.sangam.core.security.ProductionMode`, `config/ProductionEnvironment`). Every production guard uses this
@@ -269,6 +304,13 @@ offset) is refused as well. Business dates take the tenant zone from the tenant 
 engine database written by a JVM in another zone holds wall times of that zone: moving it to UTC is a data migration
 (SL-53a, UTC persistence), not a restart.
 
+**UTC conversion gate (decision 262).** While the operator-run UTC conversion tool (sangam-ops `UtcConversionTool`,
+M-114) moves a run to `APPLYING` or `ROLLING_BACK`, it closes the engine-work gate (`OPS_UTC_GATE`, one row in the
+database): no server acquires an engine job or fetches an external task while it is closed. If that run fails or is interrupted, the gate **stays closed**, and engine
+work stays stopped, until the operator resumes the run to `APPLIED` or rolls it back to `ROLLED_BACK`; only then does
+it reopen. There is no forced reopen, so plan the conversion in a maintenance window and finish or roll back every
+started run.
+
 On a **Windows** host, set both temp directories to a folder the service account owns outside the user profile
 (for example `D:\sangam\tmp`). The JDK's Windows selector opens an AF_UNIX socket in `jdk.net.unixdomain.tmpdir`
 (default: the user temp folder). Endpoint-protection filters on `C:\Users\...` can block such sockets; the server
@@ -286,6 +328,56 @@ the run fails without it. The one-shot modes already bind both ports to 0 (rando
 
 Then start every node with `SANGAM_LIQUIBASE_MODE=validate`.
 
+#### Backup console in script mode (decision 220)
+
+Without Kubernetes, the operations backup console (Ops > Backups) can run **your** backup scripts on the server host
+and show their runs. It is off by default, and Sangam ships no backup scripts. Settings (`sangam.backup.console.script`,
+in `config/application.yaml` or as environment variables):
+
+| Property | Environment variable | Meaning |
+|---|---|---|
+| `enabled` | `SANGAM_BACKUP_CONSOLE_SCRIPT_ENABLED` | `true` switches script mode on (default `false`). Cannot be on together with `sangam.backup.console.kubernetes.enabled` (the Helm Job mode): the server refuses to start. |
+| `history-dir` | `SANGAM_BACKUP_CONSOLE_SCRIPT_HISTORYDIR` | Required, absolute. Run history: one JSON and one `<run>.log` per run, the newest 100 per target, a lock file per target. With 2+ server VMs it must be one shared directory (NFS or similar) that every server sees at the same path. |
+| `env-passthrough` | `SANGAM_BACKUP_CONSOLE_SCRIPT_ENVPASSTHROUGH` | Comma-separated extra variable names the scripts receive; `PATH`, `HOME`, `LANG`, `TZ` and the temp variables always pass, nothing else does. |
+| `targets[i].id` | | Lower-case letters, digits and `-`; unique. |
+| `targets[i].name` | | Label in the console (default: the id). |
+| `targets[i].command[j]` | | The command: `command[0]` is the absolute path of the executable, the rest are its arguments. No shell runs it. |
+| `targets[i].schedule` | | Shown only (for example `daily 01:00 by cron`); Sangam does not schedule the script, your cron or timer does. |
+| `targets[i].timeout` | | ISO-8601 duration, default `PT2H`, at most 24 hours. |
+
+```yaml
+sangam:
+  backup:
+    console:
+      script:
+        enabled: true
+        history-dir: /srv/sangam-backup/console-history
+        env-passthrough: PGPASSFILE
+        targets:
+          - id: pg-full
+            name: PostgreSQL full backup
+            command: [/opt/sangam/backup-scripts/pg-full.sh, --verify]
+            schedule: daily 01:00 (cron)
+            timeout: PT3H
+```
+
+Requirements on the host:
+
+- The scripts run with the server's own user and privileges. The scripts, their directory and the history directory
+  must belong to that user (or root) and must not be writable by anyone else.
+- The scripts need the database client tools (`pg_dump`/`pg_basebackup`, `mysqldump`/`mysqlbinlog`, `sqlcmd`, RMAN).
+  The stock server image has none: on a VM install them on the host; with containers build your own image `FROM`
+  `sangam-server` that adds the client your script calls.
+- Credentials come from files or variables your script reads (for example a `.pgpass` named by `PGPASSFILE`); never
+  put them in `command` (it is plain configuration), and keep the script from printing them: its output is the run
+  log in the history directory.
+
+Compose example (off by default): `docker compose -f docker-compose.yml -f docker-compose.backup-console.yml ...`
+with `SANGAM_BACKUP_CONSOLE_SCRIPT_ENABLED=true` in `.env`. It keeps the history on the existing `backup` volume
+(`/backup/console-history`, created once with owner uid 10001 and mode 0770), mounts `SANGAM_BACKUP_SCRIPTS_DIR`
+read-only at `/opt/sangam/backup-scripts`, and passes `SANGAM_BACKUP_CONSOLE_SCRIPT_ENV_PASSTHROUGH`; put the
+targets in `config/server/application.yaml`.
+
 ### 1.4 Database preparation (all installs)
 
 | DB | Must have | Recommended |
@@ -296,6 +388,12 @@ Then start every node with `SANGAM_LIQUIBASE_MODE=validate`.
 | MySQL 8.4 | `transaction_isolation=READ-COMMITTED`, `utf8mb4` / `utf8mb4_bin`, `default_time_zone='+00:00'`, `binlog_format=ROW` | GTID on, `sync_binlog=1`, `innodb_flush_log_at_trx_commit=1`, async replica at DR |
 
 For SQL Server and MySQL, the scripts in `compose/db/` are the reference.
+
+**CockroachDB: experimental only (decisions 156 and 205).** CockroachDB is not a supported database, no release check
+runs on it, and nothing here claims it works. The server refuses a CockroachDB server unless
+`SANGAM_EXPERIMENTAL_COCKROACHDB=true` (default off); then it logs an EXPERIMENTAL warning at every start and uses the
+PostgreSQL dialect. The engine pool still has to run READ COMMITTED, which CockroachDB offers only after
+`SET CLUSTER SETTING sql.txn.read_committed_isolation.enabled = true`. Use it for testing only.
 
 ### 1.5 Adding the Oracle JDBC driver (customer-supplied, LIC-2)
 
@@ -434,7 +532,85 @@ All of these are off by default; the chart's `values.schema.json` checks each va
   decision 78 allows; nsjail applies its own per-script seccomp and runs every script as nobody in its own user
   namespace. It holds no database credentials and has no ingress. Compose: `--profile script-worker` (cgroup
   private, `systempaths=unconfined`). In Kubernetes, `procMount: Unmasked` is available only with `hostUsers: false`;
-  whether nsjail needs it on a given runtime is checked in the test phase.
+  whether nsjail needs it on a given runtime is checked in the test phase. The image builds only from the pinned build
+  args of `deploy/licence/script-worker-build-args.env` (decisions 128 and 157: `NSJAIL_COMMIT`, `KAFEL_COMMIT`,
+  `UBUNTU_SNAPSHOT`); the release records them and the image's `/licenses/OS-PACKAGES.txt` next to its SBOM.
+- **PDF validator and OCR sidecars (M-081, M-103; decisions 114, 153, 167).** `pdfValidator.enabled` and
+  `ocr.enabled` add a Deployment, a Service and (with `networkPolicy.enabled`) a NetworkPolicy each: ingress from this
+  release's server pods only, on the sidecar port, and no egress at all. Each sidecar reads its accepted tokens from
+  the Secret `existingSecret` key `token` (one per line; list old and new while rotating) and, with `transport: tls`
+  (default), its PKCS#12 key store from keys `keystore.p12` and `keystore-password`; the certificate must name
+  `<fullname>-pdf-validator` or `<fullname>-ocr`. `transport: mesh` serves plain HTTP and is only for an authenticated
+  service mesh. The server gets `SANGAM_PDF_VALIDATOR_URL`/`SANGAM_OCR_URL`, `*_TRANSPORT`, `*_TOKEN_FILE` (from
+  `clientExistingSecret` key `token`, default the same Secret; its first line is the token sent) and, with tls, the
+  trust store of `sidecarTrustStore.existingSecret` (keys `truststore.p12`, `password`; it replaces the JVM default
+  trust store, so include any public CAs the server needs) through `JDK_JAVA_OPTIONS`. Off: PDF output answers 422
+  `FORMAT_NOT_AVAILABLE` and OCR is unavailable. The OCR image (`sangam-ocr`, port 8086) installs Tesseract from a
+  pinned Ubuntu snapshot (`deploy/licence/ocr-build-args.env`); its OS packages are listed in
+  `/licenses/OS-PACKAGES.txt` with their copyright files under `/licenses/sangam-ocr/os-packages` (decision 118).
+- **Backup console (decision 155).** `backup.console.enabled` (with `backup.enabled`) adds the Role
+  `<fullname>-backup-console` (batch `cronjobs` get/list, `jobs` get/list/create) bound to the server ServiceAccount,
+  sets `SANGAM_BACKUP_CONSOLE_KUBERNETES_ENABLED=true` and the selector of this release's backup jobs on the server,
+  mounts the server pod's service account token, and opens server egress to `backup.console.apiServer.cidrs` on
+  `backup.console.apiServer.ports` (443, 6443); the cidrs are required with `networkPolicy.enabled`. Off by default:
+  nothing of this is rendered. The UI, script worker and sidecar pods share the ServiceAccount but keep
+  `automountServiceAccountToken: false`.
+- **Microsoft Teams tab (decision 213).** `ui.teams.enabled` (`SANGAM_TEAMS_ENABLED`, default false) and
+  `ui.teams.frameAncestors` (`SANGAM_TEAMS_FRAME_ANCESTORS`, space-separated https origins; empty = the UI image's
+  built-in Microsoft list). Disabled, `/teams.html` cannot be framed like every other page. Compose: the same two
+  variables in `.env`.
+- **DSC signing agent (decision 165).** `ui.dscAgentOrigin` (`SANGAM_DSC_AGENT_ORIGIN`, default empty = DSC not set up)
+  is the agent on the signer's own computer, `http://127.0.0.1:<port>` or `http://localhost:<port>` only (no path). The
+  agent is IPv4 loopback only, so `http://[::1]:<port>` is not accepted. The UI image refuses anything else, and the
+  same value is the only agent origin in the UI's CSP `connect-src` and in `/config.json` `dsc.agentUrl`. Start the
+  agent with `--origin` set to the UI's own origin. Compose: the same variable in `.env`.
+- **eSign and DSC add-on (decision 217).** Bouncy Castle is only in the optional module `sangam-esign`, never in the
+  default server. To add it: build the server image with `--build-arg WITH_ESIGN=true` (it adds the sangam-esign jar
+  and the Bouncy Castle jars the server does not ship to `/opt/sangam/lib-ext`, listed in `ESIGN-ADDON.txt`), or put
+  the files of the release asset `sangam-esign-<v>.tgz` (the jar and `lib/*.jar`, flat) into `/opt/sangam/lib-ext`
+  of a VM install or `PREBUILT_LIB_EXT` of a prebuilt image build. Live eSign stays off until its ESP profile is
+  confirmed (decision 215).
+- **NATS add-on (decision 232).** The NATS client (jnats) and the Bouncy Castle jar it needs for nkey signing
+  (`bcprov-lts8on`) are not in the server. Without the add-on the server refuses every NATS setting at start (NATS
+  channel adapters, NATS wake-up bus) and a route that needs NATS answers 501 `CAPABILITY_NOT_INSTALLED`. To add it:
+  build the server image with `--build-arg WITH_NATS=true` (exactly those two jars into `/opt/sangam/lib-ext`, listed
+  in `NATS-ADDON.txt`), or put the files of the release asset `sangam-nats-<v>.tgz` (`lib/*.jar`, flat) into
+  `/opt/sangam/lib-ext` of a VM install or `PREBUILT_LIB_EXT` of a prebuilt image build. Compose and Helm run the
+  image as built; neither adds the jars.
+- **NATS or eSign, never both, in 0.1.0 (decision 235).** A server runs the NATS add-on or the eSign and DSC add-on,
+  not both: each brings its own Bouncy Castle provider jar (`bcprov-lts8on` for jnats, `bcprov-jdk18on` for
+  sangam-esign) holding the same packages, and only one copy can be loaded. The image build refuses
+  `WITH_NATS=true` with `WITH_ESIGN=true`, `nats-addon.sh` refuses a `lib-ext` that already holds the eSign jars, and
+  the server refuses at start when it finds both. This will be revisited when jnats moves to `bcprov-jdk18on`.
+- **Health connectors and Fidelius: the eSign jar, never NATS (decision 243).** Fidelius needs Bouncy Castle
+  (`bcprov-jdk18on` 1.84, the same jar as the eSign add-on). It is an optional dependency of
+  `sangam-connectors-health` only and is never in the server fat jar. A server that uses Fidelius gets that jar from
+  the eSign add-on (`WITH_ESIGN=true` or the `sangam-esign-<v>.tgz` files in `lib-ext`), so its licence and notice
+  ship with the esign distribution. For the same reason the health module and the NATS add-on never run together.
+  The licence check enforces the split: `bcprov-lts8on` is allowed only in the nats distribution and every other
+  Bouncy Castle jar only in the esign distribution. No ABDM conformance is claimed.
+- **DSC OCSP answer age (decision 259).** `SANGAM_DSC_OCSP_MAX_AGE` (`sangam.dsc.ocsp-max-age`; Helm
+  `server.dscOcspMaxAge`; compose and `.env.example`), default `24h`, applies only with the eSign/DSC add-on. An OCSP
+  answer whose `thisUpdate` is older than this is INDETERMINATE and the signing step refuses, even with a matching
+  nonce; the clock-skew allowance stays. Values: a positive duration with one unit (`24h`, `90m`, `PT24H`, `P1D`;
+  the Helm schema checks the form). OCSP and CRL over plain http go only to the `sangam.dsc.revocation-egress`
+  origins (decision 251).
+- **Pack operation re-dispatches (decision 290).** `SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES`
+  (`sangam.integration.reconciliation.max-redispatches`; Helm `server.integrationReconciliationMaxRedispatches`;
+  compose and `.env.example`), default `3`: how many times reconciliation re-dispatches on its own a pack operation
+  that has no process instance (a REST-backed record create) before it hands the operation to a person. It must be
+  a positive integer; `0`, a negative number, a blank value or text refuses the server start and names the property
+  (the Helm schema accepts only an integer of at least 1).
+- **Inbound Event Grid channel with Entra ID (decision 219).** A channel of type `eventgrid` with `authMode: entra`
+  fetches the signing keys from its Entra authority, `login.microsoftonline.com` unless `entraAuthority` names
+  another https host. Add that host to the channel egress hosts (`sangam.ports.egress-hosts`; empty by default, so an
+  air-gapped server reaches nothing) and, in Helm with `networkPolicy.enabled`, a `networkPolicy.extraEgress` rule to
+  it on port 443. Without it the key set cannot be fetched: every delivery is answered 503 and Event Grid retries
+  until its own retry policy gives up; nothing is accepted unverified.
+- **History data lake and connector breadth (W4-H).** `sangam.history.projection.datalake.*` and
+  `sangam.connectors.{s3,graphql,jdbc}.tenants.<tenant>.<id>.*` are off until set in `server.config` (Helm) or
+  `config/server/application.yaml` (compose), with `secret://` references for credentials and a
+  `networkPolicy.extraEgress` rule to each endpoint.
 
 ---
 
@@ -470,6 +646,34 @@ Sangam supports **N → N+1 rolling upgrades**. During the rollout, pods of N an
 6. **Contract phase** (dropping old columns) ships in **N+2** only, never in the same release.
 
 **Rollback.** `helm rollback sangam <rev>` restores the N pods, which work on the expanded schema. Database downgrades are **not** supported. If a migration damaged data, restore (§3) and reconcile (§4.3).
+
+### Knowledge-base vector index and the Oracle vector column (decision 247)
+
+`SANGAM_AI_KB_VECTOR_INDEX` (`sangam.ai.kb.vector-index`; Helm `server.aiKbVectorIndex`, schema enum) picks the
+ranking index of the AI knowledge base:
+
+| Value | Database | Schema |
+|---|---|---|
+| `portable` (default) | every supported database | nothing extra |
+| `pgvector` | PostgreSQL with the pgvector column | the product changelog |
+| `oracle` | Oracle AI Database **23ai or later** | the separate changelog `db/changelog/sangam-oracle-vector.xml`, context `oracle-vector` (column `AI_KB_CHUNK.embedding_vec` of type `VECTOR`) |
+
+Any other value stops the start. With `oracle` the server checks the database version first and refuses Oracle 19c
+and 21c, before any changeset. The oracle-vector changelog is not part of the master changelog, so a plain
+`liquibase update` of the master never applies it.
+
+- **The server applies it itself** wherever it applies the product changelog: `SANGAM_LIQUIBASE_MODE=startup` (compose,
+  Helm `liquibase.mode: startup`) and the Helm migrate Job (`liquibase.mode: job`, which receives
+  `SANGAM_AI_KB_VECTOR_INDEX` from `server.aiKbVectorIndex`). Validating pods never apply it.
+- **Operators who run Liquibase themselves** (Helm `liquibase.mode: none`, or a DBA-run Liquibase) apply the product
+  changelog first and then, on Oracle 23ai or later only:
+
+  ```bash
+  liquibase update -changelog-file=db/changelog/sangam-oracle-vector.xml -contexts=oracle-vector
+  ```
+
+  The changelog's precondition halts on any database other than Oracle. `SANGAM_LIQUIBASE_MODE=update-sql` writes
+  the master changelog only, so it does not include this column.
 
 ### Failed migration (R12)
 
@@ -517,6 +721,10 @@ What must be backed up together:
 - the Keycloak / IdP database;
 - object storage for attachments, if configured;
 - the deployed model packages, which are in the database, plus their signing keys.
+
+The operations backup console shows and starts these backups: in Kubernetes the chart's backup Jobs
+(`backup.console.enabled`, section 1.7), elsewhere your own scripts (script mode, section 1.3, decision 220). Both
+cannot be on at once.
 
 The Helm chart ships **examples** (`backup.enabled=true`) per `database.type`. They write to the PVC `<release>-backup`. Move that PVC to off-site storage with your storage tooling (Velero, array replication, rsync to a DR NAS).
 
@@ -681,9 +889,26 @@ After any rotation:
 
 ```bash
 deploy/airgap/generate-sbom.sh --out deploy/airgap/out/sbom        # CycloneDX + licence gate
-deploy/airgap/save-images.sh --version 0.1.0 --registry ghcr.io/sqamentor --sbom-dir deploy/airgap/out/sbom
-# Windows: powershell -File deploy\airgap\save-images.ps1 -Version 0.1.0
+deploy/airgap/save-images.sh --version 0.1.0 --registry ghcr.io/sqamentor --sbom-dir deploy/airgap/out/sbom \
+  --notices-dir <release notices/ directory>                        # --notices-dir is optional
 ```
+
+On Windows (`-SbomDir` is required, `-NoticesDir` is optional):
+
+```powershell
+powershell -File deploy\airgap\generate-sbom.ps1 -Out deploy\airgap\out\sbom
+powershell -File deploy\airgap\save-images.ps1 -Version 0.1.0 -Registry ghcr.io/sqamentor -SbomDir deploy\airgap\out\sbom -NoticesDir <release notices\ directory>
+```
+
+- `--sbom-dir` / `-SbomDir` is **required**: the application SBOMs (CycloneDX JSON) of this version, either the
+  release's `sbom/` directory or the output of `generate-sbom`. A bundle never ships without its SBOMs (CR-03); an
+  empty directory stops the build.
+- `--notices-dir` / `-NoticesDir` is optional: the release's `notices/` directory (LICENSE, NOTICE, THIRD-PARTY.txt
+  and the licence texts of each distribution). It is copied to `docs/notices/`.
+- `--allow-missing` was **removed**. Every step is strict (RM-12): an image that cannot be pulled, an image SBOM that
+  syft cannot write, or a missing LICENSE, NOTICE or source offer stops the bundle. The old option now exits with an
+  error.
+- Before anything is saved, the image list passes the bundle licence gate (`bundle_licence_gate.py`, RM-13).
 
 On the shared build machine, wrap heavy steps in the lock:
 
@@ -695,10 +920,14 @@ The bundle `sangam-airgap-<v>.tar` (with its `.sha256`) contains:
 
 - `images/*.tar.gz`;
 - `images.lock` (pinned digests);
-- `chart/`, `compose/`, `docs/`;
-- the MariaDB source offer;
-- `sbom/`;
+- `chart/`, `compose/`, `docs/` (with `LICENSE`, `NOTICE` and, when given, `docs/notices/`);
+- the MariaDB source offer and the OS-packages source offer;
+- `sbom/` (the application SBOMs and one syft SBOM per saved image);
 - `SHA256SUMS`.
+
+**Grafana is not in the bundle** (RM-13): Grafana OSS is AGPL-3.0, a forbidden licence for anything Sangam ships.
+`--with-observability` (`-WithObservability`) adds Jaeger and Prometheus only. A customer who wants dashboards pulls
+`grafana/grafana-oss` themselves; the dev compose file still uses it for local development only.
 
 Oracle Free, SQL Server and MySQL images are **excluded** unless `--with-dev-databases` is given. They are not redistributable by Sangam.
 
@@ -715,7 +944,6 @@ helm upgrade --install sangam chart/sangam-0.1.0.tgz -n sangam \
 Pin images by digest from `images.lock` (`server.image.digest`). There are no outbound calls by default:
 
 - OTel is disabled;
-- Grafana has analytics and update checks off;
 - Keycloak runs without an internet IdP;
 - NetworkPolicy allows no egress beyond DNS, the database and the IdP.
 
@@ -736,12 +964,14 @@ To build from source inside the air-gapped network:
   <mirror><id>internal</id><mirrorOf>*</mirrorOf><url>https://nexus.sdc.local/repository/maven-all/</url></mirror>
   ```
 
-  The Oracle JDBC driver for CI tests comes from your internal mirror (Maven Central `com.oracle.database.jdbc`), never from the bundle.
-- **npm:** on the connected side, run `npm ci` in `sangam/sangam-ui`. Then either:
+  The Oracle JDBC driver for CI tests comes only with the CI profile `-Poracle-it` (decision 123), from your internal mirror (Maven Central `com.oracle.database.jdbc`), never from the bundle.
+- **npm:** never run install scripts (decision 130): every `npm ci` passes `--ignore-scripts`, and the UI then runs
+  `npm rebuild esbuild` (the one install script its build needs). On the connected side, run
+  `npm ci --ignore-scripts --cache ./npm-cache` in `sangam/sangam-ui`. Then either:
   - `npm pack` every dependency;
-  - better: tar `~/.npm/_cacache` after `npm ci --cache ./npm-cache`.
+  - better: tar the `./npm-cache` directory.
 
-  Inside, run `npm ci --offline --cache ./npm-cache`, or set `NPM_CONFIG_REGISTRY=https://nexus.sdc.local/repository/npm-all/` (an internal npm proxy). The UI Dockerfile accepts `--build-arg NPM_CONFIG_REGISTRY=...`.
+  Inside, run `npm ci --ignore-scripts --offline --cache ./npm-cache && npm rebuild esbuild`, or set `NPM_CONFIG_REGISTRY=https://nexus.sdc.local/repository/npm-all/` (an internal npm proxy). The UI Dockerfile accepts `--build-arg NPM_CONFIG_REGISTRY=...`.
 - **Docker builds offline:** use the `prebuilt` targets (`--build-arg JAR_SOURCE=prebuilt`, `--build-arg DIST_SOURCE=prebuilt`). They need no network beyond the base images, which are in the bundle (`docker load`).
 - **SBOM offline:** `deploy/airgap/generate-sbom.sh --offline`.
 
@@ -752,7 +982,7 @@ To build from source inside the air-gapped network:
 | Rule | Enforcement |
 |---|---|
 | LIC-1 GraalJS, LIC-10 Rhino / Nashorn / Jython / JRuby | `check_licences.py` forbidden components + nested-jar patterns; image build guard |
-| LIC-2 Oracle JDBC, LIC-3 Db2 JCC, LIC-4 MySQL Connector/J | Never in an image or the fat jar (Dockerfile guard, licence gate `--jar`, dependency-tree grep in `licence-check.yml`). Customers mount `/opt/sangam/drivers` (compose `./drivers`, Helm `drivers.*`). CI fetches ojdbc at test scope only (`-Psangam-oracle-driver`) |
+| LIC-2 Oracle JDBC, LIC-3 Db2 JCC, LIC-4 MySQL Connector/J | Never in an image or the fat jar (Dockerfile guard, licence gate `--jar`, dependency-tree grep in `licence-check.yml`). Customers mount `/opt/sangam/drivers` (compose `./drivers`, Helm `drivers.*`). CI fetches ojdbc at test scope only, through the CI-only profile `-Poracle-it` (decision 123), never active by default |
 | LIC-5 MariaDB Connector/J | Shipped as `/opt/sangam/lib-ext/mariadb-java-client-<v>.jar` (+ sources jar, `SOURCE-OFFER.txt`), replaceable by volume; forbidden inside `BOOT-INF/lib` |
 | LIC-6 AngularJS | Forbidden npm component |
 | LIC-7 Liquibase ≥ 5 | Version ceiling in the policy + nested-jar pattern |
@@ -868,8 +1098,14 @@ WS-DEPLOY cannot edit these modules. The deployment artefacts assume the followi
 - A simulator launcher jar, `sangam-integration/target/*-simulators.jar`, built by a Maven profile `simulators-app`.
 - Its contract is in `docker/simulators.Dockerfile`:
   - `SANGAM_SIM_KIND` = `ifms | pfms | esign | dlt | digilocker | paygov | smtp`;
-  - `SANGAM_SIM_BIND`, `SANGAM_SIM_PORT`, `SANGAM_SIM_DATA`;
+  - `SANGAM_SIM_BIND`, `SANGAM_SIM_PORT`, `SANGAM_SIM_DATA`, `SANGAM_SIM_FAULTS`;
+  - `SANGAM_SIM_SMTP_PORT`: the SMTP port of kind `smtp`, default 2525 (the image exposes 9000 and 2525);
+  - `SANGAM_SIM_PG_CALLBACK_URL`: optional callback URL of kind `paygov`, signed with the simulator's development
+    secret;
+  - the optional data-folder file `dlt-templates.json` (in `SANGAM_SIM_DATA`) with the DLT templates of kind `dlt`:
+    `{"templates":[{"id":"...","header":"...","body":"... {#var#} ..."}],"urlWhitelist":["https://..."]}`;
   - the control endpoints `/__sim/health|ledger|faults`.
+- The jar: `mvn -P simulators-app package -pl sangam-integration` (classifier `simulators`).
 - The connector base-URL properties are `SANGAM_CONNECTORS_<NAME>_BASE_URL` and `SANGAM_CONNECTORS_PFMS_DIRECTORY`.
 - The reconciliation scan endpoint for §4.3.
 

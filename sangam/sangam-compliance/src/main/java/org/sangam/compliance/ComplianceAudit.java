@@ -77,6 +77,23 @@ public final class ComplianceAudit {
     public static final String INCIDENT_REPORTED = "CMP_INCIDENT_REPORTED";
     public static final String INCIDENT_FOLLOW_UP = "CMP_INCIDENT_FOLLOW_UP";
     public static final String INCIDENT_OVERDUE = "CMP_INCIDENT_OVERDUE";
+    /*
+     * Owner decision 299: the X.4.0.3 Security catalogue names (SANGAM.md OJ-06), written on the organisation chain in
+     * the same transaction as the incident change, next to the specific CMP_INCIDENT_* event of that change.
+     */
+    /** OJ-06 step 1: an incident report was opened; payload carries noticed_at (the start of the authority's clock). */
+    public static final String SEC_INCIDENT_OPENED = "SEC_INCIDENT_OPENED";
+    /** OJ-06 step 2: the incident type from the authority's catalogue (IN: CERT-In Annexure I), personal-data flag. */
+    public static final String SEC_INCIDENT_CLASSIFIED = "SEC_INCIDENT_CLASSIFIED";
+    /** OJ-06 step 6: the report was submitted to the authority; payload carries the submission references. */
+    public static final String SEC_REPORT_SUBMITTED = "SEC_REPORT_SUBMITTED";
+    /** OJ-06 step 8: a reported incident was closed. */
+    public static final String SEC_INCIDENT_CLOSED = "SEC_INCIDENT_CLOSED";
+    /**
+     * OJ-06 step 7, owner decision 308: the 72 hour detailed breach report to the Data Protection Board, with the
+     * notices to data principals; written only for the IN pack (DPDP s.8(6), r.7), next to {@link #BREACH_REPORT_SUBMITTED}.
+     */
+    public static final String DPDP_BREACH_REPORTED = "DPDP_BREACH_REPORTED";
     public static final String LOG_SEGMENT_SEALED = "CMP_LOG_SEGMENT_SEALED";
     public static final String LOG_SEGMENT_PURGED = "CMP_LOG_SEGMENT_PURGED";
     public static final String LOG_SOURCE_REGISTERED = "CMP_LOG_SOURCE_REGISTERED";

@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/dbt-batch/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/dbt-batch/pack.json"
     }
   ],
   "seed": "packs/dbt-batch/seed.json",
@@ -153,5 +157,13 @@
   "calls": [
     "sangam-core-execution",
     "sangam-core-sanction"
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "db_sanction": {
+      "monetary": false,
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GRANT"
+    }
+  }
 }

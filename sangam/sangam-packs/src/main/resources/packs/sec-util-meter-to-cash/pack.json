@@ -21,6 +21,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/sec-util-meter-to-cash/sec-util-bill-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/sec-util-meter-to-cash/sec-util-tariff.dmn"
     },
     {
@@ -77,6 +81,13 @@
   ],
   "tenantOverrides": [],
   "calls": [],
+  "placeholders": [
+    {
+      "decision": "sec-util-bill-rounding",
+      "rule": "SYNTHETIC bill rounding: nearest paisa on the bill total",
+      "reason": "the bill rounding of the applicable SERC tariff order / supply code was not verified; deploy it as a tenant override (decision 139)"
+    }
+  ],
   "money": {
     "unit": "MINOR",
     "currency": "INR",

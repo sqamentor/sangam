@@ -76,6 +76,15 @@
         "en": "SoD exception order (if granted)",
         "hi": "कर्तव्य-पृथक्करण अपवाद आदेश (यदि दिया गया)"
       }
+    },
+    {
+      "id": "dscDocumentId",
+      "type": "hidden",
+      "required": false,
+      "label": {
+        "en": "Document signed with DSC",
+        "hi": "डीएससी से हस्ताक्षरित दस्तावेज़"
+      }
     }
   ],
   "decision": {

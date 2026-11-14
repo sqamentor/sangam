@@ -59,6 +59,11 @@
     "server": {
       "type": "object",
       "properties": {
+        "production": { "type": "boolean", "$comment": "Decisions 143 and 198: SANGAM_SECURITY_PRODUCTION, always rendered explicitly; keep true on every cluster install." },
+        "aiKbVectorIndex": { "type": "string", "enum": ["portable", "pgvector", "oracle"], "$comment": "Decision 247 (170, 207): SANGAM_AI_KB_VECTOR_INDEX, the names VectorIndex.named accepts; oracle needs Oracle AI Database 23ai or later and applies the oracle-vector changelog." },
+        "dscOcspMaxAge": { "type": "string", "pattern": "^([1-9][0-9]*(ms|s|m|h|d)|P[1-9][0-9]*D|PT[1-9][0-9]*[HMS])$", "$comment": "Decision 259: SANGAM_DSC_OCSP_MAX_AGE, a positive duration with one unit: Spring form (24h, 90m) or ISO-8601 (PT24H, P1D)." },
+        "integrationReconciliationMaxRedispatches": { "type": "integer", "minimum": 1, "maximum": 2147483647, "$comment": "Decision 290: SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES, automatic re-dispatches of a pack operation with no process instance before reconciliation hands it to a person; a positive integer (the server refuses any other value)." },
+        "systemAuditScope": { "type": "string", "pattern": "^system:[a-z0-9][a-z0-9._-]{0,47}$", "$comment": "Decision 144: SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE, the same grammar as SystemAuditScope (sangam-core); the server refuses to start on any other value." },
         "replicaCount": { "type": "integer", "minimum": 1 },
         "preStopSleepSeconds": { "type": "integer", "minimum": 0 },
         "terminationGracePeriodSeconds": { "type": "integer", "minimum": 30 },
@@ -204,8 +209,29 @@
     "ui": {
       "type": "object",
       "properties": {
-        "traceUrlTemplate": { "type": "string", "pattern": "^$|^https?://[^\\s]*\\{traceId\\}" }
+        "traceUrlTemplate": { "type": "string", "pattern": "^$|^https?://[^\\s]*\\{traceId\\}" },
+        "dscAgentOrigin": {
+          "$comment": "Decision 165: SANGAM_DSC_AGENT_ORIGIN of the UI image (17-sangam-dsc.envsh): empty or http://127.0.0.1:<port> or http://localhost:<port>, port 1-65535 without leading zeros; IPv4 loopback only, never [::1] (coordinator ruling; CSP3 host grammar cannot name it either).",
+          "type": "string",
+          "pattern": "^$|^http://(127\\.0\\.0\\.1|localhost):([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+        },
+        "teams": {
+          "$comment": "Decision 213: SANGAM_TEAMS_ENABLED and SANGAM_TEAMS_FRAME_ANCESTORS of the UI image; frameAncestors empty = the image's built-in Microsoft list, else space-separated https://host[:port] or https://*.host origins (the image refuses anything else).",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "frameAncestors": { "type": "string", "pattern": "^$|^https://(\\*\\.)?[A-Za-z0-9.-]+(:[0-9]{1,5})?( https://(\\*\\.)?[A-Za-z0-9.-]+(:[0-9]{1,5})?)*$" }
+          }
+        }
       }
+    },
+    "pdfValidator": { "$ref": "#/definitions/sidecar" },
+    "ocr": { "$ref": "#/definitions/sidecar" },
+    "sidecarTrustStore": {
+      "$comment": "M-081 / M-103: Secret with keys truststore.p12 and password; required when a sidecar is enabled with transport tls (root allOf).",
+      "type": "object",
+      "properties": { "existingSecret": { "type": "string" } }
     },
     "ingress": {
       "$comment": "SG-39 / Q-09: with private.enabled=true the public className is refused, a class is required, the user annotations cannot select a public load balancer, and every cloud preset carries its internal-load-balancer annotation.",
@@ -377,14 +403,90 @@
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean" },
+        "console": {
+          "$comment": "Decision 155 (W4-I): Role <fullname>-backup-console, server env and token, and server egress to the API server, only with backup.enabled and console.enabled; apiServer.cidrs is required then when networkPolicy.enabled (template check).",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "apiServer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "cidrs": { "type": "array", "items": { "$ref": "#/definitions/cidr" } },
+                "ports": { "type": "array", "minItems": 1, "items": { "type": "integer", "minimum": 1, "maximum": 65535 } }
+              }
+            }
+          }
+        },
         "retentionDays": { "type": "integer", "minimum": 1 },
+        "oracle": { "type": "object", "properties": { "image": { "type": "string" } } },
         "sqlserver": {
           "type": "object",
-          "properties": { "destinationType": { "type": "string", "enum": ["DISK", "URL"] } }
-        }
-      }
+          "properties": {
+            "image": { "type": "string" },
+            "destinationType": { "type": "string", "enum": ["DISK", "URL"] }
+          }
+        },
+        "mysql": { "type": "object", "properties": { "image": { "type": "string" } } }
+      },
+      "$comment": "Decision 129 (RM-34): the vendor backup images have no default. The root allOf requires the image of the configured database type when backup is enabled; templates/backup-cronjobs.yaml enforces the same with required."
     }
   },
+  "allOf": [
+    {
+      "$comment": "M-081 / M-103 (decision 153): an enabled sidecar on transport tls needs the server trust store Secret.",
+      "if": {
+        "anyOf": [
+          { "properties": { "pdfValidator": { "properties": { "enabled": { "const": true }, "transport": { "const": "tls" } }, "required": ["enabled", "transport"] } }, "required": ["pdfValidator"] },
+          { "properties": { "ocr": { "properties": { "enabled": { "const": true }, "transport": { "const": "tls" } }, "required": ["enabled", "transport"] } }, "required": ["ocr"] }
+        ]
+      },
+      "then": {
+        "properties": { "sidecarTrustStore": { "properties": { "existingSecret": { "type": "string", "minLength": 1 } }, "required": ["existingSecret"] } },
+        "required": ["sidecarTrustStore"]
+      }
+    },
+    {
+      "$comment": "Decision 129 (RM-34): backup of a SQL Server database needs backup.sqlserver.image (no default).",
+      "if": {
+        "properties": {
+          "backup": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+          "database": { "properties": { "type": { "const": "sqlserver" } }, "required": ["type"] }
+        },
+        "required": ["backup", "database"]
+      },
+      "then": {
+        "properties": { "backup": { "properties": { "sqlserver": { "properties": { "image": { "type": "string", "minLength": 1 } }, "required": ["image"] } }, "required": ["sqlserver"] } }
+      }
+    },
+    {
+      "$comment": "Decision 129 (RM-34): backup of a MySQL database needs backup.mysql.image (no default).",
+      "if": {
+        "properties": {
+          "backup": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+          "database": { "properties": { "type": { "const": "mysql" } }, "required": ["type"] }
+        },
+        "required": ["backup", "database"]
+      },
+      "then": {
+        "properties": { "backup": { "properties": { "mysql": { "properties": { "image": { "type": "string", "minLength": 1 } }, "required": ["image"] } }, "required": ["mysql"] } }
+      }
+    },
+    {
+      "$comment": "Backup of an Oracle database needs backup.oracle.image (RMAN is not redistributable, LIC-2).",
+      "if": {
+        "properties": {
+          "backup": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+          "database": { "properties": { "type": { "const": "oracle" } }, "required": ["type"] }
+        },
+        "required": ["backup", "database"]
+      },
+      "then": {
+        "properties": { "backup": { "properties": { "oracle": { "properties": { "image": { "type": "string", "minLength": 1 } }, "required": ["image"] } }, "required": ["oracle"] } }
+      }
+    }
+  ],
   "definitions": {
     "cidr": {
       "$comment": "An IPv4 or IPv6 CIDR (address/prefix), as a NetworkPolicy ipBlock.cidr takes it.",
@@ -400,6 +502,29 @@
     "publicIngressClass": {
       "$comment": "Classes that only ever provision a public load balancer: GKE 'gce' (external Application Load Balancer).",
       "enum": ["gce"]
+    },
+    "sidecar": {
+      "$comment": "M-081 / M-103 (owner decisions 114, 153, 167): pdfValidator and ocr. Credentials only from existingSecret (token; keystore.p12 and keystore-password with transport tls) and clientExistingSecret (token for the server); never values.",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "transport": { "type": "string", "enum": ["tls", "mesh"] },
+        "existingSecret": { "type": "string" },
+        "clientExistingSecret": { "type": "string" },
+        "url": { "type": "string", "pattern": "^$|^https?://[^\\s/?#@]+(/[^\\s?#]*)?$" },
+        "timeoutMs": { "type": ["string", "integer"], "pattern": "^$|^[1-9][0-9]*$", "minimum": 1 },
+        "threads": { "type": ["string", "integer"], "pattern": "^$|^[1-9][0-9]*$", "minimum": 1, "maximum": 1024 },
+        "maxBytes": { "type": ["string", "integer"], "pattern": "^$|^[1-9][0-9]*$", "minimum": 1 },
+        "maxPixels": { "type": ["string", "integer"], "pattern": "^$|^[1-9][0-9]*$", "minimum": 1 },
+        "processingTimeoutMs": { "type": ["string", "integer"], "pattern": "^$|^[1-9][0-9]*$", "minimum": 1 },
+        "languages": { "type": "string", "pattern": "^$|^[a-z_]+(,[a-z_]+)*$" },
+        "extraEnv": { "type": "array" },
+        "tmpSizeLimit": { "type": "string" }
+      },
+      "if": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+      "then": { "required": ["existingSecret"], "properties": { "existingSecret": { "minLength": 1 } } }
     }
   }
 }

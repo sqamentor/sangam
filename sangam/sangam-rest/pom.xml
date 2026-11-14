@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -31,74 +31,81 @@
   </build>
 
   <dependencies>
+    <!-- Decisions 277 and 285: the service ports, default adapters, support classes and extension SPI (plain Java,
+         package names unchanged) moved to sangam-rest-core; every consumer of sangam-rest still sees them -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-rest-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!-- Generic modules exposed through optional REST configurations (final integration wave) -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-config</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-ledger</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-billing</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-registry</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-resources</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-case</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-programme</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-geo</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-field</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-connectors-health</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
     <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-engine</artifactId>
       <scope>provided</scope>
     </dependency>
@@ -157,19 +164,26 @@
 
     <!-- /api/v1/compliance (org.sangam.rest.compliance); optional: the endpoints exist only when the server has it -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-ai</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-ops</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
+    <!-- Decision 155 (M-102): BackupController exists only when the server has sangam-backup -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-backup</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-compliance</artifactId>
       <optional>true</optional>
     </dependency>
@@ -185,14 +199,35 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- the port test doubles (FakeWorkPort for WorkControllerLongPollTest) live with the ports in sangam-rest-core -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-rest-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <!-- M-092: SchemaStatusReaderH2Test (version managed in the root pom) -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- org.springframework.mock.env.MockEnvironment for ScriptBackupWiringTest (decision 220); version from the Spring Boot
+         dependencies import in the root pom (Spring Framework 7.0.10) -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-channels</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-modeller</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>

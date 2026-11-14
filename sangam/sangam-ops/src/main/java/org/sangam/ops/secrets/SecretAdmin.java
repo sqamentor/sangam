@@ -38,7 +38,8 @@ public final class SecretAdmin {
     }
 
     private static final int ITERATIONS = 600_000;
-    private static final String CONTEXT = "ops-secret";
+    /** Encryption context (AAD) of every stored envelope; the host's re-encryption source uses the same (SL-181). */
+    public static final String CONTEXT = "ops-secret";
 
     private final Dialect dialect;
     private final Transactions tx;

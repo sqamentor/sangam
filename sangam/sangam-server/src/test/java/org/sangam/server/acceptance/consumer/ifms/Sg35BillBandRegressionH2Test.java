@@ -80,6 +80,7 @@ class Sg35BillBandRegressionH2Test {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:sg35" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required by the engine, the server's default
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true"); // empty in-memory database owned by this test
         try (OperatonEngineAdapter a = SangamEngineFactory.build(ds, s, "h2")) {

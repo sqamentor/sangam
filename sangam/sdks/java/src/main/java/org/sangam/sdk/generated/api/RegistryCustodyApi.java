@@ -67,7 +67,7 @@ public final class RegistryCustodyApi {
     /**
      * Register
      *
-     * <p>CustodyController.register (sangam-registry).
+     * <p>CustodyController.register (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items} (operationId {@code registryCustodyRegister}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -83,7 +83,7 @@ public final class RegistryCustodyApi {
     /**
      * List
      *
-     * <p>CustodyController.list (sangam-registry).
+     * <p>CustodyController.list (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items} (operationId {@code registryCustodyList}); permission {@code registry.read}.
      * @param typeKey query parameter {@code typeKey}, or null
@@ -113,7 +113,7 @@ public final class RegistryCustodyApi {
     /**
      * Get
      *
-     * <p>CustodyController.get (sangam-registry).
+     * <p>CustodyController.get (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items/{id}} (operationId {@code registryCustodyGet}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -128,7 +128,7 @@ public final class RegistryCustodyApi {
     /**
      * By label
      *
-     * <p>CustodyController.byLabel (sangam-registry).
+     * <p>CustodyController.byLabel (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items/by-label/{label}} (operationId {@code registryCustodyByLabel}); permission {@code registry.read}.
      * @param label path parameter {@code label}
@@ -143,7 +143,7 @@ public final class RegistryCustodyApi {
     /**
      * Events
      *
-     * <p>CustodyController.events (sangam-registry).
+     * <p>CustodyController.events (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items/{id}/events} (operationId {@code registryCustodyEvents}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -158,7 +158,7 @@ public final class RegistryCustodyApi {
     /**
      * Verify
      *
-     * <p>CustodyController.verify (sangam-registry).
+     * <p>CustodyController.verify (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items/{id}/verify} (operationId {@code registryCustodyVerify}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -173,7 +173,7 @@ public final class RegistryCustodyApi {
     /**
      * Transfers
      *
-     * <p>CustodyController.transfers (sangam-registry).
+     * <p>CustodyController.transfers (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items/{id}/transfers} (operationId {@code registryCustodyTransfers}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -188,7 +188,7 @@ public final class RegistryCustodyApi {
     /**
      * Initiate
      *
-     * <p>CustodyController.initiate (sangam-registry).
+     * <p>CustodyController.initiate (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/transfers} (operationId {@code registryCustodyInitiate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -205,7 +205,7 @@ public final class RegistryCustodyApi {
     /**
      * Handover
      *
-     * <p>CustodyController.handover (sangam-registry).
+     * <p>CustodyController.handover (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/handover} (operationId {@code registryCustodyHandover}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -222,7 +222,7 @@ public final class RegistryCustodyApi {
     /**
      * Transfer
      *
-     * <p>CustodyController.transfer (sangam-registry).
+     * <p>CustodyController.transfer (sangam-rest).
      *
      * <p>{@code GET /registry/custody/transfers/{transferId}} (operationId {@code registryCustodyTransfer}); permission {@code registry.read}.
      * @param transferId path parameter {@code transferId}
@@ -237,7 +237,7 @@ public final class RegistryCustodyApi {
     /**
      * Pending
      *
-     * <p>CustodyController.pending (sangam-registry).
+     * <p>CustodyController.pending (sangam-rest).
      *
      * <p>{@code GET /registry/custody/transfers/pending} (operationId {@code registryCustodyPending}); permission {@code registry.read}.
      * @param toCustodian query parameter {@code toCustodian}
@@ -257,7 +257,7 @@ public final class RegistryCustodyApi {
     /**
      * Accept
      *
-     * <p>CustodyController.accept (sangam-registry).
+     * <p>CustodyController.accept (sangam-rest).
      *
      * <p>{@code POST /registry/custody/transfers/{transferId}/accept} (operationId {@code registryCustodyAccept}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param transferId path parameter {@code transferId}
@@ -274,7 +274,7 @@ public final class RegistryCustodyApi {
     /**
      * Reject
      *
-     * <p>CustodyController.reject (sangam-registry).
+     * <p>CustodyController.reject (sangam-rest).
      *
      * <p>{@code POST /registry/custody/transfers/{transferId}/reject} (operationId {@code registryCustodyReject}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param transferId path parameter {@code transferId}
@@ -291,7 +291,7 @@ public final class RegistryCustodyApi {
     /**
      * Cancel
      *
-     * <p>CustodyController.cancel (sangam-registry).
+     * <p>CustodyController.cancel (sangam-rest).
      *
      * <p>{@code POST /registry/custody/transfers/{transferId}/cancel} (operationId {@code registryCustodyCancel}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param transferId path parameter {@code transferId}
@@ -308,7 +308,7 @@ public final class RegistryCustodyApi {
     /**
      * Seal
      *
-     * <p>CustodyController.seal (sangam-registry).
+     * <p>CustodyController.seal (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/seal} (operationId {@code registryCustodySeal}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -325,7 +325,7 @@ public final class RegistryCustodyApi {
     /**
      * Break seal
      *
-     * <p>CustodyController.breakSeal (sangam-registry).
+     * <p>CustodyController.breakSeal (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/break-seal} (operationId {@code registryCustodyBreakSeal}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -342,7 +342,7 @@ public final class RegistryCustodyApi {
     /**
      * Inspect
      *
-     * <p>CustodyController.inspect (sangam-registry).
+     * <p>CustodyController.inspect (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/inspect} (operationId {@code registryCustodyInspect}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -359,7 +359,7 @@ public final class RegistryCustodyApi {
     /**
      * Location
      *
-     * <p>CustodyController.location (sangam-registry).
+     * <p>CustodyController.location (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/location} (operationId {@code registryCustodyLocation}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -376,7 +376,7 @@ public final class RegistryCustodyApi {
     /**
      * Put into
      *
-     * <p>CustodyController.putInto (sangam-registry).
+     * <p>CustodyController.putInto (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/container} (operationId {@code registryCustodyPutInto}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -393,7 +393,7 @@ public final class RegistryCustodyApi {
     /**
      * Take out
      *
-     * <p>CustodyController.takeOut (sangam-registry).
+     * <p>CustodyController.takeOut (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/take-out} (operationId {@code registryCustodyTakeOut}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -410,7 +410,7 @@ public final class RegistryCustodyApi {
     /**
      * Disposal orders
      *
-     * <p>CustodyController.disposalOrders (sangam-registry).
+     * <p>CustodyController.disposalOrders (sangam-rest).
      *
      * <p>{@code GET /registry/custody/items/{id}/disposal-orders} (operationId {@code registryCustodyDisposalOrders}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -425,7 +425,7 @@ public final class RegistryCustodyApi {
     /**
      * Order disposal
      *
-     * <p>CustodyController.orderDisposal (sangam-registry).
+     * <p>CustodyController.orderDisposal (sangam-rest).
      *
      * <p>{@code POST /registry/custody/items/{id}/disposal-orders} (operationId {@code registryCustodyOrderDisposal}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -442,7 +442,7 @@ public final class RegistryCustodyApi {
     /**
      * Disposal order
      *
-     * <p>CustodyController.disposalOrder (sangam-registry).
+     * <p>CustodyController.disposalOrder (sangam-rest).
      *
      * <p>{@code GET /registry/custody/disposal-orders/{orderId}} (operationId {@code registryCustodyDisposalOrder}); permission {@code registry.read}.
      * @param orderId path parameter {@code orderId}
@@ -457,7 +457,7 @@ public final class RegistryCustodyApi {
     /**
      * Execute
      *
-     * <p>CustodyController.execute (sangam-registry).
+     * <p>CustodyController.execute (sangam-rest).
      *
      * <p>{@code POST /registry/custody/disposal-orders/{orderId}/execute} (operationId {@code registryCustodyExecute}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param orderId path parameter {@code orderId}
@@ -474,7 +474,7 @@ public final class RegistryCustodyApi {
     /**
      * Cancel disposal
      *
-     * <p>CustodyController.cancelDisposal (sangam-registry).
+     * <p>CustodyController.cancelDisposal (sangam-rest).
      *
      * <p>{@code POST /registry/custody/disposal-orders/{orderId}/cancel} (operationId {@code registryCustodyCancelDisposal}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param orderId path parameter {@code orderId}
@@ -491,7 +491,7 @@ public final class RegistryCustodyApi {
     /**
      * Gap check
      *
-     * <p>CustodyController.gapCheck (sangam-registry).
+     * <p>CustodyController.gapCheck (sangam-rest).
      *
      * <p>{@code GET /registry/custody/gap-check} (operationId {@code registryCustodyGapCheck}); permission {@code registry.read}.
      * @param inTransitHours query parameter {@code inTransitHours}, or null

@@ -1,0 +1,65 @@
+{
+  "key": "gov-intl-pfm-replenishment/application",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-replenishment",
+  "title": {
+    "en": "Withdrawal application",
+    "hi": "आहरण आवेदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "projectId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Project / financing agreement",
+        "hi": "परियोजना / वित्तपोषण समझौता"
+      }
+    },
+    {
+      "id": "designatedAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Designated account",
+        "hi": "नामित खाता"
+      }
+    },
+    {
+      "id": "claimAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Claim amount",
+        "hi": "दावा राशि"
+      }
+    },
+    {
+      "id": "soeRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Statement of expenditure reference",
+        "hi": "व्यय विवरण संदर्भ"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

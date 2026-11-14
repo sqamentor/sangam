@@ -359,14 +359,15 @@ class AIApi:
         req = ApiRequest("GET", f"/ai/classifications/evaluation", query={"key": key, "version": version})
         return cast("M.AiEvalResult", self._c.json(req, options))
 
-    def ai_mcp(self, body: M.AiMcpBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def ai_mcp(self, body: M.AiMcpBody, *, mcp_protocol_version: str, mcp_method: str, mcp_name: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """MCP endpoint
 
-        JSON-RPC. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins; MCP-Protocol-Version, Mcp-Method and Mcp-Name must match the body (400).
+        MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, and server/discover is served. A header that does not match the body is 400 HeaderMismatch (-32020); an unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType input_required with inputRequests and an integrity-protected requestState bound to the principal, a time limit and the originating request, and the client repeats the request with a new id, inputResponses and the echoed requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins (403 otherwise).
 
         ``POST /ai/mcp`` (operationId ``aiMcp``); permission ``ai.use``.
         """
         req = ApiRequest("POST", f"/ai/mcp")
+        _headers(req, {"MCP-Protocol-Version": mcp_protocol_version, "Mcp-Method": mcp_method, "Mcp-Name": mcp_name})
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
@@ -380,14 +381,15 @@ class AIApi:
         req = ApiRequest("GET", f"/ai/a2a/{seg(str(agent))}/card")
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def ai_a2a(self, agent: str, body: M.AiMcpBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+    def ai_a2a(self, agent: str, body: M.AiMcpBody, *, a2_a_version: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """A2A endpoint
 
-        JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
+        A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
 
         ``POST /ai/a2a/{agent}`` (operationId ``aiA2a``); permission ``ai.use``.
         """
         req = ApiRequest("POST", f"/ai/a2a/{seg(str(agent))}")
+        _headers(req, {"A2A-Version": a2_a_version})
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
 
@@ -1409,24 +1411,24 @@ class AuditApi:
         req = ApiRequest("GET", f"/audit/{seg(str(business_key))}/timeline", query={"includeHistory": include_history, "page": page, "size": size})
         return cast("Page[M.AuditEntry]", self._c.page(req, options, page, size))
 
-    def search_audit_events(self, *, chain_id: Optional[str] = None, type_: Optional[str] = None, actor: Optional[str] = None, from_: Optional[str] = None, to: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.AuditEntry]:
+    def search_audit_events(self, *, chain_id: Optional[str] = None, type_: Optional[str] = None, actor: Optional[str] = None, from_: Optional[str] = None, to: Optional[str] = None, scope: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.AuditEntry]:
         """Search audit events
 
-        Auditor search (U01).
+        Auditor search (U01). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
 
         ``GET /audit/events`` (operationId ``searchAuditEvents``); permission ``audit.read``.
         """
-        req = ApiRequest("GET", f"/audit/events", query={"chainId": chain_id, "type": type_, "actor": actor, "from": from_, "to": to, "page": page, "size": size})
+        req = ApiRequest("GET", f"/audit/events", query={"chainId": chain_id, "type": type_, "actor": actor, "from": from_, "to": to, "scope": scope, "page": page, "size": size})
         return cast("Page[M.AuditEntry]", self._c.page(req, options, page, size))
 
-    def verify_audit(self, *, chain_id: Optional[str] = None, business_key: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.AuditVerifyResult:
+    def verify_audit(self, *, chain_id: Optional[str] = None, business_key: Optional[str] = None, scope: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.AuditVerifyResult:
         """Verify hash chains
 
-        Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5).
+        Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
 
         ``GET /audit/verify`` (operationId ``verifyAudit``); permission ``audit.read``.
         """
-        req = ApiRequest("GET", f"/audit/verify", query={"chainId": chain_id, "businessKey": business_key})
+        req = ApiRequest("GET", f"/audit/verify", query={"chainId": chain_id, "businessKey": business_key, "scope": scope})
         return cast("M.AuditVerifyResult", self._c.json(req, options))
 
     def export_audit(self, *, business_key: str, format: Optional[Literal["json", "csv"]] = None, options: Optional[RequestOptions] = None) -> list[M.AuditEntry]:
@@ -1481,7 +1483,7 @@ class AuditApi:
         return self._c.raw(req, options, "application/zip")
 
 class BillingApi:
-    """``Billing`` (7 operations)."""
+    """``Billing`` (11 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -1510,7 +1512,7 @@ class BillingApi:
     def record_billing_collection(self, ledger: str, body: M.BillingCollectionRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Record a collection
 
-        Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt.
+        Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
 
         ``POST /billing/{ledger}/collections`` (operationId ``recordBillingCollection``); permission ``billing.write``; result stored atomically with the state change.
         """
@@ -1560,6 +1562,48 @@ class BillingApi:
         req = ApiRequest("POST", f"/billing/{seg(str(ledger))}/refunds")
         req.body = body
         return cast("M.BillingRefundResult", self._c.json(req, options))
+
+    def accept_unverified_payment(self, ledger: str, body: M.UnverifiedPaymentRequest, *, options: Optional[RequestOptions] = None) -> M.UnverifiedPayment:
+        """Accept a payment unverified
+
+        Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
+
+        ``POST /billing/{ledger}/unverified-payments`` (operationId ``acceptUnverifiedPayment``); permission ``billing.accept-unverified``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/billing/{seg(str(ledger))}/unverified-payments")
+        req.body = body
+        return cast("M.UnverifiedPayment", self._c.json(req, options))
+
+    def list_unverified_payments(self, ledger: str, *, state: Optional[Literal["PAYMENT_ACCEPTED_UNVERIFIED", "VERIFIED", "REJECTED", "REVERSED"]] = None, channel: Optional[str] = None, office: Optional[str] = None, min_age_days: Optional[int] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.UnverifiedPayment]:
+        """Unverified payments
+
+        Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
+
+        ``GET /billing/{ledger}/unverified-payments`` (operationId ``listUnverifiedPayments``); permission ``billing.read``.
+        """
+        req = ApiRequest("GET", f"/billing/{seg(str(ledger))}/unverified-payments", query={"state": state, "channel": channel, "office": office, "minAgeDays": min_age_days, "page": page, "size": size})
+        return cast("Page[M.UnverifiedPayment]", self._c.page(req, options, page, size))
+
+    def get_unverified_payment(self, ledger: str, id: str, *, options: Optional[RequestOptions] = None) -> M.UnverifiedPayment:
+        """An unverified payment
+
+        One record with its resolution.
+
+        ``GET /billing/{ledger}/unverified-payments/{id}`` (operationId ``getUnverifiedPayment``); permission ``billing.read``.
+        """
+        req = ApiRequest("GET", f"/billing/{seg(str(ledger))}/unverified-payments/{seg(str(id))}")
+        return cast("M.UnverifiedPayment", self._c.json(req, options))
+
+    def resolve_unverified_payment(self, ledger: str, id: str, body: M.UnverifiedPaymentResolveRequest, *, options: Optional[RequestOptions] = None) -> M.UnverifiedPayment:
+        """Resolve an unverified payment
+
+        Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
+
+        ``POST /billing/{ledger}/unverified-payments/{id}/resolution`` (operationId ``resolveUnverifiedPayment``); permission ``billing.resolve-unverified``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/billing/{seg(str(ledger))}/unverified-payments/{seg(str(id))}/resolution")
+        req.body = body
+        return cast("M.UnverifiedPayment", self._c.json(req, options))
 
 class BulkIngestApi:
     """``Bulk ingest`` (8 operations)."""
@@ -3800,6 +3844,24 @@ class DeploymentsApi:
         req = ApiRequest("GET", f"/deployments/{seg(str(id))}/resources/{seg(str(resource_name))}")
         return self._c.raw(req, options, "application/octet-stream")
 
+class DltHooksApi:
+    """``DltHooks`` (1 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def receive_dlt_delivery_reports(self, tenant: str, connector_id: str, body: Any, *, x_sangam_signature: str, options: Optional[RequestOptions] = None) -> M.DltDeliveryReportResult:
+        """Receive SMS delivery reports
+
+        Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
+
+        ``POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports`` (operationId ``receiveDltDeliveryReports``).
+        """
+        req = ApiRequest("POST", f"/hooks/sms-dlt/{seg(str(tenant))}/{seg(str(connector_id))}/delivery-reports")
+        _headers(req, {"X-Sangam-Signature": x_sangam_signature})
+        req.body = body
+        return cast("M.DltDeliveryReportResult", self._c.json(req, options))
+
 class DocumentsApi:
     """``Documents`` (10 operations)."""
 
@@ -3809,7 +3871,7 @@ class DocumentsApi:
     def upload_document(self, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.Document:
         """Upload a document
 
-        Stores an immutable version with SHA-256 checksum and scan hook (R74, K12).
+        Stores an immutable version with SHA-256 checksum and scan hook (R74, K12). A slot applies when processInstanceId is given, or taskId names a task of a process instance; never for a caseInstanceId. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
 
         ``POST /documents`` (operationId ``uploadDocument``); permission ``document.write``; result stored atomically with the state change.
         """
@@ -3860,7 +3922,7 @@ class DocumentsApi:
     def add_document_version(self, id: str, body: Mapping[str, Any], *, options: Optional[RequestOptions] = None) -> M.Document:
         """New document version
 
-        Adds an immutable version (R74).
+        Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
 
         ``POST /documents/{id}/versions`` (operationId ``addDocumentVersion``); permission ``document.write``; result stored atomically with the state change.
         """
@@ -3909,6 +3971,114 @@ class DocumentsApi:
         req = ApiRequest("POST", f"/documents/generate")
         req.body = body
         return cast("M.Document", self._c.json(req, options))
+
+class DscCertificatesApi:
+    """``DscCertificates`` (8 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def enrol_dsc_certificate(self, body: M.DscCertificateEnrolmentRequest, *, options: Optional[RequestOptions] = None) -> M.DscCertificate:
+        """Enrol a DSC certificate
+
+        The signer enrols the certificate of their token; the enrolment is PENDING until an admin other than the signer approves it. Needs task.write. Audited DSC_CERTIFICATE_ENROLLED. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``POST /me/dsc/certificates`` (operationId ``enrolDscCertificate``); permission ``task.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/me/dsc/certificates")
+        req.body = body
+        return cast("M.DscCertificate", self._c.json(req, options))
+
+    def list_my_dsc_certificates(self, *, options: Optional[RequestOptions] = None) -> list[M.DscCertificate]:
+        """My DSC certificates
+
+        The caller's enrolments in every status. Needs task.write. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``GET /me/dsc/certificates`` (operationId ``listMyDscCertificates``); permission ``task.write``.
+        """
+        req = ApiRequest("GET", f"/me/dsc/certificates")
+        return cast("list[M.DscCertificate]", self._c.json(req, options))
+
+    def revoke_my_dsc_certificate(self, enrolment_id: str, body: M.DscCertificateDecision, *, options: Optional[RequestOptions] = None) -> M.DscCertificate:
+        """Revoke my DSC certificate
+
+        The signer revokes their own PENDING or APPROVED enrolment without approval (revocation removes trust); a reason is required. Another user's enrolment answers 404 ENROLMENT_NOT_FOUND, as an unknown id does. Needs task.write. Audited DSC_CERTIFICATE_REVOKED. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``POST /me/dsc/certificates/{enrolmentId}/revoke`` (operationId ``revokeMyDscCertificate``); permission ``task.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/me/dsc/certificates/{seg(str(enrolment_id))}/revoke")
+        req.body = body
+        return cast("M.DscCertificate", self._c.json(req, options))
+
+    def list_dsc_certificates(self, *, status: Optional[Literal["PENDING", "APPROVED", "REJECTED", "REVOKED"]] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[M.DscCertificate]:
+        """DSC certificate enrolments
+
+        Enrolments of the tenant in one status, PENDING by default (the approval queue). Needs dsc.certificate.approve. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``GET /admin/dsc/certificates`` (operationId ``listDscCertificates``); permission ``dsc.certificate.approve``.
+        """
+        req = ApiRequest("GET", f"/admin/dsc/certificates", query={"status": status, "limit": limit})
+        return cast("list[M.DscCertificate]", self._c.json(req, options))
+
+    def get_dsc_certificate(self, enrolment_id: str, *, options: Optional[RequestOptions] = None) -> M.DscCertificate:
+        """A DSC certificate enrolment
+
+        One enrolment of the tenant. Needs dsc.certificate.approve. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``GET /admin/dsc/certificates/{enrolmentId}`` (operationId ``getDscCertificate``); permission ``dsc.certificate.approve``.
+        """
+        req = ApiRequest("GET", f"/admin/dsc/certificates/{seg(str(enrolment_id))}")
+        return cast("M.DscCertificate", self._c.json(req, options))
+
+    def approve_dsc_certificate(self, enrolment_id: str, body: M.DscCertificateDecision, *, options: Optional[RequestOptions] = None) -> M.DscCertificate:
+        """Approve a DSC certificate
+
+        Approves a PENDING enrolment of another user; the reason is optional. An expired certificate is 422 CERTIFICATE_EXPIRED. Audited DSC_CERTIFICATE_APPROVED. Needs dsc.certificate.approve; an admin never decides their own enrolment (403 SELF_APPROVAL on approve and reject). Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``POST /admin/dsc/certificates/{enrolmentId}/approve`` (operationId ``approveDscCertificate``); permission ``dsc.certificate.approve``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/dsc/certificates/{seg(str(enrolment_id))}/approve")
+        req.body = body
+        return cast("M.DscCertificate", self._c.json(req, options))
+
+    def reject_dsc_certificate(self, enrolment_id: str, body: M.DscCertificateDecision, *, options: Optional[RequestOptions] = None) -> M.DscCertificate:
+        """Reject a DSC certificate
+
+        Rejects a PENDING enrolment of another user; a reason is required. Audited DSC_CERTIFICATE_REJECTED. Needs dsc.certificate.approve; an admin never decides their own enrolment (403 SELF_APPROVAL on approve and reject). Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``POST /admin/dsc/certificates/{enrolmentId}/reject`` (operationId ``rejectDscCertificate``); permission ``dsc.certificate.approve``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/dsc/certificates/{seg(str(enrolment_id))}/reject")
+        req.body = body
+        return cast("M.DscCertificate", self._c.json(req, options))
+
+    def revoke_dsc_certificate(self, enrolment_id: str, body: M.DscCertificateDecision, *, options: Optional[RequestOptions] = None) -> M.DscCertificate:
+        """Revoke a DSC certificate
+
+        Revokes a PENDING or APPROVED enrolment of any user of the tenant; a reason is required. Audited DSC_CERTIFICATE_REVOKED. Needs dsc.certificate.approve; an admin never decides their own enrolment (403 SELF_APPROVAL on approve and reject). Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+
+        ``POST /admin/dsc/certificates/{enrolmentId}/revoke`` (operationId ``revokeDscCertificate``); permission ``dsc.certificate.approve``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/dsc/certificates/{seg(str(enrolment_id))}/revoke")
+        req.body = body
+        return cast("M.DscCertificate", self._c.json(req, options))
+
+class EventGridHooksApi:
+    """``EventGridHooks`` (1 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def receive_event_grid_delivery(self, tenant: str, channel: str, body: list[dict[str, Any]], *, options: Optional[RequestOptions] = None) -> M.EventGridHookResult:
+        """Receive an Event Grid delivery
+
+        Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
+
+        ``POST /hooks/eventgrid/{tenant}/{channel}`` (operationId ``receiveEventGridDelivery``).
+        """
+        req = ApiRequest("POST", f"/hooks/eventgrid/{seg(str(tenant))}/{seg(str(channel))}")
+        req.body = body
+        return cast("M.EventGridHookResult", self._c.json(req, options))
 
 class EventsApi:
     """``Events`` (14 operations)."""
@@ -4063,6 +4233,53 @@ class EventsApi:
         req = ApiRequest("POST", f"/events/{seg(str(channel))}")
         req.body = body
         return cast("M.PublishResult", self._c.json(req, options))
+
+class ExecutorApi:
+    """``Executor`` (4 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def get_executor_partition_map(self, *, options: Optional[RequestOptions] = None) -> M.ExecutorPartitionMap:
+        """Executor partition map
+
+        The committed map, its partitions with owners, epochs and slot ranges, and the active resize if any, read in one transaction (PartitionResize.map). 409 NOT_INITIALISED when the cluster has no executor map (sangam.engine.executor-partitioning was never on). Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+
+        ``GET /admin/executor/partitions`` (operationId ``getExecutorPartitionMap``); permission ``executor.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/executor/partitions")
+        return cast("M.ExecutorPartitionMap", self._c.json(req, options))
+
+    def resize_executor_partitions(self, body: M.ExecutorPartitionResizeRequest, *, options: Optional[RequestOptions] = None) -> M.ExecutorPartitionResize:
+        """Change the partition count
+
+        Starts a controlled resize and answers 202 with it in state REQUESTED; poll getExecutorPartitionResize. Minimal movement: only the slots the new balanced allocation needs move, each drained or recovered (job state, retry counts, deadlines and tenant context kept) before its new owner acquires from it, under epoch fencing. 409 INVALID_TRANSITION when another resize is REQUESTED or IN_PROGRESS (also one started concurrently) or the count is unchanged; 409 REVISION_CONFLICT on a stale expectedMapEpoch; 409 NOT_INITIALISED when the cluster has no executor map (sangam.engine.executor-partitioning is off on every node); 400 VALIDATION_FAILED when the count is outside 0..slotCount or the reason is blank or longer than 1000 characters. A retry with the same Idempotency-Key returns the same resize. Audited: EXECUTOR_PARTITION_RESIZE_REQUESTED at the request, EXECUTOR_PARTITION_COUNT_CHANGED when the new map commits, EXECUTOR_PARTITION_RESIZE_FAILED when it fails (the previous map stays committed). Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+
+        ``POST /admin/executor/partitions`` (operationId ``resizeExecutorPartitions``); permission ``executor.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/executor/partitions")
+        req.body = body
+        return cast("M.ExecutorPartitionResize", self._c.json(req, options))
+
+    def list_executor_partition_resizes(self, *, state: Optional[Literal["REQUESTED", "IN_PROGRESS", "COMPLETED", "FAILED"]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.ExecutorPartitionResize]:
+        """Partition-count changes
+
+        Resizes, newest first; movedSlots is empty in the list. Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+
+        ``GET /admin/executor/partitions/resizes`` (operationId ``listExecutorPartitionResizes``); permission ``executor.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/executor/partitions/resizes", query={"state": state, "page": page, "size": size})
+        return cast("Page[M.ExecutorPartitionResize]", self._c.page(req, options, page, size))
+
+    def get_executor_partition_resize(self, id: str, *, options: Optional[RequestOptions] = None) -> M.ExecutorPartitionResize:
+        """A partition-count change
+
+        One resize with its moved slot ranges; 404 NOT_FOUND for an unknown id. Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+
+        ``GET /admin/executor/partitions/resizes/{id}`` (operationId ``getExecutorPartitionResize``); permission ``executor.admin``.
+        """
+        req = ApiRequest("GET", f"/admin/executor/partitions/resizes/{seg(str(id))}")
+        return cast("M.ExecutorPartitionResize", self._c.json(req, options))
 
 class FieldApi:
     """``Field`` (35 operations)."""
@@ -4756,7 +4973,7 @@ class GeoApi:
     def geo_geo_layers(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Layers
 
-        GeoController.layers (sangam-geo).
+        GeoController.layers (sangam-rest).
 
         ``GET /geo/layers`` (operationId ``geoGeoLayers``); permission ``geo.read``.
         """
@@ -4766,7 +4983,7 @@ class GeoApi:
     def geo_geo_define_layer(self, body: M.GeoGeoDefineLayerBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Define layer
 
-        GeoController.defineLayer (sangam-geo).
+        GeoController.defineLayer (sangam-rest).
 
         ``POST /geo/layers`` (operationId ``geoGeoDefineLayer``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4777,7 +4994,7 @@ class GeoApi:
     def geo_geo_layer(self, layer: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Layer
 
-        GeoController.layer (sangam-geo).
+        GeoController.layer (sangam-rest).
 
         ``GET /geo/layers/{layer}`` (operationId ``geoGeoLayer``); permission ``geo.read``.
         """
@@ -4787,7 +5004,7 @@ class GeoApi:
     def geo_geo_import_boundaries(self, layer: str, body: M.GeoGeoImportBoundariesBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Import boundaries
 
-        GeoController.importBoundaries (sangam-geo).
+        GeoController.importBoundaries (sangam-rest).
 
         ``POST /geo/layers/{layer}/import`` (operationId ``geoGeoImportBoundaries``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4798,7 +5015,7 @@ class GeoApi:
     def geo_geo_features(self, layer: str, *, level: Optional[str] = None, parent_id: Optional[str] = None, history: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Features
 
-        GeoController.features (sangam-geo).
+        GeoController.features (sangam-rest).
 
         ``GET /geo/layers/{layer}/features`` (operationId ``geoGeoFeatures``); permission ``geo.read``.
         """
@@ -4808,7 +5025,7 @@ class GeoApi:
     def geo_geo_put_feature(self, layer: str, body: M.GeoGeoPutFeatureBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Put feature
 
-        GeoController.putFeature (sangam-geo).
+        GeoController.putFeature (sangam-rest).
 
         ``POST /geo/layers/{layer}/features`` (operationId ``geoGeoPutFeature``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4819,7 +5036,7 @@ class GeoApi:
     def geo_geo_feature(self, id: str, *, geometry: Optional[bool] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Feature
 
-        GeoController.feature (sangam-geo).
+        GeoController.feature (sangam-rest).
 
         ``GET /geo/features/{id}`` (operationId ``geoGeoFeature``); permission ``geo.read``.
         """
@@ -4829,7 +5046,7 @@ class GeoApi:
     def geo_geo_retire(self, id: str, *, options: Optional[RequestOptions] = None) -> None:
         """Retire
 
-        GeoController.retire (sangam-geo).
+        GeoController.retire (sangam-rest).
 
         ``DELETE /geo/features/{id}`` (operationId ``geoGeoRetire``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4839,7 +5056,7 @@ class GeoApi:
     def geo_geo_lineage(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Lineage
 
-        GeoController.lineage (sangam-geo).
+        GeoController.lineage (sangam-rest).
 
         ``GET /geo/features/{id}/lineage`` (operationId ``geoGeoLineage``); permission ``geo.read``.
         """
@@ -4849,7 +5066,7 @@ class GeoApi:
     def geo_geo_resolve(self, *, layer: str, lat: Number, lon: Number, level: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Resolve
 
-        GeoController.resolve (sangam-geo).
+        GeoController.resolve (sangam-rest).
 
         ``GET /geo/resolve`` (operationId ``geoGeoResolve``); permission ``geo.read``.
         """
@@ -4859,7 +5076,7 @@ class GeoApi:
     def geo_geo_nearest(self, *, lat: Number, lon: Number, layer: Optional[str] = None, object_type: Optional[str] = None, n: Optional[int] = None, max_km: Optional[Number] = None, tags: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Nearest
 
-        GeoController.nearest (sangam-geo).
+        GeoController.nearest (sangam-rest).
 
         ``GET /geo/nearest`` (operationId ``geoGeoNearest``); permission ``geo.read``.
         """
@@ -4869,7 +5086,7 @@ class GeoApi:
     def geo_geo_overlaps(self, body: M.GeoGeoOverlapsBody, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Overlaps
 
-        GeoController.overlaps (sangam-geo).
+        GeoController.overlaps (sangam-rest).
 
         ``POST /geo/overlaps`` (operationId ``geoGeoOverlaps``); permission ``geo.write``.
         """
@@ -4880,7 +5097,7 @@ class GeoApi:
     def geo_geo_define_fence(self, body: M.GeoGeoDefineFenceBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Define fence
 
-        GeoController.defineFence (sangam-geo).
+        GeoController.defineFence (sangam-rest).
 
         ``POST /geo/fences`` (operationId ``geoGeoDefineFence``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4891,7 +5108,7 @@ class GeoApi:
     def geo_geo_fence(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Fence
 
-        GeoController.fence (sangam-geo).
+        GeoController.fence (sangam-rest).
 
         ``GET /geo/fences/{id}`` (operationId ``geoGeoFence``); permission ``geo.read``.
         """
@@ -4901,7 +5118,7 @@ class GeoApi:
     def geo_geo_deactivate_fence(self, id: str, *, options: Optional[RequestOptions] = None) -> None:
         """Deactivate fence
 
-        GeoController.deactivateFence (sangam-geo).
+        GeoController.deactivateFence (sangam-rest).
 
         ``DELETE /geo/fences/{id}`` (operationId ``geoGeoDeactivateFence``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4911,7 +5128,7 @@ class GeoApi:
     def geo_geo_check_fence(self, id: str, body: M.GeoGeoCheckFenceBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Check fence
 
-        GeoController.checkFence (sangam-geo).
+        GeoController.checkFence (sangam-rest).
 
         ``POST /geo/fences/{id}/check`` (operationId ``geoGeoCheckFence``); permission ``geo.write``.
         """
@@ -4922,7 +5139,7 @@ class GeoApi:
     def geo_geo_put_object_geometry(self, type_: str, id: str, body: M.GeoGeoPutObjectGeometryBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Put object geometry
 
-        GeoController.putObjectGeometry (sangam-geo).
+        GeoController.putObjectGeometry (sangam-rest).
 
         ``PUT /geo/objects/{type}/{id}/geometry`` (operationId ``geoGeoPutObjectGeometry``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4933,7 +5150,7 @@ class GeoApi:
     def geo_geo_object_geometry(self, type_: str, id: str, *, attribute: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Object geometry
 
-        GeoController.objectGeometry (sangam-geo).
+        GeoController.objectGeometry (sangam-rest).
 
         ``GET /geo/objects/{type}/{id}/geometry`` (operationId ``geoGeoObjectGeometry``); permission ``geo.read``.
         """
@@ -4943,7 +5160,7 @@ class GeoApi:
     def geo_geo_external_layers(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """External layers
 
-        GeoController.externalLayers (sangam-geo).
+        GeoController.externalLayers (sangam-rest).
 
         ``GET /geo/external-layers`` (operationId ``geoGeoExternalLayers``); permission ``geo.read``.
         """
@@ -4953,7 +5170,7 @@ class GeoApi:
     def geo_geo_register_external(self, body: M.GeoGeoRegisterExternalBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Register external
 
-        GeoController.registerExternal (sangam-geo).
+        GeoController.registerExternal (sangam-rest).
 
         ``POST /geo/external-layers`` (operationId ``geoGeoRegisterExternal``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -4964,7 +5181,7 @@ class GeoApi:
     def geo_geo_query_external(self, ref: str, body: Optional[M.GeoGeoQueryExternalBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Query external
 
-        GeoController.queryExternal (sangam-geo).
+        GeoController.queryExternal (sangam-rest).
 
         ``POST /geo/external-layers/{ref}/query`` (operationId ``geoGeoQueryExternal``); permission ``geo.write``.
         """
@@ -4975,7 +5192,7 @@ class GeoApi:
     def geo_geo_import_external(self, ref: str, body: Optional[M.GeoGeoImportExternalBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Import external
 
-        GeoController.importExternal (sangam-geo).
+        GeoController.importExternal (sangam-rest).
 
         ``POST /geo/external-layers/{ref}/import`` (operationId ``geoGeoImportExternal``); permission ``geo.write``; result stored atomically with the state change.
         """
@@ -5012,7 +5229,7 @@ class HealthHooksApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class HistoryApi:
-    """``History`` (9 operations)."""
+    """``History`` (10 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5106,6 +5323,17 @@ class HistoryApi:
         """
         req = ApiRequest("GET", f"/history/external-task-log", query={"processDefinitionKey": process_definition_key, "processInstanceId": process_instance_id, "businessKey": business_key, "caseInstanceId": case_instance_id, "activityId": activity_id, "taskDefinitionKey": task_definition_key, "assignee": assignee, "finished": finished, "from": from_, "to": to, "activityInstanceId": activity_instance_id, "page": page, "size": size})
         return cast("Page[M.ExternalTaskLogEntry]", self._c.page(req, options, page, size))
+
+    def migrate_historic_process_instance(self, id: str, body: M.HistoryInstanceMigrationRequest, *, options: Optional[RequestOptions] = None) -> M.HistoryInstanceMigrationResult:
+        """Move an ended instance's history to a later version
+
+        Rewrites only the process-definition id and key of the ended instance's history rows (ACT_HI_PROCINST, ACTINST, TASKINST, VARINST, DETAIL, INCIDENT, OP_LOG, EXT_TASK_LOG, DECINST, JOB_LOG, and IDENTITYLINK through the instance's history tasks) to the target definition, in one transaction under the root lock, together with the audit event PROCESS_HISTORY_MIGRATED (actor, reason, old and new definition and version, rows per table). Activity ids and everything that ran stay as recorded; called instances keep their own definitions. Operaton migration moves running instances only; this is for history. A retry with the same Idempotency-Key returns the same result. An instance of another tenant is 404 (no existence leak); untenanted history is visible only to a platform identity. Needs history.migrate (decision 258): tenant-scoped, held by the tenant administrator among the tenant roles (a TENANT ADMIN grant, not a history grant); the platform administrator reaches untenanted history. A replay of the stored response re-checks it.
+
+        ``POST /admin/history/process-instances/{id}/migrate`` (operationId ``migrateHistoricProcessInstance``); permission ``history.migrate``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/history/process-instances/{seg(str(id))}/migrate")
+        req.body = body
+        return cast("M.HistoryInstanceMigrationResult", self._c.json(req, options))
 
 class LedgerApi:
     """``Ledger`` (9 operations)."""
@@ -5245,7 +5473,7 @@ class LinksApi:
         self._c.none(req, options)
 
 class LowCodeApi:
-    """``LowCode`` (10 operations)."""
+    """``LowCode`` (11 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5337,7 +5565,7 @@ class LowCodeApi:
     def list_data_object_records(self, key: str, *, q: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Data-object records
 
-        Records; sensitive fields masked (R78).
+        Records; sensitive fields masked (R78). For a REST-backed definition (decision 266) the server calls the connector's list operation with {q, offset, limit} (q as given, offset and limit from page and size) and answers its output.records, each validated against the definition fields (unknown fields dropped, sensitive fields masked as for DB backing); output.total, when the connector gives it, is the total count. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
 
         ``GET /data-objects/{key}/records`` (operationId ``listDataObjectRecords``); permission ``lowcode.read``.
         """
@@ -5347,13 +5575,23 @@ class LowCodeApi:
     def create_data_object_record(self, key: str, body: dict[str, Any], *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Create a record
 
-        Validated against the definition.
+        Validated against the definition. DB backing: the record is stored and the call answers 201 with it. REST backing (decision 265): the call answers 202 Accepted with the operationId and status PENDING, and Location names getDataObjectRecordOperation; the connector's create operation runs through the operation ledger with the operationId as its idempotency key, and the caller reads the outcome there. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
 
-        ``POST /data-objects/{key}/records`` (operationId ``createDataObjectRecord``); permission ``lowcode.read``; result stored atomically with the state change.
+        ``POST /data-objects/{key}/records`` (operationId ``createDataObjectRecord``); permission ``lowcode.record.write``; result stored atomically with the state change.
         """
         req = ApiRequest("POST", f"/data-objects/{seg(str(key))}/records")
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
+
+    def get_data_object_record_operation(self, key: str, operation_id: str, *, options: Optional[RequestOptions] = None) -> M.DataObjectRecordOperation:
+        """Outcome of a record create
+
+        The state of a record create on a REST-backed data object (decision 265), from the operation ledger and, while it is not settled, the connector's outcome lookup by operationId. 404 NOT_FOUND for an operation id that is not a record create of this data object in the caller's tenant.
+
+        ``GET /data-objects/{key}/records/operations/{operationId}`` (operationId ``getDataObjectRecordOperation``); permission ``lowcode.read``.
+        """
+        req = ApiRequest("GET", f"/data-objects/{seg(str(key))}/records/operations/{seg(str(operation_id))}")
+        return cast("M.DataObjectRecordOperation", self._c.json(req, options))
 
 class MeApi:
     """``Me`` (5 operations)."""
@@ -5406,14 +5644,14 @@ class MeApi:
 
         Creates a LEAVE_SUBSTITUTE assignment pending approval; the substitute acts for the seat only within the date range (IX.5 rule 4, PER-4).
 
-        ``POST /me/leave-requests`` (operationId ``requestLeave``); result stored atomically with the state change.
+        ``POST /me/leave-requests`` (operationId ``requestLeave``); permission ``task.write``; result stored atomically with the state change.
         """
         req = ApiRequest("POST", f"/me/leave-requests")
         req.body = body
         return cast("M.Assignment", self._c.json(req, options))
 
 class ModellerApi:
-    """``Modeller`` (26 operations)."""
+    """``Modeller`` (28 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5438,6 +5676,17 @@ class ModellerApi:
         req = ApiRequest("POST", f"/models/token-walk")
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
+
+    def diff_models(self, body: M.ModelDiffRequest, *, options: Optional[RequestOptions] = None) -> M.ModelDiffReport:
+        """Semantic model diff
+
+        Compares two versions of a BPMN, DMN, CMMN or form file by meaning (elements, flows, expressions, properties), not by text; reads only, nothing is stored (M-125). 400 MODEL_UNREADABLE when a side is not XML/JSON, has a DOCTYPE, or the two sides are of different formats.
+
+        ``POST /models/diff`` (operationId ``diffModels``); permission ``package.read``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/models/diff")
+        req.body = body
+        return cast("M.ModelDiffReport", self._c.json(req, options))
 
     def get_model_lease(self, file: str, *, options: Optional[RequestOptions] = None) -> M.ModelEditLease:
         """Current lease
@@ -5501,6 +5750,16 @@ class ModellerApi:
         req = ApiRequest("POST", f"/models/{seg(str(file))}/lease/takeover")
         req.body = body
         return cast("M.ModelEditLease", self._c.json(req, options))
+
+    def stream_model_presence(self, file: str, *, options: Optional[RequestOptions] = None) -> bytes:
+        """Model presence stream
+
+        Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
+
+        ``GET /models/{file}/presence/stream`` (operationId ``streamModelPresence``); permission ``package.read``.
+        """
+        req = ApiRequest("GET", f"/models/{seg(str(file))}/presence/stream")
+        return self._c.raw(req, options, "text/event-stream")
 
     def list_element_templates(self, *, kind: str, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Element templates
@@ -6824,7 +7083,7 @@ class PortalApi:
         return cast("M.GrievanceReceipt", self._c.json(req, options))
 
 class ProcessesApi:
-    """``Processes`` (31 operations)."""
+    """``Processes`` (33 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -7122,6 +7381,27 @@ class ProcessesApi:
         req = ApiRequest("POST", f"/process-instances/{seg(str(id))}/cross-boundary-move")
         req.body = body
         return cast("M.ProcessInstance", self._c.json(req, options))
+
+    def continue_process_instance_as_new(self, id: str, body: M.ContinueAsNewRequest, *, options: Optional[RequestOptions] = None) -> M.ContinueAsNewResult:
+        """Continue as new
+
+        Ends the active root instance and starts exactly one successor in one transaction, keeping the business key, the definition id and the named variables exactly. 409 CONTINUATION_NOT_ALLOWED, nothing changed, with extension reason SUB_INSTANCE, SUSPENDED, ENDED, ALREADY_CONTINUED (then the problem also carries successorId) or REQUEST_ID_REUSED (the continuationRequestId was used for another instance); an instance of another tenant is 404 (decision 145). A retry with the same continuationRequestId answers 200 with outcome EXISTING and the committed successor (ended empty). Needs PROCESS_INSTANCE MODIFY on the instance and, for another named version, PROCESS_DEFINITION START. Open user tasks, external tasks, jobs, timers and message subscriptions end with the predecessor; stale workers and callbacks on it get 404; late messages correlate by business key and tenant to the successor. Audited as PROCESS_CONTINUED_AS_NEW.
+
+        ``POST /process-instances/{id}/continue-as-new`` (operationId ``continueProcessInstanceAsNew``); permission ``process.continue``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/process-instances/{seg(str(id))}/continue-as-new")
+        req.body = body
+        return cast("M.ContinueAsNewResult", self._c.json(req, options))
+
+    def get_process_continuation_chain(self, id: str, *, options: Optional[RequestOptions] = None) -> M.ProcessContinuationChain:
+        """Continuation chain
+
+        The chain of the instance (predecessors and successors), with generation, actor, reason and request id of every link. An instance never continued has a chain of one instance and no links.
+
+        ``GET /process-instances/{id}/continuations`` (operationId ``getProcessContinuationChain``); permission ``process.read``.
+        """
+        req = ApiRequest("GET", f"/process-instances/{seg(str(id))}/continuations")
+        return cast("M.ProcessContinuationChain", self._c.json(req, options))
 
     def list_instance_handlers(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.InstanceHandler]:
         """Declared query and update handlers
@@ -8413,7 +8693,7 @@ class RegistryApi:
     def registry_registry_publish_type(self, body: M.RegistryRegistryPublishTypeBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Publish type
 
-        RegistryController.publishType (sangam-registry).
+        RegistryController.publishType (sangam-rest).
 
         ``POST /registry/types`` (operationId ``registryRegistryPublishType``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8424,7 +8704,7 @@ class RegistryApi:
     def registry_registry_list_types(self, *, kind: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """List types
 
-        RegistryController.listTypes (sangam-registry).
+        RegistryController.listTypes (sangam-rest).
 
         ``GET /registry/types`` (operationId ``registryRegistryListTypes``); permission ``registry.read``.
         """
@@ -8434,7 +8714,7 @@ class RegistryApi:
     def registry_registry_current_type(self, type_key: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Current type
 
-        RegistryController.currentType (sangam-registry).
+        RegistryController.currentType (sangam-rest).
 
         ``GET /registry/types/{typeKey}`` (operationId ``registryRegistryCurrentType``); permission ``registry.read``.
         """
@@ -8444,7 +8724,7 @@ class RegistryApi:
     def registry_registry_type_version(self, type_key: str, version: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Type version
 
-        RegistryController.typeVersion (sangam-registry).
+        RegistryController.typeVersion (sangam-rest).
 
         ``GET /registry/types/{typeKey}/versions/{version}`` (operationId ``registryRegistryTypeVersion``); permission ``registry.read``.
         """
@@ -8454,7 +8734,7 @@ class RegistryApi:
     def registry_registry_retire_type(self, type_key: str, version: str, *, options: Optional[RequestOptions] = None) -> None:
         """Retire type
 
-        RegistryController.retireType (sangam-registry).
+        RegistryController.retireType (sangam-rest).
 
         ``POST /registry/types/{typeKey}/versions/{version}/retire`` (operationId ``registryRegistryRetireType``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8470,7 +8750,7 @@ class RegistryAssetsApi:
     def registry_asset_define_class(self, body: M.RegistryAssetDefineClassBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Define class
 
-        AssetController.defineClass (sangam-registry).
+        AssetController.defineClass (sangam-rest).
 
         ``POST /registry/assets/classes`` (operationId ``registryAssetDefineClass``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8481,7 +8761,7 @@ class RegistryAssetsApi:
     def registry_asset_classes(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Classes
 
-        AssetController.classes (sangam-registry).
+        AssetController.classes (sangam-rest).
 
         ``GET /registry/assets/classes`` (operationId ``registryAssetClasses``); permission ``registry.read``.
         """
@@ -8491,7 +8771,7 @@ class RegistryAssetsApi:
     def registry_asset_get_class(self, class_key: str, *, resolved: Optional[bool] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get class
 
-        AssetController.getClass (sangam-registry).
+        AssetController.getClass (sangam-rest).
 
         ``GET /registry/assets/classes/{classKey}`` (operationId ``registryAssetGetClass``); permission ``registry.read``.
         """
@@ -8501,7 +8781,7 @@ class RegistryAssetsApi:
     def registry_asset_register(self, body: M.RegistryAssetRegisterBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Register
 
-        AssetController.register (sangam-registry).
+        AssetController.register (sangam-rest).
 
         ``POST /registry/assets`` (operationId ``registryAssetRegister``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8512,7 +8792,7 @@ class RegistryAssetsApi:
     def registry_asset_list(self, *, class_key: Optional[str] = None, status: Optional[str] = None, parent_asset_id: Optional[str] = None, location_ref: Optional[str] = None, custodian_ref: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """List
 
-        AssetController.list (sangam-registry).
+        AssetController.list (sangam-rest).
 
         ``GET /registry/assets`` (operationId ``registryAssetList``); permission ``registry.read``.
         """
@@ -8522,7 +8802,7 @@ class RegistryAssetsApi:
     def registry_asset_get(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get
 
-        AssetController.get (sangam-registry).
+        AssetController.get (sangam-rest).
 
         ``GET /registry/assets/{id}`` (operationId ``registryAssetGet``); permission ``registry.read``.
         """
@@ -8532,7 +8812,7 @@ class RegistryAssetsApi:
     def registry_asset_update_details(self, id: str, body: M.RegistryAssetUpdateDetailsBody, *, expected_version: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Update details
 
-        AssetController.updateDetails (sangam-registry).
+        AssetController.updateDetails (sangam-rest).
 
         ``PATCH /registry/assets/{id}`` (operationId ``registryAssetUpdateDetails``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8543,7 +8823,7 @@ class RegistryAssetsApi:
     def registry_asset_by_tag(self, tag: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """By tag
 
-        AssetController.byTag (sangam-registry).
+        AssetController.byTag (sangam-rest).
 
         ``GET /registry/assets/by-tag/{tag}`` (operationId ``registryAssetByTag``); permission ``registry.read``.
         """
@@ -8553,7 +8833,7 @@ class RegistryAssetsApi:
     def registry_asset_move(self, id: str, body: M.RegistryAssetMoveBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Move
 
-        AssetController.move (sangam-registry).
+        AssetController.move (sangam-rest).
 
         ``POST /registry/assets/{id}/move`` (operationId ``registryAssetMove``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8564,7 +8844,7 @@ class RegistryAssetsApi:
     def registry_asset_movements(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Movements
 
-        AssetController.movements (sangam-registry).
+        AssetController.movements (sangam-rest).
 
         ``GET /registry/assets/{id}/movements`` (operationId ``registryAssetMovements``); permission ``registry.read``.
         """
@@ -8574,7 +8854,7 @@ class RegistryAssetsApi:
     def registry_asset_reparent(self, id: str, body: M.RegistryAssetReparentBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reparent
 
-        AssetController.reparent (sangam-registry).
+        AssetController.reparent (sangam-rest).
 
         ``POST /registry/assets/{id}/reparent`` (operationId ``registryAssetReparent``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8585,7 +8865,7 @@ class RegistryAssetsApi:
     def registry_asset_children(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Children
 
-        AssetController.children (sangam-registry).
+        AssetController.children (sangam-rest).
 
         ``GET /registry/assets/{id}/children`` (operationId ``registryAssetChildren``); permission ``registry.read``.
         """
@@ -8595,7 +8875,7 @@ class RegistryAssetsApi:
     def registry_asset_ancestors(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Ancestors
 
-        AssetController.ancestors (sangam-registry).
+        AssetController.ancestors (sangam-rest).
 
         ``GET /registry/assets/{id}/ancestors`` (operationId ``registryAssetAncestors``); permission ``registry.read``.
         """
@@ -8605,7 +8885,7 @@ class RegistryAssetsApi:
     def registry_asset_subtree(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Subtree
 
-        AssetController.subtree (sangam-registry).
+        AssetController.subtree (sangam-rest).
 
         ``GET /registry/assets/{id}/subtree`` (operationId ``registryAssetSubtree``); permission ``registry.read``.
         """
@@ -8615,7 +8895,7 @@ class RegistryAssetsApi:
     def registry_asset_dispose(self, id: str, body: M.RegistryAssetDisposeBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Dispose
 
-        AssetController.dispose (sangam-registry).
+        AssetController.dispose (sangam-rest).
 
         ``POST /registry/assets/{id}/dispose`` (operationId ``registryAssetDispose``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8626,7 +8906,7 @@ class RegistryAssetsApi:
     def registry_asset_depreciation(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Depreciation
 
-        AssetController.depreciation (sangam-registry).
+        AssetController.depreciation (sangam-rest).
 
         ``GET /registry/assets/{id}/depreciation`` (operationId ``registryAssetDepreciation``); permission ``registry.read``.
         """
@@ -8636,7 +8916,7 @@ class RegistryAssetsApi:
     def registry_asset_book_value(self, id: str, *, as_of: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Book value
 
-        AssetController.bookValue (sangam-registry).
+        AssetController.bookValue (sangam-rest).
 
         ``GET /registry/assets/{id}/book-value`` (operationId ``registryAssetBookValue``); permission ``registry.read``.
         """
@@ -8646,7 +8926,7 @@ class RegistryAssetsApi:
     def registry_asset_meters(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Meters
 
-        AssetController.meters (sangam-registry).
+        AssetController.meters (sangam-rest).
 
         ``GET /registry/assets/{id}/meters`` (operationId ``registryAssetMeters``); permission ``registry.read``.
         """
@@ -8656,7 +8936,7 @@ class RegistryAssetsApi:
     def registry_asset_add_meter(self, id: str, body: M.RegistryAssetAddMeterBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Add meter
 
-        AssetController.addMeter (sangam-registry).
+        AssetController.addMeter (sangam-rest).
 
         ``POST /registry/assets/{id}/meters`` (operationId ``registryAssetAddMeter``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8667,7 +8947,7 @@ class RegistryAssetsApi:
     def registry_asset_record_reading(self, id: str, meter_type: str, body: M.RegistryAssetRecordReadingBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Record reading
 
-        AssetController.recordReading (sangam-registry).
+        AssetController.recordReading (sangam-rest).
 
         ``POST /registry/assets/{id}/meters/{meterType}/readings`` (operationId ``registryAssetRecordReading``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8678,7 +8958,7 @@ class RegistryAssetsApi:
     def registry_asset_readings(self, id: str, meter_type: str, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Readings
 
-        AssetController.readings (sangam-registry).
+        AssetController.readings (sangam-rest).
 
         ``GET /registry/assets/{id}/meters/{meterType}/readings`` (operationId ``registryAssetReadings``); permission ``registry.read``.
         """
@@ -8688,7 +8968,7 @@ class RegistryAssetsApi:
     def registry_asset_correct_reading(self, reading_id: str, body: M.RegistryAssetCorrectReadingBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Correct reading
 
-        AssetController.correctReading (sangam-registry).
+        AssetController.correctReading (sangam-rest).
 
         ``POST /registry/assets/readings/{readingId}/correct`` (operationId ``registryAssetCorrectReading``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8699,7 +8979,7 @@ class RegistryAssetsApi:
     def registry_asset_reject_reading(self, reading_id: str, body: M.RegistryAssetRejectReadingBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reject reading
 
-        AssetController.rejectReading (sangam-registry).
+        AssetController.rejectReading (sangam-rest).
 
         ``POST /registry/assets/readings/{readingId}/reject`` (operationId ``registryAssetRejectReading``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8710,7 +8990,7 @@ class RegistryAssetsApi:
     def registry_asset_plans(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Plans
 
-        AssetController.plans (sangam-registry).
+        AssetController.plans (sangam-rest).
 
         ``GET /registry/assets/{id}/plans`` (operationId ``registryAssetPlans``); permission ``registry.read``.
         """
@@ -8720,7 +9000,7 @@ class RegistryAssetsApi:
     def registry_asset_add_plan(self, id: str, body: M.RegistryAssetAddPlanBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Add plan
 
-        AssetController.addPlan (sangam-registry).
+        AssetController.addPlan (sangam-rest).
 
         ``POST /registry/assets/{id}/plans`` (operationId ``registryAssetAddPlan``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8731,7 +9011,7 @@ class RegistryAssetsApi:
     def registry_asset_update_plan(self, plan_id: str, body: M.RegistryAssetUpdatePlanBody, *, expected_version: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Update plan
 
-        AssetController.updatePlan (sangam-registry).
+        AssetController.updatePlan (sangam-rest).
 
         ``PATCH /registry/assets/plans/{planId}`` (operationId ``registryAssetUpdatePlan``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8742,7 +9022,7 @@ class RegistryAssetsApi:
     def registry_asset_plan_status(self, plan_id: str, body: M.RegistryAssetPlanStatusBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Plan status
 
-        AssetController.planStatus (sangam-registry).
+        AssetController.planStatus (sangam-rest).
 
         ``POST /registry/assets/plans/{planId}/status`` (operationId ``registryAssetPlanStatus``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8753,7 +9033,7 @@ class RegistryAssetsApi:
     def registry_asset_trigger_condition(self, plan_id: str, body: M.RegistryAssetTriggerConditionBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Trigger condition
 
-        AssetController.triggerCondition (sangam-registry).
+        AssetController.triggerCondition (sangam-rest).
 
         ``POST /registry/assets/plans/{planId}/trigger`` (operationId ``registryAssetTriggerCondition``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8764,7 +9044,7 @@ class RegistryAssetsApi:
     def registry_asset_create_work_order(self, body: M.RegistryAssetCreateWorkOrderBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Create work order
 
-        AssetController.createWorkOrder (sangam-registry).
+        AssetController.createWorkOrder (sangam-rest).
 
         ``POST /registry/assets/work-orders`` (operationId ``registryAssetCreateWorkOrder``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8775,7 +9055,7 @@ class RegistryAssetsApi:
     def registry_asset_work_orders(self, *, asset_id: Optional[str] = None, state: Optional[str] = None, work_type: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Work orders
 
-        AssetController.workOrders (sangam-registry).
+        AssetController.workOrders (sangam-rest).
 
         ``GET /registry/assets/work-orders`` (operationId ``registryAssetWorkOrders``); permission ``registry.read``.
         """
@@ -8785,7 +9065,7 @@ class RegistryAssetsApi:
     def registry_asset_work_order(self, wo_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Work order
 
-        AssetController.workOrder (sangam-registry).
+        AssetController.workOrder (sangam-rest).
 
         ``GET /registry/assets/work-orders/{woId}`` (operationId ``registryAssetWorkOrder``); permission ``registry.read``.
         """
@@ -8795,7 +9075,7 @@ class RegistryAssetsApi:
     def registry_asset_generate_due(self, body: Optional[M.RegistryAssetGenerateDueBody] = None, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Generate due
 
-        AssetController.generateDue (sangam-registry).
+        AssetController.generateDue (sangam-rest).
 
         ``POST /registry/assets/work-orders/generate-due`` (operationId ``registryAssetGenerateDue``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8806,7 +9086,7 @@ class RegistryAssetsApi:
     def registry_asset_step(self, wo_id: str, step: str, body: Optional[M.RegistryAssetStepBody] = None, *, expected_version: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Step
 
-        AssetController.step (sangam-registry).
+        AssetController.step (sangam-rest).
 
         ``POST /registry/assets/work-orders/{woId}/{step}`` (operationId ``registryAssetStep``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8817,7 +9097,7 @@ class RegistryAssetsApi:
     def registry_asset_reliability(self, id: str, *, from_: Optional[str] = None, to: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reliability
 
-        AssetController.reliability (sangam-registry).
+        AssetController.reliability (sangam-rest).
 
         ``GET /registry/assets/{id}/reliability`` (operationId ``registryAssetReliability``); permission ``registry.read``.
         """
@@ -8833,7 +9113,7 @@ class RegistryCustodyApi:
     def registry_custody_register(self, body: M.RegistryCustodyRegisterBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Register
 
-        CustodyController.register (sangam-registry).
+        CustodyController.register (sangam-rest).
 
         ``POST /registry/custody/items`` (operationId ``registryCustodyRegister``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8844,7 +9124,7 @@ class RegistryCustodyApi:
     def registry_custody_list(self, *, type_key: Optional[str] = None, custodian: Optional[str] = None, case_ref: Optional[str] = None, container_id: Optional[str] = None, state: Optional[str] = None, label: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """List
 
-        CustodyController.list (sangam-registry).
+        CustodyController.list (sangam-rest).
 
         ``GET /registry/custody/items`` (operationId ``registryCustodyList``); permission ``registry.read``.
         """
@@ -8854,7 +9134,7 @@ class RegistryCustodyApi:
     def registry_custody_get(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get
 
-        CustodyController.get (sangam-registry).
+        CustodyController.get (sangam-rest).
 
         ``GET /registry/custody/items/{id}`` (operationId ``registryCustodyGet``); permission ``registry.read``.
         """
@@ -8864,7 +9144,7 @@ class RegistryCustodyApi:
     def registry_custody_by_label(self, label: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """By label
 
-        CustodyController.byLabel (sangam-registry).
+        CustodyController.byLabel (sangam-rest).
 
         ``GET /registry/custody/items/by-label/{label}`` (operationId ``registryCustodyByLabel``); permission ``registry.read``.
         """
@@ -8874,7 +9154,7 @@ class RegistryCustodyApi:
     def registry_custody_events(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Events
 
-        CustodyController.events (sangam-registry).
+        CustodyController.events (sangam-rest).
 
         ``GET /registry/custody/items/{id}/events`` (operationId ``registryCustodyEvents``); permission ``registry.read``.
         """
@@ -8884,7 +9164,7 @@ class RegistryCustodyApi:
     def registry_custody_verify(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify
 
-        CustodyController.verify (sangam-registry).
+        CustodyController.verify (sangam-rest).
 
         ``GET /registry/custody/items/{id}/verify`` (operationId ``registryCustodyVerify``); permission ``registry.read``.
         """
@@ -8894,7 +9174,7 @@ class RegistryCustodyApi:
     def registry_custody_transfers(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Transfers
 
-        CustodyController.transfers (sangam-registry).
+        CustodyController.transfers (sangam-rest).
 
         ``GET /registry/custody/items/{id}/transfers`` (operationId ``registryCustodyTransfers``); permission ``registry.read``.
         """
@@ -8904,7 +9184,7 @@ class RegistryCustodyApi:
     def registry_custody_initiate(self, id: str, body: M.RegistryCustodyInitiateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Initiate
 
-        CustodyController.initiate (sangam-registry).
+        CustodyController.initiate (sangam-rest).
 
         ``POST /registry/custody/items/{id}/transfers`` (operationId ``registryCustodyInitiate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8915,7 +9195,7 @@ class RegistryCustodyApi:
     def registry_custody_handover(self, id: str, body: M.RegistryCustodyHandoverBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Handover
 
-        CustodyController.handover (sangam-registry).
+        CustodyController.handover (sangam-rest).
 
         ``POST /registry/custody/items/{id}/handover`` (operationId ``registryCustodyHandover``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8926,7 +9206,7 @@ class RegistryCustodyApi:
     def registry_custody_transfer(self, transfer_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Transfer
 
-        CustodyController.transfer (sangam-registry).
+        CustodyController.transfer (sangam-rest).
 
         ``GET /registry/custody/transfers/{transferId}`` (operationId ``registryCustodyTransfer``); permission ``registry.read``.
         """
@@ -8936,7 +9216,7 @@ class RegistryCustodyApi:
     def registry_custody_pending(self, *, to_custodian: str, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Pending
 
-        CustodyController.pending (sangam-registry).
+        CustodyController.pending (sangam-rest).
 
         ``GET /registry/custody/transfers/pending`` (operationId ``registryCustodyPending``); permission ``registry.read``.
         """
@@ -8946,7 +9226,7 @@ class RegistryCustodyApi:
     def registry_custody_accept(self, transfer_id: str, body: M.RegistryCustodyAcceptBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Accept
 
-        CustodyController.accept (sangam-registry).
+        CustodyController.accept (sangam-rest).
 
         ``POST /registry/custody/transfers/{transferId}/accept`` (operationId ``registryCustodyAccept``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8957,7 +9237,7 @@ class RegistryCustodyApi:
     def registry_custody_reject(self, transfer_id: str, body: M.RegistryCustodyRejectBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reject
 
-        CustodyController.reject (sangam-registry).
+        CustodyController.reject (sangam-rest).
 
         ``POST /registry/custody/transfers/{transferId}/reject`` (operationId ``registryCustodyReject``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8968,7 +9248,7 @@ class RegistryCustodyApi:
     def registry_custody_cancel(self, transfer_id: str, body: M.RegistryCustodyCancelBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Cancel
 
-        CustodyController.cancel (sangam-registry).
+        CustodyController.cancel (sangam-rest).
 
         ``POST /registry/custody/transfers/{transferId}/cancel`` (operationId ``registryCustodyCancel``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8979,7 +9259,7 @@ class RegistryCustodyApi:
     def registry_custody_seal(self, id: str, body: M.RegistryCustodySealBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Seal
 
-        CustodyController.seal (sangam-registry).
+        CustodyController.seal (sangam-rest).
 
         ``POST /registry/custody/items/{id}/seal`` (operationId ``registryCustodySeal``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -8990,7 +9270,7 @@ class RegistryCustodyApi:
     def registry_custody_break_seal(self, id: str, body: M.RegistryCustodyBreakSealBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Break seal
 
-        CustodyController.breakSeal (sangam-registry).
+        CustodyController.breakSeal (sangam-rest).
 
         ``POST /registry/custody/items/{id}/break-seal`` (operationId ``registryCustodyBreakSeal``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9001,7 +9281,7 @@ class RegistryCustodyApi:
     def registry_custody_inspect(self, id: str, body: M.RegistryCustodyInspectBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Inspect
 
-        CustodyController.inspect (sangam-registry).
+        CustodyController.inspect (sangam-rest).
 
         ``POST /registry/custody/items/{id}/inspect`` (operationId ``registryCustodyInspect``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9012,7 +9292,7 @@ class RegistryCustodyApi:
     def registry_custody_location(self, id: str, body: M.RegistryCustodyLocationBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Location
 
-        CustodyController.location (sangam-registry).
+        CustodyController.location (sangam-rest).
 
         ``POST /registry/custody/items/{id}/location`` (operationId ``registryCustodyLocation``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9023,7 +9303,7 @@ class RegistryCustodyApi:
     def registry_custody_put_into(self, id: str, body: M.RegistryCustodyPutIntoBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Put into
 
-        CustodyController.putInto (sangam-registry).
+        CustodyController.putInto (sangam-rest).
 
         ``POST /registry/custody/items/{id}/container`` (operationId ``registryCustodyPutInto``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9034,7 +9314,7 @@ class RegistryCustodyApi:
     def registry_custody_take_out(self, id: str, body: Optional[M.RegistryCustodyTakeOutBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Take out
 
-        CustodyController.takeOut (sangam-registry).
+        CustodyController.takeOut (sangam-rest).
 
         ``POST /registry/custody/items/{id}/take-out`` (operationId ``registryCustodyTakeOut``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9045,7 +9325,7 @@ class RegistryCustodyApi:
     def registry_custody_disposal_orders(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Disposal orders
 
-        CustodyController.disposalOrders (sangam-registry).
+        CustodyController.disposalOrders (sangam-rest).
 
         ``GET /registry/custody/items/{id}/disposal-orders`` (operationId ``registryCustodyDisposalOrders``); permission ``registry.read``.
         """
@@ -9055,7 +9335,7 @@ class RegistryCustodyApi:
     def registry_custody_order_disposal(self, id: str, body: M.RegistryCustodyOrderDisposalBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Order disposal
 
-        CustodyController.orderDisposal (sangam-registry).
+        CustodyController.orderDisposal (sangam-rest).
 
         ``POST /registry/custody/items/{id}/disposal-orders`` (operationId ``registryCustodyOrderDisposal``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9066,7 +9346,7 @@ class RegistryCustodyApi:
     def registry_custody_disposal_order(self, order_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Disposal order
 
-        CustodyController.disposalOrder (sangam-registry).
+        CustodyController.disposalOrder (sangam-rest).
 
         ``GET /registry/custody/disposal-orders/{orderId}`` (operationId ``registryCustodyDisposalOrder``); permission ``registry.read``.
         """
@@ -9076,7 +9356,7 @@ class RegistryCustodyApi:
     def registry_custody_execute(self, order_id: str, body: Optional[M.RegistryCustodyExecuteBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Execute
 
-        CustodyController.execute (sangam-registry).
+        CustodyController.execute (sangam-rest).
 
         ``POST /registry/custody/disposal-orders/{orderId}/execute`` (operationId ``registryCustodyExecute``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9087,7 +9367,7 @@ class RegistryCustodyApi:
     def registry_custody_cancel_disposal(self, order_id: str, body: M.RegistryCustodyCancelDisposalBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Cancel disposal
 
-        CustodyController.cancelDisposal (sangam-registry).
+        CustodyController.cancelDisposal (sangam-rest).
 
         ``POST /registry/custody/disposal-orders/{orderId}/cancel`` (operationId ``registryCustodyCancelDisposal``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9098,7 +9378,7 @@ class RegistryCustodyApi:
     def registry_custody_gap_check(self, *, in_transit_hours: Optional[int] = None, stale_days: Optional[int] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Gap check
 
-        CustodyController.gapCheck (sangam-registry).
+        CustodyController.gapCheck (sangam-rest).
 
         ``GET /registry/custody/gap-check`` (operationId ``registryCustodyGapCheck``); permission ``registry.read``.
         """
@@ -9114,7 +9394,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_issue(self, body: M.RegistryInstrumentIssueBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Issue
 
-        InstrumentController.issue (sangam-registry).
+        InstrumentController.issue (sangam-rest).
 
         ``POST /registry/instruments`` (operationId ``registryInstrumentIssue``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9125,7 +9405,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_renew(self, id: str, body: Optional[M.RegistryInstrumentRenewBody] = None, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Renew
 
-        InstrumentController.renew (sangam-registry).
+        InstrumentController.renew (sangam-rest).
 
         ``POST /registry/instruments/{id}/renew`` (operationId ``registryInstrumentRenew``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9137,7 +9417,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_deemed(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Deemed
 
-        InstrumentController.deemed (sangam-registry).
+        InstrumentController.deemed (sangam-rest).
 
         ``POST /registry/instruments/{id}/deemed-renewal`` (operationId ``registryInstrumentDeemed``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9147,7 +9427,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_suspend(self, id: str, body: M.RegistryInstrumentSuspendBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Suspend
 
-        InstrumentController.suspend (sangam-registry).
+        InstrumentController.suspend (sangam-rest).
 
         ``POST /registry/instruments/{id}/suspend`` (operationId ``registryInstrumentSuspend``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9159,7 +9439,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_reinstate(self, id: str, body: M.RegistryInstrumentReinstateBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reinstate
 
-        InstrumentController.reinstate (sangam-registry).
+        InstrumentController.reinstate (sangam-rest).
 
         ``POST /registry/instruments/{id}/reinstate`` (operationId ``registryInstrumentReinstate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9171,7 +9451,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_revoke(self, id: str, body: M.RegistryInstrumentRevokeBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Revoke
 
-        InstrumentController.revoke (sangam-registry).
+        InstrumentController.revoke (sangam-rest).
 
         ``POST /registry/instruments/{id}/revoke`` (operationId ``registryInstrumentRevoke``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9183,7 +9463,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_surrender(self, id: str, body: M.RegistryInstrumentSurrenderBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Surrender
 
-        InstrumentController.surrender (sangam-registry).
+        InstrumentController.surrender (sangam-rest).
 
         ``POST /registry/instruments/{id}/surrender`` (operationId ``registryInstrumentSurrender``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9195,7 +9475,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_expire(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Expire
 
-        InstrumentController.expire (sangam-registry).
+        InstrumentController.expire (sangam-rest).
 
         ``POST /registry/instruments/{id}/expire`` (operationId ``registryInstrumentExpire``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9205,7 +9485,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_transition(self, id: str, name: str, body: Optional[M.RegistryInstrumentTransitionBody] = None, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Transition
 
-        InstrumentController.transition (sangam-registry).
+        InstrumentController.transition (sangam-rest).
 
         ``POST /registry/instruments/{id}/transitions/{name}`` (operationId ``registryInstrumentTransition``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9217,7 +9497,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_transfer_holder(self, id: str, body: M.RegistryInstrumentTransferHolderBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Transfer holder
 
-        InstrumentController.transferHolder (sangam-registry).
+        InstrumentController.transferHolder (sangam-rest).
 
         ``POST /registry/instruments/{id}/transfer-holder`` (operationId ``registryInstrumentTransferHolder``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9229,7 +9509,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_transfer_reissue(self, id: str, body: M.RegistryInstrumentTransferReissueBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Transfer reissue
 
-        InstrumentController.transferReissue (sangam-registry).
+        InstrumentController.transferReissue (sangam-rest).
 
         ``POST /registry/instruments/{id}/transfer-reissue`` (operationId ``registryInstrumentTransferReissue``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9240,7 +9520,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_amend(self, id: str, body: M.RegistryInstrumentAmendBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Amend
 
-        InstrumentController.amend (sangam-registry).
+        InstrumentController.amend (sangam-rest).
 
         ``POST /registry/instruments/{id}/amend`` (operationId ``registryInstrumentAmend``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9252,7 +9532,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_duplicate(self, id: str, body: M.RegistryInstrumentDuplicateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Duplicate
 
-        InstrumentController.duplicate (sangam-registry).
+        InstrumentController.duplicate (sangam-rest).
 
         ``POST /registry/instruments/{id}/duplicate`` (operationId ``registryInstrumentDuplicate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9263,7 +9543,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_endorse(self, id: str, body: M.RegistryInstrumentEndorseBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Endorse
 
-        InstrumentController.endorse (sangam-registry).
+        InstrumentController.endorse (sangam-rest).
 
         ``POST /registry/instruments/{id}/endorsements`` (operationId ``registryInstrumentEndorse``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9274,7 +9554,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_endorsements(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Endorsements
 
-        InstrumentController.endorsements (sangam-registry).
+        InstrumentController.endorsements (sangam-rest).
 
         ``GET /registry/instruments/{id}/endorsements`` (operationId ``registryInstrumentEndorsements``); permission ``registry.read``.
         """
@@ -9284,7 +9564,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_documents(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Documents
 
-        InstrumentController.documents (sangam-registry).
+        InstrumentController.documents (sangam-rest).
 
         ``GET /registry/instruments/{id}/documents`` (operationId ``registryInstrumentDocuments``); permission ``registry.read``.
         """
@@ -9294,7 +9574,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_regenerate(self, id: str, *, purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Regenerate
 
-        InstrumentController.regenerate (sangam-registry).
+        InstrumentController.regenerate (sangam-rest).
 
         ``POST /registry/instruments/{id}/documents/regenerate`` (operationId ``registryInstrumentRegenerate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9304,7 +9584,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_expire_due(self, *, type_key: Optional[str] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Expire due
 
-        InstrumentController.expireDue (sangam-registry).
+        InstrumentController.expireDue (sangam-rest).
 
         ``POST /registry/instruments/jobs/expire`` (operationId ``registryInstrumentExpireDue``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9314,7 +9594,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_renewal_due(self, *, type_key: Optional[str] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Renewal due
 
-        InstrumentController.renewalDue (sangam-registry).
+        InstrumentController.renewalDue (sangam-rest).
 
         ``POST /registry/instruments/jobs/renewal-due`` (operationId ``registryInstrumentRenewalDue``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9324,7 +9604,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_reinstate_due(self, *, type_key: Optional[str] = None, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reinstate due
 
-        InstrumentController.reinstateDue (sangam-registry).
+        InstrumentController.reinstateDue (sangam-rest).
 
         ``POST /registry/instruments/jobs/reinstate`` (operationId ``registryInstrumentReinstateDue``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9334,7 +9614,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_verify_code(self, tenant: str, *, code: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify code
 
-        InstrumentController.verifyCode (sangam-registry).
+        InstrumentController.verifyCode (sangam-rest).
 
         ``GET /registry/instruments/public/{tenant}/verify`` (operationId ``registryInstrumentVerifyCode``).
         """
@@ -9344,7 +9624,7 @@ class RegistryInstrumentsApi:
     def registry_instrument_verify_qr(self, body: M.RegistryInstrumentVerifyQrBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify qr
 
-        InstrumentController.verifyQr (sangam-registry).
+        InstrumentController.verifyQr (sangam-rest).
 
         ``POST /registry/instruments/public/verify-qr`` (operationId ``registryInstrumentVerifyQr``).
         """
@@ -9361,7 +9641,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_define_series(self, series_key: str, body: M.RegistryRegistryDefineSeriesBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Define series
 
-        RegistryController.defineSeries (sangam-registry).
+        RegistryController.defineSeries (sangam-rest).
 
         ``PUT /registry/number-series/{seriesKey}`` (operationId ``registryRegistryDefineSeries``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9372,7 +9652,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_series(self, series_key: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Series
 
-        RegistryController.series (sangam-registry).
+        RegistryController.series (sangam-rest).
 
         ``GET /registry/number-series/{seriesKey}`` (operationId ``registryRegistrySeries``); permission ``registry.read``.
         """
@@ -9382,7 +9662,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_list_series(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """List series
 
-        RegistryController.listSeries (sangam-registry).
+        RegistryController.listSeries (sangam-rest).
 
         ``GET /registry/number-series`` (operationId ``registryRegistryListSeries``); permission ``registry.read``.
         """
@@ -9392,7 +9672,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_allocate(self, series_key: str, body: Optional[M.RegistryRegistryAllocateBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Allocate
 
-        RegistryController.allocate (sangam-registry).
+        RegistryController.allocate (sangam-rest).
 
         ``POST /registry/number-series/{seriesKey}/allocate`` (operationId ``registryRegistryAllocate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9403,7 +9683,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_void_number(self, series_key: str, body: M.RegistryRegistryVoidNumberBody, *, options: Optional[RequestOptions] = None) -> None:
         """Void number
 
-        RegistryController.voidNumber (sangam-registry).
+        RegistryController.voidNumber (sangam-rest).
 
         ``POST /registry/number-series/{seriesKey}/void`` (operationId ``registryRegistryVoidNumber``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9414,7 +9694,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_mark_used(self, series_key: str, body: M.RegistryRegistryMarkUsedBody, *, options: Optional[RequestOptions] = None) -> None:
         """Mark used
 
-        RegistryController.markUsed (sangam-registry).
+        RegistryController.markUsed (sangam-rest).
 
         ``POST /registry/number-series/{seriesKey}/mark-used`` (operationId ``registryRegistryMarkUsed``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9425,7 +9705,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_close_period(self, series_key: str, body: M.RegistryRegistryClosePeriodBody, *, options: Optional[RequestOptions] = None) -> None:
         """Close period
 
-        RegistryController.closePeriod (sangam-registry).
+        RegistryController.closePeriod (sangam-rest).
 
         ``POST /registry/number-series/{seriesKey}/close-period`` (operationId ``registryRegistryClosePeriod``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9436,7 +9716,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_gaps(self, series_key: str, *, period: str, scope: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Gaps
 
-        RegistryController.gaps (sangam-registry).
+        RegistryController.gaps (sangam-rest).
 
         ``GET /registry/number-series/{seriesKey}/gaps`` (operationId ``registryRegistryGaps``); permission ``registry.read``.
         """
@@ -9446,7 +9726,7 @@ class RegistryNumberSeriesApi:
     def registry_registry_allocations(self, series_key: str, *, period: str, scope: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Allocations
 
-        RegistryController.allocations (sangam-registry).
+        RegistryController.allocations (sangam-rest).
 
         ``GET /registry/number-series/{seriesKey}/allocations`` (operationId ``registryRegistryAllocations``); permission ``registry.read``.
         """
@@ -9462,7 +9742,7 @@ class RegistryObjectsApi:
     def registry_registry_create(self, body: M.RegistryRegistryCreateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Create
 
-        RegistryController.create (sangam-registry).
+        RegistryController.create (sangam-rest).
 
         ``POST /registry/objects`` (operationId ``registryRegistryCreate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9473,7 +9753,7 @@ class RegistryObjectsApi:
     def registry_registry_list(self, *, type_key: Optional[str] = None, kind: Optional[str] = None, state: Optional[str] = None, holder_party_id: Optional[str] = None, parent_id: Optional[str] = None, number: Optional[str] = None, subject_ref: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """List
 
-        RegistryController.list (sangam-registry).
+        RegistryController.list (sangam-rest).
 
         ``GET /registry/objects`` (operationId ``registryRegistryList``); permission ``registry.read``.
         """
@@ -9483,7 +9763,7 @@ class RegistryObjectsApi:
     def registry_registry_get(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get
 
-        RegistryController.get (sangam-registry).
+        RegistryController.get (sangam-rest).
 
         ``GET /registry/objects/{id}`` (operationId ``registryRegistryGet``); permission ``registry.read``.
         """
@@ -9493,7 +9773,7 @@ class RegistryObjectsApi:
     def registry_registry_update(self, id: str, body: M.RegistryRegistryUpdateBody, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Update
 
-        RegistryController.update (sangam-registry).
+        RegistryController.update (sangam-rest).
 
         ``PATCH /registry/objects/{id}`` (operationId ``registryRegistryUpdate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9505,7 +9785,7 @@ class RegistryObjectsApi:
     def registry_registry_by_number(self, number: str, *, type_key: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """By number
 
-        RegistryController.byNumber (sangam-registry).
+        RegistryController.byNumber (sangam-rest).
 
         ``GET /registry/objects/by-number/{number}`` (operationId ``registryRegistryByNumber``); permission ``registry.read``.
         """
@@ -9515,7 +9795,7 @@ class RegistryObjectsApi:
     def registry_registry_transition(self, id: str, name: str, body: Optional[M.RegistryRegistryTransitionBody] = None, *, if_match: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Transition
 
-        RegistryController.transition (sangam-registry).
+        RegistryController.transition (sangam-rest).
 
         ``POST /registry/objects/{id}/transitions/{name}`` (operationId ``registryRegistryTransition``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9527,7 +9807,7 @@ class RegistryObjectsApi:
     def registry_registry_available_transitions(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Available transitions
 
-        RegistryController.availableTransitions (sangam-registry).
+        RegistryController.availableTransitions (sangam-rest).
 
         ``GET /registry/objects/{id}/transitions`` (operationId ``registryRegistryAvailableTransitions``); permission ``registry.read``.
         """
@@ -9537,7 +9817,7 @@ class RegistryObjectsApi:
     def registry_registry_history(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """History
 
-        RegistryController.history (sangam-registry).
+        RegistryController.history (sangam-rest).
 
         ``GET /registry/objects/{id}/versions`` (operationId ``registryRegistryHistory``); permission ``registry.read``.
         """
@@ -9547,7 +9827,7 @@ class RegistryObjectsApi:
     def registry_registry_as_of(self, id: str, *, at: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """As of
 
-        RegistryController.asOf (sangam-registry).
+        RegistryController.asOf (sangam-rest).
 
         ``GET /registry/objects/{id}/as-of`` (operationId ``registryRegistryAsOf``); permission ``registry.read``.
         """
@@ -9557,7 +9837,7 @@ class RegistryObjectsApi:
     def registry_registry_verify_audit(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify audit
 
-        RegistryController.verifyAudit (sangam-registry).
+        RegistryController.verifyAudit (sangam-rest).
 
         ``GET /registry/objects/{id}/audit/verify`` (operationId ``registryRegistryVerifyAudit``); permission ``registry.read``.
         """
@@ -9567,7 +9847,7 @@ class RegistryObjectsApi:
     def registry_registry_mirror(self, body: M.RegistryRegistryMirrorBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Mirror
 
-        RegistryController.mirror (sangam-registry).
+        RegistryController.mirror (sangam-rest).
 
         ``POST /registry/objects/mirror`` (operationId ``registryRegistryMirror``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9584,7 +9864,7 @@ class RegistryPartiesApi:
     def registry_party_create(self, body: M.RegistryPartyCreateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Create
 
-        PartyController.create (sangam-registry).
+        PartyController.create (sangam-rest).
 
         ``POST /registry/parties`` (operationId ``registryPartyCreate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9595,7 +9875,7 @@ class RegistryPartiesApi:
     def registry_party_list(self, *, kind: Optional[str] = None, status: Optional[str] = None, name: Optional[str] = None, id_type: Optional[str] = None, id_value: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """List
 
-        PartyController.list (sangam-registry).
+        PartyController.list (sangam-rest).
 
         ``GET /registry/parties`` (operationId ``registryPartyList``); permission ``registry.read``.
         """
@@ -9606,7 +9886,7 @@ class RegistryPartiesApi:
     def registry_party_get(self, id: str, *, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get
 
-        PartyController.get (sangam-registry).
+        PartyController.get (sangam-rest).
 
         ``GET /registry/parties/{id}`` (operationId ``registryPartyGet``); permission ``registry.read``.
         """
@@ -9617,7 +9897,7 @@ class RegistryPartiesApi:
     def registry_party_update(self, id: str, body: M.RegistryPartyUpdateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Update
 
-        PartyController.update (sangam-registry).
+        PartyController.update (sangam-rest).
 
         ``PATCH /registry/parties/{id}`` (operationId ``registryPartyUpdate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9628,7 +9908,7 @@ class RegistryPartiesApi:
     def registry_party_deactivate(self, id: str, body: M.RegistryPartyDeactivateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Deactivate
 
-        PartyController.deactivate (sangam-registry).
+        PartyController.deactivate (sangam-rest).
 
         ``POST /registry/parties/{id}/deactivate`` (operationId ``registryPartyDeactivate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9639,7 +9919,7 @@ class RegistryPartiesApi:
     def registry_party_reactivate(self, id: str, body: M.RegistryPartyReactivateBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reactivate
 
-        PartyController.reactivate (sangam-registry).
+        PartyController.reactivate (sangam-rest).
 
         ``POST /registry/parties/{id}/reactivate`` (operationId ``registryPartyReactivate``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9650,7 +9930,7 @@ class RegistryPartiesApi:
     def registry_party_resolve(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Resolve
 
-        PartyController.resolve (sangam-registry).
+        PartyController.resolve (sangam-rest).
 
         ``GET /registry/parties/{id}/resolve`` (operationId ``registryPartyResolve``); permission ``registry.read``.
         """
@@ -9660,7 +9940,7 @@ class RegistryPartiesApi:
     def registry_party_verify_audit(self, id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify audit
 
-        PartyController.verifyAudit (sangam-registry).
+        PartyController.verifyAudit (sangam-rest).
 
         ``GET /registry/parties/{id}/audit/verify`` (operationId ``registryPartyVerifyAudit``); permission ``registry.read``.
         """
@@ -9670,7 +9950,7 @@ class RegistryPartiesApi:
     def registry_party_identifiers(self, id: str, *, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Identifiers
 
-        PartyController.identifiers (sangam-registry).
+        PartyController.identifiers (sangam-rest).
 
         ``GET /registry/parties/{id}/identifiers`` (operationId ``registryPartyIdentifiers``); permission ``registry.read``.
         """
@@ -9681,7 +9961,7 @@ class RegistryPartiesApi:
     def registry_party_add_identifier(self, id: str, body: M.RegistryPartyAddIdentifierBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Add identifier
 
-        PartyController.addIdentifier (sangam-registry).
+        PartyController.addIdentifier (sangam-rest).
 
         ``POST /registry/parties/{id}/identifiers`` (operationId ``registryPartyAddIdentifier``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9692,7 +9972,7 @@ class RegistryPartiesApi:
     def registry_party_retire_identifier(self, identifier_id: str, body: M.RegistryPartyRetireIdentifierBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Retire identifier
 
-        PartyController.retireIdentifier (sangam-registry).
+        PartyController.retireIdentifier (sangam-rest).
 
         ``POST /registry/parties/identifiers/{identifierId}/retire`` (operationId ``registryPartyRetireIdentifier``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9703,7 +9983,7 @@ class RegistryPartiesApi:
     def registry_party_reveal(self, identifier_id: str, *, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reveal
 
-        PartyController.reveal (sangam-registry).
+        PartyController.reveal (sangam-rest).
 
         ``POST /registry/parties/identifiers/{identifierId}/reveal`` (operationId ``registryPartyReveal``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9714,7 +9994,7 @@ class RegistryPartiesApi:
     def registry_party_relationships(self, id: str, *, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Relationships
 
-        PartyController.relationships (sangam-registry).
+        PartyController.relationships (sangam-rest).
 
         ``GET /registry/parties/{id}/relationships`` (operationId ``registryPartyRelationships``); permission ``registry.read``.
         """
@@ -9725,7 +10005,7 @@ class RegistryPartiesApi:
     def registry_party_add_relationship(self, id: str, body: M.RegistryPartyAddRelationshipBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Add relationship
 
-        PartyController.addRelationship (sangam-registry).
+        PartyController.addRelationship (sangam-rest).
 
         ``POST /registry/parties/{id}/relationships`` (operationId ``registryPartyAddRelationship``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9736,7 +10016,7 @@ class RegistryPartiesApi:
     def registry_party_end_relationship(self, relationship_id: str, body: M.RegistryPartyEndRelationshipBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """End relationship
 
-        PartyController.endRelationship (sangam-registry).
+        PartyController.endRelationship (sangam-rest).
 
         ``POST /registry/parties/relationships/{relationshipId}/end`` (operationId ``registryPartyEndRelationship``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9747,7 +10027,7 @@ class RegistryPartiesApi:
     def registry_party_addresses(self, id: str, *, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Addresses
 
-        PartyController.addresses (sangam-registry).
+        PartyController.addresses (sangam-rest).
 
         ``GET /registry/parties/{id}/addresses`` (operationId ``registryPartyAddresses``); permission ``registry.read``.
         """
@@ -9758,7 +10038,7 @@ class RegistryPartiesApi:
     def registry_party_add_address(self, id: str, body: M.RegistryPartyAddAddressBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Add address
 
-        PartyController.addAddress (sangam-registry).
+        PartyController.addAddress (sangam-rest).
 
         ``POST /registry/parties/{id}/addresses`` (operationId ``registryPartyAddAddress``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9769,7 +10049,7 @@ class RegistryPartiesApi:
     def registry_party_retire_address(self, address_id: str, body: M.RegistryPartyRetireAddressBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Retire address
 
-        PartyController.retireAddress (sangam-registry).
+        PartyController.retireAddress (sangam-rest).
 
         ``POST /registry/parties/addresses/{addressId}/retire`` (operationId ``registryPartyRetireAddress``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9780,7 +10060,7 @@ class RegistryPartiesApi:
     def registry_party_household(self, id: str, *, types: Optional[str] = None, depth: Optional[int] = None, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Household
 
-        PartyController.household (sangam-registry).
+        PartyController.household (sangam-rest).
 
         ``GET /registry/parties/{id}/household`` (operationId ``registryPartyHousehold``); permission ``registry.read``.
         """
@@ -9791,7 +10071,7 @@ class RegistryPartiesApi:
     def registry_party_snapshot(self, id: str, body: M.RegistryPartySnapshotBody, *, x_purpose: Optional[str] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Snapshot
 
-        PartyController.snapshot (sangam-registry).
+        PartyController.snapshot (sangam-rest).
 
         ``POST /registry/parties/{id}/snapshots`` (operationId ``registryPartySnapshot``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9803,7 +10083,7 @@ class RegistryPartiesApi:
     def registry_party_snapshots(self, *, reference: Optional[str] = None, party_id: Optional[str] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Snapshots
 
-        PartyController.snapshots (sangam-registry).
+        PartyController.snapshots (sangam-rest).
 
         ``GET /registry/parties/snapshots`` (operationId ``registryPartySnapshots``); permission ``registry.read``.
         """
@@ -9813,7 +10093,7 @@ class RegistryPartiesApi:
     def registry_party_get_snapshot(self, snapshot_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get snapshot
 
-        PartyController.getSnapshot (sangam-registry).
+        PartyController.getSnapshot (sangam-rest).
 
         ``GET /registry/parties/snapshots/{snapshotId}`` (operationId ``registryPartyGetSnapshot``); permission ``registry.read``.
         """
@@ -9823,7 +10103,7 @@ class RegistryPartiesApi:
     def registry_party_verify_snapshot(self, snapshot_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify snapshot
 
-        PartyController.verifySnapshot (sangam-registry).
+        PartyController.verifySnapshot (sangam-rest).
 
         ``GET /registry/parties/snapshots/{snapshotId}/verify`` (operationId ``registryPartyVerifySnapshot``); permission ``registry.read``.
         """
@@ -9833,7 +10113,7 @@ class RegistryPartiesApi:
     def registry_party_match(self, body: M.RegistryPartyMatchBody, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Match
 
-        PartyController.match (sangam-registry).
+        PartyController.match (sangam-rest).
 
         ``POST /registry/parties/match`` (operationId ``registryPartyMatch``); permission ``registry.write``.
         """
@@ -9844,7 +10124,7 @@ class RegistryPartiesApi:
     def registry_party_rematch(self, id: str, *, record: Optional[bool] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Rematch
 
-        PartyController.rematch (sangam-registry).
+        PartyController.rematch (sangam-rest).
 
         ``POST /registry/parties/{id}/match`` (operationId ``registryPartyRematch``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9854,7 +10134,7 @@ class RegistryPartiesApi:
     def registry_party_candidates(self, *, status: Optional[str] = None, party_id: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Candidates
 
-        PartyController.candidates (sangam-registry).
+        PartyController.candidates (sangam-rest).
 
         ``GET /registry/parties/candidates`` (operationId ``registryPartyCandidates``); permission ``registry.read``.
         """
@@ -9864,7 +10144,7 @@ class RegistryPartiesApi:
     def registry_party_confirm(self, candidate_id: str, body: Optional[M.RegistryPartyConfirmBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Confirm
 
-        PartyController.confirm (sangam-registry).
+        PartyController.confirm (sangam-rest).
 
         ``POST /registry/parties/candidates/{candidateId}/confirm`` (operationId ``registryPartyConfirm``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9875,7 +10155,7 @@ class RegistryPartiesApi:
     def registry_party_reject(self, candidate_id: str, body: Optional[M.RegistryPartyRejectBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Reject
 
-        PartyController.reject (sangam-registry).
+        PartyController.reject (sangam-rest).
 
         ``POST /registry/parties/candidates/{candidateId}/reject`` (operationId ``registryPartyReject``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9886,7 +10166,7 @@ class RegistryPartiesApi:
     def registry_party_merge(self, body: M.RegistryPartyMergeBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Merge
 
-        PartyController.merge (sangam-registry).
+        PartyController.merge (sangam-rest).
 
         ``POST /registry/parties/merge`` (operationId ``registryPartyMerge``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9897,7 +10177,7 @@ class RegistryPartiesApi:
     def registry_party_unmerge(self, merge_event_id: str, body: M.RegistryPartyUnmergeBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Unmerge
 
-        PartyController.unmerge (sangam-registry).
+        PartyController.unmerge (sangam-rest).
 
         ``POST /registry/parties/merges/{mergeEventId}/unmerge`` (operationId ``registryPartyUnmerge``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9908,7 +10188,7 @@ class RegistryPartiesApi:
     def registry_party_merges(self, id: str, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Merges
 
-        PartyController.merges (sangam-registry).
+        PartyController.merges (sangam-rest).
 
         ``GET /registry/parties/{id}/merges`` (operationId ``registryPartyMerges``); permission ``registry.read``.
         """
@@ -9918,7 +10198,7 @@ class RegistryPartiesApi:
     def registry_party_identifier_types(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Identifier types
 
-        PartyController.identifierTypes (sangam-registry).
+        PartyController.identifierTypes (sangam-rest).
 
         ``GET /registry/parties/config/identifier-types`` (operationId ``registryPartyIdentifierTypes``); permission ``registry.read``.
         """
@@ -9928,7 +10208,7 @@ class RegistryPartiesApi:
     def registry_party_save_identifier_types(self, body: list[M.RegistryPartySaveIdentifierTypesBody], *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Save identifier types
 
-        PartyController.saveIdentifierTypes (sangam-registry).
+        PartyController.saveIdentifierTypes (sangam-rest).
 
         ``PUT /registry/parties/config/identifier-types`` (operationId ``registryPartySaveIdentifierTypes``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9939,7 +10219,7 @@ class RegistryPartiesApi:
     def registry_party_match_config(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Match config
 
-        PartyController.matchConfig (sangam-registry).
+        PartyController.matchConfig (sangam-rest).
 
         ``GET /registry/parties/config/match`` (operationId ``registryPartyMatchConfig``); permission ``registry.read``.
         """
@@ -9949,7 +10229,7 @@ class RegistryPartiesApi:
     def registry_party_save_match_config(self, body: M.RegistryPartySaveMatchConfigBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Save match config
 
-        PartyController.saveMatchConfig (sangam-registry).
+        PartyController.saveMatchConfig (sangam-rest).
 
         ``PUT /registry/parties/config/match`` (operationId ``registryPartySaveMatchConfig``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9966,7 +10246,7 @@ class RegistryRegistersApi:
     def registry_register_define(self, register_key: str, body: M.RegistryRegisterDefineBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Define
 
-        RegisterController.define (sangam-registry).
+        RegisterController.define (sangam-rest).
 
         ``PUT /registry/registers/{registerKey}`` (operationId ``registryRegisterDefine``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -9977,7 +10257,7 @@ class RegistryRegistersApi:
     def registry_register_definition(self, register_key: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Definition
 
-        RegisterController.definition (sangam-registry).
+        RegisterController.definition (sangam-rest).
 
         ``GET /registry/registers/{registerKey}`` (operationId ``registryRegisterDefinition``); permission ``registry.read``.
         """
@@ -9987,7 +10267,7 @@ class RegistryRegistersApi:
     def registry_register_definitions(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Definitions
 
-        RegisterController.definitions (sangam-registry).
+        RegisterController.definitions (sangam-rest).
 
         ``GET /registry/registers`` (operationId ``registryRegisterDefinitions``); permission ``registry.read``.
         """
@@ -9997,7 +10277,7 @@ class RegistryRegistersApi:
     def registry_register_append(self, register_key: str, body: M.RegistryRegisterAppendBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Append
 
-        RegisterController.append (sangam-registry).
+        RegisterController.append (sangam-rest).
 
         ``POST /registry/registers/{registerKey}/entries`` (operationId ``registryRegisterAppend``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -10008,7 +10288,7 @@ class RegistryRegistersApi:
     def registry_register_books(self, register_key: str, *, scope: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[dict[str, Any]]:
         """Books
 
-        RegisterController.books (sangam-registry).
+        RegisterController.books (sangam-rest).
 
         ``GET /registry/registers/{registerKey}/books`` (operationId ``registryRegisterBooks``); permission ``registry.read``.
         """
@@ -10018,7 +10298,7 @@ class RegistryRegistersApi:
     def registry_register_book(self, book_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Book
 
-        RegisterController.book (sangam-registry).
+        RegisterController.book (sangam-rest).
 
         ``GET /registry/registers/books/{bookId}`` (operationId ``registryRegisterBook``); permission ``registry.read``.
         """
@@ -10028,7 +10308,7 @@ class RegistryRegistersApi:
     def registry_register_entries(self, book_id: str, *, from_: Optional[int] = None, count: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Entries
 
-        RegisterController.entries (sangam-registry).
+        RegisterController.entries (sangam-rest).
 
         ``GET /registry/registers/books/{bookId}/entries`` (operationId ``registryRegisterEntries``); permission ``registry.read``.
         """
@@ -10038,7 +10318,7 @@ class RegistryRegistersApi:
     def registry_register_effective(self, book_id: str, entry_no: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Effective
 
-        RegisterController.effective (sangam-registry).
+        RegisterController.effective (sangam-rest).
 
         ``GET /registry/registers/books/{bookId}/entries/{entryNo}`` (operationId ``registryRegisterEffective``); permission ``registry.read``.
         """
@@ -10048,7 +10328,7 @@ class RegistryRegistersApi:
     def registry_register_correct(self, book_id: str, entry_no: str, body: M.RegistryRegisterCorrectBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Correct
 
-        RegisterController.correct (sangam-registry).
+        RegisterController.correct (sangam-rest).
 
         ``POST /registry/registers/books/{bookId}/entries/{entryNo}/corrections`` (operationId ``registryRegisterCorrect``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -10059,7 +10339,7 @@ class RegistryRegistersApi:
     def registry_register_entries_for(self, *, ref_type: str, ref_id: str, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
         """Entries for
 
-        RegisterController.entriesFor (sangam-registry).
+        RegisterController.entriesFor (sangam-rest).
 
         ``GET /registry/registers/entries`` (operationId ``registryRegisterEntriesFor``); permission ``registry.read``.
         """
@@ -10069,7 +10349,7 @@ class RegistryRegistersApi:
     def registry_register_close(self, book_id: str, body: Optional[M.RegistryRegisterCloseBody] = None, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Close
 
-        RegisterController.close (sangam-registry).
+        RegisterController.close (sangam-rest).
 
         ``POST /registry/registers/books/{bookId}/close`` (operationId ``registryRegisterClose``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -10080,7 +10360,7 @@ class RegistryRegistersApi:
     def registry_register_verify(self, book_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify
 
-        RegisterController.verify (sangam-registry).
+        RegisterController.verify (sangam-rest).
 
         ``GET /registry/registers/books/{bookId}/verify`` (operationId ``registryRegisterVerify``); permission ``registry.read``.
         """
@@ -10090,7 +10370,7 @@ class RegistryRegistersApi:
     def registry_register_extract(self, book_id: str, body: M.RegistryRegisterExtractBody, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Extract
 
-        RegisterController.extract (sangam-registry).
+        RegisterController.extract (sangam-rest).
 
         ``POST /registry/registers/books/{bookId}/extracts`` (operationId ``registryRegisterExtract``); permission ``registry.write``; result stored atomically with the state change.
         """
@@ -10101,7 +10381,7 @@ class RegistryRegistersApi:
     def registry_register_get_extract(self, extract_id: str, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get extract
 
-        RegisterController.getExtract (sangam-registry).
+        RegisterController.getExtract (sangam-rest).
 
         ``GET /registry/registers/extracts/{extractId}`` (operationId ``registryRegisterGetExtract``); permission ``registry.read``.
         """
@@ -10111,7 +10391,7 @@ class RegistryRegistersApi:
     def registry_register_verify_extract(self, tenant: str, *, code: str, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Verify extract
 
-        RegisterController.verifyExtract (sangam-registry).
+        RegisterController.verifyExtract (sangam-rest).
 
         ``GET /registry/registers/public/{tenant}/extracts/verify`` (operationId ``registryRegisterVerifyExtract``).
         """
@@ -11125,7 +11405,7 @@ class SCIMApi:
     def scim_create_user(self, body: M.ScimUser, *, options: Optional[RequestOptions] = None) -> bytes:
         """Create a user
 
-        Creates the person (USER_PROVISIONED) and its postings; 409 uniqueness on userName / externalId.
+        Creates the person (USER_PROVISIONED); 400 mutability when postings are sent; 409 uniqueness on userName / externalId.
 
         ``POST /scim/v2/Users`` (operationId ``scimCreateUser``); permission ``scim.provision``; result stored atomically with the state change.
         """
@@ -11146,7 +11426,7 @@ class SCIMApi:
     def scim_replace_user(self, id: str, body: M.ScimUser, *, options: Optional[RequestOptions] = None) -> bytes:
         """Replace a user
 
-        Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and ends the postings.
+        Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and revokes its API tokens; postings are not touched (400 mutability when the request changes them).
 
         ``PUT /scim/v2/Users/{id}`` (operationId ``scimReplaceUser``); permission ``scim.provision``; result stored atomically with the state change.
         """
@@ -11168,7 +11448,7 @@ class SCIMApi:
     def scim_delete_user(self, id: str, *, options: Optional[RequestOptions] = None) -> None:
         """Delete a user
 
-        Deactivates the person (history is kept, X.2.3), ends the postings; 204.
+        Deactivates the person (history kept, X.2.3) and removes its SCIM group memberships; postings are not touched; 204.
 
         ``DELETE /scim/v2/Users/{id}`` (operationId ``scimDeleteUser``); permission ``scim.provision``; result stored atomically with the state change.
         """
@@ -11238,8 +11518,46 @@ class SCIMApi:
         req = ApiRequest("DELETE", f"/scim/v2/Groups/{seg(str(id))}")
         self._c.none(req, options)
 
+class SharedDeploymentsApi:
+    """``SharedDeployments`` (3 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def list_shared_deployments(self, *, include_revoked: Optional[bool] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.SharedDeployment]:
+        """Shared deployments
+
+        The registry: active rows by default; includeRevoked=true lists revoked rows too. Needs platform.shared-deployment.read. Platform-only: held only by a platform-issuer identity (marker group sangam-platform), never through a tenant role, a tenant grant or the administrator wildcard. The registry is platform-wide: no tenant parameter and no tenant filter.
+
+        ``GET /admin/shared-deployments`` (operationId ``listSharedDeployments``); permission ``platform.shared-deployment.read``.
+        """
+        req = ApiRequest("GET", f"/admin/shared-deployments", query={"includeRevoked": include_revoked, "page": page, "size": size})
+        return cast("Page[M.SharedDeployment]", self._c.page(req, options, page, size))
+
+    def register_shared_deployment(self, body: M.SharedDeploymentRegistration, *, options: Optional[RequestOptions] = None) -> M.SharedDeployment:
+        """Register a shared deployment
+
+        Marks an untenanted engine deployment as platform-owned, so its work runs under the system audit scope. The row and the audit event SHARED_DEPLOYMENT_REGISTERED commit in one transaction. Needs platform.shared-deployment.manage; a replay of the stored response re-checks it. Platform-only: held only by a platform-issuer identity (marker group sangam-platform), never through a tenant role, a tenant grant or the administrator wildcard. The registry is platform-wide: no tenant parameter and no tenant filter.
+
+        ``POST /admin/shared-deployments`` (operationId ``registerSharedDeployment``); permission ``platform.shared-deployment.manage``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/shared-deployments")
+        req.body = body
+        return cast("M.SharedDeployment", self._c.json(req, options))
+
+    def revoke_shared_deployment(self, deployment_id: str, body: M.SharedDeploymentRevocation, *, options: Optional[RequestOptions] = None) -> M.SharedDeployment:
+        """Revoke a shared deployment
+
+        Ends the registration; work of the deployment then has no system owner and fails closed (UNRESOLVED_TENANT). The row and the audit event SHARED_DEPLOYMENT_REVOKED commit in one transaction. Revocation is final: the id is never registered again (deploy again and register the new id). Needs platform.shared-deployment.manage. Platform-only: held only by a platform-issuer identity (marker group sangam-platform), never through a tenant role, a tenant grant or the administrator wildcard. The registry is platform-wide: no tenant parameter and no tenant filter.
+
+        ``DELETE /admin/shared-deployments/{deploymentId}`` (operationId ``revokeSharedDeployment``); permission ``platform.shared-deployment.manage``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/admin/shared-deployments/{seg(str(deployment_id))}")
+        req.body = body
+        return cast("M.SharedDeployment", self._c.json(req, options))
+
 class TasksApi:
-    """``Tasks`` (13 operations)."""
+    """``Tasks`` (15 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -11307,7 +11625,7 @@ class TasksApi:
     def complete_task(self, id: str, body: M.CompleteTaskRequest, *, options: Optional[RequestOptions] = None) -> M.CompleteTaskResult:
         """Complete a task with a decision
 
-        Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6).
+        Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6). A step that needs a DSC signature (decisions 236, 237 and 241) completes only over a verified signature of the required document by the completing person at this task: otherwise 422 DSC_SIGNATURE_NOT_VERIFIED, or 422 DSC_ENROLMENT_REVOKED when the person did sign it but the certificate enrolment that signature was bound to was revoked afterwards (also after a re-approval); the signature evidence stays recorded and the person signs again with the currently approved certificate. Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up choice is close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step 8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.
 
         ``POST /tasks/{id}/complete`` (operationId ``completeTask``); permission ``task.write``; result stored atomically with the state change.
         """
@@ -11379,11 +11697,64 @@ class TasksApi:
         _multipart(req, body)
         return cast("M.Document", self._c.json(req, options))
 
+    def prepare_dsc_signature(self, id: str, body: M.DscPrepareRequest, *, options: Optional[RequestOptions] = None) -> M.DscPrepareResponse:
+        """Prepare a DSC signature
+
+        Step 1 of a DSC signature (decision 165). Needs task.write and document.read. The document must be a PDF attached to the task or its process instance, scanned clean, with a recorded SHA-256 that matches its content, at most 50 MiB. The signer is matched by the enrolled certificate (decision 227): the signer certificate of the chain must be the caller's own enrolment, APPROVED by an admin other than the caller (me/dsc/certificates); the display name and the certificate CN are not used to bind the signer. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+
+        ``POST /tasks/{id}/dsc/prepare`` (operationId ``prepareDscSignature``); permission ``task.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/tasks/{seg(str(id))}/dsc/prepare")
+        req.body = body
+        return cast("M.DscPrepareResponse", self._c.json(req, options))
+
+    def complete_dsc_signature(self, id: str, body: M.DscCompleteRequest, *, options: Optional[RequestOptions] = None) -> M.DscCompleteResponse:
+        """Complete a DSC signature
+
+        Step 2 of a DSC signature (decision 165). Needs task.write and document.write. Consumes the prepare once (by the same caller, for the same task, before it expires), embeds and verifies the signature and answers the outcome. A wrong chain, signature or algorithm is answered 200 with outcome VERIFIED_INVALID or INDETERMINATE, not as an error; the prepare is used up either way. The enrolment is checked again: if it was revoked after prepare the outcome is VERIFIED_INVALID CERTIFICATE_NOT_ENROLLED. Only VERIFIED_VALID stores the signed PDF as the document's next version, by a compare-and-set on the prepared version (decision 228): when the document changed meanwhile nothing is stored, the outcome is recorded as INDETERMINATE and the answer is 409 DOCUMENT_CHANGED (prepare and sign again). Completing the task is a separate call. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+
+        ``POST /tasks/{id}/dsc/complete`` (operationId ``completeDscSignature``); permission ``task.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/tasks/{seg(str(id))}/dsc/complete")
+        req.body = body
+        return cast("M.DscCompleteResponse", self._c.json(req, options))
+
 class TenantOperationsApi:
-    """``Tenant operations`` (36 operations)."""
+    """``Tenant operations`` (21 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
+
+    def list_backup_targets(self, *, options: Optional[RequestOptions] = None) -> list[M.BackupTarget]:
+        """Backup targets
+
+        The deployment's backup targets with schedule and last run times. Platform operators.
+
+        ``GET /ops/backup/targets`` (operationId ``listBackupTargets``); permission ``ops.read``.
+        """
+        req = ApiRequest("GET", f"/ops/backup/targets")
+        return cast("list[M.BackupTarget]", self._c.json(req, options))
+
+    def trigger_backup(self, id: str, body: M.BackupTriggerRequest, *, options: Optional[RequestOptions] = None) -> M.BackupRun:
+        """Back up now
+
+        Starts one run of the target now (a Job from its CronJob, or one execution of its configured backup command) and answers 202 with it. 400 REASON_REQUIRED without a reason; 404 for an unknown target; 409 BACKUP_RUNNING while a run of the target is active; 502 BACKUP_TRIGGER_FAILED when the run could not be started (Kubernetes refused or failed the Job creation, or the backup command could not be started). BACKUP_TRIGGERED is audited before the run is started. Platform operators.
+
+        ``POST /ops/backup/targets/{id}/runs`` (operationId ``triggerBackup``); permission ``ops.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/backup/targets/{seg(str(id))}/runs")
+        req.body = body
+        return cast("M.BackupRun", self._c.json(req, options))
+
+    def list_backup_runs(self, *, target: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.BackupRun]:
+        """Backup run history
+
+        Runs still known to the cluster (scheduled and manual), newest first. Platform operators.
+
+        ``GET /ops/backup/runs`` (operationId ``listBackupRuns``); permission ``ops.read``.
+        """
+        req = ApiRequest("GET", f"/ops/backup/runs", query={"target": target, "page": page, "size": size})
+        return cast("Page[M.BackupRun]", self._c.page(req, options, page, size))
 
     def ops_search(self, *, q: str, cap: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Global search
@@ -11414,78 +11785,6 @@ class TenantOperationsApi:
         """
         req = ApiRequest("GET", f"/ops-admin/outliers", query={"processKey": process_key, "activityId": activity_id, "minSamples": min_samples})
         return cast("dict[str, Any]", self._c.json(req, options))
-
-    def ops_variables(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
-        """Scoped variables
-
-        Platform values overlaid with the tenant values.
-
-        ``GET /ops-admin/variables`` (operationId ``opsVariables``); permission ``ops.tenant.read``.
-        """
-        req = ApiRequest("GET", f"/ops-admin/variables")
-        return cast("dict[str, Any]", self._c.json(req, options))
-
-    def ops_variable_entries(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
-        """Tenant variable entries
-
-        Tenant scope with version, last writer and reason.
-
-        ``GET /ops-admin/variables/entries`` (operationId ``opsVariableEntries``); permission ``ops.tenant.read``.
-        """
-        req = ApiRequest("GET", f"/ops-admin/variables/entries")
-        return cast("list[Any]", self._c.json(req, options))
-
-    def ops_set_variable(self, name: str, body: M.OpsValue, *, options: Optional[RequestOptions] = None) -> None:
-        """Set a tenant variable
-
-        Secret-like names are refused.
-
-        ``PUT /ops-admin/variables/{name}`` (operationId ``opsSetVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("PUT", f"/ops-admin/variables/{seg(str(name))}")
-        req.body = body
-        self._c.none(req, options)
-
-    def ops_delete_variable(self, name: str, *, options: Optional[RequestOptions] = None) -> None:
-        """Delete a tenant variable
-
-        Removes the tenant value.
-
-        ``DELETE /ops-admin/variables/{name}`` (operationId ``opsDeleteVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("DELETE", f"/ops-admin/variables/{seg(str(name))}")
-        self._c.none(req, options)
-
-    def ops_secrets(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
-        """List secrets
-
-        Names and versions; values are never returned.
-
-        ``GET /ops-admin/secrets`` (operationId ``opsSecrets``); permission ``ops.tenant.admin``.
-        """
-        req = ApiRequest("GET", f"/ops-admin/secrets")
-        return cast("list[Any]", self._c.json(req, options))
-
-    def ops_put_secret(self, ref: str, body: M.OpsSecret, *, options: Optional[RequestOptions] = None) -> None:
-        """Store a secret
-
-        Encrypted at rest; write-only.
-
-        ``PUT /ops-admin/secrets/{ref}`` (operationId ``opsPutSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("PUT", f"/ops-admin/secrets/{seg(str(ref))}")
-        req.body = body
-        self._c.none(req, options)
-
-    def ops_delete_secret(self, ref: str, *, options: Optional[RequestOptions] = None) -> None:
-        """Delete a secret
-
-        Removes the secret.
-
-        ``DELETE /ops-admin/secrets/{ref}`` (operationId ``opsDeleteSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("DELETE", f"/ops-admin/secrets/{seg(str(ref))}")
-        self._c.none(req, options)
 
     def ops_sequences(self, table: str, *, options: Optional[RequestOptions] = None) -> list[Any]:
         """List sequences
@@ -11539,37 +11838,6 @@ class TenantOperationsApi:
         req = ApiRequest("GET", f"/ops-admin/index-drift")
         return cast("list[Any]", self._c.json(req, options))
 
-    def ops_retention_plan(self, *, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[Any]:
-        """Retention plan
-
-        Whole trees due; excludes definitions with a history time to live and held roots.
-
-        ``GET /ops-admin/retention/plan`` (operationId ``opsRetentionPlan``); permission ``ops.tenant.read``.
-        """
-        req = ApiRequest("GET", f"/ops-admin/retention/plan", query={"limit": limit})
-        return cast("list[Any]", self._c.json(req, options))
-
-    def ops_retention_execute(self, body: M.OpsReason, *, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> M.OpsPurge:
-        """Execute retention
-
-        Re-plans on the server and purges due trees.
-
-        ``POST /ops-admin/retention/execute`` (operationId ``opsRetentionExecute``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("POST", f"/ops-admin/retention/execute", query={"limit": limit})
-        req.body = body
-        return cast("M.OpsPurge", self._c.json(req, options))
-
-    def ops_retention_runs(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
-        """Retention runs
-
-        Executed purges with plan hash, reason and actor.
-
-        ``GET /ops-admin/retention/runs`` (operationId ``opsRetentionRuns``); permission ``ops.tenant.read``.
-        """
-        req = ApiRequest("GET", f"/ops-admin/retention/runs")
-        return cast("list[Any]", self._c.json(req, options))
-
     def ops_migration(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
         """Migration status
 
@@ -11609,68 +11877,6 @@ class TenantOperationsApi:
         """
         req = ApiRequest("GET", f"/ops/outliers", query={"processDefinitionKey": process_definition_key, "activityId": activity_id})
         return cast("list[Any]", self._c.json(req, options))
-
-    def ui_ops_variables(self, *, scope: Optional[str] = None, name: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[Any]:
-        """Tenant variables
-
-        As rows.
-
-        ``GET /ops/variables`` (operationId ``uiOpsVariables``); permission ``ops.tenant.read``.
-        """
-        req = ApiRequest("GET", f"/ops/variables", query={"scope": scope, "name": name, "page": page, "size": size})
-        return cast("Page[Any]", self._c.page(req, options, page, size))
-
-    def ui_ops_set_variable(self, body: M.OpsUiVariableRequest, *, options: Optional[RequestOptions] = None) -> None:
-        """Set a variable
-
-        TENANT scope only.
-
-        ``PUT /ops/variables`` (operationId ``uiOpsSetVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("PUT", f"/ops/variables")
-        req.body = body
-        self._c.none(req, options)
-
-    def ui_ops_delete_variable(self, id: str, *, reason: str, options: Optional[RequestOptions] = None) -> None:
-        """Delete a variable
-
-        Needs a reason.
-
-        ``DELETE /ops/variables/{id}`` (operationId ``uiOpsDeleteVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("DELETE", f"/ops/variables/{seg(str(id))}", query={"reason": reason})
-        self._c.none(req, options)
-
-    def ui_ops_secrets(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[Any]:
-        """Secrets
-
-        Metadata only.
-
-        ``GET /ops/secrets`` (operationId ``uiOpsSecrets``); permission ``ops.tenant.admin``.
-        """
-        req = ApiRequest("GET", f"/ops/secrets", query={"page": page, "size": size})
-        return cast("Page[Any]", self._c.page(req, options, page, size))
-
-    def ui_ops_put_secret(self, name: str, body: M.OpsUiSecretRequest, *, options: Optional[RequestOptions] = None) -> None:
-        """Set a secret
-
-        The value is write-only.
-
-        ``PUT /ops/secrets/{name}`` (operationId ``uiOpsPutSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("PUT", f"/ops/secrets/{seg(str(name))}")
-        req.body = body
-        self._c.none(req, options)
-
-    def ui_ops_delete_secret(self, name: str, *, reason: str, options: Optional[RequestOptions] = None) -> None:
-        """Delete a secret
-
-        Needs a reason.
-
-        ``DELETE /ops/secrets/{name}`` (operationId ``uiOpsDeleteSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
-        """
-        req = ApiRequest("DELETE", f"/ops/secrets/{seg(str(name))}", query={"reason": reason})
-        self._c.none(req, options)
 
     def ui_ops_sequences(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
         """Sequences
@@ -11724,6 +11930,162 @@ class TenantOperationsApi:
         req = ApiRequest("GET", f"/ops/migration-status", query={"source": source, "page": page, "size": size})
         return cast("Page[Any]", self._c.page(req, options, page, size))
 
+    def get_schema_status(self, *, options: Optional[RequestOptions] = None) -> M.SchemaStatus:
+        """Schema status
+
+        Applied product changesets, the engine schema version and the Liquibase lock; read only. Platform operators.
+
+        ``GET /ops/schema-status`` (operationId ``getSchemaStatus``); permission ``ops.read``.
+        """
+        req = ApiRequest("GET", f"/ops/schema-status")
+        return cast("M.SchemaStatus", self._c.json(req, options))
+
+class TenantOperationsFlowableMigrationsApi:
+    """``Tenant operations /flowable-migrations`` (10 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def dry_run_flowable_migration(self, body: M.FlowableMigrationRequest, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Dry-run a Flowable migration
+
+        Reads the source and classifies every instance; writes nothing (state null). Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/dry-run`` (operationId ``dryRunFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/dry-run")
+        req.body = body
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def create_flowable_migration(self, body: M.FlowableMigrationRequest, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Create a Flowable migration run
+
+        Plans the run (state DRY_RUN) and answers 201. 409 when the runId exists. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations`` (operationId ``createFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations")
+        req.body = body
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def get_flowable_migration(self, id: str, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Get a Flowable migration run
+
+        The run's report. Tenant administrators only (ops.tenant.admin).
+
+        ``GET /ops/flowable-migrations/{id}`` (operationId ``getFlowableMigration``); permission ``ops.tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/ops/flowable-migrations/{seg(str(id))}")
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def list_flowable_migration_items(self, id: str, *, status: Optional[Literal["PLANNED", "REJECTED", "APPLYING", "APPLIED", "FAILED", "MATCHED", "MISMATCHED", "ROLLED_BACK"]] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[M.FlowableMigrationItem]:
+        """Items of a Flowable migration run
+
+        Source instances of the run with status and findings. Tenant administrators only (ops.tenant.admin).
+
+        ``GET /ops/flowable-migrations/{id}/items`` (operationId ``listFlowableMigrationItems``); permission ``ops.tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/ops/flowable-migrations/{seg(str(id))}/items", query={"status": status, "page": page, "size": size})
+        return cast("Page[M.FlowableMigrationItem]", self._c.page(req, options, page, size))
+
+    def freeze_flowable_migration(self, id: str, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Freeze the source
+
+        From DRY_RUN: freezes the Flowable workers and rechecks every planned instance's fingerprint. When the workers are not drained or an instance changed or vanished, the problems are listed and the run stays DRY_RUN; otherwise FROZEN. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/{id}/freeze`` (operationId ``freezeFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/{seg(str(id))}/freeze")
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def apply_flowable_migration(self, id: str, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Apply the run
+
+        From FROZEN, APPLYING or APPLIED: creates the Sangam instances, idempotent per item (APPLYING, then APPLIED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/{id}/apply`` (operationId ``applyFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/{seg(str(id))}/apply")
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def reconcile_flowable_migration(self, id: str, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Reconcile the run
+
+        Compares every applied instance with its plan (RECONCILED or RECONCILE_FAILED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/{id}/reconcile`` (operationId ``reconcileFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/{seg(str(id))}/reconcile")
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def cut_over_flowable_migration(self, id: str, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Cut over
+
+        From RECONCILED: CUT_OVER. Then end the migrated instances on Flowable and release; rejected instances stay on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/{id}/cut-over`` (operationId ``cutOverFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/{seg(str(id))}/cut-over")
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def release_flowable_migration(self, id: str, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Release the source freeze
+
+        From DRY_RUN, FROZEN (back to DRY_RUN), ROLLED_BACK or CUT_OVER: lifts the Flowable freeze. After CUT_OVER it is refused, with a problem, while a migrated instance still exists on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/{id}/release`` (operationId ``releaseFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/{seg(str(id))}/release")
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+    def rollback_flowable_migration(self, id: str, body: M.FlowableMigrationRollbackRequest, *, options: Optional[RequestOptions] = None) -> M.FlowableMigrationReport:
+        """Roll back the run
+
+        From APPLYING, APPLIED, RECONCILED or RECONCILE_FAILED, while Flowable is still frozen: deletes the run's Sangam instances (ROLLED_BACK). Refused as a whole, with problems and no change, when Flowable is no longer frozen or a target instance has moved on. 400 REASON_REQUIRED without a reason. Tenant administrators only (ops.tenant.admin).
+
+        ``POST /ops/flowable-migrations/{id}/rollback`` (operationId ``rollbackFlowableMigration``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops/flowable-migrations/{seg(str(id))}/rollback")
+        req.body = body
+        return cast("M.FlowableMigrationReport", self._c.json(req, options))
+
+class TenantOperationsRetentionApi:
+    """``Tenant operations /retention`` (6 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def ops_retention_plan(self, *, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> list[Any]:
+        """Retention plan
+
+        Whole trees due; excludes definitions with a history time to live and held roots.
+
+        ``GET /ops-admin/retention/plan`` (operationId ``opsRetentionPlan``); permission ``ops.tenant.read``.
+        """
+        req = ApiRequest("GET", f"/ops-admin/retention/plan", query={"limit": limit})
+        return cast("list[Any]", self._c.json(req, options))
+
+    def ops_retention_execute(self, body: M.OpsReason, *, limit: Optional[int] = None, options: Optional[RequestOptions] = None) -> M.OpsPurge:
+        """Execute retention
+
+        Re-plans on the server and purges due trees.
+
+        ``POST /ops-admin/retention/execute`` (operationId ``opsRetentionExecute``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/ops-admin/retention/execute", query={"limit": limit})
+        req.body = body
+        return cast("M.OpsPurge", self._c.json(req, options))
+
+    def ops_retention_runs(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
+        """Retention runs
+
+        Executed purges with plan hash, reason and actor.
+
+        ``GET /ops-admin/retention/runs`` (operationId ``opsRetentionRuns``); permission ``ops.tenant.read``.
+        """
+        req = ApiRequest("GET", f"/ops-admin/retention/runs")
+        return cast("list[Any]", self._c.json(req, options))
+
     def ui_ops_retention_plan(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Preview retention
 
@@ -11754,6 +12116,152 @@ class TenantOperationsApi:
         req = ApiRequest("POST", f"/ops/retention/execute")
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
+
+class TenantOperationsSecretsApi:
+    """``Tenant operations /secrets`` (6 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def ops_secrets(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
+        """List secrets
+
+        Names and versions; values are never returned.
+
+        ``GET /ops-admin/secrets`` (operationId ``opsSecrets``); permission ``ops.tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/ops-admin/secrets")
+        return cast("list[Any]", self._c.json(req, options))
+
+    def ops_put_secret(self, ref: str, body: M.OpsSecret, *, options: Optional[RequestOptions] = None) -> None:
+        """Store a secret
+
+        Encrypted at rest; write-only.
+
+        ``PUT /ops-admin/secrets/{ref}`` (operationId ``opsPutSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/ops-admin/secrets/{seg(str(ref))}")
+        req.body = body
+        self._c.none(req, options)
+
+    def ops_delete_secret(self, ref: str, *, options: Optional[RequestOptions] = None) -> None:
+        """Delete a secret
+
+        Removes the secret.
+
+        ``DELETE /ops-admin/secrets/{ref}`` (operationId ``opsDeleteSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/ops-admin/secrets/{seg(str(ref))}")
+        self._c.none(req, options)
+
+    def ui_ops_secrets(self, *, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[Any]:
+        """Secrets
+
+        Metadata only.
+
+        ``GET /ops/secrets`` (operationId ``uiOpsSecrets``); permission ``ops.tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/ops/secrets", query={"page": page, "size": size})
+        return cast("Page[Any]", self._c.page(req, options, page, size))
+
+    def ui_ops_put_secret(self, name: str, body: M.OpsUiSecretRequest, *, options: Optional[RequestOptions] = None) -> None:
+        """Set a secret
+
+        The value is write-only.
+
+        ``PUT /ops/secrets/{name}`` (operationId ``uiOpsPutSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/ops/secrets/{seg(str(name))}")
+        req.body = body
+        self._c.none(req, options)
+
+    def ui_ops_delete_secret(self, name: str, *, reason: str, options: Optional[RequestOptions] = None) -> None:
+        """Delete a secret
+
+        Needs a reason.
+
+        ``DELETE /ops/secrets/{name}`` (operationId ``uiOpsDeleteSecret``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/ops/secrets/{seg(str(name))}", query={"reason": reason})
+        self._c.none(req, options)
+
+class TenantOperationsVariablesApi:
+    """``Tenant operations /variables`` (7 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def ops_variables(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
+        """Scoped variables
+
+        Platform values overlaid with the tenant values.
+
+        ``GET /ops-admin/variables`` (operationId ``opsVariables``); permission ``ops.tenant.read``.
+        """
+        req = ApiRequest("GET", f"/ops-admin/variables")
+        return cast("dict[str, Any]", self._c.json(req, options))
+
+    def ops_variable_entries(self, *, options: Optional[RequestOptions] = None) -> list[Any]:
+        """Tenant variable entries
+
+        Tenant scope with version, last writer and reason.
+
+        ``GET /ops-admin/variables/entries`` (operationId ``opsVariableEntries``); permission ``ops.tenant.read``.
+        """
+        req = ApiRequest("GET", f"/ops-admin/variables/entries")
+        return cast("list[Any]", self._c.json(req, options))
+
+    def ops_set_variable(self, name: str, body: M.OpsValue, *, options: Optional[RequestOptions] = None) -> None:
+        """Set a tenant variable
+
+        Secret-like names are refused.
+
+        ``PUT /ops-admin/variables/{name}`` (operationId ``opsSetVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/ops-admin/variables/{seg(str(name))}")
+        req.body = body
+        self._c.none(req, options)
+
+    def ops_delete_variable(self, name: str, *, options: Optional[RequestOptions] = None) -> None:
+        """Delete a tenant variable
+
+        Removes the tenant value.
+
+        ``DELETE /ops-admin/variables/{name}`` (operationId ``opsDeleteVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/ops-admin/variables/{seg(str(name))}")
+        self._c.none(req, options)
+
+    def ui_ops_variables(self, *, scope: Optional[str] = None, name: Optional[str] = None, page: Optional[int] = None, size: Optional[int] = None, options: Optional[RequestOptions] = None) -> Page[Any]:
+        """Tenant variables
+
+        As rows.
+
+        ``GET /ops/variables`` (operationId ``uiOpsVariables``); permission ``ops.tenant.read``.
+        """
+        req = ApiRequest("GET", f"/ops/variables", query={"scope": scope, "name": name, "page": page, "size": size})
+        return cast("Page[Any]", self._c.page(req, options, page, size))
+
+    def ui_ops_set_variable(self, body: M.OpsUiVariableRequest, *, options: Optional[RequestOptions] = None) -> None:
+        """Set a variable
+
+        TENANT scope only.
+
+        ``PUT /ops/variables`` (operationId ``uiOpsSetVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/ops/variables")
+        req.body = body
+        self._c.none(req, options)
+
+    def ui_ops_delete_variable(self, id: str, *, reason: str, options: Optional[RequestOptions] = None) -> None:
+        """Delete a variable
+
+        Needs a reason.
+
+        ``DELETE /ops/variables/{id}`` (operationId ``uiOpsDeleteVariable``); permission ``ops.tenant.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("DELETE", f"/ops/variables/{seg(str(id))}", query={"reason": reason})
+        self._c.none(req, options)
 
 class TestModeApi:
     """``TestMode`` (2 operations)."""
@@ -11987,7 +12495,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)
@@ -12013,8 +12521,12 @@ class SangamApis:
         self.debug = DebugApi(calls)
         self.decisions = DecisionsApi(calls)
         self.deployments = DeploymentsApi(calls)
+        self.dlt_hooks = DltHooksApi(calls)
         self.documents = DocumentsApi(calls)
+        self.dsc_certificates = DscCertificatesApi(calls)
+        self.event_grid_hooks = EventGridHooksApi(calls)
         self.events = EventsApi(calls)
+        self.executor = ExecutorApi(calls)
         self.field = FieldApi(calls)
         self.field_assignments = FieldAssignmentsApi(calls)
         self.field_units = FieldUnitsApi(calls)
@@ -12056,8 +12568,13 @@ class SangamApis:
         self.resources_items = ResourcesItemsApi(calls)
         self.rosters = RostersApi(calls)
         self.scim = SCIMApi(calls)
+        self.shared_deployments = SharedDeploymentsApi(calls)
         self.tasks = TasksApi(calls)
         self.tenant_operations = TenantOperationsApi(calls)
+        self.tenant_operations_flowable_migrations = TenantOperationsFlowableMigrationsApi(calls)
+        self.tenant_operations_retention = TenantOperationsRetentionApi(calls)
+        self.tenant_operations_secrets = TenantOperationsSecretsApi(calls)
+        self.tenant_operations_variables = TenantOperationsVariablesApi(calls)
         self.test_mode = TestModeApi(calls)
         self.work = WorkApi(calls)
         self.workspace = WorkspaceApi(calls)

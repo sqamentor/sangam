@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.engine.incident;
 
+import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -8,12 +9,11 @@ import org.operaton.bpm.engine.ProcessEngineException;
 import org.operaton.bpm.engine.impl.context.Context;
 import org.operaton.bpm.engine.impl.incident.IncidentContext;
 import org.operaton.bpm.engine.impl.interceptor.CommandContext;
-import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.operaton.bpm.engine.runtime.Incident;
 import org.sangam.core.engine.AuditSink;
 import org.sangam.core.engine.IncidentSink;
 import org.sangam.core.engine.RouteDecision;
-import org.sangam.engine.tx.CommandState;
+import org.sangam.engine.tenant.WorkTenants;
 
 /**
  * <b>SG-35 / ADR-D-25</b>: the incident handler of the strict exclusive gateway ({@code sangamRouting}). On top of
@@ -21,7 +21,8 @@ import org.sangam.engine.tx.CommandState;
  * the class-B audit chain as a {@value #AUDIT_EVENT} event carrying the stable code ({@code NO_MATCHING_ROUTE} /
  * {@code AMBIGUOUS_ROUTE}), the gateway and the instance, in the same command. A gateway that cannot route therefore
  * never parks an instance silently: the parked execution always has an open incident and an audited reason, and the
- * recovery ({@code ROUTE_CORRECTED}) closes the pair.
+ * recovery ({@code ROUTE_CORRECTED}) closes the pair. The generic {@code INCIDENT_OPENED} (errorClass config) is
+ * written by the superclass as well (owner decision 301: both events).
  *
  * <p>The code is read from the incident message, which {@link RouteDecision#message()} always prefixes with it; a
  * message without a known code is a programming error and fails the command (fail closed, nothing parks unaudited).
@@ -32,39 +33,42 @@ public final class RoutingIncidentHandler extends SangamIncidentHandler {
     public static final String AUDIT_EVENT = "ROUTING_INCIDENT";
 
     private final AuditSink audit;
-    private final String defaultTenant;
 
-    public RoutingIncidentHandler(String type, IncidentSink sink, AuditSink audit, String defaultTenant) {
-        super(type, sink, defaultTenant);
+    /** @param tenants decision 144: the audit row is written under the resolved tenant (system audit scope if unresolved) */
+    public RoutingIncidentHandler(String type, IncidentSink sink, AuditSink audit, WorkTenants tenants) {
+        super(type, sink, audit, tenants);
         this.audit = audit;
-        this.defaultTenant = defaultTenant;
     }
 
     @Override
     public Incident handleIncident(IncidentContext context, String message) {
-        String code = codeOf(message);
+        codeOf(message); // fail closed before anything is written
         Incident incident = super.handleIncident(context, message);
-        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
-        if (incident == null || cc == null) {
-            throw new ProcessEngineException("SG-35/ADR-D-25: routing incident " + code + " outside an engine command");
+        if (incident == null || !Context.hasActiveCommandContext()) {
+            throw new ProcessEngineException("SG-35/ADR-D-25: routing incident " + codeOf(message)
+                    + " outside an engine command");
         }
-        String root = incident.getProcessInstanceId();
-        if (incident.getExecutionId() != null) {
-            ExecutionEntity e = cc.getExecutionManager().findExecutionById(incident.getExecutionId());
-            if (e != null && e.getRootProcessInstanceId() != null) {
-                root = e.getRootProcessInstanceId();
-            }
-        }
+        return incident;
+    }
+
+    /** Decision 302: a routing incident is a configuration error. */
+    @Override
+    protected boolean routing() {
+        return true;
+    }
+
+    @Override
+    protected void opened(CommandContext cc, Connection c, Incident incident, String message, WorkTenants.Resolution r,
+                          String root) {
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("code", code);
+        payload.put("code", codeOf(message));
         payload.put("incidentId", incident.getId());
         payload.put("processInstanceId", incident.getProcessInstanceId());
         payload.put("processDefinitionId", incident.getProcessDefinitionId());
         payload.put("gateway", incident.getActivityId());
         payload.put("message", message);
-        audit.append(CommandState.connection(cc), incident.getTenantId() == null ? defaultTenant : incident.getTenantId(),
-                root, AUDIT_EVENT, payload);
-        return incident;
+        payload.putAll(r.auditFields()); // decision 144: engineTenant, resolvedScope, resolutionReason
+        audit.append(c, r.attribution(), root, AUDIT_EVENT, payload);
     }
 
     /** The stable code that prefixes every routing incident message. */

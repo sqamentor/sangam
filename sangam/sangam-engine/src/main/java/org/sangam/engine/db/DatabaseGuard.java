@@ -29,19 +29,48 @@ public final class DatabaseGuard {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseGuard.class);
 
     /** What the guard found. */
-    public record Findings(EngineDialect dialect, String serverProduct, String driverName, String operatonDatabaseType) {
+    /**
+     * @param experimentalCockroachDb decisions 156 and 205: the PostgreSQL-compatible server is CockroachDB (only when
+     *        the operator enabled it; experimental, no support claim)
+     */
+    public record Findings(EngineDialect dialect, String serverProduct, String driverName, String operatonDatabaseType,
+                           boolean experimentalCockroachDb) {
+        public Findings(EngineDialect dialect, String serverProduct, String driverName, String operatonDatabaseType) {
+            this(dialect, serverProduct, driverName, operatonDatabaseType, false);
+        }
     }
 
     private DatabaseGuard() {
     }
 
     public static Findings check(DataSource ds, boolean requireRcsi, String mysqlDatabaseType) {
+        return check(ds, requireRcsi, mysqlDatabaseType, false);
+    }
+
+    /**
+     * As {@link #check(DataSource, boolean, String)}; a CockroachDB server is refused unless
+     * {@code allowExperimentalCockroachDb} (decisions 156 and 205: experimental and non-gating, so never picked up
+     * silently as PostgreSQL).
+     */
+    public static Findings check(DataSource ds, boolean requireRcsi, String mysqlDatabaseType,
+                                 boolean allowExperimentalCockroachDb) {
         try (Connection c = ds.getConnection()) {
             DatabaseMetaData md = c.getMetaData();
             String product = md.getDatabaseProductName();
             String version = md.getDatabaseProductVersion();
             String driver = md.getDriverName();
             EngineDialect d = EngineDialect.fromProductName(product);
+            boolean cockroach = d == EngineDialect.POSTGRESQL && EngineDialect.isCockroachDb(c);
+            if (cockroach) {
+                if (!allowExperimentalCockroachDb) {
+                    throw new IllegalStateException("decision 205: the server is CockroachDB, which is experimental "
+                            + "and not supported; set SangamEngineSettings experimentalCockroachDb (environment "
+                            + "SANGAM_EXPERIMENTAL_COCKROACHDB=true) to run on it for testing");
+                }
+                LOG.warn("decision 205: EXPERIMENTAL CockroachDB server ({} {}), mapped to the PostgreSQL dialect and "
+                        + "Operaton databaseType 'postgres'; serialisation failures (40001) are retried for engine "
+                        + "commands; not supported, no support claim", product, version);
+            }
             if (c.getTransactionIsolation() != Connection.TRANSACTION_READ_COMMITTED) {
                 throw new IllegalStateException("R84/FLOWABLE-INTO-OPERATON D-56: the engine pool must run READ COMMITTED (found isolation "
                         + c.getTransactionIsolation() + "); wrap the DataSource in IsolationGuardDataSource");
@@ -71,7 +100,7 @@ public final class DatabaseGuard {
                 default -> {
                 }
             }
-            return new Findings(d, product + " " + version, driver, type);
+            return new Findings(d, product + " " + version, driver, type, cockroach);
         } catch (SQLException e) {
             throw new IllegalStateException("database start-up check failed", e);
         }

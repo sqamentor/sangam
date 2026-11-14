@@ -36,18 +36,17 @@ public class EventWindowDelegate implements JavaDelegate {
         List<Map<String, Object>> events = Vars.jsonList(ex, "windowEvents");
         if ("EVALUATE".equals(Vars.field(op, ex, "ADD"))) {
             int threshold = Vars.intVal(ex, "threshold", 3);
-            double sum = 0;
+            java.math.BigDecimal sum = java.math.BigDecimal.ZERO; // exact (decision 138)
             for (Map<String, Object> e : events) {
-                Object v = e.get("value");
+                java.math.BigDecimal v = Vars.decimal(e.get("value"));
                 if (v != null) {
-                    sum += Double.parseDouble(v.toString());
+                    sum = sum.add(v);
                 }
             }
-            Object vt = ex.getVariable("valueThreshold");
-            boolean reached = events.size() >= threshold
-                    || (vt != null && sum >= Double.parseDouble(vt.toString()));
+            java.math.BigDecimal vt = Vars.decimal(ex.getVariable("valueThreshold"));
+            boolean reached = events.size() >= threshold || (vt != null && sum.compareTo(vt) >= 0);
             ex.setVariable("thresholdReached", reached);
-            ex.setVariable("windowValueSum", sum);
+            ex.setVariable("windowValueSum", Vars.engineValue(sum));
             return;
         }
         if (ex.getVariable("windowStartedAt") == null) {

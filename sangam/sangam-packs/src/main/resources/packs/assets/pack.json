@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/assets/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/assets/pack.json"
     }
   ],
   "seed": "packs/assets/seed.json",
@@ -77,6 +81,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "as_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "CONDEMNATION"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

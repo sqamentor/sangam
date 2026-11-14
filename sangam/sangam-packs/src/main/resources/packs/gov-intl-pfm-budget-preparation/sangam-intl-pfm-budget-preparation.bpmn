@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Budget preparation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_budget_preparat" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_pfm_budgetEnacted" name="sangam.pfm.budgetEnacted"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-budget-preparation" name="Budget preparation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-budget-preparation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>budgetYear,spendingUnit,circularRef</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="bp_start" name="Budget circular issued" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/circular"></startEvent>
+    <serviceTask id="bp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>spendingUnit=SU-1;ledgerId=BUDGET;submitterSeat=SPENDING-UNIT;budgetOfficeSeat=BUDGET-OFFICE;executiveSeat=FINANCE-MINISTER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="bp_cfg" name="Budget calendar (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-budget-calendar</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="bp_ceiling_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>ceilingAmount=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bp_ceiling" name="Ceiling of the spending unit" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.ceilings</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>ceilings</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,budgetYear,spendingUnit</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>ceiling</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bp_ceilingGw" name="Ceiling of the spending unit?" default="intl_pfm_budget_preparat_f16"></exclusiveGateway>
+    <userTask id="bp_ceilingHold" name="Ceiling not confirmed: confirm it in the ledger" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/ceilingHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bp_submit_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bp_submit</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${budgetSubmissionSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bp_submit" name="Prepare the budget submission within the ceiling" operaton:candidateGroups="${submitterSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/submission" operaton:dueDate="${bp_submitDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bp_submit_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bp_submit</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>submitterSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="bp_submit_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="bp_submit_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bp_submit</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>submitterSeat</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bp_submit_breachGw" name="Deemed?" default="intl_pfm_budget_preparat_f13"></exclusiveGateway>
+    <exclusiveGateway id="bp_submit_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="bp_overGw" name="Within the ceiling?" default="intl_pfm_budget_preparat_f27"></exclusiveGateway>
+    <serviceTask id="bp_review_slaPlan" name="Start SLA clock" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>PLAN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bp_review</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${budgetReviewSpec}</operaton:expression></operaton:field><operaton:field name="defaultSpec"><operaton:string>5WD</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="bp_review" name="Review the submission (budget office)" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/review" operaton:dueDate="${bp_reviewDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>bp_submit</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bp_review_warnNotify" name="SLA warning" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>WARN</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bp_review</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>budgetOfficeSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="bp_review_warnEnd" name="Warned"></endEvent>
+    <serviceTask id="bp_review_breachAct" name="Escalate or deem" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>BREACH</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>bp_review</operaton:string></operaton:field><operaton:field name="onBreach"><operaton:string>ESCALATE</operaton:string></operaton:field><operaton:field name="seatVar"><operaton:string>budgetOfficeSeat</operaton:string></operaton:field><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field><operaton:field name="approveValue"><operaton:string>approve</operaton:string></operaton:field><operaton:field name="refuseValue"><operaton:string>reject</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bp_review_breachGw" name="Deemed?" default="intl_pfm_budget_preparat_f24"></exclusiveGateway>
+    <exclusiveGateway id="bp_review_done" name=""></exclusiveGateway>
+    <exclusiveGateway id="bp_reviewGw" name="" default="intl_pfm_budget_preparat_f30"></exclusiveGateway>
+    <userTask id="bp_executive" name="Executive approval of the budget proposal" operaton:candidateGroups="${executiveSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/executive"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>bp_submit,bp_review</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>executiveDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="bp_executiveGw" name="" default="intl_pfm_budget_preparat_f33"></exclusiveGateway>
+    <callActivity id="bp_bundle" name="Budget-document bundle (PFM-022)" calledElement="sangam-intl-pfm-budget-document-bundle"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <exclusiveGateway id="bp_bundleGw" name="Bundle complete?" default="intl_pfm_budget_preparat_f40"></exclusiveGateway>
+    <serviceTask id="bp_legislature_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>legReceiptRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="bp_legislature" name="Submit the budget to the legislature" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>legislature.submit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>budgetYear,spendingUnit,requestAmount</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>leg</operaton:string></operaton:field><operaton:field name="step"><operaton:string>legislature</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="bp_legislatureGw" name="Submit the budget to the legislature?" default="intl_pfm_budget_preparat_f41"></exclusiveGateway>
+    <userTask id="bp_legislatureHold" name="Legislature receipt not confirmed: confirm and resend" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/legislatureHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="bp_legClock" name="Regulatory clock: legislature" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>legislature</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${legislatureSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="bp_wait" name="Enacted?"></eventBasedGateway>
+    <intermediateCatchEvent id="bp_enactedMsg" name="Budget enacted"><messageEventDefinition messageRef="msg_sangam_pfm_budgetEnacted"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="bp_legLate" name="Legislature deadline passed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${legislatureDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="bp_legFollowUp" name="Budget not yet enacted: follow up (interim authority per the profile)" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/follow-up"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="bp_record" name="Record the enacted appropriation" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-preparation/enacted"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="bp_end" name="Budget enacted"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>ENACTED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['appropriationActRef', 'enactedAmount', 'legReceiptRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <boundaryEvent id="bp_submit_warn" name="SLA warning (75%)" attachedToRef="bp_submit" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bp_submitWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="bp_submit_breach" name="SLA breached" attachedToRef="bp_submit" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bp_submitDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="bp_review_warn" name="SLA warning (75%)" attachedToRef="bp_review" cancelActivity="false"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bp_reviewWarnAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <boundaryEvent id="bp_review_breach" name="SLA breached" attachedToRef="bp_review" cancelActivity="true"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${bp_reviewDueAt}</timeDate></timerEventDefinition></boundaryEvent>
+    <sequenceFlow id="intl_pfm_budget_preparat_f1" sourceRef="bp_ceiling_clear" targetRef="bp_ceiling"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f2" sourceRef="bp_ceiling" targetRef="bp_ceilingGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f3" sourceRef="bp_ceilingHold" targetRef="bp_ceiling_clear"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f4" name="not confirmed" sourceRef="bp_ceilingGw" targetRef="bp_ceilingHold"><conditionExpression xsi:type="tFormalExpression">${ceilingStatus != 'COMPLETED' || ceilingAmount == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f5" sourceRef="bp_start" targetRef="bp_defaults"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f6" sourceRef="bp_defaults" targetRef="bp_cfg"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f7" sourceRef="bp_cfg" targetRef="bp_ceiling_clear"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f8" sourceRef="bp_submit_warn" targetRef="bp_submit_warnNotify"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f9" sourceRef="bp_submit_warnNotify" targetRef="bp_submit_warnEnd"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f10" sourceRef="bp_submit_breach" targetRef="bp_submit_breachAct"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f11" sourceRef="bp_submit_breachAct" targetRef="bp_submit_breachGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f12" name="deemed" sourceRef="bp_submit_breachGw" targetRef="bp_submit_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f13" name="escalated" sourceRef="bp_submit_breachGw" targetRef="bp_submit_slaPlan"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f14" sourceRef="bp_submit_slaPlan" targetRef="bp_submit"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f15" sourceRef="bp_submit" targetRef="bp_submit_done"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f16" name="confirmed" sourceRef="bp_ceilingGw" targetRef="bp_submit_slaPlan"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f17" sourceRef="bp_submit_done" targetRef="bp_overGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f18" name="above the ceiling: revise" sourceRef="bp_overGw" targetRef="bp_submit_slaPlan"><conditionExpression xsi:type="tFormalExpression">${requestAmount &gt; ceilingAmount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f19" sourceRef="bp_review_warn" targetRef="bp_review_warnNotify"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f20" sourceRef="bp_review_warnNotify" targetRef="bp_review_warnEnd"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f21" sourceRef="bp_review_breach" targetRef="bp_review_breachAct"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f22" sourceRef="bp_review_breachAct" targetRef="bp_review_breachGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f23" name="deemed" sourceRef="bp_review_breachGw" targetRef="bp_review_done"><conditionExpression xsi:type="tFormalExpression">${slaAction == 'DEEMED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f24" name="escalated" sourceRef="bp_review_breachGw" targetRef="bp_review_slaPlan"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f25" sourceRef="bp_review_slaPlan" targetRef="bp_review"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f26" sourceRef="bp_review" targetRef="bp_review_done"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f27" name="within the ceiling" sourceRef="bp_overGw" targetRef="bp_review_slaPlan"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f28" sourceRef="bp_review_done" targetRef="bp_reviewGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f29" name="returned" sourceRef="bp_reviewGw" targetRef="bp_submit_slaPlan"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f30" name="approved" sourceRef="bp_reviewGw" targetRef="bp_executive"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f31" sourceRef="bp_executive" targetRef="bp_executiveGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f32" name="returned to the budget office" sourceRef="bp_executiveGw" targetRef="bp_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${executiveDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f33" name="approved" sourceRef="bp_executiveGw" targetRef="bp_bundle"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f34" sourceRef="bp_bundle" targetRef="bp_bundleGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f35" name="bundle returned: correct the data" sourceRef="bp_bundleGw" targetRef="bp_review_slaPlan"><conditionExpression xsi:type="tFormalExpression">${bundleDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f36" sourceRef="bp_legislature_clear" targetRef="bp_legislature"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f37" sourceRef="bp_legislature" targetRef="bp_legislatureGw"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f38" sourceRef="bp_legislatureHold" targetRef="bp_legislature_clear"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f39" name="not confirmed" sourceRef="bp_legislatureGw" targetRef="bp_legislatureHold"><conditionExpression xsi:type="tFormalExpression">${legStatus != 'COMPLETED' || legReceiptRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_preparat_f40" name="complete" sourceRef="bp_bundleGw" targetRef="bp_legislature_clear"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f41" name="received" sourceRef="bp_legislatureGw" targetRef="bp_legClock"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f42" sourceRef="bp_legClock" targetRef="bp_wait"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f43" sourceRef="bp_wait" targetRef="bp_enactedMsg"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f44" sourceRef="bp_wait" targetRef="bp_legLate"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f45" sourceRef="bp_legLate" targetRef="bp_legFollowUp"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f46" sourceRef="bp_legFollowUp" targetRef="bp_legClock"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f47" sourceRef="bp_enactedMsg" targetRef="bp_record"/>
+    <sequenceFlow id="intl_pfm_budget_preparat_f48" sourceRef="bp_record" targetRef="bp_end"/>
+    <subProcess id="bp_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="bp_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="bp_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="bp_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="bp_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_budget_preparat_f49" sourceRef="bp_withdrawStart" targetRef="bp_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_budget_preparat_f50" sourceRef="bp_withdrawKind" targetRef="bp_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_budget_preparat_f51" sourceRef="bp_withdrawCall" targetRef="bp_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="bp_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="bp_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="bp_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="bp_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="bp_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_budget_preparat_f52" sourceRef="bp_cancelStart" targetRef="bp_cancelKind"/>
+      <sequenceFlow id="intl_pfm_budget_preparat_f53" sourceRef="bp_cancelKind" targetRef="bp_cancelCall"/>
+      <sequenceFlow id="intl_pfm_budget_preparat_f54" sourceRef="bp_cancelCall" targetRef="bp_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_budget_preparat_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_budget_preparat_plane" bpmnElement="sangam-intl-pfm-budget-preparation">
+      <bpmndi:BPMNShape id="bp_start_di" bpmnElement="bp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_defaults_di" bpmnElement="bp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_cfg_di" bpmnElement="bp_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_ceiling_clear_di" bpmnElement="bp_ceiling_clear"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_ceiling_di" bpmnElement="bp_ceiling"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_ceilingGw_di" bpmnElement="bp_ceilingGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_ceilingHold_di" bpmnElement="bp_ceilingHold"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_slaPlan_di" bpmnElement="bp_submit_slaPlan"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_di" bpmnElement="bp_submit"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_warnNotify_di" bpmnElement="bp_submit_warnNotify"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_warnEnd_di" bpmnElement="bp_submit_warnEnd"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_breachAct_di" bpmnElement="bp_submit_breachAct"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_breachGw_di" bpmnElement="bp_submit_breachGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_done_di" bpmnElement="bp_submit_done"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_overGw_di" bpmnElement="bp_overGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_slaPlan_di" bpmnElement="bp_review_slaPlan"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_di" bpmnElement="bp_review"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_warnNotify_di" bpmnElement="bp_review_warnNotify"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_warnEnd_di" bpmnElement="bp_review_warnEnd"><dc:Bounds x="2527" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_breachAct_di" bpmnElement="bp_review_breachAct"><dc:Bounds x="2330" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_breachGw_di" bpmnElement="bp_review_breachGw"><dc:Bounds x="2520" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_done_di" bpmnElement="bp_review_done"><dc:Bounds x="2685" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_reviewGw_di" bpmnElement="bp_reviewGw"><dc:Bounds x="2850" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_executive_di" bpmnElement="bp_executive"><dc:Bounds x="2990" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_executiveGw_di" bpmnElement="bp_executiveGw"><dc:Bounds x="3180" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_bundle_di" bpmnElement="bp_bundle"><dc:Bounds x="3320" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_bundleGw_di" bpmnElement="bp_bundleGw"><dc:Bounds x="3510" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legislature_clear_di" bpmnElement="bp_legislature_clear"><dc:Bounds x="3650" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legislature_di" bpmnElement="bp_legislature"><dc:Bounds x="3815" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legislatureGw_di" bpmnElement="bp_legislatureGw"><dc:Bounds x="4005" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legislatureHold_di" bpmnElement="bp_legislatureHold"><dc:Bounds x="4145" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legClock_di" bpmnElement="bp_legClock"><dc:Bounds x="4145" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_wait_di" bpmnElement="bp_wait"><dc:Bounds x="4335" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_enactedMsg_di" bpmnElement="bp_enactedMsg"><dc:Bounds x="4507" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legLate_di" bpmnElement="bp_legLate"><dc:Bounds x="4507" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_legFollowUp_di" bpmnElement="bp_legFollowUp"><dc:Bounds x="4640" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_record_di" bpmnElement="bp_record"><dc:Bounds x="4640" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_end_di" bpmnElement="bp_end"><dc:Bounds x="4837" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_warn_di" bpmnElement="bp_submit_warn"><dc:Bounds x="1183" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_submit_breach_di" bpmnElement="bp_submit_breach"><dc:Bounds x="1213" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_warn_di" bpmnElement="bp_review_warn"><dc:Bounds x="2173" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_review_breach_di" bpmnElement="bp_review_breach"><dc:Bounds x="2203" y="92" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_withdraw_di" bpmnElement="bp_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_withdrawStart_di" bpmnElement="bp_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_withdrawKind_di" bpmnElement="bp_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_withdrawCall_di" bpmnElement="bp_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_withdrawEnd_di" bpmnElement="bp_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_cancel_di" bpmnElement="bp_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_cancelStart_di" bpmnElement="bp_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_cancelKind_di" bpmnElement="bp_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_cancelCall_di" bpmnElement="bp_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="bp_cancelEnd_di" bpmnElement="bp_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f1_di" bpmnElement="intl_pfm_budget_preparat_f1"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f2_di" bpmnElement="intl_pfm_budget_preparat_f2"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f3_di" bpmnElement="intl_pfm_budget_preparat_f3"><di:waypoint x="1060" y="235"/><di:waypoint x="1060" y="267"/><di:waypoint x="565" y="267"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f4_di" bpmnElement="intl_pfm_budget_preparat_f4"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f5_di" bpmnElement="intl_pfm_budget_preparat_f5"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f6_di" bpmnElement="intl_pfm_budget_preparat_f6"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f7_di" bpmnElement="intl_pfm_budget_preparat_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f8_di" bpmnElement="intl_pfm_budget_preparat_f8"><di:waypoint x="1201" y="128"/><di:waypoint x="1201" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f9_di" bpmnElement="intl_pfm_budget_preparat_f9"><di:waypoint x="1440" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f10_di" bpmnElement="intl_pfm_budget_preparat_f10"><di:waypoint x="1231" y="128"/><di:waypoint x="1231" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f11_di" bpmnElement="intl_pfm_budget_preparat_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f12_di" bpmnElement="intl_pfm_budget_preparat_f12"><di:waypoint x="1580" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f13_di" bpmnElement="intl_pfm_budget_preparat_f13"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="128"/><di:waypoint x="1060" y="128"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f14_di" bpmnElement="intl_pfm_budget_preparat_f14"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f15_di" bpmnElement="intl_pfm_budget_preparat_f15"><di:waypoint x="1275" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f16_di" bpmnElement="intl_pfm_budget_preparat_f16"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f17_di" bpmnElement="intl_pfm_budget_preparat_f17"><di:waypoint x="1745" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f18_di" bpmnElement="intl_pfm_budget_preparat_f18"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="135"/><di:waypoint x="1060" y="135"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f19_di" bpmnElement="intl_pfm_budget_preparat_f19"><di:waypoint x="2191" y="128"/><di:waypoint x="2191" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f20_di" bpmnElement="intl_pfm_budget_preparat_f20"><di:waypoint x="2430" y="195"/><di:waypoint x="2527" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f21_di" bpmnElement="intl_pfm_budget_preparat_f21"><di:waypoint x="2221" y="128"/><di:waypoint x="2221" y="70"/><di:waypoint x="2330" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f22_di" bpmnElement="intl_pfm_budget_preparat_f22"><di:waypoint x="2430" y="70"/><di:waypoint x="2520" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f23_di" bpmnElement="intl_pfm_budget_preparat_f23"><di:waypoint x="2570" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f24_di" bpmnElement="intl_pfm_budget_preparat_f24"><di:waypoint x="2545" y="95"/><di:waypoint x="2545" y="149"/><di:waypoint x="2050" y="149"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f25_di" bpmnElement="intl_pfm_budget_preparat_f25"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f26_di" bpmnElement="intl_pfm_budget_preparat_f26"><di:waypoint x="2265" y="70"/><di:waypoint x="2685" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f27_di" bpmnElement="intl_pfm_budget_preparat_f27"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f28_di" bpmnElement="intl_pfm_budget_preparat_f28"><di:waypoint x="2735" y="70"/><di:waypoint x="2850" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f29_di" bpmnElement="intl_pfm_budget_preparat_f29"><di:waypoint x="2875" y="95"/><di:waypoint x="2875" y="128"/><di:waypoint x="1060" y="128"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f30_di" bpmnElement="intl_pfm_budget_preparat_f30"><di:waypoint x="2900" y="70"/><di:waypoint x="2990" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f31_di" bpmnElement="intl_pfm_budget_preparat_f31"><di:waypoint x="3090" y="70"/><di:waypoint x="3180" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f32_di" bpmnElement="intl_pfm_budget_preparat_f32"><di:waypoint x="3205" y="95"/><di:waypoint x="3205" y="149"/><di:waypoint x="2050" y="149"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f33_di" bpmnElement="intl_pfm_budget_preparat_f33"><di:waypoint x="3230" y="70"/><di:waypoint x="3320" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f34_di" bpmnElement="intl_pfm_budget_preparat_f34"><di:waypoint x="3420" y="70"/><di:waypoint x="3510" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f35_di" bpmnElement="intl_pfm_budget_preparat_f35"><di:waypoint x="3535" y="95"/><di:waypoint x="3535" y="142"/><di:waypoint x="2050" y="142"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f36_di" bpmnElement="intl_pfm_budget_preparat_f36"><di:waypoint x="3750" y="70"/><di:waypoint x="3815" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f37_di" bpmnElement="intl_pfm_budget_preparat_f37"><di:waypoint x="3915" y="70"/><di:waypoint x="4005" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f38_di" bpmnElement="intl_pfm_budget_preparat_f38"><di:waypoint x="4195" y="235"/><di:waypoint x="4195" y="260"/><di:waypoint x="3700" y="260"/><di:waypoint x="3700" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f39_di" bpmnElement="intl_pfm_budget_preparat_f39"><di:waypoint x="4055" y="70"/><di:waypoint x="4100" y="70"/><di:waypoint x="4100" y="195"/><di:waypoint x="4145" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f40_di" bpmnElement="intl_pfm_budget_preparat_f40"><di:waypoint x="3560" y="70"/><di:waypoint x="3650" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f41_di" bpmnElement="intl_pfm_budget_preparat_f41"><di:waypoint x="4055" y="70"/><di:waypoint x="4145" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f42_di" bpmnElement="intl_pfm_budget_preparat_f42"><di:waypoint x="4245" y="70"/><di:waypoint x="4335" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f43_di" bpmnElement="intl_pfm_budget_preparat_f43"><di:waypoint x="4385" y="70"/><di:waypoint x="4446" y="70"/><di:waypoint x="4446" y="195"/><di:waypoint x="4507" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f44_di" bpmnElement="intl_pfm_budget_preparat_f44"><di:waypoint x="4385" y="70"/><di:waypoint x="4507" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f45_di" bpmnElement="intl_pfm_budget_preparat_f45"><di:waypoint x="4543" y="70"/><di:waypoint x="4640" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f46_di" bpmnElement="intl_pfm_budget_preparat_f46"><di:waypoint x="4690" y="110"/><di:waypoint x="4690" y="135"/><di:waypoint x="4195" y="135"/><di:waypoint x="4195" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f47_di" bpmnElement="intl_pfm_budget_preparat_f47"><di:waypoint x="4543" y="195"/><di:waypoint x="4640" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f48_di" bpmnElement="intl_pfm_budget_preparat_f48"><di:waypoint x="4740" y="195"/><di:waypoint x="4837" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f49_di" bpmnElement="intl_pfm_budget_preparat_f49"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f50_di" bpmnElement="intl_pfm_budget_preparat_f50"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f51_di" bpmnElement="intl_pfm_budget_preparat_f51"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f52_di" bpmnElement="intl_pfm_budget_preparat_f52"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f53_di" bpmnElement="intl_pfm_budget_preparat_f53"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_preparat_f54_di" bpmnElement="intl_pfm_budget_preparat_f54"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

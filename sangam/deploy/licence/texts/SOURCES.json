@@ -1,0 +1,257 @@
+{
+  "_comment": "SPDX-License-Identifier: Apache-2.0. Where each licence text in this directory comes from (W4-C round 3, 2026-11-13, no download: local Maven and npm caches only). sha256 is of the file here; artefact_sha256 is of the cached artefact it was taken from. test_release_assets.py checks both lists.",
+  "texts": {
+    "0BSD": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/0BSD.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "E3F18C71E10D673590EB9856C1D79DD3B4B0D65404EFB5E8584DBEDE7EDD608B"
+    },
+    "BSD-2-Clause": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/BSD-2-Clause.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "F32FB3B417A194167CFAD068223FC975BA96C5960513A10F66A3C28720AEC1DF"
+    },
+    "BSD-3-Clause": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/BSD-3-Clause.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "5A93D5831E1297AB10FE643E1A631E83BE392896DA14EE2951285A79012DF69D"
+    },
+    "BSD-3-Clause-Clear": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/BSD-3-Clause-Clear.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "4495ED59005765E600A16457DC52A2D39757DBFEAE081E68B59FE7C177C78589"
+    },
+    "BlueOak-1.0.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/BlueOak-1.0.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "8A1AF140FDFBF5AFD3DF27F7E662F989C5B963A300020DFAFCE42033CAE9E004"
+    },
+    "CC-BY-3.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/CC-BY-3.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "E6BC9E9C474700B708F568BAC9E5A8A9BCB2B1DAD53442F5BA449FCB848B8E76"
+    },
+    "CC-BY-4.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/CC-BY-4.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "D557539DF68E771CC1EEDCC91D13F70FCA930E508D11EEDCAFA4B15DB49E3744"
+    },
+    "CC0-1.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/CC0-1.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "A2010F343487D3F7618AFFE54F789F5487602331C0A8D03F49E9A7C547CF0499"
+    },
+    "CDDL-1.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/CDDL-1.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "FDE9EF48461569987D09CAC803379245DFDA04E7751075F39B578A0CE927D470"
+    },
+    "CDDL-1.1": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/CDDL-1.1.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "B5BBB5AC38B5CB76862A7F410CA567E4B32D7C22F22622EBFF10BA434827BB78"
+    },
+    "Classpath-exception-2.0": {
+      "source": "jakarta.annotation:jakarta.annotation-api:3.0.0 META-INF/LICENSE.md, section CLASSPATH EXCEPTION (local Maven cache; the SPDX copy in cyclonedx-core-java has no exception texts)",
+      "artefact_sha256": "B01F55552284CFB149411E64EABCA75E942D26D2E1786B32914250E4330AFAA2",
+      "entry": "META-INF/LICENSE.md",
+      "change": "section body only; Markdown heading and 4-space indent removed, wording unchanged",
+      "sha256": "C67C3DAC5D4EE6F5384E4AFE906A7DF735EA1C959D87184B2A838975AFE9759D"
+    },
+    "EPL-1.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/EPL-1.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "F3D8DC494BE2E7EA9CD31AC2FB902E35DCE7FF8181B9B30D05861B47C339CB25"
+    },
+    "EPL-2.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/EPL-2.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "61616A4066701BC7888AD910DE1633DBC55EB4D4D30D930FEEF55AFB9492E33C"
+    },
+    "GPL-2.0-only": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/GPL-2.0-only.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "AAF135472F81C5B4A0DCA9367E5BB5E9750032B5BEBE5442B36E4C0A47430DF3"
+    },
+    "GPL-2.0-or-later": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/GPL-2.0-or-later.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "AAF135472F81C5B4A0DCA9367E5BB5E9750032B5BEBE5442B36E4C0A47430DF3"
+    },
+    "ISC": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/ISC.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "F2EC607F67BB0DD3053B49835B02110D5CD0F8EB6DA3AAC4DC0B142A6B299BE9"
+    },
+    "LGPL-2.1": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/LGPL-2.1-only.txt",
+      "change": "none (verbatim bytes) ; text of the current id LGPL-2.1-only, the policy uses the deprecated id LGPL-2.1",
+      "sha256": "5749785C8BDEFAFCB5D798270ED0A967036FE2CA63DCEDADE1627565DFEF81D2"
+    },
+    "LicenseRef-BSD-3-Clause-Nuclear-Disclaimer": {
+      "source": "com.github.jai-imageio:jai-imageio-core:1.4.0 META-INF/LICENSE (local Maven cache; decision 102, PDF validator only). Its copyright lines are those of jai-imageio-core",
+      "artefact_sha256": "8AD3C68E9EFFFB10AC87FF8BC589ADF64B04A729C5194C079EFD0643607FD72A",
+      "entry": "META-INF/LICENSE",
+      "change": "none (verbatim bytes)",
+      "sha256": "31C71E38E1D27B5202FDC1D5D1A767F5FDE18306424F5D89692994BAC9668E1A"
+    },
+    "LicenseRef-BSD-stax-utils": {
+      "source": "net.java.dev.stax-utils:stax-utils:20070216 sources jar, Maven Central, fetched under decision 233(2) (DOWNLOADS-WAVE4.md 2026-11-13): licence headers of javanet/staxutils/BaseXMLEventReader.java, javanet/staxutils/ContentHandlerToXMLEventWriter.java, javanet/staxutils/IndentingXMLStreamWriter.java",
+      "artefact_sha256": "4B832AF3DFF0834726E0CE23FF2EF2DA68FC6299A731915FFE94EE00F3E90AE3",
+      "entry": "javanet/staxutils/BaseXMLEventReader.java; javanet/staxutils/ContentHandlerToXMLEventWriter.java; javanet/staxutils/IndentingXMLStreamWriter.java",
+      "change": "three header blocks joined under a short factual introduction; comment markers, tabs and CVS $Id lines removed, wording unchanged",
+      "sha256": "B2573E77B806FC55149F5DA7FCBEE335BFAE4EB83C727DF2455AE76EE506006E"
+    },
+    "LicenseRef-Bouncy-Castle": {
+      "source": "org.bouncycastle:bcprov-jdk18on:1.85.2 META-INF/LICENSE.md (local Maven cache; build-only copy pulled by sonar-maven-plugin). The shipped 1.84 jars carry no licence file; the licence wording is the same MIT-style Bouncy Castle licence, the copyright line of this copy reads 2000-2026",
+      "artefact_sha256": "986B0FB92EC10E0C66B43E036CE0077E6150CFAECD1DB9FB92B56672E157AFE5",
+      "entry": "META-INF/LICENSE.md",
+      "change": "none (verbatim bytes)",
+      "sha256": "0E01F1549C9022F406392AC2947D32223B7C2E977D21EA2F8C182FDEB4DAE5FD"
+    },
+    "LicenseRef-IU-Extreme-Lab": {
+      "source": "io.github.x-stream:mxparser:1.2.2 jar from Maven Central, META-INF/LICENSE (Indiana University Extreme! Lab Software License 1.2; decision 263, replaces the xpp3_min source of decision 226)",
+      "artefact_sha256": "AEEEE23A3303D811BCA8790EA7F25B534314861C03CFF36DAFDCC2180969EB97",
+      "entry": "META-INF/LICENSE",
+      "change": "none, byte for byte",
+      "sha256": "79F77E2E1AB271375EE45E3D9673FC78C024FE781BA6E3212D76F98BF3E60734"
+    },
+    "LicenseRef-Public-Domain": {
+      "source": "http://www.xmlpull.org/v1/download/unpacked/LICENSE.txt (redirected to the same path over https), the licence URL in the xmlpull:xmlpull 1.1.3.1 POM; scoped read under decision 234, DOWNLOADS-WAVE4.md 2026-11-13",
+      "artefact_sha256": "4EEAFA29D1D9A0CDBDAD0F5178CD553527329B57B5808FFE912CB9C698343612",
+      "entry": "LICENSE.txt",
+      "change": "a four-line factual introduction, then the page quoted byte for byte",
+      "sha256": "3164FADA4B955AE8CD46F7612432A16A46684B54BF924F3F5EB578D04DDD6458"
+    },
+    "LicenseRef-bpmn.io": {
+      "source": "npm bpmn-js 17.11.1 LICENSE (sangam-ui node_modules, installed from the committed lockfile); the bpmn.io licence (MIT with the watermark clause, LIC-8)",
+      "artefact_sha256": "5788CF8BD61481776CEE1C943595525499A1355C045E9244F92E6C8092C06770",
+      "entry": "LICENSE",
+      "change": "none (verbatim bytes)",
+      "sha256": "5788CF8BD61481776CEE1C943595525499A1355C045E9244F92E6C8092C06770"
+    },
+    "MIT": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/MIT.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "B85DCD3E453D05982552C52B5FC9E0BDD6D23C6F8E844B984A88AF32570B0CC0"
+    },
+    "MIT-0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/MIT-0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "59746D6285FFA44BFC7ECADA352AA5D6A20DC8EAB418A60CE091CC739012C135"
+    },
+    "MPL-2.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/MPL-2.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "66A3107D5AD6A058AAB753EAAC2047CCB2ED0E39465DD0FE5844DA3E300D5172"
+    },
+    "OFL-1.1": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/OFL-1.1.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "8EEA8287E5876B539670CADB82E99F9A7AFDDEC6F6730811BE1DAF25D2E9BCFD"
+    },
+    "Plexus": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/Plexus.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "22B94623B17585BDDE3E1FD4F1749DA139B656EBF5CF63C26D5C5FA9680A1AA8"
+    },
+    "PostgreSQL": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/PostgreSQL.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "D443A7DC550DA2BE365B4E924BB8779101E1C318D15BB78E5CB6374CADD8B6C0"
+    },
+    "Python-2.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/Python-2.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "893C2BAFBB8133F7AA97E1F79A3EE3241EBCA7025F56278E9E1F72BB98592F9D"
+    },
+    "UPL-1.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/UPL-1.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "2F81E75033A0C872AB9725B36081E363F0C9E6C45585C35930EDB66043FDC576"
+    },
+    "Unicode-3.0": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/Unicode-3.0.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "F7DB81051789B729FEA528A63EC4C938FDCB93D9D61D97DC8CC2E9DF6D47F2A1"
+    },
+    "Unicode-DFS-2016": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/Unicode-DFS-2016.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "1A33FC12A3ABB0B3EB14DB70E36EF1D0AF51C93B1CC1F80F022C3BD406E9B874"
+    },
+    "Unlicense": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/Unlicense.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "0BDEBFEDA07D45DADA625AE1317C6F833186E798B171D0DB640BCF32E92A8240"
+    },
+    "W3C": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/W3C.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "DF7429635BACFB82B3E92C2FFF50553949AFD97389890D53A67B67CBF9FBA68E"
+    },
+    "Zlib": {
+      "source": "SPDX License List 3.24.0 (2024-05-22) text as bundled in org.cyclonedx:cyclonedx-core-java:9.0.5 (local Maven cache)",
+      "artefact_sha256": "9474C73A81D9BE6206367D357A3449E03E70C69BC672D82BE04F15806EF170FA",
+      "entry": "licenses/Zlib.txt",
+      "change": "none (verbatim bytes)",
+      "sha256": "BFB1112D49DB5B1DAECDFEF24BD7E2F3EA0BAFB33AA67AA0AB51E2BF8407C03D"
+    }
+  }
+}

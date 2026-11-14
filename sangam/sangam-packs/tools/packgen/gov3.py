@@ -1178,15 +1178,25 @@ def records():
                '${recordOfficerSeat}', form='records/review', decision=('reviewDecision', ['retain', 'transferNai', 'destroy']),
                fields=['remarks*'])
     s.seq(st, d, rv, w, t)
+    # decision 299 (AU-03): RECORD_REVIEWED once per review decision, before the decision routes
+    rd = s.svc('rr_reviewed', 'Record the review', C['CASE'], {'op': 'REVIEW'})
     g = s.xgw('rr_gw', 'Decision?')
-    s.flow(t, g)
+    s.seq(t, rd, g)
     rr2 = s.svc('rr_again', 'Next review', C['SLA'], {'op': 'DEADLINE', 'clock': 'review', 'spec': '${reReviewPeriod}'})
     s.flow(g, rr2, "reviewDecision == 'retain'", 'retain')
     s.flow(rr2, w)
-    nai = s.conn('rr_nai', 'Transfer to National Archives (PDF/A)', 'archive.nai', 'transfer', 'submit',
-                 'fileNo,subject,retentionCategory', 'nai', step='nai')
-    s.flow(g, nai, "reviewDecision == 'transferNai'", 'transfer')
-    s.flow(nai, s.end('rr_endTransferred', 'Transferred'))
+    # decision 299: the transfer is the core execution block, so a transfer only queued in the outbox waits for its
+    # settled outcome (result message, lookup or reconciliation) instead of ending the record as transferred; only a
+    # transfer settled as succeeded writes RECORD_TRANSFERRED_NAI, any other outcome returns the record to the review
+    nc = s.setv('rr_naiCfg', 'Transfer step', values='executionConnector=archive.nai;executionStep=nai;'
+                'executionOperation=transfer;verifyApproval=false;reconcileRequired=false;'
+                'executionPayloadFields=fileNo,subject,retentionCategory')
+    nai = core(s, 'rr_nai', 'Transfer to National Archives (PDF/A) (core execution)', 'execution')
+    s.flow(nc, nai)
+    s.flow(g, nc, "reviewDecision == 'transferNai'", 'transfer')
+    nd = s.svc('rr_naiDone', 'Record the transfer', C['CASE'], {'op': 'NAI_TRANSFERRED'})
+    s.flow(nd, s.end('rr_endTransferred', 'Transferred'))
+    s.flow(nai, outcome(s, 'rr_naiGw', 'executionOutcome', {'DONE': nd}, t, 'Transferred?'))
     hg = s.xgw('rr_holdGw', 'Legal hold?')
     s.flow(g, hg, None, 'destroy', default=True)
     blocked = s.notify('rr_blocked', 'Destruction blocked by legal hold', 'destruction-blocked', 'inapp', 'recordOfficerSeat')
@@ -1203,7 +1213,7 @@ def records():
     s.flow(ag, f6, None, 'no', default=True)
     apg = s.xgw('rr_apprDecGw')
     s.flow(ap, apg)
-    s.flow(apg, nai, "appraisalDecision == 'transferNai'", 'archival value')
+    s.flow(apg, nc, "appraisalDecision == 'transferNai'", 'archival value')
     s.flow(apg, f6, None, 'destroy', default=True)
     dc = s.conn('rr_destroy', 'Destroy digital copies', 'archive.destroyCopies', 'destroy', 'submit', 'fileNo', 'destroy',
                 step='destroy')

@@ -17,7 +17,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Define
-    /// RegisterController.define (sangam-registry).
+    /// RegisterController.define (sangam-rest).
     /// PUT /registry/registers/{registerKey} (operationId registryRegisterDefine); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterDefineAsync(string registerKey, M.RegistryRegisterDefineBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Definition
-    /// RegisterController.definition (sangam-registry).
+    /// RegisterController.definition (sangam-rest).
     /// GET /registry/registers/{registerKey} (operationId registryRegisterDefinition); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterDefinitionAsync(string registerKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Definitions
-    /// RegisterController.definitions (sangam-registry).
+    /// RegisterController.definitions (sangam-rest).
     /// GET /registry/registers (operationId registryRegisterDefinitions); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegisterDefinitionsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -51,7 +51,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Append
-    /// RegisterController.append (sangam-registry).
+    /// RegisterController.append (sangam-rest).
     /// POST /registry/registers/{registerKey}/entries (operationId registryRegisterAppend); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterAppendAsync(string registerKey, M.RegistryRegisterAppendBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Books
-    /// RegisterController.books (sangam-registry).
+    /// RegisterController.books (sangam-rest).
     /// GET /registry/registers/{registerKey}/books (operationId registryRegisterBooks); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryRegisterBooksAsync(string registerKey, string? scope = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -77,7 +77,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Book
-    /// RegisterController.book (sangam-registry).
+    /// RegisterController.book (sangam-rest).
     /// GET /registry/registers/books/{bookId} (operationId registryRegisterBook); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterBookAsync(string bookId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -88,7 +88,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Entries
-    /// RegisterController.entries (sangam-registry).
+    /// RegisterController.entries (sangam-rest).
     /// GET /registry/registers/books/{bookId}/entries (operationId registryRegisterEntries); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegisterEntriesAsync(string bookId, long? from = null, long? count = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -101,7 +101,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Effective
-    /// RegisterController.effective (sangam-registry).
+    /// RegisterController.effective (sangam-rest).
     /// GET /registry/registers/books/{bookId}/entries/{entryNo} (operationId registryRegisterEffective); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterEffectiveAsync(string bookId, string entryNo, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -112,7 +112,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Correct
-    /// RegisterController.correct (sangam-registry).
+    /// RegisterController.correct (sangam-rest).
     /// POST /registry/registers/books/{bookId}/entries/{entryNo}/corrections (operationId registryRegisterCorrect); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterCorrectAsync(string bookId, string entryNo, M.RegistryRegisterCorrectBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -124,7 +124,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Entries for
-    /// RegisterController.entriesFor (sangam-registry).
+    /// RegisterController.entriesFor (sangam-rest).
     /// GET /registry/registers/entries (operationId registryRegisterEntriesFor); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegisterEntriesForAsync(string refType, string refId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -137,7 +137,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Close
-    /// RegisterController.close (sangam-registry).
+    /// RegisterController.close (sangam-rest).
     /// POST /registry/registers/books/{bookId}/close (operationId registryRegisterClose); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterCloseAsync(string bookId, M.RegistryRegisterCloseBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -149,7 +149,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Verify
-    /// RegisterController.verify (sangam-registry).
+    /// RegisterController.verify (sangam-rest).
     /// GET /registry/registers/books/{bookId}/verify (operationId registryRegisterVerify); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterVerifyAsync(string bookId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -160,7 +160,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Extract
-    /// RegisterController.extract (sangam-registry).
+    /// RegisterController.extract (sangam-rest).
     /// POST /registry/registers/books/{bookId}/extracts (operationId registryRegisterExtract); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterExtractAsync(string bookId, M.RegistryRegisterExtractBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -172,7 +172,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Get extract
-    /// RegisterController.getExtract (sangam-registry).
+    /// RegisterController.getExtract (sangam-rest).
     /// GET /registry/registers/extracts/{extractId} (operationId registryRegisterGetExtract); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterGetExtractAsync(string extractId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -183,7 +183,7 @@ public sealed class RegistryRegistersApi
 
     /// <summary>
     /// Verify extract
-    /// RegisterController.verifyExtract (sangam-registry).
+    /// RegisterController.verifyExtract (sangam-rest).
     /// GET /registry/registers/public/{tenant}/extracts/verify (operationId registryRegisterVerifyExtract).
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegisterVerifyExtractAsync(string tenant, string code, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

@@ -23,7 +23,7 @@ final class RegistryObjectsApi
     /**
      * Create
      *
-     * RegistryController.create (sangam-registry).
+     * RegistryController.create (sangam-rest).
      *
      * POST /registry/objects (operationId registryRegistryCreate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryCreateBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryObjectsApi
     /**
      * List
      *
-     * RegistryController.list (sangam-registry).
+     * RegistryController.list (sangam-rest).
      *
      * GET /registry/objects (operationId registryRegistryList); permission registry.read.
      * @param string|null $typeKey query typeKey
@@ -73,7 +73,7 @@ final class RegistryObjectsApi
     /**
      * Get
      *
-     * RegistryController.get (sangam-registry).
+     * RegistryController.get (sangam-rest).
      *
      * GET /registry/objects/{id} (operationId registryRegistryGet); permission registry.read.
      * @return array<string, mixed>
@@ -87,7 +87,7 @@ final class RegistryObjectsApi
     /**
      * Update
      *
-     * RegistryController.update (sangam-registry).
+     * RegistryController.update (sangam-rest).
      *
      * PATCH /registry/objects/{id} (operationId registryRegistryUpdate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryUpdateBody|array $body request body
@@ -107,7 +107,7 @@ final class RegistryObjectsApi
     /**
      * By number
      *
-     * RegistryController.byNumber (sangam-registry).
+     * RegistryController.byNumber (sangam-rest).
      *
      * GET /registry/objects/by-number/{number} (operationId registryRegistryByNumber); permission registry.read.
      * @param string|null $typeKey query typeKey
@@ -123,7 +123,7 @@ final class RegistryObjectsApi
     /**
      * Transition
      *
-     * RegistryController.transition (sangam-registry).
+     * RegistryController.transition (sangam-rest).
      *
      * POST /registry/objects/{id}/transitions/{name} (operationId registryRegistryTransition); permission registry.write; result stored atomically with the state change.
      * @param string|null $ifMatch header If-Match
@@ -142,7 +142,7 @@ final class RegistryObjectsApi
     /**
      * Available transitions
      *
-     * RegistryController.availableTransitions (sangam-registry).
+     * RegistryController.availableTransitions (sangam-rest).
      *
      * GET /registry/objects/{id}/transitions (operationId registryRegistryAvailableTransitions); permission registry.read.
      * @return list<array<string, mixed>>
@@ -156,7 +156,7 @@ final class RegistryObjectsApi
     /**
      * History
      *
-     * RegistryController.history (sangam-registry).
+     * RegistryController.history (sangam-rest).
      *
      * GET /registry/objects/{id}/versions (operationId registryRegistryHistory); permission registry.read.
      * @return list<array<string, mixed>>
@@ -170,7 +170,7 @@ final class RegistryObjectsApi
     /**
      * As of
      *
-     * RegistryController.asOf (sangam-registry).
+     * RegistryController.asOf (sangam-rest).
      *
      * GET /registry/objects/{id}/as-of (operationId registryRegistryAsOf); permission registry.read.
      * @param string $at query at
@@ -186,7 +186,7 @@ final class RegistryObjectsApi
     /**
      * Verify audit
      *
-     * RegistryController.verifyAudit (sangam-registry).
+     * RegistryController.verifyAudit (sangam-rest).
      *
      * GET /registry/objects/{id}/audit/verify (operationId registryRegistryVerifyAudit); permission registry.read.
      * @return array<string, mixed>
@@ -200,7 +200,7 @@ final class RegistryObjectsApi
     /**
      * Mirror
      *
-     * RegistryController.mirror (sangam-registry).
+     * RegistryController.mirror (sangam-rest).
      *
      * POST /registry/objects/mirror (operationId registryRegistryMirror); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryMirrorBody|array $body request body

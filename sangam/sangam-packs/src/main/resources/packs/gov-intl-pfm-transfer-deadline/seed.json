@@ -1,0 +1,38 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "TREASURY-OFFICER",
+      "role": "TREASURYOFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Treasury officer (revenue accounts)",
+        "hi": "कोषागार अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "TREASURY-OFFICER",
+      "person": "itd.treasury-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "TREASURYOFFICER",
+      "name": {
+        "en": "Treasury officer (revenue accounts)",
+        "hi": "कोषागार अधिकारी"
+      }
+    }
+  ]
+}

@@ -12,15 +12,15 @@ import java.sql.Connection;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
  * Versioned knowledge bases: chunk, embed, store, retrieve. Authorization is a SQL predicate applied <b>before</b> ranking,
  * on the chunk's source document id (policy resource type {@code document}), so a hidden document cannot affect a ranking
  * or a count. The predicate comes from a {@link Visibility} binding (sangam-server: the sangam-security {@code PolicyCompiler},
- * whose denies win at every scope, A-13). Without a binding every retrieval is empty (fail closed). Ranking is brute-force cosine over at most {@code maxCandidates} authorized chunks of the active version in
- * the JVM, on all four databases. A native vector index such as pgvector is not implemented.
+ * whose denies win at every scope, A-13). Without a binding every retrieval is empty (fail closed). Ranking goes through
+ * the {@link VectorIndex} port (M-129); the default is the portable index, which ranks every authorized chunk of the
+ * active version on all Tier-1 databases with no cap. A database-native index is a further implementation of the port.
  */
 public final class KnowledgeBaseService {
 
@@ -32,7 +32,7 @@ public final class KnowledgeBaseService {
     private final LlmPort llm;
     private final int chunkChars;
     private final int overlapChars;
-    private final int maxCandidates;
+    private final VectorIndex index;
     private final Visibility visibility;
 
     /** READ predicate over {@code AI_KB_CHUNK} alias {@code k}, computed in the query's own transaction. */
@@ -41,14 +41,38 @@ public final class KnowledgeBaseService {
         SqlPredicate visible(Connection c, SecurityIdentity who);
     }
 
-    /** No binding: fail closed, every retrieval is empty. */
+    /**
+     * No binding: fail closed, every retrieval is empty. {@code maxCandidates} no longer limits ranking (M-129: the cap
+     * dropped every chunk after it in chunk-id order); it is kept for source compatibility and must be positive.
+     *
+     * @deprecated use {@link #KnowledgeBaseService(Dialect, Transactions, LlmPort, int, int, Visibility, VectorIndex)}
+     */
+    @Deprecated
     public KnowledgeBaseService(Dialect dialect, Transactions tx, LlmPort llm, int chunkChars, int overlapChars, int maxCandidates) {
         this(dialect, tx, llm, chunkChars, overlapChars, maxCandidates, null);
     }
 
-    /** {@code visibility} yields a predicate over alias {@code k}; null means fail closed. */
+    /**
+     * {@code visibility} yields a predicate over alias {@code k}; null means fail closed. Ranking uses the portable index;
+     * {@code maxCandidates} no longer limits it (see the six-argument constructor) and must be positive.
+     *
+     * @deprecated use {@link #KnowledgeBaseService(Dialect, Transactions, LlmPort, int, int, Visibility, VectorIndex)}
+     */
+    @Deprecated
     public KnowledgeBaseService(Dialect dialect, Transactions tx, LlmPort llm, int chunkChars, int overlapChars, int maxCandidates,
                                 Visibility visibility) {
+        this(dialect, tx, llm, chunkChars, overlapChars, visibility, VectorIndex.portable());
+        if (maxCandidates < 1) {
+            throw new IllegalArgumentException("maxCandidates must be positive, was " + maxCandidates);
+        }
+    }
+
+    /**
+     * M-129: {@code visibility} yields a predicate over alias {@code k} (null means fail closed); {@code index} ranks
+     * the authorized chunks ({@link VectorIndex#portable()} on every Tier-1 database).
+     */
+    public KnowledgeBaseService(Dialect dialect, Transactions tx, LlmPort llm, int chunkChars, int overlapChars,
+                                Visibility visibility, VectorIndex index) {
         if (overlapChars >= chunkChars) {
             throw new IllegalArgumentException("overlap must be smaller than the chunk");
         }
@@ -57,8 +81,8 @@ public final class KnowledgeBaseService {
         this.llm = llm;
         this.chunkChars = chunkChars;
         this.overlapChars = overlapChars;
-        this.maxCandidates = maxCandidates;
         this.visibility = visibility;
+        this.index = java.util.Objects.requireNonNull(index, "index");
     }
 
     /** Opens the next version in state BUILDING. */
@@ -80,9 +104,12 @@ public final class KnowledgeBaseService {
     /** Embeds outside the transaction, then stores the chunks. Re-ingesting the same document version replaces its chunks. */
     public int ingest(String tenantId, String kb, int version, String documentId, String docVersion, String text) {
         List<String> chunks = chunk(text, chunkChars, overlapChars);
+        List<float[]> embeddings = new ArrayList<>(chunks.size());
         List<byte[]> vectors = new ArrayList<>(chunks.size());
         for (String ch : chunks) {
-            vectors.add(encode(llm.embed(tenantId, ch)));
+            float[] e = llm.embed(tenantId, ch);
+            embeddings.add(e);
+            vectors.add(encode(e));
         }
         return tx.inTransaction(c -> {
             String state = Jdbc.one(c, "SELECT state FROM AI_KB_VERSION WHERE tenant_id=? AND kb_key=? AND version=?", rs -> rs.getString(1), tenantId, kb, version)
@@ -94,6 +121,7 @@ public final class KnowledgeBaseService {
             for (int i = 0; i < chunks.size(); i++) {
                 Jdbc.update(c, "INSERT INTO AI_KB_CHUNK(tenant_id,kb_key,version,id,document_id,doc_version,seq,text_value,embedding) VALUES (?,?,?,?,?,?,?,?,?)",
                         tenantId, kb, version, documentId + "#" + i, documentId, docVersion, i, chunks.get(i), vectors.get(i));
+                index.stored(c, tenantId, kb, version, documentId + "#" + i, embeddings.get(i));
             }
             return chunks.size();
         });
@@ -115,19 +143,14 @@ public final class KnowledgeBaseService {
         if (visibility == null) {
             return List.of();
         }
-        float[] q = llm.embed(who.tenantId(), query);
-        record Row(String doc, String ver, int seq, String text, byte[] vec) {
+        if (k < 1) {
+            return List.of();
         }
-        List<Row> rows = tx.inTransaction(c -> {
+        float[] q = llm.embed(who.tenantId(), query);
+        return tx.inTransaction(c -> {
             SqlPredicate visible = visibility.visible(c, who);
-            List<Object> params = new ArrayList<>(List.of(who.tenantId(), kb, who.tenantId(), kb));
-            params.addAll(visible.params());
-            String sql = "SELECT k.document_id,k.doc_version,k.seq,k.text_value,k.embedding FROM AI_KB_CHUNK k WHERE k.tenant_id=? AND k.kb_key=? AND k.version="
-                    + "(SELECT v.version FROM AI_KB_VERSION v WHERE v.tenant_id=? AND v.kb_key=? AND v.state='ACTIVE') AND (" + visible.sql() + ") ORDER BY k.id";
-            return Jdbc.query(c, sql, rs -> new Row(rs.getString(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getBytes(5)), params.toArray());
+            return index.rank(c, who.tenantId(), kb, visible, q, k);
         });
-        return rows.stream().limit(maxCandidates).map(r -> new Hit(r.doc, r.ver, r.seq, r.text, cosine(q, decode(r.vec))))
-                .sorted(Comparator.comparingDouble(Hit::score).reversed()).limit(k).toList();
     }
 
     static List<String> chunk(String text, int size, int overlap) {

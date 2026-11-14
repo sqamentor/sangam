@@ -17,7 +17,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Define class
-    /// AssetController.defineClass (sangam-registry).
+    /// AssetController.defineClass (sangam-rest).
     /// POST /registry/assets/classes (operationId registryAssetDefineClass); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetDefineClassAsync(M.RegistryAssetDefineClassBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Classes
-    /// AssetController.classes (sangam-registry).
+    /// AssetController.classes (sangam-rest).
     /// GET /registry/assets/classes (operationId registryAssetClasses); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetClassesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Get class
-    /// AssetController.getClass (sangam-registry).
+    /// AssetController.getClass (sangam-rest).
     /// GET /registry/assets/classes/{classKey} (operationId registryAssetGetClass); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetGetClassAsync(string classKey, bool? resolved = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -52,7 +52,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Register
-    /// AssetController.register (sangam-registry).
+    /// AssetController.register (sangam-rest).
     /// POST /registry/assets (operationId registryAssetRegister); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetRegisterAsync(M.RegistryAssetRegisterBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -64,7 +64,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// List
-    /// AssetController.list (sangam-registry).
+    /// AssetController.list (sangam-rest).
     /// GET /registry/assets (operationId registryAssetList); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryAssetListAsync(string? classKey = null, string? status = null, string? parentAssetId = null, string? locationRef = null, string? custodianRef = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -82,7 +82,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Get
-    /// AssetController.get (sangam-registry).
+    /// AssetController.get (sangam-rest).
     /// GET /registry/assets/{id} (operationId registryAssetGet); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetGetAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -93,7 +93,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Update details
-    /// AssetController.updateDetails (sangam-registry).
+    /// AssetController.updateDetails (sangam-rest).
     /// PATCH /registry/assets/{id} (operationId registryAssetUpdateDetails); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetUpdateDetailsAsync(string id, M.RegistryAssetUpdateDetailsBody body, long? expectedVersion = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -106,7 +106,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// By tag
-    /// AssetController.byTag (sangam-registry).
+    /// AssetController.byTag (sangam-rest).
     /// GET /registry/assets/by-tag/{tag} (operationId registryAssetByTag); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetByTagAsync(string tag, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -117,7 +117,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Move
-    /// AssetController.move (sangam-registry).
+    /// AssetController.move (sangam-rest).
     /// POST /registry/assets/{id}/move (operationId registryAssetMove); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetMoveAsync(string id, M.RegistryAssetMoveBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -129,7 +129,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Movements
-    /// AssetController.movements (sangam-registry).
+    /// AssetController.movements (sangam-rest).
     /// GET /registry/assets/{id}/movements (operationId registryAssetMovements); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetMovementsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -140,7 +140,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Reparent
-    /// AssetController.reparent (sangam-registry).
+    /// AssetController.reparent (sangam-rest).
     /// POST /registry/assets/{id}/reparent (operationId registryAssetReparent); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetReparentAsync(string id, M.RegistryAssetReparentBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -152,7 +152,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Children
-    /// AssetController.children (sangam-registry).
+    /// AssetController.children (sangam-rest).
     /// GET /registry/assets/{id}/children (operationId registryAssetChildren); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetChildrenAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -163,7 +163,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Ancestors
-    /// AssetController.ancestors (sangam-registry).
+    /// AssetController.ancestors (sangam-rest).
     /// GET /registry/assets/{id}/ancestors (operationId registryAssetAncestors); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetAncestorsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -174,7 +174,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Subtree
-    /// AssetController.subtree (sangam-registry).
+    /// AssetController.subtree (sangam-rest).
     /// GET /registry/assets/{id}/subtree (operationId registryAssetSubtree); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetSubtreeAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -185,7 +185,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Dispose
-    /// AssetController.dispose (sangam-registry).
+    /// AssetController.dispose (sangam-rest).
     /// POST /registry/assets/{id}/dispose (operationId registryAssetDispose); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetDisposeAsync(string id, M.RegistryAssetDisposeBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -197,7 +197,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Depreciation
-    /// AssetController.depreciation (sangam-registry).
+    /// AssetController.depreciation (sangam-rest).
     /// GET /registry/assets/{id}/depreciation (operationId registryAssetDepreciation); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetDepreciationAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -208,7 +208,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Book value
-    /// AssetController.bookValue (sangam-registry).
+    /// AssetController.bookValue (sangam-rest).
     /// GET /registry/assets/{id}/book-value (operationId registryAssetBookValue); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetBookValueAsync(string id, string? asOf = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -220,7 +220,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Meters
-    /// AssetController.meters (sangam-registry).
+    /// AssetController.meters (sangam-rest).
     /// GET /registry/assets/{id}/meters (operationId registryAssetMeters); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetMetersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -231,7 +231,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Add meter
-    /// AssetController.addMeter (sangam-registry).
+    /// AssetController.addMeter (sangam-rest).
     /// POST /registry/assets/{id}/meters (operationId registryAssetAddMeter); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetAddMeterAsync(string id, M.RegistryAssetAddMeterBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -243,7 +243,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Record reading
-    /// AssetController.recordReading (sangam-registry).
+    /// AssetController.recordReading (sangam-rest).
     /// POST /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetRecordReading); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetRecordReadingAsync(string id, string meterType, M.RegistryAssetRecordReadingBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -255,7 +255,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Readings
-    /// AssetController.readings (sangam-registry).
+    /// AssetController.readings (sangam-rest).
     /// GET /registry/assets/{id}/meters/{meterType}/readings (operationId registryAssetReadings); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryAssetReadingsAsync(string id, string meterType, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -268,7 +268,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Correct reading
-    /// AssetController.correctReading (sangam-registry).
+    /// AssetController.correctReading (sangam-rest).
     /// POST /registry/assets/readings/{readingId}/correct (operationId registryAssetCorrectReading); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetCorrectReadingAsync(string readingId, M.RegistryAssetCorrectReadingBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -280,7 +280,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Reject reading
-    /// AssetController.rejectReading (sangam-registry).
+    /// AssetController.rejectReading (sangam-rest).
     /// POST /registry/assets/readings/{readingId}/reject (operationId registryAssetRejectReading); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetRejectReadingAsync(string readingId, M.RegistryAssetRejectReadingBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -292,7 +292,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Plans
-    /// AssetController.plans (sangam-registry).
+    /// AssetController.plans (sangam-rest).
     /// GET /registry/assets/{id}/plans (operationId registryAssetPlans); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetPlansAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -303,7 +303,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Add plan
-    /// AssetController.addPlan (sangam-registry).
+    /// AssetController.addPlan (sangam-rest).
     /// POST /registry/assets/{id}/plans (operationId registryAssetAddPlan); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetAddPlanAsync(string id, M.RegistryAssetAddPlanBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -315,7 +315,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Update plan
-    /// AssetController.updatePlan (sangam-registry).
+    /// AssetController.updatePlan (sangam-rest).
     /// PATCH /registry/assets/plans/{planId} (operationId registryAssetUpdatePlan); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetUpdatePlanAsync(string planId, M.RegistryAssetUpdatePlanBody body, long? expectedVersion = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -328,7 +328,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Plan status
-    /// AssetController.planStatus (sangam-registry).
+    /// AssetController.planStatus (sangam-rest).
     /// POST /registry/assets/plans/{planId}/status (operationId registryAssetPlanStatus); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetPlanStatusAsync(string planId, M.RegistryAssetPlanStatusBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -340,7 +340,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Trigger condition
-    /// AssetController.triggerCondition (sangam-registry).
+    /// AssetController.triggerCondition (sangam-rest).
     /// POST /registry/assets/plans/{planId}/trigger (operationId registryAssetTriggerCondition); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetTriggerConditionAsync(string planId, M.RegistryAssetTriggerConditionBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -352,7 +352,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Create work order
-    /// AssetController.createWorkOrder (sangam-registry).
+    /// AssetController.createWorkOrder (sangam-rest).
     /// POST /registry/assets/work-orders (operationId registryAssetCreateWorkOrder); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetCreateWorkOrderAsync(M.RegistryAssetCreateWorkOrderBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -364,7 +364,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Work orders
-    /// AssetController.workOrders (sangam-registry).
+    /// AssetController.workOrders (sangam-rest).
     /// GET /registry/assets/work-orders (operationId registryAssetWorkOrders); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryAssetWorkOrdersAsync(string? assetId = null, string? state = null, string? workType = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -380,7 +380,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Work order
-    /// AssetController.workOrder (sangam-registry).
+    /// AssetController.workOrder (sangam-rest).
     /// GET /registry/assets/work-orders/{woId} (operationId registryAssetWorkOrder); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetWorkOrderAsync(string woId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -391,7 +391,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Generate due
-    /// AssetController.generateDue (sangam-registry).
+    /// AssetController.generateDue (sangam-rest).
     /// POST /registry/assets/work-orders/generate-due (operationId registryAssetGenerateDue); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryAssetGenerateDueAsync(M.RegistryAssetGenerateDueBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -403,7 +403,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Step
-    /// AssetController.step (sangam-registry).
+    /// AssetController.step (sangam-rest).
     /// POST /registry/assets/work-orders/{woId}/{step} (operationId registryAssetStep); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetStepAsync(string woId, string step, M.RegistryAssetStepBody? body = null, long? expectedVersion = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -416,7 +416,7 @@ public sealed class RegistryAssetsApi
 
     /// <summary>
     /// Reliability
-    /// AssetController.reliability (sangam-registry).
+    /// AssetController.reliability (sangam-rest).
     /// GET /registry/assets/{id}/reliability (operationId registryAssetReliability); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryAssetReliabilityAsync(string id, string? from = null, string? to = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

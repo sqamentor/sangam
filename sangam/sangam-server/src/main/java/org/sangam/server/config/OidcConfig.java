@@ -9,6 +9,8 @@ import java.util.Map;
 
 import com.nimbusds.jwt.JWTParser;
 import org.sangam.server.security.PlatformIssuers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -45,6 +47,8 @@ import org.springframework.util.StringUtils;
 @Configuration(proxyBeanMethods = false)
 public class OidcConfig {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OidcConfig.class);
+
     static final String ISSUER = "spring.security.oauth2.resourceserver.jwt.issuer-uri";
     static final String JWKS = "spring.security.oauth2.resourceserver.jwt.jwk-set-uri";
 
@@ -54,6 +58,7 @@ public class OidcConfig {
         String issuer = env.getProperty(ISSUER);
         String jwks = env.getProperty(JWKS);
         String audience = props.getClaims().getAudience();
+        requireCompleteValidation(ProductionEnvironment.isProduction(env), issuer, audience);
         JwtDecoder tenant = decoder(issuer, jwks, audience);
         PlatformIssuers platform = props.platformIssuers();
         if (!platform.configured()) {
@@ -75,6 +80,33 @@ public class OidcConfig {
             }
         }
         return new IssuerRouting(tenant, platform, Map.copyOf(decoders));
+    }
+
+    /**
+     * RM-09 (decisions 75 and 92): token validation is complete in production. Without an issuer ({@code jwk-set-uri}
+     * only) the {@code iss} claim is not checked, and with a blank audience the {@code aud} claim is not checked; either
+     * would accept a token minted for another issuer or another client. In production the start is refused; elsewhere a
+     * WARN is logged once at start-up.
+     *
+     * @return the gaps found (empty when validation is complete), for the WARN and for tests
+     */
+    static List<String> requireCompleteValidation(boolean production, String issuer, String audience) {
+        List<String> gaps = new ArrayList<>();
+        if (!StringUtils.hasText(issuer)) {
+            gaps.add(ISSUER + " is not set (" + JWKS + " only): the token issuer (iss) is not validated");
+        }
+        if (!StringUtils.hasText(audience)) {
+            gaps.add("sangam.security.claims.audience is blank: the token audience (aud) is not validated");
+        }
+        if (gaps.isEmpty()) {
+            return gaps;
+        }
+        if (production) {
+            throw new IllegalStateException("OIDC token validation is incomplete in production (RM-09): "
+                    + String.join("; ", gaps));
+        }
+        LOG.warn("OIDC token validation is incomplete (refused in production, RM-09): {}", String.join("; ", gaps));
+        return gaps;
     }
 
     /** Issuer location (OIDC discovery) or JWKS, with the issuer, time and audience validators. */

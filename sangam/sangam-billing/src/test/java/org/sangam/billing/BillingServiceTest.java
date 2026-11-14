@@ -69,7 +69,7 @@ class BillingServiceTest {
     @Test
     void invoiceCollectArrearsPenaltyWaiver() {
         LedgerService l = ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), null);
+        BillingService b = new BillingService(l, new TariffEngine(null), new NumberSeries.InMemory(), TestRails.settling());
         LocalDate due = LocalDate.now().minusDays(5);
         BillingService.Invoice inv = b.invoice("T", "DEMAND", "2026", "C-1", "2026-10", WATER, Map.of("units", new BigDecimal("23")),
                 Map.of(), due, "sys");

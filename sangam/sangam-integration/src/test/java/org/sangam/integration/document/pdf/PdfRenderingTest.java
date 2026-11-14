@@ -62,6 +62,36 @@ class PdfRenderingTest {
     }
 
     @Test
+    void aValidatorThatIsNotReadyKeepsOutputOffWithItsReason() {
+        PdfRenderer.Validator notReady = new PdfRenderer.Validator() {
+            @Override
+            public PdfRenderer.Report validate(byte[] pdf, Set<PdfRenderer.Conformance> required) {
+                throw new AssertionError("a validator that is not ready is never called");
+            }
+
+            @Override
+            public String notReadyReason() {
+                return "no validator service configured";
+            }
+        };
+        PdfRendering r = new PdfRendering(renderer(PdfRenderer.REQUIRED, PDF), notReady);
+        assertFalse(r.available());
+        assertEquals("the PDF validator is not ready: no validator service configured", r.unavailableReason());
+        assertThrows(PdfRendering.Unavailable.class, () -> r.render(DOC));
+    }
+
+    @Test
+    void aValidatorWithNoAnswerAtRenderTimeIsUnavailableNotInvalid() {
+        PdfRenderer.Validator silent = (pdf, req) -> {
+            throw new PdfRendering.Unavailable("the PDF validator service did not answer");
+        };
+        PdfRendering r = new PdfRendering(renderer(PdfRenderer.REQUIRED, PDF), silent);
+        assertTrue(r.available());
+        PdfRendering.Unavailable e = assertThrows(PdfRendering.Unavailable.class, () -> r.render(DOC));
+        assertEquals("the PDF validator service did not answer", e.getMessage());
+    }
+
+    @Test
     void aRendererClaimingLessThanRequiredStaysOff() {
         PdfRendering r = new PdfRendering(renderer(Set.of(PdfRenderer.Conformance.PDF_A_2B), PDF), PASS);
         assertFalse(r.available());
@@ -92,9 +122,9 @@ class PdfRenderingTest {
 
     @Test
     void theInstalledRenderingStaysOffWithoutFonts() {
-        // The PDFBox renderer and the veraPDF validator are both registered (M-081, decision 95); without a configured
-        // font the renderer is not ready, so PDF output stays off with that reason. A blank property wins over the
-        // environment variable, so the result does not depend on the machine.
+        // The PDFBox renderer and the remote validator client are both registered (M-081, decisions 95 and 114); without
+        // a configured font the renderer is not ready, and its reason is reported before the validator's. A blank
+        // property wins over the environment variable, so the result does not depend on the machine.
         String before = System.getProperty("sangam.pdf.fonts");
         try {
             System.setProperty("sangam.pdf.fonts", " ");

@@ -1,0 +1,45 @@
+{
+  "key": "gov-intl-pfm-standard-reports/period",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-standard-reports",
+  "title": {
+    "en": "Report period",
+    "hi": "रिपोर्ट अवधि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "reportSet",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Report set (monthly, quarterly, annual)",
+        "hi": "रिपोर्ट समूह"
+      }
+    },
+    {
+      "id": "reportPeriod",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Reporting period",
+        "hi": "रिपोर्ट अवधि"
+      }
+    },
+    {
+      "id": "ledgerId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Ledger",
+        "hi": "लेजर"
+      }
+    }
+  ]
+}

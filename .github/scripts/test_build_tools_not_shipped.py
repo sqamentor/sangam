@@ -42,7 +42,7 @@ class BuildToolsNotShippedTest(unittest.TestCase):
     def sbom(self, *purls: str) -> Path:
         p = self.dir / "x.cdx.json"
         p.write_text(json.dumps({"bomFormat": "CycloneDX", "components": [
-            {"name": "outer", "purl": "pkg:maven/org.sangam/sangam-core@0.1.0",
+            {"name": "outer", "purl": "pkg:maven/io.github.sqamentor/sangam-core@0.1.0",
              "components": [{"name": "n", "purl": u} for u in purls]}]}), encoding="utf-8")
         return p
 

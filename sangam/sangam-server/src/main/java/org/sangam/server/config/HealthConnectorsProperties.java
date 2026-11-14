@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.sangam.rest.modules.connectorshealth.CdsClientVerifier;
-import org.sangam.security.oidc.ClientJwtVerifier;
+import org.sangam.security.oidc.JtiReplayGuard;
+import org.sangam.security.spring.ClientJwtVerifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -380,7 +381,7 @@ public class HealthConnectorsProperties {
          * As {@link #clientVerifier()}, with the {@code jti} replay guard of the verifier: SL-138 owner decision, the
          * cluster-wide {@code JdbcReplayGuard} (null: the verifier's node-local guard, tests only).
          */
-        public CdsClientVerifier clientVerifier(ClientJwtVerifier.ReplayGuard replay) {
+        public CdsClientVerifier clientVerifier(JtiReplayGuard replay) {
             if (clients.isEmpty()) {
                 return null;
             }

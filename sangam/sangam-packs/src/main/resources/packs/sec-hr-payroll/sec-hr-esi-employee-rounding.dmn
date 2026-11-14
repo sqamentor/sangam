@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_hr_esi_employee_rounding" name="ESI employee contribution rounding (decision 139 rounding policy)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Decision 139 rounding policy, generated from tools/packgen/rounding.py -->
+  <decision id="sec-hr-esi-employee-rounding" name="ESI employee contribution rounding (decision 139 rounding policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+    <decisionTable id="sec-hr-esi-employee-rounding_t" hitPolicy="UNIQUE">
+      <input id="sec-hr-esi-employee-rounding_i0" label="As of"><inputExpression id="sec-hr-esi-employee-rounding_ie0" typeRef="date"><text>date(asOfDate)</text></inputExpression></input>
+      <output id="sec-hr-esi-employee-rounding_o0" label="Policy" name="policyId" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o1" label="Policy version" name="policyVersion" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o2" label="Evidence (VERIFIED / UNVERIFIED)" name="evidenceStatus" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o3" label="Permitted use (PRODUCTION / SYNTHETIC_DEMO_ONLY)" name="permittedUse" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o4" label="Why this evidence status and use" name="evidenceNote" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o5" label="Rounding mode" name="mode" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o6" label="Rounding unit (minor units)" name="quantumMinor" typeRef="number"/>
+      <output id="sec-hr-esi-employee-rounding_o7" label="Negative amounts" name="negatives" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o8" label="Instalment that takes the remainder" name="residual" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o9" label="Applied to" name="application" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o10" label="Stage" name="stage" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o11" label="Jurisdiction" name="jurisdiction" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o12" label="Scheme" name="scheme" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o13" label="Purpose" name="purpose" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o14" label="Source" name="source" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o15" label="Provision" name="provision" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o16" label="Effective from" name="effectiveFrom" typeRef="string"/>
+      <output id="sec-hr-esi-employee-rounding_o17" label="Effective to" name="effectiveTo" typeRef="string"/>
+      <rule id="sec-hr-esi-employee-rounding_r0"><description>VERIFIED SYNTHETIC_DEMO_ONLY ss-2026-r19-1-b</description>
+        <inputEntry id="sec-hr-esi-employee-rounding_r0_i0"><text>[date("2026-05-08")..date("9999-12-31")]</text></inputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o0"><text>"sec-hr-esi-employee-rounding"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o1"><text>"ss-2026-r19-1-b"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o2"><text>"VERIFIED"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o3"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o4"><text>"VERIFIED, SYNTHETIC_DEMO_ONLY (decision 296): rule 19(1)(a) and (b) of the Social Security (Central) Rules 2026 were read (sangam-handoff evidence/STATUTORY-EVIDENCE-288.md section 2): employer 3.25 percent and employee 0.75 percent of the wages payable for a wage period, each a sum rounded to the next higher rupee, separately; worked examples: wages Rs 10,001 give 326 + 76 = 402 (combined at 4 percent it would be 401), Rs 10,000 give exactly 325 and 75 (an exact rupee is not raised: the natural reading, not explicit text), Rs 0 gives 0. In force from 8 May 2026; periods before it are refused (old rule 51 not found). Use stays SYNTHETIC_DEMO_ONLY: payroll stays blocked by the unverified ESI rules (decision 298)"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o5"><text>"CEILING"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o6"><text>100</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o7"><text>"REFUSE"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o8"><text>""</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o9"><text>"employee share"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o10"><text>"per employee per wage period"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o11"><text>"IN"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o12"><text>"ESI under the Code on Social Security, 2020"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o13"><text>"ESI employee contribution"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o14"><text>"Social Security (Central) Rules, 2026, G.S.R. 344(E) of 8 May 2026, Gazette of India Extraordinary Part II Sec 3(i) No. 310 of 8 May 2026, in force on publication (rule 1(2)); read in the Gazette PDF and the MoLE copy, sangam-handoff evidence/STATUTORY-EVIDENCE-288.md section 2"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o15"><text>"rule 19(1)(b): the employee's contribution, a sum (rounded to the next higher rupee) equal to three-fourth per cent. of the wages payable to an employee, for a wage period; CEILING to the next whole rupee per employee and wage period, each share separately (decision 272)"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o16"><text>"2026-05-08"</text></outputEntry>
+        <outputEntry id="sec-hr-esi-employee-rounding_r0_o17"><text>"9999-12-31"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

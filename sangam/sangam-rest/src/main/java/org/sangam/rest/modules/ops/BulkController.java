@@ -31,6 +31,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/bulk")
 public class BulkController {
 
+    /** Prefix of a bulk job's resource reference (owner decision 273). */
+    public static final String RESOURCE_PREFIX = "bulk-job:";
+
     private final BulkIngest ingest;
     private final PermissionPort permissions;
 
@@ -52,7 +55,7 @@ public class BulkController {
         }
         requireType(ctx, body.objectType());
         BulkIngest.Job job = call(() -> ingest.create(ctx.tenantId(), body.objectType(), body.expectedChunks(), ctx.principalId()));
-        return Lists.created("/api/v1/bulk/jobs/" + job.id(), "bulk-job:" + job.id(), job);
+        return Lists.created("/api/v1/bulk/jobs/" + job.id(), resourceRef(job.id()), job);
     }
 
     @GetMapping("/jobs")
@@ -73,23 +76,34 @@ public class BulkController {
         return guarded(ctx, id);
     }
 
-    /** Idempotent per sequence: the same content again is a replay; other content for a stored sequence is 409. */
+    /**
+     * Idempotent per sequence: the same content again is a replay; other content for a stored sequence is 409. Like
+     * create, close and abort, the answer carries the resource reference {@code bulk-job:<id>}, so an Idempotency-Key
+     * replay can re-check the permission of the stored job's sink (owner decision 273).
+     */
     @PutMapping("/jobs/{id}/chunks/{seq}")
-    public BulkIngest.ChunkReceipt upload(RequestContext ctx, @PathVariable String id, @PathVariable int seq, @RequestBody ChunkRequest body) {
+    public ResponseEntity<BulkIngest.ChunkReceipt> upload(RequestContext ctx, @PathVariable String id, @PathVariable int seq,
+            @RequestBody ChunkRequest body) {
         guarded(ctx, id);
-        return call(() -> ingest.upload(ctx.tenantId(), id, seq, body == null ? null : body.rows(), ctx.principalId()));
+        return Lists.okRef(resourceRef(id),
+                call(() -> ingest.upload(ctx.tenantId(), id, seq, body == null ? null : body.rows(), ctx.principalId())));
     }
 
     @PostMapping("/jobs/{id}/close")
-    public BulkIngest.Job close(RequestContext ctx, @PathVariable String id) {
+    public ResponseEntity<BulkIngest.Job> close(RequestContext ctx, @PathVariable String id) {
         guarded(ctx, id);
-        return call(() -> ingest.close(ctx.tenantId(), id, ctx.principalId()));
+        return Lists.okRef(resourceRef(id), call(() -> ingest.close(ctx.tenantId(), id, ctx.principalId())));
     }
 
     @PostMapping("/jobs/{id}/abort")
-    public BulkIngest.Job abort(RequestContext ctx, @PathVariable String id) {
+    public ResponseEntity<BulkIngest.Job> abort(RequestContext ctx, @PathVariable String id) {
         guarded(ctx, id);
-        return call(() -> ingest.abort(ctx.tenantId(), id, ctx.principalId()));
+        return Lists.okRef(resourceRef(id), call(() -> ingest.abort(ctx.tenantId(), id, ctx.principalId())));
+    }
+
+    /** The resource reference of a bulk job ({@code bulk-job:<id>}), the same on create, chunk upload, close and abort. */
+    public static String resourceRef(String jobId) {
+        return RESOURCE_PREFIX + jobId;
     }
 
     @GetMapping("/jobs/{id}/rows")

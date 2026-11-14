@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/gov-intl-pfm-execution/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/gov-intl-pfm-execution/pack.json"
     }
   ],
   "seed": "packs/gov-intl-pfm-execution/seed.json",
@@ -145,6 +149,15 @@
       "reason": "country delegation of commitment powers not verified: deploy the confirmed table as a tenant override (INTERNATIONAL-PFM-REQUIREMENTS section 5)"
     }
   ],
+  "currency": "USD",
+  "powers": {
+    "pe_commit": {
+      "monetary": true,
+      "currency": "USD",
+      "limitTable": "intl-pfm-powers",
+      "ruleCaseType": "COMMITMENT"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "USD",

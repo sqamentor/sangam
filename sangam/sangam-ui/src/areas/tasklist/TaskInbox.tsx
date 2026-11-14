@@ -10,7 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import type { TaskAction, TaskSection, TaskSummary } from '../../api/types';
 import { useAction, useAsync, useInterval, usePaged, announce } from '../../lib/hooks';
-import { fmtDate, fmtMinorMoney, isCurrencyCode } from '../../i18n';
+import { fmtDate, fmtDecimal, fmtMoneyAmount, isCurrencyCode } from '../../i18n';
+import { DecimalValue } from '../../lib/decimal';
 import { Badge, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, SearchBox, SelectField, Tabs, TextField } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
 
@@ -86,7 +87,8 @@ function saveInboxFilters(user: string | undefined, filters: InboxFilter[]) {
   }
 }
 
-const show = (v: unknown) => (v === undefined || v === null || v === '' ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v));
+// decision 138: a decimal variable is shown with every digit it has, formatted from its text (never a float)
+const show = (v: unknown) => (v === undefined || v === null || v === '' ? '—' : v instanceof DecimalValue ? fmtDecimal(v) : typeof v === 'object' ? JSON.stringify(v) : String(v));
 
 export function TaskInbox() {
   const { t } = useTranslation();
@@ -200,9 +202,9 @@ export function TaskInbox() {
         key: 'amount',
         header: t('task.amount'),
         className: 'num',
-        // M-042: sortable only inside one currency (the filter); minor units shown exactly (fmtMinorMoney)
+        // M-042: sortable only inside one currency (the filter); decision 211: major-unit decimal text shown exactly (fmtMoneyAmount)
         sortable: !!cur,
-        render: (r: TaskSummary) => (r.amount !== undefined && r.amount !== null ? fmtMinorMoney(r.amount, r.currency) : '—'),
+        render: (r: TaskSummary) => (r.amount !== undefined && r.amount !== null ? fmtMoneyAmount(r.amount, r.currency) : '—'),
       },
       {
         key: 'fromSeatName',

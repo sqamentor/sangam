@@ -6,6 +6,13 @@ OIDC issuer   : {{ .Values.oidc.issuerUri }}
 Telemetry     : {{ if .Values.otel.enabled }}OTLP -> {{ .Values.otel.endpoint }}{{ else }}off (R56: no outbound telemetry by default){{ end }}
 Backups       : {{ if .Values.backup.enabled }}enabled ({{ include "sangam.db.type" . }} examples, PVC {{ include "sangam.backup.claim" . }}){{ else }}disabled - configure database-native backups (deploy/README.md){{ end }}
 NetworkPolicy : {{ if .Values.networkPolicy.enabled }}enabled{{ else }}disabled{{ end }}
+Production    : SANGAM_SECURITY_PRODUCTION={{ .Values.server.production }} (decisions 143, 198)
+{{- if eq (include "sangam.backup.consoleEnabled" .) "true" }}
+Backup console: on (Role {{ include "sangam.fullname" . }}-backup-console: batch cronjobs get/list, jobs get/list/create; the server pod mounts its service account token)
+{{- end }}
+{{- if or .Values.pdfValidator.enabled .Values.ocr.enabled }}
+Sidecars      : {{ if .Values.pdfValidator.enabled }}pdf-validator ({{ .Values.pdfValidator.transport }}) {{ end }}{{ if .Values.ocr.enabled }}ocr ({{ .Values.ocr.transport }}){{ end }}; reachable from the server pods only
+{{- end }}
 
 Check the rollout:
   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "sangam.fullname" . }}-server

@@ -7,11 +7,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.DataObjectDef;
+import org.sangam.sdk.generated.model.DataObjectRecordOperation;
 import org.sangam.sdk.generated.model.PageModel;
 import org.sangam.sdk.generated.model.PageSummary;
 
 /**
- * Typed operations of {@code LowCode} (10 operations), generated from
+ * Typed operations of {@code LowCode} (11 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -29,6 +30,7 @@ public final class LowCodeApi {
     private static final TypeReference<DataObjectDef> R_updateDataObject = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_listDataObjectRecords = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_createDataObjectRecord = new TypeReference<>() { };
+    private static final TypeReference<DataObjectRecordOperation> R_getDataObjectRecordOperation = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -167,7 +169,7 @@ public final class LowCodeApi {
     /**
      * Data-object records
      *
-     * <p>Records; sensitive fields masked (R78).
+     * <p>Records; sensitive fields masked (R78). For a REST-backed definition (decision 266) the server calls the connector's list operation with {q, offset, limit} (q as given, offset and limit from page and size) and answers its output.records, each validated against the definition fields (unknown fields dropped, sensitive fields masked as for DB backing); output.total, when the connector gives it, is the total count. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
      *
      * <p>{@code GET /data-objects/{key}/records} (operationId {@code listDataObjectRecords}); permission {@code lowcode.read}.
      * @param key path parameter {@code key}
@@ -188,9 +190,9 @@ public final class LowCodeApi {
     /**
      * Create a record
      *
-     * <p>Validated against the definition.
+     * <p>Validated against the definition. DB backing: the record is stored and the call answers 201 with it. REST backing (decision 265): the call answers 202 Accepted with the operationId and status PENDING, and Location names getDataObjectRecordOperation; the connector's create operation runs through the operation ledger with the operationId as its idempotency key, and the caller reads the outcome there. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
      *
-     * <p>{@code POST /data-objects/{key}/records} (operationId {@code createDataObjectRecord}); permission {@code lowcode.read}; result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /data-objects/{key}/records} (operationId {@code createDataObjectRecord}); permission {@code lowcode.record.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param key path parameter {@code key}
      * @param body request body
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -200,5 +202,21 @@ public final class LowCodeApi {
         ApiRequest req = ApiRequest.post("/data-objects/" + HttpTransport.seg(String.valueOf(key)) + "/records");
         req.body(body);
         return call.json(req, options, R_createDataObjectRecord);
+    }
+
+    /**
+     * Outcome of a record create
+     *
+     * <p>The state of a record create on a REST-backed data object (decision 265), from the operation ledger and, while it is not settled, the connector's outcome lookup by operationId. 404 NOT_FOUND for an operation id that is not a record create of this data object in the caller's tenant.
+     *
+     * <p>{@code GET /data-objects/{key}/records/operations/{operationId}} (operationId {@code getDataObjectRecordOperation}); permission {@code lowcode.read}.
+     * @param key path parameter {@code key}
+     * @param operationId path parameter {@code operationId}. Operation id from the 202 answer
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public DataObjectRecordOperation getDataObjectRecordOperation(String key, String operationId, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/data-objects/" + HttpTransport.seg(String.valueOf(key)) + "/records/operations/" + HttpTransport.seg(String.valueOf(operationId)));
+        return call.json(req, options, R_getDataObjectRecordOperation);
     }
 }

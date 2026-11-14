@@ -7,20 +7,19 @@
  * - Maker-checker hints (IX.5 rule 5) disable approve and say why; the server re-checks in the command transaction.
  * - The acting seat (S02) is sent with every command so the audit records "acted for" (IX.5 rule 4).
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import { ApiError } from '../../api/client';
-import type { CompleteTaskResult, FieldChange, TaskAction, TaskDetail as TD } from '../../api/types';
+import type { CompleteTaskResult, FieldChange, TaskAction, TaskDetail as TD, TaskDscDocument } from '../../api/types';
 import { announce, useAction, useAsync } from '../../lib/hooks';
-import { fmtDate, fmtMinorMoney, fmtNumber } from '../../i18n';
+import { fmtDate, fmtMoneyAmount, fmtNumber } from '../../i18n';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
-import { classifyFormKey, externalFormUrl, taskFormToSchema } from '../../components/embeddedForm';
+import { useTaskFormSchema } from '../../components/taskFormSchema';
 import { PluginSlot } from '../../plugins/host';
 import { AddVariables, TaskDates } from '../../modules/operaton3';
-import { FormRenderer, schemaFromVariables, validateForm, type FormValues } from '../../components/FormRenderer';
-import { useWithCustomFields } from '../../api/customFields';
+import { FormRenderer, validateForm, type FormValues } from '../../components/FormRenderer';
 import { ActionMenu } from '../../components/ActionMenu';
 import {
   Badge,
@@ -40,6 +39,8 @@ import {
   TextArea,
 } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
+import { CompletionProblem, TaskDscSign } from './TaskDscSign';
+import { SlotUpload } from './SlotUpload';
 
 const DECISION_ACTIONS: TaskAction[] = ['APPROVE', 'FORWARD', 'SEEK_CLARIFICATION', 'REJECT', 'REASSIGN', 'RESUBMIT', 'COMPLETE'];
 
@@ -67,13 +68,8 @@ export function TaskDetail() {
   }, [task.data]);
 
   const d = task.data;
-  const formKind = d?.form ? 'other' : classifyFormKey(d?.formKey);
-  // Deployed HTML is read as data (Sangam API, task-level check, SL-37) and parsed inertly; its scripts never run.
-  const embedded = useAsync(async () => taskFormToSchema(await api.tasks.form(id)), [id, d?.formKey], formKind === 'embedded');
-  const shipped = useMemo(() => d?.form ?? embedded.data?.schema ?? (d ? schemaFromVariables(d.variables) : { components: [] }), [d, embedded.data]);
-  // M-031: a Sangam form also shows the tenant's custom fields in force today (objectType form:<formKey>)
-  const schema = useWithCustomFields(shipped, d?.form?.key);
-  const externalUrl = d?.formKey && formKind === 'external' ? externalFormUrl(d.formKey, id) : null;
+  // R47 / SL-37 / M-031: shipped schema, else the deployed form parsed inertly, plus custom fields (shared with M-043).
+  const { schema, externalUrl, scriptsIgnored, error: formError } = useTaskFormSchema(d, id);
   const isMine = !!d && (d.assignee === me?.userId || d.section === 'MY_SEAT' || d.section === 'ACTING_FOR' || d.section === 'RETURNED');
   const canAct = isMine && !stale;
 
@@ -231,7 +227,7 @@ export function TaskDetail() {
               [t('task.state'), <Badge key="s" value={d.section} />],
               [t('task.seat'), d.seatName],
               [t('task.fromSeat'), d.fromSeatName],
-              [t('task.amount'), d.amount !== undefined && d.amount !== null ? fmtMinorMoney(d.amount, d.currency) : undefined],
+              [t('task.amount'), d.amount !== undefined && d.amount !== null ? fmtMoneyAmount(d.amount, d.currency) : undefined],
               [t('task.received'), fmtDate(d.received ?? d.created)],
               [t('task.slaDue'), <span key="sla">{fmtDate(d.slaDue ?? d.due)} {d.slaState && <Badge value={d.slaState} />}</span>],
               [t('task.version'), `v${d.version}`],
@@ -288,8 +284,8 @@ export function TaskDetail() {
           }}
           lang={i18n.language}
         >
-          {embedded.data?.scriptsIgnored && <Notice tone="warn">{t('task.formScriptsIgnored')}</Notice>}
-          {embedded.error && <ProblemAlert error={embedded.error} />}
+          {scriptsIgnored && <Notice tone="warn">{t('task.formScriptsIgnored')}</Notice>}
+          {formError && <ProblemAlert error={formError} />}
           {externalUrl && (
             <Notice>
               <a href={externalUrl} target="_blank" rel="noopener noreferrer">{t('task.externalForm')}</a>
@@ -308,7 +304,7 @@ export function TaskDetail() {
         </form>
       </TabPanel>
       <TabPanel id="attachments" active={tab}>
-        <Attachments taskId={id} canUpload={canAct} />
+        <Attachments taskId={id} canUpload={canAct} dscDocument={d?.dscDocument} />
       </TabPanel>
       <TabPanel id="comments" active={tab}>
         <Comments taskId={id} canComment={isMine} />
@@ -565,7 +561,8 @@ function DecisionDialog({
         </fieldset>
       )}
       <TextArea label={t('task.remarks')} required={remarksRequired} value={remarks} onChange={setRemarks} />
-      <ProblemAlert error={cmd.error} />
+      {/* decision 241: 422 DSC_ENROLMENT_REVOKED has its own words; other problems keep the generic display */}
+      <CompletionProblem error={cmd.error} />
     </Dialog>
   );
 }
@@ -693,7 +690,7 @@ function DelegateDialog({ task, onClose, onDone }: { task: TD; onClose: () => vo
   );
 }
 
-function Attachments({ taskId, canUpload }: { taskId: string; canUpload: boolean }) {
+function Attachments({ taskId, canUpload, dscDocument }: { taskId: string; canUpload: boolean; dscDocument?: TaskDscDocument | null }) {
   const { t } = useTranslation();
   const list = useAsync(() => api.tasks.attachments(taskId), [taskId]);
   const up = useAction();
@@ -746,6 +743,10 @@ function Attachments({ taskId, canUpload }: { taskId: string; canUpload: boolean
           ]}
         />
       )}
+      {/* decisions 165, 237, 238: the assignee signs a task PDF with the DSC token; the task is then completed as usual */}
+      {/* decisions 267-269: upload or version a document into a DSC slot (NOTING, SANCTION_NOTE) */}
+      {canUpload && <SlotUpload taskId={taskId} documents={list.data ?? []} onStored={list.reload} />}
+      {canUpload && list.data && <TaskDscSign taskId={taskId} documents={list.data} onSigned={list.reload} dscDocument={dscDocument} />}
     </Section>
   );
 }

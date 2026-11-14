@@ -18,9 +18,10 @@ import org.springframework.util.ClassUtils;
  * claims profile) is in {@code sangam-security}; the Spring Security SAML filter chain belongs here.
  *
  * <p>Fail closed: an enabled adapter refuses to start when the registration is incomplete, when
- * {@code spring-security-saml2-service-provider} (with OpenSAML) is not on the class path, and, until the relying-party
- * filter chain is built (BLOCKED on the approved download of those libraries), always: an enabled adapter that cannot
- * authenticate must never start as if it could.
+ * {@code spring-security-saml2-service-provider} (with OpenSAML) is not on the class path, and otherwise always. The
+ * 0.1.0 server ships without that library and without the Shibboleth repository (owner decisions 99 and 135, RM-01):
+ * SAML works only through Keycloak brokering, and an enabled adapter that cannot authenticate must never start as if it
+ * could.
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sangam.security.saml.enabled", havingValue = "true")

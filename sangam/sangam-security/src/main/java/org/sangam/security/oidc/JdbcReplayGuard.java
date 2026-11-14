@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Cluster-wide {@link ClientJwtVerifier.ReplayGuard} (SL-138, M-006; owner decision 2026-11-12): one row per used
+ * Cluster-wide {@link JtiReplayGuard} (SL-138, M-006; owner decision 2026-11-12): one row per used
  * (issuer, {@code jti}) in {@code SEC_CLIENT_JTI}, shared by every node, kept until the token's expiry plus skew.
  *
  * <ul>
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * </ul>
  * The table is created by the product changelog (changeset 0038-02).
  */
-public final class JdbcReplayGuard implements ClientJwtVerifier.ReplayGuard {
+public final class JdbcReplayGuard implements JtiReplayGuard {
 
     static final int MAX_ISSUER = 1000;
 

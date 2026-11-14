@@ -12,11 +12,24 @@ import { useTranslation } from 'react-i18next';
 import { http } from '../api/client';
 import { useAsync } from '../lib/hooks';
 import { fmtMoney } from '../i18n';
+import { compareDecimal, decimalText, toPlainText } from '../lib/decimal';
 import { BarChart } from '../components/Charts';
 import { Empty, ProblemAlert, Section, TextField } from '../components/ui';
 import { ModulePage, c, f, type Row, type ScreenDef } from './engine';
 
-const money = (key: string) => c(key, `fld.${key}`, (r: Row) => (r[key] === undefined || r[key] === null ? '—' : <span className="num">{fmtMoney(Number(r[key]), r.currency ? String(r.currency) : undefined)}</span>));
+// decision 138: the amount's text is formatted as it is; a JSON number is shown as the number the server sent
+const amount = (v: unknown): string | number | undefined => (typeof v === 'string' || typeof v === 'number' ? v : undefined);
+const money = (key: string) => c(key, `fld.${key}`, (r: Row) => (r[key] === undefined || r[key] === null ? '—' : <span className="num">{fmtMoney(amount(r[key]), r.currency ? String(r.currency) : undefined)}</span>));
+/** Available above zero, compared on the digits. */
+const isPositive = (v: unknown): boolean => {
+  const text = decimalText(typeof v === 'number' ? String(v) : v ?? '0');
+  return text !== undefined && compareDecimal(text, '0') > 0;
+};
+/** Bar length only; the text shown is exact. */
+const barLength = (v: unknown): number => {
+  const text = decimalText(typeof v === 'number' ? String(v) : v);
+  return text === undefined ? 0 : Number(toPlainText(text));
+};
 const ledgerFilter = f.text('ledger', 'fld.ledgerId', true, { description: 'mod.ledger.ledgerHint' });
 const accountFields = [f.text('period'), f.text('line', 'fld.headOfAccount', true), f.text('holder'), f.text('stage'), f.text('sub')];
 
@@ -135,7 +148,12 @@ export function LedgerChain() {
           <BarChart
             key={String(r.accountId)}
             title={`${label}${r.state && r.state !== 'OPEN' ? ` — ${t(`enum.${String(r.state)}`, { defaultValue: String(r.state) })}` : ''}`}
-            rows={STAGES.map((s) => ({ label: t(`fld.${s}`), value: Number(r[s] ?? 0), tone: s === 'available' ? (Number(r[s] ?? 0) <= 0 ? 'bad' : 'ok') : undefined }))}
+            rows={STAGES.map((s) => ({
+              label: t(`fld.${s}`),
+              value: barLength(r[s] ?? 0),
+              text: fmtMoney(amount(r[s] ?? '0'), cur),
+              tone: s === 'available' ? (isPositive(r[s]) ? 'ok' : 'bad') : undefined,
+            }))}
             format={(n) => fmtMoney(n, cur)}
           />
         );

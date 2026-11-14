@@ -216,7 +216,8 @@ public final class PolicyAdminService {
         if (def.resourceId() == null || def.resourceId().isBlank()) {
             throw new SangamSecurityException.PolicyRejected("a policy needs a resource id or '*'");
         }
-        compiler.validate(def.resourceType(), Permission.mask(def.permissions()), def.condition());
+        compiler.validate(def.resourceType(), def.resourceId(), Permission.mask(def.permissions()), def.condition(),
+                def.effect() == Effect.DENY);
     }
 
     static String toJson(PolicyDefinition d) {

@@ -33,14 +33,32 @@ public final class ChannelAdapters {
     /** Families supplied by a {@link Provider}. */
     static final List<String> PROVIDED = List.of("sqs", "sns", "eventbridge", "servicebus", "eventgrid", "pubsub");
     /** Families with no inbound consumer in 0.1.0 (they push or have no pull API; subscribe an SQS queue, or use a webhook). */
-    static final Set<String> OUTBOUND_ONLY = Set.of("http", "sns", "eventbridge", "eventgrid");
+    static final Set<String> OUTBOUND_ONLY = Set.of("http", "sns", "eventbridge");
+    /**
+     * Push families: no consumer; the REST layer hands each request to the family's endpoint ({@code webhook}:
+     * {@link WebhookInboundEndpoint}; {@code eventgrid}: the integration module's {@code EventGridInboundEndpoint}).
+     */
+    static final Set<String> PUSH_INBOUND = Set.of("webhook", "eventgrid");
     /**
      * Families that send plain or structured CloudEvents only: no per-message metadata (MQTT 3.1.1, EventBridge), or a
-     * binary encoding not offered in 0.1.0 (Service Bus REST custom properties; Event Grid takes structured events).
+     * structured-only service (Event Grid). Service Bus sends binary mode only when the channel opts in with
+     * {@code properties.binaryMode=customProperties} (decision 189; off by default).
      */
     static final Set<String> NO_BINARY = Set.of("mqtt", "eventbridge", "servicebus", "eventgrid");
+    /** Service Bus opt-in to CloudEvents binary mode: the attributes travel as {@code cloudEvents_*} custom properties. */
+    public static final String SERVICE_BUS_BINARY_PROPERTY = "binaryMode";
+    public static final String SERVICE_BUS_BINARY_CUSTOM_PROPERTIES = "customProperties";
     /** Seconds or milliseconds a consumer waits before a message it may not acknowledge yet is offered again. */
     static final String REDELIVER_BACKOFF_MS = "redeliverBackoffMs";
+    /**
+     * Owner decisions 189 and 219: how an inbound eventgrid channel authenticates deliveries. {@value #EVENT_GRID_SHARED_SECRET}
+     * (the default) or {@value #EVENT_GRID_ENTRA} (a Microsoft Entra bearer token checked against the configured tenant).
+     */
+    public static final String EVENT_GRID_AUTH_MODE = "authMode";
+    public static final String EVENT_GRID_SHARED_SECRET = "sharedSecret";
+    public static final String EVENT_GRID_ENTRA = "entra";
+    private static final java.util.regex.Pattern GUID = java.util.regex.Pattern.compile(
+            "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
 
     private ChannelAdapters() {
     }
@@ -219,14 +237,19 @@ public final class ChannelAdapters {
         };
     }
 
-    /** Webhook channels have no consumer: the REST layer calls {@link WebhookInboundEndpoint}. Returns null for them. */
+    /**
+     * Push channels ({@link #PUSH_INBOUND}: webhook, eventgrid) have no consumer: the REST layer calls their endpoint.
+     * Returns null for them.
+     */
     public static InboundChannelAdapter inbound(ChannelDefinition ch, String tenant, InboundEventProcessor processor, Environment env) {
         require(ch, env);
         if (OUTBOUND_ONLY.contains(ch.adapterType())) {
             throw new IllegalArgumentException("no inbound adapter for " + ch.adapterType());
         }
+        if (PUSH_INBOUND.contains(ch.adapterType())) {
+            return null;
+        }
         return switch (ch.adapterType()) {
-            case "webhook" -> null;
             case "kafka" -> new KafkaAdapters.Inbound(ch, tenant, processor, env);
             case "jms" -> new JmsAdapters.Inbound(ch, tenant, processor, env);
             case "rabbitmq" -> new RabbitAdapters.Inbound(ch, tenant, processor, env);
@@ -253,7 +276,7 @@ public final class ChannelAdapters {
         }
         if (CloudEventsFormat.enabled(ch)) {
             CloudEventsFormat.Mode m = CloudEventsFormat.mode(ch);
-            if (m == CloudEventsFormat.Mode.BINARY && NO_BINARY.contains(t) && !inbound) {
+            if (m == CloudEventsFormat.Mode.BINARY && NO_BINARY.contains(t) && !inbound && !serviceBusBinary(ch)) {
                 throw new IllegalArgumentException("channel " + ch.key() + ": " + t + " has no message metadata, so it"
                         + " cannot send CloudEvents binary mode (use structured)");
             }
@@ -266,6 +289,14 @@ public final class ChannelAdapters {
             if (v == null || v.isBlank()) {
                 throw new IllegalArgumentException("channel " + ch.key() + ": " + t + " needs properties." + p);
             }
+        }
+        if (inbound && "eventgrid".equals(t)) {
+            validateEventGridAuth(ch);
+        }
+        String binaryMode = ch.properties().get(SERVICE_BUS_BINARY_PROPERTY);
+        if (binaryMode != null && !("servicebus".equals(t) && SERVICE_BUS_BINARY_CUSTOM_PROPERTIES.equals(binaryMode.trim()))) {
+            throw new IllegalArgumentException("channel " + ch.key() + ": properties." + SERVICE_BUS_BINARY_PROPERTY
+                    + " is only for servicebus, value " + SERVICE_BUS_BINARY_CUSTOM_PROPERTIES);
         }
         boolean needsTarget = switch (t) {
             case "mqtt", "nats", "kafka", "rabbitmq", "jms" -> true;
@@ -298,6 +329,51 @@ public final class ChannelAdapters {
         }
     }
 
+    /**
+     * Decisions 189 and 219: no unauthenticated push ingress. {@code sharedSecret}: {@code authSecretRef} plus exactly one
+     * of {@code authHeader} or {@code authQueryParam}. {@code entra}: {@code entraTenantId} (a GUID) and
+     * {@code entraAudience} (the webhook application ID or ID URI, comma-separated), optional {@code entraAuthority}
+     * (https) and {@code entraRequiredRole}; the two modes are alternatives, so shared-secret properties are refused.
+     */
+    private static void validateEventGridAuth(ChannelDefinition ch) {
+        Map<String, String> p = ch.properties();
+        String mode = p.get(EVENT_GRID_AUTH_MODE) == null ? EVENT_GRID_SHARED_SECRET : p.get(EVENT_GRID_AUTH_MODE).trim();
+        String where = "channel " + ch.key() + ": inbound eventgrid ";
+        if (EVENT_GRID_ENTRA.equals(mode)) {
+            String tenant = p.get("entraTenantId");
+            if (tenant == null || !GUID.matcher(tenant.trim()).matches()) {
+                throw new IllegalArgumentException(where + "with authMode entra needs properties.entraTenantId (a tenant GUID)");
+            }
+            if (blank(p.get("entraAudience"))) {
+                throw new IllegalArgumentException(where + "with authMode entra needs properties.entraAudience");
+            }
+            String authority = p.get("entraAuthority");
+            if (authority != null && !authority.trim().startsWith("https://")) {
+                throw new IllegalArgumentException(where + "properties.entraAuthority must be an https URL");
+            }
+            if (p.containsKey("entraRequiredRole") && blank(p.get("entraRequiredRole"))) {
+                throw new IllegalArgumentException(where + "properties.entraRequiredRole cannot be blank");
+            }
+            if (!blank(p.get("authSecretRef")) || !blank(p.get("authHeader")) || !blank(p.get("authQueryParam"))) {
+                throw new IllegalArgumentException(where + "uses either authMode entra or the shared secret, not both");
+            }
+            return;
+        }
+        if (!EVENT_GRID_SHARED_SECRET.equals(mode)) {
+            throw new IllegalArgumentException(where + "properties." + EVENT_GRID_AUTH_MODE + " is "
+                    + EVENT_GRID_SHARED_SECRET + " or " + EVENT_GRID_ENTRA);
+        }
+        if (blank(p.get("authSecretRef"))) {
+            throw new IllegalArgumentException("channel " + ch.key() + ": eventgrid needs properties.authSecretRef"
+                    + " (or properties." + EVENT_GRID_AUTH_MODE + "=" + EVENT_GRID_ENTRA + ")");
+        }
+        if (blank(p.get("authHeader")) == blank(p.get("authQueryParam"))) {
+            // the shared secret travels in one place only
+            throw new IllegalArgumentException(where + "needs exactly one of"
+                    + " properties.authHeader or properties.authQueryParam (with properties.authSecretRef)");
+        }
+    }
+
     /** Properties each family needs (credentials are secret references, never values). */
     static List<String> requiredProperties(String type, boolean inbound) {
         return switch (type) {
@@ -307,7 +383,8 @@ public final class ChannelAdapters {
             case "sns" -> List.of("region", "topicArn", "accessKeyRef", "secretKeyRef");
             case "eventbridge" -> List.of("region", "accessKeyRef", "secretKeyRef");
             case "servicebus" -> List.of("namespace", "entityPath", "sasKeyName", "sasKeyRef");
-            case "eventgrid" -> List.of("endpoint", "topic", "keyRef");
+            // inbound: the authentication properties depend on authMode (validateEventGridAuth)
+            case "eventgrid" -> inbound ? List.of() : List.of("endpoint", "topic", "keyRef");
             case "pubsub" -> inbound ? List.of("project", "subscription") : List.of("project", "topic");
             default -> List.of();
         };
@@ -346,9 +423,25 @@ public final class ChannelAdapters {
 
     private static void require(ChannelDefinition ch, Environment env) {
         if (!available(ch.adapterType(), env)) {
-            throw new IllegalStateException("channel " + ch.key() + ": adapter '" + ch.adapterType()
-                    + "' is not available (add its optional client dependency, see README)");
+            throw new IllegalStateException(unavailable(ch.key(), ch.adapterType()));
         }
+    }
+
+    /**
+     * Owner decision 232: jnats is not in the server; a {@code nats} channel needs the NATS add-on, which provides
+     * {@code io.nats.client.Nats}. Other families name their optional client dependency.
+     */
+    static String unavailable(String channelKey, String adapterType) {
+        String need = "nats".equals(adapterType)
+                ? "install the NATS add-on (io.nats:jnats in /opt/sangam/lib-ext, owner decision 232)"
+                : "add its optional client dependency, see README";
+        return "channel " + channelKey + ": adapter '" + adapterType + "' is not available (" + need + ")";
+    }
+
+    /** True when a servicebus channel opted in to CloudEvents binary mode as custom properties (decision 189). */
+    public static boolean serviceBusBinary(ChannelDefinition ch) {
+        String v = ch.properties().get(SERVICE_BUS_BINARY_PROPERTY);
+        return "servicebus".equals(ch.adapterType()) && v != null && SERVICE_BUS_BINARY_CUSTOM_PROPERTIES.equals(v.trim());
     }
 
     private static boolean blank(String s) {

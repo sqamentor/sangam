@@ -11,7 +11,12 @@ npm run lint         # tsc + i18n key check + no-CDN check
 npm run test         # vitest --run (pure logic tests; not run in the coding phase)
 npm run licences     # lists every installed package with its licence; fails on anything unexpected
 npm run dev          # vite dev server on :5173, proxies /api and /engine-rest to SANGAM_BACKEND (default http://localhost:8080)
+npm run build:embed  # M-043 web components → dist-embed/sangam-elements.js (a separate artefact)
+npm run e2e          # M-048 Playwright suite against a running stack (test phase; see "End-to-end tests")
 ```
+
+`npm run build` and `npm run dev` need `../deploy/fonts` (or `SANGAM_UI_FONTS_DIR`): the approved Noto fonts are copied
+from there and checked against their recorded SHA-256 (owner decisions 120, 121; [FONTS.md](FONTS.md)).
 
 **Build result (2026-11-04):**
 - `tsc` passes with zero errors in strict mode.
@@ -21,6 +26,8 @@ npm run dev          # vite dev server on :5173, proxies /api and /engine-rest t
 - The licence check passes: 243 packages and 0 unexplained.
 
 Heavy areas are lazy-loaded chunks: the editors chunk (bpmn-js, dmn-js and form-js) is about 1.46 MB, or 432 KB gzipped, and loads only in the modeller.
+
+**Supported browsers (owner decision 309):** Chrome and Edge 111 or later, Firefox 114 or later, Safari 16.4 or later. This is the Vite 8 default build target (`baseline-widely-available`), and `vite.config.ts` deliberately sets no `build.target` override. Older browsers are not supported: the built JavaScript and CSS may use syntax they cannot parse. The same baseline applies to the embeddable web components (`npm run build:embed`).
 
 ## Runtime configuration (WS-DEPLOY contract, `deploy/README.md` §10)
 
@@ -37,8 +44,86 @@ The UI also reads these optional extras:
 - `authMode` (`oidc` | `dev`). Dev-token mode is used only when `authMode` is `dev`, or when `environment` is `dev` and no mode is given.
 - `devToken`.
 - `oidc.scope`, `oidc.redirectPath` and `oidc.postLogoutPath`.
+- `teams.enabled` (owner decision 162, default false). See [TEAMS.md](TEAMS.md).
+- `dsc.agentUrl` (decision 165): the DSC signing agent on the signer's computer, an `http://127.0.0.1:<port>` style loopback origin. Any other value is ignored, and DSC signing then says it is not set up. The server's CSP `connect-src` must name the same origin.
 
 `public/config.json` is the dev default. The UI image replaces it.
+
+There is no meta CSP in `index.html` (owner decision 214). The UI server's Content-Security-Policy header is the only policy, and it names the configured OIDC issuer.
+
+## Embeddable web components (M-043)
+
+`npm run build:embed` (`vite.embed.config.ts`) builds `dist-embed/sangam-elements.js`: one self-contained ES module
+with React, i18n, bpmn-js and the Sangam styles. It is a separate artefact from the UI image. It lets another
+application (PHP, .NET, Java, React…) show a Sangam task form or process diagram without its own UI.
+
+```html
+<script type="module">
+  import { configure } from '/static/sangam-elements.js';
+  configure({
+    apiBase: 'https://sangam.example.org/api/v1',          // or a same-origin path such as /api/v1
+    getAccessToken: () => myApp.session.accessToken(),      // called before every request
+    language: 'en',                                         // optional; 0.1.0 is English-only (Q-06)
+    onUnauthenticated: () => myApp.session.refresh(),       // optional; called on 401
+  });
+</script>
+<sangam-task-form task-id="…"></sangam-task-form>
+<sangam-process-diagram process-definition-id="…" process-instance-id="…" overlay="tokens" height="460" label="…"></sangam-process-diagram>
+```
+
+| Element | Attributes | Behaviour |
+|---|---|---|
+| `<sangam-task-form>` | `task-id` (required), `lang` | The task's form, resolved exactly as in the tasklist (shipped schema, deployed form parsed inertly, custom fields). When the task offers `COMPLETE`, a submit completes it, bound to the payload hash, case version and form version that were loaded. A 409 stale answer keeps the input and blocks submit until the user continues. Decisions that need the tasklist's dialogs (approve with the declaration, reject with a reason code, forward, return) are not offered: the form is then read-only with a notice |
+| `<sangam-process-diagram>` | `process-definition-id` (required), `process-instance-id`, `overlay` (`tokens`, `heat`, `duration`), `height` (120-4000), `label`, `lang` | The BPMN diagram with the instance's tokens when an instance is given, and the data-table alternative. The bpmn.io watermark stays visible (LIC-8) |
+
+Events bubble and cross the shadow boundary (`composed`): `sangam-task-completed` `{ taskId, result }`,
+`sangam-error` `{ taskId? , status, code?, title }` and `sangam-element-selected` `{ definitionId, activityId, name? }`.
+
+Each element renders into its own open shadow root, so the host's CSS and Sangam's CSS never mix. Fonts are inherited
+from the host page (browsers ignore `@font-face` inside a shadow root). The host page's `<html lang>` and storage are
+left alone.
+
+**Token handoff.** The user signs in to the host application, which obtains an access token from the same OIDC issuer
+that the Sangam server trusts (`sangam.security` issuer and audience settings). `getAccessToken` returns it. Sangam
+puts it only in the `Authorization: Bearer` header of its own requests. It is never stored, never logged and never
+written to an attribute, so a token never appears in the page's HTML. All authorisation stays on the server: an
+element shows exactly what the token's user may see, and a hidden task answers as not available.
+
+**CORS.** When `apiBase` is on another origin, add the host page's origin (scheme, host and port, no path) to
+`sangam.security.cors.allowed-origins` on the server. The server already allows the headers the elements send
+(`Authorization`, `Content-Type`, `Idempotency-Key`, `If-Match`) and exposes `ETag` and `X-Total-Count`
+(`SecurityConfig.corsSource`). Leave the list empty when the host page and the API share an origin, for example when the
+host's reverse proxy serves `/api/v1`; that is the simpler set-up.
+
+**CSP on the host page.** The module needs:
+- `script-src` with the origin that serves `sangam-elements.js` (`'self'` when the host serves it);
+- `connect-src` with the Sangam API origin (`'self'` for a same-origin `apiBase`);
+- `style-src 'unsafe-inline'`, because the styles are placed in each shadow root as a `<style>` element, as the Sangam
+  UI's own CSP allows (`index.html`);
+- `img-src data:`, because the library build inlines its image assets as data URLs.
+
+No other origin is contacted, so the elements work air-gapped (R56).
+
+## End-to-end tests (M-048)
+
+The Playwright suite lives in `e2e/` (`playwright.config.ts`, specs named `*.e2e.ts` so vitest never collects them).
+It runs against a real stack, never mocks: the UI image at `SANGAM_E2E_BASE_URL` (default `http://localhost:8080`) and
+the server in test mode (`deploy/docker/server-test-mode.Dockerfile`, in-memory H2, dev token). `SANGAM_DEV_TOKEN`
+must be set to that server's development token. `e2e/support/global-setup.ts` seeds the data: it deploys
+`e2e/fixtures/e2e-simple.bpmn` to the sandbox, starts an instance and records the ids. Specs that change data start
+their own instance.
+
+| Spec | Covers |
+|---|---|
+| `shell.e2e.ts` | dev sign-in; no request leaves the origin (R56); `/fonts/noto/*` byte-identical to `deploy/fonts`; Devanagari renders in Noto Sans Devanagari; Sakal Bharati and @fontsource never requested (decisions 120, 121) |
+| `tasklist.e2e.ts` | inbox → detail → claim → complete through the decision dialog; a missing task shows "not available" |
+| `ops-diagram.e2e.ts` | definition and instance diagrams; the bpmn.io watermark visible, inside the canvas and uncovered, checked by rendered geometry (LIC-8, RM-47) |
+| `a11y.e2e.ts` | axe-core with colour contrast on the main screens; serious and critical violations fail (M-046) |
+| `embed.e2e.ts` | the M-043 module in a host page: same origin, and cross origin when `SANGAM_E2E_CORS_ORIGIN` names an origin the server allows |
+
+Status: written in Wave 4, not installed and not run. `@playwright/test` and its Chromium and Firefox browsers are
+approved by owner decision 106 and are fetched only in the test phase, logged in the downloads log. Run order:
+`npm run build:embed`, start the stack, then `npm run e2e`. The compose-backed CI job belongs to `ui.yml` (W4-C).
 
 ## Cross-cutting
 
@@ -50,7 +135,7 @@ The UI also reads these optional extras:
 | Typed API client (ARCHITECTURE §4) | Covers: Bearer auth; `Idempotency-Key` on every mutation, reused on a safe retry (R41, CX-4); problem+json; `X-Total-Count` / `X-Total-Count-Capped` ("more than N", A-16); ETag / If-Match; `/engine-rest` base | `src/api/client.ts` |
 | Contract adapters | Contract shapes are mapped to view models, tolerating proposed extra fields. R33 TypedValue maps are converted both ways | `src/api/adapters.ts`, `src/api/endpoints.ts` |
 | i18n Hindi + English (R54, T32) | i18next. All strings live in `src/i18n/locales/{en,hi}.json`. There is a language switch in the banner and on sign-in. Number and date formats follow `en-IN` / `hi-IN`. `scripts/check-i18n.mjs` fails on any missing key; dynamic keys are listed in `scripts/i18n-dynamic.json` | `src/i18n/*` |
-| Government fonts, air-gapped | Hindi uses the central-government font Sakal Bharati (C-DAC GIST, OFL-1.1), served from `public/fonts/gov/`. `@fontsource/noto-sans` and `@fontsource/noto-sans-devanagari` (OFL-1.1) are bundled into `dist/assets` as the fallback. The language → font map puts the state-government font first, then central, then OSI. Per-tenant override comes from `/config.json` `fonts` or `/fonts/site/fonts.json`. See [FONTS.md](FONTS.md) | `src/fonts.ts`, `src/main.tsx`, `FONTS.md` |
+| Fonts, air-gapped (owner decisions 120, 121) | Noto Sans and Noto Sans Devanagari (OFL-1.1): the approved files in `sangam/deploy/fonts`, copied into the build as `dist/fonts/noto/` by `scripts/deploy-fonts.mjs`, which fails the build when a file differs from its recorded SHA-256. No @fontsource packages and no Sakal Bharati. The language → font map puts a site's state-government font first, then a central one, then Noto. Per-tenant override comes from `/config.json` `fonts` or `/fonts/site/fonts.json`. See [FONTS.md](FONTS.md) | `src/fonts.ts`, `scripts/deploy-fonts.mjs`, `vite.config.ts`, `FONTS.md` |
 | No CDN at runtime | The CSP meta allows `'self'` only. `scripts/check-no-cdn.mjs` scans `index.html` and `dist` | `index.html`, `scripts/check-no-cdn.mjs` |
 | Accessibility (GIGW / WCAG 2.1 AA, R55) | See the list below the table | `components/ui.tsx`, `styles.css` |
 | State contract (X.4.7.2) | Covers: loading after 10 s ("Still loading"); empty states that say why; 403 and 404 shown identically ("Not available for your current seat") with a seat-switch hint; stale banner with field diff and submit blocked until acknowledged (CX-2); conflict; partial success split into done / pending / uncertain; no stack traces (R28) | `components/ui.tsx`, `tasklist/TaskDetail.tsx` |
@@ -92,6 +177,7 @@ Accessibility measures:
   - Stale / APPROVAL_INVALIDATED handling with a diff.
   - Draft save through `/forms/drafts` with If-Match.
   - Attachments with checksum and scan status; comments.
+  - DSC signing of a task PDF by the assignee (`TaskDscSign.tsx`, decisions 165, 227, 228, 236-238, 241): `POST /tasks/{id}/dsc/prepare` and `/dsc/complete` through the loopback agent; the task is then completed with the usual action, with no second signature. Shown only when `dsc.agentUrl` is set.
   - Version history with an any-to-any diff; lifecycle log (FC-52).
   - "Acted for" notice; partial-success summary.
 - **`areas/tasklist/StartAndCases.tsx`.**
@@ -102,6 +188,10 @@ Accessibility measures:
   - My delegations and leave (S14), with no self-approval.
   - Notification centre (S13); Government Message items are flagged.
   - Field visits (S15, EC-16): offline queue with stable idempotency keys and sync when back online.
+- **`areas/dsc/DscCertificates.tsx` (decision 227).**
+  - `/my/dsc-certificates` (`MyDscCertificates`, task.write): enrol the certificate of my DSC token (read through the agent) or from a DER / PEM file, list my enrolments, revoke with a reason.
+  - `/admin/dsc-certificates` (`DscCertificateQueue`, `dsc.certificate.approve`): approval queue by status; approve (reason optional), reject and revoke (reason required, at most 512 characters); an admin never decides their own enrolment (SELF_APPROVAL).
+  - A revocation voids signatures on tasks not yet completed: the step must be signed again (decision 241).
 
 ### Operations console (R63, R64, O01–O09; PF-01…06, 09, 10, 12, 13, 17, 43, 44; EC-11, EC-12, EC-13, EC-20)
 
@@ -178,7 +268,7 @@ Accessibility measures:
   - Packages (hash-pinned bundles, FC-41).
   - Package workspace:
     - bpmn-js modeller, dmn-js modeller (all hit policies, FC-54) and form-js form builder, all with the watermark kept;
-    - CMMN source editor with a plan outline that flags the listeners rejected at deploy (D-08);
+    - CMMN 1.1 diagram editor of Sangam's own on diagram-js 14.11.3 (owner decision 161, `components/cmmn/`): plan items, stages, milestones, entry and exit criteria and sentry on-parts, a toolbar and outline usable from the keyboard, CMMNDI written on save (a layout is generated for files without one), parts it does not show kept unchanged; the XML source view with its plan outline is the fallback and flags the listeners rejected at deploy (D-08);
     - save to the contract `PUT /packages/{id}` with If-Match;
     - validation report;
     - diff vs the deployed version, with an in-flight count;
@@ -353,7 +443,7 @@ C = implemented in the UI. "UI ready; server [P]" = the screen called a proposed
 | 34 | Bulk task completion | TaskInbox → Approve selected (batch) |
 | 35 | Branch-addressed correlation | InstanceDetail → Send message with branch key (`correlationKeys`) |
 | 42 | AngularJS webapps EOL | This app replaces them |
-| 43 | No released modeller, no CMMN editor | Modeller (+ CMMN source editor) |
+| 43 | No released modeller, no CMMN editor | Modeller (+ own CMMN 1.1 diagram editor with XML fallback, decision 161) |
 | 55 | Slow capped counts | "More than N" everywhere (A-16) |
 
 ### Universal patterns with UI
@@ -430,45 +520,31 @@ Direct dependencies:
 | bpmn-js | 17.11.1 | bpmn.io licence (not OSI; allowed with the watermark visible, LIC-8) | BPMN viewer / modeller |
 | dmn-js | 16.8.2 | bpmn.io licence (as above) | DMN viewer / modeller |
 | @bpmn-io/form-js-editor, @bpmn-io/form-js-viewer | 1.12.0 | bpmn.io licence (as above) | Form builder (modeller only) |
-| @fontsource/noto-sans, @fontsource/noto-sans-devanagari | 5.1.0 | OFL-1.1 | Bundled fonts |
-| Sakal Bharati (C-DAC GIST, file in `public/fonts/gov/`) | 13.02 | OFL-1.1 | Bundled font (Hindi); provenance and SHA-256 in FONTS.md |
+| Noto Sans, Noto Sans Devanagari (files from `sangam/deploy/fonts`, not npm) | 2.015 / 2.007 | OFL-1.1 | Bundled fonts (owner decisions 70, 95, 120); provenance and SHA-256 in `deploy/fonts/README.md` |
 | typescript (dev) | 5.6.3 | Apache-2.0 | Type check |
-| vite (dev) | 6.4.5 | MIT | Build |
-| @vitejs/plugin-react (dev) | 4.7.0 | MIT | Build |
+| vite (dev) | 8.3.5 | MIT | Build (Rolldown bundler, Oxc transforms, Lightning CSS minifier; M-117) |
+| @vitejs/plugin-react (dev) | 6.1.2 | MIT | Build |
+| rolldown, @rolldown/pluginutils (dev, pinned by `overrides`) | 1.2.15 / 1.0.1 | MIT | Build; pinned to the releases paired with vite 8.3.5 so the lockfile does not float to newer builds |
 | vitest (dev) | 4.1.12 | MIT | Unit tests |
 | jsdom, @testing-library/dom, @testing-library/react (dev) | 25.0.1 / 10.4.0 / 16.1.0 | MIT | Test environment |
 | axe-core (dev) | 4.14.0 | MPL-2.0 | Accessibility checks in component tests (M-046, `src/test/axe.ts`, `src/a11y.test.tsx`); not shipped |
 | @types/react, @types/react-dom (dev) | 18.3.12 / 18.3.1 | MIT | Types |
 
-The full installed tree is generated by `npm run licences`. The list below is the 2026-11-04 output and predates the upgrade to react-router 7, Vite 6 and Vitest 4, so its versions of those packages and their transitive dependencies are out of date; regenerate it with `npm run licences` (not done in this docs pass). At that time: 243 packages; "runtime" means it is in the production dependency tree. Apart from bpmn.io:
+The full installed tree is generated by `npm run licences`. The list below is its 2026-11-13 output after the Vite 8 upgrade (M-117), installed on Windows x64 with `npm install --ignore-scripts`: 280 packages, of which 151 are "runtime" (in the production dependency tree in `package-lock.json`) and 129 are "build" (build and test tooling, not shipped in `dist/`). Native binaries for other platforms (`@rolldown/binding-*`, `lightningcss-*`) are in the lockfile but are not installed here; they carry the same licences as their parent package (MIT and MPL-2.0). Apart from bpmn.io:
 - everything is OSI-approved;
 - `component-props` declares MIT in its `component.json`;
-- `caniuse-lite` (CC-BY-4.0) is browser-support data read only by the build tooling and is not shipped in `dist/`.
+- `lightningcss` (MPL-2.0, file-level copyleft) is the Vite 8 CSS minifier. It is used unmodified at build time and is not shipped in `dist/`;
+- `@csstools/color-helpers` is MIT-0 (OSI-approved), a jsdom test dependency. MIT-0 is in `scripts/list-licences.mjs`'s allow list, as it is in `deploy/licence/licence-policy.json` (coordinator ruling 2026-11-13), so `npm run licences` reports 0 packages needing a check;
+- Vite 8 and @vitejs/plugin-react 6 no longer use the Babel compiler (`@babel/core` and its plugins), esbuild, Rollup or browserslist, so they are gone from the tree, and so is `caniuse-lite` (CC-BY-4.0). `@babel/code-frame` and `@babel/runtime` remain as dependencies of other packages.
 
 <details><summary>All installed packages and licences</summary>
 
 | Package | Version | Licence | Scope |
 |---|---|---|---|
+| @asamuzakjp/css-color | 3.2.0 | MIT | build |
 | @babel/code-frame | 7.29.7 | MIT | build |
-| @babel/compat-data | 7.29.7 | MIT | build |
-| @babel/core | 7.29.7 | MIT | build |
-| @babel/generator | 7.29.12 | MIT | build |
-| @babel/helper-compilation-targets | 7.29.7 | MIT | build |
-| @babel/helper-globals | 7.29.7 | MIT | build |
-| @babel/helper-module-imports | 7.29.7 | MIT | build |
-| @babel/helper-module-transforms | 7.29.7 | MIT | build |
-| @babel/helper-plugin-utils | 7.29.7 | MIT | build |
-| @babel/helper-string-parser | 7.29.11 | MIT | build |
 | @babel/helper-validator-identifier | 7.29.7 | MIT | build |
-| @babel/helper-validator-option | 7.29.7 | MIT | build |
-| @babel/helpers | 7.29.10 | MIT | build |
-| @babel/parser | 7.29.12 | MIT | build |
-| @babel/plugin-transform-react-jsx-self | 7.29.7 | MIT | build |
-| @babel/plugin-transform-react-jsx-source | 7.29.7 | MIT | build |
-| @babel/runtime | 7.29.10 | MIT | runtime |
-| @babel/template | 7.29.7 | MIT | build |
-| @babel/traverse | 7.29.12 | MIT | build |
-| @babel/types | 7.29.11 | MIT | build |
+| @babel/runtime | 7.29.13 | MIT | runtime |
 | @bpmn-io/cm-theme | 0.2.2 | MIT | runtime |
 | @bpmn-io/cm-theme | 0.1.0-alpha.2 | MIT | runtime |
 | @bpmn-io/diagram-js-ui | 0.2.4 | MIT | runtime |
@@ -506,15 +582,13 @@ The full installed tree is generated by `npm run licences`. The list below is th
 | @codemirror/state | 6.7.6 | MIT | runtime |
 | @codemirror/streamparser | 6.0.0 | MIT | runtime |
 | @codemirror/view | 6.43.15 | MIT | runtime |
-| @esbuild/win32-x64 | 0.21.5 | MIT | build |
-| @fontsource/noto-sans | 5.1.0 | OFL-1.1 | runtime |
-| @fontsource/noto-sans-devanagari | 5.1.0 | OFL-1.1 | runtime |
+| @csstools/color-helpers | 5.1.0 | MIT-0 | build |
+| @csstools/css-calc | 2.1.4 | MIT | build |
+| @csstools/css-color-parser | 3.1.0 | MIT | build |
+| @csstools/css-parser-algorithms | 3.0.5 | MIT | build |
+| @csstools/css-tokenizer | 3.0.4 | MIT | build |
 | @ibm/telemetry-js | 1.12.0 | Apache-2.0 | runtime |
-| @jridgewell/gen-mapping | 0.3.13 | MIT | build |
-| @jridgewell/remapping | 2.3.5 | MIT | build |
-| @jridgewell/resolve-uri | 3.1.2 | MIT | build |
 | @jridgewell/sourcemap-codec | 1.6.0 | MIT | build |
-| @jridgewell/trace-mapping | 0.3.31 | MIT | build |
 | @lezer/common | 1.5.5 | MIT | runtime |
 | @lezer/highlight | 1.2.5 | MIT | runtime |
 | @lezer/html | 1.3.13 | MIT | runtime |
@@ -522,52 +596,67 @@ The full installed tree is generated by `npm run licences`. The list below is th
 | @lezer/lr | 1.4.12 | MIT | runtime |
 | @lezer/markdown | 1.8.1 | MIT | runtime |
 | @marijn/find-cluster-break | 1.0.4 | MIT | runtime |
-| @remix-run/router | 1.21.0 | MIT | runtime |
-| @rollup/rollup-win32-x64-gnu | 4.67.5 | MIT | build |
-| @rollup/rollup-win32-x64-msvc | 4.67.5 | MIT | build |
-| @types/babel__core | 7.20.5 | MIT | build |
-| @types/babel__generator | 7.27.0 | MIT | build |
-| @types/babel__template | 7.4.4 | MIT | build |
-| @types/babel__traverse | 7.28.0 | MIT | build |
+| @microsoft/teams-js | 2.59.0 | MIT | runtime |
+| @oxc-project/types | 0.155.0 | MIT | build |
+| @rolldown/binding-win32-x64-msvc | 1.2.15 | MIT | build |
+| @rolldown/pluginutils | 1.0.1 | MIT | build |
+| @standard-schema/spec | 1.1.0 | MIT | build |
+| @testing-library/dom | 10.4.0 | MIT | build |
+| @testing-library/react | 16.1.0 | MIT | build |
+| @types/aria-query | 5.0.4 | MIT | build |
+| @types/chai | 5.2.3 | MIT | build |
+| @types/deep-eql | 4.0.2 | MIT | build |
 | @types/estree | 1.0.10 | MIT | build |
 | @types/prop-types | 15.7.15 | MIT | build |
 | @types/react | 18.3.12 | MIT | build |
 | @types/react-dom | 18.3.1 | MIT | build |
 | @types/trusted-types | 2.0.7 | MIT | runtime |
-| @vitejs/plugin-react | 4.3.4 | MIT | build |
-| @vitest/expect | 2.1.8 | MIT | build |
-| @vitest/mocker | 2.1.8 | MIT | build |
-| @vitest/pretty-format | 2.1.9 | MIT | build |
-| @vitest/pretty-format | 2.1.8 | MIT | build |
-| @vitest/pretty-format | 2.1.8 | MIT | build |
-| @vitest/runner | 2.1.8 | MIT | build |
-| @vitest/snapshot | 2.1.8 | MIT | build |
-| @vitest/spy | 2.1.8 | MIT | build |
-| @vitest/utils | 2.1.8 | MIT | build |
+| @vitejs/plugin-react | 6.1.2 | MIT | build |
+| @vitest/expect | 4.1.12 | MIT | build |
+| @vitest/mocker | 4.1.12 | MIT | build |
+| @vitest/pretty-format | 4.1.12 | MIT | build |
+| @vitest/runner | 4.1.12 | MIT | build |
+| @vitest/snapshot | 4.1.12 | MIT | build |
+| @vitest/spy | 4.1.12 | MIT | build |
+| @vitest/utils | 4.1.12 | MIT | build |
+| agent-base | 7.1.4 | MIT | build |
+| ansi-regex | 5.0.1 | MIT | build |
+| ansi-styles | 4.3.0 | MIT | build |
+| ansi-styles | 5.2.0 | MIT | build |
+| aria-query | 5.3.0 | Apache-2.0 | build |
 | array-move | 4.0.0 | MIT | runtime |
 | assertion-error | 2.0.1 | MIT | build |
+| asynckit | 0.4.0 | MIT | build |
 | atoa | 1.0.0 | MIT | runtime |
-| baseline-browser-mapping | 2.11.35 | Apache-2.0 | build |
+| axe-core | 4.14.0 | MPL-2.0 | build |
+| base64-js | 1.5.1 | MIT | runtime |
 | big.js | 6.2.2 | MIT | runtime |
 | bpmn-js | 17.11.1 | SEE LICENSE IN LICENSE | runtime |
 | bpmn-moddle | 8.1.0 | MIT | runtime |
-| browserslist | 4.29.5 | MIT | build |
-| cac | 6.7.14 | MIT | build |
-| caniuse-lite | 1.0.30001820 | CC-BY-4.0 | build |
-| chai | 5.3.3 | MIT | build |
-| check-error | 2.1.3 | MIT | build |
+| call-bind-apply-helpers | 1.0.2 | MIT | build |
+| chai | 6.3.0 | MIT | build |
+| chalk | 4.1.2 | MIT | build |
 | classnames | 2.5.1 | MIT | runtime |
 | clsx | 2.1.1 | MIT | runtime |
+| color-convert | 2.0.1 | MIT | build |
+| color-name | 1.1.4 | MIT | build |
+| combined-stream | 1.0.8 | MIT | build |
 | component-event | 0.2.1 | MIT | runtime |
-| component-props | 1.1.1 | MIT (component.json) | runtime |
+| component-props | 1.1.1 | MIT | runtime |
 | component-xor | 0.0.4 | MIT | runtime |
 | contra | 1.9.4 | MIT | runtime |
 | convert-source-map | 2.0.0 | MIT | build |
+| cookie | 1.1.1 | MIT | runtime |
 | crelt | 1.0.7 | MIT | runtime |
 | css.escape | 1.5.1 | MIT | runtime |
+| cssstyle | 4.6.0 | MIT | build |
 | csstype | 3.2.3 | MIT | build |
-| debug | 4.4.3 | MIT | build |
-| deep-eql | 5.0.2 | MIT | build |
+| data-urls | 5.0.0 | MIT | build |
+| debug | 4.4.3 | MIT | runtime |
+| decimal.js | 10.6.0 | MIT | build |
+| delayed-stream | 1.0.0 | MIT | build |
+| dequal | 2.0.3 | MIT | build |
+| detect-libc | 2.1.2 | Apache-2.0 | build |
 | diagram-js | 14.11.3 | MIT | runtime |
 | diagram-js-direct-editing | 3.6.0 | MIT | runtime |
 | didi | 10.2.2 | MIT | runtime |
@@ -579,6 +668,7 @@ The full installed tree is generated by `npm run licences`. The list below is th
 | dmn-js-literal-expression | 16.8.2 | SEE LICENSE IN LICENSE | runtime |
 | dmn-js-shared | 16.8.2 | SEE LICENSE IN LICENSE | runtime |
 | dmn-moddle | 10.0.0 | MIT | runtime |
+| dom-accessibility-api | 0.5.16 | MIT | build |
 | dom-iterator | 1.0.2 | MIT | runtime |
 | domify | 3.0.0 | MIT | runtime |
 | domify | 3.0.0 | MIT | runtime |
@@ -588,38 +678,60 @@ The full installed tree is generated by `npm run licences`. The list below is th
 | domify | 3.0.0 | MIT | runtime |
 | domify | 3.0.0 | MIT | runtime |
 | dompurify | 3.4.17 | (MPL-2.0 OR Apache-2.0) | runtime |
-| electron-to-chromium | 1.5.476 | ISC | build |
-| es-module-lexer | 1.7.0 | MIT | build |
-| esbuild | 0.21.5 | MIT | build |
-| escalade | 3.2.0 | MIT | build |
+| dunder-proto | 1.0.1 | MIT | build |
+| entities | 6.0.1 | BSD-2-Clause | build |
+| es-define-property | 1.0.1 | MIT | build |
+| es-errors | 1.3.0 | MIT | build |
+| es-module-lexer | 2.3.2 | MIT | build |
+| es-object-atoms | 1.1.2 | MIT | build |
+| es-set-tostringtag | 2.1.0 | MIT | build |
 | escape-html | 1.0.3 | MIT | runtime |
 | estree-walker | 3.0.3 | MIT | build |
 | expect-type | 1.4.0 | Apache-2.0 | build |
+| fake-indexeddb | 6.2.8 | Apache-2.0 | build |
+| fdir | 6.5.0 | MIT | build |
 | feelers | 1.5.1 | MIT | runtime |
 | feelin | 3.2.0 | MIT | runtime |
 | flatpickr | 4.6.13 | MIT | runtime |
 | focus-trap | 8.2.4 | MIT | runtime |
-| gensync | 1.0.0-beta.2 | MIT | build |
+| form-data | 4.0.6 | MIT | build |
+| function-bind | 1.1.2 | MIT | build |
+| get-intrinsic | 1.3.0 | MIT | build |
+| get-proto | 1.0.1 | MIT | build |
+| gopd | 1.2.0 | MIT | build |
+| has-flag | 4.0.0 | MIT | build |
+| has-symbols | 1.1.0 | MIT | build |
+| has-tostringtag | 1.0.2 | MIT | build |
+| hasown | 2.0.4 | MIT | build |
 | htm | 3.1.1 | Apache-2.0 | runtime |
+| html-encoding-sniffer | 4.0.0 | MIT | build |
 | html-parse-stringify | 3.1.0 | MIT | runtime |
+| http-proxy-agent | 7.0.2 | MIT | build |
+| https-proxy-agent | 7.0.6 | MIT | build |
 | i18next | 23.16.8 | MIT | runtime |
+| iconv-lite | 0.6.3 | MIT | build |
 | ids | 1.0.5 | MIT | runtime |
 | inferno | 5.6.3 | MIT | runtime |
 | inferno-shared | 5.6.3 | MIT | runtime |
 | inferno-vnode-flags | 5.6.3 | MIT | runtime |
 | inherits-browser | 0.1.0 | ISC | runtime |
+| is-potential-custom-element-name | 1.0.1 | MIT | build |
 | js-tokens | 4.0.0 | MIT | runtime |
-| jsesc | 3.1.0 | MIT | build |
-| json5 | 2.2.3 | MIT | build |
+| jsdom | 25.0.1 | MIT | build |
 | jwt-decode | 4.0.0 | MIT | runtime |
 | lezer-feel | 1.9.0 | MIT | runtime |
+| lightningcss | 1.33.0 | MPL-2.0 | build |
+| lightningcss-win32-x64-msvc | 1.33.0 | MPL-2.0 | build |
 | lodash | 4.18.1 | MIT | runtime |
 | loose-envify | 1.4.0 | MIT | runtime |
-| loupe | 3.2.1 | MIT | build |
-| lru-cache | 5.1.1 | ISC | build |
+| lru-cache | 10.4.3 | ISC | build |
 | luxon | 3.7.2 | MIT | runtime |
+| lz-string | 1.5.0 | MIT | build |
 | magic-string | 0.30.21 | MIT | build |
 | marked | 15.0.12 | MIT | runtime |
+| math-intrinsics | 1.1.0 | MIT | build |
+| mime-db | 1.52.0 | MIT | build |
+| mime-types | 2.1.35 | MIT | build |
 | min-dash | 5.1.0 | MIT | runtime |
 | min-dash | 5.1.0 | MIT | runtime |
 | min-dash | 5.1.0 | MIT | runtime |
@@ -642,57 +754,73 @@ The full installed tree is generated by `npm run licences`. The list below is th
 | moddle | 6.2.3 | MIT | runtime |
 | moddle-xml | 9.0.6 | MIT | runtime |
 | moddle-xml | 10.1.0 | MIT | runtime |
-| ms | 2.1.3 | MIT | build |
+| ms | 2.1.3 | MIT | runtime |
 | nanoid | 3.3.20 | MIT | build |
-| node-releases | 2.0.63 | MIT | build |
+| nwsapi | 2.2.28 | MIT | build |
 | object-refs | 0.4.0 | MIT | runtime |
+| obug | 2.2.1 | MIT | build |
 | oidc-client-ts | 3.1.0 | Apache-2.0 | runtime |
 | opencollective-postinstall | 2.0.3 | MIT | runtime |
+| parse5 | 7.3.0 | MIT | build |
 | path-intersection | 3.1.0 | MIT | runtime |
-| pathe | 1.1.2 | MIT | build |
-| pathval | 2.0.1 | MIT | build |
+| pathe | 2.0.3 | MIT | build |
 | picocolors | 1.1.1 | ISC | build |
+| picomatch | 4.0.7 | MIT | build |
 | postcss | 8.5.32 | MIT | build |
 | preact | 10.29.8 | MIT | runtime |
+| pretty-format | 27.5.1 | MIT | build |
+| punycode | 2.3.1 | MIT | build |
 | react | 18.3.1 | MIT | runtime |
 | react-dom | 18.3.1 | MIT | runtime |
 | react-i18next | 15.1.4 | MIT | runtime |
-| react-refresh | 0.14.2 | MIT | build |
+| react-is | 17.0.2 | MIT | build |
 | react-router | 7.18.5 | MIT | runtime |
 | react-router-dom | 7.18.5 | MIT | runtime |
-| rollup | 4.67.5 | MIT | build |
+| rolldown | 1.2.15 | MIT | build |
+| rrweb-cssom | 0.8.0 | MIT | build |
+| rrweb-cssom | 0.7.1 | MIT | build |
+| safer-buffer | 2.1.2 | MIT | build |
 | saxen | 8.1.2 | MIT | runtime |
+| saxes | 6.0.0 | ISC | build |
 | scheduler | 0.23.2 | MIT | runtime |
 | selection-ranges | 3.0.3 | MIT | runtime |
 | selection-ranges | 4.1.1 | MIT | runtime |
 | selection-update | 0.1.2 | MIT | runtime |
-| semver | 6.3.2 | ISC | runtime |
-| semver | 6.3.2 | ISC | runtime |
 | semver | 7.8.6 | ISC | runtime |
+| set-cookie-parser | 2.7.3 | MIT | runtime |
 | siginfo | 2.0.0 | ISC | build |
 | source-map-js | 1.2.2 | BSD-3-Clause | build |
 | stackback | 0.0.2 | MIT | build |
-| std-env | 3.10.0 | MIT | build |
+| std-env | 4.3.0 | MIT | build |
 | style-mod | 4.1.4 | MIT | runtime |
+| supports-color | 7.2.0 | MIT | build |
+| symbol-tree | 3.2.4 | MIT | build |
 | tabbable | 6.5.1 | MIT | runtime |
 | table-js | 9.4.0 | MIT | runtime |
 | ticky | 1.0.1 | MIT | runtime |
 | tiny-svg | 3.1.3 | MIT | runtime |
 | tinybench | 2.9.0 | MIT | build |
-| tinyexec | 0.3.2 | MIT | build |
-| tinypool | 1.1.1 | MIT | build |
-| tinyrainbow | 1.2.0 | MIT | build |
-| tinyspy | 3.0.2 | MIT | build |
+| tinyexec | 1.3.1 | MIT | build |
+| tinyglobby | 0.2.17 | MIT | build |
+| tinyrainbow | 3.2.0 | MIT | build |
+| tldts | 6.1.86 | MIT | build |
+| tldts-core | 6.1.86 | MIT | build |
+| tough-cookie | 5.1.2 | BSD-3-Clause | build |
+| tr46 | 5.1.1 | MIT | build |
 | typescript | 5.6.3 | Apache-2.0 | build |
-| update-browserslist-db | 1.3.4 | MIT | build |
-| vite | 5.4.11 | MIT | build |
-| vite-node | 2.1.8 | MIT | build |
-| vitest | 2.1.8 | MIT | build |
+| vite | 8.3.5 | MIT | build |
+| vitest | 4.1.12 | MIT | build |
 | void-elements | 3.1.0 | MIT | runtime |
 | w3c-keyname | 2.2.8 | MIT | runtime |
+| w3c-xmlserializer | 5.0.0 | MIT | build |
+| webidl-conversions | 7.0.0 | BSD-2-Clause | build |
+| whatwg-encoding | 3.1.1 | MIT | build |
+| whatwg-mimetype | 4.0.0 | MIT | build |
+| whatwg-url | 14.2.0 | MIT | build |
 | why-is-node-running | 2.3.0 | MIT | build |
-| yallist | 3.1.1 | ISC | build |
-
+| ws | 8.22.1 | MIT | build |
+| xml-name-validator | 5.0.0 | Apache-2.0 | build |
+| xmlchars | 2.2.0 | MIT | build |
 </details>
 
 ## Generic modules, R46 and Operaton parity
@@ -716,7 +844,7 @@ The full installed tree is generated by `npm run licences`. The list below is th
 
 Field names are not verified where the contract gives no body schema (see "Request bodies" above). The header comment of `src/modules/platform.tsx` still says these routes are not in the contract; that comment is stale (code, not changed in this docs pass).
 
-Not built: bpmn-js custom palette and form-js composite components (templates are managed as data but not injected into the editors), the action menu inside task and case screens, Teams tab, test report export.
+Not built: bpmn-js custom palette and form-js composite components (templates are managed as data but not injected into the editors), the action menu inside task and case screens, test report export. The Teams tab is an optional module (owner decision 162): see [TEAMS.md](TEAMS.md).
 
 ## Integration notes
 

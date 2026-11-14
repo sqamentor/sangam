@@ -26,14 +26,23 @@ public final class LeaseExpiry {
     private final SangamClock clock;
     private final ExternalTaskService externalTaskService;
     private final Supplier<ExpiryPolicy> policy;
+    private final org.sangam.engine.replay.CapturePoints capture;
 
     public LeaseExpiry(SangamLeaseTable leases, ExclusiveLeaseTable exclusive, SangamClock clock,
                        ExternalTaskService externalTaskService, Supplier<ExpiryPolicy> policy) {
+        this(leases, exclusive, clock, externalTaskService, policy, org.sangam.engine.replay.CapturePoints.NONE);
+    }
+
+    /** @param capture decision 151: an expired lease is reported as {@code EXTERNAL_TASK_RESULT TIMEOUT} */
+    public LeaseExpiry(SangamLeaseTable leases, ExclusiveLeaseTable exclusive, SangamClock clock,
+                       ExternalTaskService externalTaskService, Supplier<ExpiryPolicy> policy,
+                       org.sangam.engine.replay.CapturePoints capture) {
         this.leases = leases;
         this.exclusive = exclusive;
         this.clock = clock;
         this.externalTaskService = externalTaskService;
         this.policy = policy;
+        this.capture = capture == null ? org.sangam.engine.replay.CapturePoints.NONE : capture;
     }
 
     /** Expired held leases: the policy per lease, then the lease ends. Returns the ids the policy held. */
@@ -76,6 +85,7 @@ public final class LeaseExpiry {
         if (row.state() == SangamLeaseTable.State.CANCEL_REQUESTED) {
             decision = ExpiryPolicy.Decision.HOLD; // VI.3.1 / VI.5 rule 4: cancel never acknowledged
         }
+        capture.externalTimeout(task, row.attemptNo()); // decision 151: the attempt ended by its lease expiring
         leases.end(conn, row.workId(), decision == ExpiryPolicy.Decision.HOLD
                 ? SangamLeaseTable.State.HELD : SangamLeaseTable.State.AVAILABLE, now);
         releaseExclusive(conn, row);

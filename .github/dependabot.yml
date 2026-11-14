@@ -3,6 +3,8 @@
 # handoff/** holds byte copies of private worktrees (handoff/worktree-snapshots, from f553b43); they are not product
 # code and are excluded until the owner removes them from main (SL-75 P2).
 # open-pull-requests-limit 0 keeps today's behaviour: no version-update pull requests, security updates only.
+# Decision 192 (C-29, owner 2026-11-13): github-actions and docker get version-update pull requests (SHA and digest pins
+# must not go stale); Maven, npm, NuGet, pip and Composer stay at 0 until after 0.1.0 (frozen graphs, decision 111).
 version: 2
 updates:
   - package-ecosystem: maven
@@ -34,5 +36,11 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
-    open-pull-requests-limit: 0
+    open-pull-requests-limit: 5
+    exclude-paths: ["handoff/**"]
+  # Product image definitions: the Dockerfiles under deploy/docker and the operator Dockerfile.
+  - package-ecosystem: docker
+    directories: [/sangam/deploy/docker, /sangam/deploy/operator]
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
     exclude-paths: ["handoff/**"]

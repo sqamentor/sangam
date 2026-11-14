@@ -1,0 +1,27 @@
+{
+  "key": "gov-intl-pfm-debt-operation/recordHold",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-debt-operation",
+  "title": {
+    "en": "Recording not confirmed by the debt system: confirm and resend",
+    "hi": "अभिलेखन की पुष्टि नहीं"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

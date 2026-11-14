@@ -137,6 +137,8 @@ def pascal(s: str) -> str:
 
 def camel(s: str) -> str:
     p = pascal(s)
+    if p.isupper():  # an all-caps name (ELEMENT, ID) is one word: element, id; never eLEMENT
+        return p.lower()
     return p[:1].lower() + p[1:]
 
 

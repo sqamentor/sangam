@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """The reusable government approval core (IX.3) as callable BPMN building blocks."""
-from lib import C, q
+from lib import C, q, tlistener
 from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
 
@@ -80,6 +80,15 @@ def scrutiny():
     s.seq(lap, res2, lapsed, e3)
 
 
+def dsc_gate(fields, slot, doc_type):
+    """Decisions 236 to 238: the DSC completion gate of a step. On create it records the document in `slot` (the case
+    variable holding the id of the `doc_type` document the step signs); on complete it checks a verified signature of
+    exactly that document by the completing person, and writes the evidence SignatureDelegate records."""
+    named = dict(fields, documentSlot=slot, documentType=doc_type)
+    return [tlistener('create', C['DSC'], {'documentSlot': slot, 'documentType': doc_type}),
+            tlistener('complete', C['DSC'], named)]
+
+
 def recommendation():
     p = core.proc('sangam-core-recommendation', 'Core: n-level recommendation by seat',
                   'RECOMMENDATION 1..n by seat without multi-instance (GP-02): the chain is recommendationSeats; '
@@ -104,15 +113,20 @@ def recommendation():
                              # rejection: the coded reasons are asked here, as in scrutiny and sanction
                              fields=['noting', 'remarks', 'returnToLevel', 'returnReason', 'commentSeats',
                                      'markToSeat', 'markReason', 'rejectionReasonCodes', 'rejectionRemarks',
-                                     'presentedPayloadHash'],
-                             spec='${recommendationSla}', on_breach='${recOnBreach}', sod=True, step_suffix='recLevel')
+                                     'presentedPayloadHash', 'dscDocumentId'],
+                             spec='${recommendationSla}', on_breach='${recOnBreach}', sod=True, step_suffix='recLevel',
+                             # a level that signs with DSC completes only over a server-verified signature of the
+                             # named document at this task (decisions 140, 165, 227; fail closed)
+                             # decision 236: the document a DSC level signs is the noting in notingDocumentId
+                             listeners=dsc_gate({'decisionVar': 'recDecision', 'approveValues': 'recommend',
+                                                 'requiredVar': 'signEachLevel'}, 'notingDocumentId', 'NOTING'))
     s.flow(dg, entry, None, 'next level', default=True)
     g = s.xgw('rc_decGw', 'Decision?')
     s.flow(done, g)
     adv = s.svc('rc_advance', 'Next level', C['REC'], {'op': 'ADVANCE'})
     sgw = s.xgw('rc_signGw', 'Sign noting?')
     s.flow(g, sgw, "recDecision == 'recommend'", 'recommend')
-    sign = s.svc('rc_sign', 'Sign noting (DSC / eSign)', C['SIGN'], {'op': 'REQUEST', 'purpose': 'noting'}, async_=True)
+    sign = s.svc('rc_sign', 'Sign noting (DSC / eSign)', C['SIGN'], {'op': 'REQUEST', 'purpose': 'noting', 'browserSigner': 'true'}, async_=True)
     s.flow(sgw, sign, 'signEachLevel', 'CSMOP: sign before forwarding')
     s.flow(sgw, adv, None, 'no signature', default=True)
     sres = s.xgw('rc_signRes', 'Signed?')
@@ -172,13 +186,21 @@ def sanction():
                              form='core/sanction',
                              decision=('sanctionDecision', ['approve', 'reject', 'return', 'forward']),
                              fields=['remarks', 'rejectionReasonCodes', 'rejectionRemarks', 'returnReason',
-                                     'signMethod', 'presentedPayloadHash', 'sodExceptionId'],
+                                     'signMethod', 'presentedPayloadHash', 'sodExceptionId', 'dscDocumentId'],
+                             # an approval signed with DSC completes only over a server-verified signature of the
+                             # named document at this task (decisions 140, 165, 227; fail closed); deemed: never signed
+                             # decision 236: the document a DSC approval signs is the note in sanctionDocumentId
+                             listeners=dsc_gate({'decisionVar': 'sanctionDecision', 'approveValues': 'approve',
+                                                 'requiredVar': 'signatureRequired', 'skipVar': 'deemedDecision'},
+                                                'sanctionDocumentId', 'SANCTION_NOTE'),
                              spec='${sanctionSla}', on_breach='${sanctionOnBreach}', sod=True,
                              # each sanction level of a case has its own routing table, so the SoD step id carries
                              # it: a checker and the authoriser of the same case are two steps, never the same role
                              # (SL-50); a repeat of one level after a return keeps the same id
                              step_suffix='routingDecisionKey',
-                             power={'decisionKey': '${powersDecisionKey}', 'approveValues': 'approve'},
+                             # decision 193: the limit table comes from the deployed manifest (powers.py), never
+                             # from the powersDecisionKey variable
+                             power={'approveValues': 'approve'},
                              bind='approve')
     s.seq(st, d, lc, rt, seat, entry)
     dg = s.xgw('sn_deemedGw', 'Deemed?')
@@ -190,7 +212,7 @@ def sanction():
     s.flow(bd, g)
     sg = s.xgw('sn_signGw', 'Signature required?')
     s.flow(g, sg, "sanctionDecision == 'approve'", 'approve')
-    sign = s.svc('sn_sign', 'Sign approved payload', C['SIGN'], {'op': 'REQUEST', 'purpose': 'sanction'}, async_=True)
+    sign = s.svc('sn_sign', 'Sign approved payload', C['SIGN'], {'op': 'REQUEST', 'purpose': 'sanction', 'browserSigner': 'true'}, async_=True)
     s.flow(sg, sign, 'signatureRequired && !deemedDecision', 'sign')
     approved = s.state('sn_approved', 'APPROVED')
     s.flow(sg, approved, None, 'no signature', default=True)

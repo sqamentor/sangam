@@ -66,6 +66,10 @@
     {
       "kind": "SEED",
       "path": "packs/works/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/works/pack.json"
     }
   ],
   "seed": "packs/works/seed.json",
@@ -123,6 +127,39 @@
     "sangam-tender",
     "sangam-work-order"
   ],
+  "currency": "INR",
+  "powers": {
+    "wk_ts": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "WORKS_TS"
+    },
+    "wk_aa": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "WORKS_AA"
+    },
+    "wk_aaFirst": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "WORKS_AA"
+    },
+    "wk_tsSecond": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "WORKS_TS"
+    },
+    "wk_raa": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "WORKS_RAA"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

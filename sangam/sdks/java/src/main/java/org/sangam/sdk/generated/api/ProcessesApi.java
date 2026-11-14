@@ -10,6 +10,8 @@ import org.sangam.sdk.generated.model.ActivityInstance;
 import org.sangam.sdk.generated.model.AdHocState;
 import org.sangam.sdk.generated.model.CaseVersion;
 import org.sangam.sdk.generated.model.ConsequencePreview;
+import org.sangam.sdk.generated.model.ContinueAsNewRequest;
+import org.sangam.sdk.generated.model.ContinueAsNewResult;
 import org.sangam.sdk.generated.model.CrossBoundaryMoveRequest;
 import org.sangam.sdk.generated.model.Document;
 import org.sangam.sdk.generated.model.EntityLink;
@@ -24,6 +26,7 @@ import org.sangam.sdk.generated.model.MessageRequest;
 import org.sangam.sdk.generated.model.MessageResult;
 import org.sangam.sdk.generated.model.ModifyPreviewRequest;
 import org.sangam.sdk.generated.model.ModifyRequest;
+import org.sangam.sdk.generated.model.ProcessContinuationChain;
 import org.sangam.sdk.generated.model.ProcessDefinition;
 import org.sangam.sdk.generated.model.ProcessInstance;
 import org.sangam.sdk.generated.model.ResubmitRequest;
@@ -36,7 +39,7 @@ import org.sangam.sdk.generated.model.TerminationResult;
 import org.sangam.sdk.generated.model.TriggerRequest;
 
 /**
- * Typed operations of {@code Processes} (31 operations), generated from
+ * Typed operations of {@code Processes} (33 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -68,6 +71,8 @@ public final class ProcessesApi {
     private static final TypeReference<ProcessDefinition> R_setProcessDefinitionSuspension = new TypeReference<>() { };
     private static final TypeReference<ConsequencePreview> R_previewModification = new TypeReference<>() { };
     private static final TypeReference<ProcessInstance> R_moveAcrossBoundary = new TypeReference<>() { };
+    private static final TypeReference<ContinueAsNewResult> R_continueProcessInstanceAsNew = new TypeReference<>() { };
+    private static final TypeReference<ProcessContinuationChain> R_getProcessContinuationChain = new TypeReference<>() { };
     private static final TypeReference<java.util.List<InstanceHandler>> R_listInstanceHandlers = new TypeReference<>() { };
     private static final TypeReference<InstanceQueryResult> R_queryProcessInstance = new TypeReference<>() { };
     private static final TypeReference<InstanceUpdateResult> R_updateProcessInstance = new TypeReference<>() { };
@@ -561,6 +566,38 @@ public final class ProcessesApi {
         ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/cross-boundary-move");
         req.body(body);
         return call.json(req, options, R_moveAcrossBoundary);
+    }
+
+    /**
+     * Continue as new
+     *
+     * <p>Ends the active root instance and starts exactly one successor in one transaction, keeping the business key, the definition id and the named variables exactly. 409 CONTINUATION_NOT_ALLOWED, nothing changed, with extension reason SUB_INSTANCE, SUSPENDED, ENDED, ALREADY_CONTINUED (then the problem also carries successorId) or REQUEST_ID_REUSED (the continuationRequestId was used for another instance); an instance of another tenant is 404 (decision 145). A retry with the same continuationRequestId answers 200 with outcome EXISTING and the committed successor (ended empty). Needs PROCESS_INSTANCE MODIFY on the instance and, for another named version, PROCESS_DEFINITION START. Open user tasks, external tasks, jobs, timers and message subscriptions end with the predecessor; stale workers and callbacks on it get 404; late messages correlate by business key and tenant to the successor. Audited as PROCESS_CONTINUED_AS_NEW.
+     *
+     * <p>{@code POST /process-instances/{id}/continue-as-new} (operationId {@code continueProcessInstanceAsNew}); permission {@code process.continue}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public ContinueAsNewResult continueProcessInstanceAsNew(String id, ContinueAsNewRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/continue-as-new");
+        req.body(body);
+        return call.json(req, options, R_continueProcessInstanceAsNew);
+    }
+
+    /**
+     * Continuation chain
+     *
+     * <p>The chain of the instance (predecessors and successors), with generation, actor, reason and request id of every link. An instance never continued has a chain of one instance and no links.
+     *
+     * <p>{@code GET /process-instances/{id}/continuations} (operationId {@code getProcessContinuationChain}); permission {@code process.read}.
+     * @param id path parameter {@code id}
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public ProcessContinuationChain getProcessContinuationChain(String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/process-instances/" + HttpTransport.seg(String.valueOf(id)) + "/continuations");
+        return call.json(req, options, R_getProcessContinuationChain);
     }
 
     /**

@@ -267,4 +267,19 @@ public final class CommandState {
         jobIdentity = identity;
         return previous;
     }
+
+    private Throwable jobFailure;
+
+    /**
+     * Decision 302: the original failure of the job whose failed-job command runs in this command (set by
+     * {@code job/CountingFailedJobCommandFactory} before the engine's retry command), or null. The incident handler reads
+     * it to derive {@code errorClass} for an incident opened by that command.
+     */
+    public synchronized Throwable jobFailure() {
+        return jobFailure;
+    }
+
+    public synchronized void jobFailure(Throwable failure) {
+        jobFailure = failure;
+    }
 }

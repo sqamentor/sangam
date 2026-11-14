@@ -4,6 +4,7 @@ package org.sangam.field.template;
 import org.sangam.field.template.FieldTemplate.Item;
 import org.sangam.field.template.FieldTemplate.Option;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,11 +95,18 @@ public final class ChecklistValidator {
                 }
             }
             case NUMBER -> {
-                Double d = number(a);
+                // decision 212: exact decimal comparison; answer text must already be canonical so every client hashes one form
+                BigDecimal d = exactNumber(a);
                 if (d == null) {
                     return "number expected";
                 }
-                if (i.min() != null && d < i.min() || i.max() != null && d > i.max()) {
+                if (a instanceof String s && !s.equals(canonical(d))) {
+                    return "number not canonical: expected " + canonical(d);
+                }
+                if (!i.withinScale(d)) {
+                    return "too many decimal places: at most " + i.scale();
+                }
+                if (!inRange(i, d)) {
                     return "out of range";
                 }
             }
@@ -143,6 +151,61 @@ public final class ChecklistValidator {
         return i.options().stream().filter(o -> Objects.equals(o.value(), String.valueOf(a))).findFirst().orElse(null);
     }
 
+    /**
+     * Decision 212: the exact value of a NUMBER answer, or {@code null} when it is not a number. A JSON number (older
+     * clients) is read exactly as {@link org.sangam.field.evidence.PacketHasher} normalises it ({@code new
+     * BigDecimal(n.toString())}); text is parsed as written and is not stripped. This does not check canonical form;
+     * {@link #canonicalNumber(Object)} does.
+     */
+    public static BigDecimal exactNumber(Object a) {
+        if (a == null || a instanceof Boolean) {
+            return null;
+        }
+        try {
+            if (a instanceof BigDecimal b) {
+                return b;
+            }
+            if (a instanceof Number n) {
+                return new BigDecimal(n.toString());
+            }
+            if (a instanceof String s) {
+                return new BigDecimal(s);
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * Decision 212: the value of a NUMBER answer that is acceptable for capture, or {@code null}. JSON numbers are
+     * accepted in any form and canonicalised; text must equal its canonical form ({@code 12.50}, {@code +3} and
+     * {@code 1E+2} are refused).
+     */
+    public static BigDecimal canonicalNumber(Object a) {
+        BigDecimal d = exactNumber(a);
+        if (d == null || a instanceof String s && !s.equals(canonical(d))) {
+            return null;
+        }
+        return d;
+    }
+
+    /** Canonical NUMBER text, identical to what PacketHasher.normalise writes for a JSON number (zero as "0"). */
+    public static String canonical(BigDecimal d) {
+        return d.signum() == 0 ? "0" : d.stripTrailingZeros().toPlainString();
+    }
+
+    /**
+     * Exact range check against the template bounds, which are exact decimals ({@link FieldTemplate.Bound}, owner
+     * decision 230); both bounds are inclusive.
+     */
+    public static boolean inRange(Item i, BigDecimal d) {
+        // owner decision 230: the bounds are exact decimals, so no binary double enters the comparison
+        return (i.min() == null || d.compareTo(i.min()) >= 0)
+                && (i.max() == null || d.compareTo(i.max()) <= 0);
+    }
+
+    /** Coordinates of a GEO_POINT answer (not NUMBER answers; those use {@link #canonicalNumber(Object)}). */
     public static Double number(Object a) {
         if (a instanceof Number n) {
             return n.doubleValue();

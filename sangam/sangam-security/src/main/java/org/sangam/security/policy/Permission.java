@@ -16,14 +16,25 @@ public enum Permission {
     READ, READ_TASK, READ_HISTORY, READ_VARIABLE, CLAIM, COMPLETE, APPROVE, CANCEL, MODIFY, CHANGE_GRANT, READ_AUDIT,
     // ---- appended by Stage C (ordinal 11+)
     READ_SENSITIVE, START, DELETE_INSTANCE, ERASE_DATA, MIGRATE, BULK, EXPORT, DEPLOY, ADMIN,
-    APPROVE_SOD_EXCEPTION, WORK, ASSIGN, REVIEW_PACKAGE;
+    APPROVE_SOD_EXCEPTION, WORK, ASSIGN, REVIEW_PACKAGE,
+    // ---- appended by decision 141 (ordinal 24+): unverified payments, explicit-only (see #explicitOnly())
+    ACCEPT_UNVERIFIED, RESOLVE_UNVERIFIED;
 
     /** VI.4 rule 1: a policy on these actions must compile to SQL, otherwise it is rejected at deployment. */
     private static final Set<Permission> LIST_VISIBLE = EnumSet.of(READ, READ_TASK, READ_HISTORY, READ_VARIABLE, READ_AUDIT);
 
     /** VI.4 rule 5: re-checked inside the command transaction with no cache. */
     private static final Set<Permission> SENSITIVE = EnumSet.of(COMPLETE, APPROVE, CANCEL, MODIFY, CHANGE_GRANT,
-            DELETE_INSTANCE, ERASE_DATA, MIGRATE, BULK, ADMIN, APPROVE_SOD_EXCEPTION, DEPLOY, ASSIGN, REVIEW_PACKAGE);
+            DELETE_INSTANCE, ERASE_DATA, MIGRATE, BULK, ADMIN, APPROVE_SOD_EXCEPTION, DEPLOY, ASSIGN, REVIEW_PACKAGE,
+            ACCEPT_UNVERIFIED, RESOLVE_UNVERIFIED);
+
+    /**
+     * Decision 141: conferred only by a grant that names a concrete resource type and a concrete resource id. A grant on
+     * {@code '*'} (type or id), a role template that takes "every permission of a type", and the system identity never
+     * hold them; denies on wildcards still apply. Validation rejects a grant of them on a wildcard
+     * ({@link PolicyCompiler#validate(String, String, long, Condition, boolean)}).
+     */
+    private static final Set<Permission> EXPLICIT_ONLY = EnumSet.of(ACCEPT_UNVERIFIED, RESOLVE_UNVERIFIED);
 
     public long bit() {
         return 1L << ordinal();
@@ -35,6 +46,11 @@ public enum Permission {
 
     public boolean sensitive() {
         return SENSITIVE.contains(this);
+    }
+
+    /** Decision 141: true when only an explicit grant (concrete type and id) confers this permission. */
+    public boolean explicitOnly() {
+        return EXPLICIT_ONLY.contains(this);
     }
 
     public static long mask(Permission... permissions) {

@@ -75,6 +75,7 @@ class TimerFollowUpAndMultiInstanceGuardH2Test {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:regr" + System.nanoTime() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings settings = new SangamEngineSettings();
+        settings.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         settings.setAllowMultipleEnginesPerJvm(true);
         settings.setEngineSchemaUpdate("true");
         settings.setJobExecutorActivate(false);
@@ -95,8 +96,8 @@ class TimerFollowUpAndMultiInstanceGuardH2Test {
     void repeatingTimerSchedulesEveryCycleUntilRn() {
         Instant t0 = Instant.parse("2026-11-02T04:30:00Z");
         a.setClock(t0);
-        a.deploy(null, "cycle", Map.of("cycle.bpmn", CYCLE.getBytes(StandardCharsets.UTF_8)));
-        String pid = a.startProcess(null, "cycle", "C-1", Map.of());
+        a.deploy("t1", "cycle", Map.of("cycle.bpmn", CYCLE.getBytes(StandardCharsets.UTF_8)));
+        String pid = a.startProcess("t1", "cycle", "C-1", Map.of());
         for (int h = 1; h <= 5; h++) {
             a.setClock(t0.plus(Duration.ofHours(h)).plusSeconds(60));
             a.executeDueJobs();
@@ -108,12 +109,12 @@ class TimerFollowUpAndMultiInstanceGuardH2Test {
 
     @Test
     void multiInstanceGuardSeesExpressionCardinality() {
-        a.deploy(null, "mi", Map.of("mi.bpmn", MI.getBytes(StandardCharsets.UTF_8)));
-        RuntimeException e = assertThrows(RuntimeException.class, () -> a.startProcess(null, "mi", "M-1", Map.of("n", 51)));
+        a.deploy("t1", "mi", Map.of("mi.bpmn", MI.getBytes(StandardCharsets.UTF_8)));
+        RuntimeException e = assertThrows(RuntimeException.class, () -> a.startProcess("t1", "mi", "M-1", Map.of("n", 51)));
         assertTrue(String.valueOf(e.getMessage()).contains("GP-09") || String.valueOf(e.getCause()).contains("GP-09"),
                 "GP-09 guard message: " + e);
         assertEquals(0, a.processEngine().getRuntimeService().createProcessInstanceQuery().processDefinitionKey("mi").count());
-        String pid = a.startProcess(null, "mi", "M-2", Map.of("n", 50));
+        String pid = a.startProcess("t1", "mi", "M-2", Map.of("n", 50));
         assertEquals(50, count(pid, "item"));
     }
 }

@@ -26,6 +26,9 @@ import org.sangam.engine.db.Conflicts;
  * re-acquired without losing a retry, exactly as Operaton treats its own conflicts. Every other failure is passed
  * through unchanged, so retries, retry cycles and incidents are as before.
  *
+ * <p>The command handed back runs the engine's command after recording the original failure on the command state
+ * (decision 302, {@code errorClass} of {@code INCIDENT_OPENED}).
+ *
  * <p>Such re-tries are unbounded, as for Operaton's own conflicts, so a conflict that never clears must not stay
  * silent: every conversion logs a WARN with the job id and the conflict, and is counted with {@code conflict=true}.
  */
@@ -58,7 +61,22 @@ public final class CountingFailedJobCommandFactory implements FailedJobCommandFa
                     + "); its retry is kept and it will be re-acquired. A job that keeps repeating this is in a"
                     + " livelock: check sangam_jobs_failed_total{conflict=\"true\"}");
         }
-        return delegate.getCommand(jobId, forEngine);
+        return failureRecording(delegate.getCommand(jobId, forEngine), exception);
+    }
+
+    /**
+     * Decision 302: the engine's failed-job command, run after the original failure is recorded on its command's
+     * {@code CommandState}, so an incident it opens (retries used up) can derive {@code errorClass} from the original
+     * failure, not from the converted one. Operaton's {@code FailedJobListenerCmd} only calls {@code execute} on it
+     * (javap 2.2.0).
+     */
+    static Command<Object> failureRecording(Command<Object> engineCommand, Throwable original) {
+        return cc -> {
+            if (cc != null) {
+                org.sangam.engine.tx.CommandState.of(cc).jobFailure(original);
+            }
+            return engineCommand.execute(cc);
+        };
     }
 
     /**

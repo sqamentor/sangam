@@ -176,8 +176,37 @@ WEBHOOK_MESSAGES = [
 # Written to the audit chain in the command transaction, never through the outbox (AuditChain), so they are not
 # messages; R16 / X.5.2 make this document their published list. Read from the SANGAM.md X.4.0.3 table (the single
 # source), row by row in table order: the group is the first cell without its parenthesised reference, the names are
-# the backticked upper-case words of the second cell, and `A_B`/`_C` (a name starting with _) replaces the last word of
-# the name before it (A_C). AsyncApiConsistencyTest reads the table with the same rules.
+# the backticked upper-case words of the second cell OUTSIDE parentheses, and `A_B`/`_C` (a name starting with _)
+# replaces the last word of the name before it (A_C). Text in parentheses is a note (payload, chain, decision) and is
+# never a name, so a backticked value in a note such as `PENDING` or `UNRESOLVED_TENANT` is not published. Parentheses
+# are counted only outside backticks. AsyncApiConsistencyTest.x403 reads the table with the same rules, and
+# AuditCatalogueEmittedTest checks every name against the code, because both parsers share any blind spot.
+_AUDIT_NAME = None
+
+
+def _audit_names(cell):
+    """The audit event names of one X.4.0.3 second cell, in order (rules above)."""
+    import re as _re
+    global _AUDIT_NAME
+    if _AUDIT_NAME is None:
+        _AUDIT_NAME = _re.compile(r"_?[A-Z][A-Z_]*|_[A-Z_]+")
+    names, previous, depth = [], None, 0
+    for i, part in enumerate(cell.split("`")):
+        if i % 2 == 0:  # outside backticks: track the parenthesis depth
+            for ch in part:
+                if ch == "(":
+                    depth += 1
+                elif ch == ")":
+                    depth = max(0, depth - 1)
+        elif depth == 0 and _AUDIT_NAME.fullmatch(part):
+            n = part
+            if n.startswith("_") and previous is not None:
+                n = previous[:previous.rindex("_")] + n
+            names.append(n)
+            previous = n
+    return names
+
+
 def _audit_events():
     import re as _re
     with open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "..", "..", "SANGAM.md"),
@@ -189,13 +218,8 @@ def _audit_events():
         cells = line.split("|")
         if not line.startswith("| ") or len(cells) < 3 or cells[1].strip() == "Group":
             continue
-        names, previous = [], None
-        for n in _re.findall(r"`(_?[A-Z][A-Z_]*|_[A-Z_]+)`", cells[2]):
-            if n.startswith("_") and previous is not None:
-                n = previous[:previous.rindex("_")] + n
-            names.append(n)
-            previous = n
-        out.append((_re.sub(r"\s*\(.*\)\s*$", "", cells[1].strip()), " ".join(names)))
+        assert cells[2].count("`") % 2 == 0, "SANGAM.md X.4.0.3 row %r has an unpaired backtick" % cells[1].strip()
+        out.append((_re.sub(r"\s*\(.*\)\s*$", "", cells[1].strip()), " ".join(_audit_names(cells[2]))))
     assert out, "SANGAM.md X.4.0.3 has no event rows"
     return out
 

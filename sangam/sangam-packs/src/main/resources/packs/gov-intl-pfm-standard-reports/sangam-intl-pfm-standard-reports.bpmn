@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Standard budget execution report. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_standard_report" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-standard-reports" name="Standard budget execution report" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-standard-reports</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>reportSet,reportPeriod,ledgerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="sr_start" name="Report period closed" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-standard-reports/period"></startEvent>
+    <serviceTask id="sr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ledgerId=BUDGET;reportSet=MONTHLY;preparerSeat=ACCOUNTS-OFFICER;reviewerSeat=ACCOUNTING-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="sr_cfg" name="Report due date (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-report-calendar</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="sr_due" name="Regulatory clock: report" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>report</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${reportDueSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sr_extract_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>extractDatasetRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="sr_extract" name="Ledger extract" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.report</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>report</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,reportSet,reportPeriod</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>extract</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="sr_extractGw" name="Ledger extract?" default="intl_pfm_standard_report_f9"></exclusiveGateway>
+    <userTask id="sr_extractHold" name="Ledger extract not confirmed: check the ledger" operaton:candidateGroups="${preparerSeat}" operaton:formKey="sangam:gov-intl-pfm-standard-reports/extractHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="sr_prepare" name="Prepare the report and explain variances" operaton:candidateGroups="${preparerSeat}" operaton:formKey="sangam:gov-intl-pfm-standard-reports/prepare" operaton:dueDate="${reportDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="sr_review" name="Approve the report (not the preparer)" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:gov-intl-pfm-standard-reports/review" operaton:dueDate="${reportDueAt}"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>sr_prepare</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="sr_reviewGw" name="" default="intl_pfm_standard_report_f13"></exclusiveGateway>
+    <serviceTask id="sr_doc" name="Issue the report" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>budget-execution-report</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="sr_end" name="Report issued"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>ISSUED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['extractDatasetRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_standard_report_f1" sourceRef="sr_extract_clear" targetRef="sr_extract"/>
+    <sequenceFlow id="intl_pfm_standard_report_f2" sourceRef="sr_extract" targetRef="sr_extractGw"/>
+    <sequenceFlow id="intl_pfm_standard_report_f3" sourceRef="sr_extractHold" targetRef="sr_extract_clear"/>
+    <sequenceFlow id="intl_pfm_standard_report_f4" name="not confirmed" sourceRef="sr_extractGw" targetRef="sr_extractHold"><conditionExpression xsi:type="tFormalExpression">${extractStatus != 'COMPLETED' || extractDatasetRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_standard_report_f5" sourceRef="sr_start" targetRef="sr_defaults"/>
+    <sequenceFlow id="intl_pfm_standard_report_f6" sourceRef="sr_defaults" targetRef="sr_cfg"/>
+    <sequenceFlow id="intl_pfm_standard_report_f7" sourceRef="sr_cfg" targetRef="sr_due"/>
+    <sequenceFlow id="intl_pfm_standard_report_f8" sourceRef="sr_due" targetRef="sr_extract_clear"/>
+    <sequenceFlow id="intl_pfm_standard_report_f9" name="confirmed" sourceRef="sr_extractGw" targetRef="sr_prepare"/>
+    <sequenceFlow id="intl_pfm_standard_report_f10" sourceRef="sr_prepare" targetRef="sr_review"/>
+    <sequenceFlow id="intl_pfm_standard_report_f11" sourceRef="sr_review" targetRef="sr_reviewGw"/>
+    <sequenceFlow id="intl_pfm_standard_report_f12" name="returned" sourceRef="sr_reviewGw" targetRef="sr_prepare"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_standard_report_f13" name="approved" sourceRef="sr_reviewGw" targetRef="sr_doc"/>
+    <sequenceFlow id="intl_pfm_standard_report_f14" sourceRef="sr_doc" targetRef="sr_end"/>
+    <subProcess id="sr_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="sr_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="sr_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="sr_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="sr_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_standard_report_f15" sourceRef="sr_withdrawStart" targetRef="sr_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_standard_report_f16" sourceRef="sr_withdrawKind" targetRef="sr_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_standard_report_f17" sourceRef="sr_withdrawCall" targetRef="sr_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="sr_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="sr_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="sr_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="sr_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="sr_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_standard_report_f18" sourceRef="sr_cancelStart" targetRef="sr_cancelKind"/>
+      <sequenceFlow id="intl_pfm_standard_report_f19" sourceRef="sr_cancelKind" targetRef="sr_cancelCall"/>
+      <sequenceFlow id="intl_pfm_standard_report_f20" sourceRef="sr_cancelCall" targetRef="sr_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_standard_report_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_standard_report_plane" bpmnElement="sangam-intl-pfm-standard-reports">
+      <bpmndi:BPMNShape id="sr_start_di" bpmnElement="sr_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_defaults_di" bpmnElement="sr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_cfg_di" bpmnElement="sr_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_due_di" bpmnElement="sr_due"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_extract_clear_di" bpmnElement="sr_extract_clear"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_extract_di" bpmnElement="sr_extract"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_extractGw_di" bpmnElement="sr_extractGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_extractHold_di" bpmnElement="sr_extractHold"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_prepare_di" bpmnElement="sr_prepare"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_review_di" bpmnElement="sr_review"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_reviewGw_di" bpmnElement="sr_reviewGw"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_doc_di" bpmnElement="sr_doc"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_end_di" bpmnElement="sr_end"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_withdraw_di" bpmnElement="sr_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_withdrawStart_di" bpmnElement="sr_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_withdrawKind_di" bpmnElement="sr_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_withdrawCall_di" bpmnElement="sr_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_withdrawEnd_di" bpmnElement="sr_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_cancel_di" bpmnElement="sr_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_cancelStart_di" bpmnElement="sr_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_cancelKind_di" bpmnElement="sr_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_cancelCall_di" bpmnElement="sr_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="sr_cancelEnd_di" bpmnElement="sr_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f1_di" bpmnElement="intl_pfm_standard_report_f1"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f2_di" bpmnElement="intl_pfm_standard_report_f2"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f3_di" bpmnElement="intl_pfm_standard_report_f3"><di:waypoint x="1225" y="235"/><di:waypoint x="1225" y="267"/><di:waypoint x="730" y="267"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f4_di" bpmnElement="intl_pfm_standard_report_f4"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f5_di" bpmnElement="intl_pfm_standard_report_f5"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f6_di" bpmnElement="intl_pfm_standard_report_f6"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f7_di" bpmnElement="intl_pfm_standard_report_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f8_di" bpmnElement="intl_pfm_standard_report_f8"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f9_di" bpmnElement="intl_pfm_standard_report_f9"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f10_di" bpmnElement="intl_pfm_standard_report_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f11_di" bpmnElement="intl_pfm_standard_report_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f12_di" bpmnElement="intl_pfm_standard_report_f12"><di:waypoint x="1555" y="95"/><di:waypoint x="1555" y="149"/><di:waypoint x="1225" y="149"/><di:waypoint x="1225" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f13_di" bpmnElement="intl_pfm_standard_report_f13"><di:waypoint x="1580" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f14_di" bpmnElement="intl_pfm_standard_report_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f15_di" bpmnElement="intl_pfm_standard_report_f15"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f16_di" bpmnElement="intl_pfm_standard_report_f16"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f17_di" bpmnElement="intl_pfm_standard_report_f17"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f18_di" bpmnElement="intl_pfm_standard_report_f18"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f19_di" bpmnElement="intl_pfm_standard_report_f19"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_standard_report_f20_di" bpmnElement="intl_pfm_standard_report_f20"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

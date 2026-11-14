@@ -2,7 +2,7 @@
 """Generates the GraalVM reachability metadata for the native-light Java SDK worker (SANGAM.md R7).
 
 Scans sangam/sdks/java/src/main/java/org/sangam/sdk/model (every record, including nested records/enums) and writes
-  src/main/resources/META-INF/native-image/org.sangam/sangam-sdk-worker-native/reflect-config.json
+  src/main/resources/META-INF/native-image/io.github.sqamentor/sangam-sdk-worker-native/reflect-config.json
   src/main/resources/org/sangam/sdk/nativeimage/model-classes.txt   (read by NativeSmoke)
 Jackson maps these records by reflection (canonical constructor + accessors), which native-image must know about.
 
@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SANGAM = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 MODEL = os.path.join(SANGAM, "sdks", "java", "src", "main", "java", "org", "sangam", "sdk", "model")
 PKG = "org.sangam.sdk.model"
-REFLECT = os.path.join(HERE, "src", "main", "resources", "META-INF", "native-image", "org.sangam",
+REFLECT = os.path.join(HERE, "src", "main", "resources", "META-INF", "native-image", "io.github.sqamentor",
                        "sangam-sdk-worker-native", "reflect-config.json")
 LIST = os.path.join(HERE, "src", "main", "resources", "org", "sangam", "sdk", "nativeimage", "model-classes.txt")
 

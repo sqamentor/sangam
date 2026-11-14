@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -53,7 +54,7 @@ class AuditVerifyWiringTest {
     void theJdbcAuditAdapterVerifiesTheCheckpoints() throws Exception {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:auditverify" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
-        TxSupport tx = new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
         JdbcAuditAdapter adapter = new JdbcAuditAdapter(tx, null, null, new RestProperties());
         AuditCheckpoints.KeyLookup keys = AuditCheckpoints.ed25519Keys(List.of(publicKey()));
         assertTrue(AuditVerifyWiring.bind(adapter, tx, keys));

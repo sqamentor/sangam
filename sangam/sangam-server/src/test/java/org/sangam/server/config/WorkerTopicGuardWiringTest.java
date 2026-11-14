@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,7 +53,7 @@ class WorkerTopicGuardWiringTest {
         try (Connection c = h2.getConnection()) {
             security = new SangamSecurity(SecurityDialect.detect(c), null);
         }
-        tx = new TxSupport(h2, new DataSourceTransactionManager(h2), TxSupport.detectDialect(h2));
+        tx = new SpringTxSupport(h2, new DataSourceTransactionManager(h2), TxSupport.detectDialect(h2));
         guard = SecurityWiring.workerTopicGuard(security, tx);
         tx.inTx(() -> {
             Connection c = tx.connection();

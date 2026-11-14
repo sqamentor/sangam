@@ -17,6 +17,7 @@ PORT=18080; MGMT=18081
     SERVER_ADDRESS=127.0.0.1 SPRING_PROFILES_ACTIVE=h2 SANGAM_COMPLIANCE_ORGANISATION="Sangam release pipeline" \
     exec java -Duser.timezone=UTC -jar "$(realpath "$JAR")" ) > "$OUT/server-start.log" 2>&1 &
 PID=$!
+# guard-allow: EXIT cleanup is best effort: the server may already have exited (kill fails) and wait returns its kill status; under set -e either would stop the trap before rm -rf, and the script's own exit status is already decided
 trap 'kill "$PID" 2>/dev/null || true; wait "$PID" 2>/dev/null || true; rm -rf "$WORK"' EXIT
 
 for _ in $(seq 1 90); do

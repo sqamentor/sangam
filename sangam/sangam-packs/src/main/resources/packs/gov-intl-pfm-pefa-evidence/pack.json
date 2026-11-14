@@ -1,0 +1,59 @@
+{
+  "id": "gov.intl.pfm-pefa-evidence",
+  "version": "1.0.0",
+  "name": {
+    "en": "PEFA evidence pack (worldwide PFM)",
+    "hi": "पीईएफए साक्ष्य संग्रह (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "PEFA evidence pack (PFM-080): the indicator evidence that Sangam holds is extracted from the ledger as one report set, the coordinator compiles it indicator by indicator and lists the evidence that comes from outside Sangam, a different officer reviews, and the evidence pack is issued. It is evidence for assessors, not an assessment or a score.",
+  "mainProcesses": [
+    "sangam-intl-pfm-pefa-evidence"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-pefa-evidence/sangam-intl-pfm-pefa-evidence.bpmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-pefa-evidence/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-pefa-evidence/forms/extractHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-pefa-evidence/forms/compile.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-pefa-evidence/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-pefa-evidence/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-pefa-evidence/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Ledger report set for the indicators"
+    }
+  ],
+  "covers": [
+    "PFM-080"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

@@ -6,10 +6,9 @@
 #   docker build -f deploy/docker/scale.Dockerfile --build-arg MODULE=sangam-gateway       -t sangam-gateway:dev .
 #   docker build -f deploy/docker/scale.Dockerfile --build-arg MODULE=sangam-rollup        -t sangam-rollup:dev .
 # Licence rules as server.Dockerfile: no Oracle/Db2/Connector-J driver; MariaDB only via /opt/sangam/lib-ext.
-ARG MAVEN_IMAGE=maven:3.9.11-eclipse-temurin-21
-ARG JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble
+# Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 
-FROM ${MAVEN_IMAGE} AS build
+FROM maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237 AS build
 ARG MODULE
 ARG MAVEN_ARGS="-B -ntp"
 WORKDIR /src
@@ -20,7 +19,7 @@ RUN --mount=type=cache,target=/root/.m2 \
  && jar=$(ls ${MODULE}/target/${MODULE}-*.jar | grep -v -e '\.original$' -e '-plain\.jar$' -e '-sources\.jar$' | head -n 1) \
  && cp "$jar" /out.jar
 
-FROM ${JRE_IMAGE} AS runtime
+FROM eclipse-temurin:21.0.8_9-jre-noble@sha256:20e7f7288e1c18eebe8f06a442c9f7183342d9b022d3b9a9677cae2b558ddddd AS runtime
 ARG MODULE
 LABEL org.opencontainers.image.title="${MODULE}" org.opencontainers.image.licenses="Apache-2.0"
 RUN groupadd -g 10001 sangam && useradd -u 10001 -g sangam -M -d /opt/sangam sangam \

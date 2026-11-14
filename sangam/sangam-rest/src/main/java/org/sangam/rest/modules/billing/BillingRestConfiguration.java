@@ -22,4 +22,12 @@ public class BillingRestConfiguration {
     @Import({BillingController.class, BillingProblemAdvice.class})
     static class Controllers {
     }
+
+    /** RM-03 (owner decision 141): the unverified-payment endpoints, when the host created the application service. */
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnBean(type = {"org.sangam.billing.UnverifiedPayments",
+            "org.sangam.rest.modules.ledger.LedgerTenantDefinitions"})
+    @Import(UnverifiedPaymentController.class)
+    static class UnverifiedPaymentEndpoints {
+    }
 }

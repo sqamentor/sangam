@@ -4,7 +4,6 @@ package org.sangam.server.config;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -128,8 +127,10 @@ public class RegistryWiring {
             ports = ports.withVault(HmacIdentifierVault.fromBase64(pepper));
         }
         // The side pool for unique-only number blocks (registry README §2: Transactions.of(plainPool)).
+        // RM-06, decision 143: the platform's one environment resolution decides; development-only defaults (with
+        // no compliance module, the permit-all consent) are refused outside a validated development environment.
         RegistryModule module = new RegistryModule(tx.dialect(), ports, Transactions.of(ds),
-                Arrays.asList(env.getActiveProfiles()));
+                ProductionEnvironment.resolve(env));
         return module.install();
     }
 

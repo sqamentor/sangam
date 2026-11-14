@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-assembly</artifactId>
+  <name>Sangam assembly layer and host SPI (plain Java)</name>
+  <description>M-141/M-144: the plain-Java assembly layer (construction, capability decisions, lifecycle order) and the
+    host SPI every outer host (Spring today, any later framework) implements as a thin adapter. Never a host: it names
+    no host framework (HostFrameworkBoundaryTest) and declares no host-framework dependency (AssemblyIsPlainJavaTest).
+  </description>
+
+  <dependencies>
+    <!-- core: Transactions (the transaction seam) and the engine-neutral contracts -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- M-141b: EngineAssembly builds over the engine settings and Operaton's plugin types (never a host type) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-engine</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

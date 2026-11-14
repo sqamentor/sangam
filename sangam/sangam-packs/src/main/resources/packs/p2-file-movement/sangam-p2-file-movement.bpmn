@@ -121,10 +121,12 @@
     </subProcess>
     <subProcess id="p2_rti" name="RTI request linked" triggeredByEvent="true">
       <startEvent id="p2_rtiStart" name="RTI linked" isInterrupting="false"><messageEventDefinition messageRef="msg_sangam_rtiLinked"/></startEvent>
+      <serviceTask id="p2_rtiLink" name="Record the RTI link" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RTI_LINK</operaton:string></operaton:field></extensionElements></serviceTask>
       <serviceTask id="p2_rtiHold" name="Legal hold while the RTI is open" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>LEGAL_HOLD</operaton:string></operaton:field></extensionElements></serviceTask>
       <endEvent id="p2_rtiEnd" name="Hold set"></endEvent>
-      <sequenceFlow id="p2_file_movement_f49" sourceRef="p2_rtiStart" targetRef="p2_rtiHold"/>
-      <sequenceFlow id="p2_file_movement_f50" sourceRef="p2_rtiHold" targetRef="p2_rtiEnd"/>
+      <sequenceFlow id="p2_file_movement_f49" sourceRef="p2_rtiStart" targetRef="p2_rtiLink"/>
+      <sequenceFlow id="p2_file_movement_f50" sourceRef="p2_rtiLink" targetRef="p2_rtiHold"/>
+      <sequenceFlow id="p2_file_movement_f51" sourceRef="p2_rtiHold" targetRef="p2_rtiEnd"/>
     </subProcess>
   </process>
   <bpmndi:BPMNDiagram id="p2_file_movement_diagram">
@@ -183,10 +185,11 @@
       <bpmndi:BPMNShape id="p2_referStart_di" bpmnElement="p2_referStart"><dc:Bounds x="92" y="1460" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p2_referCall_di" bpmnElement="p2_referCall"><dc:Bounds x="225" y="1438" width="100" height="80"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p2_referEnd_di" bpmnElement="p2_referEnd"><dc:Bounds x="422" y="1460" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p2_rti_di" bpmnElement="p2_rti" isExpanded="true"><dc:Bounds x="30" y="1588" width="458" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rti_di" bpmnElement="p2_rti" isExpanded="true"><dc:Bounds x="30" y="1588" width="623" height="150"/></bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="p2_rtiStart_di" bpmnElement="p2_rtiStart"><dc:Bounds x="92" y="1650" width="36" height="36"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p2_rtiHold_di" bpmnElement="p2_rtiHold"><dc:Bounds x="225" y="1628" width="100" height="80"/></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="p2_rtiEnd_di" bpmnElement="p2_rtiEnd"><dc:Bounds x="422" y="1650" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rtiLink_di" bpmnElement="p2_rtiLink"><dc:Bounds x="225" y="1628" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rtiHold_di" bpmnElement="p2_rtiHold"><dc:Bounds x="390" y="1628" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="p2_rtiEnd_di" bpmnElement="p2_rtiEnd"><dc:Bounds x="587" y="1650" width="36" height="36"/></bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="p2_file_movement_f1_di" bpmnElement="p2_file_movement_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p2_file_movement_f2_di" bpmnElement="p2_file_movement_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p2_file_movement_f3_di" bpmnElement="p2_file_movement_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
@@ -236,7 +239,8 @@
       <bpmndi:BPMNEdge id="p2_file_movement_f47_di" bpmnElement="p2_file_movement_f47"><di:waypoint x="128" y="1478"/><di:waypoint x="225" y="1478"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p2_file_movement_f48_di" bpmnElement="p2_file_movement_f48"><di:waypoint x="325" y="1478"/><di:waypoint x="422" y="1478"/></bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="p2_file_movement_f49_di" bpmnElement="p2_file_movement_f49"><di:waypoint x="128" y="1668"/><di:waypoint x="225" y="1668"/></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="p2_file_movement_f50_di" bpmnElement="p2_file_movement_f50"><di:waypoint x="325" y="1668"/><di:waypoint x="422" y="1668"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f50_di" bpmnElement="p2_file_movement_f50"><di:waypoint x="325" y="1668"/><di:waypoint x="390" y="1668"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p2_file_movement_f51_di" bpmnElement="p2_file_movement_f51"><di:waypoint x="490" y="1668"/><di:waypoint x="587" y="1668"/></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </definitions>

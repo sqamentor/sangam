@@ -4,7 +4,7 @@
   Sangam bill of materials for consumers (SG-26). Import it FIRST in your dependencyManagement, before any other BOM
   (Spring Boot 4's BOM manages Liquibase 5.x, which is FSL-licensed and not allowed by Sangam's LIC-7 / D-7):
 
-    <dependency><groupId>org.sangam</groupId><artifactId>sangam-bom</artifactId><version>...</version>
+    <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-bom</artifactId><version>...</version>
                 <type>pom</type><scope>import</scope></dependency>
 
   No parent on purpose: nothing from Sangam's build (or Spring Boot) leaks into a consumer. Sangam also refuses to
@@ -14,46 +14,66 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.sangam</groupId>
+  <groupId>io.github.sqamentor</groupId>
   <artifactId>sangam-bom</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Sangam BOM</name>
   <description>Versions of every Sangam library and the licence-pinned third-party libraries.</description>
+  <!-- No parent, so the Central metadata (decision 181) is repeated here: url, licences, developers, scm. -->
+  <url>https://github.com/sqamentor/sangam</url>
   <licenses><license><name>Apache-2.0</name><url>https://www.apache.org/licenses/LICENSE-2.0</url></license></licenses>
+  <developers><developer><id>sqamentor</id><name>The Sangam authors</name><url>https://github.com/sqamentor</url></developer></developers>
+  <scm>
+    <url>https://github.com/sqamentor/sangam</url>
+    <connection>scm:git:https://github.com/sqamentor/sangam.git</connection>
+    <developerConnection>scm:git:https://github.com/sqamentor/sangam.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+  <!-- Same local staging as the root pom (M-019): "mvn deploy" never reaches a remote repository. -->
+  <properties>
+    <sangam.staging.dir>${maven.multiModuleProjectDirectory}/target/central-staging</sangam.staging.dir>
+  </properties>
+  <distributionManagement>
+    <repository><id>sangam-staging</id><url>file://${sangam.staging.dir}</url></repository>
+    <snapshotRepository><id>sangam-staging</id><url>file://${sangam.staging.dir}</url></snapshotRepository>
+  </distributionManagement>
 
   <dependencyManagement>
     <dependencies>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-core</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-persistence</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-engine</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-security</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-integration</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-connectors-health</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-flowable-ports</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-rest</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-packs</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-compliance</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-config</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-ledger</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-registry</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-billing</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-case</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-programme</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-resources</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-geo</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-field</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-sdk-java</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-cell</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-ai</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-channels</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-ops</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-modeller</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-onboarding</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-core</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-persistence</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-feel</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-engine</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-security</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-integration</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-connectors-health</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-flowable-ports</artifactId><version>${project.version}</version></dependency>
+      <!-- Decision 285: the Spring-free ports and default adapters of sangam-rest (package names unchanged) -->
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-rest-core</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-rest</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-packs</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-compliance</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-config</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-ledger</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-registry</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-billing</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-case</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-programme</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-resources</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-geo</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-field</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-sdk-java</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-cell</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-ai</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-channels</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-ops</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-modeller</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-onboarding</artifactId><version>${project.version}</version></dependency>
       <!-- M-014: embedded mode. The starter depends on sangam-server's library jar (classifier plain); the runnable
            server is the main artifact. -->
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
-      <dependency><groupId>org.sangam</groupId><artifactId>sangam-server</artifactId><version>${project.version}</version><classifier>plain</classifier></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-spring-boot-starter</artifactId><version>${project.version}</version></dependency>
+      <dependency><groupId>io.github.sqamentor</groupId><artifactId>sangam-server</artifactId><version>${project.version}</version><classifier>plain</classifier></dependency>
       <!-- SG-33: the whole Jackson 2.x line at the version the FEEL closure (jackson-module-scala 2.22.3 below) accepts.
            A consumer's INHERITED dependencyManagement still wins over this import, so a parent pom that manages another
            jackson-databind must also set jackson.version / import jackson-bom 2.22.3; JacksonCompatibilityGuard (called by

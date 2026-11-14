@@ -1,0 +1,49 @@
+{
+  "key": "gov-intl-pfm-replenishment/difference",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-replenishment",
+  "title": {
+    "en": "Credit differs from the claim: record ineligible or unpaid amounts",
+    "hi": "अंतर दर्ज करें"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "claimAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Claim amount",
+        "hi": "दावा राशि"
+      }
+    },
+    {
+      "id": "creditAmount",
+      "type": "readonly",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount credited (bank / TSA)",
+        "hi": "जमा राशि"
+      }
+    },
+    {
+      "id": "differenceNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Difference: ineligible or partly paid amounts",
+        "hi": "अंतर: अपात्र या आंशिक भुगतान"
+      }
+    }
+  ]
+}

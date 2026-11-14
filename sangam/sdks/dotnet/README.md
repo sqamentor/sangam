@@ -195,8 +195,10 @@ Saga.Step("charge")
 
 ## Framework adapter
 
-`src/Sangam.Sdk.Hosting` (package `Sangam.Sdk.Hosting`, M-027) runs the worker as an `IHostedService` of the generic
-host / ASP.NET Core. It uses only the in-box `Microsoft.AspNetCore.App` shared framework; the core SDK gains no dependency.
+`src/Sangam.Sdk.Hosting` (M-027) runs the worker as an `IHostedService` of the generic host / ASP.NET Core. It uses
+only the in-box `Microsoft.AspNetCore.App` shared framework; the core SDK gains no dependency. In 0.1.0 it is source only
+(owner decision 132): CI tests it, but it is not packable (`IsPackable` false) and no `Sangam.Sdk.Hosting` package is
+published; reference the project from source.
 
 ```csharp
 builder.Services.AddSingleton<SangamClient>(_ => new SangamClient(options));            // optional: else BaseUrl/Token

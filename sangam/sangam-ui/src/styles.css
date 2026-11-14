@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Sangam UI styles. Colour pairs are chosen for WCAG 2.1 AA (≥ 4.5:1 for text, ≥ 3:1 for UI parts). */
 
-:root {
+/* :host carries the same tokens into the shadow root of the embeddable web components (M-043, src/embed/). */
+:root,
+:host {
   --bg: #f6f7f9;
   --surface: #ffffff;
   --text: #1b1f24;
@@ -24,16 +26,17 @@
   --series-2: #b35c00;
   --series-3: #2e7d32;
   --radius: 6px;
-  /* Font stacks per language (state govt → central govt → bundled OSI → system); src/fonts.ts overrides these at boot
+  /* Font stacks per language (state govt → central govt → bundled Noto → system); src/fonts.ts overrides these at boot
      from the language map and /config.json. These static values apply until then. See FONTS.md. */
-  --font-en: 'Noto Sans', 'SakalBharati', system-ui, sans-serif;
-  --font-hi: 'SakalBharati', 'Noto Sans Devanagari', 'Noto Sans', system-ui, sans-serif;
+  --font-en: 'Noto Sans', system-ui, sans-serif;
+  --font-hi: 'Noto Sans Devanagari', 'Noto Sans', system-ui, sans-serif;
   --font: var(--font-en);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root,
+  :host {
     --bg: #12161b;
     --surface: #1b2128;
     --text: #e8ecf1;

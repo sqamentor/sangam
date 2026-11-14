@@ -84,11 +84,13 @@ spec:
 {{- include "sangam.backup.cronjob" (dict "ctx" . "name" "ora-level1" "schedule" $b.oracle.incrementalSchedule "image" $img "command" "sh /scripts/oracle-rman.sh incremental") }}
 {{- include "sangam.backup.cronjob" (dict "ctx" . "name" "ora-archlog" "schedule" $b.oracle.archivelogSchedule "image" $img "command" "sh /scripts/oracle-rman.sh archivelog") }}
 {{- else if eq $type "sqlserver" }}
-{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-full" "schedule" $b.sqlserver.fullSchedule "image" $b.sqlserver.image "command" "bash /scripts/mssql-backup.sh full" "runAsUser" 10001) }}
-{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-diff" "schedule" $b.sqlserver.diffSchedule "image" $b.sqlserver.image "command" "bash /scripts/mssql-backup.sh diff" "runAsUser" 10001) }}
-{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-log" "schedule" $b.sqlserver.logSchedule "image" $b.sqlserver.image "command" "bash /scripts/mssql-backup.sh log" "runAsUser" 10001) }}
+{{- $img := required "backup.sqlserver.image is required: an image with sqlcmd (mssql-tools) that you are licensed to run; the chart has no default (decision 129)" $b.sqlserver.image }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-full" "schedule" $b.sqlserver.fullSchedule "image" $img "command" "bash /scripts/mssql-backup.sh full" "runAsUser" 10001) }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-diff" "schedule" $b.sqlserver.diffSchedule "image" $img "command" "bash /scripts/mssql-backup.sh diff" "runAsUser" 10001) }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mssql-log" "schedule" $b.sqlserver.logSchedule "image" $img "command" "bash /scripts/mssql-backup.sh log" "runAsUser" 10001) }}
 {{- else if eq $type "mysql" }}
-{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mysql-full" "schedule" $b.mysql.fullSchedule "image" $b.mysql.image "command" "bash /scripts/mysql-full.sh") }}
-{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mysql-binlog" "schedule" $b.mysql.binlogSchedule "image" $b.mysql.image "command" "bash /scripts/mysql-binlog.sh") }}
+{{- $img := required "backup.mysql.image is required: an image with the MySQL 8.4 client tools (mysqldump, mysqlbinlog); the chart has no default (decision 129)" $b.mysql.image }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mysql-full" "schedule" $b.mysql.fullSchedule "image" $img "command" "bash /scripts/mysql-full.sh") }}
+{{- include "sangam.backup.cronjob" (dict "ctx" . "name" "mysql-binlog" "schedule" $b.mysql.binlogSchedule "image" $img "command" "bash /scripts/mysql-binlog.sh") }}
 {{- end }}
 {{- end }}

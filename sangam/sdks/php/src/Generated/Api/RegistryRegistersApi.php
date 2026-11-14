@@ -23,7 +23,7 @@ final class RegistryRegistersApi
     /**
      * Define
      *
-     * RegisterController.define (sangam-registry).
+     * RegisterController.define (sangam-rest).
      *
      * PUT /registry/registers/{registerKey} (operationId registryRegisterDefine); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegisterDefineBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryRegistersApi
     /**
      * Definition
      *
-     * RegisterController.definition (sangam-registry).
+     * RegisterController.definition (sangam-rest).
      *
      * GET /registry/registers/{registerKey} (operationId registryRegisterDefinition); permission registry.read.
      * @return array<string, mixed>
@@ -55,7 +55,7 @@ final class RegistryRegistersApi
     /**
      * Definitions
      *
-     * RegisterController.definitions (sangam-registry).
+     * RegisterController.definitions (sangam-rest).
      *
      * GET /registry/registers (operationId registryRegisterDefinitions); permission registry.read.
      * @return list<array<string, mixed>>
@@ -69,7 +69,7 @@ final class RegistryRegistersApi
     /**
      * Append
      *
-     * RegisterController.append (sangam-registry).
+     * RegisterController.append (sangam-rest).
      *
      * POST /registry/registers/{registerKey}/entries (operationId registryRegisterAppend); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegisterAppendBody|array $body request body
@@ -87,7 +87,7 @@ final class RegistryRegistersApi
     /**
      * Books
      *
-     * RegisterController.books (sangam-registry).
+     * RegisterController.books (sangam-rest).
      *
      * GET /registry/registers/{registerKey}/books (operationId registryRegisterBooks); permission registry.read.
      * @param string|null $scope query scope
@@ -107,7 +107,7 @@ final class RegistryRegistersApi
     /**
      * Book
      *
-     * RegisterController.book (sangam-registry).
+     * RegisterController.book (sangam-rest).
      *
      * GET /registry/registers/books/{bookId} (operationId registryRegisterBook); permission registry.read.
      * @return array<string, mixed>
@@ -121,7 +121,7 @@ final class RegistryRegistersApi
     /**
      * Entries
      *
-     * RegisterController.entries (sangam-registry).
+     * RegisterController.entries (sangam-rest).
      *
      * GET /registry/registers/books/{bookId}/entries (operationId registryRegisterEntries); permission registry.read.
      * @param int|null $from query from
@@ -139,7 +139,7 @@ final class RegistryRegistersApi
     /**
      * Effective
      *
-     * RegisterController.effective (sangam-registry).
+     * RegisterController.effective (sangam-rest).
      *
      * GET /registry/registers/books/{bookId}/entries/{entryNo} (operationId registryRegisterEffective); permission registry.read.
      * @return array<string, mixed>
@@ -153,7 +153,7 @@ final class RegistryRegistersApi
     /**
      * Correct
      *
-     * RegisterController.correct (sangam-registry).
+     * RegisterController.correct (sangam-rest).
      *
      * POST /registry/registers/books/{bookId}/entries/{entryNo}/corrections (operationId registryRegisterCorrect); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegisterCorrectBody|array $body request body
@@ -171,7 +171,7 @@ final class RegistryRegistersApi
     /**
      * Entries for
      *
-     * RegisterController.entriesFor (sangam-registry).
+     * RegisterController.entriesFor (sangam-rest).
      *
      * GET /registry/registers/entries (operationId registryRegisterEntriesFor); permission registry.read.
      * @param string $refType query refType
@@ -189,7 +189,7 @@ final class RegistryRegistersApi
     /**
      * Close
      *
-     * RegisterController.close (sangam-registry).
+     * RegisterController.close (sangam-rest).
      *
      * POST /registry/registers/books/{bookId}/close (operationId registryRegisterClose); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -206,7 +206,7 @@ final class RegistryRegistersApi
     /**
      * Verify
      *
-     * RegisterController.verify (sangam-registry).
+     * RegisterController.verify (sangam-rest).
      *
      * GET /registry/registers/books/{bookId}/verify (operationId registryRegisterVerify); permission registry.read.
      * @return array<string, mixed>
@@ -220,7 +220,7 @@ final class RegistryRegistersApi
     /**
      * Extract
      *
-     * RegisterController.extract (sangam-registry).
+     * RegisterController.extract (sangam-rest).
      *
      * POST /registry/registers/books/{bookId}/extracts (operationId registryRegisterExtract); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegisterExtractBody|array $body request body
@@ -238,7 +238,7 @@ final class RegistryRegistersApi
     /**
      * Get extract
      *
-     * RegisterController.getExtract (sangam-registry).
+     * RegisterController.getExtract (sangam-rest).
      *
      * GET /registry/registers/extracts/{extractId} (operationId registryRegisterGetExtract); permission registry.read.
      * @return array<string, mixed>
@@ -252,7 +252,7 @@ final class RegistryRegistersApi
     /**
      * Verify extract
      *
-     * RegisterController.verifyExtract (sangam-registry).
+     * RegisterController.verifyExtract (sangam-rest).
      *
      * GET /registry/registers/public/{tenant}/extracts/verify (operationId registryRegisterVerifyExtract).
      * @param string $code query code

@@ -23,7 +23,7 @@ final class RegistryPartiesApi
     /**
      * Create
      *
-     * PartyController.create (sangam-registry).
+     * PartyController.create (sangam-rest).
      *
      * POST /registry/parties (operationId registryPartyCreate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyCreateBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryPartiesApi
     /**
      * List
      *
-     * PartyController.list (sangam-registry).
+     * PartyController.list (sangam-rest).
      *
      * GET /registry/parties (operationId registryPartyList); permission registry.read.
      * @param string|null $kind query kind
@@ -71,7 +71,7 @@ final class RegistryPartiesApi
     /**
      * Get
      *
-     * PartyController.get (sangam-registry).
+     * PartyController.get (sangam-rest).
      *
      * GET /registry/parties/{id} (operationId registryPartyGet); permission registry.read.
      * @param string|null $xPurpose header X-Purpose
@@ -87,7 +87,7 @@ final class RegistryPartiesApi
     /**
      * Update
      *
-     * PartyController.update (sangam-registry).
+     * PartyController.update (sangam-rest).
      *
      * PATCH /registry/parties/{id} (operationId registryPartyUpdate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyUpdateBody|array $body request body
@@ -105,7 +105,7 @@ final class RegistryPartiesApi
     /**
      * Deactivate
      *
-     * PartyController.deactivate (sangam-registry).
+     * PartyController.deactivate (sangam-rest).
      *
      * POST /registry/parties/{id}/deactivate (operationId registryPartyDeactivate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyDeactivateBody|array $body request body
@@ -123,7 +123,7 @@ final class RegistryPartiesApi
     /**
      * Reactivate
      *
-     * PartyController.reactivate (sangam-registry).
+     * PartyController.reactivate (sangam-rest).
      *
      * POST /registry/parties/{id}/reactivate (operationId registryPartyReactivate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyReactivateBody|array $body request body
@@ -141,7 +141,7 @@ final class RegistryPartiesApi
     /**
      * Resolve
      *
-     * PartyController.resolve (sangam-registry).
+     * PartyController.resolve (sangam-rest).
      *
      * GET /registry/parties/{id}/resolve (operationId registryPartyResolve); permission registry.read.
      * @return array<string, mixed>
@@ -155,7 +155,7 @@ final class RegistryPartiesApi
     /**
      * Verify audit
      *
-     * PartyController.verifyAudit (sangam-registry).
+     * PartyController.verifyAudit (sangam-rest).
      *
      * GET /registry/parties/{id}/audit/verify (operationId registryPartyVerifyAudit); permission registry.read.
      * @return array<string, mixed>
@@ -169,7 +169,7 @@ final class RegistryPartiesApi
     /**
      * Identifiers
      *
-     * PartyController.identifiers (sangam-registry).
+     * PartyController.identifiers (sangam-rest).
      *
      * GET /registry/parties/{id}/identifiers (operationId registryPartyIdentifiers); permission registry.read.
      * @param string|null $xPurpose header X-Purpose
@@ -185,7 +185,7 @@ final class RegistryPartiesApi
     /**
      * Add identifier
      *
-     * PartyController.addIdentifier (sangam-registry).
+     * PartyController.addIdentifier (sangam-rest).
      *
      * POST /registry/parties/{id}/identifiers (operationId registryPartyAddIdentifier); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyAddIdentifierBody|array $body request body
@@ -203,7 +203,7 @@ final class RegistryPartiesApi
     /**
      * Retire identifier
      *
-     * PartyController.retireIdentifier (sangam-registry).
+     * PartyController.retireIdentifier (sangam-rest).
      *
      * POST /registry/parties/identifiers/{identifierId}/retire (operationId registryPartyRetireIdentifier); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyRetireIdentifierBody|array $body request body
@@ -221,7 +221,7 @@ final class RegistryPartiesApi
     /**
      * Reveal
      *
-     * PartyController.reveal (sangam-registry).
+     * PartyController.reveal (sangam-rest).
      *
      * POST /registry/parties/identifiers/{identifierId}/reveal (operationId registryPartyReveal); permission registry.write; result stored atomically with the state change.
      * @param string|null $xPurpose header X-Purpose
@@ -237,7 +237,7 @@ final class RegistryPartiesApi
     /**
      * Relationships
      *
-     * PartyController.relationships (sangam-registry).
+     * PartyController.relationships (sangam-rest).
      *
      * GET /registry/parties/{id}/relationships (operationId registryPartyRelationships); permission registry.read.
      * @param string|null $xPurpose header X-Purpose
@@ -253,7 +253,7 @@ final class RegistryPartiesApi
     /**
      * Add relationship
      *
-     * PartyController.addRelationship (sangam-registry).
+     * PartyController.addRelationship (sangam-rest).
      *
      * POST /registry/parties/{id}/relationships (operationId registryPartyAddRelationship); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyAddRelationshipBody|array $body request body
@@ -271,7 +271,7 @@ final class RegistryPartiesApi
     /**
      * End relationship
      *
-     * PartyController.endRelationship (sangam-registry).
+     * PartyController.endRelationship (sangam-rest).
      *
      * POST /registry/parties/relationships/{relationshipId}/end (operationId registryPartyEndRelationship); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyEndRelationshipBody|array $body request body
@@ -289,7 +289,7 @@ final class RegistryPartiesApi
     /**
      * Addresses
      *
-     * PartyController.addresses (sangam-registry).
+     * PartyController.addresses (sangam-rest).
      *
      * GET /registry/parties/{id}/addresses (operationId registryPartyAddresses); permission registry.read.
      * @param string|null $xPurpose header X-Purpose
@@ -305,7 +305,7 @@ final class RegistryPartiesApi
     /**
      * Add address
      *
-     * PartyController.addAddress (sangam-registry).
+     * PartyController.addAddress (sangam-rest).
      *
      * POST /registry/parties/{id}/addresses (operationId registryPartyAddAddress); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyAddAddressBody|array $body request body
@@ -323,7 +323,7 @@ final class RegistryPartiesApi
     /**
      * Retire address
      *
-     * PartyController.retireAddress (sangam-registry).
+     * PartyController.retireAddress (sangam-rest).
      *
      * POST /registry/parties/addresses/{addressId}/retire (operationId registryPartyRetireAddress); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyRetireAddressBody|array $body request body
@@ -341,7 +341,7 @@ final class RegistryPartiesApi
     /**
      * Household
      *
-     * PartyController.household (sangam-registry).
+     * PartyController.household (sangam-rest).
      *
      * GET /registry/parties/{id}/household (operationId registryPartyHousehold); permission registry.read.
      * @param string|null $types query types
@@ -361,7 +361,7 @@ final class RegistryPartiesApi
     /**
      * Snapshot
      *
-     * PartyController.snapshot (sangam-registry).
+     * PartyController.snapshot (sangam-rest).
      *
      * POST /registry/parties/{id}/snapshots (operationId registryPartySnapshot); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartySnapshotBody|array $body request body
@@ -381,7 +381,7 @@ final class RegistryPartiesApi
     /**
      * Snapshots
      *
-     * PartyController.snapshots (sangam-registry).
+     * PartyController.snapshots (sangam-rest).
      *
      * GET /registry/parties/snapshots (operationId registryPartySnapshots); permission registry.read.
      * @param string|null $reference query reference
@@ -399,7 +399,7 @@ final class RegistryPartiesApi
     /**
      * Get snapshot
      *
-     * PartyController.getSnapshot (sangam-registry).
+     * PartyController.getSnapshot (sangam-rest).
      *
      * GET /registry/parties/snapshots/{snapshotId} (operationId registryPartyGetSnapshot); permission registry.read.
      * @return array<string, mixed>
@@ -413,7 +413,7 @@ final class RegistryPartiesApi
     /**
      * Verify snapshot
      *
-     * PartyController.verifySnapshot (sangam-registry).
+     * PartyController.verifySnapshot (sangam-rest).
      *
      * GET /registry/parties/snapshots/{snapshotId}/verify (operationId registryPartyVerifySnapshot); permission registry.read.
      * @return array<string, mixed>
@@ -427,7 +427,7 @@ final class RegistryPartiesApi
     /**
      * Match
      *
-     * PartyController.match (sangam-registry).
+     * PartyController.match (sangam-rest).
      *
      * POST /registry/parties/match (operationId registryPartyMatch); permission registry.write.
      * @param Model\RegistryPartyMatchBody|array $body request body
@@ -445,7 +445,7 @@ final class RegistryPartiesApi
     /**
      * Rematch
      *
-     * PartyController.rematch (sangam-registry).
+     * PartyController.rematch (sangam-rest).
      *
      * POST /registry/parties/{id}/match (operationId registryPartyRematch); permission registry.write; result stored atomically with the state change.
      * @param bool|null $record query record
@@ -461,7 +461,7 @@ final class RegistryPartiesApi
     /**
      * Candidates
      *
-     * PartyController.candidates (sangam-registry).
+     * PartyController.candidates (sangam-rest).
      *
      * GET /registry/parties/candidates (operationId registryPartyCandidates); permission registry.read.
      * @param string|null $status query status
@@ -483,7 +483,7 @@ final class RegistryPartiesApi
     /**
      * Confirm
      *
-     * PartyController.confirm (sangam-registry).
+     * PartyController.confirm (sangam-rest).
      *
      * POST /registry/parties/candidates/{candidateId}/confirm (operationId registryPartyConfirm); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -500,7 +500,7 @@ final class RegistryPartiesApi
     /**
      * Reject
      *
-     * PartyController.reject (sangam-registry).
+     * PartyController.reject (sangam-rest).
      *
      * POST /registry/parties/candidates/{candidateId}/reject (operationId registryPartyReject); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -517,7 +517,7 @@ final class RegistryPartiesApi
     /**
      * Merge
      *
-     * PartyController.merge (sangam-registry).
+     * PartyController.merge (sangam-rest).
      *
      * POST /registry/parties/merge (operationId registryPartyMerge); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyMergeBody|array $body request body
@@ -535,7 +535,7 @@ final class RegistryPartiesApi
     /**
      * Unmerge
      *
-     * PartyController.unmerge (sangam-registry).
+     * PartyController.unmerge (sangam-rest).
      *
      * POST /registry/parties/merges/{mergeEventId}/unmerge (operationId registryPartyUnmerge); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartyUnmergeBody|array $body request body
@@ -553,7 +553,7 @@ final class RegistryPartiesApi
     /**
      * Merges
      *
-     * PartyController.merges (sangam-registry).
+     * PartyController.merges (sangam-rest).
      *
      * GET /registry/parties/{id}/merges (operationId registryPartyMerges); permission registry.read.
      * @return list<array<string, mixed>>
@@ -567,7 +567,7 @@ final class RegistryPartiesApi
     /**
      * Identifier types
      *
-     * PartyController.identifierTypes (sangam-registry).
+     * PartyController.identifierTypes (sangam-rest).
      *
      * GET /registry/parties/config/identifier-types (operationId registryPartyIdentifierTypes); permission registry.read.
      * @return list<array<string, mixed>>
@@ -581,7 +581,7 @@ final class RegistryPartiesApi
     /**
      * Save identifier types
      *
-     * PartyController.saveIdentifierTypes (sangam-registry).
+     * PartyController.saveIdentifierTypes (sangam-rest).
      *
      * PUT /registry/parties/config/identifier-types (operationId registryPartySaveIdentifierTypes); permission registry.write; result stored atomically with the state change.
      * @param array $body request body
@@ -599,7 +599,7 @@ final class RegistryPartiesApi
     /**
      * Match config
      *
-     * PartyController.matchConfig (sangam-registry).
+     * PartyController.matchConfig (sangam-rest).
      *
      * GET /registry/parties/config/match (operationId registryPartyMatchConfig); permission registry.read.
      * @return array<string, mixed>
@@ -613,7 +613,7 @@ final class RegistryPartiesApi
     /**
      * Save match config
      *
-     * PartyController.saveMatchConfig (sangam-registry).
+     * PartyController.saveMatchConfig (sangam-rest).
      *
      * PUT /registry/parties/config/match (operationId registryPartySaveMatchConfig); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryPartySaveMatchConfigBody|array $body request body

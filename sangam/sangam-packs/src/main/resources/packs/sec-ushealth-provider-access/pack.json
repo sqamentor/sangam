@@ -1,0 +1,79 @@
+{
+  "id": "sec.ushealth.provider-access",
+  "version": "1.0.0",
+  "name": {
+    "en": "Provider Access request (CMS-0057-F)",
+    "es": "Solicitud de acceso del proveedor (CMS-0057-F)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "An in-network provider asks for a patient's data: the treatment relationship (attribution) and the patient's opt-out are both checked at their source before anything is exported; an unconfirmed check holds the request for a person and never releases data; the answer is due within the response clock from DMN (one business day, to verify).",
+  "mainProcesses": [
+    "sangam-sec-ushealth-provider-access"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-provider-access/sangam-sec-ushealth-provider-access.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-provider-access/sec-ushealth-provider-access-config.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-provider-access/forms/request.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-provider-access/forms/checkHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-provider-access/forms/exportHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-provider-access/forms/sendHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-provider-access/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-provider-access/seed.json",
+  "connectors": [
+    {
+      "id": "payer.attribution",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Provider attribution (treatment relationship)"
+    },
+    {
+      "id": "payer.memberRecord",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Member record and opt-out of this payer (FHIR)"
+    },
+    {
+      "id": "payer.providerAccess",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Provider Access answer (FHIR Bulk Data)"
+    }
+  ],
+  "covers": [
+    "US-HLT-062",
+    "US-HLT-064",
+    "US-HLT-067",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const nm = join(root, 'node_modules');
-const OSI = new Set(['MIT', 'ISC', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', '0BSD', 'OFL-1.1', 'MPL-2.0', 'BlueOak-1.0.0', 'Python-2.0', 'CC0-1.0', 'Unlicense', 'Zlib', 'Artistic-2.0']);
+// MIT-0 matches deploy/licence/licence-policy.json (coordinator ruling 2026-11-13).
+const OSI = new Set(['MIT', 'MIT-0', 'ISC', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', '0BSD', 'OFL-1.1', 'MPL-2.0', 'BlueOak-1.0.0', 'Python-2.0', 'CC0-1.0', 'Unlicense', 'Zlib', 'Artistic-2.0']);
 const BPMN_IO = /^(bpmn-js|dmn-js|dmn-js-.*|diagram-js|diagram-js-.*|@bpmn-io\/.*|bpmn-moddle|dmn-moddle|table-js|moddle|moddle-xml|ids|min-dash|min-dom|tiny-svg|object-refs|path-intersection|didi|saxen|inherits-browser|selection-ranges|selection-update)$/;
 
 const rows = [];

@@ -3,7 +3,7 @@ import os, sys, copy
 import yaml
 sys.path.insert(0, os.path.dirname(__file__))
 from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG_FULL, COFOG_SOURCE, U
-from goi import GOI, DEPTS
+from goi import GOI, DEPTS, SCIENTIFIC_CLASS_VERSION
 from states import S, L
 import billtypes
 import delta
@@ -97,7 +97,7 @@ for d in DEPTS:
 
 
 for code, s in S.items():
-    doc = {'profile': {'id': code, 'layer': 'government', 'version': '2026.11.0', 'effectiveFrom': '2026-04-01',
+    doc = {'profile': {'id': code, 'layer': 'government', 'version': SCIENTIFIC_CLASS_VERSION, 'effectiveFrom': '2026-04-01',
                        'extends': ['IN', 'IN-PRESET-' + s['preset']],
                        'name': {'en': s['en'], 'hi': s['hi']},
                        'source': 'IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources ' + s['src'] + ', accessed 2026-11-04)'}}
@@ -109,6 +109,9 @@ for code, s in S.items():
         ph.append(('locale.languages', U + ' (finance-document language policy)'))
     if s['v8'] < 5:
         ph.append(('evidence', 'thin profile: ' + str(s['v8']) + ' of 8 fields verified'))
+    # decision 225 round 4: no State list of scientific departments was read, so the class stays without a value and a
+    # case bound to the State is refused (DEPARTMENT_CLASS_NOT_CONFIRMED) until the State's list is loaded
+    ph.append(('procurement.scientificDepartment', U + " (the State's scientific-department list was not read)"))
     doc['placeholders'] = [{'path': p, 'reason': r} for p, r in ph]
     doc['evidence'] = {'fieldsVerifiedOf8': s['v8'], 'sources': s['src']}
     langs = []

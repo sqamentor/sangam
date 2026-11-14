@@ -73,6 +73,7 @@ class TestModeClockTest {
         assertThrows(IllegalStateException.class, () -> TestModeClock.forEngine(new SangamEngineSettings(), true,
                 Set.of(), c -> { }), "off in the settings: no clock");
         SangamEngineSettings on = new SangamEngineSettings();
+        on.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         on.enableTestMode(true, Set.of("e2e"));
         assertThrows(IllegalStateException.class, () -> TestModeClock.forEngine(on, false, Set.of("e2e"), c -> { }),
                 "the host's own view says not H2");

@@ -27,6 +27,7 @@ class StoredOperationIdH2Test {
         JdbcDataSource raw = new JdbcDataSource();
         raw.setURL("jdbc:h2:mem:sg15" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setApplyEnvironment(false);
         return new SangamEngineConfigurer(s).prepare(raw); // product changelog: SANGAM_LEASE exists
     }

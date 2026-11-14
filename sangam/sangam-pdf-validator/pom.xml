@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  PDF validator service (M-081; owner decisions 94, 102, 114, 119; RM-26; SL-178). A small HTTP service around veraPDF
+  that checks rendered PDF bytes against PDF/A-2b and PDF/UA-1 and answers a report. The Sangam server reaches it through
+  org.sangam.integration.document.pdf.remote.RemotePdfValidator; with no service configured or no answer, PDF output
+  answers 422 FORMAT_NOT_AVAILABLE.
+
+  veraPDF needs org.mozilla:rhino (LIC-10 / D-8 keep it out of the default build). This module is the ONLY reactor module
+  allowed to reach Rhino (decision 119): the enforcer exemption below is scoped to it, at exactly the version veraPDF
+  1.30.4 declares. No server-side module depends on this one (PdfValidatorReactorScopeTest), so Rhino never enters the
+  server or its fat jar. Image: deploy/docker/pdf-validator.Dockerfile.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-pdf-validator</artifactId>
+  <name>Sangam PDF validator service (veraPDF)</name>
+  <description>Separate validator service: checks PDF bytes against PDF/A-2b and PDF/UA-1 with veraPDF and answers a report (owner decision 114).</description>
+
+  <properties>
+    <pdf-validator.mainClass>org.sangam.pdfvalidator.PdfValidatorMain</pdf-validator.mainClass>
+    <!-- The Rhino version veraPDF 1.30.4 declares (org.verapdf:core-jakarta:1.30.4). Any other version is re-approved. -->
+    <version.rhino.verapdf>1.7.15.1</version.rhino.verapdf>
+  </properties>
+
+  <dependencies>
+    <!-- the PdfRenderer.Validator contract and the wire constants of RemotePdfValidator (one source for both sides) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-integration</artifactId>
+    </dependency>
+    <!-- veraPDF validation model (Jakarta), MPL-2.0 elected (decisions 94, 102); version managed in the root pom -->
+    <dependency>
+      <groupId>org.verapdf</groupId>
+      <artifactId>validation-model-jakarta</artifactId>
+    </dependency>
+    <!-- Apache-2.0; version from the jackson-bom import of the root pom -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <!-- tests render real samples with the PDFBox renderer (optional in sangam-integration) and the deploy/fonts -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Decision 119 (C-04): the reactor-wide ban on org.mozilla:rhino (root pom, SL-106) stays; this module alone
+           gets one exact include for the version veraPDF needs. combine.children="append" keeps the root includes. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sangam-banned-dependencies</id>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <includes combine.children="append">
+                    <include>org.mozilla:rhino:[${version.rhino.verapdf}]</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>${pdf-validator.mainClass}</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -3,8 +3,9 @@
  * Language → font mapping (FONTS.md). For every language the font stack is built in this order:
  *
  *   1. state-government font   (tenant: /config.json `fonts`, or the site drop-in manifest /fonts/site/fonts.json)
- *   2. central-government font (bundled: C-DAC GIST Sakal Bharati, SIL OFL 1.1, public/fonts/gov/central/)
- *   3. bundled OSI fallback    (Noto Sans / Noto Sans Devanagari via @fontsource, SIL OFL 1.1)
+ *   2. central-government font (none bundled, owner decision 121; a site may add one through the same config)
+ *   3. bundled Noto fallback   (Noto Sans / Noto Sans Devanagari, the approved deploy/fonts TTFs, SIL OFL 1.1,
+ *                               copied into the build as /fonts/noto/ by scripts/deploy-fonts.mjs, owner decision 120)
  *   4. system-ui, sans-serif
  *
  * Adding a language later is configuration only: give it a row in LANGUAGE_FONTS (or in /config.json) and, when a
@@ -35,8 +36,6 @@ export interface LanguageFonts {
 
 /** The optional `fonts` block of /config.json, and the shape of the drop-in manifest /fonts/site/fonts.json. */
 export interface FontsConfig {
-  /** Load the bundled central-government font files (default true). False keeps only the OSI fallback. */
-  useBundledGovFonts?: boolean;
   /** Same-origin URL of a site drop-in manifest. Default "/fonts/site/fonts.json"; "" disables it. */
   manifest?: string;
   /** Extra font files, typically state-government TTFs dropped into /fonts/site/ at install time. */
@@ -45,55 +44,56 @@ export interface FontsConfig {
   languages?: Record<string, LanguageFonts>;
 }
 
-const SB = 'SakalBharati';
+const NOTO = 'Noto Sans';
+const NOTO_DEVA = 'Noto Sans Devanagari';
 
-/** Indic, Ol Chiki, Meetei Mayek and Arabic ranges covered by Sakal Bharati (no Latin, so English never fetches it). */
-const SB_RANGE =
-  'U+0600-06FF, U+0900-0DFF, U+1C50-1C7F, U+ABC0-ABFF, U+200C-200D, U+20B9, U+25CC';
-
-/** Central-government font files shipped in public/fonts/gov/ (provenance and SHA-256 in FONTS.md). */
-export const BUNDLED_GOV_FACES: FontFaceDef[] = [
-  {
-    family: SB,
-    src: '/fonts/gov/central/sakal-bharati/SakalBharati.ttf',
-    weight: '400',
-    unicodeRange: SB_RANGE,
-    tier: 'central',
-  },
-];
+/** Devanagari, Vedic Extensions, Devanagari Extended, ZWNJ/ZWJ, rupee signs and the dotted circle: Latin never fetches it. */
+export const DEVANAGARI_RANGE = 'U+0900-097F, U+1CD0-1CFF, U+200C-200D, U+20A8, U+20B9, U+25CC, U+A830-A839, U+A8E0-A8FF';
 
 /**
- * Built-in mapping for English plus the 22 Eighth Schedule languages. No state-government font is bundled (none had
- * a verified redistribution licence, FONTS.md §3); a tenant adds them through `fonts.languages[x].state`.
+ * The fonts bundled with the UI: exactly the deploy/fonts files approved by owner decisions 70 and 95 (OFL-1.1, unmodified,
+ * Regular only), served from the UI's own origin under /fonts/noto/ (owner decision 120). Provenance and SHA-256 are in
+ * deploy/fonts/README.md; the build refuses a file whose hash differs (scripts/deploy-fonts.mjs).
+ */
+export const BUNDLED_FACES: FontFaceDef[] = [
+  { family: NOTO, src: '/fonts/noto/NotoSans-Regular.ttf', weight: '400', tier: 'osi' },
+  { family: NOTO_DEVA, src: '/fonts/noto/NotoSansDevanagari-Regular.ttf', weight: '400', unicodeRange: DEVANAGARI_RANGE, tier: 'osi' },
+];
+
+const DEVA: LanguageFonts = { fallback: [NOTO_DEVA, NOTO] };
+
+/**
+ * Built-in mapping for English plus the 22 Eighth Schedule languages. No state- or central-government font is bundled
+ * (FONTS.md §3; owner decision 121); a tenant adds them through `fonts.languages[x].state` or `.central`.
  * Only 'Noto Sans' and 'Noto Sans Devanagari' are bundled; other Noto names are used when installed on the device.
  */
 export const LANGUAGE_FONTS: Record<string, LanguageFonts> = {
-  en: { central: [], fallback: ['Noto Sans', SB] },
-  hi: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
+  en: { fallback: [NOTO] },
+  hi: DEVA,
   // Devanagari script
-  mr: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
-  ne: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
-  kok: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
-  mai: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
-  doi: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
-  brx: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
-  sa: { central: [SB], fallback: ['Noto Sans Devanagari', 'Noto Sans'] },
+  mr: DEVA,
+  ne: DEVA,
+  kok: DEVA,
+  mai: DEVA,
+  doi: DEVA,
+  brx: DEVA,
+  sa: DEVA,
   // Other Indic scripts
-  as: { central: [SB], fallback: ['Noto Sans Bengali', 'Noto Sans'] },
-  bn: { central: [SB], fallback: ['Noto Sans Bengali', 'Noto Sans'] },
-  mni: { central: [SB], fallback: ['Noto Sans Meetei Mayek', 'Noto Sans Bengali', 'Noto Sans'] },
-  gu: { central: [SB], fallback: ['Noto Sans Gujarati', 'Noto Sans'] },
-  pa: { central: [SB], fallback: ['Noto Sans Gurmukhi', 'Noto Sans'] },
-  or: { central: [SB], fallback: ['Noto Sans Oriya', 'Noto Sans'] },
-  ta: { central: [SB], fallback: ['Noto Sans Tamil', 'Noto Sans'] },
-  te: { central: [SB], fallback: ['Noto Sans Telugu', 'Noto Sans'] },
-  kn: { central: [SB], fallback: ['Noto Sans Kannada', 'Noto Sans'] },
-  ml: { central: [SB], fallback: ['Noto Sans Malayalam', 'Noto Sans'] },
-  sat: { central: [SB], fallback: ['Noto Sans Ol Chiki', 'Noto Sans'] },
-  // Perso-Arabic script (Sindhi is also written in Devanagari: sd-Deva picks up the Devanagari fonts via SB)
-  ur: { central: [SB], fallback: ['Noto Nastaliq Urdu', 'Noto Naskh Arabic', 'Noto Sans'] },
-  ks: { central: [SB], fallback: ['Noto Nastaliq Urdu', 'Noto Naskh Arabic', 'Noto Sans'] },
-  sd: { central: [SB], fallback: ['Noto Naskh Arabic', 'Noto Sans Devanagari', 'Noto Sans'] },
+  as: { fallback: ['Noto Sans Bengali', NOTO] },
+  bn: { fallback: ['Noto Sans Bengali', NOTO] },
+  mni: { fallback: ['Noto Sans Meetei Mayek', 'Noto Sans Bengali', NOTO] },
+  gu: { fallback: ['Noto Sans Gujarati', NOTO] },
+  pa: { fallback: ['Noto Sans Gurmukhi', NOTO] },
+  or: { fallback: ['Noto Sans Oriya', NOTO] },
+  ta: { fallback: ['Noto Sans Tamil', NOTO] },
+  te: { fallback: ['Noto Sans Telugu', NOTO] },
+  kn: { fallback: ['Noto Sans Kannada', NOTO] },
+  ml: { fallback: ['Noto Sans Malayalam', NOTO] },
+  sat: { fallback: ['Noto Sans Ol Chiki', NOTO] },
+  // Perso-Arabic script (Sindhi is also written in Devanagari, so the bundled Devanagari face follows Naskh)
+  ur: { fallback: ['Noto Nastaliq Urdu', 'Noto Naskh Arabic', NOTO] },
+  ks: { fallback: ['Noto Nastaliq Urdu', 'Noto Naskh Arabic', NOTO] },
+  sd: { fallback: ['Noto Naskh Arabic', NOTO_DEVA, NOTO] },
 };
 
 const SYSTEM = ['system-ui', 'sans-serif'];
@@ -110,7 +110,8 @@ function cssToken(v: string | undefined, fallback: string): string {
   return v && /^[\w\s,+\-.]+$/.test(v) ? v : fallback;
 }
 
-function faceCss(f: FontFaceDef): string | null {
+/** The @font-face rule for one face, or null when the face is not same-origin or lacks a family or source. */
+export function faceCss(f: FontFaceDef): string | null {
   if (!f.family || !f.src || !sameOrigin(f.src)) return null;
   const fmt = /\.woff2$/i.test(f.src) ? 'woff2' : /\.woff$/i.test(f.src) ? 'woff' : /\.otf$/i.test(f.src) ? 'opentype' : 'truetype';
   const lines = [
@@ -134,7 +135,7 @@ function merge(base: Record<string, LanguageFonts>, over?: Record<string, Langua
   return out;
 }
 
-/** The resolved font stack for a language: state → central → OSI fallback → system. */
+/** The resolved font stack for a language: state → central → bundled fallback → system. */
 export function fontStack(lang: string, map: Record<string, LanguageFonts> = LANGUAGE_FONTS): string[] {
   const row = map[lang] ?? map[lang.split('-')[0]] ?? map.en;
   const seen = new Set<string>();
@@ -157,21 +158,10 @@ async function readManifest(url: string): Promise<FontsConfig | undefined> {
   }
 }
 
-/**
- * Declares the font faces and per-language stacks. Precedence of sources (later wins per language tier):
- * built-in LANGUAGE_FONTS < site drop-in manifest < /config.json `fonts`.
- */
-export async function applyFonts(cfg: FontsConfig = {}): Promise<void> {
-  const site = await readManifest(cfg.manifest ?? '/fonts/site/fonts.json');
-  const useGov = cfg.useBundledGovFonts ?? site?.useBundledGovFonts ?? true;
-  const faces = [...(useGov ? BUNDLED_GOV_FACES : []), ...(site?.faces ?? []), ...(cfg.faces ?? [])];
-  let map = merge(merge(LANGUAGE_FONTS, site?.languages), cfg.languages);
-  if (!useGov) {
-    map = Object.fromEntries(
-      Object.entries(map).map(([k, v]) => [k, { ...v, central: (v.central ?? []).filter((f) => f !== SB), fallback: (v.fallback ?? []).filter((f) => f !== SB) }]),
-    );
-  }
-
+/** The style sheet for the given configuration: the bundled and site faces, then one variable and rule per language. */
+export function fontsCss(site: FontsConfig | undefined, cfg: FontsConfig): string {
+  const faces = [...BUNDLED_FACES, ...(site?.faces ?? []), ...(cfg.faces ?? [])];
+  const map = merge(merge(LANGUAGE_FONTS, site?.languages), cfg.languages);
   const css: string[] = [];
   for (const f of faces) {
     const c = faceCss(f);
@@ -186,12 +176,20 @@ export async function applyFonts(cfg: FontsConfig = {}): Promise<void> {
     if (lang !== 'en') css.push(`:where(:lang(${lang})){font-family:var(${v})}`);
   }
   css.unshift(`:root{${vars.join(';')};--font:var(--font-en)}`);
+  return css.join('\n');
+}
 
+/**
+ * Declares the font faces and per-language stacks. Precedence of sources (later wins per language tier):
+ * built-in LANGUAGE_FONTS < site drop-in manifest < /config.json `fonts`.
+ */
+export async function applyFonts(cfg: FontsConfig = {}): Promise<void> {
+  const site = await readManifest(cfg.manifest ?? '/fonts/site/fonts.json');
   let el = document.getElementById('sangam-fonts') as HTMLStyleElement | null;
   if (!el) {
     el = document.createElement('style');
     el.id = 'sangam-fonts';
     document.head.appendChild(el);
   }
-  el.textContent = css.join('\n');
+  el.textContent = fontsCss(site, cfg);
 }

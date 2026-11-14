@@ -3,6 +3,8 @@ package org.sangam.server.config;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -23,15 +25,17 @@ import org.sangam.security.assignment.SangamSecurityEnginePlugin;
 import org.sangam.security.audit.LoginEventBatcher;
 import org.sangam.security.dialect.SecurityDialect;
 import org.sangam.security.oidc.SecurityProperties;
-import org.sangam.security.oidc.TokenAuthenticationFilters;
+import org.sangam.security.spring.TokenAuthenticationFilters;
 import org.sangam.server.bridge.SecurityAdminBridge;
 import org.sangam.server.bridge.SecurityBootstrap;
 import org.sangam.server.bridge.SecurityChainContributions;
 import org.sangam.server.bridge.SecurityIdentityAdminBridge;
 import org.sangam.server.bridge.SecurityIdentityExtras;
 import org.sangam.server.bridge.SecurityIdentityFilter;
+import org.sangam.server.bridge.BulkJobPermissions;
 import org.sangam.server.bridge.SecurityPermissionBridge;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -60,6 +64,8 @@ import org.springframework.core.env.Environment;
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = "sangam.modules.security.enabled", havingValue = "true", matchIfMissing = true)
 public class SecurityWiring {
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(SecurityWiring.class);
 
     @Bean
     @ConfigurationProperties("sangam.security")
@@ -142,6 +148,17 @@ public class SecurityWiring {
         };
     }
 
+    /**
+     * Decision 141: unverified payments are authorised on sangam-security (explicit ACCEPT_UNVERIFIED and
+     * RESOLVE_UNVERIFIED on BILLING {@code payment-channel:<channel>@<office>}, only for the request's authenticated
+     * person). BillingWiring takes it through an ObjectProvider; without sangam-security every acceptance is refused.
+     */
+    @Bean
+    public org.sangam.billing.UnverifiedPaymentAuthority sangamUnverifiedPaymentAuthority(SangamSecurity security,
+                                                                                         TxSupport tx) {
+        return new org.sangam.server.bridge.UnverifiedPaymentAuthorityBridge(security, tx);
+    }
+
     @Bean
     public SangamSecurityEnginePlugin sangamSecurityEnginePlugin(SangamSecurity security) {
         return new SangamSecurityEnginePlugin(security);
@@ -155,17 +172,52 @@ public class SecurityWiring {
 
     @Bean
     public SecurityChainContributions sangamSecurityChainContributions(Transactions sangamProductTransactions,
-            SangamSecurity security, SecurityProperties props, LoginEventBatcher logins) {
+            SangamSecurity security, SecurityProperties props, LoginEventBatcher logins,
+            org.springframework.core.env.Environment env) {
+        // decision 152: development identities only in a validated development environment (decision 143)
         return new SecurityChainContributions(
                 new TokenAuthenticationFilters.ApiTokenFilter(sangamProductTransactions, security.tokens()),
-                new SecurityIdentityFilter(sangamProductTransactions, security, props, logins));
+                new SecurityIdentityFilter(sangamProductTransactions, security, props, logins,
+                        ProductionEnvironment.developmentDefaultsAllowed(env)));
     }
 
     // ---------------------------------------------------------------- sangam-rest ports on sangam-security
 
+    /**
+     * Owner decision 273: the replay of a bulk command re-checks the permission of the stored job's sink, resolved by
+     * {@link #bulkJobPermissions}; without the ops module (no BulkIngest) every bulk replay stays refused.
+     */
     @Bean
-    public PermissionPort sangamSecurityPermissionPort(SangamSecurity security, TxSupport tx) {
-        return new SecurityPermissionBridge(security, tx, new GroupPermissionAdapter());
+    public PermissionPort sangamSecurityPermissionPort(SangamSecurity security, TxSupport tx,
+            ObjectProvider<org.sangam.ops.bulk.BulkIngest> bulkIngest) {
+        return new SecurityPermissionBridge(security, tx, new GroupPermissionAdapter(),
+                bulkJobPermissions(bulkIngest::getIfAvailable));
+    }
+
+    /**
+     * Owner decision 273: a stored bulk job's sink permission, {@code BulkIngest.job(tenant, job)}'s object type then
+     * that type's sink. BulkIngest is looked up per call (no start-up cycle with the permission port). Empty, never
+     * thrown, for an absent BulkIngest, a blank tenant or job, an unknown job or one of another tenant (BulkIngest is
+     * tenant-scoped and answers NOT_FOUND), a type without a sink, or any other failure, which refuses the replay.
+     */
+    static BulkJobPermissions bulkJobPermissions(Supplier<org.sangam.ops.bulk.BulkIngest> bulkIngest) {
+        return (tenantId, jobId) -> {
+            if (tenantId == null || tenantId.isBlank() || jobId == null || jobId.isBlank()) {
+                return Optional.empty();
+            }
+            try {
+                org.sangam.ops.bulk.BulkIngest ingest = bulkIngest.get();
+                if (ingest == null) {
+                    return Optional.empty();
+                }
+                String objectType = ingest.job(tenantId, jobId).objectType();
+                return ingest.sink(objectType).map(org.sangam.ops.bulk.BulkIngest.Sink::permission)
+                        .filter(p -> !p.isBlank());
+            } catch (RuntimeException e) {
+                LOG.debug("bulk job {} sink permission not resolved: {}", jobId, e.toString());
+                return Optional.empty();
+            }
+        };
     }
 
     @Bean
@@ -198,6 +250,13 @@ public class SecurityWiring {
     public InitializingBean sangamSecurityBootstrap(SangamSecurity security, Transactions sangamProductTransactions,
                                                     SecurityProperties props, Environment env,
                                                     org.springframework.beans.factory.BeanFactory beans) {
+        if (!ProductionEnvironment.isProduction(env) && !ProductionEnvironment.developmentDefaultsAllowed(env)) {
+            // decisions 143 and 152: the bootstrap grants every resource type to the admin groups, a development
+            // default; staging is refused here, production by SecurityBootstrap.run itself (SL-109 message)
+            throw new IllegalStateException("sangam.security.bootstrap.enabled=true is allowed only in a development"
+                    + " environment (sangam.security.production=false with a dev, h2, test or local profile;"
+                    + " decisions 143 and 152)");
+        }
         return () -> {
             for (String name : List.of("sangamLiquibase", "sangamLiquibaseTask", "sangamDevSchema")) {
                 if (beans.containsBean(name)) {

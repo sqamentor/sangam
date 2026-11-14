@@ -1,0 +1,76 @@
+{
+  "key": "gov-intl-pfm-debt-operation/approve",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-debt-operation",
+  "title": {
+    "en": "Approve the debt operation",
+    "hi": "ऋण संचालन का अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "debtAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (pack currency)",
+        "hi": "राशि"
+      }
+    },
+    {
+      "id": "debtSustainabilityNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Debt sustainability and cost-risk analysis",
+        "hi": "ऋण स्थिरता एवं लागत-जोखिम विश्लेषण"
+      }
+    },
+    {
+      "id": "legalOpinion",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Legal opinion",
+        "hi": "विधिक राय"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "approveDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

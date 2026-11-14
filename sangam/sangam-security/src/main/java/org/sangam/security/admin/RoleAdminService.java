@@ -63,7 +63,7 @@ public final class RoleAdminService {
         authz.require(c, actor, ResourceRegistry.ROLE, Permission.CHANGE_GRANT, roleId);
         String t = actor.tenantId();
         for (RoleRule r : rules) {
-            compiler.validate(r.resourceType(), Permission.mask(r.permissions()), null);
+            compiler.validate(r.resourceType(), r.resourceId(), Permission.mask(r.permissions()), null, r.deny());
         }
         Jdbc.update(c, "DELETE FROM SEC_ROLE WHERE tenant_id=? AND role_id=?", t, roleId);
         Jdbc.update(c, "INSERT INTO SEC_ROLE(tenant_id, role_id, name, rules, updated_by, updated_at) VALUES (?,?,?,?,?,?)",

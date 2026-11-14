@@ -31,7 +31,7 @@ public final class RegistryApi {
     /**
      * Publish type
      *
-     * <p>RegistryController.publishType (sangam-registry).
+     * <p>RegistryController.publishType (sangam-rest).
      *
      * <p>{@code POST /registry/types} (operationId {@code registryRegistryPublishType}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -47,7 +47,7 @@ public final class RegistryApi {
     /**
      * List types
      *
-     * <p>RegistryController.listTypes (sangam-registry).
+     * <p>RegistryController.listTypes (sangam-rest).
      *
      * <p>{@code GET /registry/types} (operationId {@code registryRegistryListTypes}); permission {@code registry.read}.
      * @param kind query parameter {@code kind}, or null
@@ -63,7 +63,7 @@ public final class RegistryApi {
     /**
      * Current type
      *
-     * <p>RegistryController.currentType (sangam-registry).
+     * <p>RegistryController.currentType (sangam-rest).
      *
      * <p>{@code GET /registry/types/{typeKey}} (operationId {@code registryRegistryCurrentType}); permission {@code registry.read}.
      * @param typeKey path parameter {@code typeKey}
@@ -78,7 +78,7 @@ public final class RegistryApi {
     /**
      * Type version
      *
-     * <p>RegistryController.typeVersion (sangam-registry).
+     * <p>RegistryController.typeVersion (sangam-rest).
      *
      * <p>{@code GET /registry/types/{typeKey}/versions/{version}} (operationId {@code registryRegistryTypeVersion}); permission {@code registry.read}.
      * @param typeKey path parameter {@code typeKey}
@@ -94,7 +94,7 @@ public final class RegistryApi {
     /**
      * Retire type
      *
-     * <p>RegistryController.retireType (sangam-registry).
+     * <p>RegistryController.retireType (sangam-rest).
      *
      * <p>{@code POST /registry/types/{typeKey}/versions/{version}/retire} (operationId {@code registryRegistryRetireType}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param typeKey path parameter {@code typeKey}

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -46,7 +47,7 @@ class WorkPortWiringTest {
     static WorkPort build(EngineAdapter adapterOrNull, WorkerTopicGuard guard, WorkLongPoll poll, MockEnvironment env) {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:workport" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
-        TxSupport tx = new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
         DefaultListableBeanFactory bf = new DefaultListableBeanFactory();
         if (adapterOrNull != null) {
             bf.registerSingleton("engineAdapter", adapterOrNull);

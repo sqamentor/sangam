@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# M-081 (owner decision 95): the validation step is veraPDF (optional dependency). Without the veraPDF library this
-# service cannot load and PdfRendering keeps PDF output off with that reason.
-org.sangam.integration.document.pdf.verapdf.VeraPdfValidator
+# M-081 (owner decisions 95, 114, 119): the validation step is the separate validator service (sangam-pdf-validator,
+# veraPDF). This client sends it the bytes and reads the report; with no service configured, or no answer, PDF output
+# answers 422 FORMAT_NOT_AVAILABLE. veraPDF and Rhino never enter this module or the server.
+org.sangam.integration.document.pdf.remote.RemotePdfValidator

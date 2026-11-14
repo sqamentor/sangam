@@ -17,7 +17,7 @@ public sealed class RegistryApi
 
     /// <summary>
     /// Publish type
-    /// RegistryController.publishType (sangam-registry).
+    /// RegistryController.publishType (sangam-rest).
     /// POST /registry/types (operationId registryRegistryPublishType); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryPublishTypeAsync(M.RegistryRegistryPublishTypeBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryApi
 
     /// <summary>
     /// List types
-    /// RegistryController.listTypes (sangam-registry).
+    /// RegistryController.listTypes (sangam-rest).
     /// GET /registry/types (operationId registryRegistryListTypes); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegistryListTypesAsync(string? kind = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -41,7 +41,7 @@ public sealed class RegistryApi
 
     /// <summary>
     /// Current type
-    /// RegistryController.currentType (sangam-registry).
+    /// RegistryController.currentType (sangam-rest).
     /// GET /registry/types/{typeKey} (operationId registryRegistryCurrentType); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryCurrentTypeAsync(string typeKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -52,7 +52,7 @@ public sealed class RegistryApi
 
     /// <summary>
     /// Type version
-    /// RegistryController.typeVersion (sangam-registry).
+    /// RegistryController.typeVersion (sangam-rest).
     /// GET /registry/types/{typeKey}/versions/{version} (operationId registryRegistryTypeVersion); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryTypeVersionAsync(string typeKey, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ public sealed class RegistryApi
 
     /// <summary>
     /// Retire type
-    /// RegistryController.retireType (sangam-registry).
+    /// RegistryController.retireType (sangam-rest).
     /// POST /registry/types/{typeKey}/versions/{version}/retire (operationId registryRegistryRetireType); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RegistryRegistryRetireTypeAsync(string typeKey, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

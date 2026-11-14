@@ -15,6 +15,7 @@ P = 'org.sangam.packs.core.'
 C = dict(
     LIFE=P + 'LifecycleStateDelegate', START=P + 'PackStartListener', ACTOR=P + 'ActorRecorderListener',
     SOD=P + 'SodGuardListener', POWER=P + 'PowerLimitGuardListener', BIND=P + 'ApprovalBindingListener',
+    DSC=P + 'DscSignatureGuardListener',
     REC=P + 'RecommendationLevelDelegate', SLA=P + 'SlaDelegate', OP=P + 'ExternalOperationDelegate',
     CALL=P + 'ConnectorCallDelegate', DEC=P + 'DecisionDelegate', DOC=P + 'DocumentDelegate',
     SIGN=P + 'SignatureDelegate', CASE=P + 'CaseRecordDelegate', SEAT=P + 'SeatResolutionDelegate',
@@ -22,6 +23,7 @@ C = dict(
     ITEM=P + 'BatchItemOutcomeListener', JOIN=P + 'BatchJoinListener', LINK=P + 'LinkedInstanceDelegate',
     ASSIGN=P + 'AssignmentStrategyDelegate', SET=P + 'SetVariablesDelegate', COMM=P + 'CommitteeDelegate',
     CORR=P + 'CorrelationDelegate', SUSP=P + 'SuspensionDelegate', NOTIFY=P + 'NotifyDelegate',
+    MONEY=P + 'MoneyCalculationDelegate',
     MERIT='org.sangam.packs.gov.MeritListDelegate', WAIT='org.sangam.packs.gov.WaitlistDelegate',
     MATCH='org.sangam.packs.gov.ReconciliationMatchDelegate', HEAR='org.sangam.packs.gov.HearingScheduleDelegate',
     EVWIN='org.sangam.packs.universal.EventWindowDelegate',
@@ -345,6 +347,29 @@ class Scope:
         values = money.convert_assignments(values, f'{self.proc.pid}/{id}', self.currency())
         defaults = money.convert_assignments(defaults, f'{self.proc.pid}/{id}', self.currency())
         return self.svc(id, name, C['SET'], {'values': values, 'defaults': defaults})
+
+    def money_calc(self, id, name, result, formula, policy):
+        """Decision 139: result = formula in exact decimal arithmetic, rounded once by the calculation's own versioned
+        policy DMN (rounding.py); round(x) in the formula rounds one component by that policy before it is summed.
+        Never a JUEL expression for money: JUEL divides through a double."""
+        self.proc.decisions_used.add(policy)
+        return self.svc(id, name, C['MONEY'], {'result': result, 'formula': formula, 'policy': policy})
+
+    def instalment_calc(self, id, name, result, total, count, number, policy):
+        """Decision 139: instalment `number` of `count` of `total`, each by the policy, the residual one the rest (the
+        instalments add up to the total exactly)."""
+        self.proc.decisions_used.add(policy)
+        return self.svc(id, name, C['MONEY'], {'result': result, 'op': 'INSTALMENT', 'total': total, 'count': count,
+                                               'number': number, 'policy': policy})
+
+    def money_sum(self, id, name, result, formula):
+        """Decision 139: the exact sum / difference of amounts that are already whole minor units (rounded components
+        reconcile with their total; nothing is rounded again, so no policy)."""
+        return self.svc(id, name, C['MONEY'], {'result': result, 'formula': formula, 'op': 'SUM'})
+
+    def ratio_calc(self, id, name, result, formula):
+        """Decision 138: a ratio (not money) in exact decimal arithmetic, unrounded, so a threshold compares exactly."""
+        return self.svc(id, name, C['MONEY'], {'result': result, 'formula': formula, 'ratio': 'true'})
 
     def notify(self, id, name, template, channel='inapp', recipient=None, async_=False):
         return self.svc(id, name, C['NOTIFY'], {'template': template, 'channel': channel, 'recipientVar': recipient},

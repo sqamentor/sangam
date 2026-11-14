@@ -58,6 +58,24 @@ op('post', '/ops/sequences/{name}/advance', 'uiOpsAdvance', _T, 'Advance a seque
 op('get', '/ops/index-jobs', 'uiOpsIndexJobs', _T, 'Index jobs', 'The caller tenant.', _OR, params=_OP, resp=(200, _OLIST), perm='ops.tenant.read')
 op('post', '/ops/index-jobs', 'uiOpsStartIndexJob', _T, 'Rebuild or check the index', 'REBUILD needs ops.tenant.admin.', _OR, body=record_body(_OPSUI, 'IndexJobRequest'), resp=(200, _OANY), cmd='ops.index.start.ui', perm='ops.tenant.read')
 op('get', '/ops/migration-status', 'uiOpsMigration', _T, 'Migration checkpoints', 'Platform operators.', _OR, params=[q('source')] + _OP, resp=(200, _OLIST), perm='ops.read')
+# M-092 schema-version part (W4-I REQUEST 2026-11-12T17:04:03Z): what `sangam upgrade check` compares with its bundled
+# changelog list (a downgrade is refused by the CLI)
+schema('SchemaChangelogStatus', 'Applied product changesets (Liquibase DATABASECHANGELOG).',
+       'applied:int lastId:s lastAuthor:s lastExecutedAt:dt ids:list:s',
+       required=('applied', 'lastId', 'lastAuthor', 'lastExecutedAt', 'ids'),
+       descs={'ids': 'Every applied changeset id, in execution order'})
+schema('SchemaEngineStatus', 'The engine schema.', 'schemaVersion:s', required=('schemaVersion',),
+       descs={'schemaVersion': "Operaton ACT_GE_PROPERTY schema.version"})
+schema('SchemaStatus', 'Database schema status of this installation.',
+       'product:SchemaChangelogStatus engine:SchemaEngineStatus liquibaseLocked:bool lockedBy:s lockGrantedAt:dt',
+       required=('product', 'engine', 'liquibaseLocked'),
+       descs={'lockedBy': 'Holder of the Liquibase lock (DATABASECHANGELOGLOCK); null when not locked',
+              'lockGrantedAt': 'When the Liquibase lock was granted; null when not locked'})
+SCHEMAS['SchemaStatus']['properties']['lockedBy']['type'] = ['string', 'null']
+SCHEMAS['SchemaStatus']['properties']['lockGrantedAt']['type'] = ['string', 'null']
+op('get', '/ops/schema-status', 'getSchemaStatus', _T, 'Schema status',
+   'Applied product changesets, the engine schema version and the Liquibase lock; read only. Platform operators.', _OR,
+   resp=(200, 'SchemaStatus'), perm='ops.read', errors=('Unauthorized', 'Forbidden'))
 op('get', '/ops/retention/plan', 'uiOpsRetentionPlan', _T, 'Preview retention', 'With a hash of the plan.', _OR, resp=(200, _OANY), perm='ops.tenant.read')
 op('get', '/ops/retention/runs', 'uiOpsRetentionRuns', _T, 'Retention runs', 'Executed purges of the caller tenant, with plan hash, reason and actor.', _OR, params=_OP, resp=(200, _OLIST), perm='ops.tenant.read')
 op('post', '/ops/retention/execute', 'uiOpsRetentionExecute', _T, 'Execute retention', 'Refused when the plan changed since the preview.', _OR, body=record_body(_OPSUI, 'RetentionExecute'), resp=(200, _OANY), cmd='ops.retention.execute.ui', perm='ops.tenant.admin')

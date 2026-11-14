@@ -30,6 +30,10 @@
     {
       "kind": "SEED",
       "path": "packs/ifms-budget-allocation/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/ifms-budget-allocation/pack.json"
     }
   ],
   "seed": "packs/ifms-budget-allocation/seed.json",
@@ -108,6 +112,15 @@
     "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "currency": "INR",
+  "powers": {
+    "ba_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "ifms-allocation-powers",
+      "ruleCaseType": "BUDGET_DISTRIBUTION"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

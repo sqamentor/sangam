@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $personId Sangam person id (read-only; set by the server)
  * @property-read string|null $orgUnitId
- * @property-read list<ScimPosting>|null $postings Seats held; replacing the list ends postings not listed (validTo = today) and creates new ones
+ * @property-read list<ScimPosting>|null $postings Seats held (IX.5), read-only (decision 154): a request that changes them gets 400 scimType mutability (an unchanged echo of the current list is accepted); postings change only through the admin API
  */
 final class ScimSangamUser implements \JsonSerializable
 {

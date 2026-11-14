@@ -37,7 +37,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Define series
      *
-     * <p>RegistryController.defineSeries (sangam-registry).
+     * <p>RegistryController.defineSeries (sangam-rest).
      *
      * <p>{@code PUT /registry/number-series/{seriesKey}} (operationId {@code registryRegistryDefineSeries}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param seriesKey path parameter {@code seriesKey}
@@ -54,7 +54,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Series
      *
-     * <p>RegistryController.series (sangam-registry).
+     * <p>RegistryController.series (sangam-rest).
      *
      * <p>{@code GET /registry/number-series/{seriesKey}} (operationId {@code registryRegistrySeries}); permission {@code registry.read}.
      * @param seriesKey path parameter {@code seriesKey}
@@ -69,7 +69,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * List series
      *
-     * <p>RegistryController.listSeries (sangam-registry).
+     * <p>RegistryController.listSeries (sangam-rest).
      *
      * <p>{@code GET /registry/number-series} (operationId {@code registryRegistryListSeries}); permission {@code registry.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -83,7 +83,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Allocate
      *
-     * <p>RegistryController.allocate (sangam-registry).
+     * <p>RegistryController.allocate (sangam-rest).
      *
      * <p>{@code POST /registry/number-series/{seriesKey}/allocate} (operationId {@code registryRegistryAllocate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param seriesKey path parameter {@code seriesKey}
@@ -100,7 +100,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Void number
      *
-     * <p>RegistryController.voidNumber (sangam-registry).
+     * <p>RegistryController.voidNumber (sangam-rest).
      *
      * <p>{@code POST /registry/number-series/{seriesKey}/void} (operationId {@code registryRegistryVoidNumber}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param seriesKey path parameter {@code seriesKey}
@@ -116,7 +116,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Mark used
      *
-     * <p>RegistryController.markUsed (sangam-registry).
+     * <p>RegistryController.markUsed (sangam-rest).
      *
      * <p>{@code POST /registry/number-series/{seriesKey}/mark-used} (operationId {@code registryRegistryMarkUsed}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param seriesKey path parameter {@code seriesKey}
@@ -132,7 +132,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Close period
      *
-     * <p>RegistryController.closePeriod (sangam-registry).
+     * <p>RegistryController.closePeriod (sangam-rest).
      *
      * <p>{@code POST /registry/number-series/{seriesKey}/close-period} (operationId {@code registryRegistryClosePeriod}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param seriesKey path parameter {@code seriesKey}
@@ -148,7 +148,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Gaps
      *
-     * <p>RegistryController.gaps (sangam-registry).
+     * <p>RegistryController.gaps (sangam-rest).
      *
      * <p>{@code GET /registry/number-series/{seriesKey}/gaps} (operationId {@code registryRegistryGaps}); permission {@code registry.read}.
      * @param seriesKey path parameter {@code seriesKey}
@@ -167,7 +167,7 @@ public final class RegistryNumberSeriesApi {
     /**
      * Allocations
      *
-     * <p>RegistryController.allocations (sangam-registry).
+     * <p>RegistryController.allocations (sangam-rest).
      *
      * <p>{@code GET /registry/number-series/{seriesKey}/allocations} (operationId {@code registryRegistryAllocations}); permission {@code registry.read}.
      * @param seriesKey path parameter {@code seriesKey}

@@ -1,0 +1,114 @@
+{
+  "id": "gov.intl.pfm-budget-preparation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Budget preparation and budget-document bundle (worldwide PFM)",
+    "hi": "बजट तैयारी एवं बजट दस्तावेज़ (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Budget calendar (PFM-020, PEFA PI-17): the circular opens the round, the spending unit submits within the ceiling read from the ledger and within the submission deadline, the budget office reviews (not the submitter), the executive approves, the budget-document bundle (proposal, annexes, fiscal-risk statement, citizens' budget; PFM-022, PI-5) is produced from the data and checked, and the budget goes to the legislature with a confirmed receipt; the enacted appropriation is recorded. Dates are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-budget-preparation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-budget-preparation/sangam-intl-pfm-budget-preparation.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-budget-preparation/sangam-intl-pfm-budget-document-bundle.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-budget-preparation/intl-pfm-budget-calendar.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/circular.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/ceilingHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/submission.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/executive.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/legislatureHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/follow-up.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/enacted.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-budget-preparation/forms/bundle-check.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-budget-preparation/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-budget-preparation/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.ceilings",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Ceiling of the spending unit for the budget year"
+    },
+    {
+      "id": "legislature.submit",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Submission of the budget to the legislature"
+    }
+  ],
+  "covers": [
+    "PFM-020",
+    "PFM-022",
+    "GP-06",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation",
+    "sangam-intl-pfm-budget-document-bundle"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-budget-calendar",
+      "rule": "SYNTHETIC 30 / 15 / 90-day budget calendar",
+      "reason": "country budget calendar not verified (INTERNATIONAL-PFM-REQUIREMENTS PFM-020, section 5)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "ceilingAmount",
+      "enactedAmount",
+      "requestAmount"
+    ]
+  }
+}

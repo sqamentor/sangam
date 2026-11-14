@@ -57,13 +57,12 @@ class MoneyGuardTest {
         // --- rule 1: ratios / scores / telemetry, not money (each a dimensionless or physical double) ---
         FLOAT_ALLOWED.put("sangam-field/src/main/java/org/sangam/field/schedule/RouteOrdering.java", 1);         // route distance total (km)
         FLOAT_ALLOWED.put("sangam-flowable-ports/src/main/java/org/sangam/ports/sla/SlaService.java", 1);         // breach ratio of task counts
-        FLOAT_ALLOWED.put("sangam-packs/src/main/java/org/sangam/packs/core/CumulativeThresholdDelegate.java", 1); // utilisation percent (display ratio)
         FLOAT_ALLOWED.put("sangam-programme/src/main/java/org/sangam/programme/period/PeriodService.java", 1);    // elapsed fraction of a period (days)
         FLOAT_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java", 2);        // match score
-        FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcReconciliationSupport.java", 1); // outbox backlog % of a count budget
-        FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonInsightsAdapter.java", 1); // AI token cost units (not money)
-        FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/port/InsightsPort.java", 1);                 // AI token cost units / budget (not money)
-        FLOAT_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/port/OpsPort.java", 1);                      // outbox used percent
+        FLOAT_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/jdbc/JdbcReconciliationSupport.java", 1); // outbox backlog % of a count budget
+        FLOAT_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonInsightsAdapter.java", 1); // AI token cost units (not money)
+        FLOAT_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/port/InsightsPort.java", 1);                 // AI token cost units / budget (not money)
+        FLOAT_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/port/OpsPort.java", 1);                      // outbox used percent
         // X2-06 (owner 2026-11-12): AI usage cost units, not money. Generated SDK model of InsightsPort.AgentUsage
         // (InsightsPort.java:36, no currency field): Double costUnits and Double budget (both cost units).
         FLOAT_ALLOWED.put("sdks/java/src/main/java/org/sangam/sdk/generated/model/AgentUsage.java", 2);

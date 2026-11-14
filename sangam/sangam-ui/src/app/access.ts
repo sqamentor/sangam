@@ -36,6 +36,14 @@ export const MODULE_READERS: Role[] = ['TASK_USER', 'OPERATOR', 'ADMIN', 'PLATFO
  */
 export const USER_EXTRA_HOLDERS: Role[] = ['TASK_USER', 'OPERATOR', 'PLATFORM_ADMIN'];
 
+/**
+ * Decision 284: holders of lowcode.record.write (POST /data-objects/{key}/records): USER_BASE (Permissions.java:132-136,
+ * sangam-user TASK_USER and sangam-operator OPERATOR), sangam-tenant-admin (ADMIN), sangam-model-author (MODELLER) and
+ * sangam-admin ("*"). Model reviewers and approvers (REVIEWER) and auditors do not hold it. Used to show the record create
+ * button; the server checks the permission again.
+ */
+export const RECORD_WRITERS: Access = { roles: ['TASK_USER', 'OPERATOR', 'ADMIN', 'PLATFORM_ADMIN', 'MODELLER'], perms: ['lowcode.record.write'] };
+
 /** Holders of compliance.read: sangam-operator (:125), sangam-auditor (:127), sangam-tenant-admin (:130), sangam-admin. */
 export const COMPLIANCE_READERS: Role[] = ['OPERATOR', 'AUDITOR', 'ADMIN', 'PLATFORM_ADMIN'];
 
@@ -96,6 +104,13 @@ export const ROUTE_ACCESS: Record<string, Access> = {
   // M-032 POST /admin/security/module-defaults: tenant.admin (SecurityDefaultsController.java:48), held by
   // sangam-tenant-admin (Permissions.java:128, role ADMIN) and sangam-admin.
   '/admin/security-defaults': { roles: ['ADMIN', 'PLATFORM_ADMIN'], perms: ['tenant.admin'] },
+  // Decision 227 GET /me/dsc/certificates (routes/dsc.py listMyDscCertificates): task.write, a USER_BASE permission
+  // (Permissions.java:132) held by sangam-user, sangam-operator (USER is part of OPERATOR) and sangam-admin ("*"); a
+  // tenant administrator does not hold it.
+  '/my/dsc-certificates': { roles: USER_EXTRA_HOLDERS, perms: ['task.write'] },
+  // Decision 227 GET /admin/dsc/certificates (listDscCertificates): dsc.certificate.approve (Permissions.java:37),
+  // held by sangam-tenant-admin (role ADMIN, :156) and sangam-admin.
+  '/admin/dsc-certificates': { roles: ['ADMIN', 'PLATFORM_ADMIN'], perms: ['dsc.certificate.approve'] },
 };
 
 /**

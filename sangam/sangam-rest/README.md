@@ -92,7 +92,9 @@ Only caches and runtime telemetry stay in memory (form-version cache, conformanc
 
 At start-up, RUNNING batches and QUEUED or RUNNING export jobs resume.
 
-Without the owning module, these return 501 `CAPABILITY_NOT_INSTALLED`: directory sync (sangam-security), Git pull/push (sangam-packs, R69 stage E) and REST-backed data objects (sangam-integration). Reconciliation lookup and notification resend are bound to sangam-integration in `sangam-server` (`OpsIntegrationWiring`).
+Without the owning module, these return 501 `CAPABILITY_NOT_INSTALLED`: directory sync (sangam-security), Git pull/push (sangam-packs, R69 stage E) and REST-backed data objects (sangam-integration).
+
+Known gap in 0.1.0 (EC-06): a `reference` field checks the referenced record among the DB-backed records of the tenant only (`JdbcLowCodeAdapter`). A data object definition may name a REST-backed data object as the reference target, but every record write that sets such a field is refused (400 `VALIDATION_FAILED`, "references an unknown ... record"): fail-closed, the external system is never asked whether the record exists. Point references at DB-backed data objects until a later release adds a connector lookup. Reconciliation lookup and notification resend are bound to sangam-integration in `sangam-server` (`OpsIntegrationWiring`).
 
 PDF/A and DOCX rendering is not available by default.
 

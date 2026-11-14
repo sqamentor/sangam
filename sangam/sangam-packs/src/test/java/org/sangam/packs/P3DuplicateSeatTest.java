@@ -50,8 +50,9 @@ class P3DuplicateSeatTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -71,7 +72,7 @@ class P3DuplicateSeatTest {
         v.putAll(Map.of("district", "A", "officeId", "BLOCK-A1", "actingSeat", "DEO-A1", "initiator", "p3.deo-a1",
                 "instalmentInterval", "PT1S"));
         engine.getRuntimeService().createProcessInstanceByKey(KEY).businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         return bk;
     }
 

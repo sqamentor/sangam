@@ -9,13 +9,19 @@ import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.JobEntity;
 import org.sangam.core.engine.JobIdentityBinder;
 import org.sangam.core.security.SecurityIdentity;
+import org.sangam.core.tenant.TenantResolutionException;
+import org.sangam.engine.tenant.WorkTenants;
 import org.sangam.engine.tx.CommandState;
 
 /**
  * VI.4 rule 7 for job execution (timers, async continuations, retries, batch and cleanup jobs): every job runs as the
- * <b>system identity of its instance's tenant</b>, never without an identity. The tenant is, in order: the tenant id
- * on the job, the {@code sangamTenantId} variable of the execution, the engine's default tenant. {@code onBehalfOf}
- * records the job ({@code job:<id>}).
+ * <b>system identity of its resolved tenant</b>, never without an identity. Decision 144 (owner 197): the tenant is
+ * resolved by {@link WorkTenants} only: the engine tenant of the job (tenant-owned; a {@code sangamTenantId} variable is
+ * an untrusted claim that must agree and is never a fallback), or the system audit scope for an untenanted job of a
+ * registered shared deployment or an engine maintenance job. Anything else fails closed: the job is not executed
+ * ({@link TenantResolutionException}, so it fails, is retried and ends as an incident under the system audit scope).
+ * The old attribution default ({@code defaultTenantId}) is no longer used here (SL-86 meaning change, PATCHES.md).
+ * {@code onBehalfOf} records the job ({@code job:<id>}).
  *
  * <p>C3-05 (M-097): the identity is passed explicitly. It is attached to the job's own engine command
  * ({@link CommandState#jobIdentity}, read through {@link #current()}) and handed to the installed binder
@@ -23,32 +29,48 @@ import org.sangam.engine.tx.CommandState;
  */
 public final class JobIdentitySupport {
 
-    /** Process variable that carries the tenant for instances started without a deployment tenant. */
+    /** Process variable some models set to a tenant; decision 145/144: an untrusted claim, checked, never used. */
     public static final String TENANT_VARIABLE = "sangamTenantId";
 
-    private final JobIdentityBinder binder;
-    private final String defaultTenant;
+    /** Site label of the policy calls (decision 145: fixed text, never data). */
+    static final String SITE = "job execution";
 
-    public JobIdentitySupport(JobIdentityBinder binder, String defaultTenant) {
+    private final JobIdentityBinder binder;
+    private final WorkTenants tenants;
+
+    public JobIdentitySupport(JobIdentityBinder binder, WorkTenants tenants) {
         this.binder = binder == null ? JobIdentityBinder.LOCAL_ONLY : binder;
-        this.defaultTenant = defaultTenant;
+        this.tenants = java.util.Objects.requireNonNull(tenants, "tenants");
     }
 
-    public SecurityIdentity identityFor(JobEntity job, ExecutionEntity execution, String tenantId) {
-        String tenant = tenantId;
-        if (tenant == null && job != null) {
-            tenant = job.getTenantId();
-        }
-        if (tenant == null && execution != null) {
+    /**
+     * The resolution of {@code job} in command {@code cc}: engine tenant {@code tenantId} as the engine passes it to the
+     * handler (else the job's), claim from the execution's {@value #TENANT_VARIABLE} variable.
+     */
+    public WorkTenants.Resolution resolve(CommandContext cc, JobEntity job, ExecutionEntity execution, String tenantId) {
+        String engineTenant = tenantId != null ? tenantId : job == null ? null : job.getTenantId();
+        String claim = null;
+        if (execution != null) {
             Object v = execution.getVariable(TENANT_VARIABLE);
-            if (v != null && !String.valueOf(v).isBlank()) {
-                tenant = String.valueOf(v);
-            }
+            claim = v == null ? null : String.valueOf(v);
         }
-        if (tenant == null) {
-            tenant = defaultTenant;
+        String deployment = WorkTenants.deploymentOf(cc, job);
+        if (deployment == null && execution != null) {
+            deployment = WorkTenants.deploymentOf(cc, execution.getProcessDefinitionId());
         }
-        return SecurityIdentity.system(tenant, job == null ? "job" : "job:" + job.getId());
+        return tenants.resolve(CommandState.connection(cc), engineTenant, claim, deployment,
+                WorkTenants.isMaintenance(job), SITE);
+    }
+
+    /**
+     * The system identity the job runs as.
+     *
+     * @throws TenantResolutionException when the tenant cannot be resolved (the job is not executed)
+     */
+    public SecurityIdentity identityFor(CommandContext cc, JobEntity job, ExecutionEntity execution, String tenantId) {
+        WorkTenants.Resolution r = resolve(cc, job, execution, tenantId);
+        r.require();
+        return SecurityIdentity.system(r.attribution(), job == null ? "job" : "job:" + job.getId());
     }
 
     /**

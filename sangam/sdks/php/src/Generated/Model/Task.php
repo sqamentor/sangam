@@ -34,7 +34,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $formKey
  * @property-read string|null $delegationState
  * @property-read array<string, mixed>|null $variables P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller.
- * @property-read int|null $amount M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.
+ * @property-read string|null $amount M-042 task index: the amount (MoneyAmount, a decimal string in MAJOR units with exactly the currency's fraction digits; owner decisions 138 and 211, never an integer or a float), set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount. The index stores integer minor units, so sortBy=amount (with the currency filter) orders exactly.
  * @property-read string|null $currency M-042 task index: ISO 4217 code of amount; absent or null with amount.
  * @property-read string|null $reference M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one.
  */
@@ -63,7 +63,7 @@ final class Task implements \JsonSerializable
      * @param string|null $formKey
      * @param string|null $delegationState
      * @param array<string, mixed>|null $variables
-     * @param int|null $amount
+     * @param string|null $amount
      * @param string|null $currency
      * @param string|null $reference
      */
@@ -90,7 +90,7 @@ final class Task implements \JsonSerializable
         public readonly ?string $formKey = null,
         public readonly ?string $delegationState = null,
         public readonly ?array $variables = null,
-        public readonly ?int $amount = null,
+        public readonly ?string $amount = null,
         public readonly ?string $currency = null,
         public readonly ?string $reference = null,
     ) {
@@ -122,7 +122,7 @@ final class Task implements \JsonSerializable
             Support::str($data['formKey'] ?? null),
             Support::str($data['delegationState'] ?? null),
             Support::arr($data['variables'] ?? null),
-            Support::int($data['amount'] ?? null),
+            Support::str($data['amount'] ?? null),
             Support::str($data['currency'] ?? null),
             Support::str($data['reference'] ?? null),
         );

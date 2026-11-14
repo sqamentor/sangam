@@ -7,13 +7,50 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Tenant operations (36 operations).
+/// Typed operations of Tenant operations (21 operations).
 /// </summary>
 public sealed class TenantOperationsApi
 {
     private readonly GeneratedCalls _calls;
 
     public TenantOperationsApi(GeneratedCalls calls) => _calls = calls;
+
+    /// <summary>
+    /// Backup targets
+    /// The deployment's backup targets with schedule and last run times. Platform operators.
+    /// GET /ops/backup/targets (operationId listBackupTargets); permission ops.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.BackupTarget>?> ListBackupTargetsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/ops/backup/targets");
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.BackupTarget>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Back up now
+    /// Starts one run of the target now (a Job from its CronJob, or one execution of its configured backup command) and answers 202 with it. 400 REASON_REQUIRED without a reason; 404 for an unknown target; 409 BACKUP_RUNNING while a run of the target is active; 502 BACKUP_TRIGGER_FAILED when the run could not be started (Kubernetes refused or failed the Job creation, or the backup command could not be started). BACKUP_TRIGGERED is audited before the run is started. Platform operators.
+    /// POST /ops/backup/targets/{id}/runs (operationId triggerBackup); permission ops.write; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.BackupRun?> TriggerBackupAsync(string id, M.BackupTriggerRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/ops/backup/targets/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/runs");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.BackupRun?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Backup run history
+    /// Runs still known to the cluster (scheduled and manual), newest first. Platform operators.
+    /// GET /ops/backup/runs (operationId listBackupRuns); permission ops.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<M.BackupRun>> ListBackupRunsAsync(string? target = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/ops/backup/runs");
+        req.WithQuery("target", GeneratedCalls.Q(target));
+        req.WithQuery("page", GeneratedCalls.Q(page));
+        req.WithQuery("size", GeneratedCalls.Q(size));
+        return await _calls.PageAsync<M.BackupRun>(req, options, page, size, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Global search
@@ -53,85 +90,6 @@ public sealed class TenantOperationsApi
         req.WithQuery("activityId", GeneratedCalls.Q(activityId));
         req.WithQuery("minSamples", GeneratedCalls.Q(minSamples));
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Scoped variables
-    /// Platform values overlaid with the tenant values.
-    /// GET /ops-admin/variables (operationId opsVariables); permission ops.tenant.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> OpsVariablesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops-admin/variables");
-        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Tenant variable entries
-    /// Tenant scope with version, last writer and reason.
-    /// GET /ops-admin/variables/entries (operationId opsVariableEntries); permission ops.tenant.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> OpsVariableEntriesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops-admin/variables/entries");
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Set a tenant variable
-    /// Secret-like names are refused.
-    /// PUT /ops-admin/variables/{name} (operationId opsSetVariable); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task OpsSetVariableAsync(string name, M.OpsValue body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Put($"/ops-admin/variables/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
-        if (body is not null) req.WithBody(body);
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Delete a tenant variable
-    /// Removes the tenant value.
-    /// DELETE /ops-admin/variables/{name} (operationId opsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task OpsDeleteVariableAsync(string name, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Delete($"/ops-admin/variables/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// List secrets
-    /// Names and versions; values are never returned.
-    /// GET /ops-admin/secrets (operationId opsSecrets); permission ops.tenant.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> OpsSecretsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops-admin/secrets");
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Store a secret
-    /// Encrypted at rest; write-only.
-    /// PUT /ops-admin/secrets/{ref} (operationId opsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task OpsPutSecretAsync(string @ref, M.OpsSecret body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Put($"/ops-admin/secrets/{HttpTransport.Seg(GeneratedCalls.Str(@ref)!)}");
-        if (body is not null) req.WithBody(body);
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Delete a secret
-    /// Removes the secret.
-    /// DELETE /ops-admin/secrets/{ref} (operationId opsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task OpsDeleteSecretAsync(string @ref, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Delete($"/ops-admin/secrets/{HttpTransport.Seg(GeneratedCalls.Str(@ref)!)}");
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -192,42 +150,6 @@ public sealed class TenantOperationsApi
     }
 
     /// <summary>
-    /// Retention plan
-    /// Whole trees due; excludes definitions with a history time to live and held roots.
-    /// GET /ops-admin/retention/plan (operationId opsRetentionPlan); permission ops.tenant.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> OpsRetentionPlanAsync(int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops-admin/retention/plan");
-        req.WithQuery("limit", GeneratedCalls.Q(limit));
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Execute retention
-    /// Re-plans on the server and purges due trees.
-    /// POST /ops-admin/retention/execute (operationId opsRetentionExecute); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<M.OpsPurge?> OpsRetentionExecuteAsync(M.OpsReason body, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/ops-admin/retention/execute");
-        req.WithQuery("limit", GeneratedCalls.Q(limit));
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<M.OpsPurge?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Retention runs
-    /// Executed purges with plan hash, reason and actor.
-    /// GET /ops-admin/retention/runs (operationId opsRetentionRuns); permission ops.tenant.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> OpsRetentionRunsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops-admin/retention/runs");
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Migration status
     /// Checkpoints of history migration jobs (copied, failed, mismatched, status); platform operators only.
     /// GET /ops-admin/migration (operationId opsMigration); permission ops.read.
@@ -276,82 +198,6 @@ public sealed class TenantOperationsApi
         req.WithQuery("processDefinitionKey", GeneratedCalls.Q(processDefinitionKey));
         req.WithQuery("activityId", GeneratedCalls.Q(activityId));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<object>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Tenant variables
-    /// As rows.
-    /// GET /ops/variables (operationId uiOpsVariables); permission ops.tenant.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<object>> UiOpsVariablesAsync(string? scope = null, string? name = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops/variables");
-        req.WithQuery("scope", GeneratedCalls.Q(scope));
-        req.WithQuery("name", GeneratedCalls.Q(name));
-        req.WithQuery("page", GeneratedCalls.Q(page));
-        req.WithQuery("size", GeneratedCalls.Q(size));
-        return await _calls.PageAsync<object>(req, options, page, size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Set a variable
-    /// TENANT scope only.
-    /// PUT /ops/variables (operationId uiOpsSetVariable); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task UiOpsSetVariableAsync(M.OpsUiVariableRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Put($"/ops/variables");
-        if (body is not null) req.WithBody(body);
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Delete a variable
-    /// Needs a reason.
-    /// DELETE /ops/variables/{id} (operationId uiOpsDeleteVariable); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task UiOpsDeleteVariableAsync(string id, string reason, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Delete($"/ops/variables/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}");
-        req.WithQuery("reason", GeneratedCalls.Q(reason));
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Secrets
-    /// Metadata only.
-    /// GET /ops/secrets (operationId uiOpsSecrets); permission ops.tenant.admin.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<object>> UiOpsSecretsAsync(int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops/secrets");
-        req.WithQuery("page", GeneratedCalls.Q(page));
-        req.WithQuery("size", GeneratedCalls.Q(size));
-        return await _calls.PageAsync<object>(req, options, page, size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Set a secret
-    /// The value is write-only.
-    /// PUT /ops/secrets/{name} (operationId uiOpsPutSecret); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task UiOpsPutSecretAsync(string name, M.OpsUiSecretRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Put($"/ops/secrets/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
-        if (body is not null) req.WithBody(body);
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Delete a secret
-    /// Needs a reason.
-    /// DELETE /ops/secrets/{name} (operationId uiOpsDeleteSecret); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task UiOpsDeleteSecretAsync(string name, string reason, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Delete($"/ops/secrets/{HttpTransport.Seg(GeneratedCalls.Str(name)!)}");
-        req.WithQuery("reason", GeneratedCalls.Q(reason));
-        await _calls.NoneAsync(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -417,38 +263,13 @@ public sealed class TenantOperationsApi
     }
 
     /// <summary>
-    /// Preview retention
-    /// With a hash of the plan.
-    /// GET /ops/retention/plan (operationId uiOpsRetentionPlan); permission ops.tenant.read.
+    /// Schema status
+    /// Applied product changesets, the engine schema version and the Liquibase lock; read only. Platform operators.
+    /// GET /ops/schema-status (operationId getSchemaStatus); permission ops.read.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> UiOpsRetentionPlanAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.SchemaStatus?> GetSchemaStatusAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
-        var req = ApiRequest.Get($"/ops/retention/plan");
-        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Retention runs
-    /// Executed purges of the caller tenant, with plan hash, reason and actor.
-    /// GET /ops/retention/runs (operationId uiOpsRetentionRuns); permission ops.tenant.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<object>> UiOpsRetentionRunsAsync(int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/ops/retention/runs");
-        req.WithQuery("page", GeneratedCalls.Q(page));
-        req.WithQuery("size", GeneratedCalls.Q(size));
-        return await _calls.PageAsync<object>(req, options, page, size, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Execute retention
-    /// Refused when the plan changed since the preview.
-    /// POST /ops/retention/execute (operationId uiOpsRetentionExecute); permission ops.tenant.admin; result stored atomically with the state change.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> UiOpsRetentionExecuteAsync(M.OpsUiRetentionExecute body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Post($"/ops/retention/execute");
-        if (body is not null) req.WithBody(body);
-        return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
+        var req = ApiRequest.Get($"/ops/schema-status");
+        return await _calls.JsonAsync<M.SchemaStatus?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

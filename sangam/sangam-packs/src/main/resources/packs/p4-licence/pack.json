@@ -58,6 +58,10 @@
     {
       "kind": "SEED",
       "path": "packs/p4-licence/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/p4-licence/pack.json"
     }
   ],
   "seed": "packs/p4-licence/seed.json",
@@ -236,6 +240,15 @@
     "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "currency": "INR",
+  "powers": {
+    "p4_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "LICENCE"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

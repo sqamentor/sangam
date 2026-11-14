@@ -17,7 +17,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Register
-    /// CustodyController.register (sangam-registry).
+    /// CustodyController.register (sangam-rest).
     /// POST /registry/custody/items (operationId registryCustodyRegister); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyRegisterAsync(M.RegistryCustodyRegisterBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// List
-    /// CustodyController.list (sangam-registry).
+    /// CustodyController.list (sangam-rest).
     /// GET /registry/custody/items (operationId registryCustodyList); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryCustodyListAsync(string? typeKey = null, string? custodian = null, string? caseRef = null, string? containerId = null, string? state = null, string? label = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -48,7 +48,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Get
-    /// CustodyController.get (sangam-registry).
+    /// CustodyController.get (sangam-rest).
     /// GET /registry/custody/items/{id} (operationId registryCustodyGet); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyGetAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -59,7 +59,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// By label
-    /// CustodyController.byLabel (sangam-registry).
+    /// CustodyController.byLabel (sangam-rest).
     /// GET /registry/custody/items/by-label/{label} (operationId registryCustodyByLabel); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyByLabelAsync(string label, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -70,7 +70,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Events
-    /// CustodyController.events (sangam-registry).
+    /// CustodyController.events (sangam-rest).
     /// GET /registry/custody/items/{id}/events (operationId registryCustodyEvents); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryCustodyEventsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -81,7 +81,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Verify
-    /// CustodyController.verify (sangam-registry).
+    /// CustodyController.verify (sangam-rest).
     /// GET /registry/custody/items/{id}/verify (operationId registryCustodyVerify); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyVerifyAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -92,7 +92,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Transfers
-    /// CustodyController.transfers (sangam-registry).
+    /// CustodyController.transfers (sangam-rest).
     /// GET /registry/custody/items/{id}/transfers (operationId registryCustodyTransfers); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryCustodyTransfersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -103,7 +103,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Initiate
-    /// CustodyController.initiate (sangam-registry).
+    /// CustodyController.initiate (sangam-rest).
     /// POST /registry/custody/items/{id}/transfers (operationId registryCustodyInitiate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyInitiateAsync(string id, M.RegistryCustodyInitiateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -115,7 +115,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Handover
-    /// CustodyController.handover (sangam-registry).
+    /// CustodyController.handover (sangam-rest).
     /// POST /registry/custody/items/{id}/handover (operationId registryCustodyHandover); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyHandoverAsync(string id, M.RegistryCustodyHandoverBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -127,7 +127,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Transfer
-    /// CustodyController.transfer (sangam-registry).
+    /// CustodyController.transfer (sangam-rest).
     /// GET /registry/custody/transfers/{transferId} (operationId registryCustodyTransfer); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyTransferAsync(string transferId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -138,7 +138,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Pending
-    /// CustodyController.pending (sangam-registry).
+    /// CustodyController.pending (sangam-rest).
     /// GET /registry/custody/transfers/pending (operationId registryCustodyPending); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryCustodyPendingAsync(string toCustodian, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -152,7 +152,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Accept
-    /// CustodyController.accept (sangam-registry).
+    /// CustodyController.accept (sangam-rest).
     /// POST /registry/custody/transfers/{transferId}/accept (operationId registryCustodyAccept); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyAcceptAsync(string transferId, M.RegistryCustodyAcceptBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -164,7 +164,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Reject
-    /// CustodyController.reject (sangam-registry).
+    /// CustodyController.reject (sangam-rest).
     /// POST /registry/custody/transfers/{transferId}/reject (operationId registryCustodyReject); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyRejectAsync(string transferId, M.RegistryCustodyRejectBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -176,7 +176,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Cancel
-    /// CustodyController.cancel (sangam-registry).
+    /// CustodyController.cancel (sangam-rest).
     /// POST /registry/custody/transfers/{transferId}/cancel (operationId registryCustodyCancel); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyCancelAsync(string transferId, M.RegistryCustodyCancelBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -188,7 +188,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Seal
-    /// CustodyController.seal (sangam-registry).
+    /// CustodyController.seal (sangam-rest).
     /// POST /registry/custody/items/{id}/seal (operationId registryCustodySeal); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodySealAsync(string id, M.RegistryCustodySealBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -200,7 +200,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Break seal
-    /// CustodyController.breakSeal (sangam-registry).
+    /// CustodyController.breakSeal (sangam-rest).
     /// POST /registry/custody/items/{id}/break-seal (operationId registryCustodyBreakSeal); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyBreakSealAsync(string id, M.RegistryCustodyBreakSealBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -212,7 +212,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Inspect
-    /// CustodyController.inspect (sangam-registry).
+    /// CustodyController.inspect (sangam-rest).
     /// POST /registry/custody/items/{id}/inspect (operationId registryCustodyInspect); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyInspectAsync(string id, M.RegistryCustodyInspectBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -224,7 +224,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Location
-    /// CustodyController.location (sangam-registry).
+    /// CustodyController.location (sangam-rest).
     /// POST /registry/custody/items/{id}/location (operationId registryCustodyLocation); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyLocationAsync(string id, M.RegistryCustodyLocationBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -236,7 +236,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Put into
-    /// CustodyController.putInto (sangam-registry).
+    /// CustodyController.putInto (sangam-rest).
     /// POST /registry/custody/items/{id}/container (operationId registryCustodyPutInto); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyPutIntoAsync(string id, M.RegistryCustodyPutIntoBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -248,7 +248,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Take out
-    /// CustodyController.takeOut (sangam-registry).
+    /// CustodyController.takeOut (sangam-rest).
     /// POST /registry/custody/items/{id}/take-out (operationId registryCustodyTakeOut); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyTakeOutAsync(string id, M.RegistryCustodyTakeOutBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -260,7 +260,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Disposal orders
-    /// CustodyController.disposalOrders (sangam-registry).
+    /// CustodyController.disposalOrders (sangam-rest).
     /// GET /registry/custody/items/{id}/disposal-orders (operationId registryCustodyDisposalOrders); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryCustodyDisposalOrdersAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -271,7 +271,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Order disposal
-    /// CustodyController.orderDisposal (sangam-registry).
+    /// CustodyController.orderDisposal (sangam-rest).
     /// POST /registry/custody/items/{id}/disposal-orders (operationId registryCustodyOrderDisposal); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyOrderDisposalAsync(string id, M.RegistryCustodyOrderDisposalBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -283,7 +283,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Disposal order
-    /// CustodyController.disposalOrder (sangam-registry).
+    /// CustodyController.disposalOrder (sangam-rest).
     /// GET /registry/custody/disposal-orders/{orderId} (operationId registryCustodyDisposalOrder); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyDisposalOrderAsync(string orderId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -294,7 +294,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Execute
-    /// CustodyController.execute (sangam-registry).
+    /// CustodyController.execute (sangam-rest).
     /// POST /registry/custody/disposal-orders/{orderId}/execute (operationId registryCustodyExecute); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyExecuteAsync(string orderId, M.RegistryCustodyExecuteBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -306,7 +306,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Cancel disposal
-    /// CustodyController.cancelDisposal (sangam-registry).
+    /// CustodyController.cancelDisposal (sangam-rest).
     /// POST /registry/custody/disposal-orders/{orderId}/cancel (operationId registryCustodyCancelDisposal); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyCancelDisposalAsync(string orderId, M.RegistryCustodyCancelDisposalBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -318,7 +318,7 @@ public sealed class RegistryCustodyApi
 
     /// <summary>
     /// Gap check
-    /// CustodyController.gapCheck (sangam-registry).
+    /// CustodyController.gapCheck (sangam-rest).
     /// GET /registry/custody/gap-check (operationId registryCustodyGapCheck); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryCustodyGapCheckAsync(long? inTransitHours = null, long? staleDays = null, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

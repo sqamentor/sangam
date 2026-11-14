@@ -2,3 +2,8 @@ node_modules/
 dist/
 *.local
 .env.local
+dist-embed/
+test-results/
+playwright-report/
+e2e/.seed/
+dist-teams/

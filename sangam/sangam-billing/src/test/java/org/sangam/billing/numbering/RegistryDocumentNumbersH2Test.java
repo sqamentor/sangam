@@ -83,7 +83,10 @@ class RegistryDocumentNumbersH2Test {
             }
             return null;
         });
-        numbering = new RegistryModule(Dialect.POSTGRESQL, RegistryPorts.defaults(), null, List.of("test")).numbering();
+        // decision 143: a test installation (switch false plus the test profile), resolved by the shared policy
+        numbering = new RegistryModule(Dialect.POSTGRESQL, RegistryPorts.defaults(), null,
+                org.sangam.core.security.EnvironmentPolicy.resolve("false", "test",
+                        Map.of("test", org.sangam.core.security.EnvironmentPolicy.Signal.DEVELOPMENT))).numbering();
         numbers = new RegistryDocumentNumbers(tx, Dialect.POSTGRESQL, numbering);
     }
 

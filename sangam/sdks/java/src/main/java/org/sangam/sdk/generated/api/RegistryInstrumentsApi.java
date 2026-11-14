@@ -61,7 +61,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Issue
      *
-     * <p>InstrumentController.issue (sangam-registry).
+     * <p>InstrumentController.issue (sangam-rest).
      *
      * <p>{@code POST /registry/instruments} (operationId {@code registryInstrumentIssue}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -77,7 +77,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Renew
      *
-     * <p>InstrumentController.renew (sangam-registry).
+     * <p>InstrumentController.renew (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/renew} (operationId {@code registryInstrumentRenew}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -96,7 +96,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Deemed
      *
-     * <p>InstrumentController.deemed (sangam-registry).
+     * <p>InstrumentController.deemed (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/deemed-renewal} (operationId {@code registryInstrumentDeemed}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -111,7 +111,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Suspend
      *
-     * <p>InstrumentController.suspend (sangam-registry).
+     * <p>InstrumentController.suspend (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/suspend} (operationId {@code registryInstrumentSuspend}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -130,7 +130,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Reinstate
      *
-     * <p>InstrumentController.reinstate (sangam-registry).
+     * <p>InstrumentController.reinstate (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/reinstate} (operationId {@code registryInstrumentReinstate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -149,7 +149,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Revoke
      *
-     * <p>InstrumentController.revoke (sangam-registry).
+     * <p>InstrumentController.revoke (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/revoke} (operationId {@code registryInstrumentRevoke}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -168,7 +168,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Surrender
      *
-     * <p>InstrumentController.surrender (sangam-registry).
+     * <p>InstrumentController.surrender (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/surrender} (operationId {@code registryInstrumentSurrender}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -187,7 +187,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Expire
      *
-     * <p>InstrumentController.expire (sangam-registry).
+     * <p>InstrumentController.expire (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/expire} (operationId {@code registryInstrumentExpire}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -202,7 +202,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Transition
      *
-     * <p>InstrumentController.transition (sangam-registry).
+     * <p>InstrumentController.transition (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/transitions/{name}} (operationId {@code registryInstrumentTransition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -222,7 +222,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Transfer holder
      *
-     * <p>InstrumentController.transferHolder (sangam-registry).
+     * <p>InstrumentController.transferHolder (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/transfer-holder} (operationId {@code registryInstrumentTransferHolder}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -241,7 +241,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Transfer reissue
      *
-     * <p>InstrumentController.transferReissue (sangam-registry).
+     * <p>InstrumentController.transferReissue (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/transfer-reissue} (operationId {@code registryInstrumentTransferReissue}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -258,7 +258,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Amend
      *
-     * <p>InstrumentController.amend (sangam-registry).
+     * <p>InstrumentController.amend (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/amend} (operationId {@code registryInstrumentAmend}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -277,7 +277,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Duplicate
      *
-     * <p>InstrumentController.duplicate (sangam-registry).
+     * <p>InstrumentController.duplicate (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/duplicate} (operationId {@code registryInstrumentDuplicate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -294,7 +294,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Endorse
      *
-     * <p>InstrumentController.endorse (sangam-registry).
+     * <p>InstrumentController.endorse (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/endorsements} (operationId {@code registryInstrumentEndorse}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -311,7 +311,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Endorsements
      *
-     * <p>InstrumentController.endorsements (sangam-registry).
+     * <p>InstrumentController.endorsements (sangam-rest).
      *
      * <p>{@code GET /registry/instruments/{id}/endorsements} (operationId {@code registryInstrumentEndorsements}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -326,7 +326,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Documents
      *
-     * <p>InstrumentController.documents (sangam-registry).
+     * <p>InstrumentController.documents (sangam-rest).
      *
      * <p>{@code GET /registry/instruments/{id}/documents} (operationId {@code registryInstrumentDocuments}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -341,7 +341,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Regenerate
      *
-     * <p>InstrumentController.regenerate (sangam-registry).
+     * <p>InstrumentController.regenerate (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/{id}/documents/regenerate} (operationId {@code registryInstrumentRegenerate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -358,7 +358,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Expire due
      *
-     * <p>InstrumentController.expireDue (sangam-registry).
+     * <p>InstrumentController.expireDue (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/jobs/expire} (operationId {@code registryInstrumentExpireDue}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param typeKey query parameter {@code typeKey}, or null
@@ -376,7 +376,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Renewal due
      *
-     * <p>InstrumentController.renewalDue (sangam-registry).
+     * <p>InstrumentController.renewalDue (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/jobs/renewal-due} (operationId {@code registryInstrumentRenewalDue}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param typeKey query parameter {@code typeKey}, or null
@@ -394,7 +394,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Reinstate due
      *
-     * <p>InstrumentController.reinstateDue (sangam-registry).
+     * <p>InstrumentController.reinstateDue (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/jobs/reinstate} (operationId {@code registryInstrumentReinstateDue}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param typeKey query parameter {@code typeKey}, or null
@@ -412,7 +412,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Verify code
      *
-     * <p>InstrumentController.verifyCode (sangam-registry).
+     * <p>InstrumentController.verifyCode (sangam-rest).
      *
      * <p>{@code GET /registry/instruments/public/{tenant}/verify} (operationId {@code registryInstrumentVerifyCode}).
      * @param tenant path parameter {@code tenant}
@@ -429,7 +429,7 @@ public final class RegistryInstrumentsApi {
     /**
      * Verify qr
      *
-     * <p>InstrumentController.verifyQr (sangam-registry).
+     * <p>InstrumentController.verifyQr (sangam-rest).
      *
      * <p>{@code POST /registry/instruments/public/verify-qr} (operationId {@code registryInstrumentVerifyQr}).
      * @param body request body

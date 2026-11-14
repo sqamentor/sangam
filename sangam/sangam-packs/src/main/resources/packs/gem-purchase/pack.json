@@ -17,6 +17,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/gem-purchase/gem-amount-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/gem-purchase/gem-procurement-mode.dmn"
     },
     {
@@ -42,6 +46,10 @@
     {
       "kind": "SEED",
       "path": "packs/gem-purchase/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/gem-purchase/pack.json"
     }
   ],
   "seed": "packs/gem-purchase/seed.json",
@@ -75,6 +83,12 @@
       "capabilityClass": "a",
       "govTag": "G-PFMS",
       "purpose": "Release"
+    },
+    {
+      "id": "config.profile",
+      "capabilityClass": "a",
+      "govTag": "G-CONFIG",
+      "purpose": "Profile values of the tenant (sangam-config)"
     }
   ],
   "covers": [
@@ -104,6 +118,22 @@
     "sangam-p1-bill-payment",
     "sangam-tender"
   ],
+  "placeholders": [
+    {
+      "decision": "gem-amount-rounding",
+      "rule": "SYNTHETIC purchase value rounding: nearest paisa",
+      "reason": "the rounding of a GeM order value (line versus order) was not verified; deploy it as a tenant override (decision 139)"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "gm_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "PURCHASE"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

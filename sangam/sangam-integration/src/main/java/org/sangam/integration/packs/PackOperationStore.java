@@ -3,12 +3,16 @@ package org.sangam.integration.packs;
 
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.integration.connector.Json;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * One row per pack operation ({@code PACK_OPERATION}, keyed by the pack's own operationId): the first result per
@@ -18,7 +22,8 @@ import java.util.UUID;
  * <p>States: {@code PENDING} (dispatch queued in the outbox) → {@code COMPLETED} | {@code FAILED} | {@code UNKNOWN} |
  * {@code CANCELLED}; {@code RETRY_REQUESTED} (reconciliation chose retry, or a lookup proved nothing happened) makes the
  * next {@code submit} with the same operationId dispatch again. {@code generation} counts dispatches and keeps the
- * inbox message ids of successive results distinct.
+ * inbox message ids of successive results distinct. A final state (COMPLETED, FAILED, CANCELLED) is never left, and its
+ * first reaching calls the {@link PackSettlementListener} of the operation's kind (decision 289).
  */
 public final class PackOperationStore {
 
@@ -31,6 +36,7 @@ public final class PackOperationStore {
     }
 
     private final Dialect dialect;
+    private final Map<String, PackSettlementListener> listeners = new ConcurrentHashMap<>();
 
     public PackOperationStore(Dialect dialect) {
         this.dialect = dialect;
@@ -61,11 +67,61 @@ public final class PackOperationStore {
         return Jdbc.one(c, "SELECT * FROM PACK_OPERATION WHERE ledger_operation_id=?", PackOperationStore::map, ledgerOperationId);
     }
 
-    public void settle(Connection c, String tenantId, String operationId, Status status, String reasonCode, String externalRef,
-                       String resultJson) {
-        Jdbc.update(c, "UPDATE PACK_OPERATION SET status=?, reason_code=?, external_ref=COALESCE(?, external_ref), result_json=?,"
-                        + " updated_at=" + dialect.now() + " WHERE tenant_id=? AND operation_id=?",
+    /**
+     * Owner decision 289: registers the settlement listener of an operation kind (the business key's prefix before the
+     * first colon). One listener per kind.
+     */
+    public void onSettled(String kind, PackSettlementListener listener) {
+        Objects.requireNonNull(kind, "kind");
+        Objects.requireNonNull(listener, "listener");
+        if (listeners.putIfAbsent(kind, listener) != null) {
+            throw new IllegalStateException("a settlement listener for operation kind " + kind + " is already registered");
+        }
+    }
+
+    /** COMPLETED, FAILED and CANCELLED are final: such a row is never settled again. */
+    public static boolean isFinal(Status status) {
+        return status == Status.COMPLETED || status == Status.FAILED || status == Status.CANCELLED;
+    }
+
+    /**
+     * As {@link #settle(Connection, String, String, Status, String, String, String, Map, String)} with the stored result
+     * as the listener's output, settled by the system.
+     */
+    public boolean settle(Connection c, String tenantId, String operationId, Status status, String reasonCode, String externalRef,
+                          String resultJson) {
+        return settle(c, tenantId, operationId, status, reasonCode, externalRef, resultJson, null, null);
+    }
+
+    /**
+     * Moves the row to {@code status} unless it is already final (decision 289: a final row is never settled again, so
+     * two settling paths that race cannot both win). When the row first reaches a final state, the settlement listener
+     * of its kind is called in this transaction on {@code c}.
+     *
+     * @param output    the connector output for the listener; null = {@code resultJson} read as a map
+     * @param settledBy the actor for the listener; null = {@value PackSettlementListener#SYSTEM_ACTOR}
+     * @return whether the row was moved
+     */
+    public boolean settle(Connection c, String tenantId, String operationId, Status status, String reasonCode, String externalRef,
+                          String resultJson, Map<String, Object> output, String settledBy) {
+        int n = Jdbc.update(c, "UPDATE PACK_OPERATION SET status=?, reason_code=?, external_ref=COALESCE(?, external_ref), result_json=?,"
+                        + " updated_at=" + dialect.now() + " WHERE tenant_id=? AND operation_id=?"
+                        + " AND status NOT IN ('COMPLETED','FAILED','CANCELLED')",
                 status, reasonCode, externalRef, resultJson, tenantId, operationId);
+        if (n == 0) {
+            return false;
+        }
+        if (isFinal(status) && !listeners.isEmpty()) {
+            Row r = find(c, tenantId, operationId).orElseThrow();
+            PackSettlementListener l = Optional.ofNullable(PackSettlementListener.kindOf(r.businessKey()))
+                    .map(listeners::get).orElse(null);
+            if (l != null) {
+                Map<String, Object> out = output != null ? output : resultJson == null ? Map.of() : Json.readMap(resultJson);
+                l.settled(c, new PackSettlementListener.Settlement(r.tenantId(), r.operationId(), r.connector(), r.operation(),
+                        r.businessKey(), r.processInstanceId(), status, reasonCode, r.externalRef(), out, settledBy));
+            }
+        }
+        return true;
     }
 
     /** RETRY_REQUESTED → PENDING with a new generation (a new dispatch is queued by the caller). */

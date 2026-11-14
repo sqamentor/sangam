@@ -17,11 +17,17 @@ import org.springframework.test.context.DynamicPropertySource;
 @ActiveProfiles(resolver = AbstractAcceptanceIT.DbProfile.class)
 public abstract class AbstractAcceptanceIT {
 
-    /** Active profile = the database name ({@code postgres}, {@code oracle}, {@code sqlserver}, {@code mysql}). */
+    /**
+     * Active profiles = the database name ({@code postgres}, {@code oracle}, {@code sqlserver}, {@code mysql}) plus
+     * {@code test}. Decision 143 (RM-06): the suite uses the dev token and the security bootstrap, which are allowed only
+     * in a development or test installation, that is {@code sangam.security.production=false} (set in
+     * {@link #database}) together with a recognised development or test profile; a database profile alone with
+     * {@code false} resolves as a staging installation, where both are refused.
+     */
     public static final class DbProfile implements ActiveProfilesResolver {
         @Override
         public String[] resolve(Class<?> testClass) {
-            return new String[] {AcceptanceDatabase.name()};
+            return new String[] {AcceptanceDatabase.name(), "test"};
         }
     }
 
@@ -78,6 +84,8 @@ public abstract class AbstractAcceptanceIT {
         r.add("spring.datasource.username", AcceptanceDatabase::username);
         r.add("spring.datasource.password", AcceptanceDatabase::password);
         r.add("operaton.bpm.database.schema-update", () -> "true");
+        // decision 143: the suite states its environment explicitly (a test installation, with the test profile above)
+        r.add("sangam.security.production", () -> "false");
         // a fresh random key-encryption key per run (never a committed secret); non-h2 profiles require one
         r.add("sangam.security.kek.keys.acc1", () -> TEST_KEK);
         r.add("sangam.security.kek.current-id", () -> "acc1");

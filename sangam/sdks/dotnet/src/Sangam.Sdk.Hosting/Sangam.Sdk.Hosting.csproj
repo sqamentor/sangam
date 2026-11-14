@@ -14,6 +14,9 @@
     <RootNamespace>Sangam.Sdk.Hosting</RootNamespace>
     <AssemblyName>Sangam.Sdk.Hosting</AssemblyName>
     <PackageId>Sangam.Sdk.Hosting</PackageId>
+    <!-- decision 132 (C-17, RM-48): source only in 0.1.0, tested in CI but never packed or published; any dotnet pack
+         of the solution skips it -->
+    <IsPackable>false</IsPackable>
     <Version>0.1.0</Version>
     <Authors>Sangam</Authors>
     <Description>Hosted-service adapter for the Sangam .NET worker: AddSangamWorker(...) for the generic host and ASP.NET Core.</Description>

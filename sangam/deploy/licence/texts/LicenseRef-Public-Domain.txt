@@ -1,0 +1,21 @@
+Public domain: these components carry no licence. Their authors dedicated them to the public domain, so no
+licence text applies and none is reproduced. The dedication of the XMLPULL API (xmlpull:xmlpull 1.1.3.1, a
+dependency of io.github.x-stream:mxparser 1.2.2), quoted word for word from the licence URL in the xmlpull POM,
+http://www.xmlpull.org/v1/download/unpacked/LICENSE.txt (read 2026-11-13):
+
+XMLPULL API IS FREE
+-------------------
+
+All of the XMLPULL API source code, compiled code, and documentation 
+contained in this distribution *except* for tests (see separate LICENSE_TESTS.txt)
+are in the Public Domain.
+
+XMLPULL API comes with NO WARRANTY or guarantee of fitness for any purpose.
+
+Initial authors:
+
+  Stefan Haustein
+  Aleksander Slominski
+
+2001-12-12
+

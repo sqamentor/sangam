@@ -34,8 +34,9 @@ class PackDriverWorkersTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        engine.getRepositoryService().createDeployment()
+        engine.getRepositoryService().createDeployment().tenantId(PackTestTenant.ID)
                 .addModelInstance("ext-known.bpmn", Bpmn.createExecutableProcess("ext-known").startEvent()
                         .serviceTask("card").operatonExternalTask("sangam.docs.bulk").userTask("after").endEvent()
                         .done())

@@ -1,0 +1,13 @@
+{
+  "_comment": "SPDX-License-Identifier: Apache-2.0. M-092 upgrade rules of THIS release (the target of an upgrade). Every release appends what it removes or deprecates; 0.1.0 is the first release, so nothing is removed yet. models.constructs[]: {namespace, element, attribute?, attributeNamespace?, value?, status: removed|deprecated, note}; '*' matches any namespace or element (an attribute rule then matches on any element). config.removed / renamed: Spring keys (relaxed form, prefix match); config.removedEnv / renamedEnv: environment variable names for .env files.",
+  "release": "0.1.0",
+  "models": {
+    "constructs": []
+  },
+  "config": {
+    "removed": {},
+    "renamed": {},
+    "removedEnv": {},
+    "renamedEnv": {}
+  }
+}

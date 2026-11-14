@@ -3,6 +3,12 @@ Copyright 2026 The Sangam authors
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
+This NOTICE aggregates the notices Sangam carries for the work it builds on (M-088). The notices of the
+third-party dependencies shipped in each distribution (their own NOTICE files, the licence of each component and
+the licence texts) are generated for every release by sangam/deploy/licence/notice_bundle.py into
+sangam-notices-<version>.tgz, and THIRD-PARTY-LICENSES-<version>.txt (sangam/deploy/licence/licence_book.py) is
+the book of all of them. This file records licence notices; it is not legal advice.
+
 Sangam builds on, and its evaluation spike depends on, the following open-source projects,
 both licensed under the Apache License, Version 2.0:
 
@@ -16,7 +22,47 @@ the files are marked as modified, as required by section 4 of the Apache License
 "Operaton", "Flowable" and "Camunda" are names and trademarks of their respective owners. Sangam is
 not affiliated with or endorsed by them.
 
-DMN FEEL engine (SG-27, OneIFMS SD-301 exception; see sangam/deploy/licence/SG-27-SD-301-exception.md).
+----------------------------------------------------------------------------------------------------
+1. Operaton NOTICE, reproduced verbatim (M-088). Source: the NOTICE file of
+   https://github.com/operaton/operaton at tag v2.2.0, the version Sangam ships (SHA-256
+   E3C6927C722EE2A629577409B3F7202B16A435DB5D01D6C9F3FD70269295B628 as stored, with CRLF line endings,
+   read 2026-11-13, decision 307; the same bytes as at commit ccea9712f28a73b380829621fa6c2fb6540685f1);
+   reproduced word for word with LF line endings. The Operaton 2.2.0 jars Sangam ships carry no NOTICE file
+   of their own. The License Book it names is Operaton's; Sangam's is THIRD-PARTY-LICENSES-<version>.txt.
+----------------------------------------------------------------------------------------------------
+
+Operaton
+Copyright Andreas Klein, Andreas Zill, Tim Zöller
+
+Camunda
+Copyright 2013-2024 Camunda Services GmbH
+
+This product includes software developed by The Apache Software
+Foundation (http://www.apache.org/).
+
+This product includes software developed by Odysseus Software GmbH
+(http://www.odysseus.de/).
+
+This product includes software developed by Quartz
+(http://www.quartz-scheduler.org/).
+
+This product includes an architectural decision record template based on MADR (Markdown Architectural Decision Records)
+(https://adr.github.io/madr/).
+
+========================================================
+
+Third Party Libraries contained within this distribution
+can be reviewed in the License Book (LicenseBook.txt)
+
+========================================================
+
+----------------------------------------------------------------------------------------------------
+2. Flowable logic ports (sangam/sangam-flowable-ports/NOTICE): the module re-implements on Operaton the logic
+   of several Flowable classes (Apache License 2.0); no Flowable source file is copied, and the Flowable
+   checkout ships a LICENSE but no NOTICE file.
+
+----------------------------------------------------------------------------------------------------
+3. DMN FEEL engine (SG-27, OneIFMS SD-301 exception; see sangam/deploy/licence/SG-27-SD-301-exception.md).
 Sangam ships, unmodified, as dependencies of Operaton's DMN engine:
 
 - FEEL Scala engine org.camunda.feel:feel-engine 1.22.1 (https://github.com/camunda/feel-scala),
@@ -42,5 +88,6 @@ Sangam ships, unmodified, as dependencies of Operaton's DMN engine:
     ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-The bpmn-js, dmn-js and form-js libraries (if used by the UI) are distributed under the bpmn.io
+----------------------------------------------------------------------------------------------------
+4. The bpmn-js, dmn-js and form-js libraries (if used by the UI) are distributed under the bpmn.io
 license, which requires the bpmn.io watermark to remain visible.

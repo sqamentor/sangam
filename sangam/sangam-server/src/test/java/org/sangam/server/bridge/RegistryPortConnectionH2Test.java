@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.bridge;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
@@ -53,7 +54,7 @@ class RegistryPortConnectionH2Test {
         cfg.setMaximumPoolSize(1);
         cfg.setConnectionTimeout(250);
         ds = new HikariDataSource(cfg);
-        tx = new TxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
+        tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
         try (Connection c = ds.getConnection()) {
             Schema.create(c, Dialect.POSTGRESQL);
         } catch (java.sql.SQLException e) {

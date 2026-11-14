@@ -1,0 +1,55 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Decisions 162 and 213: optional Microsoft Teams tab (/teams.html). Sourced by the nginx image's
+# /docker-entrypoint.sh before 20-envsubst-on-templates.sh, so the values exported here reach the templates.
+# A bad value stops the container (fail closed): the entrypoint runs with set -e and this file's exit ends it.
+#
+#   SANGAM_TEAMS_ENABLED          true or false (empty = false). Anything else refuses to start.
+#   SANGAM_TEAMS_FRAME_ANCESTORS  space-separated https origins allowed to frame /teams.html; empty = the Microsoft
+#                                 published host list below (learn.microsoft.com tab-requirements, recorded in
+#                                 DOWNLOADS-WAVE4.md 2026-11-13). Quotes, semicolons, newlines and anything that is
+#                                 not https://host[:port] (optionally *.host) refuse to start.
+# Exported for the templates (always overwritten here, so they cannot be set from outside):
+#   SANGAM_TEAMS_ENABLED_JSON           true or false, for /config.json teams.enabled
+#   SANGAM_TEAMS_FRAME_ANCESTORS_EFFECTIVE  the validated origin list
+#   SANGAM_TEAMS_HEADERS_INC            the header include of location = /teams.html: teams-headers.inc when enabled,
+#                                       otherwise security-headers.inc (frame-ancestors 'none', X-Frame-Options DENY)
+
+sangam_teams_fail() {
+    echo "16-sangam-teams.envsh: ERROR: $*" >&2
+    exit 1
+}
+
+SANGAM_TEAMS_DEFAULT_FRAME_ANCESTORS="https://*.cloud.microsoft https://teams.microsoft.com https://*.teams.microsoft.com https://*.microsoft365.com https://*.office.com https://outlook.office.com https://outlook.office365.com https://outlook-sdf.office.com https://outlook-sdf.office365.com"
+
+case "${SANGAM_TEAMS_ENABLED:-false}" in
+    true)  SANGAM_TEAMS_ENABLED_JSON=true ;;
+    false) SANGAM_TEAMS_ENABLED_JSON=false ;;
+    *)     sangam_teams_fail "SANGAM_TEAMS_ENABLED must be true or false" ;;
+esac
+
+sangam_teams_fa="${SANGAM_TEAMS_FRAME_ANCESTORS:-}"
+[ -n "$sangam_teams_fa" ] || sangam_teams_fa="$SANGAM_TEAMS_DEFAULT_FRAME_ANCESTORS"
+sangam_teams_nl='
+'
+case "$sangam_teams_fa" in
+    *"$sangam_teams_nl"*|*\"*|*\'*|*\;*|*\\*|*"	"*)
+        sangam_teams_fail "SANGAM_TEAMS_FRAME_ANCESTORS may hold only space-separated https origins (no quotes, semicolons, backslashes, tabs or newlines)" ;;
+esac
+sangam_teams_checked=""
+for sangam_teams_origin in $sangam_teams_fa; do
+    printf '%s\n' "$sangam_teams_origin" | grep -Eq '^https://(\*\.)?[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+(:[0-9]{1,5})?$' \
+        || sangam_teams_fail "SANGAM_TEAMS_FRAME_ANCESTORS entry '$sangam_teams_origin' is not https://host[:port] or https://*.host"
+    sangam_teams_checked="${sangam_teams_checked:+$sangam_teams_checked }$sangam_teams_origin"
+done
+[ -n "$sangam_teams_checked" ] || sangam_teams_fail "SANGAM_TEAMS_FRAME_ANCESTORS has no origin"
+
+if [ "$SANGAM_TEAMS_ENABLED_JSON" = true ]; then
+    SANGAM_TEAMS_HEADERS_INC=teams-headers.inc
+else
+    SANGAM_TEAMS_HEADERS_INC=security-headers.inc
+fi
+SANGAM_TEAMS_FRAME_ANCESTORS_EFFECTIVE="$sangam_teams_checked"
+export SANGAM_TEAMS_ENABLED_JSON SANGAM_TEAMS_FRAME_ANCESTORS_EFFECTIVE SANGAM_TEAMS_HEADERS_INC
+echo "16-sangam-teams.envsh: teams.enabled=$SANGAM_TEAMS_ENABLED_JSON, /teams.html headers from $SANGAM_TEAMS_HEADERS_INC"
+unset sangam_teams_fa sangam_teams_nl sangam_teams_checked sangam_teams_origin

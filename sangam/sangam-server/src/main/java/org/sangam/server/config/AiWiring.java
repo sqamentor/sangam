@@ -129,8 +129,24 @@ public class AiWiring {
         if (sec == null) {
             LOG.warn("sangam-ai: no security module, knowledge retrieval returns nothing");
         }
+        // M-129: ranking through the VectorIndex port; the portable index ranks every authorized chunk with O(k) memory,
+        // so the former sangam.ai.kb.max-candidates cap (which dropped chunks) is no longer read
         return new KnowledgeBaseService(tx.dialect(), Transactions.of(ds), llm, env.getProperty("sangam.ai.kb.chunk-chars", Integer.class, 1200),
-                env.getProperty("sangam.ai.kb.overlap-chars", Integer.class, 150), env.getProperty("sangam.ai.kb.max-candidates", Integer.class, 2000), visibility);
+                env.getProperty("sangam.ai.kb.overlap-chars", Integer.class, 150), visibility, vectorIndex(env));
+    }
+
+    /**
+     * Decisions 170 and 207: {@code sangam.ai.kb.vector-index} selects the ranking index: {@code portable} (the default),
+     * {@code pgvector} (PostgreSQL with the pgvector column) or {@code oracle} (Oracle AI Vector Search column). The native
+     * indexes are off unless named here and fail closed when their column is missing; an unknown name stops start-up.
+     */
+    static org.sangam.ai.rag.VectorIndex vectorIndex(Environment env) {
+        String name = env.getProperty("sangam.ai.kb.vector-index", "portable");
+        try {
+            return org.sangam.ai.rag.VectorIndex.named(name);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("sangam.ai.kb.vector-index: " + e.getMessage(), e);
+        }
     }
 
     @Bean

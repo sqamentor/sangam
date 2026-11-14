@@ -28,8 +28,18 @@ import org.sangam.ports.events.pipeline.CloudEventsFormat;
  *       {@code Content-Type} and {@code BrokerProperties} {@code MessageId} (duplicate detection, when enabled on the
  *       entity, uses it) and {@code Label} = the event key. In: peek-lock {@code POST <entity>/messages/head}, complete
  *       with {@code DELETE} on the lock location once the processor said acknowledge; otherwise the lock is left to
- *       expire (the entity's lock duration is the redelivery delay). Plain or structured CloudEvents only: binary mode
- *       would need custom properties, whose REST encoding is an open owner question.</li>
+ *       expire (the entity's lock duration is the redelivery delay). Plain or structured CloudEvents by default. Binary
+ *       mode only when the channel opts in with {@code properties.binaryMode=customProperties} (owner decision 189):
+ *       each CloudEvents attribute is a message custom property named {@code cloudEvents_<attribute>} (the AMQP
+ *       binding's prefix), sent as an HTTP header. Service Bus types a custom-property header by its form (owner
+ *       decision 218; learn.microsoft.com service-bus-rest-message-properties, ms.date 2026-10-13, read 2026-11-13): a
+ *       double-quoted value is a string with the quotes removed, a quoted HTTP date a DateTime, unquoted
+ *       true/false, integers and decimals are typed, and anything else rejects the message. So every attribute is
+ *       sent double-quoted; a value with a double quote or a backslash (no escaping is documented), with leading or
+ *       trailing spaces, or in HTTP-date form (it would become a DateTime) is refused before sending. On receive one
+ *       pair of enclosing quotes is removed and nothing is unescaped. Without the opt-in the attributes are neither
+ *       sent nor read.</li>
+ *   <li><b>eventgrid inbound</b>: a push channel, handled by {@link EventGridInboundEndpoint}.</li>
  *   <li><b>eventgrid</b> (namespace topic, outbound): {@code endpoint} (the namespace host), {@code topic},
  *       {@code keyRef} (access key reference), optional {@code apiVersion} (default {@value #EVENT_GRID_API_VERSION});
  *       {@code POST https://<endpoint>/topics/<topic>:publish} with {@code Content-Type: application/cloudevents+json}
@@ -40,6 +50,8 @@ final class AzureChannels {
 
     static final String EVENT_GRID_API_VERSION = "2024-06-01";
     static final Duration SAS_LIFETIME = Duration.ofMinutes(5);
+    /** Custom-property prefix of CloudEvents attributes in binary mode (CloudEvents AMQP binding). */
+    static final String CE_PROPERTY_PREFIX = "cloudEvents_";
 
     private AzureChannels() {
     }
@@ -79,11 +91,22 @@ final class AzureChannels {
 
         @Override
         public void send(ChannelAdapters.Outgoing m) {
-            if (m.binary()) {
-                throw new IllegalStateException("servicebus channel " + ch.key() + " cannot send CloudEvents binary mode");
+            if (m.binary() && !ChannelAdapters.serviceBusBinary(ch)) {
+                throw new IllegalStateException("servicebus channel " + ch.key() + " sends CloudEvents binary mode only"
+                        + " with properties.binaryMode=customProperties");
             }
             Map<String, String> h = sas(ch, http, entity);
             h.put("Content-Type", m.contentType());
+            if (m.binary()) {
+                for (Map.Entry<String, String> a : new java.util.TreeMap<>(m.cloudEventsOrEmpty()).entrySet()) {
+                    String name = CE_PROPERTY_PREFIX + a.getKey();
+                    if (!HttpTransport.isToken(name) || !quotable(a.getValue())) {
+                        throw new IllegalStateException("servicebus channel " + ch.key() + ": CloudEvents attribute "
+                                + a.getKey() + " cannot travel as a string custom property header");
+                    }
+                    h.put(name, quote(a.getValue()));
+                }
+            }
             ObjectNode bp = Json.MAPPER.createObjectNode();
             bp.put("MessageId", m.messageId());
             bp.put("Label", m.eventKey());
@@ -130,6 +153,9 @@ final class AzureChannels {
             if (label != null) {
                 headers.put("servicebus-label", label);
             }
+            if (ChannelAdapters.serviceBusBinary(ch)) {
+                headers.putAll(cloudEventProperties(r.headers()));
+            }
             String id = props == null ? null : props.path("MessageId").asText(null);
             boolean ack;
             try {
@@ -143,6 +169,47 @@ final class AzureChannels {
             }
             // not acknowledged: the lock expires and Service Bus offers the message again (DeliveryCount + 1)
         }
+    }
+
+    /**
+     * The {@code cloudEvents_*} custom properties of a received message, lower-cased as the inbound pipeline expects,
+     * with one pair of enclosing double quotes removed (nothing unescaped; see the class comment).
+     */
+    static Map<String, String> cloudEventProperties(Map<String, java.util.List<String>> responseHeaders) {
+        Map<String, String> out = new LinkedHashMap<>();
+        String prefix = CE_PROPERTY_PREFIX.toLowerCase(java.util.Locale.ROOT);
+        responseHeaders.forEach((k, values) -> {
+            if (k == null || values == null || values.isEmpty()) {
+                return;
+            }
+            String name = k.toLowerCase(java.util.Locale.ROOT);
+            if (name.startsWith(prefix) && name.length() > prefix.length()) {
+                out.put(name, unquote(values.get(0)));
+            }
+        });
+        return out;
+    }
+
+    static String unquote(String v) {
+        String s = v.trim();
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            return s.substring(1, s.length() - 1);
+        }
+        return s;   // an unquoted bool or number property keeps its text
+    }
+
+    /** HTTP date (IMF-fixdate), which Service Bus would store as a DateTime instead of a string. */
+    private static final java.util.regex.Pattern HTTP_DATE = java.util.regex.Pattern.compile(
+            "[A-Za-z]{3}, \\d{2} [A-Za-z]{3} \\d{4} \\d{2}:\\d{2}:\\d{2} GMT");
+
+    /** True when {@code v} can travel as a double-quoted string custom property and come back unchanged. */
+    static boolean quotable(String v) {
+        return v != null && HttpTransport.isFieldValue(v) && v.indexOf('"') < 0 && v.indexOf('\\') < 0
+                && v.equals(v.strip()) && !HTTP_DATE.matcher(v).matches();
+    }
+
+    static String quote(String v) {
+        return "\"" + v + "\"";
     }
 
     static final class EventGridOutbound implements ChannelAdapters.OutboundChannelAdapter {

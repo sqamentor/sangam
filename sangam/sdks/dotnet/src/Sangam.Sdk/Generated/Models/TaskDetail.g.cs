@@ -59,4 +59,10 @@ public sealed record TaskDetail
 
     [global::System.Text.Json.Serialization.JsonPropertyName("delegatedFrom")]
     public string? DelegatedFrom { get; init; }
+
+    /// <summary>
+    /// Read only; present only for a task with a DSC step document
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("dscDocument")]
+    public TaskDscDocument? DscDocument { get; init; }
 }

@@ -25,6 +25,7 @@ package org.sangam.sdk.generated.model;
  * @param changedSinceLastSeen wire field {@code changedSinceLastSeen}
  * @param ruleEvidence wire field {@code ruleEvidence}
  * @param delegatedFrom wire field {@code delegatedFrom}
+ * @param dscDocument wire field {@code dscDocument}. Read only; present only for a task with a DSC step document
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record TaskDetail(
@@ -44,5 +45,6 @@ public record TaskDetail(
         @com.fasterxml.jackson.annotation.JsonProperty("returnReasons") java.util.List<CodedReason> returnReasons,
         @com.fasterxml.jackson.annotation.JsonProperty("changedSinceLastSeen") java.util.List<FieldChange> changedSinceLastSeen,
         @com.fasterxml.jackson.annotation.JsonProperty("ruleEvidence") java.util.List<RuleEvidence> ruleEvidence,
-        @com.fasterxml.jackson.annotation.JsonProperty("delegatedFrom") String delegatedFrom) {
+        @com.fasterxml.jackson.annotation.JsonProperty("delegatedFrom") String delegatedFrom,
+        @com.fasterxml.jackson.annotation.JsonProperty("dscDocument") TaskDscDocument dscDocument) {
 }

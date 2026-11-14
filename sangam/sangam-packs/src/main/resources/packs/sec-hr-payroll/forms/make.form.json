@@ -15,17 +15,6 @@
   },
   "fields": [
     {
-      "id": "grossWages",
-      "type": "money",
-      "currency": "INR",
-      "exponent": 2,
-      "required": true,
-      "label": {
-        "en": "Gross wages (INR)",
-        "hi": "सकल मजदूरी (रुपये)"
-      }
-    },
-    {
       "id": "remarks",
       "type": "text",
       "required": false,

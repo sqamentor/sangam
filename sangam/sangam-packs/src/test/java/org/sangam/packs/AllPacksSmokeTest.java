@@ -37,8 +37,9 @@ class AllPacksSmokeTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
     }
 
     @AfterAll

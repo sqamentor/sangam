@@ -396,6 +396,16 @@
   "calls": [
     "sangam-core-appeal"
   ],
+  "documentSlots": [
+    {
+      "documentType": "NOTING",
+      "slot": "notingDocumentId"
+    },
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "money": {
     "unit": "MINOR",
     "currency": "INR",

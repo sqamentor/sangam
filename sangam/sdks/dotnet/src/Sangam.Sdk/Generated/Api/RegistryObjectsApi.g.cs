@@ -17,7 +17,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Create
-    /// RegistryController.create (sangam-registry).
+    /// RegistryController.create (sangam-rest).
     /// POST /registry/objects (operationId registryRegistryCreate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryCreateAsync(M.RegistryRegistryCreateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// List
-    /// RegistryController.list (sangam-registry).
+    /// RegistryController.list (sangam-rest).
     /// GET /registry/objects (operationId registryRegistryList); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryRegistryListAsync(string? typeKey = null, string? kind = null, string? state = null, string? holderPartyId = null, string? parentId = null, string? number = null, string? subjectRef = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -49,7 +49,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Get
-    /// RegistryController.get (sangam-registry).
+    /// RegistryController.get (sangam-rest).
     /// GET /registry/objects/{id} (operationId registryRegistryGet); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryGetAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -60,7 +60,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Update
-    /// RegistryController.update (sangam-registry).
+    /// RegistryController.update (sangam-rest).
     /// PATCH /registry/objects/{id} (operationId registryRegistryUpdate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryUpdateAsync(string id, M.RegistryRegistryUpdateBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -73,7 +73,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// By number
-    /// RegistryController.byNumber (sangam-registry).
+    /// RegistryController.byNumber (sangam-rest).
     /// GET /registry/objects/by-number/{number} (operationId registryRegistryByNumber); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryByNumberAsync(string number, string? typeKey = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -85,7 +85,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Transition
-    /// RegistryController.transition (sangam-registry).
+    /// RegistryController.transition (sangam-rest).
     /// POST /registry/objects/{id}/transitions/{name} (operationId registryRegistryTransition); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryTransitionAsync(string id, string name, M.RegistryRegistryTransitionBody? body = null, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -98,7 +98,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Available transitions
-    /// RegistryController.availableTransitions (sangam-registry).
+    /// RegistryController.availableTransitions (sangam-rest).
     /// GET /registry/objects/{id}/transitions (operationId registryRegistryAvailableTransitions); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegistryAvailableTransitionsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -109,7 +109,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// History
-    /// RegistryController.history (sangam-registry).
+    /// RegistryController.history (sangam-rest).
     /// GET /registry/objects/{id}/versions (operationId registryRegistryHistory); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegistryHistoryAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -120,7 +120,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// As of
-    /// RegistryController.asOf (sangam-registry).
+    /// RegistryController.asOf (sangam-rest).
     /// GET /registry/objects/{id}/as-of (operationId registryRegistryAsOf); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryAsOfAsync(string id, string at, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -132,7 +132,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Verify audit
-    /// RegistryController.verifyAudit (sangam-registry).
+    /// RegistryController.verifyAudit (sangam-rest).
     /// GET /registry/objects/{id}/audit/verify (operationId registryRegistryVerifyAudit); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryVerifyAuditAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -143,7 +143,7 @@ public sealed class RegistryObjectsApi
 
     /// <summary>
     /// Mirror
-    /// RegistryController.mirror (sangam-registry).
+    /// RegistryController.mirror (sangam-rest).
     /// POST /registry/objects/mirror (operationId registryRegistryMirror); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryMirrorAsync(M.RegistryRegistryMirrorBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

@@ -27,6 +27,8 @@ class FeelBoundaryGuardTest {
     /** Fully-qualified use in code, e.g. {@code new org.camunda.feel.FeelEngine(...)} or {@code scala.math.BigDecimal}. */
     private static final Pattern QUALIFIED = Pattern.compile("(?<![\\w.\"/:])((?:org\\.camunda|scala)\\.[a-z]\\w*\\.[A-Za-z_]\\w*)");
     private static final String ALLOWED = "sangam-engine/src/main/java/org/sangam/engine/feel/";
+    /** Integrator ruling (option A): the FEEL policies moved unchanged to the module sangam-feel. */
+    private static final String ALLOWED_FEEL = "sangam-feel/src/main/java/org/sangam/feel/";
 
     @Test
     void noFeelOrScalaTypesOutsideTheEngineAdapter() throws IOException {
@@ -37,7 +39,7 @@ class FeelBoundaryGuardTest {
             for (Path p : (Iterable<Path>) files.filter(FeelBoundaryGuardTest::isMainSource)::iterator) {
                 scanned++;
                 String rel = root.relativize(p).toString().replace('\\', '/');
-                if (rel.startsWith(ALLOWED)) {
+                if (rel.startsWith(ALLOWED) || rel.startsWith(ALLOWED_FEEL)) {
                     continue;
                 }
                 String code = stripComments(Files.readString(p));
@@ -50,7 +52,7 @@ class FeelBoundaryGuardTest {
             }
         }
         assertTrue(scanned > 100, "scanned the reactor's production sources (" + scanned + ")");
-        assertTrue(violations.isEmpty(), "org.camunda / scala types outside " + ALLOWED + " (SG-27): "
+        assertTrue(violations.isEmpty(), "org.camunda / scala types outside " + ALLOWED + " and " + ALLOWED_FEEL + " (SG-27): "
                 + violations);
     }
 

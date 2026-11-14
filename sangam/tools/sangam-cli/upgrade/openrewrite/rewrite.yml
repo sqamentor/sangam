@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-092 (SANGAM.md 14.7): OpenRewrite recipes for Java users of the Sangam SDK (sdks/java, sdks/java-spring-boot).
+# Declarative recipes only, so this file needs no OpenRewrite code in the Sangam build. A user runs it with their own
+# OpenRewrite setup, for example:
+#   mvn org.openrewrite.maven:rewrite-maven-plugin:run -Drewrite.configLocation=<this file> \
+#       -Drewrite.activeRecipes=org.sangam.upgrade.UpgradeToLatest
+# (the plugin is the user's choice and is not shipped or downloaded by Sangam).
+#
+# Release procedure: every release that renames or removes a public SDK symbol adds one recipe named
+# org.sangam.upgrade.UpgradeTo_<major>_<minor> below (with the ChangeType / ChangeMethodName / ChangePackage steps it
+# needs) and lists it in UpgradeToLatest, and adds the same removals to tools/sangam-cli/src/main/resources/upgrade-rules.json.
+# 0.1.0 is the first release: there is nothing to rewrite yet.
+#
+# Example step for a future release (not active):
+#   - org.openrewrite.java.ChangeType:
+#       oldFullyQualifiedTypeName: org.sangam.sdk.OldName
+#       newFullyQualifiedTypeName: org.sangam.sdk.NewName
+---
+type: specs.openrewrite.org/v1beta/recipe
+name: org.sangam.upgrade.UpgradeToLatest
+displayName: Upgrade Sangam SDK code to the latest release
+description: Applies every Sangam release recipe in order. Empty for 0.1.0, the first release.
+recipeList: []

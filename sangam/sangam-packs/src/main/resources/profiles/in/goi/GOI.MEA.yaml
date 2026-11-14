@@ -4,7 +4,7 @@
 profile:
   id: GOI.MEA
   layer: department
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2024-04-01'
   name:
     en: Ministry of External Affairs (missions abroad)
@@ -37,3 +37,5 @@ missions:
   - RPR 2022 r.13(7)-(8)
   - r.17(4)
   - r.16(3)
+procurement:
+  scientificDepartment: false

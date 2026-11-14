@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Collection transfer deadline. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_transfer_deadli" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_pfm_tsaCredited" name="sangam.pfm.tsaCredited"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-transfer-deadline" name="Collection transfer deadline" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-transfer-deadline</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>collectionChannel,collectionRef,collectionAmount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="td_start" name="Collection reported" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-transfer-deadline/collection"></startEvent>
+    <serviceTask id="td_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>collectionChannel=AGENT-BANK;treasurySeat=TREASURY-OFFICER;transferLate=false</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="td_cfg" name="Transfer deadline of the channel (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-transfer-deadline</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="td_deadline" name="Regulatory clock: transfer" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>transfer</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${transferSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="td_wait" name="Credited in time?"></eventBasedGateway>
+    <intermediateCatchEvent id="td_credited" name="TSA credit reported"><messageEventDefinition messageRef="msg_sangam_pfm_tsaCredited"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="td_late" name="Transfer deadline passed"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${transferDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <serviceTask id="td_lateMark" name="Late transfer" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>transferLate=true</operaton:string></operaton:field></extensionElements></serviceTask>
+    <userTask id="td_overdue" name="Transfer overdue: pursue the collecting agent" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-transfer-deadline/overdue"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <intermediateCatchEvent id="td_creditedLate" name="TSA credit reported (late)"><messageEventDefinition messageRef="msg_sangam_pfm_tsaCredited"/></intermediateCatchEvent>
+    <serviceTask id="td_match_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>creditAmount=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="td_match" name="TSA credit of the collection" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>tsa.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>lookup</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>collectionChannel,collectionRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="td_matchGw" name="TSA credit of the collection?" default="intl_pfm_transfer_deadli_f18"></exclusiveGateway>
+    <userTask id="td_matchHold" name="TSA credit not confirmed: check the bank statement" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-transfer-deadline/matchHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="td_mismatch" name="Credit differs from the collection: investigate" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-transfer-deadline/mismatch"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="td_endDifference" name="Difference recorded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>DIFFERENCE</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['creditAmount', 'transferLate']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="td_end" name="Transferred"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>TRANSFERRED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['creditAmount', 'transferLate']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f1" sourceRef="td_start" targetRef="td_defaults"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f2" sourceRef="td_defaults" targetRef="td_cfg"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f3" sourceRef="td_cfg" targetRef="td_deadline"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f4" sourceRef="td_deadline" targetRef="td_wait"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f5" sourceRef="td_wait" targetRef="td_credited"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f6" sourceRef="td_wait" targetRef="td_late"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f7" sourceRef="td_late" targetRef="td_lateMark"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f8" sourceRef="td_lateMark" targetRef="td_overdue"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f9" sourceRef="td_overdue" targetRef="td_creditedLate"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f10" sourceRef="td_match_clear" targetRef="td_match"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f11" sourceRef="td_match" targetRef="td_matchGw"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f12" sourceRef="td_matchHold" targetRef="td_match_clear"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f13" name="not confirmed" sourceRef="td_matchGw" targetRef="td_matchHold"><conditionExpression xsi:type="tFormalExpression">${creditStatus != 'COMPLETED' || creditAmount == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f14" sourceRef="td_credited" targetRef="td_match_clear"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f15" sourceRef="td_creditedLate" targetRef="td_match_clear"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f16" name="difference" sourceRef="td_matchGw" targetRef="td_mismatch"><conditionExpression xsi:type="tFormalExpression">${creditAmount != collectionAmount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f17" sourceRef="td_mismatch" targetRef="td_endDifference"/>
+    <sequenceFlow id="intl_pfm_transfer_deadli_f18" name="credited in full" sourceRef="td_matchGw" targetRef="td_end"/>
+    <subProcess id="td_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="td_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="td_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="td_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="td_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_transfer_deadli_f19" sourceRef="td_withdrawStart" targetRef="td_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_transfer_deadli_f20" sourceRef="td_withdrawKind" targetRef="td_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_transfer_deadli_f21" sourceRef="td_withdrawCall" targetRef="td_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="td_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="td_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="td_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="td_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="td_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_transfer_deadli_f22" sourceRef="td_cancelStart" targetRef="td_cancelKind"/>
+      <sequenceFlow id="intl_pfm_transfer_deadli_f23" sourceRef="td_cancelKind" targetRef="td_cancelCall"/>
+      <sequenceFlow id="intl_pfm_transfer_deadli_f24" sourceRef="td_cancelCall" targetRef="td_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_transfer_deadli_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_transfer_deadli_plane" bpmnElement="sangam-intl-pfm-transfer-deadline">
+      <bpmndi:BPMNShape id="td_start_di" bpmnElement="td_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_defaults_di" bpmnElement="td_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cfg_di" bpmnElement="td_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_deadline_di" bpmnElement="td_deadline"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_wait_di" bpmnElement="td_wait"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_credited_di" bpmnElement="td_credited"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_late_di" bpmnElement="td_late"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_lateMark_di" bpmnElement="td_lateMark"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_overdue_di" bpmnElement="td_overdue"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_creditedLate_di" bpmnElement="td_creditedLate"><dc:Bounds x="1372" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_match_clear_di" bpmnElement="td_match_clear"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_match_di" bpmnElement="td_match"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_matchGw_di" bpmnElement="td_matchGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_matchHold_di" bpmnElement="td_matchHold"><dc:Bounds x="2000" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_mismatch_di" bpmnElement="td_mismatch"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_endDifference_di" bpmnElement="td_endDifference"><dc:Bounds x="2197" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_end_di" bpmnElement="td_end"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdraw_di" bpmnElement="td_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawStart_di" bpmnElement="td_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawKind_di" bpmnElement="td_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawCall_di" bpmnElement="td_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_withdrawEnd_di" bpmnElement="td_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancel_di" bpmnElement="td_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelStart_di" bpmnElement="td_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelKind_di" bpmnElement="td_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelCall_di" bpmnElement="td_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="td_cancelEnd_di" bpmnElement="td_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f1_di" bpmnElement="intl_pfm_transfer_deadli_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f2_di" bpmnElement="intl_pfm_transfer_deadli_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f3_di" bpmnElement="intl_pfm_transfer_deadli_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f4_di" bpmnElement="intl_pfm_transfer_deadli_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f5_di" bpmnElement="intl_pfm_transfer_deadli_f5"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f6_di" bpmnElement="intl_pfm_transfer_deadli_f6"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f7_di" bpmnElement="intl_pfm_transfer_deadli_f7"><di:waypoint x="913" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f8_di" bpmnElement="intl_pfm_transfer_deadli_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f9_di" bpmnElement="intl_pfm_transfer_deadli_f9"><di:waypoint x="1275" y="70"/><di:waypoint x="1372" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f10_di" bpmnElement="intl_pfm_transfer_deadli_f10"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f11_di" bpmnElement="intl_pfm_transfer_deadli_f11"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f12_di" bpmnElement="intl_pfm_transfer_deadli_f12"><di:waypoint x="2050" y="360"/><di:waypoint x="2050" y="399"/><di:waypoint x="1555" y="399"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f13_di" bpmnElement="intl_pfm_transfer_deadli_f13"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="320"/><di:waypoint x="2000" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f14_di" bpmnElement="intl_pfm_transfer_deadli_f14"><di:waypoint x="913" y="195"/><di:waypoint x="1209" y="195"/><di:waypoint x="1209" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f15_di" bpmnElement="intl_pfm_transfer_deadli_f15"><di:waypoint x="1408" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f16_di" bpmnElement="intl_pfm_transfer_deadli_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f17_di" bpmnElement="intl_pfm_transfer_deadli_f17"><di:waypoint x="2100" y="195"/><di:waypoint x="2197" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f18_di" bpmnElement="intl_pfm_transfer_deadli_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f19_di" bpmnElement="intl_pfm_transfer_deadli_f19"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f20_di" bpmnElement="intl_pfm_transfer_deadli_f20"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f21_di" bpmnElement="intl_pfm_transfer_deadli_f21"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f22_di" bpmnElement="intl_pfm_transfer_deadli_f22"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f23_di" bpmnElement="intl_pfm_transfer_deadli_f23"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_transfer_deadli_f24_di" bpmnElement="intl_pfm_transfer_deadli_f24"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of LowCode (10 operations). */
+/** Typed operations of LowCode (11 operations). */
 final class LowCodeApi
 {
     public function __construct(private readonly Calls $calls)
@@ -155,7 +155,7 @@ final class LowCodeApi
     /**
      * Data-object records
      *
-     * Records; sensitive fields masked (R78).
+     * Records; sensitive fields masked (R78). For a REST-backed definition (decision 266) the server calls the connector's list operation with {q, offset, limit} (q as given, offset and limit from page and size) and answers its output.records, each validated against the definition fields (unknown fields dropped, sensitive fields masked as for DB backing); output.total, when the connector gives it, is the total count. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
      *
      * GET /data-objects/{key}/records (operationId listDataObjectRecords); permission lowcode.read.
      * @param string|null $q query q
@@ -175,9 +175,9 @@ final class LowCodeApi
     /**
      * Create a record
      *
-     * Validated against the definition.
+     * Validated against the definition. DB backing: the record is stored and the call answers 201 with it. REST backing (decision 265): the call answers 202 Accepted with the operationId and status PENDING, and Location names getDataObjectRecordOperation; the connector's create operation runs through the operation ledger with the operationId as its idempotency key, and the caller reads the outcome there. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
      *
-     * POST /data-objects/{key}/records (operationId createDataObjectRecord); permission lowcode.read; result stored atomically with the state change.
+     * POST /data-objects/{key}/records (operationId createDataObjectRecord); permission lowcode.record.write; result stored atomically with the state change.
      * @param array $body request body
      * @return array<string, mixed>
      */
@@ -188,5 +188,19 @@ final class LowCodeApi
             $req->body($body);
         }
         return Support::arr($this->calls->json($req, $options)) ?? [];
+    }
+
+    /**
+     * Outcome of a record create
+     *
+     * The state of a record create on a REST-backed data object (decision 265), from the operation ledger and, while it is not settled, the connector's outcome lookup by operationId. 404 NOT_FOUND for an operation id that is not a record create of this data object in the caller's tenant.
+     *
+     * GET /data-objects/{key}/records/operations/{operationId} (operationId getDataObjectRecordOperation); permission lowcode.read.
+     * @return Model\DataObjectRecordOperation|null
+     */
+    public function getDataObjectRecordOperation(string $key, string $operationId, ?RequestOptions $options = null): ?Model\DataObjectRecordOperation
+    {
+        $req = ApiRequest::get('/data-objects/' . HttpTransport::seg((string) $key) . '/records/operations/' . HttpTransport::seg((string) $operationId));
+        return $this->calls->model($req, $options, Model\DataObjectRecordOperation::class);
     }
 }

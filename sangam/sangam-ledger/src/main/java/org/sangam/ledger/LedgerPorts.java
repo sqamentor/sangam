@@ -2,6 +2,7 @@
 package org.sangam.ledger;
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +55,33 @@ public final class LedgerPorts {
         void breach(Balance account, LedgerRequest cause);
     }
 
-    /** Audit link: every applied posting is reported with its reference and audit reference (R42 chain). */
+    /**
+     * Audit link: every applied posting is reported with its reference and audit reference (R42 chain). Called after
+     * the posting committed, so it serves stores without a transaction ({@link LedgerStore.InMemory}); a durable store
+     * writes the audit row atomically through its {@link PostingJournal} instead (RM-04).
+     */
     @FunctionalInterface
     public interface AuditLink {
         void posted(String tenant, String reference, String operation, String auditRef, String actor,
                     Map<String, Object> summary);
+    }
+
+    /**
+     * RM-04: the audit row and the general-ledger rows of a posting, written by a JDBC store <b>in the posting's own
+     * transaction</b>, so the {@code LDG_ENTRY} row, the {@code LEDGER_POSTED} audit row and the GL export row commit
+     * together or not at all. A duplicate retry therefore never finds a posting without them, and none is skipped.
+     * Implemented by {@link LedgerJournal}.
+     */
+    public interface PostingJournal {
+
+        /** In the posting transaction, after every leg applied and before the commit. Throwing rolls the posting back. */
+        void posted(Connection c, LedgerStore.Entry entry, List<AccountingEntry> accounting);
+
+        /** Accounting entries with no posting (revaluation), in their own transaction on {@code c}. */
+        void accounting(Connection c, List<AccountingEntry> entries);
+
+        /** After the posting transaction committed (for example: wake the pending-audit drain). Never throws. */
+        default void committed(LedgerStore.Entry entry) {
+        }
     }
 }

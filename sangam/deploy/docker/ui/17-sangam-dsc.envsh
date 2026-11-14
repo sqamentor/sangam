@@ -1,0 +1,29 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Decision 165: origin of the DSC loopback agent on the signer's computer. Sourced by the nginx image's
+# /docker-entrypoint.sh before 20-envsubst-on-templates.sh; a bad value stops the container (fail closed).
+#
+#   SANGAM_DSC_AGENT_ORIGIN   empty (DSC not set up) or exactly http://127.0.0.1:<port> or http://localhost:<port>,
+#                             port 1-65535 without leading zeros, lower case, no path and no trailing slash.
+# http://[::1]:<port> is refused: the agent is IPv4 loopback only (coordinator ruling, 2026-11-13) and the UI accepts
+# only these two forms. The CSP source-list grammar (W3C CSP3 section 2.3.1, host-char = ALPHA / DIGIT / "-") cannot
+# express an IPv6 literal either, so connect-src could not name it.
+# Exported for the templates (always overwritten here, so it cannot be set from outside):
+#   SANGAM_DSC_AGENT_ORIGIN_CHECKED   the validated origin or empty; /config.json dsc.agentUrl and connect-src
+
+sangam_dsc_fail() {
+    echo "17-sangam-dsc.envsh: ERROR: $*" >&2
+    exit 1
+}
+
+sangam_dsc_origin="${SANGAM_DSC_AGENT_ORIGIN:-}"
+if [ -n "$sangam_dsc_origin" ]; then
+    printf '%s\n' "$sangam_dsc_origin" | grep -Eqx 'http://(127\.0\.0\.1|localhost):[1-9][0-9]{0,4}' \
+        || sangam_dsc_fail "SANGAM_DSC_AGENT_ORIGIN must be empty or http://127.0.0.1:<port> or http://localhost:<port> (no path, no IPv6 literal: a CSP source list cannot name [::1])"
+    [ "$(printf '%s' "$sangam_dsc_origin" | wc -l)" -eq 0 ] || sangam_dsc_fail "SANGAM_DSC_AGENT_ORIGIN must be one line"
+    [ "${sangam_dsc_origin##*:}" -le 65535 ] || sangam_dsc_fail "SANGAM_DSC_AGENT_ORIGIN port must be 1-65535"
+fi
+SANGAM_DSC_AGENT_ORIGIN_CHECKED="$sangam_dsc_origin"
+export SANGAM_DSC_AGENT_ORIGIN_CHECKED
+echo "17-sangam-dsc.envsh: dsc.agentUrl=${SANGAM_DSC_AGENT_ORIGIN_CHECKED:-(not set)}"
+unset sangam_dsc_origin

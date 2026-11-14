@@ -137,6 +137,16 @@ class Identifiers(unittest.TestCase):
         self.assertEqual(emit_python.ident("getTaskById"), "get_task_by_id")
         self.assertEqual(emit_dotnet.method_name("fetchAndLock"), "FetchAndLockAsync")
 
+    def test_all_caps_names_become_one_lower_case_word(self):
+        # M-125 ModelDiffSummary members ELEMENT..PROPERTY and the AI / SCIM tags: never eLEMENT, aI, sCIM
+        self.assertEqual(ir.camel("ELEMENT"), "element")
+        self.assertEqual(ir.camel("SCIM"), "scim")
+        self.assertEqual(emit_java.ident("AI"), "ai")
+        self.assertEqual(ir.camel("Idempotency-Key"), "idempotencyKey", "mixed-case names keep camel case")
+        self.assertEqual(ir.camel("processInstanceId"), "processInstanceId")
+        self.assertEqual(ir.camel("X-Sangam-Seat"), "xSangamSeat")
+        self.assertEqual(ir.camel("2fa"), "n2fa", "a leading digit still gets the N prefix")
+
 
 class RealContract(unittest.TestCase):
     @classmethod

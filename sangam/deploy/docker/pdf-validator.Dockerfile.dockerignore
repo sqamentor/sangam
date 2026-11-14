@@ -1,0 +1,10 @@
+# context = sangam/: the reactor poms and Java modules, and the validator notice; no UI, SDK sources or build output
+**/target/**
+**/target-*/**
+**/node_modules/**
+sangam-ui/**
+sdks/dotnet/**
+sdks/python/**
+sdks/typescript/**
+sdks/php/**
+deploy/airgap/out/**

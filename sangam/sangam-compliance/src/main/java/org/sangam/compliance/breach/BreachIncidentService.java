@@ -47,6 +47,9 @@ public final class BreachIncidentService {
     /** M-010c: the compliance roles whose seats {@code sangam-breach-incident} routes its user tasks to. */
     public static final List<String> SEAT_ROLES = List.of("DPO", "CISO");
 
+    /** Owner decision 308: the jurisdiction pack whose detailed report is the DPDP Board report ({@code DPDP_BREACH_REPORTED}). */
+    public static final String DPDP_PACK = "IN";
+
     public record Breach(String breachId, Status status, Instant detectedAt, Instant awareAt, Instant reportDueAt, Instant extensionUntil,
                          Instant authorityNotifiedAt, Instant reportedAt, boolean reportLate, long subjectsAffected, long subjectsNotified,
                          List<String> incidentIds) {
@@ -250,6 +253,12 @@ public final class BreachIncidentService {
                 Status.REPORTED, now, ref, late, tenantId, breachId);
         audit.organisation(c, tenantId, ComplianceAudit.BREACH_REPORT_SUBMITTED, Sql.kv("breach", breachId, "ref", ref, "late", late,
                 "contentHash", Sql.evidenceHash(content), "actor", actor));
+        if (DPDP_PACK.equals(cfg.pack.code())) {
+            // owner decision 308, OJ-06 step 7: the DPDP Board report; other packs keep only the generic event above
+            audit.organisation(c, tenantId, ComplianceAudit.DPDP_BREACH_REPORTED, Sql.kv("breach", breachId, "authority", rules.authority(),
+                    "ref", ref, "late", late, "principalsAffected", b.subjectsAffected(), "principalsNotified", b.subjectsNotified(),
+                    "contentHash", Sql.evidenceHash(content), "actor", actor));
+        }
         return ref;
     }
 

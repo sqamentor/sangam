@@ -30,6 +30,10 @@
     {
       "kind": "SEED",
       "path": "packs/up07-improvement-loop/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up07-improvement-loop/pack.json"
     }
   ],
   "seed": "packs/up07-improvement-loop/seed.json",
@@ -75,6 +79,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "u7_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "CHANGE"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

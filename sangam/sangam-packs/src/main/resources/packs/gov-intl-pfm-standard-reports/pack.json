@@ -1,0 +1,71 @@
+{
+  "id": "gov.intl.pfm-standard-reports",
+  "version": "1.0.0",
+  "name": {
+    "en": "Standard budget execution reports (worldwide PFM)",
+    "hi": "मानक बजट निष्पादन रिपोर्ट (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "In-year and annual budget execution reports (PFM-040, PEFA PI-1, PI-2, PI-28): the ledger extract by every segment and stage (original, revised, released, committed, verified, paid, available) is taken from the ledger, the preparer explains the variances, a different officer approves, and the report is issued by the due date from DMN. The due dates are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-standard-reports"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-standard-reports/sangam-intl-pfm-standard-reports.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-standard-reports/intl-pfm-report-calendar.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-standard-reports/forms/period.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-standard-reports/forms/extractHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-standard-reports/forms/prepare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-standard-reports/forms/review.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-standard-reports/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-standard-reports/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Ledger extract by segment and stage"
+    }
+  ],
+  "covers": [
+    "PFM-040",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-report-calendar",
+      "rule": "SYNTHETIC 15-day report deadline",
+      "reason": "country in-year and annual report deadlines not verified (PFM-040, PEFA PI-28)"
+    }
+  ]
+}

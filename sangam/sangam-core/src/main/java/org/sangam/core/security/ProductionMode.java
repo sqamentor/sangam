@@ -11,6 +11,11 @@ import java.util.Locale;
  * weaker for an installation that relies on a {@code prod} profile). Every production guard asks this class; a guard
  * test ({@code ProductionPredicateGuardTest}) fails on any other profile- or property-based production check.
  * Framework-free, so modules without Spring use it too.
+ *
+ * <p>Decision 143: the full environment resolution (missing, invalid and contradictory settings refused, development
+ * defaults only in a validated development environment) is {@link EnvironmentPolicy}; host adapters (sangam-server's
+ * {@code ProductionEnvironment}) use it. {@link #isProduction(boolean, Collection)} remains for callers that have not
+ * moved yet and treats a missing switch as {@code false}; new code uses the adapter.
  */
 public final class ProductionMode {
 

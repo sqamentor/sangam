@@ -1,0 +1,15 @@
+{
+  "//": "SPDX-License-Identifier: Apache-2.0. M-048: type-check of the Playwright suite (npx tsc -p e2e/tsconfig.json), possible once @playwright/test and @types/node are installed in the test phase (owner decision 106). Kept apart from the app's tsconfig, whose gate must not depend on them.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../playwright.config.ts"]
+}

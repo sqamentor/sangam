@@ -1,0 +1,102 @@
+# SPDX-License-Identifier: Apache-2.0
+# M-090: one Sangam server installation managed by the Sangam operator (deploy/operator/README.md).
+# The operator also validates every field (InstallationSpec); this schema rejects the obvious mistakes at admission.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: sangaminstallations.sangam.io
+spec:
+  group: sangam.io
+  scope: Namespaced
+  names:
+    kind: SangamInstallation
+    listKind: SangamInstallationList
+    plural: sangaminstallations
+    singular: sangaminstallation
+    shortNames: [sgi]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - { name: Phase, type: string, jsonPath: .status.phase }
+        - { name: Image, type: string, jsonPath: .status.serverImage }
+        - { name: Ready, type: integer, jsonPath: .status.readyReplicas }
+        - { name: Age, type: date, jsonPath: .metadata.creationTimestamp }
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          x-kubernetes-validations:
+            - rule: "self.metadata.name.size() <= 40"
+              message: "metadata.name is at most 40 characters (derived names must stay DNS labels)"
+          properties:
+            spec:
+              type: object
+              required: [image, database]
+              properties:
+                image:
+                  type: string
+                  minLength: 1
+                  description: "Server image, repository:tag or repository@sha256:digest (digest recommended in production). Changing it runs one migrate-only Job, then a rolling update."
+                imagePullPolicy: { type: string, enum: [Always, IfNotPresent, Never], default: IfNotPresent }
+                imagePullSecrets:
+                  type: array
+                  items: { type: object, x-kubernetes-preserve-unknown-fields: true }
+                replicas: { type: integer, minimum: 1, maximum: 1000, default: 2 }
+                database:
+                  type: object
+                  required: [type, jdbcUrl, existingSecret]
+                  properties:
+                    type: { type: string, enum: [postgres, oracle, sqlserver, mysql] }
+                    jdbcUrl: { type: string, pattern: "^jdbc:" }
+                    existingSecret: { type: string, description: "Secret with the database user name and password" }
+                    usernameKey: { type: string, default: username }
+                    passwordKey: { type: string, default: password }
+                springProfiles: { type: string, description: "Extra Spring profiles after <database.type>,oidc" }
+                javaToolOptions: { type: string, description: "Keep -Duser.timezone=UTC: the server refuses any other JVM zone (SL-53)" }
+                outboxDestinations: { type: string, description: "SANGAM_OUTBOX_DESTINATIONS; rollup:national is added for a cell" }
+                env:
+                  type: array
+                  description: "Extra container environment (EnvVar). Names the operator sets itself are refused."
+                  items: { type: object, x-kubernetes-preserve-unknown-fields: true }
+                envFrom:
+                  type: array
+                  description: "ConfigMaps / Secrets with the rest of the server settings (EnvFromSource)"
+                  items: { type: object, x-kubernetes-preserve-unknown-fields: true }
+                configMapName: { type: string, description: "Spring configuration mounted at /opt/sangam/config (no secrets)" }
+                keysSecret: { type: string, description: "Key material mounted read-only at /opt/sangam/secrets" }
+                state:
+                  type: object
+                  description: "Writable state at /var/lib/sangam (compliance log archive, cell exports). Without claimName the operator creates <name>-state once and never deletes it."
+                  properties:
+                    claimName: { type: string }
+                    size: { type: string, default: 50Gi }
+                    storageClassName: { type: string }
+                    accessModes: { type: array, items: { type: string } }
+                driversClaimName: { type: string, description: "Claim with customer-supplied JDBC drivers (Oracle, MySQL Connector/J), mounted at /opt/sangam/drivers" }
+                serviceAccountName: { type: string }
+                resources: { type: object, x-kubernetes-preserve-unknown-fields: true }
+                restartToken: { type: string, description: "Change to any new value for a rolling restart" }
+                paused: { type: boolean, default: false, description: "true: the operator changes nothing" }
+                migration:
+                  type: object
+                  properties:
+                    mode: { type: string, enum: [job, none], default: job, description: "job: one migrate-only Job per image (R12); none: the DBA applies the SQL out of band" }
+                    backoffLimit: { type: integer, minimum: 0, maximum: 10, default: 0 }
+                    activeDeadlineSeconds: { type: integer, minimum: 60, default: 1800 }
+                    ttlSecondsAfterFinished: { type: integer, minimum: 0, default: 86400 }
+                    resources: { type: object, x-kubernetes-preserve-unknown-fields: true }
+            status:
+              type: object
+              properties:
+                phase: { type: string, description: "Invalid, Paused, Migrating, MigrationFailed, RollingOut, Ready, Error" }
+                message: { type: string }
+                observedGeneration: { type: integer }
+                migratedImage: { type: string, description: "The last image whose migration completed" }
+                migrationJob: { type: string }
+                serverImage: { type: string }
+                readyReplicas: { type: integer }
+                cellId: { type: string, description: "Cell id once bound; never changes afterwards" }

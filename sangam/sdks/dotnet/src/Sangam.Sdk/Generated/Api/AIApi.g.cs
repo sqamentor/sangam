@@ -270,12 +270,15 @@ public sealed class AIApi
 
     /// <summary>
     /// MCP endpoint
-    /// JSON-RPC. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins; MCP-Protocol-Version, Mcp-Method and Mcp-Name must match the body (400).
+    /// MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, and server/discover is served. A header that does not match the body is 400 HeaderMismatch (-32020); an unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType input_required with inputRequests and an integrity-protected requestState bound to the principal, a time limit and the originating request, and the client repeats the request with a new id, inputResponses and the echoed requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins (403 otherwise).
     /// POST /ai/mcp (operationId aiMcp); permission ai.use.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiMcpAsync(M.AiMcpBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiMcpAsync(M.AiMcpBody body, string mCPProtocolVersion, string mcpMethod, string? mcpName = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/ai/mcp");
+        req.WithHeader("MCP-Protocol-Version", GeneratedCalls.Str(mCPProtocolVersion));
+        req.WithHeader("Mcp-Method", GeneratedCalls.Str(mcpMethod));
+        req.WithHeader("Mcp-Name", GeneratedCalls.Str(mcpName));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
@@ -293,12 +296,13 @@ public sealed class AIApi
 
     /// <summary>
     /// A2A endpoint
-    /// JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
+    /// A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
     /// POST /ai/a2a/{agent} (operationId aiA2a); permission ai.use.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiA2aAsync(string agent, M.AiMcpBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> AiA2aAsync(string agent, M.AiMcpBody body, string? a2AVersion = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/ai/a2a/{HttpTransport.Seg(GeneratedCalls.Str(agent)!)}");
+        req.WithHeader("A2A-Version", GeneratedCalls.Str(a2AVersion));
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
     }

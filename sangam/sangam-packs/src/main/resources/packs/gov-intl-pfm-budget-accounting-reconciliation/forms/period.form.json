@@ -1,0 +1,36 @@
+{
+  "key": "gov-intl-pfm-budget-accounting-reconciliation/period",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-budget-accounting-reconciliation",
+  "title": {
+    "en": "Reconciliation period",
+    "hi": "मिलान अवधि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "reconPeriod",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Reconciliation period",
+        "hi": "मिलान अवधि"
+      }
+    },
+    {
+      "id": "ledgerId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Ledger",
+        "hi": "लेजर"
+      }
+    }
+  ]
+}

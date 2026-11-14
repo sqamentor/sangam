@@ -17,6 +17,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/sec-ecom-gst-tcs/sec-ecom-tcs-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/sec-ecom-gst-tcs/sec-ecom-tcs-rate.dmn"
     },
     {
@@ -65,6 +69,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
+  ],
+  "placeholders": [
+    {
+      "decision": "sec-ecom-tcs-rounding",
+      "rule": "SYNTHETIC TCS rounding: nearest rupee on one total per seller",
+      "reason": "CGST Act s.170 (nearest rupee) is known, but its stage for TCS (per seller, per CGST / SGST / IGST head) was not verified and the pack has no tax-head split; deploy the confirmed policy as a tenant override (decision 139)"
+    }
   ],
   "money": {
     "unit": "MINOR",

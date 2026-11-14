@@ -18,6 +18,8 @@ export interface Problem {
   /** Machine code, e.g. stale-lease, FORM_VERSION_STALE, APPROVAL_INVALIDATED, CONFLICT_RETRY_EXHAUSTED. */
   code?: string;
   traceId?: string;
+  /** The answer's Retry-After header, as sent (decision 265: DATA_OBJECT_CONNECTOR_FAILED and every 503). */
+  retryAfter?: string;
   errors?: { field?: string; message: string }[];
   [k: string]: unknown;
 }
@@ -39,9 +41,22 @@ export class ApiError extends Error {
     const c = this.problem.code ?? this.problem.type ?? '';
     return this.problem.status === 409 && /STALE|stale|APPROVAL_INVALIDATED/.test(c);
   }
+  /** The Retry-After header of the answer in milliseconds (seconds or an HTTP date), or undefined when absent. */
+  get retryAfterMs(): number | undefined {
+    return retryAfterMs(this.problem.retryAfter);
+  }
   get isConflict(): boolean {
     return this.problem.status === 409;
   }
+}
+
+/** A Retry-After value (delay seconds or an HTTP date, RFC 9110 10.2.3) in milliseconds; undefined when unusable. */
+export function retryAfterMs(v: unknown, now: number = Date.now()): number | undefined {
+  if (typeof v !== 'string' || !v.trim()) return undefined;
+  const s = v.trim();
+  if (/^\d+$/.test(s)) return Number(s) * 1000;
+  const at = Date.parse(s);
+  return Number.isNaN(at) ? undefined : Math.max(0, at - now);
 }
 
 export interface Page<T> {
@@ -81,6 +96,11 @@ export function newIdempotencyKey(): string {
   return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
 }
 
+/**
+ * The request URL. A same-origin base (the UI image proxies /api/v1) gives a path; an absolute apiBase on another
+ * origin (M-043 web components embedded in another application, which the server allows through
+ * sangam.security.cors.allowed-origins) keeps its origin.
+ */
 export function buildUrl(path: string, query?: Query, baseOverride?: string): string {
   const base = (baseOverride ?? (path.startsWith('/engine-rest') ? '' : config().apiBase)).replace(/\/$/, '');
   const url = new URL(base + path, window.location.origin);
@@ -91,7 +111,7 @@ export function buildUrl(path: string, query?: Query, baseOverride?: string): st
       else url.searchParams.set(k, String(v));
     }
   }
-  return url.pathname + url.search;
+  return url.origin === window.location.origin ? url.pathname + url.search : url.href;
 }
 
 export interface RequestOptions {
@@ -122,15 +142,17 @@ async function headersFor(method: string, opts: RequestOptions): Promise<Headers
 async function toProblem(res: Response): Promise<Problem> {
   const ct = res.headers.get('Content-Type') ?? '';
   const traceId = res.headers.get('traceparent')?.split('-')[1] ?? res.headers.get('X-Trace-Id') ?? undefined;
+  // a 503 (BACKPRESSURE, DATA_OBJECT_CONNECTOR_FAILED, ...) or 429 says when to retry; kept so callers can honour it
+  const retryAfter = res.headers.get('Retry-After') ?? undefined;
   if (ct.includes('json')) {
     try {
       const p = (await res.json()) as Problem;
-      return { ...p, status: p.status ?? res.status, title: p.title ?? res.statusText, traceId: p.traceId ?? traceId };
+      return { ...p, status: p.status ?? res.status, title: p.title ?? res.statusText, traceId: p.traceId ?? traceId, retryAfter };
     } catch {
       /* fall through */
     }
   }
-  return { title: res.statusText || 'Request failed', status: res.status, traceId };
+  return { title: res.statusText || 'Request failed', status: res.status, traceId, retryAfter };
 }
 
 export async function raw(method: string, path: string, opts: RequestOptions = {}): Promise<Response> {

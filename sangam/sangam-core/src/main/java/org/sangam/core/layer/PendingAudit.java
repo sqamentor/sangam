@@ -96,6 +96,7 @@ public final class PendingAudit {
      * safe on a connection other than the one holding the root's lock.
      */
     public void record(Connection c, String tenant, String chainId, String eventType, Map<String, ?> payload) {
+        AuditChain.requireTenant(tenant, eventType);
         Jdbc.update(c, "INSERT INTO AUDIT_PENDING(tenant_id, chain_id, event_type, payload, recorded_at, attempts)"
                         + " VALUES (?,?,?,?," + dialect.now() + ",0)",
                 tenant, chainId, eventType, CanonicalJson.write(payload == null ? Map.of() : payload));

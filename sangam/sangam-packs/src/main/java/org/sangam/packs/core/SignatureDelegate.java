@@ -18,14 +18,25 @@ import org.sangam.packs.port.PackRuntime;
  * {@code signMethod}, ESP chosen by {@code espId} for a retry with another ESP) or {@code APPLY_RESULT} (message
  * {@value org.sangam.packs.port.ConnectorGateway#MSG_SIGNATURE_RESULT} with {@code signatureStatus}).
  * Sets {@code signatureStatus} COMPLETED / FAILED / PENDING / UNKNOWN; {@code signatureCertSerial} on success.
+ *
+ * <p>Decision 238: with field {@code browserSigner} true (a step whose officer signs at the task with the browser DSC
+ * signer, checked by {@link DscSignatureGuardListener}), a {@code dsc} request records the evidence the gate verified
+ * (task, document, type, signer) and never calls {@code dsc.sign}; no evidence means FAILED. {@code dsc.sign} stays only
+ * for flows without the browser signer.
  */
 public class SignatureDelegate implements JavaDelegate {
 
     private Expression op;
     private Expression purpose;
+    private Expression browserSigner;
 
     @Override
     public void execute(DelegateExecution ex) {
+        if ("REQUEST".equals(Vars.field(op, ex, "REQUEST")) && Vars.fieldBool(browserSigner, ex, false)
+                && "dsc".equalsIgnoreCase(Vars.str(ex, "signMethod", "esign"))) {
+            recordBrowserEvidence(ex);
+            return;
+        }
         if ("APPLY_RESULT".equals(Vars.field(op, ex, "REQUEST"))) {
             String st = Vars.str(ex, "signatureResult", "UNKNOWN");
             ex.setVariable("signatureStatus", st);
@@ -62,5 +73,27 @@ public class SignatureDelegate implements JavaDelegate {
             default -> {
             }
         }
+    }
+
+    /** Decision 238: the signature was verified at the task; record that evidence once, with no connector call. */
+    private static void recordBrowserEvidence(DelegateExecution ex) {
+        String task = Vars.str(ex, DscSignatureGuardListener.EVIDENCE_TASK);
+        String doc = Vars.str(ex, DscSignatureGuardListener.EVIDENCE_DOCUMENT);
+        String type = Vars.str(ex, DscSignatureGuardListener.EVIDENCE_TYPE);
+        String signer = Vars.str(ex, DscSignatureGuardListener.EVIDENCE_SIGNER);
+        for (String v : new String[] {DscSignatureGuardListener.EVIDENCE_TASK,
+                DscSignatureGuardListener.EVIDENCE_DOCUMENT, DscSignatureGuardListener.EVIDENCE_TYPE,
+                DscSignatureGuardListener.EVIDENCE_SIGNER}) {
+            ex.setVariable(v, null); // used once: a later step never reuses this evidence
+        }
+        if (task == null || doc == null || signer == null) {
+            ex.setVariable("signatureStatus", "FAILED");
+            Vars.audit(ex, "SIGNATURE_FAILED", Vars.map("reason", "DSC_EVIDENCE_MISSING", "connector", null));
+            return;
+        }
+        ex.setVariable("signatureStatus", "COMPLETED");
+        ex.setVariable("signatureEvidence", "DSC_BROWSER:" + task + ":" + doc);
+        Vars.audit(ex, "SIGNATURE_APPLIED", Vars.map("evidence", "DSC_BROWSER_VERIFIED", "taskId", task,
+                "documentId", doc, "documentType", type, "signer", signer, "connector", null));
     }
 }

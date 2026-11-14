@@ -1,0 +1,129 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0. M-136 replay fixture, owner decision 151. Java form: org.sangam.modeller.replay.ReplayFixture; checks beyond this schema (hash of inline content, strictly increasing seq, non-decreasing event time, per-type payload members, canonical decimal text, named zones, no credential-like configuration keys) are in ReplayFixtures.validate.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sangam:replay-fixture:1",
+  "title": "Sangam replay fixture, schema sangam.replay-fixture/1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "fixtureId", "synthetic", "models", "initialState", "tenant", "versions", "startedAt", "events", "observed"],
+  "properties": {
+    "schemaVersion": {"const": "sangam.replay-fixture/1"},
+    "fixtureId": {"type": "string", "minLength": 1},
+    "scenario": {"type": ["string", "null"]},
+    "synthetic": {"type": "boolean"},
+    "models": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/model"}},
+    "initialState": {
+      "type": "object", "additionalProperties": false, "required": ["definitionKey"],
+      "properties": {
+        "definitionKey": {"type": "string", "minLength": 1},
+        "businessKey": {"type": ["string", "null"]},
+        "variables": {"$ref": "#/$defs/values"}
+      }
+    },
+    "configuration": {"type": "object", "additionalProperties": {"type": "string"}},
+    "tenant": {
+      "type": "object", "additionalProperties": false, "required": ["tenantId", "zoneId"],
+      "properties": {
+        "tenantId": {"type": "string", "minLength": 1},
+        "actorId": {"type": ["string", "null"]},
+        "zoneId": {"type": "string", "minLength": 1, "description": "IANA zone id with historical rules, never a fixed offset"}
+      }
+    },
+    "versions": {
+      "type": "object", "additionalProperties": false, "required": ["engine", "evaluator"],
+      "properties": {
+        "engine": {"type": "string", "minLength": 1},
+        "evaluator": {"type": "string", "minLength": 1},
+        "product": {"type": ["string", "null"]}
+      }
+    },
+    "startedAt": {"$ref": "#/$defs/instant"},
+    "events": {"type": "array", "items": {"$ref": "#/$defs/event"}},
+    "observed": {"$ref": "#/$defs/observation"},
+    "unsupported": {"type": "array", "items": {"type": "string"}, "description": "non-empty: the scenario is refused for replay"}
+  },
+  "$defs": {
+    "instant": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?Z$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "model": {
+      "type": "object", "additionalProperties": false,
+      "required": ["resource", "kind", "definitionKey", "version", "sha256"],
+      "properties": {
+        "resource": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["BPMN", "DMN", "CMMN", "FORM"]},
+        "definitionKey": {"type": "string", "minLength": 1},
+        "version": {"type": "integer"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "content": {"type": ["string", "null"]},
+        "reference": {"type": ["string", "null"]}
+      },
+      "oneOf": [
+        {"required": ["content"], "properties": {"content": {"type": "string"}, "reference": {"type": "null"}}},
+        {"required": ["reference"], "properties": {"reference": {"type": "string", "minLength": 1}, "content": {"type": "null"}}}
+      ]
+    },
+    "value": {
+      "type": "object", "additionalProperties": false, "required": ["type"],
+      "properties": {
+        "type": {"enum": ["NULL", "STRING", "BOOLEAN", "LONG", "DECIMAL", "INSTANT", "LOCAL_DATE", "LOCAL_DATE_TIME", "JSON", "BYTES_SHA256"]},
+        "value": {"type": ["string", "null"], "description": "canonical text; DECIMAL is engine decimal text v1 (the canonical BigDecimal.toString form, at most 1000 characters, e.g. 0.10 or 1E+3), never a JSON number"},
+        "zone": {"type": ["string", "null"], "description": "required for LOCAL_DATE and LOCAL_DATE_TIME only"}
+      }
+    },
+    "values": {"type": "object", "additionalProperties": {"$ref": "#/$defs/value"}},
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["seq", "type", "executionId", "attempt", "at"],
+      "properties": {
+        "seq": {"type": "integer"},
+        "type": {"enum": ["CLOCK_READ", "TIMER_SCHEDULED", "TIMER_FIRED", "MESSAGE_DELIVERED", "EXTERNAL_TASK_RESULT", "RANDOM_VALUE", "GENERATED_ID", "EXTERNAL_LOOKUP"]},
+        "executionId": {"type": "string", "minLength": 1},
+        "activityId": {"type": ["string", "null"]},
+        "attempt": {"type": "integer", "minimum": 1},
+        "at": {"$ref": "#/$defs/instant"},
+        "outcome": {"enum": ["SUCCESS", "FAILURE", "BPMN_ERROR", "TIMEOUT", null]},
+        "retriesLeft": {"type": ["integer", "null"]},
+        "payload": {"$ref": "#/$defs/values"},
+        "activityInstanceId": {"type": ["string", "null"], "description": "optional; recorded for diagnostics only, never compared"}
+      }
+    },
+    "observation": {
+      "type": "object", "additionalProperties": false, "required": ["endState"],
+      "properties": {
+        "endState": {"type": "string", "minLength": 1},
+        "outputs": {"$ref": "#/$defs/values"},
+        "transitions": {"type": "array", "items": {
+          "type": "object", "additionalProperties": false, "required": ["activityId", "kind"],
+          "properties": {
+            "executionId": {"type": ["string", "null"]},
+            "activityId": {"type": "string"},
+            "kind": {"enum": ["STARTED", "COMPLETED", "CANCELLED", "FAILED"]}
+          }}},
+        "decisions": {"type": "array", "items": {
+          "type": "object", "additionalProperties": false, "required": ["decisionKey"],
+          "properties": {
+            "activityId": {"type": ["string", "null"]},
+            "decisionKey": {"type": "string"},
+            "inputs": {"$ref": "#/$defs/values"},
+            "matchedRules": {"type": "array", "items": {"type": "string"}},
+            "outputs": {"type": "array", "items": {"$ref": "#/$defs/values"}}
+          }}},
+        "deadlines": {"type": "array", "items": {
+          "type": "object", "additionalProperties": false, "required": ["dueAt"],
+          "properties": {
+            "activityId": {"type": ["string", "null"]},
+            "kind": {"type": ["string", "null"]},
+            "dueAt": {"$ref": "#/$defs/instant"}
+          }}},
+        "sideEffects": {"type": "array", "items": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "activityId": {"type": ["string", "null"]},
+            "channel": {"type": ["string", "null"]},
+            "idempotencyKey": {"type": ["string", "null"]},
+            "payloadSha256": {"$ref": "#/$defs/sha256"}
+          }}}
+      }
+    }
+  }
+}

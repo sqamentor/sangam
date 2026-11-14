@@ -4,7 +4,7 @@
 profile:
   id: GOI
   layer: government
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2024-04-01'
   extends:
   - IN
@@ -26,6 +26,9 @@ placeholders:
 - path: grants.cna.model1Threshold
   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (>= 100 cr OM
     05-02-2024 vs TSA > 500 cr in another source)'
+- path: procurement.scientificDepartment
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (the class is
+    per department; the department layer sets it from procurement.scientificDepartments)'
 - path: budgetControl.rushOfExpenditure.q4MaxPercent
   reason: 'percentages still [U]: keep unset'
 - path: accounts.marchCuts

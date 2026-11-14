@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Cash plan. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_cash_plan" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_pfm_periodClosed" name="sangam.pfm.periodClosed"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-cash-plan" name="Cash plan" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-cash-plan</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>planPeriod,ledgerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="cp_start" name="Plan period opened" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-cash-plan/period"></startEvent>
+    <serviceTask id="cp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ledgerId=BUDGET;cashManagerSeat=CASH-MANAGER;budgetOfficeSeat=BUDGET-OFFICE</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="cp_cfg" name="Cash plan cycle (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-cash-plan</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="cp_forecast_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>forecastRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="cp_forecast" name="Cash forecast" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.cashForecast</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>forecast</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,planPeriod,cashPlanHorizon</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>forecast</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="cp_forecastGw" name="Cash forecast?" default="intl_pfm_cash_plan_f8"></exclusiveGateway>
+    <userTask id="cp_forecastHold" name="Cash forecast not confirmed: check the ledger" operaton:candidateGroups="${cashManagerSeat}" operaton:formKey="sangam:gov-intl-pfm-cash-plan/forecastHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="cp_prepare" name="Set the release plan from the forecast" operaton:candidateGroups="${cashManagerSeat}" operaton:formKey="sangam:gov-intl-pfm-cash-plan/prepare"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="cp_concur" name="Concur with the cash plan (budget office)" operaton:candidateGroups="${budgetOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-cash-plan/concur"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>cp_prepare</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>concurDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="cp_concurGw" name="" default="intl_pfm_cash_plan_f12"></exclusiveGateway>
+    <serviceTask id="cp_doc" name="Issue the cash plan" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>cash-plan</operaton:string></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="cp_wait" name="Update or close?"></eventBasedGateway>
+    <intermediateCatchEvent id="cp_review" name="In-year update due"><timerEventDefinition><timeDuration xsi:type="tFormalExpression">${cashPlanReviewSpec}</timeDuration></timerEventDefinition></intermediateCatchEvent>
+    <intermediateCatchEvent id="cp_closed" name="Plan period closed"><messageEventDefinition messageRef="msg_sangam_pfm_periodClosed"/></intermediateCatchEvent>
+    <endEvent id="cp_end" name="Plan period closed"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CLOSED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['forecastRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_cash_plan_f1" sourceRef="cp_forecast_clear" targetRef="cp_forecast"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f2" sourceRef="cp_forecast" targetRef="cp_forecastGw"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f3" sourceRef="cp_forecastHold" targetRef="cp_forecast_clear"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f4" name="not confirmed" sourceRef="cp_forecastGw" targetRef="cp_forecastHold"><conditionExpression xsi:type="tFormalExpression">${forecastStatus != 'COMPLETED' || forecastRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_cash_plan_f5" sourceRef="cp_start" targetRef="cp_defaults"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f6" sourceRef="cp_defaults" targetRef="cp_cfg"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f7" sourceRef="cp_cfg" targetRef="cp_forecast_clear"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f8" name="confirmed" sourceRef="cp_forecastGw" targetRef="cp_prepare"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f9" sourceRef="cp_prepare" targetRef="cp_concur"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f10" sourceRef="cp_concur" targetRef="cp_concurGw"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f11" name="returned" sourceRef="cp_concurGw" targetRef="cp_prepare"><conditionExpression xsi:type="tFormalExpression">${concurDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_cash_plan_f12" name="concurred" sourceRef="cp_concurGw" targetRef="cp_doc"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f13" sourceRef="cp_doc" targetRef="cp_wait"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f14" sourceRef="cp_wait" targetRef="cp_review"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f15" sourceRef="cp_wait" targetRef="cp_closed"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f16" sourceRef="cp_review" targetRef="cp_forecast_clear"/>
+    <sequenceFlow id="intl_pfm_cash_plan_f17" sourceRef="cp_closed" targetRef="cp_end"/>
+    <subProcess id="cp_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="cp_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="cp_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="cp_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="cp_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_cash_plan_f18" sourceRef="cp_withdrawStart" targetRef="cp_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_cash_plan_f19" sourceRef="cp_withdrawKind" targetRef="cp_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_cash_plan_f20" sourceRef="cp_withdrawCall" targetRef="cp_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="cp_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="cp_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="cp_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="cp_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="cp_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_cash_plan_f21" sourceRef="cp_cancelStart" targetRef="cp_cancelKind"/>
+      <sequenceFlow id="intl_pfm_cash_plan_f22" sourceRef="cp_cancelKind" targetRef="cp_cancelCall"/>
+      <sequenceFlow id="intl_pfm_cash_plan_f23" sourceRef="cp_cancelCall" targetRef="cp_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_cash_plan_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_cash_plan_plane" bpmnElement="sangam-intl-pfm-cash-plan">
+      <bpmndi:BPMNShape id="cp_start_di" bpmnElement="cp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_defaults_di" bpmnElement="cp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_cfg_di" bpmnElement="cp_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_forecast_clear_di" bpmnElement="cp_forecast_clear"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_forecast_di" bpmnElement="cp_forecast"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_forecastGw_di" bpmnElement="cp_forecastGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_forecastHold_di" bpmnElement="cp_forecastHold"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_prepare_di" bpmnElement="cp_prepare"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_concur_di" bpmnElement="cp_concur"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_concurGw_di" bpmnElement="cp_concurGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_doc_di" bpmnElement="cp_doc"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_wait_di" bpmnElement="cp_wait"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_review_di" bpmnElement="cp_review"><dc:Bounds x="1867" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_closed_di" bpmnElement="cp_closed"><dc:Bounds x="1867" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_end_di" bpmnElement="cp_end"><dc:Bounds x="2032" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_withdraw_di" bpmnElement="cp_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_withdrawStart_di" bpmnElement="cp_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_withdrawKind_di" bpmnElement="cp_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_withdrawCall_di" bpmnElement="cp_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_withdrawEnd_di" bpmnElement="cp_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_cancel_di" bpmnElement="cp_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_cancelStart_di" bpmnElement="cp_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_cancelKind_di" bpmnElement="cp_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_cancelCall_di" bpmnElement="cp_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="cp_cancelEnd_di" bpmnElement="cp_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f1_di" bpmnElement="intl_pfm_cash_plan_f1"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f2_di" bpmnElement="intl_pfm_cash_plan_f2"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f3_di" bpmnElement="intl_pfm_cash_plan_f3"><di:waypoint x="1060" y="235"/><di:waypoint x="1060" y="267"/><di:waypoint x="565" y="267"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f4_di" bpmnElement="intl_pfm_cash_plan_f4"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f5_di" bpmnElement="intl_pfm_cash_plan_f5"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f6_di" bpmnElement="intl_pfm_cash_plan_f6"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f7_di" bpmnElement="intl_pfm_cash_plan_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f8_di" bpmnElement="intl_pfm_cash_plan_f8"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f9_di" bpmnElement="intl_pfm_cash_plan_f9"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f10_di" bpmnElement="intl_pfm_cash_plan_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f11_di" bpmnElement="intl_pfm_cash_plan_f11"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="142"/><di:waypoint x="1060" y="142"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f12_di" bpmnElement="intl_pfm_cash_plan_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f13_di" bpmnElement="intl_pfm_cash_plan_f13"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f14_di" bpmnElement="intl_pfm_cash_plan_f14"><di:waypoint x="1745" y="70"/><di:waypoint x="1806" y="70"/><di:waypoint x="1806" y="195"/><di:waypoint x="1867" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f15_di" bpmnElement="intl_pfm_cash_plan_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1867" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f16_di" bpmnElement="intl_pfm_cash_plan_f16"><di:waypoint x="1885" y="213"/><di:waypoint x="1885" y="252"/><di:waypoint x="565" y="252"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f17_di" bpmnElement="intl_pfm_cash_plan_f17"><di:waypoint x="1903" y="70"/><di:waypoint x="2032" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f18_di" bpmnElement="intl_pfm_cash_plan_f18"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f19_di" bpmnElement="intl_pfm_cash_plan_f19"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f20_di" bpmnElement="intl_pfm_cash_plan_f20"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f21_di" bpmnElement="intl_pfm_cash_plan_f21"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f22_di" bpmnElement="intl_pfm_cash_plan_f22"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_cash_plan_f23_di" bpmnElement="intl_pfm_cash_plan_f23"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

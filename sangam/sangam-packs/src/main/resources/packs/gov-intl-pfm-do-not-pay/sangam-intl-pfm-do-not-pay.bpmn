@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Do-Not-Pay payee screening. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_do_not_pay" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-do-not-pay" name="Do-Not-Pay payee screening" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-do-not-pay</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>payee,payeeIdentifier,paymentRef,amount</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="dn_start" name="Payment to screen" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-do-not-pay/payment"></startEvent>
+    <serviceTask id="dn_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>screeningSeat=PAYEE-SCREENING;reviewerSeat=ACCOUNTING-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dn_screen_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>exclusionMatch=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="dn_screen" name="Screen the payee" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payee.exclusion</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>screen</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>payee,payeeIdentifier</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>exclusion</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="dn_screenGw" name="Screen the payee?" default="intl_pfm_do_not_pay_f8"></exclusiveGateway>
+    <userTask id="dn_screenHold" name="Screening not confirmed: payment held, confirm the lists" operaton:candidateGroups="${screeningSeat}" operaton:formKey="sangam:gov-intl-pfm-do-not-pay/screenHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="dn_adjudicate" name="Adjudicate the list match" operaton:candidateGroups="${screeningSeat}" operaton:formKey="sangam:gov-intl-pfm-do-not-pay/adjudicate"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>matchDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="dn_endClear" name="Payee clear"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CLEARED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['exclusionMatch']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="dn_review" name="Confirm the adjudication (second officer)" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:gov-intl-pfm-do-not-pay/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>dn_adjudicate</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="dn_reviewGw" name="" default="intl_pfm_do_not_pay_f12"></exclusiveGateway>
+    <exclusiveGateway id="dn_matchGw" name="Same person?" default="intl_pfm_do_not_pay_f15"></exclusiveGateway>
+    <serviceTask id="dn_blocked" name="Payment blocked" operaton:class="org.sangam.packs.core.NotifyDelegate"><extensionElements><operaton:field name="template"><operaton:string>payment-blocked</operaton:string></operaton:field><operaton:field name="channel"><operaton:string>inapp</operaton:string></operaton:field><operaton:field name="recipientVar"><operaton:string>initiatorSeat</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="dn_endBlocked" name="Payment blocked"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>BLOCKED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['matchDecision']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="dn_endOverride" name="Payee cleared (false positive)"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CLEARED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['matchDecision']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_do_not_pay_f1" sourceRef="dn_screen_clear" targetRef="dn_screen"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f2" sourceRef="dn_screen" targetRef="dn_screenGw"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f3" sourceRef="dn_screenHold" targetRef="dn_screen_clear"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f4" name="not confirmed" sourceRef="dn_screenGw" targetRef="dn_screenHold"><conditionExpression xsi:type="tFormalExpression">${exclusionStatus != 'COMPLETED' || exclusionMatch == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_do_not_pay_f5" sourceRef="dn_start" targetRef="dn_defaults"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f6" sourceRef="dn_defaults" targetRef="dn_screen_clear"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f7" name="match" sourceRef="dn_screenGw" targetRef="dn_adjudicate"><conditionExpression xsi:type="tFormalExpression">${exclusionMatch}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_do_not_pay_f8" name="no match" sourceRef="dn_screenGw" targetRef="dn_endClear"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f9" sourceRef="dn_adjudicate" targetRef="dn_review"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f10" sourceRef="dn_review" targetRef="dn_reviewGw"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f11" name="returned" sourceRef="dn_reviewGw" targetRef="dn_adjudicate"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_do_not_pay_f12" name="confirmed" sourceRef="dn_reviewGw" targetRef="dn_matchGw"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f13" name="true match" sourceRef="dn_matchGw" targetRef="dn_blocked"><conditionExpression xsi:type="tFormalExpression">${matchDecision == 'trueMatch'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_do_not_pay_f14" sourceRef="dn_blocked" targetRef="dn_endBlocked"/>
+    <sequenceFlow id="intl_pfm_do_not_pay_f15" name="false positive" sourceRef="dn_matchGw" targetRef="dn_endOverride"/>
+    <subProcess id="dn_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="dn_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="dn_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dn_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dn_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_do_not_pay_f16" sourceRef="dn_withdrawStart" targetRef="dn_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_do_not_pay_f17" sourceRef="dn_withdrawKind" targetRef="dn_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_do_not_pay_f18" sourceRef="dn_withdrawCall" targetRef="dn_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="dn_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="dn_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="dn_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="dn_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="dn_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_do_not_pay_f19" sourceRef="dn_cancelStart" targetRef="dn_cancelKind"/>
+      <sequenceFlow id="intl_pfm_do_not_pay_f20" sourceRef="dn_cancelKind" targetRef="dn_cancelCall"/>
+      <sequenceFlow id="intl_pfm_do_not_pay_f21" sourceRef="dn_cancelCall" targetRef="dn_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_do_not_pay_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_do_not_pay_plane" bpmnElement="sangam-intl-pfm-do-not-pay">
+      <bpmndi:BPMNShape id="dn_start_di" bpmnElement="dn_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_defaults_di" bpmnElement="dn_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_screen_clear_di" bpmnElement="dn_screen_clear"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_screen_di" bpmnElement="dn_screen"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_screenGw_di" bpmnElement="dn_screenGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_screenHold_di" bpmnElement="dn_screenHold"><dc:Bounds x="845" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_adjudicate_di" bpmnElement="dn_adjudicate"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_endClear_di" bpmnElement="dn_endClear"><dc:Bounds x="877" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_review_di" bpmnElement="dn_review"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_reviewGw_di" bpmnElement="dn_reviewGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_matchGw_di" bpmnElement="dn_matchGw"><dc:Bounds x="1365" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_blocked_di" bpmnElement="dn_blocked"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_endBlocked_di" bpmnElement="dn_endBlocked"><dc:Bounds x="1702" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_endOverride_di" bpmnElement="dn_endOverride"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_withdraw_di" bpmnElement="dn_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_withdrawStart_di" bpmnElement="dn_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_withdrawKind_di" bpmnElement="dn_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_withdrawCall_di" bpmnElement="dn_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_withdrawEnd_di" bpmnElement="dn_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_cancel_di" bpmnElement="dn_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_cancelStart_di" bpmnElement="dn_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_cancelKind_di" bpmnElement="dn_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_cancelCall_di" bpmnElement="dn_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="dn_cancelEnd_di" bpmnElement="dn_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f1_di" bpmnElement="intl_pfm_do_not_pay_f1"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f2_di" bpmnElement="intl_pfm_do_not_pay_f2"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f3_di" bpmnElement="intl_pfm_do_not_pay_f3"><di:waypoint x="895" y="360"/><di:waypoint x="895" y="392"/><di:waypoint x="400" y="392"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f4_di" bpmnElement="intl_pfm_do_not_pay_f4"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="320"/><di:waypoint x="845" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f5_di" bpmnElement="intl_pfm_do_not_pay_f5"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f6_di" bpmnElement="intl_pfm_do_not_pay_f6"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f7_di" bpmnElement="intl_pfm_do_not_pay_f7"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f8_di" bpmnElement="intl_pfm_do_not_pay_f8"><di:waypoint x="755" y="70"/><di:waypoint x="877" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f9_di" bpmnElement="intl_pfm_do_not_pay_f9"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f10_di" bpmnElement="intl_pfm_do_not_pay_f10"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f11_di" bpmnElement="intl_pfm_do_not_pay_f11"><di:waypoint x="1225" y="220"/><di:waypoint x="1225" y="267"/><di:waypoint x="895" y="267"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f12_di" bpmnElement="intl_pfm_do_not_pay_f12"><di:waypoint x="1250" y="195"/><di:waypoint x="1365" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f13_di" bpmnElement="intl_pfm_do_not_pay_f13"><di:waypoint x="1415" y="195"/><di:waypoint x="1460" y="195"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f14_di" bpmnElement="intl_pfm_do_not_pay_f14"><di:waypoint x="1605" y="320"/><di:waypoint x="1702" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f15_di" bpmnElement="intl_pfm_do_not_pay_f15"><di:waypoint x="1415" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f16_di" bpmnElement="intl_pfm_do_not_pay_f16"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f17_di" bpmnElement="intl_pfm_do_not_pay_f17"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f18_di" bpmnElement="intl_pfm_do_not_pay_f18"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f19_di" bpmnElement="intl_pfm_do_not_pay_f19"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f20_di" bpmnElement="intl_pfm_do_not_pay_f20"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_do_not_pay_f21_di" bpmnElement="intl_pfm_do_not_pay_f21"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

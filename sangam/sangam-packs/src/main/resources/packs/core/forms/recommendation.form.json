@@ -103,6 +103,15 @@
         "en": "Shown payload hash",
         "hi": "प्रदर्शित विवरण का हैश"
       }
+    },
+    {
+      "id": "dscDocumentId",
+      "type": "hidden",
+      "required": false,
+      "label": {
+        "en": "Document signed with DSC",
+        "hi": "डीएससी से हस्ताक्षरित दस्तावेज़"
+      }
     }
   ],
   "decision": {

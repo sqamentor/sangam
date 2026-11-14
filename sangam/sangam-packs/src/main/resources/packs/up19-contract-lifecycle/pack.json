@@ -50,6 +50,10 @@
     {
       "kind": "SEED",
       "path": "packs/up19-contract-lifecycle/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up19-contract-lifecycle/pack.json"
     }
   ],
   "seed": "packs/up19-contract-lifecycle/seed.json",
@@ -83,6 +87,15 @@
   "calls": [
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "u19_sign": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "CONTRACT"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

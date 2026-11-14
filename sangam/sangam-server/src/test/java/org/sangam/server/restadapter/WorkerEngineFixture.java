@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.rest.config.SpringTxSupport;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
@@ -58,10 +59,11 @@ final class WorkerEngineFixture implements AutoCloseable {
                 + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         ds.setUser("sa");
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required by the engine, the server's default
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         engine = SangamEngineFactory.build(ds, s, "h2");
-        tx = new TxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
+        tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
         RestProperties props = new RestProperties();
         work = new EngineAdapterWorkAdapter(engine, tx, new JdbcAuditAdapter(tx, null, null, props), props);
         for (String tenant : new String[]{"tA", "tB"}) {

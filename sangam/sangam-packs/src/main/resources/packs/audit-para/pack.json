@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/audit-para/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/audit-para/pack.json"
     }
   ],
   "seed": "packs/audit-para/seed.json",
@@ -63,6 +67,15 @@
   "calls": [
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "ap2_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "AUDIT_REPLY"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

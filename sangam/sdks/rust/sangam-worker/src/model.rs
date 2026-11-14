@@ -59,7 +59,8 @@ pub struct ExternalWork {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<WorkOperation>,    /// M-062: W3C trace context the engine stored for the task; None when none was stored.
+    pub operation: Option<WorkOperation>,
+    /// M-062: W3C trace context the engine stored for the task; None when none was stored.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace_context: Option<TraceContext>,
 }

@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
  *   <li>a pack uses money but does not declare {@code money} (unit MINOR, currency, exponent, variables) in
  *       {@code pack.json}, or the declaration misses a money variable its DMN or forms use.</li>
  * </ol>
+ * A second rule (decision 138, RM-36) keeps binary floating point out of all sangam-packs main code.
  */
 class PackMoneyGuardTest {
 
@@ -275,6 +276,118 @@ class PackMoneyGuardTest {
         }
         assertTrue(packsWithMoney > 50, "packs with money: " + packsWithMoney);
         assertTrue(problems.isEmpty(), problems.size() + " money problem(s):\n" + String.join("\n", problems));
+    }
+
+    static final Path MAIN_JAVA = Path.of("src", "main", "java");
+    /** A binary floating-point type, value or conversion in code (decision 138 forbids every float or Double). */
+    static final Pattern FLOAT_CODE = Pattern.compile("\\b(double|float|Double|Float|doubleValue|floatValue"
+            + "|parseDouble|parseFloat|Math\\.(pow|sqrt|exp|log|log10|random|floor|ceil|rint|round))\\b");
+    /**
+     * The only allowed uses, each a refusal of a binary float, never a production of one: file (relative to
+     * {@code src/main/java}) to the number of code lines that may match.
+     */
+    static final java.util.Map<String, Integer> FLOAT_REFUSALS = java.util.Map.of(
+            "org/sangam/packs/engine/DecimalText.java", 1);
+
+    /**
+     * Code with comments, string, text-block and character literals blanked (a mention is not a use); line breaks are
+     * kept, so line numbers stay those of the file.
+     */
+    static String code(String java) {
+        StringBuilder out = new StringBuilder(java.length());
+        int i = 0;
+        int n = java.length();
+        while (i < n) {
+            char c = java.charAt(i);
+            int end;
+            if (c == '/' && i + 1 < n && java.charAt(i + 1) == '/') {
+                end = java.indexOf('\n', i);
+                end = end < 0 ? n : end;
+            } else if (c == '/' && i + 1 < n && java.charAt(i + 1) == '*') {
+                end = java.indexOf("*/", i + 2);
+                end = end < 0 ? n : end + 2;
+            } else if (java.startsWith("\"\"\"", i)) {
+                end = java.indexOf("\"\"\"", i + 3);
+                end = end < 0 ? n : end + 3;
+            } else if (c == '"' || c == '\'') {
+                end = i + 1;
+                while (end < n && java.charAt(end) != c && java.charAt(end) != '\n') {
+                    end += java.charAt(end) == '\\' ? 2 : 1;
+                }
+                end = Math.min(n, end + 1);
+            } else {
+                out.append(c);
+                i++;
+                continue;
+            }
+            for (int k = i; k < end; k++) {
+                out.append(java.charAt(k) == '\n' ? '\n' : ' ');
+            }
+            i = end;
+        }
+        return out.toString();
+    }
+
+    /** The code lines of one main file that use a binary float. */
+    static List<String> floatLines(String where, String java) {
+        List<String> out = new ArrayList<>();
+        String[] lines = code(java).split("\n", -1);
+        for (int i = 0; i < lines.length; i++) {
+            if (FLOAT_CODE.matcher(lines[i]).find()) {
+                out.add(where + ":" + (i + 1) + ": " + lines[i].trim());
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Decision 138 (RM-36): no sangam-packs main code holds, produces or converts through a binary floating-point
+     * value; money is minor units ({@code long}) or {@link java.math.BigDecimal} end to end. The few refusals of a
+     * float are listed with their exact count, so a new use fails here and a removed refusal fails as stale.
+     */
+    @Test
+    void noPackCodeUsesBinaryFloatingPoint() throws IOException {
+        List<String> problems = new ArrayList<>();
+        java.util.Map<String, Integer> seen = new java.util.TreeMap<>();
+        try (Stream<Path> s = Files.walk(MAIN_JAVA)) {
+            for (Path p : s.filter(f -> f.toString().endsWith(".java")).sorted().toList()) {
+                String rel = MAIN_JAVA.relativize(p).toString().replace('\\', '/');
+                List<String> hits = floatLines(rel, text(p));
+                if (hits.isEmpty()) {
+                    continue;
+                }
+                seen.put(rel, hits.size());
+                if (hits.size() != FLOAT_REFUSALS.getOrDefault(rel, 0)) {
+                    problems.addAll(hits);
+                }
+            }
+        }
+        for (var e : FLOAT_REFUSALS.entrySet()) {
+            if (!e.getValue().equals(seen.get(e.getKey()))) {
+                problems.add("stale allow-list entry " + e.getKey() + " = " + e.getValue() + " (found "
+                        + seen.get(e.getKey()) + ")");
+            }
+        }
+        assertTrue(problems.isEmpty(), problems.size() + " binary float use(s) in sangam-packs main code:\n"
+                + String.join("\n", problems));
+    }
+
+    /** The float rule itself: uses are caught, mentions in comments and strings are not. */
+    @Test
+    void theFloatRuleCatchesUsesNotMentions() {
+        String src = "class X {\n"
+                + "  // a double in a comment\n"
+                + "  /* Float in a block\n comment */\n"
+                + "  String s = \"double\";\n"
+                + "  double a = 0.1;\n"
+                + "  Object b = Double.valueOf(1);\n"
+                + "  long c = Math.round(x);\n"
+                + "  BigDecimal d = n.doubleValue() > 0 ? x : y;\n"
+                + "  BigDecimal ok = new BigDecimal(\"0.1\");\n"
+                + "}\n";
+        List<String> hits = floatLines("X.java", src);
+        assertEquals(4, hits.size(), hits.toString());
+        assertTrue(hits.get(0).startsWith("X.java:6:"), hits.toString());
     }
 
     /** The guard itself: a double money column, a fractional paise boundary and an unrounded output are caught. */

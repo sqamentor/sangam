@@ -4,7 +4,7 @@
 profile:
   id: GOI.POSTS
   layer: department
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2024-04-01'
   name:
     en: Department of Posts
@@ -22,6 +22,8 @@ establishment:
 salaryDestinations:
 - BANK
 - POSB
+procurement:
+  scientificDepartment: false
 receipts:
   pliHeads:
     major: '8014'

@@ -150,6 +150,7 @@ public final class PartitionLeaseManager {
     private final LongSupplier nanos;
     private final Listener listener;
     private final OwnershipAudit audit;
+    private final PartitionResize resize;
     private final Map<Integer, Owned> owned = new ConcurrentHashMap<>();
     private volatile boolean draining;
     private volatile long coordinatorEpoch = -1;
@@ -162,6 +163,14 @@ public final class PartitionLeaseManager {
 
     public PartitionLeaseManager(DataSource ds, Dialect dialect, Config config, Supplier<Instant> engineClock,
                                  LongSupplier monotonicNanos, Listener listener, OwnershipAudit audit) {
+        this(ds, dialect, config, engineClock, monotonicNanos, listener, audit, null);
+    }
+
+    /** @param resize decision 146: the partition-count change the coordinator advances each cycle, or {@code null} */
+    public PartitionLeaseManager(DataSource ds, Dialect dialect, Config config, Supplier<Instant> engineClock,
+                                 LongSupplier monotonicNanos, Listener listener, OwnershipAudit audit,
+                                 PartitionResize resize) {
+        this.resize = resize;
         this.ds = ds;
         this.d = dialect;
         this.c = config;
@@ -173,6 +182,21 @@ public final class PartitionLeaseManager {
 
     public Config config() {
         return c;
+    }
+
+    /** Decision 146: the resize service of this cluster, or {@code null} when none was wired. */
+    public PartitionResize resize() {
+        return resize;
+    }
+
+    /**
+     * Decision 146: the live partition count of the committed map (UNOWNED, ACTIVE or DRAINING, never the virtual
+     * partition 0); the configured count only seeds a new map. At least 1, so the fair share stays defined.
+     */
+    int livePartitions() {
+        long n = tx(conn -> Jdbc.one(conn, "SELECT COUNT(*) FROM EXEC_PARTITION WHERE partition_id > 0"
+                + " AND state IN ('UNOWNED', 'ACTIVE', 'DRAINING')", rs -> rs.getLong(1)).orElse(0L));
+        return (int) Math.max(1L, n);
     }
 
     // ------------------------------------------------------------------ the cycle
@@ -386,7 +410,7 @@ public final class PartitionLeaseManager {
         }
         long live = tx(conn -> Jdbc.one(conn, "SELECT COUNT(*) FROM EXEC_NODE WHERE draining = 0 AND heartbeat_at > "
                 + d.nowPlusMillisParam(), rs -> rs.getLong(1), -c.orphanTimeout().toMillis()).orElse(1L));
-        int fair = (int) Math.ceil(c.partitions() / (double) Math.max(1L, live));
+        int fair = (int) Math.ceil(livePartitions() / (double) Math.max(1L, live));
         if (owned.size() >= fair) {
             return;
         }
@@ -494,6 +518,9 @@ public final class PartitionLeaseManager {
         }
         planMoves();
         sweepOrphans();
+        if (resize != null) { // decision 146: fenced by this coordinator's epoch inside every write
+            resize.advance(coordinatorName(), coordinatorEpoch, c.drainTimeout(), c.renewInterval(), engineClock);
+        }
     }
 
     boolean holdCoordinator() {
@@ -539,7 +566,8 @@ public final class PartitionLeaseManager {
         if (liveTakers == 0) {
             return;
         }
-        int fair = (int) Math.ceil(c.partitions() / (double) liveTakers);
+        int partitions = livePartitions();
+        int fair = (int) Math.ceil(partitions / (double) liveTakers);
         Map<String, List<long[]>> byOwner = new HashMap<>(); // owner -> [partition, epoch]
         tx(conn -> Jdbc.query(conn, "SELECT owner_node, partition_id, owner_epoch FROM EXEC_PARTITION WHERE state = 'ACTIVE'"
                 + " AND lease_expires_at > " + d.now() + " ORDER BY partition_id DESC", rs -> byOwner
@@ -550,7 +578,7 @@ public final class PartitionLeaseManager {
                 capacity += Math.max(0, fair - byOwner.getOrDefault(n.getKey(), List.of()).size());
             }
         }
-        long unclaimed = c.partitions() - byOwner.values().stream().mapToLong(List::size).sum();
+        long unclaimed = partitions - byOwner.values().stream().mapToLong(List::size).sum();
         guarded(() -> listener.orphanedPartitions(Math.max(0, unclaimed)));
         capacity -= unclaimed; // free partitions are taken first
         for (Map.Entry<String, List<long[]>> o : byOwner.entrySet()) {

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_hr_wage_rules" name="PF wage ceiling and ESI coverage (decision 223 versioned rules)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Decision 223 wage rules, selected by the wage period; generated from tools/packgen/payroll.py -->
+  <decision id="sec-hr-wage-rules" name="PF wage ceiling and ESI coverage (decision 223 versioned rules)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+    <decisionTable id="sec-hr-wage-rules_t" hitPolicy="UNIQUE">
+      <input id="sec-hr-wage-rules_i0" label="Wage period day"><inputExpression id="sec-hr-wage-rules_ie0" typeRef="date"><text>date(asOfDate)</text></inputExpression></input>
+      <output id="sec-hr-wage-rules_o0" label="Rules" name="ruleId" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o1" label="Rules version" name="ruleVersion" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o2" label="Evidence (VERIFIED / UNVERIFIED)" name="evidenceStatus" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o3" label="Permitted use (PRODUCTION / SYNTHETIC_DEMO_ONLY)" name="permittedUse" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o4" label="Why this evidence status and use" name="evidenceNote" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o5" label="PF wage ceiling (per month)" name="pfWageCeiling" typeRef="number"/>
+      <output id="sec-hr-wage-rules_o6" label="ESI coverage wage limit (per month)" name="esiWageLimit" typeRef="number"/>
+      <output id="sec-hr-wage-rules_o7" label="ESI continuation of coverage (CONTRIBUTION_PERIOD / NONE)" name="esiContinuation" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o8" label="ESI low-wage exemption: average wages per day up to" name="esiLowWageDailyLimit" typeRef="number"/>
+      <output id="sec-hr-wage-rules_o9" label="ESI low-wage exemption comparison (AT_OR_BELOW / BELOW)" name="esiLowWageComparison" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o10" label="ESI contribution periods: first days (MM-dd)" name="esiContributionPeriodStarts" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o11" label="Rule for a wage period (FIRST_DAY / LAST_DAY)" name="periodRuleBasis" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o12" label="ESI joiner in a contribution period (COVERED_TO_PERIOD_END / NONE)" name="esiMidPeriodJoiner" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o13" label="ESI low-wage exemption: average daily wage per wage basis (BASIS=METHOD)" name="esiAverageDailyWage" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o14" label="ESI average daily wage definition (VERIFIED / UNVERIFIED)" name="esiAverageDailyWageStatus" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o15" label="How the PF ceiling is applied" name="pfCeilingApplication" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o16" label="How ESI eligibility is applied" name="esiEligibility" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o17" label="Jurisdiction" name="jurisdiction" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o18" label="Source" name="source" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o19" label="Provision" name="provision" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o20" label="Effective from" name="effectiveFrom" typeRef="string"/>
+      <output id="sec-hr-wage-rules_o21" label="Effective to" name="effectiveTo" typeRef="string"/>
+      <rule id="sec-hr-wage-rules_r0"><description>UNVERIFIED SYNTHETIC_DEMO_ONLY demo-pf15k</description>
+        <inputEntry id="sec-hr-wage-rules_r0_i0"><text>[date("1900-01-01")..date("2026-09-16")]</text></inputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o0"><text>"sec-hr-wage-rules"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o1"><text>"demo-pf15k"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o2"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o3"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o4"><text>"UNVERIFIED, SYNTHETIC_DEMO_ONLY (decisions 288, 298): the ESI Rs 21,000 ceiling, continuation after crossing the ceiling, the April to September and October to March contribution periods and the Rs 176 low-wage exemption are each not found in current official text after 2026-05-08 (sangam-handoff evidence/STATUTORY-EVIDENCE-288.md section 3); ESI cannot run in production until sources are found (a known 0.1.0 gap); the PF wage ceiling notifications were not read"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o5"><text>1500000</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o6"><text>2100000</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o7"><text>"CONTRIBUTION_PERIOD"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o8"><text>17600</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o9"><text>"AT_OR_BELOW"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o10"><text>"04-01,10-01"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o11"><text>"FIRST_DAY"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o12"><text>"COVERED_TO_PERIOD_END"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o13"><text>"TIME_RATED=FULL_PERIOD_WAGE_BY_RATING"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o14"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o15"><text>"PF wages of each employee used up to the ceiling for both shares (a higher contribution by joint option is not modelled)"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o16"><text>"an employee whose ESI wages for the wage period are above the limit is not covered (no employee or employer share) unless the coverage start in the register (esiCoverageStart) is on or before the first day of the contribution period containing the first day of the wage period: coverage then continues to the end of that contribution period on the actual ESI wages; an employee whose average daily wage (esiAverageDailyWage for the employee's esiWageBasis: for TIME_RATED rule 2(1)(h)(i), esiFullPeriodWages divided by 26, 13, 6 or 1 by esiRating) is at or below the daily limit pays no employee share, the employer share and coverage stay; the rule in force on the first day of the wage period applies; decision 264: a joiner covered on joining stays covered to the end of that contribution period; decision 270: esiContinuationEndDate ends only the continuation of an employee above the limit, never shortens the continuation derived from the contribution periods; decision 271: a wage period crossing a contribution-period boundary is blocked from final calculation"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o17"><text>"IN"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o18"><text>"MoLE S.O. 2702(E) of 29 May 2026 under Code on Social Security 2020 s.2(89) (Chapter III wage ceiling Rs 15,000, as reported by commentary; text not read); ESI coverage wage limit Rs 21,000 per month: not found in current official text after 2026-05-08 (old rule 50 of the ESI (Central) Rules 1950 was superseded by G.S.R. 344(E) on 8 May 2026; no Chapter IV notification under Code s.2(89) was located); the comparison (covered at or below the ceiling) is Code on Social Security 2020 s.2(26), read; sangam-handoff evidence/STATUTORY-EVIDENCE-288.md section 3.5; ESI continuation of coverage after crossing the ceiling: not found in current official text after 2026-05-08; contribution periods April to September and October to March: not found in current official text after 2026-05-08 (old regulation 4 of the ESI (General) Regulations 1950, applicability under Code s.164 unconfirmed); employee-share exemption up to an average of Rs 176 a day: not found in current official text after 2026-05-08 (old rule 52 superseded; no s.2(31) notification located); sangam-handoff evidence/STATUTORY-EVIDENCE-288.md sections 3.1 to 3.5"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o19"><text>"PF wage ceiling: the Gazette texts and the EPF Scheme 2026 paragraph that applies the ceiling to contributions were not read; ESI wage limit Rs 21,000, continuation after crossing it, the contribution periods and the Rs 176 low-wage exemption: not found in current official text after 2026-05-08 (decision 298); so neither the values nor their application reach 97 percent confidence"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o20"><text>"1900-01-01"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r0_o21"><text>"2026-09-16"</text></outputEntry>
+      </rule>
+      <rule id="sec-hr-wage-rules_r1"><description>UNVERIFIED SYNTHETIC_DEMO_ONLY demo-pf25k</description>
+        <inputEntry id="sec-hr-wage-rules_r1_i0"><text>[date("2026-09-17")..date("9999-12-31")]</text></inputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o0"><text>"sec-hr-wage-rules"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o1"><text>"demo-pf25k"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o2"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o3"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o4"><text>"UNVERIFIED, SYNTHETIC_DEMO_ONLY (decisions 288, 298): the ESI Rs 21,000 ceiling, continuation after crossing the ceiling, the April to September and October to March contribution periods and the Rs 176 low-wage exemption are each not found in current official text after 2026-05-08 (sangam-handoff evidence/STATUTORY-EVIDENCE-288.md section 3); ESI cannot run in production until sources are found (a known 0.1.0 gap); the PF wage ceiling notifications were not read"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o5"><text>2500000</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o6"><text>2100000</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o7"><text>"CONTRIBUTION_PERIOD"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o8"><text>17600</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o9"><text>"AT_OR_BELOW"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o10"><text>"04-01,10-01"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o11"><text>"FIRST_DAY"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o12"><text>"COVERED_TO_PERIOD_END"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o13"><text>"TIME_RATED=FULL_PERIOD_WAGE_BY_RATING"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o14"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o15"><text>"PF wages of each employee used up to the ceiling for both shares (a higher contribution by joint option is not modelled)"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o16"><text>"an employee whose ESI wages for the wage period are above the limit is not covered (no employee or employer share) unless the coverage start in the register (esiCoverageStart) is on or before the first day of the contribution period containing the first day of the wage period: coverage then continues to the end of that contribution period on the actual ESI wages; an employee whose average daily wage (esiAverageDailyWage for the employee's esiWageBasis: for TIME_RATED rule 2(1)(h)(i), esiFullPeriodWages divided by 26, 13, 6 or 1 by esiRating) is at or below the daily limit pays no employee share, the employer share and coverage stay; the rule in force on the first day of the wage period applies; decision 264: a joiner covered on joining stays covered to the end of that contribution period; decision 270: esiContinuationEndDate ends only the continuation of an employee above the limit, never shortens the continuation derived from the contribution periods; decision 271: a wage period crossing a contribution-period boundary is blocked from final calculation"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o17"><text>"IN"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o18"><text>"MoLE S.O. 5109(E) of 17 September 2026 under Code on Social Security 2020 s.2(89): Rs 25,000 per month as the wage ceiling for Chapter III, from publication in the Official Gazette, superseding S.O. 2702(E) (read in a published transcription, staffnews.in, 2026-11-13; Gazette copy not read); ESI coverage wage limit Rs 21,000 per month: not found in current official text after 2026-05-08 (old rule 50 of the ESI (Central) Rules 1950 was superseded by G.S.R. 344(E) on 8 May 2026; no Chapter IV notification under Code s.2(89) was located); the comparison (covered at or below the ceiling) is Code on Social Security 2020 s.2(26), read; sangam-handoff evidence/STATUTORY-EVIDENCE-288.md section 3.5; ESI continuation of coverage after crossing the ceiling: not found in current official text after 2026-05-08; contribution periods April to September and October to March: not found in current official text after 2026-05-08 (old regulation 4 of the ESI (General) Regulations 1950, applicability under Code s.164 unconfirmed); employee-share exemption up to an average of Rs 176 a day: not found in current official text after 2026-05-08 (old rule 52 superseded; no s.2(31) notification located); sangam-handoff evidence/STATUTORY-EVIDENCE-288.md sections 3.1 to 3.5"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o19"><text>"PF wage ceiling: the Gazette texts and the EPF Scheme 2026 paragraph that applies the ceiling to contributions were not read; ESI wage limit Rs 21,000, continuation after crossing it, the contribution periods and the Rs 176 low-wage exemption: not found in current official text after 2026-05-08 (decision 298); so neither the values nor their application reach 97 percent confidence"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o20"><text>"2026-09-17"</text></outputEntry>
+        <outputEntry id="sec-hr-wage-rules_r1_o21"><text>"9999-12-31"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

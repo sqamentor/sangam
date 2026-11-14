@@ -17,6 +17,7 @@ import org.operaton.bpm.model.dmn.Dmn;
 import org.operaton.bpm.model.dmn.DmnModelInstance;
 import org.operaton.bpm.model.xml.ModelException;
 import org.operaton.bpm.model.xml.impl.util.ModelIoException;
+import org.sangam.feel.Dmn16Support;
 import org.sangam.packs.spi.ManifestPack;
 import org.sangam.packs.spi.ModelGuard;
 
@@ -29,7 +30,9 @@ import org.sangam.packs.spi.ModelGuard;
  *       {@link UncheckedIOException} (unreadable JSON) or {@link IllegalArgumentException} (a bad field, e.g. an
  *       unknown resource kind) only.</li>
  *   <li>{@link #bpmnModel} and {@link #dmnModel}: the Operaton model readers refuse with a {@link ModelException}
- *       (or {@link ModelIoException}) only, and a model they accept writes back out; a BPMN model they accept also
+ *       (or {@link ModelIoException}) only, and a model they accept writes back out; DMN is read as production reads
+ *       it, through {@code Dmn16Support.readModel}, which may also refuse with its {@code Dmn16Exception} (an
+ *       unreadable document, ONNX functions or B-FEEL); a BPMN model they accept also
  *       goes through the deploy-time {@link ModelGuard#check}, which never throws: a missing, blank, non-numeric or
  *       out-of-range {@code sangam.maxCardinality} is a reported violation (SL-148). The seeds
  *       {@code maxcardinality-without-value.bpmn} (the first finding of this target, a NullPointerException at deploy
@@ -80,8 +83,8 @@ class PackParserFuzzTest {
     void dmnModel(byte[] xml) {
         DmnModelInstance m;
         try {
-            m = Dmn.readModelFromStream(new ByteArrayInputStream(xml));
-        } catch (ModelException | ModelIoException refused) {
+            m = Dmn16Support.readModel(xml); // as production reads DMN (sangam-feel, DMN 1.1 to 1.6)
+        } catch (ModelException | ModelIoException | Dmn16Support.Dmn16Exception refused) {
             return;
         }
         Dmn.convertToString(m);

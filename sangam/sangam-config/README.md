@@ -59,7 +59,7 @@ Owner: IFMS-IMPLEMENTATION workstream (generic module per ADR-D-20). Base packag
 
 | Dependency | Licence |
 |---|---|
-| org.sangam:sangam-core | Apache-2.0 |
+| io.github.sqamentor:sangam-core | Apache-2.0 |
 | com.fasterxml.jackson.core:jackson-databind (BOM 2.22.3) | Apache-2.0 |
 | org.yaml:snakeyaml (Spring Boot BOM, 2.6) | Apache-2.0 (new direct dependency) |
 | org.slf4j:slf4j-api | MIT |
@@ -80,7 +80,7 @@ head of account against the seeds, and the per-state structures of Karnataka (SH
 
 ## International PFM coverage (spike/results/INTERNATIONAL-PFM-REQUIREMENTS.md)
 
-Status: C implemented as a generic capability (with data where needed), D data only, P partial, G gap. Counts over PFM-001..080 (72 ids): C 39, D 2, P 27, G 4; PFM-CH-1..7: 7 D. The same map is in the sangam-config and sangam-ledger READMEs. Country profiles (ISO 3166 alpha-3 ids, so they never collide with Indian state codes): USA, GBR, BRA, KEN, IDN, PHL, BGD under profiles/intl/countries/, on the regime presets PRESIDENTIAL-APPORTIONMENT, WESTMINSTER-SUPPLY, CIVIL-LAW-EMPENHO, DIPA-TREASURY-OFFICE, ALLOTMENT-NCA, indexed by profiles/intl.idx (load it with ProfileLoader.loadIndex next to profiles.idx). KEN, IDN, PHL, BGD are [U] throughout.
+Status: C implemented as a generic capability (with data where needed), D data only, P partial, G gap. Counts over PFM-001..080 (72 ids): C 39, D 2, P 31, G 0 (decision 175 packs, W4-K 00:41:24Z); PFM-CH-1..7: 7 D. The same map is in the sangam-config and sangam-ledger READMEs. Country profiles (ISO 3166 alpha-3 ids, so they never collide with Indian state codes): USA, GBR, BRA, KEN, IDN, PHL, BGD under profiles/intl/countries/, on the regime presets PRESIDENTIAL-APPORTIONMENT, WESTMINSTER-SUPPLY, CIVIL-LAW-EMPENHO, DIPA-TREASURY-OFFICE, ALLOTMENT-NCA, indexed by profiles/intl.idx (load it with ProfileLoader.loadIndex next to profiles.idx). KEN, IDN, PHL, BGD are [U] throughout.
 
 | Id | St | Where |
 |---|---|---|
@@ -95,9 +95,9 @@ Status: C implemented as a generic capability (with data where needed), D data o
 | PFM-009 | P | programme segment in country schemes; KPIs / targets on programmes not modelled |
 | PFM-010 | C | sangam-config: master/Crosswalk.java#checkSplitTags; data: profiles/intl/INTL-PFM.yaml#classification.tags |
 | PFM-011 | P | data: profiles/institutionalSector attribute; extrabudgetary-unit registry as tenants (no reporting-obligation tracker) |
-| PFM-020 | P | pack gov.ifms.budget-formulation (generic flow); intl.pfm.budget-preparation not built |
+| PFM-020 | P | pack gov.intl.pfm-budget-preparation 1.0.0 (decision 175, M-134; process sangam-intl-pfm-budget-preparation; also pack gov.ifms.budget-formulation); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-021 | C | sangam-ledger: LedgerService#commitMultiYear (outer-year ceilings as later-period accounts) |
-| PFM-022 | P | core DocumentDelegate outputs; budget-document bundle not built |
+| PFM-022 | P | pack gov.intl.pfm-budget-preparation 1.0.0 (decision 175, M-134; process sangam-intl-pfm-budget-document-bundle); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-023 | C | sangam-ledger: ALLOCATE at the top stage with auditRef = legal reference; level of control = stages / line in the profile |
 | PFM-024 | P | pack gov.ifms.scheme-appraisal (generic ladder DMN) |
 | PFM-025 | C | sangam-ledger: ADJUST; pack gov.ifms.supplementary; data: profiles/intl/countries/BRA.yaml#creditosAdicionais |
@@ -115,36 +115,36 @@ Status: C implemented as a generic capability (with data where needed), D data o
 | PFM-037 | C | sangam-ledger: FreezeOrder.java + LedgerControlStore (durable, LDG_FREEZE) |
 | PFM-038 | C | sangam-ledger: LedgerService#payablesAgeing (buckets from config); RECEIVABLE arrears |
 | PFM-039 | P | sangam-ledger: LedgerPorts.BreachSink event; data: profiles/INTL-PFM chain PFM-CH-7; breach case pack not built |
-| PFM-040 | P | sangam-ledger: LedgerStore#find by segment / stage / period; standard reports not built |
+| PFM-040 | P | pack gov.intl.pfm-standard-reports 1.0.0 (decision 175, M-134); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-041 | C | core SoD guard; data: profiles/intl/INTL-PFM.yaml PFM-CH-3 sod pairs |
 | PFM-042 | P | release notice date as document field (RELEASE_ORDER.noticeDate); no SLA report |
 | PFM-043 | C | sangam-ledger: LedgerService#closePeriod / cancelExpired, availability ANNUAL / MULTI_YEAR / NO_YEAR, carry-forward |
 | PFM-044 | C | sangam-ledger: LedgerDefinition mode SHADOW + ExternalLedgerPort + LedgerService#reconcile |
 | PFM-045 | C | sangam-ledger: TsaTopology.java (main, ledger-only, real, zero-balance, collection, exception; sweeps; lint) |
-| PFM-046 | P | pack gov.ifms.receipts (scroll reconciliation); transfer-deadline monitor not built |
-| PFM-047 | P | sangam-ledger: LedgerService#cashForecast (input from commitments); cash-plan process not built |
+| PFM-046 | P | pack gov.intl.pfm-transfer-deadline 1.0.0 (decision 175, M-134); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
+| PFM-047 | P | pack gov.intl.pfm-cash-plan 1.0.0 (decision 175, M-134; over LedgerService#cashForecast); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-048 | C | sangam-config: catalogue/DocumentTypeCatalogue.ChainTemplate#liableRoles; data: profiles/PFM-CH-3 certifying officer |
-| PFM-049 | P | sangam-config: api/PayeeDirectory (party registry) + duplicate check; exclusion-list (Do Not Pay) connector not built |
+| PFM-049 | P | pack gov.intl.pfm-do-not-pay 1.0.0 (decision 175, M-134; payee.exclusion connector); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-050 | C | rail catalogue (profile paymentRails) + core execution with UNKNOWN_OUTCOME |
 | PFM-051 | P | sangam-ledger: RECEIVABLE ledger for advances (dueDate); suspense ageing workflow not built |
 | PFM-052 | P | sangam-ledger: closePeriod + config period lock; pack gov.ifms.monthly-accounts |
 | PFM-053 | C | sangam-config: catalogue/TwoSidedDocument.java; data: profiles/IG_AGREEMENT (parties BUYER / SELLER) |
 | PFM-054 | C | sangam-ledger: accounting mapping filtered by LedgerDefinition bases; data: profiles/accountingBasis (effective-dated) per country |
-| PFM-055 | P | sangam-ledger: AccountingEntry (cash / accrual) to AccountingSink; budget-to-accounting reconciliation report not built |
-| PFM-056 | G | fiscal-transparency outputs and open data: not built |
+| PFM-055 | P | pack gov.intl.pfm-budget-accounting-reconciliation 1.0.0 (decision 175, M-134; exact SUM difference, no rounding policy); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
+| PFM-056 | P | pack gov.intl.pfm-fiscal-transparency 1.0.0 (decision 175, M-134; opendata.publish connector); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-057 | P | sangam-security read roles + audit export; SAI cross-tenant role not configured |
 | PFM-058 | P | connector accounts.render (gov.ifms.monthly-accounts); consolidation-return tracking not built |
 | PFM-059 | C | sangam-ledger: AccountKey.sub = funding source / agreement; data: profiles/FONTE scheme (BRA) |
 | PFM-060 | C | sangam-ledger: FinancingAgreements.java (agreement-level limits, currency, closing date) |
 | PFM-061 | C | sangam-ledger: FinancingAgreements#check (category, % financed, retroactive window, procurement method) |
-| PFM-062 | P | sangam-ledger: TsaTopology EXCEPTION account + WITHDRAWAL_APPLICATION / PFM-CH-6 data; replenishment pack not built |
+| PFM-062 | P | pack gov.intl.pfm-replenishment 1.0.0 (decision 175, M-134; PFM-CH-6 data, TsaTopology EXCEPTION account); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-063 | P | sangam-config: n-level scopes + core referral; data: profiles/KEN regime.transferFormula; formula DMN not written |
 | PFM-064 | P | pack gov.ifms.salary-monthly |
-| PFM-065 | G | procurement complaints: not built |
+| PFM-065 | P | pack gov.intl.pfm-procurement-complaint 1.0.0 (decision 175, M-134; procurement.suspend connector); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-066 | C | data: profiles/in/dmn/<GOV>/ifms-procurement-mode.dmn (per government) |
 | PFM-067 | P | existing pack gov.assets |
 | PFM-068 | P | sangam-ledger: a guarantee register is a LIMIT ledger by configuration; no register definition shipped |
-| PFM-069 | G | debt-operations approval chain: not built |
+| PFM-069 | P | pack gov.intl.pfm-debt-operation 1.0.0 (decision 175, M-134; debt.limit and debt.record connectors); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-070 | C | sangam-ledger: transaction vs functional currency, AccountingEntry.functionalAmount |
 | PFM-071 | C | sangam-ledger: LedgerPorts.RatePort (rate types); sangam-config: locale/ExchangeRates.java |
 | PFM-072 | C | sangam-ledger: LedgerService#revalue |
@@ -155,7 +155,7 @@ Status: C implemented as a generic capability (with data where needed), D data o
 | PFM-077 | P | data: profiles/intl/countries/GBR.yaml#accountability.ministerialDirection; no pack |
 | PFM-078 | C | sangam-ledger: FiscalRuleEvaluator.java (aggregates + ratio rules + DMN) |
 | PFM-079 | C | sangam-config: profile versioning, effective dating, ruleRef on findings |
-| PFM-080 | G | PEFA evidence pack: not built |
+| PFM-080 | P | pack gov.intl.pfm-pefa-evidence 1.0.0 (decision 175, M-134); its connector ids run on the simulator only (no server binding yet) and its country tables are SYNTHETIC placeholders (decision 108); tests written NOT_RUN |
 | PFM-CH-1 | D | Release: template in data: profiles/intl/INTL-PFM.yaml#approvalChains (generic chain mechanics: config ChainTemplate; no intl.pfm pack yet) |
 | PFM-CH-2 | D | Commitment: template in data: profiles/intl/INTL-PFM.yaml#approvalChains (generic chain mechanics: config ChainTemplate; no intl.pfm pack yet) |
 | PFM-CH-3 | D | Verification and payment: template in data: profiles/intl/INTL-PFM.yaml#approvalChains (generic chain mechanics: config ChainTemplate; no intl.pfm pack yet) |

@@ -92,7 +92,7 @@ sangam:
     # Client-IP headers in priority order, read only from a trusted proxy (an edge's connecting-IP header may be added).
     client-ip-headers: ${SANGAM_CLIENT_IP_HEADERS:X-Forwarded-For}
   # Module wiring (config/*Wiring); false = the sangam-rest defaults stay active for that module. The standalone
-  # server sets every module flag here explicitly (all on), so it never depends on a default: an application that
+  # server sets every module flag here explicitly (all on except connectors-health, decision 187), so it never depends on a default: an application that
   # embeds Sangam through sangam-spring-boot-starter gets the core on and the packs and domain modules off until it
   # enables them (M-014, owner decision 2026-11-12).
   modules:
@@ -132,8 +132,9 @@ sangam:
       enabled: ${SANGAM_MODULE_GEO:true}
     field:
       enabled: ${SANGAM_MODULE_FIELD:true}
+    # optional module, off by default (decision 187): without it the health routes answer 501 CAPABILITY_NOT_INSTALLED
     connectors-health:
-      enabled: ${SANGAM_MODULE_CONNECTORS_HEALTH:true}
+      enabled: ${SANGAM_MODULE_CONNECTORS_HEALTH:false}
     channels:
       enabled: ${SANGAM_MODULE_CHANNELS:true}
     ai:
@@ -186,6 +187,9 @@ sangam:
     # sangam-engine settings (SangamEngineSettings); the server runs Liquibase, so no product schema from the engine
     apply-product-schema: false
     apply-engine-patches: true
+    # Decision 144: the audit scope (system:<name>) of engine work no tenant owns; the engine refuses to start
+    # without a valid one. Overridable (Helm server.systemAuditScope and compose pass the same variable).
+    system-audit-scope: ${SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE:system:platform}
     # M-054: job executor options, both off (the Operaton starter's executor is used). Either one switches to
     # SangamJobExecutor (EngineWiring.sangamJobExecutor), sized by the SANGAM_JOB_* settings above.
     # job-virtual-threads: pool threads are JDK virtual threads (env SANGAM_JOB_VIRTUAL_THREADS wins over this key).

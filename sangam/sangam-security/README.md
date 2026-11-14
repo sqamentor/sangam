@@ -59,12 +59,13 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 
 | File | Covers |
 |---|---|
-| `oidc/SangamResourceServerConfiguration.java` | Spring Security resource server: JWKS/issuer validation, clock skew, audience, required `tenant` claim. Stateless, no CSRF. URL rules only require authentication; authorization lives in the services |
+| `oidc/JtiReplayGuard.java`, `oidc/JdbcReplayGuard.java` | Plain-Java client-token replay contract (one use per issuer and `jti`) and its cluster-wide store (SL-138) |
+| (moved, M-141a) `org.sangam.security.spring.SangamResourceServerConfiguration` in sangam-server | Spring Security resource server: JWKS/issuer validation, clock skew, audience, required `tenant` claim. Stateless, no CSRF. URL rules only require authentication; authorization lives in the services |
 | `oidc/KeycloakClaimsMapper.java` | Keycloak mapping: realm roles, client roles, groups (path prefix stripped), tenant claim. **MFA pass-through** per tenant (`acr`/`amr`, R67). Seats never come from the IdP (AJ-05 step 3) |
 | `oidc/SecurityProperties.java` | `sangam.security.*` settings: issuer, JWKS, audiences, JIT tenants, MFA tenants and dev tokens. **Dev static-token mode** is refused on a production profile |
-| `oidc/TokenAuthenticationFilters.java` | API-token bearer (`sgm_…`) and the dev static-token filter |
-| `oidc/IdentityResolutionFilter.java` | Resolves person, groups, roles and seats, enforces MFA, binds `TenantContext`, and logs logins once per session in batches |
-| `oidc/SangamAuthenticationToken.java`, `oidc/SecurityWebSupport.java` | Authentication token; RFC 9457 problem responses (R28); a JWT-only bearer resolver |
+| (moved, M-141a) `org.sangam.security.spring.TokenAuthenticationFilters` in sangam-server | API-token bearer (`sgm_…`) and the dev static-token filter |
+| (moved, M-141a) `org.sangam.security.spring.IdentityResolutionFilter` in sangam-server | Resolves person, groups, roles and seats, enforces MFA, binds `TenantContext`, and logs logins once per session in batches |
+| (moved, M-141a) `org.sangam.security.spring.SangamAuthenticationToken`, `SecurityWebSupport` and `ClientJwtVerifier` in sangam-server | Authentication token; RFC 9457 problem responses (R28); a JWT-only bearer resolver; the client JWT verifier |
 | `identity/PrincipalResolver.java` | Tenant active check (AJ-01). Subject → person mapping, else `NOT_LINKED`. **JIT provisioning** (R67). Groups and roles from the IdP plus Sangam memberships, role bindings of the user, its groups and its seats. Seats from postings at the database time |
 | `identity/ResolvedIdentityCache.java` | SG-15: per-token cache of the resolved identity. Every request does one validation read (tenant `policy_version`, tenant status, the person the subject maps to and its status, database time). Every product write path that changes the result bumps `policy_version` or is caught by that read, so revocation through the product is seen on the next request (`ResolvedIdentityCacheH2Test`). An entry also ends at the next effective-date boundary of the memberships, postings and leave it depends on. **`MAX_AGE` = 5 minutes is the upper bound for changes made directly in the database outside the services**; `clear()` drops all entries. There is no operator endpoint for it (restart the node, or bump `AUTH_POLICY_VERSION` for the tenant) |
 | `identity/LdapDirectorySync.java` | R67 / A-17: **LDAP/AD read and scheduled sync** (JDK JNDI, no new dependency). Users and groups with source `LDAP`; missing users are disabled; TLS is required |
@@ -147,6 +148,57 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 | `support/Sql.java` | JDBC/JSON helpers, DB clock (A-1), insert-if-absent per dialect |
 | `src/main/resources/db/sangam-security-reference.sql` | The exact tables and columns this module uses (the integration contract, below) |
 
+### External deny-only policy check (owner decision 166, M-083)
+
+An optional remote policy decision point (OPA, a Cedar agent, or any service that reads the request below) can refuse a
+command; it can never grant one. Off by default; nothing is called unless `sangam.security.external-policy.enabled=true`.
+
+| File | Covers |
+|---|---|
+| `policy/external/ExternalPolicyCheck.java` | The port: one call per command, ALLOW_CONTINUE or DENY, or `ExternalPolicyUnavailable` |
+| `policy/external/ExternalPolicyRequest.java` | Request `sangam.external-policy-request/1`: tenant, actor id, auth method, groups, command type, method, path template, path parameters (never the command body) |
+| `policy/external/ExternalPolicyDecision.java` | ALLOW_CONTINUE or DENY; reason code and policy id kept only as safe tokens |
+| `policy/external/ExternalPolicyCommands.java`, `ExternalPolicyRequirement.java` | Per command REQUIRED (unavailable fails closed), BEST_EFFORT (unavailable continues) or NONE (no call); unknown or ambiguous names stop the start-up |
+| `policy/external/ExternalPolicyGate.java` | The verdict table; asserts no L2 lock is held before the remote call (decision 86) |
+| `policy/external/HttpExternalPolicyCheck.java` | JDK HTTP client, no new library: POST `{"input": {...}}` (OPA envelope), reads `decision` ALLOW/DENY, `allow` true/false or an OPA boolean `result`; https only (http only outside production on request), no redirects, connect timeout plus an overall deadline, 64 KiB answer limit, optional bearer token from a file |
+
+The server calls the gate in `org.sangam.server.bridge.ExternalPolicyFilter` (wiring `ExternalPolicyWiring`, keys
+`sangam.security.external-policy.*`) after authentication and before the idempotency claim, the command transaction and
+any lock. A DENY answers `403 POLICY_DENIED`, an unavailable service for a required command `503 POLICY_UNAVAILABLE`;
+both are recorded as `AUTH_DENIED` on the tenant's security denial chain. Sangam's own endpoint and object checks run
+afterwards as before, so an ALLOW never overrides them. The check is made once at command entry: a policy change
+between that call and the command's own transaction is not seen by the running command (Sangam's own object checks are
+still re-checked in the transaction, VI.4 rule 5).
+
+Owner decision 200 widens the scope: besides the Sangam REST commands, the same filter checks every external-worker
+call (the contract's `x-sangam-fenced` operations, command types `work.<action>`: `work.fetch-and-lock`,
+`work.complete`, `work.fail`, `work.steps`, ...) and every state-changing `/engine-rest` call (POST, PUT, PATCH,
+DELETE; command type `engine-rest`, the request path sent as `pathTemplate`). All are checked at entry, outside any
+transaction and lock scope (`org.sangam.server.bridge.ExternalPolicyTargets`); these names are valid in
+`required-commands` and `best-effort-commands`, and `*` covers them.
+
+### Unverified payments: explicit-only permissions (owner decision 141, RM-03)
+
+`Permission.ACCEPT_UNVERIFIED` and `Permission.RESOLVE_UNVERIFIED` (ordinals 24 and 25, appended; both sensitive, so
+re-checked without cache) are **explicit-only** (`Permission.explicitOnly()`):
+
+- they are granted on the virtual type `BILLING` with the resource id `payment-channel:<channel>@<office>`
+  (`org.sangam.security.billing.UnverifiedPaymentPermissions.resourceId`); the tenant is the grant row's tenant, and a
+  counter is a condition attribute (`counterId`, with `tenantId`, `officeId`, `channel`);
+- a grant on `'*'` (type or id) never confers them, in the object check and in its set form; denies on wildcards still
+  apply. Policies and role rules granting them on `'*'`, or on a type that does not define them, are rejected at
+  validation (`PolicyCompiler.validate(type, id, perms, condition, deny)`); the `billing-admin` template and every
+  "full type" template leave them out;
+- the system identity never holds them (packs, jobs and connectors); `UnverifiedPaymentPermissions.permits` also refuses
+  API keys and an identity of another tenant, and audits a refusal as `AUTH_DENIED`.
+
+**No `PAYMENT_CHANNEL` resource type.** The existing model expresses tenant (grant row), channel and office (concrete
+resource id), counter (condition), deny-wins and the in-transaction re-check. The only missing rule was "a generic
+billing or channel permission never implies it", which the explicit-only rule adds for every type; a separate type
+would duplicate the channel scope and still need that rule. The server binds sangam-billing's
+`UnverifiedPaymentAuthority` to this (`org.sangam.server.bridge.UnverifiedPaymentAuthorityBridge`), evaluating only the
+request's resolved identity (`TenantContext`).
+
 ### Flowable gap-list items (`spike/results/FLOWABLE-INTO-OPERATON.md`) in this area
 
 | Id | Status | Where |
@@ -154,7 +206,7 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 | FC-42 IDM with privileges, privilege mappings and tokens | Done | `PersonService`, `GroupAdminService`, `PrivilegeService`, `ApiTokenService` |
 | FC-33 callee tenant fallback | Done (security part: shared-definition fallback with tenant binding) | `SangamTenantIdProvider` |
 | FC-31 instance links, R19-authorised | Descriptor done; the table is WS-PORTS'/WS-ENGINE's | `ResourceRegistry.INSTANCE_LINK` |
-| A-17 LDAP + Spring Security | Done | `LdapDirectorySync`, `oidc/*` |
+| A-17 LDAP + Spring Security | Done | `LdapDirectorySync`, `oidc/*`; the Spring Security adapters in sangam-server `org.sangam.security.spring` (M-141a) |
 | B-11 fine-grained model for admin APIs | Done (virtual admin resource types, the same deny-wins engine) | `ResourceRegistry`, all `admin/*` |
 | EC-17 multi-tenant administration | Done (service side; the A01 UI is WS-UI) | `TenantAdminService`, `RoleAdminService.bootstrapTenantAdmins` |
 | EC-20 operator permissions + operator audit | Done | `BulkOperationGuard`, `Permission`, `SecurityAuditService` |
@@ -167,14 +219,11 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 
 | Dependency | Licence | Scope |
 |---|---|---|
-| spring-security-config / -web / -oauth2-resource-server / -oauth2-jose 7.1.2 | Apache-2.0 | compile |
-| nimbus-jose-jwt 10.9.1 (via oauth2-jose) | Apache-2.0 | compile |
-| spring-context / spring-web (Boot BOM) | Apache-2.0 | compile |
-| jakarta.servlet-api 6.1.0 | EPL-2.0 OR GPL-2.0 WITH Classpath-exception (OSI) | provided |
+| nimbus-jose-jwt (Boot BOM) | Apache-2.0 | test (GovSsoSimulatorConformanceTest) |
 | operaton-engine / operaton-engine-dmn 2.2.0 | Apache-2.0 | provided (supplied by sangam-engine) |
 | jqwik 1.10.2 (version managed in the root pom) | EPL-2.0 | test (M-086 property test) |
 
-Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in this pom).
+Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in this pom). Since M-141a (decisions 72-75) this jar has no Spring and no servlet dependency: the Spring Security adapters (resource server configuration, token filters, identity resolution filter, authentication token, client JWT verifier) are in the Spring host, sangam-server, package `org.sangam.security.spring`. `HostFrameworkBoundaryTest.securityJarStaysFrameworkFree` keeps it that way.
 
 ## Integration notes (for the integrator and WS-ENGINE)
 
@@ -215,7 +264,7 @@ Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in t
 4. **Identity binding outside HTTP.** The job executor and the worker API must bind an identity with
    `TenantContext.runAs(...)`: `SecurityIdentity.system(tenant, onBehalfOf)` for jobs (VI.4 rule 7), and the
    API-token identity for workers (R26). This belongs in a sangam-engine command interceptor.
-5. **Spring beans** that sangam-server must provide for `SangamResourceServerConfiguration`: `SangamSecurity`,
+5. **Spring beans** that a Spring host must provide for `org.sangam.security.spring.SangamResourceServerConfiguration` (sangam-server; not imported by the standalone server, which adds the filters to its own chain): `SangamSecurity`,
    `Transactions` (product DataSource) and `SecurityProperties` bound with `@ConfigurationProperties("sangam.security")`.
    For production, set `sangam.security.production=true`; the dev token filter then refuses to start.
 6. **Denial audit transaction (SL-132).** Pass a leaf-pool `Transactions` as `Options.denialTx`; denials go to the

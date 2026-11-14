@@ -1,0 +1,74 @@
+{
+  "key": "gov-intl-pfm-debt-operation/proposal",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-debt-operation",
+  "title": {
+    "en": "Debt operation",
+    "hi": "ऋण संचालन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "debtOperationType",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Debt operation (borrowing, guarantee, on-lending)",
+        "hi": "ऋण संचालन प्रकार"
+      }
+    },
+    {
+      "id": "lenderName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Lender / beneficiary of the guarantee",
+        "hi": "ऋणदाता / गारंटी लाभार्थी"
+      }
+    },
+    {
+      "id": "debtAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (pack currency)",
+        "hi": "राशि"
+      }
+    },
+    {
+      "id": "debtCurrency",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Currency of the instrument",
+        "hi": "लिखत की मुद्रा"
+      }
+    },
+    {
+      "id": "termsNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Terms: maturity, interest, fees, conditions",
+        "hi": "शर्तें"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

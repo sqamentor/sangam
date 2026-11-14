@@ -1,0 +1,80 @@
+{
+  "id": "gov.intl.pfm-suspense-ageing",
+  "version": "1.0.0",
+  "name": {
+    "en": "Suspense item clearance and ageing (worldwide PFM)",
+    "hi": "उचंत मद निपटान एवं आयु निगरानी (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "A suspense item (PFM-051, PEFA PI-27) is cleared to the correct head within the clearance period from DMN; the period is guarded by an SLA that escalates; an item that cannot be cleared becomes a write-off proposal that another officer approves; the reclassification is posted through the ledger and is confirmed before the case closes. Periods are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-suspense-ageing"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-suspense-ageing/sangam-intl-pfm-suspense-ageing.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-suspense-ageing/intl-pfm-suspense-ageing.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-suspense-ageing/forms/item.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-suspense-ageing/forms/clear.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-suspense-ageing/forms/write-off.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-suspense-ageing/forms/postHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-suspense-ageing/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-suspense-ageing/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.reclassify",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Reclassify the item from suspense to the correct head"
+    }
+  ],
+  "covers": [
+    "PFM-051",
+    "GP-06",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-suspense-ageing",
+      "rule": "SYNTHETIC 30-day clearance period",
+      "reason": "country suspense clearance period not verified (INTERNATIONAL-PFM-REQUIREMENTS PFM-051, section 5)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

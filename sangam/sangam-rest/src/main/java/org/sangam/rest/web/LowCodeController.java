@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.web;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,12 +101,33 @@ public class LowCodeController {
         return Lists.ok(lowCode.records(ctx, key, q, Lists.page(page, size)));
     }
 
+    /**
+     * DB backing: 201 with the created record. REST backing (EC-06, owner decision 265): 202 Accepted with the
+     * {@code DataObjectRecordOperation} (operationId, status PENDING), {@code Location} the operation route below,
+     * resource reference the operationId.
+     */
     @PostMapping("/data-objects/{key}/records")
-    public ResponseEntity<Map<String, Object>> createRecord(RequestContext ctx, @PathVariable String key,
-                                                            @RequestBody Map<String, Object> body) {
-        permissions.require(ctx, Permissions.LOWCODE_READ);
-        Map<String, Object> r = lowCode.createRecord(ctx, key, body);
+    public ResponseEntity<Object> createRecord(RequestContext ctx, @PathVariable String key,
+                                               @RequestBody Map<String, Object> body) {
+        // decision 284: creating a record is a write; lowcode.read alone is refused 403
+        permissions.require(ctx, Permissions.LOWCODE_RECORD_WRITE);
+        LowCodePort.RecordCreation c = lowCode.createRecord(ctx, key, body);
+        if (c.accepted() != null) {
+            LowCodePort.RecordOperation a = c.accepted();
+            return ResponseEntity.accepted()
+                    .location(URI.create("/api/v1/data-objects/" + key + "/records/operations/" + a.operationId()))
+                    .header(Lists.RESOURCE_REF, a.operationId()).body(a);
+        }
+        Map<String, Object> r = c.created();
         String id = String.valueOf(r.get("id"));
         return Lists.created("/api/v1/data-objects/" + key + "/records/" + id, id, r);
+    }
+
+    /** EC-06, owner decision 265 (getDataObjectRecordOperation): the outcome of a REST-backed create. */
+    @GetMapping("/data-objects/{key}/records/operations/{operationId}")
+    public LowCodePort.RecordOperation recordOperation(RequestContext ctx, @PathVariable String key,
+                                                       @PathVariable String operationId) {
+        permissions.require(ctx, Permissions.LOWCODE_READ);
+        return lowCode.recordOperation(ctx, key, operationId);
     }
 }

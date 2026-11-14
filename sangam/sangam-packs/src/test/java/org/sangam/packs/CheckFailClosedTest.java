@@ -45,8 +45,9 @@ class CheckFailClosedTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -67,7 +68,7 @@ class CheckFailClosedTest {
             }
         }
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, new FormAnswers(engine)::answer, 80);
         return bk;
     }
@@ -206,7 +207,7 @@ class CheckFailClosedTest {
             v.put(kv[i].toString(), kv[i + 1]);
         }
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, t -> null, 30);
         return bk;
     }
@@ -240,7 +241,7 @@ class CheckFailClosedTest {
         v.put("fraudScore", 10); // spoofed
         v.put("sim_fraud_score", "UNKNOWN");
         engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-ins-motor-claim").businessKey(bk)
-                .setVariables(v).processDefinitionWithoutTenantId().execute();
+                .setVariables(v).processDefinitionTenantId(PackTestTenant.ID).execute();
         FormAnswers answers = new FormAnswers(engine);
         driver.run(bk, t -> "mc_siu".equals(t.getTaskDefinitionKey()) ? null : answers.answer(t), 60);
         assertTrue(openTasks(bk).contains("mc_siu"), bk + ": SIU not referred; open " + openTasks(bk));
@@ -307,7 +308,7 @@ class CheckFailClosedTest {
         v.put("mdmReadStatus", "NORMAL"); // spoofed
         v.put("sim_mdm_read", "FAILED:MDM_DOWN");
         engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-util-bill").businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, t -> null, 20);
         assertEquals(List.of("bl_exception"), engine.getTaskService().createTaskQuery().processInstanceBusinessKey(bk)
                 .list().stream().map(t -> t.getTaskDefinitionKey()).toList(), "the billing clerk resolves the read");

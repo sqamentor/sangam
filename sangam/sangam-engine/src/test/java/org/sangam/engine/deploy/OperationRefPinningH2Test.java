@@ -41,6 +41,7 @@ class OperationRefPinningH2Test {
 
     private static OperatonEngineAdapter engine(OperationRefPinning.Pinner pinner) {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);

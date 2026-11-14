@@ -127,6 +127,9 @@ public final class PolicyCompiler {
     public boolean allow(Connection c, SecurityIdentity who, String resourceType, Permission permission, String resourceId,
                          Map<String, ?> attributes) {
         ResourceDescriptor d = registry.get(resourceType);
+        if (permission.explicitOnly() && d.hasTable()) {
+            return false;    // decision 141: explicit-only permissions exist on virtual types only (BILLING channels)
+        }
         if (d.hasTable()) {
             SqlPredicate p = visible(c, who, resourceType, permission, "r");
             List<Object> params = new ArrayList<>();
@@ -170,6 +173,9 @@ public final class PolicyCompiler {
             return out;
         }
         ResourceDescriptor d = registry.get(resourceType);
+        if (permission.explicitOnly() && d.hasTable()) {
+            return out;      // decision 141, as in the object check
+        }
         for (int from = 0; from < distinct.size(); from += SET_CHUNK) {
             List<String> chunk = distinct.subList(from, Math.min(distinct.size(), from + SET_CHUNK));
             if (d.hasTable()) {
@@ -215,7 +221,8 @@ public final class PolicyCompiler {
         for (CompiledCondition cc : conditions(c, who.tenantId(), resourceType, permission.sensitive())) {
             conds.put(cc.conditionId(), cc.condition());
         }
-        StringBuilder sql = new StringBuilder("SELECT a.deny_flag, a.perms, a.condition_id, CASE WHEN a.resource_id = ? THEN 1 ELSE 0 END");
+        StringBuilder sql = new StringBuilder("SELECT a.deny_flag, a.perms, a.condition_id, CASE WHEN a.resource_id = ? THEN 1 ELSE 0 END,"
+                + " a.resource_type");
         List<Object> params = new ArrayList<>();
         params.add(ResourceRegistry.ANY_ID);
         for (String id : chunk) {
@@ -241,6 +248,9 @@ public final class PolicyCompiler {
             if ((perms & permission.bit()) == 0) {
                 return null;
             }
+            if (deny != 1 && !grantConfers(permission, rs.getString(5), star ? ResourceRegistry.ANY_ID : "")) {
+                return null;                       // decision 141: a wildcard grant never confers an explicit-only one
+            }
             Condition cond = condId == null ? null : conds.get(condId);
             boolean applies = deny == 1
                     ? condId == null || cond == null || ConditionCompiler.evaluate(cond, Map.of(), who)
@@ -249,7 +259,7 @@ public final class PolicyCompiler {
                 return null;
             }
             for (int i = 0; i < n; i++) {
-                if (star || rs.getInt(5 + i) == 1) {
+                if (star || rs.getInt(6 + i) == 1) {
                     if (deny == 1) {
                         denied[i] = true;
                     } else {
@@ -272,7 +282,8 @@ public final class PolicyCompiler {
         for (CompiledCondition cc : conditions(c, who.tenantId(), resourceType, permission.sensitive())) {
             conds.put(cc.conditionId(), cc.condition());
         }
-        StringBuilder sql = new StringBuilder("SELECT a.deny_flag, a.perms, a.condition_id FROM AUTH_EFFECTIVE a WHERE a.tenant_id = ? AND ");
+        StringBuilder sql = new StringBuilder("SELECT a.deny_flag, a.perms, a.condition_id, a.resource_type, a.resource_id"
+                + " FROM AUTH_EFFECTIVE a WHERE a.tenant_id = ? AND ");
         List<Object> params = new ArrayList<>();
         params.add(who.tenantId());
         appendPrincipal(sql, params, "a", who);
@@ -282,13 +293,16 @@ public final class PolicyCompiler {
         params.add(resourceId);
         params.add(ResourceRegistry.ANY_ID);
         boolean granted = false;
-        for (Object[] row : Jdbc.query(c, sql.toString(), rs -> new Object[]{rs.getInt(1), rs.getLong(2), rs.getString(3)},
-                params.toArray())) {
+        for (Object[] row : Jdbc.query(c, sql.toString(), rs -> new Object[]{rs.getInt(1), rs.getLong(2), rs.getString(3),
+                rs.getString(4), rs.getString(5)}, params.toArray())) {
             int deny = (Integer) row[0];
             long perms = (Long) row[1];
             String condId = (String) row[2];
             if ((perms & permission.bit()) == 0) {
                 continue;
+            }
+            if (deny != 1 && !grantConfers(permission, (String) row[3], (String) row[4])) {
+                continue;                          // decision 141: a wildcard grant never confers an explicit-only one
             }
             Condition cond = condId == null ? null : conds.get(condId);
             if (deny == 1) {
@@ -303,6 +317,65 @@ public final class PolicyCompiler {
     }
 
     // ------------------------------------------------------------------ deployment validation (VI.4 rule 1)
+
+    /**
+     * {@link #validate(String, long, Condition)} plus decision 141: a grant (not a deny) of an explicit-only permission
+     * ({@link Permission#explicitOnly()}) must name a concrete resource type whose permission set lists it and a concrete
+     * resource id; on {@code '*'} it is rejected, since the object check would never let it confer the permission.
+     */
+    public void validate(String resourceType, String resourceId, long perms, Condition condition, boolean deny) {
+        validate(resourceType, perms, condition);
+        if (deny) {
+            return;
+        }
+        for (Permission p : Permission.fromMask(perms)) {
+            if (!p.explicitOnly()) {
+                continue;
+            }
+            if (ResourceRegistry.ANY_TYPE.equals(resourceType) || !registry.permissionsOf(resourceType).contains(p)) {
+                throw new SangamSecurityException.PolicyRejected("permission " + p + " is granted only on a resource type"
+                        + " that defines it, never on " + resourceType + " (decision 141)");
+            }
+            if (resourceId == null || resourceId.isBlank() || ResourceRegistry.ANY_ID.equals(resourceId)) {
+                throw new SangamSecurityException.PolicyRejected("permission " + p + " is granted only on an explicit"
+                        + " resource id, never on '" + resourceId + "' (decision 141)");
+            }
+        }
+    }
+
+    /**
+     * Decision 141, endpoint gate of an explicit-only permission: whether {@code who} holds at least one grant row of
+     * {@code permission} on the concrete {@code resourceType} with a concrete id (never {@code '*'}). Conditions and
+     * denies are not evaluated: this only decides who may call the endpoint; the object check on the exact resource
+     * ({@link #allow}) stays the authority.
+     */
+    public boolean holdsExplicitGrant(Connection c, SecurityIdentity who, String resourceType, Permission permission) {
+        if (!permission.explicitOnly() || ResourceRegistry.ANY_TYPE.equals(resourceType)) {
+            return false;
+        }
+        StringBuilder sql = new StringBuilder("SELECT a.perms FROM AUTH_EFFECTIVE a WHERE a.tenant_id = ? AND ");
+        List<Object> params = new ArrayList<>();
+        params.add(who.tenantId());
+        appendPrincipal(sql, params, "a", who);
+        sql.append(" AND a.resource_type = ? AND a.resource_id <> ? AND a.deny_flag = 0");
+        params.add(resourceType);
+        params.add(ResourceRegistry.ANY_ID);
+        for (Long perms : Jdbc.query(c, sql.toString(), rs -> rs.getLong(1), params.toArray())) {
+            if ((perms & permission.bit()) != 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Decision 141, object check: whether a grant row confers {@code permission}. Every grant confers an ordinary
+     * permission; an explicit-only one only from a row on the concrete type and the concrete id (never {@code '*'}).
+     */
+    static boolean grantConfers(Permission permission, String rowType, String rowId) {
+        return !permission.explicitOnly()
+                || (!ResourceRegistry.ANY_TYPE.equals(rowType) && !ResourceRegistry.ANY_ID.equals(rowId));
+    }
 
     /** Rejects a conditional policy on a list-visible permission whose condition does not compile to SQL. */
     public void validate(String resourceType, long perms, Condition condition) {

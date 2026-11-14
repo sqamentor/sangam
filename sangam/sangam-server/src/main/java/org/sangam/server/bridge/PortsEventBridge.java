@@ -10,6 +10,7 @@ import java.util.Map;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.sangam.integration.publish.cloud.EventGridInboundEndpoint;
 import org.sangam.ports.events.EventRegistry;
 import org.sangam.ports.events.InboundEventProcessor;
 import org.sangam.ports.events.channel.InboundChannelManager;
@@ -50,6 +51,7 @@ public final class PortsEventBridge implements EventPort {
     private final AuditPort audit;
     private final RestProperties props;
     private final boolean allowUnsignedWebhooks;
+    private final EventGridInboundEndpoint eventGridOrNull;
 
     public PortsEventBridge(EventRegistry registry, WebhookInboundEndpoint webhook, InboundChannelManager channelManagerOrNull,
                             AuditPort audit, RestProperties props) {
@@ -63,6 +65,18 @@ public final class PortsEventBridge implements EventPort {
      */
     public PortsEventBridge(EventRegistry registry, WebhookInboundEndpoint webhook, InboundChannelManager channelManagerOrNull,
                             AuditPort audit, RestProperties props, boolean allowUnsignedWebhooks) {
+        this(registry, webhook, channelManagerOrNull, audit, props, allowUnsignedWebhooks, null);
+    }
+
+    /**
+     * @param eventGridOrNull the SL-170 Event Grid inbound endpoint (decisions 189 and 219), or null when the server does
+     *                        not enable it ({@code sangam.ports.events.eventgrid.enabled}, default false): every Event
+     *                        Grid hook then answers 404
+     */
+    public PortsEventBridge(EventRegistry registry, WebhookInboundEndpoint webhook, InboundChannelManager channelManagerOrNull,
+                            AuditPort audit, RestProperties props, boolean allowUnsignedWebhooks,
+                            EventGridInboundEndpoint eventGridOrNull) {
+        this.eventGridOrNull = eventGridOrNull;
         this.registry = registry;
         this.webhook = webhook;
         this.channelManagerOrNull = channelManagerOrNull;
@@ -267,6 +281,42 @@ public final class PortsEventBridge implements EventPort {
         int n = PortsErrors.call(() -> registry.deleteEvent(ctx.tenantId(), key, null));
         audit.record(ctx, "sec:" + ctx.tenantId(), "EVENT_DEFINITION_DELETED",
                 Map.of("key", key, "versions", n, "reason", reason));
+    }
+
+    // ---------------------------------------------------------------- SL-170 Event Grid hooks
+
+    /**
+     * The Event Grid inbound route (W4-H REQUEST 00:50:03Z): only a deployed INBOUND {@code eventgrid} channel of the
+     * tenant is reachable (anything else 404, so channel names are not probed through it); a failed channel
+     * authentication (SecurityException) is 401 WEBHOOK_SIGNATURE_INVALID with no detail from the check; every other
+     * answer of {@link EventGridInboundEndpoint} (200, 403 origin, 400, 503 retry) is passed on as is.
+     */
+    @Override
+    public HookAnswer eventGridHook(String method, String tenant, String channel, Map<String, String> headers,
+                                    Map<String, String> query, String body) {
+        EventGridInboundEndpoint eg = eventGridOrNull;
+        if (eg == null || tenant == null || channel == null || !inboundEventGrid(tenant, channel)) {
+            throw ApiProblem.notFound("Event Grid inbound channel", channel);
+        }
+        Map<String, String> h = headers == null ? Map.of() : headers;
+        Map<String, String> q = query == null ? Map.of() : query;
+        EventGridInboundEndpoint.Answer a;
+        try {
+            a = "OPTIONS".equals(method) ? eg.options(tenant, channel, h, q) : eg.post(tenant, channel, h, q, body);
+        } catch (SecurityException e) {
+            throw new ApiProblem(401, "WEBHOOK_SIGNATURE_INVALID", "the delivery did not authenticate for this channel");
+        } catch (org.sangam.ports.support.PortsProblem p) {
+            throw new ApiProblem(p.status(), p.code(), p.getMessage());
+        } catch (IllegalArgumentException e) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", e.getMessage());
+        }
+        return new HookAnswer(a.status(), a.headers(), a.body());
+    }
+
+    private boolean inboundEventGrid(String tenant, String channel) {
+        return PortsErrors.call(() -> registry.channel(tenant, channel)).map(EventRegistry.DeployedChannel::definition)
+                .filter(d -> d.direction() == ChannelDefinition.Direction.INBOUND && "eventgrid".equals(d.adapterType()))
+                .isPresent();
     }
 
     // ---------------------------------------------------------------- publish

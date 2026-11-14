@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Budget-to-accounting reconciliation. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_budget_accounti" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-budget-accounting-reconciliation" name="Budget-to-accounting reconciliation" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-budget-accounting-reconciliation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>reconPeriod,ledgerId</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="br_start" name="Period to reconcile" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-budget-accounting-reconciliation/period"></startEvent>
+    <serviceTask id="br_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>ledgerId=BUDGET;accountantSeat=ACCOUNTANT;reviewerSeat=ACCOUNTING-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_outturn_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>outturnAmount=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_outturn" name="Budget outturn (ledger)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>ledger.outturn</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>outturn</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>ledgerId,reconPeriod</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>outturn</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_accounts_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>accountingAmount=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="br_accounts" name="Expense (financial statements)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>accounts.statement</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>expense</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>reconPeriod</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>accounting</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="br_bothGw" name="Both confirmed?" default="intl_pfm_budget_accounti_f9"></exclusiveGateway>
+    <userTask id="br_hold" name="Amounts not confirmed: check the ledger and the accounts" operaton:candidateGroups="${accountantSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-accounting-reconciliation/hold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="br_difference" name="Difference (exact)" operaton:class="org.sangam.packs.core.MoneyCalculationDelegate"><extensionElements><operaton:field name="result"><operaton:string>differenceAmount</operaton:string></operaton:field><operaton:field name="formula"><operaton:string>outturnAmount - accountingAmount</operaton:string></operaton:field><operaton:field name="op"><operaton:string>SUM</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="br_diffGw" name="Difference?" default="intl_pfm_budget_accounti_f12"></exclusiveGateway>
+    <userTask id="br_explain" name="Explain the difference (basis, timing, entity)" operaton:candidateGroups="${accountantSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-accounting-reconciliation/explain"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="br_review" name="Approve the reconciliation (not the preparer)" operaton:candidateGroups="${reviewerSeat}" operaton:formKey="sangam:gov-intl-pfm-budget-accounting-reconciliation/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>br_explain</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="br_reviewGw" name="" default="intl_pfm_budget_accounti_f16"></exclusiveGateway>
+    <serviceTask id="br_doc" name="Reconciliation statement" operaton:class="org.sangam.packs.core.DocumentDelegate"><extensionElements><operaton:field name="template"><operaton:string>budget-accounting-reconciliation</operaton:string></operaton:field></extensionElements></serviceTask>
+    <endEvent id="br_end" name="Reconciled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>RECONCILED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['outturnAmount', 'accountingAmount', 'differenceAmount']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_budget_accounti_f1" sourceRef="br_outturn_clear" targetRef="br_outturn"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f2" sourceRef="br_accounts_clear" targetRef="br_accounts"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f3" sourceRef="br_start" targetRef="br_defaults"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f4" sourceRef="br_defaults" targetRef="br_outturn_clear"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f5" sourceRef="br_outturn" targetRef="br_accounts_clear"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f6" sourceRef="br_accounts" targetRef="br_bothGw"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f7" sourceRef="br_hold" targetRef="br_outturn_clear"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f8" name="not confirmed" sourceRef="br_bothGw" targetRef="br_hold"><conditionExpression xsi:type="tFormalExpression">${outturnStatus != 'COMPLETED' || outturnAmount == null || accountingStatus != 'COMPLETED' || accountingAmount == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_accounti_f9" name="confirmed" sourceRef="br_bothGw" targetRef="br_difference"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f10" sourceRef="br_difference" targetRef="br_diffGw"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f11" name="difference to explain" sourceRef="br_diffGw" targetRef="br_explain"><conditionExpression xsi:type="tFormalExpression">${differenceAmount != 0}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_accounti_f12" name="no difference" sourceRef="br_diffGw" targetRef="br_review"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f13" sourceRef="br_explain" targetRef="br_review"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f14" sourceRef="br_review" targetRef="br_reviewGw"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f15" name="returned" sourceRef="br_reviewGw" targetRef="br_explain"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_budget_accounti_f16" name="approved" sourceRef="br_reviewGw" targetRef="br_doc"/>
+    <sequenceFlow id="intl_pfm_budget_accounti_f17" sourceRef="br_doc" targetRef="br_end"/>
+    <subProcess id="br_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="br_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="br_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="br_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="br_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_budget_accounti_f18" sourceRef="br_withdrawStart" targetRef="br_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_budget_accounti_f19" sourceRef="br_withdrawKind" targetRef="br_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_budget_accounti_f20" sourceRef="br_withdrawCall" targetRef="br_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="br_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="br_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="br_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="br_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="br_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_budget_accounti_f21" sourceRef="br_cancelStart" targetRef="br_cancelKind"/>
+      <sequenceFlow id="intl_pfm_budget_accounti_f22" sourceRef="br_cancelKind" targetRef="br_cancelCall"/>
+      <sequenceFlow id="intl_pfm_budget_accounti_f23" sourceRef="br_cancelCall" targetRef="br_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_budget_accounti_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_budget_accounti_plane" bpmnElement="sangam-intl-pfm-budget-accounting-reconciliation">
+      <bpmndi:BPMNShape id="br_start_di" bpmnElement="br_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_defaults_di" bpmnElement="br_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_outturn_clear_di" bpmnElement="br_outturn_clear"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_outturn_di" bpmnElement="br_outturn"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_accounts_clear_di" bpmnElement="br_accounts_clear"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_accounts_di" bpmnElement="br_accounts"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_bothGw_di" bpmnElement="br_bothGw"><dc:Bounds x="1035" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_hold_di" bpmnElement="br_hold"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_difference_di" bpmnElement="br_difference"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_diffGw_di" bpmnElement="br_diffGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_explain_di" bpmnElement="br_explain"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_review_di" bpmnElement="br_review"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_reviewGw_di" bpmnElement="br_reviewGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_doc_di" bpmnElement="br_doc"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_end_di" bpmnElement="br_end"><dc:Bounds x="2197" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdraw_di" bpmnElement="br_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawStart_di" bpmnElement="br_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawKind_di" bpmnElement="br_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawCall_di" bpmnElement="br_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_withdrawEnd_di" bpmnElement="br_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancel_di" bpmnElement="br_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelStart_di" bpmnElement="br_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelKind_di" bpmnElement="br_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelCall_di" bpmnElement="br_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="br_cancelEnd_di" bpmnElement="br_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f1_di" bpmnElement="intl_pfm_budget_accounti_f1"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f2_di" bpmnElement="intl_pfm_budget_accounti_f2"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f3_di" bpmnElement="intl_pfm_budget_accounti_f3"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f4_di" bpmnElement="intl_pfm_budget_accounti_f4"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f5_di" bpmnElement="intl_pfm_budget_accounti_f5"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f6_di" bpmnElement="intl_pfm_budget_accounti_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1035" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f7_di" bpmnElement="intl_pfm_budget_accounti_f7"><di:waypoint x="1225" y="235"/><di:waypoint x="1225" y="267"/><di:waypoint x="400" y="267"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f8_di" bpmnElement="intl_pfm_budget_accounti_f8"><di:waypoint x="1085" y="70"/><di:waypoint x="1130" y="70"/><di:waypoint x="1130" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f9_di" bpmnElement="intl_pfm_budget_accounti_f9"><di:waypoint x="1085" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f10_di" bpmnElement="intl_pfm_budget_accounti_f10"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f11_di" bpmnElement="intl_pfm_budget_accounti_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f12_di" bpmnElement="intl_pfm_budget_accounti_f12"><di:waypoint x="1415" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f13_di" bpmnElement="intl_pfm_budget_accounti_f13"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f14_di" bpmnElement="intl_pfm_budget_accounti_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f15_di" bpmnElement="intl_pfm_budget_accounti_f15"><di:waypoint x="1885" y="95"/><di:waypoint x="1885" y="142"/><di:waypoint x="1555" y="142"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f16_di" bpmnElement="intl_pfm_budget_accounti_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f17_di" bpmnElement="intl_pfm_budget_accounti_f17"><di:waypoint x="2100" y="70"/><di:waypoint x="2197" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f18_di" bpmnElement="intl_pfm_budget_accounti_f18"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f19_di" bpmnElement="intl_pfm_budget_accounti_f19"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f20_di" bpmnElement="intl_pfm_budget_accounti_f20"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f21_di" bpmnElement="intl_pfm_budget_accounti_f21"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f22_di" bpmnElement="intl_pfm_budget_accounti_f22"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_budget_accounti_f23_di" bpmnElement="intl_pfm_budget_accounti_f23"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -65,7 +66,7 @@ class CdsServicesSecurityTest {
         ds.setURL("jdbc:h2:mem:cdsjti" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE");
         ds.setUser("sa");
         ds.setPassword("");
-        TxSupport tx = new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
         tx.newTransactions().inTransaction(c -> {
             try (Statement s = c.createStatement()) {
                 s.execute("CREATE TABLE SEC_CLIENT_JTI (replay_key VARBINARY(32) NOT NULL, issuer VARCHAR(1000) NOT NULL,"

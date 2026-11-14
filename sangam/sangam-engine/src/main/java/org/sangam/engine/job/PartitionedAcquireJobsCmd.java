@@ -164,12 +164,19 @@ public class PartitionedAcquireJobsCmd extends AcquireJobsCmd {
         return out;
     }
 
-    /** X.2.1.5 F-0: stamps the owner on the job's slot row only while this incarnation still holds that epoch. */
+    /**
+     * X.2.1.5 F-0: stamps the owner on the job's slot row only while this incarnation still holds that epoch and the
+     * job's slot is still a STABLE slot of that partition (decision 146: a slot that started MOVING after the candidate
+     * query is no longer acquired by its source).
+     */
     private boolean fence(Connection c, String jobId, long[] partitionEpoch) {
         return Jdbc.update(c, "UPDATE EXEC_JOB_SLOT SET owner_partition = ?, owner_epoch = ? WHERE job_id = ?"
                         + " AND EXISTS (SELECT 1 FROM EXEC_PARTITION p WHERE p.partition_id = ? AND p.owner_incarnation = ?"
-                        + " AND p.owner_epoch = ? AND p.state = 'ACTIVE' AND p.lease_expires_at > " + dialect.now() + ")",
-                partitionEpoch[0], partitionEpoch[1], jobId, partitionEpoch[0], incarnation, partitionEpoch[1]) == 1;
+                        + " AND p.owner_epoch = ? AND p.state = 'ACTIVE' AND p.lease_expires_at > " + dialect.now() + ")"
+                        + " AND EXISTS (SELECT 1 FROM EXEC_SLOT es WHERE es.slot = EXEC_JOB_SLOT.slot AND es.state = 'STABLE'"
+                        + " AND es.partition_id = ?)",
+                partitionEpoch[0], partitionEpoch[1], jobId, partitionEpoch[0], incarnation, partitionEpoch[1],
+                partitionEpoch[0]) == 1;
     }
 
     public String incarnation() {

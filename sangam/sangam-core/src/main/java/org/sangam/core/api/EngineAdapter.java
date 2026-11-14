@@ -143,16 +143,32 @@ public interface EngineAdapter extends AutoCloseable {
      * @param lockVersion        fencing token; every worker call must pass it back
      * @param attemptId          new for every lease (A-2); not used for fencing, which is by lockVersion
      * @param operationId        the operation identity of this work (T35), or null where the adapter derives none
+     * @param properties         decision 159: the activity's extension properties (for example {@code arazzo.request},
+     *                           {@code arazzo.outputs}) plus the adapter's keys {@code sangamOperationRef} (pinned
+     *                           {@code contractId@version#operationId}), {@code sangam.processDefinitionId} and
+     *                           {@code sangam.deploymentId}; never null, unmodifiable, empty where the adapter has none
      */
     record ExternalWork(String id, String topic, String processInstanceId, String activityId,
                         String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
-                        long lockVersion, String attemptId, Map<String, Object> variables, String operationId) {
+                        long lockVersion, String attemptId, Map<String, Object> variables, String operationId,
+                        Map<String, String> properties) {
+
+        public ExternalWork {
+            properties = properties == null ? Map.of() : Map.copyOf(properties);
+        }
+
+        public ExternalWork(String id, String topic, String processInstanceId, String activityId,
+                            String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
+                            long lockVersion, String attemptId, Map<String, Object> variables, String operationId) {
+            this(id, topic, processInstanceId, activityId, activityInstanceId, retries, lockExpiresAt, lockVersion,
+                    attemptId, variables, operationId, Map.of());
+        }
 
         public ExternalWork(String id, String topic, String processInstanceId, String activityId,
                             String activityInstanceId, int retries, java.time.Instant lockExpiresAt,
                             long lockVersion, String attemptId, Map<String, Object> variables) {
             this(id, topic, processInstanceId, activityId, activityInstanceId, retries, lockExpiresAt, lockVersion,
-                    attemptId, variables, null);
+                    attemptId, variables, null, Map.of());
         }
     }
 

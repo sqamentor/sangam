@@ -2,7 +2,7 @@
 
 `sangam` command-line tool over the REST API only, with no database access. Build: `mvnw.cmd -q -B -DskipTests -f tools/sangam-cli/pom.xml install`, then run `java -jar tools/sangam-cli/target/sangam-cli.jar`.
 
-**Evidence level:** compiled. `MainTest`, `TokenStoreTest` and `KeyProtectorTest` (M-093) are written against a fake HTTP layer, a fake keychain and a fake process runner; the M-093 tests have not been run yet (test phase). Never run against a real server, identity provider or OS keychain. Device-flow polling has no test.
+**Evidence level:** compiled. `ModelDiffCommandTest` (M-125, written, not run), `MainTest`, `TokenStoreTest` and `KeyProtectorTest` (M-093) are written against a fake HTTP layer, a fake keychain and a fake process runner; the M-093 tests have not been run yet (test phase). Never run against a real server, identity provider or OS keychain. Device-flow polling has no test.
 
 | Command | REST call | Note |
 |---|---|---|
@@ -13,8 +13,36 @@
 | `start KEY` | `POST /process-instances` | `--idempotency-key` for CI retries |
 | `test run PACKAGE` | `POST /packages/{id}/tests/run` | The server answers with an array of `TestRun`. Exit 1 when any has `passed: false` (an object with `failed > 0` is also understood) |
 | `batch status ID` | `GET /ops/jobs/{id}` | |
+| `upgrade check` | none (offline); with `--schema` `GET /ops/schema-status` | M-092; see below |
+| `diff BEFORE AFTER` | none (offline) | M-125; see below |
 
-Exit codes: 0 ok, 1 refused or test failures, 2 usage, 3 authentication, 4 network.
+Exit codes: 0 ok, 1 refused or test failures (for `upgrade check`: any blocking finding; for `diff`: a change at a `--fail-on` level), 2 usage, 3 authentication, 4 network.
+
+## Upgrade check (M-092)
+
+Run the CLI of the **target** release before an upgrade:
+`sangam upgrade check --models DIR [--models DIR]... --config application.yaml [--config prod.env]... [--as-of yyyy-MM-dd] [--schema postgresql|oracle|mssql|mysql|h2]`.
+Without `--schema` it needs no server. It prints one JSON report (`blocking`, `warnings`, `info`, `findings`, `notChecked`, and `schema` when compared).
+
+- **Models:** every `.bpmn`, `.bpmn20.xml`, `.dmn` and `.cmmn` file under each directory is parsed (no DTD, no external entity) and checked against the target's removed or deprecated constructs.
+- **Config:** `.yaml`/`.yml`/`.properties` keys in Spring relaxed form (case, `-` and `_` ignored; a rule key also covers its sub-keys), and `.env` variable names, against the target's removed and renamed settings.
+- **API:** the target's `sangam-api-deprecations.yaml` (bundled from `sangam-rest/api` at build time; the file `ApiDeprecationRegistry` loads). An operation past its sunset on the as-of date (default today, UTC) is blocking, because it answers 410 `API_SUNSET`; a deprecated one is a warning with its successor.
+- **Schema** (`--schema DATABASE`, the database type of the installation): the CLI reads `GET /ops/schema-status` from the logged-in server (`--server` or `sangam login`; permission `ops.read`) and compares the applied product changesets with the target's changelog, bundled from `sangam-persistence` at build time (`db/changelog/sangam-master.xml` and the formatted-SQL files it includes; engine patches and history partitioning are not product changesets). Blocking: applied changesets the target does not know (a newer release migrated the database; downgrades are not supported), or a held Liquibase lock. Info: the changesets the upgrade's migration Job will apply. Without `--schema` the report lists the schema under `notChecked`. A 401 or 403 from the server exits 3, another refusal exits 1.
+- **Rules:** `src/main/resources/upgrade-rules.json` holds what the release removes or deprecates (`--rules FILE` and `--deprecations FILE` override the bundled files). 0.1.0 is the first release, so its lists are empty.
+
+Scaffolding for later releases:
+- `upgrade/openrewrite/rewrite.yml`: declarative OpenRewrite recipes for Java SDK users (`org.sangam.upgrade.UpgradeToLatest`, empty for 0.1.0). OpenRewrite is not part of the Sangam build; users run the file with their own setup.
+- SDK codemods for the other languages follow the same rule: a release that renames a public SDK symbol adds the rename to `upgrade-rules.json` (so `upgrade check` reports it) and to the SDK's changelog. No codemod tool is shipped, because none is installed in the build.
+
+## Model diff (M-125)
+
+`sangam diff BEFORE AFTER [--json] [--fail-on ELEMENT,FLOW,EXPRESSION,PROPERTY] [--resource NAME]` compares two versions of a BPMN, DMN, CMMN or form file with `org.sangam.modeller.diff.ModelDiff`, the same code as `POST /models/diff`. It needs no server and no login.
+
+- **Output:** one line per change (`+` added, `-` removed, `~` changed, then level, element type, id, name, path and old -> new value). `--json` prints the `ModelDiffReport` of `POST /models/diff` instead.
+- **Matching:** elements are matched by id (form components by `id`, else `key`). Diagram layout (BPMNDI, DMNDI, CMMNDI) and modeller `exporter` attributes are ignored, so moving a shape is not a change.
+- **Absent version:** an empty file (for example `/dev/null`) stands for a new or deleted model; both empty is refused.
+- **Format:** from `--resource`, else the AFTER file name (BEFORE when AFTER is empty), else the content.
+- **PR check:** with `--fail-on`, exit 1 when any change is at a listed level; without it, exit 0 whatever changed. A file that cannot be read, an unreadable model, two different formats or bad options exit 2.
 
 ## Integration notes
 
@@ -39,4 +67,4 @@ Exit codes: 0 ok, 1 refused or test failures, 2 usage, 3 authentication, 4 netwo
 
 ## Third-party dependencies
 
-Jackson (Apache-2.0), shaded into the jar. `maven-shade-plugin` at build time only. The keychain needs no new dependency: it uses JDK `javax.crypto` and the platform's own tools.
+Jackson (Apache-2.0), shaded into the jar, including `jackson-dataformat-yaml` and SnakeYAML (Apache-2.0) for `upgrade check`. `sangam-modeller` (this project, Apache-2.0) for `diff`, with every transitive dependency excluded: its diff package uses only the JDK and Jackson, so no Operaton or other Sangam module jar enters the shaded jar. `maven-shade-plugin` at build time only. The keychain needs no new dependency: it uses JDK `javax.crypto` and the platform's own tools.

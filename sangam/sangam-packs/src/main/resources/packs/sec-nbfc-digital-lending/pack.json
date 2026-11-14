@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-nbfc-digital-lending/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-nbfc-digital-lending/pack.json"
     }
   ],
   "seed": "packs/sec-nbfc-digital-lending/seed.json",
@@ -110,6 +114,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "dl_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-nbfc-dl-powers",
+      "ruleCaseType": "LOAN"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

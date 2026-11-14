@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -25,110 +25,121 @@
     </dependency>
     <!-- Generic modules wired in config/*Wiring (final integration wave) -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-onboarding</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-config</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-ledger</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-billing</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-registry</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-resources</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-case</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-programme</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-geo</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-field</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-connectors-health</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- Sangam modules (ARCHITECTURE.md section 3) -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-rest</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-persistence</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-engine</artifactId>
     </dependency>
+    <!-- M-141b / M-144: plain-Java engine assembly and host SPI (the customizer and EngineWiring call it) -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-assembly</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-security</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-integration</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-flowable-ports</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-packs</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-ai</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-ops</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- Decision 155 (M-102): backup console; off unless sangam.backup.console.kubernetes.enabled=true -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-backup</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-compliance</artifactId>
     </dependency>
     <!-- SCALE: cell registration, roll-up and cross-cell publishers (IR-2, IR-3); active only with sangam.cell.id -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-cell</artifactId>
     </dependency>
     <!-- SL-92: ComplianceAuthorityGateway registers these explicitly (no class-path module discovery). Apache-2.0, Jackson BOM line. -->
@@ -158,22 +169,16 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
     </dependency>
-    <!-- M-076 SAML relying party, host side only (decision 73); off unless sangam.security.saml.enabled. Version from
-         the Spring Boot BOM; OpenSAML pinned in the root pom. -->
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-saml2-service-provider</artifactId>
-    </dependency>
+    <!-- M-076: spring-security-saml2-service-provider and the OpenSAML closure are not in the 0.1.0 server (owner
+         decision 135, RM-01); SAML works through Keycloak brokering and SamlWiring refuses saml.enabled=true. -->
     <!-- M-064 / M-058 (W3-A REQUEST 13:19:36Z): broker clients that are optional in sangam-integration, present on the
-         server so MQTT and NATS channels and the NATS/Redis wake-up bus can be enabled. Paho EPL-2.0 OR EDL-1.0, jnats
-         Apache-2.0, jedis MIT (decision 56, DOWNLOADS-WAVE3). Versions managed in the root pom. -->
+         server so MQTT channels and the Redis wake-up bus can be enabled. Paho EPL-2.0 OR EDL-1.0, jedis MIT (decision 56,
+         DOWNLOADS-WAVE3). Versions managed in the root pom. Owner decision 232: io.nats:jnats (and the bcprov-lts8on it
+         brings) is not a server dependency; NATS channels and the NATS wake-up bus need the NATS add-on in lib-ext, and
+         AddonGuardWiring / BrokerWakeupWiring refuse NATS settings without it (decision 235: never with eSign). -->
     <dependency>
       <groupId>org.eclipse.paho</groupId>
       <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.nats</groupId>
-      <artifactId>jnats</artifactId>
     </dependency>
     <dependency>
       <groupId>redis.clients</groupId>
@@ -244,6 +249,12 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- M-144/M-150: the host conformance kit and cross-host equivalence scenarios (org.sangam.server.host) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-host-conformance</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- Acceptance suite (org.sangam.server.acceptance, *IT): Testcontainers on the four Tier-1 databases.
          Test scope only: the Oracle driver is never bundled (LIC-4). -->
     <dependency>
@@ -266,19 +277,15 @@
       <artifactId>mysql</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Decision 123 (RM-23, CR-17): the Oracle JDBC driver is not here; it comes only from the CI profile oracle-it
+         below, which the Oracle lane of db-matrix.yml activates. -->
     <dependency>
-      <groupId>com.oracle.database.jdbc</groupId>
-      <artifactId>ojdbc11</artifactId>
-      <version>23.8.0.25.04</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-channels</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-modeller</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -378,6 +385,120 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <!-- Decision 123 (RM-23, CR-17): Oracle JDBC (ojdbc11) for the Oracle acceptance lane only. CI-only, never active
+         by default, test scope (LIC-2: never bundled; the root enforcer bans com.oracle.database.* in shipped scopes).
+         db-matrix.yml activates it on the Oracle lane: -Psangam-db-it,sangam-it-only,oracle-it -Dsangam.db=oracle. -->
+    <profile>
+      <id>oracle-it</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.oracle.database.jdbc</groupId>
+          <artifactId>ojdbc11</artifactId>
+          <version>23.8.0.25.04</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <!-- Decision 217: the optional eSign and DSC signing module (sangam-esign, the only holder of Bouncy Castle) as an opt-in
+         runtime add-on: -Psangam-esign puts it on the server class path; it is never a compile dependency of this module,
+         so the default server has no Bouncy Castle. Live eSign stays off until decision 215 confirms the ESP profile. -->
+    <profile>
+      <id>sangam-esign</id>
+      <dependencies>
+        <dependency>
+          <groupId>io.github.sqamentor</groupId>
+          <artifactId>sangam-esign</artifactId>
+          <version>${project.version}</version>
+          <scope>runtime</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <!-- Decisions 183 and 187: HAPI FHIR profile validation as an opt-in runtime add-on. sangam-connectors-health declares
+         HAPI as OPTIONAL, so the default server carries none of it (FhirProfileValidations answers CAPABILITY_MISSING);
+         -Psangam-health-validation adds the same closure, versions and exclusions as that module's pom (keep the two
+         in step), and the health module itself is still switched on at run time with
+         sangam.modules.connectors-health.enabled=true. -->
+    <profile>
+      <id>sangam-health-validation</id>
+      <properties>
+        <version.hapi-fhir>8.12.1</version.hapi-fhir>
+      </properties>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.33.0-GA</version>
+          </dependency>
+          <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <version>3.0.0</version>
+          </dependency>
+          <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.1.8</version>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>ca.uhn.hapi.fhir</groupId>
+          <artifactId>hapi-fhir-validation</artifactId>
+          <version>${version.hapi-fhir}</version>
+          <scope>runtime</scope>
+          <exclusions>
+            <exclusion>
+              <groupId>jakarta-regexp</groupId>
+              <artifactId>jakarta-regexp</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>org.xerial</groupId>
+              <artifactId>sqlite-jdbc</artifactId>
+            </exclusion>
+            <exclusion>
+              <groupId>org.ogce</groupId>
+              <artifactId>xpp3</artifactId>
+            </exclusion>
+          </exclusions>
+        </dependency>
+        <!-- Decisions 226, 254 and 263: the XmlPull parser of the FHIR validator is io.github.x-stream:mxparser 1.2.2
+             (parser only, no org.xmlpull.v1 class inside, found through META-INF/services by XmlPullParserFactory;
+             Indiana University Extreme! Lab Software License 1.2, attribution in NOTICE); xmlpull 1.1.3.1 below is the
+             only org.xmlpull.v1 API jar. Replaces xpp3_min 1.1.4c, as in sangam-connectors-health. -->
+        <dependency>
+          <groupId>io.github.x-stream</groupId>
+          <artifactId>mxparser</artifactId>
+          <version>1.2.2</version>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
+          <groupId>xmlpull</groupId>
+          <artifactId>xmlpull</artifactId>
+          <version>1.1.3.1</version>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
+          <groupId>ca.uhn.hapi.fhir</groupId>
+          <artifactId>hapi-fhir-structures-r4</artifactId>
+          <version>${version.hapi-fhir}</version>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
+          <groupId>ca.uhn.hapi.fhir</groupId>
+          <artifactId>hapi-fhir-validation-resources-r4</artifactId>
+          <version>${version.hapi-fhir}</version>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
+          <groupId>ca.uhn.hapi.fhir</groupId>
+          <artifactId>hapi-fhir-caching-caffeine</artifactId>
+          <version>${version.hapi-fhir}</version>
+          <scope>runtime</scope>
+        </dependency>
+      </dependencies>
     </profile>
   </profiles>
 </project>

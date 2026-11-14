@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PEFA-COORDINATOR",
+      "role": "PEFACOORDINATOR",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "PEFA coordinator",
+        "hi": "पीईएफए समन्वयक"
+      }
+    },
+    {
+      "id": "ACCOUNTING-OFFICER",
+      "role": "ACCOUNTING-OFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PEFA-COORDINATOR",
+      "person": "ipf2.pefa-coordinator",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ACCOUNTING-OFFICER",
+      "person": "ipf2.accounting-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PEFACOORDINATOR",
+      "name": {
+        "en": "PEFA coordinator",
+        "hi": "पीईएफए समन्वयक"
+      }
+    },
+    {
+      "code": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ]
+}

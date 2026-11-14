@@ -11,6 +11,8 @@ scale:
   cell:
     id: cell-in-rj-1
     region: in-rj
+    # SL-104: no product default; this example cell is in India
+    jurisdiction: IN
     publicUrl: https://cell-1.sangam.example.gov.in
     existingSecret: sangam-cell
   controlPlane: { enabled: true, existingSecret: sangam-cp }

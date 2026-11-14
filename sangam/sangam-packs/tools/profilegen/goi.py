@@ -232,9 +232,9 @@ GOI = {
 }
 
 
-def dept(code, en, hi, extra, ph=None):
+def dept(code, en, hi, extra, ph=None, source='IFMS-CENTRAL section O'):
     d = {'profile': {'id': 'GOI.' + code, 'layer': 'department', 'version': '2026.11.0', 'effectiveFrom': '2024-04-01',
-                     'name': {'en': en, 'hi': hi}, 'source': 'IFMS-CENTRAL section O'}}
+                     'name': {'en': en, 'hi': hi}, 'source': source}}
     if ph:
         d['placeholders'] = [{'path': p, 'reason': r} for p, r in ph]
     d.update(extra)
@@ -255,7 +255,14 @@ DEPTS = [
           'rulebooks': {'own': [{'id': 'DEFENCE_ACCOUNT_CODE', 'version': '2022'}, {'id': 'DFPDS_2021'}]},
           'establishment': {'pension': {'disburser': 'SPARSH', 'outsideCpao': True}},
           'treasureChests': True, 'regimentalFundsOutsideGovtAccount': True},
-         [('rulebooks.own', '[U] DFPDS 2021 official text not read')]),
+         [('rulebooks.own', '[U] DFPDS 2021 official text not read')],
+         source='IFMS-CENTRAL section O; procurement.scientificDepartment false: owner decision 257'),
+    # decision 257: DRDO, the listed part of the Ministry of Defence, is its own department layer under GOI.DEFENCE
+    # (scope GOI.DEFENCE.DRDO resolves GOI > GOI.DEFENCE > GOI.DEFENCE.DRDO); it carries only what differs from Defence
+    dept('DEFENCE.DRDO', 'Defence Research and Development Organisation (Ministry of Defence)',
+         'रक्षा अनुसंधान एवं विकास संगठन', {},
+         source='Owner decision 257 (DRDO, the listed part of the Ministry of Defence, is a scientific department); '
+                'other values inherited from GOI.DEFENCE'),
     dept('POSTS', 'Department of Posts', 'डाक विभाग',
          {'regime': {'nonCivil': True, 'cddoDesignatedBy': 'DEPARTMENT'}, 'rulebooks': {'own': [{'id': 'POSTAL_ACCOUNTS_MANUAL_I'}]},
           'establishment': {'pension': {'disburser': 'POSTS'}}, 'salaryDestinations': ['BANK', 'POSB']}),
@@ -284,3 +291,40 @@ DEPTS = [
     dept('REVENUE', 'Department of Revenue (CBDT / CBIC)', 'राजस्व विभाग',
          {'receipts': {'taxAccounting': True, 'refunds': ['GST_REFUND']}, 'writeOff': {'revenueFullPower': True}}),
 ]
+
+# Decision 225 round 4 (option A): each department layer's procurement.scientificDepartment comes from the one GOI list
+# procurement.scientificDepartments, never typed per department. A department wholly on the list is true, one not on it
+# is false. A ministry with a listed part has that part as its own department layer below it (decision 257: Defence is
+# false, GOI.DEFENCE.DRDO is true), so no department carries a guessed class. A profile whose content changes moves to
+# SCIENTIFIC_CLASS_VERSION, or DRDO_CLASS_VERSION for the decision 257 change (sangam-config freezes a submitted version).
+SCIENTIFIC_CLASS_VERSION = '2026.11.1'
+DRDO_CLASS_VERSION = '2026.11.2'
+# department layer code -> its id on the GOI list, where they differ in name
+_LIST_ID = {'DAE': 'DAE', 'SPACE': 'DOS', 'DEFENCE.DRDO': 'DRDO'}
+_PART_LAYER = {'DEFENCE': 'DEFENCE.DRDO'}  # ministry layer code -> the layer of its listed part (decision 257)
+
+
+def _apply_scientific_class():
+    listed = GOI['procurement']['scientificDepartments']
+    codes = {d['profile']['id'].split('.', 1)[1] for d in DEPTS}
+    for ministry, part in _PART_LAYER.items():
+        if ministry not in codes or part not in codes or _LIST_ID[part] not in listed or ministry in listed:
+            raise ValueError('GOI.' + part + ': the listed part needs its own layer under GOI.' + ministry)
+    for d in DEPTS:
+        code = d['profile']['id'].split('.', 1)[1]
+        value = _LIST_ID.get(code, code) in listed
+        proc = d.setdefault('procurement', {})
+        if 'scientificDepartment' in proc and proc['scientificDepartment'] is not value:
+            raise ValueError(d['profile']['id'] + ': scientificDepartment disagrees with the GOI list')
+        if 'scientificDepartment' not in proc:
+            proc['scientificDepartment'] = value
+            d['profile']['version'] = SCIENTIFIC_CLASS_VERSION
+        if code in _PART_LAYER or code in _PART_LAYER.values():
+            d['profile']['version'] = DRDO_CLASS_VERSION
+    GOI['placeholders'].append(
+        {'path': 'procurement.scientificDepartment',
+         'reason': U + ' (the class is per department; the department layer sets it from procurement.scientificDepartments)'})
+    GOI['profile']['version'] = SCIENTIFIC_CLASS_VERSION
+
+
+_apply_scientific_class()

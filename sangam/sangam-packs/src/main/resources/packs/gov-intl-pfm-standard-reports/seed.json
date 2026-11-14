@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "ACCOUNTS-OFFICER",
+      "role": "ACCOUNTSOFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Accounts officer",
+        "hi": "लेखा अधिकारी (तैयारी)"
+      }
+    },
+    {
+      "id": "ACCOUNTING-OFFICER",
+      "role": "ACCOUNTING-OFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "ACCOUNTS-OFFICER",
+      "person": "isr.accounts-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ACCOUNTING-OFFICER",
+      "person": "isr.accounting-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "ACCOUNTSOFFICER",
+      "name": {
+        "en": "Accounts officer",
+        "hi": "लेखा अधिकारी (तैयारी)"
+      }
+    },
+    {
+      "code": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ]
+}

@@ -55,7 +55,7 @@ public final class AuditApi {
     /**
      * Search audit events
      *
-     * <p>Auditor search (U01).
+     * <p>Auditor search (U01). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
      *
      * <p>{@code GET /audit/events} (operationId {@code searchAuditEvents}); permission {@code audit.read}.
      * @param chainId query parameter {@code chainId}, or null
@@ -63,18 +63,20 @@ public final class AuditApi {
      * @param actor query parameter {@code actor}, or null
      * @param from query parameter {@code from}, or null
      * @param to query parameter {@code to}, or null
+     * @param scope query parameter {@code scope}, or null. System audit scope to read instead of the caller's tenant (decision 144); needs platform.audit.system.read
      * @param page query parameter {@code page}, or null. 0-based page index
      * @param size query parameter {@code size}, or null. Page size
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response with the A-16 count headers
      */
-    public org.sangam.sdk.model.Page<AuditEntry> searchAuditEvents(String chainId, String type, String actor, java.time.Instant from, java.time.Instant to, Long page, Long size, RequestOptions options) {
+    public org.sangam.sdk.model.Page<AuditEntry> searchAuditEvents(String chainId, String type, String actor, java.time.Instant from, java.time.Instant to, String scope, Long page, Long size, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/audit/events");
         req.query("chainId", chainId);
         req.query("type", type);
         req.query("actor", actor);
         req.query("from", from);
         req.query("to", to);
+        req.query("scope", scope);
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, AuditEntry.class, page, size);
@@ -83,18 +85,20 @@ public final class AuditApi {
     /**
      * Verify hash chains
      *
-     * <p>Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5).
+     * <p>Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
      *
      * <p>{@code GET /audit/verify} (operationId {@code verifyAudit}); permission {@code audit.read}.
      * @param chainId query parameter {@code chainId}, or null
      * @param businessKey query parameter {@code businessKey}, or null
+     * @param scope query parameter {@code scope}, or null. System audit scope to read instead of the caller's tenant (decision 144); needs platform.audit.system.read
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public AuditVerifyResult verifyAudit(String chainId, String businessKey, RequestOptions options) {
+    public AuditVerifyResult verifyAudit(String chainId, String businessKey, String scope, RequestOptions options) {
         ApiRequest req = ApiRequest.get("/audit/verify");
         req.query("chainId", chainId);
         req.query("businessKey", businessKey);
+        req.query("scope", scope);
         return call.json(req, options, R_verifyAudit);
     }
 

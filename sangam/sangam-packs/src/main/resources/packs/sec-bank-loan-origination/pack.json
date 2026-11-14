@@ -50,6 +50,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-loan-origination/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-loan-origination/pack.json"
     }
   ],
   "seed": "packs/sec-bank-loan-origination/seed.json",
@@ -114,6 +118,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "lo_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-loan-powers",
+      "ruleCaseType": "LOAN"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

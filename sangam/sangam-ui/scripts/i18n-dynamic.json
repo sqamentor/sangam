@@ -113,6 +113,26 @@
     "FORM",
     "CMMN"
   ],
+  "modeller.cmmnKind.": [
+    "casePlanModel",
+    "stage",
+    "humanTask",
+    "processTask",
+    "caseTask",
+    "decisionTask",
+    "task",
+    "milestone",
+    "timerEventListener",
+    "userEventListener",
+    "entryCriterion",
+    "exitCriterion"
+  ],
+  "modeller.cmmnReason.": [
+    "xml",
+    "not-cmmn",
+    "no-case",
+    "no-plan-model"
+  ],
   "modeller.tr.": [
     "submit",
     "deploy",

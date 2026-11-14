@@ -45,6 +45,12 @@ public sealed record Problem
     [global::System.Text.Json.Serialization.JsonPropertyName("traceId")]
     public string? TraceId { get; init; }
 
+    /// <summary>
+    /// Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142)
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("powerLimit")]
+    public PowerLimitDecision? PowerLimit { get; init; }
+
     /// <summary>Members not named in the schema (additionalProperties).</summary>
     [global::System.Text.Json.Serialization.JsonExtensionData]
     public global::System.Collections.Generic.IDictionary<string, global::System.Text.Json.JsonElement>? AdditionalProperties { get; init; }

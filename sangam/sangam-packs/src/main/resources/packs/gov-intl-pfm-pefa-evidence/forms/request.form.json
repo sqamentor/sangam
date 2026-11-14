@@ -1,0 +1,45 @@
+{
+  "key": "gov-intl-pfm-pefa-evidence/request",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-pefa-evidence",
+  "title": {
+    "en": "PEFA evidence request",
+    "hi": "पीईएफए साक्ष्य अनुरोध"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "assessmentRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Assessment reference",
+        "hi": "मूल्यांकन संदर्भ"
+      }
+    },
+    {
+      "id": "reportPeriod",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Reporting period",
+        "hi": "रिपोर्ट अवधि"
+      }
+    },
+    {
+      "id": "indicatorSet",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Indicators covered",
+        "hi": "शामिल संकेतक"
+      }
+    }
+  ]
+}

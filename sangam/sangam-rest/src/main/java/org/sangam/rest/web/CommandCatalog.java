@@ -39,11 +39,15 @@ public final class CommandCatalog {
     private record Entry(Command command, PathPattern pattern) {
     }
 
-    /** Commands for which the government profile requires a key (X.2.2.1 "Required or optional"). */
+    /**
+     * Commands for which the government profile requires a key (X.2.2.1 "Required or optional"). The power-table
+     * lifecycle is two types since the contract split it: power-table.submit (submit) and power-table.decide (approve,
+     * reject).
+     */
     public static final Set<String> GOVERNMENT_REQUIRED = Set.of("process.start", "message.correlate",
             "task.complete", "task.return", "task.bulk-complete", "process.cancel", "process.delete",
             "process.resubmit", "deployment.create", "deployment.delete", "package.transition", "case.start",
-            "portal.apply", "portal.withdraw", "portal.appeal", "power-table.transition");
+            "portal.apply", "portal.withdraw", "portal.appeal", "power-table.submit", "power-table.decide");
 
     private static final Set<String> METHODS = Set.of("get", "post", "put", "patch", "delete");
 

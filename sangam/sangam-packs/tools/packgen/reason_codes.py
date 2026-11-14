@@ -68,6 +68,8 @@ CODES = {
                                       'or returned no result',
     'COVER_NOT_CONFIRMED': 'Policy cover could not be confirmed: the check failed or returned no result',
     'CREDIT_BUREAU_NOT_CONFIRMED': 'Credit bureau report could not be confirmed: the pull failed or returned no score',
+    'DEPARTMENT_CLASS_NOT_CONFIRMED': 'Whether the department is scientific could not be confirmed from the bound '
+                                      'configuration profile: the read failed or the profile has no value',
     'DUPLICATE_CHECK_NOT_CONFIRMED': 'The duplicate check could not be confirmed: it failed or returned no result',
     'GST_NOT_CONFIRMED': 'GSTIN verification could not be confirmed: the check failed or returned no result',
     'KYC_NOT_CONFIRMED': 'KYC status could not be confirmed: the check failed or returned no result',

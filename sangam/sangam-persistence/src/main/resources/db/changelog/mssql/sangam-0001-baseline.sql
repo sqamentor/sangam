@@ -2209,6 +2209,63 @@ CREATE TABLE LDG_ACCOUNTING (
 CREATE INDEX LDG_ACCOUNTING_EXPORT ON LDG_ACCOUNTING (tenant_id, exported_at);
 --rollback DROP TABLE LDG_ACCOUNTING;
 
+--changeset sangam:0019-06-bill_unverified_payment dbms:mssql
+--comment: sangam-ledger LedgerSchema (also the billing tables)
+CREATE TABLE BILL_UNVERIFIED_PAYMENT (
+  tenant_id NVARCHAR(64) NOT NULL,
+  payment_id NVARCHAR(64) NOT NULL,
+  ledger_id NVARCHAR(64) NOT NULL,
+  consumer NVARCHAR(255) NOT NULL,
+  office_id NVARCHAR(64) NOT NULL,
+  channel NVARCHAR(64) NOT NULL,
+  payment_ref NVARCHAR(255) NOT NULL,
+  amount BIGINT NOT NULL,
+  currency NVARCHAR(64) NOT NULL,
+  paid_at DATETIMEOFFSET NOT NULL,
+  payer_name NVARCHAR(255),
+  instrument NVARCHAR(64),
+  details_json NVARCHAR(MAX) NOT NULL,
+  reason NVARCHAR(MAX) NOT NULL,
+  evidence_ref NVARCHAR(255) NOT NULL,
+  policy_version NVARCHAR(64) NOT NULL,
+  downstream_json NVARCHAR(MAX) NOT NULL,
+  accepted_by NVARCHAR(255) NOT NULL,
+  accepted_at DATETIMEOFFSET NOT NULL,
+  state NVARCHAR(64) NOT NULL,
+  version BIGINT NOT NULL,
+  outcome_reason NVARCHAR(MAX),
+  verification_ref NVARCHAR(255),
+  resolved_by NVARCHAR(255),
+  resolved_at DATETIMEOFFSET,
+  receipt_no NVARCHAR(64),
+  CONSTRAINT PK_BILL_UNVERIFIED_PAYMENT PRIMARY KEY (tenant_id, payment_id)
+);
+CREATE UNIQUE INDEX BILL_UNVERIFIED_REF ON BILL_UNVERIFIED_PAYMENT (tenant_id, channel, payment_ref);
+CREATE INDEX BILL_UNVERIFIED_STATE ON BILL_UNVERIFIED_PAYMENT (tenant_id, state, accepted_at);
+--rollback DROP TABLE BILL_UNVERIFIED_PAYMENT;
+
+--changeset sangam:0019-07-bill_unverified_accrual_pause dbms:mssql
+--comment: sangam-ledger LedgerSchema (also the billing tables)
+CREATE TABLE BILL_UNVERIFIED_ACCRUAL_PAUSE (
+  tenant_id NVARCHAR(64) NOT NULL,
+  payment_id NVARCHAR(64) NOT NULL,
+  base_account_id NVARCHAR(64) NOT NULL,
+  as_of NVARCHAR(64) NOT NULL,
+  paused_from NVARCHAR(64) NOT NULL,
+  ledger_id NVARCHAR(64) NOT NULL,
+  period NVARCHAR(64) NOT NULL,
+  line_code NVARCHAR(64) NOT NULL,
+  consumer NVARCHAR(255) NOT NULL,
+  stage NVARCHAR(64) NOT NULL,
+  sub NVARCHAR(255),
+  amount BIGINT NOT NULL,
+  currency NVARCHAR(64) NOT NULL,
+  recorded_at DATETIMEOFFSET NOT NULL,
+  resumed_at DATETIMEOFFSET,
+  CONSTRAINT PK_BILL_UNVERIFIED_ACCRUAL_PAU PRIMARY KEY (tenant_id, payment_id, base_account_id, as_of)
+);
+--rollback DROP TABLE BILL_UNVERIFIED_ACCRUAL_PAUSE;
+
 --changeset sangam:0020-01-reg_object_type dbms:mssql
 --comment: sangam-registry RegistrySchema
 CREATE TABLE REG_OBJECT_TYPE (
@@ -5906,6 +5963,333 @@ CREATE TABLE PROCESS_TRACE (
 CREATE INDEX PROCESS_TRACE_ROOT ON PROCESS_TRACE (root_process_instance_id);
 --rollback DROP TABLE PROCESS_TRACE;
 
+--changeset sangam:0044-01-sec_scim_resource dbms:mssql
+--comment: SCIM provisioning state (M-099, decision 154)
+CREATE TABLE SEC_SCIM_RESOURCE (
+  tenant_id NVARCHAR(64) NOT NULL,
+  resource_type NVARCHAR(16) NOT NULL CONSTRAINT CK_SEC_SCIM_RESOURCE_TYPE CHECK (resource_type IN ('USER', 'GROUP')),
+  resource_id NVARCHAR(255) NOT NULL,
+  user_name NVARCHAR(255),
+  display_name NVARCHAR(255),
+  name_key NVARCHAR(255) NOT NULL,
+  external_id NVARCHAR(255),
+  external_key NVARCHAR(255) NOT NULL,
+  attributes NVARCHAR(MAX),
+  version BIGINT NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_SEC_SCIM_RESOURCE PRIMARY KEY (tenant_id, resource_type, resource_id)
+);
+CREATE UNIQUE INDEX SEC_SCIM_NAME ON SEC_SCIM_RESOURCE (tenant_id, resource_type, name_key);
+CREATE UNIQUE INDEX SEC_SCIM_EXT ON SEC_SCIM_RESOURCE (tenant_id, resource_type, external_key);
+--rollback DROP TABLE SEC_SCIM_RESOURCE;
+
+--changeset sangam:0044-02-process_continuation dbms:mssql
+--comment: Continue-as-new chain (M-060, decision 149)
+CREATE TABLE PROCESS_CONTINUATION (
+  tenant_id NVARCHAR(64) NOT NULL,
+  request_id NVARCHAR(255) NOT NULL,
+  predecessor_id NVARCHAR(64) NOT NULL,
+  successor_id NVARCHAR(64) NOT NULL,
+  chain_root_id NVARCHAR(64) NOT NULL,
+  generation INT NOT NULL,
+  definition_id NVARCHAR(255) NOT NULL,
+  business_key NVARCHAR(255),
+  actor_id NVARCHAR(255) NOT NULL,
+  reason NVARCHAR(MAX) NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_PROCESS_CONTINUATION PRIMARY KEY (tenant_id, request_id)
+);
+CREATE UNIQUE INDEX PROCESS_CONT_PRED ON PROCESS_CONTINUATION (predecessor_id);
+CREATE UNIQUE INDEX PROCESS_CONT_SUCC ON PROCESS_CONTINUATION (successor_id);
+CREATE INDEX PROCESS_CONT_CHAIN ON PROCESS_CONTINUATION (tenant_id, chain_root_id, generation);
+--rollback DROP TABLE PROCESS_CONTINUATION;
+
+--changeset sangam:0044-03-ops_fmig_run dbms:mssql
+--comment: Flowable migration run (M-135, decision 169)
+CREATE TABLE OPS_FMIG_RUN (
+  run_id NVARCHAR(64) NOT NULL,
+  tenant_id NVARCHAR(64) NOT NULL,
+  source_system NVARCHAR(64) NOT NULL,
+  source_tenant NVARCHAR(64),
+  source_zone NVARCHAR(64) NOT NULL,
+  state NVARCHAR(64) NOT NULL,
+  mapping_json NVARCHAR(MAX) NOT NULL,
+  report_json NVARCHAR(MAX),
+  planned BIGINT DEFAULT 0 NOT NULL,
+  rejected BIGINT DEFAULT 0 NOT NULL,
+  applied BIGINT DEFAULT 0 NOT NULL,
+  failed BIGINT DEFAULT 0 NOT NULL,
+  matched BIGINT DEFAULT 0 NOT NULL,
+  mismatched BIGINT DEFAULT 0 NOT NULL,
+  version BIGINT NOT NULL,
+  created_by NVARCHAR(255) NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_FMIG_RUN PRIMARY KEY (run_id)
+);
+CREATE INDEX OPS_FMIG_RUN_TENANT ON OPS_FMIG_RUN (tenant_id, state);
+--rollback DROP TABLE OPS_FMIG_RUN;
+
+--changeset sangam:0044-04-ops_fmig_item dbms:mssql
+--comment: Flowable migration item, one per source instance (M-135, decision 169)
+CREATE TABLE OPS_FMIG_ITEM (
+  run_id NVARCHAR(64) NOT NULL,
+  source_instance_id NVARCHAR(64) NOT NULL,
+  tenant_id NVARCHAR(64) NOT NULL,
+  status NVARCHAR(64) NOT NULL,
+  definition_key NVARCHAR(255),
+  plan_json NVARCHAR(MAX) NOT NULL,
+  fingerprint NVARCHAR(64) NOT NULL,
+  target_instance_id NVARCHAR(64),
+  attempts INT DEFAULT 0 NOT NULL,
+  error NVARCHAR(MAX),
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_FMIG_ITEM PRIMARY KEY (run_id, source_instance_id)
+);
+CREATE INDEX OPS_FMIG_ITEM_STATUS ON OPS_FMIG_ITEM (run_id, status);
+CREATE INDEX OPS_FMIG_ITEM_SOURCE ON OPS_FMIG_ITEM (source_instance_id, status);
+CREATE INDEX OPS_FMIG_ITEM_TARGET ON OPS_FMIG_ITEM (target_instance_id);
+--rollback DROP TABLE OPS_FMIG_ITEM;
+
+--changeset sangam:0045-01-ops_utc_run dbms:mssql
+--comment: UTC conversion run record (decisions 150 and 203)
+CREATE TABLE OPS_UTC_RUN (
+  run_id NVARCHAR(64) NOT NULL,
+  tool_version NVARCHAR(64) NOT NULL,
+  table_name NVARCHAR(64) NOT NULL,
+  columns_json NVARCHAR(MAX) NOT NULL,
+  provenance_column NVARCHAR(64) NOT NULL,
+  tenant_filter NVARCHAR(64),
+  source_zone NVARCHAR(64) NOT NULL,
+  cutover_at DATETIMEOFFSET NOT NULL,
+  fingerprint NVARCHAR(64) NOT NULL,
+  state NVARCHAR(32) NOT NULL,
+  rows_read BIGINT DEFAULT 0 NOT NULL,
+  converted BIGINT DEFAULT 0 NOT NULL,
+  already_utc BIGINT DEFAULT 0 NOT NULL,
+  already_converted BIGINT DEFAULT 0 NOT NULL,
+  unresolved BIGINT DEFAULT 0 NOT NULL,
+  matched BIGINT DEFAULT 0 NOT NULL,
+  mismatched BIGINT DEFAULT 0 NOT NULL,
+  restored BIGINT DEFAULT 0 NOT NULL,
+  last_key NVARCHAR(MAX),
+  report_json NVARCHAR(MAX),
+  maintenance_ref NVARCHAR(255),
+  created_by NVARCHAR(255) NOT NULL,
+  created_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  version BIGINT NOT NULL,
+  CONSTRAINT PK_OPS_UTC_RUN PRIMARY KEY (run_id)
+);
+CREATE INDEX OPS_UTC_RUN_TABLE ON OPS_UTC_RUN (table_name, state);
+--rollback DROP TABLE OPS_UTC_RUN;
+
+--changeset sangam:0045-02-ops_utc_cell dbms:mssql
+--comment: UTC conversion cell snapshot (decisions 150 and 203)
+CREATE TABLE OPS_UTC_CELL (
+  table_name NVARCHAR(64) NOT NULL,
+  column_name NVARCHAR(64) NOT NULL,
+  key_hash NVARCHAR(64) NOT NULL,
+  key_json NVARCHAR(MAX) NOT NULL,
+  run_id NVARCHAR(64) NOT NULL,
+  status NVARCHAR(32) NOT NULL,
+  reason NVARCHAR(64),
+  original_value DATETIMEOFFSET,
+  converted_value DATETIMEOFFSET,
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_UTC_CELL PRIMARY KEY (table_name, column_name, key_hash)
+);
+CREATE INDEX OPS_UTC_CELL_RUN ON OPS_UTC_CELL (run_id, status, key_hash);
+--rollback DROP TABLE OPS_UTC_CELL;
+
+--changeset sangam:0045-04-integration_dsc_prepared dbms:mssql
+--comment: decision 165 DSC prepared signature state (JdbcDscPreparedStore)
+CREATE TABLE INTEGRATION_DSC_PREPARED (
+  tenant_id NVARCHAR(64) NOT NULL,
+  prepare_id NVARCHAR(64) NOT NULL,
+  task_id NVARCHAR(64) NOT NULL,
+  document_id NVARCHAR(64) NOT NULL,
+  document_version INT NOT NULL,
+  document_sha256 NVARCHAR(64) NOT NULL,
+  principal_id NVARCHAR(255) NOT NULL,
+  signer_cert_sha256 NVARCHAR(64) NOT NULL,
+  intended_signer_name NVARCHAR(255) NOT NULL,
+  algorithm NVARCHAR(32) NOT NULL,
+  prepared_digest_sha256 NVARCHAR(64) NOT NULL,
+  signed_attributes VARBINARY(MAX) NOT NULL,
+  signing_time DATETIMEOFFSET NOT NULL,
+  prepared_pdf VARBINARY(MAX),
+  created_at DATETIMEOFFSET NOT NULL,
+  expires_at DATETIMEOFFSET NOT NULL,
+  used_at DATETIMEOFFSET,
+  outcome NVARCHAR(32),
+  reason_code NVARCHAR(64),
+  signed_document_version INT,
+  completed_at DATETIMEOFFSET,
+  CONSTRAINT PK_INTEGRATION_DSC_PREPARED PRIMARY KEY (tenant_id, prepare_id)
+);
+CREATE INDEX INTEGRATION_DSC_PREPARED_TASK ON INTEGRATION_DSC_PREPARED (tenant_id, task_id);
+CREATE INDEX INTEGRATION_DSC_PREPARED_EXPIRY ON INTEGRATION_DSC_PREPARED (expires_at);
+--rollback DROP TABLE INTEGRATION_DSC_PREPARED;
+
+--changeset sangam:0045-05-exec_resize dbms:mssql
+--comment: Executor partition-count changes (M-056, decision 146)
+CREATE TABLE EXEC_RESIZE (
+  resize_id NVARCHAR(64) NOT NULL,
+  cluster_id NVARCHAR(64) NOT NULL,
+  state NVARCHAR(64) NOT NULL,
+  from_count INT NOT NULL,
+  to_count INT NOT NULL,
+  from_map_epoch BIGINT NOT NULL,
+  to_map_epoch BIGINT NOT NULL,
+  algorithm_version NVARCHAR(64) NOT NULL,
+  moved_slot_count INT,
+  moved_slots NVARCHAR(MAX),
+  actor_id NVARCHAR(255) NOT NULL,
+  reason NVARCHAR(MAX) NOT NULL,
+  requested_at DATETIMEOFFSET NOT NULL,
+  started_at DATETIMEOFFSET,
+  completed_at DATETIMEOFFSET,
+  failure NVARCHAR(MAX),
+  handover_pause_ms BIGINT,
+  CONSTRAINT PK_EXEC_RESIZE PRIMARY KEY (resize_id)
+);
+CREATE INDEX EXEC_RESIZE_STATE ON EXEC_RESIZE (cluster_id, state);
+--rollback DROP TABLE EXEC_RESIZE;
+
+--changeset sangam:0045-06-shared_deployment dbms:mssql
+--comment: Shared-deployment registry (decision 197, system ownership proof)
+CREATE TABLE SHARED_DEPLOYMENT (
+  deployment_id NVARCHAR(64) NOT NULL,
+  registered_by NVARCHAR(255) NOT NULL,
+  reason NVARCHAR(MAX) NOT NULL,
+  registered_at DATETIMEOFFSET NOT NULL,
+  revoked_by NVARCHAR(255),
+  revoked_at DATETIMEOFFSET,
+  revoke_reason NVARCHAR(MAX),
+  CONSTRAINT PK_SHARED_DEPLOYMENT PRIMARY KEY (deployment_id)
+);
+--rollback DROP TABLE SHARED_DEPLOYMENT;
+
+--changeset sangam:0045-07-ops_fmig_ack dbms:mssql
+--comment: Flowable source listener acknowledgement per process definition (decision 231)
+CREATE TABLE OPS_FMIG_ACK (
+  tenant_id NVARCHAR(64) NOT NULL,
+  source_system NVARCHAR(64) NOT NULL,
+  definition_id NVARCHAR(64) NOT NULL,
+  definition_key NVARCHAR(255) NOT NULL,
+  definition_version INT NOT NULL,
+  listeners_sha256 NVARCHAR(64) NOT NULL,
+  listeners_json NVARCHAR(MAX) NOT NULL,
+  reason NVARCHAR(MAX) NOT NULL,
+  acknowledged_by NVARCHAR(255) NOT NULL,
+  acknowledged_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_OPS_FMIG_ACK PRIMARY KEY (tenant_id, source_system, definition_id)
+);
+--rollback DROP TABLE OPS_FMIG_ACK;
+
+--changeset sangam:0045-08-integration_dsc_certificate dbms:mssql
+--comment: DSC certificate enrolment (decision 227, JdbcDscCertificateEnrolments)
+CREATE TABLE INTEGRATION_DSC_CERTIFICATE (
+  tenant_id NVARCHAR(64) NOT NULL,
+  certificate_sha256 NVARCHAR(64) NOT NULL,
+  enrolment_id NVARCHAR(64) NOT NULL,
+  principal_id NVARCHAR(255) NOT NULL,
+  issuer_dn NVARCHAR(1024) NOT NULL,
+  serial_hex NVARCHAR(64) NOT NULL,
+  subject_dn NVARCHAR(1024) NOT NULL,
+  not_before DATETIMEOFFSET NOT NULL,
+  not_after DATETIMEOFFSET NOT NULL,
+  certificate VARBINARY(MAX) NOT NULL,
+  status NVARCHAR(16) NOT NULL,
+  enrolled_at DATETIMEOFFSET NOT NULL,
+  decided_by NVARCHAR(255),
+  decided_at DATETIMEOFFSET,
+  decision_reason NVARCHAR(512),
+  CONSTRAINT PK_INTEGRATION_DSC_CERTIFICATE PRIMARY KEY (tenant_id, certificate_sha256)
+);
+CREATE UNIQUE INDEX INTEGRATION_DSC_CERTIFICATE_ID ON INTEGRATION_DSC_CERTIFICATE (tenant_id, enrolment_id);
+CREATE INDEX INTEGRATION_DSC_CERTIFICATE_PRINCIPAL ON INTEGRATION_DSC_CERTIFICATE (tenant_id, principal_id);
+CREATE INDEX INTEGRATION_DSC_CERTIFICATE_STATUS ON INTEGRATION_DSC_CERTIFICATE (tenant_id, status);
+--rollback DROP TABLE INTEGRATION_DSC_CERTIFICATE;
+
+--changeset sangam:0045-13-ops_utc_gate dbms:mssql
+--comment: UTC conversion engine-work gate (integrator ruling 2026-11-13, option C)
+CREATE TABLE OPS_UTC_GATE (
+  gate_id NVARCHAR(32) NOT NULL,
+  state NVARCHAR(16) NOT NULL CONSTRAINT CK_OPS_UTC_GATE_STATE CHECK (state IN ('OPEN', 'CLOSED')),
+  run_id NVARCHAR(64),
+  changed_by NVARCHAR(255) NOT NULL,
+  changed_at DATETIMEOFFSET NOT NULL,
+  version BIGINT NOT NULL,
+  CONSTRAINT PK_OPS_UTC_GATE PRIMARY KEY (gate_id)
+);
+--rollback DROP TABLE OPS_UTC_GATE;
+
+--changeset sangam:0045-16-notification_delivery dbms:mssql
+--comment: decision 304 DLT SMS delivery state per message (DltDeliveryReports)
+CREATE TABLE NOTIFICATION_DELIVERY (
+  tenant_id NVARCHAR(64) NOT NULL,
+  operation_id NVARCHAR(64) NOT NULL,
+  connector_id NVARCHAR(64) NOT NULL,
+  root_id NVARCHAR(64) NOT NULL,
+  message_id NVARCHAR(255),
+  state NVARCHAR(64) NOT NULL,
+  state_rank INT NOT NULL,
+  reason NVARCHAR(255),
+  reported_at NVARCHAR(64),
+  source NVARCHAR(64) NOT NULL,
+  reports INT NOT NULL,
+  lookups INT NOT NULL,
+  next_lookup_at DATETIMEOFFSET,
+  created_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_NOTIFICATION_DELIVERY PRIMARY KEY (tenant_id, operation_id)
+);
+CREATE INDEX NOTIFICATION_DELIVERY_MESSAGE ON NOTIFICATION_DELIVERY (tenant_id, message_id);
+CREATE INDEX NOTIFICATION_DELIVERY_DUE ON NOTIFICATION_DELIVERY (state_rank, next_lookup_at);
+--rollback DROP TABLE NOTIFICATION_DELIVERY;
+
+--changeset sangam:0045-17-notification_delivery_report dbms:mssql
+--comment: decision 304 DLT delivery reports seen (idempotency)
+CREATE TABLE NOTIFICATION_DELIVERY_REPORT (
+  tenant_id NVARCHAR(64) NOT NULL,
+  report_id NVARCHAR(255) NOT NULL,
+  operation_id NVARCHAR(64) NOT NULL,
+  received_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_NOTIFICATION_DELIVERY_REPOR PRIMARY KEY (tenant_id, report_id)
+);
+--rollback DROP TABLE NOTIFICATION_DELIVERY_REPORT;
+
+--changeset sangam:0045-18-dlt_registration dbms:mssql
+--comment: decision 305 stored per-tenant DLT registration (DltRegistrationStore)
+CREATE TABLE DLT_REGISTRATION (
+  tenant_id NVARCHAR(64) NOT NULL,
+  entity_id NVARCHAR(64),
+  revision BIGINT NOT NULL,
+  updated_by NVARCHAR(255),
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_DLT_REGISTRATION PRIMARY KEY (tenant_id)
+);
+--rollback DROP TABLE DLT_REGISTRATION;
+
+--changeset sangam:0045-19-dlt_registration_item dbms:mssql
+--comment: decision 305 DLT registration headers, templates and URL prefixes
+CREATE TABLE DLT_REGISTRATION_ITEM (
+  tenant_id NVARCHAR(64) NOT NULL,
+  kind NVARCHAR(64) NOT NULL,
+  item_key NVARCHAR(255) NOT NULL,
+  header NVARCHAR(64),
+  body NVARCHAR(MAX),
+  variable_count INT,
+  registered_by NVARCHAR(255) NOT NULL,
+  registered_at DATETIMEOFFSET NOT NULL,
+  updated_at DATETIMEOFFSET NOT NULL,
+  CONSTRAINT PK_DLT_REGISTRATION_ITEM PRIMARY KEY (tenant_id, kind, item_key)
+);
+--rollback DROP TABLE DLT_REGISTRATION_ITEM;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mssql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD form_version_hash NVARCHAR(64);
@@ -5933,27 +6317,27 @@ CREATE INDEX DEBUG_BREAKPOINT_INSTANCE ON DEBUG_BREAKPOINT (tenant_id, process_i
 
 --changeset sangam:0017-01-evt_channel_def-alter dbms:mssql
 --comment: event registry retire/restore (FC-03): channel definition state
-ALTER TABLE EVT_CHANNEL_DEF ADD state NVARCHAR(64) DEFAULT 'ACTIVE' NOT NULL;
+ALTER TABLE EVT_CHANNEL_DEF ADD state NVARCHAR(64) CONSTRAINT DF_EVT_CHANNEL_DEF_STATE DEFAULT 'ACTIVE' NOT NULL;
 ALTER TABLE EVT_CHANNEL_DEF ADD retired_by NVARCHAR(255);
 ALTER TABLE EVT_CHANNEL_DEF ADD retired_at DATETIMEOFFSET;
---rollback ALTER TABLE EVT_CHANNEL_DEF DROP COLUMN state; ALTER TABLE EVT_CHANNEL_DEF DROP COLUMN retired_by; ALTER TABLE EVT_CHANNEL_DEF DROP COLUMN retired_at;
+--rollback ALTER TABLE EVT_CHANNEL_DEF DROP CONSTRAINT DF_EVT_CHANNEL_DEF_STATE; ALTER TABLE EVT_CHANNEL_DEF DROP COLUMN state; ALTER TABLE EVT_CHANNEL_DEF DROP COLUMN retired_by; ALTER TABLE EVT_CHANNEL_DEF DROP COLUMN retired_at;
 
 --changeset sangam:0017-02-evt_event_def-alter dbms:mssql
 --comment: event registry retire/restore (FC-02): event definition state
-ALTER TABLE EVT_EVENT_DEF ADD state NVARCHAR(64) DEFAULT 'ACTIVE' NOT NULL;
+ALTER TABLE EVT_EVENT_DEF ADD state NVARCHAR(64) CONSTRAINT DF_EVT_EVENT_DEF_STATE DEFAULT 'ACTIVE' NOT NULL;
 ALTER TABLE EVT_EVENT_DEF ADD retired_by NVARCHAR(255);
 ALTER TABLE EVT_EVENT_DEF ADD retired_at DATETIMEOFFSET;
---rollback ALTER TABLE EVT_EVENT_DEF DROP COLUMN state; ALTER TABLE EVT_EVENT_DEF DROP COLUMN retired_by; ALTER TABLE EVT_EVENT_DEF DROP COLUMN retired_at;
+--rollback ALTER TABLE EVT_EVENT_DEF DROP CONSTRAINT DF_EVT_EVENT_DEF_STATE; ALTER TABLE EVT_EVENT_DEF DROP COLUMN state; ALTER TABLE EVT_EVENT_DEF DROP COLUMN retired_by; ALTER TABLE EVT_EVENT_DEF DROP COLUMN retired_at;
 
 --changeset sangam:0017-03-port_batch-alter dbms:mssql
 --comment: product batches: reason, four-eyes approval, completion (R64, D-34)
 ALTER TABLE PORT_BATCH ADD reason NVARCHAR(255);
-ALTER TABLE PORT_BATCH ADD four_eyes_flag SMALLINT DEFAULT 0 NOT NULL;
+ALTER TABLE PORT_BATCH ADD four_eyes_flag SMALLINT CONSTRAINT DF_PORT_BATCH_FOUR_EYES_FLAG DEFAULT 0 NOT NULL;
 ALTER TABLE PORT_BATCH ADD approved_by NVARCHAR(255);
 ALTER TABLE PORT_BATCH ADD approved_at DATETIMEOFFSET;
 ALTER TABLE PORT_BATCH ADD completed_at DATETIMEOFFSET;
 CREATE INDEX PORT_BATCH_STATE ON PORT_BATCH (tenant_id, state, created_at);
---rollback DROP INDEX PORT_BATCH_STATE ON PORT_BATCH; ALTER TABLE PORT_BATCH DROP COLUMN reason; ALTER TABLE PORT_BATCH DROP COLUMN four_eyes_flag; ALTER TABLE PORT_BATCH DROP COLUMN approved_by; ALTER TABLE PORT_BATCH DROP COLUMN approved_at; ALTER TABLE PORT_BATCH DROP COLUMN completed_at;
+--rollback DROP INDEX PORT_BATCH_STATE ON PORT_BATCH; ALTER TABLE PORT_BATCH DROP COLUMN reason; ALTER TABLE PORT_BATCH DROP CONSTRAINT DF_PORT_BATCH_FOUR_EYES_FLAG; ALTER TABLE PORT_BATCH DROP COLUMN four_eyes_flag; ALTER TABLE PORT_BATCH DROP COLUMN approved_by; ALTER TABLE PORT_BATCH DROP COLUMN approved_at; ALTER TABLE PORT_BATCH DROP COLUMN completed_at;
 
 --changeset sangam:0017-04-sla_instance-alter dbms:mssql
 --comment: SLA statistics per definition (R79, EC-08)
@@ -5986,10 +6370,10 @@ CREATE INDEX AUDIT_EVENT_TIME ON AUDIT_EVENT (tenant_id, occurred_at);
 --comment: SL-162 CMP_BREACH risk assessment and law-enforcement delay (BreachNotificationPlanner)
 ALTER TABLE CMP_BREACH ADD risk_outcome NVARCHAR(64);
 ALTER TABLE CMP_BREACH ADD risk_json NVARCHAR(MAX);
-ALTER TABLE CMP_BREACH ADD high_risk SMALLINT DEFAULT 0 NOT NULL;
+ALTER TABLE CMP_BREACH ADD high_risk SMALLINT CONSTRAINT DF_CMP_BREACH_HIGH_RISK DEFAULT 0 NOT NULL;
 ALTER TABLE CMP_BREACH ADD delay_until DATETIMEOFFSET;
 ALTER TABLE CMP_BREACH ADD delay_ref NVARCHAR(255);
---rollback ALTER TABLE CMP_BREACH DROP COLUMN risk_outcome; ALTER TABLE CMP_BREACH DROP COLUMN risk_json; ALTER TABLE CMP_BREACH DROP COLUMN high_risk; ALTER TABLE CMP_BREACH DROP COLUMN delay_until; ALTER TABLE CMP_BREACH DROP COLUMN delay_ref;
+--rollback ALTER TABLE CMP_BREACH DROP COLUMN risk_outcome; ALTER TABLE CMP_BREACH DROP COLUMN risk_json; ALTER TABLE CMP_BREACH DROP CONSTRAINT DF_CMP_BREACH_HIGH_RISK; ALTER TABLE CMP_BREACH DROP COLUMN high_risk; ALTER TABLE CMP_BREACH DROP COLUMN delay_until; ALTER TABLE CMP_BREACH DROP COLUMN delay_ref;
 
 --changeset sangam:0041-02-cmp_breach-alter dbms:mssql
 --comment: breach notification plan instance, claimed once by a conditional UPDATE (second-start guard, M-010c)
@@ -6003,10 +6387,10 @@ ALTER TABLE CMP_PURPOSE ADD special_condition NVARCHAR(64);
 
 --changeset sangam:0041-04-cmp_rights_request-alter dbms:mssql
 --comment: SL-162 CMP_RIGHTS_REQUEST one extension and the access exception (DataSubjectRightsService)
-ALTER TABLE CMP_RIGHTS_REQUEST ADD extended SMALLINT DEFAULT 0 NOT NULL;
+ALTER TABLE CMP_RIGHTS_REQUEST ADD extended SMALLINT CONSTRAINT DF_CMP_RIGHTS_REQUEST_EXTENDED DEFAULT 0 NOT NULL;
 ALTER TABLE CMP_RIGHTS_REQUEST ADD extension_reason NVARCHAR(MAX);
 ALTER TABLE CMP_RIGHTS_REQUEST ADD access_exception NVARCHAR(64);
---rollback ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extended; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extension_reason; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN access_exception;
+--rollback ALTER TABLE CMP_RIGHTS_REQUEST DROP CONSTRAINT DF_CMP_RIGHTS_REQUEST_EXTENDED; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extended; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN extension_reason; ALTER TABLE CMP_RIGHTS_REQUEST DROP COLUMN access_exception;
 
 --changeset sangam:0043-09-ops_bulk_job-alter dbms:mssql
 --comment: bulk job creator identity snapshot (M-130)
@@ -6033,6 +6417,59 @@ ALTER TABLE CH_INBOUND_SEEN ADD media_error NVARCHAR(MAX);
 CREATE INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN (media_state, media_next_at);
 --rollback DROP INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN external_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN principal_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_ref; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_state; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_attempt; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_next_at; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_owner; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_epoch; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_doc; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_error;
 
+--changeset sangam:0044-05-hrm_process_instance-alter dbms:mssql
+--comment: decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of a process/case instance
+ALTER TABLE HRM_PROCESS_INSTANCE ADD record_source NVARCHAR(16) CONSTRAINT DF_HRM_PROCESS_INSTANCE_RECORD DEFAULT 'ENGINE' NOT NULL CONSTRAINT CK_HRM_PROCESS_INSTANCE_RECORD CHECK (record_source IN ('ENGINE', 'LEGACY'));
+ALTER TABLE HRM_PROCESS_INSTANCE ADD legacy_ref NVARCHAR(255);
+--rollback ALTER TABLE HRM_PROCESS_INSTANCE DROP CONSTRAINT CK_HRM_PROCESS_INSTANCE_RECORD; ALTER TABLE HRM_PROCESS_INSTANCE DROP CONSTRAINT DF_HRM_PROCESS_INSTANCE_RECORD; ALTER TABLE HRM_PROCESS_INSTANCE DROP COLUMN record_source; ALTER TABLE HRM_PROCESS_INSTANCE DROP COLUMN legacy_ref;
+
+--changeset sangam:0044-06-hrm_activity_instance-alter dbms:mssql
+--comment: decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of an activity instance
+ALTER TABLE HRM_ACTIVITY_INSTANCE ADD record_source NVARCHAR(16) CONSTRAINT DF_HRM_ACTIVITY_INSTANCE_RECOR DEFAULT 'ENGINE' NOT NULL CONSTRAINT CK_HRM_ACTIVITY_INSTANCE_RECOR CHECK (record_source IN ('ENGINE', 'LEGACY'));
+ALTER TABLE HRM_ACTIVITY_INSTANCE ADD legacy_ref NVARCHAR(255);
+--rollback ALTER TABLE HRM_ACTIVITY_INSTANCE DROP CONSTRAINT CK_HRM_ACTIVITY_INSTANCE_RECOR; ALTER TABLE HRM_ACTIVITY_INSTANCE DROP CONSTRAINT DF_HRM_ACTIVITY_INSTANCE_RECOR; ALTER TABLE HRM_ACTIVITY_INSTANCE DROP COLUMN record_source; ALTER TABLE HRM_ACTIVITY_INSTANCE DROP COLUMN legacy_ref;
+
+--changeset sangam:0044-07-hrm_task-alter dbms:mssql
+--comment: decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of a task
+ALTER TABLE HRM_TASK ADD record_source NVARCHAR(16) CONSTRAINT DF_HRM_TASK_RECORD_SOURCE DEFAULT 'ENGINE' NOT NULL CONSTRAINT CK_HRM_TASK_RECORD_SOURCE CHECK (record_source IN ('ENGINE', 'LEGACY'));
+ALTER TABLE HRM_TASK ADD legacy_ref NVARCHAR(255);
+--rollback ALTER TABLE HRM_TASK DROP CONSTRAINT CK_HRM_TASK_RECORD_SOURCE; ALTER TABLE HRM_TASK DROP CONSTRAINT DF_HRM_TASK_RECORD_SOURCE; ALTER TABLE HRM_TASK DROP COLUMN record_source; ALTER TABLE HRM_TASK DROP COLUMN legacy_ref;
+
+--changeset sangam:0045-03-bill_unverified_payment-alter dbms:mssql
+--comment: decisions 195 and 196: manual verification evidence and the per-consumer index of unverified payments
+ALTER TABLE BILL_UNVERIFIED_PAYMENT ADD resolution_evidence_ref NVARCHAR(255);
+CREATE INDEX BILL_UNVERIFIED_CONSUMER ON BILL_UNVERIFIED_PAYMENT (tenant_id, ledger_id, consumer, state);
+--rollback DROP INDEX BILL_UNVERIFIED_CONSUMER ON BILL_UNVERIFIED_PAYMENT; ALTER TABLE BILL_UNVERIFIED_PAYMENT DROP COLUMN resolution_evidence_ref;
+
+--changeset sangam:0045-09-ops_utc_run-alter dbms:mssql
+--comment: decision 240: declared historical session time zone of a UTC conversion run
+ALTER TABLE OPS_UTC_RUN ADD session_zone NVARCHAR(64);
+--rollback ALTER TABLE OPS_UTC_RUN DROP COLUMN session_zone;
+
+--changeset sangam:0045-11-integration_dsc_certificate-alter dbms:mssql
+--comment: decision 241: approval sequence of a DSC certificate enrolment, +1 on every move to APPROVED
+ALTER TABLE INTEGRATION_DSC_CERTIFICATE ADD approval_seq BIGINT CONSTRAINT DF_INTEGRATION_DSC_CERTIFICATE DEFAULT 0 NOT NULL;
+--rollback ALTER TABLE INTEGRATION_DSC_CERTIFICATE DROP CONSTRAINT DF_INTEGRATION_DSC_CERTIFICATE; ALTER TABLE INTEGRATION_DSC_CERTIFICATE DROP COLUMN approval_seq;
+
+--changeset sangam:0045-12-integration_dsc_prepared-alter dbms:mssql
+--comment: decision 241: the approved enrolment and its approval sequence a prepared DSC signature is bound to
+ALTER TABLE INTEGRATION_DSC_PREPARED ADD enrolment_id NVARCHAR(64) NOT NULL;
+ALTER TABLE INTEGRATION_DSC_PREPARED ADD enrolment_approval_seq BIGINT NOT NULL;
+--rollback ALTER TABLE INTEGRATION_DSC_PREPARED DROP COLUMN enrolment_id; ALTER TABLE INTEGRATION_DSC_PREPARED DROP COLUMN enrolment_approval_seq;
+
+--changeset sangam:0045-15-cmp_incident-alter dbms:mssql
+--comment: OJ-06 step 8 incident closure: root cause, lessons learned, closed at and by
+ALTER TABLE CMP_INCIDENT ADD root_cause NVARCHAR(MAX);
+ALTER TABLE CMP_INCIDENT ADD lessons_learned NVARCHAR(MAX);
+ALTER TABLE CMP_INCIDENT ADD closed_at DATETIMEOFFSET;
+ALTER TABLE CMP_INCIDENT ADD closed_by NVARCHAR(255);
+--rollback ALTER TABLE CMP_INCIDENT DROP COLUMN root_cause; ALTER TABLE CMP_INCIDENT DROP COLUMN lessons_learned; ALTER TABLE CMP_INCIDENT DROP COLUMN closed_at; ALTER TABLE CMP_INCIDENT DROP COLUMN closed_by;
+
+--changeset sangam:0045-20-connector_call-alter dbms:mssql
+--comment: decision 304 DLT delivery fallback: CONNECTOR_CALL by connector, last result and update time
+CREATE INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL (connector_id, last_result, updated_at);
+--rollback DROP INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL;
+
 --changeset sangam:0033-01-cfg_master_code-data dbms:mssql
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
 UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';
@@ -6042,6 +6479,11 @@ UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';
 --comment: SL-84 token sequences without a series: series '' becomes the absent-key value '-'
 UPDATE RES_TOKEN_SEQ SET series = '-' WHERE series = '';
 --rollback UPDATE RES_TOKEN_SEQ SET series = '' WHERE series = '-';
+
+--changeset sangam:0045-14-ops_utc_gate-data dbms:mssql
+--comment: UTC conversion gate row ENGINE_WORK, OPEN (integrator ruling 2026-11-13, option C)
+INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version) VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', SYSDATETIMEOFFSET(), 0);
+--rollback DELETE FROM OPS_UTC_GATE WHERE gate_id = 'ENGINE_WORK';
 
 --changeset sangam:0035-01-ch_message-nullable dbms:mssql
 --comment: SL-87 attachment-only conversation message: body may be empty

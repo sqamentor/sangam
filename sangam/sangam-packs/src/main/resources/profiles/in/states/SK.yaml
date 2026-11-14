@@ -4,7 +4,7 @@
 profile:
   id: SK
   layer: government
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2026-04-01'
   extends:
   - IN
@@ -17,6 +17,9 @@ placeholders:
 - path: locale.languages
   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (finance-document
     language policy)'
+- path: procurement.scientificDepartment
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (the State''s
+    scientific-department list was not read)'
 - path: delegation.tables
   reason: '[U] financial-powers and procurement-mode tables are central defaults until the State order is loaded'
 - path: delegation.rows

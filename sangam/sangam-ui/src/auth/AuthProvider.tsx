@@ -62,22 +62,29 @@ function rolesFromClaims(c: Record<string, unknown>): Role[] {
   return [...out] as Role[];
 }
 
+/**
+ * The UI's OIDC client (code + PKCE, same authority, client, scope and user store) with a given redirect URI. The
+ * console uses config().oidc.redirectPath; the optional Teams app (decision 162) uses its own page as the redirect of
+ * its sign-in pop-up, and stores the signed-in user where this provider reads it (same store key: authority + client).
+ */
+export function createUserManager(redirectUri: string): UserManager {
+  const c = config();
+  const store = safeSession() ?? undefined;
+  return new UserManager({
+    authority: c.oidc.authority,
+    client_id: c.oidc.clientId,
+    redirect_uri: redirectUri,
+    post_logout_redirect_uri: window.location.origin + c.oidc.postLogoutPath,
+    response_type: 'code',
+    scope: c.oidc.scope,
+    automaticSilentRenew: true,
+    userStore: store ? new WebStorageStateStore({ store }) : undefined,
+  });
+}
+
 let userManager: UserManager | null = null;
 function manager(): UserManager {
-  if (!userManager) {
-    const c = config();
-    const store = safeSession() ?? undefined;
-    userManager = new UserManager({
-      authority: c.oidc.authority,
-      client_id: c.oidc.clientId,
-      redirect_uri: window.location.origin + c.oidc.redirectPath,
-      post_logout_redirect_uri: window.location.origin + c.oidc.postLogoutPath,
-      response_type: 'code',
-      scope: c.oidc.scope,
-      automaticSilentRenew: true,
-      userStore: store ? new WebStorageStateStore({ store }) : undefined,
-    });
-  }
+  if (!userManager) userManager = createUserManager(window.location.origin + config().oidc.redirectPath);
   return userManager;
 }
 

@@ -170,12 +170,37 @@ metrics:
 
 # ------------------------------------------------------------------------------------------------ server
 server:
-  # SL-18: production posture. Refuses dev tokens/bootstrap and loopback/unset externally used URLs at start-up.
+  # SL-18, decisions 143 and 198: SANGAM_SECURITY_PRODUCTION, always rendered explicitly. true refuses dev
+  # tokens/bootstrap and loopback/unset externally used URLs at start-up; a dev profile in springProfiles is then ignored
+  # with a warning. Keep true for every cluster install; false is for local development stacks only.
   production: true
+  # Decision 144: SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE (sangam.engine.system-audit-scope), the audit scope of shared and
+  # system-owned engine work. Required: system:<name>, name [a-z0-9][a-z0-9._-]{0,47}; anything else, or empty, and
+  # the server refuses to start. It can never be a customer tenant (tenant ids have no ':').
+  systemAuditScope: "system:platform"
+  # Decision 247 (170, 207): SANGAM_AI_KB_VECTOR_INDEX (sangam.ai.kb.vector-index), the knowledge-base ranking index.
+  # portable (default, every database) | pgvector (PostgreSQL with the pgvector column) | oracle (Oracle AI Database 23ai
+  # or later: the server applies the separate changelog db/changelog/sangam-oracle-vector.xml, context oracle-vector, and
+  # refuses to start on Oracle below 23ai). Anything else stops the start. See deploy/README.md section 2.
+  aiKbVectorIndex: portable
+  # Decision 259: SANGAM_DSC_OCSP_MAX_AGE (sangam.dsc.ocsp-max-age), used only with the eSign/DSC add-on. An OCSP answer
+  # whose thisUpdate is older than this is INDETERMINATE (the signing step refuses), even with a matching nonce; the
+  # clock-skew allowance stays. A positive duration with one unit: ms, s, m, h or d (24h), or ISO-8601 (PT24H, P1D).
+  dscOcspMaxAge: 24h
+  # Decision 290: SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES (sangam.integration.reconciliation.max-redispatches).
+  # Automatic re-dispatches of a pack operation that has no process instance (a REST-backed record create) before
+  # reconciliation hands it to a person. A positive integer; any other value refuses the server start.
+  integrationReconciliationMaxRedispatches: 3
   # CIDRs of the ingress controller / edge proxies whose X-Forwarded-*/Forwarded headers are trusted. Empty = none.
   trustedProxies: []
   # Client-IP headers in priority order (read only from trustedProxies), e.g. [CF-Connecting-IP, X-Forwarded-For].
   clientIpHeaders: [X-Forwarded-For]
+  # Add-ons are built into the image, not switched on here (deploy/README.md): NATS (decision 232, server.Dockerfile
+  # WITH_NATS=true; without it the server refuses NATS settings at start) or eSign/DSC (decision 217, WITH_ESIGN=true).
+  # A 0.1.0 server runs NATS or eSign, never both (decision 235: two Bouncy Castle provider jars with the same packages;
+  # revisited when jnats moves to bcprov-jdk18on). Health connectors with Fidelius (decision 243) use the eSign add-on's
+  # bcprov-jdk18on 1.84 (the same jar), so health never runs with the NATS add-on either. Point image.repository/tag/
+  # digest at such an image.
   image:
     registry: ghcr.io
     repository: sqamentor/sangam-server
@@ -226,7 +251,15 @@ server:
   # read-only at /opt/sangam/secrets. Rotation: deploy/README.md "Key rotation".
   keys:
     existingSecret: ""
-  # Extra Spring configuration (rendered to /opt/sangam/config/application-helm.yaml). No secrets.
+  # Extra Spring configuration (rendered to /opt/sangam/config/application-helm.yaml). No secrets: secret values are
+  # secret:// references resolved by the platform secret providers (secrets.*). Optional integrations stay off until
+  # configured here, for example (W4-H; all off by default, nothing is called):
+  #   sangam.history.projection.datalake: { endpoint: https://s3.example, bucket: lake, access-key-ref: secret://lake/access,
+  #                                         secret-key-ref: secret://lake/secret }
+  #   sangam.connectors.s3.tenants.<tenant>.<id>: { endpoint: ..., bucket: ... }
+  #   sangam.connectors.graphql.tenants.<tenant>.<id>: { base-url: ..., documents: { <name>: "query { ... }" } }
+  #   sangam.connectors.jdbc.tenants.<tenant>.<id>: { url: ..., username: ..., password-ref: secret://..., statements: ... }
+  # Each needs a networkPolicy.extraEgress rule to its endpoint (air-gapped default: none).
   config: {}
   env: []
   envFrom: []
@@ -422,6 +455,105 @@ scriptWorker:
   tolerations: []
   affinity: {}
 
+# ------------------------------------------------------------------------------------------------ sidecars (M-081, M-103)
+# Owner decisions 114, 153 and 167: the PDF validator (veraPDF, the only distribution with Rhino) and the OCR sidecar
+# (Tesseract) run as separate, optional Deployments. Off by default: without them PDF output answers 422
+# FORMAT_NOT_AVAILABLE and OCR is unavailable (fail closed). Each one:
+#   - accepts only the bearer tokens of its Secret key `token` (one per line; list old and new while rotating), mounted
+#     as a file; the server sends the first line of the client Secret's key `token` (clientExistingSecret, default the
+#     same Secret). There is no unauthenticated mode.
+#   - transport tls (default): Secret keys `keystore.p12` (PKCS#12, certificate SAN = <release fullname>-pdf-validator
+#     or -ocr and its namespace FQDN) and `keystore-password`; the server trusts it through sidecarTrustStore. mesh:
+#     plain HTTP, only behind an authenticated service mesh, no key store.
+#   - NetworkPolicy: ingress from this release's server pods only, on its port; no egress at all.
+# Secrets are never values in this file. Demo secrets for local use are generated by deploy/compose only.
+pdfValidator:
+  enabled: false
+  image:
+    registry: ghcr.io
+    repository: sqamentor/sangam-pdf-validator
+    tag: ""            # defaults to .Chart.AppVersion
+    digest: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  port: 8085
+  transport: tls       # tls | mesh
+  existingSecret: ""   # keys token, keystore.p12, keystore-password (tls)
+  clientExistingSecret: ""   # key token for the server; empty = existingSecret
+  # SANGAM_PDF_VALIDATOR_URL for the server; empty = https://<fullname>-pdf-validator:<port> (http with mesh)
+  url: ""
+  timeoutMs: ""        # server side SANGAM_PDF_VALIDATOR_TIMEOUT_MS; empty = 30000
+  # Sidecar limits (SANGAM_PDF_VALIDATOR_*); empty = the image default
+  threads: ""
+  maxBytes: ""
+  processingTimeoutMs: ""
+  extraEnv: []
+  resources:
+    requests: { cpu: 250m, memory: 768Mi }
+    limits: { memory: 1536Mi }
+  tmpSizeLimit: 512Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile: { type: RuntimeDefault }
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: [ALL] }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+ocr:
+  enabled: false
+  image:
+    registry: ghcr.io
+    repository: sqamentor/sangam-ocr
+    tag: ""
+    digest: ""
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  port: 8086
+  transport: tls       # tls | mesh
+  existingSecret: ""   # keys token, keystore.p12, keystore-password (tls)
+  clientExistingSecret: ""   # key token for the server; empty = existingSecret
+  # SANGAM_OCR_URL for the server; empty = https://<fullname>-ocr:<port> (http with mesh)
+  url: ""
+  timeoutMs: ""        # server side SANGAM_OCR_TIMEOUT_MS; empty = the client default
+  # Sidecar limits (SANGAM_OCR_*); empty = the image default (languages eng,hin; each must be installed in the image)
+  threads: ""
+  maxBytes: ""
+  maxPixels: ""
+  processingTimeoutMs: ""
+  languages: ""
+  extraEnv: []
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits: { memory: 1Gi }
+  tmpSizeLimit: 256Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile: { type: RuntimeDefault }
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities: { drop: [ALL] }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# The server's trust store for the sidecars on transport tls: a Secret with keys `truststore.p12` (PKCS#12 holding the
+# CA that signed the sidecar certificates, plus any public CAs the server also needs, because it replaces the JVM default
+# trust store) and `password`. Required when a sidecar is enabled with transport tls. Passed to the JVM through
+# JDK_JAVA_OPTIONS, so server.javaToolOptions stays as it is.
+sidecarTrustStore:
+  existingSecret: ""
+
 # ------------------------------------------------------------------------------------------------ compliance
 # sangam-compliance: DPDP Act 2023 / Rules 2025, CERT-In Directions 2022 (jurisdiction pack IN).
 compliance:
@@ -505,6 +637,15 @@ ui:
   # https://tracing.example.gov.in/trace/{traceId} (SANGAM_TRACE_URL_TEMPLATE, served in /config.json). Empty = no
   # trace links; the UI links only http(s) results.
   traceUrlTemplate: ""
+  # Decision 213: Microsoft Teams personal tab (/teams.html). enabled false keeps it unframeable like every page.
+  # frameAncestors: space-separated https origins (https://host[:port] or https://*.host) allowed to frame it; empty =
+  # the image's built-in Microsoft list. Register https://<ui host>/teams.html as a redirect URI of oidc.uiClientId.
+  teams:
+    enabled: false
+    frameAncestors: ""
+  # Decision 165: SANGAM_DSC_AGENT_ORIGIN, the DSC signing agent on the signer's computer (dsc.agentUrl, connect-src).
+  # Empty = DSC not set up; else exactly http://127.0.0.1:<port> or http://localhost:<port> (no path; IPv4 loopback only, never [::1]).
+  dscAgentOrigin: ""
   resources:
     requests: { cpu: 50m, memory: 64Mi }
     limits: { memory: 128Mi }
@@ -618,6 +759,17 @@ networkPolicy:
 # (deploy/README.md "Backup and restore", "Disaster recovery"). Review them with the DBA before production.
 backup:
   enabled: false
+  # Decision 155 (W4-I): the backup console in the server lists the backup CronJobs and Jobs of this release and starts
+  # a Job from a CronJob. Off by default. With backup.enabled and console.enabled: a Role <fullname>-backup-console
+  # (batch cronjobs get/list, jobs get/list/create) bound to the server ServiceAccount, the server pod's service
+  # account token mounted (automountServiceAccountToken true for the server pod only) and, with networkPolicy.enabled,
+  # server egress to the Kubernetes API server (apiServer.cidrs is then required: the API server's addresses, e.g.
+  # the kubernetes Service endpoints, `kubectl get endpoints kubernetes`).
+  console:
+    enabled: false
+    apiServer:
+      cidrs: []
+      ports: [443, 6443]
   # Credentials of a backup user (keys: username, password). Defaults to database.existingSecret.
   existingSecret: ""
   retentionDays: 14
@@ -648,7 +800,9 @@ backup:
     archivelogSchedule: "*/5 * * * *"   # archive log backup every 5 min
     connectAs: "AS SYSBACKUP"
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    # Decision 129 (RM-34): no default. Supply an image with sqlcmd (mssql-tools) that your organisation is licensed
+    # to run; the chart never picks a vendor image or accepts its terms for you. Required when backup is enabled.
+    image: ""
     fullSchedule: "15 1 * * *"
     diffSchedule: "15 */6 * * *"
     logSchedule: "*/5 * * * *"
@@ -657,7 +811,9 @@ backup:
     destinationType: DISK               # DISK | URL
     urlCredential: ""                   # name of the SQL Server CREDENTIAL for TO URL
   mysql:
-    image: mysql:8.4
+    # Decision 129 (RM-34): no default. Supply an image with the MySQL 8.4 client tools (mysqldump, mysqlbinlog) that
+    # your organisation is licensed to run. Required when backup is enabled.
+    image: ""
     fullSchedule: "15 1 * * *"          # mysqldump --single-transaction (consistent, GTIDs recorded)
     binlogSchedule: "*/5 * * * *"       # FLUSH BINARY LOGS + copy closed binlogs (RPO <= 5 min)
   podSecurityContext:

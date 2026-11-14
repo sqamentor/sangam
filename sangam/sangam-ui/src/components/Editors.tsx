@@ -3,6 +3,7 @@
  * Model editors on bpmn.io (R69, EC-04, PF-21/36): BPMN (bpmn-js Modeler), DMN (dmn-js Modeler; hit policies
  * PRIORITY / OUTPUT ORDER are editable and executed by the FC-54 handlers) and forms (form-js editor).
  * LIC-8 / PK-11: the bpmn.io watermark ("powered by bpmn.io") is rendered by each library and is never hidden.
+ * CMMN uses Sangam's own diagram-js editor (decision 161) with an XML fallback.
  * Each editor exposes getContent() through the onReady callback so the package workspace can save.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -28,6 +29,8 @@ import { ProblemAlert } from './ui';
 import { ElementTemplatePanel, type ModelerLike, type Selected } from './ElementTemplatePanel';
 import { TemplatePalette } from './TemplatePalette';
 import { FormComponentPanel, type FormEditorLike } from './FormComponentPanel';
+import { CmmnParseError, parseCmmn } from './cmmn/cmmnModel';
+import { CmmnDiagramEditor, type CmmnDiagramHandle } from './cmmn/CmmnDiagramEditor';
 
 export interface EditorHandle {
   getContent: () => Promise<string>;
@@ -173,17 +176,85 @@ export function FormBuilder({ schema, onReady, onChange, height = 560 }: { schem
   );
 }
 
-/** CMMN has no maintained bpmn.io editor (EC-04, D-43): Sangam offers a source editor with a plan-item outline. */
+/**
+ * CMMN (owner decision 161, M-041). There is no maintained bpmn.io CMMN editor (EC-04, D-43), so Sangam has its own
+ * CMMN 1.1 diagram editor on diagram-js (src/components/cmmn). The XML source view is the fallback: it opens when the
+ * diagram cannot read the file, and it can always be chosen. Switching views carries the edits across.
+ */
 export function CmmnEditor({ xml, onReady, onChange }: { xml: string; onReady: (h: EditorHandle) => void; onChange?: () => void }) {
   const { t } = useTranslation();
+  const readable = (text: string): CmmnParseError | null => {
+    try {
+      parseCmmn(text);
+      return null;
+    } catch (e) {
+      return e instanceof CmmnParseError ? e : new CmmnParseError('xml');
+    }
+  };
+  const [view, setView] = useState<'diagram' | 'xml'>(() => (readable(xml) ? 'xml' : 'diagram'));
+  /** The text the diagram opened from (diagram view) or the text being edited (XML view). */
   const [text, setText] = useState(xml);
+  const [problem, setProblem] = useState<CmmnParseError | null>(() => readable(xml));
   const textRef = useRef(text);
   textRef.current = text;
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const diagram = useRef<CmmnDiagramHandle | null>(null);
+  const current = () => (viewRef.current === 'diagram' && diagram.current ? diagram.current.getXml() : textRef.current);
   useEffect(() => {
+    const p = readable(xml);
     setText(xml);
-    onReady({ getContent: async () => textRef.current });
+    setProblem(p);
+    setView(p ? 'xml' : 'diagram');
+    diagram.current = null;
+    onReady({ getContent: async () => current() });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xml]);
+  const show = (next: 'diagram' | 'xml') => {
+    if (next === view) return;
+    if (next === 'xml') {
+      setText(current());
+      diagram.current = null;
+      setView('xml');
+      return;
+    }
+    const p = readable(textRef.current);
+    setProblem(p);
+    if (!p) setView('diagram');
+  };
+  return (
+    <div className="editor">
+      <div role="tablist" aria-label={t('modeller.cmmnViews')} className="row">
+        <button type="button" role="tab" aria-selected={view === 'diagram'} className="btn btn-sm" onClick={() => show('diagram')}>
+          {t('modeller.cmmnViewDiagram')}
+        </button>
+        <button type="button" role="tab" aria-selected={view === 'xml'} className="btn btn-sm" onClick={() => show('xml')}>
+          {t('modeller.cmmnViewXml')}
+        </button>
+      </div>
+      {problem && (
+        <p className="field-error" role="alert">
+          {t('modeller.cmmnDiagramUnavailable', { reason: t(`modeller.cmmnReason.${problem.code}`) })}
+        </p>
+      )}
+      {view === 'diagram' ? (
+        <CmmnDiagramEditor key={text} xml={text} onChange={onChange} onReady={(h) => (diagram.current = h)} />
+      ) : (
+        <CmmnSourceEditor
+          text={text}
+          onText={(v) => {
+            setText(v);
+            onChange?.();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** The XML view of the CMMN editor: the source with a plan-item outline. */
+export function CmmnSourceEditor({ text, onText }: { text: string; onText: (text: string) => void }) {
+  const { t } = useTranslation();
   const outline = (() => {
     try {
       const doc = new DOMParser().parseFromString(text, 'application/xml');
@@ -200,20 +271,10 @@ export function CmmnEditor({ xml, onReady, onChange }: { xml: string; onReady: (
     }
   })();
   return (
-    <div className="grid-2 editor">
+    <div className="grid-2">
       <div className="field">
         <label htmlFor="cmmn-src">{t('modeller.cmmnSource')}</label>
-        <textarea
-          id="cmmn-src"
-          className="code"
-          rows={28}
-          spellCheck={false}
-          value={text}
-          onChange={(e) => {
-            setText(e.target.value);
-            onChange?.();
-          }}
-        />
+        <textarea id="cmmn-src" className="code" rows={28} spellCheck={false} value={text} onChange={(e) => onText(e.target.value)} />
       </div>
       <div>
         <h3>{t('modeller.cmmnOutline')}</h3>

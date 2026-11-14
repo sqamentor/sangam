@@ -23,9 +23,12 @@ import packs  # noqa: E402
 import core  # noqa: E402
 import gov1  # noqa: E402
 import gov2  # noqa: E402
+import gov2_works  # noqa: E402
 import gov3  # noqa: E402
 import gov_ifms  # noqa: E402
 import gov_intl  # noqa: E402
+import gov_pfm  # noqa: E402
+import gov_pfm_g  # noqa: E402
 import billing_pack  # noqa: E402
 import universal  # noqa: E402
 import sector  # noqa: E402
@@ -42,7 +45,7 @@ COMPLIANCE_REL = 'sangam-compliance/src/main/resources/packs/compliance'
 
 def generate(resources, readme_path, compliance_dir):
     core.build()
-    for mod in (gov1, gov2, gov3, gov_ifms, gov_intl, universal, billing_pack, sector):
+    for mod in (gov1, gov2, gov2_works, gov3, gov_ifms, gov_intl, gov_pfm, gov_pfm_g, universal, billing_pack, sector):
         mod.build()
     packs.write_all(resources)  # form titles, labels and options are resolved while writing
     if packs.MISSING:

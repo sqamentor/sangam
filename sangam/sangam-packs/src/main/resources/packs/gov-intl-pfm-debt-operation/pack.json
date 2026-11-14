@@ -1,0 +1,98 @@
+{
+  "id": "gov.intl.pfm-debt-operation",
+  "version": "1.0.0",
+  "name": {
+    "en": "Debt operation approval (worldwide PFM)",
+    "hi": "ऋण संचालन अनुमोदन (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Borrowing, guarantee or on-lending approval chain (PFM-069, PEFA PI-13): the remaining borrowing authority is read from the debt system; an operation above it goes back to the debt office; within it, the debt office records the sustainability and cost-risk analysis, legal gives its opinion (not the analyst), the approver from DMN approves (not the analyst or legal), and the operation is recorded in the debt system with a confirmed reference. Debt recording stays in the debt system. The approver is SYNTHETIC until the country confirms it.",
+  "mainProcesses": [
+    "sangam-intl-pfm-debt-operation"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-debt-operation/sangam-intl-pfm-debt-operation.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-debt-operation/intl-pfm-debt-approval.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/proposal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/limitHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/above-limit.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/analysis.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/legal.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/approve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-debt-operation/forms/recordHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-debt-operation/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-debt-operation/seed.json",
+  "connectors": [
+    {
+      "id": "debt.limit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Remaining borrowing / guarantee authority (debt system)"
+    },
+    {
+      "id": "debt.record",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Record the operation in the debt system"
+    }
+  ],
+  "covers": [
+    "PFM-069",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-debt-approval",
+      "rule": "SYNTHETIC: minister of finance approves every operation",
+      "reason": "country debt-approval authority not verified (PFM-069, PEFA PI-13.2)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "authorityRemainingLimit",
+      "debtAmount"
+    ]
+  }
+}

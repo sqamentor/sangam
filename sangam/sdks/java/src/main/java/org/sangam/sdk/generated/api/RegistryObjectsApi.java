@@ -41,7 +41,7 @@ public final class RegistryObjectsApi {
     /**
      * Create
      *
-     * <p>RegistryController.create (sangam-registry).
+     * <p>RegistryController.create (sangam-rest).
      *
      * <p>{@code POST /registry/objects} (operationId {@code registryRegistryCreate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -57,7 +57,7 @@ public final class RegistryObjectsApi {
     /**
      * List
      *
-     * <p>RegistryController.list (sangam-registry).
+     * <p>RegistryController.list (sangam-rest).
      *
      * <p>{@code GET /registry/objects} (operationId {@code registryRegistryList}); permission {@code registry.read}.
      * @param typeKey query parameter {@code typeKey}, or null
@@ -89,7 +89,7 @@ public final class RegistryObjectsApi {
     /**
      * Get
      *
-     * <p>RegistryController.get (sangam-registry).
+     * <p>RegistryController.get (sangam-rest).
      *
      * <p>{@code GET /registry/objects/{id}} (operationId {@code registryRegistryGet}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -104,7 +104,7 @@ public final class RegistryObjectsApi {
     /**
      * Update
      *
-     * <p>RegistryController.update (sangam-registry).
+     * <p>RegistryController.update (sangam-rest).
      *
      * <p>{@code PATCH /registry/objects/{id}} (operationId {@code registryRegistryUpdate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -123,7 +123,7 @@ public final class RegistryObjectsApi {
     /**
      * By number
      *
-     * <p>RegistryController.byNumber (sangam-registry).
+     * <p>RegistryController.byNumber (sangam-rest).
      *
      * <p>{@code GET /registry/objects/by-number/{number}} (operationId {@code registryRegistryByNumber}); permission {@code registry.read}.
      * @param number path parameter {@code number}
@@ -140,7 +140,7 @@ public final class RegistryObjectsApi {
     /**
      * Transition
      *
-     * <p>RegistryController.transition (sangam-registry).
+     * <p>RegistryController.transition (sangam-rest).
      *
      * <p>{@code POST /registry/objects/{id}/transitions/{name}} (operationId {@code registryRegistryTransition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -160,7 +160,7 @@ public final class RegistryObjectsApi {
     /**
      * Available transitions
      *
-     * <p>RegistryController.availableTransitions (sangam-registry).
+     * <p>RegistryController.availableTransitions (sangam-rest).
      *
      * <p>{@code GET /registry/objects/{id}/transitions} (operationId {@code registryRegistryAvailableTransitions}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -175,7 +175,7 @@ public final class RegistryObjectsApi {
     /**
      * History
      *
-     * <p>RegistryController.history (sangam-registry).
+     * <p>RegistryController.history (sangam-rest).
      *
      * <p>{@code GET /registry/objects/{id}/versions} (operationId {@code registryRegistryHistory}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -190,7 +190,7 @@ public final class RegistryObjectsApi {
     /**
      * As of
      *
-     * <p>RegistryController.asOf (sangam-registry).
+     * <p>RegistryController.asOf (sangam-rest).
      *
      * <p>{@code GET /registry/objects/{id}/as-of} (operationId {@code registryRegistryAsOf}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -207,7 +207,7 @@ public final class RegistryObjectsApi {
     /**
      * Verify audit
      *
-     * <p>RegistryController.verifyAudit (sangam-registry).
+     * <p>RegistryController.verifyAudit (sangam-rest).
      *
      * <p>{@code GET /registry/objects/{id}/audit/verify} (operationId {@code registryRegistryVerifyAudit}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -222,7 +222,7 @@ public final class RegistryObjectsApi {
     /**
      * Mirror
      *
-     * <p>RegistryController.mirror (sangam-registry).
+     * <p>RegistryController.mirror (sangam-rest).
      *
      * <p>{@code POST /registry/objects/mirror} (operationId {@code registryRegistryMirror}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body

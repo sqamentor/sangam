@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-collections/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-collections/pack.json"
     }
   ],
   "seed": "packs/sec-bank-collections/seed.json",
@@ -89,6 +93,21 @@
   "calls": [
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "co_restructure": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-ots-powers",
+      "ruleCaseType": "RESTRUCTURING"
+    },
+    "co_ots": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-ots-powers",
+      "ruleCaseType": "SETTLEMENT"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

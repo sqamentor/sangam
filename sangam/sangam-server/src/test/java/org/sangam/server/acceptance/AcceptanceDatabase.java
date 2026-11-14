@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.function.UnaryOperator;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MSSQLServerContainer;
@@ -87,6 +88,35 @@ public final class AcceptanceDatabase {
                         + "fetched or shipped by this build (LIC-3); put it on the test class path to use this lane");
     }
 
+    /** Decision 122 (RM-35): the operator's acceptance of the Microsoft SQL Server container image EULA. */
+    static final String MSSQL_EULA_VARIABLE = "SANGAM_ACCEPT_MSSQL_EULA";
+
+    /** The one value that accepts, the same value the compose file passes on as ACCEPT_EULA. */
+    static final String MSSQL_EULA_ACCEPTED = "Y";
+
+    /**
+     * Decision 122 (RM-35): this code never accepts the SQL Server EULA by itself. Only when the operator has set
+     * {@value #MSSQL_EULA_VARIABLE} to exactly {@value #MSSQL_EULA_ACCEPTED} does it pass that acceptance on to the
+     * container ({@code acceptLicense()}). Otherwise the lane refuses before any container exists, with a NOT-RUN
+     * reason: the acceptance tests fail loudly and are never counted as a pass.
+     */
+    static MSSQLServerContainer<?> sqlServer(DockerImageName image, UnaryOperator<String> env) {
+        if (!mssqlEulaAccepted(env)) {
+            throw mssqlEulaRefusal(env.apply(MSSQL_EULA_VARIABLE));
+        }
+        return new MSSQLServerContainer<>(image).acceptLicense();
+    }
+
+    static boolean mssqlEulaAccepted(UnaryOperator<String> env) {
+        return MSSQL_EULA_ACCEPTED.equals(env.apply(MSSQL_EULA_VARIABLE));
+    }
+
+    static IllegalStateException mssqlEulaRefusal(String value) {
+        return new IllegalStateException("NOT-RUN: the SQL Server lane needs the operator's acceptance of the Microsoft SQL "
+                + "Server container image EULA: set " + MSSQL_EULA_VARIABLE + "=" + MSSQL_EULA_ACCEPTED + " (it is "
+                + (value == null ? "not set" : "'" + value + "'") + "); the build never accepts it by itself (decision 122)");
+    }
+
     public static synchronized JdbcDatabaseContainer<?> container() {
         if (container == null) {
             container = create(lane());
@@ -159,11 +189,10 @@ public final class AcceptanceDatabase {
                     .withDatabaseName("sangam").withUsername("sangam").withPassword("sangam");
             case "oracle" -> new OracleContainer(DockerImageName.parse("gvenzl/oracle-free:23-slim-faststart"))
                     .withUsername("sangam").withPassword("sangam").withStartupTimeout(Duration.ofMinutes(5));
-            case "sqlserver" -> new MSSQLServerContainer<>(
-                    DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest")).acceptLicense();
-            case "sqlserver2025" -> new MSSQLServerContainer<>(
-                    DockerImageName.parse("mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04")
-                            .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server")).acceptLicense();
+            case "sqlserver" -> sqlServer(DockerImageName.parse("mcr.microsoft.com/mssql/server:2022-latest"),
+                    System::getenv);
+            case "sqlserver2025" -> sqlServer(DockerImageName.parse("mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04")
+                    .asCompatibleSubstituteFor("mcr.microsoft.com/mssql/server"), System::getenv);
             case "mysql" -> new MariaDbDriverMySqlContainer()
                     .withDatabaseName("sangam").withUsername("sangam").withPassword("sangam")
                     .withCommand("--character-set-server=utf8mb4", "--collation-server=utf8mb4_bin",

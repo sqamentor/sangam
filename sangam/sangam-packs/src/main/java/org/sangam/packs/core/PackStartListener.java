@@ -14,12 +14,14 @@ import org.sangam.packs.port.PackRuntime;
  * Process start listener of every pack's main process (DRAFT to SUBMITTED, X.4.2.1).
  *
  * <ul>
+ *   <li>resolves the case's tenant from the engine tenant only, failing closed (decision 145);</li>
  *   <li>binds the pack id and version to the case (R43, K10) as {@code packVersion = id@version};</li>
  *   <li>records the initiator person and seat for segregation of duties (K5): the REST layer passes
  *       {@code initiatorPerson} (or Operaton's {@code operaton:initiator}) and {@code actingSeat};</li>
  *   <li>stores the material field list and the submitted payload hash (K4) and starts {@code caseVersion} at 1;</li>
  *   <li>starts the case-level statutory clock {@code caseDueAt} when {@code caseSla} is given (R31, GP-35);</li>
- *   <li>writes {@code CASE_SUBMITTED}.</li>
+ *   <li>writes {@code CASE_CREATED} (decision 299: the case exists, with its bound package version and initial
+ *       state), then the audit event of entering the initial state ({@code CASE_SUBMITTED} by default).</li>
  * </ul>
  */
 public class PackStartListener implements ExecutionListener {
@@ -32,12 +34,16 @@ public class PackStartListener implements ExecutionListener {
 
     @Override
     public void notify(DelegateExecution ex) {
+        // decision 145: the engine tenant, resolved before anything is written; a forged tenantId start variable or a
+        // case without an engine tenant stops here
+        String tenant = Vars.tenant(ex);
         String id = Vars.field(packId, ex, "unknown");
         String ver = Vars.field(packVersion, ex, "0");
         ex.setVariable(Vars.PACK_VERSION, id + "@" + ver);
         ex.setVariable("packId", id);
-        if (ex.getVariable("tenantId") == null && ex.getTenantId() != null) {
-            ex.setVariable("tenantId", ex.getTenantId());
+        if (ex.getVariable(Vars.TENANT_VARIABLE) == null) {
+            // business data for forms and reports, copied from the engine tenant; never read as the tenant
+            ex.setVariable(Vars.TENANT_VARIABLE, tenant);
         }
         if (ex.getVariable("profileVersion") == null) {
             // configuration chain in force at start (ADR-D-20); kept for the life of the case (GP-19 semantics)
@@ -77,6 +83,8 @@ public class PackStartListener implements ExecutionListener {
         }
         CaseState st = CaseState.valueOf(Vars.field(initialState, ex, "SUBMITTED"));
         ex.setVariable(Vars.CASE_STATE, st.name());
+        Vars.audit(ex, "CASE_CREATED", Vars.map("package", id + "@" + ver, "initialState", st.name(),
+                "profileVersion", ex.getVariable("profileVersion")));
         Vars.audit(ex, st.auditEvent(), Vars.map("package", id + "@" + ver,
                 "payloadHash", Vars.str(ex, "submittedPayloadHash")));
     }

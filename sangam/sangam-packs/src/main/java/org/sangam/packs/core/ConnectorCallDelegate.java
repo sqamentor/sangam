@@ -27,7 +27,11 @@ import org.sangam.packs.port.PackRuntime;
  *       {@code variable>parameter} sends the variable under the connector's contract name;</li>
  *   <li>{@code resultPrefix}: result data entries are written as {@code <prefix><Key>} and the status as
  *       {@code <prefix>Status} (default prefix = last segment of the connector name);</li>
- *   <li>{@code errorOnFailure}: BPMN error code thrown on a FAILED result (else the status is only recorded).</li>
+ *   <li>{@code errorOnFailure}: BPMN error code thrown on a FAILED result (else the status is only recorded);</li>
+ *   <li>{@code documents} (decision 223): comma list of result data keys stored as a bytes JSON document
+ *       ({@link Vars#setJsonDocument}) instead of a string variable, for data that can exceed the engine's
+ *       4000-character string limit (a frozen wage register); a list or map is written as JSON, a text answer is
+ *       stored as given and must be JSON ({@link Vars#jsonList} checks it when read).</li>
  * </ul>
  */
 public class ConnectorCallDelegate implements JavaDelegate {
@@ -39,6 +43,7 @@ public class ConnectorCallDelegate implements JavaDelegate {
     private Expression resultPrefix;
     private Expression step;
     private Expression errorOnFailure;
+    private Expression documents;
 
     @Override
     public void execute(DelegateExecution ex) {
@@ -72,8 +77,18 @@ public class ConnectorCallDelegate implements JavaDelegate {
         if (r.externalRef() != null) {
             ex.setVariable(prefix + "Ref", r.externalRef());
         }
-        r.data().forEach((k, v) -> ex.setVariable(prefix + Character.toUpperCase(k.charAt(0)) + k.substring(1),
-                Vars.engineValue(v)));
+        java.util.List<String> docs = Vars.csv(Vars.field(documents, ex));
+        r.data().forEach((k, v) -> {
+            String name = prefix + Character.toUpperCase(k.charAt(0)) + k.substring(1);
+            if (!docs.contains(k)) {
+                ex.setVariable(name, Vars.engineValue(v));
+            } else if (v instanceof CharSequence text) {
+                ex.setVariable(name, org.operaton.bpm.engine.variable.Variables.byteArrayValue(
+                        text.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+            } else {
+                Vars.setJsonDocument(ex, name, v);
+            }
+        });
         String err = Vars.field(errorOnFailure, ex);
         if (err != null && r.status() == OperationStatus.FAILED) {
             throw new BpmnError(err, c + " failed: " + r.reasonCode());

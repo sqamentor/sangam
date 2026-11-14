@@ -50,6 +50,10 @@
     {
       "kind": "SEED",
       "path": "packs/ifms-gia-uc/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/ifms-gia-uc/pack.json"
     }
   ],
   "seed": "packs/ifms-gia-uc/seed.json",
@@ -132,6 +136,15 @@
     "sangam-core-sanction",
     "sangam-ifms-bill"
   ],
+  "currency": "INR",
+  "powers": {
+    "gr_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "ifms-gia-powers",
+      "ruleCaseType": "GIA"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

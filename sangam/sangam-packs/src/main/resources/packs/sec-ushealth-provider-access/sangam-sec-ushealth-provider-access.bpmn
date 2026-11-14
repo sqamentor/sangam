@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Provider Access request. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_provider_ac" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-provider-access" name="Provider Access request" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.provider-access</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>memberId,providerNpi</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pv_start" name="Provider request received" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-provider-access/request"></startEvent>
+    <serviceTask id="pv_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;memberId=@customerId;payerProgram=MA;providerNpi=1234567893;interopSeat=INTEROP-ANALYST;memberSeat=MEMBER-SERVICES</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="pv_cfg" name="Payer API timeframes (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-provider-access-config</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="pv_deadline" name="Regulatory clock: p2pResponse" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p2pResponse</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${p2pResponseSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pv_attr_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>attrAttributed=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pv_attr" name="Check the treatment relationship (attribution)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.attribution</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>check</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,providerNpi</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>attr</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pv_optOut_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>optoutOptedOut=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pv_optOut" name="Check the patient's opt-out" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.memberRecord</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>optOut</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>optout</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pv_checkGw" name="Data may be shared?" default="sec_ushealth_provider_ac_f13"></exclusiveGateway>
+    <userTask id="pv_checkHold" name="Attribution or opt-out not confirmed: confirm at the source" operaton:candidateGroups="${memberSeat}" operaton:formKey="sangam:sec-ushealth-provider-access/checkHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pv_endRefused" name="Refused: no treatment relationship, or the patient opted out"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="pv_export_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>exportBundleRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pv_export" name="Export the permitted data (Bulk Data)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.memberRecord</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>export</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,providerNpi</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>export</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pv_exportGw" name="Export ready?" default="sec_ushealth_provider_ac_f18"></exclusiveGateway>
+    <userTask id="pv_exportHold" name="Export not confirmed: check the member record" operaton:candidateGroups="${interopSeat}" operaton:formKey="sangam:sec-ushealth-provider-access/exportHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pv_send_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>sentReceiptRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pv_send" name="Answer the provider" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.providerAccess</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>respond</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>providerNpi,memberId,exportBundleRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>sent</operaton:string></operaton:field><operaton:field name="step"><operaton:string>provider-send</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pv_sendGw" name="Answered?" default="sec_ushealth_provider_ac_f22"></exclusiveGateway>
+    <userTask id="pv_sendHold" name="Answer not confirmed: check with the provider" operaton:candidateGroups="${interopSeat}" operaton:formKey="sangam:sec-ushealth-provider-access/sendHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pv_end" name="Provider answered"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SENT</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['sentReceiptRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_provider_ac_f1" sourceRef="pv_start" targetRef="pv_defaults"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f2" sourceRef="pv_defaults" targetRef="pv_cfg"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f3" sourceRef="pv_cfg" targetRef="pv_deadline"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f4" sourceRef="pv_attr_clear" targetRef="pv_attr"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f5" sourceRef="pv_optOut_clear" targetRef="pv_optOut"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f6" sourceRef="pv_deadline" targetRef="pv_attr_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f7" sourceRef="pv_attr" targetRef="pv_optOut_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f8" sourceRef="pv_optOut" targetRef="pv_checkGw"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f9" sourceRef="pv_checkHold" targetRef="pv_attr_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f10" name="not confirmed" sourceRef="pv_checkGw" targetRef="pv_checkHold"><conditionExpression xsi:type="tFormalExpression">${attrStatus != 'COMPLETED' || attrAttributed == null || optoutStatus != 'COMPLETED' || optoutOptedOut == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_provider_ac_f11" name="not attributed / opted out" sourceRef="pv_checkGw" targetRef="pv_endRefused"><conditionExpression xsi:type="tFormalExpression">${attrStatus == 'COMPLETED' &amp;&amp; attrAttributed != null &amp;&amp; optoutStatus == 'COMPLETED' &amp;&amp; optoutOptedOut != null &amp;&amp; (!attrAttributed || optoutOptedOut)}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_provider_ac_f12" sourceRef="pv_export_clear" targetRef="pv_export"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f13" name="may share" sourceRef="pv_checkGw" targetRef="pv_export_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f14" sourceRef="pv_export" targetRef="pv_exportGw"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f15" sourceRef="pv_exportHold" targetRef="pv_export_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f16" name="not confirmed" sourceRef="pv_exportGw" targetRef="pv_exportHold"><conditionExpression xsi:type="tFormalExpression">${exportStatus != 'COMPLETED' || exportBundleRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_provider_ac_f17" sourceRef="pv_send_clear" targetRef="pv_send"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f18" name="ready" sourceRef="pv_exportGw" targetRef="pv_send_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f19" sourceRef="pv_send" targetRef="pv_sendGw"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f20" sourceRef="pv_sendHold" targetRef="pv_send_clear"/>
+    <sequenceFlow id="sec_ushealth_provider_ac_f21" name="not confirmed" sourceRef="pv_sendGw" targetRef="pv_sendHold"><conditionExpression xsi:type="tFormalExpression">${sentStatus != 'COMPLETED' || sentReceiptRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_provider_ac_f22" name="answered" sourceRef="pv_sendGw" targetRef="pv_end"/>
+    <subProcess id="pv_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pv_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pv_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pv_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pv_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_provider_ac_f23" sourceRef="pv_withdrawStart" targetRef="pv_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_provider_ac_f24" sourceRef="pv_withdrawKind" targetRef="pv_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_provider_ac_f25" sourceRef="pv_withdrawCall" targetRef="pv_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pv_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pv_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pv_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pv_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pv_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_provider_ac_f26" sourceRef="pv_cancelStart" targetRef="pv_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_provider_ac_f27" sourceRef="pv_cancelKind" targetRef="pv_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_provider_ac_f28" sourceRef="pv_cancelCall" targetRef="pv_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_provider_ac_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_provider_ac_plane" bpmnElement="sangam-sec-ushealth-provider-access">
+      <bpmndi:BPMNShape id="pv_start_di" bpmnElement="pv_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_defaults_di" bpmnElement="pv_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_cfg_di" bpmnElement="pv_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_deadline_di" bpmnElement="pv_deadline"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_attr_clear_di" bpmnElement="pv_attr_clear"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_attr_di" bpmnElement="pv_attr"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_optOut_clear_di" bpmnElement="pv_optOut_clear"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_optOut_di" bpmnElement="pv_optOut"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_checkGw_di" bpmnElement="pv_checkGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_checkHold_di" bpmnElement="pv_checkHold"><dc:Bounds x="1505" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_endRefused_di" bpmnElement="pv_endRefused"><dc:Bounds x="1537" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_export_clear_di" bpmnElement="pv_export_clear"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_export_di" bpmnElement="pv_export"><dc:Bounds x="1670" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_exportGw_di" bpmnElement="pv_exportGw"><dc:Bounds x="1860" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_exportHold_di" bpmnElement="pv_exportHold"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_send_clear_di" bpmnElement="pv_send_clear"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_send_di" bpmnElement="pv_send"><dc:Bounds x="2165" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_sendGw_di" bpmnElement="pv_sendGw"><dc:Bounds x="2355" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_sendHold_di" bpmnElement="pv_sendHold"><dc:Bounds x="2495" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_end_di" bpmnElement="pv_end"><dc:Bounds x="2527" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_withdraw_di" bpmnElement="pv_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_withdrawStart_di" bpmnElement="pv_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_withdrawKind_di" bpmnElement="pv_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_withdrawCall_di" bpmnElement="pv_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_withdrawEnd_di" bpmnElement="pv_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_cancel_di" bpmnElement="pv_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_cancelStart_di" bpmnElement="pv_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_cancelKind_di" bpmnElement="pv_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_cancelCall_di" bpmnElement="pv_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pv_cancelEnd_di" bpmnElement="pv_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f1_di" bpmnElement="sec_ushealth_provider_ac_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f2_di" bpmnElement="sec_ushealth_provider_ac_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f3_di" bpmnElement="sec_ushealth_provider_ac_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f4_di" bpmnElement="sec_ushealth_provider_ac_f4"><di:waypoint x="780" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f5_di" bpmnElement="sec_ushealth_provider_ac_f5"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f6_di" bpmnElement="sec_ushealth_provider_ac_f6"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f7_di" bpmnElement="sec_ushealth_provider_ac_f7"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f8_di" bpmnElement="sec_ushealth_provider_ac_f8"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f9_di" bpmnElement="sec_ushealth_provider_ac_f9"><di:waypoint x="1555" y="360"/><di:waypoint x="1555" y="378"/><di:waypoint x="730" y="378"/><di:waypoint x="730" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f10_di" bpmnElement="sec_ushealth_provider_ac_f10"><di:waypoint x="1415" y="70"/><di:waypoint x="1460" y="70"/><di:waypoint x="1460" y="320"/><di:waypoint x="1505" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f11_di" bpmnElement="sec_ushealth_provider_ac_f11"><di:waypoint x="1415" y="70"/><di:waypoint x="1476" y="70"/><di:waypoint x="1476" y="195"/><di:waypoint x="1537" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f12_di" bpmnElement="sec_ushealth_provider_ac_f12"><di:waypoint x="1605" y="70"/><di:waypoint x="1670" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f13_di" bpmnElement="sec_ushealth_provider_ac_f13"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f14_di" bpmnElement="sec_ushealth_provider_ac_f14"><di:waypoint x="1770" y="70"/><di:waypoint x="1860" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f15_di" bpmnElement="sec_ushealth_provider_ac_f15"><di:waypoint x="2050" y="235"/><di:waypoint x="2050" y="267"/><di:waypoint x="1555" y="267"/><di:waypoint x="1555" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f16_di" bpmnElement="sec_ushealth_provider_ac_f16"><di:waypoint x="1910" y="70"/><di:waypoint x="1955" y="70"/><di:waypoint x="1955" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f17_di" bpmnElement="sec_ushealth_provider_ac_f17"><di:waypoint x="2100" y="70"/><di:waypoint x="2165" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f18_di" bpmnElement="sec_ushealth_provider_ac_f18"><di:waypoint x="1910" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f19_di" bpmnElement="sec_ushealth_provider_ac_f19"><di:waypoint x="2265" y="70"/><di:waypoint x="2355" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f20_di" bpmnElement="sec_ushealth_provider_ac_f20"><di:waypoint x="2545" y="235"/><di:waypoint x="2545" y="274"/><di:waypoint x="2050" y="274"/><di:waypoint x="2050" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f21_di" bpmnElement="sec_ushealth_provider_ac_f21"><di:waypoint x="2405" y="70"/><di:waypoint x="2450" y="70"/><di:waypoint x="2450" y="195"/><di:waypoint x="2495" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f22_di" bpmnElement="sec_ushealth_provider_ac_f22"><di:waypoint x="2405" y="70"/><di:waypoint x="2527" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f23_di" bpmnElement="sec_ushealth_provider_ac_f23"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f24_di" bpmnElement="sec_ushealth_provider_ac_f24"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f25_di" bpmnElement="sec_ushealth_provider_ac_f25"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f26_di" bpmnElement="sec_ushealth_provider_ac_f26"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f27_di" bpmnElement="sec_ushealth_provider_ac_f27"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_provider_ac_f28_di" bpmnElement="sec_ushealth_provider_ac_f28"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

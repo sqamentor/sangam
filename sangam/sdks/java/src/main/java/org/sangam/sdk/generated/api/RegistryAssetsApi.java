@@ -77,7 +77,7 @@ public final class RegistryAssetsApi {
     /**
      * Define class
      *
-     * <p>AssetController.defineClass (sangam-registry).
+     * <p>AssetController.defineClass (sangam-rest).
      *
      * <p>{@code POST /registry/assets/classes} (operationId {@code registryAssetDefineClass}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -93,7 +93,7 @@ public final class RegistryAssetsApi {
     /**
      * Classes
      *
-     * <p>AssetController.classes (sangam-registry).
+     * <p>AssetController.classes (sangam-rest).
      *
      * <p>{@code GET /registry/assets/classes} (operationId {@code registryAssetClasses}); permission {@code registry.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -107,7 +107,7 @@ public final class RegistryAssetsApi {
     /**
      * Get class
      *
-     * <p>AssetController.getClass (sangam-registry).
+     * <p>AssetController.getClass (sangam-rest).
      *
      * <p>{@code GET /registry/assets/classes/{classKey}} (operationId {@code registryAssetGetClass}); permission {@code registry.read}.
      * @param classKey path parameter {@code classKey}
@@ -124,7 +124,7 @@ public final class RegistryAssetsApi {
     /**
      * Register
      *
-     * <p>AssetController.register (sangam-registry).
+     * <p>AssetController.register (sangam-rest).
      *
      * <p>{@code POST /registry/assets} (operationId {@code registryAssetRegister}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -140,7 +140,7 @@ public final class RegistryAssetsApi {
     /**
      * List
      *
-     * <p>AssetController.list (sangam-registry).
+     * <p>AssetController.list (sangam-rest).
      *
      * <p>{@code GET /registry/assets} (operationId {@code registryAssetList}); permission {@code registry.read}.
      * @param classKey query parameter {@code classKey}, or null
@@ -168,7 +168,7 @@ public final class RegistryAssetsApi {
     /**
      * Get
      *
-     * <p>AssetController.get (sangam-registry).
+     * <p>AssetController.get (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}} (operationId {@code registryAssetGet}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -183,7 +183,7 @@ public final class RegistryAssetsApi {
     /**
      * Update details
      *
-     * <p>AssetController.updateDetails (sangam-registry).
+     * <p>AssetController.updateDetails (sangam-rest).
      *
      * <p>{@code PATCH /registry/assets/{id}} (operationId {@code registryAssetUpdateDetails}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -202,7 +202,7 @@ public final class RegistryAssetsApi {
     /**
      * By tag
      *
-     * <p>AssetController.byTag (sangam-registry).
+     * <p>AssetController.byTag (sangam-rest).
      *
      * <p>{@code GET /registry/assets/by-tag/{tag}} (operationId {@code registryAssetByTag}); permission {@code registry.read}.
      * @param tag path parameter {@code tag}
@@ -217,7 +217,7 @@ public final class RegistryAssetsApi {
     /**
      * Move
      *
-     * <p>AssetController.move (sangam-registry).
+     * <p>AssetController.move (sangam-rest).
      *
      * <p>{@code POST /registry/assets/{id}/move} (operationId {@code registryAssetMove}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -234,7 +234,7 @@ public final class RegistryAssetsApi {
     /**
      * Movements
      *
-     * <p>AssetController.movements (sangam-registry).
+     * <p>AssetController.movements (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/movements} (operationId {@code registryAssetMovements}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -249,7 +249,7 @@ public final class RegistryAssetsApi {
     /**
      * Reparent
      *
-     * <p>AssetController.reparent (sangam-registry).
+     * <p>AssetController.reparent (sangam-rest).
      *
      * <p>{@code POST /registry/assets/{id}/reparent} (operationId {@code registryAssetReparent}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -266,7 +266,7 @@ public final class RegistryAssetsApi {
     /**
      * Children
      *
-     * <p>AssetController.children (sangam-registry).
+     * <p>AssetController.children (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/children} (operationId {@code registryAssetChildren}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -281,7 +281,7 @@ public final class RegistryAssetsApi {
     /**
      * Ancestors
      *
-     * <p>AssetController.ancestors (sangam-registry).
+     * <p>AssetController.ancestors (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/ancestors} (operationId {@code registryAssetAncestors}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -296,7 +296,7 @@ public final class RegistryAssetsApi {
     /**
      * Subtree
      *
-     * <p>AssetController.subtree (sangam-registry).
+     * <p>AssetController.subtree (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/subtree} (operationId {@code registryAssetSubtree}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -311,7 +311,7 @@ public final class RegistryAssetsApi {
     /**
      * Dispose
      *
-     * <p>AssetController.dispose (sangam-registry).
+     * <p>AssetController.dispose (sangam-rest).
      *
      * <p>{@code POST /registry/assets/{id}/dispose} (operationId {@code registryAssetDispose}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -328,7 +328,7 @@ public final class RegistryAssetsApi {
     /**
      * Depreciation
      *
-     * <p>AssetController.depreciation (sangam-registry).
+     * <p>AssetController.depreciation (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/depreciation} (operationId {@code registryAssetDepreciation}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -343,7 +343,7 @@ public final class RegistryAssetsApi {
     /**
      * Book value
      *
-     * <p>AssetController.bookValue (sangam-registry).
+     * <p>AssetController.bookValue (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/book-value} (operationId {@code registryAssetBookValue}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -360,7 +360,7 @@ public final class RegistryAssetsApi {
     /**
      * Meters
      *
-     * <p>AssetController.meters (sangam-registry).
+     * <p>AssetController.meters (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/meters} (operationId {@code registryAssetMeters}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -375,7 +375,7 @@ public final class RegistryAssetsApi {
     /**
      * Add meter
      *
-     * <p>AssetController.addMeter (sangam-registry).
+     * <p>AssetController.addMeter (sangam-rest).
      *
      * <p>{@code POST /registry/assets/{id}/meters} (operationId {@code registryAssetAddMeter}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -392,7 +392,7 @@ public final class RegistryAssetsApi {
     /**
      * Record reading
      *
-     * <p>AssetController.recordReading (sangam-registry).
+     * <p>AssetController.recordReading (sangam-rest).
      *
      * <p>{@code POST /registry/assets/{id}/meters/{meterType}/readings} (operationId {@code registryAssetRecordReading}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -410,7 +410,7 @@ public final class RegistryAssetsApi {
     /**
      * Readings
      *
-     * <p>AssetController.readings (sangam-registry).
+     * <p>AssetController.readings (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/meters/{meterType}/readings} (operationId {@code registryAssetReadings}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -430,7 +430,7 @@ public final class RegistryAssetsApi {
     /**
      * Correct reading
      *
-     * <p>AssetController.correctReading (sangam-registry).
+     * <p>AssetController.correctReading (sangam-rest).
      *
      * <p>{@code POST /registry/assets/readings/{readingId}/correct} (operationId {@code registryAssetCorrectReading}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param readingId path parameter {@code readingId}
@@ -447,7 +447,7 @@ public final class RegistryAssetsApi {
     /**
      * Reject reading
      *
-     * <p>AssetController.rejectReading (sangam-registry).
+     * <p>AssetController.rejectReading (sangam-rest).
      *
      * <p>{@code POST /registry/assets/readings/{readingId}/reject} (operationId {@code registryAssetRejectReading}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param readingId path parameter {@code readingId}
@@ -464,7 +464,7 @@ public final class RegistryAssetsApi {
     /**
      * Plans
      *
-     * <p>AssetController.plans (sangam-registry).
+     * <p>AssetController.plans (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/plans} (operationId {@code registryAssetPlans}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -479,7 +479,7 @@ public final class RegistryAssetsApi {
     /**
      * Add plan
      *
-     * <p>AssetController.addPlan (sangam-registry).
+     * <p>AssetController.addPlan (sangam-rest).
      *
      * <p>{@code POST /registry/assets/{id}/plans} (operationId {@code registryAssetAddPlan}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -496,7 +496,7 @@ public final class RegistryAssetsApi {
     /**
      * Update plan
      *
-     * <p>AssetController.updatePlan (sangam-registry).
+     * <p>AssetController.updatePlan (sangam-rest).
      *
      * <p>{@code PATCH /registry/assets/plans/{planId}} (operationId {@code registryAssetUpdatePlan}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param planId path parameter {@code planId}
@@ -515,7 +515,7 @@ public final class RegistryAssetsApi {
     /**
      * Plan status
      *
-     * <p>AssetController.planStatus (sangam-registry).
+     * <p>AssetController.planStatus (sangam-rest).
      *
      * <p>{@code POST /registry/assets/plans/{planId}/status} (operationId {@code registryAssetPlanStatus}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param planId path parameter {@code planId}
@@ -532,7 +532,7 @@ public final class RegistryAssetsApi {
     /**
      * Trigger condition
      *
-     * <p>AssetController.triggerCondition (sangam-registry).
+     * <p>AssetController.triggerCondition (sangam-rest).
      *
      * <p>{@code POST /registry/assets/plans/{planId}/trigger} (operationId {@code registryAssetTriggerCondition}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param planId path parameter {@code planId}
@@ -549,7 +549,7 @@ public final class RegistryAssetsApi {
     /**
      * Create work order
      *
-     * <p>AssetController.createWorkOrder (sangam-registry).
+     * <p>AssetController.createWorkOrder (sangam-rest).
      *
      * <p>{@code POST /registry/assets/work-orders} (operationId {@code registryAssetCreateWorkOrder}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -565,7 +565,7 @@ public final class RegistryAssetsApi {
     /**
      * Work orders
      *
-     * <p>AssetController.workOrders (sangam-registry).
+     * <p>AssetController.workOrders (sangam-rest).
      *
      * <p>{@code GET /registry/assets/work-orders} (operationId {@code registryAssetWorkOrders}); permission {@code registry.read}.
      * @param assetId query parameter {@code assetId}, or null
@@ -589,7 +589,7 @@ public final class RegistryAssetsApi {
     /**
      * Work order
      *
-     * <p>AssetController.workOrder (sangam-registry).
+     * <p>AssetController.workOrder (sangam-rest).
      *
      * <p>{@code GET /registry/assets/work-orders/{woId}} (operationId {@code registryAssetWorkOrder}); permission {@code registry.read}.
      * @param woId path parameter {@code woId}
@@ -604,7 +604,7 @@ public final class RegistryAssetsApi {
     /**
      * Generate due
      *
-     * <p>AssetController.generateDue (sangam-registry).
+     * <p>AssetController.generateDue (sangam-rest).
      *
      * <p>{@code POST /registry/assets/work-orders/generate-due} (operationId {@code registryAssetGenerateDue}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body, or null
@@ -620,7 +620,7 @@ public final class RegistryAssetsApi {
     /**
      * Step
      *
-     * <p>AssetController.step (sangam-registry).
+     * <p>AssetController.step (sangam-rest).
      *
      * <p>{@code POST /registry/assets/work-orders/{woId}/{step}} (operationId {@code registryAssetStep}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param woId path parameter {@code woId}
@@ -640,7 +640,7 @@ public final class RegistryAssetsApi {
     /**
      * Reliability
      *
-     * <p>AssetController.reliability (sangam-registry).
+     * <p>AssetController.reliability (sangam-rest).
      *
      * <p>{@code GET /registry/assets/{id}/reliability} (operationId {@code registryAssetReliability}); permission {@code registry.read}.
      * @param id path parameter {@code id}

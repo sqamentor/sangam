@@ -121,10 +121,10 @@ public class PacksWiring {
             ObjectProvider<SangamSecurity> security,
             ObjectProvider<org.sangam.core.engine.SangamClock> sangamClock,
             ObjectProvider<org.sangam.core.time.BusinessClock> businessClocks,
-            ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles) {
+            ObjectProvider<org.sangam.config.profile.ProfileResolver> profiles,
+            ObjectProvider<org.sangam.integration.dsc.DscSigningFlow> dscFlows) {
         return () -> {
             Dialect dialect = tx.dialect();
-            String defaultTenant = AttributionTenant.resolve(env); // SL-86: the one attribution-tenant resolver
             // Seat validity days are business dates in each tenant's profile zone; sangam.packs.zone, if set,
             // forces one zone for every tenant (legacy override).
             String forced = env.getProperty("sangam.packs.zone");
@@ -136,7 +136,7 @@ public class PacksWiring {
                 createPackOperationTable(tx, dialect);
             }
             PackRuntime.Ports ports = PackRuntime.ports()
-                    .withAudit(new PacksAuditSink(new AuditChain(dialect), tx, defaultTenant))
+                    .withAudit(new PacksAuditSink(new AuditChain(dialect), tx)) // RM-49: no default tenant
                     .withClock(new EngineClock(ZoneOffset.UTC));
             SangamSecurity sec = security.getIfAvailable();
             if (sec != null) {
@@ -161,11 +161,40 @@ public class PacksWiring {
             } else {
                 LOG.warn("No ProfileResolver bean: pack SLAs use the default working-day calendar (no tenant holidays)");
             }
+            // decisions 236 and 237: the DSC completion gate asks the server's DSC flow; refuse-all without it
+            org.sangam.integration.dsc.DscSigningFlow dsc = dscFlows.getIfAvailable();
+            ports = ports.withSignatures(signatures(dsc));
+            // decision 292: in production every pack rule row not permitted for PRODUCTION refuses
+            ports = withProductionMode(ports, env);
             PackRuntime.install(ports);
+            LOG.info("PackRuntime DSC signature check: {}", dsc != null ? "server DSC flow" : "refuse all (DSC off)");
+            LOG.info("PackRuntime production mode: {}", ports.production()
+                    ? "on (rule rows not permitted for PRODUCTION refuse)" : "off (demonstration rows usable)");
             LOG.info("PackRuntime installed: audit chain, seats={}, ledgers={}, calendar={}",
                     sec != null ? "sangam-security" : "in-memory", clock != null ? "JDBC" : "in-memory",
                     pr != null ? "profile calendar '" + calendarName + "'" : "default working days");
         };
+    }
+
+    /**
+     * Owner decision 292: the packs' production mode is the server's fail-closed production predicate of decision 143
+     * ({@link ProductionEnvironment#isProduction}), so a missing, invalid or contradictory
+     * {@code sangam.security.production} counts as production. In production, sangam-packs refuses every rule row whose
+     * permittedUse is not PRODUCTION ({@code <PREFIX>_NOT_PERMITTED_IN_PRODUCTION}); outside it, demonstration rows stay
+     * usable.
+     */
+    static PackRuntime.Ports withProductionMode(PackRuntime.Ports ports, Environment env) {
+        return ports.withProduction(ProductionEnvironment.isProduction(env));
+    }
+
+    /**
+     * Decisions 236 and 237: the packs' signature port over the server's DSC flow, or
+     * {@link org.sangam.packs.port.SignatureVerifications#DENY} when there is none ({@code sangam.dsc.enabled} off;
+     * with it on, start-up already fails without sangam-esign).
+     */
+    public static org.sangam.packs.port.SignatureVerifications signatures(org.sangam.integration.dsc.DscSigningFlow flow) {
+        return flow == null ? org.sangam.packs.port.SignatureVerifications.DENY
+                : new org.sangam.server.bridge.DscSignatureVerificationsAdapter(flow);
     }
 
     /** The packs' business calendar over the tenant profile calendar {@code calendarName} in force today. */

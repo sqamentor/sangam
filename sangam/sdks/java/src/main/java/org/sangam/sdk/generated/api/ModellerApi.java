@@ -10,9 +10,12 @@ import org.sangam.sdk.generated.model.ActionModelInvoke;
 import org.sangam.sdk.generated.model.ActionModelPublish;
 import org.sangam.sdk.generated.model.ElementTemplateApply;
 import org.sangam.sdk.generated.model.ElementTemplatePublish;
+import org.sangam.sdk.generated.model.ModelDiffReport;
+import org.sangam.sdk.generated.model.ModelDiffRequest;
 import org.sangam.sdk.generated.model.ModelEditLease;
 import org.sangam.sdk.generated.model.ModelFenceRequest;
 import org.sangam.sdk.generated.model.ModelLeaseOutcome;
+import org.sangam.sdk.generated.model.ModelPresence;
 import org.sangam.sdk.generated.model.ModelTakeoverRequest;
 import org.sangam.sdk.generated.model.ModelTokenWalkRequest;
 import org.sangam.sdk.generated.model.ModellerFenceRequest;
@@ -23,7 +26,7 @@ import org.sangam.sdk.generated.model.TestBundleExport;
 import org.sangam.sdk.generated.model.TestBundleVerify;
 
 /**
- * Typed operations of {@code Modeller} (26 operations), generated from
+ * Typed operations of {@code Modeller} (28 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -33,6 +36,7 @@ public final class ModellerApi {
 
     private static final TypeReference<java.util.Map<String, Object>> R_getProcessLandscape = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_walkModelToken = new TypeReference<>() { };
+    private static final TypeReference<ModelDiffReport> R_diffModels = new TypeReference<>() { };
     private static final TypeReference<ModelEditLease> R_getModelLease = new TypeReference<>() { };
     private static final TypeReference<ModelLeaseOutcome> R_acquireModelLease = new TypeReference<>() { };
     private static final TypeReference<ModelEditLease> R_takeOverModelLease = new TypeReference<>() { };
@@ -88,6 +92,22 @@ public final class ModellerApi {
         ApiRequest req = ApiRequest.post("/models/token-walk");
         req.body(body);
         return call.json(req, options, R_walkModelToken);
+    }
+
+    /**
+     * Semantic model diff
+     *
+     * <p>Compares two versions of a BPMN, DMN, CMMN or form file by meaning (elements, flows, expressions, properties), not by text; reads only, nothing is stored (M-125). 400 MODEL_UNREADABLE when a side is not XML/JSON, has a DOCTYPE, or the two sides are of different formats.
+     *
+     * <p>{@code POST /models/diff} (operationId {@code diffModels}); permission {@code package.read}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public ModelDiffReport diffModels(ModelDiffRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/models/diff");
+        req.body(body);
+        return call.json(req, options, R_diffModels);
     }
 
     /**
@@ -181,6 +201,21 @@ public final class ModellerApi {
         ApiRequest req = ApiRequest.post("/models/" + HttpTransport.seg(String.valueOf(file)) + "/lease/takeover");
         req.body(body);
         return call.json(req, options, R_takeOverModelLease);
+    }
+
+    /**
+     * Model presence stream
+     *
+     * <p>Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
+     *
+     * <p>{@code GET /models/{file}/presence/stream} (operationId {@code streamModelPresence}); permission {@code package.read}.
+     * @param file path parameter {@code file}. model file: the package id
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public byte[] streamModelPresence(String file, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/models/" + HttpTransport.seg(String.valueOf(file)) + "/presence/stream");
+        return call.bytes(req, options, "text/event-stream");
     }
 
     /**

@@ -104,17 +104,55 @@ public class ContentService {
         return item(id).orElseThrow();
     }
 
+    /**
+     * Owner decision 228: the item is no longer at the version the caller expected (another version was added first).
+     * Nothing was recorded; an object already written to the store (a lost race during the write) is left unreferenced
+     * for the orphan sweeper, which diffs the store against {@link #orphanCandidates}.
+     */
+    public static final class VersionConflict extends IllegalStateException {
+        private final int expectedVersion;
+
+        public VersionConflict(String itemId, int expectedVersion) {
+            super("content item " + itemId + " is no longer at version " + expectedVersion);
+            this.expectedVersion = expectedVersion;
+        }
+
+        public int expectedVersion() {
+            return expectedVersion;
+        }
+    }
+
     public ContentVersion addVersion(String itemId, InputStream content, String user) {
         ContentItem item = item(itemId).filter(i -> !i.deleted())
                 .orElseThrow(() -> new IllegalArgumentException("content item " + itemId + " not found"));
-        int next = item.currentVersion() + 1;
+        return addVersion(item, item.currentVersion(), content, user);
+    }
+
+    /**
+     * Owner decision 228: compare-and-set. Adds version {@code expectedVersion + 1} only while {@code expectedVersion} is
+     * the current version; the metadata write is one conditional UPDATE, so of two concurrent writers at most one wins.
+     *
+     * @throws VersionConflict when the item is at another version, before or during the write
+     */
+    public ContentVersion addVersion(String itemId, int expectedVersion, InputStream content, String user) {
+        ContentItem item = item(itemId).filter(i -> !i.deleted())
+                .orElseThrow(() -> new IllegalArgumentException("content item " + itemId + " not found"));
+        if (item.currentVersion() != expectedVersion) {
+            throw new VersionConflict(itemId, expectedVersion);   // checked before any byte is stored
+        }
+        return addVersion(item, expectedVersion, content, user);
+    }
+
+    private ContentVersion addVersion(ContentItem item, int expectedVersion, InputStream content, String user) {
+        String itemId = item.id();
+        int next = expectedVersion + 1;
         DocumentStore.StoredObject obj = store(item.tenantId(), itemId, next, content, item.mimeType());
         ScanState scan = scan(item.tenantId(), item.name(), item.mimeType(), obj.key());
         tx.inTransaction(c -> {
-            int n = Jdbc.update(c, "UPDATE CONTENT_ITEM SET current_version = ? WHERE id = ? AND current_version = ?", next, itemId,
-                    item.currentVersion());
+            int n = Jdbc.update(c, "UPDATE CONTENT_ITEM SET current_version = ? WHERE id = ? AND current_version = ?"
+                    + " AND deleted_flag = 0", next, itemId, expectedVersion);
             if (n == 0) {
-                throw new IllegalStateException("concurrent new version of content item " + itemId);
+                throw new VersionConflict(itemId, expectedVersion);
             }
             insertVersion(c, itemId, next, obj, scan, user);
             return null;
@@ -194,7 +232,11 @@ public class ContentService {
 
     private DocumentStore.StoredObject store(String tenant, String id, int version, InputStream content, String mime) {
         var now = Instant.now().atZone(ZoneOffset.UTC);
-        String key = safe(tenant) + "/" + now.getYear() + "/" + String.format("%02d", now.getMonthValue()) + "/" + id + "/v" + version;
+        // a fresh key per write (the version number alone is not unique): writers racing for one version never meet in
+        // the store, the conditional metadata UPDATE decides (decision 228), and an object left by a failed metadata
+        // write can never block a later write of that version; readers use the key recorded in CONTENT_VERSION
+        String key = safe(tenant) + "/" + now.getYear() + "/" + String.format("%02d", now.getMonthValue()) + "/" + id + "/v"
+                + version + "-" + UUID.randomUUID();
         if (content == null) {
             throw new IllegalArgumentException("content stream is required");
         }

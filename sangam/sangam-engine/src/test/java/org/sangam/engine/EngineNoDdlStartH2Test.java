@@ -40,6 +40,7 @@ class EngineNoDdlStartH2Test {
 
     private static SangamEngineSettings defaults() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         return s; // engineSchemaUpdate stays null: the production default
     }

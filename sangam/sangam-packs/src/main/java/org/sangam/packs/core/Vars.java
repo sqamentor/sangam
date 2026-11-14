@@ -47,35 +47,50 @@ public final class Vars {
     public static final String OPERATION_ID = "operationId";
     public static final String OP_STATUS = "opStatus";
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Decision 138: JSON fractions read as BigDecimal (never Double); written in BigDecimal's canonical form. */
+    private static final ObjectMapper JSON = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .build();
 
     private Vars() {
     }
 
+    /** The case variable that used to stand in for the tenant: now only an untrusted claim (decision 145). */
+    public static final String TENANT_VARIABLE = "tenantId";
+
+    /**
+     * Decision 145: the tenant of pack work is the engine tenant of the execution, set by authenticated, authorised
+     * process creation, and nothing else. Pack work is tenant-owned ({@code ExecutionTenantPolicy.tenantOwned}): an
+     * execution without an engine tenant fails closed ({@code TENANT_CONTEXT_MISSING}); a {@value #TENANT_VARIABLE}
+     * case variable is untrusted business data that never substitutes for or overrides it, and one that differs is
+     * refused ({@code TENANT_CONTEXT_CONFLICT}) before the caller's connector call, seat, ledger, decision, calendar or
+     * audit use. Every caller (connector gateway, credentials, data access, audit routing) gets the same answer.
+     *
+     * @throws org.sangam.core.tenant.TenantResolutionException when the engine tenant is missing or contradicted
+     */
     public static String tenant(DelegateExecution ex) {
-        if (ex.getTenantId() != null) {
-            return ex.getTenantId();
-        }
-        Object t = ex.getVariable("tenantId");
-        return t == null ? null : t.toString();
+        return org.sangam.core.tenant.ExecutionTenantPolicy.tenantOwned(ex.getTenantId(),
+                claim(ex.getVariable(TENANT_VARIABLE)), "pack execution").tenantId();
     }
 
     /**
      * SL-90: the tenant key of a pack ledger or batch row (PACK_LEDGER_ACCOUNT, PACK_LEDGER_POSTING, PACK_BATCH_ITEM:
-     * tenant_id is a NOT NULL key). Untenanted work uses the reserved shared key, never null. {@link #tenant} itself
-     * stays the engine's tenant (null when none): it also feeds the connector gateway, seats, calendars, decisions and
-     * operation-id names, which have their own "no tenant" handling.
+     * tenant_id is a NOT NULL key). Since decision 145 this is always the execution's engine tenant ({@link #tenant}
+     * fails closed without one), never the reserved shared key.
      */
     public static String tenantKey(DelegateExecution ex) {
         return org.sangam.core.layer.TenantKey.of(tenant(ex));
     }
 
+    /** {@link #tenant(DelegateExecution)} for a user task: the task's engine tenant only (decision 145). */
     public static String tenant(DelegateTask task) {
-        if (task.getTenantId() != null) {
-            return task.getTenantId();
-        }
-        Object t = task.getVariable("tenantId");
-        return t == null ? null : t.toString();
+        return org.sangam.core.tenant.ExecutionTenantPolicy.tenantOwned(task.getTenantId(),
+                claim(task.getVariable(TENANT_VARIABLE)), "pack task").tenantId();
+    }
+
+    /** A tenant claimed by a case variable, as text (a non-text value is still a claim, never ignored). */
+    private static String claim(Object v) {
+        return v == null ? null : v.toString();
     }
 
     public static String field(Expression e, VariableScope scope) {
@@ -117,8 +132,8 @@ public final class Vars {
 
     public static int intVal(VariableScope s, String name, int dflt) {
         Object v = s.getVariable(name);
-        if (v instanceof Number n) {
-            return n.intValue();
+        if (v instanceof Number) {
+            return decimal(v).intValueExact(); // decision 138: a fraction or an overflow is refused, never truncated
         }
         return v == null || v.toString().isBlank() ? dflt : Integer.parseInt(v.toString().trim());
     }
@@ -127,22 +142,29 @@ public final class Vars {
         return decimal(s.getVariable(name));
     }
 
+    /**
+     * Decision 138: the exact decimal of a value, by the rules of the engine decimal type
+     * ({@link org.sangam.packs.engine.DecimalText#exact}): {@link BigDecimal} as is, integer types exactly, text as
+     * strict decimal text after removing grouping commas and surrounding blanks. A binary floating-point value
+     * ({@link Double}, {@link Float}) is refused with code {@value #DECIMAL_FROM_FLOAT}: its decimal text is not the
+     * value the user or the rule meant, and nothing on the pack path may produce one. Invalid text, a value over the
+     * length limit and unsupported types are refused with their codes; blank text is {@code null}.
+     *
+     * @throws org.sangam.packs.engine.DecimalText.DecimalFormatException with the refusal code
+     */
     public static BigDecimal decimal(Object v) {
         if (v == null) {
             return null;
         }
-        if (v instanceof BigDecimal b) {
-            return b;
+        if (v instanceof CharSequence) {
+            String t = v.toString().replace(",", "").trim();
+            return t.isEmpty() ? null : org.sangam.packs.engine.DecimalText.parse(t);
         }
-        if (v instanceof Double || v instanceof Float) {
-            return BigDecimal.valueOf(((Number) v).doubleValue());
-        }
-        if (v instanceof Number n) {
-            return BigDecimal.valueOf(n.longValue());
-        }
-        String t = v.toString().replace(",", "").trim();
-        return t.isEmpty() ? null : new BigDecimal(t);
+        return org.sangam.packs.engine.DecimalText.exact(v);
     }
+
+    /** Refusal code of a binary floating-point value (decision 138), as in the engine decimal type. */
+    public static final String DECIMAL_FROM_FLOAT = "DECIMAL_FROM_FLOAT";
 
     public static Instant now() {
         return PackRuntime.clock().instant();
@@ -291,24 +313,27 @@ public final class Vars {
         return v.toString();
     }
 
-    /** Converts a value to a type the engine stores natively (no Java serialization): numbers to Long or Double. */
+    /**
+     * Converts a value to a type the engine stores without Java serialization. Decision 138: numbers stay exact. A
+     * whole number that fits a long is a {@link Long} (or the given {@link Integer}); every other number is a
+     * {@link BigDecimal}, which the engine stores losslessly as decimal text (type id {@code sangam-decimal-v1}, value
+     * and scale kept). A binary floating-point value is refused ({@value #DECIMAL_FROM_FLOAT}), never stored.
+     */
     public static Object engineValue(Object v) {
         if (v == null || v instanceof String || v instanceof Boolean || v instanceof Integer || v instanceof Long
-                || v instanceof Double || v instanceof Date) {
+                || v instanceof Date) {
             return v;
         }
-        if (v instanceof java.math.BigDecimal b) {
-            if (b.signum() == 0 || b.scale() <= 0 || b.stripTrailingZeros().scale() <= 0) {
+        if (v instanceof Number) {
+            BigDecimal b = decimal(v); // refuses Double and Float
+            if (b.signum() == 0 || b.stripTrailingZeros().scale() <= 0) {
                 try {
                     return b.longValueExact();
-                } catch (ArithmeticException e) {
-                    return b.doubleValue();
+                } catch (ArithmeticException beyondLong) {
+                    return b; // whole but beyond a long: exact decimal, never a double
                 }
             }
-            return b.doubleValue();
-        }
-        if (v instanceof Number n) {
-            return n.doubleValue();
+            return b;
         }
         if (v instanceof Map<?, ?> || v instanceof java.util.Collection<?>) {
             return toJson(v);

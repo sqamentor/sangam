@@ -10,8 +10,9 @@ import org.operaton.bpm.engine.delegate.JavaDelegate;
  * Sets literal variables. {@code values} always sets, {@code defaults} sets only variables that are still null (pack
  * configuration that a department may override at start). Format: {@code name=value;name=value}; values
  * {@code true}/{@code false} become booleans, whole numbers become integers (up to 9 digits) or longs (10 to 18 digits:
- * money is integer minor units, and 1 crore rupees is already 10 digits of paise), {@code null} clears, anything else is a
- * string. A value starting with {@code @} copies another variable ({@code a=@b}).
+ * money is integer minor units, and 1 crore rupees is already 10 digits of paise), decimals ({@code 0.9}) become exact
+ * {@link java.math.BigDecimal}s (decision 138, never a double), {@code null} clears, anything else is a string. A
+ * value starting with {@code @} copies another variable ({@code a=@b}).
  */
 public class SetVariablesDelegate implements JavaDelegate, ExecutionListener {
 
@@ -68,7 +69,7 @@ public class SetVariablesDelegate implements JavaDelegate, ExecutionListener {
             return Long.parseLong(raw);
         }
         if (raw.matches("-?\\d+\\.\\d+")) {
-            return Double.parseDouble(raw);
+            return new java.math.BigDecimal(raw); // decision 138: exact decimal text, never a double
         }
         return raw;
     }

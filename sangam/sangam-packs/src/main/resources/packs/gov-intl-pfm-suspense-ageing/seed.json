@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "SUSPENSE-CLERK",
+      "role": "SUSPENSECLERK",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Suspense clearing clerk",
+        "hi": "उचंत निपटान लिपिक"
+      }
+    },
+    {
+      "id": "ACCOUNTING-OFFICER",
+      "role": "ACCOUNTING-OFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "SUSPENSE-CLERK",
+      "person": "isu.suspense-clerk",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "ACCOUNTING-OFFICER",
+      "person": "isu.accounting-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "SUSPENSECLERK",
+      "name": {
+        "en": "Suspense clearing clerk",
+        "hi": "उचंत निपटान लिपिक"
+      }
+    },
+    {
+      "code": "ACCOUNTING-OFFICER",
+      "name": {
+        "en": "Accounting officer",
+        "hi": "लेखा अधिकारी"
+      }
+    }
+  ]
+}

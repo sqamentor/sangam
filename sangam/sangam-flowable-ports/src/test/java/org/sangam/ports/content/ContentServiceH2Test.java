@@ -78,6 +78,65 @@ class ContentServiceH2Test {
     }
 
     @Test
+    void aCompareAndSetVersionIsAddedOnlyAtTheExpectedVersion() throws Exception {
+        // owner decision 228
+        ContentService cs = new ContentService(Dialect.POSTGRESQL, tx, store, null, false);
+        var item = cs.create("t1", "signed.pdf", "application/pdf", "process", "pi-1", null, bytes("v1"), "alice");
+        assertEquals(2, cs.addVersion(item.id(), 1, bytes("signed v1"), "alice").version());
+        ContentService.VersionConflict stale = assertThrows(ContentService.VersionConflict.class,
+                () -> cs.addVersion(item.id(), 1, bytes("signed again"), "bob"));
+        assertEquals(1, stale.expectedVersion());
+        assertEquals(2, cs.item(item.id()).orElseThrow().currentVersion(), "nothing was recorded");
+        assertEquals("signed v1", read(cs.open(item.id(), 0)));
+        long objects = storedObjects();
+        assertThrows(ContentService.VersionConflict.class, () -> cs.addVersion(item.id(), 3, bytes("ahead"), "bob"));
+        assertEquals(objects, storedObjects(), "a stale expectation is refused before any byte is stored");
+        cs.delete(item.id());
+        assertThrows(IllegalArgumentException.class, () -> cs.addVersion(item.id(), 2, bytes("x"), "u"));
+    }
+
+    private long storedObjects() throws IOException {
+        Path root = dir.resolve("store");
+        if (!Files.exists(root)) {
+            return 0;
+        }
+        try (var files = Files.walk(root)) {
+            return files.filter(Files::isRegularFile).count();
+        }
+    }
+
+    @Test
+    void ofConcurrentCompareAndSetWritersAtMostOneWins() throws Exception {
+        ContentService cs = new ContentService(Dialect.POSTGRESQL, tx, store, null, false);
+        var item = cs.create("t1", "signed.pdf", "application/pdf", "process", "pi-1", null, bytes("v1"), "alice");
+        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(6);
+        try {
+            List<java.util.concurrent.Callable<Boolean>> calls = new java.util.ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                String body = "writer " + i;
+                calls.add(() -> {
+                    try {
+                        cs.addVersion(item.id(), 1, bytes(body), "u");
+                        return true;
+                    } catch (ContentService.VersionConflict e) {
+                        return false;
+                    }
+                });
+            }
+            int wins = 0;
+            for (java.util.concurrent.Future<Boolean> f : pool.invokeAll(calls)) {
+                wins += f.get() ? 1 : 0;
+            }
+            assertEquals(1, wins);
+            assertEquals(2, cs.item(item.id()).orElseThrow().currentVersion());
+            assertEquals(List.of(1, 2), cs.versions(item.id()).stream().map(ContentService.ContentVersion::version)
+                    .toList());
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
     void tenantCheckedOpenHidesOtherTenantsItems() throws IOException {
         ContentService cs = new ContentService(Dialect.POSTGRESQL, tx, store, null, false);
         var item = cs.create("t1", "a.txt", "text/plain", "case", "c1", null, bytes("secret"), "u");

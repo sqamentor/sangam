@@ -62,5 +62,7 @@
     "sangam.core"
   ],
   "tenantOverrides": [],
-  "calls": []
+  "calls": [
+    "sangam-core-execution"
+  ]
 }

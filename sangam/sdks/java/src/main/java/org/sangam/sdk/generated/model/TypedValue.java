@@ -9,7 +9,7 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code TypedValue} of sangam-api.yaml 0.1.0.
  *
  * @param type wire field {@code type} (required).  One of: Decimal, BigInteger, Long, Integer, Boolean, String, Date, LocalDate, Json, Bytes.
- * @param value wire field {@code value} (required). String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json
+ * @param value wire field {@code value} (required). String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned variable type (decision 138) and returned unchanged through history, export and import.
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record TypedValue(

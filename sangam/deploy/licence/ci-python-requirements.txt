@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Python packages the CI generator checks need (profilegen, generate_changelogs, generate_scale_changelogs, gen_openapi,
+# generate_sdk_surface). They run under python -I, which ignores user site-packages, so PyYAML is installed into the
+# job's own setup-python interpreter with:
+#   python -m pip install --disable-pip-version-check --require-hashes --no-deps -r sangam/deploy/licence/ci-python-requirements.txt
+# Hashes are the sha256 digests published in https://pypi.org/pypi/PyYAML/6.0.3/json (DOWNLOADS-WAVE4.md, W4-C RESULT
+# 2026-11-13): the cp313 manylinux x86_64 wheel (setup-python 3.13.7 on ubuntu-24.04) and the sdist. PyYAML has no
+# runtime dependencies, so --no-deps installs the complete closure. Change the version only together with these hashes.
+pyyaml==6.0.3 \
+    --hash=sha256:0f29edc409a6392443abf94b9cf89ce99889a1dd5376d94316ae5145dfedd5d6 \
+    --hash=sha256:d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f

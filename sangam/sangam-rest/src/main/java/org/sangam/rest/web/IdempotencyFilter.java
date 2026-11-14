@@ -49,7 +49,9 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
  *   <li>claim (own transaction); replay / conflict / in-progress answered without executing;</li>
  *   <li>execute: the controller runs inside the command transaction, and the {@code COMPLETED} write is its last write
  *       (L6, P-1); the response is buffered and only sent after commit;</li>
- *   <li>replays re-check authorization without cache (step 4) and carry {@code Idempotent-Replayed}.</li>
+ *   <li>replays re-check authorization without cache (step 4) and carry {@code Idempotent-Replayed}; a replay is
+ *       returned only after its class-B {@code IDEMPOTENT_REPLAY} audit row is written, otherwise the answer is
+ *       {@code 503 AUDIT_UNAVAILABLE} without the stored response (RM-10).</li>
  * </ol>
  * Runs after authentication (it needs the principal). Without a key the command runs unprotected, except in the
  * government profile where a key is required for the listed commands ({@code 400 IDEMPOTENCY_KEY_REQUIRED}).
@@ -58,6 +60,9 @@ public class IdempotencyFilter extends OncePerRequestFilter {
 
     private static final Logger LOG = LoggerFactory.getLogger(IdempotencyFilter.class);
     private static final int MAX_BODY = 16 * 1024 * 1024;
+    /** RM-10: problem code of a replay refused because its {@code IDEMPOTENT_REPLAY} audit row could not be written. */
+    public static final String REPLAY_AUDIT_UNAVAILABLE = "AUDIT_UNAVAILABLE";
+    static final int REPLAY_RETRY_AFTER_SECONDS = 5;
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
 
@@ -185,8 +190,6 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                     "You no longer hold the permission for this stored result"));
             return;
         }
-        Metrics.counter("api.idempotent.replays", "command", command.commandType(),
-                "kind", r.compacted() ? "compacted" : "full").increment();
         try {
             // X.2.2.7 rule 2: every replay that returns a stored response is audited (class B).
             Map<String, Object> payload = new LinkedHashMap<>();
@@ -197,8 +200,19 @@ public class IdempotencyFilter extends OncePerRequestFilter {
             payload.put("status", r.status());
             audit.record(ctx, "sec:" + ctx.tenantId(), "IDEMPOTENT_REPLAY", payload);
         } catch (RuntimeException e) {
-            LOG.warn("could not audit idempotent replay for {}: {}", command.commandType(), e.toString());
+            // RM-10: the audit row is the condition of the replay. Without it the stored response is not returned
+            // (no status, no headers, no body of the stored result): 503, and the client retries with the same key.
+            LOG.warn("idempotent replay refused for {}: its audit row could not be written: {}",
+                    command.commandType(), e.toString());
+            Metrics.counter("api.idempotent.replays.refused", "command", command.commandType(),
+                    "reason", "audit").increment();
+            Problems.write(request, response, ApiProblem.unavailable(REPLAY_AUDIT_UNAVAILABLE,
+                    "The stored result cannot be returned now because its audit record could not be written; retry"
+                            + " with the same Idempotency-Key", REPLAY_RETRY_AFTER_SECONDS));
+            return;
         }
+        Metrics.counter("api.idempotent.replays", "command", command.commandType(),
+                "kind", r.compacted() ? "compacted" : "full").increment();
         response.setStatus(r.status());
         response.setHeader("Idempotent-Replayed", r.compacted() ? "compacted" : "true");
         if (r.expiresAt() != null) {

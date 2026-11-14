@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.rest.config.SpringReadTransactions;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -70,7 +71,7 @@ class TaskReadTransactionsH2Test {
         RestProperties props = new RestProperties();
         audit = new JdbcAuditAdapter(fx.tx, fx.engine.getHistoryService(), fx.engine.getRuntimeService(), props);
         withReads = adapter(props);
-        withReads.setReadTransactions(new ReadTransactions(fx.txManager));
+        withReads.setReadTransactions(new SpringReadTransactions(fx.txManager));
         withoutReads = adapter(props);
         // audit the extras read: a resubmission on the instance chain, a routing decision on the business-key chain
         audit.record(CTX, pi, "CASE_RESUBMITTED", Map.of("changed_fields", List.of("amount"),

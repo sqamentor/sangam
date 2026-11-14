@@ -360,6 +360,7 @@ public class PortsWiring {
         // M-082: with a scanner (MalwareScanWiring) every stored version is scanned; reads of a version that is not CLEAN
         // are refused when require-clean is on, which then defaults to sangam.malware.fail-closed.
         org.sangam.integration.malware.MalwareScanning scanning = malware.getIfAvailable();
+        MalwareScanWiring.requireScannerInProduction(env, scanning != null); // decision 125
         boolean requireClean = env.getProperty("sangam.content.require-clean", Boolean.class,
                 scanning != null && scanning.failClosed());
         try {
@@ -403,10 +404,31 @@ public class PortsWiring {
     @Bean
     public EventPort sangamPortsEventPort(EventRegistry registry, WebhookInboundEndpoint webhook,
                                           InboundChannelManager channels, AuditPort audit, RestProperties props,
-                                          Environment env) {
+                                          Environment env, ObjectProvider<InboundEventProcessor> processor,
+                                          ObjectProvider<ChannelAdapters.Environment> channelEnv) {
         return new PortsEventBridge(registry, webhook, channels, audit, props,
-                env.getProperty("sangam.ports.events.allow-unsigned-webhooks", Boolean.class, false));
+                env.getProperty("sangam.ports.events.allow-unsigned-webhooks", Boolean.class, false),
+                eventGrid(env, registry, processor.getIfAvailable(), channelEnv.getIfAvailable()));
     }
+
+    /**
+     * SL-170 (decisions 189 and 219): the Event Grid inbound endpoint behind {@code /api/v1/hooks/eventgrid/**}, built
+     * only with {@code sangam.ports.events.eventgrid.enabled=true} (default false: the route answers 404). A deployed
+     * inbound {@code eventgrid} channel with its own authentication is still required per tenant and channel.
+     */
+    public static org.sangam.integration.publish.cloud.EventGridInboundEndpoint eventGrid(Environment env, EventRegistry registry,
+            InboundEventProcessor processor, ChannelAdapters.Environment channelEnv) {
+        if (!env.getProperty(EVENT_GRID_ENABLED, Boolean.class, false)) {
+            return null;
+        }
+        if (processor == null || channelEnv == null) {
+            throw new IllegalStateException(EVENT_GRID_ENABLED + " is true but the inbound event processor or the channel "
+                    + "environment is not available");
+        }
+        return new org.sangam.integration.publish.cloud.EventGridInboundEndpoint(registry, processor, channelEnv);
+    }
+
+    public static final String EVENT_GRID_ENABLED = "sangam.ports.events.eventgrid.enabled";
 
     /** {@code sangam.content.max-bytes} (default 256 MiB): upload limit and the bound of every download read. */
     static long contentMaxBytes(Environment env) {

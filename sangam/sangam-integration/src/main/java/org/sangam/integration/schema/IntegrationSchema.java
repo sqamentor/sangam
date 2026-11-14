@@ -113,7 +113,60 @@ public final class IntegrationSchema {
               released_by  {str},
               PRIMARY KEY (tenant_id, root_id, hold_id)
             )""",
+            // decision 304: DLT SMS delivery state per message (DltDeliveryReports) and reports seen (idempotency)
+            """
+            CREATE TABLE NOTIFICATION_DELIVERY (
+              tenant_id       {str64} NOT NULL,
+              operation_id    {str64} NOT NULL,
+              connector_id    {str64} NOT NULL,
+              root_id         {str64} NOT NULL,
+              message_id      {str},
+              state           {str64} NOT NULL,
+              state_rank      {int} NOT NULL,
+              reason          {str},
+              reported_at     {str64},
+              source          {str64} NOT NULL,
+              reports         {int} NOT NULL,
+              lookups         {int} NOT NULL,
+              next_lookup_at  {ts},
+              created_at      {ts} NOT NULL,
+              updated_at      {ts} NOT NULL,
+              PRIMARY KEY (tenant_id, operation_id)
+            )""",
+            "CREATE INDEX NOTIFICATION_DELIVERY_MESSAGE ON NOTIFICATION_DELIVERY (tenant_id, message_id)",
+            "CREATE INDEX NOTIFICATION_DELIVERY_DUE ON NOTIFICATION_DELIVERY (state_rank, next_lookup_at)",
+            """
+            CREATE TABLE NOTIFICATION_DELIVERY_REPORT (
+              tenant_id     {str64} NOT NULL,
+              report_id     {str} NOT NULL,
+              operation_id  {str64} NOT NULL,
+              received_at   {ts} NOT NULL,
+              PRIMARY KEY (tenant_id, report_id)
+            )""",
+            // decision 305: stored per-tenant DLT registration (DltRegistrationStore)
+            """
+            CREATE TABLE DLT_REGISTRATION (
+              tenant_id   {str64} NOT NULL PRIMARY KEY,
+              entity_id   {str64},
+              revision    {long} NOT NULL,
+              updated_by  {str},
+              updated_at  {ts} NOT NULL
+            )""",
+            """
+            CREATE TABLE DLT_REGISTRATION_ITEM (
+              tenant_id       {str64} NOT NULL,
+              kind            {str64} NOT NULL,
+              item_key        {str} NOT NULL,
+              header          {str64},
+              body            {text},
+              variable_count  {int},
+              registered_by   {str} NOT NULL,
+              registered_at   {ts} NOT NULL,
+              updated_at      {ts} NOT NULL,
+              PRIMARY KEY (tenant_id, kind, item_key)
+            )""",
             // indexes this module needs on core tables
+            "CREATE INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL (connector_id, last_result, updated_at)",
             "CREATE INDEX OPERATION_LEDGER_ACTIVITY ON OPERATION_LEDGER (activity_instance_id, state)",
             "CREATE INDEX TOMBSTONE_TASK ON TOMBSTONE (task_id, state)",
             "CREATE INDEX OUTBOX_CREATED ON OUTBOX (created_at)",

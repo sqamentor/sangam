@@ -3,7 +3,8 @@
 /**
  * M-042 (owner decision 82, W3-J2): the inbox amount and reference columns. GET /tasks sends sortBy=amount only with
  * the currency the user chose (contract listTasks: 400 VALIDATION_FAILED otherwise); without one the amount column is
- * not sortable and the screen says why. Amounts are whole minor units plus currency, shown by fmtMinorMoney.
+ * not sortable and the screen says why. Amounts are MoneyAmount major-unit decimal text plus currency (decisions 138
+ * and 211), shown exactly by fmtMoneyAmount.
  * Each test asserts the exact query the screen hands to http.page('/tasks', ...). Written, not run (tests run after Wave 5).
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,7 +26,7 @@ import { initI18n, locale } from '../../i18n';
 import { TaskInbox, inboxSorts, isAmountSort } from './TaskInbox';
 
 const T = (k: string) => i18n.t(k) as string;
-const ROW = { id: 't1', name: 'Check bill', created: '2026-11-01T10:00:00Z', amount: 123456, currency: 'EUR', reference: 'REF-1' };
+const ROW = { id: 't1', name: 'Check bill', created: '2026-11-01T10:00:00Z', amount: '1234.56', currency: 'EUR', reference: 'REF-1' };
 const PAGE = { items: [ROW], page: 0, size: 25, total: 1, capped: false };
 
 /** The query of the latest GET /tasks. */
@@ -83,7 +84,7 @@ describe('M-042 inbox amount column', () => {
     expect([...thenSort.options].map((o) => o.value)).toContain('reference');
   });
 
-  it('shows the amount from minor units and the reference', async () => {
+  it('shows the amount as major-unit decimal text and the reference', async () => {
     show();
     await screen.findByText('REF-1');
     const expected = new Intl.NumberFormat(locale(), { style: 'currency', currency: 'EUR' }).format(1234.56);

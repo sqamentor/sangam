@@ -1,0 +1,72 @@
+{
+  "key": "sec-ushealth-payer-to-payer/enrol",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.payer-to-payer",
+  "title": {
+    "en": "New member",
+    "es": "Nuevo afiliado"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerProgram",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer program (MA, MEDICAID, CHIP, QHP_FFE, COMMERCIAL, MEDICARE_FFS)",
+        "es": "Programa del pagador (MA, MEDICAID, CHIP, QHP_FFE, COMERCIAL, MEDICARE_FFS)"
+      }
+    },
+    {
+      "id": "previousPayerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Previous payer ID",
+        "es": "Identificador del pagador anterior"
+      }
+    },
+    {
+      "id": "previousMemberId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Member ID at the previous payer",
+        "es": "Número de afiliado en el pagador anterior"
+      }
+    },
+    {
+      "id": "p2pOptIn",
+      "type": "boolean",
+      "required": true,
+      "label": {
+        "en": "Patient opted in to the payer-to-payer exchange",
+        "es": "El paciente aceptó el intercambio entre pagadores"
+      }
+    }
+  ]
+}

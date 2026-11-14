@@ -7,8 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.sangam.geo.rest.GeoCaller;
-import org.sangam.geo.web.GeoCallerResolver;
-import org.sangam.geo.web.GeoController;
+import org.sangam.rest.modules.geo.web.GeoCallerResolver;
+import org.sangam.rest.modules.geo.web.GeoController;
 import org.sangam.rest.config.SangamRestAutoConfiguration;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.PermissionPort;

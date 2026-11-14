@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  OCR sidecar (M-103; owner decisions 167 and 153, on the decision-114 pattern). A small HTTPS service that reads text
+  from PNG, JPEG and TIFF images with the Tesseract command-line program installed in its own image
+  (deploy/docker/ocr.Dockerfile) and answers it as JSON. The Sangam server reaches it through
+  org.sangam.integration.document.ocr.RemoteOcrClient, which fails closed. No Java OCR library and no native binding:
+  Tesseract runs as a separate process with a time limit, so nothing native enters any JVM. No server-side module
+  depends on this one; it is optional and off unless an operator deploys the image.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-ocr-sidecar</artifactId>
+  <name>Sangam OCR sidecar (Tesseract)</name>
+  <description>Separate OCR service: reads text from images with the Tesseract program in its own image (owner decision 167).</description>
+
+  <properties>
+    <ocr-sidecar.mainClass>org.sangam.ocrsidecar.OcrSidecarMain</ocr-sidecar.mainClass>
+  </properties>
+
+  <dependencies>
+    <!-- the shared sidecar server and authentication (org.sangam.integration.sidecar) and the wire constants of
+         RemoteOcrClient (one source for both sides) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-integration</artifactId>
+    </dependency>
+    <!-- Apache-2.0; version from the jackson-bom import of the root pom -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>${ocr-sidecar.mainClass}</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

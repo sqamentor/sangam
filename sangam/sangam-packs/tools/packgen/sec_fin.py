@@ -267,8 +267,8 @@ def bank_loan_origination():
     bureau_unconfirmed, _ = check_conditions([('bureau', ['bureauScore'])])
     s.flow(bg, reject_with(p, s, 'lo_rjBureau', 'CREDIT_BUREAU_NOT_CONFIRMED'), bureau_unconfirmed,
            'bureau score not confirmed')
-    fo = s.expr('lo_foir', 'Indicative FOIR',
-                "${execution.setVariable('foirPct', (existingEmi + amount / tenureMonths) * 100 / monthlyIncome)}")
+    fo = s.ratio_calc('lo_foir', 'Indicative FOIR (exact ratio)', 'foirPct',
+                      '(existingEmi + amount / tenureMonths) * 100 / monthlyIncome')
     s.flow(bg, fo, None, 'score received', default=True)
     pol = s.rule('lo_policy', 'Credit policy (DMN)', 'sec-bank-credit-policy')
     pg = s.xgw('lo_policyGw', 'Policy result?')

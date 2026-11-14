@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Designated account replenishment. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_replenishment" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_pfm_replenishmentReceived" name="sangam.pfm.replenishmentReceived"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-replenishment" name="Designated account replenishment" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-replenishment</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>projectId,designatedAccount,claimAmount,soeRef</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="rp_start" name="Withdrawal application prepared" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-replenishment/application"></startEvent>
+    <serviceTask id="rp_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>treasurySeat=TREASURY-OFFICER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="rp_cfg" name="Expected receipt period (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-replenishment</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <userTask id="rp_review" name="Review the application and statement of expenditure (treasury)" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-replenishment/review"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>reviewDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="rp_reviewGw" name="" default="intl_pfm_replenishment_f16"></exclusiveGateway>
+    <userTask id="rp_revise" name="Correct the withdrawal application" operaton:candidateGroups="${initiatorSeat}" operaton:formKey="sangam:gov-intl-pfm-replenishment/revise"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>rp_reviseDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="rp_revise_gw" name="Resubmit?" default="intl_pfm_replenishment_f10"></exclusiveGateway>
+    <serviceTask id="rp_revise_version" name="New case version" operaton:class="org.sangam.packs.core.CaseRecordDelegate"><extensionElements><operaton:field name="op"><operaton:string>RESUBMIT</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rp_wd_kind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+    <callActivity id="rp_wd_call" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+    <endEvent id="rp_wd_end" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="rp_apply_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>applicationRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rp_apply" name="Send the withdrawal application" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>donor.withdrawal</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>apply</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>projectId,designatedAccount,claimAmount,soeRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>application</operaton:string></operaton:field><operaton:field name="step"><operaton:string>withdrawal-application</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rp_applyGw" name="Send the withdrawal application?" default="intl_pfm_replenishment_f17"></exclusiveGateway>
+    <userTask id="rp_applyHold" name="Application not confirmed by the partner: confirm and resend" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-replenishment/applyHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rp_receiptClock" name="Regulatory clock: receipt" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>receipt</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${receiptSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <eventBasedGateway id="rp_wait" name="Received?"></eventBasedGateway>
+    <intermediateCatchEvent id="rp_received" name="Replenishment received"><messageEventDefinition messageRef="msg_sangam_pfm_replenishmentReceived"/></intermediateCatchEvent>
+    <intermediateCatchEvent id="rp_late" name="Receipt overdue"><timerEventDefinition><timeDate xsi:type="tFormalExpression">${receiptDueAt}</timeDate></timerEventDefinition></intermediateCatchEvent>
+    <userTask id="rp_followUp" name="Replenishment overdue: follow up with the partner" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-replenishment/follow-up"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="rp_credit_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>creditAmount=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="rp_credit" name="Credit in the designated account" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>tsa.credit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>lookup</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>designatedAccount,applicationRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>credit</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="rp_creditGw" name="Credit in the designated account?" default="intl_pfm_replenishment_f30"></exclusiveGateway>
+    <userTask id="rp_creditHold" name="Credit not confirmed: check the account statement" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-replenishment/creditHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="rp_difference" name="Credit differs from the claim: record ineligible or unpaid amounts" operaton:candidateGroups="${treasurySeat}" operaton:formKey="sangam:gov-intl-pfm-replenishment/difference"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="rp_endDifference" name="Replenished with a difference"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>DIFFERENCE</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['applicationRef', 'creditAmount']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <endEvent id="rp_end" name="Replenished"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REPLENISHED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['applicationRef', 'creditAmount']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_replenishment_f1" sourceRef="rp_start" targetRef="rp_defaults"/>
+    <sequenceFlow id="intl_pfm_replenishment_f2" sourceRef="rp_defaults" targetRef="rp_cfg"/>
+    <sequenceFlow id="intl_pfm_replenishment_f3" sourceRef="rp_cfg" targetRef="rp_review"/>
+    <sequenceFlow id="intl_pfm_replenishment_f4" sourceRef="rp_review" targetRef="rp_reviewGw"/>
+    <sequenceFlow id="intl_pfm_replenishment_f5" sourceRef="rp_revise" targetRef="rp_revise_gw"/>
+    <sequenceFlow id="intl_pfm_replenishment_f6" name="resubmit" sourceRef="rp_revise_gw" targetRef="rp_revise_version"><conditionExpression xsi:type="tFormalExpression">${rp_reviseDecision == 'resubmit'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_replenishment_f7" sourceRef="rp_revise_version" targetRef="rp_review"/>
+    <sequenceFlow id="intl_pfm_replenishment_f8" sourceRef="rp_wd_kind" targetRef="rp_wd_call"/>
+    <sequenceFlow id="intl_pfm_replenishment_f9" sourceRef="rp_wd_call" targetRef="rp_wd_end"/>
+    <sequenceFlow id="intl_pfm_replenishment_f10" name="withdraw" sourceRef="rp_revise_gw" targetRef="rp_wd_kind"/>
+    <sequenceFlow id="intl_pfm_replenishment_f11" name="returned" sourceRef="rp_reviewGw" targetRef="rp_revise"><conditionExpression xsi:type="tFormalExpression">${reviewDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_replenishment_f12" sourceRef="rp_apply_clear" targetRef="rp_apply"/>
+    <sequenceFlow id="intl_pfm_replenishment_f13" sourceRef="rp_apply" targetRef="rp_applyGw"/>
+    <sequenceFlow id="intl_pfm_replenishment_f14" sourceRef="rp_applyHold" targetRef="rp_apply_clear"/>
+    <sequenceFlow id="intl_pfm_replenishment_f15" name="not confirmed" sourceRef="rp_applyGw" targetRef="rp_applyHold"><conditionExpression xsi:type="tFormalExpression">${applicationStatus != 'COMPLETED' || applicationRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_replenishment_f16" name="approved" sourceRef="rp_reviewGw" targetRef="rp_apply_clear"/>
+    <sequenceFlow id="intl_pfm_replenishment_f17" name="sent" sourceRef="rp_applyGw" targetRef="rp_receiptClock"/>
+    <sequenceFlow id="intl_pfm_replenishment_f18" sourceRef="rp_receiptClock" targetRef="rp_wait"/>
+    <sequenceFlow id="intl_pfm_replenishment_f19" sourceRef="rp_wait" targetRef="rp_received"/>
+    <sequenceFlow id="intl_pfm_replenishment_f20" sourceRef="rp_wait" targetRef="rp_late"/>
+    <sequenceFlow id="intl_pfm_replenishment_f21" sourceRef="rp_late" targetRef="rp_followUp"/>
+    <sequenceFlow id="intl_pfm_replenishment_f22" sourceRef="rp_followUp" targetRef="rp_receiptClock"/>
+    <sequenceFlow id="intl_pfm_replenishment_f23" sourceRef="rp_credit_clear" targetRef="rp_credit"/>
+    <sequenceFlow id="intl_pfm_replenishment_f24" sourceRef="rp_credit" targetRef="rp_creditGw"/>
+    <sequenceFlow id="intl_pfm_replenishment_f25" sourceRef="rp_creditHold" targetRef="rp_credit_clear"/>
+    <sequenceFlow id="intl_pfm_replenishment_f26" name="not confirmed" sourceRef="rp_creditGw" targetRef="rp_creditHold"><conditionExpression xsi:type="tFormalExpression">${creditStatus != 'COMPLETED' || creditAmount == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_replenishment_f27" sourceRef="rp_received" targetRef="rp_credit_clear"/>
+    <sequenceFlow id="intl_pfm_replenishment_f28" name="difference" sourceRef="rp_creditGw" targetRef="rp_difference"><conditionExpression xsi:type="tFormalExpression">${creditAmount != claimAmount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_replenishment_f29" sourceRef="rp_difference" targetRef="rp_endDifference"/>
+    <sequenceFlow id="intl_pfm_replenishment_f30" name="received in full" sourceRef="rp_creditGw" targetRef="rp_end"/>
+    <subProcess id="rp_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="rp_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="rp_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="rp_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="rp_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_replenishment_f31" sourceRef="rp_withdrawStart" targetRef="rp_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_replenishment_f32" sourceRef="rp_withdrawKind" targetRef="rp_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_replenishment_f33" sourceRef="rp_withdrawCall" targetRef="rp_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="rp_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="rp_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="rp_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="rp_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="rp_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_replenishment_f34" sourceRef="rp_cancelStart" targetRef="rp_cancelKind"/>
+      <sequenceFlow id="intl_pfm_replenishment_f35" sourceRef="rp_cancelKind" targetRef="rp_cancelCall"/>
+      <sequenceFlow id="intl_pfm_replenishment_f36" sourceRef="rp_cancelCall" targetRef="rp_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_replenishment_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_replenishment_plane" bpmnElement="sangam-intl-pfm-replenishment">
+      <bpmndi:BPMNShape id="rp_start_di" bpmnElement="rp_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_defaults_di" bpmnElement="rp_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_cfg_di" bpmnElement="rp_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_review_di" bpmnElement="rp_review"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_reviewGw_di" bpmnElement="rp_reviewGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_revise_di" bpmnElement="rp_revise"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_revise_gw_di" bpmnElement="rp_revise_gw"><dc:Bounds x="1035" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_revise_version_di" bpmnElement="rp_revise_version"><dc:Bounds x="1175" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_wd_kind_di" bpmnElement="rp_wd_kind"><dc:Bounds x="1175" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_wd_call_di" bpmnElement="rp_wd_call"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_wd_end_di" bpmnElement="rp_wd_end"><dc:Bounds x="1537" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_apply_clear_di" bpmnElement="rp_apply_clear"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_apply_di" bpmnElement="rp_apply"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_applyGw_di" bpmnElement="rp_applyGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_applyHold_di" bpmnElement="rp_applyHold"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_receiptClock_di" bpmnElement="rp_receiptClock"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_wait_di" bpmnElement="rp_wait"><dc:Bounds x="1530" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_received_di" bpmnElement="rp_received"><dc:Bounds x="1702" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_late_di" bpmnElement="rp_late"><dc:Bounds x="1702" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_followUp_di" bpmnElement="rp_followUp"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_credit_clear_di" bpmnElement="rp_credit_clear"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_credit_di" bpmnElement="rp_credit"><dc:Bounds x="2000" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_creditGw_di" bpmnElement="rp_creditGw"><dc:Bounds x="2190" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_creditHold_di" bpmnElement="rp_creditHold"><dc:Bounds x="2330" y="405" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_difference_di" bpmnElement="rp_difference"><dc:Bounds x="2330" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_endDifference_di" bpmnElement="rp_endDifference"><dc:Bounds x="2527" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_end_di" bpmnElement="rp_end"><dc:Bounds x="2362" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_withdraw_di" bpmnElement="rp_withdraw" isExpanded="true"><dc:Bounds x="30" y="535" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_withdrawStart_di" bpmnElement="rp_withdrawStart"><dc:Bounds x="92" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_withdrawKind_di" bpmnElement="rp_withdrawKind"><dc:Bounds x="225" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_withdrawCall_di" bpmnElement="rp_withdrawCall"><dc:Bounds x="390" y="575" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_withdrawEnd_di" bpmnElement="rp_withdrawEnd"><dc:Bounds x="587" y="597" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_cancel_di" bpmnElement="rp_cancel" isExpanded="true"><dc:Bounds x="30" y="725" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_cancelStart_di" bpmnElement="rp_cancelStart"><dc:Bounds x="92" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_cancelKind_di" bpmnElement="rp_cancelKind"><dc:Bounds x="225" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_cancelCall_di" bpmnElement="rp_cancelCall"><dc:Bounds x="390" y="765" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="rp_cancelEnd_di" bpmnElement="rp_cancelEnd"><dc:Bounds x="587" y="787" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f1_di" bpmnElement="intl_pfm_replenishment_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f2_di" bpmnElement="intl_pfm_replenishment_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f3_di" bpmnElement="intl_pfm_replenishment_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f4_di" bpmnElement="intl_pfm_replenishment_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f5_di" bpmnElement="intl_pfm_replenishment_f5"><di:waypoint x="945" y="195"/><di:waypoint x="1035" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f6_di" bpmnElement="intl_pfm_replenishment_f6"><di:waypoint x="1085" y="195"/><di:waypoint x="1130" y="195"/><di:waypoint x="1130" y="320"/><di:waypoint x="1175" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f7_di" bpmnElement="intl_pfm_replenishment_f7"><di:waypoint x="1225" y="360"/><di:waypoint x="1225" y="392"/><di:waypoint x="565" y="392"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f8_di" bpmnElement="intl_pfm_replenishment_f8"><di:waypoint x="1275" y="195"/><di:waypoint x="1307" y="195"/><di:waypoint x="1307" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f9_di" bpmnElement="intl_pfm_replenishment_f9"><di:waypoint x="1440" y="320"/><di:waypoint x="1537" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f10_di" bpmnElement="intl_pfm_replenishment_f10"><di:waypoint x="1085" y="195"/><di:waypoint x="1175" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f11_di" bpmnElement="intl_pfm_replenishment_f11"><di:waypoint x="755" y="70"/><di:waypoint x="800" y="70"/><di:waypoint x="800" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f12_di" bpmnElement="intl_pfm_replenishment_f12"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f13_di" bpmnElement="intl_pfm_replenishment_f13"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f14_di" bpmnElement="intl_pfm_replenishment_f14"><di:waypoint x="1390" y="235"/><di:waypoint x="1390" y="260"/><di:waypoint x="895" y="260"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f15_di" bpmnElement="intl_pfm_replenishment_f15"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f16_di" bpmnElement="intl_pfm_replenishment_f16"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f17_di" bpmnElement="intl_pfm_replenishment_f17"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f18_di" bpmnElement="intl_pfm_replenishment_f18"><di:waypoint x="1440" y="70"/><di:waypoint x="1530" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f19_di" bpmnElement="intl_pfm_replenishment_f19"><di:waypoint x="1580" y="70"/><di:waypoint x="1641" y="70"/><di:waypoint x="1641" y="195"/><di:waypoint x="1702" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f20_di" bpmnElement="intl_pfm_replenishment_f20"><di:waypoint x="1580" y="70"/><di:waypoint x="1702" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f21_di" bpmnElement="intl_pfm_replenishment_f21"><di:waypoint x="1738" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f22_di" bpmnElement="intl_pfm_replenishment_f22"><di:waypoint x="1885" y="110"/><di:waypoint x="1885" y="135"/><di:waypoint x="1390" y="135"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f23_di" bpmnElement="intl_pfm_replenishment_f23"><di:waypoint x="1935" y="195"/><di:waypoint x="2000" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f24_di" bpmnElement="intl_pfm_replenishment_f24"><di:waypoint x="2100" y="195"/><di:waypoint x="2190" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f25_di" bpmnElement="intl_pfm_replenishment_f25"><di:waypoint x="2380" y="485"/><di:waypoint x="2380" y="503"/><di:waypoint x="1885" y="503"/><di:waypoint x="1885" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f26_di" bpmnElement="intl_pfm_replenishment_f26"><di:waypoint x="2240" y="195"/><di:waypoint x="2285" y="195"/><di:waypoint x="2285" y="445"/><di:waypoint x="2330" y="445"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f27_di" bpmnElement="intl_pfm_replenishment_f27"><di:waypoint x="1738" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f28_di" bpmnElement="intl_pfm_replenishment_f28"><di:waypoint x="2240" y="195"/><di:waypoint x="2285" y="195"/><di:waypoint x="2285" y="320"/><di:waypoint x="2330" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f29_di" bpmnElement="intl_pfm_replenishment_f29"><di:waypoint x="2430" y="320"/><di:waypoint x="2527" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f30_di" bpmnElement="intl_pfm_replenishment_f30"><di:waypoint x="2240" y="195"/><di:waypoint x="2362" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f31_di" bpmnElement="intl_pfm_replenishment_f31"><di:waypoint x="128" y="615"/><di:waypoint x="225" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f32_di" bpmnElement="intl_pfm_replenishment_f32"><di:waypoint x="325" y="615"/><di:waypoint x="390" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f33_di" bpmnElement="intl_pfm_replenishment_f33"><di:waypoint x="490" y="615"/><di:waypoint x="587" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f34_di" bpmnElement="intl_pfm_replenishment_f34"><di:waypoint x="128" y="805"/><di:waypoint x="225" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f35_di" bpmnElement="intl_pfm_replenishment_f35"><di:waypoint x="325" y="805"/><di:waypoint x="390" y="805"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_replenishment_f36_di" bpmnElement="intl_pfm_replenishment_f36"><di:waypoint x="490" y="805"/><di:waypoint x="587" y="805"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

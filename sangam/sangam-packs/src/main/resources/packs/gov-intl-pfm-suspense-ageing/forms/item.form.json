@@ -1,0 +1,65 @@
+{
+  "key": "gov-intl-pfm-suspense-ageing/item",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-suspense-ageing",
+  "title": {
+    "en": "Suspense item",
+    "hi": "उचंत मद"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "suspenseAccount",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Suspense account",
+        "hi": "उचंत खाता"
+      }
+    },
+    {
+      "id": "suspenseItemRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Suspense item reference",
+        "hi": "उचंत मद संदर्भ"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": true,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    },
+    {
+      "id": "postedOn",
+      "type": "date",
+      "required": true,
+      "label": {
+        "en": "Date the item was posted to suspense",
+        "hi": "उचंत में दर्ज करने की तिथि"
+      }
+    },
+    {
+      "id": "description",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Description",
+        "hi": "विवरण"
+      }
+    }
+  ]
+}

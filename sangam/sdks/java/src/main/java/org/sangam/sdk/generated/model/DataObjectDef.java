@@ -11,8 +11,8 @@ package org.sangam.sdk.generated.model;
  * @param id wire field {@code id}
  * @param key wire field {@code key} (required)
  * @param name wire field {@code name} (required)
- * @param backing wire field {@code backing} (required).  One of: DB, REST.
- * @param endpointRef wire field {@code endpointRef}
+ * @param backing wire field {@code backing} (required). DB: records are rows in the Sangam database (create answers 201). REST: records live in an external system reached through the connector named by endpointRef (create answers 202 with an operation, decision 265); needs sangam-integration, otherwise the record routes answer 501 CAPABILITY_NOT_INSTALLED One of: DB, REST.
+ * @param endpointRef wire field {@code endpointRef}. REST backing only: the connector id. The connector provides two named operations (decisions 265 and 266): create, input the record, run through the operation ledger with the operationId as idempotency key and its outcome read by lookup; and list, a query operation with input {q, offset, limit} that answers output.records (an array of objects) and optionally output.total (the full match count). Records the connector returns are validated against fields: unknown fields are dropped and sensitive fields masked, as for DB backing
  * @param version wire field {@code version}
  * @param fields wire field {@code fields}
  */

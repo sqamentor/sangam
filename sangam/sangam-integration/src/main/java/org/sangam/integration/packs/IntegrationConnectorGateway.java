@@ -47,7 +47,9 @@ import java.util.function.Function;
  *       operationId. The relay hands the event to {@link PackDispatchPublisher}, which calls the connector and delivers
  *       {@code sangam.operationResult} (or {@code sangam.signatureResult} for {@code sign}).</li>
  *   <li>{@link #query}: read-only, synchronous, no ledger.</li>
- *   <li>{@link #lookup}: stored outcome, or the connector's outcome lookup (classes a/b); class (c) → UNKNOWN.</li>
+ *   <li>{@link #lookup}: stored outcome, or the connector's outcome lookup (classes a/b); class (c) → UNKNOWN. A
+ *       not-found for an UNKNOWN operation of a process instance marks it RETRY_REQUESTED for the pack's re-submit; one
+ *       with no process instance stays UNKNOWN for its reconciliation item, which re-dispatches it (decision 290).</li>
  *   <li>{@link #cancel}: not yet handed to the connector → CANCELLED at once; in flight → cancel requested, the outcome
  *       is delivered as {@code sangam.cancelAck}; already completed → COMPLETED.</li>
  *   <li>{@link #openReconciliation}: opens (or reuses) the O04 item on the operation's ledger id.</li>
@@ -122,8 +124,7 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
                             "operationId " + req.operationId() + " was submitted with a different payload; a new action needs a new operationId (A-2)");
                 }
                 if (r.status() == PackOperationStore.Status.RETRY_REQUESTED) {
-                    store.redispatch(c, tenant, r.operationId());
-                    appendDispatch(c, tenant, r.rootId(), r.operationId());
+                    redispatch(c, r);
                     return ConnectorResult.pending(r.externalRef());
                 }
                 return toResult(r);
@@ -135,6 +136,16 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
             appendDispatch(c, tenant, root, req.operationId());
             return ConnectorResult.pending(null);
         });
+    }
+
+    /**
+     * Dispatches the operation again with the same operationId (PENDING, next generation, a new dispatch event), on
+     * {@code c} under the caller's row lock: after a {@code RETRY_SAME_OPERATION} the pack's re-submit does it, and for
+     * an operation with no process instance the reconciliation hooks do (decision 290).
+     */
+    void redispatch(Connection c, PackOperationStore.Row r) {
+        store.redispatch(c, r.tenantId(), r.operationId());
+        appendDispatch(c, r.tenantId(), r.rootId(), r.operationId());
     }
 
     private void appendDispatch(Connection c, String tenant, String root, String operationId) {
@@ -213,11 +224,15 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
                     f.failureCode() == null ? "DOWNSTREAM_FAILED" : f.failureCode(), "confirmed by lookup", null, f.output());
             case LookupResult.NotFound nf -> {
                 if (r.status() == PackOperationStore.Status.UNKNOWN) {
-                    // nothing reached the external system: the pack may retry with the same operationId
-                    tx.inTransaction(c -> {
-                        store.settle(c, tenant, operationId, PackOperationStore.Status.RETRY_REQUESTED, "NOT_FOUND", null, r.resultJson());
-                        return null;
-                    });
+                    if (r.processInstanceId() != null) {
+                        // nothing reached the external system: the pack may retry with the same operationId
+                        tx.inTransaction(c -> {
+                            store.settle(c, tenant, operationId, PackOperationStore.Status.RETRY_REQUESTED, "NOT_FOUND", null, r.resultJson());
+                            return null;
+                        });
+                    }
+                    // decision 290: no process instance re-submits, so the row stays UNKNOWN and its open reconciliation
+                    // item re-dispatches it with the same operationId (PackReconciliationHooks), bounded
                     yield ConnectorResult.failed("NOT_FOUND", "the external system has no record of the operation");
                 }
                 yield ConnectorResult.pending(r.externalRef());

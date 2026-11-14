@@ -1,0 +1,45 @@
+{
+  "key": "gov-intl-pfm-procurement-complaint/response",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-procurement-complaint",
+  "title": {
+    "en": "Answer the complaint (procuring entity)",
+    "hi": "शिकायत का उत्तर"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "complaintGrounds",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Grounds of the complaint",
+        "hi": "शिकायत के आधार"
+      }
+    },
+    {
+      "id": "entityResponse",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Response of the procuring entity",
+        "hi": "प्रापण इकाई का उत्तर"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

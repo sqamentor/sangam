@@ -231,11 +231,18 @@ public final class LedgerService {
         return last;
     }
 
+    /**
+     * RM-04: the accounting entries are computed before the posting, so a journaling store writes them, and the
+     * {@code LEDGER_POSTED} audit row, in the posting's own transaction; a duplicate then never lacks them. Only a
+     * store without a journal reports them after the commit through the {@link LedgerPorts.AccountingSink} and the
+     * {@link LedgerPorts.AuditLink}.
+     */
     private Result post(LedgerDefinition def, LedgerRequest r, List<Movement> legs, List<Finding> findings) {
         Map<String, Object> info = new LinkedHashMap<>(r.attrs());
         info.put("amount", r.amount() == null ? null : r.amount().toPlainString());
+        List<LedgerPorts.AccountingEntry> mapped = accounting(def, r);
         LedgerStore.PostResult pr = store.post(new LedgerStore.Entry(r.account().tenant(), r.reference(), r.operation(),
-                r.auditRef(), r.actor(), clock.instant(), legs, info));
+                r.auditRef(), r.actor(), clock.instant(), legs, info), mapped);
         if (!pr.applied()) {
             if (r.holdIfShort() && def.holdQueue() && "INSUFFICIENT_AVAILABLE".equals(pr.reason())) {
                 control.hold(r, clock.instant());
@@ -245,17 +252,19 @@ public final class LedgerService {
             findings.add(Finding.error(pr.reason(), r.account().toString(), r.operation() + " refused", null));
             return new Result(false, false, false, pr.reason(), findings, pr.after(), List.of());
         }
-        List<LedgerPorts.AccountingEntry> acc = pr.duplicate() ? List.of() : accounting(def, r);
+        List<LedgerPorts.AccountingEntry> acc = pr.duplicate() ? List.of() : mapped;
         if (!pr.duplicate()) {
             for (Balance b : pr.after()) {
                 if (b.available().signum() < 0 && !def.allowNegative()) {
                     breaches.breach(b, r);
                 }
             }
-            if (!acc.isEmpty()) {
-                accountingSink.accept(acc);
+            if (!store.journals()) {
+                if (!acc.isEmpty()) {
+                    accountingSink.accept(acc);
+                }
+                audit.posted(r.account().tenant(), r.reference(), r.operation(), r.auditRef(), r.actor(), info);
             }
-            audit.posted(r.account().tenant(), r.reference(), r.operation(), r.auditRef(), r.actor(), info);
         }
         return new Result(true, pr.duplicate(), false, null, findings, pr.after(), acc);
     }
@@ -706,7 +715,11 @@ public final class LedgerService {
             store.setState(b.key(), b.currency(), null, Map.of("bookedRate", now.get().toPlainString()));
         }
         if (!out.isEmpty()) {
-            accountingSink.accept(out);
+            if (store.journals()) {
+                store.exportAccounting(out);   // the GL rows through the store's journal, as for postings
+            } else {
+                accountingSink.accept(out);
+            }
         }
         return out;
     }

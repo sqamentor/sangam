@@ -1,8 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.field.template;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.sangam.field.FieldException;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,10 +56,41 @@ public record FieldTemplate(String key, int version, Map<String, String> title, 
      * @param expected     the compliant answer (BOOLEAN default true; CHOICE an option value)
      * @param findingCode  code of the finding raised when the item is non-compliant (data, feeds penalty DMN / CAPA)
      * @param severity     finding severity (data: e.g. MINOR / MAJOR); critical items default to CRITICAL
+     * @param min          inclusive lower bound of a NUMBER answer, an exact decimal (owner decision 230), see {@link Bound}
+     * @param max          inclusive upper bound of a NUMBER answer, an exact decimal (owner decision 230), see {@link Bound}
+     * @param scale        NUMBER only, optional (owner decision 242): the most decimal places a NUMBER answer and the
+     *                     bounds may have, {@value #MIN_SCALE}..{@value #MAX_SCALE}; null = no extra limit. Written only
+     *                     when set, so a template without it keeps its content hash
      */
     public record Item(String id, ItemType type, Map<String, String> label, boolean required, List<Option> options, Double weight,
-                       boolean critical, int minPhotos, VisibleIf visibleIf, Double min, Double max, Object expected,
-                       String findingCode, String severity, Map<String, Object> attributes) {
+                       boolean critical, int minPhotos, VisibleIf visibleIf,
+                       @JsonSerialize(using = Bound.Writer.class) @JsonDeserialize(using = Bound.Reader.class) BigDecimal min,
+                       @JsonSerialize(using = Bound.Writer.class) @JsonDeserialize(using = Bound.Reader.class) BigDecimal max,
+                       @JsonInclude(JsonInclude.Include.NON_NULL) Integer scale,
+                       Object expected, String findingCode, String severity, Map<String, Object> attributes) {
+
+        /** Owner decision 242: the allowed range of {@link #scale()}. */
+        public static final int MIN_SCALE = 0;
+        public static final int MAX_SCALE = 10;
+
+        public Item {
+            // one value, one form: 12.50 and 12.5 are the same bound and hash the same
+            min = Bound.normalise(min);
+            max = Bound.normalise(max);
+        }
+
+        /**
+         * Owner decision 242: true when {@code d} has no more decimal places than {@link #scale()} allows (always true
+         * without a scale). Decimal places are counted on the canonical form, so {@code 12.50} counts as {@code 12.5}.
+         */
+        public boolean withinScale(BigDecimal d) {
+            return scale == null || d == null || decimalPlaces(d) <= scale;
+        }
+
+        /** Decimal places of the canonical form of {@code d}: {@code 12.50} has 1, {@code 100} and {@code 0} have 0. */
+        public static int decimalPlaces(BigDecimal d) {
+            return Math.max(0, Bound.normalise(d).scale());
+        }
 
         public double weightOrDefault() {
             if (weight != null) {
@@ -64,6 +107,68 @@ public record FieldTemplate(String key, int version, Map<String, String> title, 
                 case BOOLEAN, CHOICE, MULTI_CHOICE, NUMBER -> true;
                 default -> false;
             };
+        }
+    }
+
+    /**
+     * Owner decision 230: a NUMBER bound is an exact decimal. It is written as canonical decimal text (a JSON string,
+     * {@code stripTrailingZeros().toPlainString()}, zero as {@code "0"}: the form decision 212 uses for answers), so the
+     * stored template and its content hash never depend on a binary double. It is read from a JSON number (exactly as
+     * written, from its text) or from canonical decimal text; other text ({@code "12.50"}, {@code "+3"}, {@code "1E+2"},
+     * {@code "abc"}) is refused. A bound that reached the server as a binary double (a body already parsed into a map)
+     * keeps that double's shortest decimal form; authors who need more digits send the bound as text.
+     */
+    public static final class Bound {
+
+        private Bound() {
+        }
+
+        static BigDecimal normalise(BigDecimal d) {
+            return d == null ? null : d.signum() == 0 ? BigDecimal.ZERO : d.stripTrailingZeros();
+        }
+
+        /** Canonical decimal text of a bound (same as {@link ChecklistValidator#canonical(BigDecimal)}). */
+        public static String text(BigDecimal d) {
+            return ChecklistValidator.canonical(d);
+        }
+
+        /** The bound written as {@code text}, or an error when the text is not canonical decimal text. */
+        public static BigDecimal parse(String text) {
+            BigDecimal d;
+            try {
+                d = new BigDecimal(text);
+            } catch (NumberFormatException | NullPointerException e) {
+                throw new IllegalArgumentException("bound is not a decimal: \"" + text + "\"");
+            }
+            if (!text.equals(text(d))) {
+                throw new IllegalArgumentException("bound text not canonical: \"" + text + "\", expected \"" + text(d) + "\"");
+            }
+            return d;
+        }
+
+        public static final class Writer extends JsonSerializer<BigDecimal> {
+            @Override
+            public void serialize(BigDecimal value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeString(text(value));
+            }
+        }
+
+        public static final class Reader extends JsonDeserializer<BigDecimal> {
+            @Override
+            public BigDecimal deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                JsonToken t = p.currentToken();
+                if (t == JsonToken.VALUE_NUMBER_INT || t == JsonToken.VALUE_NUMBER_FLOAT) {
+                    return p.getDecimalValue();
+                }
+                if (t == JsonToken.VALUE_STRING) {
+                    try {
+                        return parse(p.getText());
+                    } catch (IllegalArgumentException e) {
+                        return (BigDecimal) ctxt.handleWeirdStringValue(BigDecimal.class, p.getText(), e.getMessage());
+                    }
+                }
+                return (BigDecimal) ctxt.handleUnexpectedToken(BigDecimal.class, p);
+            }
         }
     }
 
@@ -134,6 +239,7 @@ public record FieldTemplate(String key, int version, Map<String, String> title, 
             if ((i.type() == ItemType.CHOICE || i.type() == ItemType.MULTI_CHOICE) && (i.options() == null || i.options().isEmpty())) {
                 throw new FieldException("INVALID_TEMPLATE", "choice item needs options: " + i.id());
             }
+            validateScale(i);
         }
         for (Item i : items()) {
             if (i.visibleIf() != null && !ids.contains(i.visibleIf().item())) {
@@ -142,6 +248,31 @@ public record FieldTemplate(String key, int version, Map<String, String> title, 
         }
         if (scoring.method() == Method.DMN && (scoring.decisionKey() == null || scoring.decisionKey().isBlank())) {
             throw new FieldException("INVALID_TEMPLATE", "DMN scoring needs a decisionKey");
+        }
+    }
+
+    /**
+     * Owner decision 242: a scale is a NUMBER-only setting in {@value Item#MIN_SCALE}..{@value Item#MAX_SCALE}, and the
+     * bounds may not have more decimal places than it allows.
+     */
+    private static void validateScale(Item i) {
+        if (i.scale() == null) {
+            return;
+        }
+        if (i.type() != ItemType.NUMBER) {
+            throw new FieldException("INVALID_TEMPLATE", "scale is only for NUMBER items: " + i.id());
+        }
+        if (i.scale() < Item.MIN_SCALE || i.scale() > Item.MAX_SCALE) {
+            throw new FieldException("INVALID_TEMPLATE", "scale must be " + Item.MIN_SCALE + ".." + Item.MAX_SCALE
+                    + ": " + i.id() + " has " + i.scale());
+        }
+        if (!i.withinScale(i.min())) {
+            throw new FieldException("INVALID_TEMPLATE", "min " + Bound.text(i.min()) + " has more than " + i.scale()
+                    + " decimal places: " + i.id());
+        }
+        if (!i.withinScale(i.max())) {
+            throw new FieldException("INVALID_TEMPLATE", "max " + Bound.text(i.max()) + " has more than " + i.scale()
+                    + " decimal places: " + i.id());
         }
     }
 

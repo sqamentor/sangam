@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of History (9 operations).
+/// Typed operations of History (10 operations).
 /// </summary>
 public sealed class HistoryApi
 {
@@ -225,5 +225,17 @@ public sealed class HistoryApi
         req.WithQuery("page", GeneratedCalls.Q(page));
         req.WithQuery("size", GeneratedCalls.Q(size));
         return await _calls.PageAsync<M.ExternalTaskLogEntry>(req, options, page, size, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Move an ended instance's history to a later version
+    /// Rewrites only the process-definition id and key of the ended instance's history rows (ACT_HI_PROCINST, ACTINST, TASKINST, VARINST, DETAIL, INCIDENT, OP_LOG, EXT_TASK_LOG, DECINST, JOB_LOG, and IDENTITYLINK through the instance's history tasks) to the target definition, in one transaction under the root lock, together with the audit event PROCESS_HISTORY_MIGRATED (actor, reason, old and new definition and version, rows per table). Activity ids and everything that ran stay as recorded; called instances keep their own definitions. Operaton migration moves running instances only; this is for history. A retry with the same Idempotency-Key returns the same result. An instance of another tenant is 404 (no existence leak); untenanted history is visible only to a platform identity. Needs history.migrate (decision 258): tenant-scoped, held by the tenant administrator among the tenant roles (a TENANT ADMIN grant, not a history grant); the platform administrator reaches untenanted history. A replay of the stored response re-checks it.
+    /// POST /admin/history/process-instances/{id}/migrate (operationId migrateHistoricProcessInstance); permission history.migrate; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.HistoryInstanceMigrationResult?> MigrateHistoricProcessInstanceAsync(string id, M.HistoryInstanceMigrationRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/admin/history/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/migrate");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.HistoryInstanceMigrationResult?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

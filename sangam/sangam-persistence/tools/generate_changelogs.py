@@ -10,7 +10,7 @@ The generated files are committed; Liquibase never runs this script. Change a ta
 change as a NEW changeset file (never edit an applied changeset; Liquibase checksums would fail).
 
 Type tokens (same meaning as org.sangam.core.layer.Dialect, plus H2):
-  {str} 255 chars, {str64}, {str32}, {char32} fixed 32 ASCII chars, {str1k} 1000 chars, {text} unbounded text, {blob}, {bytes32} 32-byte hash,
+  {str} 255 chars, {str64}, {str32}, {char32} fixed 32 ASCII chars, {str1k} 1000 chars, {vc1024} 1024 chars, {text} unbounded text, {blob}, {bytes32} 32-byte hash,
   {long}, {int}, {small} (booleans are 0/1), {money} money as BIGINT minor units of the row currency (SD-398; never a decimal),
   {dec} legacy NUMERIC(19,4) (no money column may use it: MoneyColumnGuardTest), {ts} timestamp (UTC), {identity}.
 """
@@ -20,7 +20,7 @@ DIALECTS = {
     "postgresql": {
         "{vc80}": "VARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "NUMERIC(24,6)", "{num12_6}": "NUMERIC(12,6)",
-        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{asciistr}": "VARCHAR(255)",
+        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{vc1024}": "VARCHAR(1024)", "{asciistr}": "VARCHAR(255)",
         "{str}": "VARCHAR(255)", "{str64}": "VARCHAR(64)", "{str32}": "VARCHAR(32)", "{char32}": "CHAR(32)", "{str1k}": "VARCHAR(1000)",
         "{text}": "TEXT", "{blob}": "BYTEA", "{bytes32}": "BYTEA", "{long}": "BIGINT", "{int}": "INTEGER",
         "{small}": "SMALLINT", "{money}": "BIGINT", "{dec}": "NUMERIC(19,4)", "{ts}": "TIMESTAMP WITH TIME ZONE",
@@ -29,7 +29,7 @@ DIALECTS = {
     "oracle": {
         "{vc80}": "VARCHAR2(80 CHAR)",
         "{date}": "DATE", "{num24_6}": "NUMBER(24,6)", "{num12_6}": "NUMBER(12,6)",
-        "{vc8}": "VARCHAR2(8 CHAR)", "{vc16}": "VARCHAR2(16 CHAR)", "{vc40}": "VARCHAR2(40 CHAR)", "{vc55}": "VARCHAR2(55 CHAR)", "{vc512}": "VARCHAR2(512 CHAR)", "{asciistr}": "VARCHAR2(255 CHAR)",
+        "{vc8}": "VARCHAR2(8 CHAR)", "{vc16}": "VARCHAR2(16 CHAR)", "{vc40}": "VARCHAR2(40 CHAR)", "{vc55}": "VARCHAR2(55 CHAR)", "{vc512}": "VARCHAR2(512 CHAR)", "{vc1024}": "VARCHAR2(1024 CHAR)", "{asciistr}": "VARCHAR2(255 CHAR)",
         "{str}": "VARCHAR2(255 CHAR)", "{str64}": "VARCHAR2(64 CHAR)", "{str32}": "VARCHAR2(32 CHAR)", "{char32}": "CHAR(32 CHAR)",
         "{str1k}": "VARCHAR2(1000 CHAR)", "{text}": "CLOB", "{blob}": "BLOB", "{bytes32}": "RAW(32)",
         "{long}": "NUMBER(19)", "{int}": "NUMBER(10)", "{small}": "NUMBER(5)", "{money}": "NUMBER(19)", "{dec}": "NUMBER(19,4)",
@@ -38,7 +38,7 @@ DIALECTS = {
     "mssql": {
         "{vc80}": "NVARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "DECIMAL(24,6)", "{num12_6}": "DECIMAL(12,6)",
-        "{vc8}": "NVARCHAR(8)", "{vc16}": "NVARCHAR(16)", "{vc40}": "NVARCHAR(40)", "{vc55}": "NVARCHAR(55)", "{vc512}": "NVARCHAR(512)", "{asciistr}": "NVARCHAR(255)",
+        "{vc8}": "NVARCHAR(8)", "{vc16}": "NVARCHAR(16)", "{vc40}": "NVARCHAR(40)", "{vc55}": "NVARCHAR(55)", "{vc512}": "NVARCHAR(512)", "{vc1024}": "NVARCHAR(1024)", "{asciistr}": "NVARCHAR(255)",
         "{str}": "NVARCHAR(255)", "{str64}": "NVARCHAR(64)", "{str32}": "NVARCHAR(32)", "{char32}": "CHAR(32)", "{str1k}": "NVARCHAR(1000)",
         "{text}": "NVARCHAR(MAX)", "{blob}": "VARBINARY(MAX)", "{bytes32}": "VARBINARY(32)", "{long}": "BIGINT",
         "{int}": "INT", "{small}": "SMALLINT", "{money}": "BIGINT", "{dec}": "DECIMAL(19,4)", "{ts}": "DATETIMEOFFSET",
@@ -49,7 +49,7 @@ DIALECTS = {
     "mysql": {
         "{vc80}": "VARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "DECIMAL(24,6)", "{num12_6}": "DECIMAL(12,6)",
-        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)",
+        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{vc1024}": "VARCHAR(1024)",
         "{asciistr}": "VARCHAR(255) CHARACTER SET ascii COLLATE ascii_bin",
         "{str}": "VARCHAR(255)", "{str64}": "VARCHAR(64)", "{str32}": "VARCHAR(32)", "{char32}": "CHAR(32)", "{str1k}": "VARCHAR(1000)",
         "{text}": "LONGTEXT", "{blob}": "LONGBLOB", "{bytes32}": "VARBINARY(32)", "{long}": "BIGINT", "{int}": "INT",
@@ -59,7 +59,7 @@ DIALECTS = {
     "h2": {
         "{vc80}": "VARCHAR(80)",
         "{date}": "DATE", "{num24_6}": "NUMERIC(24,6)", "{num12_6}": "NUMERIC(12,6)",
-        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{asciistr}": "VARCHAR(255)",
+        "{vc8}": "VARCHAR(8)", "{vc16}": "VARCHAR(16)", "{vc40}": "VARCHAR(40)", "{vc55}": "VARCHAR(55)", "{vc512}": "VARCHAR(512)", "{vc1024}": "VARCHAR(1024)", "{asciistr}": "VARCHAR(255)",
         "{str}": "VARCHAR(255)", "{str64}": "VARCHAR(64)", "{str32}": "VARCHAR(32)", "{char32}": "CHAR(32)", "{str1k}": "VARCHAR(1000)",
         "{text}": "CHARACTER LARGE OBJECT", "{blob}": "BINARY LARGE OBJECT", "{bytes32}": "VARBINARY(32)", "{long}": "BIGINT", "{int}": "INTEGER",
         "{small}": "SMALLINT", "{money}": "BIGINT", "{dec}": "NUMERIC(19,4)", "{ts}": "TIMESTAMP WITH TIME ZONE",
@@ -804,6 +804,8 @@ TABLES = [
     ("0019-03", "sangam-ledger LedgerSchema (also the billing tables)", "LDG_HOLD", [("tenant_id", "{str64}", "NOT NULL"), ("reference", "{str}", "NOT NULL"), ("account_id", "{str64}", "NOT NULL"), ("amount", "{money}", "NOT NULL"), ("request_json", "{text}", "NOT NULL"), ("held_at", "{ts}", "NOT NULL"), ("released_at", "{ts}", "")], ['tenant_id', 'reference'], [('LDG_HOLD_ACCOUNT', False, ['account_id', 'held_at'])]),
     ("0019-04", "sangam-ledger LedgerSchema (also the billing tables)", "LDG_FREEZE", [("tenant_id", "{str64}", "NOT NULL"), ("order_id", "{str64}", "NOT NULL"), ("predicate_json", "{text}", "NOT NULL"), ("reason", "{text}", ""), ("ordered_by", "{str}", ""), ("ordered_at", "{ts}", "NOT NULL"), ("released_at", "{ts}", "")], ['tenant_id', 'order_id'], []),
     ("0019-05", "sangam-ledger LedgerSchema (also the billing tables)", "LDG_ACCOUNTING", [("entry_id", "{identity}", ""), ("tenant_id", "{str64}", "NOT NULL"), ("reference", "{str}", "NOT NULL"), ("basis", "{str64}", "NOT NULL"), ("debit", "{str}", "NOT NULL"), ("credit", "{str}", "NOT NULL"), ("amount", "{money}", "NOT NULL"), ("currency", "{str64}", ""), ("functional_amount", "{money}", ""), ("created_at", "{ts}", "NOT NULL"), ("exported_at", "{ts}", "")], ['entry_id'], [('LDG_ACCOUNTING_EXPORT', False, ['tenant_id', 'exported_at'])]),
+    ("0019-06", "sangam-ledger LedgerSchema (also the billing tables)", "BILL_UNVERIFIED_PAYMENT", [("tenant_id", "{str64}", "NOT NULL"), ("payment_id", "{str64}", "NOT NULL"), ("ledger_id", "{str64}", "NOT NULL"), ("consumer", "{str}", "NOT NULL"), ("office_id", "{str64}", "NOT NULL"), ("channel", "{str64}", "NOT NULL"), ("payment_ref", "{str}", "NOT NULL"), ("amount", "{money}", "NOT NULL"), ("currency", "{str64}", "NOT NULL"), ("paid_at", "{ts}", "NOT NULL"), ("payer_name", "{str}", ""), ("instrument", "{str64}", ""), ("details_json", "{text}", "NOT NULL"), ("reason", "{text}", "NOT NULL"), ("evidence_ref", "{str}", "NOT NULL"), ("policy_version", "{str64}", "NOT NULL"), ("downstream_json", "{text}", "NOT NULL"), ("accepted_by", "{str}", "NOT NULL"), ("accepted_at", "{ts}", "NOT NULL"), ("state", "{str64}", "NOT NULL"), ("version", "{long}", "NOT NULL"), ("outcome_reason", "{text}", ""), ("verification_ref", "{str}", ""), ("resolved_by", "{str}", ""), ("resolved_at", "{ts}", ""), ("receipt_no", "{str64}", "")], ['tenant_id', 'payment_id'], [('BILL_UNVERIFIED_REF', True, ['tenant_id', 'channel', 'payment_ref']), ('BILL_UNVERIFIED_STATE', False, ['tenant_id', 'state', 'accepted_at'])]),
+    ("0019-07", "sangam-ledger LedgerSchema (also the billing tables)", "BILL_UNVERIFIED_ACCRUAL_PAUSE", [("tenant_id", "{str64}", "NOT NULL"), ("payment_id", "{str64}", "NOT NULL"), ("base_account_id", "{str64}", "NOT NULL"), ("as_of", "{str64}", "NOT NULL"), ("paused_from", "{str64}", "NOT NULL"), ("ledger_id", "{str64}", "NOT NULL"), ("period", "{str64}", "NOT NULL"), ("line_code", "{str64}", "NOT NULL"), ("consumer", "{str}", "NOT NULL"), ("stage", "{str64}", "NOT NULL"), ("sub", "{str}", ""), ("amount", "{money}", "NOT NULL"), ("currency", "{str64}", "NOT NULL"), ("recorded_at", "{ts}", "NOT NULL"), ("resumed_at", "{ts}", "")], ['tenant_id', 'payment_id', 'base_account_id', 'as_of'], []),
     # ------------------------------------------------------------------ sangam-registry RegistrySchema: shapes converted by script from
     # sangam-registry/src/main/java/org/sangam/registry/RegistrySchema.java
     ("0020-01", "sangam-registry RegistrySchema", "REG_OBJECT_TYPE", [("tenant_id", "{str64}", "NOT NULL"), ("type_key", "{str64}", "NOT NULL"), ("version", "{int}", "NOT NULL"), ("kind", "{str64}", "NOT NULL"), ("status", "{str64}", "NOT NULL"), ("definition_json", "{text}", "NOT NULL"), ("effective_from", "{ts}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"), ("created_by", "{str}", "NOT NULL")], ['tenant_id', 'type_key', 'version'], []),
@@ -1212,6 +1214,169 @@ TABLES = [
         ("root_process_instance_id", "{str64}", ""), ("trace_id", "{char32}", "NOT NULL"),
         ("created_at_ms", "{long}", "NOT NULL"),
     ], ["process_instance_id"], [("PROCESS_TRACE_ROOT", False, ["root_process_instance_id"])]),
+    # decision 154 (W4-I REQUEST 2026-11-12T18:56:51Z, amended 19:27:53Z): SCIM provisioning state of persons and
+    # groups (sangam-security scim). name_key and external_key are NOT NULL on purpose: SQL Server allows one NULL per
+    # unique index, so a nullable userName or externalId could not carry the RFC 7644 409 uniqueness on all dialects.
+    ("0044-01", "SCIM provisioning state (M-099, decision 154)", "SEC_SCIM_RESOURCE", [
+        ("tenant_id", "{str64}", "NOT NULL"),
+        ("resource_type", "{vc16}", "NOT NULL CONSTRAINT CK_SEC_SCIM_RESOURCE_TYPE CHECK (resource_type IN ('USER', 'GROUP'))"),
+        ("resource_id", "{str}", "NOT NULL"), ("user_name", "{str}", ""), ("display_name", "{str}", ""),
+        ("name_key", "{str}", "NOT NULL"), ("external_id", "{str}", ""), ("external_key", "{str}", "NOT NULL"),
+        ("attributes", "{text}", ""), ("version", "{long}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+        ("updated_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "resource_type", "resource_id"],
+     [("SEC_SCIM_NAME", True, ["tenant_id", "resource_type", "name_key"]),
+      ("SEC_SCIM_EXT", True, ["tenant_id", "resource_type", "external_key"])]),
+    # decision 149 (W4-E REQUEST 2026-11-12T19:33:01Z): continue-as-new chain link, written by sangam-engine in the
+    # transaction that closes the predecessor and creates the one successor; request_id makes a retry find the
+    # existing successor.
+    ("0044-02", "Continue-as-new chain (M-060, decision 149)", "PROCESS_CONTINUATION", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("request_id", "{str}", "NOT NULL"), ("predecessor_id", "{str64}", "NOT NULL"),
+        ("successor_id", "{str64}", "NOT NULL"), ("chain_root_id", "{str64}", "NOT NULL"), ("generation", "{int}", "NOT NULL"),
+        ("definition_id", "{str}", "NOT NULL"), ("business_key", "{str}", ""), ("actor_id", "{str}", "NOT NULL"),
+        ("reason", "{text}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "request_id"],
+     [("PROCESS_CONT_PRED", True, ["predecessor_id"]), ("PROCESS_CONT_SUCC", True, ["successor_id"]),
+      ("PROCESS_CONT_CHAIN", False, ["tenant_id", "chain_root_id", "generation"])]),
+    # decision 169 (M-135, W4-G): Flowable live-migration runs and their items (sangam-ops org.sangam.ops.flowable).
+    ("0044-03", "Flowable migration run (M-135, decision 169)", "OPS_FMIG_RUN", [
+        ("run_id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"), ("source_system", "{str64}", "NOT NULL"),
+        ("source_tenant", "{str64}", ""), ("source_zone", "{str64}", "NOT NULL"), ("state", "{str64}", "NOT NULL"),
+        ("mapping_json", "{text}", "NOT NULL"), ("report_json", "{text}", ""),
+        ("planned", "{long}", "DEFAULT 0 NOT NULL"), ("rejected", "{long}", "DEFAULT 0 NOT NULL"),
+        ("applied", "{long}", "DEFAULT 0 NOT NULL"), ("failed", "{long}", "DEFAULT 0 NOT NULL"),
+        ("matched", "{long}", "DEFAULT 0 NOT NULL"), ("mismatched", "{long}", "DEFAULT 0 NOT NULL"),
+        ("version", "{long}", "NOT NULL"), ("created_by", "{str}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"),
+        ("updated_at", "{ts}", "NOT NULL"),
+    ], ["run_id"], [("OPS_FMIG_RUN_TENANT", False, ["tenant_id", "state"])]),
+    ("0044-04", "Flowable migration item, one per source instance (M-135, decision 169)", "OPS_FMIG_ITEM", [
+        ("run_id", "{str64}", "NOT NULL"), ("source_instance_id", "{str64}", "NOT NULL"), ("tenant_id", "{str64}", "NOT NULL"),
+        ("status", "{str64}", "NOT NULL"), ("definition_key", "{str}", ""), ("plan_json", "{text}", "NOT NULL"),
+        ("fingerprint", "{str64}", "NOT NULL"), ("target_instance_id", "{str64}", ""),
+        ("attempts", "{int}", "DEFAULT 0 NOT NULL"), ("error", "{text}", ""), ("updated_at", "{ts}", "NOT NULL"),
+    ], ["run_id", "source_instance_id"],
+     [("OPS_FMIG_ITEM_STATUS", False, ["run_id", "status"]),
+      ("OPS_FMIG_ITEM_SOURCE", False, ["source_instance_id", "status"]),
+      ("OPS_FMIG_ITEM_TARGET", False, ["target_instance_id"])]),
+    # Decision 150 / 203 (M-114): run records of the operator-run UTC conversion tool (org.sangam.ops.utc). One run is one
+    # dataset (table, columns, provenance column and cutover, optional tenant, named source zone); a dry run is recorded
+    # before any apply, and last_key is the resume point of an interrupted apply.
+    ("0045-01", "UTC conversion run record (decisions 150 and 203)", "OPS_UTC_RUN", [
+        ("run_id", "{str64}", "NOT NULL"), ("tool_version", "{str64}", "NOT NULL"), ("table_name", "{str64}", "NOT NULL"),
+        ("columns_json", "{text}", "NOT NULL"), ("provenance_column", "{str64}", "NOT NULL"),
+        ("tenant_filter", "{str64}", ""), ("source_zone", "{str64}", "NOT NULL"), ("cutover_at", "{ts}", "NOT NULL"),
+        ("fingerprint", "{str64}", "NOT NULL"), ("state", "{str32}", "NOT NULL"),
+        ("rows_read", "{long}", "DEFAULT 0 NOT NULL"), ("converted", "{long}", "DEFAULT 0 NOT NULL"),
+        ("already_utc", "{long}", "DEFAULT 0 NOT NULL"), ("already_converted", "{long}", "DEFAULT 0 NOT NULL"),
+        ("unresolved", "{long}", "DEFAULT 0 NOT NULL"), ("matched", "{long}", "DEFAULT 0 NOT NULL"),
+        ("mismatched", "{long}", "DEFAULT 0 NOT NULL"), ("restored", "{long}", "DEFAULT 0 NOT NULL"),
+        ("last_key", "{text}", ""), ("report_json", "{text}", ""), ("maintenance_ref", "{str}", ""),
+        ("created_by", "{str}", "NOT NULL"), ("created_at", "{ts}", "NOT NULL"), ("updated_at", "{ts}", "NOT NULL"),
+        ("version", "{long}", "NOT NULL"),
+    ], ["run_id"], [("OPS_UTC_RUN_TABLE", False, ["table_name", "state"])]),
+    # One row per converted (or unresolved) cell: the recovery snapshot (original value) and the guard against a
+    # second conversion of the same cell by any later run. key_hash is SHA-256 of key_json, the row's primary key.
+    ("0045-02", "UTC conversion cell snapshot (decisions 150 and 203)", "OPS_UTC_CELL", [
+        ("table_name", "{str64}", "NOT NULL"), ("column_name", "{str64}", "NOT NULL"), ("key_hash", "{str64}", "NOT NULL"),
+        ("key_json", "{text}", "NOT NULL"), ("run_id", "{str64}", "NOT NULL"), ("status", "{str32}", "NOT NULL"),
+        ("reason", "{str64}", ""), ("original_value", "{ts}", ""), ("converted_value", "{ts}", ""),
+        ("updated_at", "{ts}", "NOT NULL"),
+    ], ["table_name", "column_name", "key_hash"], [("OPS_UTC_CELL_RUN", False, ["run_id", "status", "key_hash"])]),
+    # Decision 165 (W4-H REQUEST 2026-11-13T01:24:24Z): one prepared DSC signature, exactly as the reference DDL
+    # sangam-integration db/sangam-dsc-reference.sql read by JdbcDscPreparedStore. Bound to tenant, task, document
+    # version, signer principal and certificate; expires; used at most once. The PK refuses a second prepare_id.
+    ("0045-04", "decision 165 DSC prepared signature state (JdbcDscPreparedStore)", "INTEGRATION_DSC_PREPARED", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("prepare_id", "{str64}", "NOT NULL"), ("task_id", "{str64}", "NOT NULL"),
+        ("document_id", "{str64}", "NOT NULL"), ("document_version", "{int}", "NOT NULL"),
+        ("document_sha256", "{str64}", "NOT NULL"), ("principal_id", "{str}", "NOT NULL"),
+        ("signer_cert_sha256", "{str64}", "NOT NULL"), ("intended_signer_name", "{str}", "NOT NULL"),
+        ("algorithm", "{str32}", "NOT NULL"), ("prepared_digest_sha256", "{str64}", "NOT NULL"),
+        ("signed_attributes", "{blob}", "NOT NULL"), ("signing_time", "{ts}", "NOT NULL"), ("prepared_pdf", "{blob}", ""),
+        ("created_at", "{ts}", "NOT NULL"), ("expires_at", "{ts}", "NOT NULL"), ("used_at", "{ts}", ""),
+        ("outcome", "{str32}", ""), ("reason_code", "{str64}", ""), ("signed_document_version", "{int}", ""),
+        ("completed_at", "{ts}", ""),
+    ], ["tenant_id", "prepare_id"], [("INTEGRATION_DSC_PREPARED_TASK", False, ["tenant_id", "task_id"]),
+                                     ("INTEGRATION_DSC_PREPARED_EXPIRY", False, ["expires_at"])]),
+    # Decision 146 (W4-E REQUEST 2026-11-13T01:18:42Z): one row per executor partition-count change, written and read
+    # by sangam-engine PartitionResize on the engine connection. moved_slots encodes ranges first-last:from>to;...
+    ("0045-05", "Executor partition-count changes (M-056, decision 146)", "EXEC_RESIZE", [
+        ("resize_id", "{str64}", "NOT NULL"), ("cluster_id", "{str64}", "NOT NULL"), ("state", "{str64}", "NOT NULL"),
+        ("from_count", "{int}", "NOT NULL"), ("to_count", "{int}", "NOT NULL"), ("from_map_epoch", "{long}", "NOT NULL"),
+        ("to_map_epoch", "{long}", "NOT NULL"), ("algorithm_version", "{str64}", "NOT NULL"),
+        ("moved_slot_count", "{int}", ""), ("moved_slots", "{text}", ""), ("actor_id", "{str}", "NOT NULL"),
+        ("reason", "{text}", "NOT NULL"), ("requested_at", "{ts}", "NOT NULL"), ("started_at", "{ts}", ""),
+        ("completed_at", "{ts}", ""), ("failure", "{text}", ""), ("handover_pause_ms", "{long}", ""),
+    ], ["resize_id"], [("EXEC_RESIZE_STATE", False, ["cluster_id", "state"])]),
+    # Decisions 144 and 197 (W4-E REQUEST 2026-11-13T01:02:45Z): the shared-deployment registry, the only proof that
+    # untenanted engine work is system-owned. Platform scope by definition, so no tenant column; one row per deployment
+    # id, revocation is final (the audit chain keeps the history).
+    ("0045-06", "Shared-deployment registry (decision 197, system ownership proof)", "SHARED_DEPLOYMENT", [
+        ("deployment_id", "{str64}", "NOT NULL"), ("registered_by", "{str}", "NOT NULL"), ("reason", "{text}", "NOT NULL"),
+        ("registered_at", "{ts}", "NOT NULL"), ("revoked_by", "{str}", ""), ("revoked_at", "{ts}", ""),
+        ("revoke_reason", "{text}", ""),
+    ], ["deployment_id"], []),
+    # Decision 231: an operator's acknowledgement that a Flowable process definition's model listeners (delete or all
+    # task listeners, process event listeners) may fire when its migrated instances are ended on Flowable. Bound to the
+    # SHA-256 of the listeners seen; written with its audit event in the same transaction (sangam-ops flowable).
+    ("0045-07", "Flowable source listener acknowledgement per process definition (decision 231)", "OPS_FMIG_ACK", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("source_system", "{str64}", "NOT NULL"),
+        ("definition_id", "{str64}", "NOT NULL"), ("definition_key", "{str}", "NOT NULL"),
+        ("definition_version", "{int}", "NOT NULL"), ("listeners_sha256", "{str64}", "NOT NULL"),
+        ("listeners_json", "{text}", "NOT NULL"), ("reason", "{text}", "NOT NULL"),
+        ("acknowledged_by", "{str}", "NOT NULL"), ("acknowledged_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "source_system", "definition_id"], []),
+    # Decision 227 (W4-H REQUEST 2026-11-13T02:15:49Z): one row per tenant and DSC certificate, exactly as
+    # sangam-integration db/sangam-dsc-enrolment-reference.sql (SHA-256 97A820C5...F61B); read and written by
+    # JdbcDscCertificateEnrolments with conditional UPDATEs. certificate_sha256 is lower-case hex of the DER.
+    ("0045-08", "DSC certificate enrolment (decision 227, JdbcDscCertificateEnrolments)", "INTEGRATION_DSC_CERTIFICATE", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("certificate_sha256", "{str64}", "NOT NULL"),
+        ("enrolment_id", "{str64}", "NOT NULL"), ("principal_id", "{str}", "NOT NULL"),
+        ("issuer_dn", "{vc1024}", "NOT NULL"), ("serial_hex", "{str64}", "NOT NULL"),
+        ("subject_dn", "{vc1024}", "NOT NULL"), ("not_before", "{ts}", "NOT NULL"), ("not_after", "{ts}", "NOT NULL"),
+        ("certificate", "{blob}", "NOT NULL"), ("status", "{vc16}", "NOT NULL"), ("enrolled_at", "{ts}", "NOT NULL"),
+        ("decided_by", "{str}", ""), ("decided_at", "{ts}", ""), ("decision_reason", "{vc512}", ""),
+    ], ["tenant_id", "certificate_sha256"], [("INTEGRATION_DSC_CERTIFICATE_ID", True, ["tenant_id", "enrolment_id"]),
+                                             ("INTEGRATION_DSC_CERTIFICATE_PRINCIPAL", False, ["tenant_id", "principal_id"]),
+                                             ("INTEGRATION_DSC_CERTIFICATE_STATUS", False, ["tenant_id", "status"])]),
+    # Integrator ruling 2026-11-13T04:07:40Z items 3 and 4 (UTC conversion race, option C; shape W4-E REQUEST
+    # 2026-11-13T04:09:32Z): one gate row (ENGINE_WORK, seeded by DATA 0045-14) that the UTC tool closes in its own
+    # committed transaction before a run moves to APPLYING or ROLLING_BACK and reopens at APPLIED or ROLLED_BACK; engine
+    # job acquisition and external-task fetch read it with a lock held to commit, in the transaction that writes their
+    # locks, so no acquisition commits locks once the gate is closed. The engine refuses work when the row is missing.
+    ("0045-13", "UTC conversion engine-work gate (integrator ruling 2026-11-13, option C)", "OPS_UTC_GATE", [
+        ("gate_id", "{str32}", "NOT NULL"),
+        ("state", "{vc16}", "NOT NULL CONSTRAINT CK_OPS_UTC_GATE_STATE CHECK (state IN ('OPEN', 'CLOSED'))"),
+        ("run_id", "{str64}", ""), ("changed_by", "{str}", "NOT NULL"), ("changed_at", "{ts}", "NOT NULL"),
+        ("version", "{long}", "NOT NULL"),
+    ], ["gate_id"], []),
+    # Decisions 304 and 305 (W4-H REQUEST 2026-11-13T07:40:04Z, addendum 08:07:02Z): exactly as sangam-integration
+    # IntegrationSchema.DDL. DLT SMS delivery state per message (DltDeliveryReports, DltDeliveryStatusPoller);
+    # reported_at is the gateway's own text, not an instant.
+    ("0045-16", "decision 304 DLT SMS delivery state per message (DltDeliveryReports)", "NOTIFICATION_DELIVERY", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("operation_id", "{str64}", "NOT NULL"),
+        ("connector_id", "{str64}", "NOT NULL"), ("root_id", "{str64}", "NOT NULL"), ("message_id", "{str}", ""),
+        ("state", "{str64}", "NOT NULL"), ("state_rank", "{int}", "NOT NULL"), ("reason", "{str}", ""),
+        ("reported_at", "{str64}", ""), ("source", "{str64}", "NOT NULL"), ("reports", "{int}", "NOT NULL"),
+        ("lookups", "{int}", "NOT NULL"), ("next_lookup_at", "{ts}", ""), ("created_at", "{ts}", "NOT NULL"),
+        ("updated_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "operation_id"], [("NOTIFICATION_DELIVERY_MESSAGE", False, ["tenant_id", "message_id"]),
+                                       ("NOTIFICATION_DELIVERY_DUE", False, ["state_rank", "next_lookup_at"])]),
+    # Delivery reports seen, the idempotency key of the signed webhook intake.
+    ("0045-17", "decision 304 DLT delivery reports seen (idempotency)", "NOTIFICATION_DELIVERY_REPORT", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("report_id", "{str}", "NOT NULL"),
+        ("operation_id", "{str64}", "NOT NULL"), ("received_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "report_id"], []),
+    # Stored per-tenant DLT registration (DltRegistrationStore): the entity and its revision, then one row per header,
+    # template or URL prefix.
+    ("0045-18", "decision 305 stored per-tenant DLT registration (DltRegistrationStore)", "DLT_REGISTRATION", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("entity_id", "{str64}", ""), ("revision", "{long}", "NOT NULL"),
+        ("updated_by", "{str}", ""), ("updated_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id"], []),
+    ("0045-19", "decision 305 DLT registration headers, templates and URL prefixes", "DLT_REGISTRATION_ITEM", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("kind", "{str64}", "NOT NULL"), ("item_key", "{str}", "NOT NULL"),
+        ("header", "{str64}", ""), ("body", "{text}", ""), ("variable_count", "{int}", ""),
+        ("registered_by", "{str}", "NOT NULL"), ("registered_at", "{ts}", "NOT NULL"), ("updated_at", "{ts}", "NOT NULL"),
+    ], ["tenant_id", "kind", "item_key"], []),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).
@@ -1280,11 +1445,55 @@ ALTERS = [
       ("media_owner", "{str}", ""), ("media_epoch", "{long}", ""), ("media_doc", "{text}", ""),
       ("media_error", "{text}", "")],
      [("CH_INBOUND_SEEN_MEDIA", False, ["media_state", "media_next_at"])]),
+    # decision 160 (M-131): legacy ACT_HI_* history projected into the read model keeps a source marker. Rows of the
+    # live projector are ENGINE (existing rows take the default, which is what they are); imported rows are LEGACY,
+    # have an id of their own (no collision with live engine ids) and keep their origin in legacy_ref
+    # (<job>:<ACT_HI table>:<source id>). Read-model queries can filter or label them.
+    ("0044-05", "decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of a process/case instance",
+     "HRM_PROCESS_INSTANCE", [("record_source", "{vc16}", "DEFAULT 'ENGINE' NOT NULL", "record_source IN ('ENGINE', 'LEGACY')"),
+                              ("legacy_ref", "{str}", "")], []),
+    ("0044-06", "decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of an activity instance",
+     "HRM_ACTIVITY_INSTANCE", [("record_source", "{vc16}", "DEFAULT 'ENGINE' NOT NULL", "record_source IN ('ENGINE', 'LEGACY')"),
+                               ("legacy_ref", "{str}", "")], []),
+    ("0044-07", "decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of a task",
+     "HRM_TASK", [("record_source", "{vc16}", "DEFAULT 'ENGINE' NOT NULL", "record_source IN ('ENGINE', 'LEGACY')"),
+                  ("legacy_ref", "{str}", "")], []),
+    # W4-A REQUEST 2026-11-13T01:12:21Z, shapes exactly as sangam-ledger LedgerSchema (93FB7873...): 0019-06 is not
+    # edited because it may already be applied. Decision 196: the evidence of a manual VERIFIED (NULL for every other
+    # resolution and for existing rows). BILL_UNVERIFIED_CONSUMER serves the pending-payment lookup of the penalty run
+    # (decision 195) and the list filters.
+    ("0045-03", "decisions 195 and 196: manual verification evidence and the per-consumer index of unverified payments",
+     "BILL_UNVERIFIED_PAYMENT", [("resolution_evidence_ref", "{str}", "")],
+     [("BILL_UNVERIFIED_CONSUMER", False, ["tenant_id", "ledger_id", "consumer", "state"])]),
+    # Owner decision 240: the historical MySQL/MariaDB session time zone an operator declares for a run that converts
+    # the five session-zoned engine columns (named zone or offset); NULL for every other run.
+    ("0045-09", "decision 240: declared historical session time zone of a UTC conversion run", "OPS_UTC_RUN",
+     [("session_zone", "{str64}", "")], []),
+    # Decision 241 identity binding (W4-H REQUEST 2026-11-13T03:49:34Z), exactly as the updated reference DDL
+    # sangam-dsc-enrolment-reference.sql (AE463B06...7109D2) and sangam-dsc-reference.sql (DD1EBD22...CEE45D).
+    # The tables are new and unreleased: NOT NULL without backfill; a database that holds rows refuses the alter
+    # (MySQL fills its implicit '' and 0, an id and a sequence no approved enrolment has).
+    ("0045-11", "decision 241: approval sequence of a DSC certificate enrolment, +1 on every move to APPROVED",
+     "INTEGRATION_DSC_CERTIFICATE", [("approval_seq", "{long}", "DEFAULT 0 NOT NULL")], []),
+    ("0045-12", "decision 241: the approved enrolment and its approval sequence a prepared DSC signature is bound to",
+     "INTEGRATION_DSC_PREPARED", [("enrolment_id", "{str64}", "NOT NULL"),
+                                  ("enrolment_approval_seq", "{long}", "NOT NULL")], []),
+    # OJ-06 step 8 (integrator ruling 2026-11-13T07:36:16Z; W4-A REQUEST 07:39:37Z, reminder 08:01:38Z): a security
+    # incident closes only with its root cause and lessons learned (IncidentReportingService.close). Nullable, no
+    # backfill: incidents closed before keep NULL.
+    ("0045-15", "OJ-06 step 8 incident closure: root cause, lessons learned, closed at and by", "CMP_INCIDENT",
+     [("root_cause", "{text}", ""), ("lessons_learned", "{text}", ""), ("closed_at", "{ts}", ""),
+      ("closed_by", "{str}", "")], []),
+    # Decision 304 (W4-H addendum 2026-11-13T08:07:02Z): the delivery-lookup fallback enrols calls by connector and
+    # last result, oldest first. Index only.
+    ("0045-20", "decision 304 DLT delivery fallback: CONNECTOR_CALL by connector, last result and update time",
+     "CONNECTOR_CALL", [], [("CONNECTOR_CALL_DELIVERY", False, ["connector_id", "last_result", "updated_at"])]),
 ]
 
 # Data changesets, applied after every table and alter changeset:
-# (changeset id, comment, table, portable statement, portable rollback, {dbms: rollback override}).
-# The statement must be valid unchanged on all five dialects.
+# (changeset id, comment, table, portable statement, portable rollback, {dbms: rollback override}
+#  [, {dbms: statement override}]).
+# The statement must be valid unchanged on all five dialects unless an override gives that dialect's own form.
 DATA = [
     # SL-84: an absent key part is stored as org.sangam.core.layer.AbsentKey.NONE ('-'), never '' (Oracle stores ''
     # as NULL: ORA-01400 in the NOT NULL key). Rows written in the old form are rewritten; on Oracle none can exist,
@@ -1299,6 +1508,17 @@ DATA = [
      "UPDATE RES_TOKEN_SEQ SET series = '-' WHERE series = '';",
      "UPDATE RES_TOKEN_SEQ SET series = '' WHERE series = '-';",
      {"oracle": "SELECT 1 FROM DUAL;"}),
+    # The one UTC conversion gate row (table 0045-13), OPEN. changed_at is the database's UTC instant: SQL Server
+    # CURRENT_TIMESTAMP is the server's local wall clock without offset and MySQL's follows the session zone, so those
+    # two take SYSDATETIMEOFFSET() and UTC_TIMESTAMP(6); the others store CURRENT_TIMESTAMP with its zone.
+    ("0045-14", "UTC conversion gate row ENGINE_WORK, OPEN (integrator ruling 2026-11-13, option C)", "OPS_UTC_GATE",
+     "INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version)"
+     " VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', CURRENT_TIMESTAMP, 0);",
+     "DELETE FROM OPS_UTC_GATE WHERE gate_id = 'ENGINE_WORK';", {},
+     {"mssql": "INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version)"
+               " VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', SYSDATETIMEOFFSET(), 0);",
+      "mysql": "INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version)"
+               " VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', UTC_TIMESTAMP(6), 0);"}),
 ]
 
 # Columns that become nullable, applied after DATA: (changeset id, comment, table, column, type token).
@@ -1371,6 +1591,45 @@ NULLABLE_UNIQUE = [
      "PACKAGE_VERSION", "package_hash", "{bytes32}", "PACKAGE_VERSION_HASH", ["tenant_id", "package_hash"], "00" * 32),
 ]
 
+# Optional PostgreSQL-only changesets that depend on an extension the operator may or may not have enabled, applied
+# last and written to the PostgreSQL changelog only (no other dialect has them, so the H2 changeset count in
+# SangamSchema is unaffected): (changeset id, comment, extension name, statement, rollback).
+# The precondition onFail CONTINUE skips the changeset without recording it while the extension is absent, so it
+# applies on the first update after the operator enables the extension; a database without it never gets the column.
+PG_EXTENSION_OPTIONAL = [
+    # decision 170 (W4-K REQUEST 2026-11-12T19:23:45Z): native pgvector ranking, opt-in. Nullable, no fixed dimension
+    # (knowledge bases with different embedding models share the table), no ANN index (the ranking stays exact).
+    ("0044-08", "decision 170 pgvector: nullable AI_KB_CHUNK.embedding_vec of type vector (only where pgvector is enabled)",
+     "vector", "ALTER TABLE AI_KB_CHUNK ADD COLUMN embedding_vec vector;",
+     "ALTER TABLE AI_KB_CHUNK DROP COLUMN embedding_vec;"),
+]
+
+# Owner decision 247 (decision 207, W4-K REQUEST 2026-11-13T02:43:00Z): the Oracle AI Vector Search column, opt-in by
+# Liquibase context. VECTOR equals VECTOR(*, *): any dimension and format, NULL allowed (Oracle AI Database 26ai docs,
+# DOWNLOADS-WAVE4 00:27:59Z); no vector index (the ranking stays exact, as for pgvector). Written to
+# db/changelog/oracle-vector/oracle.sql, which only sangam-oracle-vector.xml includes, never sangam-master.xml: Liquibase
+# runs context-tagged changesets when no context is given, and Oracle 19c and 21c have no VECTOR type.
+ORACLE_VECTOR_CONTEXT = "oracle-vector"
+ORACLE_VECTOR_OPTIONAL = [
+    ("0045-10", "decision 247 Oracle AI Vector Search: nullable AI_KB_CHUNK.embedding_vec of type VECTOR (context oracle-vector)",
+     "ai_kb_chunk-oracle-vector", "ALTER TABLE AI_KB_CHUNK ADD (embedding_vec VECTOR);",
+     "ALTER TABLE AI_KB_CHUNK DROP COLUMN embedding_vec;"),
+]
+
+
+def render_oracle_vector():
+    out = ["--liquibase formatted sql", "-- SPDX-License-Identifier: Apache-2.0",
+           "-- GENERATED by sangam-persistence/tools/generate_changelogs.py (ORACLE_VECTOR_OPTIONAL); do not edit.",
+           "-- Owner decision 247: included only by db/changelog/sangam-oracle-vector.xml and applied with context "
+           + ORACLE_VECTOR_CONTEXT + " (SangamSchema.applyOracleVector), on Oracle AI Database 23ai or later.", ""]
+    for cs_id, comment, name, statement, rollback in ORACLE_VECTOR_OPTIONAL:
+        out.append(f"--changeset sangam:{cs_id}-{name} dbms:oracle context:{ORACLE_VECTOR_CONTEXT}")
+        out.append(f"--comment: {comment}")
+        out.append(statement)
+        out.append("--rollback " + rollback)
+        out.append("")
+    return "\n".join(out)
+
 
 # Column names of module reference DDL that are reserved words on one dialect. They are created QUOTED there so the
 # changelog applies everywhere; the owning module must rename them (reported to the integrator), because unquoted SQL
@@ -1392,7 +1651,7 @@ def q(dbms, name):
 
 
 # SQL Server key-size budget: clustered keys <= 900 bytes, nonclustered <= 1700 bytes (NVARCHAR = 2 bytes/char).
-MSSQL_BYTES = {"{vc80}": 160, "{date}": 3, "{num24_6}": 13, "{num12_6}": 9, "{vc8}": 16, "{vc16}": 32, "{vc40}": 80, "{vc55}": 110, "{vc512}": 1024, "{asciistr}": 510, "{text}": 0, "{str}": 510, "{str64}": 128, "{str32}": 64, "{char32}": 32, "{str1k}": 2000, "{long}": 8, "{int}": 4, "{small}": 2,
+MSSQL_BYTES = {"{vc80}": 160, "{date}": 3, "{num24_6}": 13, "{num12_6}": 9, "{vc8}": 16, "{vc16}": 32, "{vc40}": 80, "{vc55}": 110, "{vc512}": 1024, "{vc1024}": 2048, "{asciistr}": 510, "{text}": 0, "{str}": 510, "{str64}": 128, "{str32}": 64, "{char32}": 32, "{str1k}": 2000, "{long}": 8, "{int}": 4, "{small}": 2,
                "{bytes32}": 32, "{identity}": 8, "{ts}": 10, "{dec}": 9, "{money}": 8}
 
 
@@ -1460,10 +1719,10 @@ def render(dbms):
             drops.append(f"ALTER TABLE {table} DROP COLUMN {c[0]};")
         out.append("--rollback " + " ".join(drops))
         out.append("")
-    for cs_id, comment, table, statement, rollback, rollback_override in DATA:
+    for cs_id, comment, table, statement, rollback, rollback_override, *statement_override in DATA:
         out.append(f"--changeset sangam:{cs_id}-{table.lower()}-data dbms:{dbms}")
         out.append(f"--comment: {comment}")
-        out.append(statement)
+        out.append((statement_override[0] if statement_override else {}).get(dbms, statement))
         out.append("--rollback " + rollback_override.get(dbms, rollback))
         out.append("")
     for cs_id, comment, table, column, token in NULLABLE:
@@ -1489,6 +1748,15 @@ def render(dbms):
         out.append(forward)
         out.append("--rollback " + rollback)
         out.append("")
+    if dbms == "postgresql":
+        for cs_id, comment, extension, statement, rollback in PG_EXTENSION_OPTIONAL:
+            out.append(f"--changeset sangam:{cs_id}-{extension}-optional dbms:{dbms}")
+            out.append(f"--comment: {comment}")
+            out.append("--preconditions onFail:CONTINUE onError:HALT")
+            out.append(f"--precondition-sql-check expectedResult:1 SELECT COUNT(*) FROM pg_extension WHERE extname = '{extension}'")
+            out.append(statement)
+            out.append("--rollback " + rollback)
+            out.append("")
     return "\n".join(out)
 
 
@@ -1633,10 +1901,10 @@ def default_name(table, column):
 
 def column_constraint_drops(dbms, table, col):
     """Rollback: the named CHECK (and on SQL Server the named DEFAULT) of an added column, before DROP COLUMN."""
-    if len(col) < 4:
-        return []
-    ck = check_name(table, col[0])
-    out = [f"ALTER TABLE {table} DROP CHECK {ck};" if dbms == "mysql" else f"ALTER TABLE {table} DROP CONSTRAINT {ck};"]
+    out = []
+    if len(col) > 3 and col[3]:
+        ck = check_name(table, col[0])
+        out.append(f"ALTER TABLE {table} DROP CHECK {ck};" if dbms == "mysql" else f"ALTER TABLE {table} DROP CONSTRAINT {ck};")
     if dbms == "mssql" and "DEFAULT" in (col[2] or ""):
         out.append(f"ALTER TABLE {table} DROP CONSTRAINT {default_name(table, col[0])};")
     return out
@@ -1645,11 +1913,13 @@ def column_constraint_drops(dbms, table, col):
 def add_column_sql(dbms, table, col):
     """One ADD per statement: portable across PostgreSQL, Oracle, SQL Server, MySQL and H2. An optional fourth
     element is a CHECK condition, added as the named constraint CK_<table>_<column>; with it, SQL Server's default
-    is named DF_<table>_<column> too, so the rollback can drop both before the column."""
+    is named DF_<table>_<column>. Every SQL Server DEFAULT is named (integrator ruling 2026-11-13: SQL Server refuses
+    DROP COLUMN while a default constraint exists, and a system-generated name cannot be written in the rollback), so
+    the rollback drops it before the column; the other dialects drop a column default with the column."""
     name, token, nullability = col[0], col[1], col[2]
     check = col[3] if len(col) > 3 else None
     nullability = nullability or ""
-    if check and dbms == "mssql" and nullability.startswith("DEFAULT"):
+    if dbms == "mssql" and nullability.startswith("DEFAULT"):
         nullability = f"CONSTRAINT {default_name(table, name)} {nullability}"
     t = DIALECTS[dbms][token] + ((" " + nullability) if nullability else "")
     if check:
@@ -1665,6 +1935,56 @@ def drop_index_sql(dbms, table, index):
     return index
 
 
+# ------------------------------------------------------------------ decision 150 / 203: timestamp inventory
+# Every product {ts} and {date} column with its class, written next to the changelogs as db/timestamp-inventory.csv and
+# read by the UTC conversion tool (org.sangam.ops.utc.UtcInventory). Classes:
+#   EVENT_INSTANT  {ts}: a zone-aware instant (TIMESTAMP WITH TIME ZONE, DATETIMEOFFSET; MySQL DATETIME(6) holding UTC)
+#   LOCAL_BUSINESS a local business date-time (none known; listed in TS_CLASS_OVERRIDE when one is found)
+#   DATE_ONLY      {date}: a calendar date, never converted
+#   PROTECTED      a column of a table that also holds a hash, digest or signature column: whether the time is inside the
+#                  protected content is not proven per table, so the tool refuses it until a preservation strategy exists
+#   TOOL           the conversion tool's own tables
+TS_CLASS_OVERRIDE = {}  # (table, column) -> class, for a reviewed exception to the rules above
+
+
+def ts_protected(cols):
+    for c in cols:
+        n = c[0].lower()
+        if n != "geohash" and (n.endswith("hash") or n.endswith("digest") or n.endswith("digest_hex")
+                               or n.endswith("signature") or n == "signed_statement"):
+            return True
+    return False
+
+
+def timestamp_inventory():
+    rows = []
+    columns = {}
+    for cs_id, comment, table, cols, pk, indexes in TABLES:
+        columns[table] = list(cols)
+        for c in cols:
+            rows.append((table, c, cs_id))
+    for alter in ALTERS:
+        cs_id, table, cols = alter[0], alter[2], alter[3]
+        columns.setdefault(table, []).extend(cols)
+        for c in cols:
+            rows.append((table, c, cs_id))
+    out = ["table,column,token,class,changeset"]
+    for table, c, cs_id in rows:
+        if c[1] not in ("{ts}", "{date}"):
+            continue
+        if table.startswith("OPS_UTC_"):
+            cls = "TOOL"
+        elif c[1] == "{date}":
+            cls = "DATE_ONLY"
+        elif ts_protected(columns[table]):
+            cls = "PROTECTED"
+        else:
+            cls = "EVENT_INSTANT"
+        cls = TS_CLASS_OVERRIDE.get((table, c[0]), cls)
+        out.append(f"{table},{c[0]},{c[1]},{cls},{cs_id}")
+    return "\n".join(out) + "\n"
+
+
 def main():
     base = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "main", "resources", "db", "changelog")
     for dbms in DIALECTS:
@@ -1672,7 +1992,12 @@ def main():
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "sangam-0001-baseline.sql"), "w", encoding="utf-8", newline="\n") as f:
             f.write(render(dbms))
-    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant + {len(WIDEN)} widen + {len(NULLABLE_UNIQUE)} nullable-unique changesets x {len(DIALECTS)} dialects written under "
+    with open(os.path.join(base, "..", "timestamp-inventory.csv"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(timestamp_inventory())
+    os.makedirs(os.path.join(base, "oracle-vector"), exist_ok=True)
+    with open(os.path.join(base, "oracle-vector", "oracle.sql"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(render_oracle_vector())
+    print(f"{len(TABLES)} tables + {len(ALTERS)} alter + {len(DATA)} data + {len(NULLABLE)} nullable + {len(SHARED_TENANT)} shared-tenant + {len(WIDEN)} widen + {len(NULLABLE_UNIQUE)} nullable-unique changesets x {len(DIALECTS)} dialects, + {len(PG_EXTENSION_OPTIONAL)} PostgreSQL-only optional, + {len(ORACLE_VECTOR_OPTIONAL)} Oracle context-only, written under "
           f"{os.path.normpath(base)}")
 
 

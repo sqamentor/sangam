@@ -46,7 +46,7 @@ public final class RegistryRegistersApi {
     /**
      * Define
      *
-     * <p>RegisterController.define (sangam-registry).
+     * <p>RegisterController.define (sangam-rest).
      *
      * <p>{@code PUT /registry/registers/{registerKey}} (operationId {@code registryRegisterDefine}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param registerKey path parameter {@code registerKey}
@@ -63,7 +63,7 @@ public final class RegistryRegistersApi {
     /**
      * Definition
      *
-     * <p>RegisterController.definition (sangam-registry).
+     * <p>RegisterController.definition (sangam-rest).
      *
      * <p>{@code GET /registry/registers/{registerKey}} (operationId {@code registryRegisterDefinition}); permission {@code registry.read}.
      * @param registerKey path parameter {@code registerKey}
@@ -78,7 +78,7 @@ public final class RegistryRegistersApi {
     /**
      * Definitions
      *
-     * <p>RegisterController.definitions (sangam-registry).
+     * <p>RegisterController.definitions (sangam-rest).
      *
      * <p>{@code GET /registry/registers} (operationId {@code registryRegisterDefinitions}); permission {@code registry.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -92,7 +92,7 @@ public final class RegistryRegistersApi {
     /**
      * Append
      *
-     * <p>RegisterController.append (sangam-registry).
+     * <p>RegisterController.append (sangam-rest).
      *
      * <p>{@code POST /registry/registers/{registerKey}/entries} (operationId {@code registryRegisterAppend}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param registerKey path parameter {@code registerKey}
@@ -109,7 +109,7 @@ public final class RegistryRegistersApi {
     /**
      * Books
      *
-     * <p>RegisterController.books (sangam-registry).
+     * <p>RegisterController.books (sangam-rest).
      *
      * <p>{@code GET /registry/registers/{registerKey}/books} (operationId {@code registryRegisterBooks}); permission {@code registry.read}.
      * @param registerKey path parameter {@code registerKey}
@@ -130,7 +130,7 @@ public final class RegistryRegistersApi {
     /**
      * Book
      *
-     * <p>RegisterController.book (sangam-registry).
+     * <p>RegisterController.book (sangam-rest).
      *
      * <p>{@code GET /registry/registers/books/{bookId}} (operationId {@code registryRegisterBook}); permission {@code registry.read}.
      * @param bookId path parameter {@code bookId}
@@ -145,7 +145,7 @@ public final class RegistryRegistersApi {
     /**
      * Entries
      *
-     * <p>RegisterController.entries (sangam-registry).
+     * <p>RegisterController.entries (sangam-rest).
      *
      * <p>{@code GET /registry/registers/books/{bookId}/entries} (operationId {@code registryRegisterEntries}); permission {@code registry.read}.
      * @param bookId path parameter {@code bookId}
@@ -164,7 +164,7 @@ public final class RegistryRegistersApi {
     /**
      * Effective
      *
-     * <p>RegisterController.effective (sangam-registry).
+     * <p>RegisterController.effective (sangam-rest).
      *
      * <p>{@code GET /registry/registers/books/{bookId}/entries/{entryNo}} (operationId {@code registryRegisterEffective}); permission {@code registry.read}.
      * @param bookId path parameter {@code bookId}
@@ -180,7 +180,7 @@ public final class RegistryRegistersApi {
     /**
      * Correct
      *
-     * <p>RegisterController.correct (sangam-registry).
+     * <p>RegisterController.correct (sangam-rest).
      *
      * <p>{@code POST /registry/registers/books/{bookId}/entries/{entryNo}/corrections} (operationId {@code registryRegisterCorrect}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param bookId path parameter {@code bookId}
@@ -198,7 +198,7 @@ public final class RegistryRegistersApi {
     /**
      * Entries for
      *
-     * <p>RegisterController.entriesFor (sangam-registry).
+     * <p>RegisterController.entriesFor (sangam-rest).
      *
      * <p>{@code GET /registry/registers/entries} (operationId {@code registryRegisterEntriesFor}); permission {@code registry.read}.
      * @param refType query parameter {@code refType}
@@ -216,7 +216,7 @@ public final class RegistryRegistersApi {
     /**
      * Close
      *
-     * <p>RegisterController.close (sangam-registry).
+     * <p>RegisterController.close (sangam-rest).
      *
      * <p>{@code POST /registry/registers/books/{bookId}/close} (operationId {@code registryRegisterClose}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param bookId path parameter {@code bookId}
@@ -233,7 +233,7 @@ public final class RegistryRegistersApi {
     /**
      * Verify
      *
-     * <p>RegisterController.verify (sangam-registry).
+     * <p>RegisterController.verify (sangam-rest).
      *
      * <p>{@code GET /registry/registers/books/{bookId}/verify} (operationId {@code registryRegisterVerify}); permission {@code registry.read}.
      * @param bookId path parameter {@code bookId}
@@ -248,7 +248,7 @@ public final class RegistryRegistersApi {
     /**
      * Extract
      *
-     * <p>RegisterController.extract (sangam-registry).
+     * <p>RegisterController.extract (sangam-rest).
      *
      * <p>{@code POST /registry/registers/books/{bookId}/extracts} (operationId {@code registryRegisterExtract}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param bookId path parameter {@code bookId}
@@ -265,7 +265,7 @@ public final class RegistryRegistersApi {
     /**
      * Get extract
      *
-     * <p>RegisterController.getExtract (sangam-registry).
+     * <p>RegisterController.getExtract (sangam-rest).
      *
      * <p>{@code GET /registry/registers/extracts/{extractId}} (operationId {@code registryRegisterGetExtract}); permission {@code registry.read}.
      * @param extractId path parameter {@code extractId}
@@ -280,7 +280,7 @@ public final class RegistryRegistersApi {
     /**
      * Verify extract
      *
-     * <p>RegisterController.verifyExtract (sangam-registry).
+     * <p>RegisterController.verifyExtract (sangam-rest).
      *
      * <p>{@code GET /registry/registers/public/{tenant}/extracts/verify} (operationId {@code registryRegisterVerifyExtract}).
      * @param tenant path parameter {@code tenant}

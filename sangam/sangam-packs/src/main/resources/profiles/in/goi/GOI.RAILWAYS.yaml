@@ -4,7 +4,7 @@
 profile:
   id: GOI.RAILWAYS
   layer: department
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2024-04-01'
   name:
     en: Ministry of Railways
@@ -35,3 +35,5 @@ integrations:
   procurement:
   - IREPS
   - GEM
+procurement:
+  scientificDepartment: false

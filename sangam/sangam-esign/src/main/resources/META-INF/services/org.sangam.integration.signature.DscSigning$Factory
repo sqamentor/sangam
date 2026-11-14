@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+# Owner decision 165: DSC prepare and complete (Bouncy Castle and PDFBox, optional; absent = DSC signing stays blocked)
+org.sangam.esign.DscSigningProvider$Factory

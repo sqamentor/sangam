@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.web;
 
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 import org.sangam.rest.port.EventPort;
 import org.sangam.rest.port.FormPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +24,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -199,5 +207,63 @@ public class EventFormController {
                                               @RequestBody FormPort.ValidateRequest body) {
         permissions.require(ctx, Permissions.FORM_READ);
         return forms.validate(ctx, key, body);
+    }
+    // ---------------------------------------------------------------- SL-170 Event Grid hooks (decisions 189, 219)
+
+    /**
+     * CloudEvents 1.0 abuse-protection handshake of an inbound Event Grid channel. Public route (SecurityConfig): the
+     * channel's authentication is checked by the port before anything else; off unless the server enables Event Grid.
+     */
+    @RequestMapping(path = "/hooks/eventgrid/{tenant}/{channel}", method = RequestMethod.OPTIONS)
+    public ResponseEntity<String> eventGridHandshake(@PathVariable String tenant, @PathVariable String channel,
+                                                     HttpServletRequest request) {
+        return answer(events.eventGridHook("OPTIONS", tenant, channel, headers(request), query(request), null));
+    }
+
+    /** An Event Grid delivery (CloudEvents single or batch, or the Event Grid schema). */
+    @PostMapping("/hooks/eventgrid/{tenant}/{channel}")
+    public ResponseEntity<String> eventGridDelivery(@PathVariable String tenant, @PathVariable String channel,
+                                                    @RequestBody(required = false) String body,
+                                                    HttpServletRequest request) {
+        return answer(events.eventGridHook("POST", tenant, channel, headers(request), query(request), body));
+    }
+
+    static Map<String, String> headers(HttpServletRequest request) {
+        Map<String, String> out = new LinkedHashMap<>();
+        Enumeration<String> names = request.getHeaderNames();
+        while (names != null && names.hasMoreElements()) {
+            String n = names.nextElement();
+            out.putIfAbsent(n, request.getHeader(n));
+        }
+        return out;
+    }
+
+    /** The URL query only (never form fields of a body), first value per name, percent-decoded as UTF-8. */
+    static Map<String, String> query(HttpServletRequest request) {
+        Map<String, String> out = new LinkedHashMap<>();
+        String qs = request.getQueryString();
+        if (qs == null || qs.isEmpty()) {
+            return out;
+        }
+        for (String pair : qs.split("&")) {
+            if (pair.isEmpty()) {
+                continue;
+            }
+            int eq = pair.indexOf('=');
+            String k = java.net.URLDecoder.decode(eq < 0 ? pair : pair.substring(0, eq), java.nio.charset.StandardCharsets.UTF_8);
+            String v = eq < 0 ? "" : java.net.URLDecoder.decode(pair.substring(eq + 1), java.nio.charset.StandardCharsets.UTF_8);
+            out.putIfAbsent(k, v);
+        }
+        return out;
+    }
+
+    /** The port's answer as is: status, headers and body (JSON unless the answer names its own content type). */
+    static ResponseEntity<String> answer(EventPort.HookAnswer a) {
+        HttpHeaders h = new HttpHeaders();
+        a.headers().forEach(h::set);
+        if (!a.body().isEmpty() && h.getContentType() == null) {
+            h.setContentType(MediaType.APPLICATION_JSON);
+        }
+        return ResponseEntity.status(a.status()).headers(h).body(a.body().isEmpty() ? null : a.body());
     }
 }

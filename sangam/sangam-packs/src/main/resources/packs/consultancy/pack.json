@@ -34,6 +34,10 @@
     {
       "kind": "SEED",
       "path": "packs/consultancy/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/consultancy/pack.json"
     }
   ],
   "seed": "packs/consultancy/seed.json",
@@ -71,6 +75,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "cs_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "CONSULTANCY_AWARD"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

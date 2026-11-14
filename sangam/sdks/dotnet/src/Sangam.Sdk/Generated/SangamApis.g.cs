@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {
@@ -35,8 +35,12 @@ public sealed class SangamApis
         Debug = new DebugApi(calls);
         Decisions = new DecisionsApi(calls);
         Deployments = new DeploymentsApi(calls);
+        DltHooks = new DltHooksApi(calls);
         Documents = new DocumentsApi(calls);
+        DscCertificates = new DscCertificatesApi(calls);
+        EventGridHooks = new EventGridHooksApi(calls);
         Events = new EventsApi(calls);
+        Executor = new ExecutorApi(calls);
         Field = new FieldApi(calls);
         FieldAssignments = new FieldAssignmentsApi(calls);
         FieldUnits = new FieldUnitsApi(calls);
@@ -78,8 +82,13 @@ public sealed class SangamApis
         ResourcesItems = new ResourcesItemsApi(calls);
         Rosters = new RostersApi(calls);
         SCIM = new SCIMApi(calls);
+        SharedDeployments = new SharedDeploymentsApi(calls);
         Tasks = new TasksApi(calls);
         TenantOperations = new TenantOperationsApi(calls);
+        TenantOperationsFlowableMigrations = new TenantOperationsFlowableMigrationsApi(calls);
+        TenantOperationsRetention = new TenantOperationsRetentionApi(calls);
+        TenantOperationsSecrets = new TenantOperationsSecretsApi(calls);
+        TenantOperationsVariables = new TenantOperationsVariablesApi(calls);
         TestMode = new TestModeApi(calls);
         Work = new WorkApi(calls);
         Workspace = new WorkspaceApi(calls);
@@ -107,8 +116,12 @@ public sealed class SangamApis
     public DebugApi Debug { get; }
     public DecisionsApi Decisions { get; }
     public DeploymentsApi Deployments { get; }
+    public DltHooksApi DltHooks { get; }
     public DocumentsApi Documents { get; }
+    public DscCertificatesApi DscCertificates { get; }
+    public EventGridHooksApi EventGridHooks { get; }
     public EventsApi Events { get; }
+    public ExecutorApi Executor { get; }
     public FieldApi Field { get; }
     public FieldAssignmentsApi FieldAssignments { get; }
     public FieldUnitsApi FieldUnits { get; }
@@ -150,8 +163,13 @@ public sealed class SangamApis
     public ResourcesItemsApi ResourcesItems { get; }
     public RostersApi Rosters { get; }
     public SCIMApi SCIM { get; }
+    public SharedDeploymentsApi SharedDeployments { get; }
     public TasksApi Tasks { get; }
     public TenantOperationsApi TenantOperations { get; }
+    public TenantOperationsFlowableMigrationsApi TenantOperationsFlowableMigrations { get; }
+    public TenantOperationsRetentionApi TenantOperationsRetention { get; }
+    public TenantOperationsSecretsApi TenantOperationsSecrets { get; }
+    public TenantOperationsVariablesApi TenantOperationsVariables { get; }
     public TestModeApi TestMode { get; }
     public WorkApi Work { get; }
     public WorkspaceApi Workspace { get; }

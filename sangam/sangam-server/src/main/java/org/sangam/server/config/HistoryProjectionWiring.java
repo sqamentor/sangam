@@ -13,7 +13,9 @@ import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.HttpTransport;
 import org.sangam.integration.connector.RetryPolicy;
 import org.sangam.integration.connector.SecretResolver;
+import org.sangam.integration.connector.s3.S3ObjectClient;
 import org.sangam.integration.publish.KafkaPublisher;
+import org.sangam.integration.publish.history.DataLakeHistoryPublisher;
 import org.sangam.integration.publish.history.SearchIndexPublisher;
 import org.sangam.integration.relay.PublisherRegistry;
 import org.slf4j.Logger;
@@ -43,6 +45,12 @@ import org.springframework.core.env.Environment;
  *   <li><b>{@value #KAFKA_DESTINATION}</b>: Kafka, record key = event id, idempotent producer. Keys under
  *       {@code sangam.history.projection.kafka.}: {@code topic}, {@code bootstrap-servers}, {@code properties.*} (producer
  *       settings; a value starting with {@code secret://} is resolved through the platform {@link SecretResolver}).</li>
+ *   <li><b>{@value DataLakeHistoryPublisher#DESTINATION}</b>: an S3-compatible bucket, one NDJSON object per event at
+ *       {@code {prefix}/tenant={t}/date={day}/{event_id}.json}. Keys under {@code sangam.history.projection.datalake.}:
+ *       {@code endpoint}, {@code bucket}, {@code region} (default {@code us-east-1}), {@code path-style} (default true),
+ *       {@code prefix} (default {@code sangam-history}), {@code access-key-ref}, {@code secret-key-ref},
+ *       {@code session-token-ref} (secret references), {@code allow-private} (default false). The egress rule admits
+ *       exactly the bucket's origin; production profiles require https.</li>
  * </ul>
  * Nothing is configured by default: no sink, no routing, no outbound call.
  */
@@ -65,6 +73,9 @@ public class HistoryProjectionWiring {
         if (!env.getProperty(PREFIX + ".kafka.topic", "").isBlank()) {
             out.add(Outbox.Destination.unordered(KAFKA_DESTINATION));
         }
+        if (!env.getProperty(PREFIX + ".datalake.bucket", "").isBlank()) {
+            out.add(Outbox.Destination.unordered(DataLakeHistoryPublisher.DESTINATION));
+        }
         return List.copyOf(out);
     }
 
@@ -84,6 +95,30 @@ public class HistoryProjectionWiring {
         URI u = s.url();
         EgressPolicy.Rule rule = new EgressPolicy.Rule("*", u.getScheme(), u.getHost(), u.getPort(),
                 u.getPath() == null || u.getPath().isEmpty() ? "/" : u.getPath(), allowPrivate);
+        return new HttpTransport(EgressPolicy.of(List.of(rule), 0, 1024 * 1024), null, Duration.ofSeconds(10),
+                Duration.ofSeconds(30), RetryPolicy.none());
+    }
+
+    /** M-057 data-lake bucket settings; production profiles require https. */
+    static S3ObjectClient.Settings dataLakeSettings(Environment env, boolean production) {
+        String p = PREFIX + ".datalake.";
+        String endpoint = env.getProperty(p + "endpoint", "").trim();
+        if (endpoint.isEmpty()) {
+            throw new IllegalStateException(p + "endpoint is required with " + p + "bucket");
+        }
+        URI url = URI.create(endpoint);
+        if (production && !"https".equalsIgnoreCase(url.getScheme())) {
+            throw new IllegalStateException(p + "endpoint: production profiles require https");
+        }
+        return new S3ObjectClient.Settings(url, env.getProperty(p + "bucket", "").trim(),
+                env.getProperty(p + "region", "us-east-1"), env.getProperty(p + "path-style", Boolean.class, true),
+                blankToNull(env.getProperty(p + "access-key-ref")), blankToNull(env.getProperty(p + "secret-key-ref")),
+                blankToNull(env.getProperty(p + "session-token-ref")));
+    }
+
+    /** One egress rule: the bucket's origin, any tenant (the relay publishes for every tenant). */
+    static HttpTransport dataLakeTransport(S3ObjectClient.Settings s, boolean allowPrivate) {
+        EgressPolicy.Rule rule = EgressPolicy.Rule.parse("*", s.origin(), allowPrivate);
         return new HttpTransport(EgressPolicy.of(List.of(rule), 0, 1024 * 1024), null, Duration.ofSeconds(10),
                 Duration.ofSeconds(30), RetryPolicy.none());
     }
@@ -122,6 +157,15 @@ public class HistoryProjectionWiring {
                         searchTransport(s, env.getProperty(PREFIX + ".search.allow-private", Boolean.class, false)), s,
                         secrets.getIfAvailable(SecretResolver::fromEnvironment)));
                 sinks.add(SearchIndexPublisher.DESTINATION);
+            }
+            if (!env.getProperty(PREFIX + ".datalake.bucket", "").isBlank()) {
+                S3ObjectClient.Settings s = dataLakeSettings(env, ProductionEnvironment.isProduction(env));
+                S3ObjectClient client = new S3ObjectClient(s, dataLakeTransport(s,
+                        env.getProperty(PREFIX + ".datalake.allow-private", Boolean.class, false)),
+                        secrets.getIfAvailable(SecretResolver::fromEnvironment), java.time.Clock.systemUTC());
+                publishers.register(DataLakeHistoryPublisher.DESTINATION, new DataLakeHistoryPublisher(client,
+                        env.getProperty(PREFIX + ".datalake.prefix", "sangam-history")));
+                sinks.add(DataLakeHistoryPublisher.DESTINATION);
             }
             KafkaPublisher k = kafka.getIfAvailable();
             if (k != null) {

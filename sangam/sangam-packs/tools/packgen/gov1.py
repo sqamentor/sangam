@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Pilot packs P1-P4 (IX.4) and the DBT batch (GP-49)."""
 from lib import C, q
+import rounding
 from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from packs import Pack
 from common import core, outcome, end_ok, rejection, reject_with, withdraw, revise, batch_loop, checked_query, \
@@ -311,9 +312,11 @@ def p2():
     rf.seq(a, b, c)
     rt2 = s.evsub('p2_rti', 'RTI request linked')
     a = rt2.start('p2_rtiStart', 'RTI linked', msg='sangam.rtiLinked', interrupting=False)
+    # decision 299 (J-P2-E10): RTI_REQUEST_LINKED once per linked request (rtiRequestRef of the message), then the hold
+    link = rt2.svc('p2_rtiLink', 'Record the RTI link', C['CASE'], {'op': 'RTI_LINK'})
     b = rt2.svc('p2_rtiHold', 'Legal hold while the RTI is open', C['CASE'], {'op': 'LEGAL_HOLD'})
     c = rt2.end('p2_rtiEnd', 'Hold set')
-    rt2.seq(a, b, c)
+    rt2.seq(a, link, b, c)
     pk.dmn('p2-put-up-to', 'P2 "put up to" chain by subject head', 'FIRST',
            [('Subject head', 'subjectHead', 'string')],
            [('recommendationRoles', 'Chain of roles', 'string'), ('outOfHierarchyAllowed', 'Marking allowed', 'boolean')],
@@ -500,8 +503,8 @@ def p3():
     s.flow(ov, san)
     inc = s.expr('p3_nextInstalment', 'Next instalment',
                  "${execution.setVariable('instalmentNo', instalmentNo + 1)}")
-    ia = s.expr('p3_instalmentAmount', 'Instalment amount',
-                "${execution.setVariable('instalmentAmount', amount / instalments)}")
+    ia = s.instalment_calc('p3_instalmentAmount', 'Instalment amount (decision 139 policy)', 'instalmentAmount',
+                           'amount', 'instalments', 'instalmentNo', rounding.declare(pk, 'p3-instalment-rounding'))
     sfx = s.setv('p3_stepSuffix', 'One operation per instalment', values='executionStepSuffix=@instalmentNo')
     ex = core(s, 'p3_disburse', 'DBT disbursement (core execution)', 'execution')
     outcome(s, 'p3_sanGw', 'sanctionOutcome', {'SANCTIONED': inc, 'RETURNED': vseat}, rejected)

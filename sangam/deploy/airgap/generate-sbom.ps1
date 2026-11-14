@@ -2,7 +2,11 @@
 <#
 .SYNOPSIS
   Windows variant of generate-sbom.sh: CycloneDX SBOMs (Maven aggregate, sangam-ui, TypeScript SDK) + SHA256SUMS
-  + licence policy check.
+  + licence policy check (strict).
+.NOTES
+  CR-12: the npm SBOM generator comes from the committed tools lockfile (deploy\licence\tools), never from an
+  auto-installing npx. Decision 130: install scripts are off. A missing package.json or tools lockfile is an
+  error (CR-01: a requested SBOM is never skipped).
 .EXAMPLE
   python -E -X utf8 "$env:TEMP\heavy_lock.py" run --owner customwf -- powershell -File deploy\airgap\generate-sbom.ps1
 #>
@@ -10,6 +14,7 @@
 param([string]$Out = (Join-Path $PSScriptRoot "out\sbom"), [switch]$Offline)
 $ErrorActionPreference = "Stop"
 $sangam = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$tools = Join-Path $sangam "deploy\licence\tools"
 New-Item -ItemType Directory -Force $Out | Out-Null
 $mvnOff = @(); $npmOff = @()
 if ($Offline) { $mvnOff = @("-o"); $npmOff = @("--offline") }
@@ -23,13 +28,24 @@ try {
   Copy-Item target\sangam-maven.cdx.json $Out -Force
 } finally { Pop-Location }
 
+if (-not (Test-Path (Join-Path $tools "package-lock.json"))) { throw "$tools\package-lock.json is missing (CR-12)" }
+Push-Location $tools
+try {
+  npm ci --ignore-scripts --no-audit --no-fund @npmOff
+  if ($LASTEXITCODE -ne 0) { throw "installing the SBOM tools failed" }
+} finally { Pop-Location }
+$generator = Join-Path $tools "node_modules\.bin\cyclonedx-npm.cmd"
+
 foreach ($pair in @(@("sangam-ui", "sangam-ui"), @("sdks\typescript", "sdk-typescript"))) {
   $dir = Join-Path $sangam $pair[0]
-  if (-not (Test-Path (Join-Path $dir "package.json"))) { Write-Host "skip $($pair[1])"; continue }
+  if (-not (Test-Path (Join-Path $dir "package.json"))) { throw "$dir\package.json is missing" }
   Push-Location $dir
   try {
-    if (-not (Test-Path node_modules)) { npm ci --no-audit --no-fund @npmOff }
-    npx --yes @npmOff "@cyclonedx/cyclonedx-npm@2.1.0" --omit dev --spec-version 1.6 --output-format JSON --output-file (Join-Path $Out "$($pair[1]).cdx.json")
+    if (-not (Test-Path node_modules)) {
+      npm ci --ignore-scripts --no-audit --no-fund @npmOff
+      if ($LASTEXITCODE -ne 0) { throw "installing the dependencies failed: $($pair[1])" }
+    }
+    & $generator --omit dev --spec-version 1.6 --output-format JSON --output-file (Join-Path $Out "$($pair[1]).cdx.json")
     if ($LASTEXITCODE -ne 0) { throw "npm SBOM failed: $($pair[1])" }
   } finally { Pop-Location }
 }
@@ -37,14 +53,12 @@ foreach ($pair in @(@("sangam-ui", "sangam-ui"), @("sdks\typescript", "sdk-types
 # Licence policy before the checksums: --annotate records the SG-27 consumer licence-policy exception (reason, verified SPDX,
 # evidence file) as CycloneDX properties on the exact excepted components and in metadata.properties.
 $pyArgs = @("-I", (Join-Path $sangam "deploy\licence\check_licences.py"), "--policy", (Join-Path $sangam "deploy\licence\licence-policy.json"),
-          "--annotate", "--sbom", (Join-Path $Out "sangam-maven.cdx.json"), "--report", (Join-Path $Out "licence-report.md"))
-$ui = Join-Path $Out "sangam-ui.cdx.json"
-if (Test-Path $ui) { $pyArgs += @("--sbom", $ui) }
+          "--strict", "--annotate", "--sbom", (Join-Path $Out "sangam-maven.cdx.json"), "--sbom", (Join-Path $Out "sangam-ui.cdx.json"),
+          "--report", (Join-Path $Out "licence-report.md"))
 python @pyArgs
 if ($LASTEXITCODE -ne 0) { throw "licence policy check failed (see $Out\licence-report.md)" }
 # Attribution the exception carries (Apache-2.0 section 4(d) NOTICE of scala-library; MIT notices of com.lihaoyi)
-$notice = Join-Path (Split-Path -Parent $sangam) "NOTICE"
-if (Test-Path $notice) { Copy-Item $notice (Join-Path $Out "NOTICE") -Force }
+Copy-Item (Join-Path (Split-Path -Parent $sangam) "NOTICE") (Join-Path $Out "NOTICE") -Force
 
 $sums = Get-ChildItem $Out -Filter *.json | Sort-Object Name | ForEach-Object { "$((Get-FileHash -Algorithm SHA256 $_.FullName).Hash.ToLowerInvariant())  $($_.Name)" }
 [IO.File]::WriteAllLines((Join-Path $Out "SHA256SUMS"), $sums)

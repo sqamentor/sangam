@@ -6,6 +6,7 @@ import re
 
 import check_results
 import money
+import powers
 import reason_codes
 import releases
 from lib import Proc, dmn as dmn_xml
@@ -205,14 +206,43 @@ def form_json(pack, f):
     return out
 
 
+DSC_GATE = 'org.sangam.packs.core.DscSignatureGuardListener'
+_BPMN_NS = {'b': 'http://www.omg.org/spec/BPMN/20100524/MODEL', 'o': 'http://operaton.org/schema/1.0/bpmn'}
+
+
+def document_slots(xmls, pack_id):
+    """Decision 269: the documentType-to-slot pairs of a pack, read from its own generated BPMN (the create listener of
+    every DSC gate, core.dsc_gate), so the manifest never repeats them by hand. One type maps to one slot and one slot
+    to one type; anything else stops generation."""
+    import xml.etree.ElementTree as ET
+    pairs = {}
+    for xml in xmls:
+        for tl in ET.fromstring(xml.encode('utf-8')).iter('{%s}taskListener' % _BPMN_NS['o']):
+            if tl.get('class') != DSC_GATE or tl.get('event') != 'create':
+                continue
+            f = {fd.get('name'): (fd.findtext('o:string', default='', namespaces=_BPMN_NS) or '').strip()
+                 for fd in tl.findall('o:field', _BPMN_NS)}
+            doc_type, slot = f.get('documentType', ''), f.get('documentSlot', '')
+            if not doc_type or not slot:
+                raise SystemExit(f'{pack_id}: a DSC gate names no documentType or documentSlot')
+            if pairs.get(doc_type, slot) != slot:
+                raise SystemExit(f'{pack_id}: document type {doc_type} maps to {pairs[doc_type]} and {slot}')
+            pairs[doc_type] = slot
+    if len(set(pairs.values())) != len(pairs):
+        raise SystemExit(f'{pack_id}: one DSC slot serves two document types: {pairs}')
+    return [{'documentType': t, 'slot': s} for t, s in sorted(pairs.items())]
+
+
 def write_all(root):
     """root = src/main/resources. Writes packs/<dir>/..., META-INF/sangam/packs.idx; returns catalogue rows."""
     idx = ['# Sangam pack manifests (generated). One manifest path per line.']
     owner = {p.pid: pk for pk in ALL for p in pk.procs}
+    core_tables = {did: xml for pk in ALL if pk.id == 'sangam.core' for did, xml in pk.dmns}
     for pk in ALL:
         base = os.path.join(root, 'packs', pk.dir)
         os.makedirs(os.path.join(base, 'forms'), exist_ok=True)
         resources = []
+        xmls = {}
         for p in pk.procs:
             for n in all_user_names(p):
                 if split_name(n)[1] is None:
@@ -228,6 +258,7 @@ def write_all(root):
             check_results.collect(path, xml)  # SL-115: checked after all packs (a default reaches called processes)
             write(os.path.join(root, path), xml)
             resources.append({'kind': 'BPMN', 'path': path})
+            xmls[p.pid] = xml
         for did, xml in pk.dmns:
             path = f'packs/{pk.dir}/{did}.dmn'
             write(os.path.join(root, path), xml)
@@ -272,6 +303,12 @@ def write_all(root):
                 conns[c[0]]['simulatorBinding'] = {'connector': conn, 'operation': op}
         workers = [{'topic': t, 'connector': cid, 'operation': op, 'capabilityClass': cls}
                    for cid in conns for (t, op, cls) in WORKERS_BY_CONNECTOR.get(cid, [])]
+        mpath = f'packs/{pk.dir}/pack.json'
+        # decision 193: the power-limit metadata of each core sanction call, deployed with the pack (the manifest is
+        # then a resource of its own deployment, so a running case reads the declarations of the version it runs)
+        power_block = powers.declare(pk, xmls, {**core_tables, **dict(pk.dmns)}, MISSING)
+        if power_block:
+            resources.append({'kind': 'OTHER', 'path': mpath})
         manifest = {
             'id': pk.id, 'version': pk.version, 'name': {'en': pk.name_en, pk.second: pk.name_hi}, 'domain': pk.domain,
             'description': pk.desc, 'mainProcesses': pk.main or [p.pid for p in pk.procs[:1]],
@@ -281,8 +318,14 @@ def write_all(root):
         }
         if workers:
             manifest['workers'] = workers
+        slots = document_slots(xmls.values(), pk.id)
+        if slots:
+            manifest['documentSlots'] = slots  # decision 269: the server document route reads these, no server table
         if pk.placeholders:
             manifest['placeholders'] = pk.placeholders
+        if power_block:
+            manifest['currency'] = pk.currency  # the currency of the pack's money values and limit tables (ISO 4217)
+            manifest['powers'] = power_block
         accepted = []
         for a in pk.acceptance:
             run = RUNS.get((pk.id, a['id']))
@@ -301,7 +344,6 @@ def write_all(root):
         if pk.money_vars:
             manifest['money'] = {'unit': 'MINOR', 'currency': pk.currency, 'exponent': money.EXPONENT[pk.currency],
                                  'variables': sorted(pk.money_vars)}
-        mpath = f'packs/{pk.dir}/pack.json'
         check_reason_codes(mpath, json.dumps(manifest, ensure_ascii=False))   # acceptance-run answers
         write(os.path.join(root, mpath), json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
         idx.append(mpath)

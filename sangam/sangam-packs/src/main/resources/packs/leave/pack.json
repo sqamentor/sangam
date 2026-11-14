@@ -46,6 +46,10 @@
     {
       "kind": "SEED",
       "path": "packs/leave/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/leave/pack.json"
     }
   ],
   "seed": "packs/leave/seed.json",
@@ -96,5 +100,13 @@
     "sangam-core-closure",
     "sangam-core-rejection",
     "sangam-core-sanction"
-  ]
+  ],
+  "currency": "INR",
+  "powers": {
+    "lv_sanction": {
+      "monetary": false,
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "LEAVE"
+    }
+  }
 }

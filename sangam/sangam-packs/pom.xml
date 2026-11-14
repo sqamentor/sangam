@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -14,8 +14,17 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
+    </dependency>
+    <!-- Pack test engines use the production FEEL classes (integrator ruling option A, PackTestEngines). Test only: the
+         pack runtime itself stays on core + Operaton. The version is named here until INT-H2 adds sangam-feel to the
+         root dependencyManagement and sangam-bom. -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-feel</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <!-- Delegates, listeners and the pack deployer use the Operaton public API only (ADR-D-16). -->
     <dependency>

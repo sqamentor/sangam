@@ -22,7 +22,10 @@ public final class PdfRendering {
         public static final String CONTENT_TYPE = "application/pdf";
     }
 
-    /** No renderer or validator is installed. */
+    /**
+     * No renderer or validator is installed or ready, or the validator service gave no answer (owner decision 114: fail
+     * closed, never an unvalidated PDF).
+     */
     public static final class Unavailable extends RuntimeException {
         public Unavailable(String message) {
             super(message);
@@ -58,6 +61,7 @@ public final class PdfRendering {
         this.renderer = renderer;
         this.validator = validator;
         String notReady = renderer == null ? null : renderer.notReadyReason();
+        String validatorNotReady = validator == null ? null : validator.notReadyReason();
         this.unavailableReason = loadFailure != null ? loadFailure
                 : renderer == null ? "no PDF/A renderer is installed (M-081: add the renderer module)"
                 : validator == null ? "the PDF renderer " + renderer.name() + " has no validator installed; PDF output"
@@ -65,6 +69,7 @@ public final class PdfRendering {
                 : !renderer.conformance().containsAll(PdfRenderer.REQUIRED) ? "the PDF renderer " + renderer.name()
                 + " does not claim " + PdfRenderer.REQUIRED
                 : notReady != null ? "the PDF renderer " + renderer.name() + " is not ready: " + notReady
+                : validatorNotReady != null ? "the PDF validator is not ready: " + validatorNotReady
                 : null;
     }
 

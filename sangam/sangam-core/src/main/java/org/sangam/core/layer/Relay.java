@@ -26,6 +26,13 @@ import java.util.UUID;
  *       an ordered delivery is {@code PARKED} (it blocks later events of that root for that destination only) and an unordered one is {@code SKIPPED} with a gap record
  *       in {@code last_error}. Repairs ({@link #requeue}, {@link #skip}) are audited.</li>
  * </ol>
+ * <b>Parked delivery incident</b> (owner decisions 300 to 303): when an ordered delivery is parked, the same
+ * transaction, under the same claim fence, appends {@code OUTBOX_DELIVERY_PARKED} and {@value #INCIDENT_OPENED} with
+ * incidentType {@value #DELIVERY_PARKED} on the delivery's tenant and root chain, once per parked delivery; a failed
+ * attempt that is retried, a fenced-out update and an unordered SKIPPED delivery write no incident. The payload uses the
+ * engine's INCIDENT_OPENED keys (engine fields null) plus the delivery's own; {@code errorClass} is derived as for the
+ * engine: {@code retryable} for a retryable database conflict ({@link SqlConflicts#isRetryable}), else {@code unknown}
+ * (a delivery has no routing code and no BPMN error).
  * Throughput note: one claim cycle advances each ordered line by one event; later events of the line are claimed on
  * the following cycles.
  */
@@ -51,6 +58,14 @@ public final class Relay implements OutboxRepair {
 
     public record CycleResult(int claimed, int published, int failed, int fencedOut) {
     }
+
+    /** The audit event of a parked delivery's incident (SANGAM.md X.4.0.3, decision 303). */
+    public static final String INCIDENT_OPENED = "INCIDENT_OPENED";
+    /** The incidentType of a parked delivery. */
+    public static final String DELIVERY_PARKED = "DELIVERY_PARKED";
+    /** errorClass values (decision 302). */
+    public static final String ERROR_CLASS_RETRYABLE = "retryable";
+    public static final String ERROR_CLASS_UNKNOWN = "unknown";
 
     private final Dialect dialect;
     private final Transactions tx;
@@ -92,7 +107,7 @@ public final class Relay implements OutboxRepair {
                 published++;
             } catch (Exception e) {
                 failed++;
-                if (!markFailed(cl, String.valueOf(e.getMessage()))) {
+                if (!markFailed(cl, String.valueOf(e.getMessage()), e)) {
                     fenced++;
                 }
                 continue;
@@ -156,6 +171,14 @@ public final class Relay implements OutboxRepair {
 
     /** Records a failed attempt: back off, or PARKED (ordered) / SKIPPED (unordered) after maxAttempts. */
     public boolean markFailed(Claimed cl, String error) {
+        return markFailed(cl, error, null);
+    }
+
+    /**
+     * As {@link #markFailed(Claimed, String)}, with the failure that caused it (null when none is known, for example a
+     * delivery the destination rejected permanently), from which a parked delivery's incident derives its errorClass.
+     */
+    public boolean markFailed(Claimed cl, String error, Throwable cause) {
         int attempts = cl.attempts() + 1;
         boolean exhausted = attempts >= config.maxAttempts();
         String next = exhausted ? (cl.ordered() ? "PARKED" : "SKIPPED") : "PENDING";
@@ -174,6 +197,10 @@ public final class Relay implements OutboxRepair {
             if (n == 1 && exhausted && audit != null) {
                 audit.append(c, cl.event().tenantId(), cl.event().rootId(),
                         cl.ordered() ? "OUTBOX_DELIVERY_PARKED" : "OUTBOX_DELIVERY_SKIPPED", repairPayload(cl.event(), cl.destination(), "relay", error));
+                if (cl.ordered()) {
+                    audit.append(c, cl.event().tenantId(), cl.event().rootId(), INCIDENT_OPENED,
+                            parkedIncidentPayload(cl, attempts, error, cause));
+                }
             }
             return n == 1;
         });
@@ -234,6 +261,38 @@ public final class Relay implements OutboxRepair {
             }
             return n == 1;
         });
+    }
+
+    /** errorClass of a parked delivery (decision 302): retryable only for a retryable database conflict. */
+    static String errorClass(Throwable cause) {
+        return cause != null && SqlConflicts.isRetryable(cause, false) ? ERROR_CLASS_RETRYABLE : ERROR_CLASS_UNKNOWN;
+    }
+
+    /** The INCIDENT_OPENED payload of a parked delivery: the engine's keys (engine fields null) plus the delivery's. */
+    static Map<String, Object> parkedIncidentPayload(Claimed cl, int attempts, String error, Throwable cause) {
+        Outbox.OutboxEvent ev = cl.event();
+        Map<String, Object> p = new LinkedHashMap<>();
+        p.put("incidentId", "delivery:" + ev.outboxId() + ":" + cl.destination());
+        p.put("incidentType", DELIVERY_PARKED);
+        p.put("processInstanceId", null);
+        p.put("rootProcessInstanceId", null);
+        p.put("executionId", null);
+        p.put("activityId", null);
+        p.put("processDefinitionId", null);
+        p.put("configuration", cl.destination());
+        p.put("errorClass", errorClass(cause));
+        p.put("message", error);
+        p.put("engineTenant", null);
+        p.put("resolvedScope", ev.tenantId());
+        p.put("resolutionReason", "DELIVERY_TENANT");
+        p.put("outboxId", ev.outboxId());
+        p.put("eventId", ev.eventId().toString());
+        p.put("eventType", ev.eventType());
+        p.put("rootId", ev.rootId());
+        p.put("rootSeq", ev.rootSeq());
+        p.put("destination", cl.destination());
+        p.put("attempts", attempts);
+        return p;
     }
 
     private static Map<String, Object> repairPayload(Outbox.OutboxEvent ev, String destination, String actor, String reason) {

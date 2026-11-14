@@ -180,6 +180,7 @@ class PartitionLeaseManagerH2Test {
     void forcedTakeoverRecoversInFlightJobsWithTheEngineCasAndParksAPoisonJob() throws Exception {
         JdbcDataSource ds = h2();
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);
@@ -249,6 +250,7 @@ class PartitionLeaseManagerH2Test {
 
     private static SangamEngineSettings engineSettings() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);

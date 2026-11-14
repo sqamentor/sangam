@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/ifms-surrender-lapse/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/ifms-surrender-lapse/pack.json"
     }
   ],
   "seed": "packs/ifms-surrender-lapse/seed.json",
@@ -108,6 +112,15 @@
       "reason": "GFR 62(1)-(2) (corpus IFC-069) requires the surrender but does not name the CAA as the approving authority; confirm from the delegation order and deploy it as a tenant DMN override"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "su_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "ifms-surrender-powers",
+      "ruleCaseType": "SURRENDER"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

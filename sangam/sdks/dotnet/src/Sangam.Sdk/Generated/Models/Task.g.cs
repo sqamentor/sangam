@@ -79,10 +79,10 @@ public sealed record Task
     public global::System.Collections.Generic.Dictionary<string, object?>? Variables { get; init; }
 
     /// <summary>
-    /// M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.
+    /// M-042 task index: the amount (MoneyAmount, a decimal string in MAJOR units with exactly the currency's fraction digits; owner decisions 138 and 211, never an integer or a float), set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount. The index stores integer minor units, so sortBy=amount (with the currency filter) orders exactly.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("amount")]
-    public long? Amount { get; init; }
+    public string? Amount { get; init; }
 
     /// <summary>
     /// M-042 task index: ISO 4217 code of amount; absent or null with amount.

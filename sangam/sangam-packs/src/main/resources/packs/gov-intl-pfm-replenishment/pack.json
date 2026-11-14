@@ -1,0 +1,99 @@
+{
+  "id": "gov.intl.pfm-replenishment",
+  "version": "1.0.0",
+  "name": {
+    "en": "Designated account replenishment (worldwide PFM)",
+    "hi": "नामित खाता पुनःपूर्ति (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Replenishment of a designated / project account (PFM-062, PFM-CH-6): the project unit prepares the withdrawal application with its statement of expenditure, the treasury reviews it (not the preparer), the application goes to the financing partner with a confirmed reference (the partner's no-objection is external), and the receipt in the designated account is confirmed against the claim within the period from DMN; a difference is recorded. The period is SYNTHETIC until the country confirms it.",
+  "mainProcesses": [
+    "sangam-intl-pfm-replenishment"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-replenishment/sangam-intl-pfm-replenishment.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-replenishment/intl-pfm-replenishment.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/application.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/revise.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/applyHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/follow-up.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/creditHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-replenishment/forms/difference.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-replenishment/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-replenishment/seed.json",
+  "connectors": [
+    {
+      "id": "donor.withdrawal",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Withdrawal application to the financing partner"
+    },
+    {
+      "id": "tsa.credit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit in the designated account"
+    }
+  ],
+  "covers": [
+    "PFM-062",
+    "PFM-CH-6",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-replenishment",
+      "rule": "SYNTHETIC 30-day receipt period",
+      "reason": "replenishment period of the financing agreement not verified (PFM-062, PFM-CH-6)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "claimAmount",
+      "creditAmount"
+    ]
+  }
+}

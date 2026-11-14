@@ -37,10 +37,41 @@ public final class PersonService {
 
     public OrgModel.Person createUser(Connection c, SecurityIdentity actor, String personId, String displayName,
                                       String externalSubject, String email) {
+        return createUser(c, actor, personId, displayName, externalSubject, email, null);
+    }
+
+    /**
+     * Creates a person with its provisioning source (decision 154: SCIM passes {@code SCIM}, as directory sync writes
+     * {@code LDAP}); {@code null} means {@code LOCAL}, an administrator's creation, audited as before ({@code how=ADMIN}).
+     */
+    public OrgModel.Person createUser(Connection c, SecurityIdentity actor, String personId, String displayName,
+                                      String externalSubject, String email, String source) {
         authz.require(c, actor, ResourceRegistry.USER, Permission.ADMIN, ResourceRegistry.ANY_ID);
         insert(c, actor.tenantId(), personId, displayName, externalSubject, email);
-        audit.security(c, actor, SecurityEventType.USER_PROVISIONED, details(personId, externalSubject, "ADMIN"));
+        if (source != null) {
+            Jdbc.update(c, "UPDATE SEC_PERSON SET source=? WHERE tenant_id=? AND person_id=?", source, actor.tenantId(),
+                    personId);
+        }
+        audit.security(c, actor, SecurityEventType.USER_PROVISIONED,
+                details(personId, externalSubject, source == null ? "ADMIN" : source));
         return find(c, actor.tenantId(), personId).orElseThrow();
+    }
+
+    /**
+     * Re-enables a disabled person (decision 154: SCIM {@code active=true} after {@code active=false}). Changes only a
+     * {@code DISABLED} person; when a row changed, audits {@code USER_UPDATED} with {@code how=ENABLE}. API tokens revoked
+     * by the disable stay revoked.
+     *
+     * @return whether the person was disabled and is now active
+     */
+    public boolean enableUser(Connection c, SecurityIdentity actor, String personId) {
+        authz.require(c, actor, ResourceRegistry.USER, Permission.ADMIN, personId);
+        int changed = Jdbc.update(c, "UPDATE SEC_PERSON SET status='ACTIVE' WHERE tenant_id=? AND person_id=?"
+                + " AND status='DISABLED'", actor.tenantId(), personId);
+        if (changed > 0) {
+            audit.security(c, actor, SecurityEventType.USER_UPDATED, Map.of("person_id", personId, "how", "ENABLE"));
+        }
+        return changed > 0;
     }
 
     public void updateUser(Connection c, SecurityIdentity actor, String personId, String displayName, String email) {

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -78,7 +79,7 @@ class ApiContractH2Test {
         ds.setURL("jdbc:h2:mem:m068" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         ds.setUser("sa");
         SangamSchema.apply(ds);
-        tx = new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
         store = new JdbcApiContractStore(tx.dialect(), ApiContractAdapter.joined(tx));   // as ApiContractWiring
         RestProperties props = new RestProperties();
         PackageSigning unsignedDev = new PackageSigning(null, AuditCheckpoints.ed25519Keys(List.of()), true, false, "dev");

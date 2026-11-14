@@ -15,6 +15,7 @@ import { http } from '../api/client';
 import { useAsync } from '../lib/hooks';
 import { codePointLength } from '../lib/text';
 import type { FieldChange, FormField, FormSchema } from '../api/types';
+import { DecimalValue, compareDecimal, fromNumberInput } from '../lib/decimal';
 
 export type FormValues = Record<string, unknown>;
 
@@ -55,9 +56,12 @@ export function validateForm(schema: FormSchema, values: FormValues, t: (k: stri
       continue;
     }
     if (empty) continue;
-    if (typeof v === 'number') {
-      if (val.min !== undefined && v < val.min) errs[f.key] = t('form.min', { n: val.min });
-      if (val.max !== undefined && v > val.max) errs[f.key] = t('form.max', { n: val.max });
+    if (typeof v === 'number' || v instanceof DecimalValue) {
+      // decision 138: bounds are checked on the digits, so 10.10 against max 10.1 is exact
+      if (val.min !== undefined && compareDecimal(v, val.min) < 0) errs[f.key] = t('form.min', { n: val.min });
+      if (val.max !== undefined && compareDecimal(v, val.max) > 0) errs[f.key] = t('form.max', { n: val.max });
+    } else if (f.type === 'number' && typeof v === 'string') {
+      errs[f.key] = t('form.notANumber');
     }
     if (typeof v === 'string') {
       // Code points, as the server's form validator counts them (FormSchemaValidator.java:117), not UTF-16 units
@@ -181,7 +185,7 @@ export function FormRenderer({
             min={f.validate?.min}
             max={f.validate?.max}
             value={value === undefined || value === null ? '' : String(value)}
-            onChange={(e) => set(f.key!, e.target.value === '' ? undefined : Number(e.target.value))}
+            onChange={(e) => set(f.key!, fromNumberInput(e.target.value))}
           />,
         );
       case 'select':
@@ -303,7 +307,7 @@ export function schemaFromVariables(vars: Record<string, unknown>): FormSchema {
     components: Object.keys(vars).map((k) => ({
       key: k,
       label: k,
-      type: typeof vars[k] === 'number' ? 'number' : typeof vars[k] === 'boolean' ? 'checkbox' : 'textfield',
+      type: typeof vars[k] === 'number' || vars[k] instanceof DecimalValue ? 'number' : typeof vars[k] === 'boolean' ? 'checkbox' : 'textfield',
     })),
   };
 }

@@ -191,13 +191,12 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
      * sees the caller's uncommitted writes and never borrows a second pool connection.
      */
     public interface ConsentPort {
-        ConsentPort PERMIT_ALL = new ConsentPort() {
-            @Override
-            public ConsentDecision check(Connection c, RegistryContext ctx, String partyId, String purpose,
-                                         String processing) {
-                return ConsentDecision.permit(null);
-            }
-        };
+        /**
+         * Permits every processing purpose. Development only (RM-06, decisions 54R and 68: a missing capability
+         * blocks): it is the default when no compliance module is bound, and {@link RegistryModule} refuses to start
+         * with it outside development, so consent is never silently skipped in production.
+         */
+        ConsentPort PERMIT_ALL = new DevelopmentPermitAll();
 
         ConsentDecision check(Connection c, RegistryContext ctx, String partyId, String purpose, String processing);
 
@@ -209,6 +208,21 @@ public record RegistryPorts(EventPort events, SignerPort signer, DocumentPort do
 
         /** Erasure request for a party (the compliance module decides whether it may proceed). */
         default void erasureRequested(RegistryContext ctx, String partyId) {
+        }
+    }
+
+    /** {@link ConsentPort#PERMIT_ALL}: permits everything and is marked {@link DevelopmentOnly} (RM-06). */
+    static final class DevelopmentPermitAll implements ConsentPort, DevelopmentOnly {
+        @Override
+        public ConsentDecision check(Connection c, RegistryContext ctx, String partyId, String purpose,
+                                     String processing) {
+            return ConsentDecision.permit(null);
+        }
+
+        @Override
+        public String developmentOnlyReason() {
+            return "consent: no consent port is bound (the permit-all default skips every consent and purpose check);"
+                    + " enable the compliance module (sangam-compliance) or bind a ConsentPort";
         }
     }
 

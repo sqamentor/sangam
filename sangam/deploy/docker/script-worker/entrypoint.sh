@@ -18,12 +18,26 @@ if ! mkdir -p "$CG/worker" 2>/dev/null || [ ! -w "$CG/cgroup.subtree_control" ];
   echo "script-worker: $CG is not writable; run with a private writable cgroup namespace (see README)" >&2
   exit 70
 fi
-# move every process of the namespace root into the leaf group (retry: a process may start while we move)
+# Move every process of the namespace root into the leaf group. A pass is repeated because a process may start while
+# we move. The only acceptable failed move is a process that exited between the read and the write (it no longer
+# needs a group); any other failure leaves a process in the root, where cgroup v2 refuses to enable the controllers
+# below (EBUSY). So after the passes the root must be empty, or the start is refused with the reason.
 for _ in 1 2 3; do
   while read -r pid; do
-    echo "$pid" > "$CG/worker/cgroup.procs" 2>/dev/null || true
+    if ! echo "$pid" > "$CG/worker/cgroup.procs" 2>/dev/null && [ -d "/proc/$pid" ]; then
+      echo "script-worker: could not move process $pid into $CG/worker (will retry)" >&2
+    fi
   done < "$CG/cgroup.procs"
+  if [ -z "$(cat "$CG/cgroup.procs")" ]; then
+    break
+  fi
 done
+left=$(cat "$CG/cgroup.procs")
+if [ -n "$left" ]; then
+  echo "script-worker: processes still in the cgroup namespace root after 3 passes: $(echo "$left" | tr '\n' ' ');" \
+       "controllers cannot be enabled; refusing to run scripts without limits" >&2
+  exit 70
+fi
 for c in memory pids cpu; do
   if ! grep -qw "$c" "$CG/cgroup.controllers"; then
     echo "script-worker: cgroup controller $c is not available; refusing to run scripts without limits" >&2

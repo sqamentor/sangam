@@ -16,5 +16,7 @@ backup:
   enabled: true
   existingSecret: sangam-db-backup   # login with db_backupoperator
   sqlserver:
+    # No default (decision 129): an image with sqlcmd (mssql-tools) from your registry that you are licensed to run.
+    image: registry.local/dba/mssql-tools:18
     destination: /var/opt/mssql/backup/sangam
     destinationType: DISK

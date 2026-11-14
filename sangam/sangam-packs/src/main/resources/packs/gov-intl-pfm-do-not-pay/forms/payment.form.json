@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-do-not-pay/payment",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-do-not-pay",
+  "title": {
+    "en": "Payment to screen",
+    "hi": "जाँच हेतु भुगतान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "payeeIdentifier",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payee identifier (tax / registration number)",
+        "hi": "प्राप्तकर्ता पहचानकर्ता"
+      }
+    },
+    {
+      "id": "paymentRef",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Payment reference",
+        "hi": "भुगतान संदर्भ"
+      }
+    },
+    {
+      "id": "amount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Amount (INR)",
+        "hi": "राशि (रुपये)"
+      }
+    }
+  ]
+}

@@ -44,22 +44,24 @@ public final class JobSideRows implements CommandContextListener {
     private final boolean partitioning;
     private final int slots;
     private final EngineTracing tracing;
-    private final String defaultTenant;
+    private final org.sangam.engine.tenant.WorkTenants tenants;
     private final LongSupplier clockMillis;
 
     /**
      * @param partitioning write {@code EXEC_JOB_SLOT} rows
      * @param slots        the slot count S
      * @param tracingOrNull write {@code JOB_TRACE_CONTEXT} rows from this tracer's current context ({@code null}: no)
-     * @param defaultTenant the tenant of untenanted jobs (hash input)
+     * @param tenants      decision 144: the tenant hash input of a job is its resolved attribution (the engine tenant,
+     *                     else the system audit scope, whether the deployment is registered or not, so every job of a
+     *                     root hashes alike; an unresolved job is refused when it runs, not here)
      * @param clockMillis  the engine clock in epoch milliseconds
      */
-    public JobSideRows(boolean partitioning, int slots, EngineTracing tracingOrNull, String defaultTenant,
-                       LongSupplier clockMillis) {
+    public JobSideRows(boolean partitioning, int slots, EngineTracing tracingOrNull,
+                       org.sangam.engine.tenant.WorkTenants tenants, LongSupplier clockMillis) {
         this.partitioning = partitioning;
         this.slots = slots;
         this.tracing = tracingOrNull;
-        this.defaultTenant = defaultTenant;
+        this.tenants = java.util.Objects.requireNonNull(tenants, "tenants");
         this.clockMillis = clockMillis;
     }
 
@@ -112,7 +114,8 @@ public final class JobSideRows implements CommandContextListener {
         for (Object e : created) {
             if (e instanceof JobEntity job) {
                 if (partitioning && job.getRootProcessInstanceId() != null) {
-                    String tenant = job.getTenantId() == null ? defaultTenant : job.getTenantId();
+                    String tenant = tenants.resolve(c, job.getTenantId(), null, job.getDeploymentId(),
+                            org.sangam.engine.tenant.WorkTenants.isMaintenance(job), "job side rows").attribution();
                     Jdbc.update(c, "INSERT INTO EXEC_JOB_SLOT (job_id, tenant_id, root_id, slot, owner_partition, "
                                     + "owner_epoch, recoveries, created_at_ms) VALUES (?,?,?,?,NULL,NULL,0,?)",
                             job.getId(), tenant, job.getRootProcessInstanceId(),

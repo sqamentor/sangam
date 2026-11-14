@@ -1,0 +1,67 @@
+{
+  "key": "gov-intl-pfm-replenishment/review",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-replenishment",
+  "title": {
+    "en": "Review the application and statement of expenditure (treasury)",
+    "hi": "आवेदन की समीक्षा"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "claimAmount",
+      "type": "money",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Claim amount",
+        "hi": "दावा राशि"
+      }
+    },
+    {
+      "id": "soeRef",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Statement of expenditure reference",
+        "hi": "व्यय विवरण संदर्भ"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

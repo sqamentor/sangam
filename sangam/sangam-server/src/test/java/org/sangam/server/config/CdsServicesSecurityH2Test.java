@@ -52,6 +52,7 @@ class CdsServicesSecurityH2Test {
     static void settings(DynamicPropertyRegistry r) {
         r.add("spring.security.oauth2.resourceserver.jwt.issuer-uri", () -> AcceptanceIdp.get().issuer());
         r.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", () -> AcceptanceIdp.get().jwksUri());
+        r.add("sangam.modules.connectors-health.enabled", () -> "true");   // decision 187: optional, off by default
         r.add("sangam.connectors-health.cds-service.base-url", () -> BASE_URL);
         r.add("sangam.connectors-health.cds-service.clients.ehr.issuer", () -> HealthConnectorsPropertiesCdsTest.EHR);
         r.add("sangam.connectors-health.cds-service.clients.ehr.jwks",

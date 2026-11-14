@@ -35,7 +35,7 @@ public final class LiquibaseLicenceGuard {
         if (major(version) != ALLOWED_MAJOR) {
             throw new IllegalStateException("Liquibase " + version + " is on the class path; Sangam allows only "
                     + ALLOWED_MAJOR + ".x (LIC-7, ADR-D-7: 5.x is FSL-licensed). Your build's dependency management "
-                    + "overrides Sangam's pin: import org.sangam:sangam-bom before other BOMs, or set the Spring Boot "
+                    + "overrides Sangam's pin: import io.github.sqamentor:sangam-bom before other BOMs, or set the Spring Boot "
                     + "property liquibase.version=4.33.0.");
         }
     }

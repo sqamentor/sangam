@@ -13,7 +13,7 @@ Domain knowledge as data (ADR-D-20). Read by `sangam-config` (`ProfileLoader.loa
 | `in/IN.yaml` | jurisdiction | locale (INR, lakh / crore grouping, April fiscal year, IST, calendars with 15:00 cut-off), the 15-digit head-of-account scheme (major / sub-major / minor locked), derivation (0/1 receipts, 2/3 revenue, 4/5 capital, 6/7 loans, 8000 Contingency Fund, 8001-8999 Public Account), crosswalk to COFOG, SNA-SPARSH constants, CSS sharing, payment-rail catalogue, unit types, public-account types |
 | `in/presets/IN-PRESET-*.yaml` | category | GENERAL, NE-HIMALAYAN, UT-LEG, UT-NOLEG, UNION |
 | `in/GOI.yaml` | government | Union profile: rulebooks (GFR 2017, DFPR 2024, RPR 2022, CAM 2024 ...), org model and registry (AoBR series 386: 94 business units), budget control (DFPR Rule 10 rule set), appraisal ladder, PAO chain, receipts, grants, establishment, accounts calendar, the RPR bill catalogue (~35 types) and chain templates |
-| `in/goi/GOI.<DEPT>.yaml` | department | RAILWAYS, DEFENCE, POSTS, TELECOM, MEA (multi-currency), DAE, SPACE, MHA (CAPF), REVENUE |
+| `in/goi/GOI.<DEPT>.yaml` | department | RAILWAYS, DEFENCE (and DEFENCE.DRDO below it, decision 257), POSTS, TELECOM, MEA (multi-currency), DAE, SPACE, MHA (CAPF), REVENUE |
 | `in/states/<CODE>.yaml` | government | the 28 States and 8 UTs: systems, topology, rulebooks, rail, SNA-SPARSH hosting, per-state head-of-account scheme (`HOA_<CODE>`), statutory languages (scope, script, direction, effective date), procurement family, state forms, specials |
 | `in/seeds/*.csv` | - | official LMMH major, sub-major and minor heads (CS 1127), standard minor heads, object heads (pre-2027 list, closes 01-04-2027) |
 | `profiles.idx` | - | classpath index of the profile documents |
@@ -223,7 +223,7 @@ Status: **C** = generic capability + data + pack; **D** = configured as data in 
 | IFC-186 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | D |  |
 | IFC-187 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | D |  |
 | IFC-188 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | D |  |
-| IFC-189 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | G | scientific-department list in profile; procurement packs not yet reading it |
+| IFC-189 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | G | scientific-department list in profile; tender and GeM purchase read procurement.scientificDepartment (decision 225); GOI.DEFENCE false and GOI.DEFENCE.DRDO true (decision 257); the Union layer and every State stay [U] |
 | IFC-190 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | D |  |
 | IFC-191 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | C |  |
 | IFC-192 | existing procurement / works packs; thresholds as profile data | `in/GOI.yaml#procurement` | - | D |  |

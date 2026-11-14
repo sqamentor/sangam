@@ -47,9 +47,10 @@ class SectorConformanceTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
         registry = PackRegistry.discover();
-        new PackDeployer(engine, registry).deployAll(null);
+        new PackDeployer(engine, registry).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -77,7 +78,7 @@ class SectorConformanceTest {
             vars.put(startKv[i].toString(), startKv[i + 1]);
         }
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(vars)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         List<String> done = driver.run(bk, answers::answer, 80);
         assertTrue(driver.ended(bk), key + " did not reach its end; open tasks "
                 + engine.getTaskService().createTaskQuery().processInstanceBusinessKeyLike(bk + "%").list().stream()
@@ -205,7 +206,7 @@ class SectorConformanceTest {
         Map<String, Object> vars = AllPacksSmokeTest.bag();
         vars.put("amount", 400_000_000L);
         engine.getRuntimeService().createProcessInstanceByKey("sangam-ifms-supplementary").businessKey(bk)
-                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+                .setVariables(vars).processDefinitionTenantId(PackTestTenant.ID).execute();
         List<String> done = new java.util.ArrayList<>(driver.run(bk, answers()::answer, 40));
         // the budget division includes the proposal in its batch: its reply comes back through the referral inbox
         reply(bk, "sangam.referralReply", "referralDecision", "faConcur");
@@ -283,7 +284,7 @@ class SectorConformanceTest {
             vars.put(startKv[i].toString(), startKv[i + 1]);
         }
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(bk).setVariables(vars)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         List<String> done = driver.run(bk, answers::answer, 80);
         assertTrue(done.contains("sn_sanction"), key + ": sanction not reached; done " + done);
         assertEquals(0, engine.getRuntimeService().createIncidentQuery().count(), "incidents");
@@ -326,7 +327,7 @@ class SectorConformanceTest {
         vars.put("amount", 5_000_000L);
         vars.put("sim_ledger_available", "available=4999999"); // one minor unit short (SL-115: the ledger answers)
         engine.getRuntimeService().createProcessInstanceByKey("sangam-intl-pfm-execution").businessKey(bk)
-                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+                .setVariables(vars).processDefinitionTenantId(PackTestTenant.ID).execute();
         List<String> done = driver.run(bk, answers()::answer, 40);
         assertEquals(List.of("pe_breach"), done, "breach report only");
         assertTrue(driver.ended(bk));
@@ -349,7 +350,7 @@ class SectorConformanceTest {
         Map<String, Object> vars = AllPacksSmokeTest.bag();
         vars.put("dsrRight", "ACCESS");
         engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-eu-gdpr-dsr").businessKey(bk)
-                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+                .setVariables(vars).processDefinitionTenantId(PackTestTenant.ID).execute();
         FormAnswers a = answers();
         int[] n = {0};
         List<String> done = driver.run(bk, t -> {
@@ -445,7 +446,7 @@ class SectorConformanceTest {
     void usHealthBusinessAssociateAgreement() {
         String bk = "CONF/sangam-sec-ushealth-baa";
         engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-ushealth-baa").businessKey(bk)
-                .setVariables(AllPacksSmokeTest.bag()).processDefinitionWithoutTenantId().execute();
+                .setVariables(AllPacksSmokeTest.bag()).processDefinitionTenantId(PackTestTenant.ID).execute();
         List<String> done = driver.run(bk, answers().with("ba_terms", "baaTerms", true)::answer, 40);
         assertEquals(List.of("ba_security", "ba_terms", "ba_approve"), done);
         assertActiveAgreement(bk);
@@ -471,7 +472,7 @@ class SectorConformanceTest {
         String bk = "CONF/LONG/baa";
         java.util.Map<String, Object> v = AllPacksSmokeTest.bag();
         engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-ushealth-baa").businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, t -> {
             PackDriver.Answer a = base.answer(t);
             if ("ba_terms".equals(t.getTaskDefinitionKey())) {

@@ -33,13 +33,13 @@ class BillingBusinessDateTest {
         };
         BusinessClock clock = BusinessClock.of(AT, t -> "T".equals(t) ? ZoneId.of("Asia/Kolkata") : ZoneOffset.UTC);
         LedgerService l = BillingServiceTest.ledger();
-        BillingService b = new BillingService(l, new TariffEngine(null), series, null, clock);
+        BillingService b = new BillingService(l, new TariffEngine(null), series, TestRails.settling(), clock);
         BillingService.Receipt r = b.collect("T", "DEMAND", "C-9", "COUNTER", "PAY-9", org.sangam.core.money.Money.parse("10", "INR"), "cashier");
         assertEquals("RCP/1", r.number());
         assertEquals(List.of("T:RECEIPT:2026-04-02"), periods);
         assertEquals(Map.of("ADVANCE", org.sangam.core.money.Money.parse("10", "INR")), r.allocation());
 
-        BillingService utc = new BillingService(l, new TariffEngine(null), series, null, BusinessClock.utc(AT));
+        BillingService utc = new BillingService(l, new TariffEngine(null), series, TestRails.settling(), BusinessClock.utc(AT));
         utc.collect("T", "DEMAND", "C-9", "COUNTER", "PAY-10", org.sangam.core.money.Money.parse("10", "INR"), "cashier");
         assertEquals("T:RECEIPT:2026-04-01", periods.get(1));
     }

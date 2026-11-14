@@ -3,16 +3,27 @@
 #   every PR      : PostgreSQL + each affected Tier-1 DB when the change touches dialect-specific SQL, mappings or
 #                   migrations (shared migrations/mappings -> all Tier-1);
 #   nightly       : full Tier-1 matrix (PostgreSQL, Oracle, SQL Server, MySQL 8.4 - ARCHITECTURE.md 1.5);
-#   weekly        : Tier 2 (MariaDB) - R17; Db2 is unsupported (SL-114) and its leg is skipped with a LIC-3 notice (SL-112);
+#   weekly        : Tier 2 (MariaDB) - R17; Db2 is unsupported (SL-114) and its leg is NOT-RUN with a LIC-3 reason (SL-112);
 #   release       : full Tier-1 matrix, mandatory (VIII.9 condition 2) - called by release.yml.
 # Images and settings = the Stage B Testcontainers set (spike/RUN-QUEUE.md): postgres:17, Oracle Free 23,
 # SQL Server 2022 with READ_COMMITTED_SNAPSHOT ON, MySQL 8.4 with READ-COMMITTED / utf8mb4.
 # SG-05: lane sqlserver2025 (SQL Server dialect and profile on mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04,
-# the image AcceptanceDatabase uses) runs nightly and on request as tier "1-candidate": it reports but does not gate
-# until its acceptance run is green and deploy/SUPPORT-MATRIX.md declares it (then it becomes tier 1).
+# the image AcceptanceDatabase uses) runs nightly and on request as tier "1-candidate": it is report-only (its ledger
+# line is NOT-RUN, never PASS) until its acceptance run is green and deploy/SUPPORT-MATRIX.md declares it.
 # Q22 (owner 2026-11-12): the DB legs run only the database ITs (failsafe, profile sangam-it-only); the unit tests run
 # once, in ci-build.yml. SG-16: every leg records its provenance (commit, JDK, test-JVM zone, database).
-# Oracle JDBC is a test-scope dependency of sangam-server only, never shipped (LIC-2; SL-110).
+#
+# Vendor database terms (decision 122): this workflow never accepts a vendor's terms by itself. A lane whose image
+# comes under vendor terms runs only when the repository operator has set the matching repository variable to Y
+# (exactly Y, as SANGAM_ACCEPT_MSSQL_EULA=Y in compose and AcceptanceDatabase; integrator ruling, decision 180):
+#   oracle                   SANGAM_ACCEPT_ORACLE_FREE_TERMS   (Oracle Database Free container image)
+#   sqlserver, sqlserver2025 SANGAM_ACCEPT_MSSQL_EULA          (Microsoft SQL Server container image EULA)
+#   db2                      SANGAM_ACCEPT_DB2_COMMUNITY_TERMS (IBM Db2 Community Edition image)
+# The variable is passed to the test JVM under the same name. Without it the lane writes NOT-RUN with the reason,
+# so a pull request shows it and a release (which needs PASS) fails. Oracle JDBC (ojdbc) comes only from the CI
+# profile oracle-it (decision 123), which the Oracle lane activates; it is never in a shipped scope (LIC-2; SL-110).
+# Every leg writes a results-ledger line db-<db> (CR-01); the result job fails on FAIL, SKIPPED, BLOCKED or a
+# missing line, so a skipped leg is never a pass (RM-12).
 name: db-matrix
 
 on:
@@ -44,6 +55,8 @@ concurrency:
 env:
   MAVEN_ARGS: -B -ntp
   TZ: UTC
+  LEDGER: ${{ github.workspace }}/results
+  RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
 
 jobs:
   plan:
@@ -52,10 +65,11 @@ jobs:
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       dbs: ${{ steps.plan.outputs.dbs }}
+      planned: ${{ steps.plan.outputs.planned }}
       has_legs: ${{ steps.plan.outputs.has_legs }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: dorny/paths-filter@0e4a8c6effa4802afeda77dc8d303f8176d7dfad # v3.0.4
         id: changes
         if: github.event_name == 'pull_request'
         with:
@@ -121,25 +135,28 @@ jobs:
               raise SystemExit(f"unknown database(s): {bad}")
           tier = {"postgres": "1", "oracle": "1", "sqlserver": "1", "sqlserver2025": "1-candidate", "mysql": "1",
                   "mariadb": "2", "db2": "unsupported"}
-          inc = [{"db": d, "tier": tier[d]} for d in dict.fromkeys(dbs)]
-          # SL-112: Db2 needs the IBM Db2 JCC driver, which is customer-supplied (LIC-3): this build never fetches it,
-          # so the db2 lane cannot run here. It is skipped explicitly, never failed with "unknown sangam.db".
-          db2_note = ("db2 skipped: the IBM Db2 JCC driver is customer-supplied (LIC-3) and never fetched by this "
-                      "build; run -Dsangam.db=db2 where the driver is on the test class path (AcceptanceDatabase "
-                      "refuses the lane with the reason otherwise).")
-          skipped = [d for d in inc if d["db"] == "db2"]
-          inc = [d for d in inc if d["db"] != "db2"]
-          if skipped:
-              print(f"::notice title=Db2 lane skipped (LIC-3)::{db2_note}")
+          planned = list(dict.fromkeys(dbs))
+          inc = [{"db": d, "tier": tier[d]} for d in planned if d != "db2"]
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write("matrix=" + json.dumps({"include": inc}) + "\n")
               f.write("dbs=" + ",".join(d["db"] for d in inc) + "\n")
+              f.write("planned=" + ",".join(planned) + "\n")
               f.write("has_legs=" + ("true" if inc else "false") + "\n")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
-              f.write(f"### DB matrix ({why})\n\n" + "\n".join(f"- {d['db']} (Tier {d['tier']})" for d in inc) + "\n")
-              if skipped:
-                  f.write(f"\n> **{db2_note}**\n")
+              f.write(f"### DB matrix ({why})\n\n" + "\n".join(f"- {d} (Tier {tier[d]})" for d in planned) + "\n")
           PY
+      - name: Db2 lane is NOT-RUN (LIC-3, SL-112, SL-114)
+        # Db2 needs the IBM Db2 JCC driver, which is customer-supplied (LIC-3): this build never fetches it, so the
+        # lane cannot run here. It is recorded as NOT-RUN with the reason, never as a pass.
+        if: contains(format(',{0},', steps.plan.outputs.planned), ',db2,')
+        run: |
+          $RL record --check db-db2 --ledger-dir "$LEDGER" --status NOT-RUN --reason "Db2 is unsupported (SL-114); the IBM Db2 JCC driver is customer-supplied (LIC-3) and never fetched by this build"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: contains(format(',{0},', steps.plan.outputs.planned), ',db2,')
+        with:
+          name: ledger-db-db2
+          path: results/
+          if-no-files-found: error
 
   test:
     name: DB ${{ matrix.db }}
@@ -147,7 +164,6 @@ jobs:
     if: needs.plan.outputs.has_legs == 'true'   # an empty matrix (only db2 requested) is not a valid matrix
     runs-on: ubuntu-24.04
     timeout-minutes: 150
-    continue-on-error: ${{ matrix.tier == 'unsupported' || matrix.tier == '1-candidate' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
@@ -163,52 +179,112 @@ jobs:
       SANGAM_IT_IMAGE_MARIADB: mariadb:11.4
       SANGAM_IT_IMAGE_DB2: icr.io/db2_community/db2:12.1.2.0
       TESTCONTAINERS_RYUK_DISABLED: "false"
+      # Decision 122: operator acceptance of vendor database terms, passed through to the test JVM unchanged.
+      SANGAM_ACCEPT_ORACLE_FREE_TERMS: ${{ vars.SANGAM_ACCEPT_ORACLE_FREE_TERMS }}
+      SANGAM_ACCEPT_MSSQL_EULA: ${{ vars.SANGAM_ACCEPT_MSSQL_EULA }}
+      SANGAM_ACCEPT_DB2_COMMUNITY_TERMS: ${{ vars.SANGAM_ACCEPT_DB2_COMMUNITY_TERMS }}
+      REPORT_ONLY: ${{ matrix.tier == '1-candidate' && '--report-only' || '' }}
     defaults:
       run:
         working-directory: sangam
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Vendor terms accepted by the operator (decision 122)
+        id: terms
+        run: |
+          case "${{ matrix.db }}" in
+            oracle) var=SANGAM_ACCEPT_ORACLE_FREE_TERMS ;;
+            sqlserver|sqlserver2025) var=SANGAM_ACCEPT_MSSQL_EULA ;;
+            *) var="" ;;
+          esac
+          if [ -z "$var" ] || [ "${!var}" = "Y" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            $RL record --check "db-${{ matrix.db }}" --ledger-dir "$LEDGER" --status NOT-RUN \
+              --reason "repository variable $var is not set to Y: the operator has not accepted the vendor terms of this database image (decision 122)"
+          fi
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        if: steps.terms.outputs.run == 'true'
         with:
           distribution: temurin
-          java-version: "25"
+          java-version: "25.0.1"
           cache: maven
           cache-dependency-path: sangam/**/pom.xml
       - name: Free disk space for large DB images
-        if: matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'sqlserver2025' || matrix.db == 'db2'
+        if: steps.terms.outputs.run == 'true' && (matrix.db == 'oracle' || matrix.db == 'sqlserver' || matrix.db == 'sqlserver2025')
         run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           df -h /
       - name: Pre-pull database image
+        if: steps.terms.outputs.run == 'true'
         run: |
           img_var="SANGAM_IT_IMAGE_$(echo '${{ matrix.db }}' | tr a-z A-Z)"
           docker pull "${!img_var}"
       - name: Provenance (start)
+        if: steps.terms.outputs.run == 'true'
         run: python3 -I tools/provenance/run_provenance.py start --db "${{ matrix.db }}" --out target/run-provenance
       - name: Integration tests on ${{ matrix.db }}
+        if: steps.terms.outputs.run == 'true'
         run: |
-          # LIC-2 (SL-110): the Oracle driver (ojdbc11) is a test-scope dependency of sangam-server, so every lane has
-          # it on the test class path and no artefact ships it (the reactor enforcer bans it in compile/runtime scope).
-          # No Db2 JCC driver is declared anywhere: LIC-3 makes it customer-supplied; Db2 is unsupported (SL-114), and the leg is skipped with a LIC-3 notice (SL-112).
+          # Decision 123: ojdbc comes only from the CI profile oracle-it, which only this lane activates.
+          # No Db2 JCC driver is declared anywhere: LIC-3 makes it customer-supplied.
           # Q22: sangam-it-only skips the surefire unit tests (they run in ci-build.yml); failsafe ITs still run.
-          mvn $MAVEN_ARGS verify -Psangam-db-it,sangam-it-only -Dsangam.db=${{ matrix.db }}
+          profiles=sangam-db-it,sangam-it-only
+          [ "${{ matrix.db }}" = oracle ] && profiles="$profiles,oracle-it"
+          # shellcheck disable=SC2086
+          $RL run --check "db-${{ matrix.db }}" --ledger-dir "$LEDGER" $REPORT_ONLY -- \
+            mvn $MAVEN_ARGS verify -P"$profiles" -Dsangam.db=${{ matrix.db }}
+      - name: Oracle AI Vector Search equivalence (sangam-ai profile oracle-it, decisions 170 and 207)
+        # OracleVectorIndexEquivalenceTest needs SANGAM_AI_ORACLE_URL and an account that may create and drop users,
+        # so this step starts its own Oracle Free container (same image and terms gate as the lane) with a random
+        # SYSTEM password, runs only that test, and fails unless the report shows it ran with nothing skipped: an
+        # assumption skip is never a pass (RM-12).
+        if: steps.terms.outputs.run == 'true' && matrix.db == 'oracle'
+        run: |
+          set -euo pipefail
+          pw="Sg$(openssl rand -hex 12)1"
+          echo "::add-mask::$pw"
+          docker run -d --name sangam-ai-oracle -p 127.0.0.1:1522:1521 -e ORACLE_PASSWORD="$pw" "$SANGAM_IT_IMAGE_ORACLE" > /dev/null
+          for _ in $(seq 1 120); do
+            [ "$(docker inspect --format '{{.State.Health.Status}}' sangam-ai-oracle)" = healthy ] && break
+            sleep 5
+          done
+          [ "$(docker inspect --format '{{.State.Health.Status}}' sangam-ai-oracle)" = healthy ] \
+            || { echo "::error::Oracle Free for the sangam-ai equivalence test did not become healthy"; exit 1; }
+          export SANGAM_AI_ORACLE_URL="jdbc:oracle:thin:@//127.0.0.1:1522/FREEPDB1" SANGAM_AI_ORACLE_USER=system SANGAM_AI_ORACLE_PASSWORD="$pw"
+          $RL run --check db-oracle-ai-vector --ledger-dir "$LEDGER" -- bash -c '
+            set -euo pipefail
+            mvn $MAVEN_ARGS -pl sangam-ai -am test -Poracle-it -Dsangam.db=oracle \
+              -Dtest=OracleVectorIndexEquivalenceTest -Dsurefire.failIfNoSpecifiedTests=false
+            r=sangam-ai/target/surefire-reports/TEST-org.sangam.ai.rag.OracleVectorIndexEquivalenceTest.xml
+            [ -f "$r" ] || r=$(ls sangam-ai/target/surefire-reports/TEST-*OracleVectorIndexEquivalenceTest.xml)
+            grep -Eq "<testsuite[^>]* skipped=\"0\"" "$r" && ! grep -Eq "<testsuite[^>]* tests=\"0\"" "$r" \
+              || { echo "::error::OracleVectorIndexEquivalenceTest was skipped or ran no test"; exit 1; }'
+          docker rm -f sangam-ai-oracle > /dev/null
       - name: Provenance (finish)
-        if: always()
+        if: always() && steps.terms.outputs.run == 'true'
         run: |
           python3 -I tools/provenance/run_provenance.py finish --db "${{ matrix.db }}" --out target/run-provenance \
             --reports . --summary "$GITHUB_STEP_SUMMARY"
       - name: Reports
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: always() && steps.terms.outputs.run == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: db-${{ matrix.db }}-reports
           path: |
             sangam/**/target/surefire-reports/
             sangam/**/target/failsafe-reports/
             sangam/target/run-provenance/
-          if-no-files-found: ignore
+          if-no-files-found: error
           retention-days: 30
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-db-${{ matrix.db }}
+          path: results/
+          if-no-files-found: error
 
   result:
     name: DB matrix result
@@ -216,9 +292,17 @@ jobs:
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - name: Gate
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          sparse-checkout: sangam/deploy/licence
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: ledger-db-*
+          path: results
+      - name: Gate (every planned database has a ledger line; FAIL, SKIPPED or BLOCKED fails)
+        env:
+          PLANNED: ${{ needs.plan.outputs.planned }}
         run: |
-          echo "databases: ${{ needs.plan.outputs.dbs }}"
-          echo "test result: ${{ needs.test.result }}"
-          [ "${{ needs.plan.result }}" = "success" ] || exit 1
-          case "${{ needs.test.result }}" in success|skipped) ;; *) exit 1 ;; esac
+          [ "${{ needs.plan.result }}" = "success" ] || { echo "::error::the plan job did not succeed"; exit 1; }
+          python3 -I -c "import json,os; json.dump({'planned': ['db-' + d for d in os.environ['PLANNED'].split(',') if d]}, open('planned.json', 'w'))"
+          $RL gate --required planned.json --mode pr --set planned --ledger-dir results

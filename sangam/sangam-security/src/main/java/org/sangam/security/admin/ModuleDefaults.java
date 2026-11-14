@@ -126,7 +126,12 @@ public final class ModuleDefaults {
 
     private Map<String, Set<Permission>> full(List<String> types) {
         Map<String, Set<Permission>> m = new LinkedHashMap<>();
-        types.forEach(t -> m.put(t, registry.permissionsOf(t)));
+        for (String t : types) {
+            // decision 141: a role template on '*' never carries an explicit-only permission (validation rejects it)
+            Set<Permission> s = EnumSet.noneOf(Permission.class);
+            registry.permissionsOf(t).stream().filter(p -> !p.explicitOnly()).forEach(s::add);
+            m.put(t, s);
+        }
         return m;
     }
 

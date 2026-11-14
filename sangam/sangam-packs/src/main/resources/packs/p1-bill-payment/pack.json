@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/p1-bill-payment/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/p1-bill-payment/pack.json"
     }
   ],
   "seed": "packs/p1-bill-payment/seed.json",
@@ -383,6 +387,15 @@
       "capabilityClass": "c"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "p1_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "BILL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

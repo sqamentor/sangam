@@ -47,6 +47,7 @@ class PackVersionImmutabilityTest {
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
         cfg.setEnforceHistoryTimeToLive(true);
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
     }
 

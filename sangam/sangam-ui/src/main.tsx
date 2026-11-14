@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-// OSI fallback fonts are bundled from npm (@fontsource, SIL OFL 1.1) so Devanagari renders offline (air-gapped, no CDN).
-// The central-government font (C-DAC Sakal Bharati, OFL 1.1) is served from public/fonts/gov/ and declared by applyFonts().
-import '@fontsource/noto-sans/400.css';
-import '@fontsource/noto-sans/600.css';
-import '@fontsource/noto-sans/700.css';
-import '@fontsource/noto-sans-devanagari/400.css';
-import '@fontsource/noto-sans-devanagari/600.css';
-import '@fontsource/noto-sans-devanagari/700.css';
+// Fonts (owner decisions 120, 121): the approved deploy/fonts Noto TTFs are copied into the build as /fonts/noto/
+// (scripts/deploy-fonts.mjs) and declared by applyFonts(), so Devanagari renders offline (air-gapped, no CDN).
 import './styles.css';
 import { loadConfig } from './config';
 import { applyFonts } from './fonts';

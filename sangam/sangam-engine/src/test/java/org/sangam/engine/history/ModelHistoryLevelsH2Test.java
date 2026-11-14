@@ -45,6 +45,7 @@ class ModelHistoryLevelsH2Test {
 
     private static OperatonEngineAdapter engine(boolean overrides, Map<String, String> byKey) {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);
@@ -95,6 +96,7 @@ class ModelHistoryLevelsH2Test {
     @Test
     void externalModeWithoutAnEventSinkIsRefusedAtStartup() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);

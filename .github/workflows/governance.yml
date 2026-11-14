@@ -7,6 +7,7 @@
 #     SANGAM_DCO_ENFORCE=true (unset: report-only). Q-10 is open: enforce only after the owner answers it.
 # CODEOWNERS (.github/CODEOWNERS) is record-only for the same reason; its enforcement is a branch-protection setting.
 # A broken register or a git error fails the job in both modes (exit 2), so bad input never reads as "no findings".
+# The supply-chain job is NOT report-only: it gates every pull request (W4-C, CR-01; see the job comment).
 name: governance
 
 on:
@@ -15,6 +16,11 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      mode:
+        description: "release: image-pins and workflow-lockfiles gate; anything else: report-only (NOT-RUN)"
+        type: string
+        default: pr
 
 permissions:
   contents: read
@@ -29,8 +35,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
       - name: Governance script unit tests
@@ -43,16 +49,62 @@ jobs:
           python -I .github/scripts/traceability_gate.py --register spike/results/TRACEABILITY-REGISTER.csv \
             --summary "$GITHUB_STEP_SUMMARY" $ENFORCE
 
+  supply-chain:
+    # W4-C (CR-01, CR-10, CR-11, CR-12, CR-14, CR-18; decision 130). These checks GATE: each writes a results-ledger
+    # line and the last step fails the job on FAIL, SKIPPED, BLOCKED or a missing line. image-pins and
+    # workflow-lockfiles are report-only here (NOT-RUN, never PASS) and gate the release (release-checks.json).
+    name: Supply-chain guards and licence script tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      LEDGER: ${{ github.workspace }}/results
+      REPORT_ONLY: ${{ inputs.mode == 'release' && '' || '--report-only' }}
+      L: sangam/deploy/licence
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.13.7"
+      - name: Licence, release, chart-guard and bundle-gate script unit tests (deploy/licence, deploy/helm, deploy/airgap test_*.py)
+        run: |
+          $RL_PY run --check licence-script-tests --ledger-dir "$LEDGER" -- bash -c \
+            'set -e; for d in sangam/deploy/licence sangam/deploy/helm sangam/deploy/airgap; do python -I -m unittest discover -s "$d" -p "test_*.py" -v; done'
+        env:
+          RL_PY: python -I sangam/deploy/licence/results_ledger.py
+      - name: Actions pinned to commit SHAs (CR-10)
+        run: python -I $L/results_ledger.py run --check workflow-pins --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check pins .github/workflows
+      - name: No status-masking construct (CR-01)
+        run: python -I $L/results_ledger.py run --check workflow-silent --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check silent .github/workflows sangam/deploy
+      - name: No curl-pipe-shell installs (CR-11)
+        run: python -I $L/results_ledger.py run --check workflow-curl --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check curl .github/workflows sangam/deploy
+      - name: No auto-installing npx (CR-12)
+        run: python -I $L/results_ledger.py run --check workflow-npx --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check npx .github/workflows sangam/deploy
+      - name: Install scripts off for npm (decision 130, CR-14)
+        run: python -I $L/results_ledger.py run --check workflow-npm-scripts --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check npm-scripts .github/workflows sangam/deploy
+      - name: Lockfile for every package manager (CR-18, report-only on pull requests)
+        run: python -I $L/results_ledger.py run --check workflow-lockfiles $REPORT_ONLY --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check lockfiles --lock-root sangam/sdks --lock-root sangam/sangam-ui --lock-root $L/tools
+      - name: Images pinned by digest (CR-10, report-only on pull requests)
+        run: python -I $L/results_ledger.py run --check image-pins $REPORT_ONLY --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check images sangam/deploy/airgap/images.txt sangam/deploy/docker sangam/deploy/operator/Dockerfile
+      - name: Results-ledger gate (pull request)
+        if: always()
+        run: python -I $L/results_ledger.py gate --required $L/release-checks.json --mode pr --set pr-governance --ledger-dir "$LEDGER"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-governance
+          path: results/
+          if-no-files-found: error
+
   dco:
     name: DCO sign-off (report-only unless SANGAM_DCO_ENFORCE, Q-10)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.13"
       - name: Every pull-request commit is signed off by its author

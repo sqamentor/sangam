@@ -3,9 +3,12 @@ package org.sangam.integration.broker;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
@@ -119,5 +122,31 @@ class BrokerWakeupBusTest {
                 r -> Optional.of("pw"), "n1"));
         assertDoesNotThrow(() -> BrokerWakeupBus.nats(Map.of(), r -> Optional.empty(), "n1", listener()).cycleCompleted(1),
                 "a NATS bus without serverUri logs the failed hint; it never fails the relay");
+    }
+
+    /** Reads a private field (the bus keeps its transport, the NATS transport its lazily opened connection). */
+    private static Object field(Object owner, String name) throws ReflectiveOperationException {
+        Field f = owner.getClass().getDeclaredField(name);
+        f.setAccessible(true);
+        return f.get(owner);
+    }
+
+    /**
+     * Restored from sangam-server's BrokerWakeupWiringTest (decision 232 moved jnats out of the server; it is optional
+     * here, so on this module's test class path): building the NATS bus with a broker address opens no connection
+     * and starts nothing; the host calls start().
+     */
+    @Test
+    void buildingTheNatsBusWithAServerAddressOpensNoConnection() throws Exception {
+        BrokerWakeupBus bus = BrokerWakeupBus.nats(Map.of("serverUri", "nats://broker-a:4222", "subject", "sangam_outbox_x"),
+                r -> Optional.empty(), "node-1", listener());
+        assertFalse(bus.running(), "the host calls start(); building the bus starts nothing");
+        Object transport = field(bus, "transport");
+        assertTrue(transport instanceof NatsWakeupTransport, String.valueOf(transport));
+        assertEquals("sangam_outbox_x", field(transport, "subject"));
+        assertNull(field(transport, "connection"), "no connection is opened until the first publish or listen");
+        bus.close();
+        assertFalse(bus.running());
+        assertNull(field(transport, "connection"), "closing an unopened bus opens nothing");
     }
 }

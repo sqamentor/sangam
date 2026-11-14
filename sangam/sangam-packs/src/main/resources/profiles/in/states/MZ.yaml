@@ -4,7 +4,7 @@
 profile:
   id: MZ
   layer: government
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2026-04-01'
   extends:
   - IN
@@ -16,6 +16,9 @@ profile:
 placeholders:
 - path: evidence
   reason: 'thin profile: 4 of 8 fields verified'
+- path: procurement.scientificDepartment
+  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (the State''s
+    scientific-department list was not read)'
 - path: chartOfAccounts
   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (state digit
     structure not found)'

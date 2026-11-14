@@ -219,8 +219,8 @@ export interface AgentUsage {
  */
 export interface AiA2aBody {
   id?: unknown;
-  method?: string;
   params?: AiA2aBodyParams;
+  method?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
 }
@@ -233,6 +233,11 @@ export interface AiA2aBody {
 export interface AiA2aBodyParams {
   message?: AiA2aBodyParamsMessage;
   id?: string;
+  pageSize?: number;
+  status?: string;
+  contextId?: string;
+  statusTimestampAfter?: string;
+  pageToken?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
 }
@@ -819,6 +824,63 @@ export interface AuditVerifyResult {
   ok?: boolean;
   verifiedAt?: string;
   chains?: Array<ChainVerification>;
+}
+
+/**
+ * One backup run: a Kubernetes Job of a target, or one execution of a configured backup command.
+ *
+ * Schema `BackupRun`.
+ */
+export interface BackupRun {
+  /** The Job name, or the run id the server recorded for a command run */
+  id: string;
+  /** Target id */
+  target: string;
+  /**  One of: SCHEDULED, MANUAL. */
+  trigger: 'SCHEDULED' | 'MANUAL';
+  /**  One of: PENDING, RUNNING, SUCCEEDED, FAILED. */
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
+  /** When the Job started; null while PENDING */
+  startedAt?: string;
+  /** When the Job succeeded or failed; null before */
+  finishedAt?: string;
+  /** Authenticated principal of a MANUAL run; null for SCHEDULED runs */
+  requestedBy?: string;
+  /** Short outcome text from the Job status or the command's exit; never log content or credentials */
+  message?: string;
+}
+
+/**
+ * A backup target: one backup CronJob (Kubernetes) or one configured backup command (VM/compose, decision 220).
+ *
+ * Schema `BackupTarget`.
+ */
+export interface BackupTarget {
+  /** The CronJob name, or the configured command's target name */
+  id: string;
+  /** The chart's backup name, for example pg-full */
+  name: string;
+  /** Cron schedule of the CronJob */
+  schedule: string;
+  /** Time zone of the schedule; null when unset */
+  timeZone: string;
+  /** True when the CronJob is suspended */
+  suspended: boolean;
+  /** Jobs of the target running now */
+  active: number;
+  /** Last time the CronJob started a run; null before the first */
+  lastScheduleTime: string;
+  /** Last successful completion; null before the first */
+  lastSuccessfulTime: string;
+}
+
+/**
+ * Back up now: the reason is audited.
+ *
+ * Schema `BackupTriggerRequest`.
+ */
+export interface BackupTriggerRequest {
+  reason: string;
 }
 
 /**
@@ -3829,6 +3891,62 @@ export interface ConsequencePreview {
 }
 
 /**
+ * Pending items of one kind that ended with the predecessor.
+ *
+ * Schema `ContinuationEnded`.
+ */
+export interface ContinuationEnded {
+  /**  One of: USER_TASK, EXTERNAL_TASK, JOB, TIMER, MESSAGE_SUBSCRIPTION. */
+  kind: 'USER_TASK' | 'EXTERNAL_TASK' | 'JOB' | 'TIMER' | 'MESSAGE_SUBSCRIPTION';
+  ended: number;
+}
+
+/**
+ * Close this instance and continue it as one new instance (decision 149).
+ *
+ * Schema `ContinueAsNewRequest`.
+ */
+export interface ContinueAsNewRequest {
+  /** Stable id of this continuation chosen by the caller, 1..255 characters (a UUID is recommended), unique per tenant; a retry with the same id on the same instance returns the committed successor unchanged, the same id on another instance is 409 CONTINUATION_NOT_ALLOWED (REQUEST_ID_REUSED) */
+  continuationRequestId: string;
+  /** Mandatory reason for the audit record (R42) */
+  reason: string;
+  /** Definition id of the successor. Absent: the predecessor's own definition id (never the latest). Another version of the same definition key only, and only when the caller may start it (403 otherwise); another key is 400 VALIDATION_FAILED, an unknown id or one of another tenant 404 */
+  processDefinitionId?: string;
+  /** Names of predecessor variables copied to the successor with their exact types; a name the predecessor does not have, a blank or a repeated name is 400 VALIDATION_FAILED */
+  carryVariables?: Array<string>;
+  /** Further successor variables (R33 typed values; exact decimals); a name also in carryVariables is 400 VALIDATION_FAILED */
+  variables?: Record<string, unknown>;
+}
+
+/**
+ * The successor of a continued instance.
+ *
+ * Schema `ContinueAsNewResult`.
+ */
+export interface ContinueAsNewResult {
+  requestId: string;
+  predecessorId: string;
+  successorId: string;
+  /** Id of the continuation chain (the first instance of the chain) */
+  chainId: string;
+  /** Position of the successor in the chain; the first instance is generation 0 */
+  generation: number;
+  /** Business key carried to the successor; absent when the predecessor had none */
+  businessKey?: string;
+  /** Definition id the successor was started on */
+  processDefinitionId: string;
+  /** CREATED by this call, or EXISTING when the continuationRequestId was already committed One of: CREATED, EXISTING. */
+  outcome: 'CREATED' | 'EXISTING';
+  /** Authenticated principal that continued the instance */
+  actor: string;
+  reason: string;
+  continuedAt: string;
+  /** Pending items of the predecessor that ended with it, per kind; empty when outcome is EXISTING */
+  ended: Array<ContinuationEnded>;
+}
+
+/**
  * One operation of a contract (ContractOperations.Operation without the document): method and path for OpenAPI, action and channel for AsyncAPI; schemas have their local references inlined.
  *
  * Schema `ContractOperation`.
@@ -3942,8 +4060,9 @@ export interface DataObjectDef {
   id?: string;
   key: string;
   name: string;
-  /**  One of: DB, REST. */
+  /** DB: records are rows in the Sangam database (create answers 201). REST: records live in an external system reached through the connector named by endpointRef (create answers 202 with an operation, decision 265); needs sangam-integration, otherwise the record routes answer 501 CAPABILITY_NOT_INSTALLED One of: DB, REST. */
   backing: 'DB' | 'REST';
+  /** REST backing only: the connector id. The connector provides two named operations (decisions 265 and 266): create, input the record, run through the operation ledger with the operationId as idempotency key and its outcome read by lookup; and list, a query operation with input {q, offset, limit} that answers output.records (an array of objects) and optionally output.total (the full match count). Records the connector returns are validated against fields: unknown fields are dropped and sensitive fields masked, as for DB backing */
   endpointRef?: string;
   version?: number;
   fields?: Array<DataObjectField>;
@@ -3961,6 +4080,23 @@ export interface DataObjectField {
   required?: boolean;
   reference?: string;
   sensitive?: boolean;
+}
+
+/**
+ * A record create on a REST-backed data object (decision 265), run through the operation ledger.
+ *
+ * Schema `DataObjectRecordOperation`.
+ */
+export interface DataObjectRecordOperation {
+  /** Operation ledger id; sent to the external system as the idempotency key */
+  operationId: string;
+  dataObjectKey: string;
+  /** PENDING: not finished, or the external system has no record of it yet; COMPLETED: the record was created (record is set); FAILED: the external system refused it (failureCode is set); UNKNOWN: the outcome cannot be proved and the operation is in reconciliation (no automatic retry) One of: PENDING, COMPLETED, FAILED, UNKNOWN. */
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN';
+  /** COMPLETED only: the created record, validated and masked as on the list route */
+  record?: Record<string, unknown>;
+  /** FAILED only: the external system's failure code */
+  failureCode?: string;
 }
 
 /**
@@ -4142,6 +4278,40 @@ export interface DispatchServiceUnitInput {
 }
 
 /**
+ * One SMS delivery report from the provider.
+ *
+ * Schema `DltDeliveryReport`.
+ */
+export interface DltDeliveryReport {
+  /** The provider's report id; when absent the report is identified by the hash of its body. A report id already received is acknowledged as a duplicate without a second write */
+  reportId?: string;
+  /** The operationId the message was sent with; clientRef or messageId must be present */
+  clientRef?: string;
+  /** The provider's message id returned at send; clientRef or messageId must be present */
+  messageId?: string;
+  /** The provider's delivery status */
+  status: string;
+  /** The provider's reason text for a failed or pending delivery */
+  reason?: string;
+  /** When the provider recorded the status */
+  reportedAt?: string;
+}
+
+/**
+ * Outcome of a delivery-report post.
+ *
+ * Schema `DltDeliveryReportResult`.
+ */
+export interface DltDeliveryReportResult {
+  /** Reports recorded */
+  accepted?: number;
+  /** Reports already received (same report id, or same body hash), acknowledged without a second write */
+  duplicates?: number;
+  /** Reports that match no message sent through this connector, acknowledged and not written */
+  ignored?: number;
+}
+
+/**
  * Stored document version (R74).
  *
  * Schema `Document`.
@@ -4187,6 +4357,120 @@ export interface DocumentTemplate {
   /**  One of: PDFA, DOCX, HTML. */
   format?: 'PDFA' | 'DOCX' | 'HTML';
   version?: number;
+}
+
+/**
+ * One enrolment of a DSC certificate. Fingerprint, issuer, serial, subject and validity are derived by the server from the DER; the subject is shown, never trusted.
+ *
+ * Schema `DscCertificate`.
+ */
+export interface DscCertificate {
+  enrolmentId: string;
+  /** The signer who enrolled it */
+  principalId: string;
+  /** SHA-256 (lower-case hex) of the certificate DER */
+  certificateSha256: string;
+  /** Issuer distinguished name (RFC 2253) */
+  issuer: string;
+  /** Serial number, hexadecimal */
+  serialHex: string;
+  /** Subject distinguished name (RFC 2253), for display only */
+  subject: string;
+  notBefore: string;
+  notAfter: string;
+  /** PENDING until an admin decides; only APPROVED binds a signer at prepare and complete. A REJECTED or REVOKED certificate can be enrolled again under a new enrolment id One of: PENDING, APPROVED, REJECTED, REVOKED. */
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVOKED';
+  enrolledAt: string;
+  /** Who approved, rejected or revoked it */
+  decidedBy?: string;
+  decidedAt?: string;
+  decisionReason?: string;
+}
+
+/**
+ * Reason for an approval (optional) or a rejection or revocation (required, 422 REASON_REQUIRED).
+ *
+ * Schema `DscCertificateDecision`.
+ */
+export interface DscCertificateDecision {
+  /** Trimmed; longer than 512 characters is 422 REASON_TOO_LONG */
+  reason?: string;
+}
+
+/**
+ * Enrol the certificate of the caller's token.
+ *
+ * Schema `DscCertificateEnrolmentRequest`.
+ */
+export interface DscCertificateEnrolmentRequest {
+  /** Base64 (RFC 4648 section 4, padded) DER X.509 certificate of the signer, at most 16 KiB decoded */
+  certificate: string;
+}
+
+/**
+ * Step 2 of a DSC signature (decision 165).
+ *
+ * Schema `DscCompleteRequest`.
+ */
+export interface DscCompleteRequest {
+  prepareId: string;
+  /** Base64 (RFC 4648 section 4, padded) signature of signedAttributes by the token, at most 2048 bytes decoded */
+  signature: string;
+  /** The algorithm returned by prepare */
+  algorithm: string;
+  /** The same chain as at prepare, signer first (Base64 (RFC 4648 section 4, padded) DER, at most 10). A different signer certificate gives VERIFIED_INVALID DSC_SIGNER_CHANGED */
+  certificateChain: Array<string>;
+}
+
+/**
+ * The verification outcome (decision 140). It is recorded either way; only VERIFIED_VALID stores the signed PDF.
+ *
+ * Schema `DscCompleteResponse`.
+ */
+export interface DscCompleteResponse {
+  /**  One of: VERIFIED_VALID, VERIFIED_INVALID, INDETERMINATE. */
+  outcome: 'VERIFIED_VALID' | 'VERIFIED_INVALID' | 'INDETERMINATE';
+  /** Why the outcome is not VERIFIED_VALID, for example CERTIFICATE_NOT_ENROLLED (the enrolment was revoked after prepare), SIGNER_MISMATCH (the signer certificate is not the enrolled one), DSC_SIGNER_CHANGED, DSC_ALGORITHM, DSC_SIGNATURE_INVALID, DIGEST_MISMATCH, CERTIFICATE_CHAIN_INVALID, INVALID_INPUT, CMS_INVALID, SIGNATURE_TOO_LARGE, DSC_ASSEMBLY, DSC_COMPLETE_FAILED or a verifier reason (chain, revocation, policy) */
+  reasonCode?: string;
+  /** True when the same signature may verify later (for example revocation information was unavailable); a new prepare is still needed */
+  retryable: boolean;
+  /** Verification evidence (policy version, checks, certificate and revocation details), also stored with the signed version */
+  evidence: Record<string, unknown>;
+  documentId: string;
+  /** The new document version holding the signed PDF; only when outcome is VERIFIED_VALID and it was stored */
+  signedDocumentVersion?: number;
+}
+
+/**
+ * Step 1 of a DSC signature (decision 165).
+ *
+ * Schema `DscPrepareRequest`.
+ */
+export interface DscPrepareRequest {
+  /** The PDF to sign: a document attached to the task or to its process instance (a task can carry several documents) */
+  documentId: string;
+  /** The token's chain, signer first. The signer certificate must be the caller's APPROVED enrolment (decision 227). Nothing in the chain is trusted: trust comes only from sangam.dsc.trust-anchors at complete */
+  certificateChain: Array<string>;
+}
+
+/**
+ * What the signer's agent signs.
+ *
+ * Schema `DscPrepareResponse`.
+ */
+export interface DscPrepareResponse {
+  /** Single-use handle of the prepared PDF (128-bit random, lower-case hex) */
+  prepareId: string;
+  /** Base64 (RFC 4648 section 4, padded) DER of the CMS signed attributes (SET OF); the token signs exactly these bytes */
+  signedAttributes: string;
+  /** SHA-256 (lower-case hex) of the prepared PDF's byte range */
+  preparedDigestSha256: string;
+  /** Chosen from the signer key; complete must send the same value One of: SHA256withRSA, SHA256withECDSA. */
+  algorithm: 'SHA256withRSA' | 'SHA256withECDSA';
+  expiresAt: string;
+  documentId: string;
+  /** The document version that was prepared */
+  documentVersion: number;
 }
 
 /**
@@ -4340,6 +4624,20 @@ export interface EventDefinition {
 }
 
 /**
+ * Outcome of an Event Grid delivery.
+ *
+ * Schema `EventGridHookResult`.
+ */
+export interface EventGridHookResult {
+  /** Only for a SubscriptionValidationEvent: the event's validationCode; the body then has this member alone */
+  validationResponse?: string;
+  /** Events written to the inbox */
+  accepted?: number;
+  /** Events already received (same id on this channel), acknowledged without a second write */
+  duplicates?: number;
+}
+
+/**
  * Evidence attached to a reconciliation item.
  *
  * Schema `Evidence`.
@@ -4351,6 +4649,122 @@ export interface Evidence {
   addedBy?: string;
   addedAt?: string;
   sha256?: string;
+}
+
+/**
+ * The committed executor map of the cluster (EXEC_MAP) and its partitions.
+ *
+ * Schema `ExecutorPartitionMap`.
+ */
+export interface ExecutorPartitionMap {
+  clusterId: string;
+  /**  One of: STABLE, TRANSITION. */
+  state: 'STABLE' | 'TRANSITION';
+  currentMapEpoch: number;
+  /** currentMapEpoch + 1 while state is TRANSITION; absent when STABLE */
+  targetMapEpoch?: number;
+  /** Partitions owning slots in the committed map; 0 when partitioning is off (SHARED) */
+  partitionCount: number;
+  /** S, the fixed number of logical slots */
+  slotCount: number;
+  /** Allocation that produced the committed map: the newest COMPLETED resize's (MM-1), or CONTIGUOUS-1 for a map never resized (contiguous balanced ranges, X.2.1.7 step 1) */
+  algorithmVersion: string;
+  /** Every EXEC_PARTITION row sorted by partitionId, RETIRED and SHARED included */
+  partitions: Array<ExecutorPartitionView>;
+  /** The REQUESTED or IN_PROGRESS resize, with its moved slot ranges; absent when none */
+  activeResize?: ExecutorPartitionResize;
+}
+
+/**
+ * A partition-count change: a controlled transition from map epoch M to M+1.
+ *
+ * Schema `ExecutorPartitionResize`.
+ */
+export interface ExecutorPartitionResize {
+  /** Resize id (the audit and recovery key), 1..64 characters, chosen by the server */
+  id: string;
+  /**  One of: REQUESTED, IN_PROGRESS, COMPLETED, FAILED. */
+  state: 'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  fromPartitionCount: number;
+  /** 0 turns partitioning off (the single SHARED partition 0); otherwise 1..slotCount */
+  toPartitionCount: number;
+  fromMapEpoch: number;
+  /** fromMapEpoch + 1; committed only when state is COMPLETED */
+  toMapEpoch: number;
+  /** Version of the deterministic minimal-movement allocation algorithm used */
+  algorithmVersion: string;
+  /** Number of slots that change partition; absent while REQUESTED (the plan is made when the coordinator starts the resize) */
+  movedSlotCount?: number;
+  /** Slot ranges that change partition; empty while REQUESTED and in list views */
+  movedSlots?: Array<ExecutorSlotMove>;
+  /** Authenticated platform principal that requested the resize (server-side identity) */
+  actor: string;
+  reason: string;
+  requestedAt: string;
+  /** When the first slot started MOVING; absent while REQUESTED */
+  startedAt?: string;
+  /** When the new map committed (COMPLETED) or the resize stopped (FAILED) */
+  completedAt?: string;
+  /** Why the resize failed; the previous map stays committed and every slot keeps one owner */
+  failure?: string;
+  /** Longest time a moved slot had no acquiring owner, as measured; absent until COMPLETED. Reported, never assumed to be zero */
+  handoverPauseMs?: number;
+}
+
+/**
+ * Change the partition count (X.2.1.7).
+ *
+ * Schema `ExecutorPartitionResizeRequest`.
+ */
+export interface ExecutorPartitionResizeRequest {
+  /** New count: 0 (partitioning off) or 1..slotCount; the current count is 409 INVALID_TRANSITION */
+  partitionCount: number;
+  /** Mandatory reason for the audit record (R42) */
+  reason: string;
+  /** Optional optimistic check: when given and not the current map epoch, 409 REVISION_CONFLICT and nothing changes */
+  expectedMapEpoch?: number;
+}
+
+/**
+ * One partition (EXEC_PARTITION row) and the slots it owns in the committed map M. While a resize runs, a slot of the stored plan stays under its fromPartition until M+1 commits; a target partition without committed slots has slots empty.
+ *
+ * Schema `ExecutorPartitionView`.
+ */
+export interface ExecutorPartitionView {
+  /** 1..partitionCount; 0 is the virtual SHARED partition when partitioning is off */
+  partitionId: number;
+  /**  One of: UNOWNED, ACTIVE, DRAINING, RETIRED, SHARED. */
+  state: 'UNOWNED' | 'ACTIVE' | 'DRAINING' | 'RETIRED' | 'SHARED';
+  /** Executor node holding the lease; absent when UNOWNED, RETIRED or SHARED */
+  ownerNode?: string;
+  /** Fencing epoch of the current owner; strictly increasing, never reused */
+  ownerEpoch: number;
+  /** Lease expiry on the engine database clock; absent without an owner */
+  leaseExpiresAt?: string;
+  /** Owned slot ranges, sorted; they need not be contiguous after a minimal-movement resize */
+  slots: Array<ExecutorSlotRange>;
+}
+
+/**
+ * A slot range that changes partition in a resize (the stored plan, PartitionAllocation.Move). While the resize runs a moving slot takes no new acquisitions until it is STABLE under the target; per-slot progress is not part of this view.
+ *
+ * Schema `ExecutorSlotMove`.
+ */
+export interface ExecutorSlotMove {
+  first: number;
+  last: number;
+  fromPartition: number;
+  toPartition: number;
+}
+
+/**
+ * An inclusive range of logical slot ids. Slot ids are stable for the life of the cluster.
+ *
+ * Schema `ExecutorSlotRange`.
+ */
+export interface ExecutorSlotRange {
+  first: number;
+  last: number;
 }
 
 /**
@@ -4552,8 +4966,12 @@ export interface FieldTemplateItem {
   critical?: boolean;
   minPhotos?: number;
   visibleIf?: FieldTemplateVisibleIf;
-  min?: number;
-  max?: number;
+  /** Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242) */
+  min?: string;
+  /** Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON number exactly from its text, and always writes the canonical text. When scale is set it has no more decimal places than scale (decision 242) */
+  max?: string;
+  /** NUMBER items only, optional (decision 242): the most decimal places allowed. min, max and every answer to the item may not have more decimal places than scale; absent means no limit beyond decision 230 */
+  scale?: number;
   expected?: unknown;
   findingCode?: string;
   severity?: string;
@@ -4938,6 +5356,109 @@ export interface FieldWorkUpsertUnitBody {
   attributes?: Record<string, unknown>;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
+}
+
+/**
+ * Maps one Flowable process definition onto a deployed Sangam definition.
+ *
+ * Schema `FlowableDefinitionMapping`.
+ */
+export interface FlowableDefinitionMapping {
+  /** Flowable process definition key */
+  flowableKey: string;
+  /** Flowable definition version; null maps every version of the key */
+  flowableVersion: number;
+  /** Sangam process definition key */
+  targetKey: string;
+  /** Sangam process definition version */
+  targetVersion: number;
+  /** Flowable activity id to Sangam activity id, where they differ */
+  activityMap?: Record<string, string>;
+}
+
+/**
+ * One classification finding of an instance.
+ *
+ * Schema `FlowableMigrationFinding`.
+ */
+export interface FlowableMigrationFinding {
+  /**  One of: REJECT, WARN. */
+  severity: 'REJECT' | 'WARN';
+  code: string;
+  elementId?: string;
+  message?: string;
+}
+
+/**
+ * One source instance of a run.
+ *
+ * Schema `FlowableMigrationItem`.
+ */
+export interface FlowableMigrationItem {
+  sourceInstanceId: string;
+  /**  One of: PLANNED, REJECTED, APPLYING, APPLIED, FAILED, MATCHED, MISMATCHED, ROLLED_BACK. */
+  status: 'PLANNED' | 'REJECTED' | 'APPLYING' | 'APPLIED' | 'FAILED' | 'MATCHED' | 'MISMATCHED' | 'ROLLED_BACK';
+  definitionKey: string;
+  /** The Sangam instance; null before it is applied */
+  targetInstanceId: string;
+  attempts: number;
+  /** Last apply or reconcile error; null when none */
+  error: string;
+  findings: Array<FlowableMigrationFinding>;
+}
+
+/**
+ * State and counts of a run (or of a dry run, which writes nothing).
+ *
+ * Schema `FlowableMigrationReport`.
+ */
+export interface FlowableMigrationReport {
+  runId: string;
+  /** Run state; null on a dry run One of: DRY_RUN, FROZEN, APPLYING, APPLIED, RECONCILED, RECONCILE_FAILED, ROLLED_BACK, CUT_OVER. */
+  state: 'DRY_RUN' | 'FROZEN' | 'APPLYING' | 'APPLIED' | 'RECONCILED' | 'RECONCILE_FAILED' | 'ROLLED_BACK' | 'CUT_OVER';
+  instances: number;
+  supported: number;
+  rejected: number;
+  /** Rejected instances per reject code */
+  rejectionsByCode: Record<string, number>;
+  /** Warnings per warn code */
+  warningsByCode: Record<string, number>;
+  /** Rows per Flowable table read */
+  tableCounts: Record<string, number>;
+  /** Source content this migration does not carry (named, never silently dropped) */
+  outOfScope: Array<string>;
+  applied: number;
+  failed: number;
+  matched: number;
+  mismatched: number;
+  /** Problems of the last step, in order */
+  problems: Array<string>;
+}
+
+/**
+ * A Flowable migration run (decision 169).
+ *
+ * Schema `FlowableMigrationRequest`.
+ */
+export interface FlowableMigrationRequest {
+  /** Caller-chosen run id, unique in the tenant */
+  runId: string;
+  /** Name of the Flowable source system */
+  sourceSystem: string;
+  /** Flowable tenant id to read; null for Flowable's default (no) tenant */
+  sourceTenant: string;
+  /** IANA time zone of the source's local timestamps (explicit; a DST fold or gap is rejected per instance) */
+  sourceZone: string;
+  mappings: Array<FlowableDefinitionMapping>;
+}
+
+/**
+ * Roll a run back: the reason is audited.
+ *
+ * Schema `FlowableMigrationRollbackRequest`.
+ */
+export interface FlowableMigrationRollbackRequest {
+  reason: string;
 }
 
 /**
@@ -5446,6 +5967,37 @@ export interface HistoricVariable {
   activityInstanceId?: string;
   createTime?: string;
   state?: string;
+}
+
+/**
+ * Move the history of an ended process instance to a later version of its definition (decision 258).
+ *
+ * Schema `HistoryInstanceMigrationRequest`.
+ */
+export interface HistoryInstanceMigrationRequest {
+  /** Process definition id of the target: a deployed later version of the same key in the same tenant */
+  targetDefinitionId: string;
+  /** Mandatory reason for the audit record (R42) */
+  reason: string;
+}
+
+/**
+ * The moved history: old and new definition, and the rows changed per history table.
+ *
+ * Schema `HistoryInstanceMigrationResult`.
+ */
+export interface HistoryInstanceMigrationResult {
+  processInstanceId: string;
+  /** Definition id the history had before the move */
+  fromDefinitionId: string;
+  /** Definition id the history has now (the target) */
+  toDefinitionId: string;
+  /** Version of the old definition */
+  fromVersion: number;
+  /** Version of the new definition; always greater than fromVersion */
+  toVersion: number;
+  /** Rows changed per history table (ACT_HI_PROCINST is always 1; ACT_HI_IDENTITYLINK through the instance's history tasks; a table with no rows of the instance shows 0) */
+  rowsByTable: Record<string, number>;
 }
 
 /**
@@ -6064,6 +6616,69 @@ export interface MigrationPlanRequest {
 }
 
 /**
+ * One semantic change. Elements are matched by id (form components by id or key); layout (BPMNDI, DMNDI, CMMNDI) is never a change.
+ *
+ * Schema `ModelDiffChange`.
+ */
+export interface ModelDiffChange {
+  /**  One of: ELEMENT, FLOW, EXPRESSION, PROPERTY. */
+  level: 'ELEMENT' | 'FLOW' | 'EXPRESSION' | 'PROPERTY';
+  /**  One of: ADDED, REMOVED, CHANGED. */
+  kind: 'ADDED' | 'REMOVED' | 'CHANGED';
+  elementId: string;
+  /** BPMN/DMN/CMMN local name, or the form component's type */
+  elementType: string;
+  name: string;
+  /** The changed property or expression inside the element; empty for the element itself */
+  path: string;
+  /** The old value; null when added */
+  before?: string;
+  /** The new value; null when removed */
+  after?: string;
+}
+
+/**
+ * Semantic diff of two model versions.
+ *
+ * Schema `ModelDiffReport`.
+ */
+export interface ModelDiffReport {
+  resource: string;
+  /**  One of: BPMN, DMN, CMMN, FORM. */
+  format: 'BPMN' | 'DMN' | 'CMMN' | 'FORM';
+  changed: boolean;
+  summary: ModelDiffSummary;
+  /** Sorted by level, elementId, path, kind */
+  changes: Array<ModelDiffChange>;
+}
+
+/**
+ * Two versions of one model file to compare. Each side is at most 5 MiB of UTF-8 text.
+ *
+ * Schema `ModelDiffRequest`.
+ */
+export interface ModelDiffRequest {
+  /** File name; its extension (.bpmn,.bpmn20.xml,.dmn,.cmmn,.json) picks the format */
+  resource: string;
+  /** The old model text (UTF-8); null or empty = a new file */
+  before?: string;
+  /** The new model text (UTF-8); null or empty = a deleted file */
+  after?: string;
+}
+
+/**
+ * Number of changes per level.
+ *
+ * Schema `ModelDiffSummary`.
+ */
+export interface ModelDiffSummary {
+  ELEMENT: number;
+  FLOW: number;
+  EXPRESSION: number;
+  PROPERTY: number;
+}
+
+/**
  * The holder of a model file's edit lease.
  *
  * Schema `ModelEditLease`.
@@ -6097,6 +6712,16 @@ export interface ModelLeaseOutcome {
 }
 
 /**
+ * Who has a model file open.
+ *
+ * Schema `ModelPresence`.
+ */
+export interface ModelPresence {
+  fileId: string;
+  viewers: Array<ModelViewer>;
+}
+
+/**
  * Take over a lease; the former editor's draft is kept.
  *
  * Schema `ModelTakeoverRequest`.
@@ -6120,6 +6745,20 @@ export interface ModelTokenWalkRequest {
   maxSteps?: number;
   state?: Record<string, unknown>;
   choice?: string;
+}
+
+/**
+ * One user who has the model file open.
+ *
+ * Schema `ModelViewer`.
+ */
+export interface ModelViewer {
+  userId: string;
+  displayName?: string;
+  /** True for the holder of the file's edit lease */
+  editing: boolean;
+  /** When this user opened the file */
+  since: string;
 }
 
 /**
@@ -7852,6 +8491,80 @@ export interface PortalService {
 }
 
 /**
+ * A mandatory cap that applied; UNLIMITED never lifts it.
+ *
+ * Schema `PowerLimitCap`.
+ */
+export interface PowerLimitCap {
+  /** <cap id>@<cap version> */
+  cap: string;
+  max_amount: string;
+  currency: string;
+}
+
+/**
+ * Versioned power-limit decision (owner decision 142). DENY, LIMITED(max_amount, currency) and explicitly authorised UNLIMITED stay distinct; unknown operation metadata, a missing amount or currency, no applicable rule, or a malformed, conflicting or failed evaluation is DENY, never permission. Every applicable limit and every mandatory cap must pass and the lowest ceiling binds; UNLIMITED lifts only the delegated ceiling, never a cap, budget control, role or scope check or maker-checker. Whether an operation is monetary comes from trusted versioned case-type metadata, never from the caller. Version 1 evaluates the gross single-operation amount by magnitude; aggregate limits are outside version 1.
+ *
+ * Schema `PowerLimitDecision`.
+ */
+export interface PowerLimitDecision {
+  /**  One of: sangam.power-decision/1. */
+  contract_version: 'sangam.power-decision/1';
+  /**  One of: PERMIT, DENY. */
+  decision: 'PERMIT' | 'DENY';
+  effective: PowerLimitEffective;
+  /** Authenticated actor (server-side identity, never a payload value) */
+  actor?: string;
+  action?: string;
+  scope?: PowerLimitScope;
+  case_type?: string;
+  case_type_version?: number;
+  /** The authoritative amount evaluated; re-read when the action is applied */
+  amount?: string;
+  /** ISO 4217 code of amount */
+  currency?: string;
+  /** Version of the authoritative state the amount was read from */
+  state_version?: number;
+  /** From the trusted case-type metadata; absent when the metadata is unknown (then DENY) */
+  monetary?: boolean;
+  /** Version of the operation metadata used */
+  metadata_version?: string;
+  applicable_limits: Array<PowerLimitEffective>;
+  mandatory_caps: Array<PowerLimitCap>;
+  reason: string;
+  /** Fields that changed between an earlier approval and the re-read at apply time; the earlier approval is never reused */
+  changed_since_approval?: Array<string>;
+}
+
+/**
+ * A delegated limit outcome: DENY, LIMITED(max_amount, currency) or explicit UNLIMITED.
+ *
+ * Schema `PowerLimitEffective`.
+ */
+export interface PowerLimitEffective {
+  /** <rule id>@<rule version> for an applicable limit; absent on the effective outcome */
+  rule?: string;
+  /**  One of: DENY, LIMITED, UNLIMITED. */
+  kind: 'DENY' | 'LIMITED' | 'UNLIMITED';
+  /** The ceiling when kind is LIMITED; absent otherwise */
+  max_amount?: string;
+  /** ISO 4217 code of max_amount (LIMITED only) */
+  currency?: string;
+  /** Why the limit denies (DENY only) */
+  reason?: string;
+}
+
+/**
+ * Scope of a power-limit evaluation.
+ *
+ * Schema `PowerLimitScope`.
+ */
+export interface PowerLimitScope {
+  tenant?: string;
+  office?: string;
+}
+
+/**
  * Delegation-of-powers DMN table (IX.5 rule 3, K6). ACTIVE tables are deployed and evaluated by decision key.
  *
  * Schema `PowerTable`.
@@ -7931,8 +8644,37 @@ export interface Problem {
   code?: string;
   /** W3C trace id of the request (R13) */
   traceId?: string;
+  /** Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142) */
+  powerLimit?: PowerLimitDecision;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
+}
+
+/**
+ * The continuation chain an instance belongs to, oldest link first.
+ *
+ * Schema `ProcessContinuationChain`.
+ */
+export interface ProcessContinuationChain {
+  chainId: string;
+  /** Every instance of the chain in order; the last one is the current instance */
+  instanceIds: Array<string>;
+  links: Array<ProcessContinuationLink>;
+}
+
+/**
+ * One link of a continuation chain.
+ *
+ * Schema `ProcessContinuationLink`.
+ */
+export interface ProcessContinuationLink {
+  predecessorId: string;
+  successorId: string;
+  generation: number;
+  requestId: string;
+  actor: string;
+  reason: string;
+  continuedAt: string;
 }
 
 /**
@@ -10552,6 +11294,45 @@ export interface ScheduleServiceTarget {
 }
 
 /**
+ * Applied product changesets (Liquibase DATABASECHANGELOG).
+ *
+ * Schema `SchemaChangelogStatus`.
+ */
+export interface SchemaChangelogStatus {
+  applied: number;
+  lastId: string;
+  lastAuthor: string;
+  lastExecutedAt: string;
+  /** Every applied changeset id, in execution order */
+  ids: Array<string>;
+}
+
+/**
+ * The engine schema.
+ *
+ * Schema `SchemaEngineStatus`.
+ */
+export interface SchemaEngineStatus {
+  /** Operaton ACT_GE_PROPERTY schema.version */
+  schemaVersion: string;
+}
+
+/**
+ * Database schema status of this installation.
+ *
+ * Schema `SchemaStatus`.
+ */
+export interface SchemaStatus {
+  product: SchemaChangelogStatus;
+  engine: SchemaEngineStatus;
+  liquibaseLocked: boolean;
+  /** Holder of the Liquibase lock (DATABASECHANGELOGLOCK); null when not locked */
+  lockedBy?: string;
+  /** When the Liquibase lock was granted; null when not locked */
+  lockGrantedAt?: string;
+}
+
+/**
  * SCIM error (RFC 7644 section 3.12).
  *
  * Schema `ScimError`.
@@ -10606,7 +11387,7 @@ export interface ScimGroupRef {
 }
 
 /**
- * A group member.
+ * A group member: a person (User). A member of type Group is 400 invalidValue (no nested groups).
  *
  * Schema `ScimMember`.
  */
@@ -10679,7 +11460,7 @@ export interface ScimPatchRequest {
 }
 
 /**
- * A seat held by the person (IX.5): effective-dated; kind as in Assignment.
+ * A seat held by the person (IX.5): effective-dated; kind as in Assignment. Read-only in SCIM.
  *
  * Schema `ScimPosting`.
  */
@@ -10700,7 +11481,7 @@ export interface ScimSangamUser {
   /** Sangam person id (read-only; set by the server) */
   personId?: string;
   orgUnitId?: string;
-  /** Seats held; replacing the list ends postings not listed (validTo = today) and creates new ones */
+  /** Seats held (IX.5), read-only (decision 154): a request that changes them gets 400 scimType mutability (an unchanged echo of the current list is accepted); postings change only through the admin API */
   postings?: Array<ScimPosting>;
 }
 
@@ -10830,6 +11611,47 @@ export interface ServicePrincipal {
 export interface ServicePrincipalSecret {
   principal?: ServicePrincipal;
   secret?: string;
+}
+
+/**
+ * One registry row (SHARED_DEPLOYMENT). One row per deployment id; revocation is final for that id.
+ *
+ * Schema `SharedDeployment`.
+ */
+export interface SharedDeployment {
+  /** Engine deployment id (ACT_RE_DEPLOYMENT) of an untenanted deployment */
+  deploymentId: string;
+  /** Platform deployer that registered it (server-side identity) */
+  registeredBy: string;
+  /** Reason given at registration */
+  reason: string;
+  registeredAt: string;
+  /** Platform deployer that revoked it; absent while active */
+  revokedBy?: string;
+  revokedAt?: string;
+  /** Reason given at revocation */
+  revokeReason?: string;
+}
+
+/**
+ * Register an untenanted engine deployment as platform-owned.
+ *
+ * Schema `SharedDeploymentRegistration`.
+ */
+export interface SharedDeploymentRegistration {
+  deploymentId: string;
+  /** Mandatory reason for the audit record (R42) */
+  reason: string;
+}
+
+/**
+ * Revoke a registered shared deployment (final for that deployment id).
+ *
+ * Schema `SharedDeploymentRevocation`.
+ */
+export interface SharedDeploymentRevocation {
+  /** Mandatory reason for the audit record (R42) */
+  reason: string;
 }
 
 /**
@@ -10991,8 +11813,8 @@ export interface Task {
   delegationState?: string;
   /** P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller. */
   variables?: Record<string, unknown>;
-  /** M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount. */
-  amount?: number;
+  /** M-042 task index: the amount (MoneyAmount, a decimal string in MAJOR units with exactly the currency's fraction digits; owner decisions 138 and 211, never an integer or a float), set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount. The index stores integer minor units, so sortBy=amount (with the currency filter) orders exactly. */
+  amount?: string;
   /** M-042 task index: ISO 4217 code of amount; absent or null with amount. */
   currency?: string;
   /** M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one. */
@@ -11022,6 +11844,20 @@ export interface TaskDetail {
   changedSinceLastSeen?: Array<FieldChange>;
   ruleEvidence?: Array<RuleEvidence>;
   delegatedFrom?: string;
+  /** Read only; present only for a task with a DSC step document */
+  dscDocument?: TaskDscDocument;
+}
+
+/**
+ * Read only: the document a DSC step signs, as the DSC gate captured it when the task was created. The UI preselects that PDF; completion still checks it (decision 236).
+ *
+ * Schema `TaskDscDocument`.
+ */
+export interface TaskDscDocument {
+  /** The case variable that holds the step's document id, for example notingDocumentId */
+  slot: string;
+  /** The document id the slot held when the task was created; null when it was empty */
+  documentId?: string;
 }
 
 /**
@@ -11258,7 +12094,7 @@ export interface TtlRequest {
 export interface TypedValue {
   /**  One of: Decimal, BigInteger, Long, Integer, Boolean, String, Date, LocalDate, Json, Bytes. */
   type: 'Decimal' | 'BigInteger' | 'Long' | 'Integer' | 'Boolean' | 'String' | 'Date' | 'LocalDate' | 'Json' | 'Bytes';
-  /** String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json */
+  /** String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned variable type (decision 138) and returned unchanged through history, export and import. */
   value: unknown;
 }
 
@@ -11276,6 +12112,100 @@ export interface UiPluginManifest {
   styles?: Array<string>;
   contributes?: Array<Record<string, unknown>>;
   requires?: Record<string, unknown>;
+}
+
+/**
+ * A payment accepted unverified, and its state.
+ *
+ * Schema `UnverifiedPayment`.
+ */
+export interface UnverifiedPayment {
+  id: string;
+  ledger: string;
+  consumer: string;
+  channel: string;
+  office: string;
+  paymentRef: string;
+  amount: string;
+  currency: string;
+  paidAt: string;
+  /** PAYMENT_ACCEPTED_UNVERIFIED is pending verification: never verified, settled or reconciled. Penalty accrual on the arrears the payment covers pauses from the business date of acceptance (decision 195): VERIFIED forgives the suppressed amounts (the payment counts from acceptance); REJECTED or REVERSED posts each suppressed amount to the penalty account (audit PAYMENT_UNVERIFIED_ACCRUAL_RESUMED) One of: PAYMENT_ACCEPTED_UNVERIFIED, VERIFIED, REJECTED, REVERSED. */
+  state: 'PAYMENT_ACCEPTED_UNVERIFIED' | 'VERIFIED' | 'REJECTED' | 'REVERSED';
+  reason: string;
+  evidenceRef: string;
+  /** Authenticated principal that accepted it (server-side identity, never from the request) */
+  acceptedBy: string;
+  acceptedAt: string;
+  /** Whole days since acceptedAt (ageing; alerts per the channel policy) */
+  ageDays: number;
+  /** Version of the channel's unverified-acceptance policy applied */
+  policyVersion: string;
+  /** Actions the applied policy permits while the payment is pending; empty means none. Goods or services are not released, liabilities are not cleared and nothing is disbursed while pending unless a verified policy lists it */
+  downstreamPermitted: Array<string>;
+  /** Present once the payment left PAYMENT_ACCEPTED_UNVERIFIED */
+  resolution?: UnverifiedPaymentResolution;
+}
+
+/**
+ * Accept a payment that its channel cannot confirm now (decision 141).
+ *
+ * Schema `UnverifiedPaymentRequest`.
+ */
+export interface UnverifiedPaymentRequest {
+  consumer: string;
+  /** A payment channel configured for unverified acceptance; any other channel is 403 */
+  channel: string;
+  /** Office or counter where the payment was taken; part of the ACCEPT_UNVERIFIED scope */
+  office: string;
+  /** The channel's payment reference; a second acceptance of the same channel and reference is 409 (one record per tenant, channel and reference) */
+  paymentRef: string;
+  /** Greater than zero; exact decimal string (MoneyAmount) */
+  amount: string;
+  /** ISO 4217; must be the ledger currency */
+  currency: string;
+  paidAt: string;
+  payerName?: string;
+  /** How the payer paid, for example CHEQUE, DEMAND_DRAFT, CASH, UPI (free text) */
+  instrument?: string;
+  /** Why the channel could not confirm the payment */
+  reason: string;
+  /** Receipt or evidence reference (document key or physical receipt number) */
+  evidenceRef: string;
+  /** Further payment details as text (bank, instrument number, date on the instrument) */
+  details?: Record<string, string>;
+}
+
+/**
+ * How a pending unverified payment was resolved.
+ *
+ * Schema `UnverifiedPaymentResolution`.
+ */
+export interface UnverifiedPaymentResolution {
+  /**  One of: VERIFIED, REJECTED, REVERSED. */
+  outcome: 'VERIFIED' | 'REJECTED' | 'REVERSED';
+  reason: string;
+  /** The channel's confirmation reference (required for VERIFIED) */
+  verificationRef?: string;
+  /** Evidence of a manual VERIFIED (document key or receipt number; required for it, decision 196); absent for a rail reconciliation */
+  evidenceRef?: string;
+  /** Authenticated principal that resolved it (server-side identity); system:reconciliation when the rail reconciliation job verified it (the normal path to VERIFIED) */
+  resolvedBy: string;
+  resolvedAt: string;
+}
+
+/**
+ * Resolve a pending unverified payment.
+ *
+ * Schema `UnverifiedPaymentResolveRequest`.
+ */
+export interface UnverifiedPaymentResolveRequest {
+  /** VERIFIED (the channel confirmed it), REJECTED (it never arrived) or REVERSED (it was returned); the original record and its audit history stay One of: VERIFIED, REJECTED, REVERSED. */
+  outcome: 'VERIFIED' | 'REJECTED' | 'REVERSED';
+  reason: string;
+  /** Required for VERIFIED: the channel's confirmation reference */
+  verificationRef?: string;
+  /** Required for VERIFIED (a manual VERIFIED, decision 196): document key or receipt number of the evidence */
+  evidenceRef?: string;
 }
 
 /**

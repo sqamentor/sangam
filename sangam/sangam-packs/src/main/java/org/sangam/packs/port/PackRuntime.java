@@ -24,9 +24,17 @@ public final class PackRuntime {
     private PackRuntime() {
     }
 
-    /** The full set of ports. */
+    /**
+     * The full set of ports. {@code signatures} answers whether a verified DSC signature exists for a task (decisions
+     * 140 and 165); its default {@link SignatureVerifications#DENY} keeps a step that needs one closed.
+     * {@code production} (decision 292) says the installation runs in production mode: then every rounding policy row
+     * and versioned rules row whose permitted use is not {@code PRODUCTION} is refused
+     * ({@code org.sangam.packs.core.RowEvidence}). It is false (non-production) unless the server sets it from its
+     * fail-closed production setting (decision 143).
+     */
     public record Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
-                        BatchLedger batches, LedgerStore ledgers, Clock clock) {
+                        BatchLedger batches, LedgerStore ledgers, Clock clock, SignatureVerifications signatures,
+                        boolean production) {
         public Ports {
             Objects.requireNonNull(gateway, "gateway");
             Objects.requireNonNull(seats, "seats");
@@ -35,34 +43,56 @@ public final class PackRuntime {
             Objects.requireNonNull(batches, "batches");
             Objects.requireNonNull(ledgers, "ledgers");
             Objects.requireNonNull(clock, "clock");
+            Objects.requireNonNull(signatures, "signatures");
+        }
+
+        /** The ports with a DSC verification adapter, non-production (decision 292 default). */
+        public Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
+                     BatchLedger batches, LedgerStore ledgers, Clock clock, SignatureVerifications signatures) {
+            this(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, false);
+        }
+
+        /** The ports without a DSC verification adapter: every DSC check is refused; non-production. */
+        public Ports(ConnectorGateway gateway, SeatDirectory seats, BusinessCalendar calendar, PackAuditSink audit,
+                     BatchLedger batches, LedgerStore ledgers, Clock clock) {
+            this(gateway, seats, calendar, audit, batches, ledgers, clock, SignatureVerifications.DENY, false);
         }
 
         public Ports withGateway(ConnectorGateway g) {
-            return new Ports(g, seats, calendar, audit, batches, ledgers, clock);
+            return new Ports(g, seats, calendar, audit, batches, ledgers, clock, signatures, production);
         }
 
         public Ports withSeats(SeatDirectory s) {
-            return new Ports(gateway, s, calendar, audit, batches, ledgers, clock);
+            return new Ports(gateway, s, calendar, audit, batches, ledgers, clock, signatures, production);
         }
 
         public Ports withCalendar(BusinessCalendar c) {
-            return new Ports(gateway, seats, c, audit, batches, ledgers, clock);
+            return new Ports(gateway, seats, c, audit, batches, ledgers, clock, signatures, production);
         }
 
         public Ports withAudit(PackAuditSink a) {
-            return new Ports(gateway, seats, calendar, a, batches, ledgers, clock);
+            return new Ports(gateway, seats, calendar, a, batches, ledgers, clock, signatures, production);
         }
 
         public Ports withBatches(BatchLedger b) {
-            return new Ports(gateway, seats, calendar, audit, b, ledgers, clock);
+            return new Ports(gateway, seats, calendar, audit, b, ledgers, clock, signatures, production);
         }
 
         public Ports withLedgers(LedgerStore l) {
-            return new Ports(gateway, seats, calendar, audit, batches, l, clock);
+            return new Ports(gateway, seats, calendar, audit, batches, l, clock, signatures, production);
         }
 
         public Ports withClock(Clock c) {
-            return new Ports(gateway, seats, calendar, audit, batches, ledgers, c);
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, c, signatures, production);
+        }
+
+        public Ports withSignatures(SignatureVerifications v) {
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, v, production);
+        }
+
+        /** Decision 292: production mode on or off; every other port is kept. */
+        public Ports withProduction(boolean p) {
+            return new Ports(gateway, seats, calendar, audit, batches, ledgers, clock, signatures, p);
         }
     }
 
@@ -112,5 +142,14 @@ public final class PackRuntime {
 
     public static Clock clock() {
         return ports.clock();
+    }
+
+    public static SignatureVerifications signatures() {
+        return ports.signatures();
+    }
+
+    /** Decision 292: true when the installation runs in production mode (default false, non-production). */
+    public static boolean production() {
+        return ports.production();
     }
 }

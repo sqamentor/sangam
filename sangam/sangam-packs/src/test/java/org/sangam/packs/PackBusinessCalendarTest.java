@@ -49,8 +49,9 @@ class PackBusinessCalendarTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -67,7 +68,7 @@ class PackBusinessCalendarTest {
     /** Runs a pension case and returns the first working-day SLA it planned (spec, due). */
     static PackAuditEvent firstWorkingDaySla(String bk) {
         engine.getRuntimeService().createProcessInstanceByKey("sangam-pension-sanction").businessKey(bk)
-                .setVariables(AllPacksSmokeTest.bag()).processDefinitionWithoutTenantId().execute();
+                .setVariables(AllPacksSmokeTest.bag()).processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, new FormAnswers(engine)::answer, 80);
         return ((LoggingAuditSink) PackRuntime.audit()).timeline(bk).stream()
                 .filter(e -> "SLA_STARTED".equals(e.type()))

@@ -3,11 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- No remote origins: scripts, styles, fonts and images are served from this host only (air-gapped, R56). -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-    />
+    <!-- No remote origins: scripts, styles, fonts and images are served from this host only (air-gapped, R56).
+         Owner decision 214: no meta CSP. The Content-Security-Policy response header is the only policy; it names the
+         configured OIDC issuer (and the DSC agent origin when set), which a fixed meta policy here would block. -->
     <meta name="description" content="Sangam open-source workflow platform" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Sangam</title>

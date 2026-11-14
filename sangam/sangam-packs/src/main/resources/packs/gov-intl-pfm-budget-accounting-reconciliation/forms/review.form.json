@@ -1,0 +1,85 @@
+{
+  "key": "gov-intl-pfm-budget-accounting-reconciliation/review",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-budget-accounting-reconciliation",
+  "title": {
+    "en": "Approve the reconciliation (not the preparer)",
+    "hi": "मिलान का अनुमोदन"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "differenceAmount",
+      "type": "readonly",
+      "currency": "USD",
+      "exponent": 2,
+      "required": false,
+      "label": {
+        "en": "Difference (exact)",
+        "hi": "अंतर"
+      }
+    },
+    {
+      "id": "basisDifferenceNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Basis differences (cash and accrual)",
+        "hi": "आधार अंतर"
+      }
+    },
+    {
+      "id": "timingDifferenceNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Timing differences",
+        "hi": "समय अंतर"
+      }
+    },
+    {
+      "id": "entityDifferenceNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Entity differences",
+        "hi": "इकाई अंतर"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

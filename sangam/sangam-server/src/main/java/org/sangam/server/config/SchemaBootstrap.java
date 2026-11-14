@@ -81,10 +81,12 @@ public class SchemaBootstrap {
         if (isH2(dataSource)) {
             DatabaseGuard.prepareH2(dataSource);
         }
-        SpringLiquibase liquibase = new SpringLiquibase();
+        boolean run = mode == LiquibaseMode.STARTUP || mode == LiquibaseMode.MIGRATE_ONLY;
+        SangamSpringLiquibase liquibase = new SangamSpringLiquibase(dataSource, run,
+                OracleVectorSchema.wanted(env.getProperty(OracleVectorSchema.PROPERTY, "portable")));
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog(changelog);
-        liquibase.setShouldRun(mode == LiquibaseMode.STARTUP || mode == LiquibaseMode.MIGRATE_ONLY);
+        liquibase.setShouldRun(run);
         String contexts = env.getProperty("sangam.persistence.contexts");
         if (contexts != null) {
             liquibase.setContexts(contexts);
@@ -207,6 +209,39 @@ public class SchemaBootstrap {
             }
         }
         return false;
+    }
+
+    /**
+     * The product changelog, then (owner decision 247) the oracle-vector changelog when
+     * {@code sangam.ai.kb.vector-index=oracle}: the Oracle 23ai check runs first in every mode, so an older database is
+     * refused before any changeset; the changelog is applied only where the product changelog is applied.
+     */
+    static final class SangamSpringLiquibase extends SpringLiquibase {
+        private final DataSource target;
+        private final boolean run;
+        private final boolean oracleVector;
+
+        SangamSpringLiquibase(DataSource target, boolean run, boolean oracleVector) {
+            this.target = target;
+            this.run = run;
+            this.oracleVector = oracleVector;
+        }
+
+        boolean oracleVector() {
+            return oracleVector;
+        }
+
+        @Override
+        public void afterPropertiesSet() throws liquibase.exception.LiquibaseException {
+            if (oracleVector) {
+                OracleVectorSchema.requireOracle23ai(target);
+            }
+            super.afterPropertiesSet();
+            if (oracleVector && run) {
+                OracleVectorSchema.apply(target);
+                LOG.info("Product schema: oracle-vector changelog applied (sangam.ai.kb.vector-index=oracle)");
+            }
+        }
     }
 
     /** True when the configured changelog resource exists. */

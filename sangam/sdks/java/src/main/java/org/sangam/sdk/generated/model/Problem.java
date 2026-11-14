@@ -15,6 +15,7 @@ package org.sangam.sdk.generated.model;
  * @param instance wire field {@code instance}
  * @param code wire field {@code code}. Stable machine code (X.4.0.4, X.2.2.6). Clients must accept unknown codes.
  * @param traceId wire field {@code traceId}. W3C trace id of the request (R13)
+ * @param powerLimit wire field {@code powerLimit}. Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142)
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */
 public record Problem(
@@ -25,5 +26,6 @@ public record Problem(
         @com.fasterxml.jackson.annotation.JsonProperty("instance") String instance,
         @com.fasterxml.jackson.annotation.JsonProperty("code") String code,
         @com.fasterxml.jackson.annotation.JsonProperty("traceId") String traceId,
+        @com.fasterxml.jackson.annotation.JsonProperty("powerLimit") PowerLimitDecision powerLimit,
         @com.fasterxml.jackson.annotation.JsonAnySetter @com.fasterxml.jackson.annotation.JsonAnyGetter java.util.Map<String, Object> additionalProperties) {
 }

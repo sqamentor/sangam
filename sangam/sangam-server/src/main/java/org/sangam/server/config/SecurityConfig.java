@@ -61,6 +61,9 @@ public class SecurityConfig {
                                                          ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine)
             throws Exception {
         ProblemResponses problems = new ProblemResponses();
+        // decision 126 part 1: production requires signed audit checkpoints for every tenant (this chain is always on)
+        AuditCheckpointWiring.requireInProduction(env);
+        requireNoDevelopmentIssuer(props, env);
         DevTokenFilter devToken = devTokenFilter(props, env);
         JwtDecoder decoder = jwtDecoder.getIfAvailable();
         if (devToken == null && decoder == null) {
@@ -88,6 +91,10 @@ public class SecurityConfig {
                         // Channel webhooks: public only because the controller verifies the provider signature first
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/channels/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/hooks/channels/**").permitAll()
+                        // SL-170 Event Grid deliveries (decisions 189, 219): public only because PortsEventBridge checks the
+                        // channel's Entra token or shared secret first (401 when it fails); 404 unless enabled
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/eventgrid/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/api/v1/hooks/eventgrid/**").permitAll()
                         // CDS Hooks discovery and services (HL7 CDS Hooks paths, outside /api/v1). M-006 / SL-138: the
                         // caller is a CDS client (an EHR) with a JWT signed by its own key, which no Sangam decoder
                         // knows; HealthHooksController verifies it against the client's registered JWKS (iss, aud,
@@ -113,6 +120,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/cell/**")
                         .hasAnyAuthority("GROUP_CELL_ADMIN", "GROUP_sangam-cell-admin")
                         .requestMatchers("/api/**").authenticated()
+                        // SCIM 2.0 provisioning (RFC 7644 paths, outside /api/v1): a signed-in caller; the
+                        // scim.provision permission is still checked inside ScimController
+                        .requestMatchers("/scim/v2/**").authenticated()
                         // FWT-D11: the servlet error dispatch of a request that already passed this chain keeps its
                         // status for a signed-in caller (an uncaught 409/422 must not become 403 ACTION_NOT_PERMITTED);
                         // without authentication it stays 401. A direct request to /error is still denied below.
@@ -170,6 +180,19 @@ public class SecurityConfig {
         return List.of();
     }
 
+    /**
+     * Decision 152: outside a development environment the development token issuer can never be trusted, also not
+     * as a platform issuer (it would let a development-issued identity in through the JWT path).
+     */
+    static void requireNoDevelopmentIssuer(SangamSecurityProperties props, Environment env) {
+        if (!ProductionEnvironment.developmentDefaultsAllowed(env)
+                && props.platformIssuers().issuers().contains(org.sangam.server.security.PlatformIssuers.DEV_TOKEN_ISSUER)) {
+            throw new IllegalStateException("sangam.security.platform-issuer lists the development token issuer "
+                    + org.sangam.server.security.PlatformIssuers.DEV_TOKEN_ISSUER
+                    + ", which is allowed only in a development environment (decision 152)");
+        }
+    }
+
     /** Returns the dev-token filter when enabled, after the safety checks; {@code null} otherwise. */
     static DevTokenFilter devTokenFilter(SangamSecurityProperties props, Environment env) {
         SangamSecurityProperties.DevToken cfg = props.getDevToken();
@@ -179,6 +202,12 @@ public class SecurityConfig {
         if (ProductionEnvironment.isProduction(env)) { // SL-109
             throw new IllegalStateException("sangam.security.dev-token.enabled=true is not allowed in production "
                     + "(sangam.security.production=true or a 'prod' profile)");
+        }
+        if (!ProductionEnvironment.developmentDefaultsAllowed(env)) {
+            // decision 152: a static development identity only in a validated development or test environment
+            throw new IllegalStateException("sangam.security.dev-token.enabled=true is allowed only in a development"
+                    + " environment (sangam.security.production=false with a dev, h2, test or local profile;"
+                    + " decisions 143 and 152)");
         }
         if (cfg.getToken() == null || cfg.getToken().length() < MIN_DEV_TOKEN_LENGTH) {
             throw new IllegalStateException("sangam.security.dev-token.token must be at least " + MIN_DEV_TOKEN_LENGTH
@@ -203,15 +232,19 @@ public class SecurityConfig {
             java.util.Arrays.stream(CDS_SERVICES_PATHS)
                     .map(p -> (RequestMatcher) PathPatternRequestMatcher.pathPattern(p)).toList());
 
+    /** SL-170: Event Grid hooks; their Authorization header is a Microsoft Entra delivery token, checked by the channel. */
+    static final RequestMatcher EVENT_GRID_HOOKS = PathPatternRequestMatcher.pathPattern("/api/v1/hooks/eventgrid/**");
+
     /**
      * Keeps the dev token away from the JWT decoder when both modes are on. SL-138: on the CDS Hooks paths no token
      * goes to the decoder: the {@code Authorization} header there carries a CDS client's JWT, checked by the
      * controller's {@code CdsClientVerifier}; decoding it as a Sangam token would answer 401 before the controller.
+     * The same holds for the SL-170 Event Grid hooks (an Entra delivery token, checked by the channel, decision 219).
      */
     static BearerTokenResolver bearerResolver(DevTokenFilter devToken) {
         DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
         return (HttpServletRequest request) -> {
-            if (CDS_SERVICES.matches(request)) {
+            if (CDS_SERVICES.matches(request) || EVENT_GRID_HOOKS.matches(request)) {
                 return null;
             }
             String token = delegate.resolve(request);

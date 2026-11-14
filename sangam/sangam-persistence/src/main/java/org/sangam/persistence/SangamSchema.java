@@ -43,6 +43,12 @@ public final class SangamSchema {
     /** IR-8: optional ACT_HI_* partitioning; never part of the master (see the changelog's header). */
     public static final String HISTORY_PARTITIONING_CHANGELOG = "db/changelog/sangam-history-partitioning.xml";
     public static final String HISTORY_PARTITIONING_CONTEXT = "partitioned-history";
+    /**
+     * Owner decision 247: optional Oracle AI Vector Search column AI_KB_CHUNK.embedding_vec (changeset
+     * 0045-10-ai_kb_chunk-oracle-vector); never part of the master, applied only with {@link #ORACLE_VECTOR_CONTEXT}.
+     */
+    public static final String ORACLE_VECTOR_CHANGELOG = "db/changelog/sangam-oracle-vector.xml";
+    public static final String ORACLE_VECTOR_CONTEXT = "oracle-vector";
 
     /** Product tables created by the master changelog (documented in sangam-persistence/README.md). */
     public static final List<String> PRODUCT_TABLES = List.of(
@@ -77,7 +83,8 @@ public final class SangamSchema {
             // sangam-onboarding
             "ONB_RUN",
             // sangam-ledger LedgerSchema (also the billing tables)
-            "LDG_BALANCE", "LDG_ENTRY", "LDG_HOLD", "LDG_FREEZE", "LDG_ACCOUNTING",
+            "LDG_BALANCE", "LDG_ENTRY", "LDG_HOLD", "LDG_FREEZE", "LDG_ACCOUNTING", "BILL_UNVERIFIED_PAYMENT",
+            "BILL_UNVERIFIED_ACCRUAL_PAUSE",
             // sangam-billing RegistryDocumentNumbers: document numbers and receipt plans by document identity (SL-130/131)
             "BIL_DOCUMENT",
             // sangam-registry RegistrySchema
@@ -152,7 +159,22 @@ public final class SangamSchema {
             // M-078 national id vault (sangam-compliance ComplianceSchema; 0043-03)
             "CMP_NATIONAL_ID_VAULT",
             // M-084 break-glass grants, M-085 field re-encryption progress (sangam-security; 0043-04/05)
-            "SEC_BREAK_GLASS", "SEC_REENCRYPT_PROGRESS", "WORK_STEP", "CH_MESSAGE_GRAM", "API_CONTRACT", "PROCESS_TRACE");
+            "SEC_BREAK_GLASS", "SEC_REENCRYPT_PROGRESS", "WORK_STEP", "CH_MESSAGE_GRAM", "API_CONTRACT", "PROCESS_TRACE",
+            // Wave 4b: SCIM provisioning state (decision 154; 0044-01), continue-as-new chain (decision 149; 0044-02),
+            // Flowable migration runs and items (decision 169, sangam-ops; 0044-03/04)
+            "SEC_SCIM_RESOURCE", "PROCESS_CONTINUATION", "OPS_FMIG_RUN", "OPS_FMIG_ITEM",
+            // UTC conversion tool run records and cell snapshots (decisions 150 and 203, sangam-ops; 0045-01/02)
+            "OPS_UTC_RUN", "OPS_UTC_CELL",
+            // DSC prepared signature state (decision 165, sangam-integration JdbcDscPreparedStore; 0045-04)
+            "INTEGRATION_DSC_PREPARED",
+            // executor partition-count changes (decision 146; 0045-05), shared-deployment registry (decision 197;
+            // 0045-06), Flowable source listener acknowledgements (decision 231; 0045-07), DSC certificate
+            // enrolment (decision 227; 0045-08), the UTC conversion engine-work gate (integrator ruling 2026-11-13,
+            // option C; 0045-13, its ENGINE_WORK row seeded by 0045-14)
+            "EXEC_RESIZE", "SHARED_DEPLOYMENT", "OPS_FMIG_ACK", "INTEGRATION_DSC_CERTIFICATE", "OPS_UTC_GATE",
+            // DLT SMS delivery state and reports seen (decision 304; 0045-16/17), stored DLT registration (decision 305;
+            // 0045-18/19), sangam-integration IntegrationSchema
+            "NOTIFICATION_DELIVERY", "NOTIFICATION_DELIVERY_REPORT", "DLT_REGISTRATION", "DLT_REGISTRATION_ITEM");
 
     /**
      * Changesets that alter a table created earlier (generator {@code ALTERS}): FORM_DRAFT.form_version_hash,
@@ -171,10 +193,21 @@ public final class SangamSchema {
      * EXEC_NODE.node_id to 255 characters (0042-01..03); plus the M-130 alter OPS_BULK_JOB.creator_identity (0043-09) and the
      * SEC_TENANT.isolation alter with CK_SEC_TENANT_ISOLATION (0043-11, decision 97) and the CH_INBOUND_SEEN identity and media-fetch alter + CH_INBOUND_SEEN_MEDIA (0043-13, W3-C); plus the
      * generator {@code NULLABLE_UNIQUE} changeset: PACKAGE_VERSION.package_hash NULL for drafts, the unique
-     * PACKAGE_VERSION_HASH over frozen hashes only (0043-10, decision 83).
+     * PACKAGE_VERSION_HASH over frozen hashes only (0043-10, decision 83); plus the decision 160 legacy-history alters
+     * record_source (ENGINE or LEGACY, named CHECK) and legacy_ref on HRM_PROCESS_INSTANCE, HRM_ACTIVITY_INSTANCE and
+     * HRM_TASK (0044-05..07); plus BILL_UNVERIFIED_PAYMENT.resolution_evidence_ref and the index
+     * BILL_UNVERIFIED_CONSUMER (0045-03, decisions 195 and 196); plus OPS_UTC_RUN.session_zone (0045-09, decision 240);
+     * plus the decision 241 identity binding: INTEGRATION_DSC_CERTIFICATE.approval_seq (0045-11) and
+     * INTEGRATION_DSC_PREPARED.enrolment_id and enrolment_approval_seq (0045-12); plus the OJ-06 step 8 incident closure
+     * columns CMP_INCIDENT root_cause, lessons_learned, closed_at, closed_by (0045-15) and the decision 304 index
+     * CONNECTOR_CALL_DELIVERY (0045-20); plus the generator {@code DATA}
+     * changeset that seeds the OPS_UTC_GATE row ENGINE_WORK in state OPEN (0045-14).
+     * The PostgreSQL changelog also holds optional extension changesets (generator {@code PG_EXTENSION_OPTIONAL}: the
+     * pgvector column AI_KB_CHUNK.embedding_vec, 0044-08, decision 170). They are recorded only where the extension is
+     * enabled, so they are not in this count.
      * The changelog holds {@code PRODUCT_TABLES.size() + ADDITIONAL_CHANGESETS} changesets.
      */
-    public static final int ADDITIONAL_CHANGESETS = 81;
+    public static final int ADDITIONAL_CHANGESETS = 91;
 
     /** Liquibase dbms names used in the changelogs. */
     public enum Dbms {
@@ -231,6 +264,15 @@ public final class SangamSchema {
      */
     public static void applyHistoryPartitioning(DataSource dataSource) {
         run(dataSource, HISTORY_PARTITIONING_CHANGELOG, HISTORY_PARTITIONING_CONTEXT);
+    }
+
+    /**
+     * Owner decision 247: adds the nullable Oracle {@code VECTOR} column {@code AI_KB_CHUNK.embedding_vec}. Call after
+     * {@link #apply(DataSource)}, only where {@code sangam.ai.kb.vector-index=oracle} on Oracle AI Database 23ai or
+     * later (the caller refuses older versions); any other database halts on the changelog's precondition.
+     */
+    public static void applyOracleVector(DataSource dataSource) {
+        run(dataSource, ORACLE_VECTOR_CHANGELOG, ORACLE_VECTOR_CONTEXT);
     }
 
     /** Applies the engine schema patches (P-1, P-2). Call after the engine created/upgraded its tables. */

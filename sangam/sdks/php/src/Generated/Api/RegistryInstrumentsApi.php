@@ -23,7 +23,7 @@ final class RegistryInstrumentsApi
     /**
      * Issue
      *
-     * InstrumentController.issue (sangam-registry).
+     * InstrumentController.issue (sangam-rest).
      *
      * POST /registry/instruments (operationId registryInstrumentIssue); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentIssueBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryInstrumentsApi
     /**
      * Renew
      *
-     * InstrumentController.renew (sangam-registry).
+     * InstrumentController.renew (sangam-rest).
      *
      * POST /registry/instruments/{id}/renew (operationId registryInstrumentRenew); permission registry.write; result stored atomically with the state change.
      * @param string|null $ifMatch header If-Match
@@ -60,7 +60,7 @@ final class RegistryInstrumentsApi
     /**
      * Deemed
      *
-     * InstrumentController.deemed (sangam-registry).
+     * InstrumentController.deemed (sangam-rest).
      *
      * POST /registry/instruments/{id}/deemed-renewal (operationId registryInstrumentDeemed); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -74,7 +74,7 @@ final class RegistryInstrumentsApi
     /**
      * Suspend
      *
-     * InstrumentController.suspend (sangam-registry).
+     * InstrumentController.suspend (sangam-rest).
      *
      * POST /registry/instruments/{id}/suspend (operationId registryInstrumentSuspend); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentSuspendBody|array $body request body
@@ -94,7 +94,7 @@ final class RegistryInstrumentsApi
     /**
      * Reinstate
      *
-     * InstrumentController.reinstate (sangam-registry).
+     * InstrumentController.reinstate (sangam-rest).
      *
      * POST /registry/instruments/{id}/reinstate (operationId registryInstrumentReinstate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentReinstateBody|array $body request body
@@ -114,7 +114,7 @@ final class RegistryInstrumentsApi
     /**
      * Revoke
      *
-     * InstrumentController.revoke (sangam-registry).
+     * InstrumentController.revoke (sangam-rest).
      *
      * POST /registry/instruments/{id}/revoke (operationId registryInstrumentRevoke); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentRevokeBody|array $body request body
@@ -134,7 +134,7 @@ final class RegistryInstrumentsApi
     /**
      * Surrender
      *
-     * InstrumentController.surrender (sangam-registry).
+     * InstrumentController.surrender (sangam-rest).
      *
      * POST /registry/instruments/{id}/surrender (operationId registryInstrumentSurrender); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentSurrenderBody|array $body request body
@@ -154,7 +154,7 @@ final class RegistryInstrumentsApi
     /**
      * Expire
      *
-     * InstrumentController.expire (sangam-registry).
+     * InstrumentController.expire (sangam-rest).
      *
      * POST /registry/instruments/{id}/expire (operationId registryInstrumentExpire); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -168,7 +168,7 @@ final class RegistryInstrumentsApi
     /**
      * Transition
      *
-     * InstrumentController.transition (sangam-registry).
+     * InstrumentController.transition (sangam-rest).
      *
      * POST /registry/instruments/{id}/transitions/{name} (operationId registryInstrumentTransition); permission registry.write; result stored atomically with the state change.
      * @param string|null $ifMatch header If-Match
@@ -187,7 +187,7 @@ final class RegistryInstrumentsApi
     /**
      * Transfer holder
      *
-     * InstrumentController.transferHolder (sangam-registry).
+     * InstrumentController.transferHolder (sangam-rest).
      *
      * POST /registry/instruments/{id}/transfer-holder (operationId registryInstrumentTransferHolder); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentTransferHolderBody|array $body request body
@@ -207,7 +207,7 @@ final class RegistryInstrumentsApi
     /**
      * Transfer reissue
      *
-     * InstrumentController.transferReissue (sangam-registry).
+     * InstrumentController.transferReissue (sangam-rest).
      *
      * POST /registry/instruments/{id}/transfer-reissue (operationId registryInstrumentTransferReissue); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentTransferReissueBody|array $body request body
@@ -225,7 +225,7 @@ final class RegistryInstrumentsApi
     /**
      * Amend
      *
-     * InstrumentController.amend (sangam-registry).
+     * InstrumentController.amend (sangam-rest).
      *
      * POST /registry/instruments/{id}/amend (operationId registryInstrumentAmend); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentAmendBody|array $body request body
@@ -245,7 +245,7 @@ final class RegistryInstrumentsApi
     /**
      * Duplicate
      *
-     * InstrumentController.duplicate (sangam-registry).
+     * InstrumentController.duplicate (sangam-rest).
      *
      * POST /registry/instruments/{id}/duplicate (operationId registryInstrumentDuplicate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentDuplicateBody|array $body request body
@@ -263,7 +263,7 @@ final class RegistryInstrumentsApi
     /**
      * Endorse
      *
-     * InstrumentController.endorse (sangam-registry).
+     * InstrumentController.endorse (sangam-rest).
      *
      * POST /registry/instruments/{id}/endorsements (operationId registryInstrumentEndorse); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryInstrumentEndorseBody|array $body request body
@@ -281,7 +281,7 @@ final class RegistryInstrumentsApi
     /**
      * Endorsements
      *
-     * InstrumentController.endorsements (sangam-registry).
+     * InstrumentController.endorsements (sangam-rest).
      *
      * GET /registry/instruments/{id}/endorsements (operationId registryInstrumentEndorsements); permission registry.read.
      * @return list<array<string, mixed>>
@@ -295,7 +295,7 @@ final class RegistryInstrumentsApi
     /**
      * Documents
      *
-     * InstrumentController.documents (sangam-registry).
+     * InstrumentController.documents (sangam-rest).
      *
      * GET /registry/instruments/{id}/documents (operationId registryInstrumentDocuments); permission registry.read.
      * @return list<array<string, mixed>>
@@ -309,7 +309,7 @@ final class RegistryInstrumentsApi
     /**
      * Regenerate
      *
-     * InstrumentController.regenerate (sangam-registry).
+     * InstrumentController.regenerate (sangam-rest).
      *
      * POST /registry/instruments/{id}/documents/regenerate (operationId registryInstrumentRegenerate); permission registry.write; result stored atomically with the state change.
      * @param string|null $purpose query purpose
@@ -325,7 +325,7 @@ final class RegistryInstrumentsApi
     /**
      * Expire due
      *
-     * InstrumentController.expireDue (sangam-registry).
+     * InstrumentController.expireDue (sangam-rest).
      *
      * POST /registry/instruments/jobs/expire (operationId registryInstrumentExpireDue); permission registry.write; result stored atomically with the state change.
      * @param string|null $typeKey query typeKey
@@ -343,7 +343,7 @@ final class RegistryInstrumentsApi
     /**
      * Renewal due
      *
-     * InstrumentController.renewalDue (sangam-registry).
+     * InstrumentController.renewalDue (sangam-rest).
      *
      * POST /registry/instruments/jobs/renewal-due (operationId registryInstrumentRenewalDue); permission registry.write; result stored atomically with the state change.
      * @param string|null $typeKey query typeKey
@@ -361,7 +361,7 @@ final class RegistryInstrumentsApi
     /**
      * Reinstate due
      *
-     * InstrumentController.reinstateDue (sangam-registry).
+     * InstrumentController.reinstateDue (sangam-rest).
      *
      * POST /registry/instruments/jobs/reinstate (operationId registryInstrumentReinstateDue); permission registry.write; result stored atomically with the state change.
      * @param string|null $typeKey query typeKey
@@ -379,7 +379,7 @@ final class RegistryInstrumentsApi
     /**
      * Verify code
      *
-     * InstrumentController.verifyCode (sangam-registry).
+     * InstrumentController.verifyCode (sangam-rest).
      *
      * GET /registry/instruments/public/{tenant}/verify (operationId registryInstrumentVerifyCode).
      * @param string $code query code
@@ -395,7 +395,7 @@ final class RegistryInstrumentsApi
     /**
      * Verify qr
      *
-     * InstrumentController.verifyQr (sangam-registry).
+     * InstrumentController.verifyQr (sangam-rest).
      *
      * POST /registry/instruments/public/verify-qr (operationId registryInstrumentVerifyQr).
      * @param Model\RegistryInstrumentVerifyQrBody|array $body request body

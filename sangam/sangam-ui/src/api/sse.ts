@@ -112,6 +112,11 @@ export interface StreamOptions {
   retryMs?: number;
   /** Upper bound of the wait, in ms (default 30000). */
   maxRetryMs?: number;
+  /**
+   * More statuses that end the stream like a refusal, on top of 400, 401, 403 and 404. M-101 presence passes 501: a
+   * server without the stream answers it on every attempt, so retrying it only adds load.
+   */
+  fatalStatuses?: readonly number[];
 }
 
 const FATAL = new Set([400, 401, 403, 404]);
@@ -142,6 +147,7 @@ export function openEventStream(path: string, handlers: StreamHandlers, opts: St
   const ctl = new AbortController();
   const base = opts.retryMs ?? 3000;
   const max = opts.maxRetryMs ?? 30000;
+  const fatal = new Set([...FATAL, ...(opts.fatalStatuses ?? [])]);
   void (async () => {
     let lastEventId = opts.lastEventId ?? '';
     let serverRetry: number | undefined;
@@ -167,7 +173,7 @@ export function openEventStream(path: string, handlers: StreamHandlers, opts: St
         }
       } catch (e) {
         if (ctl.signal.aborted || (e as Error).name === 'AbortError') break;
-        if (e instanceof ApiError && FATAL.has(e.status)) {
+        if (e instanceof ApiError && fatal.has(e.status)) {
           handlers.onLive?.(false);
           handlers.onFatal?.(e);
           return;

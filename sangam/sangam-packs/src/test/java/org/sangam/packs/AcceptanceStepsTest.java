@@ -41,6 +41,7 @@ class AcceptanceStepsTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
         driver = new PackDriver(engine);
         deploy(Bpmn.createExecutableProcess("steps-timer").startEvent().intermediateCatchEvent("wait")
@@ -67,7 +68,7 @@ class AcceptanceStepsTest {
     }
 
     private static void deploy(BpmnModelInstance m) {
-        engine.getRepositoryService().createDeployment().addModelInstance(m.getModelElementsByType(
+        engine.getRepositoryService().createDeployment().tenantId(PackTestTenant.ID).addModelInstance(m.getModelElementsByType(
                 org.operaton.bpm.model.bpmn.instance.Process.class).iterator().next().getId() + ".bpmn", m).deploy();
     }
 

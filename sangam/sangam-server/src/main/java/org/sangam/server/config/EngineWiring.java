@@ -8,6 +8,8 @@ import java.util.function.Supplier;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import org.operaton.bpm.engine.ProcessEngine;
+import org.sangam.assembly.engine.EngineAssembly;
+import org.sangam.assembly.host.SangamProperties;
 import org.sangam.core.engine.SangamClock;
 import org.sangam.engine.OperatonEngineAdapter;
 import org.sangam.engine.SangamEngineSettings;
@@ -51,13 +53,11 @@ public class EngineWiring {
         SangamEngineSettings s = new SangamEngineSettings();
         s.setApplyProductSchema(false);
         s.setApplyEnginePatches(true);
-        s.setJobExecutorActivate(env.getProperty("operaton.bpm.job-execution.enabled", Boolean.class, true));
-        s.setRequireSqlServerRcsi(env.getProperty("sangam.db.require-rcsi", Boolean.class, true));
+        // M-141b: job executor, SQL Server RCSI check, WS-PORTS' CMMN event listeners (FLOWABLE-INTO-OPERATON FC-55, note
+        // 12) and the M-021 test-mode switch with the host's profiles, read by the host-neutral assembly (the engine
+        // refuses test mode on any database but H2; the assembly refuses it in production)
+        EngineAssembly.applyConfiguration(s, properties(env), List.of(env.getActiveProfiles()));
         s.setDefaultTenantId(AttributionTenant.resolve(env)); // SL-86: the one attribution-tenant resolver
-        // FLOWABLE-INTO-OPERATON FC-55: WS-PORTS' CMMN event listeners are on when the ports module is (note 12)
-        s.setCmmnEventListenersEnabled(env.getProperty("sangam.ports.cmmn-event-listeners", Boolean.class, true));
-        // M-021: the one test-mode switch and the host's profiles; the engine refuses it on any database but H2
-        s.enableTestMode(testMode(env), java.util.List.of(env.getActiveProfiles()));
         // M-044: the starting trace id of each new process instance is the current OpenTelemetry span's (the request's
         // or the engine command's); no valid span, no trace id
         s.setTraceIdSource(EngineWiring::currentTraceId);
@@ -154,19 +154,19 @@ public class EngineWiring {
         return ids.get(0);
     }
 
-    static final String TEST_MODE_PROPERTY = "sangam.test-mode.enabled";
+    static final String TEST_MODE_PROPERTY = EngineAssembly.TEST_MODE_PROPERTY;
+
+    /** M-141b: the Spring {@link Environment} as the assembly's config source (relaxed binding and placeholders kept). */
+    static SangamProperties properties(Environment env) {
+        return env::getProperty;
+    }
 
     /**
      * M-021: {@value #TEST_MODE_PROPERTY} (default off). On together with a production environment (SL-109:
      * {@code sangam.security.production=true} or a {@code prod} profile) the start is refused.
      */
     static boolean testMode(Environment env) {
-        boolean on = env.getProperty(TEST_MODE_PROPERTY, Boolean.class, false);
-        if (on && ProductionEnvironment.isProduction(env)) {
-            throw new IllegalStateException("M-021: " + TEST_MODE_PROPERTY + "=true is refused in production"
-                    + " (sangam.security.production or a prod profile)");
-        }
-        return on;
+        return EngineAssembly.testMode(properties(env), List.of(env.getActiveProfiles()));
     }
 
     /**

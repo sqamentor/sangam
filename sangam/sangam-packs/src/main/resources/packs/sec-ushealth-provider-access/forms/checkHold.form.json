@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-provider-access/checkHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.provider-access",
+  "title": {
+    "en": "Attribution or opt-out not confirmed: confirm at the source",
+    "es": "Atribución o exclusión no confirmada: confirmar en la fuente"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

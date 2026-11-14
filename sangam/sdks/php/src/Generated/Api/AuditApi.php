@@ -43,7 +43,7 @@ final class AuditApi
     /**
      * Search audit events
      *
-     * Auditor search (U01).
+     * Auditor search (U01). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
      *
      * GET /audit/events (operationId searchAuditEvents); permission audit.read.
      * @param string|null $chainId query chainId
@@ -51,11 +51,12 @@ final class AuditApi
      * @param string|null $actor query actor
      * @param string|null $from query from
      * @param string|null $to query to
+     * @param string|null $scope query scope
      * @param int|null $page query page
      * @param int|null $size query size
      * @return Page<Model\AuditEntry>
      */
-    public function searchAuditEvents(?string $chainId = null, ?string $type = null, ?string $actor = null, ?string $from = null, ?string $to = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
+    public function searchAuditEvents(?string $chainId = null, ?string $type = null, ?string $actor = null, ?string $from = null, ?string $to = null, ?string $scope = null, ?int $page = null, ?int $size = null, ?RequestOptions $options = null): Page
     {
         $req = ApiRequest::get('/audit/events');
         $req->query('chainId', $chainId);
@@ -63,6 +64,7 @@ final class AuditApi
         $req->query('actor', $actor);
         $req->query('from', $from);
         $req->query('to', $to);
+        $req->query('scope', $scope);
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\AuditEntry::class, $page, $size);
@@ -71,18 +73,20 @@ final class AuditApi
     /**
      * Verify hash chains
      *
-     * Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5).
+     * Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
      *
      * GET /audit/verify (operationId verifyAudit); permission audit.read.
      * @param string|null $chainId query chainId
      * @param string|null $businessKey query businessKey
+     * @param string|null $scope query scope
      * @return Model\AuditVerifyResult|null
      */
-    public function verifyAudit(?string $chainId = null, ?string $businessKey = null, ?RequestOptions $options = null): ?Model\AuditVerifyResult
+    public function verifyAudit(?string $chainId = null, ?string $businessKey = null, ?string $scope = null, ?RequestOptions $options = null): ?Model\AuditVerifyResult
     {
         $req = ApiRequest::get('/audit/verify');
         $req->query('chainId', $chainId);
         $req->query('businessKey', $businessKey);
+        $req->query('scope', $scope);
         return $this->calls->model($req, $options, Model\AuditVerifyResult::class);
     }
 

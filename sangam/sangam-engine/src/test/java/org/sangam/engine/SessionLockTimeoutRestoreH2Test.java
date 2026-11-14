@@ -62,6 +62,7 @@ class SessionLockTimeoutRestoreH2Test {
         String url = "jdbc:h2:mem:sl99_" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1";
         physical = DriverManager.getConnection(url);
         SangamEngineSettings settings = new SangamEngineSettings();
+        settings.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         settings.setAllowMultipleEnginesPerJvm(true);
         settings.setEngineSchemaUpdate("true");
         settings.setLockTimeout(Duration.ofMillis(SANGAM));

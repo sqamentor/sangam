@@ -19,7 +19,7 @@ public sealed record ScimSangamUser
     public string? OrgUnitId { get; init; }
 
     /// <summary>
-    /// Seats held; replacing the list ends postings not listed (validTo = today) and creates new ones
+    /// Seats held (IX.5), read-only (decision 154): a request that changes them gets 400 scimType mutability (an unchanged echo of the current list is accepted); postings change only through the admin API
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("postings")]
     public global::System.Collections.Generic.List<ScimPosting>? Postings { get; init; }

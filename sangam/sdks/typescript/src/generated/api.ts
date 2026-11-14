@@ -351,12 +351,13 @@ export class AIApi {
   /**
    * MCP endpoint
    *
-   * JSON-RPC. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins; MCP-Protocol-Version, Mcp-Method and Mcp-Name must match the body (400).
+   * MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, and server/discover is served. A header that does not match the body is 400 HeaderMismatch (-32020); an unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType input_required with inputRequests and an integrity-protected requestState bound to the principal, a time limit and the originating request, and the client repeats the request with a new id, inputResponses and the echoed requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins (403 otherwise).
    *
    * `POST /ai/mcp` (operationId `aiMcp`); permission `ai.use`.
    */
-  async aiMcp(body: M.AiMcpBody, options?: RequestOptions): Promise<Record<string, unknown>> {
+  async aiMcp(body: M.AiMcpBody, params: { mCPProtocolVersion: string /* Protocol revision, 2026-07-28; equals _meta protocolVersion */; mcpMethod: string /* The JSON-RPC method of the body */; mcpName?: string /* The tool, resource or prompt name; required for tools/call, resources/read and prompts/get */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/ai/mcp` };
+    headersOf(req, { 'MCP-Protocol-Version': params?.mCPProtocolVersion, 'Mcp-Method': params?.mcpMethod, 'Mcp-Name': params?.mcpName });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -376,12 +377,13 @@ export class AIApi {
   /**
    * A2A endpoint
    *
-   * JSON-RPC; the caller must be on the agent allow-list. Honours the A2A-Version header; a browser Origin must be allow-listed.
+   * A2A v1.0 JSON-RPC binding (application/json). Methods: SendMessage; GetTask; CancelTask (params id, tenant, metadata; result Task; errors -32001, -32002, -32004); ListTasks (params tenant, contextId, status, pageSize 1 to 100 default 50, pageToken, historyLength, statusTimestampAfter, includeArtifacts; result tasks, nextPageToken (empty on the last page), pageSize, totalSize; -32602 on a bad pageSize; -32004 while the process gateway does not implement it). SendStreamingMessage, SubscribeToTask and GetExtendedAgentCard answer -32004 (unsupported operation) and the four TaskPushNotificationConfig methods -32003 (push notifications not supported); the agent card says extendedAgentCard false. The caller must be on the agent allow-list; a browser Origin must be allow-listed.
    *
    * `POST /ai/a2a/{agent}` (operationId `aiA2a`); permission `ai.use`.
    */
-  async aiA2a(agent: string, body: M.AiMcpBody, options?: RequestOptions): Promise<Record<string, unknown>> {
+  async aiA2a(agent: string, body: M.AiMcpBody, params?: { a2AVersion?: string /* Major.Minor protocol version, 1.0 for A2A v1.0.x */ }, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/ai/a2a/${seg(String(agent))}` };
+    headersOf(req, { 'A2A-Version': params?.a2AVersion });
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
   }
@@ -1585,24 +1587,24 @@ export class AuditApi {
   /**
    * Search audit events
    *
-   * Auditor search (U01).
+   * Auditor search (U01). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
    *
    * `GET /audit/events` (operationId `searchAuditEvents`); permission `audit.read`.
    */
-  async searchAuditEvents(params?: { chainId?: string; type?: string; actor?: string; from?: string; to?: string; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.AuditEntry>> {
-    const req: ApiRequest = { method: 'GET', path: `/audit/events`, query: { chainId: params?.chainId, type: params?.type, actor: params?.actor, from: params?.from, to: params?.to, page: params?.page, size: params?.size } };
+  async searchAuditEvents(params?: { chainId?: string; type?: string; actor?: string; from?: string; to?: string; scope?: string /* System audit scope to read instead of the caller's tenant (decision 144); needs platform.audit.system.read */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.AuditEntry>> {
+    const req: ApiRequest = { method: 'GET', path: `/audit/events`, query: { chainId: params?.chainId, type: params?.type, actor: params?.actor, from: params?.from, to: params?.to, scope: params?.scope, page: params?.page, size: params?.size } };
     return this.calls.page<M.AuditEntry>(req, options, params?.page, params?.size);
   }
 
   /**
    * Verify hash chains
    *
-   * Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5).
+   * Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5). With the optional scope parameter (a system audit scope, system:...) the call reads that system scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.
    *
    * `GET /audit/verify` (operationId `verifyAudit`); permission `audit.read`.
    */
-  async verifyAudit(params?: { chainId?: string; businessKey?: string }, options?: RequestOptions): Promise<M.AuditVerifyResult> {
-    const req: ApiRequest = { method: 'GET', path: `/audit/verify`, query: { chainId: params?.chainId, businessKey: params?.businessKey } };
+  async verifyAudit(params?: { chainId?: string; businessKey?: string; scope?: string /* System audit scope to read instead of the caller's tenant (decision 144); needs platform.audit.system.read */ }, options?: RequestOptions): Promise<M.AuditVerifyResult> {
+    const req: ApiRequest = { method: 'GET', path: `/audit/verify`, query: { chainId: params?.chainId, businessKey: params?.businessKey, scope: params?.scope } };
     return this.calls.json<M.AuditVerifyResult>(req, options);
   }
 
@@ -1668,7 +1670,7 @@ export class AuditApi {
   }
 }
 
-/** Typed operations of `Billing` (7 operations). */
+/** Typed operations of `Billing` (11 operations). */
 export class BillingApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -1700,7 +1702,7 @@ export class BillingApi {
   /**
    * Record a collection
    *
-   * Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt.
+   * Confirms the payment with its channel, allocates it oldest-due first (excess as advance) and issues a receipt. A payment the channel cannot confirm is refused here; staff record it with acceptUnverifiedPayment (decision 141).
    *
    * `POST /billing/{ledger}/collections` (operationId `recordBillingCollection`); permission `billing.write`; result stored atomically with the state change.
    */
@@ -1759,6 +1761,56 @@ export class BillingApi {
     const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/refunds` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.BillingRefundResult>(req, options);
+  }
+
+  /**
+   * Accept a payment unverified
+   *
+   * Records a payment its channel cannot confirm now, in state PAYMENT_ACCEPTED_UNVERIFIED, with an audit record of the same name. Requires the ACCEPT_UNVERIFIED action on this channel, tenant and office (permission billing.accept-unverified, scoped); a generic billing permission is not enough (403 NOT_PERMITTED). Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Nothing is posted to the ledger. 403 CHANNEL_NOT_ENABLED when the channel is not configured for unverified acceptance or its operating policy is unresolved. 400 VALIDATION_FAILED when the currency is not the ledger currency or the amount is not a MoneyAmount of it. 409 DUPLICATE when the channel and paymentRef were already accepted in the tenant, with the existing id (a retry with the same Idempotency-Key returns the stored answer). 422 LIMIT_EXCEEDED when the amount exceeds the policy limit.
+   *
+   * `POST /billing/{ledger}/unverified-payments` (operationId `acceptUnverifiedPayment`); permission `billing.accept-unverified`; result stored atomically with the state change.
+   */
+  async acceptUnverifiedPayment(ledger: string, body: M.UnverifiedPaymentRequest, options?: RequestOptions): Promise<M.UnverifiedPayment> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/unverified-payments` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.UnverifiedPayment>(req, options);
+  }
+
+  /**
+   * Unverified payments
+   *
+   * Payments accepted unverified, oldest first, for reconciliation and ageing. Every filter applies before paging (size default 50, at most 500), with X-Total-Count.
+   *
+   * `GET /billing/{ledger}/unverified-payments` (operationId `listUnverifiedPayments`); permission `billing.read`.
+   */
+  async listUnverifiedPayments(ledger: string, params?: { state?: 'PAYMENT_ACCEPTED_UNVERIFIED' | 'VERIFIED' | 'REJECTED' | 'REVERSED'; channel?: string; office?: string; minAgeDays?: number /* Only payments pending at least this many days */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.UnverifiedPayment>> {
+    const req: ApiRequest = { method: 'GET', path: `/billing/${seg(String(ledger))}/unverified-payments`, query: { state: params?.state, channel: params?.channel, office: params?.office, minAgeDays: params?.minAgeDays, page: params?.page, size: params?.size } };
+    return this.calls.page<M.UnverifiedPayment>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * An unverified payment
+   *
+   * One record with its resolution.
+   *
+   * `GET /billing/{ledger}/unverified-payments/{id}` (operationId `getUnverifiedPayment`); permission `billing.read`.
+   */
+  async getUnverifiedPayment(ledger: string, id: string, options?: RequestOptions): Promise<M.UnverifiedPayment> {
+    const req: ApiRequest = { method: 'GET', path: `/billing/${seg(String(ledger))}/unverified-payments/${seg(String(id))}` };
+    return this.calls.json<M.UnverifiedPayment>(req, options);
+  }
+
+  /**
+   * Resolve an unverified payment
+   *
+   * Manual resolution of a pending payment to VERIFIED, REJECTED or REVERSED; rail reconciliation is the normal path to VERIFIED and runs as the system job, not through this operation. Only signed-in staff: an API key or a service identity is 403 NOT_PERMITTED (decision 201). Maker-checker: the resolver must be a different principal from the acceptor (403 NOT_PERMITTED otherwise, decision 194). The state and the caller's authorisation are rechecked atomically with the transition (403 NOT_PERMITTED). A payment already resolved is 409 INVALID_TRANSITION and changes nothing. A manual VERIFIED needs verificationRef and evidenceRef (400 VALIDATION_FAILED otherwise) and is audited as its own event PAYMENT_UNVERIFIED_MANUALLY_VERIFIED (decision 196); REJECTED and REVERSED are audited as PAYMENT_UNVERIFIED_RESOLVED and post the penalty accrual paused since acceptance (decision 195).
+   *
+   * `POST /billing/{ledger}/unverified-payments/{id}/resolution` (operationId `resolveUnverifiedPayment`); permission `billing.resolve-unverified`; result stored atomically with the state change.
+   */
+  async resolveUnverifiedPayment(ledger: string, id: string, body: M.UnverifiedPaymentResolveRequest, options?: RequestOptions): Promise<M.UnverifiedPayment> {
+    const req: ApiRequest = { method: 'POST', path: `/billing/${seg(String(ledger))}/unverified-payments/${seg(String(id))}/resolution` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.UnverifiedPayment>(req, options);
   }
 }
 
@@ -4399,6 +4451,25 @@ export class DeploymentsApi {
   }
 }
 
+/** Typed operations of `DltHooks` (1 operations). */
+export class DltHooksApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Receive SMS delivery reports
+   *
+   * Public at the Sangam layer: the X-Sangam-Signature header is the authentication and is checked first. A missing, wrong or stale signature (outside 5 minutes) is 401 WEBHOOK_SIGNATURE_INVALID; a tenant or connector that is not a configured DLT SMS connector is 404. The body is one report or an array of reports; a body that is not, or a report with neither clientRef nor messageId, is 422 DLT_DELIVERY_REPORT_INVALID and nothing is written. Each accepted report updates the message's delivery state; NOTIFICATION_DELIVERED is written once per delivered message (decision 304).
+   *
+   * `POST /hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports` (operationId `receiveDltDeliveryReports`).
+   */
+  async receiveDltDeliveryReports(tenant: string, connectorId: string, body: unknown, params: { xSangamSignature: string /* t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + '.' + body)>; refused when t is more than 5 minutes from the server clock */ }, options?: RequestOptions): Promise<M.DltDeliveryReportResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/sms-dlt/${seg(String(tenant))}/${seg(String(connectorId))}/delivery-reports` };
+    headersOf(req, { 'X-Sangam-Signature': params?.xSangamSignature });
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DltDeliveryReportResult>(req, options);
+  }
+}
+
 /** Typed operations of `Documents` (10 operations). */
 export class DocumentsApi {
   constructor(private readonly calls: GeneratedCalls) {}
@@ -4406,7 +4477,7 @@ export class DocumentsApi {
   /**
    * Upload a document
    *
-   * Stores an immutable version with SHA-256 checksum and scan hook (R74, K12).
+   * Stores an immutable version with SHA-256 checksum and scan hook (R74, K12). A slot applies when processInstanceId is given, or taskId names a task of a process instance; never for a caseInstanceId. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
    *
    * `POST /documents` (operationId `uploadDocument`); permission `document.write`; result stored atomically with the state change.
    */
@@ -4467,7 +4538,7 @@ export class DocumentsApi {
   /**
    * New document version
    *
-   * Adds an immutable version (R74).
+   * Adds an immutable version (R74). A slot applies when the document belongs to a process instance. DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is stored on either refusal. A slot changed after the signing task was created is refused at completion.
    *
    * `POST /documents/{id}/versions` (operationId `addDocumentVersion`); permission `document.write`; result stored atomically with the state change.
    */
@@ -4525,6 +4596,130 @@ export class DocumentsApi {
     const req: ApiRequest = { method: 'POST', path: `/documents/generate` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.Document>(req, options);
+  }
+}
+
+/** Typed operations of `DscCertificates` (8 operations). */
+export class DscCertificatesApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Enrol a DSC certificate
+   *
+   * The signer enrols the certificate of their token; the enrolment is PENDING until an admin other than the signer approves it. Needs task.write. Audited DSC_CERTIFICATE_ENROLLED. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `POST /me/dsc/certificates` (operationId `enrolDscCertificate`); permission `task.write`; result stored atomically with the state change.
+   */
+  async enrolDscCertificate(body: M.DscCertificateEnrolmentRequest, options?: RequestOptions): Promise<M.DscCertificate> {
+    const req: ApiRequest = { method: 'POST', path: `/me/dsc/certificates` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscCertificate>(req, options);
+  }
+
+  /**
+   * My DSC certificates
+   *
+   * The caller's enrolments in every status. Needs task.write. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `GET /me/dsc/certificates` (operationId `listMyDscCertificates`); permission `task.write`.
+   */
+  async listMyDscCertificates(options?: RequestOptions): Promise<Array<M.DscCertificate>> {
+    const req: ApiRequest = { method: 'GET', path: `/me/dsc/certificates` };
+    return this.calls.json<Array<M.DscCertificate>>(req, options);
+  }
+
+  /**
+   * Revoke my DSC certificate
+   *
+   * The signer revokes their own PENDING or APPROVED enrolment without approval (revocation removes trust); a reason is required. Another user's enrolment answers 404 ENROLMENT_NOT_FOUND, as an unknown id does. Needs task.write. Audited DSC_CERTIFICATE_REVOKED. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `POST /me/dsc/certificates/{enrolmentId}/revoke` (operationId `revokeMyDscCertificate`); permission `task.write`; result stored atomically with the state change.
+   */
+  async revokeMyDscCertificate(enrolmentId: string, body: M.DscCertificateDecision, options?: RequestOptions): Promise<M.DscCertificate> {
+    const req: ApiRequest = { method: 'POST', path: `/me/dsc/certificates/${seg(String(enrolmentId))}/revoke` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscCertificate>(req, options);
+  }
+
+  /**
+   * DSC certificate enrolments
+   *
+   * Enrolments of the tenant in one status, PENDING by default (the approval queue). Needs dsc.certificate.approve. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `GET /admin/dsc/certificates` (operationId `listDscCertificates`); permission `dsc.certificate.approve`.
+   */
+  async listDscCertificates(params?: { status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVOKED' /* PENDING (default), APPROVED, REJECTED or REVOKED; another value is 400 VALIDATION_FAILED */; limit?: number /* At most this many rows, 1 to 200 (default 200; values outside are clamped) */ }, options?: RequestOptions): Promise<Array<M.DscCertificate>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/dsc/certificates`, query: { status: params?.status, limit: params?.limit } };
+    return this.calls.json<Array<M.DscCertificate>>(req, options);
+  }
+
+  /**
+   * A DSC certificate enrolment
+   *
+   * One enrolment of the tenant. Needs dsc.certificate.approve. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `GET /admin/dsc/certificates/{enrolmentId}` (operationId `getDscCertificate`); permission `dsc.certificate.approve`.
+   */
+  async getDscCertificate(enrolmentId: string, options?: RequestOptions): Promise<M.DscCertificate> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/dsc/certificates/${seg(String(enrolmentId))}` };
+    return this.calls.json<M.DscCertificate>(req, options);
+  }
+
+  /**
+   * Approve a DSC certificate
+   *
+   * Approves a PENDING enrolment of another user; the reason is optional. An expired certificate is 422 CERTIFICATE_EXPIRED. Audited DSC_CERTIFICATE_APPROVED. Needs dsc.certificate.approve; an admin never decides their own enrolment (403 SELF_APPROVAL on approve and reject). Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `POST /admin/dsc/certificates/{enrolmentId}/approve` (operationId `approveDscCertificate`); permission `dsc.certificate.approve`; result stored atomically with the state change.
+   */
+  async approveDscCertificate(enrolmentId: string, body: M.DscCertificateDecision, options?: RequestOptions): Promise<M.DscCertificate> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/dsc/certificates/${seg(String(enrolmentId))}/approve` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscCertificate>(req, options);
+  }
+
+  /**
+   * Reject a DSC certificate
+   *
+   * Rejects a PENDING enrolment of another user; a reason is required. Audited DSC_CERTIFICATE_REJECTED. Needs dsc.certificate.approve; an admin never decides their own enrolment (403 SELF_APPROVAL on approve and reject). Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `POST /admin/dsc/certificates/{enrolmentId}/reject` (operationId `rejectDscCertificate`); permission `dsc.certificate.approve`; result stored atomically with the state change.
+   */
+  async rejectDscCertificate(enrolmentId: string, body: M.DscCertificateDecision, options?: RequestOptions): Promise<M.DscCertificate> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/dsc/certificates/${seg(String(enrolmentId))}/reject` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscCertificate>(req, options);
+  }
+
+  /**
+   * Revoke a DSC certificate
+   *
+   * Revokes a PENDING or APPROVED enrolment of any user of the tenant; a reason is required. Audited DSC_CERTIFICATE_REVOKED. Needs dsc.certificate.approve; an admin never decides their own enrolment (403 SELF_APPROVAL on approve and reject). Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED.
+   *
+   * `POST /admin/dsc/certificates/{enrolmentId}/revoke` (operationId `revokeDscCertificate`); permission `dsc.certificate.approve`; result stored atomically with the state change.
+   */
+  async revokeDscCertificate(enrolmentId: string, body: M.DscCertificateDecision, options?: RequestOptions): Promise<M.DscCertificate> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/dsc/certificates/${seg(String(enrolmentId))}/revoke` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscCertificate>(req, options);
+  }
+}
+
+/** Typed operations of `EventGridHooks` (1 operations). */
+export class EventGridHooksApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Receive an Event Grid delivery
+   *
+   * Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token (Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and application) or the delivery-property secret header, whichever the channel configures (decision 219). A delivery that satisfies no configured method is 401 WEBHOOK_SIGNATURE_INVALID (fail closed), 404 when the channel is not configured or not enabled. CloudEvents structured single or batch, or the Event Grid schema (an array). A Microsoft.EventGrid.SubscriptionValidationEvent is answered with {validationResponse} and writes nothing; other events are written to the inbox (deduplicated by id) and acknowledged. A content type the channel does not accept is 400.
+   *
+   * `POST /hooks/eventgrid/{tenant}/{channel}` (operationId `receiveEventGridDelivery`).
+   */
+  async receiveEventGridDelivery(tenant: string, channel: string, body: Array<Record<string, unknown>>, options?: RequestOptions): Promise<M.EventGridHookResult> {
+    const req: ApiRequest = { method: 'POST', path: `/hooks/eventgrid/${seg(String(tenant))}/${seg(String(channel))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.EventGridHookResult>(req, options);
   }
 }
 
@@ -4706,6 +4901,60 @@ export class EventsApi {
     const req: ApiRequest = { method: 'POST', path: `/events/${seg(String(channel))}` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PublishResult>(req, options);
+  }
+}
+
+/** Typed operations of `Executor` (4 operations). */
+export class ExecutorApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Executor partition map
+   *
+   * The committed map, its partitions with owners, epochs and slot ranges, and the active resize if any, read in one transaction (PartitionResize.map). 409 NOT_INITIALISED when the cluster has no executor map (sangam.engine.executor-partitioning was never on). Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+   *
+   * `GET /admin/executor/partitions` (operationId `getExecutorPartitionMap`); permission `executor.admin`.
+   */
+  async getExecutorPartitionMap(options?: RequestOptions): Promise<M.ExecutorPartitionMap> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/executor/partitions` };
+    return this.calls.json<M.ExecutorPartitionMap>(req, options);
+  }
+
+  /**
+   * Change the partition count
+   *
+   * Starts a controlled resize and answers 202 with it in state REQUESTED; poll getExecutorPartitionResize. Minimal movement: only the slots the new balanced allocation needs move, each drained or recovered (job state, retry counts, deadlines and tenant context kept) before its new owner acquires from it, under epoch fencing. 409 INVALID_TRANSITION when another resize is REQUESTED or IN_PROGRESS (also one started concurrently) or the count is unchanged; 409 REVISION_CONFLICT on a stale expectedMapEpoch; 409 NOT_INITIALISED when the cluster has no executor map (sangam.engine.executor-partitioning is off on every node); 400 VALIDATION_FAILED when the count is outside 0..slotCount or the reason is blank or longer than 1000 characters. A retry with the same Idempotency-Key returns the same resize. Audited: EXECUTOR_PARTITION_RESIZE_REQUESTED at the request, EXECUTOR_PARTITION_COUNT_CHANGED when the new map commits, EXECUTOR_PARTITION_RESIZE_FAILED when it fails (the previous map stays committed). Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+   *
+   * `POST /admin/executor/partitions` (operationId `resizeExecutorPartitions`); permission `executor.admin`; result stored atomically with the state change.
+   */
+  async resizeExecutorPartitions(body: M.ExecutorPartitionResizeRequest, options?: RequestOptions): Promise<M.ExecutorPartitionResize> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/executor/partitions` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ExecutorPartitionResize>(req, options);
+  }
+
+  /**
+   * Partition-count changes
+   *
+   * Resizes, newest first; movedSlots is empty in the list. Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+   *
+   * `GET /admin/executor/partitions/resizes` (operationId `listExecutorPartitionResizes`); permission `executor.admin`.
+   */
+  async listExecutorPartitionResizes(params?: { state?: 'REQUESTED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ExecutorPartitionResize>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/executor/partitions/resizes`, query: { state: params?.state, page: params?.page, size: params?.size } };
+    return this.calls.page<M.ExecutorPartitionResize>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * A partition-count change
+   *
+   * One resize with its moved slot ranges; 404 NOT_FOUND for an unknown id. Platform-level permission executor.admin (ADMIN_EXECUTOR, X.2.1.7); a tenant administrator never holds it.
+   *
+   * `GET /admin/executor/partitions/resizes/{id}` (operationId `getExecutorPartitionResize`); permission `executor.admin`.
+   */
+  async getExecutorPartitionResize(id: string, options?: RequestOptions): Promise<M.ExecutorPartitionResize> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/executor/partitions/resizes/${seg(String(id))}` };
+    return this.calls.json<M.ExecutorPartitionResize>(req, options);
   }
 }
 
@@ -5521,7 +5770,7 @@ export class GeoApi {
   /**
    * Layers
    *
-   * GeoController.layers (sangam-geo).
+   * GeoController.layers (sangam-rest).
    *
    * `GET /geo/layers` (operationId `geoGeoLayers`); permission `geo.read`.
    */
@@ -5533,7 +5782,7 @@ export class GeoApi {
   /**
    * Define layer
    *
-   * GeoController.defineLayer (sangam-geo).
+   * GeoController.defineLayer (sangam-rest).
    *
    * `POST /geo/layers` (operationId `geoGeoDefineLayer`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5546,7 +5795,7 @@ export class GeoApi {
   /**
    * Layer
    *
-   * GeoController.layer (sangam-geo).
+   * GeoController.layer (sangam-rest).
    *
    * `GET /geo/layers/{layer}` (operationId `geoGeoLayer`); permission `geo.read`.
    */
@@ -5558,7 +5807,7 @@ export class GeoApi {
   /**
    * Import boundaries
    *
-   * GeoController.importBoundaries (sangam-geo).
+   * GeoController.importBoundaries (sangam-rest).
    *
    * `POST /geo/layers/{layer}/import` (operationId `geoGeoImportBoundaries`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5571,7 +5820,7 @@ export class GeoApi {
   /**
    * Features
    *
-   * GeoController.features (sangam-geo).
+   * GeoController.features (sangam-rest).
    *
    * `GET /geo/layers/{layer}/features` (operationId `geoGeoFeatures`); permission `geo.read`.
    */
@@ -5583,7 +5832,7 @@ export class GeoApi {
   /**
    * Put feature
    *
-   * GeoController.putFeature (sangam-geo).
+   * GeoController.putFeature (sangam-rest).
    *
    * `POST /geo/layers/{layer}/features` (operationId `geoGeoPutFeature`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5596,7 +5845,7 @@ export class GeoApi {
   /**
    * Feature
    *
-   * GeoController.feature (sangam-geo).
+   * GeoController.feature (sangam-rest).
    *
    * `GET /geo/features/{id}` (operationId `geoGeoFeature`); permission `geo.read`.
    */
@@ -5608,7 +5857,7 @@ export class GeoApi {
   /**
    * Retire
    *
-   * GeoController.retire (sangam-geo).
+   * GeoController.retire (sangam-rest).
    *
    * `DELETE /geo/features/{id}` (operationId `geoGeoRetire`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5620,7 +5869,7 @@ export class GeoApi {
   /**
    * Lineage
    *
-   * GeoController.lineage (sangam-geo).
+   * GeoController.lineage (sangam-rest).
    *
    * `GET /geo/features/{id}/lineage` (operationId `geoGeoLineage`); permission `geo.read`.
    */
@@ -5632,7 +5881,7 @@ export class GeoApi {
   /**
    * Resolve
    *
-   * GeoController.resolve (sangam-geo).
+   * GeoController.resolve (sangam-rest).
    *
    * `GET /geo/resolve` (operationId `geoGeoResolve`); permission `geo.read`.
    */
@@ -5644,7 +5893,7 @@ export class GeoApi {
   /**
    * Nearest
    *
-   * GeoController.nearest (sangam-geo).
+   * GeoController.nearest (sangam-rest).
    *
    * `GET /geo/nearest` (operationId `geoGeoNearest`); permission `geo.read`.
    */
@@ -5656,7 +5905,7 @@ export class GeoApi {
   /**
    * Overlaps
    *
-   * GeoController.overlaps (sangam-geo).
+   * GeoController.overlaps (sangam-rest).
    *
    * `POST /geo/overlaps` (operationId `geoGeoOverlaps`); permission `geo.write`.
    */
@@ -5669,7 +5918,7 @@ export class GeoApi {
   /**
    * Define fence
    *
-   * GeoController.defineFence (sangam-geo).
+   * GeoController.defineFence (sangam-rest).
    *
    * `POST /geo/fences` (operationId `geoGeoDefineFence`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5682,7 +5931,7 @@ export class GeoApi {
   /**
    * Fence
    *
-   * GeoController.fence (sangam-geo).
+   * GeoController.fence (sangam-rest).
    *
    * `GET /geo/fences/{id}` (operationId `geoGeoFence`); permission `geo.read`.
    */
@@ -5694,7 +5943,7 @@ export class GeoApi {
   /**
    * Deactivate fence
    *
-   * GeoController.deactivateFence (sangam-geo).
+   * GeoController.deactivateFence (sangam-rest).
    *
    * `DELETE /geo/fences/{id}` (operationId `geoGeoDeactivateFence`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5706,7 +5955,7 @@ export class GeoApi {
   /**
    * Check fence
    *
-   * GeoController.checkFence (sangam-geo).
+   * GeoController.checkFence (sangam-rest).
    *
    * `POST /geo/fences/{id}/check` (operationId `geoGeoCheckFence`); permission `geo.write`.
    */
@@ -5719,7 +5968,7 @@ export class GeoApi {
   /**
    * Put object geometry
    *
-   * GeoController.putObjectGeometry (sangam-geo).
+   * GeoController.putObjectGeometry (sangam-rest).
    *
    * `PUT /geo/objects/{type}/{id}/geometry` (operationId `geoGeoPutObjectGeometry`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5732,7 +5981,7 @@ export class GeoApi {
   /**
    * Object geometry
    *
-   * GeoController.objectGeometry (sangam-geo).
+   * GeoController.objectGeometry (sangam-rest).
    *
    * `GET /geo/objects/{type}/{id}/geometry` (operationId `geoGeoObjectGeometry`); permission `geo.read`.
    */
@@ -5744,7 +5993,7 @@ export class GeoApi {
   /**
    * External layers
    *
-   * GeoController.externalLayers (sangam-geo).
+   * GeoController.externalLayers (sangam-rest).
    *
    * `GET /geo/external-layers` (operationId `geoGeoExternalLayers`); permission `geo.read`.
    */
@@ -5756,7 +6005,7 @@ export class GeoApi {
   /**
    * Register external
    *
-   * GeoController.registerExternal (sangam-geo).
+   * GeoController.registerExternal (sangam-rest).
    *
    * `POST /geo/external-layers` (operationId `geoGeoRegisterExternal`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5769,7 +6018,7 @@ export class GeoApi {
   /**
    * Query external
    *
-   * GeoController.queryExternal (sangam-geo).
+   * GeoController.queryExternal (sangam-rest).
    *
    * `POST /geo/external-layers/{ref}/query` (operationId `geoGeoQueryExternal`); permission `geo.write`.
    */
@@ -5782,7 +6031,7 @@ export class GeoApi {
   /**
    * Import external
    *
-   * GeoController.importExternal (sangam-geo).
+   * GeoController.importExternal (sangam-rest).
    *
    * `POST /geo/external-layers/{ref}/import` (operationId `geoGeoImportExternal`); permission `geo.write`; result stored atomically with the state change.
    */
@@ -5824,7 +6073,7 @@ export class HealthHooksApi {
   }
 }
 
-/** Typed operations of `History` (9 operations). */
+/** Typed operations of `History` (10 operations). */
 export class HistoryApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -5934,6 +6183,19 @@ export class HistoryApi {
   async listExternalTaskLog(params?: { processDefinitionKey?: string; processInstanceId?: string; businessKey?: string; caseInstanceId?: string; activityId?: string; taskDefinitionKey?: string; assignee?: string; finished?: boolean; from?: string; to?: string; activityInstanceId?: string /* P13: only rows of this activity instance */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.ExternalTaskLogEntry>> {
     const req: ApiRequest = { method: 'GET', path: `/history/external-task-log`, query: { processDefinitionKey: params?.processDefinitionKey, processInstanceId: params?.processInstanceId, businessKey: params?.businessKey, caseInstanceId: params?.caseInstanceId, activityId: params?.activityId, taskDefinitionKey: params?.taskDefinitionKey, assignee: params?.assignee, finished: params?.finished, from: params?.from, to: params?.to, activityInstanceId: params?.activityInstanceId, page: params?.page, size: params?.size } };
     return this.calls.page<M.ExternalTaskLogEntry>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Move an ended instance's history to a later version
+   *
+   * Rewrites only the process-definition id and key of the ended instance's history rows (ACT_HI_PROCINST, ACTINST, TASKINST, VARINST, DETAIL, INCIDENT, OP_LOG, EXT_TASK_LOG, DECINST, JOB_LOG, and IDENTITYLINK through the instance's history tasks) to the target definition, in one transaction under the root lock, together with the audit event PROCESS_HISTORY_MIGRATED (actor, reason, old and new definition and version, rows per table). Activity ids and everything that ran stay as recorded; called instances keep their own definitions. Operaton migration moves running instances only; this is for history. A retry with the same Idempotency-Key returns the same result. An instance of another tenant is 404 (no existence leak); untenanted history is visible only to a platform identity. Needs history.migrate (decision 258): tenant-scoped, held by the tenant administrator among the tenant roles (a TENANT ADMIN grant, not a history grant); the platform administrator reaches untenanted history. A replay of the stored response re-checks it.
+   *
+   * `POST /admin/history/process-instances/{id}/migrate` (operationId `migrateHistoricProcessInstance`); permission `history.migrate`; result stored atomically with the state change.
+   */
+  async migrateHistoricProcessInstance(id: string, body: M.HistoryInstanceMigrationRequest, options?: RequestOptions): Promise<M.HistoryInstanceMigrationResult> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/history/process-instances/${seg(String(id))}/migrate` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.HistoryInstanceMigrationResult>(req, options);
   }
 }
 
@@ -6096,7 +6358,7 @@ export class LinksApi {
   }
 }
 
-/** Typed operations of `LowCode` (10 operations). */
+/** Typed operations of `LowCode` (11 operations). */
 export class LowCodeApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -6203,7 +6465,7 @@ export class LowCodeApi {
   /**
    * Data-object records
    *
-   * Records; sensitive fields masked (R78).
+   * Records; sensitive fields masked (R78). For a REST-backed definition (decision 266) the server calls the connector's list operation with {q, offset, limit} (q as given, offset and limit from page and size) and answers its output.records, each validated against the definition fields (unknown fields dropped, sensitive fields masked as for DB backing); output.total, when the connector gives it, is the total count. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
    *
    * `GET /data-objects/{key}/records` (operationId `listDataObjectRecords`); permission `lowcode.read`.
    */
@@ -6215,14 +6477,26 @@ export class LowCodeApi {
   /**
    * Create a record
    *
-   * Validated against the definition.
+   * Validated against the definition. DB backing: the record is stored and the call answers 201 with it. REST backing (decision 265): the call answers 202 Accepted with the operationId and status PENDING, and Location names getDataObjectRecordOperation; the connector's create operation runs through the operation ledger with the operationId as its idempotency key, and the caller reads the outcome there. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
    *
-   * `POST /data-objects/{key}/records` (operationId `createDataObjectRecord`); permission `lowcode.read`; result stored atomically with the state change.
+   * `POST /data-objects/{key}/records` (operationId `createDataObjectRecord`); permission `lowcode.record.write`; result stored atomically with the state change.
    */
   async createDataObjectRecord(key: string, body: Record<string, unknown>, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/data-objects/${seg(String(key))}/records` };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
+  }
+
+  /**
+   * Outcome of a record create
+   *
+   * The state of a record create on a REST-backed data object (decision 265), from the operation ledger and, while it is not settled, the connector's outcome lookup by operationId. 404 NOT_FOUND for an operation id that is not a record create of this data object in the caller's tenant.
+   *
+   * `GET /data-objects/{key}/records/operations/{operationId}` (operationId `getDataObjectRecordOperation`); permission `lowcode.read`.
+   */
+  async getDataObjectRecordOperation(key: string, operationId: string, options?: RequestOptions): Promise<M.DataObjectRecordOperation> {
+    const req: ApiRequest = { method: 'GET', path: `/data-objects/${seg(String(key))}/records/operations/${seg(String(operationId))}` };
+    return this.calls.json<M.DataObjectRecordOperation>(req, options);
   }
 }
 
@@ -6283,7 +6557,7 @@ export class MeApi {
    *
    * Creates a LEAVE_SUBSTITUTE assignment pending approval; the substitute acts for the seat only within the date range (IX.5 rule 4, PER-4).
    *
-   * `POST /me/leave-requests` (operationId `requestLeave`); result stored atomically with the state change.
+   * `POST /me/leave-requests` (operationId `requestLeave`); permission `task.write`; result stored atomically with the state change.
    */
   async requestLeave(body: M.LeaveRequest, options?: RequestOptions): Promise<M.Assignment> {
     const req: ApiRequest = { method: 'POST', path: `/me/leave-requests` };
@@ -6292,7 +6566,7 @@ export class MeApi {
   }
 }
 
-/** Typed operations of `Modeller` (26 operations). */
+/** Typed operations of `Modeller` (28 operations). */
 export class ModellerApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -6319,6 +6593,19 @@ export class ModellerApi {
     const req: ApiRequest = { method: 'POST', path: `/models/token-walk` };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
+  }
+
+  /**
+   * Semantic model diff
+   *
+   * Compares two versions of a BPMN, DMN, CMMN or form file by meaning (elements, flows, expressions, properties), not by text; reads only, nothing is stored (M-125). 400 MODEL_UNREADABLE when a side is not XML/JSON, has a DOCTYPE, or the two sides are of different formats.
+   *
+   * `POST /models/diff` (operationId `diffModels`); permission `package.read`; result stored atomically with the state change.
+   */
+  async diffModels(body: M.ModelDiffRequest, options?: RequestOptions): Promise<M.ModelDiffReport> {
+    const req: ApiRequest = { method: 'POST', path: `/models/diff` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ModelDiffReport>(req, options);
   }
 
   /**
@@ -6394,6 +6681,18 @@ export class ModellerApi {
     const req: ApiRequest = { method: 'POST', path: `/models/${seg(String(file))}/lease/takeover` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ModelEditLease>(req, options);
+  }
+
+  /**
+   * Model presence stream
+   *
+   * Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
+   *
+   * `GET /models/{file}/presence/stream` (operationId `streamModelPresence`); permission `package.read`.
+   */
+  async streamModelPresence(file: string, options?: RequestOptions): Promise<string> {
+    const req: ApiRequest = { method: 'GET', path: `/models/${seg(String(file))}/presence/stream` };
+    return this.calls.text(req, options, 'text/event-stream');
   }
 
   /**
@@ -7948,7 +8247,7 @@ export class PortalApi {
   }
 }
 
-/** Typed operations of `Processes` (31 operations). */
+/** Typed operations of `Processes` (33 operations). */
 export class ProcessesApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -8300,6 +8599,31 @@ export class ProcessesApi {
     const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/cross-boundary-move` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ProcessInstance>(req, options);
+  }
+
+  /**
+   * Continue as new
+   *
+   * Ends the active root instance and starts exactly one successor in one transaction, keeping the business key, the definition id and the named variables exactly. 409 CONTINUATION_NOT_ALLOWED, nothing changed, with extension reason SUB_INSTANCE, SUSPENDED, ENDED, ALREADY_CONTINUED (then the problem also carries successorId) or REQUEST_ID_REUSED (the continuationRequestId was used for another instance); an instance of another tenant is 404 (decision 145). A retry with the same continuationRequestId answers 200 with outcome EXISTING and the committed successor (ended empty). Needs PROCESS_INSTANCE MODIFY on the instance and, for another named version, PROCESS_DEFINITION START. Open user tasks, external tasks, jobs, timers and message subscriptions end with the predecessor; stale workers and callbacks on it get 404; late messages correlate by business key and tenant to the successor. Audited as PROCESS_CONTINUED_AS_NEW.
+   *
+   * `POST /process-instances/{id}/continue-as-new` (operationId `continueProcessInstanceAsNew`); permission `process.continue`; result stored atomically with the state change.
+   */
+  async continueProcessInstanceAsNew(id: string, body: M.ContinueAsNewRequest, options?: RequestOptions): Promise<M.ContinueAsNewResult> {
+    const req: ApiRequest = { method: 'POST', path: `/process-instances/${seg(String(id))}/continue-as-new` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.ContinueAsNewResult>(req, options);
+  }
+
+  /**
+   * Continuation chain
+   *
+   * The chain of the instance (predecessors and successors), with generation, actor, reason and request id of every link. An instance never continued has a chain of one instance and no links.
+   *
+   * `GET /process-instances/{id}/continuations` (operationId `getProcessContinuationChain`); permission `process.read`.
+   */
+  async getProcessContinuationChain(id: string, options?: RequestOptions): Promise<M.ProcessContinuationChain> {
+    const req: ApiRequest = { method: 'GET', path: `/process-instances/${seg(String(id))}/continuations` };
+    return this.calls.json<M.ProcessContinuationChain>(req, options);
   }
 
   /**
@@ -9827,7 +10151,7 @@ export class RegistryApi {
   /**
    * Publish type
    *
-   * RegistryController.publishType (sangam-registry).
+   * RegistryController.publishType (sangam-rest).
    *
    * `POST /registry/types` (operationId `registryRegistryPublishType`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -9840,7 +10164,7 @@ export class RegistryApi {
   /**
    * List types
    *
-   * RegistryController.listTypes (sangam-registry).
+   * RegistryController.listTypes (sangam-rest).
    *
    * `GET /registry/types` (operationId `registryRegistryListTypes`); permission `registry.read`.
    */
@@ -9852,7 +10176,7 @@ export class RegistryApi {
   /**
    * Current type
    *
-   * RegistryController.currentType (sangam-registry).
+   * RegistryController.currentType (sangam-rest).
    *
    * `GET /registry/types/{typeKey}` (operationId `registryRegistryCurrentType`); permission `registry.read`.
    */
@@ -9864,7 +10188,7 @@ export class RegistryApi {
   /**
    * Type version
    *
-   * RegistryController.typeVersion (sangam-registry).
+   * RegistryController.typeVersion (sangam-rest).
    *
    * `GET /registry/types/{typeKey}/versions/{version}` (operationId `registryRegistryTypeVersion`); permission `registry.read`.
    */
@@ -9876,7 +10200,7 @@ export class RegistryApi {
   /**
    * Retire type
    *
-   * RegistryController.retireType (sangam-registry).
+   * RegistryController.retireType (sangam-rest).
    *
    * `POST /registry/types/{typeKey}/versions/{version}/retire` (operationId `registryRegistryRetireType`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -9893,7 +10217,7 @@ export class RegistryAssetsApi {
   /**
    * Define class
    *
-   * AssetController.defineClass (sangam-registry).
+   * AssetController.defineClass (sangam-rest).
    *
    * `POST /registry/assets/classes` (operationId `registryAssetDefineClass`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -9906,7 +10230,7 @@ export class RegistryAssetsApi {
   /**
    * Classes
    *
-   * AssetController.classes (sangam-registry).
+   * AssetController.classes (sangam-rest).
    *
    * `GET /registry/assets/classes` (operationId `registryAssetClasses`); permission `registry.read`.
    */
@@ -9918,7 +10242,7 @@ export class RegistryAssetsApi {
   /**
    * Get class
    *
-   * AssetController.getClass (sangam-registry).
+   * AssetController.getClass (sangam-rest).
    *
    * `GET /registry/assets/classes/{classKey}` (operationId `registryAssetGetClass`); permission `registry.read`.
    */
@@ -9930,7 +10254,7 @@ export class RegistryAssetsApi {
   /**
    * Register
    *
-   * AssetController.register (sangam-registry).
+   * AssetController.register (sangam-rest).
    *
    * `POST /registry/assets` (operationId `registryAssetRegister`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -9943,7 +10267,7 @@ export class RegistryAssetsApi {
   /**
    * List
    *
-   * AssetController.list (sangam-registry).
+   * AssetController.list (sangam-rest).
    *
    * `GET /registry/assets` (operationId `registryAssetList`); permission `registry.read`.
    */
@@ -9955,7 +10279,7 @@ export class RegistryAssetsApi {
   /**
    * Get
    *
-   * AssetController.get (sangam-registry).
+   * AssetController.get (sangam-rest).
    *
    * `GET /registry/assets/{id}` (operationId `registryAssetGet`); permission `registry.read`.
    */
@@ -9967,7 +10291,7 @@ export class RegistryAssetsApi {
   /**
    * Update details
    *
-   * AssetController.updateDetails (sangam-registry).
+   * AssetController.updateDetails (sangam-rest).
    *
    * `PATCH /registry/assets/{id}` (operationId `registryAssetUpdateDetails`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -9980,7 +10304,7 @@ export class RegistryAssetsApi {
   /**
    * By tag
    *
-   * AssetController.byTag (sangam-registry).
+   * AssetController.byTag (sangam-rest).
    *
    * `GET /registry/assets/by-tag/{tag}` (operationId `registryAssetByTag`); permission `registry.read`.
    */
@@ -9992,7 +10316,7 @@ export class RegistryAssetsApi {
   /**
    * Move
    *
-   * AssetController.move (sangam-registry).
+   * AssetController.move (sangam-rest).
    *
    * `POST /registry/assets/{id}/move` (operationId `registryAssetMove`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10005,7 +10329,7 @@ export class RegistryAssetsApi {
   /**
    * Movements
    *
-   * AssetController.movements (sangam-registry).
+   * AssetController.movements (sangam-rest).
    *
    * `GET /registry/assets/{id}/movements` (operationId `registryAssetMovements`); permission `registry.read`.
    */
@@ -10017,7 +10341,7 @@ export class RegistryAssetsApi {
   /**
    * Reparent
    *
-   * AssetController.reparent (sangam-registry).
+   * AssetController.reparent (sangam-rest).
    *
    * `POST /registry/assets/{id}/reparent` (operationId `registryAssetReparent`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10030,7 +10354,7 @@ export class RegistryAssetsApi {
   /**
    * Children
    *
-   * AssetController.children (sangam-registry).
+   * AssetController.children (sangam-rest).
    *
    * `GET /registry/assets/{id}/children` (operationId `registryAssetChildren`); permission `registry.read`.
    */
@@ -10042,7 +10366,7 @@ export class RegistryAssetsApi {
   /**
    * Ancestors
    *
-   * AssetController.ancestors (sangam-registry).
+   * AssetController.ancestors (sangam-rest).
    *
    * `GET /registry/assets/{id}/ancestors` (operationId `registryAssetAncestors`); permission `registry.read`.
    */
@@ -10054,7 +10378,7 @@ export class RegistryAssetsApi {
   /**
    * Subtree
    *
-   * AssetController.subtree (sangam-registry).
+   * AssetController.subtree (sangam-rest).
    *
    * `GET /registry/assets/{id}/subtree` (operationId `registryAssetSubtree`); permission `registry.read`.
    */
@@ -10066,7 +10390,7 @@ export class RegistryAssetsApi {
   /**
    * Dispose
    *
-   * AssetController.dispose (sangam-registry).
+   * AssetController.dispose (sangam-rest).
    *
    * `POST /registry/assets/{id}/dispose` (operationId `registryAssetDispose`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10079,7 +10403,7 @@ export class RegistryAssetsApi {
   /**
    * Depreciation
    *
-   * AssetController.depreciation (sangam-registry).
+   * AssetController.depreciation (sangam-rest).
    *
    * `GET /registry/assets/{id}/depreciation` (operationId `registryAssetDepreciation`); permission `registry.read`.
    */
@@ -10091,7 +10415,7 @@ export class RegistryAssetsApi {
   /**
    * Book value
    *
-   * AssetController.bookValue (sangam-registry).
+   * AssetController.bookValue (sangam-rest).
    *
    * `GET /registry/assets/{id}/book-value` (operationId `registryAssetBookValue`); permission `registry.read`.
    */
@@ -10103,7 +10427,7 @@ export class RegistryAssetsApi {
   /**
    * Meters
    *
-   * AssetController.meters (sangam-registry).
+   * AssetController.meters (sangam-rest).
    *
    * `GET /registry/assets/{id}/meters` (operationId `registryAssetMeters`); permission `registry.read`.
    */
@@ -10115,7 +10439,7 @@ export class RegistryAssetsApi {
   /**
    * Add meter
    *
-   * AssetController.addMeter (sangam-registry).
+   * AssetController.addMeter (sangam-rest).
    *
    * `POST /registry/assets/{id}/meters` (operationId `registryAssetAddMeter`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10128,7 +10452,7 @@ export class RegistryAssetsApi {
   /**
    * Record reading
    *
-   * AssetController.recordReading (sangam-registry).
+   * AssetController.recordReading (sangam-rest).
    *
    * `POST /registry/assets/{id}/meters/{meterType}/readings` (operationId `registryAssetRecordReading`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10141,7 +10465,7 @@ export class RegistryAssetsApi {
   /**
    * Readings
    *
-   * AssetController.readings (sangam-registry).
+   * AssetController.readings (sangam-rest).
    *
    * `GET /registry/assets/{id}/meters/{meterType}/readings` (operationId `registryAssetReadings`); permission `registry.read`.
    */
@@ -10153,7 +10477,7 @@ export class RegistryAssetsApi {
   /**
    * Correct reading
    *
-   * AssetController.correctReading (sangam-registry).
+   * AssetController.correctReading (sangam-rest).
    *
    * `POST /registry/assets/readings/{readingId}/correct` (operationId `registryAssetCorrectReading`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10166,7 +10490,7 @@ export class RegistryAssetsApi {
   /**
    * Reject reading
    *
-   * AssetController.rejectReading (sangam-registry).
+   * AssetController.rejectReading (sangam-rest).
    *
    * `POST /registry/assets/readings/{readingId}/reject` (operationId `registryAssetRejectReading`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10179,7 +10503,7 @@ export class RegistryAssetsApi {
   /**
    * Plans
    *
-   * AssetController.plans (sangam-registry).
+   * AssetController.plans (sangam-rest).
    *
    * `GET /registry/assets/{id}/plans` (operationId `registryAssetPlans`); permission `registry.read`.
    */
@@ -10191,7 +10515,7 @@ export class RegistryAssetsApi {
   /**
    * Add plan
    *
-   * AssetController.addPlan (sangam-registry).
+   * AssetController.addPlan (sangam-rest).
    *
    * `POST /registry/assets/{id}/plans` (operationId `registryAssetAddPlan`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10204,7 +10528,7 @@ export class RegistryAssetsApi {
   /**
    * Update plan
    *
-   * AssetController.updatePlan (sangam-registry).
+   * AssetController.updatePlan (sangam-rest).
    *
    * `PATCH /registry/assets/plans/{planId}` (operationId `registryAssetUpdatePlan`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10217,7 +10541,7 @@ export class RegistryAssetsApi {
   /**
    * Plan status
    *
-   * AssetController.planStatus (sangam-registry).
+   * AssetController.planStatus (sangam-rest).
    *
    * `POST /registry/assets/plans/{planId}/status` (operationId `registryAssetPlanStatus`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10230,7 +10554,7 @@ export class RegistryAssetsApi {
   /**
    * Trigger condition
    *
-   * AssetController.triggerCondition (sangam-registry).
+   * AssetController.triggerCondition (sangam-rest).
    *
    * `POST /registry/assets/plans/{planId}/trigger` (operationId `registryAssetTriggerCondition`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10243,7 +10567,7 @@ export class RegistryAssetsApi {
   /**
    * Create work order
    *
-   * AssetController.createWorkOrder (sangam-registry).
+   * AssetController.createWorkOrder (sangam-rest).
    *
    * `POST /registry/assets/work-orders` (operationId `registryAssetCreateWorkOrder`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10256,7 +10580,7 @@ export class RegistryAssetsApi {
   /**
    * Work orders
    *
-   * AssetController.workOrders (sangam-registry).
+   * AssetController.workOrders (sangam-rest).
    *
    * `GET /registry/assets/work-orders` (operationId `registryAssetWorkOrders`); permission `registry.read`.
    */
@@ -10268,7 +10592,7 @@ export class RegistryAssetsApi {
   /**
    * Work order
    *
-   * AssetController.workOrder (sangam-registry).
+   * AssetController.workOrder (sangam-rest).
    *
    * `GET /registry/assets/work-orders/{woId}` (operationId `registryAssetWorkOrder`); permission `registry.read`.
    */
@@ -10280,7 +10604,7 @@ export class RegistryAssetsApi {
   /**
    * Generate due
    *
-   * AssetController.generateDue (sangam-registry).
+   * AssetController.generateDue (sangam-rest).
    *
    * `POST /registry/assets/work-orders/generate-due` (operationId `registryAssetGenerateDue`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10293,7 +10617,7 @@ export class RegistryAssetsApi {
   /**
    * Step
    *
-   * AssetController.step (sangam-registry).
+   * AssetController.step (sangam-rest).
    *
    * `POST /registry/assets/work-orders/{woId}/{step}` (operationId `registryAssetStep`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10306,7 +10630,7 @@ export class RegistryAssetsApi {
   /**
    * Reliability
    *
-   * AssetController.reliability (sangam-registry).
+   * AssetController.reliability (sangam-rest).
    *
    * `GET /registry/assets/{id}/reliability` (operationId `registryAssetReliability`); permission `registry.read`.
    */
@@ -10323,7 +10647,7 @@ export class RegistryCustodyApi {
   /**
    * Register
    *
-   * CustodyController.register (sangam-registry).
+   * CustodyController.register (sangam-rest).
    *
    * `POST /registry/custody/items` (operationId `registryCustodyRegister`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10336,7 +10660,7 @@ export class RegistryCustodyApi {
   /**
    * List
    *
-   * CustodyController.list (sangam-registry).
+   * CustodyController.list (sangam-rest).
    *
    * `GET /registry/custody/items` (operationId `registryCustodyList`); permission `registry.read`.
    */
@@ -10348,7 +10672,7 @@ export class RegistryCustodyApi {
   /**
    * Get
    *
-   * CustodyController.get (sangam-registry).
+   * CustodyController.get (sangam-rest).
    *
    * `GET /registry/custody/items/{id}` (operationId `registryCustodyGet`); permission `registry.read`.
    */
@@ -10360,7 +10684,7 @@ export class RegistryCustodyApi {
   /**
    * By label
    *
-   * CustodyController.byLabel (sangam-registry).
+   * CustodyController.byLabel (sangam-rest).
    *
    * `GET /registry/custody/items/by-label/{label}` (operationId `registryCustodyByLabel`); permission `registry.read`.
    */
@@ -10372,7 +10696,7 @@ export class RegistryCustodyApi {
   /**
    * Events
    *
-   * CustodyController.events (sangam-registry).
+   * CustodyController.events (sangam-rest).
    *
    * `GET /registry/custody/items/{id}/events` (operationId `registryCustodyEvents`); permission `registry.read`.
    */
@@ -10384,7 +10708,7 @@ export class RegistryCustodyApi {
   /**
    * Verify
    *
-   * CustodyController.verify (sangam-registry).
+   * CustodyController.verify (sangam-rest).
    *
    * `GET /registry/custody/items/{id}/verify` (operationId `registryCustodyVerify`); permission `registry.read`.
    */
@@ -10396,7 +10720,7 @@ export class RegistryCustodyApi {
   /**
    * Transfers
    *
-   * CustodyController.transfers (sangam-registry).
+   * CustodyController.transfers (sangam-rest).
    *
    * `GET /registry/custody/items/{id}/transfers` (operationId `registryCustodyTransfers`); permission `registry.read`.
    */
@@ -10408,7 +10732,7 @@ export class RegistryCustodyApi {
   /**
    * Initiate
    *
-   * CustodyController.initiate (sangam-registry).
+   * CustodyController.initiate (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/transfers` (operationId `registryCustodyInitiate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10421,7 +10745,7 @@ export class RegistryCustodyApi {
   /**
    * Handover
    *
-   * CustodyController.handover (sangam-registry).
+   * CustodyController.handover (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/handover` (operationId `registryCustodyHandover`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10434,7 +10758,7 @@ export class RegistryCustodyApi {
   /**
    * Transfer
    *
-   * CustodyController.transfer (sangam-registry).
+   * CustodyController.transfer (sangam-rest).
    *
    * `GET /registry/custody/transfers/{transferId}` (operationId `registryCustodyTransfer`); permission `registry.read`.
    */
@@ -10446,7 +10770,7 @@ export class RegistryCustodyApi {
   /**
    * Pending
    *
-   * CustodyController.pending (sangam-registry).
+   * CustodyController.pending (sangam-rest).
    *
    * `GET /registry/custody/transfers/pending` (operationId `registryCustodyPending`); permission `registry.read`.
    */
@@ -10458,7 +10782,7 @@ export class RegistryCustodyApi {
   /**
    * Accept
    *
-   * CustodyController.accept (sangam-registry).
+   * CustodyController.accept (sangam-rest).
    *
    * `POST /registry/custody/transfers/{transferId}/accept` (operationId `registryCustodyAccept`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10471,7 +10795,7 @@ export class RegistryCustodyApi {
   /**
    * Reject
    *
-   * CustodyController.reject (sangam-registry).
+   * CustodyController.reject (sangam-rest).
    *
    * `POST /registry/custody/transfers/{transferId}/reject` (operationId `registryCustodyReject`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10484,7 +10808,7 @@ export class RegistryCustodyApi {
   /**
    * Cancel
    *
-   * CustodyController.cancel (sangam-registry).
+   * CustodyController.cancel (sangam-rest).
    *
    * `POST /registry/custody/transfers/{transferId}/cancel` (operationId `registryCustodyCancel`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10497,7 +10821,7 @@ export class RegistryCustodyApi {
   /**
    * Seal
    *
-   * CustodyController.seal (sangam-registry).
+   * CustodyController.seal (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/seal` (operationId `registryCustodySeal`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10510,7 +10834,7 @@ export class RegistryCustodyApi {
   /**
    * Break seal
    *
-   * CustodyController.breakSeal (sangam-registry).
+   * CustodyController.breakSeal (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/break-seal` (operationId `registryCustodyBreakSeal`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10523,7 +10847,7 @@ export class RegistryCustodyApi {
   /**
    * Inspect
    *
-   * CustodyController.inspect (sangam-registry).
+   * CustodyController.inspect (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/inspect` (operationId `registryCustodyInspect`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10536,7 +10860,7 @@ export class RegistryCustodyApi {
   /**
    * Location
    *
-   * CustodyController.location (sangam-registry).
+   * CustodyController.location (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/location` (operationId `registryCustodyLocation`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10549,7 +10873,7 @@ export class RegistryCustodyApi {
   /**
    * Put into
    *
-   * CustodyController.putInto (sangam-registry).
+   * CustodyController.putInto (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/container` (operationId `registryCustodyPutInto`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10562,7 +10886,7 @@ export class RegistryCustodyApi {
   /**
    * Take out
    *
-   * CustodyController.takeOut (sangam-registry).
+   * CustodyController.takeOut (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/take-out` (operationId `registryCustodyTakeOut`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10575,7 +10899,7 @@ export class RegistryCustodyApi {
   /**
    * Disposal orders
    *
-   * CustodyController.disposalOrders (sangam-registry).
+   * CustodyController.disposalOrders (sangam-rest).
    *
    * `GET /registry/custody/items/{id}/disposal-orders` (operationId `registryCustodyDisposalOrders`); permission `registry.read`.
    */
@@ -10587,7 +10911,7 @@ export class RegistryCustodyApi {
   /**
    * Order disposal
    *
-   * CustodyController.orderDisposal (sangam-registry).
+   * CustodyController.orderDisposal (sangam-rest).
    *
    * `POST /registry/custody/items/{id}/disposal-orders` (operationId `registryCustodyOrderDisposal`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10600,7 +10924,7 @@ export class RegistryCustodyApi {
   /**
    * Disposal order
    *
-   * CustodyController.disposalOrder (sangam-registry).
+   * CustodyController.disposalOrder (sangam-rest).
    *
    * `GET /registry/custody/disposal-orders/{orderId}` (operationId `registryCustodyDisposalOrder`); permission `registry.read`.
    */
@@ -10612,7 +10936,7 @@ export class RegistryCustodyApi {
   /**
    * Execute
    *
-   * CustodyController.execute (sangam-registry).
+   * CustodyController.execute (sangam-rest).
    *
    * `POST /registry/custody/disposal-orders/{orderId}/execute` (operationId `registryCustodyExecute`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10625,7 +10949,7 @@ export class RegistryCustodyApi {
   /**
    * Cancel disposal
    *
-   * CustodyController.cancelDisposal (sangam-registry).
+   * CustodyController.cancelDisposal (sangam-rest).
    *
    * `POST /registry/custody/disposal-orders/{orderId}/cancel` (operationId `registryCustodyCancelDisposal`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10638,7 +10962,7 @@ export class RegistryCustodyApi {
   /**
    * Gap check
    *
-   * CustodyController.gapCheck (sangam-registry).
+   * CustodyController.gapCheck (sangam-rest).
    *
    * `GET /registry/custody/gap-check` (operationId `registryCustodyGapCheck`); permission `registry.read`.
    */
@@ -10655,7 +10979,7 @@ export class RegistryInstrumentsApi {
   /**
    * Issue
    *
-   * InstrumentController.issue (sangam-registry).
+   * InstrumentController.issue (sangam-rest).
    *
    * `POST /registry/instruments` (operationId `registryInstrumentIssue`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10668,7 +10992,7 @@ export class RegistryInstrumentsApi {
   /**
    * Renew
    *
-   * InstrumentController.renew (sangam-registry).
+   * InstrumentController.renew (sangam-rest).
    *
    * `POST /registry/instruments/{id}/renew` (operationId `registryInstrumentRenew`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10682,7 +11006,7 @@ export class RegistryInstrumentsApi {
   /**
    * Deemed
    *
-   * InstrumentController.deemed (sangam-registry).
+   * InstrumentController.deemed (sangam-rest).
    *
    * `POST /registry/instruments/{id}/deemed-renewal` (operationId `registryInstrumentDeemed`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10694,7 +11018,7 @@ export class RegistryInstrumentsApi {
   /**
    * Suspend
    *
-   * InstrumentController.suspend (sangam-registry).
+   * InstrumentController.suspend (sangam-rest).
    *
    * `POST /registry/instruments/{id}/suspend` (operationId `registryInstrumentSuspend`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10708,7 +11032,7 @@ export class RegistryInstrumentsApi {
   /**
    * Reinstate
    *
-   * InstrumentController.reinstate (sangam-registry).
+   * InstrumentController.reinstate (sangam-rest).
    *
    * `POST /registry/instruments/{id}/reinstate` (operationId `registryInstrumentReinstate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10722,7 +11046,7 @@ export class RegistryInstrumentsApi {
   /**
    * Revoke
    *
-   * InstrumentController.revoke (sangam-registry).
+   * InstrumentController.revoke (sangam-rest).
    *
    * `POST /registry/instruments/{id}/revoke` (operationId `registryInstrumentRevoke`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10736,7 +11060,7 @@ export class RegistryInstrumentsApi {
   /**
    * Surrender
    *
-   * InstrumentController.surrender (sangam-registry).
+   * InstrumentController.surrender (sangam-rest).
    *
    * `POST /registry/instruments/{id}/surrender` (operationId `registryInstrumentSurrender`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10750,7 +11074,7 @@ export class RegistryInstrumentsApi {
   /**
    * Expire
    *
-   * InstrumentController.expire (sangam-registry).
+   * InstrumentController.expire (sangam-rest).
    *
    * `POST /registry/instruments/{id}/expire` (operationId `registryInstrumentExpire`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10762,7 +11086,7 @@ export class RegistryInstrumentsApi {
   /**
    * Transition
    *
-   * InstrumentController.transition (sangam-registry).
+   * InstrumentController.transition (sangam-rest).
    *
    * `POST /registry/instruments/{id}/transitions/{name}` (operationId `registryInstrumentTransition`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10776,7 +11100,7 @@ export class RegistryInstrumentsApi {
   /**
    * Transfer holder
    *
-   * InstrumentController.transferHolder (sangam-registry).
+   * InstrumentController.transferHolder (sangam-rest).
    *
    * `POST /registry/instruments/{id}/transfer-holder` (operationId `registryInstrumentTransferHolder`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10790,7 +11114,7 @@ export class RegistryInstrumentsApi {
   /**
    * Transfer reissue
    *
-   * InstrumentController.transferReissue (sangam-registry).
+   * InstrumentController.transferReissue (sangam-rest).
    *
    * `POST /registry/instruments/{id}/transfer-reissue` (operationId `registryInstrumentTransferReissue`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10803,7 +11127,7 @@ export class RegistryInstrumentsApi {
   /**
    * Amend
    *
-   * InstrumentController.amend (sangam-registry).
+   * InstrumentController.amend (sangam-rest).
    *
    * `POST /registry/instruments/{id}/amend` (operationId `registryInstrumentAmend`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10817,7 +11141,7 @@ export class RegistryInstrumentsApi {
   /**
    * Duplicate
    *
-   * InstrumentController.duplicate (sangam-registry).
+   * InstrumentController.duplicate (sangam-rest).
    *
    * `POST /registry/instruments/{id}/duplicate` (operationId `registryInstrumentDuplicate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10830,7 +11154,7 @@ export class RegistryInstrumentsApi {
   /**
    * Endorse
    *
-   * InstrumentController.endorse (sangam-registry).
+   * InstrumentController.endorse (sangam-rest).
    *
    * `POST /registry/instruments/{id}/endorsements` (operationId `registryInstrumentEndorse`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10843,7 +11167,7 @@ export class RegistryInstrumentsApi {
   /**
    * Endorsements
    *
-   * InstrumentController.endorsements (sangam-registry).
+   * InstrumentController.endorsements (sangam-rest).
    *
    * `GET /registry/instruments/{id}/endorsements` (operationId `registryInstrumentEndorsements`); permission `registry.read`.
    */
@@ -10855,7 +11179,7 @@ export class RegistryInstrumentsApi {
   /**
    * Documents
    *
-   * InstrumentController.documents (sangam-registry).
+   * InstrumentController.documents (sangam-rest).
    *
    * `GET /registry/instruments/{id}/documents` (operationId `registryInstrumentDocuments`); permission `registry.read`.
    */
@@ -10867,7 +11191,7 @@ export class RegistryInstrumentsApi {
   /**
    * Regenerate
    *
-   * InstrumentController.regenerate (sangam-registry).
+   * InstrumentController.regenerate (sangam-rest).
    *
    * `POST /registry/instruments/{id}/documents/regenerate` (operationId `registryInstrumentRegenerate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10879,7 +11203,7 @@ export class RegistryInstrumentsApi {
   /**
    * Expire due
    *
-   * InstrumentController.expireDue (sangam-registry).
+   * InstrumentController.expireDue (sangam-rest).
    *
    * `POST /registry/instruments/jobs/expire` (operationId `registryInstrumentExpireDue`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10891,7 +11215,7 @@ export class RegistryInstrumentsApi {
   /**
    * Renewal due
    *
-   * InstrumentController.renewalDue (sangam-registry).
+   * InstrumentController.renewalDue (sangam-rest).
    *
    * `POST /registry/instruments/jobs/renewal-due` (operationId `registryInstrumentRenewalDue`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10903,7 +11227,7 @@ export class RegistryInstrumentsApi {
   /**
    * Reinstate due
    *
-   * InstrumentController.reinstateDue (sangam-registry).
+   * InstrumentController.reinstateDue (sangam-rest).
    *
    * `POST /registry/instruments/jobs/reinstate` (operationId `registryInstrumentReinstateDue`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10915,7 +11239,7 @@ export class RegistryInstrumentsApi {
   /**
    * Verify code
    *
-   * InstrumentController.verifyCode (sangam-registry).
+   * InstrumentController.verifyCode (sangam-rest).
    *
    * `GET /registry/instruments/public/{tenant}/verify` (operationId `registryInstrumentVerifyCode`).
    */
@@ -10927,7 +11251,7 @@ export class RegistryInstrumentsApi {
   /**
    * Verify qr
    *
-   * InstrumentController.verifyQr (sangam-registry).
+   * InstrumentController.verifyQr (sangam-rest).
    *
    * `POST /registry/instruments/public/verify-qr` (operationId `registryInstrumentVerifyQr`).
    */
@@ -10945,7 +11269,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Define series
    *
-   * RegistryController.defineSeries (sangam-registry).
+   * RegistryController.defineSeries (sangam-rest).
    *
    * `PUT /registry/number-series/{seriesKey}` (operationId `registryRegistryDefineSeries`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10958,7 +11282,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Series
    *
-   * RegistryController.series (sangam-registry).
+   * RegistryController.series (sangam-rest).
    *
    * `GET /registry/number-series/{seriesKey}` (operationId `registryRegistrySeries`); permission `registry.read`.
    */
@@ -10970,7 +11294,7 @@ export class RegistryNumberSeriesApi {
   /**
    * List series
    *
-   * RegistryController.listSeries (sangam-registry).
+   * RegistryController.listSeries (sangam-rest).
    *
    * `GET /registry/number-series` (operationId `registryRegistryListSeries`); permission `registry.read`.
    */
@@ -10982,7 +11306,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Allocate
    *
-   * RegistryController.allocate (sangam-registry).
+   * RegistryController.allocate (sangam-rest).
    *
    * `POST /registry/number-series/{seriesKey}/allocate` (operationId `registryRegistryAllocate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -10995,7 +11319,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Void number
    *
-   * RegistryController.voidNumber (sangam-registry).
+   * RegistryController.voidNumber (sangam-rest).
    *
    * `POST /registry/number-series/{seriesKey}/void` (operationId `registryRegistryVoidNumber`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11008,7 +11332,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Mark used
    *
-   * RegistryController.markUsed (sangam-registry).
+   * RegistryController.markUsed (sangam-rest).
    *
    * `POST /registry/number-series/{seriesKey}/mark-used` (operationId `registryRegistryMarkUsed`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11021,7 +11345,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Close period
    *
-   * RegistryController.closePeriod (sangam-registry).
+   * RegistryController.closePeriod (sangam-rest).
    *
    * `POST /registry/number-series/{seriesKey}/close-period` (operationId `registryRegistryClosePeriod`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11034,7 +11358,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Gaps
    *
-   * RegistryController.gaps (sangam-registry).
+   * RegistryController.gaps (sangam-rest).
    *
    * `GET /registry/number-series/{seriesKey}/gaps` (operationId `registryRegistryGaps`); permission `registry.read`.
    */
@@ -11046,7 +11370,7 @@ export class RegistryNumberSeriesApi {
   /**
    * Allocations
    *
-   * RegistryController.allocations (sangam-registry).
+   * RegistryController.allocations (sangam-rest).
    *
    * `GET /registry/number-series/{seriesKey}/allocations` (operationId `registryRegistryAllocations`); permission `registry.read`.
    */
@@ -11063,7 +11387,7 @@ export class RegistryObjectsApi {
   /**
    * Create
    *
-   * RegistryController.create (sangam-registry).
+   * RegistryController.create (sangam-rest).
    *
    * `POST /registry/objects` (operationId `registryRegistryCreate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11076,7 +11400,7 @@ export class RegistryObjectsApi {
   /**
    * List
    *
-   * RegistryController.list (sangam-registry).
+   * RegistryController.list (sangam-rest).
    *
    * `GET /registry/objects` (operationId `registryRegistryList`); permission `registry.read`.
    */
@@ -11088,7 +11412,7 @@ export class RegistryObjectsApi {
   /**
    * Get
    *
-   * RegistryController.get (sangam-registry).
+   * RegistryController.get (sangam-rest).
    *
    * `GET /registry/objects/{id}` (operationId `registryRegistryGet`); permission `registry.read`.
    */
@@ -11100,7 +11424,7 @@ export class RegistryObjectsApi {
   /**
    * Update
    *
-   * RegistryController.update (sangam-registry).
+   * RegistryController.update (sangam-rest).
    *
    * `PATCH /registry/objects/{id}` (operationId `registryRegistryUpdate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11114,7 +11438,7 @@ export class RegistryObjectsApi {
   /**
    * By number
    *
-   * RegistryController.byNumber (sangam-registry).
+   * RegistryController.byNumber (sangam-rest).
    *
    * `GET /registry/objects/by-number/{number}` (operationId `registryRegistryByNumber`); permission `registry.read`.
    */
@@ -11126,7 +11450,7 @@ export class RegistryObjectsApi {
   /**
    * Transition
    *
-   * RegistryController.transition (sangam-registry).
+   * RegistryController.transition (sangam-rest).
    *
    * `POST /registry/objects/{id}/transitions/{name}` (operationId `registryRegistryTransition`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11140,7 +11464,7 @@ export class RegistryObjectsApi {
   /**
    * Available transitions
    *
-   * RegistryController.availableTransitions (sangam-registry).
+   * RegistryController.availableTransitions (sangam-rest).
    *
    * `GET /registry/objects/{id}/transitions` (operationId `registryRegistryAvailableTransitions`); permission `registry.read`.
    */
@@ -11152,7 +11476,7 @@ export class RegistryObjectsApi {
   /**
    * History
    *
-   * RegistryController.history (sangam-registry).
+   * RegistryController.history (sangam-rest).
    *
    * `GET /registry/objects/{id}/versions` (operationId `registryRegistryHistory`); permission `registry.read`.
    */
@@ -11164,7 +11488,7 @@ export class RegistryObjectsApi {
   /**
    * As of
    *
-   * RegistryController.asOf (sangam-registry).
+   * RegistryController.asOf (sangam-rest).
    *
    * `GET /registry/objects/{id}/as-of` (operationId `registryRegistryAsOf`); permission `registry.read`.
    */
@@ -11176,7 +11500,7 @@ export class RegistryObjectsApi {
   /**
    * Verify audit
    *
-   * RegistryController.verifyAudit (sangam-registry).
+   * RegistryController.verifyAudit (sangam-rest).
    *
    * `GET /registry/objects/{id}/audit/verify` (operationId `registryRegistryVerifyAudit`); permission `registry.read`.
    */
@@ -11188,7 +11512,7 @@ export class RegistryObjectsApi {
   /**
    * Mirror
    *
-   * RegistryController.mirror (sangam-registry).
+   * RegistryController.mirror (sangam-rest).
    *
    * `POST /registry/objects/mirror` (operationId `registryRegistryMirror`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11206,7 +11530,7 @@ export class RegistryPartiesApi {
   /**
    * Create
    *
-   * PartyController.create (sangam-registry).
+   * PartyController.create (sangam-rest).
    *
    * `POST /registry/parties` (operationId `registryPartyCreate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11219,7 +11543,7 @@ export class RegistryPartiesApi {
   /**
    * List
    *
-   * PartyController.list (sangam-registry).
+   * PartyController.list (sangam-rest).
    *
    * `GET /registry/parties` (operationId `registryPartyList`); permission `registry.read`.
    */
@@ -11232,7 +11556,7 @@ export class RegistryPartiesApi {
   /**
    * Get
    *
-   * PartyController.get (sangam-registry).
+   * PartyController.get (sangam-rest).
    *
    * `GET /registry/parties/{id}` (operationId `registryPartyGet`); permission `registry.read`.
    */
@@ -11245,7 +11569,7 @@ export class RegistryPartiesApi {
   /**
    * Update
    *
-   * PartyController.update (sangam-registry).
+   * PartyController.update (sangam-rest).
    *
    * `PATCH /registry/parties/{id}` (operationId `registryPartyUpdate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11258,7 +11582,7 @@ export class RegistryPartiesApi {
   /**
    * Deactivate
    *
-   * PartyController.deactivate (sangam-registry).
+   * PartyController.deactivate (sangam-rest).
    *
    * `POST /registry/parties/{id}/deactivate` (operationId `registryPartyDeactivate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11271,7 +11595,7 @@ export class RegistryPartiesApi {
   /**
    * Reactivate
    *
-   * PartyController.reactivate (sangam-registry).
+   * PartyController.reactivate (sangam-rest).
    *
    * `POST /registry/parties/{id}/reactivate` (operationId `registryPartyReactivate`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11284,7 +11608,7 @@ export class RegistryPartiesApi {
   /**
    * Resolve
    *
-   * PartyController.resolve (sangam-registry).
+   * PartyController.resolve (sangam-rest).
    *
    * `GET /registry/parties/{id}/resolve` (operationId `registryPartyResolve`); permission `registry.read`.
    */
@@ -11296,7 +11620,7 @@ export class RegistryPartiesApi {
   /**
    * Verify audit
    *
-   * PartyController.verifyAudit (sangam-registry).
+   * PartyController.verifyAudit (sangam-rest).
    *
    * `GET /registry/parties/{id}/audit/verify` (operationId `registryPartyVerifyAudit`); permission `registry.read`.
    */
@@ -11308,7 +11632,7 @@ export class RegistryPartiesApi {
   /**
    * Identifiers
    *
-   * PartyController.identifiers (sangam-registry).
+   * PartyController.identifiers (sangam-rest).
    *
    * `GET /registry/parties/{id}/identifiers` (operationId `registryPartyIdentifiers`); permission `registry.read`.
    */
@@ -11321,7 +11645,7 @@ export class RegistryPartiesApi {
   /**
    * Add identifier
    *
-   * PartyController.addIdentifier (sangam-registry).
+   * PartyController.addIdentifier (sangam-rest).
    *
    * `POST /registry/parties/{id}/identifiers` (operationId `registryPartyAddIdentifier`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11334,7 +11658,7 @@ export class RegistryPartiesApi {
   /**
    * Retire identifier
    *
-   * PartyController.retireIdentifier (sangam-registry).
+   * PartyController.retireIdentifier (sangam-rest).
    *
    * `POST /registry/parties/identifiers/{identifierId}/retire` (operationId `registryPartyRetireIdentifier`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11347,7 +11671,7 @@ export class RegistryPartiesApi {
   /**
    * Reveal
    *
-   * PartyController.reveal (sangam-registry).
+   * PartyController.reveal (sangam-rest).
    *
    * `POST /registry/parties/identifiers/{identifierId}/reveal` (operationId `registryPartyReveal`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11360,7 +11684,7 @@ export class RegistryPartiesApi {
   /**
    * Relationships
    *
-   * PartyController.relationships (sangam-registry).
+   * PartyController.relationships (sangam-rest).
    *
    * `GET /registry/parties/{id}/relationships` (operationId `registryPartyRelationships`); permission `registry.read`.
    */
@@ -11373,7 +11697,7 @@ export class RegistryPartiesApi {
   /**
    * Add relationship
    *
-   * PartyController.addRelationship (sangam-registry).
+   * PartyController.addRelationship (sangam-rest).
    *
    * `POST /registry/parties/{id}/relationships` (operationId `registryPartyAddRelationship`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11386,7 +11710,7 @@ export class RegistryPartiesApi {
   /**
    * End relationship
    *
-   * PartyController.endRelationship (sangam-registry).
+   * PartyController.endRelationship (sangam-rest).
    *
    * `POST /registry/parties/relationships/{relationshipId}/end` (operationId `registryPartyEndRelationship`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11399,7 +11723,7 @@ export class RegistryPartiesApi {
   /**
    * Addresses
    *
-   * PartyController.addresses (sangam-registry).
+   * PartyController.addresses (sangam-rest).
    *
    * `GET /registry/parties/{id}/addresses` (operationId `registryPartyAddresses`); permission `registry.read`.
    */
@@ -11412,7 +11736,7 @@ export class RegistryPartiesApi {
   /**
    * Add address
    *
-   * PartyController.addAddress (sangam-registry).
+   * PartyController.addAddress (sangam-rest).
    *
    * `POST /registry/parties/{id}/addresses` (operationId `registryPartyAddAddress`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11425,7 +11749,7 @@ export class RegistryPartiesApi {
   /**
    * Retire address
    *
-   * PartyController.retireAddress (sangam-registry).
+   * PartyController.retireAddress (sangam-rest).
    *
    * `POST /registry/parties/addresses/{addressId}/retire` (operationId `registryPartyRetireAddress`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11438,7 +11762,7 @@ export class RegistryPartiesApi {
   /**
    * Household
    *
-   * PartyController.household (sangam-registry).
+   * PartyController.household (sangam-rest).
    *
    * `GET /registry/parties/{id}/household` (operationId `registryPartyHousehold`); permission `registry.read`.
    */
@@ -11451,7 +11775,7 @@ export class RegistryPartiesApi {
   /**
    * Snapshot
    *
-   * PartyController.snapshot (sangam-registry).
+   * PartyController.snapshot (sangam-rest).
    *
    * `POST /registry/parties/{id}/snapshots` (operationId `registryPartySnapshot`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11465,7 +11789,7 @@ export class RegistryPartiesApi {
   /**
    * Snapshots
    *
-   * PartyController.snapshots (sangam-registry).
+   * PartyController.snapshots (sangam-rest).
    *
    * `GET /registry/parties/snapshots` (operationId `registryPartySnapshots`); permission `registry.read`.
    */
@@ -11477,7 +11801,7 @@ export class RegistryPartiesApi {
   /**
    * Get snapshot
    *
-   * PartyController.getSnapshot (sangam-registry).
+   * PartyController.getSnapshot (sangam-rest).
    *
    * `GET /registry/parties/snapshots/{snapshotId}` (operationId `registryPartyGetSnapshot`); permission `registry.read`.
    */
@@ -11489,7 +11813,7 @@ export class RegistryPartiesApi {
   /**
    * Verify snapshot
    *
-   * PartyController.verifySnapshot (sangam-registry).
+   * PartyController.verifySnapshot (sangam-rest).
    *
    * `GET /registry/parties/snapshots/{snapshotId}/verify` (operationId `registryPartyVerifySnapshot`); permission `registry.read`.
    */
@@ -11501,7 +11825,7 @@ export class RegistryPartiesApi {
   /**
    * Match
    *
-   * PartyController.match (sangam-registry).
+   * PartyController.match (sangam-rest).
    *
    * `POST /registry/parties/match` (operationId `registryPartyMatch`); permission `registry.write`.
    */
@@ -11514,7 +11838,7 @@ export class RegistryPartiesApi {
   /**
    * Rematch
    *
-   * PartyController.rematch (sangam-registry).
+   * PartyController.rematch (sangam-rest).
    *
    * `POST /registry/parties/{id}/match` (operationId `registryPartyRematch`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11526,7 +11850,7 @@ export class RegistryPartiesApi {
   /**
    * Candidates
    *
-   * PartyController.candidates (sangam-registry).
+   * PartyController.candidates (sangam-rest).
    *
    * `GET /registry/parties/candidates` (operationId `registryPartyCandidates`); permission `registry.read`.
    */
@@ -11538,7 +11862,7 @@ export class RegistryPartiesApi {
   /**
    * Confirm
    *
-   * PartyController.confirm (sangam-registry).
+   * PartyController.confirm (sangam-rest).
    *
    * `POST /registry/parties/candidates/{candidateId}/confirm` (operationId `registryPartyConfirm`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11551,7 +11875,7 @@ export class RegistryPartiesApi {
   /**
    * Reject
    *
-   * PartyController.reject (sangam-registry).
+   * PartyController.reject (sangam-rest).
    *
    * `POST /registry/parties/candidates/{candidateId}/reject` (operationId `registryPartyReject`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11564,7 +11888,7 @@ export class RegistryPartiesApi {
   /**
    * Merge
    *
-   * PartyController.merge (sangam-registry).
+   * PartyController.merge (sangam-rest).
    *
    * `POST /registry/parties/merge` (operationId `registryPartyMerge`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11577,7 +11901,7 @@ export class RegistryPartiesApi {
   /**
    * Unmerge
    *
-   * PartyController.unmerge (sangam-registry).
+   * PartyController.unmerge (sangam-rest).
    *
    * `POST /registry/parties/merges/{mergeEventId}/unmerge` (operationId `registryPartyUnmerge`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11590,7 +11914,7 @@ export class RegistryPartiesApi {
   /**
    * Merges
    *
-   * PartyController.merges (sangam-registry).
+   * PartyController.merges (sangam-rest).
    *
    * `GET /registry/parties/{id}/merges` (operationId `registryPartyMerges`); permission `registry.read`.
    */
@@ -11602,7 +11926,7 @@ export class RegistryPartiesApi {
   /**
    * Identifier types
    *
-   * PartyController.identifierTypes (sangam-registry).
+   * PartyController.identifierTypes (sangam-rest).
    *
    * `GET /registry/parties/config/identifier-types` (operationId `registryPartyIdentifierTypes`); permission `registry.read`.
    */
@@ -11614,7 +11938,7 @@ export class RegistryPartiesApi {
   /**
    * Save identifier types
    *
-   * PartyController.saveIdentifierTypes (sangam-registry).
+   * PartyController.saveIdentifierTypes (sangam-rest).
    *
    * `PUT /registry/parties/config/identifier-types` (operationId `registryPartySaveIdentifierTypes`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11627,7 +11951,7 @@ export class RegistryPartiesApi {
   /**
    * Match config
    *
-   * PartyController.matchConfig (sangam-registry).
+   * PartyController.matchConfig (sangam-rest).
    *
    * `GET /registry/parties/config/match` (operationId `registryPartyMatchConfig`); permission `registry.read`.
    */
@@ -11639,7 +11963,7 @@ export class RegistryPartiesApi {
   /**
    * Save match config
    *
-   * PartyController.saveMatchConfig (sangam-registry).
+   * PartyController.saveMatchConfig (sangam-rest).
    *
    * `PUT /registry/parties/config/match` (operationId `registryPartySaveMatchConfig`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11657,7 +11981,7 @@ export class RegistryRegistersApi {
   /**
    * Define
    *
-   * RegisterController.define (sangam-registry).
+   * RegisterController.define (sangam-rest).
    *
    * `PUT /registry/registers/{registerKey}` (operationId `registryRegisterDefine`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11670,7 +11994,7 @@ export class RegistryRegistersApi {
   /**
    * Definition
    *
-   * RegisterController.definition (sangam-registry).
+   * RegisterController.definition (sangam-rest).
    *
    * `GET /registry/registers/{registerKey}` (operationId `registryRegisterDefinition`); permission `registry.read`.
    */
@@ -11682,7 +12006,7 @@ export class RegistryRegistersApi {
   /**
    * Definitions
    *
-   * RegisterController.definitions (sangam-registry).
+   * RegisterController.definitions (sangam-rest).
    *
    * `GET /registry/registers` (operationId `registryRegisterDefinitions`); permission `registry.read`.
    */
@@ -11694,7 +12018,7 @@ export class RegistryRegistersApi {
   /**
    * Append
    *
-   * RegisterController.append (sangam-registry).
+   * RegisterController.append (sangam-rest).
    *
    * `POST /registry/registers/{registerKey}/entries` (operationId `registryRegisterAppend`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11707,7 +12031,7 @@ export class RegistryRegistersApi {
   /**
    * Books
    *
-   * RegisterController.books (sangam-registry).
+   * RegisterController.books (sangam-rest).
    *
    * `GET /registry/registers/{registerKey}/books` (operationId `registryRegisterBooks`); permission `registry.read`.
    */
@@ -11719,7 +12043,7 @@ export class RegistryRegistersApi {
   /**
    * Book
    *
-   * RegisterController.book (sangam-registry).
+   * RegisterController.book (sangam-rest).
    *
    * `GET /registry/registers/books/{bookId}` (operationId `registryRegisterBook`); permission `registry.read`.
    */
@@ -11731,7 +12055,7 @@ export class RegistryRegistersApi {
   /**
    * Entries
    *
-   * RegisterController.entries (sangam-registry).
+   * RegisterController.entries (sangam-rest).
    *
    * `GET /registry/registers/books/{bookId}/entries` (operationId `registryRegisterEntries`); permission `registry.read`.
    */
@@ -11743,7 +12067,7 @@ export class RegistryRegistersApi {
   /**
    * Effective
    *
-   * RegisterController.effective (sangam-registry).
+   * RegisterController.effective (sangam-rest).
    *
    * `GET /registry/registers/books/{bookId}/entries/{entryNo}` (operationId `registryRegisterEffective`); permission `registry.read`.
    */
@@ -11755,7 +12079,7 @@ export class RegistryRegistersApi {
   /**
    * Correct
    *
-   * RegisterController.correct (sangam-registry).
+   * RegisterController.correct (sangam-rest).
    *
    * `POST /registry/registers/books/{bookId}/entries/{entryNo}/corrections` (operationId `registryRegisterCorrect`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11768,7 +12092,7 @@ export class RegistryRegistersApi {
   /**
    * Entries for
    *
-   * RegisterController.entriesFor (sangam-registry).
+   * RegisterController.entriesFor (sangam-rest).
    *
    * `GET /registry/registers/entries` (operationId `registryRegisterEntriesFor`); permission `registry.read`.
    */
@@ -11780,7 +12104,7 @@ export class RegistryRegistersApi {
   /**
    * Close
    *
-   * RegisterController.close (sangam-registry).
+   * RegisterController.close (sangam-rest).
    *
    * `POST /registry/registers/books/{bookId}/close` (operationId `registryRegisterClose`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11793,7 +12117,7 @@ export class RegistryRegistersApi {
   /**
    * Verify
    *
-   * RegisterController.verify (sangam-registry).
+   * RegisterController.verify (sangam-rest).
    *
    * `GET /registry/registers/books/{bookId}/verify` (operationId `registryRegisterVerify`); permission `registry.read`.
    */
@@ -11805,7 +12129,7 @@ export class RegistryRegistersApi {
   /**
    * Extract
    *
-   * RegisterController.extract (sangam-registry).
+   * RegisterController.extract (sangam-rest).
    *
    * `POST /registry/registers/books/{bookId}/extracts` (operationId `registryRegisterExtract`); permission `registry.write`; result stored atomically with the state change.
    */
@@ -11818,7 +12142,7 @@ export class RegistryRegistersApi {
   /**
    * Get extract
    *
-   * RegisterController.getExtract (sangam-registry).
+   * RegisterController.getExtract (sangam-rest).
    *
    * `GET /registry/registers/extracts/{extractId}` (operationId `registryRegisterGetExtract`); permission `registry.read`.
    */
@@ -11830,7 +12154,7 @@ export class RegistryRegistersApi {
   /**
    * Verify extract
    *
-   * RegisterController.verifyExtract (sangam-registry).
+   * RegisterController.verifyExtract (sangam-rest).
    *
    * `GET /registry/registers/public/{tenant}/extracts/verify` (operationId `registryRegisterVerifyExtract`).
    */
@@ -13026,7 +13350,7 @@ export class SCIMApi {
   /**
    * Create a user
    *
-   * Creates the person (USER_PROVISIONED) and its postings; 409 uniqueness on userName / externalId.
+   * Creates the person (USER_PROVISIONED); 400 mutability when postings are sent; 409 uniqueness on userName / externalId.
    *
    * `POST /scim/v2/Users` (operationId `scimCreateUser`); permission `scim.provision`; result stored atomically with the state change.
    */
@@ -13051,7 +13375,7 @@ export class SCIMApi {
   /**
    * Replace a user
    *
-   * Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and ends the postings.
+   * Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and revokes its API tokens; postings are not touched (400 mutability when the request changes them).
    *
    * `PUT /scim/v2/Users/{id}` (operationId `scimReplaceUser`); permission `scim.provision`; result stored atomically with the state change.
    */
@@ -13077,7 +13401,7 @@ export class SCIMApi {
   /**
    * Delete a user
    *
-   * Deactivates the person (history is kept, X.2.3), ends the postings; 204.
+   * Deactivates the person (history kept, X.2.3) and removes its SCIM group memberships; postings are not touched; 204.
    *
    * `DELETE /scim/v2/Users/{id}` (operationId `scimDeleteUser`); permission `scim.provision`; result stored atomically with the state change.
    */
@@ -13162,7 +13486,50 @@ export class SCIMApi {
   }
 }
 
-/** Typed operations of `Tasks` (13 operations). */
+/** Typed operations of `SharedDeployments` (3 operations). */
+export class SharedDeploymentsApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Shared deployments
+   *
+   * The registry: active rows by default; includeRevoked=true lists revoked rows too. Needs platform.shared-deployment.read. Platform-only: held only by a platform-issuer identity (marker group sangam-platform), never through a tenant role, a tenant grant or the administrator wildcard. The registry is platform-wide: no tenant parameter and no tenant filter.
+   *
+   * `GET /admin/shared-deployments` (operationId `listSharedDeployments`); permission `platform.shared-deployment.read`.
+   */
+  async listSharedDeployments(params?: { includeRevoked?: boolean /* Also list revoked rows (default false) */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.SharedDeployment>> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/shared-deployments`, query: { includeRevoked: params?.includeRevoked, page: params?.page, size: params?.size } };
+    return this.calls.page<M.SharedDeployment>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Register a shared deployment
+   *
+   * Marks an untenanted engine deployment as platform-owned, so its work runs under the system audit scope. The row and the audit event SHARED_DEPLOYMENT_REGISTERED commit in one transaction. Needs platform.shared-deployment.manage; a replay of the stored response re-checks it. Platform-only: held only by a platform-issuer identity (marker group sangam-platform), never through a tenant role, a tenant grant or the administrator wildcard. The registry is platform-wide: no tenant parameter and no tenant filter.
+   *
+   * `POST /admin/shared-deployments` (operationId `registerSharedDeployment`); permission `platform.shared-deployment.manage`; result stored atomically with the state change.
+   */
+  async registerSharedDeployment(body: M.SharedDeploymentRegistration, options?: RequestOptions): Promise<M.SharedDeployment> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/shared-deployments` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.SharedDeployment>(req, options);
+  }
+
+  /**
+   * Revoke a shared deployment
+   *
+   * Ends the registration; work of the deployment then has no system owner and fails closed (UNRESOLVED_TENANT). The row and the audit event SHARED_DEPLOYMENT_REVOKED commit in one transaction. Revocation is final: the id is never registered again (deploy again and register the new id). Needs platform.shared-deployment.manage. Platform-only: held only by a platform-issuer identity (marker group sangam-platform), never through a tenant role, a tenant grant or the administrator wildcard. The registry is platform-wide: no tenant parameter and no tenant filter.
+   *
+   * `DELETE /admin/shared-deployments/{deploymentId}` (operationId `revokeSharedDeployment`); permission `platform.shared-deployment.manage`; result stored atomically with the state change.
+   */
+  async revokeSharedDeployment(deploymentId: string, body: M.SharedDeploymentRevocation, options?: RequestOptions): Promise<M.SharedDeployment> {
+    const req: ApiRequest = { method: 'DELETE', path: `/admin/shared-deployments/${seg(String(deploymentId))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.SharedDeployment>(req, options);
+  }
+}
+
+/** Typed operations of `Tasks` (15 operations). */
 export class TasksApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -13241,7 +13608,7 @@ export class TasksApi {
   /**
    * Complete a task with a decision
    *
-   * Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6).
+   * Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6). A step that needs a DSC signature (decisions 236, 237 and 241) completes only over a verified signature of the required document by the completing person at this task: otherwise 422 DSC_SIGNATURE_NOT_VERIFIED, or 422 DSC_ENROLMENT_REVOKED when the person did sign it but the certificate enrolment that signature was bound to was revoked afterwards (also after a re-approval); the signature evidence stays recorded and the person signs again with the currently approved certificate. Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up choice is close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step 8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.
    *
    * `POST /tasks/{id}/complete` (operationId `completeTask`); permission `task.write`; result stored atomically with the state change.
    */
@@ -13326,11 +13693,74 @@ export class TasksApi {
     if (body !== undefined) req.rawBody = body;
     return this.calls.json<M.Document>(req, options);
   }
+
+  /**
+   * Prepare a DSC signature
+   *
+   * Step 1 of a DSC signature (decision 165). Needs task.write and document.read. The document must be a PDF attached to the task or its process instance, scanned clean, with a recorded SHA-256 that matches its content, at most 50 MiB. The signer is matched by the enrolled certificate (decision 227): the signer certificate of the chain must be the caller's own enrolment, APPROVED by an admin other than the caller (me/dsc/certificates); the display name and the certificate CN are not used to bind the signer. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+   *
+   * `POST /tasks/{id}/dsc/prepare` (operationId `prepareDscSignature`); permission `task.write`; result stored atomically with the state change.
+   */
+  async prepareDscSignature(id: string, body: M.DscPrepareRequest, options?: RequestOptions): Promise<M.DscPrepareResponse> {
+    const req: ApiRequest = { method: 'POST', path: `/tasks/${seg(String(id))}/dsc/prepare` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscPrepareResponse>(req, options);
+  }
+
+  /**
+   * Complete a DSC signature
+   *
+   * Step 2 of a DSC signature (decision 165). Needs task.write and document.write. Consumes the prepare once (by the same caller, for the same task, before it expires), embeds and verifies the signature and answers the outcome. A wrong chain, signature or algorithm is answered 200 with outcome VERIFIED_INVALID or INDETERMINATE, not as an error; the prepare is used up either way. The enrolment is checked again: if it was revoked after prepare the outcome is VERIFIED_INVALID CERTIFICATE_NOT_ENROLLED. Only VERIFIED_VALID stores the signed PDF as the document's next version, by a compare-and-set on the prepared version (decision 228): when the document changed meanwhile nothing is stored, the outcome is recorded as INDETERMINATE and the answer is 409 DOCUMENT_CHANGED (prepare and sign again). Completing the task is a separate call. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+   *
+   * `POST /tasks/{id}/dsc/complete` (operationId `completeDscSignature`); permission `task.write`; result stored atomically with the state change.
+   */
+  async completeDscSignature(id: string, body: M.DscCompleteRequest, options?: RequestOptions): Promise<M.DscCompleteResponse> {
+    const req: ApiRequest = { method: 'POST', path: `/tasks/${seg(String(id))}/dsc/complete` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DscCompleteResponse>(req, options);
+  }
 }
 
-/** Typed operations of `Tenant operations` (36 operations). */
+/** Typed operations of `Tenant operations` (21 operations). */
 export class TenantOperationsApi {
   constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Backup targets
+   *
+   * The deployment's backup targets with schedule and last run times. Platform operators.
+   *
+   * `GET /ops/backup/targets` (operationId `listBackupTargets`); permission `ops.read`.
+   */
+  async listBackupTargets(options?: RequestOptions): Promise<Array<M.BackupTarget>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/backup/targets` };
+    return this.calls.json<Array<M.BackupTarget>>(req, options);
+  }
+
+  /**
+   * Back up now
+   *
+   * Starts one run of the target now (a Job from its CronJob, or one execution of its configured backup command) and answers 202 with it. 400 REASON_REQUIRED without a reason; 404 for an unknown target; 409 BACKUP_RUNNING while a run of the target is active; 502 BACKUP_TRIGGER_FAILED when the run could not be started (Kubernetes refused or failed the Job creation, or the backup command could not be started). BACKUP_TRIGGERED is audited before the run is started. Platform operators.
+   *
+   * `POST /ops/backup/targets/{id}/runs` (operationId `triggerBackup`); permission `ops.write`; result stored atomically with the state change.
+   */
+  async triggerBackup(id: string, body: M.BackupTriggerRequest, options?: RequestOptions): Promise<M.BackupRun> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/backup/targets/${seg(String(id))}/runs` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.BackupRun>(req, options);
+  }
+
+  /**
+   * Backup run history
+   *
+   * Runs still known to the cluster (scheduled and manual), newest first. Platform operators.
+   *
+   * `GET /ops/backup/runs` (operationId `listBackupRuns`); permission `ops.read`.
+   */
+  async listBackupRuns(params?: { target?: string /* Only runs of this target id */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.BackupRun>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/backup/runs`, query: { target: params?.target, page: params?.page, size: params?.size } };
+    return this.calls.page<M.BackupRun>(req, options, params?.page, params?.size);
+  }
 
   /**
    * Global search
@@ -13366,92 +13796,6 @@ export class TenantOperationsApi {
   async opsOutliers(params: { processKey: string; activityId: string; minSamples?: number }, options?: RequestOptions): Promise<Record<string, unknown>> {
     const req: ApiRequest = { method: 'GET', path: `/ops-admin/outliers`, query: { processKey: params?.processKey, activityId: params?.activityId, minSamples: params?.minSamples } };
     return this.calls.json<Record<string, unknown>>(req, options);
-  }
-
-  /**
-   * Scoped variables
-   *
-   * Platform values overlaid with the tenant values.
-   *
-   * `GET /ops-admin/variables` (operationId `opsVariables`); permission `ops.tenant.read`.
-   */
-  async opsVariables(options?: RequestOptions): Promise<Record<string, unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops-admin/variables` };
-    return this.calls.json<Record<string, unknown>>(req, options);
-  }
-
-  /**
-   * Tenant variable entries
-   *
-   * Tenant scope with version, last writer and reason.
-   *
-   * `GET /ops-admin/variables/entries` (operationId `opsVariableEntries`); permission `ops.tenant.read`.
-   */
-  async opsVariableEntries(options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops-admin/variables/entries` };
-    return this.calls.json<Array<unknown>>(req, options);
-  }
-
-  /**
-   * Set a tenant variable
-   *
-   * Secret-like names are refused.
-   *
-   * `PUT /ops-admin/variables/{name}` (operationId `opsSetVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async opsSetVariable(name: string, body: M.OpsValue, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops-admin/variables/${seg(String(name))}` };
-    if (body !== undefined) req.body = body;
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Delete a tenant variable
-   *
-   * Removes the tenant value.
-   *
-   * `DELETE /ops-admin/variables/{name}` (operationId `opsDeleteVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async opsDeleteVariable(name: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops-admin/variables/${seg(String(name))}` };
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * List secrets
-   *
-   * Names and versions; values are never returned.
-   *
-   * `GET /ops-admin/secrets` (operationId `opsSecrets`); permission `ops.tenant.admin`.
-   */
-  async opsSecrets(options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops-admin/secrets` };
-    return this.calls.json<Array<unknown>>(req, options);
-  }
-
-  /**
-   * Store a secret
-   *
-   * Encrypted at rest; write-only.
-   *
-   * `PUT /ops-admin/secrets/{ref}` (operationId `opsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async opsPutSecret(ref: string, body: M.OpsSecret, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops-admin/secrets/${seg(String(ref))}` };
-    if (body !== undefined) req.body = body;
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Delete a secret
-   *
-   * Removes the secret.
-   *
-   * `DELETE /ops-admin/secrets/{ref}` (operationId `opsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async opsDeleteSecret(ref: string, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops-admin/secrets/${seg(String(ref))}` };
-    await this.calls.none(req, options);
   }
 
   /**
@@ -13517,43 +13861,6 @@ export class TenantOperationsApi {
   }
 
   /**
-   * Retention plan
-   *
-   * Whole trees due; excludes definitions with a history time to live and held roots.
-   *
-   * `GET /ops-admin/retention/plan` (operationId `opsRetentionPlan`); permission `ops.tenant.read`.
-   */
-  async opsRetentionPlan(params?: { limit?: number }, options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops-admin/retention/plan`, query: { limit: params?.limit } };
-    return this.calls.json<Array<unknown>>(req, options);
-  }
-
-  /**
-   * Execute retention
-   *
-   * Re-plans on the server and purges due trees.
-   *
-   * `POST /ops-admin/retention/execute` (operationId `opsRetentionExecute`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async opsRetentionExecute(body: M.OpsReason, params?: { limit?: number }, options?: RequestOptions): Promise<M.OpsPurge> {
-    const req: ApiRequest = { method: 'POST', path: `/ops-admin/retention/execute`, query: { limit: params?.limit } };
-    if (body !== undefined) req.body = body;
-    return this.calls.json<M.OpsPurge>(req, options);
-  }
-
-  /**
-   * Retention runs
-   *
-   * Executed purges with plan hash, reason and actor.
-   *
-   * `GET /ops-admin/retention/runs` (operationId `opsRetentionRuns`); permission `ops.tenant.read`.
-   */
-  async opsRetentionRuns(options?: RequestOptions): Promise<Array<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops-admin/retention/runs` };
-    return this.calls.json<Array<unknown>>(req, options);
-  }
-
-  /**
    * Migration status
    *
    * Checkpoints of history migration jobs (copied, failed, mismatched, status); platform operators only.
@@ -13599,80 +13906,6 @@ export class TenantOperationsApi {
   async uiOpsOutliers(params?: { processDefinitionKey?: string; activityId?: string }, options?: RequestOptions): Promise<Array<unknown>> {
     const req: ApiRequest = { method: 'GET', path: `/ops/outliers`, query: { processDefinitionKey: params?.processDefinitionKey, activityId: params?.activityId } };
     return this.calls.json<Array<unknown>>(req, options);
-  }
-
-  /**
-   * Tenant variables
-   *
-   * As rows.
-   *
-   * `GET /ops/variables` (operationId `uiOpsVariables`); permission `ops.tenant.read`.
-   */
-  async uiOpsVariables(params?: { scope?: string; name?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops/variables`, query: { scope: params?.scope, name: params?.name, page: params?.page, size: params?.size } };
-    return this.calls.page<unknown>(req, options, params?.page, params?.size);
-  }
-
-  /**
-   * Set a variable
-   *
-   * TENANT scope only.
-   *
-   * `PUT /ops/variables` (operationId `uiOpsSetVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async uiOpsSetVariable(body: M.OpsUiVariableRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops/variables` };
-    if (body !== undefined) req.body = body;
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Delete a variable
-   *
-   * Needs a reason.
-   *
-   * `DELETE /ops/variables/{id}` (operationId `uiOpsDeleteVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async uiOpsDeleteVariable(id: string, params: { reason: string }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops/variables/${seg(String(id))}`, query: { reason: params?.reason } };
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Secrets
-   *
-   * Metadata only.
-   *
-   * `GET /ops/secrets` (operationId `uiOpsSecrets`); permission `ops.tenant.admin`.
-   */
-  async uiOpsSecrets(params?: { page?: number; size?: number }, options?: RequestOptions): Promise<Page<unknown>> {
-    const req: ApiRequest = { method: 'GET', path: `/ops/secrets`, query: { page: params?.page, size: params?.size } };
-    return this.calls.page<unknown>(req, options, params?.page, params?.size);
-  }
-
-  /**
-   * Set a secret
-   *
-   * The value is write-only.
-   *
-   * `PUT /ops/secrets/{name}` (operationId `uiOpsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async uiOpsPutSecret(name: string, body: M.OpsUiSecretRequest, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'PUT', path: `/ops/secrets/${seg(String(name))}` };
-    if (body !== undefined) req.body = body;
-    await this.calls.none(req, options);
-  }
-
-  /**
-   * Delete a secret
-   *
-   * Needs a reason.
-   *
-   * `DELETE /ops/secrets/{name}` (operationId `uiOpsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
-   */
-  async uiOpsDeleteSecret(name: string, params: { reason: string }, options?: RequestOptions): Promise<void> {
-    const req: ApiRequest = { method: 'DELETE', path: `/ops/secrets/${seg(String(name))}`, query: { reason: params?.reason } };
-    await this.calls.none(req, options);
   }
 
   /**
@@ -13738,6 +13971,188 @@ export class TenantOperationsApi {
   }
 
   /**
+   * Schema status
+   *
+   * Applied product changesets, the engine schema version and the Liquibase lock; read only. Platform operators.
+   *
+   * `GET /ops/schema-status` (operationId `getSchemaStatus`); permission `ops.read`.
+   */
+  async getSchemaStatus(options?: RequestOptions): Promise<M.SchemaStatus> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/schema-status` };
+    return this.calls.json<M.SchemaStatus>(req, options);
+  }
+}
+
+/** Typed operations of `Tenant operations /flowable-migrations` (10 operations). */
+export class TenantOperationsFlowableMigrationsApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Dry-run a Flowable migration
+   *
+   * Reads the source and classifies every instance; writes nothing (state null). Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/dry-run` (operationId `dryRunFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async dryRunFlowableMigration(body: M.FlowableMigrationRequest, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/dry-run` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Create a Flowable migration run
+   *
+   * Plans the run (state DRY_RUN) and answers 201. 409 when the runId exists. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations` (operationId `createFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async createFlowableMigration(body: M.FlowableMigrationRequest, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Get a Flowable migration run
+   *
+   * The run's report. Tenant administrators only (ops.tenant.admin).
+   *
+   * `GET /ops/flowable-migrations/{id}` (operationId `getFlowableMigration`); permission `ops.tenant.admin`.
+   */
+  async getFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/flowable-migrations/${seg(String(id))}` };
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Items of a Flowable migration run
+   *
+   * Source instances of the run with status and findings. Tenant administrators only (ops.tenant.admin).
+   *
+   * `GET /ops/flowable-migrations/{id}/items` (operationId `listFlowableMigrationItems`); permission `ops.tenant.admin`.
+   */
+  async listFlowableMigrationItems(id: string, params?: { status?: 'PLANNED' | 'REJECTED' | 'APPLYING' | 'APPLIED' | 'FAILED' | 'MATCHED' | 'MISMATCHED' | 'ROLLED_BACK' /* Only items in this status */; page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.FlowableMigrationItem>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/flowable-migrations/${seg(String(id))}/items`, query: { status: params?.status, page: params?.page, size: params?.size } };
+    return this.calls.page<M.FlowableMigrationItem>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Freeze the source
+   *
+   * From DRY_RUN: freezes the Flowable workers and rechecks every planned instance's fingerprint. When the workers are not drained or an instance changed or vanished, the problems are listed and the run stays DRY_RUN; otherwise FROZEN. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/{id}/freeze` (operationId `freezeFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async freezeFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/freeze` };
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Apply the run
+   *
+   * From FROZEN, APPLYING or APPLIED: creates the Sangam instances, idempotent per item (APPLYING, then APPLIED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/{id}/apply` (operationId `applyFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async applyFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/apply` };
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Reconcile the run
+   *
+   * Compares every applied instance with its plan (RECONCILED or RECONCILE_FAILED). No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/{id}/reconcile` (operationId `reconcileFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async reconcileFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/reconcile` };
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Cut over
+   *
+   * From RECONCILED: CUT_OVER. Then end the migrated instances on Flowable and release; rejected instances stay on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/{id}/cut-over` (operationId `cutOverFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async cutOverFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/cut-over` };
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Release the source freeze
+   *
+   * From DRY_RUN, FROZEN (back to DRY_RUN), ROLLED_BACK or CUT_OVER: lifts the Flowable freeze. After CUT_OVER it is refused, with a problem, while a migrated instance still exists on Flowable. No body; 200 with the report and its problems list. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/{id}/release` (operationId `releaseFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async releaseFlowableMigration(id: string, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/release` };
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+
+  /**
+   * Roll back the run
+   *
+   * From APPLYING, APPLIED, RECONCILED or RECONCILE_FAILED, while Flowable is still frozen: deletes the run's Sangam instances (ROLLED_BACK). Refused as a whole, with problems and no change, when Flowable is no longer frozen or a target instance has moved on. 400 REASON_REQUIRED without a reason. Tenant administrators only (ops.tenant.admin).
+   *
+   * `POST /ops/flowable-migrations/{id}/rollback` (operationId `rollbackFlowableMigration`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async rollbackFlowableMigration(id: string, body: M.FlowableMigrationRollbackRequest, options?: RequestOptions): Promise<M.FlowableMigrationReport> {
+    const req: ApiRequest = { method: 'POST', path: `/ops/flowable-migrations/${seg(String(id))}/rollback` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.FlowableMigrationReport>(req, options);
+  }
+}
+
+/** Typed operations of `Tenant operations /retention` (6 operations). */
+export class TenantOperationsRetentionApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Retention plan
+   *
+   * Whole trees due; excludes definitions with a history time to live and held roots.
+   *
+   * `GET /ops-admin/retention/plan` (operationId `opsRetentionPlan`); permission `ops.tenant.read`.
+   */
+  async opsRetentionPlan(params?: { limit?: number }, options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops-admin/retention/plan`, query: { limit: params?.limit } };
+    return this.calls.json<Array<unknown>>(req, options);
+  }
+
+  /**
+   * Execute retention
+   *
+   * Re-plans on the server and purges due trees.
+   *
+   * `POST /ops-admin/retention/execute` (operationId `opsRetentionExecute`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async opsRetentionExecute(body: M.OpsReason, params?: { limit?: number }, options?: RequestOptions): Promise<M.OpsPurge> {
+    const req: ApiRequest = { method: 'POST', path: `/ops-admin/retention/execute`, query: { limit: params?.limit } };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.OpsPurge>(req, options);
+  }
+
+  /**
+   * Retention runs
+   *
+   * Executed purges with plan hash, reason and actor.
+   *
+   * `GET /ops-admin/retention/runs` (operationId `opsRetentionRuns`); permission `ops.tenant.read`.
+   */
+  async opsRetentionRuns(options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops-admin/retention/runs` };
+    return this.calls.json<Array<unknown>>(req, options);
+  }
+
+  /**
    * Preview retention
    *
    * With a hash of the plan.
@@ -13772,6 +14187,176 @@ export class TenantOperationsApi {
     const req: ApiRequest = { method: 'POST', path: `/ops/retention/execute` };
     if (body !== undefined) req.body = body;
     return this.calls.json<Record<string, unknown>>(req, options);
+  }
+}
+
+/** Typed operations of `Tenant operations /secrets` (6 operations). */
+export class TenantOperationsSecretsApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * List secrets
+   *
+   * Names and versions; values are never returned.
+   *
+   * `GET /ops-admin/secrets` (operationId `opsSecrets`); permission `ops.tenant.admin`.
+   */
+  async opsSecrets(options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops-admin/secrets` };
+    return this.calls.json<Array<unknown>>(req, options);
+  }
+
+  /**
+   * Store a secret
+   *
+   * Encrypted at rest; write-only.
+   *
+   * `PUT /ops-admin/secrets/{ref}` (operationId `opsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async opsPutSecret(ref: string, body: M.OpsSecret, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops-admin/secrets/${seg(String(ref))}` };
+    if (body !== undefined) req.body = body;
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Delete a secret
+   *
+   * Removes the secret.
+   *
+   * `DELETE /ops-admin/secrets/{ref}` (operationId `opsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async opsDeleteSecret(ref: string, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops-admin/secrets/${seg(String(ref))}` };
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Secrets
+   *
+   * Metadata only.
+   *
+   * `GET /ops/secrets` (operationId `uiOpsSecrets`); permission `ops.tenant.admin`.
+   */
+  async uiOpsSecrets(params?: { page?: number; size?: number }, options?: RequestOptions): Promise<Page<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/secrets`, query: { page: params?.page, size: params?.size } };
+    return this.calls.page<unknown>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Set a secret
+   *
+   * The value is write-only.
+   *
+   * `PUT /ops/secrets/{name}` (operationId `uiOpsPutSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async uiOpsPutSecret(name: string, body: M.OpsUiSecretRequest, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops/secrets/${seg(String(name))}` };
+    if (body !== undefined) req.body = body;
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Delete a secret
+   *
+   * Needs a reason.
+   *
+   * `DELETE /ops/secrets/{name}` (operationId `uiOpsDeleteSecret`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async uiOpsDeleteSecret(name: string, params: { reason: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops/secrets/${seg(String(name))}`, query: { reason: params?.reason } };
+    await this.calls.none(req, options);
+  }
+}
+
+/** Typed operations of `Tenant operations /variables` (7 operations). */
+export class TenantOperationsVariablesApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * Scoped variables
+   *
+   * Platform values overlaid with the tenant values.
+   *
+   * `GET /ops-admin/variables` (operationId `opsVariables`); permission `ops.tenant.read`.
+   */
+  async opsVariables(options?: RequestOptions): Promise<Record<string, unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops-admin/variables` };
+    return this.calls.json<Record<string, unknown>>(req, options);
+  }
+
+  /**
+   * Tenant variable entries
+   *
+   * Tenant scope with version, last writer and reason.
+   *
+   * `GET /ops-admin/variables/entries` (operationId `opsVariableEntries`); permission `ops.tenant.read`.
+   */
+  async opsVariableEntries(options?: RequestOptions): Promise<Array<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops-admin/variables/entries` };
+    return this.calls.json<Array<unknown>>(req, options);
+  }
+
+  /**
+   * Set a tenant variable
+   *
+   * Secret-like names are refused.
+   *
+   * `PUT /ops-admin/variables/{name}` (operationId `opsSetVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async opsSetVariable(name: string, body: M.OpsValue, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops-admin/variables/${seg(String(name))}` };
+    if (body !== undefined) req.body = body;
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Delete a tenant variable
+   *
+   * Removes the tenant value.
+   *
+   * `DELETE /ops-admin/variables/{name}` (operationId `opsDeleteVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async opsDeleteVariable(name: string, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops-admin/variables/${seg(String(name))}` };
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Tenant variables
+   *
+   * As rows.
+   *
+   * `GET /ops/variables` (operationId `uiOpsVariables`); permission `ops.tenant.read`.
+   */
+  async uiOpsVariables(params?: { scope?: string; name?: string; page?: number; size?: number }, options?: RequestOptions): Promise<Page<unknown>> {
+    const req: ApiRequest = { method: 'GET', path: `/ops/variables`, query: { scope: params?.scope, name: params?.name, page: params?.page, size: params?.size } };
+    return this.calls.page<unknown>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * Set a variable
+   *
+   * TENANT scope only.
+   *
+   * `PUT /ops/variables` (operationId `uiOpsSetVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async uiOpsSetVariable(body: M.OpsUiVariableRequest, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'PUT', path: `/ops/variables` };
+    if (body !== undefined) req.body = body;
+    await this.calls.none(req, options);
+  }
+
+  /**
+   * Delete a variable
+   *
+   * Needs a reason.
+   *
+   * `DELETE /ops/variables/{id}` (operationId `uiOpsDeleteVariable`); permission `ops.tenant.admin`; result stored atomically with the state change.
+   */
+  async uiOpsDeleteVariable(id: string, params: { reason: string }, options?: RequestOptions): Promise<void> {
+    const req: ApiRequest = { method: 'DELETE', path: `/ops/variables/${seg(String(id))}`, query: { reason: params?.reason } };
+    await this.calls.none(req, options);
   }
 }
 
@@ -14042,9 +14627,9 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
-  readonly aI: AIApi;
+  readonly ai: AIApi;
   readonly admin: AdminApi;
   readonly adminAssignments: AdminAssignmentsApi;
   readonly adminOrgUnits: AdminOrgUnitsApi;
@@ -14066,8 +14651,12 @@ export class SangamApis {
   readonly debug: DebugApi;
   readonly decisions: DecisionsApi;
   readonly deployments: DeploymentsApi;
+  readonly dltHooks: DltHooksApi;
   readonly documents: DocumentsApi;
+  readonly dscCertificates: DscCertificatesApi;
+  readonly eventGridHooks: EventGridHooksApi;
   readonly events: EventsApi;
+  readonly executor: ExecutorApi;
   readonly field: FieldApi;
   readonly fieldAssignments: FieldAssignmentsApi;
   readonly fieldUnits: FieldUnitsApi;
@@ -14108,16 +14697,21 @@ export class SangamApis {
   readonly resourcesBookings: ResourcesBookingsApi;
   readonly resourcesItems: ResourcesItemsApi;
   readonly rosters: RostersApi;
-  readonly sCIM: SCIMApi;
+  readonly scim: SCIMApi;
+  readonly sharedDeployments: SharedDeploymentsApi;
   readonly tasks: TasksApi;
   readonly tenantOperations: TenantOperationsApi;
+  readonly tenantOperationsFlowableMigrations: TenantOperationsFlowableMigrationsApi;
+  readonly tenantOperationsRetention: TenantOperationsRetentionApi;
+  readonly tenantOperationsSecrets: TenantOperationsSecretsApi;
+  readonly tenantOperationsVariables: TenantOperationsVariablesApi;
   readonly testMode: TestModeApi;
   readonly work: WorkApi;
   readonly workspace: WorkspaceApi;
 
   constructor(http: HttpTransport) {
     const calls = new GeneratedCalls(http);
-    this.aI = new AIApi(calls);
+    this.ai = new AIApi(calls);
     this.admin = new AdminApi(calls);
     this.adminAssignments = new AdminAssignmentsApi(calls);
     this.adminOrgUnits = new AdminOrgUnitsApi(calls);
@@ -14139,8 +14733,12 @@ export class SangamApis {
     this.debug = new DebugApi(calls);
     this.decisions = new DecisionsApi(calls);
     this.deployments = new DeploymentsApi(calls);
+    this.dltHooks = new DltHooksApi(calls);
     this.documents = new DocumentsApi(calls);
+    this.dscCertificates = new DscCertificatesApi(calls);
+    this.eventGridHooks = new EventGridHooksApi(calls);
     this.events = new EventsApi(calls);
+    this.executor = new ExecutorApi(calls);
     this.field = new FieldApi(calls);
     this.fieldAssignments = new FieldAssignmentsApi(calls);
     this.fieldUnits = new FieldUnitsApi(calls);
@@ -14181,9 +14779,14 @@ export class SangamApis {
     this.resourcesBookings = new ResourcesBookingsApi(calls);
     this.resourcesItems = new ResourcesItemsApi(calls);
     this.rosters = new RostersApi(calls);
-    this.sCIM = new SCIMApi(calls);
+    this.scim = new SCIMApi(calls);
+    this.sharedDeployments = new SharedDeploymentsApi(calls);
     this.tasks = new TasksApi(calls);
     this.tenantOperations = new TenantOperationsApi(calls);
+    this.tenantOperationsFlowableMigrations = new TenantOperationsFlowableMigrationsApi(calls);
+    this.tenantOperationsRetention = new TenantOperationsRetentionApi(calls);
+    this.tenantOperationsSecrets = new TenantOperationsSecretsApi(calls);
+    this.tenantOperationsVariables = new TenantOperationsVariablesApi(calls);
     this.testMode = new TestModeApi(calls);
     this.work = new WorkApi(calls);
     this.workspace = new WorkspaceApi(calls);

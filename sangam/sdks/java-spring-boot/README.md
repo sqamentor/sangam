@@ -1,4 +1,4 @@
-# Sangam Java SDK: Spring Boot adapter (`org.sangam:sangam-sdk-spring-boot`)
+# Sangam Java SDK: Spring Boot adapter (`io.github.sqamentor:sangam-sdk-spring-boot`)
 
 M-027. Runs a Sangam external-task worker inside a Spring Boot application. The Java SDK itself has no Spring
 dependency; this artifact adds one auto-configuration.

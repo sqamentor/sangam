@@ -45,6 +45,7 @@ class BatchFanOutDirectiveTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
         String ns = "xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\""
                 + " targetNamespace=\"t\"";
@@ -64,7 +65,7 @@ class BatchFanOutDirectiveTest {
                 + "<startEvent id=\"cs\"/><userTask id=\"ct\"/><endEvent id=\"ce\"/>"
                 + "<sequenceFlow id=\"c1\" sourceRef=\"cs\" targetRef=\"ct\"/>"
                 + "<sequenceFlow id=\"c2\" sourceRef=\"ct\" targetRef=\"ce\"/></process></definitions>";
-        engine.getRepositoryService().createDeployment()
+        engine.getRepositoryService().createDeployment().tenantId(PackTestTenant.ID)
                 .addString("fan-parent.bpmn", parent)
                 .addString("fan-child.bpmn", child).deploy();
     }

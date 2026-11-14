@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-suspense-ageing/clear",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-suspense-ageing",
+  "title": {
+    "en": "Clear the suspense item to the correct head",
+    "hi": "उचंत मद का निपटान"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "targetHead",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Correct budget / accounting head",
+        "hi": "सही बजट / लेखा शीर्ष"
+      }
+    },
+    {
+      "id": "clearanceNote",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Clearance: the correct head and evidence",
+        "hi": "निपटान: सही शीर्ष एवं साक्ष्य"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "clearDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "cleared",
+        "label": {
+          "en": "Cleared to the correct head",
+          "hi": "सही शीर्ष में निपटाया"
+        }
+      },
+      {
+        "value": "proposeWriteOff",
+        "label": {
+          "en": "Propose write-off",
+          "hi": "बट्टे खाते का प्रस्ताव"
+        }
+      }
+    ]
+  }
+}

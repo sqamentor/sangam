@@ -67,6 +67,12 @@ export interface Act {
    * "more fields" editor. 404 means nothing to prefill (the form opens empty); what the user already typed is kept.
    */
   load?: { path: string; omit?: string[] };
+  /**
+   * A check of the request body before it is sent (after the form and the "more fields" JSON are merged): the problem
+   * in the user's words, or undefined. E.g. the field template designer's NUMBER scale and bounds (decisions 230, 242).
+   * The server stays the authority.
+   */
+  check?: (body: Row, t: (k: string, o?: Record<string, unknown>) => string) => string | undefined;
 }
 
 /**
@@ -280,6 +286,11 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
     const req = buildRequest(fields, values, json, isEnginePath(act.path) ? engineDate : undefined);
     if (req.error) {
       setJsonErr(req.error === 'json' ? t('mod.common.invalidJson') : t('mod.common.invalidJsonField', { field: req.error }));
+      return;
+    }
+    const refused = act.check?.(req.body, t);
+    if (refused) {
+      setJsonErr(refused);
       return;
     }
     setJsonErr(undefined);

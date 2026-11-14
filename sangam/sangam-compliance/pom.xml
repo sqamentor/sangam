@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -15,14 +15,14 @@
   <dependencies>
     <!-- Engine-neutral product layer: AuditChain, Transactions, Dialect, Jdbc, SecurityPorts. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
     <!-- Erasure with tombstones (VI.5) and legal holds are reused, never duplicated: the adapters in
          org.sangam.compliance.adapters wrap ErasureService and LegalHoldStore. Optional, so the compliance ports can be
          served by another implementation. No cycle: sangam-integration does not depend on this module. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-integration</artifactId>
       <optional>true</optional>
     </dependency>

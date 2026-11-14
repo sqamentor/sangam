@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.sangam.core.layer.AuditChain;
+import org.sangam.core.layer.TenantKey;
 import org.sangam.packs.port.PackAuditEvent;
 import org.sangam.packs.port.PackAuditSink;
 import org.sangam.ports.support.EngineTx;
@@ -15,22 +16,37 @@ import org.sangam.rest.support.TxSupport;
  * engine command, so the event is appended on that command's connection and commits or rolls back with the engine
  * change (L5 insert, VI.1). Outside a command a short transaction is used. The chain is the business key, else the
  * process instance id, else the tenant security chain.
+ *
+ * <p>RM-49: an event must name its tenant. One without a tenant (null, blank, or the reserved shared key) is refused
+ * with an {@link IllegalArgumentException} before anything is appended; it is never charged to a default tenant or
+ * chained under an empty tenant. The refusal propagates to the pack delegate or listener, so the engine command rolls
+ * back with it. Server pack deployments are always tenant-scoped ({@code PacksTenantDeployer}), so a missing tenant
+ * means a broken producer, for example an untenanted definition calling pack delegates.
  */
 public final class PacksAuditSink implements PackAuditSink {
 
     private final AuditChain chain;
     private final TxSupport tx;
-    private final String defaultTenant;
 
-    public PacksAuditSink(AuditChain chain, TxSupport tx, String defaultTenant) {
+    public PacksAuditSink(AuditChain chain, TxSupport tx) {
         this.chain = chain;
         this.tx = tx;
-        this.defaultTenant = defaultTenant;
+    }
+
+    /** The event's tenant, or an {@link IllegalArgumentException} when it has none (RM-49). */
+    static String requireTenant(PackAuditEvent e) {
+        String t = e.tenantId();
+        if (t == null || t.isBlank() || TenantKey.SHARED.equals(t)) {
+            throw new IllegalArgumentException("pack audit event " + e.type() + " refused: it names no tenant"
+                    + " (business key " + e.businessKey() + ", process instance " + e.processInstanceId()
+                    + "); audit is never charged to a default or empty tenant");
+        }
+        return t;
     }
 
     @Override
     public void record(PackAuditEvent e) {
-        String tenant = e.tenantId() == null || e.tenantId().isBlank() ? defaultTenant : e.tenantId();
+        String tenant = requireTenant(e);
         String chainId = e.businessKey() != null ? e.businessKey()
                 : e.processInstanceId() != null ? e.processInstanceId() : "sec:" + tenant;
         Map<String, Object> payload = new LinkedHashMap<>(e.details());

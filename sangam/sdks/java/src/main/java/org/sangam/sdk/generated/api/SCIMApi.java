@@ -94,7 +94,7 @@ public final class SCIMApi {
     /**
      * Create a user
      *
-     * <p>Creates the person (USER_PROVISIONED) and its postings; 409 uniqueness on userName / externalId.
+     * <p>Creates the person (USER_PROVISIONED); 400 mutability when postings are sent; 409 uniqueness on userName / externalId.
      *
      * <p>{@code POST /scim/v2/Users} (operationId {@code scimCreateUser}); permission {@code scim.provision}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -129,7 +129,7 @@ public final class SCIMApi {
     /**
      * Replace a user
      *
-     * <p>Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and ends the postings.
+     * <p>Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and revokes its API tokens; postings are not touched (400 mutability when the request changes them).
      *
      * <p>{@code PUT /scim/v2/Users/{id}} (operationId {@code scimReplaceUser}); permission {@code scim.provision}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}. SCIM resource id
@@ -163,7 +163,7 @@ public final class SCIMApi {
     /**
      * Delete a user
      *
-     * <p>Deactivates the person (history is kept, X.2.3), ends the postings; 204.
+     * <p>Deactivates the person (history kept, X.2.3) and removes its SCIM group memberships; postings are not touched; 204.
      *
      * <p>{@code DELETE /scim/v2/Users/{id}} (operationId {@code scimDeleteUser}); permission {@code scim.provision}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}. SCIM resource id

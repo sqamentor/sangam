@@ -252,7 +252,7 @@ final class AcceptanceSteps {
         Map<String, Object> vars = new HashMap<>();
         s.vars().forEach((k, v) -> vars.put(k, CASE.equals(v) ? businessKey : v));
         engine.getRuntimeService().createProcessInstanceByKey(key).businessKey(businessKey + "/" + s.key())
-                .setVariables(vars).processDefinitionWithoutTenantId().execute();
+                .setVariables(vars).processDefinitionTenantId(PackTestTenant.ID).execute();
     }
 
     /** The messages of the exception and its causes (the engine may wrap the delegate's refusal). */

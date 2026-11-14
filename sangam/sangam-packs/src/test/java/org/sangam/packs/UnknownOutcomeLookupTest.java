@@ -42,8 +42,9 @@ class UnknownOutcomeLookupTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -72,7 +73,7 @@ class UnknownOutcomeLookupTest {
                 "executionPayloadFields", "fee,applicantRef", "fee", 1000L));
         v.put(org.sangam.packs.core.Vars.simVar(connector), directive);
         engine.getRuntimeService().createProcessInstanceByKey("sangam-core-execution").businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         driver.run(bk, t -> null, 20);
     }
 

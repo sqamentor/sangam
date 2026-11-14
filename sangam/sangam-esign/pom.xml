@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!--
+  Optional signing module (owner decisions 140, 165 and 217; M-080). The ONLY reactor module that depends on Bouncy
+  Castle: PAdES/CMS signing (PadesSigning), RFC 3161 time-stamps, PDF signature validation, eSign response verification
+  and DSC signed-PDF verification with revocation (OCSP, CRL).
+
+  Nothing depends on this module: the server finds its verifiers with ServiceLoader through the framework-independent
+  interfaces of sangam-integration (org.sangam.integration.signature). A deployment without it has no Bouncy Castle on
+  its class path; operations that need verified eSign or DSC stay blocked and everything else works
+  (BouncyCastleConfinementTest in sangam-integration).
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-esign</artifactId>
+  <name>Sangam eSign and DSC signing (optional, Bouncy Castle)</name>
+  <description>Optional module: PAdES signing, eSign response and DSC signed-PDF verification with Bouncy Castle (owner decision 217).</description>
+
+  <dependencies>
+    <!-- the verification interfaces, HttpTransport (egress policy) and the DSC agent -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-integration</artifactId>
+    </dependency>
+    <!-- Bouncy Castle, licence "Bouncy-Castle" (MIT style); bcpkix pulls bcutil and bcprov. Version managed in the root
+         pom (version.bouncycastle). -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk18on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcutil-jdk18on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+    </dependency>
+    <!-- Apache PDFBox, Apache-2.0 (optional in sangam-integration, required here). Same version as sangam-integration. -->
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox</artifactId>
+      <version>3.0.8</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Wires the server to the PDF validator and OCR sidecars of docker-compose.yml (owner decisions 114, 153, 167):
+#
+#   docker compose -f docker-compose.yml -f docker-compose.sidecars.yml --profile postgres --profile pdf --profile ocr up -d
+#
+# The server joins the internal sidecars network and mounts, read-only, the client volume that sidecar-secrets-init
+# fills: one token file per sidecar (its first line is the token this server sends) and truststore.p12 (the JRE's public
+# CA list plus the two demo sidecar certificates). The trust store is passed through JDK_JAVA_OPTIONS, which the java
+# launcher reads in addition to the image's JAVA_TOOL_OPTIONS, so the image settings stay. With only one of the two
+# profiles, set the other URL to empty in .env (SANGAM_OCR_URL= or SANGAM_PDF_VALIDATOR_URL=): an empty URL switches
+# that feature off (fail closed) instead of calling a service that is not running.
+# Production: give the server its own token files and the sidecars' CA from your secret store (deploy/README.md).
+
+x-sidecar-client: &sidecar-client
+  depends_on:
+    sidecar-secrets-init:
+      condition: service_completed_successfully
+      required: false
+  environment:
+    SANGAM_PDF_VALIDATOR_URL: ${SANGAM_PDF_VALIDATOR_URL-https://pdf-validator:8085}
+    SANGAM_PDF_VALIDATOR_TRANSPORT: tls
+    SANGAM_PDF_VALIDATOR_TOKEN_FILE: /run/sangam-sidecars/pdf-validator.token
+    SANGAM_PDF_VALIDATOR_TIMEOUT_MS: ${SANGAM_PDF_VALIDATOR_TIMEOUT_MS:-30000}
+    SANGAM_OCR_URL: ${SANGAM_OCR_URL-https://ocr:8086}
+    SANGAM_OCR_TRANSPORT: tls
+    SANGAM_OCR_TOKEN_FILE: /run/sangam-sidecars/ocr.token
+    JDK_JAVA_OPTIONS: -Djavax.net.ssl.trustStore=/run/sangam-sidecars/truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit
+  volumes:
+    - sidecar-client-secrets:/run/sangam-sidecars:ro
+  networks:
+    sidecars: {}
+
+services:
+  server-postgres: *sidecar-client
+  server-oracle: *sidecar-client
+  server-sqlserver: *sidecar-client
+  server-mysql: *sidecar-client

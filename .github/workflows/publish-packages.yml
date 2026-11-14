@@ -1,0 +1,369 @@
+# SPDX-License-Identifier: Apache-2.0
+# SDK package publishing (M-019, code only: decision 105). Manual only, and it publishes nothing by default.
+#
+# - Runs only by workflow_dispatch, from a release tag vX.Y.Z whose GitHub release exists (release.yml passed its
+#   gate for that tag). dry_run defaults to true: the packages are built and checksummed, nothing is uploaded.
+# - A real publish (dry_run false) runs in the GitHub environment "package-release". The owner configures that
+#   environment (required reviewers) and its registry tokens; creating registry accounts and accepting registry terms
+#   are owner actions (decision 112). A missing token FAILS the job (RM-12: a skipped publish is never reported as done).
+# - Packagist has no upload: it reads a tagged repository with composer.json at its root, which this repository is not
+#   (the PHP SDK is in sangam/sdks/php). packagist-check validates the split tree on every run and pushes nothing;
+#   packagist-split (decision 306, package-release environment only) pushes it to the owner's read-only split
+#   repository, as git push --dry-run unless dry_run is false.
+# - Package names are checked against decision 105 before anything is built (npm @sangam/sdk, PyPI sangam-sdk, NuGet
+#   Sangam.Sdk, Packagist sangam/sdk). Secrets are referenced by name only and never printed.
+# - Maven Central (decision 181): the whole reactor (BOM, starter and modules) is deployed into a file staging
+#   repository and checked by deploy/licence/central_bundle.py. The groupId is never defaulted: the owner sets the
+#   repository variable SANGAM_MAVEN_GROUP_ID, and decision 210 allows only io.github.sqamentor (decision 105 left the
+#   choice open); every pom must already carry it. The real upload goes to the Central
+#   Publisher Portal with publishingType USER_MANAGED: the Portal validates the bundle and waits; pressing Publish in
+#   the Portal is the owner's act (decision 112). Signing (GPG) happens only in the package-release environment.
+name: publish-packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true: build, check and checksum only; false: publish to npm, PyPI and NuGet and upload the Maven Central bundle (USER_MANAGED; needs the package-release environment)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          case "$GITHUB_REF" in refs/tags/v*) ;; *) echo "::error::run this workflow from a release tag vX.Y.Z"; exit 1 ;; esac
+          v="${GITHUB_REF_NAME#v}"
+          echo "$v" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$' || { echo "::error::bad version $v"; exit 1; }
+          gh release view "v$v" --repo "$GITHUB_REPOSITORY" > /dev/null \
+            || { echo "::error::no GitHub release v$v: release.yml did not pass its gate for this tag"; exit 1; }
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      V: ${{ needs.check.outputs.version }}
+    defaults:
+      run:
+        working-directory: sangam/sdks
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: "22.18.0" }
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with: { python-version: "3.13.7" }
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with: { dotnet-version: "8.0.x" }
+      - name: Package versions match the tag
+        run: |
+          set -euo pipefail
+          python -I -c 'import json,sys; v=json.load(open("typescript/package.json"))["version"]; sys.exit(0 if v == sys.argv[1] else f"typescript/package.json version {v} is not {sys.argv[1]}")' "$V"
+          python -I -c 'import sys,tomllib; v=tomllib.load(open("python/pyproject.toml","rb"))["project"]["version"]; sys.exit(0 if v == sys.argv[1] else f"python/pyproject.toml version {v} is not {sys.argv[1]}")' "$V"
+          python -I -c 'import sys,xml.etree.ElementTree as E; v=E.parse("dotnet/src/Sangam.Sdk/Sangam.Sdk.csproj").getroot().findtext("./PropertyGroup/Version"); sys.exit(0 if v == sys.argv[1] else f"Sangam.Sdk.csproj Version {v} is not {sys.argv[1]}")' "$V"
+      - name: Package names are the owner's registry names (decision 105)
+        # npm @sangam/sdk, PyPI sangam-sdk, NuGet Sangam.Sdk, Packagist sangam/sdk; a renamed manifest fails here
+        # instead of publishing under a name the owner does not hold.
+        run: |
+          set -euo pipefail
+          python -I - <<'PY'
+          import json, sys, tomllib, xml.etree.ElementTree as E
+          got = {
+              "typescript/package.json name": json.load(open("typescript/package.json"))["name"],
+              "python/pyproject.toml project.name": tomllib.load(open("python/pyproject.toml", "rb"))["project"]["name"],
+              "Sangam.Sdk.csproj PackageId": E.parse("dotnet/src/Sangam.Sdk/Sangam.Sdk.csproj").getroot().findtext("./PropertyGroup/PackageId"),
+              "php/composer.json name": json.load(open("php/composer.json"))["name"],
+          }
+          want = dict(zip(got, ("@sangam/sdk", "sangam-sdk", "Sangam.Sdk", "sangam/sdk")))
+          bad = [f"{k} is {got[k]!r}, decision 105 says {want[k]!r}" for k in got if got[k] != want[k]]
+          for b in bad:
+              print(f"::error::{b}")
+          sys.exit(1 if bad else 0)
+          PY
+      - name: npm package
+        working-directory: sangam/sdks/typescript
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build
+          mkdir -p ../../../packages/npm
+          npm pack --pack-destination ../../../packages/npm
+      - name: PyPI package
+        working-directory: sangam/sdks/python
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check build==1.2.2.post1 twine==6.1.0
+          python -m build -o ../../../packages/pypi
+          python -m twine check --strict ../../../packages/pypi/*
+      - name: NuGet package
+        working-directory: sangam/sdks/dotnet
+        run: |
+          set -euo pipefail
+          dotnet build src/Sangam.Sdk/Sangam.Sdk.csproj -c Release -p:Version="$V"
+          dotnet pack src/Sangam.Sdk/Sangam.Sdk.csproj --no-build -c Release -p:Version="$V" -o "$GITHUB_WORKSPACE/packages/nuget"
+      - name: Checksums
+        working-directory: packages
+        run: |
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sdk-packages
+          path: packages/
+          if-no-files-found: error
+
+  publish:
+    needs: [check, build]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: package-release
+    permissions:
+      contents: read
+      id-token: write   # npm provenance
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with: { name: sdk-packages, path: packages }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version: "22.18.0", registry-url: "https://registry.npmjs.org" }
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with: { python-version: "3.13.7" }
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with: { dotnet-version: "8.0.x" }
+      - name: Registry tokens are configured (owner action)
+        env:
+          NPM: ${{ secrets.NPM_TOKEN != '' }}
+          PYPI: ${{ secrets.PYPI_TOKEN != '' }}
+          NUGET: ${{ secrets.NUGET_API_KEY != '' }}
+        run: |
+          missing=""
+          [ "$NPM" = true ] || missing="$missing NPM_TOKEN"
+          [ "$PYPI" = true ] || missing="$missing PYPI_TOKEN"
+          [ "$NUGET" = true ] || missing="$missing NUGET_API_KEY"
+          if [ -n "$missing" ]; then echo "::error::BLOCKED: environment package-release has no$missing"; exit 1; fi
+      - name: Checksums of the built packages
+        working-directory: packages
+        run: sha256sum --strict -c SHA256SUMS
+      - name: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish packages/npm/*.tgz --provenance --access public
+      - name: PyPI upload
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          python -m pip install --disable-pip-version-check twine==6.1.0
+          python -m twine upload --non-interactive packages/pypi/*
+      - name: NuGet push
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push "packages/nuget/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json
+
+  packagist-check:
+    # Packagist has no upload API: it reads a VCS repository whose ROOT holds composer.json and whose tags are the
+    # versions. This repository keeps the PHP SDK in sangam/sdks/php, so Packagist reads it from a read-only split
+    # repository (decision 306, packagist-split). This job builds and validates the tree the split carries, on every
+    # run and without the owner's environment; it pushes nothing.
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with: { php-version: "8.3", tools: "composer:2.8.3", coverage: none }
+      - name: The PHP SDK tree at this tag, as a split repository would carry it
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/php-split"
+          git archive --format=tar "$GITHUB_SHA:sangam/sdks/php" | tar -x -C "$RUNNER_TEMP/php-split"
+          cd "$RUNNER_TEMP/php-split"
+          composer validate --strict
+          test "$(python3 -I -c 'import json; print(json.load(open("composer.json"))["name"])')" = sangam/sdk
+          test "$(python3 -I -c 'import json; print(json.load(open("composer.json"))["license"])')" = Apache-2.0
+          if ! cmp -s LICENSE "$GITHUB_WORKSPACE/LICENSE"; then echo "::error::sangam/sdks/php/LICENSE must be the repository LICENSE (Apache-2.0, decision 306)"; exit 1; fi
+          find . -type f -print0 | sort -z | xargs -0 sha256sum > "$RUNNER_TEMP/php-split.SHA256SUMS"
+          cat "$RUNNER_TEMP/php-split.SHA256SUMS"
+
+  packagist-split:
+    # Decision 306: the owner creates a read-only split repository for Packagist (composer.json at its root) and sets
+    # the repository variable SANGAM_PHP_SPLIT_REPOSITORY (an https URL without credentials) and the environment secret
+    # PHP_SPLIT_TOKEN (write access to that repository only). This job runs only in the package-release environment
+    # (owner approval). It splits sangam/sdks/php with its history (git subtree split, the same commits on every run)
+    # and pushes the branch main and the tag vX.Y.Z there; with dry_run true (the default) it runs git push --dry-run,
+    # which checks access and the refs and changes nothing. Registering the package on Packagist is the owner's act
+    # (decision 112). The token is read by a credential helper from the environment, never put on a command line or
+    # printed.
+    needs: [check, packagist-check]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: package-release
+    permissions:
+      contents: read
+    env:
+      V: ${{ needs.check.outputs.version }}
+      SPLIT_URL: ${{ vars.SANGAM_PHP_SPLIT_REPOSITORY }}
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: Split repository and token are configured (owner action)
+        env:
+          TOKEN_SET: ${{ secrets.PHP_SPLIT_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          missing=""
+          echo "$SPLIT_URL" | grep -Eqx 'https://[A-Za-z0-9.-]+/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+(\.git)?' \
+            || missing="$missing SANGAM_PHP_SPLIT_REPOSITORY(an https URL without credentials, got '${SPLIT_URL}')"
+          [ "$TOKEN_SET" = true ] || missing="$missing PHP_SPLIT_TOKEN"
+          if [ -n "$missing" ]; then echo "::error title=BLOCKED::package-release has no valid$missing"; exit 1; fi
+      - name: Split sangam/sdks/php with its history and tag it
+        run: |
+          set -euo pipefail
+          git config user.name "sangam-release"
+          git config user.email "sangam-release@users.noreply.github.com"
+          head=$(git subtree split --prefix=sangam/sdks/php "$GITHUB_SHA")
+          test "$(git show "$head:composer.json" | python3 -I -c 'import json,sys; print(json.load(sys.stdin)["name"])')" = sangam/sdk
+          git show "$head:LICENSE" > /dev/null
+          # a local name apart from this repository's own tag vX.Y.Z; it is pushed as vX.Y.Z to the split repository
+          git tag -a "php-split-v$V" -m "sangam/sdk $V (split of sangam/sdks/php at $GITHUB_SHA)" "$head"
+          echo "SPLIT_HEAD=$head" >> "$GITHUB_ENV"
+          echo "split head $head for v$V from $GITHUB_SHA"
+      - name: Push the split (git push --dry-run unless dry_run is false)
+        env:
+          PHP_SPLIT_TOKEN: ${{ secrets.PHP_SPLIT_TOKEN }}
+        run: |
+          set -euo pipefail
+          flag=--dry-run
+          if [ "$DRY_RUN" = false ]; then flag=; fi
+          # no --force: an existing tag or a diverged main is refused by the remote and fails the job
+          git -c credential.helper= \
+              -c 'credential.helper=!f() { echo username=x-access-token; echo "password=${PHP_SPLIT_TOKEN}"; }; f' \
+              push $flag --porcelain "$SPLIT_URL" "$SPLIT_HEAD:refs/heads/main" "refs/tags/php-split-v$V:refs/tags/v$V"
+          if [ -n "$flag" ]; then echo "dry run: nothing was pushed"; else echo "pushed main and v$V; registering on Packagist is the owner's act"; fi
+
+  maven-bundle:
+    # Decision 181: built and checked on every run, the dry run included; nothing leaves the runner here.
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      V: ${{ needs.check.outputs.version }}
+      GROUP: ${{ vars.SANGAM_MAVEN_GROUP_ID }}
+      STAGING: ${{ github.workspace }}/central-staging
+      CB: python3 -I ${{ github.workspace }}/sangam/deploy/licence/central_bundle.py
+    defaults:
+      run:
+        working-directory: sangam
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - name: Namespace chosen by the owner (decision 210)
+        run: |
+          case "$GROUP" in
+            io.github.sqamentor) echo "Maven Central namespace: $GROUP" ;;
+            *) echo "::error title=BLOCKED::repository variable SANGAM_MAVEN_GROUP_ID must be io.github.sqamentor (decision 210); it is '${GROUP}'"; exit 1 ;;
+          esac
+      - name: Set version (versions-maven-plugin 2.25.1, decision 185)
+        run: mvn -B -ntp -q org.codehaus.mojo:versions-maven-plugin:2.25.1:set -DnewVersion="$V" -DprocessAllModules=true -DgenerateBackupPoms=false
+      - name: Deploy the reactor into the staging repository (no remote repository)
+        # Profile sangam-central (sources and javadoc jars, POM metadata) is the root pom's, integrator scope; while it
+        # does not exist Maven only warns and central_bundle.py prepare fails on the missing jars and metadata.
+        run: mvn -B -ntp -DskipTests -Dsangam.db=h2 -Psangam-central deploy -DaltDeploymentRepository="sangam-staging::file://$STAGING"
+      - name: Central requirements (groupId, version, jars, sources, javadoc, POM metadata)
+        run: $CB prepare "$STAGING" --group "$GROUP" --version "$V"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: central-staging
+          path: central-staging/
+          if-no-files-found: error
+      - name: Dry-run bundle (unsigned, checksums only; it cannot be uploaded)
+        if: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          $CB finish "$STAGING" --unsigned-dry-run
+          $CB zip "$STAGING" --out "$GITHUB_WORKSPACE/central-bundle-dry-run.zip"
+
+  maven-publish:
+    needs: [check, maven-bundle]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: package-release
+    permissions:
+      contents: read
+    env:
+      V: ${{ needs.check.outputs.version }}
+      STAGING: ${{ github.workspace }}/central-staging
+      CB: python3 -I ${{ github.workspace }}/sangam/deploy/licence/central_bundle.py
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with: { name: central-staging, path: central-staging }
+      - name: Central Portal token and signing key are configured (owner action)
+        env:
+          USER_SET: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME != '' }}
+          PASS_SET: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD != '' }}
+          KEY_SET: ${{ secrets.MAVEN_GPG_PRIVATE_KEY != '' }}
+          PHRASE_SET: ${{ secrets.MAVEN_GPG_PASSPHRASE != '' }}
+        run: |
+          missing=""
+          [ "$USER_SET" = true ] || missing="$missing MAVEN_CENTRAL_TOKEN_USERNAME"
+          [ "$PASS_SET" = true ] || missing="$missing MAVEN_CENTRAL_TOKEN_PASSWORD"
+          [ "$KEY_SET" = true ] || missing="$missing MAVEN_GPG_PRIVATE_KEY"
+          [ "$PHRASE_SET" = true ] || missing="$missing MAVEN_GPG_PASSPHRASE"
+          if [ -n "$missing" ]; then echo "::error title=BLOCKED::environment package-release has no$missing"; exit 1; fi
+      - name: Sign every file (GPG, detached ASCII armour)
+        env:
+          MAVEN_GPG_PRIVATE_KEY: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -m 700 "$GNUPGHOME"
+          printf '%s\n' "$MAVEN_GPG_PRIVATE_KEY" | gpg --batch --quiet --import
+          find "$STAGING" -type f ! -name '*.asc' ! -name '*.md5' ! -name '*.sha1' ! -name '*.sha256' ! -name '*.sha512' -print0 |
+            while IFS= read -r -d '' f; do
+              printf '%s' "$MAVEN_GPG_PASSPHRASE" |
+                gpg --batch --yes --quiet --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign --output "$f.asc" "$f"
+              gpg --batch --quiet --verify "$f.asc" "$f"
+            done
+          rm -rf "$GNUPGHOME"
+      - name: Signed bundle with md5 and sha1 checksums
+        run: |
+          set -euo pipefail
+          $CB finish "$STAGING"
+          $CB zip "$STAGING" --out "$RUNNER_TEMP/central-bundle.zip"
+      - name: Upload to the Central Publisher Portal (USER_MANAGED; the owner presses Publish in the Portal)
+        env:
+          MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
+          MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          hdr="$RUNNER_TEMP/central-auth.txt"
+          printf 'Authorization: Bearer %s\n' "$(printf '%s:%s' "$MAVEN_CENTRAL_TOKEN_USERNAME" "$MAVEN_CENTRAL_TOKEN_PASSWORD" | base64 -w0)" > "$hdr"
+          id=$(curl --fail-with-body -sS -X POST -H @"$hdr" \
+            -F "bundle=@$RUNNER_TEMP/central-bundle.zip;type=application/octet-stream" \
+            "https://central.sonatype.com/api/v1/publisher/upload?publishingType=USER_MANAGED&name=sangam-$V")
+          echo "Central Portal deployment id: $id (validation runs in the Portal; publishing is the owner's act, decision 112)"
+          curl --fail-with-body -sS -X POST -H @"$hdr" "https://central.sonatype.com/api/v1/publisher/status?id=$id"
+          rm -f "$hdr"

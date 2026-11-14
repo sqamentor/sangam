@@ -17,11 +17,13 @@ import org.sangam.integration.connector.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *       {@code notFoundConfirmations} consecutive "not found" answers at least {@code settleDelay} apart (eventual
  *       consistency of the provider), then retry with the same operationId. Each resolution goes through
  *       {@link ReconciliationQueue#resolve} (ledger update + {@code RECONCILIATION_ACTION} audit in one transaction),
- *       then the held work is released ({@link HeldWorkReleaser}).</li>
+ *       then the held work is released ({@link HeldWorkReleaser}). A {@code CONFIRM_SUCCESS} that moves the ledger to
+ *       SUCCEEDED also writes the connector's catalogued events in that transaction ({@link #confirmations}).</li>
  *   <li><b>Escalate</b> to a human ({@link ReconciliationTaskPort}): class (c) (no lookup), no connector call on record,
  *       {@code LATE_RESULT_AFTER_DELETE} items (never retried, VI.5 rule 3), lookups unavailable for longer than
  *       {@code maxAutomaticAge} or {@code maxLookups}.</li>
@@ -97,6 +100,45 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
         return this;
     }
 
+    private volatile ConnectorInvoker confirmations;
+
+    /**
+     * Where a {@code CONFIRM_SUCCESS} writes the connector's catalogued events ({@code AuditedConnector}, for example
+     * {@code DOCUMENT_PUSHED}): the invoker's own audit path, so a confirmed operation has them once whichever path
+     * confirmed it (the invoker on a dispatch or lookup, this engine on a reconciliation). Wired by the server with the
+     * direct-audit invoker.
+     */
+    public ReconciliationEngine confirmations(ConnectorInvoker invoker) {
+        this.confirmations = invoker;
+        return this;
+    }
+
+    /** In {@code c}, before the resolution: it moves the ledger from UNKNOWN_OUTCOME to SUCCEEDED, so the events are due. */
+    private boolean confirms(Connection c, ReconciliationQueue.Item item, ReconciliationQueue.Action action) {
+        return action == ReconciliationQueue.Action.CONFIRM_SUCCESS && item.operationId() != null && confirmations != null
+                && ledger.find(c, item.operationId()).map(e -> e.state() == OperationLedger.State.UNKNOWN_OUTCOME).orElse(false);
+    }
+
+    /** The confirmed call's connector events with the confirmed output, in {@code c}; the call when any was written. */
+    private Optional<ConnectorCallJournal.Call> writeConfirmedEvents(Connection c, ReconciliationQueue.Item item, String resolutionJson) {
+        ConnectorInvoker invoker = confirmations;
+        Optional<ConnectorCallJournal.Call> call = journal.find(c, item.operationId());
+        if (invoker == null || call.isEmpty()) {
+            return Optional.empty();
+        }
+        Object output = Json.readMap(resolutionJson).get("output");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> out = output instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
+        return invoker.writeConfirmedEvents(c, call.get(), out) > 0 ? call : Optional.empty();
+    }
+
+    private void afterConfirmedEvents(Optional<ConnectorCallJournal.Call> call) {
+        ConnectorInvoker invoker = confirmations;
+        if (invoker != null) {
+            call.ifPresent(x -> invoker.afterConfirmedEvents(x.tenantId(), x.rootId()));
+        }
+    }
+
     private void notifyResolved(ReconciliationQueue.Item item, ReconciliationQueue.Action action, String actor, String json) {
         try {
             listener.resolved(item, action, actor, json);
@@ -141,6 +183,9 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
 
     public void start() {
         if (running.compareAndSet(false, true)) {
+            if (confirmations == null) {
+                LOG.warn("reconciliation confirmations are not wired: a CONFIRM_SUCCESS writes no connector events");
+            }
             loop.scheduleWithFixedDelay(() -> {
                 try {
                     runOnce();
@@ -153,7 +198,11 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
 
     /** One pass over due items. */
     public PassResult runOnce() {
-        List<ReconciliationQueue.Item> due = claim();
+        return process(claim());
+    }
+
+    /** Looks up and resolves claimed items (package-private for tests: the claim is dialect SQL). */
+    PassResult process(List<ReconciliationQueue.Item> due) {
         int resolved = 0, escalated = 0, deferred = 0;
         for (ReconciliationQueue.Item item : due) {
             try {
@@ -264,9 +313,12 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
     }
 
     private Step resolve(ReconciliationQueue.Item item, OperationLedger.Entry entry, ReconciliationQueue.Action action, String resolutionJson) {
+        Optional<ConnectorCallJournal.Call> confirmed;
         try {
-            tx.inTransaction(c -> {
+            confirmed = tx.inTransaction(c -> {
+                boolean confirms = confirms(c, item, action);
                 queue.resolve(c, item.id(), action, SYSTEM_ACTOR, resolutionJson);
+                Optional<ConnectorCallJournal.Call> events = confirms ? writeConfirmedEvents(c, item, resolutionJson) : Optional.empty();
                 if (item.operationId() != null) {
                     journal.recordResult(c, item.operationId(), switch (action) {
                         case CONFIRM_SUCCESS -> ConnectorCallJournal.LastResult.SUCCESS;
@@ -276,11 +328,12 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
                 }
                 Jdbc.update(c, "UPDATE RECONCILIATION_ATTEMPT SET last_result=?, updated_at=" + dialect.now() + " WHERE item_id=?",
                         "RESOLVED " + action, item.id());
-                return null;
+                return events;
             });
         } catch (ReconciliationQueue.AlreadyResolvedException e) {
             return Step.RESOLVED;
         }
+        afterConfirmedEvents(confirmed);
         release(item, entry);
         notifyResolved(item, action, SYSTEM_ACTOR, resolutionJson);
         return Step.RESOLVED;
@@ -318,7 +371,10 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
                 yield Json.write(m);
             }
         };
+        java.util.concurrent.atomic.AtomicReference<Optional<ConnectorCallJournal.Call>> confirmed =
+                new java.util.concurrent.atomic.AtomicReference<>(Optional.empty());
         ReconciliationQueue.Item done = tx.inTransaction(c -> {
+            boolean confirms = confirms(c, item, action);
             ReconciliationQueue.Item r = queue.resolve(c, itemId, action, actor, json);
             if (item.operationId() != null) {
                 journal.find(c, item.operationId()).ifPresent(x -> journal.recordResult(c, item.operationId(),
@@ -326,14 +382,54 @@ public final class ReconciliationEngine implements AutoCloseable, org.sangam.cor
                                 : action == ReconciliationQueue.Action.CONFIRM_SUCCESS ? ConnectorCallJournal.LastResult.SUCCESS
                                 : ConnectorCallJournal.LastResult.BUSINESS_FAILURE, null, "resolved by " + actor));
             }
+            confirmed.set(confirms ? writeConfirmedEvents(c, item, json) : Optional.empty());
             return r;
         });
+        afterConfirmedEvents(confirmed.get());
         if (item.kind() == ReconciliationQueue.Kind.UNKNOWN_OUTCOME) {
             release(item, item.operationId() == null ? null : tx.inTransaction(c -> ledger.find(c, item.operationId())).orElse(null));
         }
         notifyResolved(item, action, actor, json);
         return done;
     }
+
+    /**
+     * Owner decision 290: an operation whose automatic retries are used up goes to a human. In the caller's transaction
+     * on {@code c}: the ledger entry returns to {@code UNKNOWN_OUTCOME} with a new OPEN {@code UNKNOWN_OUTCOME} item
+     * ({@link OperationLedger#markUnknown}), and the item's attempt row is marked escalated at once, so no automatic
+     * lookup ever claims it (it would only retry again). Call {@link #escalateOpened} after the commit to open the human
+     * task; until then the item is OPEN in the queue and visible to the officer's console.
+     *
+     * @return the item id
+     */
+    public long openForHuman(Connection c, UUID operationId, String reason) {
+        OperationLedger.Entry e = ledger.find(c, operationId)
+                .orElseThrow(() -> new IllegalStateException("unknown operation " + operationId));
+        long itemId = ledger.markUnknown(c, operationId, e.lockVersion(), reason);
+        String marker = "ESCALATED: " + truncate(reason);
+        boolean inserted = Jdbc.insertIfAbsent(c, dialect,
+                "INSERT INTO RECONCILIATION_ATTEMPT(item_id, attempts, not_found_streak, next_attempt_at, last_result,"
+                        + " escalated_task_id, created_at, updated_at) VALUES (?,0,0," + dialect.nowPlusMillisParam()
+                        + ",?,?," + dialect.now() + "," + dialect.now() + ")",
+                itemId, settings.claimTtl().toMillis(), marker, HUMAN_PENDING);
+        if (!inserted) {
+            Jdbc.update(c, "UPDATE RECONCILIATION_ATTEMPT SET escalated_task_id=?, last_result=?, updated_at=" + dialect.now()
+                    + " WHERE item_id=?", HUMAN_PENDING, marker, itemId);
+        }
+        return itemId;
+    }
+
+    /** After {@link #openForHuman} committed: opens the human task of the item and records it on the attempt row. */
+    public void escalateOpened(long itemId, String reason) {
+        ReconciliationQueue.Item item = tx.inTransaction(c -> queue.get(c, itemId))
+                .orElseThrow(() -> new IllegalArgumentException("no reconciliation item " + itemId));
+        String connectorId = item.operationId() == null ? null
+                : tx.inTransaction(c -> journal.find(c, item.operationId())).map(ConnectorCallJournal.Call::connectorId).orElse(null);
+        escalate(item, connectorId, reason);
+    }
+
+    /** The attempt-row task id of an item opened for a human whose task is not opened yet. */
+    public static final String HUMAN_PENDING = "pending-human";
 
     private void release(ReconciliationQueue.Item item, OperationLedger.Entry entry) {
         if (item.kind() != ReconciliationQueue.Kind.UNKNOWN_OUTCOME || item.operationId() == null) {

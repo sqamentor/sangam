@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "PROJECT-UNIT",
+      "role": "PROJECTUNIT",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "TREASURY-OFFICER",
+      "name": {
+        "en": "Project unit accountant",
+        "hi": "परियोजना इकाई लेखाकार"
+      }
+    },
+    {
+      "id": "TREASURY-OFFICER",
+      "role": "TREASURYOFFICER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Treasury officer",
+        "hi": "कोषागार अधिकारी"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "PROJECT-UNIT",
+      "person": "irp.project-unit",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "TREASURY-OFFICER",
+      "person": "irp.treasury-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "PROJECTUNIT",
+      "name": {
+        "en": "Project unit accountant",
+        "hi": "परियोजना इकाई लेखाकार"
+      }
+    },
+    {
+      "code": "TREASURYOFFICER",
+      "name": {
+        "en": "Treasury officer",
+        "hi": "कोषागार अधिकारी"
+      }
+    }
+  ]
+}

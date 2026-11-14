@@ -10,13 +10,13 @@
       <output id="ifms-procurement-mode_o1" label="Rule" name="ruleRef" typeRef="string"/>
       <rule id="ifms-procurement-mode_r0"><description>[U] central default, replace from Manual of Office Procedures for Procurement 2016 (was: GFR 2017 r.154 / r.149 (direct purchase up to 50,000))</description>
         <inputEntry id="ifms-procurement-mode_r0_i0"><text>&lt;= 5000000</text></inputEntry>
-        <inputEntry id="ifms-procurement-mode_r0_i1"><text>false</text></inputEntry>
+        <inputEntry id="ifms-procurement-mode_r0_i1"><text>-</text></inputEntry>
         <outputEntry id="ifms-procurement-mode_r0_o0"><text>"DIRECT"</text></outputEntry>
         <outputEntry id="ifms-procurement-mode_r0_o1"><text>"[U] central default, replace from Manual of Office Procedures for Procurement 2016 (was: GFR 2017 r.154 / r.149 (direct purchase up to 50,000))"</text></outputEntry>
       </rule>
       <rule id="ifms-procurement-mode_r1"><description>[U] central default, replace from Manual of Office Procedures for Procurement 2016 (was: GFR 2017 r.149 (GeM L1 above 50,000 to 10 lakh))</description>
         <inputEntry id="ifms-procurement-mode_r1_i0"><text>&lt;= 100000000</text></inputEntry>
-        <inputEntry id="ifms-procurement-mode_r1_i1"><text>false</text></inputEntry>
+        <inputEntry id="ifms-procurement-mode_r1_i1"><text>-</text></inputEntry>
         <outputEntry id="ifms-procurement-mode_r1_o0"><text>"GEM_L1"</text></outputEntry>
         <outputEntry id="ifms-procurement-mode_r1_o1"><text>"[U] central default, replace from Manual of Office Procedures for Procurement 2016 (was: GFR 2017 r.149 (GeM L1 above 50,000 to 10 lakh))"</text></outputEntry>
       </rule>

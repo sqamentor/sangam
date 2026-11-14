@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 """Generates sangam-rest/api/sangam-api.yaml (OpenAPI 3.1) from the WS-REST route table and port records, and next to
 it the SCALE app contracts (api/apps/*.py: sangam-control-plane-api.yaml, sangam-rollup-api.yaml, sangam-gateway-api.yaml;
-M-017) and the AsyncAPI 3 events contract (api/events/*.py: sangam-events.asyncapi.yaml; M-050)."""
+M-017) and the AsyncAPI 3 events contract (api/events/*.py: sangam-events.asyncapi.yaml; M-050).
+
+Audit event names (AsyncAPI AuditEventName) are parsed from the SANGAM.md X.4.0.3 table by a text rule
+(events/sangam_events.py _audit_names): a name is a backticked upper-case word of the row's second cell outside
+parentheses; text in parentheses is a note and never a name. Limitation: the rule cannot tell an event name from any
+other backticked upper-case word outside parentheses, so a value written that way in the table is published as an event
+name. AsyncApiConsistencyTest compares this output with the same rule in Java, so it shares the blind spot by
+construction. AuditCatalogueEmittedTest is the independent check: every published name must appear in the main code as
+a string literal or an enum constant, or be on its allowlist with decision and owner."""
 import sys
 import yaml
 
@@ -70,7 +78,12 @@ SCHEMAS["Problem"] = {
                      "SEAT_NOT_HELD", "REASON_REQUIRED", "EVIDENCE_REQUIRED", "DEBUGGER_DISABLED", "LEGAL_HOLD",
                      "BULK_NOT_ALLOWED", "DOCUMENT_REJECTED", "FORMAT_NOT_AVAILABLE", "PRECONDITION_REQUIRED",
                      "PAYLOAD_TOO_LARGE", "INTERNAL_ERROR", "EVENT_IN_FLIGHT", "NOT_RETIRED",
-                     "INVALID_BATCH_STATE", "TENANT_MOVED", "TENANT_NOT_ON_INSTANCE"]}, {"type": "string"}]},
+                     "INVALID_BATCH_STATE", "TENANT_MOVED", "TENANT_NOT_ON_INSTANCE", "AUDIT_UNAVAILABLE",
+                     "MODEL_UNREADABLE", "POLICY_DENIED", "POLICY_UNAVAILABLE",
+                     "BACKUP_CONSOLE_NOT_CONFIGURED", "BACKUP_RUNNING", "BACKUP_TRIGGER_FAILED",
+                     "FLOWABLE_MIGRATION_STATE", "CONCURRENT_MODIFICATION", "CONTINUATION_NOT_ALLOWED",
+                     "BACKUP_PLATFORM_ERROR"]},
+                    {"type": "string"}]},
         "traceId": {"type": "string", "description": "W3C trace id of the request (R13)"},
     },
     "additionalProperties": True,
@@ -99,6 +112,61 @@ SCHEMAS["MoneyAmount"] = {
                     "(bills, penalties) are rounded once per document total and the lines sum to the total exactly."),
     "examples": ["100000.00", "0.01", "1.230"],
 }
+SCHEMAS["DecimalString"] = {
+    "type": "string",
+    "pattern": "^-?[0-9]+([.][0-9]+)?$",
+    "description": ("Exact decimal (owner decision 138) for a rate, percentage, quantity or financial intermediate: "
+                    "plain decimal text, no exponent, no JSON number, never a binary float, and clients never turn it "
+                    "into one. The scale is kept as given (\"1.50\" stays \"1.50\"). Rounding mode and scale are "
+                    "applied only at a business boundary by the rule that governs it, never silently in between; a "
+                    "value with more precision than that rule allows, an overflow or an unsupported conversion is "
+                    "refused with VALIDATION_FAILED, never rounded. Money amounts use MoneyAmount. This is also the "
+                    "text of a TypedValue of type Decimal."),
+    "examples": ["0.075", "18.00", "-1250.5"],
+}
+SCHEMAS["TypedValue"]["properties"]["value"]["description"] = (
+    "String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is "
+    "DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned "
+    "variable type (decision 138) and returned unchanged through history, export and import.")
+# Owner decision 142 (RM-08): the versioned power-limit decision of sangam-core org.sangam.core.power
+# (PowerLimitEvaluator.audit, contract sangam.power-decision/1; W4-A REQUEST 2026-11-12T18:48:41Z). Member names are the
+# audit payload's own (snake_case), so the REST layer and the audit record carry the same document.
+_PL_KINDS = ["DENY", "LIMITED", "UNLIMITED"]
+schema("PowerLimitEffective", "A delegated limit outcome: DENY, LIMITED(max_amount, currency) or explicit UNLIMITED.",
+       "rule kind max_amount:MoneyAmount currency reason", ["kind"], enums={"kind": _PL_KINDS},
+       descs={"rule": "<rule id>@<rule version> for an applicable limit; absent on the effective outcome",
+              "max_amount": "The ceiling when kind is LIMITED; absent otherwise",
+              "currency": "ISO 4217 code of max_amount (LIMITED only)",
+              "reason": "Why the limit denies (DENY only)"})
+schema("PowerLimitCap", "A mandatory cap that applied; UNLIMITED never lifts it.",
+       "cap max_amount:MoneyAmount currency", ["cap", "max_amount", "currency"],
+       descs={"cap": "<cap id>@<cap version>"})
+schema("PowerLimitScope", "Scope of a power-limit evaluation.", "tenant office")
+schema("PowerLimitDecision", "Versioned power-limit decision (owner decision 142). DENY, LIMITED(max_amount, currency) "
+                             "and explicitly authorised UNLIMITED stay distinct; unknown operation metadata, a missing "
+                             "amount or currency, no applicable rule, or a malformed, conflicting or failed evaluation "
+                             "is DENY, never permission. Every applicable limit and every mandatory cap must pass and "
+                             "the lowest ceiling binds; UNLIMITED lifts only the delegated ceiling, never a cap, budget "
+                             "control, role or scope check or maker-checker. Whether an operation is monetary comes "
+                             "from trusted versioned case-type metadata, never from the caller. Version 1 evaluates the "
+                             "gross single-operation amount by magnitude; aggregate limits are outside version 1.",
+       "contract_version decision effective:PowerLimitEffective actor action scope:PowerLimitScope case_type "
+       "case_type_version:int amount:MoneyAmount currency state_version:long monetary:bool metadata_version "
+       "applicable_limits:list:PowerLimitEffective mandatory_caps:list:PowerLimitCap reason "
+       "changed_since_approval:list:s",
+       ["contract_version", "decision", "effective", "applicable_limits", "mandatory_caps", "reason"],
+       enums={"contract_version": ["sangam.power-decision/1"], "decision": ["PERMIT", "DENY"]},
+       descs={"actor": "Authenticated actor (server-side identity, never a payload value)",
+              "amount": "The authoritative amount evaluated; re-read when the action is applied",
+              "currency": "ISO 4217 code of amount",
+              "state_version": "Version of the authoritative state the amount was read from",
+              "monetary": "From the trusted case-type metadata; absent when the metadata is unknown (then DENY)",
+              "metadata_version": "Version of the operation metadata used",
+              "changed_since_approval": "Fields that changed between an earlier approval and the re-read at apply "
+                                        "time; the earlier approval is never reused"})
+SCHEMAS["Problem"]["properties"]["powerLimit"] = {
+    "allOf": [{"$ref": "#/components/schemas/PowerLimitDecision"}],
+    "description": "Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142)"}
 SCHEMAS["VariableMap"] = {
     "type": "object",
     "description": ("Variables by name. Plain JSON values pass through (a JSON number with a fraction is read as an exact "
@@ -169,9 +237,9 @@ schema("CancelAckRequest", "Acknowledge CANCEL_REQUESTED (VI.5).", "workerId loc
 schema("Task", "A BPMN user task or CMMN human task (FC-52 lifecycle fields included).",
        "id name description taskDefinitionKey processInstanceId processDefinitionKey caseInstanceId businessKey assignee owner "
        "seatId tenantId created:dt due:dt followUp:dt lastUpdated:dt claimTime:dt state priority:int formKey delegationState variables:map "
-       "amount:long currency reference",
+       "amount:MoneyAmount currency reference",
        descs={"variables": "P45 task-card variables: only when the list was asked for them with variableNames; the same values GET /tasks/{id}/variables returns to the caller.",
-              "amount": "M-042 task index: the amount in minor units of currency, set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount.",
+              "amount": "M-042 task index: the amount (MoneyAmount, a decimal string in MAJOR units with exactly the currency's fraction digits; owner decisions 138 and 211, never an integer or a float), set when the task is created by the process's index rule; absent or null when the process has no rule or the rule found no amount. The index stores integer minor units, so sortBy=amount (with the currency filter) orders exactly.",
               "currency": "M-042 task index: ISO 4217 code of amount; absent or null with amount.",
               "reference": "M-042 task index: the reference set at creation by the process's index rule (at most 255 characters); absent or null without one."})
 SCHEMAS["Task"]["properties"]["currency"]["pattern"] = "^[A-Z]{3}$"
@@ -180,7 +248,17 @@ schema("TaskDetail", "Task plus the material payload hash the caller must send b
        "task:Task variables:map payloadHash caseVersion:long formVersion materialFields:list:s allowedActions:list:s "
        "candidateUsers:list:s candidateGroups:list:s returnTargets:list:ReturnTarget sod:SodCheck candidates:list:CandidateSeat "
        "rejectReasons:list:CodedReason returnReasons:list:CodedReason changedSinceLastSeen:list:FieldChange "
-       "ruleEvidence:list:RuleEvidence delegatedFrom")
+       "ruleEvidence:list:RuleEvidence delegatedFrom dscDocument:TaskDscDocument")
+# Owner decision 236 and W4-J REQUEST 2026-11-13T05:42:55Z (INT-H2 REQUEST 05:54:10Z, TaskPort.DscDocument).
+schema("TaskDscDocument", "Read only: the document a DSC step signs, as the DSC gate captured it when the task was "
+                          "created. The UI preselects that PDF; completion still checks it (decision 236).",
+       "slot documentId", ["slot"],
+       descs={"slot": "The case variable that holds the step's document id, for example notingDocumentId",
+              "documentId": "The document id the slot held when the task was created; null when it was empty"})
+SCHEMAS["TaskDscDocument"]["properties"]["documentId"]["type"] = ["string", "null"]
+SCHEMAS["TaskDscDocument"]["readOnly"] = True
+SCHEMAS["TaskDetail"]["properties"]["dscDocument"]["description"] = (
+    "Read only; present only for a task with a DSC step document")
 schema("TaskForm", "The task's form for the task UI (SL-37): deployed embedded HTML or Operaton form (form-js JSON), or the key of an external form.",
        "taskId formKey kind contentType content", ["taskId", "kind"],
        enums={"kind": ["EMBEDDED", "FORM", "EXTERNAL", "OTHER", "NONE"]},
@@ -584,7 +662,18 @@ schema("PageSummary", "Page list entry.", "id key title version:int state")
 schema("DataObjectField", "Data-object field (R78).", "name type required:bool reference sensitive:bool", ["name", "type"],
        enums={"type": ["string", "number", "boolean", "date", "reference", "json"]})
 schema("DataObjectDef", "Data object definition (R78, EC-06).", "id key name backing endpointRef version:int fields:list:DataObjectField",
-       ["key", "name", "backing"], enums={"backing": ["DB", "REST"]})
+       ["key", "name", "backing"], enums={"backing": ["DB", "REST"]},
+       descs={"backing": "DB: records are rows in the Sangam database (create answers 201). REST: records live in an "
+                         "external system reached through the connector named by endpointRef (create answers 202 with "
+                         "an operation, decision 265); needs sangam-integration, otherwise the record routes answer 501 "
+                         "CAPABILITY_NOT_INSTALLED",
+              "endpointRef": "REST backing only: the connector id. The connector provides two named operations "
+                             "(decisions 265 and 266): create, input the record, run through the operation ledger with "
+                             "the operationId as idempotency key and its outcome read by lookup; and list, a query "
+                             "operation with input {q, offset, limit} that answers output.records (an array of objects) "
+                             "and optionally output.total (the full match count). Records the connector returns are "
+                             "validated against fields: unknown fields are dropped and sensitive fields masked, as for "
+                             "DB backing"})
 # Package tools
 schema("ValidationIssue", "Deployment validation issue (R44 profile, X.2.4.6, FC-46).", "severity artifact elementId message code",
        enums={"severity": ["ERROR", "WARNING", "INFO"]})
@@ -632,15 +721,15 @@ HEADERS = {
 PROBLEM = {"application/problem+json": {"schema": R("Problem")}}
 RESPONSES = {
     "BadRequest": {"description": "Invalid request (VALIDATION_FAILED, IDEMPOTENCY_KEY_REQUIRED, IDEMPOTENCY_KEY_INVALID ...)", "content": PROBLEM},
-    "Unauthorized": {"description": "Missing or invalid token (SESSION_EXPIRED)", "content": PROBLEM},
-    "Forbidden": {"description": "ACTION_NOT_PERMITTED (permission re-checked in the command transaction, VI.4 rule 5)", "content": PROBLEM},
+    "Unauthorized": {"description": "Missing or invalid token (SESSION_EXPIRED); RESERVED_TENANT_REFUSED: the identity's tenant is a reserved id, the shared key or a system audit scope (a tenant starting with system:), which is never a caller's tenant (decision 144); or, when the external deny-only policy check is enabled (decisions 166 and 200), a checked command or external-worker call whose caller has no tenant (the check is refused before the call, fail closed)", "content": PROBLEM},
+    "Forbidden": {"description": "ACTION_NOT_PERMITTED (permission re-checked in the command transaction, VI.4 rule 5), or for a command or an external-worker call POLICY_DENIED: the external deny-only policy service refused it (decisions 166 and 200, only when sangam.security.external-policy.enabled; extension reason_code, A-Z 0-9 _ . - up to 64 characters)", "content": PROBLEM},
     "NotFound": {"description": "Not found or not visible to the caller (no existence leak)", "content": PROBLEM},
     "Conflict": {"description": "Conflict: STALE_LEASE, CONFLICT_RETRY_EXHAUSTED, APPROVAL_INVALIDATED, FORM_VERSION_STALE, TASK_ALREADY_CLAIMED, IDEMPOTENCY_IN_PROGRESS, DRAFT_CONFLICT, REVISION_CONFLICT, INVALID_TRANSITION",
                  "headers": {"Retry-After": H("Retry-After")}, "content": PROBLEM},
     "Gone": {"description": "GONE_INSTANCE_DELETED: the instance was deleted; a late result is audited and may open LATE_RESULT_AFTER_DELETE (VI.5 rule 3)", "content": PROBLEM},
     "Unprocessable": {"description": "Business rule: SOD_VIOLATION, POWER_LIMIT_EXCEEDED, IDEMPOTENCY_KEY_REUSED, IDEMPOTENCY_KEY_PRINCIPAL_MISMATCH, MODEL_INVALID, ENGINE_REJECTED, VALIDATION_FAILED", "content": PROBLEM},
-    "ServiceUnavailable": {"description": "BACKPRESSURE (outbox ≥ 80 %, VI.2.4) or capability not installed", "headers": {"Retry-After": H("Retry-After")}, "content": PROBLEM},
-    "NotImplemented": {"description": "CAPABILITY_NOT_INSTALLED: the providing module is not installed in this server", "content": PROBLEM},
+    "ServiceUnavailable": {"description": "BACKPRESSURE (outbox ≥ 80 %, VI.2.4), AUDIT_UNAVAILABLE: an idempotent replay whose IDEMPOTENT_REPLAY audit row could not be written is refused without the stored result; retry with the same Idempotency-Key after Retry-After (RM-10), or POLICY_UNAVAILABLE: the external policy service required for this command or external-worker call did not answer in time or answered invalidly, so the call is refused (decisions 166 and 200, fail closed; Retry-After)", "headers": {"Retry-After": H("Retry-After")}, "content": PROBLEM},
+    "NotImplemented": {"description": "CAPABILITY_NOT_INSTALLED: the providing optional module is not installed in this server, or is switched off (not retryable; temporary unavailability is 503)", "content": PROBLEM},
     "MisdirectedRequest": {"description": "421 Misdirected Request: TENANT_MOVED (the tenant left this cell; details.targetCell names its cell, SCALE IR-4) or TENANT_NOT_ON_INSTANCE (M-016: this instance does not serve the tenant: a dedicated instance bound to another tenant, or a shared instance asked for a SCHEMA or DATABASE isolated tenant; details.tenant only, the bound tenant is never named). Fail-closed, no data is read.", "content": PROBLEM},
 }
 
@@ -741,7 +830,9 @@ def op(method, path, opid, tag, summary, desc, reqs=(), params=(), body=None, re
     responses = {str(status): r}
     errs = list(errors)
     if cmd:
-        for e in ("Conflict", "Unprocessable"):
+        # ServiceUnavailable: IdempotencyFilter refuses a replay whose audit row cannot be written (RM-10, 503
+        # AUDIT_UNAVAILABLE), so every idempotent command can answer 503
+        for e in ("Conflict", "Unprocessable", "ServiceUnavailable"):
             if e not in errs:
                 errs.append(e)
     for e in errs:
@@ -798,7 +889,15 @@ op("post", "/tasks/{id}/claim", "claimTask", "Tasks", "Claim a task", "Single wi
 op("post", "/tasks/{id}/unclaim", "unclaimTask", "Tasks", "Unclaim a task", "Returns the task to the seat/candidate pool (TASK_UNCLAIMED).",
    ["R41"], params=[ID], resp=(204, None), cmd="task.unclaim", perm="task.write")
 op("post", "/tasks/{id}/complete", "completeTask", "Tasks", "Complete a task with a decision",
-   "Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6).",
+   "Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6). "
+   "A step that needs a DSC signature (decisions 236, 237 and 241) completes only over a verified signature of the "
+   "required document by the completing person at this task: otherwise 422 DSC_SIGNATURE_NOT_VERIFIED, or 422 "
+   "DSC_ENROLMENT_REVOKED when the person did sign it but the certificate enrolment that signature was bound to was "
+   "revoked afterwards (also after a re-approval); the signature evidence stays recorded and the person signs again "
+   "with the currently approved certificate. "
+   "Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up "
+   "choice is close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step "
+   "8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.",
    ["VI.4", "R41", "R43", "R47", "K3", "K4", "K5", "K6", "K9", "T16", "T17"], params=[ID], body="CompleteTaskRequest",
    resp=(200, "CompleteTaskResult"), cmd="task.complete", perm="task.write")
 op("post", "/tasks/{id}/return", "returnTask", "Tasks", "Return a task to an earlier level",
@@ -958,7 +1057,31 @@ op("get", "/packages/{id}/diff", "diffPackage", "Packages", "Semantic diff", "Di
    ["R43"], params=[ID], resp=(200, "array:PackageDiffEntry"), perm="package.read", errors=GET_E)
 
 # Documents
-op("post", "/documents", "uploadDocument", "Documents", "Upload a document", "Stores an immutable version with SHA-256 checksum and scan hook (FC-40, R74, K12).",
+# Owner decisions 267, 268 and 269 (INT-H2 REQUEST 2026-11-13T05:54:10Z, DocumentController and DocumentSlots): a PDF
+# uploaded or versioned on a process instance with a documentType for which the instance's pack declares a slot
+# (manifest documentSlots) fills that DSC step's document slot.
+_SLOT_FIELDS = {
+    "documentType": {"type": "string",
+                     "description": "Optional document type, for example NOTING or SANCTION_NOTE (decision 267). When "
+                                    "the pack of the document's process instance declares a slot for it and the "
+                                    "document is a PDF, the document is written into that slot; otherwise the type is "
+                                    "stored as metadata only and no slot is touched"},
+    "replaceSlot": {"type": "boolean", "default": False,
+                    "description": "Explicitly replace another document that the slot already holds (decision 267); "
+                                   "a new version of the document the slot holds needs no replace"},
+}
+_SLOT_TEXT = (" DSC document slot (decisions 267 to 269): with a documentType for which the pack of the process "
+              "instance declares a slot, a PDF fills that slot in the same transaction as the store, audited in "
+              "DOCUMENT_UPLOADED or DOCUMENT_VERSION_ADDED with slot and document_type. Only the assignee of an open "
+              "task of that instance with task.write may set or replace a slot (403 DOCUMENT_SLOT_NOT_TASK_HOLDER); "
+              "a slot holding another document is 409 DOCUMENT_SLOT_OCCUPIED unless replaceSlot is true. Nothing is "
+              "stored on either refusal. A slot changed after the signing task was created is refused at completion.")
+MULTI_DOC["content"]["multipart/form-data"]["schema"]["properties"].update(_SLOT_FIELDS)
+MULTI_VERSION = {"required": True, "content": {"multipart/form-data": {"schema": {"type": "object", "required": ["file"], "properties": dict(
+    MULTI_FILE["content"]["multipart/form-data"]["schema"]["properties"], **_SLOT_FIELDS)}}}}
+op("post", "/documents", "uploadDocument", "Documents", "Upload a document", "Stores an immutable version with SHA-256 checksum and scan hook (FC-40, R74, K12)."
+   " A slot applies when processInstanceId is given, or taskId names a task of a process instance; never for a "
+   "caseInstanceId." + _SLOT_TEXT,
    ["FC-40", "R74", "K12", "R41"], body=MULTI_DOC, resp=(201, "Document"), cmd="document.upload", perm="document.write", created=True)
 op("get", "/documents", "listDocuments", "Documents", "List documents", "Authorized document list.", ["FC-40", "R74"], list_=True,
    params=[q("taskId"), q("processInstanceId"), q("caseInstanceId"), q("name")], resp=(200, "array:Document"), perm="document.read", errors=STD_R)
@@ -967,8 +1090,18 @@ op("get", "/documents/{id}", "getDocument", "Documents", "Document metadata", "L
 op("get", "/documents/{id}/content", "getDocumentContent", "Documents", "Document content", "Content of the latest or given version.", ["R74"],
    params=[ID, q("version", "int")], resp=(200, {"application/octet-stream": {"schema": {"type": "string", "contentMediaType": "application/octet-stream"}}}),
    perm="document.read", errors=GET_E)
-op("post", "/documents/{id}/versions", "addDocumentVersion", "Documents", "New document version", "Adds an immutable version (R74).",
-   ["R74", "R41"], params=[ID], body=MULTI_FILE, resp=(201, "Document"), cmd="document.version", perm="document.write", created=True)
+op("post", "/documents/{id}/versions", "addDocumentVersion", "Documents", "New document version", "Adds an immutable version (R74)."
+   " A slot applies when the document belongs to a process instance." + _SLOT_TEXT,
+   ["R74", "R41"], params=[ID], body=MULTI_VERSION, resp=(201, "Document"), cmd="document.version", perm="document.write", created=True)
+for _p in ("/documents", "/documents/{id}/versions"):
+    _r = PATHS[_p]["post"]["responses"]
+    _r["403"] = {"description": RESPONSES["Forbidden"]["description"] + "; or DOCUMENT_SLOT_NOT_TASK_HOLDER: a "
+                 "documentType names a DSC slot and the caller is not the assignee of an open task of that process "
+                 "instance with task.write (nothing stored)", "content": PROBLEM}
+    _prev = _r.get("409")
+    _prev = RESPONSES[_prev["$ref"].rsplit("/", 1)[1]] if _prev and "$ref" in _prev else _prev
+    _r["409"] = {"description": (_prev["description"] + "; or " if _prev else "") + "DOCUMENT_SLOT_OCCUPIED: the "
+                 "slot already holds another document and replaceSlot is not true (nothing stored)", "content": PROBLEM}
 op("delete", "/documents/{id}", "deleteDocument", "Documents", "Delete a document", "Deletes (subject to retention and legal hold, R29, R61).",
    ["R74", "R61", "R41"], params=[ID, P("reason")], resp=(204, None), cmd="document.delete", perm="document.write")
 
@@ -1007,11 +1140,26 @@ op("get", "/audit/{businessKey}/timeline", "getAuditTimeline", "Audit", "Audit t
    "Class-B chain events of every root with this business key, optionally merged with class-A history (evidence=false). The read is audited (AUDIT_VIEWED).",
    ["R42", "X.2.3", "T30"], list_=True, params=[pp("businessKey"), q("includeHistory", "bool", "Merge class-A history (default true)")],
    resp=(200, "array:AuditEntry"), perm="audit.read", errors=GET_E)
-op("get", "/audit/events", "searchAuditEvents", "Audit", "Search audit events", "Auditor search (U01).", ["R42"], list_=True,
-   params=[q("chainId"), q("type"), q("actor"), q("from", "dt"), q("to", "dt")], resp=(200, "array:AuditEntry"), perm="audit.read", errors=STD_R)
+# Decision 144: a system audit scope (system:...) holds the audit rows of shared deployments, which belong to no
+# tenant. Only a platform identity with platform.audit.system.read (SecurityPermissionBridge.SYSTEM_AUDIT_READ: the
+# platform administrator and the platform auditor) may read it; tenant audit.read never reaches it.
+_AUD_SCOPE_TEXT = (" With the optional scope parameter (a system audit scope, system:...) the call reads that system "
+                   "scope instead of the caller's tenant; it needs platform.audit.system.read (platform-only, platform "
+                   "administrator or platform auditor, decision 144), otherwise 403. Without scope nothing changes.")
+
+
+def _aud_scope():
+    p = q("scope", desc="System audit scope to read instead of the caller's tenant (decision 144); needs "
+                        "platform.audit.system.read")
+    p["schema"]["pattern"] = r"^system:[a-z0-9][a-z0-9._-]{0,47}$"
+    return p
+
+
+op("get", "/audit/events", "searchAuditEvents", "Audit", "Search audit events", "Auditor search (U01)." + _AUD_SCOPE_TEXT, ["R42"], list_=True,
+   params=[q("chainId"), q("type"), q("actor"), q("from", "dt"), q("to", "dt"), _aud_scope()], resp=(200, "array:AuditEntry"), perm="audit.read", errors=STD_R)
 op("get", "/audit/verify", "verifyAudit", "Audit", "Verify hash chains",
-   "Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5).",
-   ["R42", "X.2.3.4"], params=[q("chainId"), q("businessKey")], resp=(200, "AuditVerifyResult"), perm="audit.read", errors=STD_R)
+   "Recomputes chains (gapless seq, prev_hash links, hashes, payload digests, chain head) and reports the first divergence (X.2.3.4 rule 5)." + _AUD_SCOPE_TEXT,
+   ["R42", "X.2.3.4"], params=[q("chainId"), q("businessKey"), _aud_scope()], resp=(200, "AuditVerifyResult"), perm="audit.read", errors=STD_R)
 op("get", "/audit/export", "exportAudit", "Audit", "Export the audit trail", "Bounded export; writes AUDIT_EXPORTED (R42).", ["R42"],
    params=[q("businessKey", required=True), q("format", enum=["json", "csv"])],
    resp=(200, {"application/json": {"schema": {"type": "array", "items": R("AuditEntry")}}, "text/csv": {"schema": {"type": "string"}}}),
@@ -1214,7 +1362,8 @@ op("get", "/me/delegations", "listMyDelegations", "Me", "My delegations and acti
    ["IX.5"], resp=(200, "array:Assignment"), errors=WS_E)
 op("post", "/me/leave-requests", "requestLeave", "Me", "Request leave with a substitute",
    "Creates a LEAVE_SUBSTITUTE assignment pending approval; the substitute acts for the seat only within the date range (IX.5 rule 4, PER-4).",
-   ["IX.5", "R41"], body="LeaveRequest", resp=(201, "Assignment"), cmd="me.leave.request", created=True)
+   ["IX.5", "R41"], body="LeaveRequest", resp=(201, "Assignment"), cmd="me.leave.request", perm="task.write",
+   created=True)
 
 TQ = [ID]
 op("get", "/tasks/counts", "getTaskCounts", "Workspace", "Inbox counts",
@@ -1430,12 +1579,16 @@ op("put", "/admin/power-tables/{id}", "updatePowerTable", "Admin", "Update a pow
 op("post", "/admin/power-tables/{id}/check", "checkPowerTable", "Admin", "Check a power table",
    "Gaps, overlaps, hit policy and test cases.", ["IX.5", "K6"], params=[ID], resp=(200, "PowerTableCheckResult"), perm="admin.read",
    errors=GET_E + ("Unprocessable",))
-for act, s, perm in [("submit", "Submit for approval", "admin.write"), ("approve", "Approve (four-eyes)", "power-table.approve"),
-                     ("reject", "Reject", "power-table.approve")]:
+# W4-B REQUEST 2026-11-13T04:47:48Z: one command type per permission, so a replay re-checks exactly the permission of
+# the route that made the call (submit: admin.write; approve and reject: power-table.approve). It was one type,
+# power-table.transition, whose replay needed both. CommandCatalog.GOVERNMENT_REQUIRED names both new types.
+for act, s, perm, ctype in [("submit", "Submit for approval", "admin.write", "power-table.submit"),
+                            ("approve", "Approve (four-eyes)", "power-table.approve", "power-table.decide"),
+                            ("reject", "Reject", "power-table.approve", "power-table.decide")]:
     op("post", "/admin/power-tables/{id}/" + act, act + "PowerTable", "Admin", s + " a power table",
        "Lifecycle DRAFT → IN_REVIEW → APPROVED → ACTIVE on effectiveFrom; approver ≠ author by person and seat (422 SEGREGATION_OF_DUTIES).",
        ["IX.5", "R43", "R41", "R42"], params=[ID], body="PowerTableTransitionRequest", resp=(200, "PowerTable"),
-       cmd="power-table.transition", perm=perm)
+       cmd=ctype, perm=perm)
 
 # Identity admin (IdentityAdminPort)
 op("post", "/admin/assignments/impact", "previewAssignmentImpact", "Admin", "Impact of an assignment",
@@ -1537,11 +1690,76 @@ op("post", "/data-objects", "createDataObject", "LowCode", "Create a data object
    resp=(201, "DataObjectDef"), cmd="data-object.create", perm="lowcode.admin", created=True)
 op("put", "/data-objects/{id}", "updateDataObject", "LowCode", "Update a data object", "New schema version.", ["R78", "R41"], params=[ID],
    body="DataObjectDef", resp=(200, "DataObjectDef"), cmd="data-object.update", perm="lowcode.admin")
-op("get", "/data-objects/{key}/records", "listDataObjectRecords", "LowCode", "Data-object records", "Records; sensitive fields masked (R78).",
+op("get", "/data-objects/{key}/records", "listDataObjectRecords", "LowCode", "Data-object records",
+   "Records; sensitive fields masked (R78). For a REST-backed definition (decision 266) the server calls the "
+   "connector's list operation with {q, offset, limit} (q as given, offset and limit from page and size) and answers "
+   "its output.records, each validated against the definition fields (unknown fields dropped, sensitive fields masked "
+   "as for DB backing); output.total, when the connector gives it, is the total count. 501 CAPABILITY_NOT_INSTALLED "
+   "for a REST-backed definition on a server without sangam-integration.",
    ["R78", "VI.4"], list_=True, params=[KEY, q("q")], resp=(200, "array:VariableMap"), perm="lowcode.read", errors=GET_E)
-op("post", "/data-objects/{key}/records", "createDataObjectRecord", "LowCode", "Create a record", "Validated against the definition.",
+op("post", "/data-objects/{key}/records", "createDataObjectRecord", "LowCode", "Create a record",
+   "Validated against the definition. DB backing: the record is stored and the call answers 201 with it. REST backing "
+   "(decision 265): the call answers 202 Accepted with the operationId and status PENDING, and Location names "
+   "getDataObjectRecordOperation; the connector's create operation runs through the operation ledger with the "
+   "operationId as its idempotency key, and the caller reads the outcome there. 501 CAPABILITY_NOT_INSTALLED for a "
+   "REST-backed definition on a server without sangam-integration.",
    ["R78", "R41"], params=[KEY], body={"required": True, "content": {"application/json": {"schema": R("VariableMap")}}},
-   resp=(201, "object"), cmd="data-object.record.create", perm="lowcode.read", created=True)
+   resp=(201, "object"), cmd="data-object.record.create", perm="lowcode.record.write", created=True)  # decision 284
+# Owner decisions 265 and 266 (EC-06 REST backing; integrator ruling 2026-11-13T01:26:13Z for 501).
+SCHEMAS["DataObjectRecordOperation"] = {
+    "type": "object",
+    "description": "A record create on a REST-backed data object (decision 265), run through the operation ledger.",
+    "required": ["operationId", "dataObjectKey", "status"],
+    "properties": {
+        "operationId": {"type": "string", "minLength": 1, "maxLength": 64,
+                        "description": "Operation ledger id; sent to the external system as the idempotency key"},
+        "dataObjectKey": {"type": "string"},
+        "status": {"type": "string", "enum": ["PENDING", "COMPLETED", "FAILED", "UNKNOWN"],
+                   "description": "PENDING: not finished, or the external system has no record of it yet; COMPLETED: "
+                                  "the record was created (record is set); FAILED: the external system refused it "
+                                  "(failureCode is set); UNKNOWN: the outcome cannot be proved and the operation is "
+                                  "in reconciliation (no automatic retry)"},
+        "record": {"$ref": "#/components/schemas/VariableMap",
+                   "description": "COMPLETED only: the created record, validated and masked as on the list route"},
+        "failureCode": {"type": "string", "description": "FAILED only: the external system's failure code"},
+    },
+}
+_DO_501 = {"description": "CAPABILITY_NOT_INSTALLED: the data object is REST-backed and this server has no "
+                          "sangam-integration (not retryable). DB-backed data objects never answer 501",
+           "content": PROBLEM}
+_r = PATHS["/data-objects/{key}/records"]["post"]["responses"]
+_r["202"] = {"description": "REST-backed data object: accepted, status PENDING (decision 265); poll "
+                            "getDataObjectRecordOperation",
+             "headers": {"Location": {"description": "/api/v1/data-objects/{key}/records/operations/{operationId}",
+                                      "schema": {"type": "string"}}},
+             "content": {"application/json": {"schema": R("DataObjectRecordOperation")}}}
+_r["501"] = _DO_501
+PATHS["/data-objects/{key}/records"]["get"]["responses"]["501"] = _DO_501
+op("get", "/data-objects/{key}/records/operations/{operationId}", "getDataObjectRecordOperation", "LowCode",
+   "Outcome of a record create",
+   "The state of a record create on a REST-backed data object (decision 265), from the operation ledger and, while "
+   "it is not settled, the connector's outcome lookup by operationId. 404 NOT_FOUND for an operation id that is not a "
+   "record create of this data object in the caller's tenant.",
+   ["R78", "VI.3"], params=[KEY, pp("operationId", "Operation id from the 202 answer")],
+   resp=(200, "DataObjectRecordOperation"), perm="lowcode.read", errors=GET_E)
+PATHS["/data-objects/{key}/records/operations/{operationId}"]["get"]["responses"]["501"] = _DO_501
+# INT-H2 ACK 2026-11-13T05:34:50Z (RestBackedDataObjects.failed, JdbcLowCodeAdapter.recordOperation): a connector that
+# gives no usable answer is 503 DATA_OBJECT_CONNECTOR_FAILED, and a DB-backed object has no operations (404).
+_DO_503_TEXT = ("DATA_OBJECT_CONNECTOR_FAILED: the data object is REST-backed and its connector gave no usable answer "
+                "(extension reasonCode names why); retry after the Retry-After header")
+_DO_RA = {"Retry-After": {"description": "Seconds to wait before retrying", "schema": {"type": "integer"}}}
+for _p, _m in (("/data-objects/{key}/records", "post"), ("/data-objects/{key}/records", "get"),
+               ("/data-objects/{key}/records/operations/{operationId}", "get")):
+    _r = PATHS[_p][_m]["responses"]
+    _prev = _r.get("503")
+    if _prev is not None and "$ref" in _prev:  # the shared response (commands: idempotency store, policy service)
+        _prev = RESPONSES[_prev["$ref"].rsplit("/", 1)[1]]
+    _r["503"] = {"description": _DO_503_TEXT if _prev is None else _prev["description"] + "; or " + _DO_503_TEXT,
+                 "headers": dict(_DO_RA, **(_prev or {}).get("headers", {})), "content": PROBLEM}
+PATHS["/data-objects/{key}/records/operations/{operationId}"]["get"]["responses"]["404"] = {
+    "description": "NOT_FOUND: no data object with this key, the data object is DB-backed (a DB create finishes at "
+                   "once with 201 and has no operation), or the operation id is not a record create of this data "
+                   "object in the caller's tenant", "content": PROBLEM}
 
 # Package tools (PackageToolsPort)
 op("post", "/packages/{id}/validate", "validatePackage", "Packages", "Validate a package",
@@ -1856,6 +2074,15 @@ import os as _os
 for _route_file in sorted(_glob.glob(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "routes", "*.py"))):
     with open(_route_file, encoding="utf-8") as _f:
         exec(compile(_f.read(), _route_file, "exec"), globals())
+# Owner decision 200: the external deny-only policy check (decision 166) also covers external-worker calls, at entry
+# and outside the lock scope, so every /work operation can answer 403 POLICY_DENIED, 503 POLICY_UNAVAILABLE and 401 when
+# the checked call has no tenant (W4-B INFO 2026-11-13T01:14:20Z).
+for _p, _item in PATHS.items():
+    if _p == "/work" or _p.startswith("/work/"):
+        for _m, _o in _item.items():
+            _o["responses"].setdefault("401", RESP("Unauthorized"))
+            _o["responses"].setdefault("403", RESP("Forbidden"))
+            _o["responses"].setdefault("503", RESP("ServiceUnavailable"))
 # Platform administration (W2-C 2026-11-12): the onboarding, promotion, pack lifecycle and plugin controllers of
 # sangam-server require membership of the platform group sangam-admin (ctx.inGroup at OnboardingController.java:72,
 # PromotionController.java:70, PackLifecycleController.java:53, PluginAdminController.java:32), and answer
@@ -1882,6 +2109,26 @@ for _kind, _one, _many, _d, _reqs in REG:
     map_body("act" + _one, "sangam-rest/src/main/java/org/sangam/rest/web/RegistryController.java",
              "RegistryController.action", "body")
 _bk_apply()
+# Owner decision 230 (INT-H2 REQUEST 2026-11-13T02:23:43Z): a NUMBER item's min and max are exact decimals written as
+# canonical decimal text (FieldTemplate.Item.text = ChecklistValidator.canonical: stripTrailingZeros().toPlainString(),
+# zero as "0"). The record typing above already makes them strings; this adds the canonical form the server enforces
+# (FieldTemplate.Item.parse refuses "12.50", "+3", "1E+2").
+for _f in ("min", "max"):
+    _fp = SCHEMAS["FieldTemplateItem"]["properties"][_f]
+    assert _fp.get("type") == "string", "decision 230: FieldTemplateItem.%s is no longer typed as decimal text" % _f
+    _fp["pattern"] = r"^(0|-?(0\.[0-9]*[1-9]|[1-9][0-9]*(\.[0-9]*[1-9])?))$"
+    _fp["description"] = ("Exact decimal bound of a NUMBER item (decision 230) as canonical decimal text: no trailing "
+                          "zeros, no plus sign, no exponent, zero as 0 (12.5, not 12.50). The server also reads a JSON "
+                          "number exactly from its text, and always writes the canonical text. When scale is set it has "
+                          "no more decimal places than scale (decision 242)")
+# Owner decision 242: an optional scale (0..10 decimal places) for a NUMBER item; min, max and every answer to the item
+# may not have more decimal places than scale. Contract-first: when FieldTemplate.Item gains the component the record
+# typing above yields an integer property, and this only adds the bounds and the rule.
+_sc = SCHEMAS["FieldTemplateItem"]["properties"].setdefault("scale", {"type": "integer"})
+assert _sc.get("type") == "integer", "decision 242: FieldTemplateItem.scale is no longer an integer"
+_sc.update({"minimum": 0, "maximum": 10,
+            "description": "NUMBER items only, optional (decision 242): the most decimal places allowed. min, max and "
+                           "every answer to the item may not have more decimal places than scale; absent means no limit beyond decision 230"})
 
 # ---------------------------------------------------------------- API lifecycle (SL-38, API-LIFECYCLE-POLICY.md)
 # api/sangam-api-deprecations.yaml is the single deprecation registry: the server's DeprecationHeadersFilter reads the
@@ -1915,7 +2162,8 @@ doc = {
             "- Lists use `?page=&size=` and return `X-Total-Count`, capped with `X-Total-Count-Capped: true` (A-16).\n"
             "- Variables use R33 typed JSON (see TypedValue).\n"
             "- `x-sangam-permission` names the endpoint permission; object-level policy (VI.4) is applied in addition.\n"
-            "- The Operaton REST API stays available unchanged at /engine-rest behind Sangam authentication."),
+            "- The Operaton REST API stays available unchanged at /engine-rest behind Sangam authentication. It is not part of this contract. When the external deny-only policy check is enabled (decisions 166 and 200), every POST, PUT, PATCH and DELETE under /engine-rest is checked at entry, before any transaction or lock (command type `engine-rest`, the raw path as the path template), and can answer 403 POLICY_DENIED, 503 POLICY_UNAVAILABLE with `Retry-After`, or 401 when the checked call has no tenant.\n"
+            "- The same check covers Sangam commands and the external-worker calls (`x-sangam-fenced: true`, command types `work.<action>`, for example `work.complete`)."),
         "license": {"name": "Apache-2.0", "identifier": "Apache-2.0"},
     },
     "servers": [{"url": "/api/v1", "description": "Sangam server"}],
@@ -1997,15 +2245,20 @@ APP_ERRORS = {
 
 
 def app(file, title, summary, description, roles, tags, servers=None, problem=None, components=None, extensions=None,
-        errors=None, bearer=None):
-    """Starts an app contract. `roles` maps a role to its meaning; `problem` replaces the default Problem schema,
-    `errors` the default error-response texts (APP_ERRORS) and `bearer` the bearer-token description."""
+        errors=None, bearer=None, auth=True):
+    """Starts an app contract. `roles` maps a role to its meaning; `problem` replaces the default Problem schema
+    (False: the service answers no RFC 9457 problems, so none is declared), `errors` the default error-response texts
+    (APP_ERRORS) and `bearer` the bearer-token description. auth=False is an internal service without authentication
+    (reachable only inside the deployment): no security scheme, `security: []`."""
     global APP
     APP = {"file": file, "title": title, "summary": summary, "description": description, "roles": roles, "tags": tags,
+           "auth": auth,
            "servers": servers or [{"url": "/api/v1"}], "components": components or {}, "extensions": extensions or {},
            "errors": dict(APP_ERRORS, **(errors or {})),
            "bearer": bearer or ("Static service token from the app's token list (`<token>:<ROLE>[,<ROLE>]`), compared in "
                                 "constant time. Roles: " + "; ".join("%s (%s)" % kv for kv in roles.items()) + ".")}
+    if problem is False:
+        return
     SCHEMAS["Problem"] = problem or {
         "type": "object",
         "description": "RFC 9457 problem details (Spring ProblemDetail). `type` is about:blank unless stated; extra members "
@@ -2056,7 +2309,8 @@ def _write_app_contract():
     for name, text in APP["errors"].items():
         if RESP(name)["$ref"] in used:
             responses[name] = {"description": text, "content": {"application/problem+json": {"schema": R("Problem")}}}
-    comps = {"securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "description": APP["bearer"]}}}
+    comps = {"securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer", "description": APP["bearer"]}}} \
+        if APP["auth"] else {}
     if responses:
         comps["responses"] = responses
     comps["schemas"] = SCHEMAS
@@ -2065,7 +2319,7 @@ def _write_app_contract():
     d = {"openapi": "3.1.0",
          "info": {"title": APP["title"], "version": "0.1.0", "summary": APP["summary"], "description": APP["description"],
                   "license": {"name": "Apache-2.0", "identifier": "Apache-2.0"}},
-         "servers": APP["servers"], "security": [{"bearerAuth": []}],
+         "servers": APP["servers"], "security": [{"bearerAuth": []}] if APP["auth"] else [],
          "tags": [{"name": n, "description": t} for n, t in APP["tags"]], "paths": PATHS, "components": comps}
     d.update(APP["extensions"])
     t = json.dumps(d)

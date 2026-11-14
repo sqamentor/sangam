@@ -58,6 +58,10 @@
     {
       "kind": "SEED",
       "path": "packs/pension/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/pension/pack.json"
     }
   ],
   "seed": "packs/pension/seed.json",
@@ -122,6 +126,15 @@
       "capabilityClass": "c"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "ps_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "pension-powers",
+      "ruleCaseType": "PENSION"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

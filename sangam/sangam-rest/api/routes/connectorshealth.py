@@ -17,5 +17,15 @@ op("post", "/hooks/fhir/{channel}", "receiveFhirNotification", "HealthHooks", "R
                                        "application/json": {"schema": {"type": "object"}}}},
    resp=(200, "HealthHookResult"), errors=("BadRequest", "Unauthorized", "NotFound", "Unprocessable"))
 public("/hooks/fhir/{channel}", "post")
+# Owner decision 187: sangam-connectors-health is optional and off by default. With the module off or not installed,
+# these operations (and the CDS Hooks endpoints at the server root) answer 501 CAPABILITY_NOT_INSTALLED (capability
+# connectors-health), never an unmapped 404 (W4-K REQUEST 2026-11-12T19:02:19Z). Integrator ruling
+# 2026-11-13T01:26:13Z: an absent optional module is 501 (ApiProblem.notInstalled, not retryable); 503 stays for
+# temporary unavailability only.
+_CH_OFF = {"description": "CAPABILITY_NOT_INSTALLED: the optional health connectors module (capability "
+                          "connectors-health) is not installed or is off; it is off by default (decision 187). Not "
+                          "retryable", "content": PROBLEM}
+PATHS["/hooks/fhir/{channel}"]["post"]["responses"]["501"] = _CH_OFF
 
 op("post", "/connectors-health/x12/835", "receiveRemittance835", TAGS[-1][0], "Hand over a received 835", "Routes each claim to its waiting case, else starts the later-remittance process once per trace number. An unreadable file becomes a poison item (422).", body={"required": True, "content": {"text/plain": {"schema": {"type": "string"}}, "application/edi-x12": {"schema": {"type": "string"}}}}, resp=(202, "object"), cmd="connectorshealth.remittance.receive", perm="ops.write")
+PATHS["/connectors-health/x12/835"]["post"]["responses"]["501"] = _CH_OFF

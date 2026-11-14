@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+# Sangam configuration profile (data, not code; ADR-D-20). Values marked under "placeholders" are [U]:
+# unverified in the research pass and must be confirmed from the government's own orders before go-live.
+profile:
+  id: GOI.DEFENCE.DRDO
+  layer: department
+  version: 2026.11.2
+  effectiveFrom: '2024-04-01'
+  name:
+    en: Defence Research and Development Organisation (Ministry of Defence)
+    hi: रक्षा अनुसंधान एवं विकास संगठन
+  source: Owner decision 257 (DRDO, the listed part of the Ministry of Defence, is a scientific department); other values
+    inherited from GOI.DEFENCE
+procurement:
+  scientificDepartment: true

@@ -5,6 +5,7 @@
  * - in-browser BPMN / DMN / form editors (bpmn.io, watermark kept) and a CMMN source editor with outline;
  * - validation report (closure check, unsupported constructs, latest-binding and CMMN-listener findings);
  * - diff vs the deployed version, comments, Git sync (pull / push), model tests;
+ * - M-125 semantic compare of two versions of one file (POST /models/diff) and M-101 presence (who else has it open);
  * - lifecycle draft → review → approved → deployed → retired; reviewer ≠ author; "play" deploys to the sandbox tenant.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -12,8 +13,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import { fileName } from '../../api/adapters';
-import { BulkTestReport, FeelPlayground, LeaseBanner, TokenWalk } from '../../modules/platform';
+import { BulkTestReport, FeelPlayground, LeaseBanner, TokenWalk, type LeaseState } from '../../modules/platform';
 import { ScanReport, hasBlocking, scanArtifacts } from '../../modules/compat';
+import { ModelPresenceBar } from '../../modules/presence';
+import { ModelCompare } from './ModelCompare';
 import type { ModelArtifact, ModelPackage, PackageDiff, PackageState, ValidationIssue } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
@@ -131,6 +134,8 @@ export function PackageWorkspace() {
   const [transition, setTransition] = useState<'submit' | 'deploy' | 'retire' | null>(null);
   const [tenant, setTenant] = useState('');
   const [ack, setAck] = useState(false);
+  // M-101 / R18: one edit lease per package (keyed by the package id like the save fence and presence)
+  const [lease, setLease] = useState<LeaseState>();
   const act = useAction();
 
   useEffect(() => {
@@ -141,6 +146,8 @@ export function PackageWorkspace() {
   if (!pkg.data) return <ProblemAlert error={pkg.error} onRetry={pkg.reload} />;
   const p = pkg.data;
   const editable = p.state === 'DRAFT' || p.state === 'REJECTED';
+  // Someone else holds the lease: the server refuses the save (EDIT_LEASE_REQUIRED / EDIT_LEASE_LOST), so the UI does too.
+  const leaseBlocks = lease !== undefined && !lease.mine;
   const art = p.artifacts.find((a) => a.id === current);
   const scan = scanArtifacts(p.artifacts);
 
@@ -148,7 +155,7 @@ export function PackageWorkspace() {
     if (!art || !handle.current) return true;
     const content = await handle.current.getContent();
     const next = p.artifacts.map((a) => (a.id === art.id ? { ...a, content } : a));
-    const r = await act.run(() => api.packages.saveResources(id, next, p.name));
+    const r = await act.run(() => api.packages.saveResources(id, next, p.name, lease?.fence));
     if (r) {
       setDirty(false);
       pkg.setData({ ...r, artifacts: r.artifacts.length ? r.artifacts : next });
@@ -174,7 +181,7 @@ export function PackageWorkspace() {
             <Badge value={p.state} />
             {editable && (
               <>
-                <button type="button" disabled={!dirty || act.busy} onClick={() => void save()}>
+                <button type="button" disabled={!dirty || act.busy || leaseBlocks} onClick={() => void save()}>
                   {t('common.save')}
                 </button>
                 <button
@@ -210,6 +217,9 @@ export function PackageWorkspace() {
           </>
         }
       />
+      {/* M-101: the contract's {file} is the package id (ModellerController: "a model file is its package id"). */}
+      <ModelPresenceBar file={id} selfId={me?.userId} />
+      {editable && <LeaseBanner packageId={id} onState={setLease} />}
       <ProblemAlert error={act.error} />
       {p.hash && (
         <p className="small muted">
@@ -225,6 +235,7 @@ export function PackageWorkspace() {
           { id: 'validation', label: t('modeller.validation'), badge: issues ? String(issues.filter((i) => i.severity === 'ERROR').length) : undefined },
           { id: 'compat', label: t('mod.compat.scan'), badge: scan.length ? String(scan.length) : undefined },
           { id: 'diff', label: t('modeller.diff') },
+          { id: 'compare', label: t('mod.modeller2.compare') },
           { id: 'history', label: t('modeller.history') },
           { id: 'tests', label: t('modeller.tests') },
           { id: 'play', label: t('modeller.play') },
@@ -255,8 +266,6 @@ export function PackageWorkspace() {
           <div className="artifact-editor">
             {art ? (
               editable ? (
-                <>
-                <LeaseBanner key={art.id} packageId={id} file={art.name} />
                 <ArtifactEditor
                   key={art.id}
                   artifact={art}
@@ -266,7 +275,6 @@ export function PackageWorkspace() {
                   }}
                   onChange={() => setDirty(true)}
                 />
-                </>
               ) : (
                 <>
                   <Notice>{t('modeller.readOnly')}</Notice>
@@ -289,6 +297,10 @@ export function PackageWorkspace() {
       </TabPanel>
       <TabPanel id="diff" active={tab}>
         <DiffPanel packageId={id} />
+      </TabPanel>
+      <TabPanel id="compare" active={tab}>
+        {/* M-125: the open model's saved text is offered as the "after" side; keyed so a model switch starts afresh. */}
+        <ModelCompare key={art?.id ?? ''} resource={art ? fileName(art) : ''} current={art?.content} />
       </TabPanel>
       <TabPanel id="history" active={tab}>
         <HistoryPanel packageId={id} />
@@ -324,7 +336,7 @@ export function PackageWorkspace() {
               const content = adding!.kind === 'BPMN' ? EMPTY_BPMN : adding!.kind === 'DMN' ? EMPTY_DMN : adding!.kind === 'FORM' ? EMPTY_FORM : EMPTY_CMMN;
               const added = { id: fileName({ name: adding!.name, kind: adding!.kind }), name: fileName({ name: adding!.name, kind: adding!.kind }), kind: adding!.kind, content };
               const next = [...p.artifacts, added];
-              void act.run(() => api.packages.saveResources(id, next, p.name)).then((r) => {
+              void act.run(() => api.packages.saveResources(id, next, p.name, lease?.fence)).then((r) => {
                 if (r) {
                   setAdding(null);
                   pkg.setData({ ...r, artifacts: r.artifacts.length ? r.artifacts : next });

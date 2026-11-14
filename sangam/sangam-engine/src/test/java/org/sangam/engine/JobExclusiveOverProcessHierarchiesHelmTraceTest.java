@@ -48,6 +48,7 @@ class JobExclusiveOverProcessHierarchiesHelmTraceTest {
         assertTrue(read("templates/server-configmap.yaml").contains(
                 ENV + ": {{ .Values.server.jobExecutor.exclusiveOverProcessHierarchies | quote }}"));
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.applyEnvironment(Map.of(ENV, "false")); // what "| quote" renders for false
         assertFalse(s.isJobExclusiveOverProcessHierarchies(), "the rendered name is the one the engine reads");
     }

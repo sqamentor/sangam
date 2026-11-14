@@ -132,6 +132,9 @@ const ConversationalChannels = named(ad, 'ConversationalChannels');
 const AgentDefinitions = named(ad, 'AgentDefinitions');
 const RetentionClasses = named(ad, 'RetentionClasses');
 const ModuleSecurityDefaults = named(ad, 'ModuleSecurityDefaults');
+const dc = () => import('../areas/dsc/DscCertificates');
+const MyDscCertificates = named(dc, 'MyDscCertificates');
+const DscCertificateQueue = named(dc, 'DscCertificateQueue');
 const Packages = named(md, 'Packages');
 const PackageWorkspace = named(md, 'PackageWorkspace');
 const ReviewQueue = named(md, 'ReviewQueue');
@@ -214,6 +217,8 @@ function AuthedRoutes() {
           {m('/admin/custom-fields', <CustomFieldsPage />)}
           {m('/admin/bulk', <BulkIngestPage />)}
           {m('/admin/security-defaults', <ModuleSecurityDefaults />)}
+          {m('/admin/dsc-certificates', <DscCertificateQueue />)}
+          {m('/my/dsc-certificates', <MyDscCertificates />)}
           <Route path="/privacy/:tenant?" element={<PublicPrivacy />} />
           <Route path="/modeller/compatibility" element={g(MODEL, <CompatibilityMatrix />)} />
           {m('/m/registry', <RegistryPage />)}

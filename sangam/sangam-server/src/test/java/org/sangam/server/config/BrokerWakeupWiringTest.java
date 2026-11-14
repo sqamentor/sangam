@@ -19,8 +19,9 @@ import org.springframework.mock.env.MockEnvironment;
 /**
  * M-058 wiring: the bus is built only for {@code nats} or {@code redis}, takes its settings from its own prefix, is not
  * started by the factory (Spring starts and closes it), and a wrong kind or missing required setting fails start-up.
- * The nats/redis cases need the optional clients on the sangam-server classpath (W3-A REQUEST to the integrator for
- * sangam-server/pom.xml, the same entries as sangam-integration/pom.xml).
+ * The redis case needs the optional client on the sangam-server classpath (W3-A REQUEST to the integrator for
+ * sangam-server/pom.xml). Owner decision 232: jnats left the server, so {@code nats} without the NATS add-on is a clear
+ * start-up refusal; building the NATS bus itself is covered in sangam-integration, where jnats is optional.
  */
 class BrokerWakeupWiringTest {
 
@@ -31,7 +32,7 @@ class BrokerWakeupWiringTest {
     }
 
     @Test
-    void natsSettingsComeFromTheirOwnPrefixAndTheBusIsNotStartedByTheFactory() {
+    void natsSettingsComeFromTheirOwnPrefixAndNatsWithoutTheAddOnRefusesStartUp() {
         MockEnvironment env = new MockEnvironment()
                 .withProperty("sangam.wakeup.bus", "NATS")
                 .withProperty("sangam.wakeup.nats.serverUri", "nats://broker-a:4222")
@@ -42,9 +43,13 @@ class BrokerWakeupWiringTest {
         assertEquals("sangam_outbox_x", s.get("subject"));
         assertFalse(s.containsKey("host"), "the redis keys do not leak into the nats settings");
 
-        BrokerWakeupBus bus = BrokerWakeupWiring.bus(env, SECRETS, "node-1", listener());
-        assertFalse(bus.running(), "Spring calls start(); building the bean opens no connection");
-        bus.close();
+        assertFalse(AddonGuardWiring.natsPresent(BrokerWakeupWiring.class.getClassLoader()),
+                "decision 232: the server class path has no jnats");
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> BrokerWakeupWiring.bus(env, SECRETS, "node-1", listener()));
+        assertTrue(e.getMessage().contains("sangam.wakeup.bus=nats"), e.getMessage());
+        assertTrue(e.getMessage().contains("NATS add-on"), e.getMessage());
+        assertTrue(e.getMessage().contains(AddonGuardWiring.NATS_CLASS), e.getMessage());
     }
 
     @Test

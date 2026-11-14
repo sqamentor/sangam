@@ -35,3 +35,39 @@ sangam/sdks/**/generated/** text eol=lf
 sangam/sdks/dotnet/src/Sangam.Sdk/Generated/** text eol=lf
 sangam/sdks/codegen/surface-manifest.json text eol=lf
 sangam/sdks/php/src/Generated/** text eol=lf
+
+# W4-C (2026-11-13): scripts that run in a POSIX shell or a container build are LF in every checkout. Without these
+# rules core.autocrlf=true checked them out CRLF ("set -eu\r" breaks sh, sh -n fails on load-images.sh), so an
+# air-gapped bundle or an image built from a Windows checkout shipped broken scripts. The index already holds them as
+# LF, so these rules change no committed bytes. Guard: test_workflow_guards.py LineEndings (governance.yml).
+*.sh            text eol=lf
+*.envsh         text eol=lf
+Dockerfile*     text eol=lf
+*.Dockerfile    text eol=lf
+mvnw            text eol=lf
+entrypoint      text eol=lf
+*-entrypoint    text eol=lf
+# Windows-only scripts keep CRLF (cmd.exe needs it for labels and goto; Windows PowerShell 5.1 reads them as such).
+*.ps1           text eol=crlf
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+# Binary: never converted, never diffed as text.
+*.jar           binary
+*.class         binary
+*.ttf           binary
+*.otf           binary
+*.woff          binary
+*.woff2         binary
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.webp          binary
+*.pdf           binary
+*.zip           binary
+*.gz            binary
+*.tgz           binary
+*.p12           binary
+*.jks           binary
+*.der           binary

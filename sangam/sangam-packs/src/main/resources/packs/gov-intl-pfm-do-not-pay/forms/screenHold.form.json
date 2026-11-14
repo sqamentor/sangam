@@ -1,0 +1,27 @@
+{
+  "key": "gov-intl-pfm-do-not-pay/screenHold",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-do-not-pay",
+  "title": {
+    "en": "Screening not confirmed: payment held, confirm the lists",
+    "hi": "जाँच की पुष्टि नहीं, भुगतान रोका"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

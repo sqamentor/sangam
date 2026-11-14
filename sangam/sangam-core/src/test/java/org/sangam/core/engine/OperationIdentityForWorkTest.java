@@ -38,12 +38,15 @@ class OperationIdentityForWorkTest {
         assertNotEquals(withKey, OperationIdentity.forWork("t1", "bk-1", "root-1", "payment", 0, null, "k"));
     }
 
-    /** Source guard: the engine-work paths (sangam-engine, sangam-rest) derive the id only through forWork. */
+    /**
+     * Source guard: the engine-work paths (sangam-engine, sangam-rest, and sangam-rest-core since decision 285) derive
+     * the id only through forWork.
+     */
     @Test
     void noEngineWorkPathHasASecondDerivation() throws IOException {
         Path root = Path.of("..").toAbsolutePath().normalize();
         List<String> offenders = new ArrayList<>();
-        for (String module : List.of("sangam-engine", "sangam-rest")) {
+        for (String module : List.of("sangam-engine", "sangam-rest", "sangam-rest-core")) {
             Path src = root.resolve(module).resolve("src/main/java");
             assertTrue(Files.isDirectory(src), "module sources not found: " + src);
             try (Stream<Path> files = Files.walk(src)) {

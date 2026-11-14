@@ -2209,6 +2209,63 @@ CREATE TABLE LDG_ACCOUNTING (
 CREATE INDEX LDG_ACCOUNTING_EXPORT ON LDG_ACCOUNTING (tenant_id, exported_at);
 --rollback DROP TABLE LDG_ACCOUNTING;
 
+--changeset sangam:0019-06-bill_unverified_payment dbms:h2
+--comment: sangam-ledger LedgerSchema (also the billing tables)
+CREATE TABLE BILL_UNVERIFIED_PAYMENT (
+  tenant_id VARCHAR(64) NOT NULL,
+  payment_id VARCHAR(64) NOT NULL,
+  ledger_id VARCHAR(64) NOT NULL,
+  consumer VARCHAR(255) NOT NULL,
+  office_id VARCHAR(64) NOT NULL,
+  channel VARCHAR(64) NOT NULL,
+  payment_ref VARCHAR(255) NOT NULL,
+  amount BIGINT NOT NULL,
+  currency VARCHAR(64) NOT NULL,
+  paid_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  payer_name VARCHAR(255),
+  instrument VARCHAR(64),
+  details_json CHARACTER LARGE OBJECT NOT NULL,
+  reason CHARACTER LARGE OBJECT NOT NULL,
+  evidence_ref VARCHAR(255) NOT NULL,
+  policy_version VARCHAR(64) NOT NULL,
+  downstream_json CHARACTER LARGE OBJECT NOT NULL,
+  accepted_by VARCHAR(255) NOT NULL,
+  accepted_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  version BIGINT NOT NULL,
+  outcome_reason CHARACTER LARGE OBJECT,
+  verification_ref VARCHAR(255),
+  resolved_by VARCHAR(255),
+  resolved_at TIMESTAMP WITH TIME ZONE,
+  receipt_no VARCHAR(64),
+  CONSTRAINT PK_BILL_UNVERIFIED_PAYMENT PRIMARY KEY (tenant_id, payment_id)
+);
+CREATE UNIQUE INDEX BILL_UNVERIFIED_REF ON BILL_UNVERIFIED_PAYMENT (tenant_id, channel, payment_ref);
+CREATE INDEX BILL_UNVERIFIED_STATE ON BILL_UNVERIFIED_PAYMENT (tenant_id, state, accepted_at);
+--rollback DROP TABLE BILL_UNVERIFIED_PAYMENT;
+
+--changeset sangam:0019-07-bill_unverified_accrual_pause dbms:h2
+--comment: sangam-ledger LedgerSchema (also the billing tables)
+CREATE TABLE BILL_UNVERIFIED_ACCRUAL_PAUSE (
+  tenant_id VARCHAR(64) NOT NULL,
+  payment_id VARCHAR(64) NOT NULL,
+  base_account_id VARCHAR(64) NOT NULL,
+  as_of VARCHAR(64) NOT NULL,
+  paused_from VARCHAR(64) NOT NULL,
+  ledger_id VARCHAR(64) NOT NULL,
+  period VARCHAR(64) NOT NULL,
+  line_code VARCHAR(64) NOT NULL,
+  consumer VARCHAR(255) NOT NULL,
+  stage VARCHAR(64) NOT NULL,
+  sub VARCHAR(255),
+  amount BIGINT NOT NULL,
+  currency VARCHAR(64) NOT NULL,
+  recorded_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  resumed_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_BILL_UNVERIFIED_ACCRUAL_PAU PRIMARY KEY (tenant_id, payment_id, base_account_id, as_of)
+);
+--rollback DROP TABLE BILL_UNVERIFIED_ACCRUAL_PAUSE;
+
 --changeset sangam:0020-01-reg_object_type dbms:h2
 --comment: sangam-registry RegistrySchema
 CREATE TABLE REG_OBJECT_TYPE (
@@ -5906,6 +5963,333 @@ CREATE TABLE PROCESS_TRACE (
 CREATE INDEX PROCESS_TRACE_ROOT ON PROCESS_TRACE (root_process_instance_id);
 --rollback DROP TABLE PROCESS_TRACE;
 
+--changeset sangam:0044-01-sec_scim_resource dbms:h2
+--comment: SCIM provisioning state (M-099, decision 154)
+CREATE TABLE SEC_SCIM_RESOURCE (
+  tenant_id VARCHAR(64) NOT NULL,
+  resource_type VARCHAR(16) NOT NULL CONSTRAINT CK_SEC_SCIM_RESOURCE_TYPE CHECK (resource_type IN ('USER', 'GROUP')),
+  resource_id VARCHAR(255) NOT NULL,
+  user_name VARCHAR(255),
+  display_name VARCHAR(255),
+  name_key VARCHAR(255) NOT NULL,
+  external_id VARCHAR(255),
+  external_key VARCHAR(255) NOT NULL,
+  attributes CHARACTER LARGE OBJECT,
+  version BIGINT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_SEC_SCIM_RESOURCE PRIMARY KEY (tenant_id, resource_type, resource_id)
+);
+CREATE UNIQUE INDEX SEC_SCIM_NAME ON SEC_SCIM_RESOURCE (tenant_id, resource_type, name_key);
+CREATE UNIQUE INDEX SEC_SCIM_EXT ON SEC_SCIM_RESOURCE (tenant_id, resource_type, external_key);
+--rollback DROP TABLE SEC_SCIM_RESOURCE;
+
+--changeset sangam:0044-02-process_continuation dbms:h2
+--comment: Continue-as-new chain (M-060, decision 149)
+CREATE TABLE PROCESS_CONTINUATION (
+  tenant_id VARCHAR(64) NOT NULL,
+  request_id VARCHAR(255) NOT NULL,
+  predecessor_id VARCHAR(64) NOT NULL,
+  successor_id VARCHAR(64) NOT NULL,
+  chain_root_id VARCHAR(64) NOT NULL,
+  generation INTEGER NOT NULL,
+  definition_id VARCHAR(255) NOT NULL,
+  business_key VARCHAR(255),
+  actor_id VARCHAR(255) NOT NULL,
+  reason CHARACTER LARGE OBJECT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_PROCESS_CONTINUATION PRIMARY KEY (tenant_id, request_id)
+);
+CREATE UNIQUE INDEX PROCESS_CONT_PRED ON PROCESS_CONTINUATION (predecessor_id);
+CREATE UNIQUE INDEX PROCESS_CONT_SUCC ON PROCESS_CONTINUATION (successor_id);
+CREATE INDEX PROCESS_CONT_CHAIN ON PROCESS_CONTINUATION (tenant_id, chain_root_id, generation);
+--rollback DROP TABLE PROCESS_CONTINUATION;
+
+--changeset sangam:0044-03-ops_fmig_run dbms:h2
+--comment: Flowable migration run (M-135, decision 169)
+CREATE TABLE OPS_FMIG_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  source_system VARCHAR(64) NOT NULL,
+  source_tenant VARCHAR(64),
+  source_zone VARCHAR(64) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  mapping_json CHARACTER LARGE OBJECT NOT NULL,
+  report_json CHARACTER LARGE OBJECT,
+  planned BIGINT DEFAULT 0 NOT NULL,
+  rejected BIGINT DEFAULT 0 NOT NULL,
+  applied BIGINT DEFAULT 0 NOT NULL,
+  failed BIGINT DEFAULT 0 NOT NULL,
+  matched BIGINT DEFAULT 0 NOT NULL,
+  mismatched BIGINT DEFAULT 0 NOT NULL,
+  version BIGINT NOT NULL,
+  created_by VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_FMIG_RUN PRIMARY KEY (run_id)
+);
+CREATE INDEX OPS_FMIG_RUN_TENANT ON OPS_FMIG_RUN (tenant_id, state);
+--rollback DROP TABLE OPS_FMIG_RUN;
+
+--changeset sangam:0044-04-ops_fmig_item dbms:h2
+--comment: Flowable migration item, one per source instance (M-135, decision 169)
+CREATE TABLE OPS_FMIG_ITEM (
+  run_id VARCHAR(64) NOT NULL,
+  source_instance_id VARCHAR(64) NOT NULL,
+  tenant_id VARCHAR(64) NOT NULL,
+  status VARCHAR(64) NOT NULL,
+  definition_key VARCHAR(255),
+  plan_json CHARACTER LARGE OBJECT NOT NULL,
+  fingerprint VARCHAR(64) NOT NULL,
+  target_instance_id VARCHAR(64),
+  attempts INTEGER DEFAULT 0 NOT NULL,
+  error CHARACTER LARGE OBJECT,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_FMIG_ITEM PRIMARY KEY (run_id, source_instance_id)
+);
+CREATE INDEX OPS_FMIG_ITEM_STATUS ON OPS_FMIG_ITEM (run_id, status);
+CREATE INDEX OPS_FMIG_ITEM_SOURCE ON OPS_FMIG_ITEM (source_instance_id, status);
+CREATE INDEX OPS_FMIG_ITEM_TARGET ON OPS_FMIG_ITEM (target_instance_id);
+--rollback DROP TABLE OPS_FMIG_ITEM;
+
+--changeset sangam:0045-01-ops_utc_run dbms:h2
+--comment: UTC conversion run record (decisions 150 and 203)
+CREATE TABLE OPS_UTC_RUN (
+  run_id VARCHAR(64) NOT NULL,
+  tool_version VARCHAR(64) NOT NULL,
+  table_name VARCHAR(64) NOT NULL,
+  columns_json CHARACTER LARGE OBJECT NOT NULL,
+  provenance_column VARCHAR(64) NOT NULL,
+  tenant_filter VARCHAR(64),
+  source_zone VARCHAR(64) NOT NULL,
+  cutover_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  fingerprint VARCHAR(64) NOT NULL,
+  state VARCHAR(32) NOT NULL,
+  rows_read BIGINT DEFAULT 0 NOT NULL,
+  converted BIGINT DEFAULT 0 NOT NULL,
+  already_utc BIGINT DEFAULT 0 NOT NULL,
+  already_converted BIGINT DEFAULT 0 NOT NULL,
+  unresolved BIGINT DEFAULT 0 NOT NULL,
+  matched BIGINT DEFAULT 0 NOT NULL,
+  mismatched BIGINT DEFAULT 0 NOT NULL,
+  restored BIGINT DEFAULT 0 NOT NULL,
+  last_key CHARACTER LARGE OBJECT,
+  report_json CHARACTER LARGE OBJECT,
+  maintenance_ref VARCHAR(255),
+  created_by VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  version BIGINT NOT NULL,
+  CONSTRAINT PK_OPS_UTC_RUN PRIMARY KEY (run_id)
+);
+CREATE INDEX OPS_UTC_RUN_TABLE ON OPS_UTC_RUN (table_name, state);
+--rollback DROP TABLE OPS_UTC_RUN;
+
+--changeset sangam:0045-02-ops_utc_cell dbms:h2
+--comment: UTC conversion cell snapshot (decisions 150 and 203)
+CREATE TABLE OPS_UTC_CELL (
+  table_name VARCHAR(64) NOT NULL,
+  column_name VARCHAR(64) NOT NULL,
+  key_hash VARCHAR(64) NOT NULL,
+  key_json CHARACTER LARGE OBJECT NOT NULL,
+  run_id VARCHAR(64) NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  reason VARCHAR(64),
+  original_value TIMESTAMP WITH TIME ZONE,
+  converted_value TIMESTAMP WITH TIME ZONE,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_UTC_CELL PRIMARY KEY (table_name, column_name, key_hash)
+);
+CREATE INDEX OPS_UTC_CELL_RUN ON OPS_UTC_CELL (run_id, status, key_hash);
+--rollback DROP TABLE OPS_UTC_CELL;
+
+--changeset sangam:0045-04-integration_dsc_prepared dbms:h2
+--comment: decision 165 DSC prepared signature state (JdbcDscPreparedStore)
+CREATE TABLE INTEGRATION_DSC_PREPARED (
+  tenant_id VARCHAR(64) NOT NULL,
+  prepare_id VARCHAR(64) NOT NULL,
+  task_id VARCHAR(64) NOT NULL,
+  document_id VARCHAR(64) NOT NULL,
+  document_version INTEGER NOT NULL,
+  document_sha256 VARCHAR(64) NOT NULL,
+  principal_id VARCHAR(255) NOT NULL,
+  signer_cert_sha256 VARCHAR(64) NOT NULL,
+  intended_signer_name VARCHAR(255) NOT NULL,
+  algorithm VARCHAR(32) NOT NULL,
+  prepared_digest_sha256 VARCHAR(64) NOT NULL,
+  signed_attributes BINARY LARGE OBJECT NOT NULL,
+  signing_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  prepared_pdf BINARY LARGE OBJECT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  used_at TIMESTAMP WITH TIME ZONE,
+  outcome VARCHAR(32),
+  reason_code VARCHAR(64),
+  signed_document_version INTEGER,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT PK_INTEGRATION_DSC_PREPARED PRIMARY KEY (tenant_id, prepare_id)
+);
+CREATE INDEX INTEGRATION_DSC_PREPARED_TASK ON INTEGRATION_DSC_PREPARED (tenant_id, task_id);
+CREATE INDEX INTEGRATION_DSC_PREPARED_EXPIRY ON INTEGRATION_DSC_PREPARED (expires_at);
+--rollback DROP TABLE INTEGRATION_DSC_PREPARED;
+
+--changeset sangam:0045-05-exec_resize dbms:h2
+--comment: Executor partition-count changes (M-056, decision 146)
+CREATE TABLE EXEC_RESIZE (
+  resize_id VARCHAR(64) NOT NULL,
+  cluster_id VARCHAR(64) NOT NULL,
+  state VARCHAR(64) NOT NULL,
+  from_count INTEGER NOT NULL,
+  to_count INTEGER NOT NULL,
+  from_map_epoch BIGINT NOT NULL,
+  to_map_epoch BIGINT NOT NULL,
+  algorithm_version VARCHAR(64) NOT NULL,
+  moved_slot_count INTEGER,
+  moved_slots CHARACTER LARGE OBJECT,
+  actor_id VARCHAR(255) NOT NULL,
+  reason CHARACTER LARGE OBJECT NOT NULL,
+  requested_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  started_at TIMESTAMP WITH TIME ZONE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  failure CHARACTER LARGE OBJECT,
+  handover_pause_ms BIGINT,
+  CONSTRAINT PK_EXEC_RESIZE PRIMARY KEY (resize_id)
+);
+CREATE INDEX EXEC_RESIZE_STATE ON EXEC_RESIZE (cluster_id, state);
+--rollback DROP TABLE EXEC_RESIZE;
+
+--changeset sangam:0045-06-shared_deployment dbms:h2
+--comment: Shared-deployment registry (decision 197, system ownership proof)
+CREATE TABLE SHARED_DEPLOYMENT (
+  deployment_id VARCHAR(64) NOT NULL,
+  registered_by VARCHAR(255) NOT NULL,
+  reason CHARACTER LARGE OBJECT NOT NULL,
+  registered_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  revoked_by VARCHAR(255),
+  revoked_at TIMESTAMP WITH TIME ZONE,
+  revoke_reason CHARACTER LARGE OBJECT,
+  CONSTRAINT PK_SHARED_DEPLOYMENT PRIMARY KEY (deployment_id)
+);
+--rollback DROP TABLE SHARED_DEPLOYMENT;
+
+--changeset sangam:0045-07-ops_fmig_ack dbms:h2
+--comment: Flowable source listener acknowledgement per process definition (decision 231)
+CREATE TABLE OPS_FMIG_ACK (
+  tenant_id VARCHAR(64) NOT NULL,
+  source_system VARCHAR(64) NOT NULL,
+  definition_id VARCHAR(64) NOT NULL,
+  definition_key VARCHAR(255) NOT NULL,
+  definition_version INTEGER NOT NULL,
+  listeners_sha256 VARCHAR(64) NOT NULL,
+  listeners_json CHARACTER LARGE OBJECT NOT NULL,
+  reason CHARACTER LARGE OBJECT NOT NULL,
+  acknowledged_by VARCHAR(255) NOT NULL,
+  acknowledged_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_OPS_FMIG_ACK PRIMARY KEY (tenant_id, source_system, definition_id)
+);
+--rollback DROP TABLE OPS_FMIG_ACK;
+
+--changeset sangam:0045-08-integration_dsc_certificate dbms:h2
+--comment: DSC certificate enrolment (decision 227, JdbcDscCertificateEnrolments)
+CREATE TABLE INTEGRATION_DSC_CERTIFICATE (
+  tenant_id VARCHAR(64) NOT NULL,
+  certificate_sha256 VARCHAR(64) NOT NULL,
+  enrolment_id VARCHAR(64) NOT NULL,
+  principal_id VARCHAR(255) NOT NULL,
+  issuer_dn VARCHAR(1024) NOT NULL,
+  serial_hex VARCHAR(64) NOT NULL,
+  subject_dn VARCHAR(1024) NOT NULL,
+  not_before TIMESTAMP WITH TIME ZONE NOT NULL,
+  not_after TIMESTAMP WITH TIME ZONE NOT NULL,
+  certificate BINARY LARGE OBJECT NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  enrolled_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  decided_by VARCHAR(255),
+  decided_at TIMESTAMP WITH TIME ZONE,
+  decision_reason VARCHAR(512),
+  CONSTRAINT PK_INTEGRATION_DSC_CERTIFICATE PRIMARY KEY (tenant_id, certificate_sha256)
+);
+CREATE UNIQUE INDEX INTEGRATION_DSC_CERTIFICATE_ID ON INTEGRATION_DSC_CERTIFICATE (tenant_id, enrolment_id);
+CREATE INDEX INTEGRATION_DSC_CERTIFICATE_PRINCIPAL ON INTEGRATION_DSC_CERTIFICATE (tenant_id, principal_id);
+CREATE INDEX INTEGRATION_DSC_CERTIFICATE_STATUS ON INTEGRATION_DSC_CERTIFICATE (tenant_id, status);
+--rollback DROP TABLE INTEGRATION_DSC_CERTIFICATE;
+
+--changeset sangam:0045-13-ops_utc_gate dbms:h2
+--comment: UTC conversion engine-work gate (integrator ruling 2026-11-13, option C)
+CREATE TABLE OPS_UTC_GATE (
+  gate_id VARCHAR(32) NOT NULL,
+  state VARCHAR(16) NOT NULL CONSTRAINT CK_OPS_UTC_GATE_STATE CHECK (state IN ('OPEN', 'CLOSED')),
+  run_id VARCHAR(64),
+  changed_by VARCHAR(255) NOT NULL,
+  changed_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  version BIGINT NOT NULL,
+  CONSTRAINT PK_OPS_UTC_GATE PRIMARY KEY (gate_id)
+);
+--rollback DROP TABLE OPS_UTC_GATE;
+
+--changeset sangam:0045-16-notification_delivery dbms:h2
+--comment: decision 304 DLT SMS delivery state per message (DltDeliveryReports)
+CREATE TABLE NOTIFICATION_DELIVERY (
+  tenant_id VARCHAR(64) NOT NULL,
+  operation_id VARCHAR(64) NOT NULL,
+  connector_id VARCHAR(64) NOT NULL,
+  root_id VARCHAR(64) NOT NULL,
+  message_id VARCHAR(255),
+  state VARCHAR(64) NOT NULL,
+  state_rank INTEGER NOT NULL,
+  reason VARCHAR(255),
+  reported_at VARCHAR(64),
+  source VARCHAR(64) NOT NULL,
+  reports INTEGER NOT NULL,
+  lookups INTEGER NOT NULL,
+  next_lookup_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_NOTIFICATION_DELIVERY PRIMARY KEY (tenant_id, operation_id)
+);
+CREATE INDEX NOTIFICATION_DELIVERY_MESSAGE ON NOTIFICATION_DELIVERY (tenant_id, message_id);
+CREATE INDEX NOTIFICATION_DELIVERY_DUE ON NOTIFICATION_DELIVERY (state_rank, next_lookup_at);
+--rollback DROP TABLE NOTIFICATION_DELIVERY;
+
+--changeset sangam:0045-17-notification_delivery_report dbms:h2
+--comment: decision 304 DLT delivery reports seen (idempotency)
+CREATE TABLE NOTIFICATION_DELIVERY_REPORT (
+  tenant_id VARCHAR(64) NOT NULL,
+  report_id VARCHAR(255) NOT NULL,
+  operation_id VARCHAR(64) NOT NULL,
+  received_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_NOTIFICATION_DELIVERY_REPOR PRIMARY KEY (tenant_id, report_id)
+);
+--rollback DROP TABLE NOTIFICATION_DELIVERY_REPORT;
+
+--changeset sangam:0045-18-dlt_registration dbms:h2
+--comment: decision 305 stored per-tenant DLT registration (DltRegistrationStore)
+CREATE TABLE DLT_REGISTRATION (
+  tenant_id VARCHAR(64) NOT NULL,
+  entity_id VARCHAR(64),
+  revision BIGINT NOT NULL,
+  updated_by VARCHAR(255),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_DLT_REGISTRATION PRIMARY KEY (tenant_id)
+);
+--rollback DROP TABLE DLT_REGISTRATION;
+
+--changeset sangam:0045-19-dlt_registration_item dbms:h2
+--comment: decision 305 DLT registration headers, templates and URL prefixes
+CREATE TABLE DLT_REGISTRATION_ITEM (
+  tenant_id VARCHAR(64) NOT NULL,
+  kind VARCHAR(64) NOT NULL,
+  item_key VARCHAR(255) NOT NULL,
+  header VARCHAR(64),
+  body CHARACTER LARGE OBJECT,
+  variable_count INTEGER,
+  registered_by VARCHAR(255) NOT NULL,
+  registered_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  CONSTRAINT PK_DLT_REGISTRATION_ITEM PRIMARY KEY (tenant_id, kind, item_key)
+);
+--rollback DROP TABLE DLT_REGISTRATION_ITEM;
+
 --changeset sangam:0016-03-form_draft-alter dbms:h2
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);
@@ -6033,6 +6417,59 @@ ALTER TABLE CH_INBOUND_SEEN ADD COLUMN media_error CHARACTER LARGE OBJECT;
 CREATE INDEX CH_INBOUND_SEEN_MEDIA ON CH_INBOUND_SEEN (media_state, media_next_at);
 --rollback DROP INDEX CH_INBOUND_SEEN_MEDIA; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN external_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN principal_id; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_ref; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_state; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_attempt; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_next_at; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_owner; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_epoch; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_doc; ALTER TABLE CH_INBOUND_SEEN DROP COLUMN media_error;
 
+--changeset sangam:0044-05-hrm_process_instance-alter dbms:h2
+--comment: decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of a process/case instance
+ALTER TABLE HRM_PROCESS_INSTANCE ADD COLUMN record_source VARCHAR(16) DEFAULT 'ENGINE' NOT NULL CONSTRAINT CK_HRM_PROCESS_INSTANCE_RECORD CHECK (record_source IN ('ENGINE', 'LEGACY'));
+ALTER TABLE HRM_PROCESS_INSTANCE ADD COLUMN legacy_ref VARCHAR(255);
+--rollback ALTER TABLE HRM_PROCESS_INSTANCE DROP CONSTRAINT CK_HRM_PROCESS_INSTANCE_RECORD; ALTER TABLE HRM_PROCESS_INSTANCE DROP COLUMN record_source; ALTER TABLE HRM_PROCESS_INSTANCE DROP COLUMN legacy_ref;
+
+--changeset sangam:0044-06-hrm_activity_instance-alter dbms:h2
+--comment: decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of an activity instance
+ALTER TABLE HRM_ACTIVITY_INSTANCE ADD COLUMN record_source VARCHAR(16) DEFAULT 'ENGINE' NOT NULL CONSTRAINT CK_HRM_ACTIVITY_INSTANCE_RECOR CHECK (record_source IN ('ENGINE', 'LEGACY'));
+ALTER TABLE HRM_ACTIVITY_INSTANCE ADD COLUMN legacy_ref VARCHAR(255);
+--rollback ALTER TABLE HRM_ACTIVITY_INSTANCE DROP CONSTRAINT CK_HRM_ACTIVITY_INSTANCE_RECOR; ALTER TABLE HRM_ACTIVITY_INSTANCE DROP COLUMN record_source; ALTER TABLE HRM_ACTIVITY_INSTANCE DROP COLUMN legacy_ref;
+
+--changeset sangam:0044-07-hrm_task-alter dbms:h2
+--comment: decision 160 legacy history: record source ENGINE or LEGACY and the legacy origin of a task
+ALTER TABLE HRM_TASK ADD COLUMN record_source VARCHAR(16) DEFAULT 'ENGINE' NOT NULL CONSTRAINT CK_HRM_TASK_RECORD_SOURCE CHECK (record_source IN ('ENGINE', 'LEGACY'));
+ALTER TABLE HRM_TASK ADD COLUMN legacy_ref VARCHAR(255);
+--rollback ALTER TABLE HRM_TASK DROP CONSTRAINT CK_HRM_TASK_RECORD_SOURCE; ALTER TABLE HRM_TASK DROP COLUMN record_source; ALTER TABLE HRM_TASK DROP COLUMN legacy_ref;
+
+--changeset sangam:0045-03-bill_unverified_payment-alter dbms:h2
+--comment: decisions 195 and 196: manual verification evidence and the per-consumer index of unverified payments
+ALTER TABLE BILL_UNVERIFIED_PAYMENT ADD COLUMN resolution_evidence_ref VARCHAR(255);
+CREATE INDEX BILL_UNVERIFIED_CONSUMER ON BILL_UNVERIFIED_PAYMENT (tenant_id, ledger_id, consumer, state);
+--rollback DROP INDEX BILL_UNVERIFIED_CONSUMER; ALTER TABLE BILL_UNVERIFIED_PAYMENT DROP COLUMN resolution_evidence_ref;
+
+--changeset sangam:0045-09-ops_utc_run-alter dbms:h2
+--comment: decision 240: declared historical session time zone of a UTC conversion run
+ALTER TABLE OPS_UTC_RUN ADD COLUMN session_zone VARCHAR(64);
+--rollback ALTER TABLE OPS_UTC_RUN DROP COLUMN session_zone;
+
+--changeset sangam:0045-11-integration_dsc_certificate-alter dbms:h2
+--comment: decision 241: approval sequence of a DSC certificate enrolment, +1 on every move to APPROVED
+ALTER TABLE INTEGRATION_DSC_CERTIFICATE ADD COLUMN approval_seq BIGINT DEFAULT 0 NOT NULL;
+--rollback ALTER TABLE INTEGRATION_DSC_CERTIFICATE DROP COLUMN approval_seq;
+
+--changeset sangam:0045-12-integration_dsc_prepared-alter dbms:h2
+--comment: decision 241: the approved enrolment and its approval sequence a prepared DSC signature is bound to
+ALTER TABLE INTEGRATION_DSC_PREPARED ADD COLUMN enrolment_id VARCHAR(64) NOT NULL;
+ALTER TABLE INTEGRATION_DSC_PREPARED ADD COLUMN enrolment_approval_seq BIGINT NOT NULL;
+--rollback ALTER TABLE INTEGRATION_DSC_PREPARED DROP COLUMN enrolment_id; ALTER TABLE INTEGRATION_DSC_PREPARED DROP COLUMN enrolment_approval_seq;
+
+--changeset sangam:0045-15-cmp_incident-alter dbms:h2
+--comment: OJ-06 step 8 incident closure: root cause, lessons learned, closed at and by
+ALTER TABLE CMP_INCIDENT ADD COLUMN root_cause CHARACTER LARGE OBJECT;
+ALTER TABLE CMP_INCIDENT ADD COLUMN lessons_learned CHARACTER LARGE OBJECT;
+ALTER TABLE CMP_INCIDENT ADD COLUMN closed_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE CMP_INCIDENT ADD COLUMN closed_by VARCHAR(255);
+--rollback ALTER TABLE CMP_INCIDENT DROP COLUMN root_cause; ALTER TABLE CMP_INCIDENT DROP COLUMN lessons_learned; ALTER TABLE CMP_INCIDENT DROP COLUMN closed_at; ALTER TABLE CMP_INCIDENT DROP COLUMN closed_by;
+
+--changeset sangam:0045-20-connector_call-alter dbms:h2
+--comment: decision 304 DLT delivery fallback: CONNECTOR_CALL by connector, last result and update time
+CREATE INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL (connector_id, last_result, updated_at);
+--rollback DROP INDEX CONNECTOR_CALL_DELIVERY;
+
 --changeset sangam:0033-01-cfg_master_code-data dbms:h2
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
 UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';
@@ -6042,6 +6479,11 @@ UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';
 --comment: SL-84 token sequences without a series: series '' becomes the absent-key value '-'
 UPDATE RES_TOKEN_SEQ SET series = '-' WHERE series = '';
 --rollback UPDATE RES_TOKEN_SEQ SET series = '' WHERE series = '-';
+
+--changeset sangam:0045-14-ops_utc_gate-data dbms:h2
+--comment: UTC conversion gate row ENGINE_WORK, OPEN (integrator ruling 2026-11-13, option C)
+INSERT INTO OPS_UTC_GATE (gate_id, state, run_id, changed_by, changed_at, version) VALUES ('ENGINE_WORK', 'OPEN', NULL, 'changelog', CURRENT_TIMESTAMP, 0);
+--rollback DELETE FROM OPS_UTC_GATE WHERE gate_id = 'ENGINE_WORK';
 
 --changeset sangam:0035-01-ch_message-nullable dbms:h2
 --comment: SL-87 attachment-only conversation message: body may be empty

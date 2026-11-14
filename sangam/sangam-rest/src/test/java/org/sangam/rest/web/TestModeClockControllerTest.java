@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.rest.web;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -147,7 +148,7 @@ class TestModeClockControllerTest {
             }
         };
         return new TestModeClockController(beans.getBeanProvider(TestClockPort.class), permissions, audit,
-                new TxSupport(null, noTx, null));
+                new SpringTxSupport(null, noTx, null));
     }
 
     @Test

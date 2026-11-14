@@ -1,18 +1,24 @@
 {
-  "_comment": "SPDX-License-Identifier: Apache-2.0. Licence policy for what Sangam ships (SANGAM.md X.3, X.3a LIC-1..LIC-11). Used by check_licences.py in CI (licence-check.yml, release.yml).",
+  "_comment": "SPDX-License-Identifier: Apache-2.0. Licence policy for what Sangam ships (SANGAM.md X.3, X.3a LIC-1..LIC-11). Used by check_licences.py in CI (licence-check.yml, release.yml, ui.yml). This file records owner decisions as gate rules; it is not a legal conclusion.",
+  "_comment_allowed": "SPDX ids (RM-18: no home-made ids; the old spellings EDL-1.0, Bouncy-Castle and GPL-2.0-with-classpath-exception are aliases in check_licences.py normalise()).",
   "allowed": [
     "Apache-2.0", "MIT", "MIT-0", "BSD-2-Clause", "BSD-3-Clause", "0BSD", "ISC", "Zlib", "Unlicense", "CC0-1.0",
-    "PostgreSQL", "EPL-1.0", "EPL-2.0", "EDL-1.0", "BSD-3-Clause-Clear", "Python-2.0", "BlueOak-1.0.0",
+    "PostgreSQL", "EPL-1.0", "EPL-2.0", "BSD-3-Clause-Clear", "Python-2.0", "BlueOak-1.0.0",
     "CDDL-1.0", "CDDL-1.1", "MPL-2.0", "CC-BY-3.0", "CC-BY-4.0", "W3C", "Unicode-DFS-2016", "Unicode-3.0",
-    "UPL-1.0", "Bouncy-Castle", "Plexus", "GPL-2.0-with-classpath-exception", "Classpath-exception-2.0",
-    "LicenseRef-Public-Domain"
+    "UPL-1.0", "LicenseRef-Bouncy-Castle", "Plexus", "GPL-2.0-only WITH Classpath-exception-2.0",
+    "GPL-2.0-or-later WITH Classpath-exception-2.0", "LicenseRef-Public-Domain"
   ],
-  "_comment_conditional": "Allowed only for the named components and only under the stated condition.",
+  "_comment_conditional": "Allowed only for the named components (purl prefix; a prefix with @version pins one version) and only under the stated condition. Checked BEFORE forbidden_licenses (RM-18), so a scoped entry is live. allowed_in: the distribution ids (distributions.json) in which the entry applies; anywhere else the licence is forbidden.",
   "conditional": [
     {
       "license": "LGPL-2.1",
       "components": ["pkg:maven/org.mariadb.jdbc/mariadb-java-client"],
       "condition": "LIC-5: separate replaceable jar in /opt/sangam/lib-ext with source offer; never inside the fat jar (checked by --jar)"
+    },
+    {
+      "license": "LicenseRef-IU-Extreme-Lab",
+      "components": ["pkg:maven/io.github.x-stream/mxparser"],
+      "condition": "Owner decision 263 (2026-11-13, replaces decision 226: xpp3_min is out; W4-K re-resolve and swap in sangam-connectors-health, DOWNLOADS-WAVE4.md): Indiana University Extreme! Lab Software License, Version 1.2 (the jar META-INF/LICENSE), BSD style. Only io.github.x-stream:mxparser 1.2.2 as an optional dependency of the HAPI FHIR validation path. Where it ships, the distribution NOTICE carries the copyright, the licence and the IU acknowledgement from attributions/mxparser-1.2.2.txt (notice_bundle.py); no endorsement and no 'Indiana University' in a product name. Its xmlpull:xmlpull 1.1.3.1 dependency is public domain (LicenseRef-Public-Domain)."
     },
     {
       "license": "LicenseRef-bpmn.io",
@@ -22,29 +28,62 @@
     {
       "license": "OFL-1.1",
       "components": ["pkg:generic/noto-sans-devanagari", "pkg:github/notofonts/devanagari", "pkg:generic/noto-sans", "pkg:github/notofonts/latin-greek-cyrillic"],
-      "condition": "Owner decision 70 (2026-11-12): fonts only, embedded in generated PDF/A documents by the M-081 renderer. Reason: PDF/A-2b requires every font to be embedded and Devanagari text needs a font that covers it; Noto Sans Devanagari is OFL-1.1. Scope: the unmodified font file, shipped with its OFL.txt, never sold on its own and never renamed (OFL-1.1 conditions 1, 3, 4); no OFL-licensed code. Widened by owner decision 95 to Noto Sans for Latin text; files and hashes in deploy/fonts/README.md. Any other OFL font needs a new owner decision."
-    },
-    {
-      "license": "LGPL-3.0",
-      "components": ["pkg:maven/org.cryptacular/cryptacular@1.3.0"],
-      "condition": "Owner decision 90 (2026-11-12): cryptacular 1.3.0 is dual-licensed Apache-2.0 OR LGPL-3.0; Sangam elects Apache-2.0. Reached only through the optional M-076 SAML relying party (OpenSAML 5.2.3). Exactly this version; any other version is re-approved."
-    },
-    {
-      "license": "GPL-3.0-or-later",
-      "components": ["pkg:maven/org.verapdf/"],
-      "condition": "Owner decision 94 (2026-11-12): veraPDF 1.30.4 (jakarta) is dual-licensed GPL-3.0-or-later OR MPL-2.0; Sangam elects MPL-2.0. Used only as the PDF/A-2b and PDF/UA-1 validator of the M-081 renderer. Exactly version 1.30.4 (wcag-algorithms 1.30.3); any other version is re-approved."
+      "condition": "Owner decision 70 (2026-11-12): fonts only, embedded in generated PDF/A documents by the M-081 renderer. Reason: PDF/A-2b requires every font to be embedded and Devanagari text needs a font that covers it; Noto Sans Devanagari is OFL-1.1. Scope: the unmodified font file, shipped with its OFL.txt, never sold on its own and never renamed (OFL-1.1 conditions 1, 3, 4); no OFL-licensed code. Widened by owner decision 95 to Noto Sans for Latin text. Owner decisions 120 and 121: the same unmodified Noto Sans and Noto Sans Devanagari TTFs, each with its OFL text, are also served as same-origin UI web fonts from sangam-ui dist/fonts/noto/ (copied and hash-checked at build by sangam-ui scripts/deploy-fonts.mjs); no other font is served. Files and hashes in deploy/fonts/README.md. Any other OFL font needs a new owner decision."
     },
     {
       "license": "LicenseRef-BSD-3-Clause-Nuclear-Disclaimer",
       "components": ["pkg:maven/com.github.jai-imageio/jai-imageio-core@1.4.0", "pkg:maven/com.github.jai-imageio/jai-imageio-jpeg2000@1.3.0"],
-      "condition": "Owner decision 102 (2026-11-12): BSD-3-Clause with a nuclear-facility disclaimer (jpeg2000 also under the JJ2000 licence). Reached only through veraPDF (decision 94) for image checks during PDF validation. Exactly these versions."
+      "allowed_in": ["pdf-validator"],
+      "condition": "Owner decision 102 (2026-11-12): BSD-3-Clause with a nuclear-facility disclaimer (jpeg2000 also under the JJ2000 licence). Reached only through veraPDF (decision 94), which runs only in the PDF validator (decisions 114, 119). Exactly these versions."
     },
     {
       "license": "LicenseRef-BSD-stax-utils",
       "components": ["pkg:maven/net.java.dev.stax-utils/stax-utils@20070216"],
-      "condition": "Owner decision 102 (2026-11-12): BSD-style licence of stax-utils, reached only through veraPDF (decision 94). Exactly this version."
+      "allowed_in": ["pdf-validator"],
+      "condition": "Owner decision 102 (2026-11-12): BSD-style licence of stax-utils, reached only through veraPDF (decision 94), which runs only in the PDF validator (decisions 114, 119). Exactly this version."
     }
   ],
+  "_comment_elections": "Owner decision 117 (C-02, 2026-11-12), plus decisions 90 (cryptacular), 94 (veraPDF) and 176 (the six Jersey jars of DR-01 join the EPL-2.0 entry): the licence Sangam elects for a component offered under a choice. Keyed by exact purl (pkg:type/namespace/name@version), or by purl prefix plus exact versions. The gate checks that the elected licence is one of the offered terms, then judges the component by the elected licence only, and the NOTICE generator prints the election. A multi-licence component with no election is read as AND (every term must pass), RM-18. A version change needs a new entry.",
+  "elections": [
+    { "elected": "EPL-2.0", "decision": "117", "purls": [
+      "pkg:maven/ch.qos.logback/logback-classic@1.5.38", "pkg:maven/ch.qos.logback/logback-core@1.5.38",
+      "pkg:maven/jakarta.annotation/jakarta.annotation-api@3.0.0", "pkg:maven/jakarta.el/jakarta.el-api@6.0.1",
+      "pkg:maven/jakarta.jms/jakarta.jms-api@3.1.0", "pkg:maven/jakarta.ws.rs/jakarta.ws.rs-api@4.0.0",
+      "pkg:maven/jakarta.servlet/jakarta.servlet-api@6.0.0", "pkg:maven/jakarta.servlet/jakarta.servlet-api@6.1.0",
+      "pkg:maven/org.glassfish.expressly/expressly@5.0.0",
+      "pkg:maven/org.glassfish.hk2.external/aopalliance-repackaged@4.0.3", "pkg:maven/org.glassfish.hk2/class-model@4.0.3",
+      "pkg:maven/org.glassfish.hk2/hk2-api@4.0.3", "pkg:maven/org.glassfish.hk2/hk2-core@4.0.3",
+      "pkg:maven/org.glassfish.hk2/hk2-locator@4.0.3", "pkg:maven/org.glassfish.hk2/hk2-runlevel@4.0.3",
+      "pkg:maven/org.glassfish.hk2/hk2-utils@4.0.3", "pkg:maven/org.glassfish.hk2/hk2@4.0.3",
+      "pkg:maven/org.glassfish.hk2/osgi-resource-locator@3.0.0", "pkg:maven/org.glassfish.hk2/spring-bridge@4.0.3",
+      "pkg:maven/org.glassfish.jersey.containers/jersey-container-servlet@4.0.3", "pkg:maven/org.glassfish.jersey.core/jersey-client@4.0.3",
+      "pkg:maven/org.glassfish.jersey.ext/jersey-bean-validation@4.0.3", "pkg:maven/org.glassfish.jersey.ext/jersey-entity-filtering@4.0.3",
+      "pkg:maven/org.glassfish.jersey.ext/jersey-spring6@4.0.3", "pkg:maven/org.glassfish.jersey.inject/jersey-hk2@4.0.3",
+      "pkg:maven/org.glassfish.jersey.core/jersey-common@4.0.3", "pkg:maven/org.glassfish.jersey.core/jersey-server@4.0.3"
+    ] },
+    { "elected": "BSD-3-Clause", "decision": "117 (EDL-1.0, which is BSD-3-Clause)", "purls": [
+      "pkg:maven/jakarta.mail/jakarta.mail-api@2.1.5", "pkg:maven/org.eclipse.angus/angus-mail@2.0.4",
+      "pkg:maven/org.eclipse.angus/angus-mail@2.0.5"
+    ] },
+    { "elected": "Apache-2.0", "decision": "117", "purls": [
+      "pkg:maven/org.javassist/javassist@3.33.0-GA", "pkg:maven/com.rabbitmq/amqp-client@5.37.1",
+      "pkg:maven/org.glassfish.jersey.media/jersey-media-json-jackson@4.0.3",
+      "pkg:maven/com.github.javaparser/javaparser-core@3.28.2", "pkg:maven/net.java.dev.jna/jna@5.13.0",
+      "pkg:maven/net.java.dev.jna/jna@5.17.0", "pkg:maven/net.java.dev.jna/jna-platform@5.17.0",
+      "pkg:npm/dompurify@3.4.17", "pkg:cargo/ryu@1.0.17"
+    ] },
+    { "elected": "Apache-2.0", "decision": "90", "purls": ["pkg:maven/org.cryptacular/cryptacular@1.3.0"] },
+    { "elected": "CDDL-1.1", "decision": "117", "purls": ["pkg:maven/javax.xml.bind/jaxb-api@2.3.1"] },
+    { "elected": "BSD-2-Clause", "decision": "117", "purls": ["pkg:maven/org.hdrhistogram/HdrHistogram@2.2.2"] },
+    { "elected": "MPL-2.0", "decision": "117 (H2 election MPL-2.0)", "purls": ["pkg:maven/com.h2database/h2@2.3.232"] },
+    { "elected": "MPL-2.0", "decision": "94 (veraPDF 1.30.4, wcag-algorithms 1.30.3; only in the PDF validator, decisions 114 and 119)",
+      "purl_prefix": "pkg:maven/org.verapdf/", "versions": ["1.30.4", "1.30.3"], "allowed_in": ["pdf-validator"] }
+  ],
+  "_comment_rust_crates": "Decision 117: the Rust crates are MIT OR Apache-2.0 (both allowed, so their SPDX OR expression passes as it is); only ryu needs the election above. They matter only if a binary is ever shipped.",
+  "_comment_pending_review": "Shipped components whose licence reading is open in the decision register. Each is reported as REVIEW REQUIRED and fails the gate until the register entry is closed and this list is updated (decision 117: the six Jersey jars stay unelected until their files are reviewed). Decision 176 (2026-11-12) closed DR-01 (the six Jersey jars, now elected EPL-2.0 above from the SPDX line of their own META-INF/NOTICE.md) and DR-02 (paranamer 2.8.3, BSD-3-Clause from the upstream LICENSE.txt at its release tag); evidence in the E16 CSV rows. The list is empty and stays in place for the next open reading.",
+  "pending_review": [],
+  "_comment_restricted": "Copyleft licences allowed only through a conditional entry, an election or the OS-package rule; anywhere else they are forbidden, whatever the spelling (CF-17).",
+  "restricted_licenses": ["LGPL-2.0", "LGPL-2.1", "LGPL-3.0", "LicenseRef-LGPL-unversioned", "MPL-1.1"],
   "_comment_forbidden": "Fails the build when found in what Sangam ships (runtime/compile scope SBOM, npm production deps).",
   "forbidden_licenses": [
     "GPL-1.0", "GPL-2.0", "GPL-2.0-only", "GPL-2.0-or-later", "GPL-3.0", "GPL-3.0-only", "GPL-3.0-or-later",
@@ -56,9 +95,16 @@
   "forbidden_license_name_patterns": [
     "(?i)graalvm free terms", "(?i)\\bgftc\\b", "(?i)oracle free use", "(?i)oracle technology network",
     "(?i)international program license", "(?i)functional source license", "(?i)business source license",
-    "(?i)server side public license", "(?i)commons clause", "(?i)non-?commercial"
+    "(?i)server side public license", "(?i)commons clause", "(?i)non-?commercial", "(?i)affero"
   ],
-  "_comment_components": "Components that must never ship, whatever their declared licence (purl prefix match).",
+  "_comment_os_packages": "Owner decision 118 (C-03, 2026-11-12): operating-system packages in the base layers of a shipped image (purl types below, as syft reports them) are separate programs. GPL and LGPL licences are allowed for them, provided the image keeps their copyright files and ships the source offer named here. AGPL and every other forbidden licence stay forbidden, even for an OS package. Applies only to image SBOMs (distribution kind image).",
+  "os_packages": {
+    "purl_types": ["pkg:deb/", "pkg:apk/", "pkg:rpm/"],
+    "copyleft_allowed": ["GPL-1.0", "GPL-2.0", "GPL-2.0-only", "GPL-2.0-or-later", "GPL-3.0", "GPL-3.0-only", "GPL-3.0-or-later", "LGPL-2.0", "LGPL-2.1", "LGPL-3.0", "LicenseRef-LGPL-unversioned"],
+    "source_offer": "deploy/licence/OS-PACKAGES-SOURCE-OFFER.txt",
+    "condition": "Decision 118: separate program in a base layer; copyright files kept in the image; source offer shipped (CR-20)."
+  },
+  "_comment_components": "Components that must never ship, whatever their declared licence (purl prefix match). allowed_in: the distribution ids where decision-scoped use is allowed (decision 119: Rhino only in the PDF validator).",
   "forbidden_components": [
     { "purl": "pkg:maven/com.oracle.database.jdbc/", "rule": "LIC-2 Oracle JDBC is customer-supplied (bring your own driver)" },
     { "purl": "pkg:maven/com.oracle.database.", "rule": "LIC-2 Oracle client libraries (ucp, ons, security) are not shipped" },
@@ -69,7 +115,10 @@
     { "purl": "pkg:maven/org.graalvm.polyglot/js", "rule": "LIC-1 GraalJS (GFTC) is stripped from every build (D-8)" },
     { "purl": "pkg:maven/org.graalvm.js/", "rule": "LIC-1 GraalJS (GFTC) is stripped from every build (D-8)" },
     { "purl": "pkg:maven/org.graalvm.polyglot/polyglot", "rule": "LIC-1/D-8 no in-engine polyglot scripting" },
-    { "purl": "pkg:maven/org.mozilla/rhino", "rule": "LIC-10 Rhino stays out of the default build (D-8)" },
+    { "purl": "pkg:maven/org.mozilla/rhino", "allowed_in": ["pdf-validator"], "rule": "LIC-10 Rhino stays out of every distribution except the PDF validator, where veraPDF evaluates its profile rules (decisions 114, 119)" },
+    { "purl": "pkg:maven/org.bouncycastle/bcprov-lts8on", "allowed_in": ["nats"], "rule": "decisions 232 and 235: bcprov-lts8on (the jnats provider) ships only in the opt-in nats add-on, never in the server, the esign add-on or another distribution" },
+    { "purl": "pkg:maven/org.bouncycastle/", "allowed_in": ["esign"], "rule": "decisions 217, 235 and 243: Bouncy Castle jdk18on ships only in the opt-in esign add-on (eSign and DSC, and Fidelius of sangam-connectors-health use the same jar), never in the server, the nats add-on or another distribution" },
+    { "purl": "pkg:maven/io.nats/jnats", "allowed_in": ["nats"], "rule": "decision 232: the NATS client ships only in the opt-in nats add-on, not in the server fat jar" },
     { "purl": "pkg:maven/org.openjdk.nashorn/", "rule": "LIC-10 Nashorn stays out of the default build (D-8)" },
     { "purl": "pkg:maven/org.python/jython", "rule": "LIC-10 Jython stays out of the default build (D-8)" },
     { "purl": "pkg:maven/org.jruby/", "rule": "LIC-10 JRuby stays out of the default build (D-8)" },
@@ -112,6 +161,32 @@
     { "tool": "sonar-scanner-java-library-batch-interface", "coordinate": "org.sonarsource.scanner.lib:sonar-scanner-java-library-batch-interface:4.1.2.1663", "via": "transitive of sonar-maven-plugin:5.8.0.7211", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-java-library-batch-interface@", "decision": "owner 2026-11-12: build-time only, never shipped" },
     { "tool": "sonar-scanner-download-cache", "coordinate": "org.sonarsource.scanner.lib:sonar-scanner-download-cache:4.1.2.1663", "via": "transitive of sonar-maven-plugin:5.8.0.7211", "license": "LGPL-3.0", "never_ship": "pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-download-cache@", "decision": "owner 2026-11-12: build-time only, never shipped" }
   ],
+  "_comment_build_tool_exceptions": "Owner decision 127 (C-12, 2026-11-12): build-tool exception for exactly these GPL+CPE and unproven-licence build artifacts at exactly these versions (decision register DR-04, DR-05, DR-06). Never shipped: the shipped-SBOM gates (forbidden in shipped scope via restricted/unknown), build_tools_not_shipped.py (CR-16) and the build/test SBOM review (check_licences.py --build-scope, CR-17). In build scope an unknown licence is reported, not failed; a forbidden licence or a forbidden component outside its scope still fails.",
+  "_comment_test_scope_exceptions": "Owner decision 229 (2026-11-13, W4-F REQUEST 01:37:22Z, DOWNLOADS-WAVE4.md 2026-11-13T01:37:22Z): exactly these coordinates are allowed in test scope only, on the test class path of sangam-quarkus-extension through io.quarkus:quarkus-junit 3.40.1.1 (M-150 kit). check_licences.py --build-scope reports them as exceptions; any version of them in a shipped SBOM (fat jar, image, distribution) fails as TEST-SCOPE ONLY.",
+  "test_scope_exceptions": [
+    {"purl": "pkg:maven/io.smallrye.classfile/jdk-classfile-backport@26", "decision": "229", "license": "GPL-2.0-only WITH Classpath-exception-2.0"},
+    {"purl": "pkg:maven/org.eclipse.sisu/org.eclipse.sisu.inject@1.0.1", "decision": "229", "license": "EPL-2.0"},
+    {"purl": "pkg:maven/org.eclipse.sisu/org.eclipse.sisu.plexus@1.0.1", "decision": "229", "license": "EPL-2.0"}
+  ],
+  "build_tool_exceptions": [
+    { "purl": "pkg:maven/io.github.eisop/dataflow-errorprone@3.41.0-eisop1", "register": "DR-04", "license": "GPL-2.0-only WITH Classpath-exception-2.0" },
+    { "purl": "pkg:maven/org.checkerframework/dataflow-nullaway@4.3.1", "register": "DR-04", "license": "GPL-2.0-only WITH Classpath-exception-2.0" },
+    { "purl": "pkg:maven/antlr/antlr@2.7.7", "register": "DR-05", "license": "BSD variant unproven" },
+    { "purl": "pkg:maven/asm/asm@3.3.1", "register": "DR-05", "license": "BSD variant unproven" },
+    { "purl": "pkg:maven/jaxen/jaxen@2.0.6", "register": "DR-05", "license": "BSD variant unproven" },
+    { "purl": "pkg:maven/org.antlr/antlr4-runtime@4.7.2", "register": "DR-05", "license": "BSD variant unproven" },
+    { "purl": "pkg:maven/org.antlr/stringtemplate@3.2.1", "register": "DR-05", "license": "BSD variant unproven" },
+    { "purl": "pkg:maven/org.jdom/jdom2@2.0.6.1", "register": "DR-05", "license": "unmapped (Apache-like without the acknowledgment clause)" },
+    { "purl": "pkg:maven/uk.org.lidalia/sysout-over-slf4j@1.0.2", "register": "DR-05", "license": "MIT X11 variant unproven" },
+    { "purl": "pkg:maven/commons-beanutils/commons-beanutils@1.7.0", "register": "DR-06", "license": "none declared" },
+    { "purl": "pkg:maven/dom4j/dom4j@1.1", "register": "DR-06", "license": "none declared" },
+    { "purl": "pkg:maven/org.codehaus.plexus/plexus-i18n@1.0-beta-10", "register": "DR-06", "license": "none declared" },
+    { "purl": "pkg:maven/oro/oro@2.0.8", "register": "DR-06", "license": "none declared" }
+  ],
+  "_comment_build_scope": "Decision 123 (C-08): the Oracle driver is allowed in build/test scope only inside the CI-only Maven profile (oracle-it); a build/test SBOM made with default profiles must not contain it (CR-17).",
+  "build_scope_forbidden": [
+    { "purl": "pkg:maven/com.oracle.database.", "rule": "decision 123: Oracle JDBC only in the CI-only profile oracle-it, never in a default build" }
+  ],
   "_comment_versions":"Version ceilings (LIC-7 Liquibase >= 5.0 is FSL until the D-7 legal review).",
   "max_versions": [
     { "purl": "pkg:maven/org.liquibase/liquibase-core", "below": "5.0.0", "rule": "LIC-7 Liquibase pinned at 4.33.0" }
@@ -130,5 +205,6 @@
     { "pattern": "^BOOT-INF/lib/liquibase-core-([5-9]|[1-9][0-9])\\.[^/]*\\.jar$", "rule": "LIC-7" },
     { "pattern": "^BOOT-INF/lib/(spotbugs|spotbugs-annotations|findsecbugs-plugin|sonar-maven-plugin|sonar-scanner-java-library|sonar-scanner-java-library-batch-interface|sonar-scanner-download-cache)-[0-9][^/]*\\.jar$", "rule": "build_time_tools (owner 2026-11-12): LGPL build-time tools are never shipped" }
   ],
-  "unknown_license": "warn"
+  "_comment_unknown": "Decision 116 (C-01): an unknown or unmapped licence fails on every pull request and every release.",
+  "unknown_license": "fail"
 }

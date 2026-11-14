@@ -109,6 +109,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // M-021: test mode (clock steering) only on H2 and never with a production profile; refused before anything else
         org.sangam.engine.clock.TestModeClock.requireAllowed(s.isTestMode(),
                 components.dialect() == org.sangam.engine.db.EngineDialect.H2, s.getActiveProfiles());
+        // decision 151: a replay capture listener only where the host stated "not production"
+        org.sangam.engine.replay.CaptureListener.requireAllowed(s.getCaptureListener(), s.getCaptureProduction(),
+                s.getActiveProfiles());
 
         // engine defaults
         cfg.setIdGenerator(new StrongUuidGenerator());
@@ -123,7 +126,7 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         cfg.setProducePrioritizedJobs(true);
         // IR-7: job executor sizing and acquisition (SCALE 3 defaults; SANGAM_JOB_* env); M-054 virtual threads and
         // bulkheads, M-056 partitioned acquisition, M-062 trace links: all opt-in, off = Operaton's executor as is
-        jobSetup = new JobExecutorSetup(s, components.dialect(), () -> components.clock().now());
+        jobSetup = new JobExecutorSetup(s, components.dialect(), () -> components.clock().now(), components.workTenants());
         List<java.util.function.Supplier<CommandInterceptor>> jobSideRows = jobSetup.preInit(cfg);
         cfg.setJobExecutorAcquireByDueDate(s.isJobAcquireByDueDate());
         cfg.setJobExecutorAcquireByPriority(s.isJobAcquireByPriority());
@@ -139,6 +142,11 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 new RollbackGuardInterceptor(flush)), new JobMetricsInterceptor(components.metrics())));
         cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
                 new RollbackGuardInterceptor(flush)));
+        // decision 150, rulings 3 and 4: acquisition and fetch read the UTC conversion gate with a lock held to commit
+        cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(),
+                new org.sangam.engine.job.UtcConversionHardStop(components.dialect(), s.getLockTimeout())));
+        cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
+                new org.sangam.engine.job.UtcConversionHardStop(components.dialect(), s.getLockTimeout())));
         // M-056 / M-062: job side rows (EXEC_JOB_SLOT, JOB_TRACE_CONTEXT) in the creating command; none when both are off
         for (java.util.function.Supplier<CommandInterceptor> i : jobSideRows) { // one object per chain
             cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(), i.get()));
@@ -155,6 +163,12 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 processTraces.interceptor()));
         cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
                 processTraces.interceptor()));
+        if (components.capture().active()) { // decision 151: TIMER_SCHEDULED at command close, one object per chain
+            cfg.setCustomPostCommandInterceptorsTxRequired(append(cfg.getCustomPostCommandInterceptorsTxRequired(),
+                    components.capture().interceptor()));
+            cfg.setCustomPostCommandInterceptorsTxRequiresNew(append(cfg.getCustomPostCommandInterceptorsTxRequiresNew(),
+                    components.capture().interceptor()));
+        }
         // M-062 (R13): a span per command, covering flush and commit (pre interceptor); nothing when tracing is NONE
         if (s.getTracing() != EngineTracing.NONE) {
             cfg.setCustomPreCommandInterceptorsTxRequired(append(cfg.getCustomPreCommandInterceptorsTxRequired(),
@@ -169,6 +183,8 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         List<org.operaton.bpm.engine.impl.interceptor.SessionFactory> sessions = cfg.getCustomSessionFactories() == null
                 ? new ArrayList<>() : new ArrayList<>(cfg.getCustomSessionFactories());
         sessions.addAll(org.sangam.engine.deploy.TenantScopedCreation.sessionFactories());
+        // SL-177: PROCESS_TRACE rows go with the instance's history (B-36)
+        sessions.add(org.sangam.engine.trace.ProcessTraceHistoryRemoval.sessionFactory());
         cfg.setCustomSessionFactories(sessions);
 
         // variables: long strings and JSON first, so they win over Operaton's string / Java serializers
@@ -181,6 +197,8 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
             pre.addAll(cfg.getCustomPreVariableSerializers());
         }
         cfg.setCustomPreVariableSerializers(pre);
+        // decision 138: BigDecimal variables as lossless decimal text (type id sangam-decimal-v1), first (B-37)
+        org.sangam.packs.engine.DecimalValueSerializer.register(cfg);
 
         // timers: DST-safe cycle calendar, tagged duration calendar, Operaton's due-date calendar
         MapBusinessCalendarManager calendars = new MapBusinessCalendarManager();
@@ -203,8 +221,14 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
                 ? new ArrayList<>() : new ArrayList<>(dmn.getCustomPreDecisionEvaluationListeners());
         dmnListeners.add(new FeelPinningListener(feel, components.clock()));
         dmn.setCustomPreDecisionEvaluationListeners(dmnListeners);
-        // ADR-D-26 (SG-33/34): exact numbers, strict FEEL evaluation, strict null input
-        org.sangam.engine.feel.SangamFeel.install(dmn);
+        // ADR-D-26 (SG-33/34): exact numbers, strict FEEL evaluation, strict null input; decision 151: with a replay
+        // capture listener (never in production) FEEL now()/today() read the engine clock and each read is captured
+        if (s.getCaptureListener() != null) {
+            org.sangam.feel.SangamFeel.install(dmn, new org.sangam.engine.replay.CapturingFeelClock(
+                    () -> components.clock().now(), java.time.ZoneId.systemDefault(), s.getCaptureListener()));
+        } else {
+            org.sangam.feel.SangamFeel.install(dmn);
+        }
         List<org.operaton.bpm.engine.impl.persistence.deploy.Deployer> preDeployers =
                 cfg.getCustomPreDeployers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomPreDeployers());
         preDeployers.add(new org.sangam.engine.feel.DmnModelLint.DeployRule()); // ADR-D-26: deploy-time DMN type rules
@@ -225,6 +249,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         List<org.operaton.bpm.engine.impl.event.EventHandler> eventHandlers = cfg.getCustomEventHandlers() == null
                 ? new ArrayList<>() : new ArrayList<>(cfg.getCustomEventHandlers());
         eventHandlers.add(new org.sangam.engine.deploy.SequentialCompensation.EventHandler());
+        if (components.capture().active()) { // decision 151: MESSAGE_DELIVERED, then Operaton's message handling
+            eventHandlers.add(components.capture().messageEventHandler());
+        }
         cfg.setCustomEventHandlers(eventHandlers);
         List<CmmnTransformListener> cmmn = cfg.getCustomPostCmmnTransformListeners() == null ? new ArrayList<>()
                 : new ArrayList<>(cfg.getCustomPostCmmnTransformListeners());
@@ -290,13 +317,20 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         // incidents -> reconciliation
         List<IncidentHandler> incidents = cfg.getCustomIncidentHandlers() == null ? new ArrayList<>()
                 : new ArrayList<>(cfg.getCustomIncidentHandlers());
-        incidents.add(new SangamIncidentHandler("failedJob", components.incidentSink(), s.getDefaultTenantId()));
-        incidents.add(new SangamIncidentHandler("failedExternalTask", components.incidentSink(), s.getDefaultTenantId()));
+        // decision 144: the incident tenant is resolved (WorkTenants); an unresolved one goes to the system audit scope only
+        incidents.add(new SangamIncidentHandler("failedJob", components.incidentSink(), components.auditSink(),
+                components.workTenants()));
+        incidents.add(new SangamIncidentHandler("failedExternalTask", components.incidentSink(), components.auditSink(),
+                components.workTenants()));
+        // decision 301 (ruling on W4-E INFO 07:26:42Z): the X.2.1.6 recovery-loop incident too, so it gets the
+        // reconciliation row and exactly one INCIDENT_OPENED like every other incident the engine opens
+        incidents.add(new SangamIncidentHandler(org.sangam.engine.job.PartitionLeaseManager.RECOVERY_LOOP,
+                components.incidentSink(), components.auditSink(), components.workTenants()));
         // ADR-D-25: AMBIGUOUS_ROUTE / NO_MATCHING_ROUTE at a strict exclusive gateway
         // SG-35: also audited in the hash chain (ROUTING_INCIDENT with the stable code), never a silent park
         incidents.add(new org.sangam.engine.incident.RoutingIncidentHandler(
                 org.sangam.engine.deploy.StrictExclusiveGatewayBehavior.INCIDENT_TYPE,
-                components.incidentSink(), components.auditSink(), s.getDefaultTenantId()));
+                components.incidentSink(), components.auditSink(), components.workTenants()));
         cfg.setCustomIncidentHandlers(incidents);
     }
 
@@ -329,12 +363,12 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
             LOG.warn("VI.4 rule 7: no JobIdentityBinder installed; jobs bind the tenant system identity only "
                     + "on the job's engine command (JobIdentitySupport.current()). Install TenantContext::runAs in the server.");
         }
-        JobIdentitySupport identity = new JobIdentitySupport(s.getJobIdentityBinder(), s.getDefaultTenantId());
+        JobIdentitySupport identity = new JobIdentitySupport(s.getJobIdentityBinder(), components.workTenants());
         Map<String, JobHandler<?>> handlers = cfg.getJobHandlers();
         for (Map.Entry<String, JobHandler<?>> e : handlers.entrySet()) {
             e.setValue(GuardedJobHandler.wrap(e.getValue(), components.dialect(), components.rootLock(),
                     components.timerGuard(), components.timerPolicies(), components.clock(), components.metrics(),
-                    s.getLockTimeout(), s.getStatementTimeout(), s.getDefaultTenantId(), identity));
+                    s.getLockTimeout(), s.getStatementTimeout(), s.getDefaultTenantId(), identity, components.capture()));
         }
     }
 
@@ -349,9 +383,18 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
             processEngine.close();
             throw e;
         }
+        // decision 146: one resize service per engine, on every node, reachable by the host through the components;
+        // decision 144: its audit (and the ownership audit) is written under the system audit scope
+        SangamEngineSettings s = components.settings();
+        String scope = components.workTenants().systemAuditScope();
+        if (components.partitionResize() == null) {
+            components.partitionResize(new org.sangam.engine.job.PartitionResize(cfg.getDataSource(),
+                    components.dialect().coreDialect(), s.getExecutorClusterId(), s.getExecutorSlots(),
+                    components.auditSink(), scope, s.getExecutorRecoveryBatch()));
+        }
         // M-056 (C3-04): partition leases, only when partitioning is on; ownership audit + executor metrics
-        jobSetup.startLeases(processEngine, components.metrics(), components.auditSink(),
-                components.settings().getDefaultTenantId());
+        jobSetup.startLeases(processEngine, components.metrics(), components.auditSink(), scope,
+                components.partitionResize());
     }
 
     /**

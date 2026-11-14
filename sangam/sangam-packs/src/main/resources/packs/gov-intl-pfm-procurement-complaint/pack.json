@@ -1,0 +1,76 @@
+{
+  "id": "gov.intl.pfm-procurement-complaint",
+  "version": "1.0.0",
+  "name": {
+    "en": "Procurement complaint (worldwide PFM)",
+    "hi": "प्रापण शिकायत (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "A bidder complaint (PFM-065, PEFA PI-24.4): the complaint review officer decides admissibility, an admissible complaint suspends the award through the e-procurement connector (confirmed), the procuring entity answers within its period, and the review officer (not the procuring entity) upholds or dismisses it with reasons and a remedy within the decision deadline from DMN; the decision is issued and the procuring entity notified. Periods and the suspension rule are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-procurement-complaint"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-procurement-complaint/sangam-intl-pfm-procurement-complaint.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-procurement-complaint/intl-pfm-complaint-rules.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-procurement-complaint/forms/complaint.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-procurement-complaint/forms/admissibility.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-procurement-complaint/forms/suspendHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-procurement-complaint/forms/response.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-procurement-complaint/forms/decision.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-procurement-complaint/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-procurement-complaint/seed.json",
+  "connectors": [
+    {
+      "id": "procurement.suspend",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Suspension of the award (e-procurement)"
+    }
+  ],
+  "covers": [
+    "PFM-065",
+    "GP-06",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-complaint-rules",
+      "rule": "SYNTHETIC 20-day decision, 7-day answer, suspension on",
+      "reason": "country complaint-review periods and suspension rule not verified (PFM-065, PEFA PI-24.4)"
+    }
+  ]
+}

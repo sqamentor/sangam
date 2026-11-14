@@ -15,6 +15,21 @@ public sealed record AiA2aBodyParams
     [global::System.Text.Json.Serialization.JsonPropertyName("id")]
     public string? Id { get; init; }
 
+    [global::System.Text.Json.Serialization.JsonPropertyName("pageSize")]
+    public int? PageSize { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("status")]
+    public string? Status { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("contextId")]
+    public string? ContextId { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("statusTimestampAfter")]
+    public string? StatusTimestampAfter { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("pageToken")]
+    public string? PageToken { get; init; }
+
     /// <summary>Members not named in the schema (additionalProperties).</summary>
     [global::System.Text.Json.Serialization.JsonExtensionData]
     public global::System.Collections.Generic.IDictionary<string, global::System.Text.Json.JsonElement>? AdditionalProperties { get; init; }

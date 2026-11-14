@@ -16,7 +16,7 @@ public sealed record TypedValue
     public string? Type { get; init; }
 
     /// <summary>
-    /// String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json Required.
+    /// String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned variable type (decision 138) and returned unchanged through history, export and import. Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("value")]
     public object? Value { get; init; }

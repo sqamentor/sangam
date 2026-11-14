@@ -47,9 +47,10 @@ class ChangeAdoptionTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
         registry = PackRegistry.discover();
-        new PackDeployer(engine, registry).deployAll(null);
+        new PackDeployer(engine, registry).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
     }
 
@@ -74,13 +75,20 @@ class ChangeAdoptionTest {
     /** Version 1.1 of the payment pack: the two-level band starts at 10 lakh instead of 25 lakh (data only). */
     static void deployLowerTwoLevelBand() {
         SangamPack p = registry.find(PAY).orElseThrow();
-        DeploymentBuilder b = engine.getRepositoryService().createDeployment().name("pack:" + PAY + "@1.1.0")
+        DeploymentBuilder b = engine.getRepositoryService().createDeployment().tenantId(PackTestTenant.ID)
+                .name("pack:" + PAY + "@1.1.0")
                 .source("sangam-packs");
         for (PackDescriptor.PackResource r : p.descriptor().resources()) {
-            if (!r.model()) {
+            boolean manifest = r.path().endsWith("/pack.json"); // decision 193: the manifest deploys with the pack
+            if (!r.model() && !manifest) {
                 continue;
             }
             String xml = read(p, r.path());
+            if (manifest) {
+                String changed = xml.replace("\"version\": \"" + p.descriptor().version() + "\"", "\"version\": \"1.1.0\"");
+                assertTrue(!changed.equals(xml), "the manifest names its version");
+                xml = changed;
+            }
             if (r.path().endsWith("sec-bank-pay-limits.dmn")) {
                 String changed = xml.replace("<text>&gt; 250000000</text>", "<text>&gt; 100000000</text>") // paise
                         .replace("operaton:versionTag=\"" + p.descriptor().version() + "\"", "operaton:versionTag=\"1.1.0\"");
@@ -96,7 +104,7 @@ class ChangeAdoptionTest {
         java.util.Map<String, Object> v = AllPacksSmokeTest.bag();
         v.put("amount", amount);
         return engine.getRuntimeService().createProcessInstanceByKey("sangam-sec-bank-payment").businessKey(bk)
-                .setVariables(v).processDefinitionWithoutTenantId().execute().getId();
+                .setVariables(v).processDefinitionTenantId(PackTestTenant.ID).execute().getId();
     }
 
     @Test

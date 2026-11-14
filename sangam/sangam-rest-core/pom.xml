@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-rest-core</artifactId>
+  <name>Sangam service ports and default adapters (plain Java)</name>
+  <description>Owner decisions 277 and 285: the Spring-free part of sangam-rest, package names unchanged. The service
+    ports (org.sangam.rest.port), their default JDBC, Operaton and in-memory adapters (org.sangam.rest.adapter.*), the
+    plain-Java support classes (org.sangam.rest.support) and the extension SPI (org.sangam.rest.extension). Names no host
+    framework. sangam-rest (the Spring MVC host area) depends on it; any other host (sangam-quarkus-extension, the host
+    conformance kit) uses it without Spring.
+  </description>
+
+  <build>
+    <plugins>
+      <!-- The test doubles of the ports (for example adapter/operaton/FakeWorkPort) are shared with the Spring host
+           area's tests in sangam-rest (WorkControllerLongPollTest) through this module's test jar: one copy, no fork -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-core</artifactId>
+    </dependency>
+    <!-- Engine types used by the Operaton adapters (deployment pinning, instance handlers); supplied at runtime by the
+         host, as it was for sangam-rest -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-engine</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Optional module types, the same scope sangam-rest gives them: the adapters that use them run only when the host
+         has the module (TenantLocales: sangam-config; ApiContractAdapter and the PDF audit export: sangam-integration;
+         CmmnConversionRows: sangam-modeller) -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-config</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-integration</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-modeller</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Default adapters: the Operaton Java API (RuntimeService, TaskService, ...) -->
+    <dependency>
+      <groupId>org.operaton.bpm</groupId>
+      <artifactId>operaton-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <!-- DocumentStore: java.time in persisted JSON documents (Apache-2.0) -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

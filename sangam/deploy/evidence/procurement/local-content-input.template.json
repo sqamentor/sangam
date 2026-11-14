@@ -1,0 +1,52 @@
+{
+  "_spdx": "SPDX-License-Identifier: Apache-2.0",
+  "_about": "M-089 input template for local_content_dossier.py. Copy it, fill every field for ONE SKU, and keep the copy outside the repository if it holds commercial figures. Money and percentages are decimal text. Every part of the total value must be in exactly one component. The generator writes a draft only; the owner signs the declaration at listing time (owner decision 109).",
+  "sku": "",
+  "product": "Sangam",
+  "productVersion": "",
+  "currency": "",
+  "totalValueExcludingDomesticIndirectTaxes": "",
+  "thresholds": {
+    "classIPercent": "50",
+    "classIIPercent": "20",
+    "source": "Public Procurement (Preference to Make in India) order as revised 19 Jul 2024, read in SANGAM.md IX.7 GOV-12; confirm against the order and any nodal-ministry notification in force on the listing date"
+  },
+  "components": [
+    {
+      "id": "engineering",
+      "description": "Design, development, testing and release engineering of the SKU",
+      "value": "",
+      "origin": "DOMESTIC",
+      "paidOutsideCountry": false,
+      "importedItemBoughtLocally": false,
+      "evidence": ""
+    },
+    {
+      "id": "support",
+      "description": "Support and maintenance staff cost attributable to the SKU",
+      "value": "",
+      "origin": "DOMESTIC",
+      "paidOutsideCountry": false,
+      "importedItemBoughtLocally": false,
+      "evidence": ""
+    },
+    {
+      "id": "third-party-licences",
+      "description": "Licence fees, royalties or subscriptions for third-party components (zero when only open-source components without fees are used)",
+      "value": "",
+      "origin": "IMPORTED",
+      "paidOutsideCountry": true,
+      "importedItemBoughtLocally": false,
+      "evidence": ""
+    },
+    {
+      "id": "hosting",
+      "description": "Hosting cost for a hosted SKU (cloud offer only through an empanelled cloud service provider, R62); zero otherwise",
+      "value": "",
+      "origin": "DOMESTIC",
+      "paidOutsideCountry": false,
+      "importedItemBoughtLocally": false,
+      "evidence": ""
+    }
+  ]
+}

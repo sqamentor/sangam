@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_intl_pfm_suspense_ageing" name="Suspense clearance period (SYNTHETIC; per country)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- PFM-051 (PEFA PI-27.2 suspense clearance). Deploy the confirmed period as a tenant override. -->
+  <decision id="intl-pfm-suspense-ageing" name="Suspense clearance period (SYNTHETIC; per country)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="intl-pfm-suspense-ageing_t" hitPolicy="FIRST">
+      <input id="intl-pfm-suspense-ageing_i0" label="Suspense account"><inputExpression id="intl-pfm-suspense-ageing_ie0" typeRef="string"><text>suspenseAccount</text></inputExpression></input>
+      <output id="intl-pfm-suspense-ageing_o0" label="Clear within" name="suspenseClearSpec" typeRef="string"/>
+      <rule id="intl-pfm-suspense-ageing_r0"><description>SYNTHETIC</description>
+        <inputEntry id="intl-pfm-suspense-ageing_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="intl-pfm-suspense-ageing_r0_o0"><text>"30D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

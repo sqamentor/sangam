@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ins-death-claim/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ins-death-claim/pack.json"
     }
   ],
   "seed": "packs/sec-ins-death-claim/seed.json",
@@ -79,6 +83,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "dc_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-ins-death-powers",
+      "ruleCaseType": "DEATH_CLAIM"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

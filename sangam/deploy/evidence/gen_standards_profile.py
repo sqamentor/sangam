@@ -10,9 +10,11 @@ It is built from the data that already enforces the profile, so the published pr
   - the release version: --version, else sangam/pom.xml without -SNAPSHOT.
 Outputs (next to this script): STANDARDS-PROFILE.md and standards-profile.json. No timestamps, so a second run with the
 same inputs writes the same bytes. --check compares instead of writing and exits 1 on a difference.
-Publishing both files from release.yml with the evidence pack is the M-052 release step (Wave 5). Standard library only.
+Publishing both files from release.yml is the M-052 release step: the evidence job runs --check (the committed profile
+matches the committed compat data), then writes the profile of the tag version with --out-dir into the evidence pack
+(area standards, 10-standards-profile) and the release assets. Standard library only.
 
-  python -I gen_standards_profile.py [--version 0.1.0] [--check]
+  python -I gen_standards_profile.py [--version 0.1.0] [--check | --out-dir DIR]
 """
 import argparse
 import json
@@ -124,7 +126,11 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--version")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--out-dir", help="write both files into this directory instead of next to this script (release.yml "
+                                      "M-052 step: the profile of the tag version for the evidence pack and the release)")
     a = ap.parse_args(argv)
+    if a.check and a.out_dir:
+        ap.error("--check compares the committed files; it cannot be combined with --out-dir")
     with open(COMPAT, encoding="utf-8") as f:
         compat = json.load(f)
     with open(SANGAM_MD, encoding="utf-8") as f:
@@ -132,7 +138,12 @@ def main(argv=None):
     with open(POM, encoding="utf-8") as f:
         version = a.version or version_from_pom(f.read())
     p = profile(compat, feel, version)
-    outputs = {OUT_JSON: json.dumps(p, ensure_ascii=False, indent=2) + "\n", OUT_MD: markdown(p)}
+    out_json, out_md = OUT_JSON, OUT_MD
+    if a.out_dir:
+        os.makedirs(a.out_dir, exist_ok=True)
+        out_json = os.path.join(a.out_dir, os.path.basename(OUT_JSON))
+        out_md = os.path.join(a.out_dir, os.path.basename(OUT_MD))
+    outputs = {out_json: json.dumps(p, ensure_ascii=False, indent=2) + "\n", out_md: markdown(p)}
     stale = []
     for path, text in outputs.items():
         if a.check:

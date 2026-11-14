@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.bridge;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,7 +60,7 @@ class EndAssignmentDbTimeH2Test {
                     .postingId();
         });
         SecurityAdminBridge bridge = new SecurityAdminBridge(security,
-                new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), null, new RestProperties());
+                new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), null, new RestProperties());
         RequestContext ctx = new RequestContext(T, "sl83-admin", Set.of("sangam-system"), null, null, null, null, null,
                 "SYSTEM");
 

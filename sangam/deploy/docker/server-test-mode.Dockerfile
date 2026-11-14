@@ -32,7 +32,11 @@ LABEL org.opencontainers.image.title="sangam-server-test-mode" \
 #     continuations run within about half a second instead of up to five; the test harness waits less.
 # SANGAM_DEV_TOKEN: application-h2.yaml's development token; tests read it from the same variable. Override it with
 #     -e SANGAM_DEV_TOKEN=... ; it is a test credential, never a production secret.
+# SANGAM_SECURITY_PRODUCTION=false: set explicitly (decisions 143 and 198): the server image does not set the switch,
+#     EnvironmentPolicy refuses a missing one, and production mode refuses the dev token, dev bootstrap and simulators
+#     that test mode is made of. This layer is never production.
 ENV SPRING_PROFILES_ACTIVE=h2 \
+    SANGAM_SECURITY_PRODUCTION=false \
     SANGAM_JOB_WAIT_TIME_IN_MILLIS=100 \
     SANGAM_JOB_MAX_WAIT=500
 

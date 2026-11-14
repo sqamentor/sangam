@@ -24,7 +24,10 @@ import org.sangam.packs.spi.PackDescriptor.SeedSeat;
  */
 public final class ManifestPack implements SangamPack {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Decision 138: JSON fractions are read as BigDecimal nodes, so no shipped number passes through a double. */
+    private static final ObjectMapper JSON = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+            .build();
 
     private final PackDescriptor descriptor;
     private final ClassLoader loader;
@@ -104,11 +107,20 @@ public final class ManifestPack implements SangamPack {
                     texts(m.path("name")), m.path("domain").asText(""), m.path("description").asText(""),
                     strings(m.path("mainProcesses")), res, roles, seats, conns, strings(m.path("covers")), acc,
                     strings(m.path("dependsOn")), overrides(m.path("tenantOverrides")), placeholders(m.path("placeholders")),
-                    workers);
+                    workers, documentSlots(m.path("documentSlots")));
             return new ManifestPack(d, loader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** Decision 269: the DSC documentType-to-slot pairs; a malformed entry refuses the manifest. */
+    private static List<PackDescriptor.DocumentSlot> documentSlots(JsonNode n) {
+        List<PackDescriptor.DocumentSlot> out = new ArrayList<>();
+        for (JsonNode s : n) {
+            out.add(new PackDescriptor.DocumentSlot(s.path("documentType").asText(null), s.path("slot").asText(null)));
+        }
+        return out;
     }
 
     private static List<PackDescriptor.Placeholder> placeholders(JsonNode n) {
@@ -148,7 +160,7 @@ public final class ManifestPack implements SangamPack {
             return n.asLong();
         }
         if (n.isNumber()) {
-            return n.asDouble();
+            return n.decimalValue(); // decision 138: exact (the reader keeps JSON fractions as BigDecimal), never a double
         }
         if (n.isContainerNode()) {
             return n.toString();

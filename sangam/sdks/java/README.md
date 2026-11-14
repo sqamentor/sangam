@@ -1,4 +1,4 @@
-# Sangam Java SDK (`org.sangam:sangam-sdk-java`)
+# Sangam Java SDK (`io.github.sqamentor:sangam-sdk-java`)
 
 This SDK is a typed REST client and external-worker runtime for the Sangam API (`/api/v1`). Owner: WS-SDK.
 
@@ -149,7 +149,7 @@ same action twice undoes it once. One record per step name and process scope.
 
 ## Framework adapter (M-027)
 
-`sdks/java-spring-boot` (`org.sangam:sangam-sdk-spring-boot`): auto-configuration that builds the client from
+`sdks/java-spring-boot` (`io.github.sqamentor:sangam-sdk-spring-boot`): auto-configuration that builds the client from
 `sangam.worker.*`, subscribes every `TopicSubscription` and `Saga` bean, and starts and stops the worker with the
 application context (`SangamWorkerLifecycle`). The SDK itself stays free of Spring.
 

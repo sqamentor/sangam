@@ -17,6 +17,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/p3-grant-sanction/p3-instalment-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/p3-grant-sanction/p3-eligibility.dmn"
     },
     {
@@ -58,6 +62,10 @@
     {
       "kind": "SEED",
       "path": "packs/p3-grant-sanction/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/p3-grant-sanction/pack.json"
     }
   ],
   "seed": "packs/p3-grant-sanction/seed.json",
@@ -216,6 +224,22 @@
     "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "placeholders": [
+    {
+      "decision": "p3-instalment-rounding",
+      "rule": "SYNTHETIC instalment rule: whole rupees down, remainder on the last instalment",
+      "reason": "no scheme guideline on instalment rounding was found in the repository or in a public source; deploy the scheme's confirmed instalment policy as a tenant override (decision 139)"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "p3_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "GRANT"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

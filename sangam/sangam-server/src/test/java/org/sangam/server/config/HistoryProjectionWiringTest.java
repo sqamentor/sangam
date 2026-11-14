@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.sangam.cell.rollup.RollupPublisher;
 import org.sangam.core.layer.Outbox;
 import org.sangam.integration.connector.SecretResolver;
+import org.sangam.integration.connector.s3.S3ObjectClient;
+import org.sangam.integration.publish.history.DataLakeHistoryPublisher;
 import org.sangam.integration.publish.history.SearchIndexPublisher;
 import org.sangam.integration.relay.OutboxWriter;
 import org.springframework.mock.env.MockEnvironment;
@@ -87,6 +89,44 @@ class HistoryProjectionWiringTest {
         env.setProperty("sangam.history.projection.search.username", "projector");
         assertThrows(IllegalArgumentException.class, () -> HistoryProjectionWiring.searchSettings(env, false),
                 "a user name without a password reference is refused at start-up");
+    }
+
+    @Test
+    void theDataLakeSinkIsADestinationOnlyWhenABucketIsConfigured() {
+        MockEnvironment env = new MockEnvironment().withProperty("sangam.history.projection.datalake.bucket", "lake");
+        List<Outbox.Destination> sinks = HistoryProjectionWiring.destinations(env);
+        assertEquals(List.of(DataLakeHistoryPublisher.DESTINATION), sinks.stream().map(Outbox.Destination::name).toList());
+        assertFalse(sinks.get(0).ordered(), "idempotent per event id: unordered");
+        OutboxWriter.SubscriptionResolver r = IntegrationWiring.subscriptions(FIXED, false, sinks);
+        assertEquals(List.of("readmodel", "history-datalake"), names(r, "sangam.history.task.complete"));
+        assertEquals(List.of("readmodel"), names(r, "payments.ack"));
+    }
+
+    @Test
+    void dataLakeSettingsNeedAnEndpointHttpsInProductionAndBothKeyReferences() {
+        MockEnvironment env = new MockEnvironment()
+                .withProperty("sangam.history.projection.datalake.bucket", "lake")
+                .withProperty("sangam.history.projection.datalake.access-key-ref", "secret://lake/access")
+                .withProperty("sangam.history.projection.datalake.secret-key-ref", "secret://lake/secret");
+        assertThrows(IllegalStateException.class, () -> HistoryProjectionWiring.dataLakeSettings(env, false),
+                "no endpoint");
+        env.setProperty("sangam.history.projection.datalake.endpoint", "http://minio.internal:9000");
+        assertThrows(IllegalStateException.class, () -> HistoryProjectionWiring.dataLakeSettings(env, true));
+        S3ObjectClient.Settings s = HistoryProjectionWiring.dataLakeSettings(env, false);
+        assertEquals("us-east-1", s.region());
+        assertTrue(s.pathStyle());
+        assertEquals("http://minio.internal:9000", s.origin());
+
+        env.setProperty("sangam.history.projection.datalake.path-style", "false");
+        assertEquals("http://lake.minio.internal:9000", HistoryProjectionWiring.dataLakeSettings(env, false).origin(),
+                "virtual-hosted style: the egress rule names the bucket host");
+
+        MockEnvironment noSecret = new MockEnvironment()
+                .withProperty("sangam.history.projection.datalake.endpoint", "https://s3.example")
+                .withProperty("sangam.history.projection.datalake.bucket", "lake")
+                .withProperty("sangam.history.projection.datalake.access-key-ref", "secret://lake/access");
+        assertThrows(IllegalArgumentException.class, () -> HistoryProjectionWiring.dataLakeSettings(noSecret, false),
+                "a missing secret-key-ref is refused at start-up");
     }
 
     @Test

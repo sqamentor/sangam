@@ -6,20 +6,18 @@ package org.sangam.sdk.generated.api;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
+import org.sangam.sdk.generated.model.BackupRun;
+import org.sangam.sdk.generated.model.BackupTarget;
+import org.sangam.sdk.generated.model.BackupTriggerRequest;
 import org.sangam.sdk.generated.model.OpsAdvance;
 import org.sangam.sdk.generated.model.OpsJob;
-import org.sangam.sdk.generated.model.OpsPurge;
 import org.sangam.sdk.generated.model.OpsReason;
-import org.sangam.sdk.generated.model.OpsSecret;
 import org.sangam.sdk.generated.model.OpsUiAdvanceRequest;
 import org.sangam.sdk.generated.model.OpsUiIndexJobRequest;
-import org.sangam.sdk.generated.model.OpsUiRetentionExecute;
-import org.sangam.sdk.generated.model.OpsUiSecretRequest;
-import org.sangam.sdk.generated.model.OpsUiVariableRequest;
-import org.sangam.sdk.generated.model.OpsValue;
+import org.sangam.sdk.generated.model.SchemaStatus;
 
 /**
- * Typed operations of {@code Tenant operations} (36 operations), generated from
+ * Typed operations of {@code Tenant operations} (21 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -27,37 +25,80 @@ import org.sangam.sdk.generated.model.OpsValue;
 @SuppressWarnings("unused")
 public final class TenantOperationsApi {
 
+    private static final TypeReference<java.util.List<BackupTarget>> R_listBackupTargets = new TypeReference<>() { };
+    private static final TypeReference<BackupRun> R_triggerBackup = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_opsSearch = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_opsUsage = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_opsOutliers = new TypeReference<>() { };
-    private static final TypeReference<java.util.Map<String, Object>> R_opsVariables = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<Object>> R_opsVariableEntries = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<Object>> R_opsSecrets = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_opsSequences = new TypeReference<>() { };
     private static final TypeReference<OpsJob> R_opsRebuildIndex = new TypeReference<>() { };
     private static final TypeReference<OpsJob> R_opsIndexJob = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_opsIndexDrift = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<Object>> R_opsRetentionPlan = new TypeReference<>() { };
-    private static final TypeReference<OpsPurge> R_opsRetentionExecute = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<Object>> R_opsRetentionRuns = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_opsMigration = new TypeReference<>() { };
     private static final TypeReference<Object> R_uiSearch = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_uiOpsUsage = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_uiOpsOutliers = new TypeReference<>() { };
-    private static final TypeReference<Object> R_uiOpsVariables = new TypeReference<>() { };
-    private static final TypeReference<Object> R_uiOpsSecrets = new TypeReference<>() { };
     private static final TypeReference<java.util.List<Object>> R_uiOpsSequences = new TypeReference<>() { };
     private static final TypeReference<Object> R_uiOpsIndexJobs = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_uiOpsStartIndexJob = new TypeReference<>() { };
     private static final TypeReference<Object> R_uiOpsMigration = new TypeReference<>() { };
-    private static final TypeReference<java.util.Map<String, Object>> R_uiOpsRetentionPlan = new TypeReference<>() { };
-    private static final TypeReference<Object> R_uiOpsRetentionRuns = new TypeReference<>() { };
-    private static final TypeReference<java.util.Map<String, Object>> R_uiOpsRetentionExecute = new TypeReference<>() { };
+    private static final TypeReference<SchemaStatus> R_getSchemaStatus = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
     public TenantOperationsApi(HttpTransport http) {
         this.call = new GeneratedCalls(http);
+    }
+
+    /**
+     * Backup targets
+     *
+     * <p>The deployment's backup targets with schedule and last run times. Platform operators.
+     *
+     * <p>{@code GET /ops/backup/targets} (operationId {@code listBackupTargets}); permission {@code ops.read}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<BackupTarget> listBackupTargets(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/ops/backup/targets");
+        return call.json(req, options, R_listBackupTargets);
+    }
+
+    /**
+     * Back up now
+     *
+     * <p>Starts one run of the target now (a Job from its CronJob, or one execution of its configured backup command) and answers 202 with it. 400 REASON_REQUIRED without a reason; 404 for an unknown target; 409 BACKUP_RUNNING while a run of the target is active; 502 BACKUP_TRIGGER_FAILED when the run could not be started (Kubernetes refused or failed the Job creation, or the backup command could not be started). BACKUP_TRIGGERED is audited before the run is started. Platform operators.
+     *
+     * <p>{@code POST /ops/backup/targets/{id}/runs} (operationId {@code triggerBackup}); permission {@code ops.write}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. Target id
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 202 response
+     */
+    public BackupRun triggerBackup(String id, BackupTriggerRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/ops/backup/targets/" + HttpTransport.seg(String.valueOf(id)) + "/runs");
+        req.body(body);
+        return call.json(req, options, R_triggerBackup);
+    }
+
+    /**
+     * Backup run history
+     *
+     * <p>Runs still known to the cluster (scheduled and manual), newest first. Platform operators.
+     *
+     * <p>{@code GET /ops/backup/runs} (operationId {@code listBackupRuns}); permission {@code ops.read}.
+     * @param target query parameter {@code target}, or null. Only runs of this target id
+     * @param page query parameter {@code page}, or null. 0-based page index
+     * @param size query parameter {@code size}, or null. Page size
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response with the A-16 count headers
+     */
+    public org.sangam.sdk.model.Page<BackupRun> listBackupRuns(String target, Long page, Long size, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/ops/backup/runs");
+        req.query("target", target);
+        req.query("page", page);
+        req.query("size", size);
+        return call.page(req, options, BackupRun.class, page, size);
     }
 
     /**
@@ -114,108 +155,6 @@ public final class TenantOperationsApi {
         req.query("activityId", activityId);
         req.query("minSamples", minSamples);
         return call.json(req, options, R_opsOutliers);
-    }
-
-    /**
-     * Scoped variables
-     *
-     * <p>Platform values overlaid with the tenant values.
-     *
-     * <p>{@code GET /ops-admin/variables} (operationId {@code opsVariables}); permission {@code ops.tenant.read}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.Map<String, Object> opsVariables(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops-admin/variables");
-        return call.json(req, options, R_opsVariables);
-    }
-
-    /**
-     * Tenant variable entries
-     *
-     * <p>Tenant scope with version, last writer and reason.
-     *
-     * <p>{@code GET /ops-admin/variables/entries} (operationId {@code opsVariableEntries}); permission {@code ops.tenant.read}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<Object> opsVariableEntries(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops-admin/variables/entries");
-        return call.json(req, options, R_opsVariableEntries);
-    }
-
-    /**
-     * Set a tenant variable
-     *
-     * <p>Secret-like names are refused.
-     *
-     * <p>{@code PUT /ops-admin/variables/{name}} (operationId {@code opsSetVariable}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void opsSetVariable(String name, OpsValue body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops-admin/variables/" + HttpTransport.seg(String.valueOf(name)));
-        req.body(body);
-        call.none(req, options);
-    }
-
-    /**
-     * Delete a tenant variable
-     *
-     * <p>Removes the tenant value.
-     *
-     * <p>{@code DELETE /ops-admin/variables/{name}} (operationId {@code opsDeleteVariable}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void opsDeleteVariable(String name, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops-admin/variables/" + HttpTransport.seg(String.valueOf(name)));
-        call.none(req, options);
-    }
-
-    /**
-     * List secrets
-     *
-     * <p>Names and versions; values are never returned.
-     *
-     * <p>{@code GET /ops-admin/secrets} (operationId {@code opsSecrets}); permission {@code ops.tenant.admin}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<Object> opsSecrets(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops-admin/secrets");
-        return call.json(req, options, R_opsSecrets);
-    }
-
-    /**
-     * Store a secret
-     *
-     * <p>Encrypted at rest; write-only.
-     *
-     * <p>{@code PUT /ops-admin/secrets/{ref}} (operationId {@code opsPutSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ref path parameter {@code ref}
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void opsPutSecret(String ref, OpsSecret body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops-admin/secrets/" + HttpTransport.seg(String.valueOf(ref)));
-        req.body(body);
-        call.none(req, options);
-    }
-
-    /**
-     * Delete a secret
-     *
-     * <p>Removes the secret.
-     *
-     * <p>{@code DELETE /ops-admin/secrets/{ref}} (operationId {@code opsDeleteSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param ref path parameter {@code ref}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void opsDeleteSecret(String ref, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops-admin/secrets/" + HttpTransport.seg(String.valueOf(ref)));
-        call.none(req, options);
     }
 
     /**
@@ -295,54 +234,6 @@ public final class TenantOperationsApi {
     }
 
     /**
-     * Retention plan
-     *
-     * <p>Whole trees due; excludes definitions with a history time to live and held roots.
-     *
-     * <p>{@code GET /ops-admin/retention/plan} (operationId {@code opsRetentionPlan}); permission {@code ops.tenant.read}.
-     * @param limit query parameter {@code limit}, or null
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<Object> opsRetentionPlan(Integer limit, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops-admin/retention/plan");
-        req.query("limit", limit);
-        return call.json(req, options, R_opsRetentionPlan);
-    }
-
-    /**
-     * Execute retention
-     *
-     * <p>Re-plans on the server and purges due trees.
-     *
-     * <p>{@code POST /ops-admin/retention/execute} (operationId {@code opsRetentionExecute}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param body request body
-     * @param limit query parameter {@code limit}, or null
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public OpsPurge opsRetentionExecute(OpsReason body, Integer limit, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops-admin/retention/execute");
-        req.body(body);
-        req.query("limit", limit);
-        return call.json(req, options, R_opsRetentionExecute);
-    }
-
-    /**
-     * Retention runs
-     *
-     * <p>Executed purges with plan hash, reason and actor.
-     *
-     * <p>{@code GET /ops-admin/retention/runs} (operationId {@code opsRetentionRuns}); permission {@code ops.tenant.read}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<Object> opsRetentionRuns(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops-admin/retention/runs");
-        return call.json(req, options, R_opsRetentionRuns);
-    }
-
-    /**
      * Migration status
      *
      * <p>Checkpoints of history migration jobs (copied, failed, mismatched, status); platform operators only.
@@ -410,109 +301,6 @@ public final class TenantOperationsApi {
         req.query("processDefinitionKey", processDefinitionKey);
         req.query("activityId", activityId);
         return call.json(req, options, R_uiOpsOutliers);
-    }
-
-    /**
-     * Tenant variables
-     *
-     * <p>As rows.
-     *
-     * <p>{@code GET /ops/variables} (operationId {@code uiOpsVariables}); permission {@code ops.tenant.read}.
-     * @param scope query parameter {@code scope}, or null
-     * @param name query parameter {@code name}, or null
-     * @param page query parameter {@code page}, or null
-     * @param size query parameter {@code size}, or null
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response with the A-16 count headers
-     */
-    public org.sangam.sdk.model.Page<Object> uiOpsVariables(String scope, String name, Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/variables");
-        req.query("scope", scope);
-        req.query("name", name);
-        req.query("page", page);
-        req.query("size", size);
-        return call.page(req, options, R_uiOpsVariables, page, size);
-    }
-
-    /**
-     * Set a variable
-     *
-     * <p>TENANT scope only.
-     *
-     * <p>{@code PUT /ops/variables} (operationId {@code uiOpsSetVariable}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void uiOpsSetVariable(OpsUiVariableRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops/variables");
-        req.body(body);
-        call.none(req, options);
-    }
-
-    /**
-     * Delete a variable
-     *
-     * <p>Needs a reason.
-     *
-     * <p>{@code DELETE /ops/variables/{id}} (operationId {@code uiOpsDeleteVariable}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param id path parameter {@code id}
-     * @param reason query parameter {@code reason}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void uiOpsDeleteVariable(String id, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops/variables/" + HttpTransport.seg(String.valueOf(id)));
-        req.query("reason", reason);
-        call.none(req, options);
-    }
-
-    /**
-     * Secrets
-     *
-     * <p>Metadata only.
-     *
-     * <p>{@code GET /ops/secrets} (operationId {@code uiOpsSecrets}); permission {@code ops.tenant.admin}.
-     * @param page query parameter {@code page}, or null
-     * @param size query parameter {@code size}, or null
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response with the A-16 count headers
-     */
-    public org.sangam.sdk.model.Page<Object> uiOpsSecrets(Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/secrets");
-        req.query("page", page);
-        req.query("size", size);
-        return call.page(req, options, R_uiOpsSecrets, page, size);
-    }
-
-    /**
-     * Set a secret
-     *
-     * <p>The value is write-only.
-     *
-     * <p>{@code PUT /ops/secrets/{name}} (operationId {@code uiOpsPutSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void uiOpsPutSecret(String name, OpsUiSecretRequest body, RequestOptions options) {
-        ApiRequest req = ApiRequest.put("/ops/secrets/" + HttpTransport.seg(String.valueOf(name)));
-        req.body(body);
-        call.none(req, options);
-    }
-
-    /**
-     * Delete a secret
-     *
-     * <p>Needs a reason.
-     *
-     * <p>{@code DELETE /ops/secrets/{name}} (operationId {@code uiOpsDeleteSecret}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param name path parameter {@code name}
-     * @param reason query parameter {@code reason}
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     */
-    public void uiOpsDeleteSecret(String name, String reason, RequestOptions options) {
-        ApiRequest req = ApiRequest.delete("/ops/secrets/" + HttpTransport.seg(String.valueOf(name)));
-        req.query("reason", reason);
-        call.none(req, options);
     }
 
     /**
@@ -600,50 +388,16 @@ public final class TenantOperationsApi {
     }
 
     /**
-     * Preview retention
+     * Schema status
      *
-     * <p>With a hash of the plan.
+     * <p>Applied product changesets, the engine schema version and the Liquibase lock; read only. Platform operators.
      *
-     * <p>{@code GET /ops/retention/plan} (operationId {@code uiOpsRetentionPlan}); permission {@code ops.tenant.read}.
+     * <p>{@code GET /ops/schema-status} (operationId {@code getSchemaStatus}); permission {@code ops.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.Map<String, Object> uiOpsRetentionPlan(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/retention/plan");
-        return call.json(req, options, R_uiOpsRetentionPlan);
-    }
-
-    /**
-     * Retention runs
-     *
-     * <p>Executed purges of the caller tenant, with plan hash, reason and actor.
-     *
-     * <p>{@code GET /ops/retention/runs} (operationId {@code uiOpsRetentionRuns}); permission {@code ops.tenant.read}.
-     * @param page query parameter {@code page}, or null
-     * @param size query parameter {@code size}, or null
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response with the A-16 count headers
-     */
-    public org.sangam.sdk.model.Page<Object> uiOpsRetentionRuns(Integer page, Integer size, RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/ops/retention/runs");
-        req.query("page", page);
-        req.query("size", size);
-        return call.page(req, options, R_uiOpsRetentionRuns, page, size);
-    }
-
-    /**
-     * Execute retention
-     *
-     * <p>Refused when the plan changed since the preview.
-     *
-     * <p>{@code POST /ops/retention/execute} (operationId {@code uiOpsRetentionExecute}); permission {@code ops.tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
-     * @param body request body
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.Map<String, Object> uiOpsRetentionExecute(OpsUiRetentionExecute body, RequestOptions options) {
-        ApiRequest req = ApiRequest.post("/ops/retention/execute");
-        req.body(body);
-        return call.json(req, options, R_uiOpsRetentionExecute);
+    public SchemaStatus getSchemaStatus(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/ops/schema-status");
+        return call.json(req, options, R_getSchemaStatus);
     }
 }

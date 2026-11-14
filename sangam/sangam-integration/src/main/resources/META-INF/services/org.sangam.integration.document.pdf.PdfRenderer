@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 # M-081: the PDF/A-2b + PDF/UA-1 renderer (Apache PDFBox, optional dependency). PDF output is on only when this
-# renderer has its fonts (sangam.pdf.fonts / SANGAM_PDF_FONTS) and the veraPDF validator service loads as well.
+# renderer has its fonts (sangam.pdf.fonts / SANGAM_PDF_FONTS) and the remote validator client has its service
+# (sangam.pdf.validator.url / SANGAM_PDF_VALIDATOR_URL, owner decision 114).
 org.sangam.integration.document.pdf.pdfbox.PdfBoxRenderer

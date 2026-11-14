@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// A group member.
+/// A group member: a person (User). A member of type Group is 400 invalidValue (no nested groups).
 /// Schema ScimMember.
 /// </summary>
 public sealed record ScimMember

@@ -299,7 +299,8 @@ public final class PackDeployer {
 
     /** Deployment name prefix of every pack deployment. */
     static final String NAME_PREFIX = "pack:";
-    static final String SOURCE = "sangam-packs";
+    /** Deployment source of every pack deployment; a tenant table deployed with another source is its own (decision 202). */
+    public static final String SOURCE = "sangam-packs";
 
     /** One engine deployment of a pack version for a tenant scope (null = shared definitions). */
     public record Installed(String packId, String version, String tenantId, String deploymentId,

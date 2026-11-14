@@ -12,11 +12,11 @@ public sealed record AiA2aBody
     [global::System.Text.Json.Serialization.JsonPropertyName("id")]
     public object? Id { get; init; }
 
-    [global::System.Text.Json.Serialization.JsonPropertyName("method")]
-    public string? Method { get; init; }
-
     [global::System.Text.Json.Serialization.JsonPropertyName("params")]
     public AiA2aBodyParams? Params { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("method")]
+    public string? Method { get; init; }
 
     /// <summary>Members not named in the schema (additionalProperties).</summary>
     [global::System.Text.Json.Serialization.JsonExtensionData]

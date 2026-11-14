@@ -34,7 +34,19 @@ server {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         include /etc/nginx/conf.d/security-headers.inc;
-        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"${SANGAM_TRACE_URL_TEMPLATE}"}';
+        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"${SANGAM_TRACE_URL_TEMPLATE}","teams":{"enabled":${SANGAM_TEAMS_ENABLED_JSON}},"dsc":{"agentUrl":"${SANGAM_DSC_AGENT_ORIGIN_CHECKED}"}}';
+    }
+    # teams.enabled (decision 162): true or false from SANGAM_TEAMS_ENABLED, validated by 16-sangam-teams.envsh.
+    # dsc.agentUrl (decision 165): the DSC loopback agent origin from SANGAM_DSC_AGENT_ORIGIN, validated by
+    # 17-sangam-dsc.envsh; empty = DSC not set up. The same value is in connect-src.
+
+    # Teams tab page (decisions 162, 213): its own headers only when SANGAM_TEAMS_ENABLED=true (teams-headers.inc,
+    # framed by the SANGAM_TEAMS_FRAME_ANCESTORS hosts); otherwise the same headers as every other page, so it cannot
+    # be framed anywhere. The include name comes from 16-sangam-teams.envsh; without it nginx does not start.
+    location = /teams.html {
+        try_files $uri =404;
+        add_header Cache-Control "no-cache" always;
+        include /etc/nginx/conf.d/${SANGAM_TEAMS_HEADERS_INC};
     }
     # traceUrlTemplate (M-044, owner decision 57): a link to the operator's trace viewer with the placeholder
     # {traceId}, e.g. https://tracing.example/trace/{traceId}; empty = no trace links. The UI links only http(s).

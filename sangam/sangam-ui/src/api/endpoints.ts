@@ -10,6 +10,8 @@ import type { CapturePacket } from '../lib/offline/canonical';
 import type { DeviceView as FieldDeviceView, PullResult, PulledTemplate, SyncOutcome } from '../lib/offline/fieldSync';
 
 const enc = encodeURIComponent;
+/** The edit-lease fence header of a package save (ModellerWiring.FENCE_HEADER). */
+export const EDIT_FENCE_HEADER = 'X-Sangam-Edit-Fence';
 
 export interface ListQuery extends Query {
   page?: number;
@@ -181,6 +183,31 @@ export const api = {
       http.post<Record<string, unknown>>(`/tasks/${enc(id)}/comments`, { message: text }, key).then(A.normComment),
     lifecycle: (id: string) =>
       http.get<{ at: string; event: string; by?: string; seatName?: string; actedFor?: string }[]>(`/tasks/${enc(id)}/lifecycle`), // (FC-52)
+    /**
+     * Decisions 165, 236-238 (routes/dsc.py prepareDscSignature): the assignee prepares the signature of a task PDF for
+     * one certificate chain (Base64 DER, signer first). task.write; the server binds it to the approved enrolment.
+     */
+    dscPrepare: (id: string, body: { documentId: string; certificateChain: string[] }, key?: string) =>
+      http.post<T.DscPrepareResponse>(`/tasks/${enc(id)}/dsc/prepare`, body, key),
+    /** completeDscSignature: the agent's signature for prepareId; verified at once. Does not complete the task. */
+    dscComplete: (id: string, body: { prepareId: string; signature: string; algorithm: string; certificateChain: string[] }, key?: string) =>
+      http.post<T.DscCompleteResponse>(`/tasks/${enc(id)}/dsc/complete`, body, key),
+  },
+
+  // ------------------------------------------------------------ DSC certificate enrolment (decision 227, routes/dsc.py)
+  dsc: {
+    /** enrolDscCertificate: the caller's own certificate (Base64 DER), PENDING until another admin approves. task.write. */
+    enrol: (certificate: string, key?: string) => http.post<T.DscEnrolment>('/me/dsc/certificates', { certificate }, key),
+    mine: async () => (await http.get<T.DscEnrolment[]>('/me/dsc/certificates')) ?? [],
+    /** revokeMyDscCertificate: reason required (422 REASON_REQUIRED). */
+    revokeMine: (enrolmentId: string, reason: string, key?: string) =>
+      http.post<T.DscEnrolment>(`/me/dsc/certificates/${enc(enrolmentId)}/revoke`, { reason }, key),
+    /** listDscCertificates: one status, PENDING by default (the approval queue). dsc.certificate.approve. */
+    list: async (status: T.DscEnrolmentStatus, limit?: number) => (await http.get<T.DscEnrolment[]>('/admin/dsc/certificates', { status, limit })) ?? [],
+    get: (enrolmentId: string) => http.get<T.DscEnrolment>(`/admin/dsc/certificates/${enc(enrolmentId)}`),
+    /** approve (reason optional), reject and revoke (reason required); 403 SELF_APPROVAL on the caller's own. */
+    decide: (enrolmentId: string, verb: 'approve' | 'reject' | 'revoke', reason: string, key?: string) =>
+      http.post<T.DscEnrolment>(`/admin/dsc/certificates/${enc(enrolmentId)}/${verb}`, reason.trim() ? { reason: reason.trim() } : {}, key),
   },
 
   // ------------------------------------------------------------ start catalogue, processes, cases, decisions
@@ -349,11 +376,18 @@ export const api = {
       return A.normPackage(r.body);
     },
     create: (body: { key: string; name: string }) => http.post<Record<string, unknown>>('/packages', body).then(A.normPackage),
-    /** PUT /packages/{id} {resources: {fileName: content}} with If-Match (optimistic concurrency). */
-    saveResources: async (id: string, artifacts: T.ModelArtifact[], name?: string) => {
+    /**
+     * PUT /packages/{id} {resources: {fileName: content}} with If-Match (optimistic concurrency) and, while the caller
+     * holds the package's edit lease, its fence in X-Sangam-Edit-Fence (ModellerWiring.fenced: with no header a save is
+     * refused while anyone holds a live lease, EDIT_LEASE_REQUIRED).
+     */
+    saveResources: async (id: string, artifacts: T.ModelArtifact[], name?: string, fence?: number) => {
       const resources = Object.fromEntries(artifacts.map((a) => [A.fileName(a), a.content]));
       const tag = packageTags.get(id);
-      const res = await raw('PUT', `/packages/${enc(id)}`, { body: { name, resources }, headers: tag ? { 'If-Match': tag } : {} });
+      const headers: Record<string, string> = {};
+      if (tag) headers['If-Match'] = tag;
+      if (fence !== undefined) headers[EDIT_FENCE_HEADER] = String(fence);
+      const res = await raw('PUT', `/packages/${enc(id)}`, { body: { name, resources }, headers });
       packageTags.set(id, res.headers.get('ETag'));
       return A.normPackage((await res.json()) as Record<string, unknown>);
     },
@@ -383,6 +417,12 @@ export const api = {
       files.forEach((x) => f.append('files', x, x.name));
       return http.upload<{ file: string; element?: string; construct: string; classification: 'SUPPORTED' | 'MAPPED' | 'PATTERN' | 'REJECTED'; note?: string }[]>('/packages/assessment', f); // (EC-21)
     },
+  },
+  models: {
+    /** M-125 diffModels: semantic diff of two versions of one model file (package.read); reads only, stores nothing. */
+    diff: (body: T.ModelDiffRequest) => http.post<T.ModelDiffReport>('/models/diff', body),
+    /** M-101 streamModelPresence path (text/event-stream, event 'presence', data ModelPresence); open with openEventStream. */
+    presencePath: (file: string) => `/models/${enc(file)}/presence/stream`,
   },
   forms: {
     get: async (key: string, version?: number) => A.normForm(await http.get<Record<string, unknown>>(`/forms/${enc(key)}`, { version })),
@@ -632,6 +672,16 @@ export const api = {
     templates: () => http.get<{ id: string; name: string; languages: string[]; format: 'PDFA' | 'DOCX' | 'HTML'; version: number }[]>('/documents/templates'),
     generate: (templateId: string, businessKey: string, language: string, key?: string) =>
       http.post<Record<string, unknown>>('/documents/generate', { templateId, businessKey, language }, key).then(A.normDocument),
+    /**
+     * uploadDocument (decisions 267-269): with a documentType the pack of the process instance declares a slot for, a
+     * PDF fills that slot. 403 DOCUMENT_SLOT_NOT_TASK_HOLDER: only the assignee of an open task of the instance;
+     * 409 DOCUMENT_SLOT_OCCUPIED: the slot holds another document unless replaceSlot is true. Nothing stored on either.
+     */
+    upload: (file: File, o: { name?: string; taskId?: string; processInstanceId?: string; caseInstanceId?: string; documentType?: string; replaceSlot?: boolean }, key?: string) =>
+      http.upload<Record<string, unknown>>('/documents', documentForm(file, o), key).then(A.normDocument),
+    /** addDocumentVersion: the same slot rules; a new version of the document the slot holds needs no replace. */
+    addVersion: (id: string, file: File, o: { name?: string; documentType?: string; replaceSlot?: boolean }, key?: string) =>
+      http.upload<Record<string, unknown>>(`/documents/${enc(id)}/versions`, documentForm(file, o), key).then(A.normDocument),
   },
 
   // ------------------------------------------------------------ pages and data objects (R77, R78, EC-03, EC-06)
@@ -645,6 +695,19 @@ export const api = {
     list: () => http.get<DataObjectDef[]>('/data-objects'),
     save: (d: DataObjectDef) => (d.id ? http.put<DataObjectDef>(`/data-objects/${enc(d.id)}`, d) : http.post<DataObjectDef>('/data-objects', d)),
     records: (key: string, q: ListQuery) => http.page<Record<string, unknown>>(`/data-objects/${enc(key)}/records`, q),
+    /**
+     * createDataObjectRecord (lowcode.record.write, decision 284). DB backing answers 201 with the record; REST backing
+     * (decision 265) answers 202 with a DataObjectRecordOperation (PENDING) and a Location to poll.
+     */
+    createRecord: async (key: string, record: Record<string, unknown>, idempotencyKey?: string): Promise<RecordCreateAnswer> => {
+      const res = await raw('POST', `/data-objects/${enc(key)}/records`, { body: record, idempotencyKey });
+      const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (res.status === 202) return { kind: 'accepted', operation: body as unknown as T.DataObjectRecordOperation, location: res.headers.get('Location') ?? undefined };
+      return { kind: 'created', record: body };
+    },
+    /** getDataObjectRecordOperation (lowcode.read): the outcome of a REST-backed record create. */
+    recordOperation: (key: string, operationId: string, signal?: AbortSignal) =>
+      http.get<T.DataObjectRecordOperation>(`/data-objects/${enc(key)}/records/operations/${enc(operationId)}`, undefined, signal),
   },
 
   // ------------------------------------------------------------ events (FC-02, FC-03), keyed by `key`
@@ -715,6 +778,21 @@ export interface PageModel {
   version?: number;
   state?: string;
   blocks: PageBlock[];
+}
+
+/** The two answers of a record create (decision 265). */
+export type RecordCreateAnswer = { kind: 'created'; record: Record<string, unknown> } | { kind: 'accepted'; operation: T.DataObjectRecordOperation; location?: string };
+
+/** multipart body of uploadDocument / addDocumentVersion; empty and false fields are left out. */
+export function documentForm(file: File, o: { name?: string; taskId?: string; processInstanceId?: string; caseInstanceId?: string; documentType?: string; replaceSlot?: boolean }): FormData {
+  const f = new FormData();
+  f.append('file', file, file.name);
+  for (const k of ['name', 'taskId', 'processInstanceId', 'caseInstanceId', 'documentType'] as const) {
+    const v = o[k as keyof typeof o];
+    if (typeof v === 'string' && v.trim()) f.append(k, v.trim());
+  }
+  if (o.replaceSlot) f.append('replaceSlot', 'true');
+  return f;
 }
 
 export interface DataObjectField {

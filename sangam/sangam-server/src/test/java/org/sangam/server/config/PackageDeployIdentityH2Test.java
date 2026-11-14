@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,6 +77,7 @@ class PackageDeployIdentityH2Test {
         store.put("t1", "P1", "orderApi", EngineWiringOperationRefPinnerTest.openApi("v2", "createOrder"));
         PackagePort port = EngineWiringOperationRefPinnerTest.packagePort(packages);
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required by the engine, the server's default
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);
@@ -87,7 +89,7 @@ class PackageDeployIdentityH2Test {
         AuditPort audit = (AuditPort) Proxy.newProxyInstance(AuditPort.class.getClassLoader(), new Class<?>[]{AuditPort.class},
                 (proxy, m, args) -> m.getName().equals("record") ? "audit-1" : null);
         deployments = new OperatonDeploymentAdapter(engine.processEngine().getRepositoryService(),
-                new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), audit);
+                new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), audit);
     }
 
     @AfterEach

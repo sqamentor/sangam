@@ -11,7 +11,7 @@ from typing import Any, Literal, TypedDict, Union
 
 Number = Union[int, float, Decimal]
 
-__all__ = ["Number", "ActAgentBody", "ActConversationChannelBody", "ActRetentionClassBody", "ActRoutingStrategyBody", "ActServiceBody", "ActSlaModelBody", "ActTemplateBody", "ActionModelInvoke", "ActionModelPublish", "ActivityInstance", "ActivityStat", "AdHocActivity", "AdHocState", "AddCaseCommentRequest", "AddCommentRequest", "AgeBucket", "AgentUsage", "AiA2aBody", "AiA2aBodyParams", "AiA2aBodyParamsMessage", "AiA2aBodyParamsMessagePartsItem", "AiApproval", "AiClassification", "AiClassify", "AiCorrect", "AiDecide", "AiDraft", "AiDraftGenerate", "AiDraftReview", "AiEvalResult", "AiEvaluate", "AiEvaluation", "AiIngest", "AiIngestResult", "AiKbSearch", "AiKbVersion", "AiMcpBody", "AiMcpBodyParams", "AiProposal", "AiPropose", "AiReason", "AiRun", "AiStartRun", "AiUiDecisionRequest", "AiUiPublishKbRequest", "AiUiReviewRequest", "AlertRule", "AnalyticsSummary", "ApiContract", "ApiContractSummary", "AppealRequest", "Application", "ApplyRequest", "AssessmentRow", "Assignment", "AssignmentImpact", "AssignmentServiceNewAssignment", "AuditEntry", "AuditExportJob", "AuditExportRequest", "AuditVerifyResult", "Batch", "BatchControlRequest", "BatchFilter", "BatchItem", "BatchPreview", "BatchRequest", "BillingCollectionRequest", "BillingInvoiceRequest", "BillingPenaltyRequest", "BillingRefundRequest", "BillingRefundResult", "BillingWaiverRequest", "BookingModelAllotRequest", "BookingModelHoldRequest", "BookingModelRecurrence", "BookingModelWaitlistRequest", "BreakGlassGrant", "BreakGlassIssued", "BreakGlassRequest", "BreakGlassReview", "BreakpointsRequest", "BulkChunk", "BulkChunkReceipt", "BulkClaimRequest", "BulkCompleteRequest", "BulkCreateJob", "BulkFailure", "BulkJob", "BulkResult", "BulkRowInput", "BulkRowStatus", "BundleDiffEntry", "BundleDiffRequest", "BundleImportRequest", "BundleImportResult", "CalendarServiceSlotTemplate", "CancelAckRequest", "CandidateSeat", "CaseComment", "CaseDefinition", "CaseExecution", "CaseExecutionCommand", "CaseFilePublishConfigBody", "CaseInstance", "CaseInstanceCommand", "CaseVersion", "CatalogueEntry", "CellActivateRequest", "CellDrainStatus", "CellExportHandle", "CellImportRequest", "CellImportResult", "CellMoveRequest", "CellMovedRequest", "CellTenantChecksum", "CellTenantState", "CfActionItem", "CfActionItemServicePendency", "CfAddPartyRequest", "CfAdjournRequest", "CfAgendaItem", "CfAgendaOrder", "CfAgendaRequest", "CfApproveBody", "CfApproveMinutesRequest", "CfAtrBody", "CfAttendance", "CfAttendanceRequest", "CfCarryResult", "CfCaseFile", "CfCaseFileRestPortAssignRequest", "CfCaseFileRestPortExtendRequest", "CfCaseLink", "CfCaseParty", "CfCaseView", "CfCommittee", "CfCommitteeView", "CfConfigEntry", "CfConflict", "CfConstituteRequest", "CfCreateRequest", "CfDeadline", "CfDecision", "CfDecisionInput", "CfDocument", "CfDocumentRequest", "CfDraftBody", "CfDuplicateCandidate", "CfEntry", "CfEscalationStep", "CfEvent", "CfFolder", "CfFolderRequest", "CfFollowUpRequest", "CfHearing", "CfHearingRequest", "CfLinkRequest", "CfLinkedRecord", "CfMeeting", "CfMeetingControllerReasonBody", "CfMeetingView", "CfMember", "CfMemberInput", "CfMergeRequest", "CfMilestoneRequest", "CfMinutes", "CfMove", "CfNote", "CfNoteRequest", "CfNotice", "CfOpenRequest", "CfOutcomeRequest", "CfParty", "CfPartyInput", "CfPartyResult", "CfPublishedConfig", "CfQuorumStatus", "CfReasonRequest", "CfReassignBody", "CfReconstituteRequest", "CfRecordRequest", "CfReference", "CfReferenceControllerReasonBody", "CfReferenceRestPortAssignRequest", "CfReferenceRestPortExtendRequest", "CfReferenceServicePendency", "CfReferenceView", "CfRegisterRequest", "CfReplyRequest", "CfRescheduleRequest", "CfScheduleRequest", "CfSplitRequest", "CfStageRequest", "CfTextBody", "CfTransferRequest", "CfUpdateRequest", "CfVerifyRequest", "ChainVerification", "ChannelAddParticipant", "ChannelAttachment", "ChannelConversation", "ChannelCreateConversation", "ChannelHookResult", "ChannelMessage", "ChannelOptInRequest", "ChannelSendMessage", "ChannelSlackHookResult", "ChannelStatus", "ChecklistItem", "Clarification", "CleanupStatus", "ClockItem", "CloudEvent", "CodedReason", "Comment", "CompleteTaskRequest", "CompleteTaskResult", "ComplianceAuditEvidence", "ComplianceAuditEvidenceRequest", "ComplianceAuditVerification", "ComplianceBreach", "ComplianceBreachRequest", "ComplianceConsent", "ComplianceConsentArtefact", "ComplianceContact", "ComplianceGiveConsentRequest", "ComplianceImpactAssessment", "ComplianceImpactAssessmentRequest", "ComplianceIncident", "ComplianceIncidentRequest", "ComplianceJurisdiction", "ComplianceLawfulRequest", "ComplianceLawfulRequestBody", "ComplianceLogSegment", "CompliancePublishNoticeRequest", "CompliancePublishResult", "CompliancePurpose", "ComplianceReasonBody", "ComplianceRenderedNotice", "ComplianceReport", "ComplianceRespondLawfulRequest", "ComplianceRightsRequest", "ComplianceRightsSubmission", "ComplianceSealLogsRequest", "ComplianceSubmitIncidentRequest", "ComplianceTransferDecision", "ComplianceTransferRequest", "ComplianceVerifyLawfulRequest", "ComplianceWithdrawConsentRequest", "ConfigActivateRequest", "ConfigApproveRequest", "ConfigChangeRecord", "ConfigClassificationRequest", "ConfigCorrectionSlip", "ConfigCrosswalkRequest", "ConfigDocumentCheckRequest", "ConfigFinding", "ConfigFindingsResult", "ConfigMasterCode", "ConfigProfileVersion", "ConfigProfileVersionDocument", "ConfigRejectRequest", "ConfigResolvedProfile", "ConfigSeedResult", "ConfigSlipChange", "ConfigValidateRequest", "ConformanceResult", "ConsequencePreview", "ContractOperation", "CreateLinkRequest", "CreatePackageRequest", "CrossBoundaryMoveRequest", "CustomField", "CustomFieldDefineRequest", "CustomFieldRetireRequest", "DataObjectDef", "DataObjectField", "DebugStatus", "DebugStepResult", "DecisionDefinition", "DecisionEvaluateRequest", "DecisionEvaluateResult", "DelegateTaskRequest", "Delegation", "DeployedDefinition", "Deployment", "Deviation", "DeviceRegistryRegistration", "DispatchServiceUnitInput", "Document", "DocumentGenerateRequest", "DocumentTemplate", "DurationReportRow", "ElementTemplateApply", "ElementTemplatePublish", "EndAssignmentRequest", "EntityLink", "EnvBinding", "EnvBindingApproval", "EnvBindingRequest", "EventChannel", "EventDefinition", "Evidence", "ExplainRequest", "ExplainResult", "ExtendLockRequest", "ExternalTaskLogEntry", "ExternalWork", "FetchAndLockRequest", "FieldChange", "FieldError", "FieldTemplate", "FieldTemplateEvidenceRules", "FieldTemplateGeofenceRule", "FieldTemplateGrade", "FieldTemplateItem", "FieldTemplateOption", "FieldTemplateScoring", "FieldTemplateSection", "FieldTemplateVisibleIf", "FieldVisit", "FieldWorkCreateAssignmentBody", "FieldWorkCreateJobBody", "FieldWorkDefineScheduleBody", "FieldWorkDevicePolicyBody", "FieldWorkDeviceStatusBody", "FieldWorkJobActionBody", "FieldWorkPingBody", "FieldWorkPublishTemplateBody", "FieldWorkReassignBody", "FieldWorkRegisterDeviceBody", "FieldWorkResolveConflictBody", "FieldWorkRespondOfferBody", "FieldWorkReviewBody", "FieldWorkRouteBody", "FieldWorkSelectBody", "FieldWorkStartTripBody", "FieldWorkTransitionBody", "FieldWorkTripActionBody", "FieldWorkUnitStatusBody", "FieldWorkUpsertUnitBody", "FormDraft", "FormValidateRequest", "FormValidationResult", "FormVersion", "GeoGeoCheckFenceBody", "GeoGeoDefineFenceBody", "GeoGeoDefineLayerBody", "GeoGeoDefineLayerBodyLevelsItem", "GeoGeoImportBoundariesBody", "GeoGeoImportBoundariesBodyLayer", "GeoGeoImportBoundariesBodyLayerLevelsItem", "GeoGeoImportExternalBody", "GeoGeoOverlapsBody", "GeoGeoPutFeatureBody", "GeoGeoPutObjectGeometryBody", "GeoGeoQueryExternalBody", "GeoGeoRegisterExternalBody", "GitConfig", "GitStatus", "GitSyncRequest", "GitSyncResult", "Grievance", "GrievanceReceipt", "GrievanceRequest", "Group", "HandlerParameter", "HealthHookResult", "HistoricActivityInstance", "HistoricDecision", "HistoricIncident", "HistoricJobLog", "HistoricProcessInstance", "HistoricTask", "HistoricVariable", "IdentityProvider", "IdentitySyncResult", "IdentityTestResult", "InboxEntry", "Incident", "IncidentAction", "InjectionRequest", "InjectionResult", "InstalledPack", "InstanceHandler", "InstanceQueryRequest", "InstanceQueryResult", "InstanceUpdateRequest", "InstanceUpdateResult", "Job", "JobRetriesRequest", "JobSummary", "JobSuspensionRequest", "LeaveRequest", "LedgerAccount", "LedgerAccountKey", "LedgerAccountRef", "LedgerAccountingEntry", "LedgerCloseRequest", "LedgerFreezeOrder", "LedgerFreezeRequest", "LedgerHeldRequest", "LedgerOperationRequest", "LedgerReconcileRequest", "LedgerReconcileRow", "LedgerResult", "LegalHoldRequest", "LifecycleEvent", "LockState", "LookupResult", "Me", "MeLocale", "MessageRequest", "MessageResult", "MigrationExecuteRequest", "MigrationInstruction", "MigrationPlan", "MigrationPlanRequest", "ModelEditLease", "ModelFenceRequest", "ModelLeaseOutcome", "ModelTakeoverRequest", "ModelTokenWalkRequest", "ModellerFenceRequest", "ModellerRunActionRequest", "ModificationInstruction", "ModifyPreviewRequest", "ModifyRequest", "ModuleDefaultsRequest", "ModuleDefaultsResult", "NodeStatus", "NoteRequest", "Notification", "NotificationFailure", "NumberGrouping", "OnboardingApproveRequest", "OnboardingDryRun", "OnboardingProblem", "OnboardingReadiness", "OnboardingReasonRequest", "OnboardingRequest", "OnboardingRequestAdminSpec", "OnboardingRequestComplianceSpec", "OnboardingRequestConnectorBindingSpec", "OnboardingRequestGoLiveSpec", "OnboardingRequestPackSpec", "OnboardingRequestProfileSpec", "OnboardingRequestRoleRuleSpec", "OnboardingRequestRoleSpec", "OnboardingRequestSeedSpec", "OnboardingRequestTenantSpec", "OnboardingRequestTestCall", "OnboardingRun", "OnboardingSecurity", "OpenTaskCount", "OpsAdvance", "OpsDashboard", "OpsJob", "OpsMetric", "OpsPurge", "OpsReason", "OpsSecret", "OpsUiAdvanceRequest", "OpsUiIndexJobRequest", "OpsUiRetentionExecute", "OpsUiSecretRequest", "OpsUiVariableRequest", "OpsValue", "OrgUnit", "OrgUnitImportResult", "OutboxDelivery", "OutboxRepairRequest", "OutboxStats", "OutboxUsage", "OutcomeUnknownRequest", "OutcomeUnknownResult", "PackDeployResult", "PackLifecycleRequest", "PackResolution", "PackResolveRequest", "PackUninstalled", "Package", "PackageAddCommentRequest", "PackageBundle", "PackageComment", "PackageDiffEntry", "PackageEvent", "PackageImportRequest", "PackageSignature", "PackageTransitionRequest", "PackageVerification", "PageBlock", "PageModel", "PageSummary", "Participant", "PartitionCount", "PgAchievement", "PgAchievementRequest", "PgAlert", "PgAllocationRequest", "PgCampaignRequest", "PgCampaignResult", "PgCurrentConfig", "PgEvent", "PgFinancial", "PgFinancialRequest", "PgFinding", "PgGeneratePeriodsRequest", "PgImportRequest", "PgImportResult", "PgMilestone", "PgMilestoneRequest", "PgMilestoneServiceProgress", "PgNode", "PgOutcome", "PgPeriod", "PgPeriodStateRequest", "PgProgramme", "PgProgrammeInput", "PgProgressServiceProgress", "PgPublished", "PgReasonBody", "PgRefreshResult", "PgReturnDetail", "PgReturnRow", "PgReturnValuesRequest", "PgReviseTargetRequest", "PgRollupRequest", "PgRollupResult", "PgSetTargetRequest", "PgSnapshot", "PgStatusRequest", "PgStoredFinding", "PgTarget", "PgUpdateProgrammeRequest", "PgValue", "PgVarianceRequest", "PgVersionBody", "PluginInfo", "PoisonInboundItem", "PoisonInboundParked", "Policy", "PolicyMatch", "PolicyVersion", "PortalMessage", "PortalService", "PowerTable", "PowerTableCheckResult", "PowerTableTestCase", "PowerTableTestOutcome", "PowerTableTransitionRequest", "Problem", "ProcessDefinition", "ProcessInstance", "ProgrammePublishConfigBody", "ProgrammePublishConfigBodyVariance", "PromotionApplyRequest", "PromotionPlan", "PromotionPlanRequest", "PublishResult", "QueueCallRequest", "QueueCompleteRequest", "QueueOpenRequest", "QueuePolicy", "QueueReasonRequest", "QueueRestPortCounterRequest", "QueueRestPortIssueTokenRequest", "QueueRestPortServicePointRequest", "QueueRestPortTransferRequest", "QueueStatusRequest", "RandomSelectorCandidate", "ReasonRequest", "ReceiveMatrixTransactionRequest", "ReconciliationItem", "ReconciliationResolveRequest", "RegistryAssetAddMeterBody", "RegistryAssetAddPlanBody", "RegistryAssetCorrectReadingBody", "RegistryAssetCreateWorkOrderBody", "RegistryAssetDefineClassBody", "RegistryAssetDefineClassBodyDepreciation", "RegistryAssetDefineClassBodyMaintenancePlansItem", "RegistryAssetDefineClassBodyMetersItem", "RegistryAssetDisposeBody", "RegistryAssetGenerateDueBody", "RegistryAssetMoveBody", "RegistryAssetPlanStatusBody", "RegistryAssetRecordReadingBody", "RegistryAssetRegisterBody", "RegistryAssetRejectReadingBody", "RegistryAssetReparentBody", "RegistryAssetStepBody", "RegistryAssetTriggerConditionBody", "RegistryAssetUpdateDetailsBody", "RegistryAssetUpdatePlanBody", "RegistryCustodyAcceptBody", "RegistryCustodyBreakSealBody", "RegistryCustodyCancelBody", "RegistryCustodyCancelDisposalBody", "RegistryCustodyExecuteBody", "RegistryCustodyHandoverBody", "RegistryCustodyInitiateBody", "RegistryCustodyInspectBody", "RegistryCustodyLocationBody", "RegistryCustodyOrderDisposalBody", "RegistryCustodyPutIntoBody", "RegistryCustodyRegisterBody", "RegistryCustodyRejectBody", "RegistryCustodySealBody", "RegistryCustodyTakeOutBody", "RegistryEntry", "RegistryInstrumentAmendBody", "RegistryInstrumentDuplicateBody", "RegistryInstrumentEndorseBody", "RegistryInstrumentIssueBody", "RegistryInstrumentReinstateBody", "RegistryInstrumentRenewBody", "RegistryInstrumentRevokeBody", "RegistryInstrumentSurrenderBody", "RegistryInstrumentSuspendBody", "RegistryInstrumentTransferHolderBody", "RegistryInstrumentTransferReissueBody", "RegistryInstrumentTransitionBody", "RegistryInstrumentVerifyQrBody", "RegistryPartyAddAddressBody", "RegistryPartyAddIdentifierBody", "RegistryPartyAddRelationshipBody", "RegistryPartyConfirmBody", "RegistryPartyCreateBody", "RegistryPartyCreateBodyAddressesItem", "RegistryPartyCreateBodyIdentifiersItem", "RegistryPartyCreateBodyNames", "RegistryPartyDeactivateBody", "RegistryPartyEndRelationshipBody", "RegistryPartyMatchBody", "RegistryPartyMatchBodyIdentifiersItem", "RegistryPartyMatchBodyNames", "RegistryPartyMergeBody", "RegistryPartyReactivateBody", "RegistryPartyRejectBody", "RegistryPartyRetireAddressBody", "RegistryPartyRetireIdentifierBody", "RegistryPartySaveIdentifierTypesBody", "RegistryPartySaveMatchConfigBody", "RegistryPartySaveMatchConfigBodyComparatorsItem", "RegistryPartySaveMatchConfigBodyRulesItem", "RegistryPartySnapshotBody", "RegistryPartyUnmergeBody", "RegistryPartyUpdateBody", "RegistryPartyUpdateBodyNames", "RegistryRegisterAppendBody", "RegistryRegisterCloseBody", "RegistryRegisterCorrectBody", "RegistryRegisterDefineBody", "RegistryRegisterDefineBodyColumns", "RegistryRegisterDefineBodyColumnsFieldsItem", "RegistryRegisterExtractBody", "RegistryRegistryAllocateBody", "RegistryRegistryClosePeriodBody", "RegistryRegistryCreateBody", "RegistryRegistryDefineSeriesBody", "RegistryRegistryMarkUsedBody", "RegistryRegistryMirrorBody", "RegistryRegistryPublishTypeBody", "RegistryRegistryPublishTypeBodyDefinition", "RegistryRegistryPublishTypeBodyDefinitionDocuments", "RegistryRegistryPublishTypeBodyDefinitionLifecycle", "RegistryRegistryPublishTypeBodyDefinitionLifecycleStatesItem", "RegistryRegistryPublishTypeBodyDefinitionLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyDefinitionNumbering", "RegistryRegistryPublishTypeBodyDefinitionSchema", "RegistryRegistryPublishTypeBodyDefinitionSchemaFieldsItem", "RegistryRegistryPublishTypeBodyDefinitionValidity", "RegistryRegistryPublishTypeBodyDefinitionVerification", "RegistryRegistryPublishTypeBodyDocuments", "RegistryRegistryPublishTypeBodyLifecycle", "RegistryRegistryPublishTypeBodyLifecycleStatesItem", "RegistryRegistryPublishTypeBodyLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyNumbering", "RegistryRegistryPublishTypeBodySchema", "RegistryRegistryPublishTypeBodySchemaFieldsItem", "RegistryRegistryPublishTypeBodyValidity", "RegistryRegistryPublishTypeBodyVerification", "RegistryRegistryTransitionBody", "RegistryRegistryUpdateBody", "RegistryRegistryVoidNumberBody", "ResourceDraft", "ResourcePatch", "ResourceQuery", "ResourcesAllotNextRequest", "ResourcesApprovalRequest", "ResourcesAvailableSearchRequest", "ResourcesBumpRequest", "ResourcesCancelAllotmentRequest", "ResourcesCancelRequest", "ResourcesDrawRequest", "ResourcesDrawVerifyRequest", "ResourcesExtendRequest", "ResourcesMoveRequest", "ResourcesNoticeRequest", "ResourcesReasonRequest", "ResourcesResourcesDefineTypeBody", "ResourcesResourcesSaveCalendarBody", "ResourcesRestPortBlackoutRequest", "ResourcesSeriesRequest", "ResourcesStatusRequest", "ResourcesVacateRequest", "RestartRequest", "ResubmitRequest", "ReturnTarget", "ReturnTaskRequest", "RosterOnCallRequest", "RosterRestPortAssignRequest", "RosterRestPortDecisionRequest", "RosterRestPortDemandRequest", "RosterRestPortMemberRequest", "RosterRestPortPeriodRequest", "RosterRestPortRandomiseRequest", "RosterRestPortRotationRequest", "RosterRestPortShiftRequest", "RosterRestPortSwapCreateRequest", "RostersRosterUpdateConstraintsBody", "RuleEvidence", "SaveDraftRequest", "ScheduleServiceSchedule", "ScheduleServiceTarget", "ScimError", "ScimGroup", "ScimGroupList", "ScimGroupRef", "ScimMember", "ScimMeta", "ScimMultiValue", "ScimName", "ScimPatchOperation", "ScimPatchRequest", "ScimPosting", "ScimSangamUser", "ScimUser", "ScimUserList", "Seat", "SeatHolding", "ServiceMocksCreateMock", "ServiceMocksToggle", "ServicePrincipal", "ServicePrincipalSecret", "SignalRequest", "SignatureCheck", "SlaRow", "SodCheck", "SodConflict", "SodException", "StartAdHocActivityRequest", "StartCaseRequest", "StartProcessRequest", "SuspensionRequest", "Task", "TaskDetail", "TaskForm", "TaskStat", "Tenant", "TenantBundle", "TerminateRequest", "TerminationResult", "TestBundleExport", "TestBundleVerify", "TestClock", "TestClockChange", "TestRun", "TimePoint", "TopicBacklog", "TopicInfo", "TopicRequest", "TraceContext", "TriggerRequest", "TtlRequest", "TypedValue", "UiPluginManifest", "UpdatePackageRequest", "User", "UserOperation", "ValidationIssue", "Variant", "VisitRecord", "WithdrawRequest", "WorkBpmnErrorRequest", "WorkCompleteRequest", "WorkFailRequest", "WorkOperation", "WorkOutcome", "WorkStep", "WorkStepRequest", "WorkUnlockRequest", "WorkerInfo"]
+__all__ = ["Number", "ActAgentBody", "ActConversationChannelBody", "ActRetentionClassBody", "ActRoutingStrategyBody", "ActServiceBody", "ActSlaModelBody", "ActTemplateBody", "ActionModelInvoke", "ActionModelPublish", "ActivityInstance", "ActivityStat", "AdHocActivity", "AdHocState", "AddCaseCommentRequest", "AddCommentRequest", "AgeBucket", "AgentUsage", "AiA2aBody", "AiA2aBodyParams", "AiA2aBodyParamsMessage", "AiA2aBodyParamsMessagePartsItem", "AiApproval", "AiClassification", "AiClassify", "AiCorrect", "AiDecide", "AiDraft", "AiDraftGenerate", "AiDraftReview", "AiEvalResult", "AiEvaluate", "AiEvaluation", "AiIngest", "AiIngestResult", "AiKbSearch", "AiKbVersion", "AiMcpBody", "AiMcpBodyParams", "AiProposal", "AiPropose", "AiReason", "AiRun", "AiStartRun", "AiUiDecisionRequest", "AiUiPublishKbRequest", "AiUiReviewRequest", "AlertRule", "AnalyticsSummary", "ApiContract", "ApiContractSummary", "AppealRequest", "Application", "ApplyRequest", "AssessmentRow", "Assignment", "AssignmentImpact", "AssignmentServiceNewAssignment", "AuditEntry", "AuditExportJob", "AuditExportRequest", "AuditVerifyResult", "BackupRun", "BackupTarget", "BackupTriggerRequest", "Batch", "BatchControlRequest", "BatchFilter", "BatchItem", "BatchPreview", "BatchRequest", "BillingCollectionRequest", "BillingInvoiceRequest", "BillingPenaltyRequest", "BillingRefundRequest", "BillingRefundResult", "BillingWaiverRequest", "BookingModelAllotRequest", "BookingModelHoldRequest", "BookingModelRecurrence", "BookingModelWaitlistRequest", "BreakGlassGrant", "BreakGlassIssued", "BreakGlassRequest", "BreakGlassReview", "BreakpointsRequest", "BulkChunk", "BulkChunkReceipt", "BulkClaimRequest", "BulkCompleteRequest", "BulkCreateJob", "BulkFailure", "BulkJob", "BulkResult", "BulkRowInput", "BulkRowStatus", "BundleDiffEntry", "BundleDiffRequest", "BundleImportRequest", "BundleImportResult", "CalendarServiceSlotTemplate", "CancelAckRequest", "CandidateSeat", "CaseComment", "CaseDefinition", "CaseExecution", "CaseExecutionCommand", "CaseFilePublishConfigBody", "CaseInstance", "CaseInstanceCommand", "CaseVersion", "CatalogueEntry", "CellActivateRequest", "CellDrainStatus", "CellExportHandle", "CellImportRequest", "CellImportResult", "CellMoveRequest", "CellMovedRequest", "CellTenantChecksum", "CellTenantState", "CfActionItem", "CfActionItemServicePendency", "CfAddPartyRequest", "CfAdjournRequest", "CfAgendaItem", "CfAgendaOrder", "CfAgendaRequest", "CfApproveBody", "CfApproveMinutesRequest", "CfAtrBody", "CfAttendance", "CfAttendanceRequest", "CfCarryResult", "CfCaseFile", "CfCaseFileRestPortAssignRequest", "CfCaseFileRestPortExtendRequest", "CfCaseLink", "CfCaseParty", "CfCaseView", "CfCommittee", "CfCommitteeView", "CfConfigEntry", "CfConflict", "CfConstituteRequest", "CfCreateRequest", "CfDeadline", "CfDecision", "CfDecisionInput", "CfDocument", "CfDocumentRequest", "CfDraftBody", "CfDuplicateCandidate", "CfEntry", "CfEscalationStep", "CfEvent", "CfFolder", "CfFolderRequest", "CfFollowUpRequest", "CfHearing", "CfHearingRequest", "CfLinkRequest", "CfLinkedRecord", "CfMeeting", "CfMeetingControllerReasonBody", "CfMeetingView", "CfMember", "CfMemberInput", "CfMergeRequest", "CfMilestoneRequest", "CfMinutes", "CfMove", "CfNote", "CfNoteRequest", "CfNotice", "CfOpenRequest", "CfOutcomeRequest", "CfParty", "CfPartyInput", "CfPartyResult", "CfPublishedConfig", "CfQuorumStatus", "CfReasonRequest", "CfReassignBody", "CfReconstituteRequest", "CfRecordRequest", "CfReference", "CfReferenceControllerReasonBody", "CfReferenceRestPortAssignRequest", "CfReferenceRestPortExtendRequest", "CfReferenceServicePendency", "CfReferenceView", "CfRegisterRequest", "CfReplyRequest", "CfRescheduleRequest", "CfScheduleRequest", "CfSplitRequest", "CfStageRequest", "CfTextBody", "CfTransferRequest", "CfUpdateRequest", "CfVerifyRequest", "ChainVerification", "ChannelAddParticipant", "ChannelAttachment", "ChannelConversation", "ChannelCreateConversation", "ChannelHookResult", "ChannelMessage", "ChannelOptInRequest", "ChannelSendMessage", "ChannelSlackHookResult", "ChannelStatus", "ChecklistItem", "Clarification", "CleanupStatus", "ClockItem", "CloudEvent", "CodedReason", "Comment", "CompleteTaskRequest", "CompleteTaskResult", "ComplianceAuditEvidence", "ComplianceAuditEvidenceRequest", "ComplianceAuditVerification", "ComplianceBreach", "ComplianceBreachRequest", "ComplianceConsent", "ComplianceConsentArtefact", "ComplianceContact", "ComplianceGiveConsentRequest", "ComplianceImpactAssessment", "ComplianceImpactAssessmentRequest", "ComplianceIncident", "ComplianceIncidentRequest", "ComplianceJurisdiction", "ComplianceLawfulRequest", "ComplianceLawfulRequestBody", "ComplianceLogSegment", "CompliancePublishNoticeRequest", "CompliancePublishResult", "CompliancePurpose", "ComplianceReasonBody", "ComplianceRenderedNotice", "ComplianceReport", "ComplianceRespondLawfulRequest", "ComplianceRightsRequest", "ComplianceRightsSubmission", "ComplianceSealLogsRequest", "ComplianceSubmitIncidentRequest", "ComplianceTransferDecision", "ComplianceTransferRequest", "ComplianceVerifyLawfulRequest", "ComplianceWithdrawConsentRequest", "ConfigActivateRequest", "ConfigApproveRequest", "ConfigChangeRecord", "ConfigClassificationRequest", "ConfigCorrectionSlip", "ConfigCrosswalkRequest", "ConfigDocumentCheckRequest", "ConfigFinding", "ConfigFindingsResult", "ConfigMasterCode", "ConfigProfileVersion", "ConfigProfileVersionDocument", "ConfigRejectRequest", "ConfigResolvedProfile", "ConfigSeedResult", "ConfigSlipChange", "ConfigValidateRequest", "ConformanceResult", "ConsequencePreview", "ContinuationEnded", "ContinueAsNewRequest", "ContinueAsNewResult", "ContractOperation", "CreateLinkRequest", "CreatePackageRequest", "CrossBoundaryMoveRequest", "CustomField", "CustomFieldDefineRequest", "CustomFieldRetireRequest", "DataObjectDef", "DataObjectField", "DataObjectRecordOperation", "DebugStatus", "DebugStepResult", "DecisionDefinition", "DecisionEvaluateRequest", "DecisionEvaluateResult", "DelegateTaskRequest", "Delegation", "DeployedDefinition", "Deployment", "Deviation", "DeviceRegistryRegistration", "DispatchServiceUnitInput", "DltDeliveryReport", "DltDeliveryReportResult", "Document", "DocumentGenerateRequest", "DocumentTemplate", "DscCertificate", "DscCertificateDecision", "DscCertificateEnrolmentRequest", "DscCompleteRequest", "DscCompleteResponse", "DscPrepareRequest", "DscPrepareResponse", "DurationReportRow", "ElementTemplateApply", "ElementTemplatePublish", "EndAssignmentRequest", "EntityLink", "EnvBinding", "EnvBindingApproval", "EnvBindingRequest", "EventChannel", "EventDefinition", "EventGridHookResult", "Evidence", "ExecutorPartitionMap", "ExecutorPartitionResize", "ExecutorPartitionResizeRequest", "ExecutorPartitionView", "ExecutorSlotMove", "ExecutorSlotRange", "ExplainRequest", "ExplainResult", "ExtendLockRequest", "ExternalTaskLogEntry", "ExternalWork", "FetchAndLockRequest", "FieldChange", "FieldError", "FieldTemplate", "FieldTemplateEvidenceRules", "FieldTemplateGeofenceRule", "FieldTemplateGrade", "FieldTemplateItem", "FieldTemplateOption", "FieldTemplateScoring", "FieldTemplateSection", "FieldTemplateVisibleIf", "FieldVisit", "FieldWorkCreateAssignmentBody", "FieldWorkCreateJobBody", "FieldWorkDefineScheduleBody", "FieldWorkDevicePolicyBody", "FieldWorkDeviceStatusBody", "FieldWorkJobActionBody", "FieldWorkPingBody", "FieldWorkPublishTemplateBody", "FieldWorkReassignBody", "FieldWorkRegisterDeviceBody", "FieldWorkResolveConflictBody", "FieldWorkRespondOfferBody", "FieldWorkReviewBody", "FieldWorkRouteBody", "FieldWorkSelectBody", "FieldWorkStartTripBody", "FieldWorkTransitionBody", "FieldWorkTripActionBody", "FieldWorkUnitStatusBody", "FieldWorkUpsertUnitBody", "FlowableDefinitionMapping", "FlowableMigrationFinding", "FlowableMigrationItem", "FlowableMigrationReport", "FlowableMigrationRequest", "FlowableMigrationRollbackRequest", "FormDraft", "FormValidateRequest", "FormValidationResult", "FormVersion", "GeoGeoCheckFenceBody", "GeoGeoDefineFenceBody", "GeoGeoDefineLayerBody", "GeoGeoDefineLayerBodyLevelsItem", "GeoGeoImportBoundariesBody", "GeoGeoImportBoundariesBodyLayer", "GeoGeoImportBoundariesBodyLayerLevelsItem", "GeoGeoImportExternalBody", "GeoGeoOverlapsBody", "GeoGeoPutFeatureBody", "GeoGeoPutObjectGeometryBody", "GeoGeoQueryExternalBody", "GeoGeoRegisterExternalBody", "GitConfig", "GitStatus", "GitSyncRequest", "GitSyncResult", "Grievance", "GrievanceReceipt", "GrievanceRequest", "Group", "HandlerParameter", "HealthHookResult", "HistoricActivityInstance", "HistoricDecision", "HistoricIncident", "HistoricJobLog", "HistoricProcessInstance", "HistoricTask", "HistoricVariable", "HistoryInstanceMigrationRequest", "HistoryInstanceMigrationResult", "IdentityProvider", "IdentitySyncResult", "IdentityTestResult", "InboxEntry", "Incident", "IncidentAction", "InjectionRequest", "InjectionResult", "InstalledPack", "InstanceHandler", "InstanceQueryRequest", "InstanceQueryResult", "InstanceUpdateRequest", "InstanceUpdateResult", "Job", "JobRetriesRequest", "JobSummary", "JobSuspensionRequest", "LeaveRequest", "LedgerAccount", "LedgerAccountKey", "LedgerAccountRef", "LedgerAccountingEntry", "LedgerCloseRequest", "LedgerFreezeOrder", "LedgerFreezeRequest", "LedgerHeldRequest", "LedgerOperationRequest", "LedgerReconcileRequest", "LedgerReconcileRow", "LedgerResult", "LegalHoldRequest", "LifecycleEvent", "LockState", "LookupResult", "Me", "MeLocale", "MessageRequest", "MessageResult", "MigrationExecuteRequest", "MigrationInstruction", "MigrationPlan", "MigrationPlanRequest", "ModelDiffChange", "ModelDiffReport", "ModelDiffRequest", "ModelDiffSummary", "ModelEditLease", "ModelFenceRequest", "ModelLeaseOutcome", "ModelPresence", "ModelTakeoverRequest", "ModelTokenWalkRequest", "ModelViewer", "ModellerFenceRequest", "ModellerRunActionRequest", "ModificationInstruction", "ModifyPreviewRequest", "ModifyRequest", "ModuleDefaultsRequest", "ModuleDefaultsResult", "NodeStatus", "NoteRequest", "Notification", "NotificationFailure", "NumberGrouping", "OnboardingApproveRequest", "OnboardingDryRun", "OnboardingProblem", "OnboardingReadiness", "OnboardingReasonRequest", "OnboardingRequest", "OnboardingRequestAdminSpec", "OnboardingRequestComplianceSpec", "OnboardingRequestConnectorBindingSpec", "OnboardingRequestGoLiveSpec", "OnboardingRequestPackSpec", "OnboardingRequestProfileSpec", "OnboardingRequestRoleRuleSpec", "OnboardingRequestRoleSpec", "OnboardingRequestSeedSpec", "OnboardingRequestTenantSpec", "OnboardingRequestTestCall", "OnboardingRun", "OnboardingSecurity", "OpenTaskCount", "OpsAdvance", "OpsDashboard", "OpsJob", "OpsMetric", "OpsPurge", "OpsReason", "OpsSecret", "OpsUiAdvanceRequest", "OpsUiIndexJobRequest", "OpsUiRetentionExecute", "OpsUiSecretRequest", "OpsUiVariableRequest", "OpsValue", "OrgUnit", "OrgUnitImportResult", "OutboxDelivery", "OutboxRepairRequest", "OutboxStats", "OutboxUsage", "OutcomeUnknownRequest", "OutcomeUnknownResult", "PackDeployResult", "PackLifecycleRequest", "PackResolution", "PackResolveRequest", "PackUninstalled", "Package", "PackageAddCommentRequest", "PackageBundle", "PackageComment", "PackageDiffEntry", "PackageEvent", "PackageImportRequest", "PackageSignature", "PackageTransitionRequest", "PackageVerification", "PageBlock", "PageModel", "PageSummary", "Participant", "PartitionCount", "PgAchievement", "PgAchievementRequest", "PgAlert", "PgAllocationRequest", "PgCampaignRequest", "PgCampaignResult", "PgCurrentConfig", "PgEvent", "PgFinancial", "PgFinancialRequest", "PgFinding", "PgGeneratePeriodsRequest", "PgImportRequest", "PgImportResult", "PgMilestone", "PgMilestoneRequest", "PgMilestoneServiceProgress", "PgNode", "PgOutcome", "PgPeriod", "PgPeriodStateRequest", "PgProgramme", "PgProgrammeInput", "PgProgressServiceProgress", "PgPublished", "PgReasonBody", "PgRefreshResult", "PgReturnDetail", "PgReturnRow", "PgReturnValuesRequest", "PgReviseTargetRequest", "PgRollupRequest", "PgRollupResult", "PgSetTargetRequest", "PgSnapshot", "PgStatusRequest", "PgStoredFinding", "PgTarget", "PgUpdateProgrammeRequest", "PgValue", "PgVarianceRequest", "PgVersionBody", "PluginInfo", "PoisonInboundItem", "PoisonInboundParked", "Policy", "PolicyMatch", "PolicyVersion", "PortalMessage", "PortalService", "PowerLimitCap", "PowerLimitDecision", "PowerLimitEffective", "PowerLimitScope", "PowerTable", "PowerTableCheckResult", "PowerTableTestCase", "PowerTableTestOutcome", "PowerTableTransitionRequest", "Problem", "ProcessContinuationChain", "ProcessContinuationLink", "ProcessDefinition", "ProcessInstance", "ProgrammePublishConfigBody", "ProgrammePublishConfigBodyVariance", "PromotionApplyRequest", "PromotionPlan", "PromotionPlanRequest", "PublishResult", "QueueCallRequest", "QueueCompleteRequest", "QueueOpenRequest", "QueuePolicy", "QueueReasonRequest", "QueueRestPortCounterRequest", "QueueRestPortIssueTokenRequest", "QueueRestPortServicePointRequest", "QueueRestPortTransferRequest", "QueueStatusRequest", "RandomSelectorCandidate", "ReasonRequest", "ReceiveMatrixTransactionRequest", "ReconciliationItem", "ReconciliationResolveRequest", "RegistryAssetAddMeterBody", "RegistryAssetAddPlanBody", "RegistryAssetCorrectReadingBody", "RegistryAssetCreateWorkOrderBody", "RegistryAssetDefineClassBody", "RegistryAssetDefineClassBodyDepreciation", "RegistryAssetDefineClassBodyMaintenancePlansItem", "RegistryAssetDefineClassBodyMetersItem", "RegistryAssetDisposeBody", "RegistryAssetGenerateDueBody", "RegistryAssetMoveBody", "RegistryAssetPlanStatusBody", "RegistryAssetRecordReadingBody", "RegistryAssetRegisterBody", "RegistryAssetRejectReadingBody", "RegistryAssetReparentBody", "RegistryAssetStepBody", "RegistryAssetTriggerConditionBody", "RegistryAssetUpdateDetailsBody", "RegistryAssetUpdatePlanBody", "RegistryCustodyAcceptBody", "RegistryCustodyBreakSealBody", "RegistryCustodyCancelBody", "RegistryCustodyCancelDisposalBody", "RegistryCustodyExecuteBody", "RegistryCustodyHandoverBody", "RegistryCustodyInitiateBody", "RegistryCustodyInspectBody", "RegistryCustodyLocationBody", "RegistryCustodyOrderDisposalBody", "RegistryCustodyPutIntoBody", "RegistryCustodyRegisterBody", "RegistryCustodyRejectBody", "RegistryCustodySealBody", "RegistryCustodyTakeOutBody", "RegistryEntry", "RegistryInstrumentAmendBody", "RegistryInstrumentDuplicateBody", "RegistryInstrumentEndorseBody", "RegistryInstrumentIssueBody", "RegistryInstrumentReinstateBody", "RegistryInstrumentRenewBody", "RegistryInstrumentRevokeBody", "RegistryInstrumentSurrenderBody", "RegistryInstrumentSuspendBody", "RegistryInstrumentTransferHolderBody", "RegistryInstrumentTransferReissueBody", "RegistryInstrumentTransitionBody", "RegistryInstrumentVerifyQrBody", "RegistryPartyAddAddressBody", "RegistryPartyAddIdentifierBody", "RegistryPartyAddRelationshipBody", "RegistryPartyConfirmBody", "RegistryPartyCreateBody", "RegistryPartyCreateBodyAddressesItem", "RegistryPartyCreateBodyIdentifiersItem", "RegistryPartyCreateBodyNames", "RegistryPartyDeactivateBody", "RegistryPartyEndRelationshipBody", "RegistryPartyMatchBody", "RegistryPartyMatchBodyIdentifiersItem", "RegistryPartyMatchBodyNames", "RegistryPartyMergeBody", "RegistryPartyReactivateBody", "RegistryPartyRejectBody", "RegistryPartyRetireAddressBody", "RegistryPartyRetireIdentifierBody", "RegistryPartySaveIdentifierTypesBody", "RegistryPartySaveMatchConfigBody", "RegistryPartySaveMatchConfigBodyComparatorsItem", "RegistryPartySaveMatchConfigBodyRulesItem", "RegistryPartySnapshotBody", "RegistryPartyUnmergeBody", "RegistryPartyUpdateBody", "RegistryPartyUpdateBodyNames", "RegistryRegisterAppendBody", "RegistryRegisterCloseBody", "RegistryRegisterCorrectBody", "RegistryRegisterDefineBody", "RegistryRegisterDefineBodyColumns", "RegistryRegisterDefineBodyColumnsFieldsItem", "RegistryRegisterExtractBody", "RegistryRegistryAllocateBody", "RegistryRegistryClosePeriodBody", "RegistryRegistryCreateBody", "RegistryRegistryDefineSeriesBody", "RegistryRegistryMarkUsedBody", "RegistryRegistryMirrorBody", "RegistryRegistryPublishTypeBody", "RegistryRegistryPublishTypeBodyDefinition", "RegistryRegistryPublishTypeBodyDefinitionDocuments", "RegistryRegistryPublishTypeBodyDefinitionLifecycle", "RegistryRegistryPublishTypeBodyDefinitionLifecycleStatesItem", "RegistryRegistryPublishTypeBodyDefinitionLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyDefinitionNumbering", "RegistryRegistryPublishTypeBodyDefinitionSchema", "RegistryRegistryPublishTypeBodyDefinitionSchemaFieldsItem", "RegistryRegistryPublishTypeBodyDefinitionValidity", "RegistryRegistryPublishTypeBodyDefinitionVerification", "RegistryRegistryPublishTypeBodyDocuments", "RegistryRegistryPublishTypeBodyLifecycle", "RegistryRegistryPublishTypeBodyLifecycleStatesItem", "RegistryRegistryPublishTypeBodyLifecycleTransitionsItem", "RegistryRegistryPublishTypeBodyNumbering", "RegistryRegistryPublishTypeBodySchema", "RegistryRegistryPublishTypeBodySchemaFieldsItem", "RegistryRegistryPublishTypeBodyValidity", "RegistryRegistryPublishTypeBodyVerification", "RegistryRegistryTransitionBody", "RegistryRegistryUpdateBody", "RegistryRegistryVoidNumberBody", "ResourceDraft", "ResourcePatch", "ResourceQuery", "ResourcesAllotNextRequest", "ResourcesApprovalRequest", "ResourcesAvailableSearchRequest", "ResourcesBumpRequest", "ResourcesCancelAllotmentRequest", "ResourcesCancelRequest", "ResourcesDrawRequest", "ResourcesDrawVerifyRequest", "ResourcesExtendRequest", "ResourcesMoveRequest", "ResourcesNoticeRequest", "ResourcesReasonRequest", "ResourcesResourcesDefineTypeBody", "ResourcesResourcesSaveCalendarBody", "ResourcesRestPortBlackoutRequest", "ResourcesSeriesRequest", "ResourcesStatusRequest", "ResourcesVacateRequest", "RestartRequest", "ResubmitRequest", "ReturnTarget", "ReturnTaskRequest", "RosterOnCallRequest", "RosterRestPortAssignRequest", "RosterRestPortDecisionRequest", "RosterRestPortDemandRequest", "RosterRestPortMemberRequest", "RosterRestPortPeriodRequest", "RosterRestPortRandomiseRequest", "RosterRestPortRotationRequest", "RosterRestPortShiftRequest", "RosterRestPortSwapCreateRequest", "RostersRosterUpdateConstraintsBody", "RuleEvidence", "SaveDraftRequest", "ScheduleServiceSchedule", "ScheduleServiceTarget", "SchemaChangelogStatus", "SchemaEngineStatus", "SchemaStatus", "ScimError", "ScimGroup", "ScimGroupList", "ScimGroupRef", "ScimMember", "ScimMeta", "ScimMultiValue", "ScimName", "ScimPatchOperation", "ScimPatchRequest", "ScimPosting", "ScimSangamUser", "ScimUser", "ScimUserList", "Seat", "SeatHolding", "ServiceMocksCreateMock", "ServiceMocksToggle", "ServicePrincipal", "ServicePrincipalSecret", "SharedDeployment", "SharedDeploymentRegistration", "SharedDeploymentRevocation", "SignalRequest", "SignatureCheck", "SlaRow", "SodCheck", "SodConflict", "SodException", "StartAdHocActivityRequest", "StartCaseRequest", "StartProcessRequest", "SuspensionRequest", "Task", "TaskDetail", "TaskDscDocument", "TaskForm", "TaskStat", "Tenant", "TenantBundle", "TerminateRequest", "TerminationResult", "TestBundleExport", "TestBundleVerify", "TestClock", "TestClockChange", "TestRun", "TimePoint", "TopicBacklog", "TopicInfo", "TopicRequest", "TraceContext", "TriggerRequest", "TtlRequest", "TypedValue", "UiPluginManifest", "UnverifiedPayment", "UnverifiedPaymentRequest", "UnverifiedPaymentResolution", "UnverifiedPaymentResolveRequest", "UpdatePackageRequest", "User", "UserOperation", "ValidationIssue", "Variant", "VisitRecord", "WithdrawRequest", "WorkBpmnErrorRequest", "WorkCompleteRequest", "WorkFailRequest", "WorkOperation", "WorkOutcome", "WorkStep", "WorkStepRequest", "WorkUnlockRequest", "WorkerInfo"]
 
 class ActAgentBody(TypedDict, total=False):
     """Request body of RegistryController.action, read by the service as a JSON object; typed from the keys the service reads (M-051). Members it does not read are accepted and ignored.
@@ -196,8 +196,8 @@ Schema ``AiA2aBody``.
 
 The schema allows members it does not name (additionalProperties); they are kept as received."""
     id: Any
-    method: str
     params: AiA2aBodyParams
+    method: str
 
 
 class AiA2aBodyParams(TypedDict, total=False):
@@ -208,6 +208,11 @@ Schema ``AiA2aBodyParams``.
 The schema allows members it does not name (additionalProperties); they are kept as received."""
     message: AiA2aBodyParamsMessage
     id: str
+    pageSize: int
+    status: str
+    contextId: str
+    statusTimestampAfter: str
+    pageToken: str
 
 
 class AiA2aBodyParamsMessage(TypedDict, total=False):
@@ -697,6 +702,44 @@ Schema ``AuditVerifyResult``."""
     ok: bool
     verifiedAt: str
     chains: list[ChainVerification]
+
+
+class _BackupRunRequired(TypedDict):
+    id: str
+    target: str
+    trigger: Literal["SCHEDULED", "MANUAL"]
+    status: Literal["PENDING", "RUNNING", "SUCCEEDED", "FAILED"]
+
+
+class BackupRun(_BackupRunRequired, total=False):
+    """One backup run: a Kubernetes Job of a target, or one execution of a configured backup command.
+
+Schema ``BackupRun``."""
+    startedAt: str
+    finishedAt: str
+    requestedBy: str
+    message: str
+
+
+class BackupTarget(TypedDict):
+    """A backup target: one backup CronJob (Kubernetes) or one configured backup command (VM/compose, decision 220).
+
+Schema ``BackupTarget``."""
+    id: str
+    name: str
+    schedule: str
+    timeZone: str
+    suspended: bool
+    active: int
+    lastScheduleTime: str
+    lastSuccessfulTime: str
+
+
+class BackupTriggerRequest(TypedDict):
+    """Back up now: the reason is audited.
+
+Schema ``BackupTriggerRequest``."""
+    reason: str
 
 
 class Batch(TypedDict, total=False):
@@ -3349,6 +3392,49 @@ Schema ``ConsequencePreview``."""
     limitExceeded: bool
 
 
+class ContinuationEnded(TypedDict):
+    """Pending items of one kind that ended with the predecessor.
+
+Schema ``ContinuationEnded``."""
+    kind: Literal["USER_TASK", "EXTERNAL_TASK", "JOB", "TIMER", "MESSAGE_SUBSCRIPTION"]
+    ended: int
+
+
+class _ContinueAsNewRequestRequired(TypedDict):
+    continuationRequestId: str
+    reason: str
+
+
+class ContinueAsNewRequest(_ContinueAsNewRequestRequired, total=False):
+    """Close this instance and continue it as one new instance (decision 149).
+
+Schema ``ContinueAsNewRequest``."""
+    processDefinitionId: str
+    carryVariables: list[str]
+    variables: dict[str, Any]
+
+
+class _ContinueAsNewResultRequired(TypedDict):
+    requestId: str
+    predecessorId: str
+    successorId: str
+    chainId: str
+    generation: int
+    processDefinitionId: str
+    outcome: Literal["CREATED", "EXISTING"]
+    actor: str
+    reason: str
+    continuedAt: str
+    ended: list[ContinuationEnded]
+
+
+class ContinueAsNewResult(_ContinueAsNewResultRequired, total=False):
+    """The successor of a continued instance.
+
+Schema ``ContinueAsNewResult``."""
+    businessKey: str
+
+
 class _ContractOperationRequired(TypedDict):
     operationId: str
     format: Literal["OPENAPI", "ASYNCAPI"]
@@ -3473,6 +3559,20 @@ Schema ``DataObjectField``."""
     required: bool
     reference: str
     sensitive: bool
+
+
+class _DataObjectRecordOperationRequired(TypedDict):
+    operationId: str
+    dataObjectKey: str
+    status: Literal["PENDING", "COMPLETED", "FAILED", "UNKNOWN"]
+
+
+class DataObjectRecordOperation(_DataObjectRecordOperationRequired, total=False):
+    """A record create on a REST-backed data object (decision 265), run through the operation ledger.
+
+Schema ``DataObjectRecordOperation``."""
+    record: dict[str, Any]
+    failureCode: str
 
 
 class DebugStatus(TypedDict, total=False):
@@ -3631,6 +3731,30 @@ The schema allows members it does not name (additionalProperties); they are kept
     attributes: dict[str, Any]
 
 
+class _DltDeliveryReportRequired(TypedDict):
+    status: str
+
+
+class DltDeliveryReport(_DltDeliveryReportRequired, total=False):
+    """One SMS delivery report from the provider.
+
+Schema ``DltDeliveryReport``."""
+    reportId: str
+    clientRef: str
+    messageId: str
+    reason: str
+    reportedAt: str
+
+
+class DltDeliveryReportResult(TypedDict, total=False):
+    """Outcome of a delivery-report post.
+
+Schema ``DltDeliveryReportResult``."""
+    accepted: int
+    duplicates: int
+    ignored: int
+
+
 class Document(TypedDict, total=False):
     """Stored document version (R74).
 
@@ -3672,6 +3796,88 @@ Schema ``DocumentTemplate``."""
     languages: list[str]
     format: Literal["PDFA", "DOCX", "HTML"]
     version: int
+
+
+class _DscCertificateRequired(TypedDict):
+    enrolmentId: str
+    principalId: str
+    certificateSha256: str
+    issuer: str
+    serialHex: str
+    subject: str
+    notBefore: str
+    notAfter: str
+    status: Literal["PENDING", "APPROVED", "REJECTED", "REVOKED"]
+    enrolledAt: str
+
+
+class DscCertificate(_DscCertificateRequired, total=False):
+    """One enrolment of a DSC certificate. Fingerprint, issuer, serial, subject and validity are derived by the server from the DER; the subject is shown, never trusted.
+
+Schema ``DscCertificate``."""
+    decidedBy: str
+    decidedAt: str
+    decisionReason: str
+
+
+class DscCertificateDecision(TypedDict, total=False):
+    """Reason for an approval (optional) or a rejection or revocation (required, 422 REASON_REQUIRED).
+
+Schema ``DscCertificateDecision``."""
+    reason: str
+
+
+class DscCertificateEnrolmentRequest(TypedDict):
+    """Enrol the certificate of the caller's token.
+
+Schema ``DscCertificateEnrolmentRequest``."""
+    certificate: str
+
+
+class DscCompleteRequest(TypedDict):
+    """Step 2 of a DSC signature (decision 165).
+
+Schema ``DscCompleteRequest``."""
+    prepareId: str
+    signature: str
+    algorithm: str
+    certificateChain: list[str]
+
+
+class _DscCompleteResponseRequired(TypedDict):
+    outcome: Literal["VERIFIED_VALID", "VERIFIED_INVALID", "INDETERMINATE"]
+    retryable: bool
+    evidence: dict[str, Any]
+    documentId: str
+
+
+class DscCompleteResponse(_DscCompleteResponseRequired, total=False):
+    """The verification outcome (decision 140). It is recorded either way; only VERIFIED_VALID stores the signed PDF.
+
+Schema ``DscCompleteResponse``."""
+    reasonCode: str
+    signedDocumentVersion: int
+
+
+class DscPrepareRequest(TypedDict):
+    """Step 1 of a DSC signature (decision 165).
+
+Schema ``DscPrepareRequest``."""
+    documentId: str
+    certificateChain: list[str]
+
+
+class DscPrepareResponse(TypedDict):
+    """What the signer's agent signs.
+
+Schema ``DscPrepareResponse``."""
+    prepareId: str
+    signedAttributes: str
+    preparedDigestSha256: str
+    algorithm: Literal["SHA256withRSA", "SHA256withECDSA"]
+    expiresAt: str
+    documentId: str
+    documentVersion: int
 
 
 class DurationReportRow(TypedDict, total=False):
@@ -3811,6 +4017,15 @@ Schema ``EventDefinition``."""
     revision: int
 
 
+class EventGridHookResult(TypedDict, total=False):
+    """Outcome of an Event Grid delivery.
+
+Schema ``EventGridHookResult``."""
+    validationResponse: str
+    accepted: int
+    duplicates: int
+
+
 class Evidence(TypedDict, total=False):
     """Evidence attached to a reconciliation item.
 
@@ -3821,6 +4036,94 @@ Schema ``Evidence``."""
     addedBy: str
     addedAt: str
     sha256: str
+
+
+class _ExecutorPartitionMapRequired(TypedDict):
+    clusterId: str
+    state: Literal["STABLE", "TRANSITION"]
+    currentMapEpoch: int
+    partitionCount: int
+    slotCount: int
+    algorithmVersion: str
+    partitions: list[ExecutorPartitionView]
+
+
+class ExecutorPartitionMap(_ExecutorPartitionMapRequired, total=False):
+    """The committed executor map of the cluster (EXEC_MAP) and its partitions.
+
+Schema ``ExecutorPartitionMap``."""
+    targetMapEpoch: int
+    activeResize: ExecutorPartitionResize
+
+
+class _ExecutorPartitionResizeRequired(TypedDict):
+    id: str
+    state: Literal["REQUESTED", "IN_PROGRESS", "COMPLETED", "FAILED"]
+    fromPartitionCount: int
+    toPartitionCount: int
+    fromMapEpoch: int
+    toMapEpoch: int
+    algorithmVersion: str
+    actor: str
+    reason: str
+    requestedAt: str
+
+
+class ExecutorPartitionResize(_ExecutorPartitionResizeRequired, total=False):
+    """A partition-count change: a controlled transition from map epoch M to M+1.
+
+Schema ``ExecutorPartitionResize``."""
+    movedSlotCount: int
+    movedSlots: list[ExecutorSlotMove]
+    startedAt: str
+    completedAt: str
+    failure: str
+    handoverPauseMs: int
+
+
+class _ExecutorPartitionResizeRequestRequired(TypedDict):
+    partitionCount: int
+    reason: str
+
+
+class ExecutorPartitionResizeRequest(_ExecutorPartitionResizeRequestRequired, total=False):
+    """Change the partition count (X.2.1.7).
+
+Schema ``ExecutorPartitionResizeRequest``."""
+    expectedMapEpoch: int
+
+
+class _ExecutorPartitionViewRequired(TypedDict):
+    partitionId: int
+    state: Literal["UNOWNED", "ACTIVE", "DRAINING", "RETIRED", "SHARED"]
+    ownerEpoch: int
+    slots: list[ExecutorSlotRange]
+
+
+class ExecutorPartitionView(_ExecutorPartitionViewRequired, total=False):
+    """One partition (EXEC_PARTITION row) and the slots it owns in the committed map M. While a resize runs, a slot of the stored plan stays under its fromPartition until M+1 commits; a target partition without committed slots has slots empty.
+
+Schema ``ExecutorPartitionView``."""
+    ownerNode: str
+    leaseExpiresAt: str
+
+
+class ExecutorSlotMove(TypedDict):
+    """A slot range that changes partition in a resize (the stored plan, PartitionAllocation.Move). While the resize runs a moving slot takes no new acquisitions until it is STABLE under the target; per-slot progress is not part of this view.
+
+Schema ``ExecutorSlotMove``."""
+    first: int
+    last: int
+    fromPartition: int
+    toPartition: int
+
+
+class ExecutorSlotRange(TypedDict):
+    """An inclusive range of logical slot ids. Slot ids are stable for the life of the cluster.
+
+Schema ``ExecutorSlotRange``."""
+    first: int
+    last: int
 
 
 class ExplainRequest(TypedDict):
@@ -3994,8 +4297,9 @@ The schema allows members it does not name (additionalProperties); they are kept
     critical: bool
     minPhotos: int
     visibleIf: FieldTemplateVisibleIf
-    min: Number
-    max: Number
+    min: str
+    max: str
+    scale: int
     expected: Any
     findingCode: str
     severity: str
@@ -4323,6 +4627,84 @@ The schema allows members it does not name (additionalProperties); they are kept
     homeLon: Number
     orgUnitRef: str
     attributes: dict[str, Any]
+
+
+class _FlowableDefinitionMappingRequired(TypedDict):
+    flowableKey: str
+    flowableVersion: int
+    targetKey: str
+    targetVersion: int
+
+
+class FlowableDefinitionMapping(_FlowableDefinitionMappingRequired, total=False):
+    """Maps one Flowable process definition onto a deployed Sangam definition.
+
+Schema ``FlowableDefinitionMapping``."""
+    activityMap: dict[str, str]
+
+
+class _FlowableMigrationFindingRequired(TypedDict):
+    severity: Literal["REJECT", "WARN"]
+    code: str
+
+
+class FlowableMigrationFinding(_FlowableMigrationFindingRequired, total=False):
+    """One classification finding of an instance.
+
+Schema ``FlowableMigrationFinding``."""
+    elementId: str
+    message: str
+
+
+class FlowableMigrationItem(TypedDict):
+    """One source instance of a run.
+
+Schema ``FlowableMigrationItem``."""
+    sourceInstanceId: str
+    status: Literal["PLANNED", "REJECTED", "APPLYING", "APPLIED", "FAILED", "MATCHED", "MISMATCHED", "ROLLED_BACK"]
+    definitionKey: str
+    targetInstanceId: str
+    attempts: int
+    error: str
+    findings: list[FlowableMigrationFinding]
+
+
+class FlowableMigrationReport(TypedDict):
+    """State and counts of a run (or of a dry run, which writes nothing).
+
+Schema ``FlowableMigrationReport``."""
+    runId: str
+    state: Literal["DRY_RUN", "FROZEN", "APPLYING", "APPLIED", "RECONCILED", "RECONCILE_FAILED", "ROLLED_BACK", "CUT_OVER"]
+    instances: int
+    supported: int
+    rejected: int
+    rejectionsByCode: dict[str, int]
+    warningsByCode: dict[str, int]
+    tableCounts: dict[str, int]
+    outOfScope: list[str]
+    applied: int
+    failed: int
+    matched: int
+    mismatched: int
+    problems: list[str]
+
+
+class FlowableMigrationRequest(TypedDict):
+    """A Flowable migration run (decision 169).
+
+Schema ``FlowableMigrationRequest``."""
+    runId: str
+    sourceSystem: str
+    sourceTenant: str
+    sourceZone: str
+    mappings: list[FlowableDefinitionMapping]
+
+
+class FlowableMigrationRollbackRequest(TypedDict):
+    """Roll a run back: the reason is audited.
+
+Schema ``FlowableMigrationRollbackRequest``."""
+    reason: str
 
 
 class FormDraft(TypedDict, total=False):
@@ -4764,6 +5146,26 @@ Schema ``HistoricVariable``."""
     activityInstanceId: str
     createTime: str
     state: str
+
+
+class HistoryInstanceMigrationRequest(TypedDict):
+    """Move the history of an ended process instance to a later version of its definition (decision 258).
+
+Schema ``HistoryInstanceMigrationRequest``."""
+    targetDefinitionId: str
+    reason: str
+
+
+class HistoryInstanceMigrationResult(TypedDict):
+    """The moved history: old and new definition, and the rows changed per history table.
+
+Schema ``HistoryInstanceMigrationResult``."""
+    processInstanceId: str
+    fromDefinitionId: str
+    toDefinitionId: str
+    fromVersion: int
+    toVersion: int
+    rowsByTable: dict[str, int]
 
 
 class _IdentityProviderRequired(TypedDict):
@@ -5303,6 +5705,56 @@ Schema ``MigrationPlanRequest``."""
     variables: dict[str, Any]
 
 
+class _ModelDiffChangeRequired(TypedDict):
+    level: Literal["ELEMENT", "FLOW", "EXPRESSION", "PROPERTY"]
+    kind: Literal["ADDED", "REMOVED", "CHANGED"]
+    elementId: str
+    elementType: str
+    name: str
+    path: str
+
+
+class ModelDiffChange(_ModelDiffChangeRequired, total=False):
+    """One semantic change. Elements are matched by id (form components by id or key); layout (BPMNDI, DMNDI, CMMNDI) is never a change.
+
+Schema ``ModelDiffChange``."""
+    before: str
+    after: str
+
+
+class ModelDiffReport(TypedDict):
+    """Semantic diff of two model versions.
+
+Schema ``ModelDiffReport``."""
+    resource: str
+    format: Literal["BPMN", "DMN", "CMMN", "FORM"]
+    changed: bool
+    summary: ModelDiffSummary
+    changes: list[ModelDiffChange]
+
+
+class _ModelDiffRequestRequired(TypedDict):
+    resource: str
+
+
+class ModelDiffRequest(_ModelDiffRequestRequired, total=False):
+    """Two versions of one model file to compare. Each side is at most 5 MiB of UTF-8 text.
+
+Schema ``ModelDiffRequest``."""
+    before: str
+    after: str
+
+
+class ModelDiffSummary(TypedDict):
+    """Number of changes per level.
+
+Schema ``ModelDiffSummary``."""
+    ELEMENT: int
+    FLOW: int
+    EXPRESSION: int
+    PROPERTY: int
+
+
 class _ModelEditLeaseRequired(TypedDict):
     fileId: str
     holder: str
@@ -5336,6 +5788,14 @@ Schema ``ModelLeaseOutcome``."""
     lease: ModelEditLease
 
 
+class ModelPresence(TypedDict):
+    """Who has a model file open.
+
+Schema ``ModelPresence``."""
+    fileId: str
+    viewers: list[ModelViewer]
+
+
 class _ModelTakeoverRequestRequired(TypedDict):
     reason: str
 
@@ -5359,6 +5819,19 @@ Schema ``ModelTokenWalkRequest``."""
     maxSteps: int
     state: dict[str, Any]
     choice: str
+
+
+class _ModelViewerRequired(TypedDict):
+    userId: str
+    editing: bool
+    since: str
+
+
+class ModelViewer(_ModelViewerRequired, total=False):
+    """One user who has the model file open.
+
+Schema ``ModelViewer``."""
+    displayName: str
 
 
 class ModellerFenceRequest(TypedDict, total=False):
@@ -6858,6 +7331,63 @@ Schema ``PortalService``."""
     documentsRequired: list[str]
 
 
+class PowerLimitCap(TypedDict):
+    """A mandatory cap that applied; UNLIMITED never lifts it.
+
+Schema ``PowerLimitCap``."""
+    cap: str
+    max_amount: str
+    currency: str
+
+
+class _PowerLimitDecisionRequired(TypedDict):
+    contract_version: Literal["sangam.power-decision/1"]
+    decision: Literal["PERMIT", "DENY"]
+    effective: PowerLimitEffective
+    applicable_limits: list[PowerLimitEffective]
+    mandatory_caps: list[PowerLimitCap]
+    reason: str
+
+
+class PowerLimitDecision(_PowerLimitDecisionRequired, total=False):
+    """Versioned power-limit decision (owner decision 142). DENY, LIMITED(max_amount, currency) and explicitly authorised UNLIMITED stay distinct; unknown operation metadata, a missing amount or currency, no applicable rule, or a malformed, conflicting or failed evaluation is DENY, never permission. Every applicable limit and every mandatory cap must pass and the lowest ceiling binds; UNLIMITED lifts only the delegated ceiling, never a cap, budget control, role or scope check or maker-checker. Whether an operation is monetary comes from trusted versioned case-type metadata, never from the caller. Version 1 evaluates the gross single-operation amount by magnitude; aggregate limits are outside version 1.
+
+Schema ``PowerLimitDecision``."""
+    actor: str
+    action: str
+    scope: PowerLimitScope
+    case_type: str
+    case_type_version: int
+    amount: str
+    currency: str
+    state_version: int
+    monetary: bool
+    metadata_version: str
+    changed_since_approval: list[str]
+
+
+class _PowerLimitEffectiveRequired(TypedDict):
+    kind: Literal["DENY", "LIMITED", "UNLIMITED"]
+
+
+class PowerLimitEffective(_PowerLimitEffectiveRequired, total=False):
+    """A delegated limit outcome: DENY, LIMITED(max_amount, currency) or explicit UNLIMITED.
+
+Schema ``PowerLimitEffective``."""
+    rule: str
+    max_amount: str
+    currency: str
+    reason: str
+
+
+class PowerLimitScope(TypedDict, total=False):
+    """Scope of a power-limit evaluation.
+
+Schema ``PowerLimitScope``."""
+    tenant: str
+    office: str
+
+
 class _PowerTableRequired(TypedDict):
     key: str
     name: str
@@ -6934,6 +7464,29 @@ The schema allows members it does not name (additionalProperties); they are kept
     instance: str
     code: str
     traceId: str
+    powerLimit: PowerLimitDecision
+
+
+class ProcessContinuationChain(TypedDict):
+    """The continuation chain an instance belongs to, oldest link first.
+
+Schema ``ProcessContinuationChain``."""
+    chainId: str
+    instanceIds: list[str]
+    links: list[ProcessContinuationLink]
+
+
+class ProcessContinuationLink(TypedDict):
+    """One link of a continuation chain.
+
+Schema ``ProcessContinuationLink``."""
+    predecessorId: str
+    successorId: str
+    generation: int
+    requestId: str
+    actor: str
+    reason: str
+    continuedAt: str
 
 
 class ProcessDefinition(TypedDict, total=False):
@@ -9142,6 +9695,38 @@ The schema allows members it does not name (additionalProperties); they are kept
     attributes: dict[str, Any]
 
 
+class SchemaChangelogStatus(TypedDict):
+    """Applied product changesets (Liquibase DATABASECHANGELOG).
+
+Schema ``SchemaChangelogStatus``."""
+    applied: int
+    lastId: str
+    lastAuthor: str
+    lastExecutedAt: str
+    ids: list[str]
+
+
+class SchemaEngineStatus(TypedDict):
+    """The engine schema.
+
+Schema ``SchemaEngineStatus``."""
+    schemaVersion: str
+
+
+class _SchemaStatusRequired(TypedDict):
+    product: SchemaChangelogStatus
+    engine: SchemaEngineStatus
+    liquibaseLocked: bool
+
+
+class SchemaStatus(_SchemaStatusRequired, total=False):
+    """Database schema status of this installation.
+
+Schema ``SchemaStatus``."""
+    lockedBy: str
+    lockGrantedAt: str
+
+
 class _ScimErrorRequired(TypedDict):
     schemas: list[Literal["urn:ietf:params:scim:api:messages:2.0:Error"]]
     status: str
@@ -9192,7 +9777,7 @@ ScimGroupRef.__doc__ = """A group the user belongs to (read-only on User).
 Schema ``ScimGroupRef``."""
 
 ScimMember = TypedDict("ScimMember", {"value": "str", "display": "str", "$ref": "str", "type": "Literal[\"User\", \"Group\"]"}, total=False)
-ScimMember.__doc__ = """A group member.
+ScimMember.__doc__ = """A group member: a person (User). A member of type Group is 400 invalidValue (no nested groups).
 
 Schema ``ScimMember``.
 
@@ -9254,7 +9839,7 @@ class _ScimPostingRequired(TypedDict):
 
 
 class ScimPosting(_ScimPostingRequired, total=False):
-    """A seat held by the person (IX.5): effective-dated; kind as in Assignment.
+    """A seat held by the person (IX.5): effective-dated; kind as in Assignment. Read-only in SCIM.
 
 Schema ``ScimPosting``."""
     kind: Literal["SUBSTANTIVE", "ADDITIONAL_CHARGE", "LEAVE_SUBSTITUTE", "ACTING"]
@@ -9374,6 +9959,37 @@ class ServicePrincipalSecret(TypedDict, total=False):
 Schema ``ServicePrincipalSecret``."""
     principal: ServicePrincipal
     secret: str
+
+
+class _SharedDeploymentRequired(TypedDict):
+    deploymentId: str
+    registeredBy: str
+    reason: str
+    registeredAt: str
+
+
+class SharedDeployment(_SharedDeploymentRequired, total=False):
+    """One registry row (SHARED_DEPLOYMENT). One row per deployment id; revocation is final for that id.
+
+Schema ``SharedDeployment``."""
+    revokedBy: str
+    revokedAt: str
+    revokeReason: str
+
+
+class SharedDeploymentRegistration(TypedDict):
+    """Register an untenanted engine deployment as platform-owned.
+
+Schema ``SharedDeploymentRegistration``."""
+    deploymentId: str
+    reason: str
+
+
+class SharedDeploymentRevocation(TypedDict):
+    """Revoke a registered shared deployment (final for that deployment id).
+
+Schema ``SharedDeploymentRevocation``."""
+    reason: str
 
 
 class _SignalRequestRequired(TypedDict):
@@ -9527,7 +10143,7 @@ Schema ``Task``."""
     formKey: str
     delegationState: str
     variables: dict[str, Any]
-    amount: int
+    amount: str
     currency: str
     reference: str
 
@@ -9553,6 +10169,18 @@ Schema ``TaskDetail``."""
     changedSinceLastSeen: list[FieldChange]
     ruleEvidence: list[RuleEvidence]
     delegatedFrom: str
+    dscDocument: TaskDscDocument
+
+
+class _TaskDscDocumentRequired(TypedDict):
+    slot: str
+
+
+class TaskDscDocument(_TaskDscDocumentRequired, total=False):
+    """Read only: the document a DSC step signs, as the DSC gate captured it when the task was created. The UI preselects that PDF; completion still checks it (decision 236).
+
+Schema ``TaskDscDocument``."""
+    documentId: str
 
 
 class _TaskFormRequired(TypedDict):
@@ -9778,6 +10406,82 @@ Schema ``UiPluginManifest``."""
     styles: list[str]
     contributes: list[dict[str, Any]]
     requires: dict[str, Any]
+
+
+class _UnverifiedPaymentRequired(TypedDict):
+    id: str
+    ledger: str
+    consumer: str
+    channel: str
+    office: str
+    paymentRef: str
+    amount: str
+    currency: str
+    paidAt: str
+    state: Literal["PAYMENT_ACCEPTED_UNVERIFIED", "VERIFIED", "REJECTED", "REVERSED"]
+    reason: str
+    evidenceRef: str
+    acceptedBy: str
+    acceptedAt: str
+    ageDays: int
+    policyVersion: str
+    downstreamPermitted: list[str]
+
+
+class UnverifiedPayment(_UnverifiedPaymentRequired, total=False):
+    """A payment accepted unverified, and its state.
+
+Schema ``UnverifiedPayment``."""
+    resolution: UnverifiedPaymentResolution
+
+
+class _UnverifiedPaymentRequestRequired(TypedDict):
+    consumer: str
+    channel: str
+    office: str
+    paymentRef: str
+    amount: str
+    currency: str
+    paidAt: str
+    reason: str
+    evidenceRef: str
+
+
+class UnverifiedPaymentRequest(_UnverifiedPaymentRequestRequired, total=False):
+    """Accept a payment that its channel cannot confirm now (decision 141).
+
+Schema ``UnverifiedPaymentRequest``."""
+    payerName: str
+    instrument: str
+    details: dict[str, str]
+
+
+class _UnverifiedPaymentResolutionRequired(TypedDict):
+    outcome: Literal["VERIFIED", "REJECTED", "REVERSED"]
+    reason: str
+    resolvedBy: str
+    resolvedAt: str
+
+
+class UnverifiedPaymentResolution(_UnverifiedPaymentResolutionRequired, total=False):
+    """How a pending unverified payment was resolved.
+
+Schema ``UnverifiedPaymentResolution``."""
+    verificationRef: str
+    evidenceRef: str
+
+
+class _UnverifiedPaymentResolveRequestRequired(TypedDict):
+    outcome: Literal["VERIFIED", "REJECTED", "REVERSED"]
+    reason: str
+
+
+class UnverifiedPaymentResolveRequest(_UnverifiedPaymentResolveRequestRequired, total=False):
+    """Resolve a pending unverified payment.
+
+Schema ``UnverifiedPaymentResolveRequest``."""
+    verificationRef: str
+    evidenceRef: str
 
 
 class UpdatePackageRequest(TypedDict, total=False):

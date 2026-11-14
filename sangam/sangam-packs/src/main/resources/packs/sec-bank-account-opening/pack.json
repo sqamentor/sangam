@@ -50,6 +50,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-account-opening/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-account-opening/pack.json"
     }
   ],
   "seed": "packs/sec-bank-account-opening/seed.json",
@@ -197,6 +201,14 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "ao_check": {
+      "monetary": false,
+      "limitTable": "sec-bank-ao-powers",
+      "ruleCaseType": "ACCOUNT_OPENING"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

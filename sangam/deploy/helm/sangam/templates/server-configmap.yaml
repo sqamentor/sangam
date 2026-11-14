@@ -14,6 +14,14 @@ data:
   TZ: UTC
   # SL-18: production posture (no dev tokens/bootstrap, no loopback URL defaults, keys required)
   SANGAM_SECURITY_PRODUCTION: {{ .Values.server.production | quote }}
+  # Decision 144: system audit scope of shared and system-owned engine work (required; refused at start if invalid)
+  SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE: {{ required "server.systemAuditScope is required (decision 144)" .Values.server.systemAuditScope | quote }}
+  # Decision 247: knowledge-base ranking index (portable, pgvector, oracle); also set on the migrate Job
+  SANGAM_AI_KB_VECTOR_INDEX: {{ .Values.server.aiKbVectorIndex | quote }}
+  # Decision 259: maximum age of an OCSP answer's thisUpdate (DSC add-on only)
+  SANGAM_DSC_OCSP_MAX_AGE: {{ .Values.server.dscOcspMaxAge | quote }}
+  # Decision 290: automatic re-dispatches of a pack operation with no process instance (positive integer)
+  SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES: {{ .Values.server.integrationReconciliationMaxRedispatches | int | quote }}
   SANGAM_TRUSTED_PROXIES: {{ join "," .Values.server.trustedProxies | quote }}
   SANGAM_CLIENT_IP_HEADERS: {{ join "," .Values.server.clientIpHeaders | quote }}
   SANGAM_PORT: {{ .Values.server.service.port | quote }}

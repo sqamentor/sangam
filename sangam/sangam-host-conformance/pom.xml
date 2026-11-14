@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.github.sqamentor</groupId>
+    <artifactId>sangam-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>sangam-host-conformance</artifactId>
+  <name>Sangam host conformance and cross-host equivalence kit</name>
+  <description>M-144 / M-150: the host-neutral behavioural tests every host must pass before it is supported (fail
+    closed on every required capability, authorization, duplicate prevention, audit) and the cross-host equivalence
+    scenarios (the same operation, inputs and rule versions give the same business result on every host). Each host
+    runs the kit from its own test sources through a HostHarness. Plain Java: names no host framework.
+  </description>
+
+  <dependencies>
+    <!-- the host SPI: capabilities, seams -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-assembly</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- the ports every scenario calls (org.sangam.rest.port), plain Java since decision 285; no Spring on this path -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-rest-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- the kit is a set of abstract JUnit tests, so JUnit is a compile dependency of this test-only module -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+    </dependency>
+  </dependencies>
+</project>

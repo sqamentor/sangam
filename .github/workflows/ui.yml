@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
-# sangam-ui (React + TypeScript + Vite): install, lint, type-check, unit tests, build, CycloneDX SBOM, image build.
+# sangam-ui (React + TypeScript + Vite): install, lint, type-check, unit tests, build, CycloneDX SBOM, licence and
+# register gates, image build. Every check writes a results-ledger line (CR-01); the gate step fails the job on FAIL,
+# SKIPPED, BLOCKED or a missing line. A missing sangam-ui is BLOCKED, never a silent skip.
+# npm runs with --ignore-scripts (decision 130, CR-14); esbuild, the one package whose install script the build
+# needs (it checks its platform binary), is rebuilt explicitly by name. The CycloneDX generator comes from the
+# committed tools lockfile in sangam/deploy/licence/tools (CR-12), not from npx.
 name: ui
 
 on:
   push:
     branches: [main]
-    paths: ["sangam/sangam-ui/**", "sangam/deploy/docker/ui*", "sangam/deploy/docker/ui/**", ".github/workflows/ui.yml"]
+    paths: ["sangam/sangam-ui/**", "sangam/deploy/docker/ui*", "sangam/deploy/docker/ui/**", "sangam/deploy/licence/**", ".github/workflows/ui.yml"]
   pull_request:
-    paths: ["sangam/sangam-ui/**", "sangam/deploy/docker/ui*", "sangam/deploy/docker/ui/**", ".github/workflows/ui.yml"]
+    paths: ["sangam/sangam-ui/**", "sangam/deploy/docker/ui*", "sangam/deploy/docker/ui/**", "sangam/deploy/licence/**", ".github/workflows/ui.yml"]
   workflow_dispatch:
   workflow_call:
 
@@ -17,6 +22,10 @@ permissions:
 concurrency:
   group: ui-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  LEDGER: ${{ github.workspace }}/results
+  RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
 
 jobs:
   ui:
@@ -28,63 +37,172 @@ jobs:
         working-directory: sangam/sangam-ui
         shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - name: Detect sangam-ui
-        id: detect
-        working-directory: .
-        run: |
-          if [ -f sangam/sangam-ui/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT";
-          else echo "present=false" >> "$GITHUB_OUTPUT"; echo "::notice::sangam/sangam-ui not present yet - skipped"; fi
-      - uses: actions/setup-node@v4
-        if: steps.detect.outputs.present == 'true'
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: "22"
+          node-version: "22.18.0"
           cache: npm
           cache-dependency-path: sangam/sangam-ui/package-lock.json
-      - name: Install
-        if: steps.detect.outputs.present == 'true'
-        run: npm ci --no-audit --no-fund
+      - name: Install (lockfile, no install scripts)
+        run: $RL run --check ui-install --ledger-dir "$LEDGER" --expect package.json --expect package-lock.json -- bash -c 'npm ci --ignore-scripts --no-audit --no-fund && npm rebuild esbuild'
       - name: Lint
-        if: steps.detect.outputs.present == 'true'
-        run: npm run --if-present lint
+        run: $RL run --check ui-lint --ledger-dir "$LEDGER" --expect node_modules -- npm run lint
       - name: Type-check
-        if: steps.detect.outputs.present == 'true'
-        run: npm run --if-present typecheck
+        run: $RL run --check ui-typecheck --ledger-dir "$LEDGER" --expect node_modules -- npm run typecheck
       - name: Unit tests
-        if: steps.detect.outputs.present == 'true'
         # The "test" script is already "vitest --run"; vitest 4 rejects a repeated --run flag.
-        run: npm run --if-present test
+        run: $RL run --check ui-test --ledger-dir "$LEDGER" --expect node_modules -- npm run test
         env:
           CI: "true"
       - name: Build
-        if: steps.detect.outputs.present == 'true'
-        run: npm run build && test -f dist/index.html
-      - name: bpmn.io watermark kept (LIC-8)
-        if: steps.detect.outputs.present == 'true'
+        run: $RL run --check ui-build --ledger-dir "$LEDGER" --expect node_modules -- bash -c 'npm run build && test -f dist/index.html'
+      - name: Build the embeddable web components (M-043)
+        run: $RL run --check ui-build-embed --ledger-dir "$LEDGER" --expect node_modules -- bash -c 'npm run build:embed && test -f dist-embed/sangam-elements.js'
+      - name: bpmn.io watermark kept (LIC-8, CR-19)
+        # The bpmn.io logo/link must stay in the bundled modeller code; fail if a build step stripped it. bpmn-js is a
+        # dependency of the UI, so its absence is BLOCKED (an expected input is missing), not a pass.
         run: |
-          # The bpmn.io logo/link must stay in the bundled modeller code; fail if a build step stripped it.
-          if grep -rqs "bpmn.io" node_modules/bpmn-js/package.json 2>/dev/null; then
-            grep -rqs "bpmn.io" dist/ || { echo "::error::bpmn.io watermark not found in dist (LIC-8)"; exit 1; }
-          fi
+          $RL run --check bpmn-watermark --ledger-dir "$LEDGER" --expect node_modules/bpmn-js/package.json --expect dist/index.html -- grep -rqs "bpmn.io" dist/
+          $RL run --check bpmn-watermark-embed --ledger-dir "$LEDGER" --expect dist-embed/sangam-elements.js -- grep -rqs "bpmn.io" dist-embed/
+      - name: Install the pinned CycloneDX npm generator (tools lockfile, CR-12)
+        working-directory: sangam/deploy/licence/tools
+        run: $RL run --check ui-sbom-tool --ledger-dir "$LEDGER" --expect package-lock.json -- npm ci --ignore-scripts --no-audit --no-fund
       - name: CycloneDX SBOM (production dependencies)
-        if: steps.detect.outputs.present == 'true'
-        run: npx --yes @cyclonedx/cyclonedx-npm@2.1.0 --omit dev --spec-version 1.6 --output-format JSON --output-file ../../sangam-ui.cdx.json
-      - name: Licence policy
-        if: steps.detect.outputs.present == 'true'
+        run: |
+          $RL run --check ui-sbom --ledger-dir "$LEDGER" --expect ../deploy/licence/tools/node_modules/.bin/cyclonedx-npm -- \
+            ../deploy/licence/tools/node_modules/.bin/cyclonedx-npm --omit dev --spec-version 1.6 --output-format JSON --output-file ../../sangam-ui.cdx.json
+      - name: Licence policy (strict, distribution ui)
         working-directory: .
-        run: python3 -I sangam/deploy/licence/check_licences.py --policy sangam/deploy/licence/licence-policy.json --sbom sangam-ui.cdx.json --report ui-licence-report.md
-      - uses: actions/upload-artifact@v4
-        if: steps.detect.outputs.present == 'true'
+        run: |
+          $RL run --check licence-ui --ledger-dir "$LEDGER" --expect sangam-ui.cdx.json -- \
+            python3 -I sangam/deploy/licence/check_licences.py --policy sangam/deploy/licence/licence-policy.json --strict \
+              --distribution ui --sbom sangam-ui.cdx.json --report ui-licence-report.md
+      - name: Decision register (CR-08, CR-09)
+        working-directory: .
+        run: $RL run --check register-ui --ledger-dir "$LEDGER" --expect sangam-ui.cdx.json -- python3 -I sangam/deploy/licence/register_check.py sangam-ui.cdx.json --distribution ui
+      - name: Results-ledger gate (pull request)
+        if: always()
+        working-directory: .
+        run: $RL gate --required sangam/deploy/licence/release-checks.json --mode pr --set pr-ui --ledger-dir "$LEDGER"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
         with:
           name: sangam-ui-dist
           path: |
             sangam/sangam-ui/dist/
             sangam-ui.cdx.json
             ui-licence-report.md
+            results/
           retention-days: 7
-      - uses: docker/setup-buildx-action@v3
-        if: steps.detect.outputs.present == 'true'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          # M-043: the web components ship as their own artefact (watermark kept, LIC-8)
+          name: sangam-ui-elements
+          path: sangam/sangam-ui/dist-embed/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - name: Image build (no push)
-        if: steps.detect.outputs.present == 'true'
         working-directory: sangam
         run: docker buildx build -f deploy/docker/ui.Dockerfile --build-arg DIST_SOURCE=prebuilt --load -t sangam-ui:ci .
+
+  e2e:
+    # M-048 (W4-J REQUEST 17:13:56Z): Playwright end-to-end tests against a real stack: the test-mode server
+    # (deploy/docker/server-test-mode.Dockerfile, in-memory H2, development token) and the UI image on one network.
+    # The browsers come from Playwright's own download (decision 106). The development token is generated per run:
+    # a test value, never a secret.
+    name: UI end-to-end (Playwright)
+    needs: ui
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: sangam
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.18.0"
+          cache: npm
+          cache-dependency-path: sangam/sangam-ui/package-lock.json
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - name: Server jar and the test-mode server image
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -DskipTests -pl sangam-server -am package
+          jar=$(find sangam-server/target -maxdepth 1 -name 'sangam-server-*.jar' ! -name '*-plain.jar' ! -name '*-sources.jar' | head -n1)
+          [ -n "$jar" ] || { echo "::error::no sangam-server fat jar"; exit 1; }
+          cp "$jar" sangam-server/target/sangam-server.jar
+          docker buildx build -f deploy/docker/server.Dockerfile --target runtime --build-arg JAR_SOURCE=prebuilt \
+            --build-arg PREBUILT_JAR=sangam-server/target/sangam-server.jar --load -t sangam-server:dev .
+          docker buildx build -f deploy/docker/server-test-mode.Dockerfile --load -t sangam-server:dev-test-mode .
+      - name: UI build (install scripts off, decision 130) and the UI image
+        run: |
+          set -euo pipefail
+          (cd sangam-ui && npm ci --ignore-scripts --no-audit --no-fund && npm rebuild esbuild && npm run build && npm run build:embed)
+          docker buildx build -f deploy/docker/ui.Dockerfile --build-arg DIST_SOURCE=prebuilt --load -t sangam-ui:e2e .
+      - name: Start the stack
+        run: |
+          set -euo pipefail
+          token=$(python3 -I -c "import secrets; print(secrets.token_hex(24))")
+          echo "::add-mask::$token"
+          echo "SANGAM_DEV_TOKEN=$token" >> "$GITHUB_ENV"
+          docker network create e2e
+          docker run -d --name sangam-server --network e2e -e SANGAM_DEV_TOKEN="$token" \
+            -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test sangam-server:dev-test-mode
+          docker run -d --name sangam-ui --network e2e -p 127.0.0.1:8080:8080 \
+            -e SANGAM_API_UPSTREAM=http://sangam-server:8080 sangam-ui:e2e
+          for i in $(seq 1 60); do
+            docker exec sangam-server sh -c 'exec 3<>/dev/tcp/127.0.0.1/8081' 2>/dev/null && break
+            sleep 5
+          done
+          curl -sSf http://127.0.0.1:8080/ > /dev/null
+      - name: Playwright browsers (decision 106)
+        working-directory: sangam/sangam-ui
+        run: npx playwright install --with-deps chromium firefox
+      - name: End-to-end tests
+        # Ledger check ui-e2e (release-checks.json, INT-H2). It FAILS unless Playwright ran at least one test and
+        # skipped none and none failed: the JSON reporter's stats are checked after the run, so a test.skip (for
+        # example embed.e2e.ts without SANGAM_E2E_CORS_ORIGIN) or an empty run is never a pass. If an earlier step
+        # fails, this step does not run, the line is missing and the gate fails on the missing line.
+        working-directory: sangam/sangam-ui
+        env:
+          SANGAM_E2E_BASE_URL: http://127.0.0.1:8080
+          SANGAM_E2E_CORS_ORIGIN: https://host.e2e.test
+          PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
+          PLAYWRIGHT_HTML_OPEN: never
+        run: |
+          $RL run --check ui-e2e --ledger-dir "$LEDGER" --expect node_modules/@playwright/test/package.json -- bash -c '
+            set -uo pipefail
+            npm run e2e -- --reporter=list,html,json; rc=$?
+            python3 -I - e2e-results.json "$rc" <<"PY"
+          import json, sys
+          path, rc = sys.argv[1], int(sys.argv[2])
+          try:
+              with open(path, encoding="utf-8") as f:
+                  s = json.load(f)["stats"]
+          except (OSError, ValueError, KeyError) as e:
+              sys.exit(f"::error title=ui-e2e::no Playwright JSON stats ({e}); run exit {rc}")
+          passed, flaky, skipped, failed = (s.get(k, 0) for k in ("expected", "flaky", "skipped", "unexpected"))
+          ran = passed + flaky
+          print(f"ui-e2e: passed {passed}, flaky {flaky}, failed {failed}, skipped {skipped}, exit {rc}")
+          if rc != 0 or failed or skipped or ran == 0:
+              sys.exit("::error title=ui-e2e::end-to-end run failed, skipped tests or ran none (a skip is not a pass)")
+          PY'
+      - name: Server log on failure
+        if: failure()
+        run: docker logs sangam-server
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
+        with:
+          name: playwright-report
+          path: sangam/sangam-ui/playwright-report/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-ui-e2e
+          path: results/
+          if-no-files-found: error

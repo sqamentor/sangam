@@ -69,7 +69,7 @@ public class PluginWiring {
     }
 
     static PlatformInfo platform(ClassLoader cl) {
-        return PlatformInfo.detect(cl, "org.sangam", "org.operaton.bpm.engine.ProcessEngine", "0.1.0-SNAPSHOT", "2.2.0", Map.of());
+        return PlatformInfo.detect(cl, "io.github.sqamentor", "org.operaton.bpm.engine.ProcessEngine", "0.1.0-SNAPSHOT", "2.2.0", Map.of());
     }
 
     @Bean

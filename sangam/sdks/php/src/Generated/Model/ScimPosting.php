@@ -8,7 +8,7 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * A seat held by the person (IX.5): effective-dated; kind as in Assignment.
+ * A seat held by the person (IX.5): effective-dated; kind as in Assignment. Read-only in SCIM.
  *
  * Schema ScimPosting of sangam-api.yaml 0.1.0.
  *

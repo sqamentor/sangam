@@ -1,0 +1,95 @@
+{
+  "id": "sec.ushealth.payer-to-payer",
+  "version": "1.0.0",
+  "name": {
+    "en": "Payer-to-Payer data exchange (CMS-0057-F)",
+    "es": "Intercambio de datos entre pagadores (CMS-0057-F)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "New payer: the patient opt-in is recorded first and nothing is requested without it; the member is matched at the previous payer, the data of the look-back period (DMN, five years) is requested with the response clock from DMN and stored in the member record; an unanswered request is chased or closed by the interoperability analyst. Previous payer: a request is answered only with the requesting payer's opt-in attestation and a confirmed member match, within the response clock.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-p2p-request"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-payer-to-payer/sangam-sec-ushealth-p2p-request.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-payer-to-payer/sangam-sec-ushealth-p2p-respond.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-payer-to-payer/sec-ushealth-p2p-config.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/enrol.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/matchHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/chase.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/storeHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/inbound.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/exportHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-payer-to-payer/forms/sendHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-payer-to-payer/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-payer-to-payer/seed.json",
+  "connectors": [
+    {
+      "id": "payer.memberMatch",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Member match at the other payer ($member-match)"
+    },
+    {
+      "id": "payer.p2pData",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Payer-to-Payer data request and response (FHIR Bulk Data)"
+    },
+    {
+      "id": "payer.memberRecord",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Member record of this payer (FHIR)"
+    }
+  ],
+  "covers": [
+    "US-HLT-063",
+    "US-HLT-064",
+    "US-HLT-067",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ]
+}

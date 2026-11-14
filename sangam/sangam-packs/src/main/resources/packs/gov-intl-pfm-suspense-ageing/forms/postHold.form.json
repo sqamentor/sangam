@@ -1,0 +1,27 @@
+{
+  "key": "gov-intl-pfm-suspense-ageing/postHold",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-suspense-ageing",
+  "title": {
+    "en": "Reclassification not confirmed: check the ledger",
+    "hi": "पुनर्वर्गीकरण की पुष्टि नहीं"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ]
+}

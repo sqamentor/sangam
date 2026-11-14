@@ -26,6 +26,10 @@
     {
       "kind": "SEED",
       "path": "packs/budget-reappropriation/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/budget-reappropriation/pack.json"
     }
   ],
   "seed": "packs/budget-reappropriation/seed.json",
@@ -72,6 +76,15 @@
     "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "currency": "INR",
+  "powers": {
+    "br_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "REAPPROPRIATION"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

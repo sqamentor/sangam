@@ -94,7 +94,7 @@ These are thin adapters, one per framework:
 - **Bean registration.** Spring: `@Configuration` classes whose `@Bean` methods are one line each, `return XAssembly.x(...)`. Quarkus: CDI producers of the same shape. Bean names are kept, which preserves the `ServerBeanSetEqualityTest` contract.
 - **Property source binding.** Spring `Environment`, or SmallRye `Config`, wrapped as `SangamProperties`.
 - **Transaction binding.** Spring `PlatformTransactionManager` plus `TransactionAwareDataSourceProxy`, or a Quarkus JTA `TransactionManager` plus Agroal. Both are exposed through the core `Transactions` interface. `TxSupport`'s Spring code stays in the Spring host.
-- **HTTP.** The MVC controllers stay Spring-only. A Quarkus HTTP surface is out of scope until the owner decides on a contract-generated JAX-RS binding, which would be a second HTTP binding.
+- **HTTP.** The MVC controllers stay Spring-only. **Owner decision 278:** in 0.1.0 the Quarkus host offers the ports and the engine only, with no REST controllers and no OIDC over HTTP; the capability catalogue marks `http` and `oidc-http` as Spring-only (`Capabilities.SPRING_ONLY`). A contract-generated JAX-RS binding would be a later, second HTTP binding.
 - **Security front end.** OIDC filters, `SecurityFilterChain`, Quarkus OIDC.
 - **Host checks.** The Boot line check, the start-up UTC trigger (the core check itself is `EngineTimeZone`), and the defaults property source.
 
@@ -129,8 +129,8 @@ R = required (fail-closed when missing); C = convenience (may be absent and is r
 | Job partition leases and fencing (`EXEC_NODE/PARTITION/SLOT`) | yes | yes | R when the job executor is on | Job executor refused to start |
 | FEEL / Jackson 2.22 (`JacksonCompatibilityGuard`) | yes | build step plus runtime check | R | Build or start-up refused |
 | Money and ledger invariants (opt-in modules) | yes | yes, plain Java | R when the module is on | Module refused |
-| REST API, OpenAPI | yes | **no** (until decided) | C | Not offered |
-| OIDC resource server, API tokens over HTTP | yes | Quarkus OIDC (later) | C (HTTP only) | No HTTP surface; the Java API still authorizes |
+| REST API, OpenAPI | yes | **no** in 0.1.0 (decision 278: Spring-only) | C | Not offered |
+| OIDC resource server, API tokens over HTTP | yes | **no** in 0.1.0 (decision 278: Spring-only) | C (HTTP only) | No HTTP surface; the Java API still authorizes |
 | Metrics (Micrometer), tracing (OTel) | yes | Quarkus equivalents | C | Off, logged |
 | Defaults property source | `sangam-defaults.yaml` | the same file as a SmallRye source | C | Host config only |
 | Async long-poll, actuator, webapp | yes | no | C | Not offered |
@@ -302,7 +302,46 @@ Phase 1a costs little (a mechanical class move), removes a real inconsistency an
 
 ## 10. Host SPI (decision 81, M-144): any outer host
 
-Spring is today's host and Quarkus a possible second one; neither is special. A host is a **thin adapter**: it implements the seams below over the plain-Java assembly layer (`sangam-assembly`, section 2), registers nothing that decides product behaviour, and leaves the core, the domain modules and the assembly untouched. The SPI types live in `sangam-assembly` (package `org.sangam.assembly.host`), are plain Java, and are fenced by `HostFrameworkBoundaryTest` like the rest of the assembly. The sketches below are design, not code; they are written in phase 1b-3, never in Wave 3.
+Spring is today's host and Quarkus a possible second one; neither is special. A host is a **thin adapter**: it implements the seams below over the plain-Java assembly layer (`sangam-assembly`, section 2), registers nothing that decides product behaviour, and leaves the core, the domain modules and the assembly untouched. The SPI types live in `sangam-assembly` (package `org.sangam.assembly.host`), are plain Java, and are fenced by `HostFrameworkBoundaryTest` like the rest of the assembly. The sketches below were design only in Wave 3.
+
+**Wave 4 status (W4-F, M-144 and M-150; code and tests written, not run).**
+
+- **The SPI is code** in `sangam-assembly`, package `org.sangam.assembly.host`:
+  - `SangamProperties`, `ModuleSwitch`, `Capability`;
+  - `Capabilities`, the one catalogue of the 3.1 matrix plus the 10.1 seams;
+  - `CapabilitySet`, `CapabilityMissingException` (`CAPABILITY_MISSING`);
+  - `Lifecycle`, `SangamRuntime`, `ConnectionBinding`, `SecurityContextBinding`, `HostScheduler`, `HealthCheck`, `HttpBinding`;
+  - `HostSeams`, which derives the seam capabilities from what a host actually handed over.
+- **The kit is a separate module**, `sangam-host-conformance` (package `org.sangam.host.conformance`), not the `sangam-assembly` test-jar this section first named. The kit needs JUnit at compile scope and the `sangam-rest` ports, and the assembly keeps its dependencies to sangam-core. The kit contains:
+  - `HostHarness`;
+  - `HostConformanceKit`, with the M-150 equivalence scenarios against `golden-results.properties`;
+  - `HostFailClosedKit`.
+- **The Spring baseline runs the kit** through `sangam-server/src/test/java/org/sangam/server/host/SpringHostHarness.java`:
+  - **Removable now:** the security module (decision 75 refusal).
+  - **Gaps:** every other required capability is a declared gap, with the extraction phase that makes it removable. Only the baseline host may have gaps.
+- **Phase 1b (M-141b) is code:** `org.sangam.assembly.engine.EngineAssembly` holds the engine settings read from configuration, the module ports, the plugin order (the same 8 classes, compared by `EngineAssemblyTest`) and the engine capability check. `EngineConfigurationCustomizer` and `EngineWiring` call it; the line references in section 1 describe the code before this move.
+- **M-141d is done:** the registry and geo Spring controllers moved into the REST host area of `sangam-rest` (`modules/registry/web`, `modules/geo/web`); the unregistered field adapter was removed. Their 9 ratchet entries are gone, and the field, geo and registry modules joined the never-a-host list of `HostFrameworkBoundaryTest` beside `sangam-assembly` and `sangam-host-conformance`.
+- **M-141c is written and waiting for its consumer grant:** `TxSupport` and `ReadTransactions` become plain Java with Spring implementations in `sangam-rest` `config/`; the last 4 ratchet entries go when it lands.
+- **M-143 (the Quarkus host) is in 0.1.0 as an optional adapter.** Owner decision 186 replaces the earlier deferral to 0.2. The module is `sangam-quarkus-extension`, built only by an opt-in reactor profile.
+  - **Seams:** it supplies five: config source, lifecycle, scheduling, security context, and the shared JTA transaction (Narayana and the Agroal data source the engine also holds). Every other required capability is `CAPABILITY_MISSING`, so both the engine build and the start-up refuse.
+  - **Closure (D-5, decision 137(2)):** Operaton 2.2.0 with Quarkus 3.40.1.1. Jackson is held at 2.22.3. Spring is excluded. There is no JDBC driver extension and no quarkus-maven-plugin.
+  - **Status:** download DONE, licence review ALLOWED, technical compatibility NOT_RUN, deployment approval NOT APPROVED.
+  - **Owner decisions 274 to 287 that concern this host (Wave 4, 2026-11-13):**
+    - **274:** Quarkus is a full host in 0.1.0. Every module port is assembled with CDI producers over the same plain-Java assembly the Spring configuration calls (reuse, no fork). The full kit must pass, equivalence included, with no gaps and no loosening of the kit.
+    - **275:** `jna` is pinned to 5.17.0 in the Quarkus test closure.
+    - **276:** W4-F leads extraction phases 1b, 3, 2 and 5, in that order, one phase per round. The Spring configuration files change only by their owners, through a REQUEST per file.
+    - **277:** the Spring-free part of `sangam-rest` moves into its own plain module; the proposal (`sangam-rest-core`) is posted contract-first.
+    - **278:** the Quarkus host offers the ports and the engine only: no REST controllers and no OIDC over HTTP. `Capabilities.SPRING_ONLY` marks `http` and `oidc-http`.
+    - **279:** each Quarkus seam is an optional CDI bean (`QuarkusConfigSource`, `QuarkusLifecycle`, `QuarkusScheduling`, `QuarkusSecurityContext`). Without one, its capability is missing and the start is refused (`HostSeams.Builder.withoutScheduler` removes the standalone fallback). The harness removes a seam with `quarkus.arc.exclude-types`, and runs the `utc-jvm` case in a separate JVM with `-Duser.timezone=Asia/Kolkata`. All 16 required capabilities are removable on Quarkus, with no gaps.
+    - **285:** `sangam-rest-core` is approved, package names unchanged, `sangam-rest` depending on it; the move waits for a window with no open claims on the six packages.
+    - **286:** `job-leases` is required only while executor partitioning is on; the default is unchanged on both hosts.
+    - **287:** the engine area's three removals on Quarkus: (a) jackson-databind 2.21.7 forced into the application; (b) `sangam.engine.apply-product-schema` bound on Quarkus, `false` refused (no host schema step); (c) the database checks also run on the very data source the engine is handed, on every host, refused with the database guard's own message.
+  - **Phase 1b on Quarkus (decisions 276, 286, 287) is code:** `EngineAssembly.checkBeforeDatabase` (UTC, Jackson line, schema step, job leases while partitioning is on) and `EngineAssembly.checkDatabase` (the guard on the engine's data source) give `EngineChecks`; a new `requireCapabilities` overload takes them. The Quarkus host leaves `EngineAssembly.ENGINE_AREA` to the engine step and refuses its host gaps with the database-free checks in one refusal before any database access. The Spring host keeps the three-argument check until its owner switches `EngineConfigurationCustomizer` (REQUEST to INT-H2).
+  - **Still open:**
+    - the phase 3, 2 and 5 capabilities on Quarkus (decision 276);
+    - the Spring host's switch to the phase 1b engine checks (INT-H2);
+    - the P-1 money scenario on four databases;
+    - the M-150 kit run on Quarkus (written, not run).
 
 ### 10.1 The seams every host provides
 

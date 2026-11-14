@@ -4,26 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>sangam-security</artifactId>
   <name>Authorization (deny-wins), OIDC, seats, delegation, maker-checker</name>
 
-  <!-- Spring Framework / Security versions come from the Spring Boot 4.1.2 BOM imported by the parent -->
-  <properties>
-    <version.jakarta-servlet>6.1.0</version.jakarta-servlet>
-  </properties>
-
   <dependencies>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
     <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-engine</artifactId>
       <scope>provided</scope>
     </dependency>
@@ -40,37 +35,9 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- OIDC resource server (Apache-2.0). Nimbus JOSE+JWT (Apache-2.0) comes in through spring-security-oauth2-jose. -->
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-config</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-web</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-oauth2-resource-server</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-oauth2-jose</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-context</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-web</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.servlet</groupId>
-      <artifactId>jakarta.servlet-api</artifactId>
-      <version>${version.jakarta-servlet}</version>
-      <scope>provided</scope>
-    </dependency>
+    <!-- M-141a (decisions 72-75): no Spring and no servlet dependency here. The Spring Security resource server, the
+         token filters and the client JWT verifier live in the Spring host (sangam-server, package
+         org.sangam.security.spring); this jar stays plain Java. -->
 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -91,6 +58,14 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- GovSsoSimulatorConformanceTest verifies the simulator's signed tokens. Nimbus JOSE+JWT (Apache-2.0) is test
+         scope only since M-141a; main code never uses it. The version is the one spring-security-oauth2-jose 7.1.2
+         brings to sangam-server, managed in the root pom. -->
+    <dependency>
+      <groupId>com.nimbusds</groupId>
+      <artifactId>nimbus-jose-jwt</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- M-086 property test (set-based field masks equal the per-row result). Version and test scope are managed in the
          root pom (M-095 approved batch 1); never shipped. -->
     <dependency>
@@ -101,7 +76,7 @@
     <!-- M-077 T89: the government SSO adapter is tested against its simulator (sim/parichay). Test scope only; no
          cycle: sangam-integration depends on core, engine, packs and flowable-ports, never on sangam-security. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-integration</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>

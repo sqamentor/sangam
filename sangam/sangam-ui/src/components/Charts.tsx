@@ -91,7 +91,8 @@ export function LineChart({ title, labels, series, height = 220 }: { title: stri
   );
 }
 
-export function BarChart({ title, rows, unit, format = fmtNumber }: { title: string; rows: { label: string; value: number; tone?: 'ok' | 'warn' | 'bad' }[]; unit?: string; format?: (n: number) => string }) {
+/** rows[].value only sizes the bar; rows[].text, when given, is the exact value shown (decision 138: money as text). */
+export function BarChart({ title, rows, unit, format = fmtNumber }: { title: string; rows: { label: string; value: number; tone?: 'ok' | 'warn' | 'bad'; text?: string }[]; unit?: string; format?: (n: number) => string }) {
   const { t } = useTranslation();
   const id = useId();
   const max = Math.max(1, ...rows.map((r) => r.value));
@@ -106,7 +107,7 @@ export function BarChart({ title, rows, unit, format = fmtNumber }: { title: str
               <span className={`bar-fill tone-${r.tone ?? 'info'}`} style={{ width: `${(r.value / max) * 100}%` }} />
             </span>
             <span className="bar-value">
-              {format(r.value)}
+              {r.text ?? format(r.value)}
               {unit ? ` ${unit}` : ''}
             </span>
           </li>

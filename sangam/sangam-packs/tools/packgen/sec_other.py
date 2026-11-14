@@ -4,6 +4,7 @@ supply chain and manufacturing (sec.scm.*, sec.mfg.*), education (sec.edu.*), ut
 and legal / privacy (sec.legal.*). References: spike/results/SECTOR-WORKFLOWS.md. Values marked SYNTHETIC are pilot
 values replaced by the tenant's policy (GP-37)."""
 from lib import C, q
+import rounding
 from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
 from common import core, outcome, end_ok, rejection, reject_with, revise, checked_query, check_conditions
 from gov2 import simple_seeds
@@ -614,7 +615,8 @@ def scm_p2p():
                defaults='supplierName=SUPPLIER-1;msmeSupplier=false;caseType=PURCHASE;'
                         'routingDecisionKey=sec-scm-pr-authority;powersDecisionKey=sec-scm-powers;appealAllowed=false;'
                         'buyerSeat=BUYER;poQty=@quantity;poPrice=@unitPrice')
-    am = s.expr('pp_amount', 'Value', "${execution.setVariable('amount', quantity * unitPrice)}")
+    am = s.money_calc('pp_amount', 'Value (decision 139 policy)', 'amount', 'quantity * unitPrice',
+                      rounding.declare(pk, 'sec-scm-p2p-amount-rounding'))
     # SL-115: the budget check fails closed (cleared before the query; no default stands in)
     bce, bc = checked_query(s, 'pp_budget', 'Budget check', 'erp.budgetCheck', 'check', 'amount', 'budget', ['budgetOk'])
     g = s.xgw('pp_budGw', 'Budget available?')
@@ -633,7 +635,8 @@ def scm_p2p():
     s.flow(mg, rq, "sourcingMode != 'DIRECT'", 'RFQ / RFP')
     s.flow(rq, s.xgw('pp_rfqGw'))
     s.flow('pp_rfqGw', rq, "rfqDecision == 'retender'", 'retender')
-    rc = s.expr('pp_recompute', 'Value at the awarded price', "${execution.setVariable('amount', quantity * unitPrice)}")
+    rc = s.money_calc('pp_recompute', 'Value at the awarded price (decision 139 policy)', 'amount',
+                      'quantity * unitPrice', rounding.declare(pk, 'sec-scm-p2p-amount-rounding'))
     s.flow('pp_rfqGw', rc, None, 'award', default=True)
     san = core(s, 'pp_approve', 'Approve requisition (core sanction)', 'sanction')
     s.flow(mg, san, None, 'direct', default=True)

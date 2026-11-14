@@ -4,7 +4,7 @@
 profile:
   id: GOI.REVENUE
   layer: department
-  version: 2026.11.0
+  version: 2026.11.1
   effectiveFrom: '2024-04-01'
   name:
     en: Department of Revenue (CBDT / CBIC)
@@ -16,3 +16,5 @@ receipts:
   - GST_REFUND
 writeOff:
   revenueFullPower: true
+procurement:
+  scientificDepartment: false

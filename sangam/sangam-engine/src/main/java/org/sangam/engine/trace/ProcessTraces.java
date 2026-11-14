@@ -59,6 +59,21 @@ public final class ProcessTraces {
                 rs -> Optional.ofNullable(valid(rs.getString(1))), processInstanceId).flatMap(o -> o);
     }
 
+    /**
+     * SL-177: removes the rows of exactly these process instances (their history is being removed), in IN lists of at
+     * most {@code chunk} ids; returns the number of rows removed.
+     */
+    public static int deleteInstances(Connection c, java.util.List<String> processInstanceIds, int chunk) {
+        int removed = 0;
+        for (int from = 0; from < processInstanceIds.size(); from += chunk) {
+            java.util.List<String> part = processInstanceIds.subList(from, Math.min(processInstanceIds.size(), from + chunk));
+            String marks = String.join(",", java.util.Collections.nCopies(part.size(), "?"));
+            removed += Jdbc.update(c, "DELETE FROM PROCESS_TRACE WHERE process_instance_id IN (" + marks + ")",
+                    part.toArray());
+        }
+        return removed;
+    }
+
     /** Removes the rows of a root and every instance under it (the instance's history was removed). */
     public static int deleteRoot(Connection c, String rootProcessInstanceId) {
         return Jdbc.update(c, "DELETE FROM PROCESS_TRACE WHERE root_process_instance_id = ? OR process_instance_id = ?",

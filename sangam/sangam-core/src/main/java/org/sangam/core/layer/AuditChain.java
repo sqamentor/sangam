@@ -88,8 +88,23 @@ public final class AuditChain {
         return prefix + Hashes.hex(Hashes.sha256(tenant + "\u0000" + key)).substring(0, 32);
     }
 
+    /**
+     * RM-49: every audit event belongs to a named tenant. A null or blank tenant is refused before anything is written,
+     * so no sink can start or extend a chain without a tenant (the shared key {@link TenantKey#SHARED} is a named
+     * tenant: shared definitions audit under it).
+     *
+     * @return the tenant, unchanged
+     */
+    public static String requireTenant(String tenant, String eventType) {
+        if (tenant == null || tenant.isBlank()) {
+            throw new IllegalArgumentException("audit event " + eventType + " without a tenant is refused (RM-49)");
+        }
+        return tenant;
+    }
+
     /** Appends one event to the root's chain inside the caller's transaction. */
     public AuditEvent append(Connection c, String tenant, String rootId, String eventType, Map<String, ?> payload) {
+        requireTenant(tenant, eventType);
         RootSeq.Locked locked = RootSeq.lockAndNow(c, dialect, tenant, rootId);   // one round trip on PostgreSQL
         RootSeq.Row head = locked.row();
         long seq = head.nextAuditSeq();

@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Decision 162 (M-109): the optional Microsoft Teams app page (personal tab, and the OIDC sign-in pop-up). -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- No meta CSP: the policy comes from the HTTP response header for /teams.html, which must (a) let the Teams
+         hosts frame the page (frame-ancestors; ignored in a meta element), (b) reach the OIDC issuer (connect-src,
+         form-action), and (c) keep the pop-up's opener (no Cross-Origin-Opener-Policy same-origin, no X-Frame-Options
+         DENY). A meta policy would be enforced as well and block (b). See TEAMS.md. -->
+    <meta name="description" content="Sangam in Microsoft Teams" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Sangam</title>
+  </head>
+  <body>
+    <noscript>Sangam needs JavaScript.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/teams/main.tsx"></script>
+  </body>
+</html>

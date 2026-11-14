@@ -81,19 +81,19 @@ class ArchitectureGuardTest {
     static final Map<String, Integer> CLASS_SIZE_ALLOWED = new TreeMap<>();
 
     static {
-        CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java", 1373);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java", 1373);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java", 1341);
         CLASS_SIZE_ALLOWED.put("sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java", 1142);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/roster/RosterService.java", 1146);
         CLASS_SIZE_ALLOWED.put("sangam-registry/src/main/java/org/sangam/registry/custody/CustodyService.java", 1118);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/queue/QueueService.java", 1042);
         CLASS_SIZE_ALLOWED.put("sangam-server/src/main/java/org/sangam/server/bridge/CellTenantMover.java", 989);
-        CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java", 981);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java", 981);
         CLASS_SIZE_ALLOWED.put("sangam-case/src/main/java/org/sangam/casefile/rest/CaseRestAdapter.java", 974);
         CLASS_SIZE_ALLOWED.put("sangam-resources/src/main/java/org/sangam/resources/booking/BookingService.java", 913);
-        CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonProcessAdapter.java", 832);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/operaton/OperatonProcessAdapter.java", 832);
         CLASS_SIZE_ALLOWED.put("sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineRunner.java", 825);
-        CLASS_SIZE_ALLOWED.put("sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 821);
+        CLASS_SIZE_ALLOWED.put("sangam-rest-core/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java", 821);
     }
 
     /**

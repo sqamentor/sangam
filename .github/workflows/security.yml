@@ -1,13 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 # Static analysis (CodeQL: Java, JavaScript/TypeScript) and OWASP Dependency-Check (fails on CVSS >= 7).
-# M-094 (report-only, never failing): Error Prone + NullAway, SpotBugs + FindSecBugs, Semgrep (local rules in
-# semgrep/ only, plus a pip licence report), Gitleaks, OpenSSF Scorecard; Sonar waits for a server (jobs below the
-# dependency-check job).
+# M-094: Error Prone + NullAway, SpotBugs + FindSecBugs, Semgrep (local rules in semgrep/ only, plus a pip licence
+# report), Gitleaks, OpenSSF Scorecard; Sonar waits for a server.
+#
+# Release security gate (decision 133, CR-15). Called by release.yml with mode=release, this workflow FAILS on:
+#   - any verified secret: gitleaks findings fail (gitleaks does not verify secrets; every finding counts until the
+#     test-phase triage proves one a false positive and adds it to .gitleaksignore with a reason);
+#   - Semgrep errors (severity ERROR) in the authorisation, money or audit paths (SEMGREP_GATE_PATHS below);
+#   - a critical vulnerability with a fix in a shipped jar (dependency-check, CVSS >= 7, stricter than the decision)
+#     or a shipped image (grype in release.yml, image-vuln-scan).
+# On pull requests and pushes the same scanners are REPORT-ONLY: each writes a results-ledger line NOT-RUN
+# (report-only), never PASS (CR-01, RM-12), and the step summary says so.
+#
 # The NVD API key is read at run time from AWS SSM (/shared/security/nvd-api-key, SecureString) through GitHub OIDC and
 # the IAM role sangam-ci (SHARED-CONFIG-AWS.md section 3). No long-lived secret is stored in GitHub. A missing parameter
 # fails the job with a message naming it; there is no fallback to any other path. Pull requests from forks and from
-# Dependabot get no OIDC token: there the scan is skipped with a notice in the step summary (it stays strict on main,
-# nightly and release).
+# Dependabot get no OIDC token: there the scan writes NOT-RUN with the reason (it stays strict on main, nightly and
+# release).
 name: security
 
 on:
@@ -20,9 +29,20 @@ on:
     - cron: "0 23 * * 1"
   workflow_dispatch:
   workflow_call:
+    inputs:
+      mode:
+        description: "release: decision 133 gate; anything else: report-only"
+        type: string
+        default: pr
 
 permissions:
   contents: read
+
+env:
+  LEDGER: ${{ github.workspace }}/results
+  RL: python3 -I ${{ github.workspace }}/sangam/deploy/licence/results_ledger.py
+  # decision 133: report-only unless called by release.yml with mode=release
+  REPORT_ONLY: ${{ inputs.mode == 'release' && '' || '--report-only' }}
 
 jobs:
   codeql:
@@ -42,21 +62,11 @@ jobs:
           - language: javascript-typescript
             build-mode: none
     steps:
-      - uses: actions/checkout@v4
-      - name: Detect sources
-        id: d
-        shell: bash
-        run: |
-          if [ "${{ matrix.language }}" = "javascript-typescript" ]; then
-            if [ -f sangam/sangam-ui/package.json ] || [ -f sangam/sdks/typescript/package.json ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::no JS/TS sources yet"; fi
-          else
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          fi
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         if: matrix.language == 'java-kotlin'
-        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
-      - uses: github/codeql-action/init@v3
-        if: steps.d.outputs.present == 'true'
+        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -73,8 +83,7 @@ jobs:
         if: matrix.language == 'java-kotlin'
         working-directory: sangam
         run: mvn -B -ntp -DskipTests compile test-compile
-      - uses: github/codeql-action/analyze@v3
-        if: steps.d.outputs.present == 'true'
+      - uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
         with:
           category: /language:${{ matrix.language }}
 
@@ -87,6 +96,7 @@ jobs:
       security-events: write
       id-token: write   # GitHub OIDC -> IAM role sangam-ci (reads /shared/security/nvd-api-key)
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: OIDC availability (fork and Dependabot pull requests get no token)
         id: oidc
         shell: bash
@@ -95,26 +105,23 @@ jobs:
           NO_OIDC_PR: ${{ github.event_name == 'pull_request' && (github.event.pull_request.head.repo.full_name != github.repository || github.actor == 'dependabot[bot]') }}
         run: |
           if [ "$NO_OIDC_PR" = "true" ]; then
-            msg="OWASP Dependency-Check skipped: this pull request (fork or Dependabot) gets no GitHub OIDC token, so the NVD API key (SSM /shared/security/nvd-api-key, role sangam-ci) cannot be read. The NVD scan runs on main, nightly and release, where it is strict."
-            echo "::notice title=NVD scan skipped::$msg"
-            echo "### NVD scan skipped" >> "$GITHUB_STEP_SUMMARY"
-            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+            $RL record --check dependency-check --ledger-dir "$LEDGER" --status NOT-RUN \
+              --reason "pull request from a fork or Dependabot: no GitHub OIDC token, so the NVD API key cannot be read; the scan runs on main, nightly and release"
             echo "run=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
             echo "::error title=NVD API key unavailable::no GitHub OIDC token for this run (event '${{ github.event_name }}'), so SSM /shared/security/nvd-api-key cannot be read through role sangam-ci"
+            $RL record --check dependency-check --ledger-dir "$LEDGER" --status BLOCKED --reason "no GitHub OIDC token for this run"
             exit 1
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         if: steps.oidc.outputs.run == 'true'
-      - uses: actions/setup-java@v4
-        if: steps.oidc.outputs.run == 'true'
-        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
       - name: AWS credentials (OIDC, role sangam-ci)
         if: steps.oidc.outputs.run == 'true'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           role-to-assume: arn:aws:iam::196337091345:role/sangam-ci
           role-session-name: sangam-dependency-check-${{ github.run_id }}
@@ -130,81 +137,86 @@ jobs:
           if ! value="$(aws ssm get-parameter --name "$NVD_PARAM" --with-decryption --query Parameter.Value --output text 2>"$err")"; then
             echo "::error title=NVD API key missing::cannot read SSM parameter $NVD_PARAM (SecureString, region ap-south-1) as role sangam-ci. The owner stores it with: aws ssm put-parameter --name $NVD_PARAM --type SecureString --key-id alias/shared-config"
             cat "$err" >&2
+            $RL record --check dependency-check --ledger-dir "$LEDGER" --status BLOCKED --reason "SSM parameter $NVD_PARAM not readable"
             exit 1
           fi
           if [ -z "$value" ] || [ "$value" = "None" ] || [ "$value" != "${value//$'\n'/}" ]; then
             echo "::error title=NVD API key missing::SSM parameter $NVD_PARAM is empty or not a single-line value"
+            $RL record --check dependency-check --ledger-dir "$LEDGER" --status BLOCKED --reason "SSM parameter $NVD_PARAM empty"
             exit 1
           fi
           echo "::add-mask::$value"
           echo "NVD_API_KEY=$value" >> "$GITHUB_ENV"
       - name: NVD data cache
         if: steps.oidc.outputs.run == 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/.m2/repository/org/owasp/dependency-check-data
           # Keyed by plugin version: 12.2.2 widened the reference URL column (DependencyCheck #8467), so an H2
           # database built by an older plugin must not be restored.
           key: nvd-13.0.0-${{ github.run_id }}
           restore-keys: nvd-13.0.0-
-      - name: dependency-check aggregate
+      - name: dependency-check aggregate (strict in every mode, CVSS >= 7 fails)
         if: steps.oidc.outputs.run == 'true'
         working-directory: sangam
         # NVD_API_KEY comes from the masked SSM step above (GITHUB_ENV); it is never a repository secret.
         run: |
           mvn -B -ntp -DskipTests install
-          mvn -B -ntp org.owasp:dependency-check-maven:13.0.0:aggregate \
-            -DfailBuildOnCVSS=7 -Dformats=HTML,SARIF,JSON -DskipTestScope=true -DskipProvidedScope=true \
-            -DassemblyAnalyzerEnabled=false -DossindexAnalyzerEnabled=false \
-            -DsuppressionFile=deploy/licence/dependency-check-suppressions.xml \
-            "-DnvdApiKey=${NVD_API_KEY:?NVD_API_KEY not set: the SSM step must run first}"
-      - uses: github/codeql-action/upload-sarif@v3
+          $RL run --check dependency-check --ledger-dir "$LEDGER" --tool-version dependency-check-maven-13.0.0 -- \
+            mvn -B -ntp org.owasp:dependency-check-maven:13.0.0:aggregate \
+              -DfailBuildOnCVSS=7 -Dformats=HTML,SARIF,JSON -DskipTestScope=true -DskipProvidedScope=true \
+              -DassemblyAnalyzerEnabled=false -DossindexAnalyzerEnabled=false \
+              -DsuppressionFile=deploy/licence/dependency-check-suppressions.xml \
+              "-DnvdApiKey=${NVD_API_KEY:?NVD_API_KEY not set: the SSM step must run first}"
+      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
         if: always() && steps.oidc.outputs.run == 'true' && hashFiles('sangam/target/dependency-check-report.sarif') != ''
         with:
           sarif_file: sangam/target/dependency-check-report.sarif
           category: dependency-check
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always() && steps.oidc.outputs.run == 'true'
         with:
           name: dependency-check-report
           path: sangam/target/dependency-check-report.*
-          if-no-files-found: ignore
-
-  # ---- M-094 gates (owner download batch 1, 2026-11-12). ALL REPORT-ONLY: every scanner exits 0 on findings and
-  # every job is continue-on-error, so no finding (or tool outage) fails this workflow, a pull request or a release.
-  # Making one blocking is an owner decision after the test-phase triage; the baselines come from that triage.
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-security-dependency-check
+          path: results/
+          if-no-files-found: error
 
   static-analysis:
     # SpotBugs + FindSecBugs (profile sangam-spotbugs, failOnError=false). Its LGPL-2.1 transitive spotbugs-annotations
     # 4.10.5 is in the owner's build-time exception (extended 2026-11-12) and banned from shipped scopes (enforcer).
-    # One SpotBugs report per module: they are kept as an artifact with a count per module in the step summary, not
-    # uploaded to code scanning (one category cannot take several runs of the same tool).
+    # Report-only in every mode (decision 133 names no gate for it): its ledger line is NOT-RUN, never PASS.
     name: Error Prone + NullAway, SpotBugs + FindSecBugs (report-only)
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    continue-on-error: true
     permissions:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
-      - name: Compile with Error Prone + NullAway (warnings), then SpotBugs + FindSecBugs at verify (no failure)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - name: Compile with Error Prone + NullAway (warnings), then SpotBugs + FindSecBugs at verify
         working-directory: sangam
         # sangam/pom.xml profiles sangam-static-analysis and sangam-spotbugs (versions in its properties); no tests run
-        run: mvn -B -ntp -Psangam-static-analysis,sangam-spotbugs -DskipTests verify 2>&1 | tee ../static-analysis.log
+        run: |
+          $RL run --check static-analysis --report-only --ledger-dir "$LEDGER" -- \
+            bash -c 'set -o pipefail; mvn -B -ntp -Psangam-static-analysis,sangam-spotbugs -DskipTests verify 2>&1 | tee ../static-analysis.log'
       - name: Summarise the reports
         if: always()
         shell: bash
         run: |
-          grep -E '\.java:\[[0-9]+,[0-9]+\] \[[A-Za-z]+\]' static-analysis.log > error-prone-warnings.txt || true
+          grep -E '\.java:\[[0-9]+,[0-9]+\] \[[A-Za-z]+\]' static-analysis.log > error-prone-warnings.txt || true  # guard-allow: grep exits 1 when there are no warnings; this is a count
           echo "### Error Prone + NullAway (report-only): $(wc -l < error-prone-warnings.txt) warnings" >> "$GITHUB_STEP_SUMMARY"
           echo "### SpotBugs + FindSecBugs (report-only): findings per module" >> "$GITHUB_STEP_SUMMARY"
           find sangam -path '*/target*/spotbugsXml.xml' | sort | while read -r f; do
-            echo "- ${f%%/target*}: $(grep -c '<BugInstance' "$f" || true)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- ${f%%/target*}: $(grep -c '<BugInstance' "$f" || true)" >> "$GITHUB_STEP_SUMMARY"  # guard-allow: grep -c exits 1 on a zero count
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: static-analysis-report
@@ -212,21 +224,44 @@ jobs:
             error-prone-warnings.txt
             sangam/**/target*/spotbugsXml.xml
             sangam/**/target*/spotbugsSarif.json
-          if-no-files-found: ignore
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-security-static-analysis
+          path: results/
+          if-no-files-found: error
 
   semgrep:
-    name: Semgrep (report-only)
+    name: Semgrep (gate at release on authorisation, money and audit paths; report-only otherwise)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    continue-on-error: true
     permissions:
       contents: read
       security-events: write
+    env:
+      # decision 133: Semgrep errors in the authorisation, money or audit paths fail the release. Decision 177 widens
+      # the set to the core audit chain, the pack money code (sangam-packs), the server bridges and the eSign
+      # connector with its signature verification. Every path must exist: a moved path fails the gate step below.
+      SEMGREP_GATE_PATHS: >-
+        sangam/sangam-security/src/main
+        sangam/sangam-rest/src/main
+        sangam/sangam-billing/src/main
+        sangam/sangam-ledger/src/main
+        sangam/sangam-control-plane/src/main/java/org/sangam/controlplane/audit
+        sangam/sangam-core/src/main/java/org/sangam/core/layer/AuditChain.java
+        sangam/sangam-core/src/main/java/org/sangam/core/layer/AuditCheckpoints.java
+        sangam/sangam-core/src/main/java/org/sangam/core/layer/PendingAudit.java
+        sangam/sangam-core/src/main/java/org/sangam/core/layer/PendingAuditDrainer.java
+        sangam/sangam-packs/src/main
+        sangam/sangam-server/src/main/java/org/sangam/server/bridge
+        sangam/sangam-integration/src/main/java/org/sangam/integration/connector/gov/EsignConnector.java
+        sangam/sangam-integration/src/main/java/org/sangam/integration/signature
+        sangam/sangam-integration/src/main/java/org/sangam/integration/document/sign
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: "3.13"
+          python-version: "3.13.7"
       - name: Semgrep CLI 1.185.0 in its own venv (LGPL-2.1 build-time tool, licence-policy.json build_time_tools)
         run: |
           python -m venv "$RUNNER_TEMP/semgrep-venv"
@@ -242,75 +277,88 @@ jobs:
         # semgrep/<rule>.yaml + semgrep/<rule>.java (// ruleid: and // ok: annotations). Owner 2026-11-12: local rules
         # only, no registry rule packs.
         run: semgrep --test --metrics=off semgrep/
-      - name: Scan with the local rules only (findings never fail the job; no --error)
+      - name: Scan the whole tree with the local rules (report, all severities)
         run: |
-          semgrep scan --metrics=off --config semgrep/ --sarif --output semgrep.sarif \
-            --exclude spike --exclude reference --exclude handoff --exclude node_modules --exclude 'target*' sangam || true
-      - uses: actions/upload-artifact@v4
+          $RL run --check semgrep-report --report-only --ledger-dir "$LEDGER" -- \
+            semgrep scan --metrics=off --config semgrep/ --sarif --output semgrep.sarif --error \
+              --exclude spike --exclude reference --exclude handoff --exclude node_modules --exclude 'target*' sangam
+      - name: Gate - Semgrep errors in the authorisation, money and audit paths (decision 133)
+        run: |
+          for p in $SEMGREP_GATE_PATHS; do
+            [ -e "$p" ] || { echo "::error title=semgrep gate path::$p does not exist (decision 177 path list is stale)"; exit 1; }
+          done
+          # shellcheck disable=SC2086
+          $RL run --check semgrep --ledger-dir "$LEDGER" $REPORT_ONLY -- \
+            semgrep scan --metrics=off --config semgrep/ --severity ERROR --error $SEMGREP_GATE_PATHS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: semgrep-report
           path: |
             semgrep.sarif
             semgrep-pip-licences.json
-          if-no-files-found: ignore
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
         if: always() && hashFiles('semgrep.sarif') != ''
         with:
           sarif_file: semgrep.sarif
           category: semgrep
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-security-semgrep
+          path: results/
+          if-no-files-found: error
 
   gitleaks:
-    name: Gitleaks (report-only)
+    name: Gitleaks (gate at release; report-only otherwise)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    continue-on-error: true
     permissions:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - name: gitleaks 8.30.1 (binary, MIT; checksum verified)
+      - name: gitleaks 8.30.1 (binary, MIT; SHA-256 pinned in ci-tool-pins.json, CR-11; the vendor publishes no signature)
+        run: python3 -I sangam/deploy/licence/fetch_tool.py gitleaks --bin "$RUNNER_TEMP/bin"
+      - name: Scan the git history (secrets redacted in the report)
         run: |
-          set -euo pipefail
-          v=8.30.1; base="https://github.com/gitleaks/gitleaks/releases/download/v$v"
-          cd "$RUNNER_TEMP"
-          curl -sSfLO "$base/gitleaks_${v}_linux_x64.tar.gz"
-          curl -sSfLO "$base/gitleaks_${v}_checksums.txt"
-          grep " gitleaks_${v}_linux_x64.tar.gz\$" "gitleaks_${v}_checksums.txt" | sha256sum -c -
-          tar -xzf "gitleaks_${v}_linux_x64.tar.gz" gitleaks
-      - name: "Scan the git history (exit code 0 on findings: report-only; secrets redacted in the report)"
-        run: |
-          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --exit-code 0 \
-            --report-format sarif --report-path gitleaks.sarif .
-      - uses: github/codeql-action/upload-sarif@v3
+          # shellcheck disable=SC2086
+          $RL run --check secret-scan --ledger-dir "$LEDGER" $REPORT_ONLY --tool-version gitleaks-8.30.1 -- \
+            "$RUNNER_TEMP/bin/gitleaks" git --redact --no-banner --exit-code 1 --report-format sarif --report-path gitleaks.sarif .
+      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
         if: always() && hashFiles('gitleaks.sarif') != ''
         with:
           sarif_file: gitleaks.sarif
           category: gitleaks
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: ledger-security-gitleaks
+          path: results/
+          if-no-files-found: error
 
   scorecard:
-    name: OpenSSF Scorecard (report-only)
+    name: OpenSSF Scorecard (report-only, not a required check)
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    continue-on-error: true
+    continue-on-error: true  # guard-allow: report-only and not in release-checks.json; decision 133 names no Scorecard gate
     permissions:
       contents: read
       security-events: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: ossf/scorecard-action@v2.5.0
+      - uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
         with:
           results_file: scorecard.sarif
           results_format: sarif
           publish_results: false
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
         if: always() && hashFiles('scorecard.sarif') != ''
         with:
           sarif_file: scorecard.sarif
@@ -326,13 +374,13 @@ jobs:
     if: vars.SANGAM_SONAR_HOST_URL != '' && github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    continue-on-error: true
+    continue-on-error: true  # guard-allow: report-only and not in release-checks.json; held until a Sonar server exists
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: "25", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
       - name: Unit tests with coverage, then the Sonar analysis (no quality-gate wait)
         working-directory: sangam
         env:

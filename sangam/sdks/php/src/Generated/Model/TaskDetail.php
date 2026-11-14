@@ -29,6 +29,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read list<FieldChange>|null $changedSinceLastSeen
  * @property-read list<RuleEvidence>|null $ruleEvidence
  * @property-read string|null $delegatedFrom
+ * @property-read TaskDscDocument|null $dscDocument Read only; present only for a task with a DSC step document
  */
 final class TaskDetail implements \JsonSerializable
 {
@@ -50,6 +51,7 @@ final class TaskDetail implements \JsonSerializable
      * @param list<FieldChange>|null $changedSinceLastSeen
      * @param list<RuleEvidence>|null $ruleEvidence
      * @param string|null $delegatedFrom
+     * @param TaskDscDocument|null $dscDocument
      */
     public function __construct(
         public readonly ?Task $task = null,
@@ -69,6 +71,7 @@ final class TaskDetail implements \JsonSerializable
         public readonly ?array $changedSinceLastSeen = null,
         public readonly ?array $ruleEvidence = null,
         public readonly ?string $delegatedFrom = null,
+        public readonly ?TaskDscDocument $dscDocument = null,
     ) {
     }
 
@@ -93,6 +96,7 @@ final class TaskDetail implements \JsonSerializable
             Support::models($data['changedSinceLastSeen'] ?? null, FieldChange::class),
             Support::models($data['ruleEvidence'] ?? null, RuleEvidence::class),
             Support::str($data['delegatedFrom'] ?? null),
+            Support::model($data['dscDocument'] ?? null, TaskDscDocument::class),
         );
     }
 
@@ -149,6 +153,9 @@ final class TaskDetail implements \JsonSerializable
         }
         if ($this->delegatedFrom !== null) {
             $out['delegatedFrom'] = $this->delegatedFrom;
+        }
+        if ($this->dscDocument !== null) {
+            $out['dscDocument'] = $this->dscDocument;
         }
         return $out === [] ? new \stdClass() : $out;
     }

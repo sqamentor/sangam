@@ -15,6 +15,7 @@ import { useAction, useAsync, useInterval } from '../lib/hooks';
 import { fmtDate } from '../i18n';
 import { Badge, Empty, JsonView, Notice, ProblemAlert, Section, TextField } from '../components/ui';
 import { ActionDialog, ModulePage, c, f, type Act, type Row, type ScreenDef } from './engine';
+import { checkTemplateSections } from './fieldTemplateCheck';
 
 // ------------------------------------------------------------------ field
 
@@ -29,7 +30,7 @@ const templates: ScreenDef = {
   detail: '/field/templates/{key}',
   // M-051: the body is a FieldTemplate(key, version, title {lang: text}, offlineCapable, sections, scoring, geofence, evidence, attributes)
   // (FieldTemplate.java:29; FieldRestService.java:176-178)
-  create: { id: 'publish', label: 'act.publishTemplate', path: '/field/templates', fields: [f.text('key', undefined, true), f.json('title', 'fld.title', true), f.bool('offlineCapable', 'fld.offlineCapable'), f.json('sections', 'fld.checklistSections', true)], hint: 'mod.field.templateHint' },
+  create: { id: 'publish', label: 'act.publishTemplate', path: '/field/templates', fields: [f.text('key', undefined, true), f.json('title', 'fld.title', true), f.bool('offlineCapable', 'fld.offlineCapable'), f.json('sections', 'fld.checklistSections', true)], hint: 'mod.field.templateHint', check: (body, t) => checkTemplateSections(body.sections, t) },
   actions: [{ id: 'retire', label: 'act.retire', path: '/field/templates/{key}/{version}/retire', reason: 'body', danger: true }],
 };
 

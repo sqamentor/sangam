@@ -1,0 +1,71 @@
+{
+  "id": "gov.intl.pfm-cash-plan",
+  "version": "1.0.0",
+  "name": {
+    "en": "Cash plan (worldwide PFM)",
+    "hi": "नकद योजना (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Cash forecasting and the cash plan (PFM-047, PEFA PI-21.2): the forecast comes from the ledger (releases and commitments), the cash manager sets the release plan, the budget office concurs (not the cash manager), the plan is issued, and it is updated in year on the review cycle from DMN until the period closes. The cycle is SYNTHETIC until the country confirms it.",
+  "mainProcesses": [
+    "sangam-intl-pfm-cash-plan"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-cash-plan/sangam-intl-pfm-cash-plan.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-cash-plan/intl-pfm-cash-plan.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-cash-plan/forms/period.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-cash-plan/forms/forecastHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-cash-plan/forms/prepare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-cash-plan/forms/concur.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-cash-plan/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-cash-plan/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.cashForecast",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Cash forecast from releases and commitments"
+    }
+  ],
+  "covers": [
+    "PFM-047",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-cash-plan",
+      "rule": "SYNTHETIC monthly horizon, 30-day update",
+      "reason": "country cash-planning horizon and update cycle not verified (PFM-047, PEFA PI-21.2)"
+    }
+  ]
+}

@@ -155,10 +155,10 @@ public final class ResourceRegistry {
         register(new ResourceDescriptor(AUDIT, "AUDIT_EVENT", "tenant_id", "event_id", null,
                 List.of(new ResourceDescriptor.Scope("chain:", "chain_id")),
                 Map.of("chainId", "chain_id", "eventType", "event_type")));
-        register(new ResourceDescriptor(INSTANCE_LINK, "INSTANCE_LINK", "tenant_id", "link_id", null,
+        register(new ResourceDescriptor(INSTANCE_LINK, "INSTANCE_LINK", "tenant_id", "id", null,
                 List.of(new ResourceDescriptor.Scope("procinst:", "source_id")),
                 Map.of("linkType", "link_type", "sourceId", "source_id", "targetId", "target_id")));
-        register(new ResourceDescriptor(RECONCILIATION_ITEM, "RECONCILIATION_ITEM", "tenant_id", "item_id", null,
+        register(new ResourceDescriptor(RECONCILIATION_ITEM, "RECONCILIATION_ITEM", "tenant_id", "id", null,
                 List.of(), Map.of("state", "state", "kind", "kind")));
         for (String v : List.of(TENANT, POLICY, ROLE, GROUP, USER, ORG_UNIT, SEAT, POSTING, POWER_TABLE, SOD_EXCEPTION,
                 PRIVILEGE, API_TOKEN, WORKER_TOPIC, OPERATIONS, OUTBOX)) {

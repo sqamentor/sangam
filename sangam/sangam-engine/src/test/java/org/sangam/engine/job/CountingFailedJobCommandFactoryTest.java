@@ -44,7 +44,12 @@ class CountingFailedJobCommandFactoryTest {
     private final List<Throwable> handedToEngine = new ArrayList<>();
     private final List<String> counted = new ArrayList<>();
     private final List<String> warnings = new ArrayList<>();
-    private final Command<Object> engineCommand = cc -> null;
+    private static final Object ENGINE_RESULT = new Object();
+    private final List<String> engineRuns = new ArrayList<>();
+    private final Command<Object> engineCommand = cc -> {
+        engineRuns.add("run");
+        return ENGINE_RESULT;
+    };
 
     private final CountingFailedJobCommandFactory factory = new CountingFailedJobCommandFactory(
             (jobId, e) -> {
@@ -69,7 +74,10 @@ class CountingFailedJobCommandFactoryTest {
         Jdbc.LayerSqlException timeout = sqlError("S0001", 1222);
         assertTrue(ENGINE.decrements(timeout), "precondition: the engine charges a retry for the raw failure");
 
-        assertSame(engineCommand, factory.getCommand("job-1", timeout));
+        Command<Object> handedBack = factory.getCommand("job-1", timeout);
+        // decision 302: the engine's own failed-job command runs (once) behind the failure-recording wrapper
+        assertSame(ENGINE_RESULT, handedBack.execute(null), "the engine's failed-job command runs and its result is returned");
+        assertEquals(List.of("run"), engineRuns);
 
         Throwable seen = handedToEngine.get(0);
         assertInstanceOf(OptimisticLockingException.class, seen);

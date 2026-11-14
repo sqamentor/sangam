@@ -12,6 +12,7 @@ import { FieldQueueError, type CachedState, type FieldSync, type PendingItem, ty
 import { openFieldSync } from '../../lib/offline/session';
 import { javaInstant, type GpsFix } from '../../lib/offline/canonical';
 import { defaultBackend } from '../../lib/offline/storage';
+import { canonicalDecimalOrUndefined, compareDecimal, withinScale } from '../../lib/decimal';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { useAuth } from '../../auth/AuthProvider';
@@ -159,6 +160,68 @@ function locate(): Promise<GpsFix | undefined> {
 
 type AnswerValue = boolean | string | number | string[];
 
+/** Why a NUMBER answer is refused, checked exactly as sangam-field ChecklistValidator does (decisions 212, 230, 242). */
+export type NumberProblem = { code: 'notANumber' } | { code: 'scale'; scale: number } | { code: 'min'; bound: string } | { code: 'max'; bound: string };
+
+/** compareDecimal, or undefined when a bound is not decimal text (the server validated it; it is then not applied here). */
+function compareBound(answer: string, bound: string | number): number | undefined {
+  try {
+    return compareDecimal(answer, typeof bound === 'number' ? bound : String(bound));
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Owner decisions 212, 230, 242: a NUMBER answer must be a number, have no more decimal places than the item's scale
+ * (counted on the canonical form, so 12.50 has 1) and lie within min..max (inclusive). Every check is exact decimal
+ * arithmetic, never a float.
+ */
+export function numberProblem(item: Pick<TemplateItem, 'min' | 'max' | 'scale'>, text: string): NumberProblem | undefined {
+  const c = canonicalDecimalOrUndefined(text);
+  if (c === undefined) return { code: 'notANumber' };
+  if (typeof item.scale === 'number' && !withinScale(c, item.scale)) return { code: 'scale', scale: item.scale };
+  if (item.min !== undefined && item.min !== null && (compareBound(c, item.min) ?? 0) < 0) return { code: 'min', bound: String(item.min) };
+  if (item.max !== undefined && item.max !== null && (compareBound(c, item.max) ?? 0) > 0) return { code: 'max', bound: String(item.max) };
+  return undefined;
+}
+
+/** The user's words for a NUMBER problem (form.* messages). */
+export function numberProblemText(p: NumberProblem, t: (k: string, o?: Record<string, unknown>) => string): string {
+  switch (p.code) {
+    case 'notANumber':
+      return t('form.notANumber');
+    case 'scale':
+      return p.scale === 0 ? t('form.wholeNumber') : t('form.tooManyPlaces', { n: p.scale });
+    case 'min':
+      return t('form.min', { n: p.bound });
+    case 'max':
+      return t('form.max', { n: p.bound });
+  }
+}
+
+/**
+ * Owner decision 212: NUMBER answers travel as canonical decimal text (never a JavaScript float), the same text the
+ * server's PacketHasher writes for a number, so the packet hash matches. Returns the answers to capture, or the ids of
+ * NUMBER items whose answer is refused: not a number, more decimal places than the item's scale (decision 242), or
+ * outside its min..max (decision 230).
+ */
+export function capturedAnswers(items: TemplateItem[], answers: Record<string, AnswerValue | undefined>): { answers: Record<string, AnswerValue>; invalid: string[] } {
+  const numbers = new Map(items.filter((i) => i.type === 'NUMBER').map((i) => [i.id, i]));
+  const out: Record<string, AnswerValue> = {};
+  const invalid: string[] = [];
+  for (const [k, v] of Object.entries(answers)) {
+    if (v === undefined) continue;
+    const item = numbers.get(k);
+    if (item) {
+      const text = canonicalDecimalOrUndefined(String(v));
+      if (text === undefined || numberProblem(item, text)) invalid.push(k);
+      else out[k] = text;
+    } else out[k] = v;
+  }
+  return { answers: out, invalid };
+}
+
 /** One answer input per template item type (FieldTemplate.ItemType); media and position items are not captured here. */
 function ItemInput({ item, value, onChange, lang }: { item: TemplateItem; value: AnswerValue | undefined; onChange: (v: AnswerValue | undefined) => void; lang: string }) {
   const { t } = useTranslation();
@@ -193,8 +256,22 @@ function ItemInput({ item, value, onChange, lang }: { item: TemplateItem; value:
         </fieldset>
       );
     }
-    case 'NUMBER':
-      return <TextField label={l} type="number" required={item.required} value={value === undefined ? '' : String(value)} onChange={(v) => onChange(v === '' ? undefined : Number(v))} />;
+    case 'NUMBER': {
+      // decision 212: the typed text is kept as it is (no Number()); it is made canonical when captured. Decisions 230
+      // and 242: the bounds and the scale are checked exactly on that text.
+      const problem = value === undefined ? undefined : numberProblem(item, String(value));
+      return (
+        <TextField
+          label={l}
+          type="text"
+          inputMode={item.scale === 0 ? 'numeric' : 'decimal'}
+          required={item.required}
+          value={value === undefined ? '' : String(value)}
+          error={problem ? numberProblemText(problem, t) : undefined}
+          onChange={(v) => onChange(v.trim() === '' ? undefined : v)}
+        />
+      );
+    }
     case 'DATE':
       return <TextField label={l} type="date" required={item.required} value={typeof value === 'string' ? value : ''} onChange={(v) => onChange(v || undefined)} />;
     case 'TEXT':
@@ -314,7 +391,13 @@ export function FieldVisits() {
   const saveAssignment = async () => {
     if (!client || !assignment) return;
     try {
-      const filled = Object.fromEntries(Object.entries(answers).filter(([, v]) => v !== undefined));
+      const { answers: filled, invalid } = capturedAnswers(items, answers);
+      if (invalid.length) {
+        const item = items.find((i) => i.id === invalid[0]);
+        const problem = item ? numberProblem(item, String(answers[invalid[0]])) : undefined;
+        setSyncErr(new Error(`${label(item?.label, i18n.language, invalid[0])}: ${problem ? numberProblemText(problem, t) : t('form.notANumber')}`));
+        return;
+      }
       await client.captureVisit({ assignmentId: String(assignment.id), baseVersion: Number(assignment.version), answers: filled, notes, fix: await locate() });
       setOpen(null);
       announce(t('field.saved'));

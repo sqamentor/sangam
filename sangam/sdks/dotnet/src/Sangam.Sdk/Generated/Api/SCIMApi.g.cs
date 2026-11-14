@@ -66,7 +66,7 @@ public sealed class SCIMApi
 
     /// <summary>
     /// Create a user
-    /// Creates the person (USER_PROVISIONED) and its postings; 409 uniqueness on userName / externalId.
+    /// Creates the person (USER_PROVISIONED); 400 mutability when postings are sent; 409 uniqueness on userName / externalId.
     /// POST /scim/v2/Users (operationId scimCreateUser); permission scim.provision; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> ScimCreateUserAsync(M.ScimUser body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -91,7 +91,7 @@ public sealed class SCIMApi
 
     /// <summary>
     /// Replace a user
-    /// Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and ends the postings.
+    /// Full replacement (If-Match honoured, 412 on a stale version). active=false disables the person (USER_DISABLED) and revokes its API tokens; postings are not touched (400 mutability when the request changes them).
     /// PUT /scim/v2/Users/{id} (operationId scimReplaceUser); permission scim.provision; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<byte[]> ScimReplaceUserAsync(string id, M.ScimUser body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -115,7 +115,7 @@ public sealed class SCIMApi
 
     /// <summary>
     /// Delete a user
-    /// Deactivates the person (history is kept, X.2.3), ends the postings; 204.
+    /// Deactivates the person (history kept, X.2.3) and removes its SCIM group memberships; postings are not touched; 204.
     /// DELETE /scim/v2/Users/{id} (operationId scimDeleteUser); permission scim.provision; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task ScimDeleteUserAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

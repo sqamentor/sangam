@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-payer-to-payer/matchHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.payer-to-payer",
+  "title": {
+    "en": "No confirmed member match: correct the member data",
+    "es": "Sin coincidencia confirmada: corregir los datos del afiliado"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "previousPayerId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Previous payer ID",
+        "es": "Identificador del pagador anterior"
+      }
+    },
+    {
+      "id": "previousMemberId",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Member ID at the previous payer",
+        "es": "Número de afiliado en el pagador anterior"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

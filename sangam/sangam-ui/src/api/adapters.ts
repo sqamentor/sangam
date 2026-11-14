@@ -6,6 +6,7 @@
  */
 import type { Page } from './client';
 import type * as T from './types';
+import { DECIMAL_TEXT, DecimalValue } from '../lib/decimal';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Contract payloads are read defensively; ny keeps the adapters tolerant of both shapes.
@@ -29,6 +30,7 @@ export function toVariableMap(vars: Record<string, unknown> = {}): Record<string
   for (const [k, v] of Object.entries(vars)) {
     if (v === undefined) continue;
     if (isTyped(v)) out[k] = v;
+    else if (v instanceof DecimalValue) out[k] = { type: v.type, value: v.text }; // decision 138: the text as it is
     else if (typeof v === 'number') out[k] = { type: Number.isInteger(v) ? 'Long' : 'Decimal', value: Number.isInteger(v) ? v : String(v) };
     else if (typeof v === 'boolean') out[k] = { type: 'Boolean', value: v };
     else if (typeof v === 'string') out[k] = { type: 'String', value: v };
@@ -37,15 +39,26 @@ export function toVariableMap(vars: Record<string, unknown> = {}): Record<string
   return out;
 }
 
-/** R33 TypedValue map → plain values for forms (Decimal stays numeric for inputs). */
+/**
+ * R33 TypedValue map → plain values for forms. Decision 138: a Decimal or BigInteger value becomes a DecimalValue
+ * holding the server's text, never a float, so it is shown and sent back digit for digit (toVariableMap keeps its
+ * type). A value that is not decimal text is kept as it came.
+ */
 export function fromVariableMap(m: unknown): Record<string, unknown> {
   if (!m || typeof m !== 'object') return {};
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(m as Any)) {
-    if (isTyped(v)) out[k] = v.type === 'Decimal' || v.type === 'BigInteger' ? Number(v.value) : v.value;
+    if (isTyped(v)) out[k] = v.type === 'Decimal' || v.type === 'BigInteger' ? decimalVariable(v.value, v.type) : v.value;
     else out[k] = v;
   }
   return out;
+}
+
+function decimalVariable(value: unknown, type: 'Decimal' | 'BigInteger'): unknown {
+  if (typeof value === 'string' && DECIMAL_TEXT.test(value.trim())) return new DecimalValue(value, type);
+  // a JSON number here was already a double when the response was parsed; only a safe integer is still exact
+  if (typeof value === 'number' && Number.isSafeInteger(value)) return new DecimalValue(String(value), type);
+  return value;
 }
 
 export function variableEntries(m: unknown): T.VariableEntry[] {
@@ -108,7 +121,7 @@ export function normTaskDetail(d: Any): T.TaskDetail {
   return {
     ...(d.task ? {} : d),
     ...task,
-    ...(d.task ? { form: d.form, sod: d.sod, returnTargets: d.returnTargets, candidates: d.candidates, rejectReasons: d.rejectReasons, returnReasons: d.returnReasons, changedSinceLastSeen: d.changedSinceLastSeen, ruleEvidence: d.ruleEvidence, delegatedFrom: d.delegatedFrom, description: d.description } : {}),
+    ...(d.task ? { form: d.form, sod: d.sod, returnTargets: d.returnTargets, candidates: d.candidates, rejectReasons: d.rejectReasons, returnReasons: d.returnReasons, changedSinceLastSeen: d.changedSinceLastSeen, ruleEvidence: d.ruleEvidence, delegatedFrom: d.delegatedFrom, description: d.description, dscDocument: d.dscDocument } : {}),
     formKey: d.formKey ?? d.task?.formKey,
     formVersion: d.formVersion,
     variables,

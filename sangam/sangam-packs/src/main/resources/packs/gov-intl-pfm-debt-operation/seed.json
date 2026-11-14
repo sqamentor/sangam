@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "MINISTRY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "DEBT-OFFICE",
+      "role": "DEBTOFFICE",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "FINANCE-MINISTER",
+      "name": {
+        "en": "Debt management office",
+        "hi": "ऋण प्रबंधन कार्यालय"
+      }
+    },
+    {
+      "id": "LEGAL-ADVISER",
+      "role": "LEGALADVISER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "FINANCE-MINISTER",
+      "name": {
+        "en": "Legal adviser",
+        "hi": "विधिक सलाहकार"
+      }
+    },
+    {
+      "id": "FINANCE-MINISTER",
+      "role": "MINISTER",
+      "office": "MINISTRY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Minister of finance",
+        "hi": "वित्त मंत्री"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "DEBT-OFFICE",
+      "person": "ido.debt-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "LEGAL-ADVISER",
+      "person": "ido.legal-adviser",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "FINANCE-MINISTER",
+      "person": "ido.finance-minister",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "DEBTOFFICE",
+      "name": {
+        "en": "Debt management office",
+        "hi": "ऋण प्रबंधन कार्यालय"
+      }
+    },
+    {
+      "code": "LEGALADVISER",
+      "name": {
+        "en": "Legal adviser",
+        "hi": "विधिक सलाहकार"
+      }
+    },
+    {
+      "code": "MINISTER",
+      "name": {
+        "en": "Minister of finance",
+        "hi": "वित्त मंत्री"
+      }
+    }
+  ]
+}

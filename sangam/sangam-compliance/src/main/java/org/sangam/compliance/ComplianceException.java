@@ -38,6 +38,8 @@ public class ComplianceException extends RuntimeException {
         LOCALISATION_VIOLATION(422),
         /** A breach / incident report lacks a required item. */
         REPORT_INCOMPLETE(422),
+        /** A security incident close lacks the root cause or the lessons learned (SANGAM.md OJ-06 step 8). */
+        INCIDENT_CLOSURE_INCOMPLETE(422),
         /** Raw national identifier where only a reference key is allowed (IN: Aadhaar Act s.29, ADV circulars). */
         NATIONAL_ID_NOT_TOKENISED(422),
         /** Maker-checker: the approver is the person who made the entry. */

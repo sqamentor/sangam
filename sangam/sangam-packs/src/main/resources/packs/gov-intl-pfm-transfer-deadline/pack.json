@@ -1,0 +1,80 @@
+{
+  "id": "gov.intl.pfm-transfer-deadline",
+  "version": "1.0.0",
+  "name": {
+    "en": "Collection transfer-deadline monitor (worldwide PFM)",
+    "hi": "संग्रह अंतरण समय-सीमा निगरानी (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Revenue collected by an agent (bank, portal) must reach the treasury single account by the deadline of its channel from DMN (for example T+1; PFM-046, PEFA PI-20): the case waits for the TSA credit, compares the credited amount with the collection, sends a difference to the treasury officer, and records a late transfer for follow-up with the agent. Deadlines are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-transfer-deadline"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-transfer-deadline/sangam-intl-pfm-transfer-deadline.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-transfer-deadline/intl-pfm-transfer-deadline.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-transfer-deadline/forms/collection.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-transfer-deadline/forms/overdue.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-transfer-deadline/forms/matchHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-transfer-deadline/forms/mismatch.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-transfer-deadline/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-transfer-deadline/seed.json",
+  "connectors": [
+    {
+      "id": "tsa.credit",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Credit in the treasury single account"
+    }
+  ],
+  "covers": [
+    "PFM-046",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-transfer-deadline",
+      "rule": "SYNTHETIC T+1 working day",
+      "reason": "country transfer deadlines per collection channel not verified (PFM-046, PEFA PI-20)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "collectionAmount",
+      "creditAmount"
+    ]
+  }
+}

@@ -38,6 +38,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-nbfc-dlg-arrangement/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-nbfc-dlg-arrangement/pack.json"
     }
   ],
   "seed": "packs/sec-nbfc-dlg-arrangement/seed.json",
@@ -74,6 +78,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "dg_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-nbfc-dlg-powers",
+      "ruleCaseType": "DLG"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

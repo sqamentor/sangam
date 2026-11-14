@@ -95,6 +95,33 @@ spec:
       ports:
         - { protocol: TCP, port: 3310 }
     {{- end }}
+    {{- range $row := splitList " " (include "sangam.sidecars.list" .) }}
+    {{- $f := splitList ":" $row }}
+    {{- $sv := index $.Values (index $f 0) }}
+    {{- if $sv.enabled }}
+    # M-081 / M-103: this release's {{ index $f 1 }} sidecar
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" $ "component" (index $f 1)) | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: {{ $sv.port }} }
+    {{- end }}
+    {{- end }}
+    {{- if eq (include "sangam.backup.consoleEnabled" .) "true" }}
+    {{- if not .Values.backup.console.apiServer.cidrs }}
+    {{- fail "backup.console.apiServer.cidrs is required with backup.console.enabled and networkPolicy.enabled (the Kubernetes API server addresses)" }}
+    {{- end }}
+    # decision 155: the backup console reads and starts this release's backup Jobs through the Kubernetes API
+    - to:
+        {{- range .Values.backup.console.apiServer.cidrs }}
+        - ipBlock: { cidr: {{ . }} }
+        {{- end }}
+      ports:
+        {{- range .Values.backup.console.apiServer.ports }}
+        - { protocol: TCP, port: {{ . }} }
+        {{- end }}
+    {{- end }}
     {{- with $np.extraEgress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

@@ -46,6 +46,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-bank-payment-dual-auth/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-bank-payment-dual-auth/pack.json"
     }
   ],
   "seed": "packs/sec-bank-payment-dual-auth/seed.json",
@@ -140,6 +144,21 @@
       "reason": "tenant-specific band amounts: the concurrence rule itself is decided (owner, SL-50, 2026-11-08: checker concurrence capped at the band of the authoriser covering the amount); the band amounts are SYNTHETIC; confirm them from the board-approved delegation of financial powers and deploy sec-bank-pay-limits and sec-bank-pay-powers together as tenant DMN overrides"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "py_checker": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-pay-powers",
+      "ruleCaseType": "PAYMENT"
+    },
+    "py_authoriser": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-bank-pay-powers",
+      "ruleCaseType": "PAYMENT"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

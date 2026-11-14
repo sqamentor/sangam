@@ -51,7 +51,9 @@ public final class PlatformIssuers {
 
     static {
         Set<String> s = new LinkedHashSet<>(List.of(Permissions.GROUP_ADMIN, TenantAdminService.PLATFORM_ADMIN_ROLE,
-                Permissions.GROUP_PLATFORM, Permissions.GROUP_SYSTEM));
+                Permissions.GROUP_PLATFORM, Permissions.GROUP_SYSTEM,
+                // decision 197: the platform deployer writes the shared-deployment registry; never from a tenant token
+                org.sangam.server.bridge.SecurityPermissionBridge.GROUP_PLATFORM_DEPLOYER));
         s.addAll(CELL_ADMIN_GROUPS);
         PLATFORM_ONLY = Set.copyOf(s);
     }

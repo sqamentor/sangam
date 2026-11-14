@@ -1,0 +1,81 @@
+{
+  "id": "gov.intl.pfm-fiscal-transparency",
+  "version": "1.0.0",
+  "name": {
+    "en": "Fiscal transparency publication (worldwide PFM)",
+    "hi": "राजकोषीय पारदर्शिता प्रकाशन (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "Fiscal transparency outputs (PFM-056, PEFA PI-9): in-year reports, annual statements, the citizens' budget and open data in machine-readable form are prepared from the ledger extract, approved by a different officer and published through the open-data connector with a confirmed reference, by the publication deadline from DMN. Deadlines are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-fiscal-transparency"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/sangam-intl-pfm-fiscal-transparency.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/intl-pfm-publication-calendar.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/forms/publication.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/forms/extractHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/forms/prepare.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/forms/approve.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/forms/publishHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-fiscal-transparency/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-fiscal-transparency/seed.json",
+  "connectors": [
+    {
+      "id": "ledger.report",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Ledger extract for the publication"
+    },
+    {
+      "id": "opendata.publish",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Publication on the open-data portal"
+    }
+  ],
+  "covers": [
+    "PFM-056",
+    "GP-06"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-publication-calendar",
+      "rule": "SYNTHETIC 30-day publication deadline",
+      "reason": "country publication deadlines not verified (PFM-056, PEFA PI-9)"
+    }
+  ]
+}

@@ -405,7 +405,7 @@ def write(path, packs):
     w('')
     w('| Dependency | Licence | Scope |')
     w('|---|---|---|')
-    w('| org.sangam:sangam-core | Apache-2.0 | compile |')
+    w('| io.github.sqamentor:sangam-core | Apache-2.0 | compile |')
     w('| org.operaton.bpm:operaton-engine 2.2.0 (BOM) | Apache-2.0 | compile |')
     w('| com.fasterxml.jackson.core:jackson-databind 2.22.3 (BOM) | Apache-2.0 | compile |')
     w('| org.slf4j:slf4j-api 2.0.17 | MIT | compile |')

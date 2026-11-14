@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Payer-to-Payer: answer a request from the new payer. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_p2p_respond" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-p2p-respond" name="Payer-to-Payer: answer a request from the new payer" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.payer-to-payer</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>memberId,requestingPayerId,optInAttested</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pr_start" name="Request received from the new payer" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-payer-to-payer/inbound"></startEvent>
+    <serviceTask id="pr_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;memberId=@customerId;payerProgram=MA;requestingPayerId=SIMPAYER;optInAttested=false;interopSeat=INTEROP-ANALYST;memberSeat=MEMBER-SERVICES</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="pr_cfg" name="Payer API timeframes (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-p2p-config</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="pr_deadline" name="Regulatory clock: p2pResponse" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>p2pResponse</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${p2pResponseSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pr_optGw" name="Opt-in attested?" default="sec_ushealth_p2p_respond_f5"></exclusiveGateway>
+    <endEvent id="pr_endNoOptIn" name="Refused: no opt-in attestation"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>REJECTED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="pr_match_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>localPatientId=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pr_match" name="Match the member in this payer's records" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.memberRecord</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>match</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,patientName</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>local</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pr_matchGw" name="Member matched?" default="sec_ushealth_p2p_respond_f12"></exclusiveGateway>
+    <userTask id="pr_matchHold" name="No confirmed member match: establish it before any data leaves" operaton:candidateGroups="${memberSeat}" operaton:formKey="sangam:sec-ushealth-payer-to-payer/matchHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pr_export_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>exportBundleRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pr_export" name="Export the member data of the look-back period (Bulk Data)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.memberRecord</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>export</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>localPatientId,p2pLookback</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>export</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pr_exportGw" name="Export ready?" default="sec_ushealth_p2p_respond_f17"></exclusiveGateway>
+    <userTask id="pr_exportHold" name="Export not confirmed: check the member record" operaton:candidateGroups="${interopSeat}" operaton:formKey="sangam:sec-ushealth-payer-to-payer/exportHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pr_send_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>sentReceiptRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pr_send" name="Send the data to the new payer" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.p2pData</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>respond</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>requestingPayerId,memberId,exportBundleRef</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>sent</operaton:string></operaton:field><operaton:field name="step"><operaton:string>p2p-send</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pr_sendGw" name="Sent?" default="sec_ushealth_p2p_respond_f21"></exclusiveGateway>
+    <userTask id="pr_sendHold" name="Sending not confirmed: check with the new payer" operaton:candidateGroups="${interopSeat}" operaton:formKey="sangam:sec-ushealth-payer-to-payer/sendHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pr_end" name="Data sent"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>SENT</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['sentReceiptRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f1" sourceRef="pr_start" targetRef="pr_defaults"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f2" sourceRef="pr_defaults" targetRef="pr_cfg"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f3" sourceRef="pr_cfg" targetRef="pr_deadline"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f4" sourceRef="pr_deadline" targetRef="pr_optGw"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f5" name="no attestation" sourceRef="pr_optGw" targetRef="pr_endNoOptIn"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f6" sourceRef="pr_match_clear" targetRef="pr_match"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f7" name="attested" sourceRef="pr_optGw" targetRef="pr_match_clear"><conditionExpression xsi:type="tFormalExpression">${optInAttested == true}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f8" sourceRef="pr_match" targetRef="pr_matchGw"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f9" sourceRef="pr_matchHold" targetRef="pr_match_clear"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f10" name="not matched" sourceRef="pr_matchGw" targetRef="pr_matchHold"><conditionExpression xsi:type="tFormalExpression">${localStatus != 'COMPLETED' || localPatientId == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f11" sourceRef="pr_export_clear" targetRef="pr_export"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f12" name="matched" sourceRef="pr_matchGw" targetRef="pr_export_clear"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f13" sourceRef="pr_export" targetRef="pr_exportGw"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f14" sourceRef="pr_exportHold" targetRef="pr_export_clear"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f15" name="not confirmed" sourceRef="pr_exportGw" targetRef="pr_exportHold"><conditionExpression xsi:type="tFormalExpression">${exportStatus != 'COMPLETED' || exportBundleRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f16" sourceRef="pr_send_clear" targetRef="pr_send"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f17" name="ready" sourceRef="pr_exportGw" targetRef="pr_send_clear"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f18" sourceRef="pr_send" targetRef="pr_sendGw"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f19" sourceRef="pr_sendHold" targetRef="pr_send_clear"/>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f20" name="not confirmed" sourceRef="pr_sendGw" targetRef="pr_sendHold"><conditionExpression xsi:type="tFormalExpression">${sentStatus != 'COMPLETED' || sentReceiptRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_p2p_respond_f21" name="sent" sourceRef="pr_sendGw" targetRef="pr_end"/>
+    <subProcess id="pr_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pr_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pr_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pr_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pr_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_p2p_respond_f22" sourceRef="pr_withdrawStart" targetRef="pr_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_p2p_respond_f23" sourceRef="pr_withdrawKind" targetRef="pr_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_p2p_respond_f24" sourceRef="pr_withdrawCall" targetRef="pr_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pr_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pr_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pr_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pr_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pr_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_p2p_respond_f25" sourceRef="pr_cancelStart" targetRef="pr_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_p2p_respond_f26" sourceRef="pr_cancelKind" targetRef="pr_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_p2p_respond_f27" sourceRef="pr_cancelCall" targetRef="pr_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_p2p_respond_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_p2p_respond_plane" bpmnElement="sangam-sec-ushealth-p2p-respond">
+      <bpmndi:BPMNShape id="pr_start_di" bpmnElement="pr_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_defaults_di" bpmnElement="pr_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_cfg_di" bpmnElement="pr_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_deadline_di" bpmnElement="pr_deadline"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_optGw_di" bpmnElement="pr_optGw"><dc:Bounds x="705" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_endNoOptIn_di" bpmnElement="pr_endNoOptIn"><dc:Bounds x="877" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_match_clear_di" bpmnElement="pr_match_clear"><dc:Bounds x="845" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_match_di" bpmnElement="pr_match"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_matchGw_di" bpmnElement="pr_matchGw"><dc:Bounds x="1200" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_matchHold_di" bpmnElement="pr_matchHold"><dc:Bounds x="1340" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_export_clear_di" bpmnElement="pr_export_clear"><dc:Bounds x="1340" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_export_di" bpmnElement="pr_export"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_exportGw_di" bpmnElement="pr_exportGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_exportHold_di" bpmnElement="pr_exportHold"><dc:Bounds x="1835" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_send_clear_di" bpmnElement="pr_send_clear"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_send_di" bpmnElement="pr_send"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_sendGw_di" bpmnElement="pr_sendGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_sendHold_di" bpmnElement="pr_sendHold"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_end_di" bpmnElement="pr_end"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_withdraw_di" bpmnElement="pr_withdraw" isExpanded="true"><dc:Bounds x="30" y="285" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_withdrawStart_di" bpmnElement="pr_withdrawStart"><dc:Bounds x="92" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_withdrawKind_di" bpmnElement="pr_withdrawKind"><dc:Bounds x="225" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_withdrawCall_di" bpmnElement="pr_withdrawCall"><dc:Bounds x="390" y="325" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_withdrawEnd_di" bpmnElement="pr_withdrawEnd"><dc:Bounds x="587" y="347" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_cancel_di" bpmnElement="pr_cancel" isExpanded="true"><dc:Bounds x="30" y="475" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_cancelStart_di" bpmnElement="pr_cancelStart"><dc:Bounds x="92" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_cancelKind_di" bpmnElement="pr_cancelKind"><dc:Bounds x="225" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_cancelCall_di" bpmnElement="pr_cancelCall"><dc:Bounds x="390" y="515" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pr_cancelEnd_di" bpmnElement="pr_cancelEnd"><dc:Bounds x="587" y="537" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f1_di" bpmnElement="sec_ushealth_p2p_respond_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f2_di" bpmnElement="sec_ushealth_p2p_respond_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f3_di" bpmnElement="sec_ushealth_p2p_respond_f3"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f4_di" bpmnElement="sec_ushealth_p2p_respond_f4"><di:waypoint x="615" y="70"/><di:waypoint x="705" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f5_di" bpmnElement="sec_ushealth_p2p_respond_f5"><di:waypoint x="755" y="70"/><di:waypoint x="816" y="70"/><di:waypoint x="816" y="195"/><di:waypoint x="877" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f6_di" bpmnElement="sec_ushealth_p2p_respond_f6"><di:waypoint x="945" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f7_di" bpmnElement="sec_ushealth_p2p_respond_f7"><di:waypoint x="755" y="70"/><di:waypoint x="845" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f8_di" bpmnElement="sec_ushealth_p2p_respond_f8"><di:waypoint x="1110" y="70"/><di:waypoint x="1200" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f9_di" bpmnElement="sec_ushealth_p2p_respond_f9"><di:waypoint x="1390" y="235"/><di:waypoint x="1390" y="253"/><di:waypoint x="895" y="253"/><di:waypoint x="895" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f10_di" bpmnElement="sec_ushealth_p2p_respond_f10"><di:waypoint x="1250" y="70"/><di:waypoint x="1295" y="70"/><di:waypoint x="1295" y="195"/><di:waypoint x="1340" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f11_di" bpmnElement="sec_ushealth_p2p_respond_f11"><di:waypoint x="1440" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f12_di" bpmnElement="sec_ushealth_p2p_respond_f12"><di:waypoint x="1250" y="70"/><di:waypoint x="1340" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f13_di" bpmnElement="sec_ushealth_p2p_respond_f13"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f14_di" bpmnElement="sec_ushealth_p2p_respond_f14"><di:waypoint x="1885" y="235"/><di:waypoint x="1885" y="260"/><di:waypoint x="1390" y="260"/><di:waypoint x="1390" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f15_di" bpmnElement="sec_ushealth_p2p_respond_f15"><di:waypoint x="1745" y="70"/><di:waypoint x="1790" y="70"/><di:waypoint x="1790" y="195"/><di:waypoint x="1835" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f16_di" bpmnElement="sec_ushealth_p2p_respond_f16"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f17_di" bpmnElement="sec_ushealth_p2p_respond_f17"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f18_di" bpmnElement="sec_ushealth_p2p_respond_f18"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f19_di" bpmnElement="sec_ushealth_p2p_respond_f19"><di:waypoint x="2380" y="235"/><di:waypoint x="2380" y="267"/><di:waypoint x="1885" y="267"/><di:waypoint x="1885" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f20_di" bpmnElement="sec_ushealth_p2p_respond_f20"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f21_di" bpmnElement="sec_ushealth_p2p_respond_f21"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f22_di" bpmnElement="sec_ushealth_p2p_respond_f22"><di:waypoint x="128" y="365"/><di:waypoint x="225" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f23_di" bpmnElement="sec_ushealth_p2p_respond_f23"><di:waypoint x="325" y="365"/><di:waypoint x="390" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f24_di" bpmnElement="sec_ushealth_p2p_respond_f24"><di:waypoint x="490" y="365"/><di:waypoint x="587" y="365"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f25_di" bpmnElement="sec_ushealth_p2p_respond_f25"><di:waypoint x="128" y="555"/><di:waypoint x="225" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f26_di" bpmnElement="sec_ushealth_p2p_respond_f26"><di:waypoint x="325" y="555"/><di:waypoint x="390" y="555"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_p2p_respond_f27_di" bpmnElement="sec_ushealth_p2p_respond_f27"><di:waypoint x="490" y="555"/><di:waypoint x="587" y="555"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

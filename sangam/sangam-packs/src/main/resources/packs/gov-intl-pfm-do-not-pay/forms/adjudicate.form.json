@@ -1,0 +1,65 @@
+{
+  "key": "gov-intl-pfm-do-not-pay/adjudicate",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-do-not-pay",
+  "title": {
+    "en": "Adjudicate the list match",
+    "hi": "सूची मिलान का निर्णय"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "payee",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payee",
+        "hi": "आदाता"
+      }
+    },
+    {
+      "id": "payeeIdentifier",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Payee identifier (tax / registration number)",
+        "hi": "प्राप्तकर्ता पहचानकर्ता"
+      }
+    },
+    {
+      "id": "matchEvidence",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Evidence: why the list entry is or is not this payee",
+        "hi": "साक्ष्य: सूची प्रविष्टि का मिलान"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "matchDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "trueMatch",
+        "label": {
+          "en": "Same person: block the payment",
+          "hi": "वही व्यक्ति: भुगतान रोकें"
+        }
+      },
+      {
+        "value": "falsePositive",
+        "label": {
+          "en": "False positive",
+          "hi": "मिथ्या मिलान"
+        }
+      }
+    ]
+  }
+}

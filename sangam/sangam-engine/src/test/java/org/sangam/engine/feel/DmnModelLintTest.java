@@ -66,6 +66,24 @@ class DmnModelLintTest {
                 .isEmpty(), "ordering compares instants and is fine");
     }
 
+    /** Decision 206 (DMN 1.6): moved unchanged from Dmn16SupportTest when the FEEL policies moved to sangam-feel. */
+    @Test
+    void timeLiteralWithIanaZoneIsWarned() {
+        String xml = """
+                <definitions xmlns="%s" id="w" name="w" namespace="https://example.org/w">
+                  <decision id="a" name="a"><literalExpression id="la"><text>time("10:30:00@Europe/Paris")</text></literalExpression></decision>
+                  <decision id="b" name="b"><literalExpression id="lb"><text>@"10:30:00@Asia/Kolkata"</text></literalExpression></decision>
+                  <decision id="c" name="c"><literalExpression id="lc"><text>date and time("2026-11-08T10:00:00@Asia/Kolkata")</text></literalExpression></decision>
+                  <decision id="d" name="d"><literalExpression id="ld"><text>time("10:30:00+05:30")</text></literalExpression></decision>
+                </definitions>
+                """.formatted(org.sangam.feel.Dmn16Support.DMN16_NS);
+        List<DmnModelLint.Finding> f = DmnModelLint.check("w.dmn", xml.getBytes(StandardCharsets.UTF_8)).stream()
+                .filter(x -> "SANGAM-DMN-TIME-IANA".equals(x.code())).toList();
+        assertEquals(List.of("la", "lb"), f.stream().map(DmnModelLint.Finding::element).toList(),
+                "time literals with an IANA id only; date-time literals and offsets are not deprecated");
+        assertTrue(f.stream().noneMatch(DmnModelLint.Finding::error), "a warning, never a refusal");
+    }
+
     /** Every shipped pack/corpus DMN passes the deploy rule (176 files migrated from double to number). */
     @Test
     void shippedModelsHaveNoMoneyDoubles() throws IOException {

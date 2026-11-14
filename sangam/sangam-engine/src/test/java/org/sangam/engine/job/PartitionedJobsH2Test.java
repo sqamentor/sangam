@@ -55,6 +55,7 @@ class PartitionedJobsH2Test {
 
     private static SangamEngineSettings settings(boolean partitioning) {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setEngineSchemaUpdate("true");
         s.setApplyEnvironment(false);

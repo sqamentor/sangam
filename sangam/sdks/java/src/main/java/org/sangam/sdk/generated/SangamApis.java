@@ -26,8 +26,12 @@ import org.sangam.sdk.generated.api.ConfigApi;
 import org.sangam.sdk.generated.api.DebugApi;
 import org.sangam.sdk.generated.api.DecisionsApi;
 import org.sangam.sdk.generated.api.DeploymentsApi;
+import org.sangam.sdk.generated.api.DltHooksApi;
 import org.sangam.sdk.generated.api.DocumentsApi;
+import org.sangam.sdk.generated.api.DscCertificatesApi;
+import org.sangam.sdk.generated.api.EventGridHooksApi;
 import org.sangam.sdk.generated.api.EventsApi;
+import org.sangam.sdk.generated.api.ExecutorApi;
 import org.sangam.sdk.generated.api.FieldApi;
 import org.sangam.sdk.generated.api.FieldAssignmentsApi;
 import org.sangam.sdk.generated.api.FieldUnitsApi;
@@ -69,20 +73,25 @@ import org.sangam.sdk.generated.api.ResourcesBookingsApi;
 import org.sangam.sdk.generated.api.ResourcesItemsApi;
 import org.sangam.sdk.generated.api.RostersApi;
 import org.sangam.sdk.generated.api.SCIMApi;
+import org.sangam.sdk.generated.api.SharedDeploymentsApi;
 import org.sangam.sdk.generated.api.TasksApi;
 import org.sangam.sdk.generated.api.TenantOperationsApi;
+import org.sangam.sdk.generated.api.TenantOperationsFlowableMigrationsApi;
+import org.sangam.sdk.generated.api.TenantOperationsRetentionApi;
+import org.sangam.sdk.generated.api.TenantOperationsSecretsApi;
+import org.sangam.sdk.generated.api.TenantOperationsVariablesApi;
 import org.sangam.sdk.generated.api.TestModeApi;
 import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
 public final class SangamApis {
 
-    private final AIApi aI;
+    private final AIApi ai;
     private final AdminApi admin;
     private final AdminAssignmentsApi adminAssignments;
     private final AdminOrgUnitsApi adminOrgUnits;
@@ -104,8 +113,12 @@ public final class SangamApis {
     private final DebugApi debug;
     private final DecisionsApi decisions;
     private final DeploymentsApi deployments;
+    private final DltHooksApi dltHooks;
     private final DocumentsApi documents;
+    private final DscCertificatesApi dscCertificates;
+    private final EventGridHooksApi eventGridHooks;
     private final EventsApi events;
+    private final ExecutorApi executor;
     private final FieldApi field;
     private final FieldAssignmentsApi fieldAssignments;
     private final FieldUnitsApi fieldUnits;
@@ -146,15 +159,20 @@ public final class SangamApis {
     private final ResourcesBookingsApi resourcesBookings;
     private final ResourcesItemsApi resourcesItems;
     private final RostersApi rosters;
-    private final SCIMApi sCIM;
+    private final SCIMApi scim;
+    private final SharedDeploymentsApi sharedDeployments;
     private final TasksApi tasks;
     private final TenantOperationsApi tenantOperations;
+    private final TenantOperationsFlowableMigrationsApi tenantOperationsFlowableMigrations;
+    private final TenantOperationsRetentionApi tenantOperationsRetention;
+    private final TenantOperationsSecretsApi tenantOperationsSecrets;
+    private final TenantOperationsVariablesApi tenantOperationsVariables;
     private final TestModeApi testMode;
     private final WorkApi work;
     private final WorkspaceApi workspace;
 
     public SangamApis(HttpTransport http) {
-        this.aI = new AIApi(http);
+        this.ai = new AIApi(http);
         this.admin = new AdminApi(http);
         this.adminAssignments = new AdminAssignmentsApi(http);
         this.adminOrgUnits = new AdminOrgUnitsApi(http);
@@ -176,8 +194,12 @@ public final class SangamApis {
         this.debug = new DebugApi(http);
         this.decisions = new DecisionsApi(http);
         this.deployments = new DeploymentsApi(http);
+        this.dltHooks = new DltHooksApi(http);
         this.documents = new DocumentsApi(http);
+        this.dscCertificates = new DscCertificatesApi(http);
+        this.eventGridHooks = new EventGridHooksApi(http);
         this.events = new EventsApi(http);
+        this.executor = new ExecutorApi(http);
         this.field = new FieldApi(http);
         this.fieldAssignments = new FieldAssignmentsApi(http);
         this.fieldUnits = new FieldUnitsApi(http);
@@ -218,16 +240,21 @@ public final class SangamApis {
         this.resourcesBookings = new ResourcesBookingsApi(http);
         this.resourcesItems = new ResourcesItemsApi(http);
         this.rosters = new RostersApi(http);
-        this.sCIM = new SCIMApi(http);
+        this.scim = new SCIMApi(http);
+        this.sharedDeployments = new SharedDeploymentsApi(http);
         this.tasks = new TasksApi(http);
         this.tenantOperations = new TenantOperationsApi(http);
+        this.tenantOperationsFlowableMigrations = new TenantOperationsFlowableMigrationsApi(http);
+        this.tenantOperationsRetention = new TenantOperationsRetentionApi(http);
+        this.tenantOperationsSecrets = new TenantOperationsSecretsApi(http);
+        this.tenantOperationsVariables = new TenantOperationsVariablesApi(http);
         this.testMode = new TestModeApi(http);
         this.work = new WorkApi(http);
         this.workspace = new WorkspaceApi(http);
     }
 
     /** {@code AI}: 34 operations. */
-    public AIApi aI() { return aI; }
+    public AIApi ai() { return ai; }
     /** {@code Admin}: 36 operations. */
     public AdminApi admin() { return admin; }
     /** {@code Admin /assignments}: 7 operations. */
@@ -244,7 +271,7 @@ public final class SangamApis {
     public ApiContractsApi apiContracts() { return apiContracts; }
     /** {@code Audit}: 8 operations. */
     public AuditApi audit() { return audit; }
-    /** {@code Billing}: 7 operations. */
+    /** {@code Billing}: 11 operations. */
     public BillingApi billing() { return billing; }
     /** {@code Bulk ingest}: 8 operations. */
     public BulkIngestApi bulkIngest() { return bulkIngest; }
@@ -270,10 +297,18 @@ public final class SangamApis {
     public DecisionsApi decisions() { return decisions; }
     /** {@code Deployments}: 5 operations. */
     public DeploymentsApi deployments() { return deployments; }
+    /** {@code DltHooks}: 1 operations. */
+    public DltHooksApi dltHooks() { return dltHooks; }
     /** {@code Documents}: 10 operations. */
     public DocumentsApi documents() { return documents; }
+    /** {@code DscCertificates}: 8 operations. */
+    public DscCertificatesApi dscCertificates() { return dscCertificates; }
+    /** {@code EventGridHooks}: 1 operations. */
+    public EventGridHooksApi eventGridHooks() { return eventGridHooks; }
     /** {@code Events}: 14 operations. */
     public EventsApi events() { return events; }
+    /** {@code Executor}: 4 operations. */
+    public ExecutorApi executor() { return executor; }
     /** {@code Field}: 35 operations. */
     public FieldApi field() { return field; }
     /** {@code Field /assignments}: 9 operations. */
@@ -286,17 +321,17 @@ public final class SangamApis {
     public GeoApi geo() { return geo; }
     /** {@code HealthHooks}: 2 operations. */
     public HealthHooksApi healthHooks() { return healthHooks; }
-    /** {@code History}: 9 operations. */
+    /** {@code History}: 10 operations. */
     public HistoryApi history() { return history; }
     /** {@code Ledger}: 9 operations. */
     public LedgerApi ledger() { return ledger; }
     /** {@code Links}: 3 operations. */
     public LinksApi links() { return links; }
-    /** {@code LowCode}: 10 operations. */
+    /** {@code LowCode}: 11 operations. */
     public LowCodeApi lowCode() { return lowCode; }
     /** {@code Me}: 5 operations. */
     public MeApi me() { return me; }
-    /** {@code Modeller}: 26 operations. */
+    /** {@code Modeller}: 28 operations. */
     public ModellerApi modeller() { return modeller; }
     /** {@code Onboarding}: 17 operations. */
     public OnboardingApi onboarding() { return onboarding; }
@@ -318,7 +353,7 @@ public final class SangamApis {
     public PluginsApi plugins() { return plugins; }
     /** {@code Portal}: 11 operations. */
     public PortalApi portal() { return portal; }
-    /** {@code Processes}: 31 operations. */
+    /** {@code Processes}: 33 operations. */
     public ProcessesApi processes() { return processes; }
     /** {@code Programmes}: 25 operations. */
     public ProgrammesApi programmes() { return programmes; }
@@ -355,11 +390,21 @@ public final class SangamApis {
     /** {@code Rosters}: 37 operations. */
     public RostersApi rosters() { return rosters; }
     /** {@code SCIM}: 15 operations. */
-    public SCIMApi sCIM() { return sCIM; }
-    /** {@code Tasks}: 13 operations. */
+    public SCIMApi scim() { return scim; }
+    /** {@code SharedDeployments}: 3 operations. */
+    public SharedDeploymentsApi sharedDeployments() { return sharedDeployments; }
+    /** {@code Tasks}: 15 operations. */
     public TasksApi tasks() { return tasks; }
-    /** {@code Tenant operations}: 36 operations. */
+    /** {@code Tenant operations}: 21 operations. */
     public TenantOperationsApi tenantOperations() { return tenantOperations; }
+    /** {@code Tenant operations /flowable-migrations}: 10 operations. */
+    public TenantOperationsFlowableMigrationsApi tenantOperationsFlowableMigrations() { return tenantOperationsFlowableMigrations; }
+    /** {@code Tenant operations /retention}: 6 operations. */
+    public TenantOperationsRetentionApi tenantOperationsRetention() { return tenantOperationsRetention; }
+    /** {@code Tenant operations /secrets}: 6 operations. */
+    public TenantOperationsSecretsApi tenantOperationsSecrets() { return tenantOperationsSecrets; }
+    /** {@code Tenant operations /variables}: 7 operations. */
+    public TenantOperationsVariablesApi tenantOperationsVariables() { return tenantOperationsVariables; }
     /** {@code TestMode}: 2 operations. */
     public TestModeApi testMode() { return testMode; }
     /** {@code Work}: 11 operations. */

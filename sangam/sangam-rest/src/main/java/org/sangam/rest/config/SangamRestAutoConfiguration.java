@@ -83,7 +83,7 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TxSupport sangamTxSupport(DataSource dataSource, PlatformTransactionManager txManager) {
-        return new TxSupport(dataSource, txManager, TxSupport.detectDialect(dataSource));
+        return new SpringTxSupport(dataSource, txManager, TxSupport.detectDialect(dataSource));
     }
 
     /** REST_DOCUMENT: persistence of the default adapters' state (nothing in memory). */
@@ -147,30 +147,62 @@ public class SangamRestAutoConfiguration {
 
     /** Opt-in key for running without sangam-security (development only; default false). */
     public static final String ALLOW_WITHOUT_SECURITY = "sangam.security.allow-without-security-module";
-    /** Profiles that count as an explicit development start (the convention of the server's key wiring). */
-    public static final java.util.Set<String> DEVELOPMENT_PROFILES = java.util.Set.of("dev", "h2");
+    /**
+     * Profiles that count as an explicit development start: the platform convention
+     * ({@link org.sangam.core.security.EnvironmentPolicy#DEVELOPMENT_PROFILES}, decision 143).
+     */
+    public static final java.util.Set<String> DEVELOPMENT_PROFILES =
+            org.sangam.core.security.EnvironmentPolicy.DEVELOPMENT_PROFILES;
+
+    /** Name given to the Spring environment as the source of the production switch (for refusal messages only). */
+    private static final String SPRING_ENVIRONMENT = "Spring environment";
+
+    /**
+     * Decisions 143 and 198: production for these guards, through the platform's one resolver
+     * ({@link org.sangam.core.security.EnvironmentPolicy}); a missing, invalid or contradictory switch counts as
+     * production (fail closed), and the switch true wins over a development profile.
+     */
+    static boolean production(org.springframework.core.env.Environment env) {
+        return org.sangam.core.security.EnvironmentPolicy.productionOrFailClosed(
+                env.getProperty(org.sangam.core.security.ProductionMode.PROPERTY), SPRING_ENVIRONMENT, profileSignals(env));
+    }
+
+    /** Decision 143: a validated development resolution (switch false and a development profile). */
+    static boolean developmentResolution(org.springframework.core.env.Environment env) {
+        return org.sangam.core.security.EnvironmentPolicy.developmentDefaultsAllowed(
+                env.getProperty(org.sangam.core.security.ProductionMode.PROPERTY), SPRING_ENVIRONMENT, profileSignals(env));
+    }
+
+    /** The active profiles (or, without one, the default profiles), classified by the platform convention. */
+    static java.util.Map<String, org.sangam.core.security.EnvironmentPolicy.Signal> profileSignals(
+            org.springframework.core.env.Environment env) {
+        String[] active = env.getActiveProfiles();
+        return org.sangam.core.security.EnvironmentPolicy.signals(
+                java.util.Arrays.asList(active.length > 0 ? active : env.getDefaultProfiles()));
+    }
 
     /**
      * Decision 75 (fail closed): a start without the security module is refused unless {@value #ALLOW_WITHOUT_SECURITY}
-     * is true or a development profile is active; when allowed, every start logs an ERROR line naming what is lost.
-     * Decision 92: in production ({@link org.sangam.core.security.ProductionMode}, the one production predicate) the
-     * start is refused whatever the flag or the profiles say.
+     * is true or the environment resolves to DEVELOPMENT (decision 143); when allowed, every start logs an ERROR line
+     * naming what is lost. Decision 92: in production the start is refused whatever the flag or the profiles say;
+     * decisions 143 and 198: production is the shared resolver's answer, so a missing or invalid
+     * {@code sangam.security.production} also refuses, and true wins over a development profile.
      */
     public static void requireDevelopmentWithoutSecurity(org.springframework.core.env.Environment env, String consequence) {
-        if (org.sangam.core.security.ProductionMode.isProduction(
-                env.getProperty(org.sangam.core.security.ProductionMode.PROPERTY, Boolean.class, false),
-                java.util.List.of(env.getActiveProfiles()))) {
+        if (production(env)) {
             throw new IllegalStateException("sangam-security is not active, so " + consequence + ". Refusing to start:"
                     + " this is a production start (" + org.sangam.core.security.ProductionMode.PROPERTY
-                    + " or a prod profile), where running without sangam-security is never allowed, not even with "
-                    + ALLOW_WITHOUT_SECURITY + "=true. Enable sangam.modules.security.enabled (the default).");
+                    + "=true, a prod profile, or the switch missing or invalid; decision 143), where running without"
+                    + " sangam-security is never allowed, not even with " + ALLOW_WITHOUT_SECURITY
+                    + "=true. Enable sangam.modules.security.enabled (the default).");
         }
         boolean flag = env.getProperty(ALLOW_WITHOUT_SECURITY, Boolean.class, false);
-        boolean devProfile = java.util.Arrays.stream(env.getActiveProfiles()).anyMatch(DEVELOPMENT_PROFILES::contains);
+        boolean devProfile = developmentResolution(env);
         if (!flag && !devProfile) {
             throw new IllegalStateException("sangam-security is not active, so " + consequence + ". Refusing to start:"
                     + " enable sangam.modules.security.enabled (the default), or for development only set "
-                    + ALLOW_WITHOUT_SECURITY + "=true or a development profile " + DEVELOPMENT_PROFILES);
+                    + ALLOW_WITHOUT_SECURITY + "=true or a development profile " + DEVELOPMENT_PROFILES + " with "
+                    + org.sangam.core.security.ProductionMode.PROPERTY + "=false");
         }
         org.slf4j.LoggerFactory.getLogger(SangamRestAutoConfiguration.class).error(
                 "DEVELOPMENT MODE WITHOUT sangam-security ({}): {}. Never use this configuration in production.",
@@ -258,7 +290,7 @@ public class SangamRestAutoConfiguration {
         // SL-77: required fields of the task's Sangam form are enforced on completion.
         adapter.setFormRequirements(new org.sangam.rest.adapter.operaton.TaskFormRequirements(
                 engine.getRepositoryService()));
-        adapter.setReadTransactions(new org.sangam.rest.adapter.operaton.ReadTransactions(txManager));
+        adapter.setReadTransactions(new SpringReadTransactions(txManager));
         org.sangam.rest.adapter.jdbc.DenialAudit denials = denialAudit.getIfAvailable();
         if (denials != null) {
             adapter.setDenialAudit(denials);
@@ -515,15 +547,19 @@ public class SangamRestAutoConfiguration {
         return console;
     }
 
+    /**
+     * SL-109, decisions 143 and 198: the debugger is on only with {@code sangam.debug.enabled=true} outside production,
+     * as the shared resolver decides it (a missing or invalid switch counts as production).
+     */
+    static boolean debuggerEnabled(org.springframework.core.env.Environment env) {
+        return env.getProperty("sangam.debug.enabled", Boolean.class, false) && !production(env);
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.DebugPort sangamDebugPort(ProcessEngine engine, RestProperties props,
             org.springframework.core.env.Environment env, TxSupport tx) {
-        // SL-109: never enabled in production (ProductionMode: the production property or a 'prod' profile)
-        boolean enabled = env.getProperty("sangam.debug.enabled", Boolean.class, false)
-                && !org.sangam.core.security.ProductionMode.isProduction(
-                        env.getProperty(org.sangam.core.security.ProductionMode.PROPERTY, Boolean.class, false),
-                        java.util.Arrays.asList(env.getActiveProfiles()));
+        boolean enabled = debuggerEnabled(env);
         String profile = String.join(",", env.getActiveProfiles());
         return new org.sangam.rest.adapter.operaton.OperatonDebugAdapter(engine.getRuntimeService(),
                 engine.getManagementService(), props, enabled, profile, env.getProperty("sangam.debug.sandbox-tenant"),
@@ -593,8 +629,12 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.LowCodePort sangamLowCodePort(org.sangam.rest.support.DocumentStore store,
-            TaskPort tasks, ProcessPort processes, AuditPort audit, RestProperties props) {
-        return new org.sangam.rest.adapter.jdbc.JdbcLowCodeAdapter(store, tasks, processes, audit, props);
+            TaskPort tasks, ProcessPort processes, AuditPort audit, RestProperties props,
+            ObjectProvider<org.sangam.rest.port.RestBackedRecords> restBacked) {
+        // EC-06 (decisions 265, 266): REST-backed data objects use the host's connector seam when it has one (the
+        // server binds it with sangam-integration); resolved per call, so without one they answer 501
+        return new org.sangam.rest.adapter.jdbc.JdbcLowCodeAdapter(store, tasks, processes, audit, props,
+                restBacked::getIfAvailable);
     }
 
     @Bean

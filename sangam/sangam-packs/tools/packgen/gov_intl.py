@@ -9,9 +9,9 @@ pack's (money in integer minor units, money.py); a tenant with another currency 
 from lib import C, q
 from money import M  # noqa: F401
 from packs import Pack
-from common import core, outcome, end_ok, rejection, reject_with, checked_query, check_conditions
+from common import core, outcome, end_ok, rejection, reject_with, checked_query, check_conditions, unconfirmed_hold
 from gov2 import simple_seeds
-from sector import powers, authority
+from sector import powers, authority, clock
 
 import forms
 
@@ -138,5 +138,148 @@ def execution():
               vars={'amount': 50000, 'sim_ledger_available': 'available=1000000', 'sim_payee_integrity': 'clear=true'})
 
 
+# ------------------------------------------------------------------------------------------------ M-134 PFM packs
+# Owner decision 108: country data comes from the deploying government through its own channel; until then every
+# country value is a SYNTHETIC placeholder (pk.placeholder: readiness fails until a confirmed override is deployed),
+# and no consumer data is in these files (ADR-D-20).
+
+forms.L.update({k: v for k, v in {
+    'breachKind': ('Kind of breach (over-obligation, over-expenditure, other)', 'उल्लंघन का प्रकार', 'select'),
+    'breachFacts': ('Facts of the breach (limit, amount, date, how it was detected)', 'उल्लंघन के तथ्य', 'text'),
+    'investigationFindings': ('Investigation findings and responsibility', 'जाँच के निष्कर्ष एवं उत्तरदायित्व', 'text'),
+    'correctiveAction': ('Corrective action taken', 'सुधारात्मक कार्रवाई', 'text'),
+    'suspenseAccount': ('Suspense account', 'उचंत खाता', 'string'),
+    'suspenseItemRef': ('Suspense item reference', 'उचंत मद संदर्भ', 'string'),
+    'postedOn': ('Date the item was posted to suspense', 'उचंत में दर्ज करने की तिथि', 'date'),
+    'clearanceNote': ('Clearance: the correct head and evidence', 'निपटान: सही शीर्ष एवं साक्ष्य', 'text'),
+    'targetHead': ('Correct budget / accounting head', 'सही बजट / लेखा शीर्ष', 'string'),
+}.items() if k not in forms.L})
+forms.OPT.update({k: v for k, v in {
+    'cleared': ('Cleared to the correct head', 'सही शीर्ष में निपटाया'),
+    'proposeWriteOff': ('Propose write-off', 'बट्टे खाते का प्रस्ताव'),
+}.items() if k not in forms.OPT})
+
+
+def breach_case():
+    pk = Pack('gov.intl.pfm-breach-case', 'gov-intl-pfm-breach-case', 'Budget limit breach case (worldwide PFM)',
+              'बजट सीमा उल्लंघन मामला (अंतरराष्ट्रीय सार्वजनिक वित्त)', 'Public finance (international)',
+              'A breach of a budget limit is a legal event in some countries (PFM-039, PFM-CH-7): the case records the '
+              'facts, a person other than the reporter investigates and records responsibility and corrective action, '
+              'the accounting officer reviews, and the report goes to the authorities the country configures, within '
+              'the report deadline from DMN. Authorities and deadline are SYNTHETIC until the country confirms them.',
+              ['PFM-039', 'PFM-CH-7', 'GP-14'],
+              connectors=[('authority.report', 'b', '', 'Report to the configured authorities')], currency='USD')
+    p = pk.proc('sangam-intl-pfm-breach-case', 'Budget limit breach case', '',
+                start={'materialFields': 'spendingUnit,budgetLine,amount,breachKind'})
+    s = p.root
+    st = s.start('bc_start', 'Breach detected', form='gov-intl-pfm-breach-case/report')
+    p.forms.append(dict(key='gov-intl-pfm-breach-case/report', name='Breach detected | उल्लंघन पाया गया', decision=None,
+                        fields=['spendingUnit*', 'budgetLine*', 'amount*', 'breachKind*', 'breachFacts*'], doc=None))
+    d = s.setv('bc_defaults', 'Configuration',
+               defaults='spendingUnit=SU-1;budgetLine=GEN-01;amount=0;breachKind=OTHER;'
+                        'investigatorSeat=BREACH-INVESTIGATOR;accountingSeat=ACCOUNTING-OFFICER;'
+                        'budgetOfficeSeat=BUDGET-OFFICE')
+    r = s.rule('bc_cfg', 'Breach reporting rule (DMN)', 'intl-pfm-breach-reporting')
+    dl = clock(s, 'bc_deadline', 'breachReport', '${breachReportSpec}')
+    inv = s.user('bc_investigate', 'Investigate: findings, responsibility and corrective action | जाँच',
+                 '${investigatorSeat}', form='gov-intl-pfm-breach-case/investigate', decision=None,
+                 fields=['breachFacts', 'investigationFindings*', 'correctiveAction*'], due='${breachReportDueAt}')
+    s.seq(st, d, r, dl, inv)
+    rv = s.user('bc_review', 'Review the breach report (accounting officer) | उल्लंघन रिपोर्ट की समीक्षा',
+                '${accountingSeat}', form='gov-intl-pfm-breach-case/review', decision=('reviewDecision', ['approve', 'reject']),
+                fields=['investigationFindings', 'correctiveAction', 'remarks'], sod=True, sod_steps='bc_investigate',
+                due='${breachReportDueAt}')
+    s.flow(inv, rv)
+    rg = s.xgw('bc_reviewGw')
+    s.flow(rv, rg)
+    s.flow(rg, inv, "reviewDecision == 'reject'", 'investigate again')
+    re_, rp = checked_query(s, 'bc_send', 'Report to the configured authorities', 'authority.report', 'report',
+                            'breachAuthorities,breachKind,breachFacts,investigationFindings,correctiveAction', 'report',
+                            ['reportReceiptRef'], mode='submit', step='breach-report')
+    s.flow(rg, re_, None, 'approved', default=True)
+    sg = s.xgw('bc_sentGw', 'Report received?')
+    s.flow(rp, sg)
+    sent_unconfirmed, _ = check_conditions([('report', ['reportReceiptRef'])])
+    s.flow(sg, unconfirmed_hold(p, s, 'bc_sendHold', 'Report not confirmed by the authority: confirm and resend | '
+                                'रिपोर्ट की पुष्टि नहीं', '${budgetOfficeSeat}', re_), sent_unconfirmed, 'not confirmed')
+    s.flow(sg, end_ok(p, s, 'bc_end', 'Breach reported', outcome='REPORTED', data=['reportReceiptRef']), None,
+           'reported', default=True)
+    s.side_exits('bc')
+    pk.dmn('intl-pfm-breach-reporting', 'Breach reporting rule (SYNTHETIC: authorities and deadline per country)', 'FIRST',
+           [('Kind of breach', 'breachKind', 'string')],
+           [('breachAuthorities', 'Authorities to report to', 'string'), ('breachReportSpec', 'Report due within', 'string')],
+           [(['-'], [q('CONFIGURE-PER-COUNTRY'), q('30D')], 'SYNTHETIC')],
+           doc='PFM-039, PFM-CH-7. The authorities and the deadline are country law: deploy the confirmed table as a '
+               'tenant override.')
+    pk.placeholder('intl-pfm-breach-reporting', 'SYNTHETIC authorities and 30-day deadline',
+                   'country breach-reporting authorities and deadline not verified (INTERNATIONAL-PFM-REQUIREMENTS '
+                   'PFM-039, section 5)')
+    simple_seeds(pk, 'MINISTRY', [
+        ('BREACH-INVESTIGATOR', 'INVESTIGATOR', 'ACCOUNTING-OFFICER', 'Breach investigator', 'उल्लंघन जाँच अधिकारी'),
+        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी'),
+        ('BUDGET-OFFICE', 'BUDGETOFFICE', None, 'Budget office', 'बजट कार्यालय')], 'ibc')
+
+
+def suspense_ageing():
+    pk = Pack('gov.intl.pfm-suspense-ageing', 'gov-intl-pfm-suspense-ageing', 'Suspense item clearance and ageing (worldwide PFM)',
+              'उचंत मद निपटान एवं आयु निगरानी (अंतरराष्ट्रीय सार्वजनिक वित्त)', 'Public finance (international)',
+              'A suspense item (PFM-051, PEFA PI-27) is cleared to the correct head within the clearance period from '
+              'DMN; the period is guarded by an SLA that escalates; an item that cannot be cleared becomes a write-off '
+              'proposal that another officer approves; the reclassification is posted through the ledger and is '
+              'confirmed before the case closes. Periods are SYNTHETIC until the country confirms them.',
+              ['PFM-051', 'GP-06', 'GP-14'],
+              connectors=[('ledger.reclassify', 'a', '', 'Reclassify the item from suspense to the correct head')],
+              currency='USD')
+    p = pk.proc('sangam-intl-pfm-suspense-ageing', 'Suspense item clearance', '',
+                start={'materialFields': 'suspenseAccount,suspenseItemRef,amount'})
+    s = p.root
+    st = s.start('su_start', 'Item posted to suspense', form='gov-intl-pfm-suspense-ageing/item')
+    p.forms.append(dict(key='gov-intl-pfm-suspense-ageing/item', name='Suspense item | उचंत मद', decision=None,
+                        fields=['suspenseAccount*', 'suspenseItemRef*', 'amount*', 'postedOn*', 'description'], doc=None))
+    d = s.setv('su_defaults', 'Configuration',
+               defaults='suspenseAccount=SUSPENSE;suspenseItemRef=@customerId;amount=0;ledgerId=ACCOUNTS;'
+                        'clearingSeat=SUSPENSE-CLERK;accountingSeat=ACCOUNTING-OFFICER')
+    r = s.rule('su_cfg', 'Suspense clearance period (DMN)', 'intl-pfm-suspense-ageing')
+    ce, cx = s.sla_task('su_clear', 'Clear the suspense item to the correct head | उचंत मद का निपटान', 'clearingSeat',
+                        form='gov-intl-pfm-suspense-ageing/clear', decision=('clearDecision', ['cleared', 'proposeWriteOff']),
+                        fields=['targetHead*', 'clearanceNote*'], spec='${suspenseClearSpec}')
+    s.seq(st, d, r, ce)
+    cg = s.xgw('su_clearGw')
+    s.flow(cx, cg)
+    wo = s.user('su_writeOff', 'Approve the write-off proposal (not the proposer) | बट्टे खाते का अनुमोदन',
+                '${accountingSeat}', form='gov-intl-pfm-suspense-ageing/write-off',
+                decision=('writeOffDecision', ['approve', 'reject']), fields=['clearanceNote', 'remarks*'], sod=True,
+                sod_steps='su_clear')
+    s.flow(cg, wo, "clearDecision == 'proposeWriteOff'", 'write-off proposed')
+    wg = s.xgw('su_writeOffGw')
+    s.flow(wo, wg)
+    s.flow(wg, ce, "writeOffDecision == 'reject'", 'clear it instead')
+    pe, po = checked_query(s, 'su_post', 'Reclassify from suspense (ledger)', 'ledger.reclassify', 'reclassify',
+                           'ledgerId,suspenseAccount,suspenseItemRef,targetHead,amount,clearDecision', 'reclass',
+                           ['reclassEntryRef'], mode='submit', step='reclassify')
+    s.flow(cg, pe, None, 'cleared', default=True)
+    s.flow(wg, pe, None, 'write-off approved', default=True)
+    pg = s.xgw('su_postGw', 'Posted?')
+    s.flow(po, pg)
+    post_unconfirmed, _ = check_conditions([('reclass', ['reclassEntryRef'])])
+    s.flow(pg, unconfirmed_hold(p, s, 'su_postHold', 'Reclassification not confirmed: check the ledger | '
+                                'पुनर्वर्गीकरण की पुष्टि नहीं', '${accountingSeat}', pe), post_unconfirmed, 'not confirmed')
+    s.flow(pg, end_ok(p, s, 'su_end', 'Suspense item cleared', outcome='CLEARED', data=['reclassEntryRef']), None,
+           'posted', default=True)
+    s.side_exits('su')
+    pk.dmn('intl-pfm-suspense-ageing', 'Suspense clearance period (SYNTHETIC; per country)', 'FIRST',
+           [('Suspense account', 'suspenseAccount', 'string')],
+           [('suspenseClearSpec', 'Clear within', 'string')],
+           [(['-'], [q('30D')], 'SYNTHETIC')],
+           doc='PFM-051 (PEFA PI-27.2 suspense clearance). Deploy the confirmed period as a tenant override.')
+    pk.placeholder('intl-pfm-suspense-ageing', 'SYNTHETIC 30-day clearance period',
+                   'country suspense clearance period not verified (INTERNATIONAL-PFM-REQUIREMENTS PFM-051, section 5)')
+    simple_seeds(pk, 'TREASURY', [
+        ('SUSPENSE-CLERK', 'SUSPENSECLERK', 'ACCOUNTING-OFFICER', 'Suspense clearing clerk', 'उचंत निपटान लिपिक'),
+        ('ACCOUNTING-OFFICER', 'ACCOUNTING-OFFICER', None, 'Accounting officer', 'लेखा अधिकारी')], 'isu')
+
+
 def build():
     execution()
+    breach_case()
+    suspense_ageing()

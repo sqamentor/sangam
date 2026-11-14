@@ -15,8 +15,15 @@
 #   docker build -f deploy/docker/server.Dockerfile --build-arg APP_MODULE=sangam-gateway -t sangam-gateway:dev .
 #   docker build -f deploy/docker/server.Dockerfile --target runtime-distroless -t sangam-server:dev-distroless .
 #   # JDK 21 runtime (still certified, deploy/SUPPORT-MATRIX.md):
-#   docker build -f deploy/docker/server.Dockerfile --build-arg JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble \
-#       --build-arg DISTROLESS_IMAGE=gcr.io/distroless/java21-debian12:nonroot -t sangam-server:dev-jdk21 .
+#   docker build -f deploy/docker/server.Dockerfile --build-arg JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble@sha256:20e7f7288e1c18eebe8f06a442c9f7183342d9b022d3b9a9677cae2b558ddddd \
+#       --build-arg DISTROLESS_IMAGE=gcr.io/distroless/java21-debian12:nonroot@sha256:7e37784d94dccbf5ccb195c73b295f5ad00cd266512dfbac12eb9c3c28f8077d \
+#       -t sangam-server:dev-jdk21 .
+#   # opt-in eSign and DSC add-on (decision 217; Bouncy Castle, off by default):
+#   docker build -f deploy/docker/server.Dockerfile --build-arg WITH_ESIGN=true -t sangam-server:dev-esign .
+#   (prebuilt jar: put the release asset sangam-esign-<v>.tgz, unpacked flat, into PREBUILT_LIB_EXT)
+#   # opt-in NATS add-on (decision 232; jnats and bcprov-lts8on, off by default, not with WITH_ESIGN=true):
+#   docker build -f deploy/docker/server.Dockerfile --build-arg WITH_NATS=true -t sangam-server:dev-nats .
+#   (prebuilt jar: put the release asset sangam-nats-<v>.tgz, unpacked flat, into PREBUILT_LIB_EXT)
 #   # a jar built outside Docker (CI, air-gapped build host):
 #   docker build -f deploy/docker/server.Dockerfile --build-arg JAR_SOURCE=prebuilt \
 #       --build-arg PREBUILT_JAR=sangam-server/target/sangam-server-0.1.0-SNAPSHOT.jar .
@@ -33,9 +40,11 @@
 # driver can be replaced without rebuilding the image. Writable state lives under /var/lib/sangam (compliance log
 # archive, cell exports); mount a volume there (R51: 180-day India-resident logs).
 
-ARG MAVEN_IMAGE=maven:3.9.11-eclipse-temurin-25
-ARG JRE_IMAGE=eclipse-temurin:25.0.1_8-jre-noble
-ARG DISTROLESS_IMAGE=gcr.io/distroless/java25-debian13:nonroot
+# Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
+# JRE_IMAGE and DISTROLESS_IMAGE stay build args (decision 253) because the JDK 21 variant above overrides them;
+# their defaults are digest-pinned like every FROM (decision 261).
+ARG JRE_IMAGE=eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33
+ARG DISTROLESS_IMAGE=gcr.io/distroless/java25-debian13:nonroot@sha256:1c4ced761d17961c900cba60c33c8c3c46edbdadaa9d5ef9806eb5a6824fd406
 # build | prebuilt
 ARG JAR_SOURCE=build
 ARG APP_MODULE=sangam-server
@@ -43,7 +52,7 @@ ARG APP_MODULE=sangam-server
 # ---------------------------------------------------------------------------------------------------------------
 # Stage: build the fat jar from source with the reactor (needs Maven Central or an offline mirror, see README).
 # ---------------------------------------------------------------------------------------------------------------
-FROM ${MAVEN_IMAGE} AS build
+FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS build
 ARG MAVEN_ARGS="-B -ntp"
 ARG MARIADB_VERSION=3.5.11
 ARG APP_MODULE
@@ -60,11 +69,48 @@ RUN --mount=type=cache,target=/root/.m2 \
  && mvn ${MAVEN_ARGS} -q dependency:copy \
         -Dartifact=org.mariadb.jdbc:mariadb-java-client:${MARIADB_VERSION}:jar:sources -DoutputDirectory=/out/lib-ext \
         || echo "WARN: MariaDB sources jar not fetched; the source offer text still applies"
+# Owner decision 217: opt-in eSign and DSC add-on (module sangam-esign, the only module with Bouncy Castle). Off by
+# default, so a default image has no Bouncy Castle. --build-arg WITH_ESIGN=true (sangam-server only) adds the
+# sangam-esign jar and the runtime jars the fat jar lacks (Bouncy Castle) to /opt/sangam/lib-ext, which is on
+# loader.path; the server finds the verifiers by ServiceLoader. The list is /opt/sangam/lib-ext/ESIGN-ADDON.txt. Live
+# eSign stays off until decision 215 is met; this only makes verified eSign and DSC possible. The sangam-server
+# profile sangam-esign puts the same module inside the fat jar instead; the image keeps the fat jar as released and
+# adds the jars beside it, which is also how the release asset sangam-esign-<v>.tgz ships them.
+ARG WITH_ESIGN=false
+RUN --mount=type=cache,target=/root/.m2 \
+    case "${WITH_ESIGN}" in \
+      false) exit 0 ;; \
+      true) [ "${APP_MODULE}" = sangam-server ] || { echo "WITH_ESIGN=true is for APP_MODULE=sangam-server only"; exit 1; } ;; \
+      *) echo "WITH_ESIGN must be true or false"; exit 1 ;; \
+    esac \
+ && mvn ${MAVEN_ARGS} -DskipTests -pl sangam-esign -am install \
+ && mvn ${MAVEN_ARGS} -q -pl sangam-esign dependency:copy-dependencies -DincludeScope=runtime -DoutputDirectory=/tmp/esign-deps \
+ && esign=$(ls sangam-esign/target/sangam-esign-*.jar | grep -v -e '-sources\.jar$' -e '-javadoc\.jar$' | head -n 1) \
+ && test -n "$esign" \
+ && sh deploy/docker/server/esign-addon.sh /out/app.jar /tmp/esign-deps "$esign" /out/lib-ext
+# Owner decision 232: opt-in NATS add-on (NATS channel adapters and the NATS wake-up bus). jnats is not in the server
+# fat jar; without the add-on the server refuses NATS settings at start and NATS routes answer 501
+# CAPABILITY_NOT_INSTALLED. --build-arg WITH_NATS=true (sangam-server only) puts exactly jnats and its Bouncy Castle
+# jar bcprov-lts8on (the versions the reactor resolves; jnats is an optional dependency of sangam-integration) into
+# /opt/sangam/lib-ext, listed in /opt/sangam/lib-ext/NATS-ADDON.txt. Not combinable with WITH_ESIGN=true: both add a
+# Bouncy Castle provider jar (lts8on and jdk18on) with the same packages. The release asset sangam-nats-<v>.tgz ships
+# the same two jars.
+ARG WITH_NATS=false
+RUN --mount=type=cache,target=/root/.m2 \
+    case "${WITH_NATS}" in \
+      false) exit 0 ;; \
+      true) [ "${APP_MODULE}" = sangam-server ] || { echo "WITH_NATS=true is for APP_MODULE=sangam-server only"; exit 1; } \
+            ; [ "${WITH_ESIGN}" = false ] || { echo "WITH_NATS=true and WITH_ESIGN=true cannot be combined (two Bouncy Castle providers)"; exit 1; } ;; \
+      *) echo "WITH_NATS must be true or false"; exit 1 ;; \
+    esac \
+ && mvn ${MAVEN_ARGS} -q -DskipTests -pl sangam-integration -am package dependency:copy-dependencies \
+        -DincludeScope=runtime -DincludeArtifactIds=jnats,bcprov-lts8on -DoutputDirectory=/tmp/nats-deps \
+ && sh deploy/docker/server/nats-addon.sh /out/app.jar /tmp/nats-deps /out/lib-ext
 
 # ---------------------------------------------------------------------------------------------------------------
 # Stage: take a jar built elsewhere (CI artefact, air-gapped build host).
 # ---------------------------------------------------------------------------------------------------------------
-FROM ${MAVEN_IMAGE} AS prebuilt
+FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS prebuilt
 ARG PREBUILT_JAR=sangam-server/target/sangam-server.jar
 ARG PREBUILT_LIB_EXT=deploy/docker/lib-ext
 COPY ${PREBUILT_JAR} /out/app.jar
@@ -76,7 +122,7 @@ FROM ${JAR_SOURCE} AS jar
 # ---------------------------------------------------------------------------------------------------------------
 # Stage: common file layout + licence guard.
 # ---------------------------------------------------------------------------------------------------------------
-FROM ${MAVEN_IMAGE} AS layout
+FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS layout
 COPY --from=jar /out/ /layout/opt/sangam/
 COPY deploy/docker/server/SOURCE-OFFER.txt /layout/opt/sangam/lib-ext/SOURCE-OFFER.txt
 COPY deploy/docker/server/drivers-README.txt /layout/opt/sangam/drivers/README.txt

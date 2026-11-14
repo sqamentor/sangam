@@ -125,7 +125,11 @@ class AsyncApiConsistencyTest {
 
     // ---------------------------------------------------------------- helpers
 
-    /** Names of the X.4.0.3 table in order; {@code A_B`/`_C} (a name starting with _) replaces the last word: A_C. */
+    /**
+     * Names of the X.4.0.3 table in order, by the generator's rule (sangam_events._audit_names): a name is a backticked
+     * upper-case word of the second cell outside parentheses (text in parentheses is a note, never a name; parentheses
+     * count only outside backticks), and {@code A_B`/`_C} (a name starting with _) replaces the last word: A_C.
+     */
     static List<String> x403() throws IOException {
         String md = Files.readString(SANGAM_MD, StandardCharsets.UTF_8);
         int from = md.indexOf("#### X.4.0.3");
@@ -137,10 +141,32 @@ class AsyncApiConsistencyTest {
             if (!line.startsWith("| ") || cells.length < 3 || cells[1].trim().equals("Group")) {
                 continue;
             }
-            Matcher n = Pattern.compile("`(_?[A-Z][A-Z_]*|_[A-Z_]+)`").matcher(cells[2]);
-            String previous = null;
-            while (n.find()) {
-                String name = n.group(1);
+            assertEquals(0, cells[2].chars().filter(c -> c == '`').count() % 2,
+                    "X.4.0.3 row " + cells[1].trim() + " has an unpaired backtick");
+            out.addAll(names(cells[2]));
+        }
+        return out;
+    }
+
+    private static final Pattern NAME = Pattern.compile("_?[A-Z][A-Z_]*|_[A-Z_]+");
+
+    /** The names of one second cell (rule of {@link #x403()}). */
+    static List<String> names(String cell) {
+        List<String> out = new ArrayList<>();
+        String[] parts = cell.split("`", -1);
+        String previous = null;
+        int depth = 0;
+        for (int i = 0; i < parts.length; i++) {
+            if (i % 2 == 0) {
+                for (char c : parts[i].toCharArray()) {
+                    if (c == '(') {
+                        depth++;
+                    } else if (c == ')') {
+                        depth = Math.max(0, depth - 1);
+                    }
+                }
+            } else if (depth == 0 && NAME.matcher(parts[i]).matches()) {
+                String name = parts[i];
                 if (name.startsWith("_") && previous != null) {
                     name = previous.substring(0, previous.lastIndexOf('_')) + name;
                 }
@@ -149,6 +175,63 @@ class AsyncApiConsistencyTest {
             }
         }
         return out;
+    }
+
+    /** Guard for the backtick slip of 2026-11-13: a backticked value in a note is not an event name. */
+    @Test
+    void aBacktickedValueInANoteIsNotAName() {
+        assertEquals(List.of("DATA_OBJECT_RECORD_CREATED", "TENANT_UNRESOLVED", "NEXT_EVENT"),
+                names(" `DATA_OBJECT_RECORD_CREATED` (REST-backed: status `PENDING`, backing `REST`, chain `data:<key>`),"
+                        + " `TENANT_UNRESOLVED` (resolutionReason `UNRESOLVED_TENANT`; nested (`INNER`) note),"
+                        + " `NEXT_EVENT` "));
+        assertEquals(List.of("A_B", "A_C"), names(" `A_B`/`_C` (note `_D`) "));
+    }
+
+    /**
+     * Backticked upper-case words that X.4.0.3 writes inside a note (parentheses) and nowhere as a name: payload values,
+     * never events. Each needs its reason. A name the table means to publish must be written outside parentheses.
+     */
+    static final Map<String, String> NOTE_VALUES = Map.of(
+            "UNRESOLVED_TENANT", "decision 144: the resolutionReason value in the TENANT_UNRESOLVED payload note");
+
+    /**
+     * No event name is written only inside parentheses: the rule drops it silently, so every backticked upper-case word
+     * in a note is either published elsewhere in the table or a listed note value; a listed value no longer in a note
+     * fails too, so the list stays exact.
+     */
+    @Test
+    void noNameIsWrittenOnlyInsideParentheses() throws IOException {
+        String md = Files.readString(SANGAM_MD, StandardCharsets.UTF_8);
+        int from = md.indexOf("#### X.4.0.3");
+        int to = md.indexOf("#### X.4.0.4", from);
+        Set<String> published = new TreeSet<>(x403());
+        Set<String> inNotes = new TreeSet<>();
+        List<String> unlisted = new ArrayList<>();
+        for (String line : md.substring(from, to).split("\n")) {
+            String[] cells = line.split("\\|");
+            if (!line.startsWith("| ") || cells.length < 3 || cells[1].trim().equals("Group")) {
+                continue;
+            }
+            String[] parts = cells[2].split("`", -1);
+            int depth = 0;
+            for (int i = 0; i < parts.length; i++) {
+                if (i % 2 == 0) {
+                    for (char c : parts[i].toCharArray()) {
+                        depth += c == '(' ? 1 : c == ')' && depth > 0 ? -1 : 0;
+                    }
+                } else if (depth > 0 && NAME.matcher(parts[i]).matches() && !published.contains(parts[i])) {
+                    inNotes.add(parts[i]);
+                    if (!NOTE_VALUES.containsKey(parts[i])) {
+                        unlisted.add(cells[1].trim() + ": " + parts[i]);
+                    }
+                }
+            }
+        }
+        assertEquals(List.of(), unlisted, "backticked upper-case words only in X.4.0.3 notes: write an event name "
+                + "outside parentheses, or list a payload value in NOTE_VALUES with its reason");
+        Set<String> stale = new TreeSet<>(NOTE_VALUES.keySet());
+        stale.removeAll(inNotes);
+        assertEquals(Set.of(), stale, "NOTE_VALUES entries no longer in an X.4.0.3 note");
     }
 
     @SuppressWarnings("unchecked")

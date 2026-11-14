@@ -25,7 +25,10 @@ import java.util.concurrent.atomic.AtomicLong;
  * handshake (2025-11-25 and earlier), using the version the server negotiated. Answers may be JSON or SSE; SSE notifications
  * before the response are skipped. Servers are allow-listed by the {@code EgressPolicy} of the transport, and tools by
  * {@code toolFilter}. Tool annotations are untrusted unless {@code trustAnnotations} is set for this server, so by default every
- * tool needs human approval. Server-initiated requests and {@code input_required} results are not handled.
+ * tool needs human approval. Decision 171 (2026-07-28 is stateless; {@code input_required} replaces server-initiated
+ * requests): the client declares no elicitation, sampling or roots capability, so an {@code input_required} result with
+ * {@code inputRequests} fails the call; one without them is retried with a new id, echoing {@code requestState} when
+ * given, at most {@link #MAX_INPUT_ROUNDS} rounds. Not verified against other implementations until tests run.
  */
 public final class McpClient {
 
@@ -35,6 +38,8 @@ public final class McpClient {
     public static final List<String> LEGACY_VERSIONS = List.of("2025-11-25", "2025-06-18", "2025-03-26");
     private static final int MAX_PAGES = 100;
     private static final int UNSUPPORTED_VERSION = -32022;
+    /** Bound on {@code input_required} rounds of one tool call (decision 171). */
+    static final int MAX_INPUT_ROUNDS = 5;
 
     public record Config(String id, URI endpoint, String tenantId, String bearerRef, Set<String> toolFilter, boolean trustAnnotations) {
         public Config(String id, URI endpoint, String tenantId, String bearerRef, Set<String> toolFilter) {
@@ -152,15 +157,38 @@ public final class McpClient {
     }
 
     private AgentTool.Result call(String tool, Map<String, Object> args, boolean readOnly, Map<List<String>, String> mirrored) {
-        JsonNode r;
-        try {
-            r = rpc("tools/call", Map.of("name", tool, "arguments", args), paramHeaders(args, mirrored));
-        } catch (McpException e) {
-            // After a non-read-only send the effect is unknown; MCP has no idempotency key or outcome lookup.
-            return readOnly ? new AgentTool.Retry(e.getMessage()) : new AgentTool.Pending("UNKNOWN_OUTCOME: " + e.getMessage());
-        }
-        if ("input_required".equals(r.path("resultType").asText())) {
-            return new AgentTool.Failed("the MCP server asked for more input, which this client does not support");
+        JsonNode r = null;
+        String requestState = null;
+        for (int round = 0; ; round++) {
+            Map<String, Object> params = new LinkedHashMap<>();
+            params.put("name", tool);
+            params.put("arguments", args);
+            if (requestState != null) {
+                // 2026-07-28 multi round-trip: echo the opaque state exactly, as a top-level field of params
+                params.put("requestState", requestState);
+            }
+            try {
+                // rpc takes a new JSON-RPC id for every round, as the retry requires
+                r = rpc("tools/call", params, paramHeaders(args, mirrored));
+            } catch (McpException e) {
+                // After a non-read-only send the effect is unknown; MCP has no idempotency key or outcome lookup.
+                return readOnly ? new AgentTool.Retry(e.getMessage()) : new AgentTool.Pending("UNKNOWN_OUTCOME: " + e.getMessage());
+            }
+            if (!"input_required".equals(r.path("resultType").asText())) {
+                break;
+            }
+            JsonNode asked = r.path("inputRequests");
+            if (asked.isObject() && asked.size() > 0) {
+                // This client declares no elicitation, sampling or roots capability, so the server must not ask.
+                List<String> keys = new ArrayList<>();
+                asked.fieldNames().forEachRemaining(keys::add);
+                return new AgentTool.Failed("the MCP server requested input this client did not declare: " + keys);
+            }
+            if (round + 1 >= MAX_INPUT_ROUNDS) {
+                return new AgentTool.Failed("the MCP server still required input after " + MAX_INPUT_ROUNDS + " rounds");
+            }
+            // No input requests: retry, with the request state when the server gave one and without it otherwise.
+            requestState = r.hasNonNull("requestState") ? r.get("requestState").asText() : null;
         }
         StringBuilder text = new StringBuilder();
         for (JsonNode c : r.path("content")) {

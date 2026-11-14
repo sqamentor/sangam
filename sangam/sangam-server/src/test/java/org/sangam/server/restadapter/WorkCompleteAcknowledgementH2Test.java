@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,7 +62,7 @@ class WorkCompleteAcknowledgementH2Test {
         org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
         ds.setURL(url);
         ds.setUser("sa");
-        TxSupport tx = new TxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
+        TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
         engine = new FakeEngine();
         work = new EngineAdapterWorkAdapter(engine, tx, new NoSeparateAudit(), new RestProperties());
     }

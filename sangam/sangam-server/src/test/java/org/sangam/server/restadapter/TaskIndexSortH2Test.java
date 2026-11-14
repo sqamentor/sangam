@@ -110,12 +110,13 @@ class TaskIndexSortH2Test {
     @Test
     void anAmountSortIsWithinOneCurrencyAndCarriesTheIndexValues() {
         List<TaskPort.Task> asc = list("amount", "asc", "INR");
-        assertEquals(List.of(120L, 500L), asc.stream().map(TaskPort.Task::amount).toList());
+        // decision 211: MoneyAmount text in major units (INR has 2 fraction digits), sorted on the stored minor units
+        assertEquals(List.of("1.20", "5.00"), asc.stream().map(TaskPort.Task::amount).toList());
         assertEquals(List.of("B-1", "B-3"), asc.stream().map(TaskPort.Task::reference).toList());
         assertTrue(asc.stream().allMatch(t -> "INR".equals(t.currency())));
-        assertEquals(List.of(500L, 120L), list("amount", "desc", "INR").stream().map(TaskPort.Task::amount).toList());
-        assertEquals(List.of(300L), list("amount", "asc", "USD").stream().map(TaskPort.Task::amount).toList());
-        assertEquals(List.of(120L, 500L), list("amount,created", "asc,desc", "INR").stream()
+        assertEquals(List.of("5.00", "1.20"), list("amount", "desc", "INR").stream().map(TaskPort.Task::amount).toList());
+        assertEquals(List.of("3.00"), list("amount", "asc", "USD").stream().map(TaskPort.Task::amount).toList());
+        assertEquals(List.of("1.20", "5.00"), list("amount,created", "asc,desc", "INR").stream()
                 .map(TaskPort.Task::amount).toList(), "multi-key sort keeps amount first");
     }
 

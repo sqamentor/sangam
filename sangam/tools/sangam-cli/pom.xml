@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
@@ -18,6 +18,24 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
+    <!-- M-092 upgrade check: reads YAML config files and the bundled API deprecation registry (Apache-2.0; snakeyaml Apache-2.0) -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
+    <!-- M-125 `sangam diff`: org.sangam.modeller.diff uses only the JDK and Jackson (declared above), so every
+         transitive dependency (sangam-core, sangam-integration, the Operaton model jars) stays out of the shaded jar -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-modeller</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -27,6 +45,32 @@
 
   <build>
     <finalName>sangam-cli</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- M-092: the target release's API deprecation registry, the same file ApiDeprecationRegistry loads -->
+      <resource>
+        <directory>../../sangam-rest/api</directory>
+        <includes>
+          <include>sangam-api-deprecations.yaml</include>
+        </includes>
+      </resource>
+      <!-- M-092 schema part: the target release's product changelog (master and the formatted-SQL files it includes),
+           compared with GET /ops/schema-status. Engine patches and history partitioning are not product changesets. -->
+      <resource>
+        <directory>../../sangam-persistence/src/main/resources</directory>
+        <includes>
+          <include>db/changelog/sangam-master.xml</include>
+          <include>db/changelog/*.sql</include>
+          <include>db/changelog/postgresql/*.sql</include>
+          <include>db/changelog/oracle/*.sql</include>
+          <include>db/changelog/mssql/*.sql</include>
+          <include>db/changelog/mysql/*.sql</include>
+          <include>db/changelog/h2/*.sql</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

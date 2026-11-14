@@ -118,7 +118,8 @@ public final class ComplianceSteps {
             return Map.of();
         }));
         steps.put("incident.close", (t, v) -> tx(c -> {
-            cmp.incidents.close(c, t, s(v, "incidentId"), actor(v));
+            // OJ-06 step 8: root cause and lessons from the follow-up task; the service refuses a close without them
+            cmp.incidents.close(c, t, s(v, "incidentId"), text(v, "rootCause"), text(v, "lessonsLearned"), actor(v));
             return Map.of();
         }));
     }
@@ -145,6 +146,12 @@ public final class ComplianceSteps {
             throw new IllegalArgumentException("process variable " + name + " is required");
         }
         return String.valueOf(o);
+    }
+
+    /** An optional text variable: null when unset (the service decides whether it is required). */
+    private static String text(Map<String, Object> v, String name) {
+        Object o = v.get(name);
+        return o == null ? null : String.valueOf(o);
     }
 
     private static String actor(Map<String, Object> v) {

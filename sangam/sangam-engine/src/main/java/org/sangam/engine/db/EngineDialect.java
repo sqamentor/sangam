@@ -25,6 +25,26 @@ public enum EngineDialect {
         }
     }
 
+    /**
+     * Decisions 156 and 205 (experimental, non-gating): true when a server that reports itself as PostgreSQL through
+     * the JDBC metadata is CockroachDB, whose {@code version()} text starts with {@code CockroachDB}. Sangam maps it to
+     * {@link #POSTGRESQL} (wire and SQL compatible), Operaton {@code databaseType} {@code postgres}; serialisation
+     * failures (SQLState 40001) are retried by {@link Conflicts} like on every database. No support claim until the
+     * DB-matrix tests ran.
+     */
+    public static boolean isCockroachDb(Connection c) {
+        try (Statement s = c.createStatement(); java.sql.ResultSet rs = s.executeQuery("SELECT version()")) {
+            return rs.next() && isCockroachDbVersion(rs.getString(1));
+        } catch (SQLException e) {
+            throw new IllegalStateException("cannot read the server version", e);
+        }
+    }
+
+    /** The {@code version()} text test of {@link #isCockroachDb}. */
+    static boolean isCockroachDbVersion(String version) {
+        return version != null && version.trim().toLowerCase(Locale.ROOT).startsWith("cockroachdb");
+    }
+
     public static EngineDialect fromProductName(String productName) {
         String p = productName == null ? "" : productName.toLowerCase(Locale.ROOT);
         if (p.contains("postgres")) {

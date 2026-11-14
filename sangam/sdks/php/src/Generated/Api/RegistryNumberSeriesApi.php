@@ -23,7 +23,7 @@ final class RegistryNumberSeriesApi
     /**
      * Define series
      *
-     * RegistryController.defineSeries (sangam-registry).
+     * RegistryController.defineSeries (sangam-rest).
      *
      * PUT /registry/number-series/{seriesKey} (operationId registryRegistryDefineSeries); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryDefineSeriesBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryNumberSeriesApi
     /**
      * Series
      *
-     * RegistryController.series (sangam-registry).
+     * RegistryController.series (sangam-rest).
      *
      * GET /registry/number-series/{seriesKey} (operationId registryRegistrySeries); permission registry.read.
      * @return array<string, mixed>
@@ -55,7 +55,7 @@ final class RegistryNumberSeriesApi
     /**
      * List series
      *
-     * RegistryController.listSeries (sangam-registry).
+     * RegistryController.listSeries (sangam-rest).
      *
      * GET /registry/number-series (operationId registryRegistryListSeries); permission registry.read.
      * @return list<array<string, mixed>>
@@ -69,7 +69,7 @@ final class RegistryNumberSeriesApi
     /**
      * Allocate
      *
-     * RegistryController.allocate (sangam-registry).
+     * RegistryController.allocate (sangam-rest).
      *
      * POST /registry/number-series/{seriesKey}/allocate (operationId registryRegistryAllocate); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -86,7 +86,7 @@ final class RegistryNumberSeriesApi
     /**
      * Void number
      *
-     * RegistryController.voidNumber (sangam-registry).
+     * RegistryController.voidNumber (sangam-rest).
      *
      * POST /registry/number-series/{seriesKey}/void (operationId registryRegistryVoidNumber); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryVoidNumberBody|array $body request body
@@ -103,7 +103,7 @@ final class RegistryNumberSeriesApi
     /**
      * Mark used
      *
-     * RegistryController.markUsed (sangam-registry).
+     * RegistryController.markUsed (sangam-rest).
      *
      * POST /registry/number-series/{seriesKey}/mark-used (operationId registryRegistryMarkUsed); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryMarkUsedBody|array $body request body
@@ -120,7 +120,7 @@ final class RegistryNumberSeriesApi
     /**
      * Close period
      *
-     * RegistryController.closePeriod (sangam-registry).
+     * RegistryController.closePeriod (sangam-rest).
      *
      * POST /registry/number-series/{seriesKey}/close-period (operationId registryRegistryClosePeriod); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryRegistryClosePeriodBody|array $body request body
@@ -137,7 +137,7 @@ final class RegistryNumberSeriesApi
     /**
      * Gaps
      *
-     * RegistryController.gaps (sangam-registry).
+     * RegistryController.gaps (sangam-rest).
      *
      * GET /registry/number-series/{seriesKey}/gaps (operationId registryRegistryGaps); permission registry.read.
      * @param string $period query period
@@ -155,7 +155,7 @@ final class RegistryNumberSeriesApi
     /**
      * Allocations
      *
-     * RegistryController.allocations (sangam-registry).
+     * RegistryController.allocations (sangam-rest).
      *
      * GET /registry/number-series/{seriesKey}/allocations (operationId registryRegistryAllocations); permission registry.read.
      * @param string $period query period

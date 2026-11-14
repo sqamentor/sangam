@@ -54,6 +54,10 @@
     {
       "kind": "SEED",
       "path": "packs/p2-file-movement/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/p2-file-movement/pack.json"
     }
   ],
   "seed": "packs/p2-file-movement/seed.json",
@@ -198,6 +202,13 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "p2_disposal": {
+      "monetary": false,
+      "limitTable": "p2-disposal-powers"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

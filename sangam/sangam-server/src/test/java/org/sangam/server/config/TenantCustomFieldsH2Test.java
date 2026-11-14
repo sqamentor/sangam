@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -88,7 +89,7 @@ class TenantCustomFieldsH2Test {
         JdbcDataSource h2 = new JdbcDataSource();
         h2.setURL("jdbc:h2:mem:tcf" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamSchema.apply(h2);
-        tx = new TxSupport(h2, new DataSourceTransactionManager(h2), Dialect.POSTGRESQL);
+        tx = new SpringTxSupport(h2, new DataSourceTransactionManager(h2), Dialect.POSTGRESQL);
         reg = TenantCustomFieldsWiring.registry(tx, audit);
     }
 

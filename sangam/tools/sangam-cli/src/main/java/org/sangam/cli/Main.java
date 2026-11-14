@@ -37,6 +37,9 @@ import java.util.UUID;
  *   sangam start KEY [--business-key K] [--var k=v]...            POST /process-instances
  *   sangam test run PACKAGE                                       POST /packages/{id}/tests/run; exit 1 when a case fails
  *   sangam batch status ID                                        GET /ops/jobs/{id}
+ *   sangam upgrade check [--models DIR]... [--config FILE]...      offline pre-upgrade scan ({@link UpgradeCheck}, M-092)
+ *   sangam upgrade check ... --schema DATABASE [--server URL]       plus the server's applied changesets ({@link SchemaCheck})
+ *   sangam diff BEFORE AFTER [--json] [--fail-on LEVEL,...]        offline semantic model diff ({@link ModelDiffCommand}, M-125)
  * </pre>
  * Every mutation sends a fresh {@code Idempotency-Key}, or the value of {@code --idempotency-key} so a CI retry stays one operation.
  *
@@ -68,6 +71,7 @@ public final class Main {
     private final java.util.function.Function<String, String> env;
     private final TokenStore store;
     private final TokenSession session;
+    private final Clock clock;
 
     /** Tokens in an owner-only file next to the config file (no keychain); the system clock. */
     Main(Http http, Path configFile, PrintStream out, PrintStream err, java.util.function.Function<String, String> env) {
@@ -84,6 +88,7 @@ public final class Main {
         this.out = out;
         this.err = err;
         this.env = env;
+        this.clock = clock;
         this.store = new TokenStore(configFile.toAbsolutePath().getParent().resolve("credentials"), protector,
                 TokenStore.Mode.parse(env.apply("SANGAM_TOKEN_STORE")), err);
         this.session = new TokenSession(http, store, clock, env, err);
@@ -102,6 +107,9 @@ public final class Main {
             if (args.length == 0) {
                 return usage("no command");
             }
+            if (args[0].equals("diff")) { // offline, own flags (--json takes no value)
+                return new ModelDiffCommand(out, err).run(List.of(args).subList(1, args.length));
+            }
             Args a = Args.parse(args);
             return switch (a.positional.get(0)) {
                 case "login" -> login(a);
@@ -112,6 +120,10 @@ public final class Main {
                 case "start" -> start(a);
                 case "test" -> testRun(a);
                 case "batch" -> a.positional.size() == 3 && a.positional.get(1).equals("status") ? call("GET", "/ops/jobs/" + enc(a.positional.get(2)), null, a) : usage("batch status ID");
+                case "upgrade" -> a.positional.size() == 2 && a.positional.get(1).equals("check")
+                        ? upgradeCheck(a)
+                        : usage("upgrade check [--models DIR]... [--config FILE]... [--rules FILE] [--deprecations FILE] [--as-of yyyy-MM-dd]"
+                                + " [--schema postgresql|oracle|mssql|mysql|h2 [--server URL]]");
                 default -> usage("unknown command " + a.positional.get(0));
             };
         } catch (IllegalArgumentException e) {
@@ -127,7 +139,7 @@ public final class Main {
     }
 
     private int usage(String why) {
-        err.println("usage: " + why + "\ncommands: login, logout, deploy, list, get, start, test run, batch status");
+        err.println("usage: " + why + "\ncommands: login, logout, deploy, list, get, start, test run, batch status, upgrade check, diff");
         return USAGE;
     }
 
@@ -290,6 +302,31 @@ public final class Main {
         HttpRequest.Builder b = request("/packages/" + enc(a.positional.get(2)) + "/tests/run", a).header("Content-Type", "application/json")
                 .header("Idempotency-Key", a.opt("idempotency-key", UUID.randomUUID().toString())).POST(HttpRequest.BodyPublishers.ofString("{}"));
         return send(b.build(), true);
+    }
+
+    /**
+     * M-092: offline checks, plus with {@code --schema DATABASE} the installation's applied changesets read from
+     * {@code GET /ops/schema-status} (platform operators, the session's token) and compared with this release's changelog.
+     */
+    private int upgradeCheck(Args a) throws IOException, InterruptedException {
+        String database = null;
+        JsonNode status = null;
+        if (a.has("schema")) {
+            database = SchemaCheck.database(a.opt("schema", null));
+            HttpResponse<String> resp = authorized(request("/ops/schema-status", a).GET().build());
+            int s = resp.statusCode();
+            if (s == 401 || s == 403) {
+                err.println(resp.body());
+                return AUTH;
+            }
+            if (s >= 400) {
+                err.println(resp.body());
+                return REFUSED;
+            }
+            status = JSON.readTree(resp.body());
+        }
+        return new UpgradeCheck(out, err, clock).run(a.multi("models"), a.multi("config"), a.opt("rules", null),
+                a.opt("deprecations", null), a.opt("as-of", null), database, status);
     }
 
     private int call(String method, String path, String body, Args a) throws IOException, InterruptedException {

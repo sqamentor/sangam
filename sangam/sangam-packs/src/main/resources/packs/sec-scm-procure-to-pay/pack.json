@@ -17,6 +17,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/sec-scm-procure-to-pay/sec-scm-p2p-amount-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/sec-scm-procure-to-pay/sec-scm-sourcing.dmn"
     },
     {
@@ -50,6 +54,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-scm-procure-to-pay/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-scm-procure-to-pay/pack.json"
     }
   ],
   "seed": "packs/sec-scm-procure-to-pay/seed.json",
@@ -109,6 +117,22 @@
     "sangam-core-sanction",
     "sangam-up14-three-way-match"
   ],
+  "placeholders": [
+    {
+      "decision": "sec-scm-p2p-amount-rounding",
+      "rule": "SYNTHETIC line value rounding: nearest paisa",
+      "reason": "the company's order value rounding (line versus order total) was not verified; deploy it as a tenant override (decision 139)"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "pp_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-scm-powers",
+      "ruleCaseType": "PURCHASE"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

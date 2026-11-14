@@ -1,0 +1,11 @@
+# context = sangam/: the reactor poms and Java modules, the OCR notice and the shared OS source offer; no UI, SDK
+# sources or build output
+**/target/**
+**/target-*/**
+**/node_modules/**
+sangam-ui/**
+sdks/dotnet/**
+sdks/python/**
+sdks/typescript/**
+sdks/php/**
+deploy/airgap/out/**

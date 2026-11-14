@@ -6,7 +6,7 @@
     "hi": "पीएफ एवं ईएसआई विवरणी सहित मासिक वेतन"
   },
   "domain": "HR",
-  "description": "Monthly: inputs frozen, payroll computed with PF (12 % on wages up to the ceiling) and ESI (0.75 % / 3.25 % up to the wage limit) by rule, maker-checker approval, wages paid by the 7th (Code on Wages s.17), PF ECR and ESI contributions filed and paid by the 15th, payslips issued.",
+  "description": "Monthly: inputs and the wage register frozen, PF (12 % on wages up to the ceiling) and ESI (0.75 % / 3.25 % for employees within the wage limit) computed per employee by rule, maker-checker approval, wages paid by the 7th (Code on Wages s.17), PF ECR and ESI contributions filed and paid by the 15th, payslips issued.",
   "mainProcesses": [
     "sangam-sec-hr-payroll"
   ],
@@ -14,6 +14,22 @@
     {
       "kind": "BPMN",
       "path": "packs/sec-hr-payroll/sangam-sec-hr-payroll.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-wage-rules.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-pf-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-esi-employee-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-hr-payroll/sec-hr-esi-employer-rounding.dmn"
     },
     {
       "kind": "DMN",
@@ -42,6 +58,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-hr-payroll/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-hr-payroll/pack.json"
     }
   ],
   "seed": "packs/sec-hr-payroll/seed.json",
@@ -93,14 +113,45 @@
     "sangam-core-execution",
     "sangam-core-sanction"
   ],
+  "placeholders": [
+    {
+      "decision": "sec-hr-wage-rules",
+      "rule": "UNVERIFIED (use SYNTHETIC_DEMO_ONLY) PF wage ceiling (Rs 15,000, Rs 25,000 from 17 September 2026), ESI coverage limit (Rs 21,000), ESI continuation to the end of the contribution period and the ESI low-wage exemption (Rs 176 a day), applied per employee by wage period",
+      "reason": "the PF ceiling texts were not read; the ESI limit, continuation, contribution periods and low-wage exemption are not found in current official text after 2026-05-08 (decision 298); the treatment of a wage period crossing a contribution-period boundary has no source (decision 271); deploy the confirmed rules as a tenant override (decision 223)"
+    },
+    {
+      "decision": "sec-hr-pf-rounding",
+      "rule": "PF rounding is UNVERIFIED (use SYNTHETIC_DEMO_ONLY)",
+      "reason": "decisions 288 and 294: EPF Scheme 2026 para 18(5) was read and matches, but its date of publication (Gazette 29 June 2026 or e-Gazette 1 July 2026) is not confirmed, and the 1952 Scheme provision was not read; deploy the confirmed policy as a tenant override (decision 139); applied per employee per wage period to each share (decision 223, payroll.py op EACH)"
+    },
+    {
+      "decision": "sec-hr-esi-employee-rounding",
+      "rule": "ESI employee rounding is VERIFIED but SYNTHETIC_DEMO_ONLY: next higher rupee from 8 May 2026",
+      "reason": "decision 296: rule 19(1)(b) was read and matches; its use stays SYNTHETIC_DEMO_ONLY because the ESI ceiling, continuation, contribution periods and low-wage exemption were not found in current official text (decision 298); wage periods before 8 May 2026 are refused; deploy the confirmed policy as a tenant override (decision 139); applied per employee per wage period to each share (decision 223, payroll.py op EACH)"
+    },
+    {
+      "decision": "sec-hr-esi-employer-rounding",
+      "rule": "ESI employer rounding is VERIFIED but SYNTHETIC_DEMO_ONLY: next higher rupee from 8 May 2026",
+      "reason": "decision 296: rule 19(1)(a) was read and matches; its use stays SYNTHETIC_DEMO_ONLY because the ESI ceiling, continuation, contribution periods and low-wage exemption were not found in current official text (decision 298); wage periods before 8 May 2026 are refused; deploy the confirmed policy as a tenant override (decision 139); applied per employee per wage period to each share (decision 223, payroll.py op EACH)"
+    }
+  ],
+  "currency": "INR",
+  "powers": {
+    "pr_approve": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-hr-payroll-powers",
+      "ruleCaseType": "PAYROLL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",
     "exponent": 2,
     "variables": [
       "amount",
+      "esiLowWageDailyLimit",
       "esiWageLimit",
-      "grossWages",
       "pfWageCeiling",
       "powerLimit"
     ]

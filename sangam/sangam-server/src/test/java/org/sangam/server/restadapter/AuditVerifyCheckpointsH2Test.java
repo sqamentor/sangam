@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,7 +54,7 @@ class AuditVerifyCheckpointsH2Test {
             Schema.create(c, Dialect.POSTGRESQL);
             AuditCheckpoints.create(c, Dialect.POSTGRESQL);
         }
-        tx = new TxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
+        tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
         audit = new JdbcAuditAdapter(tx, null, null, new RestProperties());
         KeyPair kp = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
         String priv = Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded());

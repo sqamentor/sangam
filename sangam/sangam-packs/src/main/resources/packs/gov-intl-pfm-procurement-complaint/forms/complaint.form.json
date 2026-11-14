@@ -1,0 +1,54 @@
+{
+  "key": "gov-intl-pfm-procurement-complaint/complaint",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-procurement-complaint",
+  "title": {
+    "en": "Procurement complaint",
+    "hi": "प्रापण शिकायत"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "tenderId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Tender ID",
+        "hi": "निविदा आईडी"
+      }
+    },
+    {
+      "id": "complainantName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Complainant (bidder)",
+        "hi": "शिकायतकर्ता (बोलीदाता)"
+      }
+    },
+    {
+      "id": "complaintGrounds",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Grounds of the complaint",
+        "hi": "शिकायत के आधार"
+      }
+    },
+    {
+      "id": "documents",
+      "type": "attachments",
+      "required": false,
+      "label": {
+        "en": "Documents",
+        "hi": "दस्तावेज़"
+      }
+    }
+  ]
+}

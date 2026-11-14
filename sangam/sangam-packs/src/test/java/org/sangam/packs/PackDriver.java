@@ -59,6 +59,44 @@ final class PackDriver {
         this.engine = engine;
     }
 
+    static final String DSC_DOCUMENT = "dscDocumentId";
+    static final SimulatedDscSignatures SIMULATED_DSC = new SimulatedDscSignatures();
+
+    /**
+     * The scenario's officers sign with DSC through the loopback agent at every task they complete, and this stands in
+     * for the server (decisions 140, 165, 236, 237): where a step names a document slot that was empty when the task
+     * was created, it plays the server attaching the step's document to that slot; it then answers true only for the
+     * tenant, task, document and person the driver signed, so the pack's DscSignatureGuardListener still checks the
+     * exact task, document and signer. Demo evidence only. It is installed only over the fail-closed default, never
+     * over a port a test installed.
+     */
+    static final class SimulatedDscSignatures implements org.sangam.packs.port.SignatureVerifications {
+        private final java.util.Set<String> signed = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+        String sign(ProcessEngine engine, Task t, String person) {
+            if (org.sangam.packs.port.PackRuntime.signatures() == org.sangam.packs.port.SignatureVerifications.DENY) {
+                org.sangam.packs.port.PackRuntime.install(org.sangam.packs.port.PackRuntime.ports().withSignatures(this));
+            }
+            var tasks = engine.getTaskService();
+            Object slot = tasks.getVariableLocal(t.getId(), org.sangam.packs.core.DscSignatureGuardListener.SLOT);
+            Object required = tasks.getVariableLocal(t.getId(),
+                    org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT);
+            String documentId = required != null ? required.toString() : "sim-dsc-" + t.getId();
+            if (slot != null && required == null) {
+                engine.getRuntimeService().setVariable(t.getExecutionId(), slot.toString(), documentId);
+                tasks.setVariableLocal(t.getId(), org.sangam.packs.core.DscSignatureGuardListener.REQUIRED_DOCUMENT,
+                        documentId);
+            }
+            signed.add(t.getTenantId() + "|" + t.getId() + "|" + documentId + "|" + person);
+            return documentId;
+        }
+
+        @Override
+        public boolean hasVerifiedSignature(String tenantId, String taskId, String documentId, String principal) {
+            return signed.contains(tenantId + "|" + taskId + "|" + documentId + "|" + principal);
+        }
+    }
+
     /** A scenario answer: task-local acting context plus completion variables. */
     record Answer(String person, String seat, Map<String, Object> vars) {
         static Answer of(String person, String seat, Object... kv) {
@@ -109,6 +147,10 @@ final class PackDriver {
             Map<String, Object> local = new HashMap<>();
             local.put("actingPerson", a.person());
             local.put("actingSeat", a.seat());
+            if (!a.vars().containsKey(DSC_DOCUMENT)) {
+                // the officer signed the step's required document at this task (DscSignatureGuardListener)
+                local.put(DSC_DOCUMENT, SIMULATED_DSC.sign(engine, t, a.person()));
+            }
             engine.getTaskService().setVariablesLocal(t.getId(), local);
             engine.getTaskService().complete(t.getId(), a.vars());
             done.add(t.getTaskDefinitionKey());

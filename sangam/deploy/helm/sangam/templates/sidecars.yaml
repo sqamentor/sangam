@@ -1,0 +1,160 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- /* M-081 and M-103 (owner decisions 114, 153, 167): the optional PDF validator and OCR sidecars. Each one accepts only
+       the tokens of its mounted token file, serves TLS from its key store (or plain HTTP behind a mesh), is reachable
+       from this release's server pods only and has no egress. Off by default: nothing is rendered. */ -}}
+{{- $root := . -}}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- range $row := splitList " " (include "sangam.sidecars.list" .) }}
+{{- $f := splitList ":" $row }}
+{{- $key := index $f 0 }}
+{{- $name := index $f 1 }}
+{{- $prefix := index $f 2 }}
+{{- $v := index $root.Values $key }}
+{{- if $v.enabled }}
+{{- include "sangam.sidecars.checkTransport" $v }}
+{{- $tls := eq $v.transport "tls" }}
+{{- $secret := required (printf "%s.existingSecret is required with %s.enabled (keys token, and keystore.p12 and keystore-password with transport tls)" $key $key) $v.existingSecret }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-{{ $name }}
+  labels:
+    {{- include "sangam.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  replicas: {{ $v.replicaCount }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" $root "component" $name) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "sangam.selectorLabels" (dict "ctx" $root "component" $name) | nindent 8 }}
+    spec:
+      {{- include "sangam.imagePullSecrets" $root | nindent 6 }}
+      serviceAccountName: {{ include "sangam.serviceAccountName" $root }}
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml $v.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $name }}
+          image: {{ include "sangam.image" (dict "ctx" $root "image" $v.image) | quote }}
+          imagePullPolicy: {{ $v.image.pullPolicy }}
+          securityContext:
+            {{- toYaml $v.securityContext | nindent 12 }}
+          ports:
+            - name: sidecar
+              containerPort: {{ $v.port }}
+              protocol: TCP
+          env:
+            - name: TZ
+              value: UTC
+            - name: {{ $prefix }}_PORT
+              value: {{ $v.port | quote }}
+            - name: {{ $prefix }}_TRANSPORT
+              value: {{ $v.transport | quote }}
+            - name: {{ $prefix }}_TOKEN_FILE
+              value: /opt/sangam/sidecar-secrets/token
+            {{- if $tls }}
+            - name: {{ $prefix }}_TLS_KEYSTORE
+              value: /opt/sangam/sidecar-secrets/keystore.p12
+            - name: {{ $prefix }}_TLS_KEYSTORE_PASSWORD_FILE
+              value: /opt/sangam/sidecar-secrets/keystore-password
+            {{- end }}
+            {{- range $k, $val := dict "THREADS" $v.threads "MAX_BYTES" $v.maxBytes "PROCESSING_TIMEOUT_MS" $v.processingTimeoutMs "MAX_PIXELS" ($v.maxPixels | default "") "LANGUAGES" ($v.languages | default "") }}
+            {{- if $val }}
+            - name: {{ $prefix }}_{{ $k }}
+              value: {{ $val | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with $v.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet: { path: /health, port: sidecar, scheme: {{ ternary "HTTPS" "HTTP" $tls }} }
+            periodSeconds: 10
+            failureThreshold: 3
+            timeoutSeconds: 3
+          livenessProbe:
+            tcpSocket: { port: sidecar }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            {{- toYaml $v.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: sidecar-secrets
+              mountPath: /opt/sangam/sidecar-secrets
+              readOnly: true
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ $v.tmpSizeLimit }}
+        - name: sidecar-secrets
+          secret:
+            secretName: {{ $secret }}
+            defaultMode: 0440
+            items:
+              - { key: token, path: token }
+              {{- if $tls }}
+              - { key: keystore.p12, path: keystore.p12 }
+              - { key: keystore-password, path: keystore-password }
+              {{- end }}
+      {{- with $v.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $v.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-{{ $name }}
+  labels:
+    {{- include "sangam.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "sangam.selectorLabels" (dict "ctx" $root "component" $name) | nindent 4 }}
+  ports:
+    - name: {{ ternary "https" "http" $tls }}
+      port: {{ $v.port }}
+      targetPort: sidecar
+      protocol: TCP
+{{- if $root.Values.networkPolicy.enabled }}
+---
+# {{ $name }}: ingress from this release's server pods only, on its port; no egress at all (it needs none).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname }}-{{ $name }}
+  labels:
+    {{- include "sangam.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "sangam.selectorLabels" (dict "ctx" $root "component" $name) | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- include "sangam.selectorLabels" (dict "ctx" $root "component" "server") | nindent 14 }}
+      ports:
+        - { protocol: TCP, port: {{ $v.port }} }
+  egress: []
+{{- end }}
+{{- end }}
+{{- end }}

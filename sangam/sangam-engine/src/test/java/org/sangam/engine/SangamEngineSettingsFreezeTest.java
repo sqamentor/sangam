@@ -62,6 +62,7 @@ class SangamEngineSettingsFreezeTest {
     @Test
     void everySetterIsGuardedAfterTheFreeze() throws Exception {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.freeze();
         assertTrue(s.isFrozen());
         List<Method> setters = setters();
@@ -79,6 +80,7 @@ class SangamEngineSettingsFreezeTest {
     @Test
     void theValuesSurviveTheFreezeUnchanged() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setJobMaxPoolSize(7);
         s.setHistory("audit");
         s.getHistoryLevelByProcessKey().put("b", "none");
@@ -98,6 +100,7 @@ class SangamEngineSettingsFreezeTest {
     @Test
     void mapsAndSetsAreUnmodifiableAfterTheFreeze() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.freeze();
         assertThrows(UnsupportedOperationException.class, () -> s.getWorkCalendars().put("x", null));
         assertThrows(UnsupportedOperationException.class, () -> s.getTimerCatchUpByProcessKey().clear());
@@ -112,6 +115,7 @@ class SangamEngineSettingsFreezeTest {
     @Test
     void aMapHeldBeforeTheFreezeNoLongerReachesTheSettings() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         Map<String, String> early = s.getHistoryLevelByProcessKey();
         s.freeze();
         early.put("late", "none");
@@ -121,6 +125,7 @@ class SangamEngineSettingsFreezeTest {
     @Test
     void beforeTheFreezeTheBeanIsMutableAsBefore() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         assertFalse(s.isFrozen());
         assertDoesNotThrow(() -> {
             s.setJobCorePoolSize(3);
@@ -136,6 +141,7 @@ class SangamEngineSettingsFreezeTest {
     @Test
     void freezeIsIdempotentAndKeepsNullCollectionsNull() {
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setPublishedHistoryEvents(null);
         s.freeze();
         Map<String, String> frozen = s.getHistoryLevelByProcessKey();
@@ -149,6 +155,7 @@ class SangamEngineSettingsFreezeTest {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:fz" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         SangamEngineSettings s = new SangamEngineSettings();
+        s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
         s.setApplyProductSchema(false);
         SangamEngineConfigurer c = new SangamEngineConfigurer(s);

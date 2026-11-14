@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// A seat held by the person (IX.5): effective-dated; kind as in Assignment.
+/// A seat held by the person (IX.5): effective-dated; kind as in Assignment. Read-only in SCIM.
 /// Schema ScimPosting.
 /// </summary>
 public sealed record ScimPosting

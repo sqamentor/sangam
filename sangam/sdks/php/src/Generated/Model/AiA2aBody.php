@@ -13,21 +13,21 @@ use Sangam\Sdk\Generated\Support;
  * Schema AiA2aBody of sangam-api.yaml 0.1.0.
  *
  * @property-read mixed|null $id
- * @property-read string|null $method
  * @property-read AiA2aBodyParams|null $params
+ * @property-read string|null $method
  */
 final class AiA2aBody implements \JsonSerializable
 {
     /**
      * @param mixed|null $id
-     * @param string|null $method
      * @param AiA2aBodyParams|null $params
+     * @param string|null $method
      * @param array<string, mixed> $additionalProperties members not named in the schema
      */
     public function __construct(
         public readonly mixed $id = null,
-        public readonly ?string $method = null,
         public readonly ?AiA2aBodyParams $params = null,
+        public readonly ?string $method = null,
         public readonly array $additionalProperties = [],
     ) {
     }
@@ -35,11 +35,11 @@ final class AiA2aBody implements \JsonSerializable
     /** @param array<string, mixed> $data decoded JSON object */
     public static function fromArray(array $data): self
     {
-        $extra = array_diff_key($data, array_flip(['id', 'method', 'params']));
+        $extra = array_diff_key($data, array_flip(['id', 'params', 'method']));
         return new self(
             $data['id'] ?? null,
-            Support::str($data['method'] ?? null),
             Support::model($data['params'] ?? null, AiA2aBodyParams::class),
+            Support::str($data['method'] ?? null),
             $extra,
         );
     }
@@ -50,11 +50,11 @@ final class AiA2aBody implements \JsonSerializable
         if ($this->id !== null) {
             $out['id'] = $this->id;
         }
-        if ($this->method !== null) {
-            $out['method'] = $this->method;
-        }
         if ($this->params !== null) {
             $out['params'] = $this->params;
+        }
+        if ($this->method !== null) {
+            $out['method'] = $this->method;
         }
         return $out === [] ? new \stdClass() : $out;
     }

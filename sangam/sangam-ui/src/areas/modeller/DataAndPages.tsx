@@ -11,6 +11,7 @@ import { api, type DataObjectDef, type DataObjectField, type PageBlock, type Pag
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { Badge, Checkbox, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, Section, SelectField, TextField } from '../../components/ui';
 import { Stat } from '../../components/Charts';
+import { RecordCreate, useCanWriteRecords } from './RecordCreate';
 
 const FIELD_TYPES: DataObjectField['type'][] = ['string', 'number', 'boolean', 'date', 'reference', 'json'];
 
@@ -65,6 +66,10 @@ export function DataObjects() {
   const [browse, setBrowse] = useState<string>('');
   const records = usePaged((p) => api.dataObjects.records(browse, p), [browse]);
   const act = useAction();
+  // decision 284: creating a record needs lowcode.record.write
+  const canWrite = useCanWriteRecords();
+  const [creating, setCreating] = useState(false);
+  const browsed = list.data?.find((o) => o.key === browse);
   const upd = (i: number, p: Partial<DataObjectField>) => edit && setEdit({ ...edit, fields: edit.fields.map((f, j) => (j === i ? { ...f, ...p } : f)) });
   return (
     <>
@@ -101,7 +106,14 @@ export function DataObjects() {
                     <button type="button" className="link" onClick={() => setEdit(r)}>
                       {t('common.edit')}
                     </button>
-                    <button type="button" className="link" onClick={() => setBrowse(r.key)}>
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => {
+                        setCreating(false);
+                        setBrowse(r.key);
+                      }}
+                    >
                       {t('data.browse')}
                     </button>
                   </span>
@@ -192,7 +204,17 @@ export function DataObjects() {
         </Section>
       )}
       {browse && (
-        <Section title={t('data.records', { key: browse })}>
+        <Section
+          title={t('data.records', { key: browse })}
+          actions={
+            canWrite && browsed && !creating ? (
+              <button type="button" className="primary" onClick={() => setCreating(true)}>
+                {t('data.createRecord')}
+              </button>
+            ) : undefined
+          }
+        >
+          {creating && browsed && <RecordCreate key={browsed.key} def={browsed} onClose={() => setCreating(false)} onCreated={records.reload} />}
           <ProblemAlert error={records.error} />
           {records.data && records.data.items.length > 0 && (
             <DataTable

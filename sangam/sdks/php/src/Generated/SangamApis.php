@@ -29,8 +29,12 @@ use Sangam\Sdk\Generated\Api\ConfigApi;
 use Sangam\Sdk\Generated\Api\DebugApi;
 use Sangam\Sdk\Generated\Api\DecisionsApi;
 use Sangam\Sdk\Generated\Api\DeploymentsApi;
+use Sangam\Sdk\Generated\Api\DltHooksApi;
 use Sangam\Sdk\Generated\Api\DocumentsApi;
+use Sangam\Sdk\Generated\Api\DscCertificatesApi;
+use Sangam\Sdk\Generated\Api\EventGridHooksApi;
 use Sangam\Sdk\Generated\Api\EventsApi;
+use Sangam\Sdk\Generated\Api\ExecutorApi;
 use Sangam\Sdk\Generated\Api\FieldApi;
 use Sangam\Sdk\Generated\Api\FieldAssignmentsApi;
 use Sangam\Sdk\Generated\Api\FieldUnitsApi;
@@ -72,19 +76,24 @@ use Sangam\Sdk\Generated\Api\ResourcesBookingsApi;
 use Sangam\Sdk\Generated\Api\ResourcesItemsApi;
 use Sangam\Sdk\Generated\Api\RostersApi;
 use Sangam\Sdk\Generated\Api\SCIMApi;
+use Sangam\Sdk\Generated\Api\SharedDeploymentsApi;
 use Sangam\Sdk\Generated\Api\TasksApi;
 use Sangam\Sdk\Generated\Api\TenantOperationsApi;
+use Sangam\Sdk\Generated\Api\TenantOperationsFlowableMigrationsApi;
+use Sangam\Sdk\Generated\Api\TenantOperationsRetentionApi;
+use Sangam\Sdk\Generated\Api\TenantOperationsSecretsApi;
+use Sangam\Sdk\Generated\Api\TenantOperationsVariablesApi;
 use Sangam\Sdk\Generated\Api\TestModeApi;
 use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1089 operations on 912 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
 {
-    public readonly AIApi $aI;
+    public readonly AIApi $ai;
     public readonly AdminApi $admin;
     public readonly AdminAssignmentsApi $adminAssignments;
     public readonly AdminOrgUnitsApi $adminOrgUnits;
@@ -106,8 +115,12 @@ final class SangamApis
     public readonly DebugApi $debug;
     public readonly DecisionsApi $decisions;
     public readonly DeploymentsApi $deployments;
+    public readonly DltHooksApi $dltHooks;
     public readonly DocumentsApi $documents;
+    public readonly DscCertificatesApi $dscCertificates;
+    public readonly EventGridHooksApi $eventGridHooks;
     public readonly EventsApi $events;
+    public readonly ExecutorApi $executor;
     public readonly FieldApi $field;
     public readonly FieldAssignmentsApi $fieldAssignments;
     public readonly FieldUnitsApi $fieldUnits;
@@ -148,9 +161,14 @@ final class SangamApis
     public readonly ResourcesBookingsApi $resourcesBookings;
     public readonly ResourcesItemsApi $resourcesItems;
     public readonly RostersApi $rosters;
-    public readonly SCIMApi $sCIM;
+    public readonly SCIMApi $scim;
+    public readonly SharedDeploymentsApi $sharedDeployments;
     public readonly TasksApi $tasks;
     public readonly TenantOperationsApi $tenantOperations;
+    public readonly TenantOperationsFlowableMigrationsApi $tenantOperationsFlowableMigrations;
+    public readonly TenantOperationsRetentionApi $tenantOperationsRetention;
+    public readonly TenantOperationsSecretsApi $tenantOperationsSecrets;
+    public readonly TenantOperationsVariablesApi $tenantOperationsVariables;
     public readonly TestModeApi $testMode;
     public readonly WorkApi $work;
     public readonly WorkspaceApi $workspace;
@@ -158,7 +176,7 @@ final class SangamApis
     public function __construct(HttpTransport $http)
     {
         $calls = new Calls($http);
-        $this->aI = new AIApi($calls);
+        $this->ai = new AIApi($calls);
         $this->admin = new AdminApi($calls);
         $this->adminAssignments = new AdminAssignmentsApi($calls);
         $this->adminOrgUnits = new AdminOrgUnitsApi($calls);
@@ -180,8 +198,12 @@ final class SangamApis
         $this->debug = new DebugApi($calls);
         $this->decisions = new DecisionsApi($calls);
         $this->deployments = new DeploymentsApi($calls);
+        $this->dltHooks = new DltHooksApi($calls);
         $this->documents = new DocumentsApi($calls);
+        $this->dscCertificates = new DscCertificatesApi($calls);
+        $this->eventGridHooks = new EventGridHooksApi($calls);
         $this->events = new EventsApi($calls);
+        $this->executor = new ExecutorApi($calls);
         $this->field = new FieldApi($calls);
         $this->fieldAssignments = new FieldAssignmentsApi($calls);
         $this->fieldUnits = new FieldUnitsApi($calls);
@@ -222,9 +244,14 @@ final class SangamApis
         $this->resourcesBookings = new ResourcesBookingsApi($calls);
         $this->resourcesItems = new ResourcesItemsApi($calls);
         $this->rosters = new RostersApi($calls);
-        $this->sCIM = new SCIMApi($calls);
+        $this->scim = new SCIMApi($calls);
+        $this->sharedDeployments = new SharedDeploymentsApi($calls);
         $this->tasks = new TasksApi($calls);
         $this->tenantOperations = new TenantOperationsApi($calls);
+        $this->tenantOperationsFlowableMigrations = new TenantOperationsFlowableMigrationsApi($calls);
+        $this->tenantOperationsRetention = new TenantOperationsRetentionApi($calls);
+        $this->tenantOperationsSecrets = new TenantOperationsSecretsApi($calls);
+        $this->tenantOperationsVariables = new TenantOperationsVariablesApi($calls);
         $this->testMode = new TestModeApi($calls);
         $this->work = new WorkApi($calls);
         $this->workspace = new WorkspaceApi($calls);

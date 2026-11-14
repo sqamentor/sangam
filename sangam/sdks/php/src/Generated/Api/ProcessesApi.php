@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Processes (31 operations). */
+/** Typed operations of Processes (33 operations). */
 final class ProcessesApi
 {
     public function __construct(private readonly Calls $calls)
@@ -505,6 +505,38 @@ final class ProcessesApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\ProcessInstance::class);
+    }
+
+    /**
+     * Continue as new
+     *
+     * Ends the active root instance and starts exactly one successor in one transaction, keeping the business key, the definition id and the named variables exactly. 409 CONTINUATION_NOT_ALLOWED, nothing changed, with extension reason SUB_INSTANCE, SUSPENDED, ENDED, ALREADY_CONTINUED (then the problem also carries successorId) or REQUEST_ID_REUSED (the continuationRequestId was used for another instance); an instance of another tenant is 404 (decision 145). A retry with the same continuationRequestId answers 200 with outcome EXISTING and the committed successor (ended empty). Needs PROCESS_INSTANCE MODIFY on the instance and, for another named version, PROCESS_DEFINITION START. Open user tasks, external tasks, jobs, timers and message subscriptions end with the predecessor; stale workers and callbacks on it get 404; late messages correlate by business key and tenant to the successor. Audited as PROCESS_CONTINUED_AS_NEW.
+     *
+     * POST /process-instances/{id}/continue-as-new (operationId continueProcessInstanceAsNew); permission process.continue; result stored atomically with the state change.
+     * @param Model\ContinueAsNewRequest|array $body request body
+     * @return Model\ContinueAsNewResult|null
+     */
+    public function continueProcessInstanceAsNew(string $id, Model\ContinueAsNewRequest|array $body, ?RequestOptions $options = null): ?Model\ContinueAsNewResult
+    {
+        $req = ApiRequest::post('/process-instances/' . HttpTransport::seg((string) $id) . '/continue-as-new');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ContinueAsNewResult::class);
+    }
+
+    /**
+     * Continuation chain
+     *
+     * The chain of the instance (predecessors and successors), with generation, actor, reason and request id of every link. An instance never continued has a chain of one instance and no links.
+     *
+     * GET /process-instances/{id}/continuations (operationId getProcessContinuationChain); permission process.read.
+     * @return Model\ProcessContinuationChain|null
+     */
+    public function getProcessContinuationChain(string $id, ?RequestOptions $options = null): ?Model\ProcessContinuationChain
+    {
+        $req = ApiRequest::get('/process-instances/' . HttpTransport::seg((string) $id) . '/continuations');
+        return $this->calls->model($req, $options, Model\ProcessContinuationChain::class);
     }
 
     /**

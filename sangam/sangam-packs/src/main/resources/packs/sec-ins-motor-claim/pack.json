@@ -58,6 +58,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-ins-motor-claim/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-ins-motor-claim/pack.json"
     }
   ],
   "seed": "packs/sec-ins-motor-claim/seed.json",
@@ -112,6 +116,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "mc_sanction": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-ins-claim-powers",
+      "ruleCaseType": "CLAIM"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

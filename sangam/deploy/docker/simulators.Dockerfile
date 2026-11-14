@@ -14,13 +14,15 @@
 #   SANGAM_SIM_PORT   HTTP port (default 9000)
 #   SANGAM_SIM_DATA   working directory (PFMS inbound/outbound files, ledgers), default /data
 #   SANGAM_SIM_FAULTS optional fault script (JSON) applied at start (FaultInjector)
+#   SANGAM_SIM_SMTP_PORT   smtp only: SMTP listener port (2525, exposed below; HTTP control stays on SANGAM_SIM_PORT)
+#   SANGAM_SIM_PG_CALLBACK_URL  paygov only, optional: callback URL, signed with the simulator's development secret
+#   dlt reads the optional data-folder file dlt-templates.json (registered DLT templates) from SANGAM_SIM_DATA
 #   GET /__sim/health, GET /__sim/ledger, POST /__sim/faults are the control endpoints.
 
-ARG MAVEN_IMAGE=maven:3.9.11-eclipse-temurin-21
-ARG JRE_IMAGE=eclipse-temurin:21.0.8_9-jre-noble
+# Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 ARG JAR_SOURCE=build
 
-FROM ${MAVEN_IMAGE} AS build
+FROM maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237 AS build
 ARG MAVEN_ARGS="-B -ntp"
 WORKDIR /src
 COPY . .
@@ -31,13 +33,13 @@ RUN --mount=type=cache,target=/root/.m2 \
  && test -n "$jar" \
  && cp "$jar" /out/simulators.jar
 
-FROM ${MAVEN_IMAGE} AS prebuilt
+FROM maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237 AS prebuilt
 ARG PREBUILT_JAR=sangam-integration/target/sangam-integration-simulators.jar
 COPY ${PREBUILT_JAR} /out/simulators.jar
 
 FROM ${JAR_SOURCE} AS jar
 
-FROM ${JRE_IMAGE} AS runtime
+FROM eclipse-temurin:21.0.8_9-jre-noble@sha256:20e7f7288e1c18eebe8f06a442c9f7183342d9b022d3b9a9677cae2b558ddddd AS runtime
 LABEL org.opencontainers.image.title="sangam-simulators" \
       org.opencontainers.image.description="Sangam government-system simulators (dev/test only)" \
       org.opencontainers.image.licenses="Apache-2.0"
@@ -50,7 +52,8 @@ ENV TZ=UTC LANG=C.UTF-8 \
     JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=60 -Duser.timezone=UTC -Dfile.encoding=UTF-8"
 USER 10001:0
 VOLUME ["/data"]
-EXPOSE 9000
+# 2525: SMTP listener of SANGAM_SIM_KIND=smtp (SANGAM_SIM_SMTP_PORT); the other kinds open only 9000
+EXPOSE 9000 2525
 HEALTHCHECK --interval=15s --timeout=3s --retries=5 \
   CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/${SANGAM_SIM_PORT} && printf "GET /__sim/health HTTP/1.0\r\n\r\n" >&3 && grep -q "200" <&3' || exit 1
 ENTRYPOINT ["java", "-jar", "/opt/sangam-sim/simulators.jar"]

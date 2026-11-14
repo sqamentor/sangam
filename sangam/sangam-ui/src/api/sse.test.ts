@@ -131,6 +131,27 @@ describe('openEventStream', () => {
     expect(live).toHaveBeenLastCalledWith(false);
   });
 
+  it('fatalStatuses adds a final status (501): onFatal once, no retry', async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ title: 'Not Implemented', status: 501 }), { status: 501, headers: { 'Content-Type': 'application/problem+json' } }));
+    const fatal = vi.fn();
+    openEventStream('/s', { onEvent: () => undefined, onFatal: fatal }, { retryMs: 1, fatalStatuses: [501] });
+    await vi.waitFor(() => expect(fatal).toHaveBeenCalledTimes(1));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fatal.mock.calls[0][0] as { status: number }).status).toBe(501);
+  });
+
+  it('without fatalStatuses a 501 is retried like any server failure', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response('', { status: 501 }))
+      .mockImplementation(() => new Promise(() => undefined));
+    const fatal = vi.fn();
+    const close = openEventStream('/s', { onEvent: () => undefined, onFatal: fatal }, { retryMs: 1 });
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    close();
+    expect(fatal).not.toHaveBeenCalled();
+  });
+
   it('a network failure is retried', async () => {
     fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockImplementation(() => new Promise(() => undefined));
     const close = openEventStream('/s', { onEvent: () => undefined }, { retryMs: 1 });

@@ -52,6 +52,19 @@ public final class GroupAdminService {
         audit.security(c, actor, SecurityEventType.MEMBERSHIP_CHANGED, Map.of("group_id", groupId, "created", true));
     }
 
+    /**
+     * Renames a group and sets its external reference (decision 154: SCIM {@code displayName} and {@code externalId} of
+     * a Group). Memberships are unchanged; an unknown group is {@code AdminConflict GROUP_NOT_FOUND}.
+     */
+    public void updateGroup(Connection c, SecurityIdentity actor, String groupId, String name, String externalRef) {
+        authz.require(c, actor, ResourceRegistry.GROUP, Permission.ADMIN, groupId);
+        if (Jdbc.update(c, "UPDATE SEC_GROUP SET name=?, external_ref=? WHERE tenant_id=? AND group_id=?", name,
+                externalRef, actor.tenantId(), groupId) == 0) {
+            throw new SangamSecurityException.AdminConflict("GROUP_NOT_FOUND", "group " + groupId + " does not exist");
+        }
+        audit.security(c, actor, SecurityEventType.MEMBERSHIP_CHANGED, Map.of("group_id", groupId, "updated", true));
+    }
+
     public void deleteGroup(Connection c, SecurityIdentity actor, String groupId) {
         authz.require(c, actor, ResourceRegistry.GROUP, Permission.ADMIN, groupId);
         String t = actor.tenantId();

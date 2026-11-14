@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -20,25 +20,25 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
     <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-engine</artifactId>
       <scope>provided</scope>
     </dependency>
     <!-- WS-PORTS event registry (EventDispatcher, ChannelPublisher, HistoryProjector). No cycle: sangam-flowable-ports
          depends only on sangam-core. Optional, so consumers of this module are not forced to take it. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-flowable-ports</artifactId>
       <optional>true</optional>
     </dependency>
     <!-- WS-PACKS ports (ConnectorGateway). No cycle: sangam-packs depends only on sangam-core. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-packs</artifactId>
       <optional>true</optional>
     </dependency>
@@ -119,13 +119,20 @@
       <version>3.0.8</version>
       <optional>true</optional>
     </dependency>
-    <!-- M-081 PDF/A validation (document/pdf/verapdf/VeraPdfValidator, W3-E). veraPDF validation model (Jakarta);
-         licences recorded under owner decisions 94 and 102. Optional; version managed in the root pom. -->
+    <!-- M-080 / owner decisions 140 and 217: PAdES/CMS signing, RFC 3161 time-stamps and eSign/DSC verification need
+         Bouncy Castle and live in the separate optional module sangam-esign. This module has no Bouncy Castle at all;
+         it keeps the framework-independent org.sangam.integration.signature interfaces, found by ServiceLoader. -->
+    <!-- M-100 package Git sync (git/PackageGitSync). Eclipse JGit, EDL-1.0 (BSD-3-Clause); pulls JavaEWAH and
+         commons-codec (Apache-2.0) and slf4j-api. Optional: a deployment without it has no Git package sync (the
+         gitSync binding checks for it before use). Version managed in the root pom (version.jgit). -->
     <dependency>
-      <groupId>org.verapdf</groupId>
-      <artifactId>validation-model-jakarta</artifactId>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
       <optional>true</optional>
     </dependency>
+    <!-- M-081 PDF/A validation: owner decisions 114 and 119 keep veraPDF (and the Rhino it needs) out of this module,
+         even as an optional dependency, because this module is inside the server fat jar. The validation step here is
+         document/pdf/remote/RemotePdfValidator (JDK HTTP client); veraPDF runs in sangam-pdf-validator. -->
     <!-- Idempotency servlet filter. EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0. Provided by the servlet container. -->
     <dependency>
       <groupId>jakarta.servlet</groupId>
@@ -145,4 +152,38 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <!-- Owner decision 184: the simulator launcher jar of deploy/docker/simulators.Dockerfile
+         (sangam-integration-<version>-simulators.jar, main class sim.launcher.SimulatorLauncher). Opt-in only: the
+         normal build and the module's own jar are unchanged, and simulators stay demo/test only. Uses the
+         spring-boot-maven-plugin of the one Spring line (version.spring-boot) for the executable jar layout only; no
+         Spring code runs in the launcher. -->
+    <profile>
+      <id>simulators-app</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <version>${version.spring-boot}</version>
+            <executions>
+              <execution>
+                <id>simulators-app-repackage</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>repackage</goal>
+                </goals>
+                <configuration>
+                  <classifier>simulators</classifier>
+                  <mainClass>org.sangam.integration.sim.launcher.SimulatorLauncher</mainClass>
+                  <layout>JAR</layout>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

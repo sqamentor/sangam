@@ -7,6 +7,7 @@ import org.sangam.field.template.ChecklistValidator;
 import org.sangam.field.template.FieldTemplate;
 import org.sangam.field.template.FieldTemplate.Item;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -138,11 +139,13 @@ public final class ScoringService {
                 yield clamp(s / c.size());
             }
             case NUMBER -> {
-                Double d = ChecklistValidator.number(a);
+                // decision 212: exact decimal check; a non-canonical answer text is not a valid answer and scores 0
+                BigDecimal d = ChecklistValidator.canonicalNumber(a);
                 if (d == null) {
                     yield 0;
                 }
-                yield (i.min() == null || d >= i.min()) && (i.max() == null || d <= i.max()) ? 1 : 0;
+                // decision 242: an answer with more decimal places than the item's scale is not a valid answer
+                yield i.withinScale(d) && ChecklistValidator.inRange(i, d) ? 1 : 0;
             }
             default -> 1;
         };

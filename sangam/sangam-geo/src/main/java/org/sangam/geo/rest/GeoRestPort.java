@@ -5,8 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Framework-neutral REST port of the geo module, served at {@code /api/v1/geo} by {@code web.GeoController} (or by a
- * sangam-rest controller the integrator writes over this port). JSON in/out; geometry accepted as GeoJSON object,
+ * Framework-neutral REST port of the geo module, served at {@code /api/v1/geo} by sangam-rest's\n * {@code org.sangam.rest.modules.geo.web.GeoController} (REST host area, M-141d). JSON in/out; geometry accepted as GeoJSON object,
  * {@code {"wkt": "..."}} or {@code {"lat":..,"lon":..}}; returned as GeoJSON.
  *
  * <pre>

@@ -1,0 +1,65 @@
+{
+  "key": "gov-intl-pfm-cash-plan/concur",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-cash-plan",
+  "title": {
+    "en": "Concur with the cash plan (budget office)",
+    "hi": "नकद योजना पर सहमति"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "forecastRef",
+      "type": "readonly",
+      "required": false,
+      "label": {
+        "en": "Cash forecast (ledger)",
+        "hi": "नकद पूर्वानुमान"
+      }
+    },
+    {
+      "id": "releasePlanNote",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Release plan: monthly / weekly releases and borrowing need",
+        "hi": "निर्मुक्ति योजना"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "concurDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

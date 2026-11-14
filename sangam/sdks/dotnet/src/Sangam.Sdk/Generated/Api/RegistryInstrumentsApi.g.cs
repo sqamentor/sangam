@@ -17,7 +17,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Issue
-    /// InstrumentController.issue (sangam-registry).
+    /// InstrumentController.issue (sangam-rest).
     /// POST /registry/instruments (operationId registryInstrumentIssue); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentIssueAsync(M.RegistryInstrumentIssueBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Renew
-    /// InstrumentController.renew (sangam-registry).
+    /// InstrumentController.renew (sangam-rest).
     /// POST /registry/instruments/{id}/renew (operationId registryInstrumentRenew); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentRenewAsync(string id, M.RegistryInstrumentRenewBody? body = null, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -42,7 +42,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Deemed
-    /// InstrumentController.deemed (sangam-registry).
+    /// InstrumentController.deemed (sangam-rest).
     /// POST /registry/instruments/{id}/deemed-renewal (operationId registryInstrumentDeemed); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentDeemedAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Suspend
-    /// InstrumentController.suspend (sangam-registry).
+    /// InstrumentController.suspend (sangam-rest).
     /// POST /registry/instruments/{id}/suspend (operationId registryInstrumentSuspend); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentSuspendAsync(string id, M.RegistryInstrumentSuspendBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -66,7 +66,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Reinstate
-    /// InstrumentController.reinstate (sangam-registry).
+    /// InstrumentController.reinstate (sangam-rest).
     /// POST /registry/instruments/{id}/reinstate (operationId registryInstrumentReinstate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentReinstateAsync(string id, M.RegistryInstrumentReinstateBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -79,7 +79,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Revoke
-    /// InstrumentController.revoke (sangam-registry).
+    /// InstrumentController.revoke (sangam-rest).
     /// POST /registry/instruments/{id}/revoke (operationId registryInstrumentRevoke); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentRevokeAsync(string id, M.RegistryInstrumentRevokeBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -92,7 +92,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Surrender
-    /// InstrumentController.surrender (sangam-registry).
+    /// InstrumentController.surrender (sangam-rest).
     /// POST /registry/instruments/{id}/surrender (operationId registryInstrumentSurrender); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentSurrenderAsync(string id, M.RegistryInstrumentSurrenderBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -105,7 +105,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Expire
-    /// InstrumentController.expire (sangam-registry).
+    /// InstrumentController.expire (sangam-rest).
     /// POST /registry/instruments/{id}/expire (operationId registryInstrumentExpire); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentExpireAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -116,7 +116,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Transition
-    /// InstrumentController.transition (sangam-registry).
+    /// InstrumentController.transition (sangam-rest).
     /// POST /registry/instruments/{id}/transitions/{name} (operationId registryInstrumentTransition); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentTransitionAsync(string id, string name, M.RegistryInstrumentTransitionBody? body = null, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -129,7 +129,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Transfer holder
-    /// InstrumentController.transferHolder (sangam-registry).
+    /// InstrumentController.transferHolder (sangam-rest).
     /// POST /registry/instruments/{id}/transfer-holder (operationId registryInstrumentTransferHolder); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentTransferHolderAsync(string id, M.RegistryInstrumentTransferHolderBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -142,7 +142,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Transfer reissue
-    /// InstrumentController.transferReissue (sangam-registry).
+    /// InstrumentController.transferReissue (sangam-rest).
     /// POST /registry/instruments/{id}/transfer-reissue (operationId registryInstrumentTransferReissue); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentTransferReissueAsync(string id, M.RegistryInstrumentTransferReissueBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -154,7 +154,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Amend
-    /// InstrumentController.amend (sangam-registry).
+    /// InstrumentController.amend (sangam-rest).
     /// POST /registry/instruments/{id}/amend (operationId registryInstrumentAmend); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentAmendAsync(string id, M.RegistryInstrumentAmendBody body, string? ifMatch = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -167,7 +167,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Duplicate
-    /// InstrumentController.duplicate (sangam-registry).
+    /// InstrumentController.duplicate (sangam-rest).
     /// POST /registry/instruments/{id}/duplicate (operationId registryInstrumentDuplicate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentDuplicateAsync(string id, M.RegistryInstrumentDuplicateBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -179,7 +179,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Endorse
-    /// InstrumentController.endorse (sangam-registry).
+    /// InstrumentController.endorse (sangam-rest).
     /// POST /registry/instruments/{id}/endorsements (operationId registryInstrumentEndorse); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentEndorseAsync(string id, M.RegistryInstrumentEndorseBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -191,7 +191,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Endorsements
-    /// InstrumentController.endorsements (sangam-registry).
+    /// InstrumentController.endorsements (sangam-rest).
     /// GET /registry/instruments/{id}/endorsements (operationId registryInstrumentEndorsements); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryInstrumentEndorsementsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -202,7 +202,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Documents
-    /// InstrumentController.documents (sangam-registry).
+    /// InstrumentController.documents (sangam-rest).
     /// GET /registry/instruments/{id}/documents (operationId registryInstrumentDocuments); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryInstrumentDocumentsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -213,7 +213,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Regenerate
-    /// InstrumentController.regenerate (sangam-registry).
+    /// InstrumentController.regenerate (sangam-rest).
     /// POST /registry/instruments/{id}/documents/regenerate (operationId registryInstrumentRegenerate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentRegenerateAsync(string id, string? purpose = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -225,7 +225,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Expire due
-    /// InstrumentController.expireDue (sangam-registry).
+    /// InstrumentController.expireDue (sangam-rest).
     /// POST /registry/instruments/jobs/expire (operationId registryInstrumentExpireDue); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentExpireDueAsync(string? typeKey = null, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -238,7 +238,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Renewal due
-    /// InstrumentController.renewalDue (sangam-registry).
+    /// InstrumentController.renewalDue (sangam-rest).
     /// POST /registry/instruments/jobs/renewal-due (operationId registryInstrumentRenewalDue); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentRenewalDueAsync(string? typeKey = null, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -251,7 +251,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Reinstate due
-    /// InstrumentController.reinstateDue (sangam-registry).
+    /// InstrumentController.reinstateDue (sangam-rest).
     /// POST /registry/instruments/jobs/reinstate (operationId registryInstrumentReinstateDue); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentReinstateDueAsync(string? typeKey = null, int? limit = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -264,7 +264,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Verify code
-    /// InstrumentController.verifyCode (sangam-registry).
+    /// InstrumentController.verifyCode (sangam-rest).
     /// GET /registry/instruments/public/{tenant}/verify (operationId registryInstrumentVerifyCode).
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentVerifyCodeAsync(string tenant, string code, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -276,7 +276,7 @@ public sealed class RegistryInstrumentsApi
 
     /// <summary>
     /// Verify qr
-    /// InstrumentController.verifyQr (sangam-registry).
+    /// InstrumentController.verifyQr (sangam-rest).
     /// POST /registry/instruments/public/verify-qr (operationId registryInstrumentVerifyQr).
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryInstrumentVerifyQrAsync(M.RegistryInstrumentVerifyQrBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

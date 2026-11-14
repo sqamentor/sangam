@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Debt operation approval. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_intl_pfm_debt_operation" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-intl-pfm-debt-operation" name="Debt operation approval" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>gov.intl.pfm-debt-operation</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>debtOperationType,lenderName,debtAmount,debtCurrency</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="do_start" name="Debt operation proposed" operaton:initiator="initiator" operaton:formKey="sangam:gov-intl-pfm-debt-operation/proposal"></startEvent>
+    <serviceTask id="do_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>debtOperationType=BORROWING;debtOfficeSeat=DEBT-OFFICE;legalSeat=LEGAL-ADVISER</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="do_cfg" name="Approver of the operation (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>intl-pfm-debt-approval</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <serviceTask id="do_limit_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>authorityRemainingLimit=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="do_limit" name="Remaining authority (debt system)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>debt.limit</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>remaining</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>query</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>debtOperationType</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>authority</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="do_limitGw" name="Remaining authority (debt system)?" default="intl_pfm_debt_operation_f10"></exclusiveGateway>
+    <userTask id="do_limitHold" name="Remaining authority not confirmed: check the debt system" operaton:candidateGroups="${debtOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-debt-operation/limitHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="do_aboveLimit" name="Above the remaining authority: record the outcome" operaton:candidateGroups="${debtOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-debt-operation/above-limit"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="do_endAbove" name="Above the authority"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>ABOVE_AUTHORITY</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <userTask id="do_analysis" name="Sustainability and cost-risk analysis (debt office)" operaton:candidateGroups="${debtOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-debt-operation/analysis"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <userTask id="do_legal" name="Legal opinion" operaton:candidateGroups="${legalSeat}" operaton:formKey="sangam:gov-intl-pfm-debt-operation/legal"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>do_analysis</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>legalDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="do_legalGw" name="" default="intl_pfm_debt_operation_f14"></exclusiveGateway>
+    <userTask id="do_approve" name="Approve the debt operation" operaton:candidateGroups="${approverSeat}" operaton:formKey="sangam:gov-intl-pfm-debt-operation/approve"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.SodGuardListener"><operaton:field name="steps"><operaton:string>do_analysis,do_legal</operaton:string></operaton:field></operaton:taskListener><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"><operaton:field name="decisionVar"><operaton:string>approveDecision</operaton:string></operaton:field></operaton:taskListener></extensionElements></userTask>
+    <exclusiveGateway id="do_approveGw" name="" default="intl_pfm_debt_operation_f21"></exclusiveGateway>
+    <serviceTask id="do_record_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>recordRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="do_record" name="Record in the debt system" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>debt.record</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>record</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>debtOperationType,lenderName,debtAmount,debtCurrency</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>record</operaton:string></operaton:field><operaton:field name="step"><operaton:string>record</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="do_recordGw" name="Record in the debt system?" default="intl_pfm_debt_operation_f22"></exclusiveGateway>
+    <userTask id="do_recordHold" name="Recording not confirmed by the debt system: confirm and resend" operaton:candidateGroups="${debtOfficeSeat}" operaton:formKey="sangam:gov-intl-pfm-debt-operation/recordHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="do_end" name="Approved and recorded"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>APPROVED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['recordRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="intl_pfm_debt_operation_f1" sourceRef="do_limit_clear" targetRef="do_limit"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f2" sourceRef="do_limit" targetRef="do_limitGw"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f3" sourceRef="do_limitHold" targetRef="do_limit_clear"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f4" name="not confirmed" sourceRef="do_limitGw" targetRef="do_limitHold"><conditionExpression xsi:type="tFormalExpression">${authorityStatus != 'COMPLETED' || authorityRemainingLimit == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_debt_operation_f5" sourceRef="do_start" targetRef="do_defaults"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f6" sourceRef="do_defaults" targetRef="do_cfg"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f7" sourceRef="do_cfg" targetRef="do_limit_clear"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f8" name="above the authority" sourceRef="do_limitGw" targetRef="do_aboveLimit"><conditionExpression xsi:type="tFormalExpression">${authorityRemainingLimit &lt; debtAmount}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_debt_operation_f9" sourceRef="do_aboveLimit" targetRef="do_endAbove"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f10" name="within the authority" sourceRef="do_limitGw" targetRef="do_analysis"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f11" sourceRef="do_analysis" targetRef="do_legal"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f12" sourceRef="do_legal" targetRef="do_legalGw"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f13" name="returned" sourceRef="do_legalGw" targetRef="do_analysis"><conditionExpression xsi:type="tFormalExpression">${legalDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_debt_operation_f14" name="cleared" sourceRef="do_legalGw" targetRef="do_approve"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f15" sourceRef="do_approve" targetRef="do_approveGw"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f16" name="returned" sourceRef="do_approveGw" targetRef="do_analysis"><conditionExpression xsi:type="tFormalExpression">${approveDecision == 'return'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_debt_operation_f17" sourceRef="do_record_clear" targetRef="do_record"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f18" sourceRef="do_record" targetRef="do_recordGw"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f19" sourceRef="do_recordHold" targetRef="do_record_clear"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f20" name="not confirmed" sourceRef="do_recordGw" targetRef="do_recordHold"><conditionExpression xsi:type="tFormalExpression">${recordStatus != 'COMPLETED' || recordRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="intl_pfm_debt_operation_f21" name="approved" sourceRef="do_approveGw" targetRef="do_record_clear"/>
+    <sequenceFlow id="intl_pfm_debt_operation_f22" name="recorded" sourceRef="do_recordGw" targetRef="do_end"/>
+    <subProcess id="do_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="do_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="do_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="do_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="do_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_debt_operation_f23" sourceRef="do_withdrawStart" targetRef="do_withdrawKind"/>
+      <sequenceFlow id="intl_pfm_debt_operation_f24" sourceRef="do_withdrawKind" targetRef="do_withdrawCall"/>
+      <sequenceFlow id="intl_pfm_debt_operation_f25" sourceRef="do_withdrawCall" targetRef="do_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="do_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="do_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="do_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="do_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="do_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="intl_pfm_debt_operation_f26" sourceRef="do_cancelStart" targetRef="do_cancelKind"/>
+      <sequenceFlow id="intl_pfm_debt_operation_f27" sourceRef="do_cancelKind" targetRef="do_cancelCall"/>
+      <sequenceFlow id="intl_pfm_debt_operation_f28" sourceRef="do_cancelCall" targetRef="do_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="intl_pfm_debt_operation_diagram">
+    <bpmndi:BPMNPlane id="intl_pfm_debt_operation_plane" bpmnElement="sangam-intl-pfm-debt-operation">
+      <bpmndi:BPMNShape id="do_start_di" bpmnElement="do_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_defaults_di" bpmnElement="do_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_cfg_di" bpmnElement="do_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_limit_clear_di" bpmnElement="do_limit_clear"><dc:Bounds x="515" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_limit_di" bpmnElement="do_limit"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_limitGw_di" bpmnElement="do_limitGw"><dc:Bounds x="870" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_limitHold_di" bpmnElement="do_limitHold"><dc:Bounds x="1010" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_aboveLimit_di" bpmnElement="do_aboveLimit"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_endAbove_di" bpmnElement="do_endAbove"><dc:Bounds x="1207" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_analysis_di" bpmnElement="do_analysis"><dc:Bounds x="1010" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_legal_di" bpmnElement="do_legal"><dc:Bounds x="1175" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_legalGw_di" bpmnElement="do_legalGw"><dc:Bounds x="1365" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_approve_di" bpmnElement="do_approve"><dc:Bounds x="1505" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_approveGw_di" bpmnElement="do_approveGw"><dc:Bounds x="1695" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_record_clear_di" bpmnElement="do_record_clear"><dc:Bounds x="1835" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_record_di" bpmnElement="do_record"><dc:Bounds x="2000" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_recordGw_di" bpmnElement="do_recordGw"><dc:Bounds x="2190" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_recordHold_di" bpmnElement="do_recordHold"><dc:Bounds x="2330" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_end_di" bpmnElement="do_end"><dc:Bounds x="2362" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_withdraw_di" bpmnElement="do_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_withdrawStart_di" bpmnElement="do_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_withdrawKind_di" bpmnElement="do_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_withdrawCall_di" bpmnElement="do_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_withdrawEnd_di" bpmnElement="do_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_cancel_di" bpmnElement="do_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_cancelStart_di" bpmnElement="do_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_cancelKind_di" bpmnElement="do_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_cancelCall_di" bpmnElement="do_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="do_cancelEnd_di" bpmnElement="do_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f1_di" bpmnElement="intl_pfm_debt_operation_f1"><di:waypoint x="615" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f2_di" bpmnElement="intl_pfm_debt_operation_f2"><di:waypoint x="780" y="70"/><di:waypoint x="870" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f3_di" bpmnElement="intl_pfm_debt_operation_f3"><di:waypoint x="1060" y="360"/><di:waypoint x="1060" y="392"/><di:waypoint x="565" y="392"/><di:waypoint x="565" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f4_di" bpmnElement="intl_pfm_debt_operation_f4"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="320"/><di:waypoint x="1010" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f5_di" bpmnElement="intl_pfm_debt_operation_f5"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f6_di" bpmnElement="intl_pfm_debt_operation_f6"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f7_di" bpmnElement="intl_pfm_debt_operation_f7"><di:waypoint x="450" y="70"/><di:waypoint x="515" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f8_di" bpmnElement="intl_pfm_debt_operation_f8"><di:waypoint x="920" y="70"/><di:waypoint x="965" y="70"/><di:waypoint x="965" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f9_di" bpmnElement="intl_pfm_debt_operation_f9"><di:waypoint x="1110" y="195"/><di:waypoint x="1207" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f10_di" bpmnElement="intl_pfm_debt_operation_f10"><di:waypoint x="920" y="70"/><di:waypoint x="1010" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f11_di" bpmnElement="intl_pfm_debt_operation_f11"><di:waypoint x="1110" y="70"/><di:waypoint x="1175" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f12_di" bpmnElement="intl_pfm_debt_operation_f12"><di:waypoint x="1275" y="70"/><di:waypoint x="1365" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f13_di" bpmnElement="intl_pfm_debt_operation_f13"><di:waypoint x="1390" y="95"/><di:waypoint x="1390" y="128"/><di:waypoint x="1060" y="128"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f14_di" bpmnElement="intl_pfm_debt_operation_f14"><di:waypoint x="1415" y="70"/><di:waypoint x="1505" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f15_di" bpmnElement="intl_pfm_debt_operation_f15"><di:waypoint x="1605" y="70"/><di:waypoint x="1695" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f16_di" bpmnElement="intl_pfm_debt_operation_f16"><di:waypoint x="1720" y="95"/><di:waypoint x="1720" y="149"/><di:waypoint x="1060" y="149"/><di:waypoint x="1060" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f17_di" bpmnElement="intl_pfm_debt_operation_f17"><di:waypoint x="1935" y="70"/><di:waypoint x="2000" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f18_di" bpmnElement="intl_pfm_debt_operation_f18"><di:waypoint x="2100" y="70"/><di:waypoint x="2190" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f19_di" bpmnElement="intl_pfm_debt_operation_f19"><di:waypoint x="2380" y="235"/><di:waypoint x="2380" y="267"/><di:waypoint x="1885" y="267"/><di:waypoint x="1885" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f20_di" bpmnElement="intl_pfm_debt_operation_f20"><di:waypoint x="2240" y="70"/><di:waypoint x="2285" y="70"/><di:waypoint x="2285" y="195"/><di:waypoint x="2330" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f21_di" bpmnElement="intl_pfm_debt_operation_f21"><di:waypoint x="1745" y="70"/><di:waypoint x="1835" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f22_di" bpmnElement="intl_pfm_debt_operation_f22"><di:waypoint x="2240" y="70"/><di:waypoint x="2362" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f23_di" bpmnElement="intl_pfm_debt_operation_f23"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f24_di" bpmnElement="intl_pfm_debt_operation_f24"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f25_di" bpmnElement="intl_pfm_debt_operation_f25"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f26_di" bpmnElement="intl_pfm_debt_operation_f26"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f27_di" bpmnElement="intl_pfm_debt_operation_f27"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="intl_pfm_debt_operation_f28_di" bpmnElement="intl_pfm_debt_operation_f28"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

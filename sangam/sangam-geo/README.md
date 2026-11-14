@@ -59,15 +59,13 @@ Domain knowledge is data only (SANGAM.md X.0e). Layer codes, level names, hierar
 | `connector/GisSimulatorConnector.java` | SIMULATOR profile (§1.9) for WFS/WMS without network |
 | `connector/ExternalLayer.java`, `ExternalLayerGateway.java` | Registered external layers; query through the tenant's connector; WFS import into a local layer (versioned, audited) |
 | `rest/GeoRestPort.java`, `GeoRestService.java`, `GeoCaller.java` | Framework-neutral REST port (routes listed on the interface). The caller cannot choose `baseUrl`, so egress goes only to the registered URL |
-| `web/GeoController.java`, `GeoCallerResolver.java` | Spring MVC at `/api/v1/geo`; RFC 9457 problem+json |
+| (sangam-rest) `modules/geo/web/GeoController.java`, `GeoCallerResolver.java` | Spring MVC at `/api/v1/geo`; RFC 9457 problem+json. In sangam-rest's REST host area since M-141d, so this module names no host framework |
 
 ## Third-party dependencies
 
 None new. The module uses jackson-databind (Apache-2.0), plus the following optional or provided dependencies:
 - operaton-engine and operaton-engine-feel-scala (Apache-2.0), optional;
-- spring-webmvc (Apache-2.0), optional;
-- jakarta.servlet-api (EPL-2.0 / GPL-2.0 with Classpath Exception), provided.
-
+- no Spring or servlet dependency (M-141d: the controller is in sangam-rest).\n
 All of these are already on the Sangam dependency line. JTS (EPL-2.0/EDL-1.0) is **not** used. PostGIS (GPL-2.0) is a database server extension used over SQL only: nothing is linked or shipped.
 
 ## Integration notes
@@ -78,7 +76,7 @@ All of these are already on the Sangam dependency line. JTS (EPL-2.0/EDL-1.0) is
    - `new GeoEnginePlugin(new GeoFeelFunctionProvider(geoService, defaultTenant))` added to the engine plugins;
    - delegate beans `geoJurisdiction` = `new GeoDelegates.Jurisdiction(geo, defaultTenant)`, plus `geoFence` and `geoNearest`;
    - `new GeoRestService(geo, new ExternalLayerGateway(geo, connectorRegistry::resolve), "geo-admin")`;
-   - `GeoController(port, request -> new GeoCaller(ctx.tenantId(), ctx.principalId(), ctx.groups()))` from sangam-rest's `RequestContext`.
+   - sangam-rest's `GeoRestConfiguration` registers `GeoController(port, request -> new GeoCaller(ctx.tenantId(), ctx.principalId(), ctx.groups()))` from its `RequestContext`.
 3. **Connectors (WS-INTEGRATION).**
    - Register `WfsConnector` / `WmsConnector` instances per tenant in `ConnectorRegistry`, with `GisHttp.Config(baseUrl, allowedHosts, headers, timeout, maxBytes)`.
    - For SIMULATOR profiles, use `GisSimulatorConnector`.

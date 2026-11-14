@@ -59,7 +59,7 @@ class ProfileDataTest {
                 assertEquals(ccy, l.get("currency"), d.id() + ": ledger " + l.get("id") + " currency vs locale.currency");
             }
         }
-        assertTrue(ledgers >= 37 + 9, "the Indian governments and departments resolve their BUDGET ledger: " + ledgers);
+        assertTrue(ledgers >= 37 + 10,"the Indian governments and departments resolve their BUDGET ledger: " + ledgers);
     }
 
     @Test
@@ -78,7 +78,7 @@ class ProfileDataTest {
                 n++;
             }
         }
-        assertEquals(37 + 9, n); // GOI + 36 States / UTs, 9 GOI department profiles
+        assertEquals(37 + 10, n); // GOI + 36 States / UTs, 10 GOI department profiles (decision 257 adds GOI.DEFENCE.DRDO)
         // every government has the complete delegation structure (financial powers + procurement mode tables)
         javax.xml.parsers.DocumentBuilderFactory xml = javax.xml.parsers.DocumentBuilderFactory.newInstance();
         xml.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -116,6 +116,18 @@ class ProfileDataTest {
         assertFalse(hr.list("rulebooks.own").isEmpty(), "Haryana adopts the Punjab rulebooks");
         ResolvedProfile rail = r.resolve("GOI.RAILWAYS", LocalDate.of(2026, 11, 5));
         assertEquals("RAILWAY_BOARD_SOP", rail.str("regime.delegationBook", null));
+        // decision 257: the Ministry of Defence is not a scientific department; DRDO, its listed part, is its own
+        // department layer below it (chain GOI > GOI.DEFENCE > GOI.DEFENCE.DRDO) and is; neither value is a placeholder
+        ResolvedProfile defence = r.resolve("GOI.DEFENCE", LocalDate.of(2026, 11, 5));
+        assertEquals(Boolean.FALSE, defence.get("procurement.scientificDepartment"));
+        assertFalse(defence.isPlaceholder("procurement.scientificDepartment"));
+        ResolvedProfile drdo = r.resolve("GOI.DEFENCE.DRDO", LocalDate.of(2026, 11, 5));
+        assertTrue(Finding.errors(drdo.findings()).isEmpty(), "GOI.DEFENCE.DRDO: " + Finding.errors(drdo.findings()));
+        assertEquals(Boolean.TRUE, drdo.get("procurement.scientificDepartment"));
+        assertFalse(drdo.isPlaceholder("procurement.scientificDepartment"));
+        assertEquals("DFPDS_2021", drdo.str("regime.delegationBook", null), "DRDO inherits the Defence layer");
+        assertEquals(List.of("GOI", "GOI.DEFENCE", "GOI.DEFENCE.DRDO"),
+                drdo.chain().stream().map(c -> c.split("@", 2)[0]).filter(c -> c.startsWith("GOI")).toList());
         // SL-102: the 100 crore band is typed money (integer paise + the profile currency), no longer the text "100CR"
         assertEquals(org.sangam.core.money.Money.ofMinor(100_000_000_000L, "INR"),
                 r.resolve("GOI", LocalDate.of(2026, 11, 5)).money("appraisal.ladder.0.upTo"));
@@ -255,6 +267,62 @@ class ProfileDataTest {
             assertTrue(p.findings().stream().noneMatch(f -> f.code().startsWith("FISCAL_")), d.id() + ": " + p.findings());
             withFiscal++;
         }
-        assertEquals(1 + 7 + 37 + 9, withFiscal); // IN, the seven INTL countries, GOI + 36 States / UTs, 9 GOI departments
+        assertEquals(1 + 7 + 37 + 10, withFiscal); // IN, the seven INTL countries, GOI + 36 States / UTs, 10 GOI departments
+    }
+
+    /**
+     * Decisions 244 and 257, coordinator round 6: the GOI base and every State and UT declare
+     * {@code procurement.scientificDepartment} as a [U] placeholder with no value. Validation keeps the
+     * PLACEHOLDER_NO_VALUE warning (a warning, never an error), and at run time the config connector answers
+     * {@code profile.get} with no value and the path listed as a placeholder, which the procurement packs refuse with
+     * DEPARTMENT_CLASS_NOT_CONFIRMED (sangam-packs DepartmentClassLookupTest, the same answer shape). Defence answers
+     * false and DRDO true, neither a placeholder.
+     */
+    @Test
+    void anUndeclaredScientificClassWarnsAndIsAnsweredWithoutAValueWhileDefenceAndDrdoAnswer() throws Exception {
+        String path = "procurement.scientificDepartment";
+        List<ProfileDocument> docs = ProfileLoader.loadDirectory(DIR);
+        LayerModel layers = LayerModel.from(ProfileLoader.parseTree(Files.readString(DIR.resolve("layers.yaml"))).get("layers"));
+        ProfileResolver r = new ProfileResolver(InMemoryProfileRepository.active(docs), layers);
+        org.sangam.config.profile.ProfileValidator validator = new org.sangam.config.profile.ProfileValidator(layers);
+        org.sangam.config.api.ConfigConnector connector = new org.sangam.config.api.ConfigConnector(r,
+                new ClassificationRegistry(new MasterStore.InMemory()), new org.sangam.config.catalogue.NumberSeries.InMemory());
+        int undeclared = 0;
+        for (ProfileDocument d : docs) {
+            if (!d.layer().equals("government")) {
+                continue;
+            }
+            List<Finding> findings = validator.validateDocument(d);
+            assertTrue(Finding.errors(findings).isEmpty(), d.id() + ": " + Finding.errors(findings));
+            assertTrue(findings.stream().anyMatch(f -> f.severity() == Finding.Severity.WARNING
+                    && "PLACEHOLDER_NO_VALUE".equals(f.code()) && path.equals(f.path())), d.id() + ": " + findings);
+            java.util.Map<String, Object> out = profileGet(connector, d.id(), path);
+            assertTrue(((java.util.Map<?, ?>) out.get("values")).containsKey(path), d.id());
+            assertEquals(null, ((java.util.Map<?, ?>) out.get("values")).get(path), d.id() + ": no value is invented");
+            assertTrue(((List<?>) out.get("placeholders")).contains(path), d.id() + ": " + out.get("placeholders"));
+            undeclared++;
+        }
+        assertEquals(37, undeclared, "GOI + 36 States / UTs");
+        assertTrue(docs.stream().anyMatch(d -> d.id().equals("AP")), "State AP is among them");
+        for (String id : List.of("GOI.DEFENCE", "GOI.DEFENCE.DRDO")) {
+            ProfileDocument d = docs.stream().filter(x -> x.id().equals(id)).findFirst().orElseThrow();
+            assertTrue(validator.validateDocument(d).stream().noneMatch(f -> "PLACEHOLDER_NO_VALUE".equals(f.code())
+                    && path.equals(f.path())), id);
+            java.util.Map<String, Object> out = profileGet(connector, id, path);
+            assertEquals(id.equals("GOI.DEFENCE.DRDO") ? Boolean.TRUE : Boolean.FALSE,
+                    ((java.util.Map<?, ?>) out.get("values")).get(path), id);
+            assertFalse(((List<?>) out.get("placeholders")).contains(path), id + ": " + out.get("placeholders"));
+        }
+    }
+
+    private static java.util.Map<String, Object> profileGet(org.sangam.config.api.ConfigConnector c, String tenant,
+                                                            String path) {
+        java.util.Map<String, Object> in = new java.util.LinkedHashMap<>();
+        in.put("paths", path);
+        in.put("asOf", "2026-11-05");
+        org.sangam.core.integration.ConnectorResult res = c.invoke(new org.sangam.core.integration.ConnectorRequest(tenant,
+                java.util.UUID.randomUUID(), "a", 1, null, null, "profile.get", in, null));
+        return org.junit.jupiter.api.Assertions.assertInstanceOf(org.sangam.core.integration.ConnectorResult.Success.class,
+                res, tenant).output();
     }
 }

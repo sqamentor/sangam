@@ -1,0 +1,80 @@
+{
+  "id": "gov.intl.pfm-breach-case",
+  "version": "1.0.0",
+  "name": {
+    "en": "Budget limit breach case (worldwide PFM)",
+    "hi": "बजट सीमा उल्लंघन मामला (अंतरराष्ट्रीय सार्वजनिक वित्त)"
+  },
+  "domain": "Public finance (international)",
+  "description": "A breach of a budget limit is a legal event in some countries (PFM-039, PFM-CH-7): the case records the facts, a person other than the reporter investigates and records responsibility and corrective action, the accounting officer reviews, and the report goes to the authorities the country configures, within the report deadline from DMN. Authorities and deadline are SYNTHETIC until the country confirms them.",
+  "mainProcesses": [
+    "sangam-intl-pfm-breach-case"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/gov-intl-pfm-breach-case/sangam-intl-pfm-breach-case.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/gov-intl-pfm-breach-case/intl-pfm-breach-reporting.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-breach-case/forms/report.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-breach-case/forms/investigate.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-breach-case/forms/review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/gov-intl-pfm-breach-case/forms/sendHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/gov-intl-pfm-breach-case/seed.json"
+    }
+  ],
+  "seed": "packs/gov-intl-pfm-breach-case/seed.json",
+  "connectors": [
+    {
+      "id": "authority.report",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Report to the configured authorities"
+    }
+  ],
+  "covers": [
+    "PFM-039",
+    "PFM-CH-7",
+    "GP-14"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "intl-pfm-breach-reporting",
+      "rule": "SYNTHETIC authorities and 30-day deadline",
+      "reason": "country breach-reporting authorities and deadline not verified (INTERNATIONAL-PFM-REQUIREMENTS PFM-039, section 5)"
+    }
+  ],
+  "money": {
+    "unit": "MINOR",
+    "currency": "USD",
+    "exponent": 2,
+    "variables": [
+      "amount"
+    ]
+  }
+}

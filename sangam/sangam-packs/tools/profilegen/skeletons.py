@@ -30,8 +30,10 @@ GOI_POWERS = [('DDO', 0, 'RPR 2022: DDO draws within a sanction; no sanction pow
 GOI_PROC_LIMITS = {'direct': in_money('50000'), 'gemL1': in_money('10L'), 'limitedTender': in_money('50L'),
                    'limitedTenderScientific': in_money('1CR')}
 _upto = lambda k: '<= ' + major(GOI_PROC_LIMITS[k], IN['locale']['currency'])  # noqa: E731
-GOI_PROC = [(_upto('direct'), 'false', 'DIRECT', 'GFR 2017 r.154 / r.149 (direct purchase up to 50,000)'),
-            (_upto('gemL1'), 'false', 'GEM_L1', 'GFR 2017 r.149 (GeM L1 above 50,000 to 10 lakh)'),
+# Decision 225 round 4: direct purchase and GeM L1 apply to every department class ('-'); only the limited-tender
+# ceiling depends on the class, so a scientific department's small purchase never falls to LIMITED_TENDER.
+GOI_PROC = [(_upto('direct'), '-', 'DIRECT', 'GFR 2017 r.154 / r.149 (direct purchase up to 50,000)'),
+            (_upto('gemL1'), '-', 'GEM_L1', 'GFR 2017 r.149 (GeM L1 above 50,000 to 10 lakh)'),
             (_upto('limitedTender'), 'false', 'LIMITED_TENDER', 'GFR 2017 (limited tender up to 50 lakh; delta IFC-188)'),
             (_upto('limitedTenderScientific'), 'true', 'LIMITED_TENDER',
              'scientific departments: limited tender up to 1 crore (delta IFC-188)'),

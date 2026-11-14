@@ -38,6 +38,7 @@ class PackDeploymentTest {
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
         cfg.setEnforceHistoryTimeToLive(true);
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
     }
 
@@ -52,7 +53,7 @@ class PackDeploymentTest {
     void everyPackDeploys() {
         PackRegistry reg = PackRegistry.discover();
         assertFalse(reg.all().isEmpty(), "no packs found");
-        List<PackDeployer.Result> results = new PackDeployer(engine, reg).deployAll(null);
+        List<PackDeployer.Result> results = new PackDeployer(engine, reg).deployAll(PackTestTenant.ID);
         assertEquals(reg.all().size(), results.size());
         List<String> missing = new ArrayList<>();
         for (SangamPack p : reg.all()) {
@@ -80,7 +81,7 @@ class PackDeploymentTest {
         });
         assertTrue(missing.isEmpty(), "unresolved call activities: " + missing);
         // redeploy is filtered as a duplicate
-        List<PackDeployer.Result> again = new PackDeployer(engine, reg).deployAll(null);
+        List<PackDeployer.Result> again = new PackDeployer(engine, reg).deployAll(PackTestTenant.ID);
         assertTrue(again.stream().noneMatch(PackDeployer.Result::newDeployment), "duplicate filtering failed");
     }
 }

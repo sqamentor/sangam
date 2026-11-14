@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Modeller (26 operations). */
+/** Typed operations of Modeller (28 operations). */
 final class ModellerApi
 {
     public function __construct(private readonly Calls $calls)
@@ -50,6 +50,24 @@ final class ModellerApi
             $req->body($body);
         }
         return Support::arr($this->calls->json($req, $options)) ?? [];
+    }
+
+    /**
+     * Semantic model diff
+     *
+     * Compares two versions of a BPMN, DMN, CMMN or form file by meaning (elements, flows, expressions, properties), not by text; reads only, nothing is stored (M-125). 400 MODEL_UNREADABLE when a side is not XML/JSON, has a DOCTYPE, or the two sides are of different formats.
+     *
+     * POST /models/diff (operationId diffModels); permission package.read; result stored atomically with the state change.
+     * @param Model\ModelDiffRequest|array $body request body
+     * @return Model\ModelDiffReport|null
+     */
+    public function diffModels(Model\ModelDiffRequest|array $body, ?RequestOptions $options = null): ?Model\ModelDiffReport
+    {
+        $req = ApiRequest::post('/models/diff');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\ModelDiffReport::class);
     }
 
     /**
@@ -143,6 +161,20 @@ final class ModellerApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\ModelEditLease::class);
+    }
+
+    /**
+     * Model presence stream
+     *
+     * Server-sent events, event name 'presence', data = ModelPresence: one event on connect and one on every join, leave or lease change (M-101). The caller is present while the stream is open; closing it leaves. Live across nodes like the conversation stream (M-040).
+     *
+     * GET /models/{file}/presence/stream (operationId streamModelPresence); permission package.read.
+     * @return string
+     */
+    public function streamModelPresence(string $file, ?RequestOptions $options = null): string
+    {
+        $req = ApiRequest::get('/models/' . HttpTransport::seg((string) $file) . '/presence/stream');
+        return $this->calls->raw($req, $options, 'text/event-stream');
     }
 
     /**

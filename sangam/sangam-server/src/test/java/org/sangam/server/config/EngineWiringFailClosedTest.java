@@ -11,7 +11,8 @@ import org.springframework.mock.env.MockEnvironment;
 
 /**
  * Owner decision 75: the engine no longer drops the job identity binding silently when the security module is off;
- * the start is refused unless development is explicit (key or dev/h2 profile). Written for the test phase (not run).
+ * the start is refused unless development is explicit (key, or a development profile, with the switch false; decision
+ * 143). Written for the test phase (not run).
  */
 class EngineWiringFailClosedTest {
 
@@ -29,14 +30,31 @@ class EngineWiringFailClosedTest {
         assertTrue(e.getMessage().contains(SangamRestAutoConfiguration.ALLOW_WITHOUT_SECURITY), e.getMessage());
     }
 
+    /** Decision 143: an explicit development start states the switch false. */
     @Test
     void anExplicitDevelopmentStartRunsWithoutTheBinding() {
         assertFalse(EngineWiring.securityModuleEnabled(new MockEnvironment()
                 .withProperty("sangam.modules.security.enabled", "false")
+                .withProperty(org.sangam.core.security.ProductionMode.PROPERTY, "false")
                 .withProperty(SangamRestAutoConfiguration.ALLOW_WITHOUT_SECURITY, "true")));
-        MockEnvironment dev = new MockEnvironment().withProperty("sangam.modules.security.enabled", "false");
+        MockEnvironment dev = new MockEnvironment().withProperty("sangam.modules.security.enabled", "false")
+                .withProperty(org.sangam.core.security.ProductionMode.PROPERTY, "false");
         dev.setActiveProfiles("dev");
         assertFalse(EngineWiring.securityModuleEnabled(dev));
+    }
+
+    /** Decisions 143 and 198: without the switch, or with true next to a development profile, it is refused. */
+    @Test
+    void aMissingSwitchOrProductionOverADevelopmentProfileIsRefused() {
+        MockEnvironment noSwitch = new MockEnvironment().withProperty("sangam.modules.security.enabled", "false")
+                .withProperty(SangamRestAutoConfiguration.ALLOW_WITHOUT_SECURITY, "true");
+        noSwitch.setActiveProfiles("dev");
+        assertThrows(IllegalStateException.class, () -> EngineWiring.securityModuleEnabled(noSwitch));
+        MockEnvironment wins = new MockEnvironment().withProperty("sangam.modules.security.enabled", "false")
+                .withProperty(SangamRestAutoConfiguration.ALLOW_WITHOUT_SECURITY, "true")
+                .withProperty(org.sangam.core.security.ProductionMode.PROPERTY, "true");
+        wins.setActiveProfiles("h2");
+        assertThrows(IllegalStateException.class, () -> EngineWiring.securityModuleEnabled(wins));
     }
 
     /** Decision 92: a production start is refused even with the development key. */

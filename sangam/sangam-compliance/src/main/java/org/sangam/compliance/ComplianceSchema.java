@@ -109,6 +109,7 @@ public final class ComplianceSchema {
               occurred_at {ts}, noticed_at {ts} NOT NULL, due_at {ts}, warn_at {ts}, status {str64} NOT NULL, reported_at {ts}, late {small} NOT NULL,
               systems_json {text}, description {text}, indicators_json {text}, actions_taken {text}, breach_id {str64}, report_refs_json {text},
               follow_ups {int} NOT NULL, registered_by {str}, registered_at {ts} NOT NULL, process_instance_id {str64},
+              root_cause {text}, lessons_learned {text}, closed_at {ts}, closed_by {str},
               PRIMARY KEY (tenant_id, incident_id))""",
             """
             CREATE TABLE CMP_BREACH (tenant_id {str64} NOT NULL, breach_id {str64} NOT NULL, detected_at {ts}, aware_at {ts} NOT NULL, facts_json {text},

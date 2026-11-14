@@ -79,7 +79,7 @@ public final class RegistryPartiesApi {
     /**
      * Create
      *
-     * <p>PartyController.create (sangam-registry).
+     * <p>PartyController.create (sangam-rest).
      *
      * <p>{@code POST /registry/parties} (operationId {@code registryPartyCreate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -95,7 +95,7 @@ public final class RegistryPartiesApi {
     /**
      * List
      *
-     * <p>PartyController.list (sangam-registry).
+     * <p>PartyController.list (sangam-rest).
      *
      * <p>{@code GET /registry/parties} (operationId {@code registryPartyList}); permission {@code registry.read}.
      * @param kind query parameter {@code kind}, or null
@@ -125,7 +125,7 @@ public final class RegistryPartiesApi {
     /**
      * Get
      *
-     * <p>PartyController.get (sangam-registry).
+     * <p>PartyController.get (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}} (operationId {@code registryPartyGet}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -142,7 +142,7 @@ public final class RegistryPartiesApi {
     /**
      * Update
      *
-     * <p>PartyController.update (sangam-registry).
+     * <p>PartyController.update (sangam-rest).
      *
      * <p>{@code PATCH /registry/parties/{id}} (operationId {@code registryPartyUpdate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -159,7 +159,7 @@ public final class RegistryPartiesApi {
     /**
      * Deactivate
      *
-     * <p>PartyController.deactivate (sangam-registry).
+     * <p>PartyController.deactivate (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/deactivate} (operationId {@code registryPartyDeactivate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -176,7 +176,7 @@ public final class RegistryPartiesApi {
     /**
      * Reactivate
      *
-     * <p>PartyController.reactivate (sangam-registry).
+     * <p>PartyController.reactivate (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/reactivate} (operationId {@code registryPartyReactivate}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -193,7 +193,7 @@ public final class RegistryPartiesApi {
     /**
      * Resolve
      *
-     * <p>PartyController.resolve (sangam-registry).
+     * <p>PartyController.resolve (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/resolve} (operationId {@code registryPartyResolve}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -208,7 +208,7 @@ public final class RegistryPartiesApi {
     /**
      * Verify audit
      *
-     * <p>PartyController.verifyAudit (sangam-registry).
+     * <p>PartyController.verifyAudit (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/audit/verify} (operationId {@code registryPartyVerifyAudit}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -223,7 +223,7 @@ public final class RegistryPartiesApi {
     /**
      * Identifiers
      *
-     * <p>PartyController.identifiers (sangam-registry).
+     * <p>PartyController.identifiers (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/identifiers} (operationId {@code registryPartyIdentifiers}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -240,7 +240,7 @@ public final class RegistryPartiesApi {
     /**
      * Add identifier
      *
-     * <p>PartyController.addIdentifier (sangam-registry).
+     * <p>PartyController.addIdentifier (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/identifiers} (operationId {@code registryPartyAddIdentifier}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -257,7 +257,7 @@ public final class RegistryPartiesApi {
     /**
      * Retire identifier
      *
-     * <p>PartyController.retireIdentifier (sangam-registry).
+     * <p>PartyController.retireIdentifier (sangam-rest).
      *
      * <p>{@code POST /registry/parties/identifiers/{identifierId}/retire} (operationId {@code registryPartyRetireIdentifier}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param identifierId path parameter {@code identifierId}
@@ -274,7 +274,7 @@ public final class RegistryPartiesApi {
     /**
      * Reveal
      *
-     * <p>PartyController.reveal (sangam-registry).
+     * <p>PartyController.reveal (sangam-rest).
      *
      * <p>{@code POST /registry/parties/identifiers/{identifierId}/reveal} (operationId {@code registryPartyReveal}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param identifierId path parameter {@code identifierId}
@@ -291,7 +291,7 @@ public final class RegistryPartiesApi {
     /**
      * Relationships
      *
-     * <p>PartyController.relationships (sangam-registry).
+     * <p>PartyController.relationships (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/relationships} (operationId {@code registryPartyRelationships}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -308,7 +308,7 @@ public final class RegistryPartiesApi {
     /**
      * Add relationship
      *
-     * <p>PartyController.addRelationship (sangam-registry).
+     * <p>PartyController.addRelationship (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/relationships} (operationId {@code registryPartyAddRelationship}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -325,7 +325,7 @@ public final class RegistryPartiesApi {
     /**
      * End relationship
      *
-     * <p>PartyController.endRelationship (sangam-registry).
+     * <p>PartyController.endRelationship (sangam-rest).
      *
      * <p>{@code POST /registry/parties/relationships/{relationshipId}/end} (operationId {@code registryPartyEndRelationship}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param relationshipId path parameter {@code relationshipId}
@@ -342,7 +342,7 @@ public final class RegistryPartiesApi {
     /**
      * Addresses
      *
-     * <p>PartyController.addresses (sangam-registry).
+     * <p>PartyController.addresses (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/addresses} (operationId {@code registryPartyAddresses}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -359,7 +359,7 @@ public final class RegistryPartiesApi {
     /**
      * Add address
      *
-     * <p>PartyController.addAddress (sangam-registry).
+     * <p>PartyController.addAddress (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/addresses} (operationId {@code registryPartyAddAddress}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -376,7 +376,7 @@ public final class RegistryPartiesApi {
     /**
      * Retire address
      *
-     * <p>PartyController.retireAddress (sangam-registry).
+     * <p>PartyController.retireAddress (sangam-rest).
      *
      * <p>{@code POST /registry/parties/addresses/{addressId}/retire} (operationId {@code registryPartyRetireAddress}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param addressId path parameter {@code addressId}
@@ -393,7 +393,7 @@ public final class RegistryPartiesApi {
     /**
      * Household
      *
-     * <p>PartyController.household (sangam-registry).
+     * <p>PartyController.household (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/household} (operationId {@code registryPartyHousehold}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -414,7 +414,7 @@ public final class RegistryPartiesApi {
     /**
      * Snapshot
      *
-     * <p>PartyController.snapshot (sangam-registry).
+     * <p>PartyController.snapshot (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/snapshots} (operationId {@code registryPartySnapshot}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -433,7 +433,7 @@ public final class RegistryPartiesApi {
     /**
      * Snapshots
      *
-     * <p>PartyController.snapshots (sangam-registry).
+     * <p>PartyController.snapshots (sangam-rest).
      *
      * <p>{@code GET /registry/parties/snapshots} (operationId {@code registryPartySnapshots}); permission {@code registry.read}.
      * @param reference query parameter {@code reference}, or null
@@ -451,7 +451,7 @@ public final class RegistryPartiesApi {
     /**
      * Get snapshot
      *
-     * <p>PartyController.getSnapshot (sangam-registry).
+     * <p>PartyController.getSnapshot (sangam-rest).
      *
      * <p>{@code GET /registry/parties/snapshots/{snapshotId}} (operationId {@code registryPartyGetSnapshot}); permission {@code registry.read}.
      * @param snapshotId path parameter {@code snapshotId}
@@ -466,7 +466,7 @@ public final class RegistryPartiesApi {
     /**
      * Verify snapshot
      *
-     * <p>PartyController.verifySnapshot (sangam-registry).
+     * <p>PartyController.verifySnapshot (sangam-rest).
      *
      * <p>{@code GET /registry/parties/snapshots/{snapshotId}/verify} (operationId {@code registryPartyVerifySnapshot}); permission {@code registry.read}.
      * @param snapshotId path parameter {@code snapshotId}
@@ -481,7 +481,7 @@ public final class RegistryPartiesApi {
     /**
      * Match
      *
-     * <p>PartyController.match (sangam-registry).
+     * <p>PartyController.match (sangam-rest).
      *
      * <p>{@code POST /registry/parties/match} (operationId {@code registryPartyMatch}); permission {@code registry.write}.
      * @param body request body
@@ -497,7 +497,7 @@ public final class RegistryPartiesApi {
     /**
      * Rematch
      *
-     * <p>PartyController.rematch (sangam-registry).
+     * <p>PartyController.rematch (sangam-rest).
      *
      * <p>{@code POST /registry/parties/{id}/match} (operationId {@code registryPartyRematch}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param id path parameter {@code id}
@@ -514,7 +514,7 @@ public final class RegistryPartiesApi {
     /**
      * Candidates
      *
-     * <p>PartyController.candidates (sangam-registry).
+     * <p>PartyController.candidates (sangam-rest).
      *
      * <p>{@code GET /registry/parties/candidates} (operationId {@code registryPartyCandidates}); permission {@code registry.read}.
      * @param status query parameter {@code status}, or null
@@ -536,7 +536,7 @@ public final class RegistryPartiesApi {
     /**
      * Confirm
      *
-     * <p>PartyController.confirm (sangam-registry).
+     * <p>PartyController.confirm (sangam-rest).
      *
      * <p>{@code POST /registry/parties/candidates/{candidateId}/confirm} (operationId {@code registryPartyConfirm}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param candidateId path parameter {@code candidateId}
@@ -553,7 +553,7 @@ public final class RegistryPartiesApi {
     /**
      * Reject
      *
-     * <p>PartyController.reject (sangam-registry).
+     * <p>PartyController.reject (sangam-rest).
      *
      * <p>{@code POST /registry/parties/candidates/{candidateId}/reject} (operationId {@code registryPartyReject}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param candidateId path parameter {@code candidateId}
@@ -570,7 +570,7 @@ public final class RegistryPartiesApi {
     /**
      * Merge
      *
-     * <p>PartyController.merge (sangam-registry).
+     * <p>PartyController.merge (sangam-rest).
      *
      * <p>{@code POST /registry/parties/merge} (operationId {@code registryPartyMerge}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -586,7 +586,7 @@ public final class RegistryPartiesApi {
     /**
      * Unmerge
      *
-     * <p>PartyController.unmerge (sangam-registry).
+     * <p>PartyController.unmerge (sangam-rest).
      *
      * <p>{@code POST /registry/parties/merges/{mergeEventId}/unmerge} (operationId {@code registryPartyUnmerge}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param mergeEventId path parameter {@code mergeEventId}
@@ -603,7 +603,7 @@ public final class RegistryPartiesApi {
     /**
      * Merges
      *
-     * <p>PartyController.merges (sangam-registry).
+     * <p>PartyController.merges (sangam-rest).
      *
      * <p>{@code GET /registry/parties/{id}/merges} (operationId {@code registryPartyMerges}); permission {@code registry.read}.
      * @param id path parameter {@code id}
@@ -618,7 +618,7 @@ public final class RegistryPartiesApi {
     /**
      * Identifier types
      *
-     * <p>PartyController.identifierTypes (sangam-registry).
+     * <p>PartyController.identifierTypes (sangam-rest).
      *
      * <p>{@code GET /registry/parties/config/identifier-types} (operationId {@code registryPartyIdentifierTypes}); permission {@code registry.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -632,7 +632,7 @@ public final class RegistryPartiesApi {
     /**
      * Save identifier types
      *
-     * <p>PartyController.saveIdentifierTypes (sangam-registry).
+     * <p>PartyController.saveIdentifierTypes (sangam-rest).
      *
      * <p>{@code PUT /registry/parties/config/identifier-types} (operationId {@code registryPartySaveIdentifierTypes}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -648,7 +648,7 @@ public final class RegistryPartiesApi {
     /**
      * Match config
      *
-     * <p>PartyController.matchConfig (sangam-registry).
+     * <p>PartyController.matchConfig (sangam-rest).
      *
      * <p>{@code GET /registry/parties/config/match} (operationId {@code registryPartyMatchConfig}); permission {@code registry.read}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
@@ -662,7 +662,7 @@ public final class RegistryPartiesApi {
     /**
      * Save match config
      *
-     * <p>PartyController.saveMatchConfig (sangam-registry).
+     * <p>PartyController.saveMatchConfig (sangam-rest).
      *
      * <p>{@code PUT /registry/parties/config/match} (operationId {@code registryPartySaveMatchConfig}); permission {@code registry.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body

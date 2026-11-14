@@ -4,7 +4,7 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * A seat held by the person (IX.5): effective-dated; kind as in Assignment.
+ * A seat held by the person (IX.5): effective-dated; kind as in Assignment. Read-only in SCIM.
  *
  * <p>Schema {@code ScimPosting} of sangam-api.yaml 0.1.0.
  *

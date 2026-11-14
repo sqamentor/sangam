@@ -8,7 +8,7 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * A group member.
+ * A group member: a person (User). A member of type Group is 400 invalidValue (no nested groups).
  *
  * Schema ScimMember of sangam-api.yaml 0.1.0.
  *

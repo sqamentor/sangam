@@ -22,6 +22,10 @@
     {
       "kind": "FORM",
       "path": "packs/up05-four-eyes/forms/change.form.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/up05-four-eyes/pack.json"
     }
   ],
   "seed": null,
@@ -54,6 +58,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "u5_check": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "DUAL_CONTROL"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

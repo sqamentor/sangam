@@ -8,12 +8,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { http, request } from '../api/client';
+import { ApiError, http, request } from '../api/client';
 import { mergeById, openEventStream } from '../api/sse';
 import { useAction, useAsync, useInterval } from '../lib/hooks';
 import { BpmnDiagram } from '../components/BpmnDiagram';
 import { fmtNumber } from '../i18n';
-import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, Section, TextArea, TextField } from '../components/ui';
+import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, ReasonDialog, Section, TextArea, TextField } from '../components/ui';
 import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
 
 // ------------------------------------------------------------------ AI
@@ -263,35 +263,92 @@ export function TokenWalk({ bpmnXml, file }: { bpmnXml: string; file: string }) 
   );
 }
 
-/** Edit lease for one model file: acquires on open, heartbeats, releases on close, and offers takeover. */
-export function LeaseBanner({ packageId, file, onState }: { packageId: string; file: string; onState?: (mine: boolean) => void }) {
+/**
+ * The console's view of an edit lease (ModellerController.LeaseView): the lease row plus whether the caller holds it
+ * (mine) and may edit (editable). A free file has no holder and no fence.
+ */
+export type LeaseView = { fileId?: string; holder?: string; fence?: number; expiresAt?: string; requestedBy?: string; mine: boolean; editable: boolean };
+/** What the workspace needs from the lease: may this user save, and with which fence (X-Sangam-Edit-Fence). */
+export type LeaseState = { mine: boolean; fence?: number };
+
+/** The lease path of a package. The lease, the save fence (ModellerWiring.fenced, PUT /packages/{id}) and presence all key a model file by its package id. */
+export function leasePath(packageId: string): string {
+  return `/models/${encodeURIComponent(packageId)}/lease`;
+}
+
+/**
+ * Edit lease for one package (M-101 and the R18 save fence): acquires on open, renews every 30 s with the fence,
+ * releases with the fence on close, and offers "ask for the lease" and a takeover with a reason (audited
+ * MODEL_LEASE_TAKEOVER; the server requires the reason). A renewal refused as EDIT_LEASE_LOST re-reads the lease, so the
+ * banner shows the new holder and the workspace stops saving with the old fence.
+ */
+export function LeaseBanner({ packageId, onState }: { packageId: string; onState?: (s: LeaseState) => void }) {
   const { t } = useTranslation();
-  const [lease, setLease] = useState<{ holder?: string; mine?: boolean; expiresAt?: string }>();
-  const path = `/models/${encodeURIComponent(file)}/lease`;
-  const held = useRef(false);
+  const [lease, setLease] = useState<LeaseView>();
+  const [taking, setTaking] = useState(false);
+  const [asked, setAsked] = useState(false);
+  const path = leasePath(packageId);
+  const held = useRef<number | undefined>(undefined);
+  const stateRef = useRef(onState);
+  stateRef.current = onState;
   const act = useAction();
-  const acquire = (verb: string) => void act.run(() => http.post<typeof lease>(`${path}/${verb}`, { packageId })).then((r) => {
-    if (r) {
-      setLease(r);
-      held.current = !!r.mine;
-      onState?.(!!r.mine);
-    }
-  });
+  const apply = (r: LeaseView) => {
+    setLease(r);
+    held.current = r.mine && typeof r.fence === 'number' ? r.fence : undefined;
+    stateRef.current?.({ mine: r.mine, fence: held.current });
+  };
+  const acquire = () => act.run(() => http.post<LeaseView>(`${path}/acquire`, {})).then((r) => { if (r) apply(r); });
   useEffect(() => {
-    acquire('acquire');
+    void acquire();
     return () => {
-      if (held.current) void http.post(`${path}/release`, { packageId }).catch(() => undefined);
+      const fence = held.current;
+      held.current = undefined;
+      if (fence !== undefined) void http.post(`${path}/release`, { fence }).catch(() => undefined);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
-  useInterval(() => { if (held.current) acquire('heartbeat'); }, 30000);
-  if (act.error) return <ProblemAlert error={act.error} />;
-  if (!lease || lease.mine) return null;
+  useInterval(() => {
+    const fence = held.current;
+    if (fence === undefined) return;
+    // the contract answers 204; ModellerController answers the LeaseView: keep the lease as it is on an empty answer
+    void http.post<LeaseView | undefined>(`${path}/heartbeat`, { fence }).then((r) => { if (r) apply(r); }, () => {
+      held.current = undefined;
+      stateRef.current?.({ mine: false });
+      void acquire();
+    });
+  }, 30000);
   return (
-    <Notice tone="warn">
-      {t('mod.modeller2.leased', { who: lease.holder ?? '' })}{' '}
-      <button type="button" className="link" onClick={() => acquire('takeover')}>{t('mod.modeller2.takeover')}</button>
-    </Notice>
+    <>
+      {/* a reader without package.author (403) just stays read-only; the dialog shows its own errors */}
+      {!taking && !(act.error instanceof ApiError && act.error.status === 403) && <ProblemAlert error={act.error} />}
+      {lease?.mine && lease.requestedBy && <Notice>{t('mod.modeller2.leaseRequested', { who: lease.requestedBy })}</Notice>}
+      {lease && !lease.mine && lease.holder && (
+        <Notice tone="warn">
+          {t('mod.modeller2.leased', { who: lease.holder })}{' '}
+          <button type="button" className="link" disabled={asked || act.busy} onClick={() => void act.run(() => http.post(`${path}/request-takeover`, {}).then(() => true)).then((ok) => ok && setAsked(true))}>
+            {asked ? t('mod.modeller2.leaseAsked') : t('mod.modeller2.leaseAsk')}
+          </button>{' '}
+          <button type="button" className="link" onClick={() => setTaking(true)}>{t('mod.modeller2.takeover')}</button>
+        </Notice>
+      )}
+      <ReasonDialog
+        open={taking}
+        title={t('mod.modeller2.takeover')}
+        busy={act.busy}
+        error={act.error}
+        danger
+        onClose={() => setTaking(false)}
+        onConfirm={(reason) =>
+          void act.run(() => http.post(`${path}/takeover`, { reason }).then(() => true)).then((ok) => {
+            if (!ok) return;
+            setTaking(false);
+            void acquire(); // the takeover answer is the bare lease; acquire renews it and says mine and the fence
+          })
+        }
+      >
+        <Notice tone="warn">{t('mod.modeller2.takeoverHint', { who: lease?.holder ?? '' })}</Notice>
+      </ReasonDialog>
+    </>
   );
 }
 

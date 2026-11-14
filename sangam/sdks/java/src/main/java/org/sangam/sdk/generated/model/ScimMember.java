@@ -4,7 +4,7 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * A group member.
+ * A group member: a person (User). A member of type Group is 400 invalidValue (no nested groups).
  *
  * <p>Schema {@code ScimMember} of sangam-api.yaml 0.1.0.
  *

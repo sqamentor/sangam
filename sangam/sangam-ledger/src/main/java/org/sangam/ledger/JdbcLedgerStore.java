@@ -36,6 +36,11 @@ import java.util.Optional;
  * the unit is the currency minor unit ({@link org.sangam.core.money.Money}); for a quantity account (no / non-ISO
  * currency) it is 10^-{@value #QUANTITY_EXPONENT}. A value finer than the unit is rejected ({@link #units}), never
  * rounded, so a balance can never drift by a fraction of a minor unit.
+ *
+ * <p>Audit and accounting (RM-04): with a {@link LedgerPorts.PostingJournal} the store writes the posting's
+ * {@code LEDGER_POSTED} audit row and its general-ledger rows on the posting connection, after the legs and before the
+ * commit, so they commit with the {@code LDG_ENTRY} row or not at all. A duplicate reference finds an entry that was
+ * committed together with its audit and GL rows, so nothing is missing and nothing is written again.
  */
 public final class JdbcLedgerStore implements LedgerStore {
 
@@ -69,14 +74,62 @@ public final class JdbcLedgerStore implements LedgerStore {
 
     private final DataSource ds;
     private final Dialect dialect;
+    private final LedgerPorts.PostingJournal journal;
 
+    /** Without a journal: the caller reports audit and accounting after the commit (development and tools). */
     public JdbcLedgerStore(DataSource ds, Dialect dialect) {
+        this(ds, dialect, null);
+    }
+
+    /** @param journal writes each posting's audit and GL rows in the posting transaction (RM-04); null: none */
+    public JdbcLedgerStore(DataSource ds, Dialect dialect, LedgerPorts.PostingJournal journal) {
         this.ds = ds;
         this.dialect = dialect;
+        this.journal = journal;
+    }
+
+    @Override
+    public boolean journals() {
+        return journal != null;
     }
 
     @Override
     public PostResult post(Entry e) {
+        return post(e, List.of());
+    }
+
+    @Override
+    public void exportAccounting(List<LedgerPorts.AccountingEntry> entries) {
+        if (journal == null) {
+            throw new UnsupportedOperationException("this ledger store has no posting journal");
+        }
+        if (entries == null || entries.isEmpty()) {
+            return;
+        }
+        try (Connection c = ds.getConnection()) {
+            c.setAutoCommit(false);
+            try {
+                journal.accounting(c, entries);
+                c.commit();
+            } catch (RuntimeException ex) {
+                c.rollback();
+                throw ex;
+            }
+        } catch (SQLException ex) {
+            throw new Jdbc.LayerSqlException("ledger accounting export", ex);
+        }
+    }
+
+    @Override
+    public PostResult post(Entry e, List<LedgerPorts.AccountingEntry> accounting) {
+        PostResult r = postInTransaction(e, accounting == null ? List.of() : accounting);
+        if (journal != null && r.applied() && !r.duplicate()) {
+            journal.committed(e);
+        }
+        return r;
+    }
+
+    private PostResult postInTransaction(Entry e, List<LedgerPorts.AccountingEntry> accounting) {
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
             try {
@@ -121,6 +174,9 @@ public final class JdbcLedgerStore implements LedgerStore {
                         return new PostResult(false, false, reason, List.of(b));
                     }
                     read(c, m.key()).ifPresent(after::add);
+                }
+                if (journal != null) {
+                    journal.posted(c, e, accounting);   // RM-04: audit and GL rows commit with LDG_ENTRY
                 }
                 c.commit();
                 return new PostResult(true, false, null, after);

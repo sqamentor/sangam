@@ -34,7 +34,18 @@ class ProductionGuardsTest {
         return env;
     }
 
+    /**
+     * A valid development installation (decision 143): a development profile and the explicit switch false. A
+     * development profile without the switch is not one (see {@link #thePredicate}).
+     */
     private static MockEnvironment development() {
+        MockEnvironment env = new MockEnvironment().withProperty("sangam.security.production", "false");
+        env.setActiveProfiles("h2");
+        return env;
+    }
+
+    /** A development profile with no switch: refused at start-up, production for every guard (decision 143). */
+    private static MockEnvironment developmentProfileWithoutSwitch() {
         MockEnvironment env = new MockEnvironment();
         env.setActiveProfiles("h2");
         return env;
@@ -53,12 +64,17 @@ class ProductionGuardsTest {
         assertTrue(ProductionEnvironment.isProduction(helm()));
         assertTrue(ProductionEnvironment.isProduction(prodProfile()));
         assertFalse(ProductionEnvironment.isProduction(development()));
+        // decision 143: neither profile nor flag stays refused; the guards fail closed (ProductionEnvironmentPolicyTest)
+        assertTrue(ProductionEnvironment.isProduction(developmentProfileWithoutSwitch()));
     }
 
     @Test
     void debugger() {
         refusedInBothProductionForms(PortsWiring::refuseDebuggerInProduction, "sangam.debug.enabled must not be set");
         assertDoesNotThrow(() -> PortsWiring.refuseDebuggerInProduction(development()));
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> PortsWiring.refuseDebuggerInProduction(developmentProfileWithoutSwitch()));
+        assertTrue(e.getMessage().contains("sangam.debug.enabled must not be set"), e.getMessage());
     }
 
     @Test

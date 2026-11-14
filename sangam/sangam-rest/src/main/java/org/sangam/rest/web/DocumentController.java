@@ -10,7 +10,10 @@ import org.sangam.rest.port.Download;
 import org.sangam.rest.port.LinkPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.port.RequestContext;
+import org.sangam.rest.support.DocumentSlots;
 import org.sangam.rest.support.Permissions;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -33,22 +36,48 @@ public class DocumentController {
     private final DocumentPort documents;
     private final LinkPort links;
     private final PermissionPort permissions;
+    private final ObjectProvider<DocumentSlots> slots;
 
     public DocumentController(DocumentPort documents, LinkPort links, PermissionPort permissions) {
+        this(documents, links, permissions, null);
+    }
+
+    /**
+     * @param slots owner decisions 267 to 269: the DSC document slot rules (sangam-server with packs); without them a
+     *              documentType is stored as metadata only and no slot is filled
+     */
+    @Autowired
+    public DocumentController(DocumentPort documents, LinkPort links, PermissionPort permissions,
+                              ObjectProvider<DocumentSlots> slots) {
         this.documents = documents;
         this.links = links;
         this.permissions = permissions;
+        this.slots = slots;
+    }
+
+    private DocumentSlots slots() {
+        return slots == null ? null : slots.getIfAvailable();
+    }
+
+    private static java.util.Map<String, Object> typeMetadata(String documentType) {
+        return documentType == null || documentType.isBlank() ? null
+                : java.util.Map.of(DocumentSlots.META_DOCUMENT_TYPE, documentType.trim());
     }
 
     @PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DocumentPort.Document> upload(RequestContext ctx, @RequestPart("file") MultipartFile file,
             @RequestParam(required = false) String name, @RequestParam(required = false) String taskId,
             @RequestParam(required = false) String processInstanceId,
-            @RequestParam(required = false) String caseInstanceId) throws IOException {
+            @RequestParam(required = false) String caseInstanceId,
+            @RequestParam(required = false) String documentType,
+            @RequestParam(required = false, defaultValue = "false") boolean replaceSlot) throws IOException {
         permissions.require(ctx, Permissions.DOCUMENT_WRITE);
-        DocumentPort.Document d = documents.upload(ctx, new DocumentPort.UploadRequest(
+        DocumentPort.UploadRequest r = new DocumentPort.UploadRequest(
                 name != null ? name : file.getOriginalFilename(), file.getContentType(), file.getBytes(), taskId,
-                processInstanceId, caseInstanceId, null));
+                processInstanceId, caseInstanceId, typeMetadata(documentType));
+        DocumentSlots s = slots();
+        DocumentPort.Document d = s == null ? documents.upload(ctx, r)
+                : s.upload(ctx, documents, r, documentType, replaceSlot);
         return Lists.created("/api/v1/documents/" + d.id(), d.id(), d);
     }
 
@@ -77,11 +106,16 @@ public class DocumentController {
 
     @PostMapping(value = "/documents/{id}/versions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<DocumentPort.Document> newVersion(RequestContext ctx, @PathVariable String id,
-            @RequestPart("file") MultipartFile file, @RequestParam(required = false) String name) throws IOException {
+            @RequestPart("file") MultipartFile file, @RequestParam(required = false) String name,
+            @RequestParam(required = false) String documentType,
+            @RequestParam(required = false, defaultValue = "false") boolean replaceSlot) throws IOException {
         permissions.require(ctx, Permissions.DOCUMENT_WRITE);
-        DocumentPort.Document d = documents.newVersion(ctx, id, new DocumentPort.UploadRequest(
+        DocumentPort.UploadRequest r = new DocumentPort.UploadRequest(
                 name != null ? name : file.getOriginalFilename(), file.getContentType(), file.getBytes(), null, null,
-                null, null));
+                null, typeMetadata(documentType));
+        DocumentSlots s = slots();
+        DocumentPort.Document d = s == null ? documents.newVersion(ctx, id, r)
+                : s.newVersion(ctx, documents, id, null, r, documentType, replaceSlot);
         return Lists.created("/api/v1/documents/" + d.id(), d.id(), d);
     }
 

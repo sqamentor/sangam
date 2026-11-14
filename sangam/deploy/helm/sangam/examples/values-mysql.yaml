@@ -13,3 +13,6 @@ networkPolicy:
 backup:
   enabled: true
   existingSecret: sangam-db-backup   # RELOAD, REPLICATION CLIENT, REPLICATION SLAVE, SELECT, SHOW VIEW, EVENT, TRIGGER
+  mysql:
+    # No default (decision 129): an image with the MySQL 8.4 client tools from your registry.
+    image: registry.local/dba/mysql-client:8.4

@@ -95,7 +95,7 @@ public final class MeApi {
      *
      * <p>Creates a LEAVE_SUBSTITUTE assignment pending approval; the substitute acts for the seat only within the date range (IX.5 rule 4, PER-4).
      *
-     * <p>{@code POST /me/leave-requests} (operationId {@code requestLeave}); result stored atomically with the state change (x-sangam-idempotent).
+     * <p>{@code POST /me/leave-requests} (operationId {@code requestLeave}); permission {@code task.write}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 201 response

@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Processes (31 operations).
+/// Typed operations of Processes (33 operations).
 /// </summary>
 public sealed class ProcessesApi
 {
@@ -355,6 +355,29 @@ public sealed class ProcessesApi
         var req = ApiRequest.Post($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/cross-boundary-move");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ProcessInstance?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Continue as new
+    /// Ends the active root instance and starts exactly one successor in one transaction, keeping the business key, the definition id and the named variables exactly. 409 CONTINUATION_NOT_ALLOWED, nothing changed, with extension reason SUB_INSTANCE, SUSPENDED, ENDED, ALREADY_CONTINUED (then the problem also carries successorId) or REQUEST_ID_REUSED (the continuationRequestId was used for another instance); an instance of another tenant is 404 (decision 145). A retry with the same continuationRequestId answers 200 with outcome EXISTING and the committed successor (ended empty). Needs PROCESS_INSTANCE MODIFY on the instance and, for another named version, PROCESS_DEFINITION START. Open user tasks, external tasks, jobs, timers and message subscriptions end with the predecessor; stale workers and callbacks on it get 404; late messages correlate by business key and tenant to the successor. Audited as PROCESS_CONTINUED_AS_NEW.
+    /// POST /process-instances/{id}/continue-as-new (operationId continueProcessInstanceAsNew); permission process.continue; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ContinueAsNewResult?> ContinueProcessInstanceAsNewAsync(string id, M.ContinueAsNewRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/continue-as-new");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.ContinueAsNewResult?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Continuation chain
+    /// The chain of the instance (predecessors and successors), with generation, actor, reason and request id of every link. An instance never continued has a chain of one instance and no links.
+    /// GET /process-instances/{id}/continuations (operationId getProcessContinuationChain); permission process.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.ProcessContinuationChain?> GetProcessContinuationChainAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/process-instances/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/continuations");
+        return await _calls.JsonAsync<M.ProcessContinuationChain?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

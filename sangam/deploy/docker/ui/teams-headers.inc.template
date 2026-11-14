@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Decisions 162 and 213: headers of /teams.html only, and only when SANGAM_TEAMS_ENABLED=true (16-sangam-teams.envsh
+# picks this file; otherwise /teams.html gets security-headers.inc like every other page).
+# Differences from security-headers.inc, nothing else:
+#   - frame-ancestors is the validated SANGAM_TEAMS_FRAME_ANCESTORS list (default: Microsoft's published Teams,
+#     Outlook and Microsoft 365 host list) instead of 'none';
+#   - no X-Frame-Options (DENY would block the Teams frame; ALLOW-FROM takes one origin and is obsolete);
+#   - no Cross-Origin-Opener-Policy same-origin: the Teams sign-in pop-up must keep its opener to hand the result back.
+add_header X-Content-Type-Options    "nosniff" always;
+add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy        "camera=(), microphone=(), geolocation=(), payment=()" always;
+add_header Content-Security-Policy   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${SANGAM_OIDC_ISSUER} ${SANGAM_CSP_CONNECT_EXTRA} ${SANGAM_DSC_AGENT_ORIGIN_CHECKED}; frame-src 'self' ${SANGAM_OIDC_ISSUER}; frame-ancestors ${SANGAM_TEAMS_FRAME_ANCESTORS_EFFECTIVE}; base-uri 'self'; form-action 'self' ${SANGAM_OIDC_ISSUER}; object-src 'none'" always;

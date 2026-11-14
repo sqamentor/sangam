@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -68,7 +69,9 @@ import org.springframework.core.env.Environment;
  * Properties: {@code sangam.modules.connectors-health.enabled}, and {@link HealthConnectorsProperties}.
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(name = "sangam.modules.connectors-health.enabled", havingValue = "true", matchIfMissing = true)
+// decision 187: optional and off by default; the jar may be left out of the class path
+@ConditionalOnClass(name = "org.sangam.connectors.health.HealthConnectors")
+@ConditionalOnProperty(name = "sangam.modules.connectors-health.enabled", havingValue = "true", matchIfMissing = false)
 public class HealthConnectorsWiring {
 
     private static final Logger LOG = LoggerFactory.getLogger(HealthConnectorsWiring.class);

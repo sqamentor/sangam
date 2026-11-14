@@ -360,3 +360,104 @@ spec:
 {{- fail "server.state: set existingClaim or create=true (compliance log archive, R51)" -}}
 {{- end -}}
 {{- end -}}
+{{/* ------------------------------------------------------------------ sidecars (M-081, M-103) */}}
+
+{{/* The optional sidecars: values key, component name, environment prefix (owner decisions 114, 153, 167). */}}
+{{- define "sangam.sidecars.list" -}}
+pdfValidator:pdf-validator:SANGAM_PDF_VALIDATOR ocr:ocr:SANGAM_OCR
+{{- end -}}
+
+{{/* Fails on a transport other than tls or mesh; call with the sidecar's values. */}}
+{{- define "sangam.sidecars.checkTransport" -}}
+{{- if not (has .transport (list "tls" "mesh")) -}}
+{{- fail (printf "sidecar transport must be tls or mesh, not %v" .transport) -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Server environment for the enabled sidecars: URL, transport, token file, timeout and, when one uses tls, the
+     trust store through JDK_JAVA_OPTIONS (the image's JAVA_TOOL_OPTIONS stays). Empty when none is enabled. */}}
+{{- define "sangam.sidecars.serverEnv" -}}
+{{- $root := . -}}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- $tls := false -}}
+{{- range $row := splitList " " (include "sangam.sidecars.list" .) }}
+{{- $f := splitList ":" $row }}
+{{- $v := index $root.Values (index $f 0) }}
+{{- if $v.enabled }}
+{{- include "sangam.sidecars.checkTransport" $v }}
+{{- if eq $v.transport "tls" }}{{ $tls = true }}{{ end }}
+- name: {{ index $f 2 }}_URL
+  value: {{ default (printf "%s://%s-%s:%v" (ternary "https" "http" (eq $v.transport "tls")) $fullname (index $f 1) $v.port) $v.url | quote }}
+- name: {{ index $f 2 }}_TRANSPORT
+  value: {{ $v.transport | quote }}
+- name: {{ index $f 2 }}_TOKEN_FILE
+  value: {{ printf "/opt/sangam/sidecars/%s/token" (index $f 1) | quote }}
+{{- with $v.timeoutMs }}
+- name: {{ index $f 2 }}_TIMEOUT_MS
+  value: {{ . | quote }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if $tls }}
+- name: SANGAM_SIDECAR_TRUSTSTORE_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ required "sidecarTrustStore.existingSecret is required when a sidecar uses transport tls (keys truststore.p12, password)" $root.Values.sidecarTrustStore.existingSecret }}
+      key: password
+- name: JDK_JAVA_OPTIONS
+  value: "-Djavax.net.ssl.trustStore=/opt/sangam/sidecars/truststore/truststore.p12 -Djavax.net.ssl.trustStoreType=PKCS12 -Djavax.net.ssl.trustStorePassword=$(SANGAM_SIDECAR_TRUSTSTORE_PASSWORD)"
+{{- end }}
+{{- end -}}
+
+{{/* Server volume mounts for the enabled sidecars (client token files, trust store). */}}
+{{- define "sangam.sidecars.serverMounts" -}}
+{{- $root := . -}}
+{{- $tls := false -}}
+{{- range $row := splitList " " (include "sangam.sidecars.list" .) }}
+{{- $f := splitList ":" $row }}
+{{- $v := index $root.Values (index $f 0) }}
+{{- if $v.enabled }}
+{{- if eq $v.transport "tls" }}{{ $tls = true }}{{ end }}
+- name: sidecar-{{ index $f 1 }}-client
+  mountPath: /opt/sangam/sidecars/{{ index $f 1 }}
+  readOnly: true
+{{- end }}
+{{- end }}
+{{- if $tls }}
+- name: sidecar-truststore
+  mountPath: /opt/sangam/sidecars/truststore
+  readOnly: true
+{{- end }}
+{{- end -}}
+
+{{/* Server volumes for the enabled sidecars. */}}
+{{- define "sangam.sidecars.serverVolumes" -}}
+{{- $root := . -}}
+{{- $tls := false -}}
+{{- range $row := splitList " " (include "sangam.sidecars.list" .) }}
+{{- $f := splitList ":" $row }}
+{{- $v := index $root.Values (index $f 0) }}
+{{- if $v.enabled }}
+{{- if eq $v.transport "tls" }}{{ $tls = true }}{{ end }}
+- name: sidecar-{{ index $f 1 }}-client
+  secret:
+    secretName: {{ default (required (printf "%s.existingSecret is required with %s.enabled" (index $f 0) (index $f 0)) $v.existingSecret) $v.clientExistingSecret }}
+    defaultMode: 0440
+    items:
+      - { key: token, path: token }
+{{- end }}
+{{- end }}
+{{- if $tls }}
+- name: sidecar-truststore
+  secret:
+    secretName: {{ required "sidecarTrustStore.existingSecret is required when a sidecar uses transport tls (keys truststore.p12, password)" $root.Values.sidecarTrustStore.existingSecret }}
+    defaultMode: 0440
+    items:
+      - { key: truststore.p12, path: truststore.p12 }
+{{- end }}
+{{- end -}}
+
+{{/* Decision 155 (W4-I): the backup console is on only with backup.enabled and backup.console.enabled. */}}
+{{- define "sangam.backup.consoleEnabled" -}}
+{{- if and .Values.backup.enabled .Values.backup.console.enabled -}}true{{- end -}}
+{{- end -}}

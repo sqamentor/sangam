@@ -31,7 +31,12 @@ public final class JobExecutorSetup {
     private AcquireJobsCommandFactory partitionedFactory;
     private String incarnation;
 
-    public JobExecutorSetup(SangamEngineSettings settings, EngineDialect dialect, Supplier<java.time.Instant> engineClock) {
+    private final org.sangam.engine.tenant.WorkTenants tenants;
+
+    /** @param tenants decision 144: the tenant resolution of the side rows */
+    public JobExecutorSetup(SangamEngineSettings settings, EngineDialect dialect, Supplier<java.time.Instant> engineClock,
+                            org.sangam.engine.tenant.WorkTenants tenants) {
+        this.tenants = tenants;
         this.s = settings;
         this.dialect = dialect;
         this.clock = engineClock;
@@ -92,7 +97,7 @@ public final class JobExecutorSetup {
             return List.of();
         }
         JobSideRows rows = new JobSideRows(s.isExecutorPartitioning(), s.getExecutorSlots(),
-                traceLinks() ? s.getTracing() : null, s.getDefaultTenantId(), () -> clock.get().toEpochMilli());
+                traceLinks() ? s.getTracing() : null, tenants, () -> clock.get().toEpochMilli());
         return List.of(rows::interceptor);
     }
 
@@ -138,6 +143,17 @@ public final class JobExecutorSetup {
     public PartitionLeaseManager startLeases(org.operaton.bpm.engine.ProcessEngine engine,
                                              org.sangam.core.engine.EngineMetrics metrics,
                                              org.sangam.core.engine.AuditSink auditSink, String auditTenant) {
+        return startLeases(engine, metrics, auditSink, auditTenant, null);
+    }
+
+    /**
+     * As above, with the engine's one {@link PartitionResize} (decision 146, built by the plugin for every node, so the
+     * server reaches it through {@code SangamEngineComponents.partitionResize()}); {@code null} builds one here.
+     */
+    public PartitionLeaseManager startLeases(org.operaton.bpm.engine.ProcessEngine engine,
+                                             org.sangam.core.engine.EngineMetrics metrics,
+                                             org.sangam.core.engine.AuditSink auditSink, String auditTenant,
+                                             PartitionResize engineResize) {
         if (incarnation == null) {
             return null;
         }
@@ -173,8 +189,11 @@ public final class JobExecutorSetup {
                 }
             }
         };
+        PartitionResize resize = engineResize != null ? engineResize : new PartitionResize(cfg.getDataSource(),
+                dialect.coreDialect(), config.clusterId(), config.slots(), auditSink, auditTenant,
+                config.recoveryBatch()); // decision 146
         leases = new PartitionLeaseManager(cfg.getDataSource(), dialect.coreDialect(), config, clock, System::nanoTime,
-                incidents, ownershipAudit(auditSink, auditTenant, config, incarnation));
+                incidents, ownershipAudit(auditSink, auditTenant, config, incarnation), resize);
         leaseTimer = java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "sangam-exec-lease-" + node);
             t.setDaemon(true);

@@ -1,0 +1,133 @@
+{
+  "_comment": "M-135 synthetic Flowable runtime corpus (decision 169): states that must be REJECTED, one reason per instance (r<n>). Not real data. Times are wall-clock in Europe/Berlin. r17 to r20 come from the Flowable source check: an async-after job (the activity already ran), a longString and an oversized json kept as bytes, a pre-6.5.0.1 timer whose JSON configuration names no activityId. Decision 231: r21 to r23 belong to definitions whose deployed model declares a delete task listener, a process event listener, or cannot be read (no resource); the other definitions have a model without such listeners, so each instance keeps one reason.",
+  "tables": {
+    "ACT_RE_PROCDEF": [
+      {"ID_": "order:1:100", "KEY_": "order", "VERSION_": 1, "TENANT_ID_": "acme", "DEPLOYMENT_ID_": "dep-100", "RESOURCE_NAME_": "order.bpmn20.xml"},
+      {"ID_": "legacy:3:900", "KEY_": "legacy", "VERSION_": 3, "TENANT_ID_": "acme", "DEPLOYMENT_ID_": "dep-900", "RESOURCE_NAME_": "legacy.bpmn20.xml"},
+      {"ID_": "order:1:101", "KEY_": "order", "VERSION_": 1, "TENANT_ID_": "acme", "DEPLOYMENT_ID_": "dep-101", "RESOURCE_NAME_": "order.bpmn20.xml"},
+      {"ID_": "order:1:102", "KEY_": "order", "VERSION_": 1, "TENANT_ID_": "acme", "DEPLOYMENT_ID_": "dep-102", "RESOURCE_NAME_": "order.bpmn20.xml"},
+      {"ID_": "order:1:103", "KEY_": "order", "VERSION_": 1, "TENANT_ID_": "acme", "DEPLOYMENT_ID_": "dep-103", "RESOURCE_NAME_": "order.bpmn20.xml"}
+    ],
+    "ACT_RU_EXECUTION": [
+      {"ID_": "r01", "PROC_INST_ID_": "r01", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r01-e1", "PARENT_ID_": "r01", "PROC_INST_ID_": "r01", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "dispatch", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r02", "PROC_INST_ID_": "r02", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r02-e1", "PARENT_ID_": "r02", "PROC_INST_ID_": "r02", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "dispatch", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r03", "PROC_INST_ID_": "r03", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r03-e1", "PARENT_ID_": "r03", "PROC_INST_ID_": "r03", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "dispatch", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r04", "PROC_INST_ID_": "r04", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r04-e1", "PARENT_ID_": "r04", "PROC_INST_ID_": "r04", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": false, "IS_MI_ROOT_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r04-e2", "PARENT_ID_": "r04-e1", "PROC_INST_ID_": "r04", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r05", "PROC_INST_ID_": "r05", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r05-e1", "PARENT_ID_": "r05", "PROC_INST_ID_": "r05", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "callSub", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r06", "PROC_INST_ID_": "r06", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "SUPER_EXEC_": "r05-e1", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r06-e1", "PARENT_ID_": "r06", "PROC_INST_ID_": "r06", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r07", "PROC_INST_ID_": "r07", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r07-e1", "PARENT_ID_": "r07", "PROC_INST_ID_": "r07", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r07-e2", "PARENT_ID_": "r07", "PROC_INST_ID_": "r07", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "chargeCard", "IS_ACTIVE_": false, "IS_EVENT_SCOPE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r08", "PROC_INST_ID_": "r08", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r08-e1", "PARENT_ID_": "r08", "PROC_INST_ID_": "r08", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r09", "PROC_INST_ID_": "r09", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r09-e1", "PARENT_ID_": "r09", "PROC_INST_ID_": "r09", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r10", "PROC_INST_ID_": "r10", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r10-e1", "PARENT_ID_": "r10", "PROC_INST_ID_": "r10", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r11", "PROC_INST_ID_": "r11", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r11-e1", "PARENT_ID_": "r11", "PROC_INST_ID_": "r11", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r12", "PROC_INST_ID_": "r12", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r12-e1", "PARENT_ID_": "r12", "PROC_INST_ID_": "r12", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "cooling", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r13", "PROC_INST_ID_": "r13", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "CALLBACK_TYPE_": "cmmn-1.1-to-bpmn-2.0-child-process", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r13-e1", "PARENT_ID_": "r13", "PROC_INST_ID_": "r13", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r14", "PROC_INST_ID_": "r14", "PROC_DEF_ID_": "legacy:3:900", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r14-e1", "PARENT_ID_": "r14", "PROC_INST_ID_": "r14", "PROC_DEF_ID_": "legacy:3:900", "TENANT_ID_": "acme", "ACT_ID_": "legacyTask", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r15", "PROC_INST_ID_": "r15", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r15-e1", "PARENT_ID_": "r15", "PROC_INST_ID_": "r15", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r16", "PROC_INST_ID_": "r16", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r16-e1", "PARENT_ID_": "r16", "PROC_INST_ID_": "r16", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "oldStep", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1}
+   ,
+
+      {"ID_": "r17", "PROC_INST_ID_": "r17", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r17-e1", "PARENT_ID_": "r17", "PROC_INST_ID_": "r17", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "dispatch", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r18", "PROC_INST_ID_": "r18", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r18-e1", "PARENT_ID_": "r18", "PROC_INST_ID_": "r18", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r19", "PROC_INST_ID_": "r19", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r19-e1", "PARENT_ID_": "r19", "PROC_INST_ID_": "r19", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r20", "PROC_INST_ID_": "r20", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r20-e1", "PARENT_ID_": "r20", "PROC_INST_ID_": "r20", "PROC_DEF_ID_": "order:1:100", "TENANT_ID_": "acme", "ACT_ID_": "cooling", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r21", "PROC_INST_ID_": "r21", "PROC_DEF_ID_": "order:1:101", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r21-e1", "PARENT_ID_": "r21", "PROC_INST_ID_": "r21", "PROC_DEF_ID_": "order:1:101", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r22", "PROC_INST_ID_": "r22", "PROC_DEF_ID_": "order:1:102", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r22-e1", "PARENT_ID_": "r22", "PROC_INST_ID_": "r22", "PROC_DEF_ID_": "order:1:102", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1},
+
+      {"ID_": "r23", "PROC_INST_ID_": "r23", "PROC_DEF_ID_": "order:1:103", "TENANT_ID_": "acme", "IS_ACTIVE_": false, "IS_SCOPE_": true, "SUSPENSION_STATE_": 1},
+      {"ID_": "r23-e1", "PARENT_ID_": "r23", "PROC_INST_ID_": "r23", "PROC_DEF_ID_": "order:1:103", "TENANT_ID_": "acme", "ACT_ID_": "review", "IS_ACTIVE_": true, "SUSPENSION_STATE_": 1}
+    ],
+    "ACT_RU_TASK": [
+      {"ID_": "t-r04", "EXECUTION_ID_": "r04-e2", "PROC_INST_ID_": "r04", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r06", "EXECUTION_ID_": "r06-e1", "PROC_INST_ID_": "r06", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r07", "EXECUTION_ID_": "r07-e1", "PROC_INST_ID_": "r07", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r08", "EXECUTION_ID_": "r08-e1", "PROC_INST_ID_": "r08", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r08b", "PROC_INST_ID_": "r08", "PARENT_TASK_ID_": "t-r08", "TENANT_ID_": "acme", "NAME_": "Check the address", "PRIORITY_": 50},
+      {"ID_": "t-r09", "EXECUTION_ID_": "r09-e1", "PROC_INST_ID_": "r09", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r10", "EXECUTION_ID_": "r10-e1", "PROC_INST_ID_": "r10", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r11", "EXECUTION_ID_": "r11-e1", "PROC_INST_ID_": "r11", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50, "DUE_DATE_": "2026-10-25T02:30:00"},
+      {"ID_": "t-r13", "EXECUTION_ID_": "r13-e1", "PROC_INST_ID_": "r13", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r14", "EXECUTION_ID_": "r14-e1", "PROC_INST_ID_": "r14", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "legacyTask", "NAME_": "Legacy step", "PRIORITY_": 50},
+      {"ID_": "t-r15", "EXECUTION_ID_": "r15-e1", "PROC_INST_ID_": "r15", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r16", "EXECUTION_ID_": "r16-e1", "PROC_INST_ID_": "r16", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "oldStep", "NAME_": "Removed step", "PRIORITY_": 50}
+   ,
+      {"ID_": "t-r18", "EXECUTION_ID_": "r18-e1", "PROC_INST_ID_": "r18", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r19", "EXECUTION_ID_": "r19-e1", "PROC_INST_ID_": "r19", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r21", "EXECUTION_ID_": "r21-e1", "PROC_INST_ID_": "r21", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r22", "EXECUTION_ID_": "r22-e1", "PROC_INST_ID_": "r22", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50},
+      {"ID_": "t-r23", "EXECUTION_ID_": "r23-e1", "PROC_INST_ID_": "r23", "TENANT_ID_": "acme", "TASK_DEF_KEY_": "review", "NAME_": "Review order", "PRIORITY_": 50}
+    ],
+    "ACT_RU_VARIABLE": [
+      {"ID_": "vr09", "NAME_": "invoice", "TYPE_": "serializable", "EXECUTION_ID_": "r09", "PROC_INST_ID_": "r09", "BYTEARRAY_ID_": "ba-r09"},
+      {"ID_": "vr10", "NAME_": "payload", "TYPE_": "json", "EXECUTION_ID_": "r10", "PROC_INST_ID_": "r10", "TEXT_": "{\"a\":1}"},
+      {"ID_": "vr15", "NAME_": "loopCounter", "TYPE_": "integer", "EXECUTION_ID_": "r15-e1", "PROC_INST_ID_": "r15", "LONG_": 2},
+      {"ID_": "vr18", "NAME_": "remarks", "TYPE_": "longString", "EXECUTION_ID_": "r18", "PROC_INST_ID_": "r18", "BYTEARRAY_ID_": "ba-r18"},
+      {"ID_": "vr19", "NAME_": "payload", "TYPE_": "json", "EXECUTION_ID_": "r19", "PROC_INST_ID_": "r19", "BYTEARRAY_ID_": "ba-r19"}
+    ],
+    "ACT_RU_EVENT_SUBSCR": [
+      {"ID_": "es-r07", "EVENT_TYPE_": "compensate", "EXECUTION_ID_": "r07-e2", "PROC_INST_ID_": "r07", "ACTIVITY_ID_": "chargeCard", "TENANT_ID_": "acme"}
+    ],
+    "ACT_RU_JOB": [
+      {"ID_": "j-r01", "TYPE_": "message", "PROCESS_INSTANCE_ID_": "r01", "EXECUTION_ID_": "r01-e1", "ELEMENT_ID_": "dispatch", "RETRIES_": 3, "LOCK_OWNER_": "flowable-node-1", "LOCK_EXP_TIME_": "2026-06-01T12:00:00", "HANDLER_TYPE_": "async-continuation", "TENANT_ID_": "acme"},
+      {"ID_": "j-r02", "TYPE_": "message", "PROCESS_INSTANCE_ID_": "r02", "EXECUTION_ID_": "r02-e1", "ELEMENT_ID_": "dispatch", "RETRIES_": 1, "EXCEPTION_MSG_": "connection refused", "HANDLER_TYPE_": "async-continuation", "TENANT_ID_": "acme"},
+      {"ID_": "j-r17", "TYPE_": "message", "PROCESS_INSTANCE_ID_": "r17", "EXECUTION_ID_": "r17-e1", "ELEMENT_ID_": "dispatch", "RETRIES_": 3, "HANDLER_TYPE_": "async-after", "TENANT_ID_": "acme"}
+    ],
+    "ACT_RU_TIMER_JOB": [
+      {"ID_": "j-r12", "TYPE_": "timer", "PROCESS_INSTANCE_ID_": "r12", "EXECUTION_ID_": "r12-e1", "ELEMENT_ID_": "cooling", "RETRIES_": 3, "DUEDATE_": "2026-03-29T02:30:00", "HANDLER_TYPE_": "trigger-timer", "TENANT_ID_": "acme"},
+      {"ID_": "j-r20", "TYPE_": "timer", "PROCESS_INSTANCE_ID_": "r20", "EXECUTION_ID_": "r20-e1", "RETRIES_": 3, "DUEDATE_": "2026-12-01T10:00:00", "HANDLER_TYPE_": "trigger-timer", "HANDLER_CFG_": "{\"timerEndDate\":\"2027-01-01\"}", "TENANT_ID_": "acme"}
+    ],
+    "ACT_RU_DEADLETTER_JOB": [
+      {"ID_": "j-r03", "TYPE_": "message", "PROCESS_INSTANCE_ID_": "r03", "EXECUTION_ID_": "r03-e1", "ELEMENT_ID_": "dispatch", "RETRIES_": 0, "EXCEPTION_MSG_": "HTTP 500 from the carrier", "HANDLER_TYPE_": "async-continuation", "TENANT_ID_": "acme"}
+    ]
+  },
+  "resources": {
+    "dep-100/order.bpmn20.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:flowable=\"http://flowable.org/bpmn\" targetNamespace=\"urn:sangam:test:flowable-source\"><process id=\"order\" isExecutable=\"true\"><userTask id=\"review\"><extensionElements><flowable:taskListener event=\"create\" class=\"org.example.Listener\"/></extensionElements></userTask></process></definitions>",
+    "dep-900/legacy.bpmn20.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:flowable=\"http://flowable.org/bpmn\" targetNamespace=\"urn:sangam:test:flowable-source\"><process id=\"legacy\" isExecutable=\"true\"><userTask id=\"legacyTask\"><extensionElements><flowable:taskListener event=\"create\" class=\"org.example.Listener\"/></extensionElements></userTask></process></definitions>",
+    "dep-101/order.bpmn20.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:flowable=\"http://flowable.org/bpmn\" targetNamespace=\"urn:sangam:test:flowable-source\"><process id=\"order\" isExecutable=\"true\"><userTask id=\"review\"><extensionElements><flowable:taskListener event=\"delete\" class=\"org.example.Listener\"/></extensionElements></userTask></process></definitions>",
+    "dep-102/order.bpmn20.xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:flowable=\"http://flowable.org/bpmn\" targetNamespace=\"urn:sangam:test:flowable-source\"><process id=\"order\" isExecutable=\"true\"><extensionElements><flowable:eventListener class=\"org.example.Audit\"/></extensionElements><userTask id=\"review\"><extensionElements><flowable:taskListener event=\"create\" class=\"org.example.Listener\"/></extensionElements></userTask></process></definitions>"
+  }
+}

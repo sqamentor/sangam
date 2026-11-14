@@ -15,6 +15,7 @@ import java.util.Map;
 
 import org.sangam.modeller.action.ActionModels;
 import org.sangam.modeller.catalogue.ExtensionCatalogue;
+import org.sangam.modeller.diff.ModelDiff;
 import org.sangam.modeller.landscape.ProcessLandscape;
 import org.sangam.modeller.lease.EditLeases;
 import org.sangam.modeller.simulation.TokenWalk;
@@ -180,6 +181,52 @@ public class ModellerController {
         List<String> current = r.pending() != null ? List.of(r.pending().gatewayId())
                 : r.visited() == null || r.visited().isEmpty() ? List.of() : List.of(r.visited().get(r.visited().size() - 1));
         return new TokenWalkView(r.status(), r.moves(), r.visited(), r.pending(), r.warnings(), current, options, r.status() != TokenWalk.Status.NEEDS_CHOICE, state);
+    }
+
+    /** M-125 {@code ModelDiffRequest}: a file name and the two texts (null or empty = new or deleted file). */
+    public record ModelDiffRequest(String resource, String before, String after) {
+    }
+
+    /** Contract limits of {@code ModelDiffRequest}. */
+    static final int MAX_RESOURCE_LENGTH = 255;
+    static final int MAX_MODEL_BYTES = 5 * 1024 * 1024;
+
+    /**
+     * M-125 {@code diffModels}: semantic diff of two versions of one model file ({@link ModelDiff}); reads only, stores
+     * nothing. The answer is {@code ModelDiffReport} ({@link ModelDiff.Result#toJson()}).
+     */
+    @PostMapping("/models/diff")
+    public Map<String, Object> diffModels(RequestContext ctx, @RequestBody ModelDiffRequest b) {
+        permissions.require(ctx, Permissions.PACKAGE_READ);
+        return diff(b);
+    }
+
+    /** The checks and the diff of {@link #diffModels}, without the permission check. */
+    static Map<String, Object> diff(ModelDiffRequest b) {
+        if (b == null || b.resource() == null || b.resource().isBlank()) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "resource is required");
+        }
+        if (b.resource().length() > MAX_RESOURCE_LENGTH) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "resource is longer than " + MAX_RESOURCE_LENGTH);
+        }
+        byte[] before = utf8(b.before(), "before");
+        byte[] after = utf8(b.after(), "after");
+        try {
+            return ModelDiff.compare(b.resource(), before, after).toJson();
+        } catch (IllegalArgumentException e) {
+            throw ApiProblem.badRequest("MODEL_UNREADABLE", e.getMessage());
+        }
+    }
+
+    private static byte[] utf8(String text, String side) {
+        if (text == null) {
+            return null;
+        }
+        byte[] bytes = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (bytes.length > MAX_MODEL_BYTES) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", side + " is larger than 5 MiB");
+        }
+        return bytes;
     }
 
     @GetMapping("/models/{file}/lease")

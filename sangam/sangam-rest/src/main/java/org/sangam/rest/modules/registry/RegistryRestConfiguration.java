@@ -8,13 +8,13 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.sangam.core.layer.Transactions;
 import org.sangam.registry.RegistryContext;
-import org.sangam.registry.rest.AssetController;
-import org.sangam.registry.rest.CustodyController;
-import org.sangam.registry.rest.InstrumentController;
-import org.sangam.registry.rest.PartyController;
-import org.sangam.registry.rest.RegisterController;
-import org.sangam.registry.rest.RegistryController;
-import org.sangam.registry.rest.RegistryExceptionHandler;
+import org.sangam.rest.modules.registry.web.AssetController;
+import org.sangam.rest.modules.registry.web.CustodyController;
+import org.sangam.rest.modules.registry.web.InstrumentController;
+import org.sangam.rest.modules.registry.web.PartyController;
+import org.sangam.rest.modules.registry.web.RegisterController;
+import org.sangam.rest.modules.registry.web.RegistryController;
+import org.sangam.rest.modules.registry.web.RegistryExceptionHandler;
 import org.sangam.registry.rest.RegistryRestSupport;
 import org.sangam.rest.config.SangamRestAutoConfiguration;
 import org.sangam.rest.port.PermissionPort;
@@ -33,8 +33,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * REST exposure of sangam-registry ({@code /api/v1/registry/**}, registry README §2): the module's own Spring
- * controllers and its problem+json handler, with a {@link RegistryRestSupport} whose caller is the authenticated
+ * REST exposure of sangam-registry ({@code /api/v1/registry/**}, registry README §2): the module's Spring
+ * controllers (in {@code org.sangam.rest.modules.registry.web}, the REST host area since M-141d) and its problem+json handler, with a {@link RegistryRestSupport} whose caller is the authenticated
  * {@link RequestContext} (tenant from the token, VI.4 rule 6; {@code Idempotency-Key} as operationId) and whose
  * transactions join the Spring transaction the engine and sangam-rest's Idempotency-Key filter use (P-1).
  *

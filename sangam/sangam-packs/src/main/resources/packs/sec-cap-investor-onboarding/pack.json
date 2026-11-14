@@ -42,6 +42,10 @@
     {
       "kind": "SEED",
       "path": "packs/sec-cap-investor-onboarding/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/sec-cap-investor-onboarding/pack.json"
     }
   ],
   "seed": "packs/sec-cap-investor-onboarding/seed.json",
@@ -105,6 +109,15 @@
     "sangam-core-rejection",
     "sangam-core-sanction"
   ],
+  "currency": "INR",
+  "powers": {
+    "io_check": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sec-cap-powers",
+      "ruleCaseType": "ONBOARDING"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

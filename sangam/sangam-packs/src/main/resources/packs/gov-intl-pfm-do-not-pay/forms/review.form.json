@@ -1,0 +1,56 @@
+{
+  "key": "gov-intl-pfm-do-not-pay/review",
+  "version": "1.0.0",
+  "pack": "gov.intl.pfm-do-not-pay",
+  "title": {
+    "en": "Confirm the adjudication (second officer)",
+    "hi": "निर्णय की पुष्टि"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "hi": "प्रकरण का विवरण"
+    }
+  },
+  "fields": [
+    {
+      "id": "matchEvidence",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Evidence: why the list entry is or is not this payee",
+        "hi": "साक्ष्य: सूची प्रविष्टि का मिलान"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": false,
+      "label": {
+        "en": "Remarks",
+        "hi": "टिप्पणी"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "reviewDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "approve",
+        "label": {
+          "en": "Approve / sanction",
+          "hi": "अनुमोदित / स्वीकृत करें"
+        }
+      },
+      {
+        "value": "return",
+        "label": {
+          "en": "Return",
+          "hi": "वापस करें"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-provider-access/sendHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.provider-access",
+  "title": {
+    "en": "Answer not confirmed: check with the provider",
+    "es": "Respuesta no confirmada: verificar con el proveedor"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "interopNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Interoperability follow-up notes",
+        "es": "Notas de seguimiento de interoperabilidad"
+      }
+    }
+  ]
+}

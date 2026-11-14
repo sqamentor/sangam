@@ -10,8 +10,7 @@ Boundary (CAPABILITY-COVERAGE.md): **IN** for capture, sync, evidence, job and u
 through connectors.
 
 The module depends on `sangam-core` (Dialect, Jdbc, Transactions, Hashes, CanonicalJson, AuditChain) and on
-`sangam-geo` (geometry, geofence, nearest-N). Operaton and Spring MVC are optional dependencies: they are used only by
-the DMN adapter and the controller.
+`sangam-geo` (geometry, geofence, nearest-N). Operaton is an optional dependency, used only by the DMN adapter. The module names\nno host framework (M-141d): sangam-rest's `FieldWorkController` serves the REST port.
 
 ## Entry point
 
@@ -59,7 +58,7 @@ is unset, the module uses an air-gapped default (ARCHITECTURE §1.9):
 | `dispatch/DispatchModel.java` | N17 `Unit`, `UnitStatus` (AVAILABLE, ASSIGNED, EN_ROUTE, ON_SCENE, RETURNING, OFF_DUTY), `Job`, `Offer`, `Trip` / `Leg`, `PositionFix`, `Eta`, `Candidate`, with transition tables |
 | `dispatch/DispatchService.java` | Candidates by distance and skill (N13 nearest-N, R82). Offer, then accept, decline or timeout, then re-dispatch. Direct assignment. Job and unit states kept in step. Pings (idempotent per unit and time) set ON_SCENE automatically inside the arrival radius. ETA from distance × road factor ÷ speed per kind. Response-time SLA. Closure with proof of service (an N05 packet). Cancel and re-dispatch. Trips with legs, odometer and track distance from pings, approved maker-checker (GX08 logbook) |
 | `rest/FieldRestPort.java`, `FieldRestService.java`, `FieldCaller.java` | Framework-neutral REST port at `/api/v1/field`, including the existing sangam-ui contract (`GET /visits`, `POST /visits/{id}/record` with Idempotency-Key, R41) |
-| `web/FieldController.java`, `web/CallerResolver.java` | Spring MVC adapter. Errors are RFC 9457 problem+json |
+| (none in this module) | The HTTP binding is sangam-rest's `modules/field/FieldWorkController` (REST host area); the former `web/FieldController` adapter, registered nowhere, was removed in M-141d |
 
 ## Third-party dependencies added
 
@@ -67,8 +66,7 @@ is unset, the module uses an air-gapped default (ARCHITECTURE §1.9):
   (BSD-3-Clause), for PNG and HEIF/HEIC EXIF (M-132, owner decisions 56 and 60). Both are in `licence-policy.json`
   `allowed`. The version is pinned in this module's pom until the root pom `dependencyManagement` entry lands.
 - The module also uses `jackson-databind` and `jackson-datatype-jsr310` (Apache-2.0, the parent's Jackson BOM line,
-  already used by sangam-rest), `operaton-engine` (Apache-2.0, optional), and `spring-webmvc` (Apache-2.0, optional,
-  from the parent Spring Boot BOM). `jakarta.servlet-api` has provided scope. JPEG EXIF, geohash and geometry use no
+  already used by sangam-rest), and `operaton-engine` (Apache-2.0, optional). No Spring or servlet dependency\n  (M-141d). JPEG EXIF, geohash and geometry use no
   library.
 
 ## Integration notes
@@ -86,9 +84,7 @@ is unset, the module uses an air-gapped default (ARCHITECTURE §1.9):
    - `blobs`: an object store if one is configured;
    - `audit`: the default is `FieldAudit.chain(dialect)`.
 
-   Register `FieldController(module.rest, callerResolver)` as a bean.
-3. **CallerResolver.** Map sangam-rest's `RequestContext` (OIDC tenant claim, principal, groups, `X-Sangam-Seat`) to
-   `FieldCaller`. Apply the VI.4 endpoint policy in front of the controller. Suggested permissions:
+   sangam-rest's `FieldWorkController` serves `module.rest` over HTTP.\n3. **Caller.** sangam-rest maps its `RequestContext` (OIDC tenant claim, principal, groups, `X-Sangam-Seat`) to\n   `FieldCaller`. The VI.4 endpoint policy applies in front of the controller. Suggested permissions:
    - `field.capture`: visits, sync, devices, evidence upload;
    - `field.admin`: templates, schedules, selections;
    - `field.review`: review, conflicts;

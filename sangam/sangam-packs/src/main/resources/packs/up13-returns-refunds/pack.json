@@ -17,6 +17,10 @@
     },
     {
       "kind": "DMN",
+      "path": "packs/up13-returns-refunds/up13-refund-rounding.dmn"
+    },
+    {
+      "kind": "DMN",
       "path": "packs/up13-returns-refunds/up13-policy.dmn"
     },
     {
@@ -64,6 +68,13 @@
   "tenantOverrides": [],
   "calls": [
     "sangam-core-execution"
+  ],
+  "placeholders": [
+    {
+      "decision": "up13-refund-rounding",
+      "rule": "SYNTHETIC refund rounding: nearest paisa",
+      "reason": "refund rounding is the tenant's business policy (or its payment provider's); deploy it as a tenant override (decision 139)"
+    }
   ],
   "money": {
     "unit": "MINOR",

@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of LowCode (10 operations).
+/// Typed operations of LowCode (11 operations).
 /// </summary>
 public sealed class LowCodeApi
 {
@@ -111,7 +111,7 @@ public sealed class LowCodeApi
 
     /// <summary>
     /// Data-object records
-    /// Records; sensitive fields masked (R78).
+    /// Records; sensitive fields masked (R78). For a REST-backed definition (decision 266) the server calls the connector's list operation with {q, offset, limit} (q as given, offset and limit from page and size) and answers its output.records, each validated against the definition fields (unknown fields dropped, sensitive fields masked as for DB backing); output.total, when the connector gives it, is the total count. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
     /// GET /data-objects/{key}/records (operationId listDataObjectRecords); permission lowcode.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> ListDataObjectRecordsAsync(string key, string? q = null, long? page = null, long? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -125,13 +125,24 @@ public sealed class LowCodeApi
 
     /// <summary>
     /// Create a record
-    /// Validated against the definition.
-    /// POST /data-objects/{key}/records (operationId createDataObjectRecord); permission lowcode.read; result stored atomically with the state change.
+    /// Validated against the definition. DB backing: the record is stored and the call answers 201 with it. REST backing (decision 265): the call answers 202 Accepted with the operationId and status PENDING, and Location names getDataObjectRecordOperation; the connector's create operation runs through the operation ledger with the operationId as its idempotency key, and the caller reads the outcome there. 501 CAPABILITY_NOT_INSTALLED for a REST-backed definition on a server without sangam-integration.
+    /// POST /data-objects/{key}/records (operationId createDataObjectRecord); permission lowcode.record.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> CreateDataObjectRecordAsync(string key, global::System.Collections.Generic.Dictionary<string, object?> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/data-objects/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/records");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Outcome of a record create
+    /// The state of a record create on a REST-backed data object (decision 265), from the operation ledger and, while it is not settled, the connector's outcome lookup by operationId. 404 NOT_FOUND for an operation id that is not a record create of this data object in the caller's tenant.
+    /// GET /data-objects/{key}/records/operations/{operationId} (operationId getDataObjectRecordOperation); permission lowcode.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.DataObjectRecordOperation?> GetDataObjectRecordOperationAsync(string key, string operationId, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/data-objects/{HttpTransport.Seg(GeneratedCalls.Str(key)!)}/records/operations/{HttpTransport.Seg(GeneratedCalls.Str(operationId)!)}");
+        return await _calls.JsonAsync<M.DataObjectRecordOperation?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }

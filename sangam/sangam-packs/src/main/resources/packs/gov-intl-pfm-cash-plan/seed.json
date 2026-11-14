@@ -1,0 +1,62 @@
+{
+  "offices": [
+    {
+      "id": "TREASURY",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "CASH-MANAGER",
+      "role": "CASHMANAGER",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "BUDGET-OFFICE",
+      "name": {
+        "en": "Cash manager (treasury)",
+        "hi": "नकद प्रबंधक"
+      }
+    },
+    {
+      "id": "BUDGET-OFFICE",
+      "role": "BUDGETOFFICE",
+      "office": "TREASURY",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Budget office",
+        "hi": "बजट कार्यालय"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "CASH-MANAGER",
+      "person": "icp.cash-manager",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "BUDGET-OFFICE",
+      "person": "icp.budget-office",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "CASHMANAGER",
+      "name": {
+        "en": "Cash manager (treasury)",
+        "hi": "नकद प्रबंधक"
+      }
+    },
+    {
+      "code": "BUDGETOFFICE",
+      "name": {
+        "en": "Budget office",
+        "hi": "बजट कार्यालय"
+      }
+    }
+  ]
+}

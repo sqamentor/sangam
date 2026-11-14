@@ -84,7 +84,7 @@ final class MeApi
      *
      * Creates a LEAVE_SUBSTITUTE assignment pending approval; the substitute acts for the seat only within the date range (IX.5 rule 4, PER-4).
      *
-     * POST /me/leave-requests (operationId requestLeave); result stored atomically with the state change.
+     * POST /me/leave-requests (operationId requestLeave); permission task.write; result stored atomically with the state change.
      * @param Model\LeaveRequest|array $body request body
      * @return Model\Assignment|null
      */

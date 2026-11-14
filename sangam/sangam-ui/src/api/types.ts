@@ -75,8 +75,11 @@ export interface TaskSummary {
   seatName?: string;
   actingForSeatName?: string;
   fromSeatName?: string;
-  /** M-042 task index (contract Task.amount, int64): whole minor units of `currency`; show with fmtMinorMoney, never divide. */
-  amount?: number;
+  /**
+   * M-042 task index (contract Task.amount, MoneyAmount; owner decisions 138 and 211): decimal text in MAJOR units of
+   * `currency`, e.g. "1234.56". Show with fmtMoneyAmount; never parse it into a number.
+   */
+  amount?: string | null;
   /** M-042: ISO 4217 code of `amount`; absent with it. */
   currency?: string;
   created: Iso;
@@ -198,6 +201,29 @@ export interface TaskDetail extends TaskSummary {
   ruleEvidence?: { rule: string; version: string; result: string }[];
   materialFields?: { key: string; label: string; value: unknown }[];
   delegatedFrom?: string;
+  /** Read only (decision 236, TaskDscDocument): the document a DSC step signs, as captured when the task was created. */
+  dscDocument?: TaskDscDocument | null;
+}
+
+/** The slot (case variable) of a DSC step's document and the document id it held at task creation (null: empty). */
+export interface TaskDscDocument {
+  slot: string;
+  documentId?: Id | null;
+}
+
+/** Decision 267: document types the packs declare slots for (W4-K packs: NOTING, SANCTION_NOTE); other types are metadata. */
+export const DOCUMENT_SLOT_TYPES = ['NOTING', 'SANCTION_NOTE'] as const;
+
+/** Decision 265 DataObjectRecordOperation: a record create on a REST-backed data object, through the operation ledger. */
+export type RecordOperationStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'UNKNOWN';
+export interface DataObjectRecordOperation {
+  operationId: string;
+  dataObjectKey: string;
+  status: RecordOperationStatus;
+  /** COMPLETED only. */
+  record?: Record<string, unknown>;
+  /** FAILED only: the external system's failure code. */
+  failureCode?: string;
 }
 
 export interface CompleteTaskRequest {
@@ -554,6 +580,57 @@ export interface PackageDiff {
   toVersion: string;
   artifacts: { name: string; change: 'ADDED' | 'REMOVED' | 'MODIFIED' | 'UNCHANGED'; summary?: string[] }[];
   inFlightCases?: number;
+}
+
+/** M-125 diffModels levels (sangam-api.yaml ModelDiffSummary / ModelDiffChange.level). */
+export const MODEL_DIFF_LEVELS = ['ELEMENT', 'FLOW', 'EXPRESSION', 'PROPERTY'] as const;
+export type ModelDiffLevel = (typeof MODEL_DIFF_LEVELS)[number];
+
+/** POST /models/diff body (ModelDiffRequest). resource required, at most 255; each side at most 5 MiB; null or empty = new / deleted file. */
+export interface ModelDiffRequest {
+  resource: string;
+  before: string | null;
+  after: string | null;
+}
+
+/** One semantic change (ModelDiffChange). Layout (BPMNDI, DMNDI, CMMNDI) is never a change. */
+export interface ModelDiffChange {
+  level: ModelDiffLevel;
+  kind: 'ADDED' | 'REMOVED' | 'CHANGED';
+  elementId: string;
+  /** BPMN/DMN/CMMN local name, or the form component's type. */
+  elementType: string;
+  name: string;
+  /** The changed property or expression inside the element; empty for the element itself. */
+  path: string;
+  /** Null when added. */
+  before?: string | null;
+  /** Null when removed. */
+  after?: string | null;
+}
+
+/** 200 of POST /models/diff (ModelDiffReport); changes sorted by level, elementId, path, kind. */
+export interface ModelDiffReport {
+  resource: string;
+  format: 'BPMN' | 'DMN' | 'CMMN' | 'FORM';
+  changed: boolean;
+  summary: Record<ModelDiffLevel, number>;
+  changes: ModelDiffChange[];
+}
+
+/** M-101 one user who has the model file open (ModelViewer); editing = holds the file's edit lease. */
+export interface ModelViewer {
+  userId: string;
+  displayName?: string;
+  editing: boolean;
+  /** date-time: when this user opened the file. */
+  since: string;
+}
+
+/** Data of the 'presence' event of GET /models/{file}/presence/stream (ModelPresence). */
+export interface ModelPresence {
+  fileId: string;
+  viewers: ModelViewer[];
 }
 
 // ---------------------------------------------------------------- operations (O01–O09, R63, R64)
@@ -1118,6 +1195,49 @@ export interface TestClock {
 
 /** M-021 contract TestClockChange: exactly one of advanceBy, set or reset; reason goes to TEST_CLOCK_CHANGED. */
 export type TestClockChange = ({ advanceBy: string } | { set: Iso } | { reset: true }) & { reason?: string };
+
+/**
+ * Decision 165 / 236-238 contract (sangam-rest/api/routes/dsc.py, DscPrepareResponse): what the server prepared for
+ * one DSC signature of a task document. prepareId goes back with the signature; the signature is bound server-side to
+ * the approved enrolment of the certificate (decisions 227, 241) and to this prepared document version (decision 228).
+ */
+export interface DscPrepareResponse {
+  prepareId: string;
+  signedAttributes: string;
+  preparedDigestSha256: string;
+  algorithm: 'SHA256withRSA' | 'SHA256withECDSA';
+  expiresAt: Iso;
+  documentId: Id;
+  documentVersion: number;
+}
+
+/** DscCompleteResponse: the verification outcome (decision 140). Completing the task is a separate call. */
+export interface DscCompleteResponse {
+  outcome: 'VERIFIED_VALID' | 'VERIFIED_INVALID' | 'INDETERMINATE';
+  reasonCode?: string | null;
+  retryable: boolean;
+  evidence?: Record<string, unknown>;
+  documentId: Id;
+  signedDocumentVersion?: number | null;
+}
+
+/** Decision 227: one DSC certificate enrolment (DscCertificate). Only APPROVED binds a signer. */
+export type DscEnrolmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'REVOKED';
+export interface DscEnrolment {
+  enrolmentId: Id;
+  principalId: string;
+  certificateSha256: string;
+  issuer: string;
+  serialHex: string;
+  subject: string;
+  notBefore: Iso;
+  notAfter: Iso;
+  status: DscEnrolmentStatus;
+  enrolledAt: Iso;
+  decidedBy?: string | null;
+  decidedAt?: Iso | null;
+  decisionReason?: string | null;
+}
 
 export interface Notification {
   id: Id;

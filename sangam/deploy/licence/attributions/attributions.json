@@ -1,0 +1,6 @@
+{
+  "_comment": "SPDX-License-Identifier: Apache-2.0. Read by notice_bundle.py (decision 176): exact purl (no qualifiers) -> text file in this directory, appended to the distribution NOTICE when the SBOM contains that component. Only for components whose artefact carries no NOTICE text (META-INF/NOTICE*) of its own, or whose licence asks for an acknowledgement that no NOTICE carries. A version change needs a new, re-verified entry.",
+  "pkg:maven/com.thoughtworks.paranamer/paranamer@2.8.3": "paranamer-2.8.3.txt",
+  "_comment_mxparser": "Decision 263 (replaces decision 226, xpp3_min is out): mxparser 1.2.2 carries META-INF/LICENSE but no NOTICE, and notice_bundle.py collects NOTICE files only; its IU Extreme! Lab licence requires the acknowledgement in the documentation, so this entry adds it with the copyright and the licence. xmlpull 1.1.3.1 is public domain and needs no entry.",
+  "pkg:maven/io.github.x-stream/mxparser@1.2.2": "mxparser-1.2.2.txt"
+}

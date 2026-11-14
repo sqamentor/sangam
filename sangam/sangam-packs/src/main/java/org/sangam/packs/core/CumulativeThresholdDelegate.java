@@ -35,8 +35,9 @@ public class CumulativeThresholdDelegate implements JavaDelegate {
         boolean crossed = lim.signum() > 0
                 && total.compareTo(lim.multiply(BigDecimal.ONE.add(tol.movePointLeft(2)))) > 0;
         ex.setVariable(tv, total.toPlainString()); // exact decimal string (R33, SD-398)
-        ex.setVariable(tv + "Pct", lim.signum() == 0 ? 0d
-                : total.multiply(BigDecimal.valueOf(100)).divide(lim, 2, RoundingMode.HALF_UP).doubleValue());
+        // display percentage at scale 2, rounded once (HALF_UP); exact decimal, never a double (decision 138)
+        ex.setVariable(tv + "Pct", Vars.engineValue(lim.signum() == 0 ? BigDecimal.ZERO
+                : total.multiply(BigDecimal.valueOf(100)).divide(lim, 2, RoundingMode.HALF_UP)));
         ex.setVariable("thresholdCrossed", crossed);
         if (crossed) {
             Vars.audit(ex, "THRESHOLD_CROSSED", Vars.map("total", total.toPlainString(), "limit", lim.toPlainString(),

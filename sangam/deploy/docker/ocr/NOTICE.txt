@@ -1,0 +1,15 @@
+Sangam OCR sidecar image - third-party components and where their terms are
+(owner decisions 106, 118, 157, 167; M-103)
+
+The Sangam code in this image (sangam-ocr-sidecar, sangam-integration, sangam-core) is licensed under the Apache
+License 2.0. The jars under /opt/sangam/ocr/lib are shipped unmodified and separately, each under its own licence. The
+full component list with exact versions and licences is the image SBOM published with each release (M-147).
+
+Tesseract OCR, its language data (eng, hin, osd) and the libraries it needs (Leptonica and the image libraries) are
+the Ubuntu packages of the dated snapshot named in the image label org.sangam.ubuntu.snapshot, installed unmodified and
+run as a separate program. Their exact package versions are listed in /licenses/OS-PACKAGES.txt; the copyright and
+licence file of every package added on top of the base image is copied to /licenses/sangam-ocr/os-packages/ from the
+package itself. Those files state the licence terms; this notice does not restate or interpret them.
+
+Source code for those packages: see /licenses/OS-PACKAGES-SOURCE-OFFER.txt (the Ubuntu source packages of the same
+names and versions, from the same snapshot).

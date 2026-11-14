@@ -17,7 +17,8 @@ OUT="$HERE/out/sbom"
 IMAGES=""
 OFFLINE=0
 CYCLONEDX_MAVEN="org.cyclonedx:cyclonedx-maven-plugin:2.9.1"
-CYCLONEDX_NPM="@cyclonedx/cyclonedx-npm@2.1.0"
+# CR-12: the npm generator comes from the committed tools lockfile (deploy/licence/tools), never from npx --yes.
+CYCLONEDX_TOOLS="$SANGAM/deploy/licence/tools"
 while [ $# -gt 0 ]; do
   case "$1" in
     --out) OUT="$2"; shift 2 ;;
@@ -37,11 +38,14 @@ echo ">> Maven aggregate SBOM"
     -DincludeTestScope=false -DincludeProvidedScope=false -DincludeSystemScope=false )
 cp "$SANGAM/target/sangam-maven.cdx.json" "$OUT/"
 
+[ -f "$CYCLONEDX_TOOLS/package-lock.json" ] || { echo "ERROR: $CYCLONEDX_TOOLS/package-lock.json is missing (CR-12)" >&2; exit 2; }
+( cd "$CYCLONEDX_TOOLS" && npm ci --ignore-scripts --no-audit --no-fund $NPM_OFF )
 npm_sbom() { # dir name
-  [ -f "$1/package.json" ] || { echo "skip $2 (no $1/package.json)"; return 0; }
+  [ -f "$1/package.json" ] || { echo "ERROR: $1/package.json is missing" >&2; exit 2; }
   echo ">> npm SBOM $2"
-  ( cd "$1" && { [ -d node_modules ] || npm ci --no-audit --no-fund $NPM_OFF; } \
-      && npx --yes $NPM_OFF "$CYCLONEDX_NPM" --omit dev --spec-version 1.6 --output-format JSON \
+  # decision 130: install scripts off; esbuild (build-time only) is not needed for an SBOM
+  ( cd "$1" && { [ -d node_modules ] || npm ci --ignore-scripts --no-audit --no-fund $NPM_OFF; } \
+      && "$CYCLONEDX_TOOLS/node_modules/.bin/cyclonedx-npm" --omit dev --spec-version 1.6 --output-format JSON \
          --output-file "$OUT/$2.cdx.json" )
 }
 npm_sbom "$SANGAM/sangam-ui" sangam-ui
@@ -54,7 +58,8 @@ if [ -n "$IMAGES" ]; then
       syft "docker:$ref" -o cyclonedx-json="$OUT/$(echo "$ref" | tr '/:@' '___').cdx.json" -q
     done
   else
-    echo "WARN: syft not installed; image SBOMs skipped" >&2
+    echo "ERROR: --images given but syft is not installed (CR-01: a requested SBOM is never skipped)" >&2
+    exit 2
   fi
 fi
 
@@ -67,10 +72,10 @@ UI_SBOM_ARGS=()
 if [ -f "$OUT/sangam-ui.cdx.json" ]; then
   UI_SBOM_ARGS=(--sbom "$OUT/sangam-ui.cdx.json")
 fi
-python3 -I "$SANGAM/deploy/licence/check_licences.py" --policy "$SANGAM/deploy/licence/licence-policy.json" --annotate \
+python3 -I "$SANGAM/deploy/licence/check_licences.py" --policy "$SANGAM/deploy/licence/licence-policy.json" --strict --annotate \
   --sbom "$OUT/sangam-maven.cdx.json" ${UI_SBOM_ARGS[@]+"${UI_SBOM_ARGS[@]}"} \
   --report "$OUT/licence-report.md"
 # Attribution the exception carries (Apache-2.0 section 4(d) NOTICE of scala-library; MIT notices of com.lihaoyi)
-cp "$SANGAM/../NOTICE" "$OUT/NOTICE" 2>/dev/null || true
+cp "$SANGAM/../NOTICE" "$OUT/NOTICE"
 ( cd "$OUT" && sha256sum *.json > SHA256SUMS )
 echo "SBOMs in $OUT"

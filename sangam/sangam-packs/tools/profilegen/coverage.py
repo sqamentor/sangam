@@ -47,7 +47,8 @@ DEPT_FILE = {224: 'GOI.RAILWAYS', 225: 'GOI.DEFENCE', 226: 'GOI.DEFENCE', 227: '
              230: 'GOI.MEA', 231: 'GOI.MHA', 232: 'GOI.DAE / GOI.SPACE', 234: 'GOI.REVENUE'}
 GAPS_IFC = {
     'IFC-001': 'registry seed of the 94 business units not loaded as rows (counts and events in profile)',
-    'IFC-189': 'scientific-department list in profile; procurement packs not yet reading it',
+    'IFC-189': 'scientific-department list in profile; tender and GeM purchase read procurement.scientificDepartment '
+               '(decision 225); GOI.DEFENCE false and GOI.DEFENCE.DRDO true (decision 257); the Union layer and every State stay [U]',
     'IFC-238': 'CPWD account-code departments: no specific profile',
     'IFC-244': 'field-heavy CDDO patterns: data only',
 }
@@ -198,7 +199,7 @@ w('| `regime/REGIME-WESTMINSTER-SUPPLY.yaml` | regime | default ledger stage cha
 w('| `in/IN.yaml` | jurisdiction | locale (INR, lakh / crore grouping, April fiscal year, IST, calendars with 15:00 cut-off), the 15-digit head-of-account scheme (major / sub-major / minor locked), derivation (0/1 receipts, 2/3 revenue, 4/5 capital, 6/7 loans, 8000 Contingency Fund, 8001-8999 Public Account), crosswalk to COFOG, SNA-SPARSH constants, CSS sharing, payment-rail catalogue, unit types, public-account types |')
 w('| `in/presets/IN-PRESET-*.yaml` | category | GENERAL, NE-HIMALAYAN, UT-LEG, UT-NOLEG, UNION |')
 w('| `in/GOI.yaml` | government | Union profile: rulebooks (GFR 2017, DFPR 2024, RPR 2022, CAM 2024 ...), org model and registry (AoBR series 386: 94 business units), budget control (DFPR Rule 10 rule set), appraisal ladder, PAO chain, receipts, grants, establishment, accounts calendar, the RPR bill catalogue (~35 types) and chain templates |')
-w('| `in/goi/GOI.<DEPT>.yaml` | department | RAILWAYS, DEFENCE, POSTS, TELECOM, MEA (multi-currency), DAE, SPACE, MHA (CAPF), REVENUE |')
+w('| `in/goi/GOI.<DEPT>.yaml` | department | RAILWAYS, DEFENCE (and DEFENCE.DRDO below it, decision 257), POSTS, TELECOM, MEA (multi-currency), DAE, SPACE, MHA (CAPF), REVENUE |')
 w('| `in/states/<CODE>.yaml` | government | the 28 States and 8 UTs: systems, topology, rulebooks, rail, SNA-SPARSH hosting, per-state head-of-account scheme (`HOA_<CODE>`), statutory languages (scope, script, direction, effective date), procurement family, state forms, specials |')
 w('| `in/seeds/*.csv` | - | official LMMH major, sub-major and minor heads (CS 1127), standard minor heads, object heads (pre-2027 list, closes 01-04-2027) |')
 w('| `profiles.idx` | - | classpath index of the profile documents |')

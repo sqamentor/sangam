@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.bridge;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,7 +69,7 @@ class ChannelHooksWebhooksH2Test {
             Schema.create(c, Dialect.POSTGRESQL);
             ChannelsSchema.create(c, Dialect.POSTGRESQL);
         }
-        tx = new TxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
+        tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
         optIns = new OptInRegistry(Dialect.POSTGRESQL, Transactions.of(ds), new AuditChain(Dialect.POSTGRESQL));
         optIns.optIn("t", "SLACK", "U1", "alice", "consent form 1");
         optIns.optIn("t", "MATRIX", "@bob:example.org", "bob", "consent form 2");

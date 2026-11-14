@@ -5,7 +5,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.sangam</groupId>
+    <groupId>io.github.sqamentor</groupId>
     <artifactId>sangam-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
@@ -14,17 +14,25 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
     <!-- ADR-D-26: standalone DMN engines use Sangam's FEEL policies (SangamFeel); supplied at runtime by sangam-server -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-engine</artifactId>
       <scope>provided</scope>
     </dependency>
+    <!-- DraftValidators reads DMN 1.1 to 1.6 through org.sangam.feel.Dmn16Support (W4-E); supplied at runtime by
+         sangam-server like sangam-engine. Version named until INT-H2 adds sangam-feel to dependencyManagement. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-feel</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-integration</artifactId>
     </dependency>
     <dependency>
@@ -51,7 +59,7 @@
     </dependency>
     <!-- Tests only: the production visibility binding (PolicyCompiler) for the A-13 deny test. -->
     <dependency>
-      <groupId>org.sangam</groupId>
+      <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-security</artifactId>
       <scope>test</scope>
     </dependency>
@@ -65,5 +73,28 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- decision 170: PgVectorIndexEquivalenceTest (runs only when SANGAM_AI_PGVECTOR_URL is set); version from the parent -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+  <profiles>
+    <!-- decision 207: OracleVectorIndexEquivalenceTest needs the Oracle JDBC driver. Off by default, test scope only
+         (LIC-2: never bundled; the root enforcer bans com.oracle.database.* in shipped scopes); same artifact and
+         version as the sangam-server oracle-it profile, already in the local repository. The test also needs
+         SANGAM_AI_ORACLE_URL and stays NOT_RUN without it. -->
+    <profile>
+      <id>oracle-it</id>
+      <dependencies>
+        <dependency>
+          <groupId>com.oracle.database.jdbc</groupId>
+          <artifactId>ojdbc11</artifactId>
+          <version>23.8.0.25.04</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 </project>

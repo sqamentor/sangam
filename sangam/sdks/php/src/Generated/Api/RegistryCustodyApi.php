@@ -23,7 +23,7 @@ final class RegistryCustodyApi
     /**
      * Register
      *
-     * CustodyController.register (sangam-registry).
+     * CustodyController.register (sangam-rest).
      *
      * POST /registry/custody/items (operationId registryCustodyRegister); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyRegisterBody|array $body request body
@@ -41,7 +41,7 @@ final class RegistryCustodyApi
     /**
      * List
      *
-     * CustodyController.list (sangam-registry).
+     * CustodyController.list (sangam-rest).
      *
      * GET /registry/custody/items (operationId registryCustodyList); permission registry.read.
      * @param string|null $typeKey query typeKey
@@ -71,7 +71,7 @@ final class RegistryCustodyApi
     /**
      * Get
      *
-     * CustodyController.get (sangam-registry).
+     * CustodyController.get (sangam-rest).
      *
      * GET /registry/custody/items/{id} (operationId registryCustodyGet); permission registry.read.
      * @return array<string, mixed>
@@ -85,7 +85,7 @@ final class RegistryCustodyApi
     /**
      * By label
      *
-     * CustodyController.byLabel (sangam-registry).
+     * CustodyController.byLabel (sangam-rest).
      *
      * GET /registry/custody/items/by-label/{label} (operationId registryCustodyByLabel); permission registry.read.
      * @return array<string, mixed>
@@ -99,7 +99,7 @@ final class RegistryCustodyApi
     /**
      * Events
      *
-     * CustodyController.events (sangam-registry).
+     * CustodyController.events (sangam-rest).
      *
      * GET /registry/custody/items/{id}/events (operationId registryCustodyEvents); permission registry.read.
      * @return list<array<string, mixed>>
@@ -113,7 +113,7 @@ final class RegistryCustodyApi
     /**
      * Verify
      *
-     * CustodyController.verify (sangam-registry).
+     * CustodyController.verify (sangam-rest).
      *
      * GET /registry/custody/items/{id}/verify (operationId registryCustodyVerify); permission registry.read.
      * @return array<string, mixed>
@@ -127,7 +127,7 @@ final class RegistryCustodyApi
     /**
      * Transfers
      *
-     * CustodyController.transfers (sangam-registry).
+     * CustodyController.transfers (sangam-rest).
      *
      * GET /registry/custody/items/{id}/transfers (operationId registryCustodyTransfers); permission registry.read.
      * @return list<array<string, mixed>>
@@ -141,7 +141,7 @@ final class RegistryCustodyApi
     /**
      * Initiate
      *
-     * CustodyController.initiate (sangam-registry).
+     * CustodyController.initiate (sangam-rest).
      *
      * POST /registry/custody/items/{id}/transfers (operationId registryCustodyInitiate); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyInitiateBody|array $body request body
@@ -159,7 +159,7 @@ final class RegistryCustodyApi
     /**
      * Handover
      *
-     * CustodyController.handover (sangam-registry).
+     * CustodyController.handover (sangam-rest).
      *
      * POST /registry/custody/items/{id}/handover (operationId registryCustodyHandover); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyHandoverBody|array $body request body
@@ -177,7 +177,7 @@ final class RegistryCustodyApi
     /**
      * Transfer
      *
-     * CustodyController.transfer (sangam-registry).
+     * CustodyController.transfer (sangam-rest).
      *
      * GET /registry/custody/transfers/{transferId} (operationId registryCustodyTransfer); permission registry.read.
      * @return array<string, mixed>
@@ -191,7 +191,7 @@ final class RegistryCustodyApi
     /**
      * Pending
      *
-     * CustodyController.pending (sangam-registry).
+     * CustodyController.pending (sangam-rest).
      *
      * GET /registry/custody/transfers/pending (operationId registryCustodyPending); permission registry.read.
      * @param string $toCustodian query toCustodian
@@ -211,7 +211,7 @@ final class RegistryCustodyApi
     /**
      * Accept
      *
-     * CustodyController.accept (sangam-registry).
+     * CustodyController.accept (sangam-rest).
      *
      * POST /registry/custody/transfers/{transferId}/accept (operationId registryCustodyAccept); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyAcceptBody|array $body request body
@@ -229,7 +229,7 @@ final class RegistryCustodyApi
     /**
      * Reject
      *
-     * CustodyController.reject (sangam-registry).
+     * CustodyController.reject (sangam-rest).
      *
      * POST /registry/custody/transfers/{transferId}/reject (operationId registryCustodyReject); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyRejectBody|array $body request body
@@ -247,7 +247,7 @@ final class RegistryCustodyApi
     /**
      * Cancel
      *
-     * CustodyController.cancel (sangam-registry).
+     * CustodyController.cancel (sangam-rest).
      *
      * POST /registry/custody/transfers/{transferId}/cancel (operationId registryCustodyCancel); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyCancelBody|array $body request body
@@ -265,7 +265,7 @@ final class RegistryCustodyApi
     /**
      * Seal
      *
-     * CustodyController.seal (sangam-registry).
+     * CustodyController.seal (sangam-rest).
      *
      * POST /registry/custody/items/{id}/seal (operationId registryCustodySeal); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodySealBody|array $body request body
@@ -283,7 +283,7 @@ final class RegistryCustodyApi
     /**
      * Break seal
      *
-     * CustodyController.breakSeal (sangam-registry).
+     * CustodyController.breakSeal (sangam-rest).
      *
      * POST /registry/custody/items/{id}/break-seal (operationId registryCustodyBreakSeal); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyBreakSealBody|array $body request body
@@ -301,7 +301,7 @@ final class RegistryCustodyApi
     /**
      * Inspect
      *
-     * CustodyController.inspect (sangam-registry).
+     * CustodyController.inspect (sangam-rest).
      *
      * POST /registry/custody/items/{id}/inspect (operationId registryCustodyInspect); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyInspectBody|array $body request body
@@ -319,7 +319,7 @@ final class RegistryCustodyApi
     /**
      * Location
      *
-     * CustodyController.location (sangam-registry).
+     * CustodyController.location (sangam-rest).
      *
      * POST /registry/custody/items/{id}/location (operationId registryCustodyLocation); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyLocationBody|array $body request body
@@ -337,7 +337,7 @@ final class RegistryCustodyApi
     /**
      * Put into
      *
-     * CustodyController.putInto (sangam-registry).
+     * CustodyController.putInto (sangam-rest).
      *
      * POST /registry/custody/items/{id}/container (operationId registryCustodyPutInto); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyPutIntoBody|array $body request body
@@ -355,7 +355,7 @@ final class RegistryCustodyApi
     /**
      * Take out
      *
-     * CustodyController.takeOut (sangam-registry).
+     * CustodyController.takeOut (sangam-rest).
      *
      * POST /registry/custody/items/{id}/take-out (operationId registryCustodyTakeOut); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -372,7 +372,7 @@ final class RegistryCustodyApi
     /**
      * Disposal orders
      *
-     * CustodyController.disposalOrders (sangam-registry).
+     * CustodyController.disposalOrders (sangam-rest).
      *
      * GET /registry/custody/items/{id}/disposal-orders (operationId registryCustodyDisposalOrders); permission registry.read.
      * @return list<array<string, mixed>>
@@ -386,7 +386,7 @@ final class RegistryCustodyApi
     /**
      * Order disposal
      *
-     * CustodyController.orderDisposal (sangam-registry).
+     * CustodyController.orderDisposal (sangam-rest).
      *
      * POST /registry/custody/items/{id}/disposal-orders (operationId registryCustodyOrderDisposal); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyOrderDisposalBody|array $body request body
@@ -404,7 +404,7 @@ final class RegistryCustodyApi
     /**
      * Disposal order
      *
-     * CustodyController.disposalOrder (sangam-registry).
+     * CustodyController.disposalOrder (sangam-rest).
      *
      * GET /registry/custody/disposal-orders/{orderId} (operationId registryCustodyDisposalOrder); permission registry.read.
      * @return array<string, mixed>
@@ -418,7 +418,7 @@ final class RegistryCustodyApi
     /**
      * Execute
      *
-     * CustodyController.execute (sangam-registry).
+     * CustodyController.execute (sangam-rest).
      *
      * POST /registry/custody/disposal-orders/{orderId}/execute (operationId registryCustodyExecute); permission registry.write; result stored atomically with the state change.
      * @return array<string, mixed>
@@ -435,7 +435,7 @@ final class RegistryCustodyApi
     /**
      * Cancel disposal
      *
-     * CustodyController.cancelDisposal (sangam-registry).
+     * CustodyController.cancelDisposal (sangam-rest).
      *
      * POST /registry/custody/disposal-orders/{orderId}/cancel (operationId registryCustodyCancelDisposal); permission registry.write; result stored atomically with the state change.
      * @param Model\RegistryCustodyCancelDisposalBody|array $body request body
@@ -453,7 +453,7 @@ final class RegistryCustodyApi
     /**
      * Gap check
      *
-     * CustodyController.gapCheck (sangam-registry).
+     * CustodyController.gapCheck (sangam-rest).
      *
      * GET /registry/custody/gap-check (operationId registryCustodyGapCheck); permission registry.read.
      * @param int|null $inTransitHours query inTransitHours

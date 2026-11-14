@@ -17,7 +17,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Define series
-    /// RegistryController.defineSeries (sangam-registry).
+    /// RegistryController.defineSeries (sangam-rest).
     /// PUT /registry/number-series/{seriesKey} (operationId registryRegistryDefineSeries); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryDefineSeriesAsync(string seriesKey, M.RegistryRegistryDefineSeriesBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -29,7 +29,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Series
-    /// RegistryController.series (sangam-registry).
+    /// RegistryController.series (sangam-rest).
     /// GET /registry/number-series/{seriesKey} (operationId registryRegistrySeries); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistrySeriesAsync(string seriesKey, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -40,7 +40,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// List series
-    /// RegistryController.listSeries (sangam-registry).
+    /// RegistryController.listSeries (sangam-rest).
     /// GET /registry/number-series (operationId registryRegistryListSeries); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> RegistryRegistryListSeriesAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -51,7 +51,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Allocate
-    /// RegistryController.allocate (sangam-registry).
+    /// RegistryController.allocate (sangam-rest).
     /// POST /registry/number-series/{seriesKey}/allocate (operationId registryRegistryAllocate); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryAllocateAsync(string seriesKey, M.RegistryRegistryAllocateBody? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Void number
-    /// RegistryController.voidNumber (sangam-registry).
+    /// RegistryController.voidNumber (sangam-rest).
     /// POST /registry/number-series/{seriesKey}/void (operationId registryRegistryVoidNumber); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RegistryRegistryVoidNumberAsync(string seriesKey, M.RegistryRegistryVoidNumberBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -75,7 +75,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Mark used
-    /// RegistryController.markUsed (sangam-registry).
+    /// RegistryController.markUsed (sangam-rest).
     /// POST /registry/number-series/{seriesKey}/mark-used (operationId registryRegistryMarkUsed); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RegistryRegistryMarkUsedAsync(string seriesKey, M.RegistryRegistryMarkUsedBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -87,7 +87,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Close period
-    /// RegistryController.closePeriod (sangam-registry).
+    /// RegistryController.closePeriod (sangam-rest).
     /// POST /registry/number-series/{seriesKey}/close-period (operationId registryRegistryClosePeriod); permission registry.write; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task RegistryRegistryClosePeriodAsync(string seriesKey, M.RegistryRegistryClosePeriodBody body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -99,7 +99,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Gaps
-    /// RegistryController.gaps (sangam-registry).
+    /// RegistryController.gaps (sangam-rest).
     /// GET /registry/number-series/{seriesKey}/gaps (operationId registryRegistryGaps); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> RegistryRegistryGapsAsync(string seriesKey, string period, string? scope = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -112,7 +112,7 @@ public sealed class RegistryNumberSeriesApi
 
     /// <summary>
     /// Allocations
-    /// RegistryController.allocations (sangam-registry).
+    /// RegistryController.allocations (sangam-rest).
     /// GET /registry/number-series/{seriesKey}/allocations (operationId registryRegistryAllocations); permission registry.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::Sangam.Sdk.Models.Page<global::System.Collections.Generic.Dictionary<string, object?>>> RegistryRegistryAllocationsAsync(string seriesKey, string period, string? scope = null, int? page = null, int? size = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

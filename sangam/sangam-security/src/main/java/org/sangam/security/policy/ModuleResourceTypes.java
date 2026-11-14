@@ -208,8 +208,11 @@ public final class ModuleResourceTypes {
         r.register(ResourceDescriptor.virtual(CONFIG), EnumSet.of(READ, READ_HISTORY, MODIFY, APPROVE, DEPLOY, ADMIN));
         r.register(ResourceDescriptor.virtual(LEDGER),
                 EnumSet.of(READ, READ_HISTORY, READ_AUDIT, EXPORT, START, APPROVE, CANCEL, ADMIN));
+        // decision 141: ACCEPT_UNVERIFIED and RESOLVE_UNVERIFIED are explicit-only, on the channel id
+        // payment-channel:<channel>@<office> (org.sangam.security.billing.UnverifiedPaymentPermissions); no '*' grant
         r.register(ResourceDescriptor.virtual(BILLING),
-                EnumSet.of(READ, READ_HISTORY, EXPORT, START, MODIFY, APPROVE, CANCEL, ADMIN));
+                EnumSet.of(READ, READ_HISTORY, EXPORT, START, MODIFY, APPROVE, CANCEL, ADMIN,
+                        Permission.ACCEPT_UNVERIFIED, Permission.RESOLVE_UNVERIFIED));
         // sangam-field README: field.capture -> START/MODIFY, field.review -> APPROVE, field.admin -> ADMIN
         r.register(ResourceDescriptor.virtual(FIELD), EnumSet.of(READ, READ_SENSITIVE, START, MODIFY, APPROVE, ADMIN));
         // dispatch.operate -> START/MODIFY/ASSIGN/CANCEL

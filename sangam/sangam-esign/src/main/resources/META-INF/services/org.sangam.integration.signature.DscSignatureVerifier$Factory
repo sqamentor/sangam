@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+# Owner decisions 165 and 140: the DSC signed-PDF verifier (Bouncy Castle and PDFBox, optional; absent = DSC stays blocked)
+org.sangam.esign.DscSignatureVerification$Provider

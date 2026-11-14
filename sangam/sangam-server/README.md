@@ -427,7 +427,7 @@ Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines st
 | `sangam.ai.llm.timeout` | 60s | Per-call timeout |
 | `sangam.ai.llm.allow-private` | false | Allow a private-network LLM address |
 | `sangam.ai.expression.limit` | 2s | Expression-help evaluation limit |
-| `sangam.ai.kb.chunk-chars`, `.overlap-chars`, `.max-candidates` | 1200, 150, 2000 | Knowledge-base chunking and retrieval candidates |
+| `sangam.ai.kb.chunk-chars`, `.overlap-chars` | 1200, 150 | Knowledge-base chunking (ranking has no candidate cap since M-129: `sangam.ai.kb.max-candidates` is no longer read) |
 | `sangam.ai.agents-json`, `sangam.ai.tools-json`, `sangam.ai.a2a-json` | unset | Agents, connector tools (need sangam-integration) and inbound A2A agents |
 | `sangam.ai.mcp.rest-base-url` | `http://127.0.0.1:${server.port}` | Where MCP tools call back into this API |
 | `sangam.ai.mcp.write-tenants` | empty | Tenants whose MCP write tools are on |
@@ -435,6 +435,7 @@ Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines st
 | `sangam.ai.worker.tenants`, `.batch`, `.every`, `.lease`, `.external-retry` | unset, 20, 5s, 2m, 5m | Agent worker |
 | `sangam.channels.documents-dir` | `./data/channels` | Channel attachment storage |
 | `sangam.channels.allow-unscanned` | false | Accept attachments with no malware scanner |
+| `sangam.malware.production-waiver` | empty | Production refuses to start without a malware scanner (owner decision 125) unless this names the reason for running without one; the waiver is logged at every start |
 | `sangam.channels.poll-seconds`, `sangam.channels.poll.<type>.*` | 60 | Polling channel interval and per-type settings |
 | `sangam.channels.bot-process` | unset | Channel type to bot process key |
 | `sangam.channels.teams.jwks-uri` | `https://login.botframework.com/v1/.well-known/keys` | Teams (Bot Framework) token keys |

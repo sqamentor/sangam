@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.config;
 
+import org.sangam.rest.config.SpringTxSupport;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -63,7 +64,7 @@ class SharedInstanceIsolationSecurityOnH2Test {
             security = new SangamSecurity(SecurityDialect.detect(c), null);
         }
         admin = new SecurityAdminBridge(security,
-                new TxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), null, new RestProperties());
+                new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), null, new RestProperties());
         admin.createTenant(platform, tenant("d1", "DATABASE"));
         admin.createTenant(platform, tenant("s1", "SCHEMA"));
         admin.createTenant(platform, tenant("h1", "SHARED"));

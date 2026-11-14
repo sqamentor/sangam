@@ -10,10 +10,20 @@ package org.sangam.sdk.generated.model;
  *
  * @param message wire field {@code message}
  * @param id wire field {@code id}
+ * @param pageSize wire field {@code pageSize}
+ * @param status wire field {@code status}
+ * @param contextId wire field {@code contextId}
+ * @param statusTimestampAfter wire field {@code statusTimestampAfter}
+ * @param pageToken wire field {@code pageToken}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */
 public record AiA2aBodyParams(
         @com.fasterxml.jackson.annotation.JsonProperty("message") AiA2aBodyParamsMessage message,
         @com.fasterxml.jackson.annotation.JsonProperty("id") String id,
+        @com.fasterxml.jackson.annotation.JsonProperty("pageSize") Integer pageSize,
+        @com.fasterxml.jackson.annotation.JsonProperty("status") String status,
+        @com.fasterxml.jackson.annotation.JsonProperty("contextId") String contextId,
+        @com.fasterxml.jackson.annotation.JsonProperty("statusTimestampAfter") String statusTimestampAfter,
+        @com.fasterxml.jackson.annotation.JsonProperty("pageToken") String pageToken,
         @com.fasterxml.jackson.annotation.JsonAnySetter @com.fasterxml.jackson.annotation.JsonAnyGetter java.util.Map<String, Object> additionalProperties) {
 }

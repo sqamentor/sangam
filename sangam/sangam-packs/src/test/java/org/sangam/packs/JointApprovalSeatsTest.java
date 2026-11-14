@@ -54,8 +54,9 @@ class JointApprovalSeatsTest {
         cfg.setDatabaseSchemaUpdate("create-drop");
         cfg.setJobExecutorActivate(false);
         cfg.setHistory("full");
+        PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel): as SangamProcessEnginePlugin does
         engine = cfg.buildProcessEngine();
-        new PackDeployer(engine, PackRegistry.discover()).deployAll(null);
+        new PackDeployer(engine, PackRegistry.discover()).deployAll(PackTestTenant.ID);
         driver = new PackDriver(engine);
         // two test-only joint seats beside the p1 seed: JOINT-B9-X is held by p1.se (who holds SE-CIRCLE too);
         // JOINT-B9-Y is held by p1.b9y, with p1.se on additional charge
@@ -89,7 +90,7 @@ class JointApprovalSeatsTest {
             v.put("jointApprovalSeats", jointSeats);
         }
         engine.getRuntimeService().createProcessInstanceByKey(KEY).businessKey(bk).setVariables(v)
-                .processDefinitionWithoutTenantId().execute();
+                .processDefinitionTenantId(PackTestTenant.ID).execute();
         return bk;
     }
 

@@ -50,6 +50,10 @@
     {
       "kind": "SEED",
       "path": "packs/land-acquisition/seed.json"
+    },
+    {
+      "kind": "OTHER",
+      "path": "packs/land-acquisition/pack.json"
     }
   ],
   "seed": "packs/land-acquisition/seed.json",
@@ -105,6 +109,21 @@
       "capabilityClass": "c"
     }
   ],
+  "currency": "INR",
+  "powers": {
+    "la_decide": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "LAND"
+    },
+    "la_declare": {
+      "monetary": true,
+      "currency": "INR",
+      "limitTable": "sangam-core-powers",
+      "ruleCaseType": "LAND"
+    }
+  },
   "money": {
     "unit": "MINOR",
     "currency": "INR",

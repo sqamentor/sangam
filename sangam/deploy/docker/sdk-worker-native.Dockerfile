@@ -10,12 +10,10 @@
 #   docker run --rm sangam-sdk-worker:dev --smoke         # offline compatibility check, exit 0
 #   docker run --rm -e SANGAM_URL=http://sangam-server:8080 -e SANGAM_TOKEN=... sangam-sdk-worker:dev
 
-ARG MAVEN_IMAGE=maven:3.9.11-eclipse-temurin-25
-ARG GRAALVM_IMAGE=ghcr.io/graalvm/native-image-community:25.0.1
-ARG RUNTIME_IMAGE=gcr.io/distroless/base-debian12:nonroot
+# Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 
 # Stage 1: SDK + worker jars and their runtime dependencies (plain JDK).
-FROM ${MAVEN_IMAGE} AS jars
+FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS jars
 ARG MAVEN_ARGS="-B -ntp"
 WORKDIR /src
 COPY . .
@@ -29,7 +27,7 @@ RUN --mount=type=cache,target=/root/.m2 \
  && ls -l /out /out/lib
 
 # Stage 2: native-image (GraalVM CE). Metadata comes from the jars' META-INF/native-image directories.
-FROM ${GRAALVM_IMAGE} AS native
+FROM ghcr.io/graalvm/native-image-community:25.0.1@sha256:2fec8f17e9eed1a14987ebf7610524622b91193ffd3d12619f47d7c2f2cab844 AS native
 WORKDIR /build
 COPY --from=jars /out/ /build/
 RUN native-image -cp "$(ls /build/*.jar | head -n1):/build/lib/*" \
@@ -37,7 +35,7 @@ RUN native-image -cp "$(ls /build/*.jar | head -n1):/build/lib/*" \
  && /build/sangam-sdk-worker --smoke
 
 # Stage 3: runtime.
-FROM ${RUNTIME_IMAGE} AS runtime
+FROM gcr.io/distroless/base-debian12:nonroot@sha256:7f0c72cd138b442ae0deeb69c08b1acf5525439ba251a49ad93c320a061567e5 AS runtime
 LABEL org.opencontainers.image.title="sangam-sdk-worker" \
       org.opencontainers.image.description="Sangam native-light SDK worker (R7)" \
       org.opencontainers.image.licenses="Apache-2.0" \

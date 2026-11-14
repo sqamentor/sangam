@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Tasks (13 operations). */
+/** Typed operations of Tasks (15 operations). */
 final class TasksApi
 {
     public function __construct(private readonly Calls $calls)
@@ -139,7 +139,7 @@ final class TasksApi
     /**
      * Complete a task with a decision
      *
-     * Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6).
+     * Bound to the payload hash and case version shown (409 APPROVAL_INVALIDATED / FORM_VERSION_STALE); SoD by person and seat (422 SOD_VIOLATION); delegated power (422 POWER_LIMIT_EXCEEDED); permission re-checked in the command transaction (VI.4 rule 5, K3–K6). A step that needs a DSC signature (decisions 236, 237 and 241) completes only over a verified signature of the required document by the completing person at this task: otherwise 422 DSC_SIGNATURE_NOT_VERIFIED, or 422 DSC_ENROLMENT_REVOKED when the person did sign it but the certificate enrolment that signature was bound to was revoked afterwards (also after a re-approval); the signature evidence stays recorded and the person signs again with the currently approved certificate. Closing a security incident (task compliance/incident-follow-up of sangam-incident-report, when the follow-up choice is close) needs non-blank rootCause and lessonsLearned in the completion variables (SANGAM.md OJ-06 step 8): otherwise 422 INCIDENT_CLOSURE_INCOMPLETE naming the missing field(s), and nothing is written.
      *
      * POST /tasks/{id}/complete (operationId completeTask); permission task.write; result stored atomically with the state change.
      * @param Model\CompleteTaskRequest|array $body request body
@@ -249,5 +249,41 @@ final class TasksApi
         $req = ApiRequest::post('/tasks/' . HttpTransport::seg((string) $id) . '/attachments');
         Support::multipart($req, $body);
         return $this->calls->model($req, $options, Model\Document::class);
+    }
+
+    /**
+     * Prepare a DSC signature
+     *
+     * Step 1 of a DSC signature (decision 165). Needs task.write and document.read. The document must be a PDF attached to the task or its process instance, scanned clean, with a recorded SHA-256 that matches its content, at most 50 MiB. The signer is matched by the enrolled certificate (decision 227): the signer certificate of the chain must be the caller's own enrolment, APPROVED by an admin other than the caller (me/dsc/certificates); the display name and the certificate CN are not used to bind the signer. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+     *
+     * POST /tasks/{id}/dsc/prepare (operationId prepareDscSignature); permission task.write; result stored atomically with the state change.
+     * @param Model\DscPrepareRequest|array $body request body
+     * @return Model\DscPrepareResponse|null
+     */
+    public function prepareDscSignature(string $id, Model\DscPrepareRequest|array $body, ?RequestOptions $options = null): ?Model\DscPrepareResponse
+    {
+        $req = ApiRequest::post('/tasks/' . HttpTransport::seg((string) $id) . '/dsc/prepare');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\DscPrepareResponse::class);
+    }
+
+    /**
+     * Complete a DSC signature
+     *
+     * Step 2 of a DSC signature (decision 165). Needs task.write and document.write. Consumes the prepare once (by the same caller, for the same task, before it expires), embeds and verifies the signature and answers the outcome. A wrong chain, signature or algorithm is answered 200 with outcome VERIFIED_INVALID or INDETERMINATE, not as an error; the prepare is used up either way. The enrolment is checked again: if it was revoked after prepare the outcome is VERIFIED_INVALID CERTIFICATE_NOT_ENROLLED. Only VERIFIED_VALID stores the signed PDF as the document's next version, by a compare-and-set on the prepared version (decision 228): when the document changed meanwhile nothing is stored, the outcome is recorded as INDETERMINATE and the answer is 409 DOCUMENT_CHANGED (prepare and sign again). Completing the task is a separate call. The task must be assigned to the caller (403 NOT_ASSIGNEE otherwise) and not suspended. Without the opt-in wiring (sangam.dsc.enabled, which needs the optional module sangam-esign) the call answers 501 CAPABILITY_NOT_INSTALLED and nothing is prepared or accepted.
+     *
+     * POST /tasks/{id}/dsc/complete (operationId completeDscSignature); permission task.write; result stored atomically with the state change.
+     * @param Model\DscCompleteRequest|array $body request body
+     * @return Model\DscCompleteResponse|null
+     */
+    public function completeDscSignature(string $id, Model\DscCompleteRequest|array $body, ?RequestOptions $options = null): ?Model\DscCompleteResponse
+    {
+        $req = ApiRequest::post('/tasks/' . HttpTransport::seg((string) $id) . '/dsc/complete');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\DscCompleteResponse::class);
     }
 }

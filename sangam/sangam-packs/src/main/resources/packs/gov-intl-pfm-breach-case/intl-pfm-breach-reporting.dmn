@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_intl_pfm_breach_reporting" name="Breach reporting rule (SYNTHETIC: authorities and deadline per country)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- PFM-039, PFM-CH-7. The authorities and the deadline are country law: deploy the confirmed table as a tenant override. -->
+  <decision id="intl-pfm-breach-reporting" name="Breach reporting rule (SYNTHETIC: authorities and deadline per country)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="intl-pfm-breach-reporting_t" hitPolicy="FIRST">
+      <input id="intl-pfm-breach-reporting_i0" label="Kind of breach"><inputExpression id="intl-pfm-breach-reporting_ie0" typeRef="string"><text>breachKind</text></inputExpression></input>
+      <output id="intl-pfm-breach-reporting_o0" label="Authorities to report to" name="breachAuthorities" typeRef="string"/>
+      <output id="intl-pfm-breach-reporting_o1" label="Report due within" name="breachReportSpec" typeRef="string"/>
+      <rule id="intl-pfm-breach-reporting_r0"><description>SYNTHETIC</description>
+        <inputEntry id="intl-pfm-breach-reporting_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="intl-pfm-breach-reporting_r0_o0"><text>"CONFIGURE-PER-COUNTRY"</text></outputEntry>
+        <outputEntry id="intl-pfm-breach-reporting_r0_o1"><text>"30D"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

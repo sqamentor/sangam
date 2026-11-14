@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.server.restadapter;
 
+import org.sangam.rest.config.SpringTxSupport;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
@@ -51,7 +52,7 @@ final class RestEngineFixture implements AutoCloseable {
         this.raw = h2;
         this.dataSource = counting(h2);
         this.txManager = new DataSourceTransactionManager(dataSource);
-        this.tx = new TxSupport(dataSource, txManager, Dialect.POSTGRESQL);
+        this.tx = new SpringTxSupport(dataSource, txManager, Dialect.POSTGRESQL);
         SpringProcessEngineConfiguration cfg = new SpringProcessEngineConfiguration();
         cfg.setProcessEngineName(name + "-" + UUID.randomUUID());
         cfg.setDataSource(dataSource);
