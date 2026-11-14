@@ -54,7 +54,7 @@ jobs:
             || { echo "Pack files differ from tools/packgen output: change the generator, then regenerate."; exit 1; }
           # packgen's own unit tests (compliance BPMN takeover, SL-134)
           python -I -m unittest discover -s sangam/sangam-packs/tools/packgen -p "test_*.py"
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         if: matrix.java == '25'
         with:
           python-version: "3.13.7"
