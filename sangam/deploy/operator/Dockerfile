@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.m2 \
     mvn ${MAVEN_ARGS} -DskipTests -pl deploy/operator -am package \
  && cp deploy/operator/target/sangam-operator.jar /out.jar
 
-FROM eclipse-temurin:21.0.8_9-jre-noble@sha256:20e7f7288e1c18eebe8f06a442c9f7183342d9b022d3b9a9677cae2b558ddddd AS runtime
+FROM eclipse-temurin:24.0.2_12-jre-noble@sha256:b416d02335e702b0403ff280de9475a3348e29382285969c9d4e17862ce632e7 AS runtime
 LABEL org.opencontainers.image.title="sangam-operator" org.opencontainers.image.licenses="Apache-2.0"
 RUN groupadd -g 10001 sangam && useradd -u 10001 -g sangam -M -d /opt/sangam sangam \
  && mkdir -p /opt/sangam && chown -R sangam:sangam /opt/sangam
