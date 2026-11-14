@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/root/.m2 \
  && ls -l /out /out/lib
 
 # Stage 2: nsjail from source at a pinned commit (kafel is a git submodule, so no release tarball).
-FROM eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33 AS nsjail
+FROM eclipse-temurin:26.0.2.1_1-jre-noble@sha256:adfd44c114916dc79fa9a24087fbac34252096edb9892d1c2d9d82db3f8947b3 AS nsjail
 ARG NSJAIL_TAG=3.4
 ARG NSJAIL_COMMIT
 ARG KAFEL_COMMIT
@@ -86,7 +86,7 @@ RUN test -n "${NSJAIL_COMMIT}" || { echo "NSJAIL_COMMIT is required (the approve
 FROM node:22.18.0-bookworm-slim@sha256:752ea8a2f758c34002a0461bd9f1cee4f9a3c36d48494586f60ffce1fc708e0e AS node
 
 # Stage 3: runtime.
-FROM eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33 AS runtime
+FROM eclipse-temurin:26.0.2.1_1-jre-noble@sha256:adfd44c114916dc79fa9a24087fbac34252096edb9892d1c2d9d82db3f8947b3 AS runtime
 ARG NSJAIL_TAG=3.4
 ARG NSJAIL_COMMIT
 ARG KAFEL_COMMIT
