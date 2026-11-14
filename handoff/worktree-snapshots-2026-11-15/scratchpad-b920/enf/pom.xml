@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Scratch probe: does enforcer 3.6.1 bannedDependencies match partial wildcards, scopes, ranges and includes? -->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>probe</groupId>
+  <artifactId>enf-probe</artifactId>
+  <version>1</version>
+  <packaging>pom</packaging>
+  <properties><probe.include>none:none</probe.include><probe.scope>compile</probe.scope></properties>
+  <dependencies>
+    <dependency><groupId>org.camunda.feel</groupId><artifactId>feel-engine</artifactId><version>1.22.1</version><scope>${probe.scope}</scope></dependency>
+    <dependency><groupId>org.liquibase</groupId><artifactId>liquibase-core</artifactId><version>4.33.0</version></dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <id>probe</id>
+            <phase>validate</phase>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>${probe.exclude}</exclude>
+                  </excludes>
+                  <includes>
+                    <include>${probe.include}</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

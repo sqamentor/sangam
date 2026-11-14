@@ -1,0 +1,72 @@
+diff --git a/sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerConnector.java b/sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerConnector.java
+index b7d76f44..20e72743 100644
+--- a/sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerConnector.java
++++ b/sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerConnector.java
+@@ -35,10 +35,13 @@ import java.util.function.BiFunction;
+  *   <li>holder: {@code holder}, {@code ddoCode}, {@code motherSanctionNo}, {@code consumer}, {@code location};</li>
+  *   <li>period: {@code period}, {@code fiscalYear} (missing or {@code current}: the period resolver);</li>
+  *   <li>stage: {@code stage} (missing: the definition's consume stage; for {@code allocate} the first stage);</li>
+- *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount};</li>
++ *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount}: for a money ledger (request {@code currency}, or the
++ *       ledger's currency) an integer number of MINOR units (paise for INR), the unit every pack variable carries
++ *       (SD-398, packgen {@code money.py}); for a quantity ledger (no currency) the quantity itself;</li>
+  *   <li>target for transfer: line {@code toHead} and / or holder {@code toHolder}; for distribute / withdraw: the parent stage with holder
+  *       {@code fromHolder} (default {@code -}).</li>
+  * </ul>
++ * The output {@code available} is in the same unit as the amount: integer minor units for a money ledger.
+  */
+ public final class LedgerConnector implements SangamConnector {
+ 
+@@ -82,12 +85,13 @@ public final class LedgerConnector implements SangamConnector {
+             String stage = first(r, List.of("stage"), "allocate".equals(op) ? def.stages().get(0) : def.consumeAt());
+             AccountKey acct = new AccountKey(tenant, ledgerId, period, first(r, LINE, "-"), first(r, HOLDER, "-"), stage,
+                     first(r, List.of("sub"), null));
+-            BigDecimal amount = new BigDecimal(first(r, AMOUNT, "0"));
++            String ccy = r.str("currency") != null ? r.str("currency") : def.currency();
++            BigDecimal amount = fromPack(first(r, AMOUNT, "0"), ccy);
+             String ref = r.operationId().toString();
+             Map<String, Object> out = new LinkedHashMap<>();
+             switch (op) {
+                 case "available" -> {
+-                    out.put("available", ledger.available(acct).toPlainString());
++                    out.put("available", toPack(ledger.available(acct), ccy));
+                     return ConnectorResult.Success.of(out, null);
+                 }
+                 case "releaseHolds" -> {
+@@ -107,7 +111,7 @@ public final class LedgerConnector implements SangamConnector {
+                     out.put("applied", res.applied());
+                     out.put("held", res.held());
+                     out.put("duplicate", res.duplicate());
+-                    out.put("available", ledger.available(acct).toPlainString());
++                    out.put("available", toPack(ledger.available(acct), ccy));
+                     if (res.applied() || res.held()) {
+                         return new ConnectorResult.Success(out, ref, res.duplicate());
+                     }
+@@ -166,6 +170,27 @@ public final class LedgerConnector implements SangamConnector {
+                 .orElseGet(LookupResult.NotFound::new);
+     }
+ 
++    /**
++     * A pack amount to the ledger's major-unit {@link BigDecimal}: money is integer minor units (an amount with a
++     * fraction of a minor unit is refused, never rounded: SD-398); a quantity (no currency) is taken as it is.
++     */
++    static BigDecimal fromPack(String raw, String currency) {
++        BigDecimal v = new BigDecimal(raw.trim());
++        if (currency == null) {
++            return v;
++        }
++        try {
++            return JdbcLedgerStore.amount(v.longValueExact(), currency);
++        } catch (ArithmeticException e) {
++            throw new IllegalArgumentException("amount " + raw + " " + currency + " is not a whole number of minor units");
++        }
++    }
++
++    /** A ledger amount back to the pack unit: integer minor units for money, the quantity otherwise. */
++    static Object toPack(BigDecimal v, String currency) {
++        return currency == null ? v.toPlainString() : (Object) JdbcLedgerStore.units(v, currency);
++    }
++
+     private static String first(ConnectorRequest r, List<String> keys, String def) {
+         for (String k : keys) {
+             Object v = r.input().get(k);

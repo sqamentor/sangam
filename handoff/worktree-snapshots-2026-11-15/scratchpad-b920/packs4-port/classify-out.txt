@@ -1,0 +1,134 @@
+ 0.68 BASE       added=  37 present=  25  sangam/TESTING-GAP-REGISTER.md
+        MISSING: | SG-03 | HIGH | ~28 test classes for 1,354 Java files; sangam-flowable-ports 0 tests | Acceptance suite (25 ITs so far) + per-module unit tests; flowable-ports unit test
+        MISSING: | SL-18 | MEDIUM | Generic hosting requirements (from Hosting peer: no own host, no public inbound, edge access gate, trusted proxy headers only from configured proxies, 
+        MISSING: | SL-50 | HIGH | (conformance) Bank payment: checker power 25 lakh "alone" refused the first level of the two-level path (>25 lakh), so SEC-BANK-PY-1 could never pass. Fo
+        MISSING: | SL-32 | MEDIUM | Pack `acceptance[]` blocks (given/when/then + startVariables) are never executed by any test, which is how SL-50 shipped | Generic runner: for every pa
+        MISSING: | SL-33 | MEDIUM | No end-to-end scenario for worldwide PFM (INTERNATIONAL-PFM-REQUIREMENTS) or EU GDPR rights | Add pack(s) or profile and a conformance row each | OPEN 
+        MISSING: | SL-36 | LOW docs | TRACEABILITY-REGISTER vs PREMIUM-GAP-RECHECK disagree on NG-01..47 (34 implemented vs 31 MISSING; NG-23 CLI exists); FWT rows marked test-pending tho
+        MISSING: | SL-37 | HIGH | Claimed but untested rows (money/security first): FW-07, FW-31/32, FW-35, FW-36, FW-34, FW-37, FW-28, C03, C11; FW-30, FW-33, FW-38, FW-29, FW-40, FW-46,
+        MISSING: | SL-39 | MEDIUM | `HttpWebhookPublisher` untested (signing, retry/backoff, DLQ, replay) | Unit + IT | OPEN |
+ 1.00 BASE       added=  51 present=  51  sangam/deploy/README.md
+ 1.00 BASE       added=  67 present=  67  sangam/deploy/SUPPORT-MATRIX.md
+ 1.00 BASE       added=   1 present=   1  sangam/deploy/docker/server.Dockerfile
+ 1.00 BASE       added=   4 present=   4  sangam/deploy/helm/sangam/templates/server-configmap.yaml
+ 0.98 BASE       added=  45 present=  44  sangam/sangam-connectors-health/src/main/java/org/sangam/connectors/health/x12/X12Decoders.java
+        MISSING: }}
+ 1.00 BASE       added=   6 present=   6  sangam/sangam-connectors-health/src/test/java/org/sangam/connectors/health/x12/Remittance835FieldsTest.java
+ 1.00 BASE       added=  20 present=  20  sangam/sangam-core/src/main/java/org/sangam/core/layer/Relay.java
+ 1.00 BASE       added=  10 present=  10  sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
+ 1.00 BASE       added=   1 present=   1  sangam/sangam-integration/README.md
+ 1.00 BASE       added=  14 present=  14  sangam/sangam-integration/src/main/java/org/sangam/integration/relay/OutboxRelayService.java
+ 1.00 BASE       added=  27 present=  27  sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerConnector.java
+ 1.00 BASE       added=  23 present=  23  sangam/sangam-ledger/src/test/java/org/sangam/ledger/LedgerJdbcH2Test.java
+ 0.69 BASE       added=  16 present=  11  sangam/sangam-packs/README.md
+        MISSING: **Contents:** 132 packs, 186 BPMN processes, 166 DMN decisions, 4 CMMN cases, 491 bilingual (English / Hindi) forms, seed seats and roles per pack, 65 Java source files (
+        MISSING: | `gov.intl.pfm-execution` Commitment, verification and payment (worldwide PFM) / प्रतिबद्धता, सत्यापन एवं भुगतान (अंतरराष्ट्रीय सार्वजनिक वित्त) | Public finance (intern
+        MISSING: | GP-01 | Maker > checker > approver by seat with amount bands | `sangam.core`, `gov.p1.bill-payment`, `gov.ifms.budget-reappropriation`, `gov.gem-purchase`, `gov.stores`
+        MISSING: | GP-11 | Budget check + encumbrance, released on cancel | `gov.p1.bill-payment`, `gov.ifms.budget-reappropriation`, `gov.works`, `gov.gem-purchase`, `gov.ifms.bill`, `go
+        MISSING: | GP-34 | Digital signature bound to the approval | `sangam.core`, `gov.p1.bill-payment`, `gov.p2.file-movement`, `gov.p4.licence`, `gov.pension`, `gov.work-order`, `gov.
+ 1.00 BASE       added=   5 present=   5  sangam/sangam-packs/src/main/java/org/sangam/packs/core/BatchDelegate.java
+ 1.00 BASE       added=  27 present=  27  sangam/sangam-packs/src/main/java/org/sangam/packs/core/LedgerDelegate.java
+ 1.00 BASE       added=   5 present=   5  sangam/sangam-packs/src/main/java/org/sangam/packs/core/SetVariablesDelegate.java
+ 1.00 BASE       added=   2 present=   2  sangam/sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java
+ 1.00 BASE       added=   7 present=   7  sangam/sangam-packs/src/test/java/org/sangam/packs/AllPacksSmokeTest.java
+ 1.00 BASE       added=   7 present=   7  sangam/sangam-packs/src/test/java/org/sangam/packs/PilotScenarioTest.java
+ 1.00 BASE       added=   1 present=   1  sangam/sangam-packs/tools/packgen/billing_pack.py
+ 1.00 BASE       added=   1 present=   1  sangam/sangam-packs/tools/packgen/common.py
+ 1.00 BASE       added=   7 present=   7  sangam/sangam-packs/tools/packgen/core.py
+ 1.00 BASE       added=  16 present=  16  sangam/sangam-packs/tools/packgen/gov1.py
+ 1.00 BASE       added=  46 present=  46  sangam/sangam-packs/tools/packgen/gov2.py
+ 1.00 BASE       added=  12 present=  12  sangam/sangam-packs/tools/packgen/gov3.py
+ 1.00 BASE       added=  68 present=  68  sangam/sangam-packs/tools/packgen/gov_ifms.py
+ 1.00 BASE       added=  60 present=  60  sangam/sangam-packs/tools/packgen/lib.py
+ 0.00 BASE       added=   2 present=   0  sangam/sangam-packs/tools/packgen/main.py
+        MISSING: import gov_intl  # noqa: E402
+        MISSING: for mod in (gov1, gov2, gov3, gov_ifms, gov_intl, universal, billing_pack, sector):
+ 1.00 BASE       added=  70 present=  70  sangam/sangam-packs/tools/packgen/packs.py
+ 1.00 BASE       added=  48 present=  48  sangam/sangam-packs/tools/packgen/sec_fin.py
+ 1.00 BASE       added=  16 present=  16  sangam/sangam-packs/tools/packgen/sec_more.py
+ 1.00 BASE       added=   5 present=   5  sangam/sangam-packs/tools/packgen/sec_other.py
+ 1.00 BASE       added=   3 present=   3  sangam/sangam-packs/tools/packgen/sec_ushealth.py
+ 1.00 BASE       added=  28 present=  28  sangam/sangam-packs/tools/packgen/sector.py
+ 1.00 BASE       added=   9 present=   9  sangam/sangam-packs/tools/packgen/universal.py
+ 1.00 BASE       added=   7 present=   7  sangam/sangam-packs/tools/profilegen/goi.py
+ 1.00 BASE       added=   8 present=   8  sangam/sangam-packs/tools/profilegen/skeletons.py
+ 1.00 BASE       added=   1 present=   1  sangam/sangam-persistence/src/main/java/org/sangam/persistence/SangamSchema.java
+ 1.00 BASE       added=  10 present=  10  sangam/sangam-persistence/src/main/resources/db/changelog/h2/sangam-0001-baseline.sql
+ 1.00 BASE       added=  10 present=  10  sangam/sangam-persistence/src/main/resources/db/changelog/mssql/sangam-0001-baseline.sql
+ 1.00 BASE       added=  10 present=  10  sangam/sangam-persistence/src/main/resources/db/changelog/mysql/sangam-0001-baseline.sql
+ 1.00 BASE       added=  10 present=  10  sangam/sangam-persistence/src/main/resources/db/changelog/oracle/sangam-0001-baseline.sql
+ 1.00 BASE       added=  10 present=  10  sangam/sangam-persistence/src/main/resources/db/changelog/postgresql/sangam-0001-baseline.sql
+ 1.00 BASE       added=   6 present=   6  sangam/sangam-persistence/tools/generate_changelogs.py
+ 1.00 BASE       added=  29 present=  29  sangam/sangam-rest/api/gen_openapi.py
+ 1.00 BASE       added=  73 present=  73  sangam/sangam-rest/api/sangam-api.yaml
+ 1.00 BASE       added=  92 present=  92  sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/EngineAdapterWorkAdapter.java
+ 1.00 BASE       added=  49 present=  49  sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonWorkAdapter.java
+ 1.00 BASE       added=  25 present=  25  sangam/sangam-rest/src/main/java/org/sangam/rest/config/SangamRestAutoConfiguration.java
+ 1.00 BASE       added=  14 present=  14  sangam/sangam-rest/src/main/java/org/sangam/rest/port/WorkPort.java
+ 1.00 BASE       added=   3 present=   3  sangam/sangam-server/README.md
+ 1.00 BASE       added=  23 present=  23  sangam/sangam-server/src/main/java/org/sangam/server/bridge/OnboardingBridges.java
+ 1.00 BASE       added=  13 present=  13  sangam/sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
+ 1.00 BASE       added=   2 present=   2  sangam/sangam-server/src/main/java/org/sangam/server/web/FlowableWorkerCompatController.java
+ 1.00 BASE       added=  14 present=  14  sangam/sangam-server/src/main/resources/application.yaml
+ 1.00 BASE       added=  13 present=  13  sangam/sangam-server/src/test/java/org/sangam/server/bridge/RemittanceAndSeedsTest.java
+ 1.00 BASE       added= 546 present= 546  sangam/sangam-ui/package-lock.json
+ 0.50 BASE       added=   4 present=   2  sangam/sangam-ui/package.json
+        MISSING: "vitest": "4.1.12",
+        MISSING: "vite": "6.4.5"
+ 1.00 NEW        added=  33 present=  33  sangam/sangam-config/src/test/java/org/sangam/config/ProfileMoneyUnitsTest.java
+ 0.95 NEW        added=  73 present=  69  sangam/sangam-engine/src/main/java/org/sangam/engine/deploy/TenantIsolationGuard.java
+        MISSING: import org.operaton.bpm.engine.ProcessEngineException;
+        MISSING: throw new ProcessEngineException("SL-13 tenant isolation: '" + element + "' of tenant " + caller
+        MISSING: + " may not resolve a definition of tenant " + target + "; only the caller's own tenant and shared"
+        MISSING: + " definitions are allowed (cross-tenant work is a message to the other tenant, J-P2-E09)");
+ 0.95 NEW        added= 183 present= 173  sangam/sangam-integration/src/test/java/org/sangam/integration/connector/http/LiveHttpConnectorsTest.java
+        MISSING: /** SL-17: configuration-built LIVE HTTP connector against a local JDK HttpServer stub. */
+        MISSING: } else if (path.equals("/slow")) {
+        MISSING: Thread.sleep(3_000);
+        MISSING: status = 200;
+        MISSING: body = "{}".getBytes(StandardCharsets.UTF_8);
+        MISSING: return new LiveHttpConnectors.Spec("pay", base + path, "POST", cls, null, null, auth, null,
+        MISSING: Duration.ofSeconds(2), readTimeout, 1, List.of(), allowPrivate, Map.of(),
+        MISSING: void readTimeoutAfterSendIsOutcomeUnknown() {
+ 1.00 NEW        added=  67 present=  67  sangam/sangam-packs/src/main/resources/META-INF/sangam/money.json
+ 1.00 NEW        added= 201 present= 201  sangam/sangam-packs/src/test/java/org/sangam/packs/BankPaymentConcurrenceTest.java
+ 1.00 NEW        added= 131 present= 131  sangam/sangam-packs/src/test/java/org/sangam/packs/ChangeAdoptionTest.java
+ 1.00 NEW        added=  90 present=  90  sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java
+ 1.00 NEW        added= 284 present= 284  sangam/sangam-packs/src/test/java/org/sangam/packs/PackMoneyGuardTest.java
+ 0.93 NEW        added= 403 present= 376  sangam/sangam-packs/src/test/java/org/sangam/packs/SectorConformanceTest.java
+        MISSING: // ---- SL-33: worldwide PFM and EU GDPR ----------------------------------------------------------------------------
+        MISSING: void worldwidePfmCommitmentVerifiedCertifiedAndPaid() {
+        MISSING: // PFM-CH-2 / CH-3: commitment within authority, verifier and certifying officer differ from the approver
+        MISSING: Run r = conform("gov.intl.pfm-execution", "sangam-intl-pfm-execution", answers(), "amount", 5_000_000L,
+        MISSING: "fundsAvailable", 100_000_000L, "payee", "SUPPLIER-1");
+        MISSING: assertTrue(r.done().containsAll(List.of("sn_sanction", "pe_verify", "pe_certify")), "chain: " + r.done());
+        MISSING: assertTrue(called(r.bk(), "ledger.encumber"), "commitment recorded against authority");
+        MISSING: assertTrue(called(r.bk(), "treasury.pay"), "class (c) payment rail");
+ 0.98 NEW        added=  48 present=  47  sangam/sangam-packs/tools/packgen/acceptance_runs.py
+        MISSING: ('gov.intl.pfm-execution', 'PFM-CH-3'): dict(expect=dict(audit=['CASE_CLOSED'], ended=True)),
+ 1.00 NEW        added= 126 present= 126  sangam/sangam-packs/tools/packgen/gov_intl.py
+ 1.00 NEW        added= 114 present= 114  sangam/sangam-packs/tools/packgen/money.py
+ 0.99 NEW        added= 129 present= 128  sangam/sangam-packs/tools/packgen/sec_eu.py
+        MISSING: from money import M  # noqa: F401
+ 1.00 NEW        added= 146 present= 146  sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkLedger.java
+ 1.00 NEW        added=  34 present=  34  sangam/sangam-server/src/test/java/org/sangam/server/NoClassPathAutoDeploymentTest.java
+ 1.00 NEW        added= 259 present= 258  sangam/sangam-server/src/test/java/org/sangam/server/acceptance/fwt/FwtWorkerCompatIT.java
+        MISSING: String pid = start("010", topic);
+ 0.00 IT-MISSING added= 219 present=   0  sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ifms/IfmsPacksIT.java
+        MISSING: // SPDX-License-Identifier: Apache-2.0
+        MISSING: package org.sangam.server.acceptance.ifms;
+        MISSING: import static org.assertj.core.api.Assertions.assertThat;
+        MISSING: import java.sql.Connection;
+        MISSING: import java.sql.PreparedStatement;
+        MISSING: import java.sql.ResultSet;
+ 0.88 NEW        added= 502 present= 444  sangam/sangam-server/src/test/java/org/sangam/server/acceptance/isolation/CrossTenantIsolationIT.java
+        MISSING: * with a spoofed tenant header and tenant query parameters. Two oracles: (1) no successful response carries tenant B's
+        MISSING: * tenant id, business key, secret variable value or an id of B that the request did not itself contain; (2) a content
+        MISSING: * hash of every tenant-B row of every tenant-scoped table is unchanged afterwards, so no read, claim, completion,
+        MISSING: * correlation, signal, suspension, deletion, variable write, comment or audit row reached tenant B. {@code /engine-rest}
+        MISSING: * is exercised the same way with a tenant-A engine administrator.
+        MISSING: /** Tenant B's ids of every tenant-scoped table, by table. */
+        MISSING: Map<String, String> before;
+        MISSING: send(tokenB, "POST", "/api/v1/process-instances",
+ 1.00 NEW        added= 403 present= 403  sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ix8/TScaleLoadIT.java
+ 1.00 NEW        added= 102 present= 102  sangam/sangam-server/src/test/java/org/sangam/server/bridge/OutboxRepairDeadLetterTest.java

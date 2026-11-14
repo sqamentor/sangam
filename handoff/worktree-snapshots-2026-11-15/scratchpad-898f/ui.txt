@@ -1,0 +1,14 @@
+
+added 242 packages in 3m
+i18n OK: 2909 keys used, 2933 keys per locale.
+No CDN references (1 files checked).
+> tsc -p tsconfig.json --noEmit
+
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5)
+
+Node.js v22.14.0
+[2mdist/[22m[36massets/Editors-CWtCh_jr.js                                        [39m[1m[2m1,460.77 kB[22m[1m[22m[2m │ gzip: 432.73 kB[22m[2m │ map: 6,409.28 kB[22m
+[32m✓ built in 1m 24s[39m
+DIST_OK

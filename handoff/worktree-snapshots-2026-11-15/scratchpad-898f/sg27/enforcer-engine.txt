@@ -1,0 +1,17 @@
+[INFO] Scanning for projects...
+[WARNING] The POM for org.apache.maven.plugins:maven-enforcer-plugin:jar:3.5.0 is missing, no dependency information available
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.135 s
+[INFO] Finished at: 2026-11-08T07:57:25+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Plugin org.apache.maven.plugins:maven-enforcer-plugin:3.5.0 or one of its dependencies could not be resolved:
+[ERROR] 	Cannot access central (https://repo.maven.apache.org/maven2) in offline mode and the artifact org.apache.maven.plugins:maven-enforcer-plugin:jar:3.5.0 has not been downloaded from it before.
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/PluginResolutionException

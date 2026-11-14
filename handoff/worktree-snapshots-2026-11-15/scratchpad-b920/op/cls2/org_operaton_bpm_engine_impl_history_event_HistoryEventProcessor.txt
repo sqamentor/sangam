@@ -1,0 +1,37 @@
+Compiled from "HistoryEventProcessor.java"
+public final class org.operaton.bpm.engine.impl.history.event.HistoryEventProcessor {
+  private org.operaton.bpm.engine.impl.history.event.HistoryEventProcessor();
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: return
+
+  public static void processHistoryEvents(org.operaton.bpm.engine.impl.history.event.HistoryEventProcessor$HistoryEventCreator);
+    Code:
+         0: invokestatic  #7                  // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         3: invokevirtual #13                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryEventProducer:()Lorg/operaton/bpm/engine/impl/history/producer/HistoryEventProducer;
+         6: astore_1
+         7: invokestatic  #7                  // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+        10: invokevirtual #19                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryEventHandler:()Lorg/operaton/bpm/engine/impl/history/handler/HistoryEventHandler;
+        13: astore_2
+        14: aload_0
+        15: aload_1
+        16: invokevirtual #23                 // Method org/operaton/bpm/engine/impl/history/event/HistoryEventProcessor$HistoryEventCreator.createHistoryEvent:(Lorg/operaton/bpm/engine/impl/history/producer/HistoryEventProducer;)Lorg/operaton/bpm/engine/impl/history/event/HistoryEvent;
+        19: astore_3
+        20: aload_3
+        21: ifnull        36
+        24: aload_2
+        25: aload_3
+        26: invokeinterface #29,  2           // InterfaceMethod org/operaton/bpm/engine/impl/history/handler/HistoryEventHandler.handleEvent:(Lorg/operaton/bpm/engine/impl/history/event/HistoryEvent;)V
+        31: aload_0
+        32: aload_3
+        33: invokevirtual #35                 // Method org/operaton/bpm/engine/impl/history/event/HistoryEventProcessor$HistoryEventCreator.postHandleSingleHistoryEventCreated:(Lorg/operaton/bpm/engine/impl/history/event/HistoryEvent;)V
+        36: aload_0
+        37: aload_1
+        38: invokevirtual #38                 // Method org/operaton/bpm/engine/impl/history/event/HistoryEventProcessor$HistoryEventCreator.createHistoryEvents:(Lorg/operaton/bpm/engine/impl/history/producer/HistoryEventProducer;)Ljava/util/List;
+        41: astore        4
+        43: aload_2
+        44: aload         4
+        46: invokeinterface #42,  2           // InterfaceMethod org/operaton/bpm/engine/impl/history/handler/HistoryEventHandler.handleEvents:(Ljava/util/List;)V
+        51: return
+}

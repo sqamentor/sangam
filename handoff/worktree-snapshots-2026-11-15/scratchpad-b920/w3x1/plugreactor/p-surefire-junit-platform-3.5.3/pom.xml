@@ -1,0 +1,5 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+<parent><groupId>w3x1</groupId><artifactId>plug-root</artifactId><version>1</version></parent>
+<artifactId>p-surefire-junit-platform-3.5.3</artifactId><packaging>pom</packaging>
+<dependencies><dependency><groupId>org.apache.maven.surefire</groupId><artifactId>surefire-junit-platform</artifactId><version>3.5.3</version><type>jar</type></dependency></dependencies>
+</project>

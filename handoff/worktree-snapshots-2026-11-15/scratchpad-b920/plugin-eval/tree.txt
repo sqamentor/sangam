@@ -1,0 +1,67 @@
+eval.w4c:plugin-eval:pom:1
++- org.cyclonedx:cyclonedx-maven-plugin:jar:2.9.1:compile
+|  +- org.cyclonedx:cyclonedx-core-java:jar:9.0.5:compile
+|  |  +- commons-io:commons-io:jar:2.16.1:compile
+|  |  +- org.apache.commons:commons-collections4:jar:4.4:compile
+|  |  +- com.github.package-url:packageurl-java:jar:1.5.0:compile
+|  |  +- com.fasterxml.jackson.dataformat:jackson-dataformat-xml:jar:2.17.2:compile
+|  |  |  +- com.fasterxml.jackson.core:jackson-core:jar:2.17.2:compile
+|  |  |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.17.2:compile
+|  |  |  \- com.fasterxml.jackson.core:jackson-databind:jar:2.17.2:compile
+|  |  \- com.networknt:json-schema-validator:jar:1.5.1:compile
+|  |     +- com.ethlo.time:itu:jar:1.10.2:compile
+|  |     \- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.17.1:compile
+|  +- commons-codec:commons-codec:jar:1.17.1:compile
+|  +- org.apache.commons:commons-lang3:jar:3.17.0:compile
+|  +- org.apache.maven.shared:maven-dependency-tree:jar:3.3.0:compile
+|  |  +- org.apache.maven.resolver:maven-resolver-util:jar:1.4.1:compile
+|  |  \- org.slf4j:slf4j-api:jar:1.7.36:compile
+|  \- org.apache.maven.shared:maven-dependency-analyzer:jar:1.14.1:compile
+|     \- org.ow2.asm:asm:jar:9.7:compile
+\- org.codehaus.mojo:versions-maven-plugin:jar:2.25.1:compile
+   +- org.codehaus.mojo.versions:versions-api:jar:2.25.1:compile
+   +- org.codehaus.mojo.versions:versions-model:jar:2.25.1:compile
+   +- org.codehaus.mojo.versions:versions-model-report:jar:2.25.1:compile
+   +- org.codehaus.mojo.versions:versions-common:jar:2.25.1:compile
+   |  +- com.fasterxml.woodstox:woodstox-core:jar:7.3.0:compile
+   |  +- org.yaml:snakeyaml:jar:2.7:compile
+   |  \- org.codehaus.woodstox:stax2-api:jar:4.3.2:compile
+   +- org.apache.maven.shared:maven-common-artifact-filters:jar:3.4.0:compile
+   +- org.apache.maven.reporting:maven-reporting-api:jar:4.0.0:compile
+   +- org.apache.maven.reporting:maven-reporting-impl:jar:4.0.0:compile
+   |  +- org.apache.maven.shared:maven-shared-utils:jar:3.4.2:compile
+   |  +- org.apache.maven.doxia:doxia-site-model:jar:2.0.0:compile
+   |  +- org.apache.maven.doxia:doxia-integration-tools:jar:2.0.0:compile
+   |  |  \- org.codehaus.plexus:plexus-interpolation:jar:1.27:compile
+   |  +- org.apache.maven.doxia:doxia-site-renderer:jar:2.0.0:compile
+   |  |  +- org.apache.maven.doxia:doxia-skin-model:jar:2.0.0:compile
+   |  |  +- org.apache.maven.doxia:doxia-module-xhtml5:jar:2.0.0:compile
+   |  |  +- org.codehaus.plexus:plexus-velocity:jar:2.2.0:compile
+   |  |  +- org.apache.velocity:velocity-engine-core:jar:2.4:compile
+   |  |  \- org.apache.velocity.tools:velocity-tools-generic:jar:3.1:compile
+   |  |     +- commons-beanutils:commons-beanutils:jar:1.9.4:compile
+   |  |     |  +- commons-logging:commons-logging:jar:1.2:compile
+   |  |     |  \- commons-collections:commons-collections:jar:3.2.2:compile
+   |  |     +- org.apache.commons:commons-digester3:jar:3.2:compile
+   |  |     \- com.github.cliftonlabs:json-simple:jar:3.0.2:compile
+   |  +- org.apache.maven.doxia:doxia-module-apt:jar:2.0.0:runtime
+   |  +- org.apache.maven.doxia:doxia-module-xdoc:jar:2.0.0:runtime
+   |  +- org.codehaus.plexus:plexus-utils:jar:4.0.1:compile
+   |  +- org.apache.maven:maven-archiver:jar:3.6.2:compile
+   |  |  \- org.codehaus.plexus:plexus-archiver:jar:4.9.2:compile
+   |  |     +- org.codehaus.plexus:plexus-io:jar:3.4.2:compile
+   |  |     +- org.apache.commons:commons-compress:jar:1.26.1:compile
+   |  |     +- org.iq80.snappy:snappy:jar:0.4:compile
+   |  |     +- org.tukaani:xz:jar:1.9:runtime
+   |  |     \- com.github.luben:zstd-jni:jar:1.5.5-11:runtime
+   |  +- org.apache.maven.resolver:maven-resolver-api:jar:1.4.1:compile
+   |  \- org.eclipse.sisu:org.eclipse.sisu.plexus:jar:0.9.0.M3:compile
+   |     +- org.eclipse.sisu:org.eclipse.sisu.inject:jar:0.9.0.M3:compile
+   |     +- org.codehaus.plexus:plexus-component-annotations:jar:2.1.0:compile
+   |     \- org.codehaus.plexus:plexus-classworlds:jar:2.6.0:compile
+   +- org.apache.maven.doxia:doxia-core:jar:2.2.0:compile
+   |  \- javax.inject:javax.inject:jar:1:compile
+   +- org.apache.maven.doxia:doxia-sink-api:jar:2.2.0:compile
+   +- org.codehaus.plexus:plexus-i18n:jar:1.2.0:compile
+   +- org.codehaus.plexus:plexus-interactivity-api:jar:1.6.0:compile
+   \- org.codehaus.plexus:plexus-xml:jar:3.1.0:compile

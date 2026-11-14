@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.server.bridge.BulkIngestRestH2Test
+-------------------------------------------------------------------------------
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 84.15 s -- in org.sangam.server.bridge.BulkIngestRestH2Test

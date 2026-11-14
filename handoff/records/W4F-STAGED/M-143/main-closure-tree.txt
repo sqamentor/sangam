@@ -1,0 +1,100 @@
+eval:quarkus-eval-main:jar:0
++- org.operaton.bpm.quarkus:operaton-bpm-quarkus-engine:jar:2.2.0:compile
+|  +- org.operaton.bpm:operaton-engine:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile
+|  |  |  +- org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile
+|  |  |  \- org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile
+|  |  +- org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile
+|  |  |  \- jakarta.el:jakarta.el-api:jar:6.0.1:compile
+|  |  +- org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+|  |  |  +- org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile
+|  |  |  +- org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile
+|  |  |  +- org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile
+|  |  |  +- org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+|  |  |  |  \- org.scala-lang:scala-library:jar:2.13.16:compile
+|  |  |  \- org.camunda.feel:feel-engine:jar:1.22.1:compile
+|  |  |     +- com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+|  |  |     |  +- com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+|  |  |     |  \- com.lihaoyi:geny_2.13:jar:1.1.0:compile
+|  |  |     \- com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+|  |  |        +- com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile
+|  |  |        +- com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile
+|  |  |        +- com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile
+|  |  |        \- com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile
+|  |  +- org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile
+|  |  +- org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile
+|  |  +- org.jspecify:jspecify:jar:1.0.0:compile
+|  |  +- org.mybatis:mybatis:jar:3.5.19:compile
+|  |  \- joda-time:joda-time:jar:2.15.0:compile
+|  +- org.operaton.bpm:operaton-engine-cdi:jar:2.2.0:compile
+|  |  \- org.jboss.arquillian.core:arquillian-core-spi:jar:1.10.2.Final:compile
+|  |     \- org.jboss.arquillian.core:arquillian-core-api:jar:1.10.2.Final:compile
+|  \- com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile
+|     \- org.slf4j:slf4j-api:jar:2.0.18:compile
++- io.quarkus:quarkus-arc:jar:3.40.1.1:compile
+|  +- io.quarkus.arc:arc:jar:3.40.1.1:compile
+|  |  +- jakarta.enterprise:jakarta.enterprise.cdi-api:jar:4.1.0:compile
+|  |  |  +- jakarta.enterprise:jakarta.enterprise.lang-model:jar:4.1.0:compile
+|  |  |  \- jakarta.interceptor:jakarta.interceptor-api:jar:2.2.0:compile
+|  |  +- jakarta.annotation:jakarta.annotation-api:jar:3.0.0:compile
+|  |  +- io.smallrye.reactive:mutiny:jar:3.3.0:compile
+|  |  |  +- io.smallrye.common:smallrye-common-annotation:jar:2.19.0:compile
+|  |  |  \- org.jctools:jctools-core:jar:4.0.5:compile
+|  |  \- org.jboss.logging:jboss-logging:jar:3.6.3.Final:compile
+|  +- io.quarkus:quarkus-core:jar:3.40.1.1:compile
+|  |  +- jakarta.inject:jakarta.inject-api:jar:2.0.1:compile
+|  |  +- io.smallrye.common:smallrye-common-os:jar:2.19.0:compile
+|  |  +- io.quarkus:quarkus-ide-launcher:jar:3.40.1.1:compile
+|  |  +- io.quarkus:quarkus-development-mode-spi:jar:3.40.1.1:compile
+|  |  +- io.smallrye.config:smallrye-config:jar:3.17.2:compile
+|  |  |  \- io.smallrye.config:smallrye-config-core:jar:3.17.2:compile
+|  |  |     +- org.eclipse.microprofile.config:microprofile-config-api:jar:3.1.1:compile
+|  |  |     +- io.smallrye.common:smallrye-common-classloader:jar:2.19.0:compile
+|  |  |     \- io.smallrye.config:smallrye-config-common:jar:3.17.2:compile
+|  |  +- org.jboss.logmanager:jboss-logmanager:jar:3.2.2.Final:compile
+|  |  |  +- io.smallrye.common:smallrye-common-constraint:jar:2.19.0:compile
+|  |  |  +- io.smallrye.common:smallrye-common-cpu:jar:2.19.0:compile
+|  |  |  +- io.smallrye.common:smallrye-common-expression:jar:2.19.0:compile
+|  |  |  +- io.smallrye.common:smallrye-common-net:jar:2.19.0:compile
+|  |  |  +- io.smallrye.common:smallrye-common-ref:jar:2.19.0:compile
+|  |  |  +- jakarta.json:jakarta.json-api:jar:2.1.3:compile
+|  |  |  \- org.eclipse.parsson:parsson:jar:1.1.9:compile
+|  |  +- org.jboss.threads:jboss-threads:jar:3.9.2:compile
+|  |  |  \- io.smallrye.common:smallrye-common-function:jar:2.19.0:compile
+|  |  +- org.jboss.slf4j:slf4j-jboss-logmanager:jar:2.0.2.Final:compile
+|  |  +- org.wildfly.common:wildfly-common:jar:2.0.1:compile
+|  |  +- io.quarkus:quarkus-value-registry:jar:3.40.1.1:compile
+|  |  +- io.quarkus:quarkus-bootstrap-runner:jar:3.40.1.1:compile
+|  |  |  +- io.quarkus:quarkus-classloader-commons:jar:3.40.1.1:compile
+|  |  |  +- io.smallrye.common:smallrye-common-io:jar:2.19.0:compile
+|  |  |  |  \- io.smallrye.common:smallrye-common-search:jar:2.19.0:compile
+|  |  |  \- org.crac:crac:jar:1.5.0:compile
+|  |  \- io.quarkus:quarkus-fs-util:jar:1.4.2:compile
+|  \- org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api:jar:1.3:compile
++- io.quarkus:quarkus-agroal:jar:3.40.1.1:compile
+|  +- io.quarkus:quarkus-datasource:jar:3.40.1.1:compile
+|  |  \- io.quarkus:quarkus-devservices:jar:3.40.1.1:compile
+|  +- io.agroal:agroal-api:jar:3.2.1:compile
+|  +- io.agroal:agroal-narayana:jar:3.2.1:compile
+|  +- io.agroal:agroal-pool:jar:3.2.1:compile
+|  \- io.quarkus:quarkus-credentials:jar:3.40.1.1:compile
+\- io.quarkus:quarkus-narayana-jta:jar:3.40.1.1:compile
+   +- io.quarkus:quarkus-transaction-annotations:jar:3.40.1.1:compile
+   +- io.quarkus:quarkus-mutiny:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-smallrye-context-propagation:jar:3.40.1.1:compile
+   |  |  \- io.smallrye:smallrye-context-propagation:jar:2.3.0:compile
+   |  |     +- io.smallrye:smallrye-context-propagation-api:jar:2.3.0:compile
+   |  |     \- io.smallrye:smallrye-context-propagation-storage:jar:2.3.0:compile
+   |  \- io.smallrye.reactive:mutiny-smallrye-context-propagation:jar:3.3.0:compile
+   +- io.quarkus:quarkus-datasource-common:jar:3.40.1.1:compile
+   +- io.smallrye:smallrye-context-propagation-jta:jar:2.3.0:compile
+   +- jakarta.transaction:jakarta.transaction-api:jar:2.0.1:compile
+   +- io.smallrye.reactive:smallrye-reactive-converter-api:jar:3.0.3:compile
+   |  \- org.reactivestreams:reactive-streams:jar:1.0.4:compile
+   +- io.smallrye.reactive:smallrye-reactive-converter-mutiny:jar:3.0.3:compile
+   +- io.smallrye.reactive:mutiny-zero-flow-adapters:jar:1.2.1:compile
+   +- org.jboss.narayana.jta:narayana-jta:jar:7.3.4.Final:compile
+   +- org.jboss:jboss-transaction-spi:jar:8.0.0.Final:compile
+   |  \- jakarta.resource:jakarta.resource-api:jar:2.1.0:compile
+   \- org.jboss.narayana.jts:narayana-jts-integration:jar:7.3.4.Final:compile

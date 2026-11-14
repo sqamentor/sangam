@@ -1,0 +1,5 @@
+{
+  "extends": "D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sdks/typescript/tsconfig.json",
+  "compilerOptions": { "types": [], "noEmit": true, "rootDir": "D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sdks/typescript" },
+  "include": ["D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sdks/typescript/src/**/*.ts", "./node-stub.d.ts"]
+}

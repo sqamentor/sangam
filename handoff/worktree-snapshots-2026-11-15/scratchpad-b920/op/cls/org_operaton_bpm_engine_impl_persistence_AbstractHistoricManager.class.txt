@@ -1,0 +1,127 @@
+Compiled from "AbstractHistoricManager.java"
+public class org.operaton.bpm.engine.impl.persistence.AbstractHistoricManager extends org.operaton.bpm.engine.impl.persistence.AbstractManager {
+  protected static final org.operaton.bpm.engine.impl.db.EnginePersistenceLogger LOG;
+
+  protected org.operaton.bpm.engine.impl.history.HistoryLevel historyLevel;
+
+  protected boolean isHistoryEnabled;
+
+  protected boolean isHistoryLevelFullEnabled;
+
+  public org.operaton.bpm.engine.impl.persistence.AbstractHistoricManager();
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method org/operaton/bpm/engine/impl/persistence/AbstractManager."<init>":()V
+         4: aload_0
+         5: invokestatic  #7                  // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         8: invokevirtual #13                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryLevel:()Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        11: putfield      #19                 // Field historyLevel:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        14: aload_0
+        15: aload_0
+        16: getfield      #19                 // Field historyLevel:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        19: getstatic     #25                 // Field org/operaton/bpm/engine/impl/history/HistoryLevel.HISTORY_LEVEL_NONE:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        22: invokevirtual #30                 // Method java/lang/Object.equals:(Ljava/lang/Object;)Z
+        25: ifne          32
+        28: iconst_1
+        29: goto          33
+        32: iconst_0
+        33: putfield      #36                 // Field isHistoryEnabled:Z
+        36: aload_0
+        37: aload_0
+        38: getfield      #19                 // Field historyLevel:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        41: getstatic     #40                 // Field org/operaton/bpm/engine/impl/history/HistoryLevel.HISTORY_LEVEL_FULL:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        44: invokevirtual #30                 // Method java/lang/Object.equals:(Ljava/lang/Object;)Z
+        47: putfield      #43                 // Field isHistoryLevelFullEnabled:Z
+        50: return
+
+  protected void checkHistoryEnabled();
+    Code:
+         0: aload_0
+         1: getfield      #36                 // Field isHistoryEnabled:Z
+         4: ifne          14
+         7: getstatic     #46                 // Field LOG:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+        10: invokevirtual #50                 // Method org/operaton/bpm/engine/impl/db/EnginePersistenceLogger.disabledHistoryException:()Lorg/operaton/bpm/engine/ProcessEngineException;
+        13: athrow
+        14: return
+
+  public boolean isHistoryEnabled();
+    Code:
+         0: aload_0
+         1: getfield      #36                 // Field isHistoryEnabled:Z
+         4: ireturn
+
+  public boolean isHistoryLevelFullEnabled();
+    Code:
+         0: aload_0
+         1: getfield      #43                 // Field isHistoryLevelFullEnabled:Z
+         4: ireturn
+
+  protected static boolean isPerformUpdate(java.util.Set<java.lang.String>, java.lang.Class<?>);
+    Code:
+         0: aload_0
+         1: ifnull        26
+         4: aload_0
+         5: invokeinterface #56,  1           // InterfaceMethod java/util/Set.isEmpty:()Z
+        10: ifne          26
+        13: aload_0
+        14: aload_1
+        15: invokevirtual #62                 // Method java/lang/Class.getName:()Ljava/lang/String;
+        18: invokeinterface #68,  2           // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+        23: ifeq          30
+        26: iconst_1
+        27: goto          31
+        30: iconst_0
+        31: ireturn
+
+  protected static boolean isPerformUpdateOnly(java.util.Set<java.lang.String>, java.lang.Class<?>);
+    Code:
+         0: aload_0
+         1: ifnull        31
+         4: aload_0
+         5: invokeinterface #71,  1           // InterfaceMethod java/util/Set.size:()I
+        10: iconst_1
+        11: if_icmpne     31
+        14: aload_0
+        15: aload_1
+        16: invokevirtual #62                 // Method java/lang/Class.getName:()Ljava/lang/String;
+        19: invokeinterface #68,  2           // InterfaceMethod java/util/Set.contains:(Ljava/lang/Object;)Z
+        24: ifeq          31
+        27: iconst_1
+        28: goto          32
+        31: iconst_0
+        32: ireturn
+
+  protected static void addOperation(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation, java.util.Map<java.lang.Class<? extends org.operaton.bpm.engine.impl.db.DbEntity>, org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation>);
+    Code:
+         0: aload_1
+         1: aload_0
+         2: invokevirtual #75                 // Method org/operaton/bpm/engine/impl/db/entitymanager/operation/DbOperation.getEntityType:()Ljava/lang/Class;
+         5: aload_0
+         6: invokeinterface #81,  3           // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        11: pop
+        12: return
+
+  protected static void addOperation(java.util.Collection<org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation>, java.util.Map<java.lang.Class<? extends org.operaton.bpm.engine.impl.db.DbEntity>, org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation>);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokedynamic #87,  0             // InvokeDynamic #0:accept:(Ljava/util/Map;)Ljava/util/function/Consumer;
+         7: invokeinterface #91,  2           // InterfaceMethod java/util/Collection.forEach:(Ljava/util/function/Consumer;)V
+        12: return
+
+  private static void lambda$addOperation$0(java.util.Map, org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: invokevirtual #75                 // Method org/operaton/bpm/engine/impl/db/entitymanager/operation/DbOperation.getEntityType:()Ljava/lang/Class;
+         5: aload_1
+         6: invokeinterface #81,  3           // InterfaceMethod java/util/Map.put:(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+        11: pop
+        12: return
+
+  static {};
+    Code:
+         0: getstatic     #97                 // Field org/operaton/bpm/engine/impl/ProcessEngineLogger.PERSISTENCE_LOGGER:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+         3: putstatic     #46                 // Field LOG:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+         6: return
+}

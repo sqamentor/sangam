@@ -1,0 +1,167 @@
+--- main: 121
+sangam-rest/src/main/java/org/sangam/rest/port/AdminPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/AnalyticsPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/ApiContractPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/ApiProblem.java
+sangam-rest/src/main/java/org/sangam/rest/port/AuditExportPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/AuditPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/CasePort.java
+sangam-rest/src/main/java/org/sangam/rest/port/DebugPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/DecisionPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/DeploymentPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/DocumentExtrasPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/DocumentPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/Download.java
+sangam-rest/src/main/java/org/sangam/rest/port/DynamicPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/EventPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/ExecutorPartitionPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/FormPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/HistoryPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/IdempotencyPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/IdentityAdminPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/InsightsPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/InstanceControlPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/InstanceHandlerPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/LinkPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/LowCodePort.java
+sangam-rest/src/main/java/org/sangam/rest/port/OpsConsolePort.java
+sangam-rest/src/main/java/org/sangam/rest/port/OpsPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/PackagePort.java
+sangam-rest/src/main/java/org/sangam/rest/port/PackageToolsPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/Page.java
+sangam-rest/src/main/java/org/sangam/rest/port/PermissionPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/PortalPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/PowerTablePort.java
+sangam-rest/src/main/java/org/sangam/rest/port/ProcessContinuationPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/ProcessPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/RegistryPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/RequestContext.java
+sangam-rest/src/main/java/org/sangam/rest/port/RestBackedRecords.java
+sangam-rest/src/main/java/org/sangam/rest/port/SangamPrincipal.java
+sangam-rest/src/main/java/org/sangam/rest/port/TaskPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/TestClockPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/VariableMaskPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/WorkPort.java
+sangam-rest/src/main/java/org/sangam/rest/port/WorkspacePort.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/ApiContractAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/ChainViews.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/DenialAudit.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/DocMap.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAdminAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAuditAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAuditExportAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcEnvBindings.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcEventAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdempotencyAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdentityAdminAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcLowCodeAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcPackageAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcPackageSignatures.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcPowerTableAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcReconciliationSupport.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcSupport.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcTenantCustomFieldStore.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/PackageManifests.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/RestBackedDataObjects.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/ScriptTaskDeployRewrite.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/memory/GroupPermissionAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/CmmnConversionRows.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/DmnTesting.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/EngineAdapterWorkAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/FormSchemaValidator.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/NotInstalledDynamicAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonAnalyticsAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonCaseAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDebugAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDecisionAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDeploymentAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDocumentAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDocumentExtrasAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonFormAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonHistoryAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonInsightsAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonInstanceControlAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonInstanceHandlerAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonLinkAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOperationIds.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsConsoleAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonPackageToolsAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonPortalAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonProcessAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonSupport.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonVariableOwners.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonWorkAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonWorkspaceAdapter.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/PayloadHash.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/ProcessTraceReads.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/ReadTransactions.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TaskAuditExtras.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TaskFormRequirements.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TaskIndex.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TenantLocales.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TrackingWorkPort.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkLedger.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkStepJournal.java
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkerTopicGuard.java
+sangam-rest/src/main/java/org/sangam/rest/support/BlobStore.java
+sangam-rest/src/main/java/org/sangam/rest/support/BusinessDates.java
+sangam-rest/src/main/java/org/sangam/rest/support/CorrelationNames.java
+sangam-rest/src/main/java/org/sangam/rest/support/DocumentSlots.java
+sangam-rest/src/main/java/org/sangam/rest/support/DocumentStore.java
+sangam-rest/src/main/java/org/sangam/rest/support/PackageSigning.java
+sangam-rest/src/main/java/org/sangam/rest/support/Permissions.java
+sangam-rest/src/main/java/org/sangam/rest/support/RestProperties.java
+sangam-rest/src/main/java/org/sangam/rest/support/TxSupport.java
+sangam-rest/src/main/java/org/sangam/rest/support/TypedVariables.java
+sangam-rest/src/main/java/org/sangam/rest/support/VariableMasking.java
+sangam-rest/src/main/java/org/sangam/rest/support/VariableMaskingPorts.java
+sangam-rest/src/main/java/org/sangam/rest/support/WorkLongPoll.java
+sangam-rest/src/main/java/org/sangam/rest/extension/TenantCustomFieldRegistry.java
+--- test: 25
+sangam-rest/src/test/java/org/sangam/rest/port/TaskAmountTest.java
+sangam-rest/src/test/java/org/sangam/rest/port/TaskDscDocumentTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/jdbc/JdbcAuditExportPdfTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/jdbc/PackageManifestsTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/jdbc/RestBackedDataObjectsTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/jdbc/ScriptTaskDeployRewriteTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/CmmnConversionAssessmentTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/FakeWorkPort.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/OperatonDocumentAdapterCasTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/OperatonFormAdapterEffectiveTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/OperatonInstanceHandlerAdapterTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/PackageToolsScriptConventionTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TaskFormRequirementsTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TaskIndexTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TaskLocalSubmitTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TenantCustomFieldsTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TenantLocalesTest.java
+sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TrackingWorkPortLongPollTest.java
+sangam-rest/src/test/java/org/sangam/rest/support/CorrelationNamesTest.java
+sangam-rest/src/test/java/org/sangam/rest/support/DocumentSlotsTest.java
+sangam-rest/src/test/java/org/sangam/rest/support/PermissionsTenantAdminTest.java
+sangam-rest/src/test/java/org/sangam/rest/support/VariableMaskingPortsTest.java
+sangam-rest/src/test/java/org/sangam/rest/support/WorkLongPollBackoffTest.java
+sangam-rest/src/test/java/org/sangam/rest/support/WorkLongPollTest.java
+sangam-rest/src/test/java/org/sangam/rest/extension/TenantCustomFieldStoreTest.java
+--- moved tests referencing other sangam-rest test classes or non-moved main classes
+--- sangam-rest test resources
+--- path references
+79 handoff\worktree-snapshots\wt-bulk.files.txt
+79 handoff\worktree-snapshots\wt-bulk2.files.txt
+7 handoff\worktree-snapshots\wt-fwtd.files.txt
+70 handoff\worktree-snapshots\wt-iso.files.txt
+4 handoff\worktree-snapshots\wt-packs4.files.txt
+79 handoff\worktree-snapshots\wt-perf.files.txt
+7 handoff\worktree-snapshots\wt-uip2.files.txt
+2 handoff\worktree-snapshots\wt-uiparity.files.txt
+4 handoff\worktree-snapshots\wt-bulk\sangam-core\src\test\java\org\sangam\core\money\MoneyGuardTest.java
+4 handoff\worktree-snapshots\wt-bulk2\sangam-core\src\test\java\org\sangam\core\money\MoneyGuardTest.java
+4 handoff\worktree-snapshots\wt-iso\sangam-core\src\test\java\org\sangam\core\money\MoneyGuardTest.java
+4 handoff\worktree-snapshots\wt-perf\sangam-core\src\test\java\org\sangam\core\money\MoneyGuardTest.java
+4 sangam\sangam-core\src\test\java\org\sangam\core\arch\ArchitectureGuardTest.java
+4 sangam\sangam-core\src\test\java\org\sangam\core\money\MoneyGuardTest.java
+2 sangam\sangam-engine\PATCHES.md
+7 sangam\sangam-rest\api\sangam-api.yaml

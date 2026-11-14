@@ -1,0 +1,1 @@
+{"owner": "A", "what": "bruteforce", "since": "2026-11-10T00:47:05+00:00", "epoch": 1794271625.1542006, "held_by": "owner name until release (not a pid)", "acquirer_pid": 36724, "acquirer_pid_note": "short-lived acquire process; exits at once (I-34)", "holder_pid": 36724, "holder_start": 1794271623.0648885, "lease_until": 1794273471.248118, "lease_seconds": 1800}}

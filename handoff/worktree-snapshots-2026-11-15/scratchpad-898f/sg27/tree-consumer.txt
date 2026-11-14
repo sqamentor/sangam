@@ -1,0 +1,90 @@
+x:bare-consumer:jar:1
+\- org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+   +- org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   |  +- (com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile - omitted for duplicate)
+   |  \- (org.slf4j:slf4j-api:jar:2.0.17:compile - omitted for duplicate)
+   +- org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:compile
+   |  +- (org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile - omitted for duplicate)
+   |  +- org.liquibase:liquibase-core:jar:4.33.0:compile
+   |  |  +- com.opencsv:opencsv:jar:5.11.2:compile
+   |  |  |  +- (org.apache.commons:commons-lang3:jar:3.17.0:compile - omitted for duplicate)
+   |  |  |  +- (org.apache.commons:commons-text:jar:1.13.1:compile - omitted for duplicate)
+   |  |  |  \- (org.apache.commons:commons-collections4:jar:4.5.0:compile - omitted for duplicate)
+   |  |  +- org.yaml:snakeyaml:jar:2.4:compile
+   |  |  +- javax.xml.bind:jaxb-api:jar:2.3.1:compile
+   |  |  +- org.apache.commons:commons-collections4:jar:4.5.0:compile
+   |  |  +- org.apache.commons:commons-text:jar:1.13.1:compile
+   |  |  |  \- (org.apache.commons:commons-lang3:jar:3.17.0:compile - omitted for duplicate)
+   |  |  +- org.apache.commons:commons-lang3:jar:3.17.0:compile
+   |  |  \- commons-io:commons-io:jar:2.19.0:compile
+   |  \- (org.slf4j:slf4j-api:jar:2.0.17:compile - omitted for duplicate)
+   +- org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile
+   |  +- (org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile - omitted for duplicate)
+   |  +- (org.operaton.bpm:operaton-engine:jar:2.2.0:compile - omitted for duplicate)
+   |  +- (com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile - omitted for duplicate)
+   |  \- (org.slf4j:slf4j-api:jar:2.0.17:compile - omitted for duplicate)
+   +- org.operaton.bpm:operaton-engine:jar:2.2.0:compile
+   |  +- org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile
+   |  |  +- (org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile - omitted for duplicate)
+   |  |  +- org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile
+   |  |  |  \- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  |  \- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  +- org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile
+   |  |  +- (org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile - omitted for duplicate)
+   |  |  +- (org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile - omitted for duplicate)
+   |  |  \- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  +- org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile
+   |  |  \- jakarta.el:jakarta.el-api:jar:6.0.1:compile
+   |  +- (org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile - omitted for duplicate)
+   |  +- org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile
+   |  |  +- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  |  \- (org.slf4j:slf4j-api:jar:2.0.20:compile - omitted for conflict with 2.0.17)
+   |  +- org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile
+   |  |  +- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  |  \- (org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile - omitted for duplicate)
+   |  +- org.jspecify:jspecify:jar:1.0.1:compile
+   |  +- org.mybatis:mybatis:jar:3.5.19:compile
+   |  \- joda-time:joda-time:jar:2.15.0:compile
+   +- org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+   |  +- org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile
+   |  |  +- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  |  \- (org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile - omitted for duplicate)
+   |  +- (org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile - omitted for duplicate)
+   |  +- org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile
+   |  |  +- (org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile - omitted for duplicate)
+   |  |  +- (org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile - omitted for duplicate)
+   |  |  \- (org.jspecify:jspecify:jar:1.0.1:compile - omitted for duplicate)
+   |  +- org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile
+   |  |  \- (org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile - omitted for duplicate)
+   |  +- org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile
+   |  |  +- (org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile - omitted for duplicate)
+   |  |  +- (org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile - omitted for duplicate)
+   |  |  +- (org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile - omitted for duplicate)
+   |  |  \- (org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile - omitted for duplicate)
+   |  +- (org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile - omitted for duplicate)
+   |  +- org.camunda.feel:feel-engine:jar:1.22.1:compile
+   |  |  +- (org.scala-lang:scala-library:jar:2.13.18:compile - omitted for duplicate)
+   |  |  +- com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   |  |  |  +- com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   |  |  |  |  \- (org.scala-lang:scala-library:jar:2.13.8:compile - omitted for conflict with 2.13.18)
+   |  |  |  +- com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   |  |  |  |  \- (org.scala-lang:scala-library:jar:2.13.8:compile - omitted for conflict with 2.13.18)
+   |  |  |  \- (org.scala-lang:scala-library:jar:2.13.14:compile - omitted for conflict with 2.13.18)
+   |  |  +- (org.slf4j:slf4j-api:jar:1.7.25:compile - omitted for conflict with 2.0.17)
+   |  |  +- com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile
+   |  |  |  \- (org.slf4j:slf4j-api:jar:1.7.36:compile - omitted for conflict with 2.0.17)
+   |  |  \- com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile
+   |  |     +- (org.scala-lang:scala-library:jar:2.13.18:compile - omitted for duplicate)
+   |  |     +- (com.fasterxml.jackson.core:jackson-core:jar:2.22.1:compile - omitted for conflict with 2.22.3)
+   |  |     +- (com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile - omitted for duplicate)
+   |  |     +- (com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:compile - omitted for conflict with 2.22.3)
+   |  |     \- com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile
+   |  \- (org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile - omitted for duplicate)
+   +- org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   |  +- (org.camunda.feel:feel-engine:jar:1.22.1:compile - omitted for duplicate)
+   |  +- org.scala-lang:scala-library:jar:2.13.18:compile
+   |  \- (org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile - omitted for duplicate)
+   +- com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile
+   |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile
+   |  \- com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile
+   \- org.slf4j:slf4j-api:jar:2.0.17:compile

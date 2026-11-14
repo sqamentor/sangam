@@ -1,0 +1,1 @@
+mvn -B -ntp -DskipTests -Dsangam.db=h2 -Psangam-central deploy -DaltDeploymentRepository="sangam-staging::file://$STAGING"

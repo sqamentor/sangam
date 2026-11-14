@@ -1,0 +1,268 @@
+# action.yml
+name: cosign-installer
+author: sigstore
+description: 'Installs cosign and includes it in your path'
+branding:
+  icon: 'package'
+  color: 'blue'
+# This is pinned to the last major release, we have to bump it for each action version.
+inputs:
+  cosign-release:
+    description: 'cosign release version to be installed'
+    required: false
+    default: 'v2.5.2'
+  install-dir:
+    description: 'Where to install the cosign binary'
+    required: false
+    default: '$HOME/.cosign'
+  use-sudo:
+    description: 'set to true if install-dir location requires sudo privs'
+    required: false
+    default: 'false'
+runs:
+  using: "composite"
+  steps:
+    # We verify the version against a SHA **in the published action itself**, not in the GCS bucket.
+    - shell: bash
+      run: |
+        #!/bin/bash
+        # cosign install script
+        shopt -s expand_aliases
+        if [ -z "$NO_COLOR" ]; then
+          alias log_info="echo -e \"\033[1;32mINFO\033[0m:\""
+          alias log_error="echo -e \"\033[1;31mERROR\033[0m:\""
+        else
+          alias log_info="echo \"INFO:\""
+          alias log_error="echo \"ERROR:\""
+        fi
+        set -e
+
+        mkdir -p ${{ inputs.install-dir }}
+
+        if [[ ${{ inputs.cosign-release }} == "main" ]]; then
+          log_info "installing cosign via 'go install' from its main version"
+          GOBIN=$(go env GOPATH)/bin
+          go install github.com/sigstore/cosign/v2/cmd/cosign@main
+          ln -s $GOBIN/cosign ${{ inputs.install-dir}}/cosign
+          exit 0
+        fi
+
+        shaprog() {
+          case ${{ runner.os }} in
+            Linux|linux)
+              sha256sum $1 | cut -d' ' -f1
+              ;;
+            macOS|macos)
+              shasum -a256 $1 | cut -d' ' -f1
+              ;;
+            Windows|windows)
+              powershell -command "(Get-FileHash $1 -Algorithm SHA256 | Select-Object -ExpandProperty Hash).ToLower()"
+              ;;
+            *)
+              log_error "unsupported OS ${{ runner.os }}"
+              exit 1
+              ;;
+          esac
+        }
+
+        bootstrap_version='v2.5.2'
+        bootstrap_linux_amd64_sha='bcfeae05557a9f313ee4392d2f335d0ff69ebbfd232019e3736fb04999fe1734'
+        bootstrap_linux_arm_sha='ecb5b9d8b6d7c8cec98363f0827456fa3207279e5f4690db6b4e6c77b10e45f9'
+        bootstrap_linux_arm64_sha='2cbcea1873ad76274c3f241ef175d204654e3aac3e73e6ec4504e5227015cb0a'
+        bootstrap_darwin_amd64_sha='0681abe20a482f4b9b3ed65b3debb8c6346591f2dc484b6bfa79609ff1318de4'
+        bootstrap_darwin_arm64_sha='51fdc6d8da8310d72df10065a52247b6bebfe990d4c946dd9f71e17588256011'
+        bootstrap_windows_amd64_sha='fef1c4731da9112d4cf2f6d93ae2a1551c73116a4f73fab7b0c15b38e95ff688'
+        cosign_executable_name=cosign
+
+        trap "popd >/dev/null" EXIT
+
+        pushd ${{ inputs.install-dir }} > /dev/null
+
+        case ${{ runner.os }} in
+          Linux|linux)
+            case ${{ runner.arch }} in
+              X64|amd64)
+                bootstrap_filename='cosign-linux-amd64'
+                bootstrap_sha=${bootstrap_linux_amd64_sha}
+                desired_cosign_filename='cosign-linux-amd64'
+                # v0.6.0 had different filename structures from all other releases
+                if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+                  desired_cosign_filename='cosign_linux_amd64_0.6.0_linux_amd64'
+                  desired_cosign_v060_signature='cosign_linux_amd64_0.6.0_linux_amd64.sig'
+                fi
+                ;;
+
+              ARM|arm)
+                bootstrap_filename='cosign-linux-arm'
+                bootstrap_sha=${bootstrap_linux_arm_sha}
+                desired_cosign_filename='cosign-linux-arm'
+                if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+                  log_error "linux-arm build not available at v0.6.0"
+                  exit 1
+                fi
+                ;;
+
+              ARM64|arm64)
+                bootstrap_filename='cosign-linux-arm64'
+                bootstrap_sha=${bootstrap_linux_arm64_sha}
+                desired_cosign_filename='cosign-linux-arm64'
+                if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+                  log_error "linux-arm64 build not available at v0.6.0"
+                  exit 1
+                fi
+                ;;
+
+              *)
+                log_error "unsupported architecture ${{ runner.arch }}"
+                exit 1
+                ;;
+            esac
+            ;;
+
+          macOS|macos)
+            case ${{ runner.arch }} in
+              X64|amd64)
+                bootstrap_filename='cosign-darwin-amd64'
+                bootstrap_sha=${bootstrap_darwin_amd64_sha}
+                desired_cosign_filename='cosign-darwin-amd64'
+                # v0.6.0 had different filename structures from all other releases
+                if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+                  desired_cosign_filename='cosign_darwin_amd64_0.6.0_darwin_amd64'
+                  desired_cosign_v060_signature='cosign_darwin_amd64_0.6.0_darwin_amd64.sig'
+                fi
+                ;;
+
+              ARM64|arm64)
+                bootstrap_filename='cosign-darwin-arm64'
+                bootstrap_sha=${bootstrap_darwin_arm64_sha}
+                desired_cosign_filename='cosign-darwin-arm64'
+                # v0.6.0 had different filename structures from all other releases
+                if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+                  desired_cosign_filename='cosign_darwin_arm64_0.6.0_darwin_arm64'
+                  desired_cosign_v060_signature='cosign_darwin_arm64_0.6.0_darwin_arm64.sig'
+                fi
+                ;;
+
+              *)
+                log_error "unsupported architecture ${{ runner.arch }}"
+                exit 1
+                ;;
+            esac
+            ;;
+
+          Windows|windows)
+            case ${{ runner.arch }} in
+              X64|amd64)
+                bootstrap_filename='cosign-windows-amd64.exe'
+                bootstrap_sha=${bootstrap_windows_amd64_sha}
+                desired_cosign_filename='cosign-windows-amd64.exe'
+                cosign_executable_name=cosign.exe
+                # v0.6.0 had different filename structures from all other releases
+                if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+                  desired_cosign_filename='cosign_windows_amd64_0.6.0_windows_amd64.exe'
+                  desired_cosign_v060_signature='cosign_windows_amd64_0.6.0_windows_amd64.exe.sig'
+                fi
+                ;;
+              *)
+                log_error "unsupported architecture ${{ runner.arch }}"
+                exit 1
+                ;;
+            esac
+            ;;
+          *)
+            log_error "unsupported os ${{ runner.os }}"
+            exit 1
+            ;;
+        esac
+
+        SUDO=
+        if [[ "${{ inputs.use-sudo }}" == "true" ]] && command -v sudo >/dev/null; then
+          SUDO=sudo
+        fi
+
+        expected_bootstrap_version_digest=${bootstrap_sha}
+        log_info "Downloading bootstrap version '${bootstrap_version}' of cosign to verify version to be installed...\n      https://github.com/sigstore/cosign/releases/download/${bootstrap_version}/${bootstrap_filename}"
+        $SUDO curl -fsL https://github.com/sigstore/cosign/releases/download/${bootstrap_version}/${bootstrap_filename} -o ${cosign_executable_name}
+        shaBootstrap=$(shaprog ${cosign_executable_name});
+        if [[ $shaBootstrap != ${expected_bootstrap_version_digest} ]]; then
+          log_error "Unable to validate cosign version: '${{ inputs.cosign-release }}'"
+          exit 1
+        fi
+        $SUDO chmod +x ${cosign_executable_name}
+
+        # If the bootstrap and specified `cosign` releases are the same, we're done.
+        if [[ ${{ inputs.cosign-release }} == ${bootstrap_version} ]]; then
+          log_info "bootstrap version successfully verified and matches requested version so nothing else to do"
+          exit 0
+        fi
+
+        semver='^v([0-9]+\.){0,2}(\*|[0-9]+)(-?r?c?)(\.[0-9]+)$'
+        if [[ ${{ inputs.cosign-release }} =~ $semver ]]; then
+          log_info "Custom cosign version '${{ inputs.cosign-release }}' requested"
+        else
+          log_error "Unable to validate requested cosign version: '${{ inputs.cosign-release }}'"
+          exit 1
+        fi
+
+        # Download custom cosign
+        log_info "Downloading platform-specific version '${{ inputs.cosign-release }}' of cosign...\n      https://github.com/sigstore/cosign/releases/download/${{ inputs.cosign-release }}/${desired_cosign_filename}"
+        $SUDO curl -fsL https://github.com/sigstore/cosign/releases/download/${{ inputs.cosign-release }}/${desired_cosign_filename} -o cosign_${{ inputs.cosign-release }}
+        shaCustom=$(shaprog cosign_${{ inputs.cosign-release }});
+
+        # same hash means it is the same release
+        if [[ $shaCustom != $shaBootstrap ]]; then
+          if [[ ${{ inputs.cosign-release }} == 'v0.6.0' && ${{ runner.os }} == 'Linux' ]]; then
+            # v0.6.0's linux release has a dependency on `libpcsclite1`
+            log_info "Installing libpcsclite1 package if necessary..."
+            set +e
+            sudo dpkg -s libpcsclite1
+            if [ $? -eq 0 ]; then
+                log_info "libpcsclite1 package is already installed"
+            else
+                 log_info "libpcsclite1 package is not installed, installing it now."
+                 sudo apt-get update -q -q
+                 sudo apt-get install -yq libpcsclite1
+            fi
+            set -e
+          fi
+
+          if [[ ${{ inputs.cosign-release }} == 'v0.6.0' ]]; then
+            log_info "Downloading detached signature for platform-specific '${{ inputs.cosign-release }}' of cosign...\n      https://github.com/sigstore/cosign/releases/download/${{ inputs.cosign-release }}/${desired_cosign_v060_signature}"
+            $SUDO curl -fsL https://github.com/sigstore/cosign/releases/download/${{ inputs.cosign-release }}/${desired_cosign_v060_signature} -o ${desired_cosign_filename}.sig
+          else
+            log_info "Downloading detached signature for platform-specific '${{ inputs.cosign-release }}' of cosign...\n      https://github.com/sigstore/cosign/releases/download/${{ inputs.cosign-release }}/${desired_cosign_filename}.sig"
+            $SUDO curl -fsLO https://github.com/sigstore/cosign/releases/download/${{ inputs.cosign-release }}/${desired_cosign_filename}.sig
+          fi
+
+          if [[ ${{ inputs.cosign-release }} < 'v0.6.0' ]]; then
+            log_info "Downloading cosign public key '${{ inputs.cosign-release }}' of cosign...\n    https://raw.githubusercontent.com/sigstore/cosign/${{ inputs.cosign-release }}/.github/workflows/cosign.pub"
+            RELEASE_COSIGN_PUB_KEY=https://raw.githubusercontent.com/sigstore/cosign/${{ inputs.cosign-release }}/.github/workflows/cosign.pub
+            RELEASE_COSIGN_PUB_KEY_SHA='4aa4bd19530a4929d758a9896255aef2c82f1a3a9f4b000034c6df4307c14f9e'
+          else
+            log_info "Downloading cosign public key '${{ inputs.cosign-release }}' of cosign...\n    https://raw.githubusercontent.com/sigstore/cosign/${{ inputs.cosign-release }}/release/release-cosign.pub"
+            RELEASE_COSIGN_PUB_KEY=https://raw.githubusercontent.com/sigstore/cosign/${{ inputs.cosign-release }}/release/release-cosign.pub
+            RELEASE_COSIGN_PUB_KEY_SHA='f4cea466e5e887a45da5031757fa1d32655d83420639dc1758749b744179f126'
+          fi
+
+          log_info "Verifying public key matches expected value"
+          $SUDO curl -fsL $RELEASE_COSIGN_PUB_KEY -o public.key
+          sha_fetched_key=$(shaprog public.key)
+          if [[ $sha_fetched_key != $RELEASE_COSIGN_PUB_KEY_SHA ]]; then
+            log_error "Fetched public key does not match expected digest, exiting"
+            exit 1
+          fi
+
+          log_info "Using bootstrap cosign to verify signature of desired cosign version"
+          ./cosign verify-blob --key public.key --signature ${desired_cosign_filename}.sig cosign_${{ inputs.cosign-release }}
+
+          $SUDO rm cosign
+          $SUDO mv cosign_${{ inputs.cosign-release }} ${cosign_executable_name}
+          $SUDO chmod +x ${cosign_executable_name}
+          log_info "Installation complete!"
+        fi
+    - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
+      run: echo "${{ inputs.install-dir }}" >> $GITHUB_PATH
+      shell: bash
+    - if: ${{ runner.os == 'Windows' }}
+      run: echo "${{ inputs.install-dir }}" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      shell: pwsh

@@ -1,0 +1,318 @@
+{
+  "codes": [
+    {
+      "code": "ADVANCE_LIMIT",
+      "label": {
+        "en": "Advance above the admissible limit"
+      }
+    },
+    {
+      "code": "AGE_BELOW_60",
+      "label": {
+        "en": "Applicant below the qualifying age of 60"
+      }
+    },
+    {
+      "code": "BILL_INVALID",
+      "label": {
+        "en": "Bill does not satisfy the rules of its bill type (rule cited)"
+      }
+    },
+    {
+      "code": "BUDGET_NOT_AVAILABLE",
+      "label": {
+        "en": "Budget not available under the head"
+      }
+    },
+    {
+      "code": "CLAIM_FRAUD",
+      "label": {
+        "en": "Claim found fraudulent on investigation"
+      }
+    },
+    {
+      "code": "CLAIM_FRAUD_OR_NON_DISCLOSURE",
+      "label": {
+        "en": "Claim found fraudulent or with material non-disclosure on investigation"
+      }
+    },
+    {
+      "code": "CLARIFICATION_LAPSED",
+      "label": {
+        "en": "The clarification sought was not received within the window"
+      }
+    },
+    {
+      "code": "COMMITTEE_DECLINED",
+      "label": {
+        "en": "Declined by the committee"
+      }
+    },
+    {
+      "code": "CREDIT_POLICY_DECLINE",
+      "label": {
+        "en": "Declined under the credit policy"
+      }
+    },
+    {
+      "code": "DEEMED_REFUSAL",
+      "label": {
+        "en": "Deemed refusal: no decision within the statutory time (CaseRecordDelegate)"
+      }
+    },
+    {
+      "code": "DLG_ABOVE_CAP_OR_FORM",
+      "label": {
+        "en": "Default loss guarantee above the cap or not in an allowed form"
+      }
+    },
+    {
+      "code": "DUPLICATE_BENEFICIARY",
+      "label": {
+        "en": "Beneficiary already receives the benefit"
+      }
+    },
+    {
+      "code": "DUPLICATE_BILL",
+      "label": {
+        "en": "A bill for the same claim already exists"
+      }
+    },
+    {
+      "code": "DUPLICATE_CLAIM",
+      "label": {
+        "en": "Duplicate claim"
+      }
+    },
+    {
+      "code": "ENTITLEMENT_NOT_ESTABLISHED",
+      "label": {
+        "en": "Entitlement not established"
+      }
+    },
+    {
+      "code": "EXECUTION_FAILED",
+      "label": {
+        "en": "The approved action could not be carried out: the external operation failed"
+      }
+    },
+    {
+      "code": "FA_NOT_CONCURRED",
+      "label": {
+        "en": "Financial Adviser did not concur"
+      }
+    },
+    {
+      "code": "FIELD_VERIFICATION_FAILED",
+      "label": {
+        "en": "Field verification failed"
+      }
+    },
+    {
+      "code": "FINANCE_NOT_CONCURRED",
+      "label": {
+        "en": "Finance did not concur"
+      }
+    },
+    {
+      "code": "FUNDS_NOT_CONFIRMED",
+      "label": {
+        "en": "Availability of funds could not be confirmed: the check failed or returned no amount"
+      }
+    },
+    {
+      "code": "GIA_RULE",
+      "label": {
+        "en": "Grant release not allowed by the grant-in-aid rules (rule cited)"
+      }
+    },
+    {
+      "code": "GPF_NOT_ELIGIBLE",
+      "label": {
+        "en": "Not eligible for the GPF advance or withdrawal"
+      }
+    },
+    {
+      "code": "INCOME_ABOVE_CEILING",
+      "label": {
+        "en": "Income above the ceiling"
+      }
+    },
+    {
+      "code": "INCOME_ABOVE_LIMIT",
+      "label": {
+        "en": "Income above the limit"
+      }
+    },
+    {
+      "code": "INSPECTION_UNSATISFACTORY",
+      "label": {
+        "en": "Inspection unsatisfactory"
+      }
+    },
+    {
+      "code": "INSTITUTE_VERIFICATION_FAILED",
+      "label": {
+        "en": "Not verified by the institute"
+      }
+    },
+    {
+      "code": "INSUFFICIENT_LEAVE_BALANCE",
+      "label": {
+        "en": "Insufficient leave balance"
+      }
+    },
+    {
+      "code": "KYC_FAILED",
+      "label": {
+        "en": "KYC failed"
+      }
+    },
+    {
+      "code": "KYC_NOT_COMPLIANT",
+      "label": {
+        "en": "KYC not compliant"
+      }
+    },
+    {
+      "code": "MINOR_WITHOUT_GUARDIAN",
+      "label": {
+        "en": "Minor applicant without a guardian"
+      }
+    },
+    {
+      "code": "MOF_NOT_APPROVED",
+      "label": {
+        "en": "Ministry of Finance / Budget Division did not approve"
+      }
+    },
+    {
+      "code": "NOT_COVERED",
+      "label": {
+        "en": "Not covered by the policy"
+      }
+    },
+    {
+      "code": "NOT_ELIGIBLE",
+      "label": {
+        "en": "Not eligible"
+      }
+    },
+    {
+      "code": "NOT_FEASIBLE",
+      "label": {
+        "en": "Not technically feasible"
+      }
+    },
+    {
+      "code": "NOT_INCLUDED_BY_BUDGET_DIVISION",
+      "label": {
+        "en": "Not included by the Budget Division in the supplementary batch"
+      }
+    },
+    {
+      "code": "NO_ACTIVE_MOTHER_SANCTION",
+      "label": {
+        "en": "No active (or an exhausted) mother sanction"
+      }
+    },
+    {
+      "code": "NO_BUDGET",
+      "label": {
+        "en": "No budget available"
+      }
+    },
+    {
+      "code": "PAN_INOPERATIVE",
+      "label": {
+        "en": "PAN inoperative"
+      }
+    },
+    {
+      "code": "PAYEE_NOT_CONFIRMED",
+      "label": {
+        "en": "Payee not confirmed"
+      }
+    },
+    {
+      "code": "POLICY_LAPSED",
+      "label": {
+        "en": "Policy lapsed"
+      }
+    },
+    {
+      "code": "POLICY_NOT_IN_FORCE",
+      "label": {
+        "en": "Policy not in force"
+      }
+    },
+    {
+      "code": "PRESCRIBER_NOT_VERIFIED",
+      "label": {
+        "en": "Prescriber not verified"
+      }
+    },
+    {
+      "code": "PROCEEDINGS_LAPSED_S25",
+      "label": {
+        "en": "Proceedings lapsed (RFCTLARR Act 2013 s.25)"
+      }
+    },
+    {
+      "code": "REAPP_RULE",
+      "label": {
+        "en": "Re-appropriation not allowed by the rules (rule cited)"
+      }
+    },
+    {
+      "code": "REVERIFICATION_FAILED",
+      "label": {
+        "en": "Re-verification failed"
+      }
+    },
+    {
+      "code": "SANCTIONS_MATCH",
+      "label": {
+        "en": "Match on a sanctions list"
+      }
+    },
+    {
+      "code": "SAVINGS_NOT_AVAILABLE",
+      "label": {
+        "en": "Savings not available in the source head"
+      }
+    },
+    {
+      "code": "SERVICE_NOT_VERIFIED",
+      "label": {
+        "en": "Service record not verified"
+      }
+    },
+    {
+      "code": "TENDER_NOT_AWARDED",
+      "label": {
+        "en": "Tender not awarded"
+      }
+    },
+    {
+      "code": "VCIP_FAILED",
+      "label": {
+        "en": "Video customer identification failed"
+      }
+    }
+  ],
+  "dynamic": [
+    {
+      "variable": "eligibilityReasonCode",
+      "decision": "p3-eligibility",
+      "notReasons": [
+        "ELIGIBLE"
+      ]
+    },
+    {
+      "variable": "exemptionSection",
+      "open": true,
+      "vocabulary": "RTI Act 2005 s.8(1) / s.9 exemption clause chosen by the PIO"
+    }
+  ]
+}

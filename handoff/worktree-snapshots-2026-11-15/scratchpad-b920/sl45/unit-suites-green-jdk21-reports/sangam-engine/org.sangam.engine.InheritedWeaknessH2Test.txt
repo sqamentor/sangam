@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.engine.InheritedWeaknessH2Test
+-------------------------------------------------------------------------------
+Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 50.14 s -- in org.sangam.engine.InheritedWeaknessH2Test

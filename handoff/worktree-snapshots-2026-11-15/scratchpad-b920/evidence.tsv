@@ -1,0 +1,859 @@
+operationId	node	key	kind	read at
+actAgent		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actAgent		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actConversationChannel		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actConversationChannel		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actRetentionClass		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actRetentionClass		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actRoutingStrategy		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actRoutingStrategy		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actService		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actService		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actSlaModel		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actSlaModel		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actTemplate		reason	any	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+actTemplate		reason	string	sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcRegistryAdapter.java:148
+aiA2a		id	any	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:156
+aiA2a		method	string	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:163
+aiA2a		params	object	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:164
+aiA2a	params	message	any	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:164
+aiA2a	params.message	messageId	string	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:181
+aiA2a	params.message	parts	any	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:186
+aiA2a	params.message.parts.[]	text	string	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:187
+aiA2a		params	object	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:165
+aiA2a	params	id	string	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:165
+aiA2a		params	object	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:166
+aiA2a	params	message	any	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:166
+aiA2a		params	object	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:167
+aiA2a	params	id	string	sangam-ai/src/main/java/org/sangam/ai/a2a/A2a.java:167
+aiMcp		id	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:69
+aiMcp		method	string	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:70
+aiMcp		params	object	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:74
+aiMcp	params	_meta	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:74
+aiMcp		params	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:76
+aiMcp	params	name	string	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:182
+aiMcp	params	arguments	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:187
+aiMcp	params	arguments	object	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:188
+aiMcp		params	object	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:80
+aiMcp	params	protocolVersion	string	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:80
+aiMcp		params	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:86
+aiMcp		params	object	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:145
+aiMcp	params	_meta	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:145
+aiMcp		id	any	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:149
+aiMcp		method	string	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:150
+aiMcp		params	object	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:157
+aiMcp	params	name	string	sangam-ai/src/main/java/org/sangam/ai/mcp/McpServer.java:157
+caseFilePublishConfig		key	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfigRegistry.java:43
+caseFilePublishConfig		key	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:196
+caseFilePublishConfig		fields	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:199
+caseFilePublishConfig		roles	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:207
+caseFilePublishConfig		conflictingRoles	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:213
+caseFilePublishConfig		stages	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:223
+caseFilePublishConfig		initialStage	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:240
+caseFilePublishConfig		deadlines	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:245
+caseFilePublishConfig		duplicateCheck	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:252
+caseFilePublishConfig		name	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:258
+caseFilePublishConfig		numbering	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:258
+caseFilePublishConfig		milestones	strings	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:259
+caseFilePublishConfig		folders	strings	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:260
+caseFilePublishConfig		cmmnCaseKey	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:260
+caseFilePublishConfig		confidentiality	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:260
+caseFilePublishConfig		key	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:280
+caseFilePublishConfig		replyPeriod	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:281
+caseFilePublishConfig		warnBefore	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:283
+caseFilePublishConfig		duplicateWindow	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:287
+caseFilePublishConfig		fields	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:292
+caseFilePublishConfig		name	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:295
+caseFilePublishConfig		numbering	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:295
+caseFilePublishConfig		calendar	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:296
+caseFilePublishConfig		ladder	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:296
+caseFilePublishConfig		replyApproval	boolean	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:297
+caseFilePublishConfig		caseType	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:297
+caseFilePublishConfig		processKey	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:297
+caseFilePublishConfig		sourceCategories	strings	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:298
+caseFilePublishConfig		followUpKind	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:298
+caseFilePublishConfig		extensionAllowed	boolean	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:299
+caseFilePublishConfig		maxExtensions	integer	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:299
+caseFilePublishConfig		key	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:313
+caseFilePublishConfig		quorumRule	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:314
+caseFilePublishConfig		actionPeriod	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:316
+caseFilePublishConfig		memberRoles	strings	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:318
+caseFilePublishConfig		name	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:322
+caseFilePublishConfig		chairRequired	boolean	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:322
+caseFilePublishConfig		minNoticeHours	integer	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:323
+caseFilePublishConfig		minutesApprovalByChair	boolean	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:323
+caseFilePublishConfig		actionCalendar	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:324
+caseFilePublishConfig		actionLadder	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:324
+caseFilePublishConfig		actionProcessKey	string	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:324
+caseFilePublishConfig		meetingNumbering	any	sangam-case/src/main/java/org/sangam/casefile/config/CaseConfig.java:325
+fieldWorkCreateJob		requiredSkills	array	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:428
+fieldWorkCreateJob		attributes	object	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:430
+fieldWorkCreateJob		kind	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:431
+fieldWorkCreateJob		priority	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:431
+fieldWorkCreateJob		lat	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:431
+fieldWorkCreateJob		lon	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:432
+fieldWorkCreateJob		address	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:432
+fieldWorkCreateJob		slaTargetSeconds	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:432
+fieldWorkCreateJob		slaTargetSeconds	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:432
+fieldWorkCreateJob		businessKey	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:433
+fieldWorkCreateJob		autoDispatch	boolean	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:433
+fieldWorkDeviceStatus		status	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:305
+fieldWorkDeviceStatus		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:305
+fieldWorkJobAction		unitId	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:457
+fieldWorkJobAction		status	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:458
+fieldWorkJobAction		outcome	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:459
+fieldWorkJobAction		note	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:459
+fieldWorkJobAction		proofPacketId	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:459
+fieldWorkJobAction		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:460
+fieldWorkJobAction		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:461
+fieldWorkPing		at	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:405
+fieldWorkPing		at	date-time	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:405
+fieldWorkPing		lat	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:406
+fieldWorkPing		lon	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:406
+fieldWorkPing		accuracyM	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:407
+fieldWorkPing		accuracyM	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:407
+fieldWorkPing		speedMps	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:407
+fieldWorkPing		speedMps	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:407
+fieldWorkPing		headingDeg	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:408
+fieldWorkPing		headingDeg	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:408
+fieldWorkPing		source	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:408
+fieldWorkReassign		version	integer	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:218
+fieldWorkReassign		assignee	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:218
+fieldWorkReassign		seatId	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:218
+fieldWorkResolveConflict		resolution	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:339
+fieldWorkResolveConflict		note	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:340
+fieldWorkRespondOffer		accept	boolean	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:469
+fieldWorkRespondOffer		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:469
+fieldWorkReview		accept	boolean	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:230
+fieldWorkReview		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:230
+fieldWorkRoute		assignee	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:235
+fieldWorkRoute		assignee	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:235
+fieldWorkRoute		lat	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:240
+fieldWorkRoute		lat	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:240
+fieldWorkRoute		lon	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:240
+fieldWorkSelect		population	records:RandomSelector.Candidate	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:280
+fieldWorkSelect		seed	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:282
+fieldWorkSelect		sampleSize	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:282
+fieldWorkSelect		riskDecisionKey	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:282
+fieldWorkStartTrip		unitId	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:479
+fieldWorkStartTrip		jobId	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:479
+fieldWorkStartTrip		purpose	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:479
+fieldWorkStartTrip		odometer	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:480
+fieldWorkStartTrip		odometer	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:480
+fieldWorkTransition		version	integer	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:224
+fieldWorkTransition		status	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:224
+fieldWorkTransition		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:225
+fieldWorkTripAction		odometer	any	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:486
+fieldWorkTripAction		odometer	number	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:486
+fieldWorkTripAction		label	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:488
+fieldWorkTripAction		approve	boolean	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:490
+fieldWorkTripAction		reason	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:490
+fieldWorkUnitStatus		status	string	sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java:400
+geoGeoCheckFence		lat	number	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:245
+geoGeoCheckFence		lon	number	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:245
+geoGeoCheckFence		accuracyM	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:246
+geoGeoCheckFence		accuracyM	number	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:246
+geoGeoDefineFence		id	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:218
+geoGeoDefineFence		kind	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:222
+geoGeoDefineFence		featureRef	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:222
+geoGeoDefineFence		radiusM	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:223
+geoGeoDefineFence		center	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:224
+geoGeoDefineFence		center	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:224
+geoGeoDefineFence		geometry	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:225
+geoGeoDefineFence		attributes	object	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:226
+geoGeoDefineFence		radiusM	number	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:227
+geoGeoDefineFence		featureRef	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:227
+geoGeoDefineFence		toleranceM	number	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:227
+geoGeoDefineFence		maxAccuracyM	number	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:228
+geoGeoDefineLayer		levels	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:106
+geoGeoDefineLayer		names	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:115
+geoGeoDefineLayer		names	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:115
+geoGeoDefineLayer		attributes	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:116
+geoGeoDefineLayer		attributes	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:116
+geoGeoDefineLayer		code	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:117
+geoGeoDefineLayer		kind	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:117
+geoGeoDefineLayer		orgUnitLinked	boolean	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:118
+geoGeoDefineLayer		indexPrecision	integer	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:118
+geoGeoDefineLayer	levels.[]	code	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:110
+geoGeoDefineLayer	levels.[]	names	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:111
+geoGeoDefineLayer	levels.[]	names	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:111
+geoGeoImportBoundaries		layer	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:58
+geoGeoImportBoundaries		layer	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:58
+geoGeoImportBoundaries	layer	levels	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:106
+geoGeoImportBoundaries	layer	names	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:115
+geoGeoImportBoundaries	layer	names	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:115
+geoGeoImportBoundaries	layer	attributes	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:116
+geoGeoImportBoundaries	layer	attributes	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:116
+geoGeoImportBoundaries	layer	code	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:117
+geoGeoImportBoundaries	layer	kind	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:117
+geoGeoImportBoundaries	layer	orgUnitLinked	boolean	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:118
+geoGeoImportBoundaries	layer	indexPrecision	integer	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:118
+geoGeoImportBoundaries	layer.levels.[]	code	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:110
+geoGeoImportBoundaries	layer.levels.[]	names	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:111
+geoGeoImportBoundaries	layer.levels.[]	names	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:111
+geoGeoImportBoundaries		codeProperty	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:59
+geoGeoImportBoundaries		levelProperty	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:60
+geoGeoImportBoundaries		parentProperty	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:61
+geoGeoImportBoundaries		orgUnitProperty	string	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:62
+geoGeoImportBoundaries		nameProperties	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:63
+geoGeoImportBoundaries		nameProperties	object	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:64
+geoGeoImportBoundaries		features	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:67
+geoGeoImportBoundaries		features	any	sangam-geo/src/main/java/org/sangam/geo/boundary/BoundaryDataLoader.java:67
+geoGeoImportExternal		baseUrl	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:333
+geoGeoImportExternal		baseUrl	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:53
+geoGeoImportExternal		typeName	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:55
+geoGeoImportExternal		outputFormat	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:56
+geoGeoImportExternal		layers	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:58
+geoGeoImportExternal		format	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:59
+geoGeoOverlaps		layer	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:205
+geoGeoOverlaps		geometry	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:209
+geoGeoPutFeature		code	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:129
+geoGeoPutFeature		geometry	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:133
+geoGeoPutFeature		names	object	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:134
+geoGeoPutFeature		properties	object	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:135
+geoGeoPutFeature		level	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:136
+geoGeoPutFeature		parentCode	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:137
+geoGeoPutFeature		orgUnitRef	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:137
+geoGeoPutObjectGeometry		geometry	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:277
+geoGeoPutObjectGeometry		tags	array	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:278
+geoGeoPutObjectGeometry		attribute	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:279
+geoGeoQueryExternal		operation	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:318
+geoGeoQueryExternal		baseUrl	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:319
+geoGeoQueryExternal		baseUrl	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:53
+geoGeoQueryExternal		typeName	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:55
+geoGeoQueryExternal		outputFormat	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:56
+geoGeoQueryExternal		layers	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:58
+geoGeoQueryExternal		format	any	sangam-geo/src/main/java/org/sangam/geo/connector/ExternalLayerGateway.java:59
+geoGeoRegisterExternal		ref	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:307
+geoGeoRegisterExternal		protocol	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:307
+geoGeoRegisterExternal		connectorId	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:308
+geoGeoRegisterExternal		baseUrl	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:308
+geoGeoRegisterExternal		remoteName	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:308
+geoGeoRegisterExternal		serviceVersion	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:308
+geoGeoRegisterExternal		srs	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:308
+geoGeoRegisterExternal		outputFormat	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:309
+geoGeoRegisterExternal		importLayer	string	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:309
+geoGeoRegisterExternal		attributes	object	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:310
+geoGeoRegisterExternal		active	any	sangam-geo/src/main/java/org/sangam/geo/rest/GeoRestService.java:311
+programmePublishConfig		fiscalYearStartMonth	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:222
+programmePublishConfig		units	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:56
+programmePublishConfig		programmeKinds	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:58
+programmePublishConfig		variance	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:64
+programmePublishConfig		indicators	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:66
+programmePublishConfig		returns	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:73
+programmePublishConfig		physicalProgress	string	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:81
+programmePublishConfig	variance	warnPct	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:79
+programmePublishConfig	variance	criticalPct	any	sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java:80
+registryAssetAddMeter		meterType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36
+registryAssetAddMeter		unit	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36
+registryAssetAddMeter		cumulative	boolean	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36
+registryAssetAddMeter		rolloverAt	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:37
+registryAssetAddPlan		trigger	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:50
+registryAssetAddPlan		intervalDays	integer	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:54
+registryAssetAddPlan		meterInterval	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:55
+registryAssetAddPlan		meterType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:56
+registryAssetAddPlan		planKey	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:63
+registryAssetAddPlan		leadDays	integer	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:64
+registryAssetAddPlan		workType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:64
+registryAssetAddPlan		tasks	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:64
+registryAssetAddPlan		workOrderSeries	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:65
+registryAssetAddPlan		startFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:264
+registryAssetCorrectReading		reading	decimal	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:193
+registryAssetCorrectReading		note	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:194
+registryAssetCreateWorkOrder		assetId	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:445
+registryAssetCreateWorkOrder		planId	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:449
+registryAssetCreateWorkOrder		genKey	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:454
+registryAssetCreateWorkOrder		workType	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:462
+registryAssetCreateWorkOrder		downtimeStart	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:463
+registryAssetCreateWorkOrder		priority	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:465
+registryAssetCreateWorkOrder		description	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:466
+registryAssetCreateWorkOrder		reportedBy	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:466
+registryAssetCreateWorkOrder		dueAt	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:466
+registryAssetDefineClass		classKey	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:76
+registryAssetDefineClass		parentClass	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:80
+registryAssetDefineClass		meters	objects	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:85
+registryAssetDefineClass		maintenancePlans	objects	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:89
+registryAssetDefineClass		objectType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:92
+registryAssetDefineClass		title	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:92
+registryAssetDefineClass		depreciation	object	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:93
+registryAssetDefineClass	depreciation	method	string	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:30
+registryAssetDefineClass	depreciation	method	string	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:30
+registryAssetDefineClass	depreciation	convention	string	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:34
+registryAssetDefineClass	depreciation	convention	string	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:34
+registryAssetDefineClass	depreciation	usefulLifeMonths	integer	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:38
+registryAssetDefineClass	depreciation	residualPercent	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:42
+registryAssetDefineClass	depreciation	rate	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:42
+registryAssetDefineClass	depreciation	unitsTotal	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:43
+registryAssetDefineClass	depreciation	unitsMeterType	string	sangam-registry/src/main/java/org/sangam/registry/asset/DepreciationParams.java:43
+registryAssetDefineClass		workOrderSeries	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:94
+registryAssetDefineClass		disposeTransition	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:94
+registryAssetDefineClass		extensions	object	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:94
+registryAssetDefineClass	meters.[]	meterType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36
+registryAssetDefineClass	meters.[]	unit	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36
+registryAssetDefineClass	meters.[]	cumulative	boolean	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:36
+registryAssetDefineClass	meters.[]	rolloverAt	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:37
+registryAssetDefineClass	maintenancePlans.[]	trigger	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:50
+registryAssetDefineClass	maintenancePlans.[]	intervalDays	integer	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:54
+registryAssetDefineClass	maintenancePlans.[]	meterInterval	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:55
+registryAssetDefineClass	maintenancePlans.[]	meterType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:56
+registryAssetDefineClass	maintenancePlans.[]	planKey	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:63
+registryAssetDefineClass	maintenancePlans.[]	leadDays	integer	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:64
+registryAssetDefineClass	maintenancePlans.[]	workType	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:64
+registryAssetDefineClass	maintenancePlans.[]	tasks	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:64
+registryAssetDefineClass	maintenancePlans.[]	workOrderSeries	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetClassDefinition.java:65
+registryAssetDispose		date	date	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:140
+registryAssetDispose		method	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:140
+registryAssetDispose		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:141
+registryAssetDispose		transition	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:141
+registryAssetGenerateDue		asOf	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:263
+registryAssetGenerateDue		limit	integer	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:264
+registryAssetMove		toLocation	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:106
+registryAssetMove		toCustodian	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:107
+registryAssetMove		geometryRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:107
+registryAssetMove		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:107
+registryAssetPlanStatus		status	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:226
+registryAssetPlanStatus		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:227
+registryAssetRecordReading		reading	decimal	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:178
+registryAssetRecordReading		readAt	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:178
+registryAssetRecordReading		source	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:178
+registryAssetRecordReading		note	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:179
+registryAssetRegister		classKey	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:143
+registryAssetRegister		tag	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:144
+registryAssetRegister		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:146
+registryAssetRegister		parentAssetId	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:158
+registryAssetRegister		depreciationMethod	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:162
+registryAssetRegister		acquisitionDate	date	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:166
+registryAssetRegister		inServiceDate	date	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:167
+registryAssetRegister		warrantyUntil	date	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:168
+registryAssetRegister		attributes	object	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:170
+registryAssetRegister		displayName	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:170
+registryAssetRegister		holderPartyId	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:170
+registryAssetRegister		locationRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:171
+registryAssetRegister		externalRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:171
+registryAssetRegister		numberScope	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:172
+registryAssetRegister		locationRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:178
+registryAssetRegister		geometryRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:178
+registryAssetRegister		custodianRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:179
+registryAssetRegister		acquisitionValue	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:180
+registryAssetRegister		currency	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:180
+registryAssetRegister		residualValue	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:181
+registryAssetRegister		currency	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:181
+registryAssetRegister		currency	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:181
+registryAssetRegister		usefulLifeMonths	integer	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:181
+registryAssetRegister		depreciationRate	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:182
+registryAssetRegister		warrantyRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:183
+registryAssetRegister		locationRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:199
+registryAssetRegister		custodianRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:199
+registryAssetRegister		acquisitionValue	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:200
+registryAssetRegister		currency	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:200
+registryAssetRejectReading		note	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:200
+registryAssetReparent		parentAssetId	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:118
+registryAssetReparent		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:119
+registryAssetStep		assignee	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:275
+registryAssetStep		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:277
+registryAssetStep		completedAt	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:609
+registryAssetStep		completedAt	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:609
+registryAssetStep		findings	object	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:613
+registryAssetStep		downtimeStart	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:617
+registryAssetStep		downtimeStart	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:617
+registryAssetStep		downtimeEnd	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:618
+registryAssetStep		downtimeEnd	date-time	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:618
+registryAssetStep		meterAtDone	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:622
+registryAssetStep		parts	array	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:628
+registryAssetStep		evidence	array	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:629
+registryAssetStep		currency	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:631
+registryAssetStep		cost	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:633
+registryAssetStep		cost	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:647
+registryAssetStep		remarks	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:280
+registryAssetStep		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:281
+registryAssetTriggerCondition		condition	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:233
+registryAssetTriggerCondition		priority	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:234
+registryAssetUpdateDetails		depreciationMethod	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:362
+registryAssetUpdateDetails		acquisitionDate	date	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:366
+registryAssetUpdateDetails		inServiceDate	date	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:367
+registryAssetUpdateDetails		warrantyUntil	date	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:368
+registryAssetUpdateDetails		currency	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:369
+registryAssetUpdateDetails		acquisitionValue	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:370
+registryAssetUpdateDetails		acquisitionValue	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:374
+registryAssetUpdateDetails		acquisitionValue	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:374
+registryAssetUpdateDetails		residualValue	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:376
+registryAssetUpdateDetails		residualValue	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:376
+registryAssetUpdateDetails		usefulLifeMonths	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:378
+registryAssetUpdateDetails		usefulLifeMonths	integer	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:378
+registryAssetUpdateDetails		depreciationRate	any	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:379
+registryAssetUpdateDetails		depreciationRate	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:379
+registryAssetUpdateDetails		warrantyRef	string	sangam-registry/src/main/java/org/sangam/registry/asset/AssetService.java:385
+registryAssetUpdateDetails		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/AssetController.java:100
+registryAssetUpdatePlan		intervalDays	any	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:285
+registryAssetUpdatePlan		intervalDays	integer	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:285
+registryAssetUpdatePlan		meterInterval	any	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:286
+registryAssetUpdatePlan		meterInterval	decimal	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:286
+registryAssetUpdatePlan		tasks	any	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:294
+registryAssetUpdatePlan		tasks	any	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:295
+registryAssetUpdatePlan		workOrderSeries	any	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:297
+registryAssetUpdatePlan		workOrderSeries	any	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:298
+registryAssetUpdatePlan		leadDays	integer	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:310
+registryAssetUpdatePlan		workType	string	sangam-registry/src/main/java/org/sangam/registry/asset/MaintenanceService.java:310
+registryCustodyAccept		toSignatureRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:50
+registryCustodyAccept		conditionText	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:50
+registryCustodyAccept		sealIntact	boolean	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:50
+registryCustodyAccept		observedSealNo	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:51
+registryCustodyAccept		locationRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:51
+registryCustodyAccept		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:51
+registryCustodyBreakSeal		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:146
+registryCustodyBreakSeal		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:147
+registryCustodyCancel		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:132
+registryCustodyCancelDisposal		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:206
+registryCustodyExecute		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:199
+registryCustodyExecute		details	object	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:200
+registryCustodyHandover		toCustodian	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:60
+registryCustodyHandover		toLocation	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:60
+registryCustodyHandover		reason	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:60
+registryCustodyHandover		fromSignatureRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:61
+registryCustodyHandover		toSignatureRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:61
+registryCustodyHandover		conditionText	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:61
+registryCustodyHandover		sealIntact	boolean	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:62
+registryCustodyHandover		observedSealNo	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:62
+registryCustodyHandover		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:62
+registryCustodyHandover		occurredAt	date-time	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:63
+registryCustodyInitiate		toCustodian	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:41
+registryCustodyInitiate		toLocation	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:41
+registryCustodyInitiate		reason	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:41
+registryCustodyInitiate		fromSignatureRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:42
+registryCustodyInspect		conditionText	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:153
+registryCustodyInspect		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:154
+registryCustodyInspect		details	object	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:154
+registryCustodyLocation		locationRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:160
+registryCustodyLocation		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:161
+registryCustodyOrderDisposal		method	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:77
+registryCustodyOrderDisposal		authorityRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:77
+registryCustodyOrderDisposal		details	object	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:77
+registryCustodyPutInto		containerId	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:167
+registryCustodyPutInto		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:168
+registryCustodyRegister		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:29
+registryCustodyRegister		label	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:29
+registryCustodyRegister		labelKind	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:29
+registryCustodyRegister		description	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:30
+registryCustodyRegister		caseRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:30
+registryCustodyRegister		custodianRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:30
+registryCustodyRegister		locationRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:31
+registryCustodyRegister		sealNo	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:31
+registryCustodyRegister		container	boolean	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:31
+registryCustodyRegister		containerId	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:32
+registryCustodyRegister		attributes	object	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:32
+registryCustodyRegister		displayName	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:32
+registryCustodyRegister		holderPartyId	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:33
+registryCustodyRegister		externalRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:33
+registryCustodyRegister		signatureRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:33
+registryCustodyRegister		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:34
+registryCustodyReject		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:125
+registryCustodyReject		signatureRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:126
+registryCustodySeal		sealNo	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:70
+registryCustodySeal		witnessRef	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:70
+registryCustodySeal		reason	string	sangam-registry/src/main/java/org/sangam/registry/custody/CustodyRequests.java:70
+registryCustodyTakeOut		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/CustodyController.java:174
+registryInstrumentAmend		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentAmend		attributes	object	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:127
+registryInstrumentAmend		endorsement	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:127
+registryInstrumentDuplicate		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:133
+registryInstrumentEndorse		type	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:139
+registryInstrumentEndorse		content	object	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:139
+registryInstrumentIssue		conditions	any	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:43
+registryInstrumentIssue		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:44
+registryInstrumentIssue		holderPartyId	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:44
+registryInstrumentIssue		subjectRef	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:44
+registryInstrumentIssue		attributes	object	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:45
+registryInstrumentIssue		validFrom	date	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:46
+registryInstrumentIssue		validTo	date	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:46
+registryInstrumentIssue		numberScope	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:46
+registryInstrumentIssue		displayName	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:47
+registryInstrumentIssue		externalRef	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:47
+registryInstrumentIssue		activate	boolean	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:47
+registryInstrumentIssue		sourceRef	string	sangam-registry/src/main/java/org/sangam/registry/instrument/InstrumentService.java:48
+registryInstrumentReinstate		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentReinstate		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:73
+registryInstrumentRenew		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentRenew		validTo	date	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:51
+registryInstrumentRenew		attributes	object	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:51
+registryInstrumentRenew		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:51
+registryInstrumentRenew		force	boolean	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:51
+registryInstrumentRevoke		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentRevoke		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:81
+registryInstrumentRevoke		countersignedBy	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:81
+registryInstrumentSurrender		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentSurrender		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:89
+registryInstrumentSuspend		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentSuspend		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:65
+registryInstrumentSuspend		until	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:65
+registryInstrumentTransferHolder		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentTransferHolder		newHolderPartyId	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:112
+registryInstrumentTransferHolder		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:112
+registryInstrumentTransferReissue		newHolderPartyId	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:118
+registryInstrumentTransferReissue		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:119
+registryInstrumentTransition		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryInstrumentTransition		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:104
+registryInstrumentTransition		until	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:104
+registryInstrumentTransition		countersignedBy	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:104
+registryInstrumentVerifyQr		token	string	sangam-registry/src/main/java/org/sangam/registry/rest/InstrumentController.java:186
+registryPartyAddAddress		address	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:594
+registryPartyAddAddress		primary	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:598
+registryPartyAddAddress		type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:605
+registryPartyAddAddress		geometryRef	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:605
+registryPartyAddAddress		validFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:606
+registryPartyAddAddress		validTo	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:606
+registryPartyAddAddress		type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:607
+registryPartyAddIdentifier		type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:448
+registryPartyAddIdentifier		value	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:454
+registryPartyAddIdentifier		issuer	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:484
+registryPartyAddIdentifier		validFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:484
+registryPartyAddIdentifier		validTo	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:484
+registryPartyAddIdentifier		verified	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:485
+registryPartyAddIdentifier		verified	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:487
+registryPartyAddRelationship		toParty	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:140
+registryPartyAddRelationship		type	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:140
+registryPartyAddRelationship		attributes	object	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:140
+registryPartyAddRelationship		validFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:141
+registryPartyAddRelationship		validTo	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:141
+registryPartyConfirm		survivorId	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:232
+registryPartyConfirm		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:233
+registryPartyCreate		kind	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:238
+registryPartyCreate		names	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:239
+registryPartyCreate		name	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:240
+registryPartyCreate		name	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:241
+registryPartyCreate		displayName	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:243
+registryPartyCreate		birthDate	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:244
+registryPartyCreate		gender	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:250
+registryPartyCreate		attributes	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:251
+registryPartyCreate		source	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:251
+registryPartyCreate		sourcePriority	integer	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:251
+registryPartyCreate		source	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:253
+registryPartyCreate		identifiers	objects	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:255
+registryPartyCreate		addresses	objects	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:258
+registryPartyCreate		match	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:263
+registryPartyCreate	names	full	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:48
+registryPartyCreate	names	given	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:52
+registryPartyCreate	names	family	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:53
+registryPartyCreate	identifiers.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:448
+registryPartyCreate	identifiers.[]	value	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:454
+registryPartyCreate	identifiers.[]	issuer	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:484
+registryPartyCreate	identifiers.[]	validFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:484
+registryPartyCreate	identifiers.[]	validTo	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:484
+registryPartyCreate	identifiers.[]	verified	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:485
+registryPartyCreate	identifiers.[]	verified	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:487
+registryPartyCreate	addresses.[]	address	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:594
+registryPartyCreate	addresses.[]	primary	boolean	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:598
+registryPartyCreate	addresses.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:605
+registryPartyCreate	addresses.[]	geometryRef	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:605
+registryPartyCreate	addresses.[]	validFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:606
+registryPartyCreate	addresses.[]	validTo	date-time	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:606
+registryPartyCreate	addresses.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:607
+registryPartyDeactivate		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:77
+registryPartyEndRelationship		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:148
+registryPartyMatch		kind	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:744
+registryPartyMatch		names	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:745
+registryPartyMatch		name	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:746
+registryPartyMatch		name	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:747
+registryPartyMatch		identifiers	objects	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:750
+registryPartyMatch		displayName	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:759
+registryPartyMatch		birthDate	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:760
+registryPartyMatch		gender	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:760
+registryPartyMatch		attributes	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:761
+registryPartyMatch	names	full	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:48
+registryPartyMatch	names	given	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:52
+registryPartyMatch	names	family	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:53
+registryPartyMatch	names	given	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:759
+registryPartyMatch	names	family	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:760
+registryPartyMatch	identifiers.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:751
+registryPartyMatch	identifiers.[]	value	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:754
+registryPartyMerge		survivorId	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:248
+registryPartyMerge		mergedId	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:249
+registryPartyMerge		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:249
+registryPartyMerge		candidateId	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:249
+registryPartyReactivate		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:83
+registryPartyReject		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:240
+registryPartyRetireAddress		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:169
+registryPartyRetireIdentifier		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:116
+registryPartySaveMatchConfig		comparators	objects	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:66
+registryPartySaveMatchConfig		rules	objects	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:79
+registryPartySaveMatchConfig		survivorship	object	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:87
+registryPartySaveMatchConfig		autoMergeThreshold	number	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:94
+registryPartySaveMatchConfig		reviewThreshold	number	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:95
+registryPartySaveMatchConfig		rules	any	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:100
+registryPartySaveMatchConfig		autoMergeEnabled	boolean	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:101
+registryPartySaveMatchConfig		externalWeight	number	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:101
+registryPartySaveMatchConfig		maxCandidates	integer	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:102
+registryPartySaveMatchConfig	comparators.[]	m	number	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:67
+registryPartySaveMatchConfig	comparators.[]	u	number	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:68
+registryPartySaveMatchConfig	comparators.[]	method	string	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:72
+registryPartySaveMatchConfig	comparators.[]	field	string	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:76
+registryPartySaveMatchConfig	comparators.[]	threshold	number	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:76
+registryPartySaveMatchConfig	rules.[]	decision	string	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:80
+registryPartySaveMatchConfig	rules.[]	key	string	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:84
+registryPartySaveMatchConfig	rules.[]	fields	strings	sangam-registry/src/main/java/org/sangam/registry/party/MatchConfig.java:84
+registryPartySnapshot		reference	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:186
+registryPartySnapshot		extra	object	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:186
+registryPartyUnmerge		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:256
+registryPartyUpdate		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/PartyController.java:71
+registryPartyUpdate		names	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:281
+registryPartyUpdate		names	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:281
+registryPartyUpdate		birthDate	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:282
+registryPartyUpdate		birthDate	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:282
+registryPartyUpdate		gender	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:283
+registryPartyUpdate		gender	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:283
+registryPartyUpdate		attributes	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:285
+registryPartyUpdate		attributes	object	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:286
+registryPartyUpdate		displayName	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:294
+registryPartyUpdate		names	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:294
+registryPartyUpdate		displayName	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:295
+registryPartyUpdate		source	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:297
+registryPartyUpdate		source	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:297
+registryPartyUpdate		sourcePriority	any	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:298
+registryPartyUpdate		sourcePriority	integer	sangam-registry/src/main/java/org/sangam/registry/party/PartyService.java:298
+registryPartyUpdate	names	full	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:48
+registryPartyUpdate	names	given	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:52
+registryPartyUpdate	names	family	string	sangam-registry/src/main/java/org/sangam/registry/party/PartyMatcher.java:53
+registryRegisterAppend		scope	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:59
+registryRegisterAppend		date	date	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:59
+registryRegisterAppend		columns	object	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:59
+registryRegisterAppend		refType	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:59
+registryRegisterAppend		refId	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:60
+registryRegisterClose		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:107
+registryRegisterCorrect		columns	object	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:95
+registryRegisterCorrect		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:95
+registryRegisterCorrect		countersignedBy	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:95
+registryRegisterDefine		registerKey	string	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:26
+registryRegisterDefine		title	string	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:30
+registryRegisterDefine		series	string	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:30
+registryRegisterDefine		scopeRequired	boolean	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:31
+registryRegisterDefine		correctionCountersign	boolean	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:31
+registryRegisterDefine		extractTemplate	string	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:32
+registryRegisterDefine		columns	object	sangam-registry/src/main/java/org/sangam/registry/register/RegisterDefinition.java:32
+registryRegisterDefine	columns	fields	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java:24
+registryRegisterDefine	columns	additionalAllowed	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java:27
+registryRegisterDefine	columns.fields.[]	name	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:28
+registryRegisterDefine	columns.fields.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:28
+registryRegisterDefine	columns.fields.[]	required	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegisterDefine	columns.fields.[]	pattern	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegisterDefine	columns.fields.[]	min	decimal	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegisterDefine	columns.fields.[]	max	decimal	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegisterDefine	columns.fields.[]	maxLength	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegisterDefine	columns.fields.[]	values	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegisterDefine	columns.fields.[]	codeList	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegisterDefine	columns.fields.[]	sensitive	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegisterDefine	columns.fields.[]	public	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegisterDefine	columns.fields.[]	immutable	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegisterDefine	columns.fields.[]	label	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:32
+registryRegisterExtract		fromEntry	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:120
+registryRegisterExtract		toEntry	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:120
+registryRegisterExtract		purpose	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegisterController.java:121
+registryRegistryAllocate		date	date	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:190
+registryRegistryAllocate		scope	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:192
+registryRegistryAllocate		attributes	object	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:192
+registryRegistryAllocate		refType	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:192
+registryRegistryAllocate		refId	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:192
+registryRegistryClosePeriod		scope	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:217
+registryRegistryClosePeriod		period	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:217
+registryRegistryCreate		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:44
+registryRegistryCreate		attributes	object	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:44
+registryRegistryCreate		displayName	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:44
+registryRegistryCreate		holderPartyId	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:45
+registryRegistryCreate		subjectRef	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:45
+registryRegistryCreate		parentId	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:45
+registryRegistryCreate		externalRef	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:46
+registryRegistryCreate		validFrom	date	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:46
+registryRegistryCreate		validTo	date	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:46
+registryRegistryCreate		numberScope	string	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:47
+registryRegistryCreate		assignNumber	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:47
+registryRegistryCreate		applyValidity	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/RegisteredObjectService.java:47
+registryRegistryDefineSeries		seriesKey	string	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:63
+registryRegistryDefineSeries		gapPolicy	string	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:67
+registryRegistryDefineSeries		reset	string	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:71
+registryRegistryDefineSeries		pattern	string	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:75
+registryRegistryDefineSeries		fiscalStartMonth	integer	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:79
+registryRegistryDefineSeries		prefix	string	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:80
+registryRegistryDefineSeries		start	int64	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:81
+registryRegistryDefineSeries		start	int64	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:81
+registryRegistryDefineSeries		blockSize	integer	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:81
+registryRegistryDefineSeries		check	string	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:82
+registryRegistryDefineSeries		maxValue	int64	sangam-registry/src/main/java/org/sangam/registry/numbering/NumberSeriesDefinition.java:82
+registryRegistryMarkUsed		number	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:208
+registryRegistryMarkUsed		refType	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:208
+registryRegistryMarkUsed		refId	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:208
+registryRegistryMirror		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:163
+registryRegistryMirror		externalRef	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:163
+registryRegistryPublishType		effectiveFrom	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:56
+registryRegistryPublishType		definition	any	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:57
+registryRegistryPublishType		definition	object	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:57
+registryRegistryPublishType	definition	typeKey	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeService.java:48
+registryRegistryPublishType		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeService.java:48
+registryRegistryPublishType	definition	typeKey	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:61
+registryRegistryPublishType		typeKey	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:61
+registryRegistryPublishType	definition	kind	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:67
+registryRegistryPublishType		kind	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:67
+registryRegistryPublishType	definition	kind	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:69
+registryRegistryPublishType		kind	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:69
+registryRegistryPublishType	definition	schema	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:71
+registryRegistryPublishType		schema	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:71
+registryRegistryPublishType	definition.schema	fields	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java:24
+registryRegistryPublishType	schema	fields	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java:24
+registryRegistryPublishType	definition.schema	additionalAllowed	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java:27
+registryRegistryPublishType	schema	additionalAllowed	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectSchema.java:27
+registryRegistryPublishType	definition.schema.fields.[]	name	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:28
+registryRegistryPublishType	schema.fields.[]	name	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:28
+registryRegistryPublishType	definition.schema.fields.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:28
+registryRegistryPublishType	schema.fields.[]	type	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:28
+registryRegistryPublishType	definition.schema.fields.[]	required	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	schema.fields.[]	required	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	definition.schema.fields.[]	pattern	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	schema.fields.[]	pattern	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	definition.schema.fields.[]	min	decimal	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	schema.fields.[]	min	decimal	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	definition.schema.fields.[]	max	decimal	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	schema.fields.[]	max	decimal	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:29
+registryRegistryPublishType	definition.schema.fields.[]	maxLength	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegistryPublishType	schema.fields.[]	maxLength	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegistryPublishType	definition.schema.fields.[]	values	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegistryPublishType	schema.fields.[]	values	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegistryPublishType	definition.schema.fields.[]	codeList	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegistryPublishType	schema.fields.[]	codeList	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:30
+registryRegistryPublishType	definition.schema.fields.[]	sensitive	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegistryPublishType	schema.fields.[]	sensitive	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegistryPublishType	definition.schema.fields.[]	public	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegistryPublishType	schema.fields.[]	public	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegistryPublishType	definition.schema.fields.[]	immutable	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegistryPublishType	schema.fields.[]	immutable	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:31
+registryRegistryPublishType	definition.schema.fields.[]	label	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:32
+registryRegistryPublishType	schema.fields.[]	label	string	sangam-registry/src/main/java/org/sangam/registry/kernel/FieldDefinition.java:32
+registryRegistryPublishType	definition	documents	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:73
+registryRegistryPublishType		documents	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:73
+registryRegistryPublishType	definition	title	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:80
+registryRegistryPublishType		title	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:80
+registryRegistryPublishType	definition	lifecycle	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:81
+registryRegistryPublishType		lifecycle	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:81
+registryRegistryPublishType	definition.lifecycle	states	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:40
+registryRegistryPublishType	lifecycle	states	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:40
+registryRegistryPublishType	definition.lifecycle	transitions	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:45
+registryRegistryPublishType	lifecycle	transitions	objects	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:45
+registryRegistryPublishType	definition.lifecycle	initial	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:50
+registryRegistryPublishType	lifecycle	initial	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:50
+registryRegistryPublishType	definition.lifecycle.states.[]	key	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:41
+registryRegistryPublishType	lifecycle.states.[]	key	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:41
+registryRegistryPublishType	definition.lifecycle.states.[]	terminal	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:42
+registryRegistryPublishType	lifecycle.states.[]	terminal	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:42
+registryRegistryPublishType	definition.lifecycle.states.[]	live	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:42
+registryRegistryPublishType	lifecycle.states.[]	live	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:42
+registryRegistryPublishType	definition.lifecycle.transitions.[]	name	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46
+registryRegistryPublishType	lifecycle.transitions.[]	name	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46
+registryRegistryPublishType	definition.lifecycle.transitions.[]	from	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46
+registryRegistryPublishType	lifecycle.transitions.[]	from	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46
+registryRegistryPublishType	definition.lifecycle.transitions.[]	to	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46
+registryRegistryPublishType	lifecycle.transitions.[]	to	string	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:46
+registryRegistryPublishType	definition.lifecycle.transitions.[]	reasonRequired	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:47
+registryRegistryPublishType	lifecycle.transitions.[]	reasonRequired	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:47
+registryRegistryPublishType	definition.lifecycle.transitions.[]	countersign	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:47
+registryRegistryPublishType	lifecycle.transitions.[]	countersign	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:47
+registryRegistryPublishType	definition.lifecycle.transitions.[]	untilAllowed	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:48
+registryRegistryPublishType	lifecycle.transitions.[]	untilAllowed	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/Lifecycle.java:48
+registryRegistryPublishType	definition	validity	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:81
+registryRegistryPublishType		validity	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:81
+registryRegistryPublishType	definition.validity	period	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:53
+registryRegistryPublishType	validity	period	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:53
+registryRegistryPublishType	definition.validity	mode	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:54
+registryRegistryPublishType	validity	mode	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:54
+registryRegistryPublishType	definition.validity	fiscalStartMonth	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:58
+registryRegistryPublishType	validity	fiscalStartMonth	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:58
+registryRegistryPublishType	definition.validity	renewalPeriod	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:59
+registryRegistryPublishType	validity	renewalPeriod	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:59
+registryRegistryPublishType	definition.validity	alignTo	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:60
+registryRegistryPublishType	validity	alignTo	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:60
+registryRegistryPublishType	definition.validity	renewalWindow	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:61
+registryRegistryPublishType	validity	renewalWindow	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:61
+registryRegistryPublishType	definition.validity	grace	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:61
+registryRegistryPublishType	validity	grace	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:61
+registryRegistryPublishType	definition.validity	maxRenewals	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:62
+registryRegistryPublishType	validity	maxRenewals	integer	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:62
+registryRegistryPublishType	definition.validity	renewFrom	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:62
+registryRegistryPublishType	validity	renewFrom	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:62
+registryRegistryPublishType	definition.validity	deemedRenewalDecision	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:63
+registryRegistryPublishType	validity	deemedRenewalDecision	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ValidityRule.java:63
+registryRegistryPublishType	definition	numbering	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:82
+registryRegistryPublishType		numbering	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:82
+registryRegistryPublishType	definition.numbering	series	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:35
+registryRegistryPublishType	numbering	series	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:35
+registryRegistryPublishType	definition.numbering	series	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:38
+registryRegistryPublishType	numbering	series	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:38
+registryRegistryPublishType	definition.numbering	scopeAttribute	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:38
+registryRegistryPublishType	numbering	scopeAttribute	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:38
+registryRegistryPublishType	definition.numbering	assignOn	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:39
+registryRegistryPublishType	numbering	assignOn	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:39
+registryRegistryPublishType	definition	verification	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:82
+registryRegistryPublishType		verification	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:82
+registryRegistryPublishType	definition.verification	publicFields	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:50
+registryRegistryPublishType	verification	publicFields	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:50
+registryRegistryPublishType	definition.verification	showHolderName	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:51
+registryRegistryPublishType	verification	showHolderName	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:51
+registryRegistryPublishType	definition.verification	qr	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:52
+registryRegistryPublishType	verification	qr	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:52
+registryRegistryPublishType	definition	transferable	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:83
+registryRegistryPublishType		transferable	boolean	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:83
+registryRegistryPublishType	definition	parentTypes	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:84
+registryRegistryPublishType		parentTypes	strings	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:84
+registryRegistryPublishType	definition	extensions	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:84
+registryRegistryPublishType		extensions	object	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:84
+registryRegistryPublishType	definition.documents	publishChannel	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:83
+registryRegistryPublishType	documents	publishChannel	string	sangam-registry/src/main/java/org/sangam/registry/kernel/ObjectTypeDefinition.java:83
+registryRegistryTransition		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryRegistryTransition		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:134
+registryRegistryTransition		until	date-time	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:135
+registryRegistryTransition		countersignedBy	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:135
+registryRegistryUpdate		expectedVersion	int64	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:242
+registryRegistryUpdate		attributes	object	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:124
+registryRegistryUpdate		displayName	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:125
+registryRegistryUpdate		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:125
+registryRegistryVoidNumber		number	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:199
+registryRegistryVoidNumber		reason	string	sangam-registry/src/main/java/org/sangam/registry/rest/RegistryController.java:199
+resourcesResourcesDefineType		refundTiers	array	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:114
+resourcesResourcesDefineType		attributes	array	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:119
+resourcesResourcesDefineType		allowedParentTypes	array	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:126
+resourcesResourcesDefineType		bookingMode	any	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:127
+resourcesResourcesDefineType		extra	object	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:128
+resourcesResourcesDefineType		typeId	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:129
+resourcesResourcesDefineType		name	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:129
+resourcesResourcesDefineType		typeId	any	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:129
+resourcesResourcesDefineType		kind	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:130
+resourcesResourcesDefineType		slotMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:132
+resourcesResourcesDefineType		alignMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:132
+resourcesResourcesDefineType		holdMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:132
+resourcesResourcesDefineType		minNoticeMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:133
+resourcesResourcesDefineType		maxAdvanceDays	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:133
+resourcesResourcesDefineType		minDurationMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:134
+resourcesResourcesDefineType		maxDurationMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:134
+resourcesResourcesDefineType		noShowGraceMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:135
+resourcesResourcesDefineType		defaultCapacity	integer	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:135
+resourcesResourcesDefineType		unitLabel	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:136
+resourcesResourcesDefineType		requiresApproval	boolean	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:136
+resourcesResourcesDefineType		approvalProcessKey	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:136
+resourcesResourcesDefineType		allowBump	boolean	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:137
+resourcesResourcesDefineType		entitlementDecision	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:137
+resourcesResourcesDefineType		priorityDecision	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:137
+resourcesResourcesDefineType		tariffDecision	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:138
+resourcesResourcesDefineType		cancellationDecision	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:138
+resourcesResourcesDefineType		defaultTariffCode	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:138
+resourcesResourcesDefineType		currency	string	sangam-resources/src/main/java/org/sangam/resources/catalogue/ResourceType.java:139
+resourcesResourcesDefineType		typeId	string	sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java:115
+resourcesResourcesSaveCalendar		hours	object	sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java:61
+resourcesResourcesSaveCalendar		zone	any	sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java:76
+resourcesResourcesSaveCalendar		name	string	sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java:77
+resourcesResourcesSaveCalendar		businessCalendarId	string	sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java:78
+resourcesResourcesSaveCalendar		closedOnHolidays	boolean	sangam-resources/src/main/java/org/sangam/resources/calendar/AvailabilityCalendar.java:78
+rostersRosterUpdateConstraints		minRestMinutes	integer	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:145
+rostersRosterUpdateConstraints		maxMinutesPerWeek	integer	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:146
+rostersRosterUpdateConstraints		maxMinutesPerDay	integer	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:147
+rostersRosterUpdateConstraints		weeklyOffDays	integer	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:148
+rostersRosterUpdateConstraints		maxConsecutiveNights	integer	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:149
+rostersRosterUpdateConstraints		maxConsecutiveDays	integer	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:150
+rostersRosterUpdateConstraints		requireSkill	boolean	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:151
+rostersRosterUpdateConstraints		constraintsDecision	string	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:152
+rostersRosterUpdateConstraints		approvalProcessKey	any	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:153
+rostersRosterUpdateConstraints		approvalProcessKey	any	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:153
+rostersRosterUpdateConstraints		swapApprovalProcessKey	string	sangam-resources/src/main/java/org/sangam/resources/roster/RosterModel.java:154

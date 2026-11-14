@@ -1,0 +1,13 @@
+  98 True 8EA86F54A7BE34CFDB12C66F90DF915D6C1213EA48E2B96481C4F713B11480EC sangam-integration/src/main/java/org/sangam/integration/dsc/DscPreparedStore.java
+ 101 True F875BE6CD867124423B7187CEB39B2CDA48328101242F338EFEA2689806D2607 sangam-integration/src/main/java/org/sangam/integration/dsc/JdbcDscPreparedStore.java
+ 318 True 291D7EA037B2F55008446443645EE834004A1BBC23A9BC73AE2C7FD7CF5CCB06 sangam-integration/src/main/java/org/sangam/integration/dsc/DscSigningFlow.java
+ 458 True D17673D935D5F3736342A0339DA8D9A6C18A44CD8BC669DE6C2880BA387BB606 sangam-integration/src/test/java/org/sangam/integration/dsc/DscSigningFlowTest.java
+ 184 True 714CDEB2494372B0C566ADBDC5266C8F0033695409D6CBA8B51DE1EFD7E450E8 sangam-integration/src/test/java/org/sangam/integration/dsc/JdbcDscPreparedStoreH2Test.java
+ 460 True 2224D9A6DD7A00D6B686735635DCACC7939F66BCF3AC58DAF2D2AB0689AD14DC sangam-server/src/test/java/org/sangam/server/web/DscSigningControllerTest.java
+ 218 True C5828AF5240B5FE9CB89E97E8FF2AA23421BE470C8D4BD57199048769D86F0A3 sangam-server/src/main/java/org/sangam/server/web/DscCertificateController.java
+ 232 True CB8125621B90E1A5CDBFFD06852EEF66AB96E91A80225427CC1A91D7F06C5414 sangam-server/src/test/java/org/sangam/server/web/DscCertificateControllerTest.java
+ 390 False E2C3FE9E09FC7359CFA2E0FBA4349E6D6BAD63D6C6CE6C898E641DFC16197AAA sangam-integration/README.md
+ 273 True C302B1D83CD6B7283A9F4435BB235DA3A0E7AAE8EDA033FBA37CB25D679741C1 sangam-esign/src/main/java/org/sangam/esign/RevocationChecker.java
+ 129 True 021E48127DB0A803B0B1B8B979D98815C2B508889FA63CD17E6D4EE2CBD5A46F sangam-esign/src/test/java/org/sangam/esign/RevocationCheckerTest.java
+ 396 True 5B55B6E971AE52213CA8B05AF61FEFA1C571F9D93254F3561AB3D78690146D28 sangam-esign/src/test/java/org/sangam/esign/EsignTestPki.java
+  34 False 63CA51D103170720F4F8260C04985C264295A01349DECA2D5B43FA6D78C5D650 sangam-esign/README.md

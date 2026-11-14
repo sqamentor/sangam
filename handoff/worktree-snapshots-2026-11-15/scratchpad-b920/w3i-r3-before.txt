@@ -1,0 +1,2 @@
+sangam-engine/src/main/java/org/sangam/engine/lease/SangamLeaseTable.java 175EB35CBA03E6726681E814D9C00510184996A8236CCC9CA48E2D1C760444CD
+sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/EngineAdapterWorkAdapter.java 64C2B3BB7C0A4C6EDF05BFC70EA38DB3F5432ADB82E25DF95C5E0B6D673C620A

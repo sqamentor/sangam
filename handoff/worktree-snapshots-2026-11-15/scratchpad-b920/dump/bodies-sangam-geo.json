@@ -1,0 +1,15 @@
+{"ops":[
+{"cls":"org.sangam.geo.web.GeoController","m":"importExternal","verb":"POST","path":"/api/v1/geo/external-layers/{ref}/import","required":false,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"queryExternal","verb":"POST","path":"/api/v1/geo/external-layers/{ref}/query","required":false,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"defineFence","verb":"POST","path":"/api/v1/geo/fences","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"defineLayer","verb":"POST","path":"/api/v1/geo/layers","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"putObjectGeometry","verb":"PUT","path":"/api/v1/geo/objects/{type}/{id}/geometry","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"registerExternal","verb":"POST","path":"/api/v1/geo/external-layers","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"importBoundaries","verb":"POST","path":"/api/v1/geo/layers/{layer}/import","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"checkFence","verb":"POST","path":"/api/v1/geo/fences/{id}/check","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"putFeature","verb":"POST","path":"/api/v1/geo/layers/{layer}/features","required":true,"type":{"k":"map","of":{"k":"any"}}},
+{"cls":"org.sangam.geo.web.GeoController","m":"overlaps","verb":"POST","path":"/api/v1/geo/overlaps","required":true,"type":{"k":"map","of":{"k":"any"}}}
+],
+"records":{
+
+}}

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.server.bridge.QuotaPoolDeadlockTtl30sH2Test
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 158.0 s -- in org.sangam.server.bridge.QuotaPoolDeadlockTtl30sH2Test

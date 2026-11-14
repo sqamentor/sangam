@@ -1,0 +1,389 @@
+Compiled from "AbstractSetProcessInstanceStateCmd.java"
+public abstract class org.operaton.bpm.engine.impl.cmd.AbstractSetProcessInstanceStateCmd extends org.operaton.bpm.engine.impl.cmd.AbstractSetStateCmd {
+  protected final java.lang.String processInstanceId;
+
+  protected final java.lang.String processDefinitionId;
+
+  protected final java.lang.String processDefinitionKey;
+
+  protected final java.lang.String processDefinitionTenantId;
+
+  protected final boolean isProcessDefinitionTenantIdSet;
+
+  protected org.operaton.bpm.engine.impl.cmd.AbstractSetProcessInstanceStateCmd(org.operaton.bpm.engine.impl.runtime.UpdateProcessInstanceSuspensionStateBuilderImpl);
+    Code:
+         0: aload_0
+         1: iconst_1
+         2: aconst_null
+         3: invokespecial #1                  // Method org/operaton/bpm/engine/impl/cmd/AbstractSetStateCmd."<init>":(ZLjava/util/Date;)V
+         6: aload_0
+         7: aload_1
+         8: invokevirtual #7                  // Method org/operaton/bpm/engine/impl/runtime/UpdateProcessInstanceSuspensionStateBuilderImpl.getProcessInstanceId:()Ljava/lang/String;
+        11: putfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        14: aload_0
+        15: aload_1
+        16: invokevirtual #19                 // Method org/operaton/bpm/engine/impl/runtime/UpdateProcessInstanceSuspensionStateBuilderImpl.getProcessDefinitionId:()Ljava/lang/String;
+        19: putfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        22: aload_0
+        23: aload_1
+        24: invokevirtual #25                 // Method org/operaton/bpm/engine/impl/runtime/UpdateProcessInstanceSuspensionStateBuilderImpl.getProcessDefinitionKey:()Ljava/lang/String;
+        27: putfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        30: aload_0
+        31: aload_1
+        32: invokevirtual #31                 // Method org/operaton/bpm/engine/impl/runtime/UpdateProcessInstanceSuspensionStateBuilderImpl.getProcessDefinitionTenantId:()Ljava/lang/String;
+        35: putfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+        38: aload_0
+        39: aload_1
+        40: invokevirtual #37                 // Method org/operaton/bpm/engine/impl/runtime/UpdateProcessInstanceSuspensionStateBuilderImpl.isProcessDefinitionTenantIdSet:()Z
+        43: putfield      #41                 // Field isProcessDefinitionTenantIdSet:Z
+        46: return
+
+  protected void checkParameters(org.operaton.bpm.engine.impl.interceptor.CommandContext);
+    Code:
+         0: aload_0
+         1: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+         4: ifnonnull     31
+         7: aload_0
+         8: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        11: ifnonnull     31
+        14: aload_0
+        15: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        18: ifnonnull     31
+        21: new           #44                 // class org/operaton/bpm/engine/ProcessEngineException
+        24: dup
+        25: ldc           #46                 // String ProcessInstanceId, ProcessDefinitionId nor ProcessDefinitionKey cannot be null.
+        27: invokespecial #48                 // Method org/operaton/bpm/engine/ProcessEngineException."<init>":(Ljava/lang/String;)V
+        30: athrow
+        31: return
+
+  protected void checkAuthorization(org.operaton.bpm.engine.impl.interceptor.CommandContext);
+    Code:
+         0: aload_1
+         1: invokevirtual #51                 // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         4: invokevirtual #57                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getCommandCheckers:()Ljava/util/List;
+         7: invokeinterface #63,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+        12: astore_2
+        13: aload_2
+        14: invokeinterface #69,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        19: ifeq          92
+        22: aload_2
+        23: invokeinterface #74,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        28: checkcast     #78                 // class org/operaton/bpm/engine/impl/cfg/CommandChecker
+        31: astore_3
+        32: aload_0
+        33: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        36: ifnull        52
+        39: aload_3
+        40: aload_0
+        41: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        44: invokeinterface #80,  2           // InterfaceMethod org/operaton/bpm/engine/impl/cfg/CommandChecker.checkUpdateProcessInstanceSuspensionStateById:(Ljava/lang/String;)V
+        49: goto          89
+        52: aload_0
+        53: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        56: ifnull        72
+        59: aload_3
+        60: aload_0
+        61: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        64: invokeinterface #83,  2           // InterfaceMethod org/operaton/bpm/engine/impl/cfg/CommandChecker.checkUpdateProcessInstanceSuspensionStateByProcessDefinitionId:(Ljava/lang/String;)V
+        69: goto          89
+        72: aload_0
+        73: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        76: ifnull        89
+        79: aload_3
+        80: aload_0
+        81: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        84: invokeinterface #86,  2           // InterfaceMethod org/operaton/bpm/engine/impl/cfg/CommandChecker.checkUpdateProcessInstanceSuspensionStateByProcessDefinitionKey:(Ljava/lang/String;)V
+        89: goto          13
+        92: return
+
+  protected void updateSuspensionState(org.operaton.bpm.engine.impl.interceptor.CommandContext, org.operaton.bpm.engine.impl.persistence.entity.SuspensionState);
+    Code:
+         0: aload_1
+         1: invokevirtual #89                 // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getExecutionManager:()Lorg/operaton/bpm/engine/impl/persistence/entity/ExecutionManager;
+         4: astore_3
+         5: aload_1
+         6: invokevirtual #93                 // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getTaskManager:()Lorg/operaton/bpm/engine/impl/persistence/entity/TaskManager;
+         9: astore        4
+        11: aload_1
+        12: invokevirtual #97                 // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getExternalTaskManager:()Lorg/operaton/bpm/engine/impl/persistence/entity/ExternalTaskManager;
+        15: astore        5
+        17: aload_0
+        18: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        21: ifnull        56
+        24: aload_3
+        25: aload_0
+        26: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        29: aload_2
+        30: invokevirtual #101                // Method org/operaton/bpm/engine/impl/persistence/entity/ExecutionManager.updateExecutionSuspensionStateByProcessInstanceId:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+        33: aload         4
+        35: aload_0
+        36: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        39: aload_2
+        40: invokevirtual #107                // Method org/operaton/bpm/engine/impl/persistence/entity/TaskManager.updateTaskSuspensionStateByProcessInstanceId:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+        43: aload         5
+        45: aload_0
+        46: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        49: aload_2
+        50: invokevirtual #112                // Method org/operaton/bpm/engine/impl/persistence/entity/ExternalTaskManager.updateExternalTaskSuspensionStateByProcessInstanceId:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+        53: goto          175
+        56: aload_0
+        57: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        60: ifnull        95
+        63: aload_3
+        64: aload_0
+        65: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        68: aload_2
+        69: invokevirtual #117                // Method org/operaton/bpm/engine/impl/persistence/entity/ExecutionManager.updateExecutionSuspensionStateByProcessDefinitionId:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+        72: aload         4
+        74: aload_0
+        75: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        78: aload_2
+        79: invokevirtual #120                // Method org/operaton/bpm/engine/impl/persistence/entity/TaskManager.updateTaskSuspensionStateByProcessDefinitionId:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+        82: aload         5
+        84: aload_0
+        85: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        88: aload_2
+        89: invokevirtual #123                // Method org/operaton/bpm/engine/impl/persistence/entity/ExternalTaskManager.updateExternalTaskSuspensionStateByProcessDefinitionId:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+        92: goto          175
+        95: aload_0
+        96: getfield      #41                 // Field isProcessDefinitionTenantIdSet:Z
+        99: ifeq          146
+       102: aload_3
+       103: aload_0
+       104: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       107: aload_0
+       108: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+       111: aload_2
+       112: invokevirtual #126                // Method org/operaton/bpm/engine/impl/persistence/entity/ExecutionManager.updateExecutionSuspensionStateByProcessDefinitionKeyAndTenantId:(Ljava/lang/String;Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+       115: aload         4
+       117: aload_0
+       118: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       121: aload_0
+       122: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+       125: aload_2
+       126: invokevirtual #130                // Method org/operaton/bpm/engine/impl/persistence/entity/TaskManager.updateTaskSuspensionStateByProcessDefinitionKeyAndTenantId:(Ljava/lang/String;Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+       129: aload         5
+       131: aload_0
+       132: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       135: aload_0
+       136: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+       139: aload_2
+       140: invokevirtual #133                // Method org/operaton/bpm/engine/impl/persistence/entity/ExternalTaskManager.updateExternalTaskSuspensionStateByProcessDefinitionKeyAndTenantId:(Ljava/lang/String;Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+       143: goto          175
+       146: aload_3
+       147: aload_0
+       148: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       151: aload_2
+       152: invokevirtual #136                // Method org/operaton/bpm/engine/impl/persistence/entity/ExecutionManager.updateExecutionSuspensionStateByProcessDefinitionKey:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+       155: aload         4
+       157: aload_0
+       158: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       161: aload_2
+       162: invokevirtual #139                // Method org/operaton/bpm/engine/impl/persistence/entity/TaskManager.updateTaskSuspensionStateByProcessDefinitionKey:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+       165: aload         5
+       167: aload_0
+       168: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       171: aload_2
+       172: invokevirtual #142                // Method org/operaton/bpm/engine/impl/persistence/entity/ExternalTaskManager.updateExternalTaskSuspensionStateByProcessDefinitionKey:(Ljava/lang/String;Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;)V
+       175: return
+
+  protected void triggerHistoryEvent(org.operaton.bpm.engine.impl.interceptor.CommandContext);
+    Code:
+         0: aload_1
+         1: invokevirtual #51                 // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         4: invokevirtual #145                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryLevel:()Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+         7: astore_2
+         8: aload_0
+         9: aload_1
+        10: invokevirtual #149                // Method obtainProcessInstances:(Lorg/operaton/bpm/engine/impl/interceptor/CommandContext;)Ljava/util/List;
+        13: astore_3
+        14: aload_3
+        15: invokeinterface #63,  1           // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+        20: astore        4
+        22: aload         4
+        24: invokeinterface #69,  1           // InterfaceMethod java/util/Iterator.hasNext:()Z
+        29: ifeq          74
+        32: aload         4
+        34: invokeinterface #74,  1           // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        39: checkcast     #153                // class org/operaton/bpm/engine/runtime/ProcessInstance
+        42: astore        5
+        44: aload_2
+        45: getstatic     #155                // Field org/operaton/bpm/engine/impl/history/event/HistoryEventTypes.PROCESS_INSTANCE_UPDATE:Lorg/operaton/bpm/engine/impl/history/event/HistoryEventTypes;
+        48: aload         5
+        50: invokeinterface #161,  3          // InterfaceMethod org/operaton/bpm/engine/impl/history/HistoryLevel.isHistoryEventProduced:(Lorg/operaton/bpm/engine/impl/history/event/HistoryEventType;Ljava/lang/Object;)Z
+        55: ifeq          71
+        58: new           #167                // class org/operaton/bpm/engine/impl/cmd/AbstractSetProcessInstanceStateCmd$1
+        61: dup
+        62: aload_0
+        63: aload         5
+        65: invokespecial #169                // Method org/operaton/bpm/engine/impl/cmd/AbstractSetProcessInstanceStateCmd$1."<init>":(Lorg/operaton/bpm/engine/impl/cmd/AbstractSetProcessInstanceStateCmd;Lorg/operaton/bpm/engine/runtime/ProcessInstance;)V
+        68: invokestatic  #172                // Method org/operaton/bpm/engine/impl/history/event/HistoryEventProcessor.processHistoryEvents:(Lorg/operaton/bpm/engine/impl/history/event/HistoryEventProcessor$HistoryEventCreator;)V
+        71: goto          22
+        74: return
+
+  protected java.util.List<org.operaton.bpm.engine.runtime.ProcessInstance> obtainProcessInstances(org.operaton.bpm.engine.impl.interceptor.CommandContext);
+    Code:
+         0: new           #178                // class org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl
+         3: dup
+         4: invokespecial #180                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl."<init>":()V
+         7: astore_2
+         8: aload_0
+         9: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        12: ifnull        27
+        15: aload_2
+        16: aload_0
+        17: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        20: invokevirtual #183                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl.processInstanceId:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/ProcessInstanceQueryImpl;
+        23: pop
+        24: goto          105
+        27: aload_0
+        28: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        31: ifnull        46
+        34: aload_2
+        35: aload_0
+        36: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        39: invokevirtual #186                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl.processDefinitionId:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/ProcessInstanceQueryImpl;
+        42: pop
+        43: goto          105
+        46: aload_0
+        47: getfield      #41                 // Field isProcessDefinitionTenantIdSet:Z
+        50: ifeq          96
+        53: aload_2
+        54: aload_0
+        55: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        58: invokevirtual #188                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl.processDefinitionKey:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/ProcessInstanceQueryImpl;
+        61: pop
+        62: aload_0
+        63: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+        66: ifnull        88
+        69: aload_2
+        70: iconst_1
+        71: anewarray     #190                // class java/lang/String
+        74: dup
+        75: iconst_0
+        76: aload_0
+        77: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+        80: aastore
+        81: invokevirtual #192                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl.tenantIdIn:([Ljava/lang/String;)Lorg/operaton/bpm/engine/runtime/ProcessInstanceQuery;
+        84: pop
+        85: goto          105
+        88: aload_2
+        89: invokevirtual #196                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl.withoutTenantId:()Lorg/operaton/bpm/engine/runtime/ProcessInstanceQuery;
+        92: pop
+        93: goto          105
+        96: aload_2
+        97: aload_0
+        98: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+       101: invokevirtual #188                // Method org/operaton/bpm/engine/impl/ProcessInstanceQueryImpl.processDefinitionKey:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/ProcessInstanceQueryImpl;
+       104: pop
+       105: new           #200                // class java/util/ArrayList
+       108: dup
+       109: invokespecial #202                // Method java/util/ArrayList."<init>":()V
+       112: astore_3
+       113: aload_3
+       114: aload_1
+       115: invokevirtual #89                 // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getExecutionManager:()Lorg/operaton/bpm/engine/impl/persistence/entity/ExecutionManager;
+       118: aload_2
+       119: aconst_null
+       120: invokevirtual #203                // Method org/operaton/bpm/engine/impl/persistence/entity/ExecutionManager.findProcessInstancesByQueryCriteria:(Lorg/operaton/bpm/engine/impl/ProcessInstanceQueryImpl;Lorg/operaton/bpm/engine/impl/Page;)Ljava/util/List;
+       123: invokeinterface #207,  2          // InterfaceMethod java/util/List.addAll:(Ljava/util/Collection;)Z
+       128: pop
+       129: aload_3
+       130: areturn
+
+  protected void logUserOperation(org.operaton.bpm.engine.impl.interceptor.CommandContext);
+    Code:
+         0: new           #211                // class org/operaton/bpm/engine/impl/persistence/entity/PropertyChange
+         3: dup
+         4: ldc           #213                // String suspensionState
+         6: aconst_null
+         7: aload_0
+         8: invokevirtual #215                // Method getNewSuspensionState:()Lorg/operaton/bpm/engine/impl/persistence/entity/SuspensionState;
+        11: invokeinterface #219,  1          // InterfaceMethod org/operaton/bpm/engine/impl/persistence/entity/SuspensionState.getName:()Ljava/lang/String;
+        16: invokespecial #224                // Method org/operaton/bpm/engine/impl/persistence/entity/PropertyChange."<init>":(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V
+        19: astore_2
+        20: aload_1
+        21: invokevirtual #227                // Method org/operaton/bpm/engine/impl/interceptor/CommandContext.getOperationLogManager:()Lorg/operaton/bpm/engine/impl/persistence/entity/UserOperationLogManager;
+        24: aload_0
+        25: invokevirtual #231                // Method getLogEntryOperation:()Ljava/lang/String;
+        28: aload_0
+        29: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        32: aload_0
+        33: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        36: aload_0
+        37: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        40: aload_2
+        41: invokestatic  #234                // Method java/util/Collections.singletonList:(Ljava/lang/Object;)Ljava/util/List;
+        44: invokevirtual #240                // Method org/operaton/bpm/engine/impl/persistence/entity/UserOperationLogManager.logProcessInstanceOperation:(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+        47: return
+
+  protected org.operaton.bpm.engine.impl.management.UpdateJobSuspensionStateBuilderImpl createJobCommandBuilder();
+    Code:
+         0: new           #246                // class org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl
+         3: dup
+         4: invokespecial #248                // Method org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl."<init>":()V
+         7: astore_1
+         8: aload_0
+         9: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        12: ifnull        27
+        15: aload_1
+        16: aload_0
+        17: getfield      #13                 // Field processInstanceId:Ljava/lang/String;
+        20: invokevirtual #249                // Method org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl.byProcessInstanceId:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;
+        23: pop
+        24: goto          97
+        27: aload_0
+        28: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        31: ifnull        46
+        34: aload_1
+        35: aload_0
+        36: getfield      #22                 // Field processDefinitionId:Ljava/lang/String;
+        39: invokevirtual #253                // Method org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl.byProcessDefinitionId:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;
+        42: pop
+        43: goto          97
+        46: aload_0
+        47: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        50: ifnull        97
+        53: aload_1
+        54: aload_0
+        55: getfield      #28                 // Field processDefinitionKey:Ljava/lang/String;
+        58: invokevirtual #256                // Method org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl.byProcessDefinitionKey:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;
+        61: pop
+        62: aload_0
+        63: getfield      #41                 // Field isProcessDefinitionTenantIdSet:Z
+        66: ifeq          85
+        69: aload_0
+        70: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+        73: ifnull        85
+        76: aload_1
+        77: aload_0
+        78: getfield      #34                 // Field processDefinitionTenantId:Ljava/lang/String;
+        81: invokevirtual #259                // Method org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl.processDefinitionTenantId:(Ljava/lang/String;)Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;
+        84: areturn
+        85: aload_0
+        86: getfield      #41                 // Field isProcessDefinitionTenantIdSet:Z
+        89: ifeq          97
+        92: aload_1
+        93: invokevirtual #261                // Method org/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl.processDefinitionWithoutTenantId:()Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;
+        96: areturn
+        97: aload_1
+        98: areturn
+
+  protected org.operaton.bpm.engine.impl.cmd.AbstractSetJobStateCmd getNextCommand();
+    Code:
+         0: aload_0
+         1: invokevirtual #265                // Method createJobCommandBuilder:()Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;
+         4: astore_1
+         5: aload_0
+         6: aload_1
+         7: invokevirtual #268                // Method getNextCommand:(Lorg/operaton/bpm/engine/impl/management/UpdateJobSuspensionStateBuilderImpl;)Lorg/operaton/bpm/engine/impl/cmd/AbstractSetJobStateCmd;
+        10: areturn
+
+  protected abstract org.operaton.bpm.engine.impl.cmd.AbstractSetJobStateCmd getNextCommand(org.operaton.bpm.engine.impl.management.UpdateJobSuspensionStateBuilderImpl);
+
+  protected org.operaton.bpm.engine.impl.cmd.AbstractSetStateCmd getNextCommand();
+    Code:
+         0: aload_0
+         1: invokevirtual #272                // Method getNextCommand:()Lorg/operaton/bpm/engine/impl/cmd/AbstractSetJobStateCmd;
+         4: areturn
+}

@@ -1,0 +1,44 @@
+## SL-157 hits 1
+   WAVE2 11-12T09:13Z W2-L/B40 DONE: SL-157 tenant-filtered fetch + per-call tenant check, SL-158 topic guard hook, SL-161 single-flight key store, M-073 verify checkpoints, SG-15 lease-lookup fold on storedOperationIdOf (W2-D DONE consumed): OperatonEngineAdapter.java 3180E0906F36B9BEEF327C02DFB
+## SL-158 hits 9
+   WAVE2 11-12T10:11Z W2-L/B40 DONE: nks wiring), W2-B 2026-11-12T10:11Z | W2-L/B40 | DONE | X1-07 one back-off (WorkLongPoll.Settings.nextIntervalMillis) + SL-158 OperatonWorkAdapter.setTopicGuard: OperatonWorkAdapter.java C8C83C31DC32524601765EC37CCC321A9B3B4577FEF14496D5C7ABF58C0600C5; WorkLon
+   WAVE2 11-12T11:07Z integrator DONE: line 119 closed: SL-158 binding note in the Worker section of sdks/java 1359299CF3E86121C642FA1AD8B277DCFFD0C2BDE93F79FD8AEA0BBF18DB0791, typescript 73433C56980841ED50773C89F4919139343FDB7626DBEB852F34D866420F4E0E, python 82DD5A958317F02B36E8E67A74A615871DD057
+## SL-161 hits 5
+   WAVE2 11-12T09:47Z W2-A/B29 DONE: SL-161: SecurityKeysWiring.sangamFieldEncryptor passes the sangam-security-audit leaf pool (SecurityAuditPool.transactionsOrNull) to newFieldEncryptor; main pool only when the main pool is not HikariCP. Test in SecurityDenialAuditWiringTest (key-store tx holds
+   WAVE2 11-12T09:47Z W2-A/B29 DONE: application.yaml 0BC65D7C51E658110CA57109AFD706E509F1704758446490877555BAF2576D15: SL-158 migration (bind workers), SL-161 note, trusted-public-key-refs, and W2-K's compliance seats (sangam.compliance.seats.<ROLE>, fail closed) documented as comments
+## SL-162 hits 1
+   WAVE2 11-12T10:02Z W2-E/B33 DONE: SL-162 + second-start guard landed: ALTERS 0041-01 CMP_BREACH (risk_outcome, risk_json, high_risk DEFAULT 0 NOT NULL, delay_until, delay_ref), 0041-02 CMP_BREACH.plan_process_instance_id {str64} NULL (also in ComplianceSchema CMP_BREACH H2 DDL), 0041-03 CMP_PU
+## SL-164 hits 1
+   WAVE3 11-12T12:08Z integrator ACK: cached by exp) and a transport seam on GoogleServiceAccountToken; W3-B removes GcpTokens once it lands (no second copy, SL-164)
+## SL-168 hits 2
+   WAVE3 11-12T12:04:42 W3-M/B54 CHANGE+DONE: SL-168 deploy: Helm database.pool.leafPools {quota 4, securityDenialAudit 2, complianceDenialAudit 2} -> SANGAM_QUOTA_POOL_SIZE / SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE / SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE; otel.engineTracing false -> SANGAM_TRACING_ENGI
+   WAVE3 11-12T12:07:04 W3-M/B54 INFO:  BROKEN above). No error in a W3-M file. The integrator gate on the merged tree is the green check for C3-09, C3-10 and SL-168
+## SL-134 hits 0
+## SL-159 hits 0
+## SL-176 hits 0
+## SL-179 hits 1
+   WAVE3 11-12T15:30:45 integrator ACK: oyPackage; Pinner pin(PackageDeploy, ref); gate exit 0 enforcer on). App-bundle packages with operationRef are refused: SL-179. M-068 set CODED.
+## SL-180 hits 2
+   WAVE3 11-12T15:39:15 W3-I/B50 DONE: ncident), never handed out. Resolve route (OperatonOpsAdapter to ReconciliationEngine.resolve: queue + ledger + OperatonHeldWorkReleaser setRetries) reads no lease. Vectors: case awaiting-reconciliation and 6 workCalls awaiting-reconciliation-*, fail now calle
+   WAVE3 11-12T15:40:10 integrator ACK: sting test-only (decision 132); gate exit 0 enforcer on. The hold-window re-offer after an early resolve is recorded as SL-180 for Wave 4 (W4-E). All Wave 3 coding lanes have now reported; the close-out gate starts.
+## SL-75 hits 1
+   WAVE4 11-13T06:44:07 W4-K/B6B INFO: ad, 01:20:52Z) and OWNER-DECISIONS 280 and 288 only name the rows, no correction; (d) the snapshot copies under handoff/worktree-snapshots/*/TESTING-GAP-REGISTER.md predate the rows and do not name them; (e) the 2026-11-08 transcripts (last written 2026-11-09T
+## SL-111 hits 0
+## AC-08 hits 1
+   WAVE2 11-12T09:24Z W2-B/B30 DONE: r + generated surface (5 SDKs, 1046 ops / 882 paths at the time of generation), M-021 test engines, M-023 T01-T04/T18 + AC-08 harness, M-022 Tier-2 (Go/Rust helpers, Kotlin DSL, openapi-generator configs), M-062 SDK traceparent (opt-in). Hashes in FILE-CLAIMS 
+## SL-172 hits 4
+   WAVE3 11-12T12:46Z integrator ACK: W3-F final report: C3-05 partial (LockScope.DEPTH open), M-059 CODED, C3-04 CODED (partition-count change, metrics, EXECUTOR_OWNERSHIP_CHANGED audit left), M-025 fence DONE; M-057, M-060 not started; owner Qs batched. W3-K: SW-3 deploy-time rewrite location ba
+   WAVE3 11-12T13:16:29 W3-B/B43 DONE: decision 86 CHANGE 13:04:13Z landed: HttpTransport.execute calls LockScope.assertNoLockHeld("HTTP <method> <scheme://host:port>") before any network work (origin only, never path or query); no allow-list, no flag. sangam/sangam-integration/src/main/java/org/sa
+## M-089 precise hits 10
+   WAVE4 11-13T05:41:45 W4-K/B6B-esi7 DONE: re checked (statuses unchanged, question to coordinator). HALF_UP in the ESI path: none (PF, TCS, utility, refund, P2P, GeM rounding and CumulativeThresholdDelegate display only). Assertions replaced (behaviour these decisions replace): MoneyWagePeriodTest the
+   WAVE4 11-13T06:44:07 W4-K/B6B DONE: IED + SYNTHETIC_DEMO_ONLY, not the demonstration text; true demonstration policies (instalment, TCS, bill, refund, P2P, GeM) are UNVERIFIED + SYNTHETIC_DEMO_ONLY with the demonstration note. No shipped row is PRODUCTION; every payroll placeholder stays, so the
+## M-128 any hits 0
+## M-149 any RM hits 38
+   WAVE4 11-12T20:22:37 W4-H/B68 DONE: Decision 140 RM-07 CODED (tests written NOT_RUN): EsignConnector refuses to sign without a verifier, LIVE needs documentId and signerName, only VERIFIED_VALID succeeds; Bouncy Castle confined to document/sign. Root fix this session: a detached eSign CMS now ca
+   WAVE4 11-12T20:33:06 W4-B/B62 DONE: Decision 143 RM-06 PARTIAL (tests written NOT_RUN, Oracle and SQL Server not applicable, compile only). Shared framework-free resolver org.sangam.core.security.EnvironmentPolicy (modes PRODUCTION, NON_PRODUCTION, DEVELOPMENT; refusals MISSING, INVALID, CONTRAD
+## backup docs W4-C hits 9
+   WAVE4 11-13T01:04:00 W4-I/B69 DONE: ors on the 0044-01 table) 4DE0C20473E87F7C5A8EE341D0041E634B4042CE95B1C5FC4AA2E349F2737C5A. Decision 220 VM and compose backup console: NEW sangam-backup ScriptBackupTargets (absolute command, no shell, cleared env plus allow-list, timeout kills the process tr
+   WAVE4 11-13T01:43:23 W4-C/B63 DONE: Round 2 follow-up CODED, NOT_RUN (static checks only): (1) decision 220 script backup console: deploy README section 1.3 settings table (enabled, history-dir, env-passthrough, targets[i].id/name/command[j]/schedule/timeout, YAML example, host requirements: own
+## 187 default false hits 2
+   WAVE4 11-12T19:02:19 W4-K/B6B-healt INFO: with test vectors, or approve the mgrmtech/fidelius-cli source (licence to be checked) as the reference? Also waits for decision 187 to land (Bouncy Castle enters the module only once it is optional).
+   WAVE4 11-13T00:43:53 W4-K/B6B-healt INFO: DS-WAVE4.md 00:24:08Z). Also decision 173 note: Bouncy Castle may enter only once the module is optional at the server (decision 187 REQUEST still open). Options: (a) owner obtains a written licence or permission from the fidelius-cli authors; (b) use an MIT-l

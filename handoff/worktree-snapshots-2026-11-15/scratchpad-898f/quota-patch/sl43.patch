@@ -1,0 +1,666 @@
+diff --git a/sangam/sangam-security/src/main/java/org/sangam/security/admin/TenantAdminService.java b/sangam/sangam-security/src/main/java/org/sangam/security/admin/TenantAdminService.java
+index c59968e..2d9613e 100644
+--- a/sangam/sangam-security/src/main/java/org/sangam/security/admin/TenantAdminService.java
++++ b/sangam/sangam-security/src/main/java/org/sangam/security/admin/TenantAdminService.java
+@@ -138,6 +138,7 @@ public final class TenantAdminService {
+     public Tenant createTenant(Connection c, SecurityIdentity platformAdmin, String tenantId, String nameEn, String nameHi,
+                                String nameLocal, String hostingProfile, Map<String, Object> quotas) {
+         requirePlatformAdmin(platformAdmin);
++        validateQuotas(quotas);
+         if (!tenantId.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,59}")) {
+             throw new SangamSecurityException.AdminConflict("INVALID_TENANT_ID", "tenant id must be 1-60 safe characters");
+         }
+@@ -163,6 +164,7 @@ public final class TenantAdminService {
+         if (config != null) {
+             merged.putAll(config);
+         }
++        validateQuotas(quotas);
+         Map<String, Object> q = new LinkedHashMap<>(t.quotas());
+         if (quotas != null) {
+             q.putAll(quotas);
+@@ -241,6 +243,15 @@ public final class TenantAdminService {
+         return v == null ? defaultValue : Long.parseLong(v.toString());
+     }
+ 
++    /** SL-43: the quota entries the product enforces must be integers (negative = unlimited). */
++    private static void validateQuotas(Map<String, Object> quotas) {
++        try {
++            org.sangam.security.quota.JdbcTenantQuotas.validate(quotas);
++        } catch (IllegalArgumentException e) {
++            throw new SangamSecurityException.AdminConflict("INVALID_QUOTA", e.getMessage());
++        }
++    }
++
+     static void requirePlatformAdmin(SecurityIdentity who) {
+         if (!who.hasRole(PLATFORM_ADMIN_ROLE)) {
+             throw new SangamSecurityException.AccessDenied("platform administrator role required", 0);
+diff --git a/sangam/sangam-security/src/main/java/org/sangam/security/audit/SecurityEventType.java b/sangam/sangam-security/src/main/java/org/sangam/security/audit/SecurityEventType.java
+index 8b2f38e..8ff5650 100644
+--- a/sangam/sangam-security/src/main/java/org/sangam/security/audit/SecurityEventType.java
++++ b/sangam/sangam-security/src/main/java/org/sangam/security/audit/SecurityEventType.java
+@@ -21,5 +21,7 @@ public enum SecurityEventType {
+     TENANT_CREATED, TENANT_CONFIGURED, TENANT_ACTIVATED, TENANT_SUSPENDED, SEAT_CREATED, SEAT_MOVED, SEAT_ABOLISHED,
+     ORG_UNIT_CREATED, ORG_UNIT_MOVED, ORG_UNIT_RENAMED, POSTING_EFFECTIVE, POSTING_ENDED, ADDITIONAL_CHARGE_GRANTED, LEAVE_RECORDED,
+     DELEGATION_GRANTED, DELEGATION_EXPIRED, PACKAGE_SUBMITTED_FOR_REVIEW, PACKAGE_APPROVED, PACKAGE_PUBLISHED,
+-    PACKAGE_RETIRED, WORKER_BOUND, WORKER_UNBOUND, BULK_OPERATION_APPROVED, OPERATOR_ACTION
++    PACKAGE_RETIRED, WORKER_BOUND, WORKER_UNBOUND, BULK_OPERATION_APPROVED, OPERATOR_ACTION,
++    // quotas (SL-43; chain quota:<tenant>, written by JdbcTenantQuotas)
++    TENANT_QUOTA_EXCEEDED
+ }
+diff --git a/sangam/sangam-persistence/README.md b/sangam/sangam-persistence/README.md
+index cd964e7..19ca9ba 100644
+--- a/sangam/sangam-persistence/README.md
++++ b/sangam/sangam-persistence/README.md
+@@ -61,6 +61,7 @@ from the owner's reference DDL (integrator decision: the consuming code wins).
+ | `AUTH_MEMBERSHIP` **(ref)** | tenant, member, principal, source | member → principal, effective-dated (>200 groups, D-55) | security |
+ | `SEC_POLICY`, `SEC_POLICY_CHANGE`, `SEC_ROLE`, `SEC_ROLE_BINDING`, `SEC_GROUP`, `SEC_GROUP_MEMBER`, `SEC_PRIVILEGE`, `SEC_PRIVILEGE_MAPPING`, `SEC_API_TOKEN`, `SEC_WORKER_BINDING`, `SEC_BULK_PLAN`, `SEC_FIELD_RULE` **(ref)** | see DDL | policies (four-eyes changes), roles, groups, FC-42 privileges and tokens, R26 worker binding and bulk plans, field rules | security |
+ | `SEC_TENANT`, `SEC_TENANT_CHECKLIST` **(ref)** | tenant | tenants, onboarding (AJ-01) | security |
++| `SEC_TENANT_QUOTA_WINDOW` | tenant, quota, window start | per-tenant quota counting windows shared by all nodes (SL-43, R28) | security |
+ | `SEC_PERSON` **(ref)** | tenant, person | persons; unique subject per tenant (filtered on SQL Server, function-based on Oracle, so persons without a subject never collide) | security |
+ | `SEC_ORG_LEVEL`, `SEC_ORG_UNIT`, `SEC_ORG_UNIT_PARENT` **(ref)** | | hierarchy with effective-dated parents (IX.5 rule 2) | security |
+ | `SEC_SEAT`, `SEC_SEAT_PLACEMENT` **(ref)** | | seats/posts, effective-dated placement (IX.5 rule 1) | security |
+@@ -84,6 +85,7 @@ from the owner's reference DDL (integrator decision: the consuming code wins).
+ | `CONNECTOR_CALL` **(ref)** | operation_id | R37 durable call intent, provider handles | integration |
+ | `INTEGRATION_DEAD_LETTER` **(ref)** | id | dead letters (VI.2.3 rule 5, VI.2.6 rule 3) | integration |
+ | `INTEGRATION_LEADER` **(ref)** | name | leader election (R29) | integration |
++| `INTEGRATION_WEBHOOK_STATE` **(ref)** | destination | outbound webhook health: auto-disable / re-enable (SL-39) | integration |
+ | `UNIQUE_START` **(ref)** | tenant, definition_key, business_key | VI.2.6 rule 4 uniqueStart (FC-04, D-06) | integration |
+ | `RECONCILIATION_ATTEMPT` **(ref)** | item_id | reconciliation engine bookkeeping | integration |
+ | `LEGAL_HOLD` **(ref)** | tenant, root, hold | VI.5.1 / R61 legal holds | integration |
+diff --git a/sangam/sangam-security/src/main/resources/db/sangam-security-reference.sql b/sangam/sangam-security/src/main/resources/db/sangam-security-reference.sql
+index 397d954..2c6398e 100644
+--- a/sangam/sangam-security/src/main/resources/db/sangam-security-reference.sql
++++ b/sangam/sangam-security/src/main/resources/db/sangam-security-reference.sql
+@@ -138,6 +138,11 @@ CREATE TABLE SEC_TENANT_CHECKLIST (
+   tenant_id VARCHAR(64) NOT NULL, item VARCHAR(64) NOT NULL, evidence_ref VARCHAR(1000), recorded_by VARCHAR(255),
+   recorded_at TIMESTAMP WITH TIME ZONE, PRIMARY KEY (tenant_id, item)
+ );
++-- SL-43 per-tenant quota counting windows (JdbcTenantQuotas; shared by all nodes)
++CREATE TABLE SEC_TENANT_QUOTA_WINDOW (
++  tenant_id VARCHAR(64) NOT NULL, quota_name VARCHAR(64) NOT NULL, window_start BIGINT NOT NULL, used BIGINT NOT NULL,
++  refused SMALLINT NOT NULL, PRIMARY KEY (tenant_id, quota_name, window_start)
++);
+ 
+ -- ---------------------------------------------------------------- organisation (IX.5)
+ CREATE TABLE SEC_PERSON (
+diff --git a/sangam/sangam-integration/src/main/java/org/sangam/integration/schema/IntegrationSchema.java b/sangam/sangam-integration/src/main/java/org/sangam/integration/schema/IntegrationSchema.java
+index dec6fe3..9481715 100644
+--- a/sangam/sangam-integration/src/main/java/org/sangam/integration/schema/IntegrationSchema.java
++++ b/sangam/sangam-integration/src/main/java/org/sangam/integration/schema/IntegrationSchema.java
+@@ -65,6 +65,17 @@ public final class IntegrationSchema {
+               epoch       {long} NOT NULL,
+               expires_at  {ts} NOT NULL
+             )""",
++            // SL-39 outbound webhook destination health (WebhookHealth)
++            """
++            CREATE TABLE INTEGRATION_WEBHOOK_STATE (
++              destination           {str} NOT NULL PRIMARY KEY,
++              state                 {str64} NOT NULL,
++              consecutive_failures  {int} NOT NULL,
++              last_error            {text},
++              disabled_at           {ts},
++              changed_by            {str},
++              updated_at            {ts} NOT NULL
++            )""",
+             // VI.2.6 rule 4 uniqueStart
+             """
+             CREATE TABLE UNIQUE_START (
+diff --git a/sangam/sangam-integration/src/main/java/org/sangam/integration/relay/OutboxRelayService.java b/sangam/sangam-integration/src/main/java/org/sangam/integration/relay/OutboxRelayService.java
+index 047d190..5cc6fc5 100644
+--- a/sangam/sangam-integration/src/main/java/org/sangam/integration/relay/OutboxRelayService.java
++++ b/sangam/sangam-integration/src/main/java/org/sangam/integration/relay/OutboxRelayService.java
+@@ -37,7 +37,9 @@ import java.util.concurrent.atomic.AtomicLong;
+  *       at once with an audit entry and a dead letter; ordinary failures back off exponentially and are parked/skipped
+  *       after {@code maxAttempts} (default 10), also dead-lettered.</li>
+  *   <li><b>Destination back-pressure.</b> A per-destination {@link CircuitBreaker}: while a destination is open its
+- *       deliveries are deferred without consuming attempts.</li>
++ *       deliveries are deferred without consuming attempts. A publisher can ask for the same with
++ *       {@link DeferPublishException} (e.g. a webhook's {@code Retry-After}, or a disabled webhook in its hold
++ *       period).</li>
+  *   <li><b>Wake-up.</b> One payload-free {@link WakeupNotifier} call per cycle that published (R1).</li>
+  * </ul>
+  */
+@@ -182,6 +184,10 @@ public final class OutboxRelayService implements AutoCloseable, org.sangam.core.
+         }
+         try {
+             publishers.publish(dest, cl.event());
++        } catch (DeferPublishException e) {
++            // the publisher asked to wait (Retry-After, disabled destination in its hold period): no attempt consumed
++            defer(cl, Math.max(1000, e.delay().toMillis()));
++            return false;
+         } catch (PermanentPublishException e) {
+             breaker.success(dest);   // the destination answered; the event is the problem
+             poison(cl, "POISON: " + e.getMessage());
+diff --git a/sangam/sangam-integration/src/main/java/org/sangam/integration/inbox/WebhookInboxReceiver.java b/sangam/sangam-integration/src/main/java/org/sangam/integration/inbox/WebhookInboxReceiver.java
+index eae5f34..5895ed0 100644
+--- a/sangam/sangam-integration/src/main/java/org/sangam/integration/inbox/WebhookInboxReceiver.java
++++ b/sangam/sangam-integration/src/main/java/org/sangam/integration/inbox/WebhookInboxReceiver.java
+@@ -4,12 +4,8 @@ package org.sangam.integration.inbox;
+ import org.sangam.core.layer.Inbox;
+ import org.sangam.integration.relay.BackpressureGate;
+ 
+-import javax.crypto.Mac;
+-import javax.crypto.spec.SecretKeySpec;
+ import java.nio.charset.StandardCharsets;
+-import java.security.MessageDigest;
+ import java.time.Duration;
+-import java.util.HexFormat;
+ import java.util.Map;
+ 
+ /**
+@@ -71,39 +67,9 @@ public final class WebhookInboxReceiver {
+     }
+ 
+     boolean verify(String header, byte[] body) {
+-        if (header == null) {
+-            return false;
+-        }
+-        long t = -1;
+-        String v1 = null;
+-        for (String part : header.split(",")) {
+-            String[] kv = part.trim().split("=", 2);
+-            if (kv.length == 2 && kv[0].equals("t")) {
+-                try {
+-                    t = Long.parseLong(kv[1]);
+-                } catch (NumberFormatException e) {
+-                    return false;
+-                }
+-            } else if (kv.length == 2 && kv[0].equals("v1")) {
+-                v1 = kv[1];
+-            }
+-        }
+-        if (t < 0 || v1 == null) {
+-            return false;
+-        }
+-        long now = System.currentTimeMillis() / 1000;
+-        if (Math.abs(now - t) > tolerance.toSeconds()) {
+-            return false;
+-        }
+-        try {
+-            Mac mac = Mac.getInstance("HmacSHA256");
+-            mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+-            mac.update((t + ".").getBytes(StandardCharsets.UTF_8));
+-            byte[] expected = HexFormat.of().formatHex(mac.doFinal(body)).getBytes(StandardCharsets.US_ASCII);
+-            return MessageDigest.isEqual(expected, v1.getBytes(StandardCharsets.US_ASCII));
+-        } catch (Exception e) {
+-            return false;
+-        }
++        // shared with the sender; accepts any of several v1 entries (secret rotation), constant-time compare
++        return org.sangam.integration.publish.WebhookSignature.verify(secret, header, body, tolerance,
++                System.currentTimeMillis() / 1000);
+     }
+ 
+     private static String header(Map<String, String> headers, String name) {
+diff --git a/sangam/sangam-integration/src/main/java/org/sangam/integration/publish/HttpWebhookPublisher.java b/sangam/sangam-integration/src/main/java/org/sangam/integration/publish/HttpWebhookPublisher.java
+index 8272c6a..7fcd8be 100644
+--- a/sangam/sangam-integration/src/main/java/org/sangam/integration/publish/HttpWebhookPublisher.java
++++ b/sangam/sangam-integration/src/main/java/org/sangam/integration/publish/HttpWebhookPublisher.java
+@@ -4,52 +4,85 @@ package org.sangam.integration.publish;
+ import org.sangam.core.layer.Outbox;
+ import org.sangam.core.layer.Publisher;
+ import org.sangam.integration.connector.HttpTransport;
++import org.sangam.integration.connector.SecretResolver;
++import org.sangam.integration.relay.DeferPublishException;
+ import org.sangam.integration.relay.PermanentPublishException;
+ 
+-import javax.crypto.Mac;
+-import javax.crypto.spec.SecretKeySpec;
+ import java.net.URI;
+ import java.nio.charset.StandardCharsets;
+-import java.util.HexFormat;
++import java.time.Clock;
++import java.time.Duration;
++import java.time.Instant;
++import java.util.ArrayList;
+ import java.util.LinkedHashMap;
++import java.util.List;
+ import java.util.Map;
++import java.util.Set;
+ import java.util.function.Function;
+ 
+ /**
+- * Outbound webhook publisher (R71 "webhook", VI.2.3; unordered by default, VI.2.3 rule 5).
++ * Outbound webhook publisher (R71 "webhook", VI.2.3, SL-39). One {@link #publish} = one HTTP attempt; retries,
++ * backoff with jitter, dead letters and per-key ordering belong to the outbox relay ({@code OutboxRelayService} on
++ * core {@code Relay}): register the destination as {@code Outbox.Destination.ordered(name)} for per-root ordering.
+  *
+  * <ul>
+- *   <li>CloudEvents 1.0 binary mode: {@code ce-*} headers, body = payload JSON. {@code ce-id} is the event id, the
+- *       receiver's dedup key.</li>
+- *   <li>Signature: {@code X-Sangam-Signature: t=<epochSeconds>,v1=<hex HMAC-SHA256(secret, t + "." + body)>}, so the
+- *       receiver can authenticate the call and reject replays outside its tolerance window (R27 callback rule, same
+- *       scheme as {@code WebhookInboxReceiver}).</li>
+- *   <li>Egress control and timeouts through {@link HttpTransport}; no in-transport retry (the relay owns retries).</li>
+- *   <li>2xx → done; 410 Gone, 400, 404, 413, 415, 422 → {@link PermanentPublishException} (poison); anything else →
+- *       retryable failure.</li>
++ *   <li><b>Payload.</b> CloudEvents 1.0 binary mode: {@code ce-*} headers, body = payload JSON.</li>
++ *   <li><b>Idempotency.</b> {@code Idempotency-Key} and {@code ce-id} = the outbox event id, identical on every retry,
++ *       so the receiver deduplicates redeliveries (at-least-once delivery; Stripe's guidance: log processed event ids).</li>
++ *   <li><b>Signature.</b> {@link WebhookSignature}: {@code X-Sangam-Signature: t=<epochSeconds>,v1=<hex
++ *       HMAC-SHA256(secret, t + "." + body)>}, computed per attempt (fresh timestamp, so a delayed retry is still inside
++ *       the receiver's tolerance). The per-subscription secret is a {@code secret://} reference resolved through the
++ *       {@link SecretResolver} port on every attempt (rotation takes effect without a restart); a comma-separated
++ *       value signs with each secret (rotation overlap). Unsigned endpoints are refused.</li>
++ *   <li><b>Egress / SSRF.</b> Through {@link HttpTransport}: per-tenant allow-list, private/link-local/metadata
++ *       addresses blocked, every redirect hop re-checked. A refusal is permanent (dead-lettered), never retried.</li>
++ *   <li><b>Outcome.</b> 2xx done; 400/404/413/415/422 permanent (the event is the problem); 410 Gone permanent and the
++ *       destination is disabled; 429/503 with {@code Retry-After} deferred by that delay without consuming an attempt
++ *       (still counted as a failure); other answers and transport failures retryable.</li>
++ *   <li><b>Auto-disable.</b> With a {@link WebhookHealth}: failures count towards {@code disableAfter}; a disabled
++ *       destination's deliveries are held (deferred, no attempt consumed, order kept) for {@code holdWhileDisabled}
++ *       after the disable, then dead-lettered. {@link WebhookHealth#enable} is the re-enable path.</li>
+  * </ul>
+  */
+ public final class HttpWebhookPublisher implements Publisher {
+ 
+-    /** Endpoint of one destination. {@code secret} is the resolved signing secret (null = unsigned). */
+-    public record Endpoint(URI url, String secret, Map<String, String> headers) {
++    /** Endpoint of one subscription. {@code secretRef} is a {@code secret://} reference (a literal only in dev). */
++    public record Endpoint(URI url, String secretRef, Map<String, String> headers) {
+         public Endpoint {
+             headers = headers == null ? Map.of() : Map.copyOf(headers);
+         }
+     }
+ 
++    public static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
++    private static final Set<Integer> PERMANENT = Set.of(400, 404, 410, 413, 415, 422);
++    private static final Duration MAX_RETRY_AFTER = Duration.ofHours(1);
++    private static final Duration HOLD_RECHECK = Duration.ofMinutes(1);
++
+     private final HttpTransport transport;
+     private final Function<String, Endpoint> endpoints;
++    private final SecretResolver secrets;
++    private final WebhookHealth health;
++    private final Duration holdWhileDisabled;
+     private final String source;
++    private final Clock clock;
+ 
+     /**
+-     * @param endpoints destination name → endpoint (null when unknown → poison)
+-     * @param source    CloudEvents {@code source}, e.g. {@code urn:sangam:<installation>}
++     * @param endpoints         destination name → endpoint (null when unknown → poison)
++     * @param secrets           secret port resolving {@link Endpoint#secretRef()}
++     * @param healthOrNull      destination health (auto-disable); null = never disabled
++     * @param holdWhileDisabled how long deliveries of a disabled destination are held before they are dead-lettered
++     *                          (default 72 h, the length of Stripe's automatic retry period)
++     * @param source            CloudEvents {@code source}, e.g. {@code urn:sangam:<installation>}
+      */
+-    public HttpWebhookPublisher(HttpTransport transport, Function<String, Endpoint> endpoints, String source) {
++    public HttpWebhookPublisher(HttpTransport transport, Function<String, Endpoint> endpoints, SecretResolver secrets,
++                                WebhookHealth healthOrNull, Duration holdWhileDisabled, String source, Clock clock) {
+         this.transport = transport;
+         this.endpoints = endpoints;
++        this.secrets = secrets;
++        this.health = healthOrNull;
++        this.holdWhileDisabled = holdWhileDisabled == null ? Duration.ofHours(72) : holdWhileDisabled;
+         this.source = source;
++        this.clock = clock == null ? Clock.systemUTC() : clock;
+     }
+ 
+     @Override
+@@ -58,41 +91,100 @@ public final class HttpWebhookPublisher implements Publisher {
+         if (ep == null) {
+             throw new PermanentPublishException("no webhook endpoint configured for " + destination);
+         }
++        if (ep.secretRef() == null || ep.secretRef().isBlank()) {
++            throw new PermanentPublishException("webhook " + destination + " has no signing secret; unsigned webhooks are refused");
++        }
++        holdIfDisabled(destination);
+         byte[] body = (event.payload() == null ? "null" : event.payload()).getBytes(StandardCharsets.UTF_8);
+         Map<String, String> h = new LinkedHashMap<>(ep.headers());
+         CloudEvents.attributes(source, destination, event).forEach((k, v) -> h.put("ce-" + k, v));
+         h.put("Content-Type", "application/json");
+-        if (ep.secret() != null) {
+-            h.put("X-Sangam-Signature", signature(ep.secret(), System.currentTimeMillis() / 1000, body));
+-        }
++        h.put(IDEMPOTENCY_HEADER, event.eventId().toString());
++        h.put(WebhookSignature.HEADER, WebhookSignature.header(clock.millis() / 1000, body, secretsOf(ep.secretRef())));
+         HttpTransport.Outcome o = transport.execute(event.tenantId(),
+                 new HttpTransport.Call("POST", ep.url(), h, body, null, true), 0);
+         switch (o) {
+-            case HttpTransport.Outcome.Response r when r.is2xx() -> {
++            case HttpTransport.Outcome.Response r when r.is2xx() -> success(destination);
++            case HttpTransport.Outcome.Response r when r.status() == 410 -> {
++                if (health != null) {
++                    health.disable(event.tenantId(), destination, "receiver", "receiver answered 410 Gone");
++                }
++                throw new PermanentPublishException("webhook " + destination + " is gone: HTTP 410");
++            }
++            case HttpTransport.Outcome.Response r when PERMANENT.contains(r.status()) -> {
++                success(destination);   // the receiver is up and answered; the event is the problem
++                throw new PermanentPublishException("webhook " + destination + " rejected event: HTTP " + r.status());
++            }
++            case HttpTransport.Outcome.Response r when (r.status() == 429 || r.status() == 503) && r.retryAfter().isPresent() -> {
++                failure(event, destination, "HTTP " + r.status());
++                Duration d = r.retryAfter().get();
++                throw new DeferPublishException("webhook " + destination + " asked to retry after " + d.toSeconds() + " s",
++                        d.compareTo(MAX_RETRY_AFTER) > 0 ? MAX_RETRY_AFTER : d);
++            }
++            case HttpTransport.Outcome.Response r -> {
++                failure(event, destination, "HTTP " + r.status());
++                throw new IllegalStateException("webhook HTTP " + r.status());
+             }
+-            case HttpTransport.Outcome.Response r when r.status() == 400 || r.status() == 404 || r.status() == 410
+-                    || r.status() == 413 || r.status() == 415 || r.status() == 422 ->
+-                    throw new PermanentPublishException("webhook " + destination + " rejected event: HTTP " + r.status());
+-            case HttpTransport.Outcome.Response r -> throw new IllegalStateException("webhook HTTP " + r.status());
+             case HttpTransport.Outcome.NoEffect ne -> {
+                 if (ne.reason().startsWith("EGRESS_DENIED")) {
+                     throw new PermanentPublishException(ne.reason());
+                 }
++                failure(event, destination, ne.reason());
+                 throw new IllegalStateException(ne.reason());
+             }
+-            case HttpTransport.Outcome.Unknown u -> throw new IllegalStateException(u.reason());
++            case HttpTransport.Outcome.Unknown u -> {
++                failure(event, destination, u.reason());
++                throw new IllegalStateException(u.reason());
++            }
+         }
+     }
+ 
+-    /** {@code t=<t>,v1=<hex HMAC-SHA256(secret, t + "." + body)>}. */
+-    public static String signature(String secret, long epochSeconds, byte[] body) {
+-        try {
+-            Mac mac = Mac.getInstance("HmacSHA256");
+-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+-            mac.update((epochSeconds + ".").getBytes(StandardCharsets.UTF_8));
+-            return "t=" + epochSeconds + ",v1=" + HexFormat.of().formatHex(mac.doFinal(body));
+-        } catch (Exception e) {
+-            throw new IllegalStateException(e);
++    private void holdIfDisabled(String destination) throws PermanentPublishException {
++        if (health == null) {
++            return;
++        }
++        WebhookHealth.Status s = health.status(destination).orElse(null);
++        if (s == null || s.state() != WebhookHealth.State.DISABLED) {
++            return;
+         }
++        Instant since = s.disabledAt() == null ? clock.instant() : s.disabledAt();
++        Duration left = Duration.between(clock.instant(), since.plus(holdWhileDisabled));
++        if (left.isNegative() || left.isZero()) {
++            throw new PermanentPublishException("WEBHOOK_DISABLED: " + destination + " disabled since " + since
++                    + " (hold of " + holdWhileDisabled + " elapsed)");
++        }
++        throw new DeferPublishException("WEBHOOK_DISABLED: " + destination + " held until re-enabled",
++                left.compareTo(HOLD_RECHECK) < 0 ? left : HOLD_RECHECK);
++    }
++
++    private List<String> secretsOf(String ref) {
++        String value = secrets.require(ref);
++        List<String> out = new ArrayList<>();
++        for (String s : value.split(",")) {
++            if (!s.isBlank()) {
++                out.add(s.trim());
++            }
++        }
++        if (out.isEmpty()) {
++            throw new IllegalStateException("signing secret " + ref + " is empty");
++        }
++        return out;
++    }
++
++    private void success(String destination) {
++        if (health != null) {
++            health.success(destination);
++        }
++    }
++
++    private void failure(Outbox.OutboxEvent event, String destination, String error) {
++        if (health != null) {
++            health.failure(event.tenantId(), destination, error);
++        }
++    }
++
++    /** {@code t=<t>,v1=<hex HMAC-SHA256(secret, t + "." + body)>} (kept for callers of the earlier API). */
++    public static String signature(String secret, long epochSeconds, byte[] body) {
++        return WebhookSignature.header(epochSeconds, body, List.of(secret));
+     }
+ }
+diff --git a/sangam/sangam-integration/README.md b/sangam/sangam-integration/README.md
+index 695ee46..7b3fc8a 100644
+--- a/sangam/sangam-integration/README.md
++++ b/sangam/sangam-integration/README.md
+@@ -106,7 +106,9 @@ Paths are under `src/main/java/org/sangam/integration/` unless marked *core*.
+ | File | Requirements |
+ |---|---|
+ | `CloudEvents.java` | VI.2.3 rule 2: CloudEvents `id` = event_id; per-root order extension |
+-| `HttpWebhookPublisher.java` | R71 webhook; HMAC signature (R27); 4xx poison classification |
++| `HttpWebhookPublisher.java` | R71 webhook (SL-39): HMAC-SHA256 over `t.body` with the subscription secret from `SecretResolver` (rotation: several `v1`), `Idempotency-Key` = event id, egress/SSRF guard, 410 disables, 429/503 `Retry-After` defers without an attempt, auto-disable hold then dead letter |
++| `WebhookSignature.java` | shared sender/receiver signature scheme; constant-time compare, timestamp tolerance (default 5 min) |
++| `WebhookHealth.java` | SL-39 destination health in `INTEGRATION_WEBHOOK_STATE`: consecutive failures, auto-disable (audited `WEBHOOK_DISABLED`), re-enable (`WEBHOOK_ENABLED`) |
+ | `KafkaPublisher.java` | R71 Kafka; **FC-03**; idempotent producer; key tenant:root for per-root order (optional dependency) |
+ | `JmsPublisher.java` | R71 JMS/AMQP; **FC-03**; transacted persistent send; JMSXGroupID per root (optional dependency) |
+ 
+@@ -213,6 +215,7 @@ New tables:
+ - `CONNECTOR_CALL`
+ - `INTEGRATION_DEAD_LETTER`
+ - `INTEGRATION_LEADER`
++- `INTEGRATION_WEBHOOK_STATE` (SL-39 webhook destination health)
+ - `UNIQUE_START`
+ - `RECONCILIATION_ATTEMPT`
+ - `LEGAL_HOLD`
+diff --git a/sangam/sangam-core/src/main/java/org/sangam/core/layer/Relay.java b/sangam/sangam-core/src/main/java/org/sangam/core/layer/Relay.java
+index 58c7128..1eb5eb0 100644
+--- a/sangam/sangam-core/src/main/java/org/sangam/core/layer/Relay.java
++++ b/sangam/sangam-core/src/main/java/org/sangam/core/layer/Relay.java
+@@ -21,8 +21,8 @@ import java.util.UUID;
+  *   <li><b>Mark</b> {@code DONE} fenced by {@code claim_epoch} and {@code state='CLAIMED'}; zero rows means this node lost
+  *       its claim, and the publish may be duplicated (allowed).</li>
+  *   <li><b>Sweep</b>: expired {@code CLAIMED} rows return to {@code PENDING}; consumers dedup on {@code event_id}.</li>
+- *   <li><b>Failures</b> back off exponentially; after {@code maxAttempts} an ordered delivery is {@code PARKED} (it blocks
+- *       later events of that root for that destination only) and an unordered one is {@code SKIPPED} with a gap record
++ *   <li><b>Failures</b> back off exponentially with full jitter ({@link #backoffMillis}); after {@code maxAttempts}
++ *       an ordered delivery is {@code PARKED} (it blocks later events of that root for that destination only) and an unordered one is {@code SKIPPED} with a gap record
+  *       in {@code last_error}. Repairs ({@link #requeue}, {@link #skip}) are audited.</li>
+  * </ol>
+  * Throughput note: one claim cycle advances each ordered line by one event; later events of the line are claimed on
+@@ -146,8 +146,7 @@ public final class Relay implements OutboxRepair {
+         String lastError = exhausted && !cl.ordered()
+                 ? "GAP: skipped after " + attempts + " attempts: " + error
+                 : error;
+-        long backoff = Math.min(config.backoffCap().toMillis(),
+-                config.backoffBase().toMillis() * (1L << Math.min(attempts - 1, 20)));
++        long backoff = backoffMillis(config, attempts, java.util.concurrent.ThreadLocalRandom.current().nextDouble());
+         return tx.inTransaction(c -> {
+             if (exhausted && audit != null) {
+                 RootSeq.lock(c, dialect, cl.event().tenantId(), cl.event().rootId());
+@@ -164,6 +163,23 @@ public final class Relay implements OutboxRepair {
+         });
+     }
+ 
++    /**
++     * Delay before the next attempt after {@code attempts} failures: exponential ({@code base * 2^(attempts-1)}, capped
++     * at {@code backoffCap}) with <b>full jitter</b> ({@code random in [0, ceiling]}; AWS Architecture Blog,
++     * "Exponential Backoff And Jitter"). Without jitter, every delivery that failed in the same outage retries in the
++     * same instant and hits the recovering destination as one synchronised wave.
++     *
++     * @param random a uniform value in [0, 1)
++     */
++    public static long backoffMillis(Config config, int attempts, double random) {
++        long base = config.backoffBase().toMillis();
++        long cap = config.backoffCap().toMillis();
++        int shift = Math.min(Math.max(attempts, 1) - 1, 20);
++        long ceiling = base <= 0 ? 0 : Math.min(cap, base > (Long.MAX_VALUE >> shift) ? cap : base << shift);
++        double r = random < 0 ? 0 : Math.min(random, 1.0);
++        return Math.min(ceiling, (long) Math.floor(r * (ceiling + 1)));
++    }
++
+     /** Crash recovery: expired CLAIMED rows go back to PENDING (the event will be published again). */
+     public int sweep() {
+         return tx.inTransaction(c -> Jdbc.update(c,
+diff --git a/sangam/sangam-rest/src/main/java/org/sangam/rest/web/ProblemHandler.java b/sangam/sangam-rest/src/main/java/org/sangam/rest/web/ProblemHandler.java
+index 8a42c3a..4185c24 100644
+--- a/sangam/sangam-rest/src/main/java/org/sangam/rest/web/ProblemHandler.java
++++ b/sangam/sangam-rest/src/main/java/org/sangam/rest/web/ProblemHandler.java
+@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
+ import org.sangam.core.api.StaleLeaseException;
+ import org.sangam.core.layer.IdempotencyStore;
+ import org.sangam.core.layer.OperationLedger;
++import org.sangam.core.quota.TenantQuotaExceededException;
+ import org.sangam.rest.port.ApiProblem;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+@@ -93,8 +94,28 @@ public class ProblemHandler {
+         return respond(new ApiProblem(404, "NOT_FOUND", "No such endpoint"), req);
+     }
+ 
++    /** SL-43: 429 (rate, with Retry-After) or 413 (size) {@code TENANT_QUOTA_EXCEEDED}, naming the limit. */
++    @ExceptionHandler(TenantQuotaExceededException.class)
++    public ResponseEntity<Map<String, Object>> quota(TenantQuotaExceededException e, HttpServletRequest req) {
++        return respond(quotaProblem(e), req);
++    }
++
++    public static ApiProblem quotaProblem(TenantQuotaExceededException e) {
++        String detail = e.limit().isRate()
++                ? "Tenant " + e.tenantId() + " is over its " + e.limit().key() + " quota (" + e.allowed() + "); retry after "
++                + e.retryAfterSeconds() + " s"
++                : "Tenant " + e.tenantId() + " is over its " + e.limit().key() + " quota (" + e.allowed() + " allowed, "
++                + e.requested() + " requested)";
++        return new ApiProblem(e.httpStatus(), TenantQuotaExceededException.CODE, null, detail, e.details(),
++                e.retryAfterSeconds());
++    }
++
+     @ExceptionHandler(Exception.class)
+     public ResponseEntity<Map<String, Object>> unexpected(Exception e, HttpServletRequest req) {
++        TenantQuotaExceededException quota = TenantQuotaExceededException.find(e);
++        if (quota != null) {
++            return respond(quotaProblem(quota), req);   // wrapped by the engine or an adapter
++        }
+         LOG.error("Unhandled error on {} {}", req.getMethod(), req.getRequestURI(), e);
+         return respond(new ApiProblem(500, "INTERNAL_ERROR", "An unexpected error occurred; see the server log for the trace id"), req);
+     }
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/content/ContentService.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/content/ContentService.java
+index 7472578..44ad151 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/content/ContentService.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/content/ContentService.java
+@@ -5,6 +5,8 @@ import org.sangam.core.layer.Dialect;
+ import org.sangam.core.layer.Jdbc;
+ import org.sangam.core.layer.Transactions;
+ import org.sangam.core.ports.DocumentStore;
++import org.sangam.core.quota.QuotaLimit;
++import org.sangam.core.quota.TenantQuotas;
+ 
+ import java.io.IOException;
+ import java.io.InputStream;
+@@ -196,18 +198,43 @@ public class ContentService {
+         if (content == null) {
+             throw new IllegalArgumentException("content stream is required");
+         }
++        // SL-43: the tenant's maxDocumentBytes quota, when lower than the deployment-wide guard
++        TenantQuotas quotas = TenantQuotas.current();
++        long tenantMax = quotas.limit(tenant, QuotaLimit.DOCUMENT_BYTES);
++        boolean quotaBound = tenantMax >= 0 && tenantMax < maxBytes;
++        long limit = quotaBound ? tenantMax : maxBytes;
++        DocumentStore.StoredObject obj;
+         try {
+-            return store.put(key, new LimitedInputStream(content, maxBytes), mime);
++            obj = store.put(key, new LimitedInputStream(content, limit), mime);
+         } catch (LimitExceeded e) {
+-            try {
+-                store.delete(key);      // the partial object (if the store kept one) must not stay behind
+-            } catch (IOException ignored) {
+-                // the orphan sweeper removes it
++            deleteQuietly(key);      // the partial object (if the store kept one) must not stay behind
++            if (quotaBound) {
++                quotas.checkSize(tenant, QuotaLimit.DOCUMENT_BYTES, e.read);   // throws TENANT_QUOTA_EXCEEDED, audited
+             }
+-            throw org.sangam.ports.support.PortsProblem.tooLarge("PAYLOAD_TOO_LARGE", "document", e.read, maxBytes);
++            throw org.sangam.ports.support.PortsProblem.tooLarge("PAYLOAD_TOO_LARGE", "document", e.read, limit);
+         } catch (IOException e) {
+             throw new UncheckedIOException(e);
+         }
++        // SL-43: the tenant's total stored bytes (maxStorageBytes); checked after the write because the size of a
++        // stream is known only then. Concurrent uploads of one tenant can each pass the check (bounded overshoot).
++        long storageMax = quotas.limit(tenant, QuotaLimit.STORAGE_BYTES);
++        if (storageMax >= 0 && tenant != null && !tenant.isBlank()) {
++            long used = tx.inTransaction(c -> Jdbc.one(c, "SELECT COALESCE(SUM(v.size_bytes), 0) FROM CONTENT_VERSION v"
++                    + " JOIN CONTENT_ITEM i ON i.id = v.item_id WHERE i.tenant_id = ?", rs -> rs.getLong(1), tenant).orElse(0L));
++            if (!TenantQuotas.within(storageMax, used + obj.sizeBytes())) {
++                deleteQuietly(key);
++                quotas.checkSize(tenant, QuotaLimit.STORAGE_BYTES, used + obj.sizeBytes());
++            }
++        }
++        return obj;
++    }
++
++    private void deleteQuietly(String key) {
++        try {
++            store.delete(key);
++        } catch (IOException ignored) {
++            // the orphan sweeper removes it
++        }
+     }
+ 
+     private ScanState scan(String tenant, String name, String mime, String key) {
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
+index cdf57d2..d223663 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
+@@ -115,6 +115,9 @@ public class ProductBatchService {
+         if (items.isEmpty()) {
+             throw new IllegalArgumentException("batch without items");
+         }
++        // SL-43: the tenant's maxBatchSize quota (TENANT_QUOTA_EXCEEDED, audited)
++        org.sangam.core.quota.TenantQuotas.current().checkSize(tenant, org.sangam.core.quota.QuotaLimit.BATCH_SIZE,
++                items.size());
+         boolean four = fourEyes.required(tenant, type, items.size());
+         String id = UUID.randomUUID().toString();
+         tx.inTransaction(c -> {
+diff --git a/sangam/sangam-server/src/main/resources/application.yaml b/sangam/sangam-server/src/main/resources/application.yaml
+index 95f21d6..e7cad11 100644
+--- a/sangam/sangam-server/src/main/resources/application.yaml
++++ b/sangam/sangam-server/src/main/resources/application.yaml
+@@ -127,6 +127,23 @@ sangam:
+     default-destinations: ${SANGAM_OUTBOX_DESTINATIONS:}
+     outbox:
+       retention: 7d
++    # SL-39 outbound webhooks (WebhooksProperties): subscriptions.<name>.url / .secret-ref, destination webhook:<name>
++    webhooks:
++      disable-after: ${SANGAM_WEBHOOKS_DISABLE_AFTER:50}
++      hold-while-disabled: ${SANGAM_WEBHOOKS_HOLD_WHILE_DISABLED:72h}
++  # SL-43 per-tenant quotas (QuotaWiring). Over a rate limit: 429 TENANT_QUOTA_EXCEEDED + Retry-After; over a size
++  # limit: 413 TENANT_QUOTA_EXCEEDED. Per-tenant overrides: the same keys in the tenant's quotas (onboarding
++  # tenant.quotas). Negative = unlimited.
++  quotas:
++    enabled: ${SANGAM_QUOTAS_ENABLED:true}
++    override-ttl: 30s
++    defaults:
++      startsPerSecond: ${SANGAM_QUOTA_STARTS_PER_SECOND:50}
++      apiCallsPerMinute: ${SANGAM_QUOTA_API_CALLS_PER_MINUTE:6000}
++      maxBatchSize: ${SANGAM_QUOTA_MAX_BATCH_SIZE:10000}
++      maxVariableBytes: ${SANGAM_QUOTA_MAX_VARIABLE_BYTES:4194304}
++      maxDocumentBytes: ${SANGAM_QUOTA_MAX_DOCUMENT_BYTES:268435456}
++      maxStorageBytes: ${SANGAM_QUOTA_MAX_STORAGE_BYTES:53687091200}
+   outbound:
+     # Air-gapped by default (ARCHITECTURE 1.9): no outbound calls from admin tooling (IdP discovery test)
+     enabled: false
+diff --git a/sangam/sangam-server/README.md b/sangam/sangam-server/README.md
+index 86a06cb..7175f40 100644
+--- a/sangam/sangam-server/README.md
++++ b/sangam/sangam-server/README.md
+@@ -161,6 +161,8 @@ All five modules are wired. The wiring classes live in `config/`:
+ - **Start order.** Everything starts in the `IntegrationServices` `SmartLifecycle` (phase `MAX_VALUE-100`), after `EventRegistryWiring.wire(...)` (PortsWiring) has run.
+ - **History handlers.** `sangam.history.outbox-handler=integration|engine|none` (default `integration`) and `sangam.history.read-model-projection` (default `true`) make integration's `OutboxHistoryEventHandler` the only outbox writer. Ports' `PortsHistoryEventHandler` only projects the read model.
+ - **Back-pressure.** `IntegrationBackpressureFilter` (filter order 50) returns 503 `BACKPRESSURE` for starts and inbound events.
++- **Per-tenant quotas (SL-43, `QuotaWiring`).** `sangam.quotas.defaults.*` plus per-tenant overrides in the tenant's `quotas` (onboarding `tenant.quotas`): `startsPerSecond`, `apiCallsPerMinute`, `maxBatchSize`, `maxVariableBytes`, `maxDocumentBytes`, `maxStorageBytes` (negative = unlimited). Counted in fixed windows in `SEC_TENANT_QUOTA_WINDOW` (one conditional UPDATE per counted call, so all nodes share one count). `TenantQuotaFilter` (order 45) counts API calls and refuses oversized bodies; `TenantQuotaEnginePlugin` counts process/case starts and checks written variable sizes before the command flushes; `ProductBatchService` and `ContentService` check batch size, document size and stored bytes. Rate limits answer 429 `TENANT_QUOTA_EXCEEDED` with `Retry-After`, size limits 413 `TENANT_QUOTA_EXCEEDED`; the problem names `limit`, `allowed`, `requested`; the first refusal per window is audited (`TENANT_QUOTA_EXCEEDED`, chain `quota:<tenant>`).
++- **Outbound webhooks (SL-39, `WebhooksWiring`).** `sangam.integration.webhooks.subscriptions.<name>.url/secret-ref` publish outbox destination `webhook:<name>` (signed, idempotency key = event id, egress allow-list per URL, no redirects, one attempt per relay try). `disable-after` consecutive failures disable the destination (audited); deliveries are held for `hold-while-disabled` and then dead-lettered; `WebhookHealth.enable` re-enables.
+ - **Idempotency.** Integration's `IdempotencyServletFilter` is not registered: sangam-rest's `IdempotencyFilter` owns R41.
+ - **Packs.** `PacksIntegration.wire(...)` (`sangamPacksIntegration`) installs the `IntegrationConnectorGateway` into `PackRuntime`, with the dispatch publisher, inbox handlers and reconciliation hooks.
+   - Site bindings come from `sangam.packs.bindings.<packConnector>.{connector,operation,mapping.*,constants.*,pass-through}`; see `config/PackBindingsProperties`.
+diff --git a/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/AbstractAcceptanceIT.java b/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/AbstractAcceptanceIT.java
+index 70c04d2..d6e8977 100644
+--- a/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/AbstractAcceptanceIT.java
++++ b/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/AbstractAcceptanceIT.java
+@@ -92,5 +92,11 @@ public abstract class AbstractAcceptanceIT {
+         r.add("sangam.security.bootstrap.enabled", () -> "true");
+         r.add("sangam.security.bootstrap.admin-groups", () -> "sangam-admin");
+         r.add("sangam.integration.simulators.enabled", () -> "true");
++        // SL-43: the suite drives load the production defaults would throttle; quotas are tested per tenant by
++        // TenantQuotaIT through tenant overrides, read without caching so a test's override applies at once
++        for (org.sangam.core.quota.QuotaLimit l : org.sangam.core.quota.QuotaLimit.values()) {
++            r.add("sangam.quotas.defaults." + l.key(), () -> "-1");
++        }
++        r.add("sangam.quotas.override-ttl", () -> "0s");
+     }
+ }

@@ -1,0 +1,14 @@
+diff --git "a/D:\\GITHUB  Project\\Custom WorkFlow\\.claude\\worktrees\\workspace-scan-resume-06b524\\sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java" "b/C:\\Users\\Lokendra Singh\\AppData\\Local\\Temp\\claude\\5cef910d4d286f64\\898f1ff7-0dcc-4d95-b425-830a9a5ead44\\scratchpad\\wt-packs4\\sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java"
+index 83267e1d..d8cee195 100644
+--- "a/D:\\GITHUB  Project\\Custom WorkFlow\\.claude\\worktrees\\workspace-scan-resume-06b524\\sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java"	
++++ "b/C:\\Users\\Lokendra Singh\\AppData\\Local\\Temp\\claude\\5cef910d4d286f64\\898f1ff7-0dcc-4d95-b425-830a9a5ead44\\scratchpad\\wt-packs4\\sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java"	
+@@ -73,7 +73,8 @@ final class FormAnswers {
+                     continue;
+                 }
+                 Object val = switch (fld.path("type").asText()) {
+-                    case "decimal", "money", "number" -> 1000.0;
++                    case "decimal", "number" -> 1000.0;
++                    case "money" -> 100_000L; // integer minor units: 1,000.00 of the pack currency (SD-398)
+                     case "integer" -> 1;
+                     case "boolean" -> true;
+                     case "date", "datetime" -> new Date(System.currentTimeMillis() + 86_400_000L);

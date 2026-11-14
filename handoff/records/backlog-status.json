@@ -1,0 +1,1116 @@
+{
+  "_as_of": "Wave 4 close-out 2026-11-13, 2026-11-13T07:27:55Z (W5-S status sync; boards read to WAVE4-SYNC-BOARD 2026-11-13T07:24Z)",
+  "_doc": "Live status for every M-id in BACKLOG-0.1.0-MASTER.md; regenerate BACKLOG-STATUS-0.1.0.md with gen_backlog_status.py. Status values since W5-S: CODED (code and tests written, tests NOT_RUN), PARTIAL, BLOCKED (owner question or missing input), NOT_STARTED, OUT_OF_SCOPE (only with a decision number), REFERENCE (reference row, no new work). PASS is never used: no test has run except one HAPI smoke run (W4-K, 2026-11-13T04:39:50Z, 6/6). Fields: status, reg, lane, note (summary), evidence, open.",
+  "M-001": {
+    "status": "CODED",
+    "reg": "SL-129",
+    "lane": "W1-G B25 / W2-N",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); W2-N LocalQueueContract AAD",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); W2-N LocalQueueContract AAD. Open: tests NOT_RUN"
+  },
+  "M-002": {
+    "status": "CODED",
+    "reg": "SL-130,SL-131",
+    "lane": "W1-B B20",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); BillingWiring live",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); BillingWiring live. Open: tests NOT_RUN"
+  },
+  "M-003": {
+    "status": "CODED",
+    "reg": "SL-133",
+    "lane": "W2-E B33",
+    "evidence": "W2-A DONE 2026-11-12T09:02Z pending-audit beans",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-A DONE 2026-11-12T09:02Z pending-audit beans. Open: tests NOT_RUN"
+  },
+  "M-004": {
+    "status": "CODED",
+    "reg": "LMMH-HIER",
+    "lane": "W1-E B23",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-134",
+    "open": "seed slips 1128-1132 parked under decision 108 (IFMS data via JL); tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-134. Open: seed slips 1128-1132 parked under decision 108 (IFMS data via JL); tests NOT_RUN"
+  },
+  "M-005": {
+    "status": "CODED",
+    "reg": "SL-140",
+    "lane": "W1-C B21",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); used by W3-C M-040 fan-out DONE 2026-11-12T13:02Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); used by W3-C M-040 fan-out DONE 2026-11-12T13:02Z. Open: tests NOT_RUN"
+  },
+  "M-006": {
+    "status": "CODED",
+    "reg": "SL-138",
+    "lane": "W1-D B22",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); W2-A/W2-E JdbcReplayGuard",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); W2-A/W2-E JdbcReplayGuard. Open: tests NOT_RUN"
+  },
+  "M-007": {
+    "status": "CODED",
+    "reg": "SL-139",
+    "lane": "W1-B B20",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE). Open: tests NOT_RUN"
+  },
+  "M-008": {
+    "status": "CODED",
+    "reg": "SL-142",
+    "lane": "W1-C B21 / W2-N / W4-I",
+    "evidence": "W4-I INFO 2026-11-12T17:04:03Z close-out: nothing left to code (TenantAdmission, InboundTenantGate, CellParkedInboundController)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-I INFO 2026-11-12T17:04:03Z close-out: nothing left to code (TenantAdmission, InboundTenantGate, CellParkedInboundController). Open: tests NOT_RUN"
+  },
+  "M-009": {
+    "status": "CODED",
+    "reg": "SL-137",
+    "lane": "W1-D B22",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "docs follow-ups in carry list; tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE). Open: docs follow-ups in carry list; tests NOT_RUN"
+  },
+  "M-010": {
+    "status": "CODED",
+    "reg": "SL-134",
+    "lane": "W2-K B39",
+    "evidence": "W2-K DONE (Wave 2 board)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-K DONE (Wave 2 board). Open: tests NOT_RUN"
+  },
+  "M-011": {
+    "status": "CODED",
+    "reg": "SL-134",
+    "lane": "W2-K B39",
+    "evidence": "W2-K DONE (Wave 2 board)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-K DONE (Wave 2 board). Open: tests NOT_RUN"
+  },
+  "M-012": {
+    "status": "CODED",
+    "reg": "SL-135",
+    "lane": "W1-F B24",
+    "evidence": "W2-D DONE 2026-11-12T10:24Z PATCHES B-31",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-D DONE 2026-11-12T10:24Z PATCHES B-31. Open: tests NOT_RUN"
+  },
+  "M-013": {
+    "status": "CODED",
+    "reg": "SL-145",
+    "lane": "W1-A B19",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-145",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-145. Open: tests NOT_RUN"
+  },
+  "M-014": {
+    "status": "CODED",
+    "lane": "W2-A B29",
+    "evidence": "W2-A DONE 2026-11-12T09:29Z starter",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-A DONE 2026-11-12T09:29Z starter. Open: tests NOT_RUN"
+  },
+  "M-015": {
+    "status": "PARTIAL",
+    "lane": "W4-F B66 (via M-143)",
+    "evidence": "REPLACED by decision 54R then decisions 186, 274-279; W4-F DONE 2026-11-13T06:38:52Z (design doc, Quarkus host)",
+    "open": "tracked under M-143/M-150; Quarkus kit equivalence after extraction phase 3",
+    "note": "Evidence: REPLACED by decision 54R then decisions 186, 274-279; W4-F DONE 2026-11-13T06:38:52Z (design doc, Quarkus host). Open: tracked under M-143/M-150; Quarkus kit equivalence after extraction phase 3"
+  },
+  "M-016": {
+    "status": "CODED",
+    "lane": "W3-H B49",
+    "evidence": "W3-H DONE 2026-11-12T15:00:23Z (decisions 51, 97)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-H DONE 2026-11-12T15:00:23Z (decisions 51, 97). Open: tests NOT_RUN"
+  },
+  "M-017": {
+    "status": "CODED",
+    "reg": "SL-145",
+    "lane": "W1-A B19",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-145",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-145. Open: tests NOT_RUN"
+  },
+  "M-018": {
+    "status": "NOT_STARTED",
+    "lane": "integrator (Wave 5 per WAVE4-LANE-PLAN)",
+    "evidence": "no board line names M-018",
+    "open": "guide not written; planned Wave 5, no active lane yet",
+    "note": "Evidence: no board line names M-018. Open: guide not written; planned Wave 5, no active lane yet"
+  },
+  "M-019": {
+    "status": "PARTIAL",
+    "lane": "W4-C B63 / integrator",
+    "evidence": "W4-C DONE 2026-11-13T01:23:54Z (decision 210 Central job), decisions 105/181 publish dry-run",
+    "open": "publishing is the owner's act (decisions 105, 112); groupId sweep of all poms to io.github.sqamentor by integrator at Wave 4 close-out (W4-M DONE 2026-11-13T00:54:59Z 210 PARTIAL); first v0.1.0 tag not made",
+    "note": "Evidence: W4-C DONE 2026-11-13T01:23:54Z (decision 210 Central job), decisions 105/181 publish dry-run. Open: publishing is the owner's act (decisions 105, 112); groupId sweep of all poms to io.github.sqamentor by integrator at Wave 4 close-out (W4-M DONE 2026-11-13T00:54:59Z 210 PARTIAL); first v0.1.0 tag not made"
+  },
+  "M-020": {
+    "status": "CODED",
+    "lane": "W2-B B30 / W4-M",
+    "evidence": "W2-B DONE 2026-11-12T10:15Z; regenerated by W4-M",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-B DONE 2026-11-12T10:15Z; regenerated by W4-M. Open: tests NOT_RUN"
+  },
+  "M-021": {
+    "status": "CODED",
+    "lane": "W2-B / W3-F / W3-K",
+    "evidence": "W3-F DONE 2026-11-12T14:34Z test-mode clock",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-F DONE 2026-11-12T14:34Z test-mode clock. Open: tests NOT_RUN"
+  },
+  "M-022": {
+    "status": "PARTIAL",
+    "lane": "W4-M B6C / W4-C B63",
+    "evidence": "W4-M DONE 2026-11-12T20:25:18Z; W4-C DONE 2026-11-13T04:07:04Z (Go 1.27.4 and 1.26.11 CI jobs, decisions 190 252 260)",
+    "open": "Go and Kotlin SDKs never compiled locally (CI only, NOT_RUN)",
+    "note": "Evidence: W4-M DONE 2026-11-12T20:25:18Z; W4-C DONE 2026-11-13T04:07:04Z (Go 1.27.4 and 1.26.11 CI jobs, decisions 190 252 260). Open: Go and Kotlin SDKs never compiled locally (CI only, NOT_RUN)"
+  },
+  "M-023": {
+    "status": "CODED",
+    "lane": "W2-B B30",
+    "evidence": "W2-B DONE 2026-11-12T09:24Z",
+    "open": "harness NOT_RUN (needs .NET 8/PHP, decision 106)",
+    "note": "Evidence: W2-B DONE 2026-11-12T09:24Z. Open: harness NOT_RUN (needs .NET 8/PHP, decision 106)"
+  },
+  "M-024": {
+    "status": "NOT_STARTED",
+    "lane": "test phase",
+    "evidence": "master wave 'test phase' (a run, no code)",
+    "open": "run net8.0 build and tests in the test phase",
+    "note": "Evidence: master wave 'test phase' (a run, no code). Open: run net8.0 build and tests in the test phase"
+  },
+  "M-025": {
+    "status": "CODED",
+    "lane": "W3-I B50",
+    "evidence": "W3-I DONE 2026-11-12T13:03Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-I DONE 2026-11-12T13:03Z. Open: tests NOT_RUN"
+  },
+  "M-026": {
+    "status": "CODED",
+    "lane": "W3-I B50",
+    "evidence": "W3-I DONE 2026-11-12T13:03Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-I DONE 2026-11-12T13:03Z. Open: tests NOT_RUN"
+  },
+  "M-027": {
+    "status": "CODED",
+    "lane": "W3-I B50 / W4-M",
+    "evidence": "W3-I DONE 2026-11-12T13:03Z; W4-M DONE 2026-11-12T16:47:29Z (decisions 131, 132)",
+    "open": "Django/Laravel/Symfony OUT_OF_SCOPE (decision 96), FastAPI OUT_OF_SCOPE (decision 131); NestJS verified only in test phase",
+    "note": "Evidence: W3-I DONE 2026-11-12T13:03Z; W4-M DONE 2026-11-12T16:47:29Z (decisions 131, 132). Open: Django/Laravel/Symfony OUT_OF_SCOPE (decision 96), FastAPI OUT_OF_SCOPE (decision 131); NestJS verified only in test phase"
+  },
+  "M-028": {
+    "status": "CODED",
+    "reg": "SL-143",
+    "lane": "W1-G B25",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-143",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-143. Open: tests NOT_RUN"
+  },
+  "M-029": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-030": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-031": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-032": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-033": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-034": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-035": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-036": {
+    "status": "CODED",
+    "lane": "W3-J B51",
+    "evidence": "W3-J DONE 2026-11-12T11:56Z (decision 58)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-J DONE 2026-11-12T11:56Z (decision 58). Open: tests NOT_RUN"
+  },
+  "M-037": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-038": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C DONE (UI screen)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C DONE (UI screen). Open: tests NOT_RUN"
+  },
+  "M-039": {
+    "status": "CODED",
+    "lane": "W2-C B31 / W3-J2",
+    "evidence": "W3-J2 DONE 2026-11-12T15:53Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-J2 DONE 2026-11-12T15:53Z. Open: tests NOT_RUN"
+  },
+  "M-040": {
+    "status": "CODED",
+    "lane": "W3-J B51 / W3-C B44 / W3-M",
+    "evidence": "W3-C DONE 2026-11-12T13:02Z server fan-out; W3-M CHANGE+DONE 14:01:57Z contract; W3-J DONE 11:46Z client",
+    "open": "SL-176 media takeover duplicate copy OPEN; tests NOT_RUN",
+    "note": "Evidence: W3-C DONE 2026-11-12T13:02Z server fan-out; W3-M CHANGE+DONE 14:01:57Z contract; W3-J DONE 11:46Z client. Open: SL-176 media takeover duplicate copy OPEN; tests NOT_RUN"
+  },
+  "M-041": {
+    "status": "CODED",
+    "lane": "W4-J B6A",
+    "evidence": "W4-J DONE 2026-11-12T20:03:30Z decision 161 own CMMN editor",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-J DONE 2026-11-12T20:03:30Z decision 161 own CMMN editor. Open: tests NOT_RUN"
+  },
+  "M-042": {
+    "status": "CODED",
+    "lane": "W3-G B48 / W3-J2",
+    "evidence": "W3-G DONE 2026-11-12T13:10Z; W3-J2 DONE 14:44Z",
+    "open": "money as DecimalString per decision 211 (W4-M); tests NOT_RUN",
+    "note": "Evidence: W3-G DONE 2026-11-12T13:10Z; W3-J2 DONE 14:44Z. Open: money as DecimalString per decision 211 (W4-M); tests NOT_RUN",
+    "ui": "W3-J2: currency filter, amount sort only with a currency, fmtMinorMoney (BigInt, Intl minor digits), reference sort; tsc exit 0"
+  },
+  "M-043": {
+    "status": "CODED",
+    "lane": "W4-J B6A",
+    "evidence": "W4-J DONE 2026-11-12T17:19:01Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-J DONE 2026-11-12T17:19:01Z. Open: tests NOT_RUN"
+  },
+  "M-044": {
+    "status": "CODED",
+    "lane": "W3-F / W3-G / W3-J / W4-E",
+    "evidence": "W3-F DONE 2026-11-12T14:55Z; W4-E DONE 2026-11-12T16:45:35Z SL-177 cleanup",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-F DONE 2026-11-12T14:55Z; W4-E DONE 2026-11-12T16:45:35Z SL-177 cleanup. Open: tests NOT_RUN"
+  },
+  "M-045": {
+    "status": "CODED",
+    "reg": "SL-147",
+    "lane": "W2-C / W2-L / W2-H / W2-A",
+    "evidence": "W2-A DONE 2026-11-12T10:46Z",
+    "open": "multilingual OUT_OF_SCOPE for 0.1.0 (decision 36); tests NOT_RUN",
+    "note": "Evidence: W2-A DONE 2026-11-12T10:46Z. Open: multilingual OUT_OF_SCOPE for 0.1.0 (decision 36); tests NOT_RUN"
+  },
+  "M-046": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "W2-C DONE 2026-11-12T10:03Z",
+    "open": "assistive-technology audit in test phase (decision 110)",
+    "note": "Evidence: W2-C DONE 2026-11-12T10:03Z. Open: assistive-technology audit in test phase (decision 110)"
+  },
+  "M-047": {
+    "status": "PARTIAL",
+    "lane": "W3-J B51 (no Wave 4 lane)",
+    "evidence": "backlog-status W3 note; no Wave 4 board line names M-047",
+    "open": "Admin/Modeller and some sub-dialog component tests not written; no active lane",
+    "note": "Evidence: backlog-status W3 note; no Wave 4 board line names M-047. Open: Admin/Modeller and some sub-dialog component tests not written; no active lane"
+  },
+  "M-048": {
+    "status": "CODED",
+    "lane": "W4-J B6A / W4-C",
+    "evidence": "W4-J DONE 2026-11-12T17:19:01Z specs; W4-C DONE 2026-11-13T02:09:31Z ui-e2e gate",
+    "open": "Playwright never installed or run (NOT_RUN)",
+    "note": "Evidence: W4-J DONE 2026-11-12T17:19:01Z specs; W4-C DONE 2026-11-13T02:09:31Z ui-e2e gate. Open: Playwright never installed or run (NOT_RUN)"
+  },
+  "M-049": {
+    "status": "CODED",
+    "lane": "W2-C B31",
+    "evidence": "Wave 2 W2-C",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-C. Open: tests NOT_RUN"
+  },
+  "M-050": {
+    "status": "CODED",
+    "reg": "SL-145",
+    "lane": "W1-A B19",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE). Open: tests NOT_RUN"
+  },
+  "M-051": {
+    "status": "CODED",
+    "reg": "SL-145",
+    "lane": "W2-H B36 / W2-C",
+    "evidence": "Wave 2 W2-H",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-H. Open: tests NOT_RUN"
+  },
+  "M-052": {
+    "status": "PARTIAL",
+    "lane": "W2-H B36; release step Wave 5",
+    "evidence": "W2-H DONE 2026-11-12T09:33Z generator",
+    "open": "release.yml publish of the standards profile not evidenced on any board (planned Wave 5)",
+    "note": "Evidence: W2-H DONE 2026-11-12T09:33Z generator. Open: release.yml publish of the standards profile not evidenced on any board (planned Wave 5)"
+  },
+  "M-053": {
+    "status": "CODED",
+    "reg": "SL-141",
+    "lane": "W1-C B21",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-141",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE); register SL-141. Open: tests NOT_RUN"
+  },
+  "M-054": {
+    "status": "CODED",
+    "lane": "W2-D B32",
+    "evidence": "Wave 2 W2-D; W4-F DONE 2026-11-13T04:56Z (refused on Quarkus)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-D; W4-F DONE 2026-11-13T04:56Z (refused on Quarkus). Open: tests NOT_RUN"
+  },
+  "M-055": {
+    "status": "CODED",
+    "reg": "SL-136",
+    "lane": "W1-F B24",
+    "evidence": "W4-E INFO 2026-11-12T16:47:03Z verified, no change",
+    "open": "A/B evidence test phase",
+    "note": "Evidence: W4-E INFO 2026-11-12T16:47:03Z verified, no change. Open: A/B evidence test phase"
+  },
+  "M-056": {
+    "status": "CODED",
+    "lane": "W3-F B47 / W4-E / INT-H2",
+    "evidence": "W4-E decision 146; INT-H2 DONE 2026-11-13T03:56:47Z ExecutorPartitionWiring; W4-M contract",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-E decision 146; INT-H2 DONE 2026-11-13T03:56:47Z ExecutorPartitionWiring; W4-M contract. Open: tests NOT_RUN"
+  },
+  "M-057": {
+    "status": "CODED",
+    "lane": "W3-F / W3-A / W4-H B68",
+    "evidence": "W4-H DONE 2026-11-12T17:27:06Z data-lake sink",
+    "open": "Helm/compose keys for data-lake deferred by W4-C (INFO 2026-11-12T17:53:27Z, off by default); tests NOT_RUN",
+    "note": "Evidence: W4-H DONE 2026-11-12T17:27:06Z data-lake sink. Open: Helm/compose keys for data-lake deferred by W4-C (INFO 2026-11-12T17:53:27Z, off by default); tests NOT_RUN"
+  },
+  "M-058": {
+    "status": "CODED",
+    "lane": "W3-A B42",
+    "evidence": "W3-A board 384",
+    "open": "NATS now an opt-in add-on (decision 232); tests NOT_RUN",
+    "note": "Evidence: W3-A board 384. Open: NATS now an opt-in add-on (decision 232); tests NOT_RUN"
+  },
+  "M-059": {
+    "status": "CODED",
+    "lane": "W3-F B47",
+    "evidence": "W3-M DONE 2026-11-12T15:53:26Z; W3-D masking 14:34Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-M DONE 2026-11-12T15:53:26Z; W3-D masking 14:34Z. Open: tests NOT_RUN"
+  },
+  "M-060": {
+    "status": "CODED",
+    "lane": "W4-E B65 / W4-G / INT-H2 / W4-M",
+    "evidence": "decision 149: INT-H2 DONE 2026-11-13T02:32:58Z REST; W4-G 0044-02; W4-M DONE 03:26:38Z 501 contract",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: decision 149: INT-H2 DONE 2026-11-13T02:32:58Z REST; W4-G 0044-02; W4-M DONE 03:26:38Z 501 contract. Open: tests NOT_RUN"
+  },
+  "M-061": {
+    "status": "CODED",
+    "lane": "W3-K B52 / W4-D / W4-C",
+    "evidence": "W3-K DONE 2026-11-12T13:13Z; W4-C DONE 2026-11-13T04:18:12Z entrypoint",
+    "open": "image build and nsjail run in test phase (decisions 128, 157)",
+    "note": "Evidence: W3-K DONE 2026-11-12T13:13Z; W4-C DONE 2026-11-13T04:18:12Z entrypoint. Open: image build and nsjail run in test phase (decisions 128, 157)"
+  },
+  "M-062": {
+    "status": "CODED",
+    "lane": "W2-D / W2-B / W2-H / W2-L",
+    "evidence": "W2-B DONE 2026-11-12T10:15Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-B DONE 2026-11-12T10:15Z. Open: tests NOT_RUN"
+  },
+  "M-063": {
+    "status": "CODED",
+    "lane": "W3-K B52",
+    "evidence": "W3-K DONE 2026-11-12T12:23:57Z",
+    "open": "measurement in test phase",
+    "note": "Evidence: W3-K DONE 2026-11-12T12:23:57Z. Open: measurement in test phase"
+  },
+  "M-064": {
+    "status": "PARTIAL",
+    "lane": "W3-A B42 / W4-H B68 / INT-H2",
+    "evidence": "W4-H DONE 2026-11-12T20:22:37Z decision 189; DONE 2026-11-13T00:50:03Z decisions 218 219",
+    "open": "server wiring of the Event Grid inbound route routed to INT-H2 (integrator ACK 2026-11-13T00:50:58Z), no DONE found; register SL-170 still says deferred (stale)",
+    "note": "Evidence: W4-H DONE 2026-11-12T20:22:37Z decision 189; DONE 2026-11-13T00:50:03Z decisions 218 219. Open: server wiring of the Event Grid inbound route routed to INT-H2 (integrator ACK 2026-11-13T00:50:58Z), no DONE found; register SL-170 still says deferred (stale)"
+  },
+  "M-065": {
+    "status": "CODED",
+    "lane": "W3-A B42 / W4-H",
+    "evidence": "W3-A DONE 2026-11-12T13:03Z; Service Bus binary mode W4-H decision 189",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-A DONE 2026-11-12T13:03Z; Service Bus binary mode W4-H decision 189. Open: tests NOT_RUN"
+  },
+  "M-066": {
+    "status": "CODED",
+    "lane": "W3-A B42",
+    "evidence": "W3-A DONE 2026-11-12T15:50Z (decision 101)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-A DONE 2026-11-12T15:50Z (decision 101). Open: tests NOT_RUN"
+  },
+  "M-067": {
+    "status": "CODED",
+    "lane": "W3-B B43",
+    "evidence": "W3-B DONE 2026-11-12T12:40Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-B DONE 2026-11-12T12:40Z. Open: tests NOT_RUN"
+  },
+  "M-068": {
+    "status": "CODED",
+    "lane": "W3-B / W3-F / W3-J2",
+    "evidence": "W3-F DONE 2026-11-12T15:26Z",
+    "open": "SL-179 app-bundle refusal OPEN; tests NOT_RUN",
+    "note": "Evidence: W3-F DONE 2026-11-12T15:26Z. Open: SL-179 app-bundle refusal OPEN; tests NOT_RUN"
+  },
+  "M-069": {
+    "status": "PARTIAL",
+    "lane": "W4-G B67 / W4-H B68 / W4-E / INT-H2",
+    "evidence": "decision 159: W4-G DONE 2026-11-12T19:02Z importer; W4-H DONE 20:22:37Z step PARTIAL; W4-E DONE 2026-11-13T01:13:46Z properties; W4-G DONE 00:48:25Z YAML (204, 221)",
+    "open": "server wiring of ArazzoOperationStep routed to INT-H2 (ACK 2026-11-13T00:50:58Z), no DONE found (UNSURE); no conformance claim",
+    "note": "Evidence: decision 159: W4-G DONE 2026-11-12T19:02Z importer; W4-H DONE 20:22:37Z step PARTIAL; W4-E DONE 2026-11-13T01:13:46Z properties; W4-G DONE 00:48:25Z YAML (204, 221). Open: server wiring of ArazzoOperationStep routed to INT-H2 (ACK 2026-11-13T00:50:58Z), no DONE found (UNSURE); no conformance claim"
+  },
+  "M-070": {
+    "status": "PARTIAL",
+    "lane": "W4-H B68 / INT-H2",
+    "evidence": "decision 163: W4-H DONE 2026-11-12T20:22:37Z TemporalConnector; 216 DONE 2026-11-13T00:50:03Z",
+    "open": "server wiring of TemporalConnector routed to INT-H2 (ACK 00:50:58Z), no DONE found (UNSURE); inbound adapter narrowed by decision 163 to start-and-await",
+    "note": "Evidence: decision 163: W4-H DONE 2026-11-12T20:22:37Z TemporalConnector; 216 DONE 2026-11-13T00:50:03Z. Open: server wiring of TemporalConnector routed to INT-H2 (ACK 00:50:58Z), no DONE found (UNSURE); inbound adapter narrowed by decision 163 to start-and-await"
+  },
+  "M-071": {
+    "status": "CODED",
+    "lane": "W3-C B44",
+    "evidence": "W3-C DONE 2026-11-12T12:21Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-C DONE 2026-11-12T12:21Z. Open: tests NOT_RUN"
+  },
+  "M-072": {
+    "status": "CODED",
+    "lane": "W3-B B43",
+    "evidence": "W3-B DONE 2026-11-12T12:40Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-B DONE 2026-11-12T12:40Z. Open: tests NOT_RUN"
+  },
+  "M-073": {
+    "status": "CODED",
+    "reg": "SL-152",
+    "lane": "W2-E / W2-L / W2-A",
+    "evidence": "W2-A DONE 2026-11-12T09:47Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-A DONE 2026-11-12T09:47Z. Open: tests NOT_RUN"
+  },
+  "M-074": {
+    "status": "CODED",
+    "lane": "W3-G B48",
+    "evidence": "W3-G DONE 2026-11-12T12:28Z (decisions 83-85)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-G DONE 2026-11-12T12:28Z (decisions 83-85). Open: tests NOT_RUN"
+  },
+  "M-075": {
+    "status": "CODED",
+    "lane": "W3-B B43",
+    "evidence": "W3-B DONE 2026-11-12T12:40Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-B DONE 2026-11-12T12:40Z. Open: tests NOT_RUN"
+  },
+  "M-076": {
+    "status": "CODED",
+    "lane": "W3-D B45 / integrator",
+    "evidence": "W3-D DONE 2026-11-12T14:34Z decision 99; integrator RM-01 decision 135 DONE 2026-11-12T16:32Z",
+    "open": "SAML only via Keycloak brokering in 0.1.0; server SP OUT_OF_SCOPE (decisions 99, 135)",
+    "note": "Evidence: W3-D DONE 2026-11-12T14:34Z decision 99; integrator RM-01 decision 135 DONE 2026-11-12T16:32Z. Open: SAML only via Keycloak brokering in 0.1.0; server SP OUT_OF_SCOPE (decisions 99, 135)"
+  },
+  "M-077": {
+    "status": "CODED",
+    "lane": "W3-D B45 / W3-M",
+    "evidence": "W3-D DONE 2026-11-12T13:41Z; broker OTP kcadm script W3-D DONE 14:43Z (decision 113), W3-M compose 14:55Z",
+    "open": "MFA verified in E2E only (decision 100)",
+    "note": "Evidence: W3-D DONE 2026-11-12T13:41Z; broker OTP kcadm script W3-D DONE 14:43Z (decision 113), W3-M compose 14:55Z. Open: MFA verified in E2E only (decision 100)"
+  },
+  "M-078": {
+    "status": "CODED",
+    "lane": "W3-E B46",
+    "evidence": "W3-E DONE 2026-11-12T13:00:35Z (decision 67)",
+    "open": "one adapter per AUA once the AUA is named (decision 67); tests NOT_RUN",
+    "note": "Evidence: W3-E DONE 2026-11-12T13:00:35Z (decision 67). Open: one adapter per AUA once the AUA is named (decision 67); tests NOT_RUN"
+  },
+  "M-079": {
+    "status": "CODED",
+    "lane": "W4-H / W4-J / W4-C / W4-G / INT-H2",
+    "evidence": "decision 165 and 227-241: W4-H DONE 2026-11-13T05:58:28Z; W4-J DONE 06:51:56Z; W4-C DONE 05:48:02Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: decision 165 and 227-241: W4-H DONE 2026-11-13T05:58:28Z; W4-J DONE 06:51:56Z; W4-C DONE 05:48:02Z. Open: tests NOT_RUN"
+  },
+  "M-080": {
+    "status": "PARTIAL",
+    "lane": "W4-H B68",
+    "evidence": "W4-H DONE 2026-11-12T17:27:06Z PadesSigning (no LTV, no revocation); decision 140/217 RM-07 CODED 20:22:37Z",
+    "open": "LTV not built; live eSign BLOCKED until ESP sandbox confirmation (decision 215, owner act)",
+    "note": "Evidence: W4-H DONE 2026-11-12T17:27:06Z PadesSigning (no LTV, no revocation); decision 140/217 RM-07 CODED 20:22:37Z. Open: LTV not built; live eSign BLOCKED until ESP sandbox confirmation (decision 215, owner act)"
+  },
+  "M-081": {
+    "status": "CODED",
+    "lane": "W3-E / W4-D B64",
+    "evidence": "W4-D DONE 2026-11-12T17:05Z (decisions 114, 119); 153 auth DONE 19:49:29Z",
+    "open": "validator image build test phase",
+    "note": "Evidence: W4-D DONE 2026-11-12T17:05Z (decisions 114, 119); 153 auth DONE 19:49:29Z. Open: validator image build test phase"
+  },
+  "M-082": {
+    "status": "CODED",
+    "lane": "W3-E B46 / W4-B",
+    "evidence": "W3-E DONE 2026-11-12T12:07Z; decision 125 W4-B DONE 2026-11-12T20:33:06Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-E DONE 2026-11-12T12:07Z; decision 125 W4-B DONE 2026-11-12T20:33:06Z. Open: tests NOT_RUN"
+  },
+  "M-083": {
+    "status": "CODED",
+    "lane": "W4-B B62b",
+    "evidence": "W4-B DONE 2026-11-12T19:38Z decision 166; decision 200 widening",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-B DONE 2026-11-12T19:38Z decision 166; decision 200 widening. Open: tests NOT_RUN"
+  },
+  "M-084": {
+    "status": "CODED",
+    "lane": "W3-D B45",
+    "evidence": "W3-D DONE 2026-11-12T12:43Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-D DONE 2026-11-12T12:43Z. Open: tests NOT_RUN"
+  },
+  "M-085": {
+    "status": "CODED",
+    "lane": "W3-D B45",
+    "evidence": "W3-D DONE 2026-11-12T13:41Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-D DONE 2026-11-12T13:41Z. Open: tests NOT_RUN"
+  },
+  "M-086": {
+    "status": "CODED",
+    "lane": "W3-D B45",
+    "evidence": "W3-D DONE 2026-11-12T12:55Z (decisions 87, 98)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-D DONE 2026-11-12T12:55Z (decisions 87, 98). Open: tests NOT_RUN"
+  },
+  "M-087": {
+    "status": "CODED",
+    "lane": "W3-E B46",
+    "evidence": "W3-E DONE 2026-11-12T12:59:38Z (decision 68)",
+    "open": "guardian verifier unbound and fail closed (decision 68); officer-attested verifier needs legal review (later)",
+    "note": "Evidence: W3-E DONE 2026-11-12T12:59:38Z (decision 68). Open: guardian verifier unbound and fail closed (decision 68); officer-attested verifier needs legal review (later)"
+  },
+  "M-088": {
+    "status": "PARTIAL",
+    "lane": "W4-C B63 (via M-147); master wave 5",
+    "evidence": "W4-C DONE 2026-11-12T17:53:27Z notices bundle; DONE 2026-11-13T01:36:02Z attributions",
+    "open": "UNSURE whether the THIRD-PARTY-LICENSES book and the Operaton NOTICE verbatim part are complete; no board line names M-088",
+    "note": "Evidence: W4-C DONE 2026-11-12T17:53:27Z notices bundle; DONE 2026-11-13T01:36:02Z attributions. Open: UNSURE whether the THIRD-PARTY-LICENSES book and the Operaton NOTICE verbatim part are complete; no board line names M-088"
+  },
+  "M-089": {
+    "status": "CODED",
+    "lane": "W4-K B6B",
+    "evidence": "no board DONE names M-089; files present: sangam/deploy/evidence/procurement/{local_content_dossier.py, local-content-input.template.json, sku-catalogue.template.md, test_local_content_dossier.py}; integrator DONE 2026-11-12T17:09:50Z evidence area",
+    "open": "UNSURE: confirmed by file presence only, no W4-K DONE with hashes; tests NOT_RUN",
+    "note": "Evidence: no board DONE names M-089; files present: sangam/deploy/evidence/procurement/{local_content_dossier.py, local-content-input.template.json, sku-catalogue.template.md, test_local_content_dossier.py}; integrator DONE 2026-11-12T17:09:50Z evidence area. Open: UNSURE: confirmed by file presence only, no W4-K DONE with hashes; tests NOT_RUN"
+  },
+  "M-090": {
+    "status": "CODED",
+    "lane": "W4-I B69",
+    "evidence": "W4-I DONE 2026-11-12T17:04Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-I DONE 2026-11-12T17:04Z. Open: tests NOT_RUN"
+  },
+  "M-091": {
+    "status": "CODED",
+    "reg": "SL-150",
+    "lane": "W2-G B35 / W2-J",
+    "evidence": "W2-J DONE 2026-11-12T10:07Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W2-J DONE 2026-11-12T10:07Z. Open: tests NOT_RUN"
+  },
+  "M-092": {
+    "status": "CODED",
+    "lane": "W4-I B69",
+    "evidence": "W4-I DONE 2026-11-12T20:20Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-I DONE 2026-11-12T20:20Z. Open: tests NOT_RUN"
+  },
+  "M-093": {
+    "status": "CODED",
+    "lane": "W3-L B53",
+    "evidence": "W3-L DONE 2026-11-12T11:49Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-L DONE 2026-11-12T11:49Z. Open: tests NOT_RUN"
+  },
+  "M-094": {
+    "status": "CODED",
+    "reg": "SL-144",
+    "lane": "W1-H B26",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "rules verified only on first CI run",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE). Open: rules verified only on first CI run"
+  },
+  "M-095": {
+    "status": "CODED",
+    "reg": "SL-144",
+    "lane": "W1-H B26",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE). Open: tests NOT_RUN"
+  },
+  "M-096": {
+    "status": "CODED",
+    "lane": "W1-H B26",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "record-only (decision 24)",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE). Open: record-only (decision 24)"
+  },
+  "M-097": {
+    "status": "CODED",
+    "reg": "SL-151",
+    "lane": "W2-F B34 / W3-F",
+    "evidence": "W3-F DONE 2026-11-12T12:14Z",
+    "open": "LockScope.DEPTH ThreadLocal tracked debt SL-172",
+    "note": "Evidence: W3-F DONE 2026-11-12T12:14Z. Open: LockScope.DEPTH ThreadLocal tracked debt SL-172"
+  },
+  "M-098": {
+    "status": "CODED",
+    "lane": "W2-D B32",
+    "evidence": "Wave 2 W2-D",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-D. Open: tests NOT_RUN"
+  },
+  "M-099": {
+    "status": "CODED",
+    "lane": "W4-I B69 / W4-B / W4-G / INT-H2",
+    "evidence": "decision 154: W4-I DONE 2026-11-13T01:04:00Z (501 stubs gone); INT-H2 INFO 01:58:37Z /scim/v2 authenticated",
+    "open": "Oracle and SQL Server parts NOT_RUN",
+    "note": "Evidence: decision 154: W4-I DONE 2026-11-13T01:04:00Z (501 stubs gone); INT-H2 INFO 01:58:37Z /scim/v2 authenticated. Open: Oracle and SQL Server parts NOT_RUN"
+  },
+  "M-100": {
+    "status": "CODED",
+    "lane": "W4-H B68 / integrator",
+    "evidence": "W4-H DONE 2026-11-12T20:22:37Z; integrator DONE 2026-11-13T00:40:25Z root pom",
+    "open": "gitSync binding REQUEST to W4-F stays open per W4-H (UNSURE); tests NOT_RUN",
+    "note": "Evidence: W4-H DONE 2026-11-12T20:22:37Z; integrator DONE 2026-11-13T00:40:25Z root pom. Open: gitSync binding REQUEST to W4-F stays open per W4-H (UNSURE); tests NOT_RUN"
+  },
+  "M-101": {
+    "status": "CODED",
+    "lane": "W4-J B6A / W4-M",
+    "evidence": "W4-J DONE 2026-11-12T18:09Z and 20:03Z key fix",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-J DONE 2026-11-12T18:09Z and 20:03Z key fix. Open: tests NOT_RUN"
+  },
+  "M-102": {
+    "status": "CODED",
+    "lane": "W4-I B69 / W4-C / INT-H2",
+    "evidence": "decision 155 W4-I DONE 2026-11-12T20:20Z; decision 220 W4-I DONE 2026-11-13T01:04:00Z, W4-C DONE 01:43:23Z",
+    "open": "restore stays offline procedure (decision 155); tests NOT_RUN",
+    "note": "Evidence: decision 155 W4-I DONE 2026-11-12T20:20Z; decision 220 W4-I DONE 2026-11-13T01:04:00Z, W4-C DONE 01:43:23Z. Open: restore stays offline procedure (decision 155); tests NOT_RUN"
+  },
+  "M-103": {
+    "status": "PARTIAL",
+    "lane": "W4-D B64 (no active follow-up)",
+    "evidence": "decision 167 W4-D DONE 2026-11-12T19:49:29Z: M-103 PARTIAL",
+    "open": "knowledge-base wiring of OCR text and the review screen remain (W4-D REQUEST 19:49:29Z); no lane holds them",
+    "note": "Evidence: decision 167 W4-D DONE 2026-11-12T19:49:29Z: M-103 PARTIAL. Open: knowledge-base wiring of OCR text and the review screen remain (W4-D REQUEST 19:49:29Z); no lane holds them"
+  },
+  "M-104": {
+    "status": "CODED",
+    "lane": "W4-M B6C",
+    "evidence": "decision 164 W4-M DONE 2026-11-12T20:25:18Z Robot Framework example",
+    "open": "orchestrator REST adapters OUT_OF_SCOPE (decision 164)",
+    "note": "Evidence: decision 164 W4-M DONE 2026-11-12T20:25:18Z Robot Framework example. Open: orchestrator REST adapters OUT_OF_SCOPE (decision 164)"
+  },
+  "M-105": {
+    "status": "CODED",
+    "lane": "W4-H B68",
+    "evidence": "W4-H DONE 2026-11-12T17:27:06Z GraphQL/S3/JDBC",
+    "open": "chat is M-071; Camel OUT_OF_SCOPE (decision 137, W4Q-17)",
+    "note": "Evidence: W4-H DONE 2026-11-12T17:27:06Z GraphQL/S3/JDBC. Open: chat is M-071; Camel OUT_OF_SCOPE (decision 137, W4Q-17)"
+  },
+  "M-106": {
+    "status": "CODED",
+    "lane": "W4-E B65",
+    "evidence": "W4-E INFO 2026-11-13T02:36Z D-19 CODED NOT_RUN (147); DONE 03:38Z D-27 (148); D-10 not needed (decision 51)",
+    "open": "tests NOT_RUN incl. Oracle/SQL Server",
+    "note": "Evidence: W4-E INFO 2026-11-13T02:36Z D-19 CODED NOT_RUN (147); DONE 03:38Z D-27 (148); D-10 not needed (decision 51). Open: tests NOT_RUN incl. Oracle/SQL Server"
+  },
+  "M-107": {
+    "status": "PARTIAL",
+    "lane": "W4-E / INT-H2 / W4-H",
+    "evidence": "decision 168: FC-18 INT-H2 DONE 2026-11-13T04:41:14Z, W4-B 04:26:25Z; EC-06 INT-H2 DONE 05:41:27Z and 06:18:41Z (PARTIAL)",
+    "open": "EC-06 settled-outcome event and reconciliation re-dispatch in progress (decisions 289, 290); P-4 and P-5 documented gaps (decision 168)",
+    "note": "Evidence: decision 168: FC-18 INT-H2 DONE 2026-11-13T04:41:14Z, W4-B 04:26:25Z; EC-06 INT-H2 DONE 05:41:27Z and 06:18:41Z (PARTIAL). Open: EC-06 settled-outcome event and reconciliation re-dispatch in progress (decisions 289, 290); P-4 and P-5 documented gaps (decision 168)"
+  },
+  "M-108": {
+    "status": "PARTIAL",
+    "lane": "W4-E B65 / W4-C",
+    "evidence": "decisions 156, 205 W4-E DONE 2026-11-13T00:45:05Z CockroachDB (PARTIAL); W4-C DONE 01:43:23Z README",
+    "open": "YugabyteDB and the non-gating CI lane not evidenced on any board (UNSURE); experimental, no support claim",
+    "note": "Evidence: decisions 156, 205 W4-E DONE 2026-11-13T00:45:05Z CockroachDB (PARTIAL); W4-C DONE 01:43:23Z README. Open: YugabyteDB and the non-gating CI lane not evidenced on any board (UNSURE); experimental, no support claim"
+  },
+  "M-109": {
+    "status": "PARTIAL",
+    "lane": "W4-J B6A / W4-C",
+    "evidence": "decision 162 W4-J DONE 2026-11-12T20:03Z (PARTIAL); 213 W4-J DONE 2026-11-13T00:29:32Z, W4-C DONE 01:02:52Z",
+    "open": "UNSURE whether the IdP redirect part is closed: no W4-J line restates 162 as CODED",
+    "note": "Evidence: decision 162 W4-J DONE 2026-11-12T20:03Z (PARTIAL); 213 W4-J DONE 2026-11-13T00:29:32Z, W4-C DONE 01:02:52Z. Open: UNSURE whether the IdP redirect part is closed: no W4-J line restates 162 as CODED"
+  },
+  "M-110": {
+    "status": "CODED",
+    "lane": "W1-J B28/B16",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)"
+  },
+  "M-111": {
+    "status": "CODED",
+    "lane": "W1-J B28",
+    "evidence": "Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)",
+    "open": "",
+    "note": "Evidence: Wave 1 lane report (no board in Wave 1; FILE-CLAIMS RELEASE)"
+  },
+  "M-112": {
+    "status": "CODED",
+    "lane": "W2-J B38",
+    "evidence": "Wave 2 W2-J",
+    "open": "",
+    "note": "Evidence: Wave 2 W2-J"
+  },
+  "M-113": {
+    "status": "CODED",
+    "reg": "SG-39",
+    "lane": "W2-G B35",
+    "evidence": "Wave 2 W2-G (decision 35)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: Wave 2 W2-G (decision 35). Open: tests NOT_RUN"
+  },
+  "M-114": {
+    "status": "PARTIAL",
+    "lane": "W4-G B67 / W4-E B65",
+    "evidence": "decisions 150, 203, 240, 262: W4-E DONE 2026-11-13T01:36Z (PARTIAL); W4-G DONE 03:09:50Z and 04:26:51Z",
+    "open": "owner picks the cutover per dataset (decision 104); W4-E engine part self-reported PARTIAL; tests NOT_RUN",
+    "note": "Evidence: decisions 150, 203, 240, 262: W4-E DONE 2026-11-13T01:36Z (PARTIAL); W4-G DONE 03:09:50Z and 04:26:51Z. Open: owner picks the cutover per dataset (decision 104); W4-E engine part self-reported PARTIAL; tests NOT_RUN"
+  },
+  "M-115": {
+    "status": "CODED",
+    "reg": "AC-01..AC-11",
+    "lane": "integrator",
+    "evidence": "register AC-01..AC-11",
+    "open": "",
+    "note": "Evidence: register AC-01..AC-11"
+  },
+  "M-116": {
+    "status": "CODED",
+    "reg": "SL-32",
+    "lane": "W2-I B37",
+    "evidence": "Wave 2 W2-I",
+    "open": "journeys run in test phase",
+    "note": "Evidence: Wave 2 W2-I. Open: journeys run in test phase"
+  },
+  "M-117": {
+    "status": "NOT_STARTED",
+    "lane": "W5-B (claimed 2026-11-13T07:18:08Z)",
+    "evidence": "FILE-CLAIMS 2026-11-13T07:18:08Z W4-J as W5-B CLAIM M-117 (decisions 106, 111)",
+    "open": "in progress in Wave 5",
+    "note": "Evidence: FILE-CLAIMS 2026-11-13T07:18:08Z W4-J as W5-B CLAIM M-117 (decisions 106, 111). Open: in progress in Wave 5"
+  },
+  "M-118": {
+    "status": "CODED",
+    "lane": "integrator",
+    "evidence": "register rows",
+    "open": "",
+    "note": "Evidence: register rows"
+  },
+  "M-119": {
+    "status": "REFERENCE",
+    "lane": "integrator",
+    "evidence": "C-19 sent and ACKed by IFMS 2026-11-12",
+    "open": "no work left",
+    "note": "Evidence: C-19 sent and ACKed by IFMS 2026-11-12. Open: no work left"
+  },
+  "M-120": {
+    "status": "REFERENCE",
+    "reg": "SL-102",
+    "lane": "",
+    "evidence": "register SL-102",
+    "open": "FIXED in tree",
+    "note": "Evidence: register SL-102. Open: FIXED in tree"
+  },
+  "M-121": {
+    "status": "REFERENCE",
+    "reg": "SG-15",
+    "lane": "B15 / W2",
+    "evidence": "SG-15; W3-K DONE 2026-11-12T12:23:57Z hooks",
+    "open": "measurement in test phase; register SG-15 OPEN",
+    "note": "Evidence: SG-15; W3-K DONE 2026-11-12T12:23:57Z hooks. Open: measurement in test phase; register SG-15 OPEN"
+  },
+  "M-122": {
+    "status": "REFERENCE",
+    "reg": "SL-78",
+    "lane": "",
+    "evidence": "register SL-78",
+    "open": "FIXED in tree; run in test phase",
+    "note": "Evidence: register SL-78. Open: FIXED in tree; run in test phase"
+  },
+  "M-123": {
+    "status": "REFERENCE",
+    "reg": "SL-79",
+    "lane": "B13",
+    "evidence": "SL-79 diagnostic",
+    "open": "test phase",
+    "note": "Evidence: SL-79 diagnostic. Open: test phase"
+  },
+  "M-124": {
+    "status": "REFERENCE",
+    "reg": "SL-58",
+    "lane": "",
+    "evidence": "register SL-58",
+    "open": "CLOSED, not a Sangam defect",
+    "note": "Evidence: register SL-58. Open: CLOSED, not a Sangam defect"
+  },
+  "M-125": {
+    "status": "CODED",
+    "lane": "W4-G B67 / W4-M / W4-J",
+    "evidence": "W4-G DONE 2026-11-12T17:30:54Z REST and CLI; W4-J DONE 18:09:34Z compare view",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-G DONE 2026-11-12T17:30:54Z REST and CLI; W4-J DONE 18:09:34Z compare view. Open: tests NOT_RUN"
+  },
+  "M-126": {
+    "status": "PARTIAL",
+    "lane": "W4-E B65",
+    "evidence": "decisions 158, 206 W4-E DONE 2026-11-13T00:40Z (PARTIAL, no conformance claim)",
+    "open": "tests NOT_RUN; lane word PARTIAL",
+    "note": "Evidence: decisions 158, 206 W4-E DONE 2026-11-13T00:40Z (PARTIAL, no conformance claim). Open: tests NOT_RUN; lane word PARTIAL"
+  },
+  "M-127": {
+    "status": "CODED",
+    "lane": "W4-G B67",
+    "evidence": "W4-G DONE 2026-11-12T17:30:54Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-G DONE 2026-11-12T17:30:54Z. Open: tests NOT_RUN"
+  },
+  "M-128": {
+    "status": "NOT_STARTED",
+    "lane": "none",
+    "evidence": "no line on any board names M-128; not in WAVE4-LANE-PLAN or WAVE4B-ASSIGNMENTS",
+    "open": "no lane, no decision deferring it",
+    "note": "Evidence: no line on any board names M-128; not in WAVE4-LANE-PLAN or WAVE4B-ASSIGNMENTS. Open: no lane, no decision deferring it"
+  },
+  "M-129": {
+    "status": "CODED",
+    "lane": "W4-K B6B / W4-G / INT-H2 / W4-C",
+    "evidence": "decisions 170, 171 W4-K DONE 2026-11-12T19:24:28Z; 247 INT-H2 DONE 2026-11-13T03:39:56Z, W4-C DONE 03:52:48Z",
+    "open": "Oracle and pgvector tests NOT_RUN; pgvector deployment approval separate (decision 188)",
+    "note": "Evidence: decisions 170, 171 W4-K DONE 2026-11-12T19:24:28Z; 247 INT-H2 DONE 2026-11-13T03:39:56Z, W4-C DONE 03:52:48Z. Open: Oracle and pgvector tests NOT_RUN; pgvector deployment approval separate (decision 188)"
+  },
+  "M-130": {
+    "status": "CODED",
+    "lane": "W3-L B53",
+    "evidence": "W3-L DONE 2026-11-12T13:34:51Z (decisions 59, 93)",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-L DONE 2026-11-12T13:34:51Z (decisions 59, 93). Open: tests NOT_RUN"
+  },
+  "M-131": {
+    "status": "CODED",
+    "lane": "W4-G B67",
+    "evidence": "decision 160 W4-G DONE 2026-11-12T20:17:04Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: decision 160 W4-G DONE 2026-11-12T20:17:04Z. Open: tests NOT_RUN"
+  },
+  "M-132": {
+    "status": "CODED",
+    "lane": "W3-L B53",
+    "evidence": "W3-L DONE 2026-11-12T12:11Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W3-L DONE 2026-11-12T12:11Z. Open: tests NOT_RUN"
+  },
+  "M-133": {
+    "status": "PARTIAL",
+    "lane": "W4-K B6B / INT-H2 / W4-C",
+    "evidence": "W4-K DONE 2026-11-12T17:19Z payer packs; Fidelius decision 243 DONE 2026-11-13T04:17:53Z; HAPI decisions 183/263 smoke 6/6 W4-K DONE 04:41:42Z (the only run so far); INT-H2 DONE 05:49:57Z",
+    "open": "US-HLT-061 pack Wave 5 (decision 174); CAQH full envelope is a recorded gap (decision 172); No Surprises Act items traceability only (decision 107)",
+    "note": "Evidence: W4-K DONE 2026-11-12T17:19Z payer packs; Fidelius decision 243 DONE 2026-11-13T04:17:53Z; HAPI decisions 183/263 smoke 6/6 W4-K DONE 04:41:42Z (the only run so far); INT-H2 DONE 05:49:57Z. Open: US-HLT-061 pack Wave 5 (decision 174); CAQH full envelope is a recorded gap (decision 172); No Surprises Act items traceability only (decision 107)"
+  },
+  "M-134": {
+    "status": "CODED",
+    "lane": "W4-K B6B",
+    "evidence": "decision 175 W4-K DONE 2026-11-13T00:41:24Z; IFC-189 decisions 225/244/245/257 DONE 03:18:48Z, 03:54:38Z, 04:31:53Z",
+    "open": "[U] markers parked (decision 108); W4-K REQUEST 00:41:24Z PFM coverage map unanswered; tests NOT_RUN",
+    "note": "Evidence: decision 175 W4-K DONE 2026-11-13T00:41:24Z; IFC-189 decisions 225/244/245/257 DONE 03:18:48Z, 03:54:38Z, 04:31:53Z. Open: [U] markers parked (decision 108); W4-K REQUEST 00:41:24Z PFM coverage map unanswered; tests NOT_RUN"
+  },
+  "M-135": {
+    "status": "PARTIAL",
+    "lane": "W4-G B67",
+    "evidence": "decision 169 W4-G DONE 2026-11-12T19:39Z (PARTIAL), 2026-11-13T02:06:31Z; 231 DONE 02:46:23Z",
+    "open": "synthetic corpus only; real-data validation waits for the owner's data",
+    "note": "Evidence: decision 169 W4-G DONE 2026-11-12T19:39Z (PARTIAL), 2026-11-13T02:06:31Z; 231 DONE 02:46:23Z. Open: synthetic corpus only; real-data validation waits for the owner's data"
+  },
+  "M-136": {
+    "status": "PARTIAL",
+    "lane": "W4-G B67 / W4-E B65",
+    "evidence": "decision 151 W4-E DONE 2026-11-13T02:42:57Z capture; W4-G DONE 02:06:31Z",
+    "open": "W4-G: stays PARTIAL until an executed capture-to-replay run incl. Oracle and SQL Server",
+    "note": "Evidence: decision 151 W4-E DONE 2026-11-13T02:42:57Z capture; W4-G DONE 02:06:31Z. Open: W4-G: stays PARTIAL until an executed capture-to-replay run incl. Oracle and SQL Server"
+  },
+  "M-137": {
+    "status": "CODED",
+    "lane": "W3-H B49",
+    "evidence": "W3-H DONE 2026-11-12T12:08Z",
+    "open": "",
+    "note": "Evidence: W3-H DONE 2026-11-12T12:08Z"
+  },
+  "M-138": {
+    "status": "CODED",
+    "lane": "W3-H B49",
+    "evidence": "W3-H report",
+    "open": "",
+    "note": "Evidence: W3-H report"
+  },
+  "M-139": {
+    "status": "CODED",
+    "lane": "W3-H B49",
+    "evidence": "W3-H DONE 2026-11-12T12:37Z",
+    "open": "ratchet 0 after M-141c",
+    "note": "Evidence: W3-H DONE 2026-11-12T12:37Z. Open: ratchet 0 after M-141c"
+  },
+  "M-140": {
+    "status": "CODED",
+    "lane": "W3-H B49",
+    "evidence": "W3-H report (doc)",
+    "open": "tests in test phase",
+    "note": "Evidence: W3-H report (doc). Open: tests in test phase"
+  },
+  "M-141": {
+    "status": "CODED",
+    "lane": "W4-B / W4-F",
+    "evidence": "phase 1 = M-141a..d all landed; integrator INFO 2026-11-12T18:34Z ratchet 0",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: phase 1 = M-141a..d all landed; integrator INFO 2026-11-12T18:34Z ratchet 0. Open: tests NOT_RUN"
+  },
+  "M-141a": {
+    "status": "CODED",
+    "lane": "W4-B B62",
+    "evidence": "W4-B DONE 2026-11-12T17:33Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-B DONE 2026-11-12T17:33Z. Open: tests NOT_RUN"
+  },
+  "M-141b": {
+    "status": "CODED",
+    "lane": "W4-F B66",
+    "evidence": "W4-F DONE 2026-11-12T17:43Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-F DONE 2026-11-12T17:43Z. Open: tests NOT_RUN"
+  },
+  "M-141c": {
+    "status": "CODED",
+    "lane": "W4-F B66",
+    "evidence": "W4-F DONE 2026-11-12T18:34Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-F DONE 2026-11-12T18:34Z. Open: tests NOT_RUN"
+  },
+  "M-141d": {
+    "status": "CODED",
+    "lane": "W4-F B66",
+    "evidence": "W4-F DONE 2026-11-12T17:37Z",
+    "open": "tests NOT_RUN",
+    "note": "Evidence: W4-F DONE 2026-11-12T17:37Z. Open: tests NOT_RUN"
+  },
+  "M-142": {
+    "status": "PARTIAL",
+    "lane": "W4-F B66",
+    "evidence": "decisions 274, 276, 277, 285 bring extraction into 0.1.0: phase 1b W4-F DONE 2026-11-13T06:38:52Z; sangam-rest-core move started 07:09:39Z",
+    "open": "phases 3, 2, 5 and the move pending; master still says 0.2 (superseded by decision 276)",
+    "note": "Evidence: decisions 274, 276, 277, 285 bring extraction into 0.1.0: phase 1b W4-F DONE 2026-11-13T06:38:52Z; sangam-rest-core move started 07:09:39Z. Open: phases 3, 2, 5 and the move pending; master still says 0.2 (superseded by decision 276)"
+  },
+  "M-143": {
+    "status": "PARTIAL",
+    "lane": "W4-F B66",
+    "evidence": "decision 186 W4-F DONE 2026-11-13T01:31Z (PARTIAL), 04:56Z, 05:54:52Z, 06:38:52Z",
+    "open": "full host per decisions 274/278; equivalence after phase 3",
+    "note": "Evidence: decision 186 W4-F DONE 2026-11-13T01:31Z (PARTIAL), 04:56Z, 05:54:52Z, 06:38:52Z. Open: full host per decisions 274/278; equivalence after phase 3"
+  },
+  "M-144": {
+    "status": "CODED",
+    "lane": "W3-H / W4-F B66",
+    "evidence": "W3-H DONE 2026-11-12T12:50Z; W4-F sangam-assembly host SPI DONE 2026-11-13T05:54:52Z",
+    "open": "kit equivalence tracked in M-150",
+    "note": "Evidence: W3-H DONE 2026-11-12T12:50Z; W4-F sangam-assembly host SPI DONE 2026-11-13T05:54:52Z. Open: kit equivalence tracked in M-150"
+  },
+  "M-145": {
+    "status": "CODED",
+    "lane": "W3-X1 / W3-X2 / W3-X4",
+    "evidence": "integrator INFO 2026-11-12T15:30Z deliverables accepted",
+    "open": "",
+    "note": "Evidence: integrator INFO 2026-11-12T15:30Z deliverables accepted"
+  },
+  "M-146": {
+    "status": "CODED",
+    "lane": "W3-X3 / W3-X4",
+    "evidence": "integrator INFO 2026-11-12T15:30Z",
+    "open": "remediation is M-149",
+    "note": "Evidence: integrator INFO 2026-11-12T15:30Z. Open: remediation is M-149"
+  },
+  "M-147": {
+    "status": "CODED",
+    "lane": "W4-C B63",
+    "evidence": "W4-C DONE 2026-11-12T17:53:27Z and follow-ups",
+    "open": "release jobs NOT_RUN",
+    "note": "Evidence: W4-C DONE 2026-11-12T17:53:27Z and follow-ups. Open: release jobs NOT_RUN"
+  },
+  "M-148": {
+    "status": "CODED",
+    "lane": "W4-C B63",
+    "evidence": "W4-C DONE 2026-11-12T17:53:27Z; decisions 177 179 DONE 19:35:54Z; 253/261 DONE 2026-11-13T04:02:19Z",
+    "open": "CI controls NOT_RUN until first CI run",
+    "note": "Evidence: W4-C DONE 2026-11-12T17:53:27Z; decisions 177 179 DONE 19:35:54Z; 253/261 DONE 2026-11-13T04:02:19Z. Open: CI controls NOT_RUN until first CI run"
+  },
+  "M-149": {
+    "status": "PARTIAL",
+    "lane": "W4 lanes (per RM row)",
+    "evidence": "board DONE lines name RM-01..RM-11, RM-13, RM-24, RM-26, RM-32, RM-36, RM-46, RM-48, RM-49",
+    "open": "RM-12, RM-14..23, RM-25, RM-27..31, RM-33..35, RM-37..45, RM-47, RM-50..56 have no board line by RM id (some covered under decision numbers, UNSURE per row)",
+    "note": "Evidence: board DONE lines name RM-01..RM-11, RM-13, RM-24, RM-26, RM-32, RM-36, RM-46, RM-48, RM-49. Open: RM-12, RM-14..23, RM-25, RM-27..31, RM-33..35, RM-37..45, RM-47, RM-50..56 have no board line by RM id (some covered under decision numbers, UNSURE per row)"
+  },
+  "M-150": {
+    "status": "PARTIAL",
+    "lane": "W4-F B66",
+    "evidence": "W4-F DONE 2026-11-13T06:38:52Z: coverage kit, fail-closed 14 of 16",
+    "open": "equivalence after extraction phase 3 (decision 274)",
+    "note": "Evidence: W4-F DONE 2026-11-13T06:38:52Z: coverage kit, fail-closed 14 of 16. Open: equivalence after extraction phase 3 (decision 274)"
+  }
+}

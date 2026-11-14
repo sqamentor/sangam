@@ -1,0 +1,56 @@
+
+The following files have been resolved:
+   org.codehaus.mojo:versions-maven-plugin:jar:2.25.1:compile -- module versions.maven.plugin (auto)
+   org.codehaus.mojo.versions:versions-api:jar:2.25.1:compile -- module versions.api (auto)
+   org.codehaus.mojo.versions:versions-model:jar:2.25.1:compile -- module versions.model (auto)
+   org.codehaus.mojo.versions:versions-model-report:jar:2.25.1:compile -- module versions.model.report (auto)
+   org.codehaus.mojo.versions:versions-common:jar:2.25.1:compile -- module versions.common (auto)
+   com.fasterxml.woodstox:woodstox-core:jar:7.3.0:compile -- module com.ctc.wstx
+   org.yaml:snakeyaml:jar:2.7:compile -- module org.yaml.snakeyaml
+   org.codehaus.woodstox:stax2-api:jar:4.3.2:compile -- module org.codehaus.stax2
+   org.apache.commons:commons-collections4:jar:4.6.0:compile -- module org.apache.commons.collections4
+   org.apache.maven.shared:maven-common-artifact-filters:jar:3.4.0:compile -- module maven.common.artifact.filters (auto)
+   org.slf4j:slf4j-api:jar:1.7.36:compile -- module org.slf4j [auto]
+   org.apache.maven.resolver:maven-resolver-util:jar:1.4.1:compile -- module org.apache.maven.resolver.util [auto]
+   org.apache.maven.reporting:maven-reporting-api:jar:4.0.0:compile -- module maven.reporting.api (auto)
+   org.apache.maven.reporting:maven-reporting-impl:jar:4.0.0:compile -- module maven.reporting.impl (auto)
+   org.apache.maven.shared:maven-shared-utils:jar:3.4.2:compile -- module maven.shared.utils (auto)
+   commons-io:commons-io:jar:2.11.0:compile -- module org.apache.commons.io [auto]
+   org.apache.maven.doxia:doxia-site-model:jar:2.0.0:compile -- module doxia.site.model (auto)
+   org.apache.maven.doxia:doxia-integration-tools:jar:2.0.0:compile -- module doxia.integration.tools (auto)
+   org.codehaus.plexus:plexus-interpolation:jar:1.27:compile -- module plexus.interpolation (auto)
+   org.apache.maven.doxia:doxia-site-renderer:jar:2.0.0:compile -- module doxia.site.renderer (auto)
+   org.apache.maven.doxia:doxia-skin-model:jar:2.0.0:compile -- module doxia.skin.model (auto)
+   org.apache.maven.doxia:doxia-module-xhtml5:jar:2.0.0:compile -- module doxia.module.xhtml5 (auto)
+   org.codehaus.plexus:plexus-velocity:jar:2.2.0:compile -- module plexus.velocity (auto)
+   org.apache.velocity:velocity-engine-core:jar:2.4:compile -- module velocity.engine.core (auto)
+   org.apache.velocity.tools:velocity-tools-generic:jar:3.1:compile -- module velocity.tools.generic (auto)
+   commons-beanutils:commons-beanutils:jar:1.9.4:compile -- module commons.beanutils (auto)
+   commons-logging:commons-logging:jar:1.2:compile -- module commons.logging (auto)
+   commons-collections:commons-collections:jar:3.2.2:compile -- module commons.collections (auto)
+   org.apache.commons:commons-digester3:jar:3.2:compile -- module commons.digester3 (auto)
+   com.github.cliftonlabs:json-simple:jar:3.0.2:compile -- module json.simple (auto)
+   org.apache.maven.doxia:doxia-module-apt:jar:2.0.0:runtime -- module doxia.module.apt (auto)
+   org.apache.maven.doxia:doxia-module-xdoc:jar:2.0.0:runtime -- module doxia.module.xdoc (auto)
+   org.codehaus.plexus:plexus-utils:jar:4.0.1:compile -- module plexus.utils (auto)
+   org.apache.maven:maven-archiver:jar:3.6.2:compile -- module maven.archiver (auto)
+   org.codehaus.plexus:plexus-archiver:jar:4.9.2:compile -- module plexus.archiver (auto)
+   org.codehaus.plexus:plexus-io:jar:3.4.2:compile -- module plexus.io (auto)
+   org.apache.commons:commons-compress:jar:1.26.1:compile -- module org.apache.commons.compress
+   commons-codec:commons-codec:jar:1.16.1:compile -- module org.apache.commons.codec
+   org.iq80.snappy:snappy:jar:0.4:compile -- module snappy (auto)
+   org.tukaani:xz:jar:1.9:runtime -- module org.tukaani.xz
+   com.github.luben:zstd-jni:jar:1.5.5-11:runtime -- module com.github.luben.zstd_jni
+   org.apache.maven.resolver:maven-resolver-api:jar:1.4.1:compile -- module org.apache.maven.resolver [auto]
+   org.eclipse.sisu:org.eclipse.sisu.plexus:jar:0.9.0.M3:compile -- module org.eclipse.sisu.plexus (auto)
+   org.eclipse.sisu:org.eclipse.sisu.inject:jar:0.9.0.M3:compile -- module org.eclipse.sisu.inject (auto)
+   org.codehaus.plexus:plexus-component-annotations:jar:2.1.0:compile -- module plexus.component.annotations (auto)
+   org.codehaus.plexus:plexus-classworlds:jar:2.6.0:compile -- module plexus.classworlds (auto)
+   org.apache.maven.doxia:doxia-core:jar:2.2.0:compile -- module doxia.core (auto)
+   javax.inject:javax.inject:jar:1:compile -- module javax.inject (auto)
+   org.apache.maven.doxia:doxia-sink-api:jar:2.2.0:compile -- module doxia.sink.api (auto)
+   org.codehaus.plexus:plexus-i18n:jar:1.2.0:compile -- module org.codehaus.plexus.i18n [auto]
+   org.codehaus.plexus:plexus-interactivity-api:jar:1.6.0:compile -- module org.codehaus.plexus.components.interactivity [auto]
+   org.apache.commons:commons-lang3:jar:3.21.0:compile -- module org.apache.commons.lang3
+   org.codehaus.plexus:plexus-xml:jar:3.1.0:compile -- module org.codehaus.plexus.util.xml [auto]
+

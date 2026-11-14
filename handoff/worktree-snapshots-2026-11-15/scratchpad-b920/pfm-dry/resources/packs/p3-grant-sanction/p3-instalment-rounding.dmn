@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_p3_instalment_rounding" name="Instalment rounding (P3 grant) (decision 139 rounding policy)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- Decision 139 rounding policy, generated from tools/packgen/rounding.py -->
+  <decision id="p3-instalment-rounding" name="Instalment rounding (P3 grant) (decision 139 rounding policy)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.1">
+    <decisionTable id="p3-instalment-rounding_t" hitPolicy="UNIQUE">
+      <input id="p3-instalment-rounding_i0" label="As of"><inputExpression id="p3-instalment-rounding_ie0" typeRef="date"><text>date(asOfDate)</text></inputExpression></input>
+      <output id="p3-instalment-rounding_o0" label="Policy" name="policyId" typeRef="string"/>
+      <output id="p3-instalment-rounding_o1" label="Policy version" name="policyVersion" typeRef="string"/>
+      <output id="p3-instalment-rounding_o2" label="Status (VERIFIED / SYNTHETIC_DEMO)" name="status" typeRef="string"/>
+      <output id="p3-instalment-rounding_o3" label="Rounding mode" name="mode" typeRef="string"/>
+      <output id="p3-instalment-rounding_o4" label="Rounding unit (minor units)" name="quantumMinor" typeRef="number"/>
+      <output id="p3-instalment-rounding_o5" label="Negative amounts" name="negatives" typeRef="string"/>
+      <output id="p3-instalment-rounding_o6" label="Instalment that takes the remainder" name="residual" typeRef="string"/>
+      <output id="p3-instalment-rounding_o7" label="Applied to" name="application" typeRef="string"/>
+      <output id="p3-instalment-rounding_o8" label="Stage" name="stage" typeRef="string"/>
+      <output id="p3-instalment-rounding_o9" label="Jurisdiction" name="jurisdiction" typeRef="string"/>
+      <output id="p3-instalment-rounding_o10" label="Scheme" name="scheme" typeRef="string"/>
+      <output id="p3-instalment-rounding_o11" label="Purpose" name="purpose" typeRef="string"/>
+      <output id="p3-instalment-rounding_o12" label="Source" name="source" typeRef="string"/>
+      <output id="p3-instalment-rounding_o13" label="Provision" name="provision" typeRef="string"/>
+      <output id="p3-instalment-rounding_o14" label="Effective from" name="effectiveFrom" typeRef="string"/>
+      <output id="p3-instalment-rounding_o15" label="Effective to" name="effectiveTo" typeRef="string"/>
+      <rule id="p3-instalment-rounding_r0"><description>SYNTHETIC_DEMO demo-1</description>
+        <inputEntry id="p3-instalment-rounding_r0_i0"><text>[date("1900-01-01")..date("9999-12-31")]</text></inputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o0"><text>"p3-instalment-rounding"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o1"><text>"demo-1"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o2"><text>"SYNTHETIC_DEMO"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o3"><text>"DOWN"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o4"><text>100</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o5"><text>"REFUSE"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o6"><text>"LAST"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o7"><text>"INSTALMENT"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o8"><text>"each instalment"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o9"><text>"any (demonstration)"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o10"><text>"demonstration"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o11"><text>"DBT instalment of a sanctioned grant"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o12"><text>"none found (SYNTHETIC_DEMO: not a statutory or contractual rule; deploy the confirmed policy as a tenant override)"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o13"><text>"none"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o14"><text>"1900-01-01"</text></outputEntry>
+        <outputEntry id="p3-instalment-rounding_r0_o15"><text>"9999-12-31"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

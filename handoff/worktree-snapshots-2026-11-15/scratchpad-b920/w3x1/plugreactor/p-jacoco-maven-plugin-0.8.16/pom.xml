@@ -1,0 +1,5 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+<parent><groupId>w3x1</groupId><artifactId>plug-root</artifactId><version>1</version></parent>
+<artifactId>p-jacoco-maven-plugin-0.8.16</artifactId><packaging>pom</packaging>
+<dependencies><dependency><groupId>org.jacoco</groupId><artifactId>jacoco-maven-plugin</artifactId><version>0.8.16</version><type>maven-plugin</type></dependency></dependencies>
+</project>

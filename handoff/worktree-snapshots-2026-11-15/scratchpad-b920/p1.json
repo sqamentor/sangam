@@ -1,0 +1,2 @@
+[["`acquireByDueDate` with the due-date index. | WS-ENGINE settings, IR-7 |",
+"`acquireByDueDate` with the due-date index. Exclusive jobs are grouped per root instance (`SANGAM_JOB_EXCLUSIVE_OVER_PROCESS_HIERARCHIES`, Helm `server.jobExecutor.exclusiveOverProcessHierarchies`, default `true`, SANGAM.md §4.3 item 3). The L2 root lock already serialises a root's job execution, so this moves the wait from a blocked row lock to job acquisition. | WS-ENGINE settings, IR-7 |"]]

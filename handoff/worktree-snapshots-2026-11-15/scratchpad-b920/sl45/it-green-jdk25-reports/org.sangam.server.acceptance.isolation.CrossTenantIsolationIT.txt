@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.server.acceptance.isolation.CrossTenantIsolationIT
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 437.7 s -- in org.sangam.server.acceptance.isolation.CrossTenantIsolationIT

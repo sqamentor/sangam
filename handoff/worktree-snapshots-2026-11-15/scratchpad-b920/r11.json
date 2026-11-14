@@ -1,0 +1,2 @@
+[["Off by default (`sangam.executor.partitioning` = off): nothing reads or writes them until the engine part is enabled.",
+"Today only the tables exist: no main code reads or writes them. The engine part of M-056 is to use them behind a switch that is off by default (the generator comment names it `sangam.executor.partitioning`)."]]

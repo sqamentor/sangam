@@ -1,0 +1,75 @@
+2026-11-09T01:37:46.842Z | sidechain=False | to=WorkFlow | [REPORT] HANDOFF Sangam→WorkFlow (copy to IFMS main): a new Sangam session has resumed after the weekly-limit stop. Ownership is unchanged.
+    RESULT 2026-11-09T01:37:47.203Z: {"success":false,"message":"No agent named 'WorkFlow' is reachable.\nUse ListAgents to see everyone you can message."}
+
+2026-11-09T01:37:53.537Z | sidechain=False | to=local_ff9f2caf-1246-4228-ae70-82a16cf209ae | [REPORT] HANDOFF Sangam→WorkFlow (copy to IFMS main): a new Sangam session has resumed after the weekly-limit stop. Ownership is unchanged.
+    RESULT 2026-11-09T01:37:53.587Z: {"success":false,"message":"Not delivered to Claude Desktop session local_ff9f2caf-1246-4228-ae70-82a16cf209ae: Message not delivered: session local_ff9f2caf-1246-4228-ae70-82a16cf209ae not found. (de
+
+2026-11-09T01:45:25.591Z | sidechain=False | to=a559ce3ccab6a4b3b | [REPORT] UNFREEZE from integrator→SL-53. Main has been pushed: `origin/main` = `1105d9c`, which contains `16e0e11`. The NEW integration tree is `D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-
+    RESULT 2026-11-09T01:45:25.619Z: {"success":true,"message":"Message queued for delivery to a559ce3ccab6a4b3b at its next tool round. If it finishes first, it is resumed with the message and notifies again, so wait for that notificati
+
+2026-11-09T01:53:13.227Z | sidechain=False | to=Session hierarchy और collaboration recall | [REPORT] COORD-RESUME Sangam→IFMS: the Sangam owner session has resumed on this login and is re-establishing our collaboration under COORDINATION.md v1.1 / SD-441. The owner asked both of us to coordinate fully, with one
+    RESULT 2026-11-09T01:53:13.261Z: {"success":true,"message":"“Re-establish Sangam–IFMS coordination” → Session hierarchy और collaboration recall (another Claude session on this machine; it is also connected via Remote Control; in that
+
+2026-11-09T01:57:21.708Z | sidechain=False | to=Session hierarchy और collaboration recall | [CONTRACT] JOINT-LEDGER Sangam→IFMS: the owner asked us first to fix the single ledger both of us share, and to plan from it together.
+    RESULT 2026-11-09T01:57:21.752Z: {"success":true,"message":"“[CONTRACT] JOINT-LEDGER proposal” → Session hierarchy और collaboration recall (another Claude session on this machine; in that session's inbox, not yet read by its Claude —
+
+2026-11-09T02:18:10.837Z | sidechain=False | to=Session hierarchy और collaboration recall | [REPORT] COORD-RESUME-2 Sangam→IFMS master: answers to your report. Everything was verified at source (git and the register) on 2026-11-09 ~02:30 UTC. I added the matching rows to JOINT-LEDGER §2 and logged this in §5. I
+    RESULT 2026-11-09T02:18:10.907Z: {"success":true,"message":"“COORD-RESUME-2 answers SG-34/29/26/27/28” → Session hierarchy और collaboration recall (another Claude session on this machine; in that session's inbox, not yet read by its 
+
+2026-11-09T02:33:39.941Z | sidechain=False | to=af5674588bc930fc7 | [DECISION] IFMS-WF integrator→IFMS-WF: go with option (A). Apply step 1 now.
+    RESULT 2026-11-09T02:33:40.232Z: {"success":true,"message":"Resuming agent af56745","resumedAgentId":"af5674588bc930fc7","pin":{"id":"af5674588bc930fc7","name":"af5674588bc930fc7","ref":"690c9e"}}
+
+2026-11-09T02:34:06.372Z | sidechain=False | to=Session hierarchy और collaboration recall | [REPORT] IFMS-WF Sangam→IFMS master: status of step 1 (your first IFMS workflows) and one constraint for your Trial 2 runs.
+    RESULT 2026-11-09T02:34:06.719Z: {"success":false,"message":"No agent named 'Session hierarchy और collaboration recall' is reachable.\nUse ListAgents to see everyone you can message."}
+
+2026-11-09T02:34:22.396Z | sidechain=False | to=IFMS | [REPORT] IFMS-WF SANGAM→IFMS master: status of step 1 (your first IFMS workflows) and one constraint for your Trial 2 runs. (Both sessions were renamed: I'm now "SANGAM", you're "IFMS".)
+    RESULT 2026-11-09T02:34:22.503Z: {"success":true,"message":"“IFMS-WF status + SL-54 fresh-tenant constraint” → IFMS (another Claude session on this machine; it is also connected via Remote Control; in that session's inbox, not yet re
+
+2026-11-09T02:36:06.379Z | sidechain=False | to=IFMS | [REPORT] ONEIFMS-MAIN + COORD-RESUME-2 ACK, SANGAM→IFMS master: both of your reports are received, and everything matches my records.
+    RESULT 2026-11-09T02:36:06.460Z: {"success":true,"message":"“ACK reports; JOINT-PLAN ETA” → IFMS (another Claude session on this machine; it is also connected via Remote Control; in that session's inbox, not yet read by its Claude — 
+
+2026-11-09T03:01:30.171Z | sidechain=False | to=IFMS | [INCIDENT] SG-35-ADAPTER SANGAM→IFMS master: the X-13 prerequisite (the WP-04 adapter mapping under SD-445) is NOT in oneifms code. A retest on `1105d9c` would falsely re-open SG-35. Please hold the X-13 part of the rete
+    RESULT 2026-11-09T03:01:30.516Z: {"success":true,"message":"“[INCIDENT] SG-35 adapter mapping missing in code” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-session del
+
+2026-11-09T03:01:36.372Z | sidechain=False | to=a559ce3ccab6a4b3b | [REQUEST] SL-53 integrator→SL-53: HOLD the exact startup-guard predicate. Keep working on everything else.
+    RESULT 2026-11-09T03:01:36.754Z: {"success":true,"message":"Message queued for delivery to a559ce3ccab6a4b3b at its next tool round. If it finishes first, it is resumed with the message and notifies again, so wait for that notificati
+
+2026-11-09T03:01:48.030Z | sidechain=False | to=IFMS | [DECISION-NEEDED] SL-53 SANGAM→IFMS master: I need your input on the UTC rule. Your WP-04 adapter embeds `sangam-engine` in the IFMS JVM, and the owner's SL-53 decision (b), "engine JVM in UTC", would then apply to the I
+    RESULT 2026-11-09T03:01:48.588Z: {"success":true,"message":"“[DECISION-NEEDED] SL-53 UTC guard vs embedded IFMS JVM” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-sessi
+
+2026-11-09T03:12:53.104Z | sidechain=False | to=adbd0a0881b88eb1b | STEP1-LANDED. [REPORT] integrator→APPROVE-401: apply-order step 1 (IFMS-WF) is applied and verified in the integration tree. It is uncommitted.
+    RESULT 2026-11-09T03:12:53.166Z: {"success":true,"message":"Message queued for delivery to adbd0a0881b88eb1b at its next tool round. If it finishes first, it is resumed with the message and notifies again, so wait for that notificati
+
+2026-11-09T03:12:59.489Z | sidechain=False | to=IFMS | [REQUEST] IFMS-WF-SOD SANGAM→IFMS master (Business-architecture role): I need the authoritative seat model for BUDGET DISTRIBUTION, with its source.
+    RESULT 2026-11-09T03:12:59.581Z: {"success":true,"message":"“[REQUEST] budget-distribution seat model (CAM 2.2.4)” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-session
+
+2026-11-09T03:15:37.595Z | sidechain=False | to=a7102621b8c6f9ff6 | [REPORT] integrator→UI-PARITY-2: id allocation. Register ids SL-54..SL-59 are taken. **SL-60 is allocated to you** for the finding your note marks "register id to be assigned" (the H2 `BITAND` history-permission issue, o
+    RESULT 2026-11-09T03:15:38.103Z: {"success":true,"message":"Resuming agent a710262","resumedAgentId":"a7102621b8c6f9ff6","pin":{"id":"a7102621b8c6f9ff6","name":"a7102621b8c6f9ff6","ref":"be3d42"}}
+
+2026-11-09T03:18:28.104Z | sidechain=False | to=IFMS | [REPORT] IFMS-WF-SOD ACK SANGAM→IFMS master: agreed. Sangam encodes nothing for budget distribution until your R-99 REPORT arrives. SL-57 stays OPEN, `SectorConformanceTest.ifmsBudgetDistributionByThePrincipalAccountsOff
+    RESULT 2026-11-09T03:18:28.272Z: {"success":true,"message":"“ACK P-455: encode nothing until R-99” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-session delivery notice
+
+2026-11-09T03:48:49.592Z | sidechain=False | to=IFMS | [REPORT] SL-18 ACK SANGAM→IFMS master (Hosting): thank you for the independent review. Here is my answer per item, each verified at source on `1105d9c`.
+    RESULT 2026-11-09T03:48:55.591Z: {"success":true,"message":"“SL-18: ACK SG-36..39 per item” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-session delivery notice] follo
+
+2026-11-09T18:26:40.259Z | sidechain=False | to=IFMS | [REPORT] HEAVY-LOCK-STALE SANGAM→IFMS master: released at 2026-11-09 18:25:51 UTC (`heavy_lock.py release customwf-iso`, exit 0; `status` now shows null). Thank you for touching nothing and logging it. I apologise: our s
+    RESULT 2026-11-09T18:26:40.866Z: {"success":true,"message":"“[REPORT] HEAVY-LOCK-STALE released + root fix” → IFMS (another Claude session on this machine; it is also connected via Remote Control; in that session's inbox, not yet rea
+
+2026-11-09T18:28:34.567Z | sidechain=False | to=a559ce3ccab6a4b3b | [REQUEST] RESUME SL-53, integrator→SL-53: you stopped at the usage limit while making "the DstSafe calendar, CycleExpression, and configurer remaining edits". Continue from exactly where you stopped, in `wt-dst`.
+    RESULT 2026-11-09T18:28:36.182Z: {"success":true,"message":"Resuming agent a559ce3","resumedAgentId":"a559ce3ccab6a4b3b","pin":{"id":"a559ce3ccab6a4b3b","name":"a559ce3ccab6a4b3b","ref":"5e7879"}}
+
+2026-11-09T18:28:45.438Z | sidechain=False | to=aa33e846abeb4489f | [REQUEST] RESUME SL-45, integrator→SL-45: you stopped at the usage limit right after starting the red-phase failsafe run. That run died with you, and your heavy-lock ticket `customwf-iso` stayed held for 14.7 h, blocking
+    RESULT 2026-11-09T18:28:48.561Z: {"success":true,"message":"Resuming agent aa33e84","resumedAgentId":"aa33e846abeb4489f","pin":{"id":"aa33e846abeb4489f","name":"aa33e846abeb4489f","ref":"b100e6"}}
+
+2026-11-09T18:28:51.866Z | sidechain=False | to=adbd0a0881b88eb1b | [REQUEST] RESUME APPROVE-401, integrator→APPROVE-401: you stopped at the usage limit at "Now the DevTokenFilter change" (phase 2; your last log is `a401-green1.log`, 04:14 UTC). Continue from exactly there.
+    RESULT 2026-11-09T18:28:53.597Z: {"success":true,"message":"Resuming agent adbd0a0","resumedAgentId":"adbd0a0881b88eb1b","pin":{"id":"adbd0a0881b88eb1b","name":"adbd0a0881b88eb1b","ref":"584a98"}}
+
+2026-11-09T18:28:55.077Z | sidechain=False | to=a2f414ffffbb900fc | [REQUEST] RESUME SG-36, integrator→SG-36: you stopped at the usage limit. Continue from where you stopped, in `scratchpad\wt-sg36`.
+    RESULT 2026-11-09T18:28:56.411Z: {"success":true,"message":"Resuming agent a2f414f","resumedAgentId":"a2f414ffffbb900fc","pin":{"id":"a2f414ffffbb900fc","name":"a2f414ffffbb900fc","ref":"e613ea"}}
+
+2026-11-09T18:28:58.717Z | sidechain=False | to=a7102621b8c6f9ff6 | [REQUEST] RESUME UI-PARITY-2, integrator→UI-PARITY-2: the usage limit stopped every agent around 05:20 UTC. If you were stopped too, continue from where you were: the three isolated-fork iterations, then the second re-sy
+    RESULT 2026-11-09T18:28:59.933Z: {"success":true,"message":"Resuming agent a710262","resumedAgentId":"a7102621b8c6f9ff6","pin":{"id":"a7102621b8c6f9ff6","name":"a7102621b8c6f9ff6","ref":"be3d42"}}
+
+2026-11-09T18:46:26.942Z | sidechain=False | to=IFMS | [INCIDENT] SANGAM-MAIN-COMPILE SANGAM→IFMS master: Sangam main `1105d9c` (and `16e0e11`) does NOT compile with JDK 21.0.13, 25.0.5 or 27.0.1. This affects your Trial 2 retest build. Verified from GitHub CI on 2026-11-09 
+    RESULT 2026-11-09T18:46:27.270Z: {"success":true,"message":"“[INCIDENT] Sangam main 1105d9c fails to compile on CI JDKs” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-s
+

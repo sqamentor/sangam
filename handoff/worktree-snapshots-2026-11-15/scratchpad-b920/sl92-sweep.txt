@@ -1,0 +1,126 @@
+sangam/sangam-case/src/main/java/org/sangam/casefile/config/CaseConfigRegistry.java:26: private static final ObjectMapper MAPPER = new ObjectMapper();
+sangam/sangam-case/src/main/java/org/sangam/casefile/delegate/DelegateSupport.java:32: private static final ObjectMapper MAPPER = new ObjectMapper();
+sangam/sangam-case/src/main/java/org/sangam/casefile/support/Db.java:30: private static final ObjectMapper MAPPER = new ObjectMapper();
+sangam/sangam-compliance/src/main/java/org/sangam/compliance/jurisdiction/JurisdictionPack.java:325: return new JurisdictionPack(new ObjectMapper().readTree(in));
+sangam/sangam-compliance/src/main/java/org/sangam/compliance/support/Sql.java:27: private static final ObjectMapper MAPPER = new ObjectMapper();
+sangam/sangam-config/src/main/java/org/sangam/config/profile/ProfileLoader.java:32: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-config/src/main/java/org/sangam/config/store/JdbcConfigStore.java:36: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:24: * modules it needs explicitly ({@code registerModule(new JavaTimeModule())} and so on).
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:27: * ignored): {@code findAndRegisterModules}, {@code findAndAddModules}, {@code findModules(},
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:28: * {@code findModulesViaServiceLoader}, and a {@code ServiceLoader} of Jackson {@code Module}.
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:32: static final Pattern DISCOVERY = Pattern.compile("\\bfindAndRegisterModules\\b|\\bfindAndAddModules\\b"
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:33: + "|\\bfindModules\\s*\\(|\\bfindModulesViaServiceLoader\\b"
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:93: assertEquals(List.of(), violations, "Register Jackson modules explicitly (e.g. registerModule(new "
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:94: + "JavaTimeModule()).registerModule(new Jdk8Module())); class-path discovery also registers "
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:100: for (String s : List.of("new ObjectMapper().findAndRegisterModules();", "JsonMapper.builder().findAndAddModules()",
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:101: "m.registerModules(ObjectMapper.findModules());", "ObjectMapper.findModules (cl)",
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:102: "builder.findModulesViaServiceLoader(true);", "ServiceLoader.load(Module.class)",
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:106: for (String s : List.of("m.registerModule(new JavaTimeModule());", "String s = \"findAndRegisterModules\";",
+sangam/sangam-core/src/test/java/org/sangam/core/json/JacksonModuleDiscoveryGuardTest.java:107: "x(); // findAndRegisterModules was removed", "ServiceLoader.load(Plugin.class)")) {
+sangam/sangam-engine/src/main/java/org/sangam/engine/packs/JdbcBatchLedger.java:26: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-engine/src/main/java/org/sangam/engine/variables/JsonValueSerializer.java:35: private static final ObjectMapper MAPPER = JsonMapper.builder(JsonFactory.builder()
+sangam/sangam-field/src/main/java/org/sangam/field/FieldJson.java:16: public static final ObjectMapper MAPPER = new ObjectMapper()
+sangam/sangam-field/src/main/java/org/sangam/field/FieldJson.java:17: .registerModule(new JavaTimeModule())
+sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/support/Json.java:37: public static final ObjectMapper MAPPER = new ObjectMapper(JsonFactory.builder()
+sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/support/Json.java:48: .registerModule(new JavaTimeModule())
+sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/support/Json.java:49: .registerModule(new Jdk8Module());
+sangam/sangam-geo/src/main/java/org/sangam/geo/model/GeoJson.java:16: public static final ObjectMapper MAPPER = new ObjectMapper();
+sangam/sangam-integration/src/main/java/org/sangam/integration/connector/Json.java:20: public static final ObjectMapper MAPPER = new ObjectMapper()
+sangam/sangam-integration/src/main/java/org/sangam/integration/sim/dlt/DltSmsSimulator.java:36: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-integration/src/main/java/org/sangam/integration/sim/ifms/IfmsJitSimulator.java:55: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-integration/src/main/java/org/sangam/integration/sim/pay/PaymentGatewaySimulator.java:77: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-integration/src/main/java/org/sangam/integration/sim/rest/RestEchoSimulator.java:45: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-integration/src/main/java/org/sangam/integration/sim/rest/RestEchoSimulator.java:47: private static final ObjectMapper CANONICAL = new ObjectMapper()
+sangam/sangam-ledger/src/main/java/org/sangam/ledger/JdbcLedgerStore.java:42: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerControlStore.java:52: ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/deps/PackRequirementsCatalog.java:40: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/support/OnboardingJson.java:25: public static final ObjectMapper MAPPER = new ObjectMapper()
+sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/support/OnboardingJson.java:26: .registerModule(new JavaTimeModule())
+sangam/sangam-onboarding/src/test/java/org/sangam/onboarding/acceptance/PlugAndPlayAcceptanceTest.java:37: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-ops/src/main/java/org/sangam/ops/bulk/BulkIngest.java:175: private static final ObjectMapper CANONICAL = new ObjectMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java:51: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-packs/src/main/java/org/sangam/packs/sim/InMemorySeatDirectory.java:43: JsonNode root = new ObjectMapper().readTree(seedJson);
+sangam/sangam-packs/src/main/java/org/sangam/packs/sim/LoggingAuditSink.java:22: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-packs/src/main/java/org/sangam/packs/spi/ManifestPack.java:27: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java:31: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-packs/src/test/java/org/sangam/packs/OperationIdAndSeedsTest.java:37: JsonNode types = new ObjectMapper().readTree(in).path("identifierTypes");
+sangam/sangam-packs/src/test/java/org/sangam/packs/PackAcceptanceTest.java:51: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-programme/src/main/java/org/sangam/programme/support/Db.java:31: private static final ObjectMapper MAPPER = new ObjectMapper();
+sangam/sangam-registry/src/main/java/org/sangam/registry/support/Json.java:21: public static final ObjectMapper MAPPER = new ObjectMapper()
+sangam/sangam-resources/src/main/java/org/sangam/resources/support/Sql.java:34: private static final ObjectMapper JSON = new ObjectMapper()
+sangam/sangam-resources/src/main/java/org/sangam/resources/support/Sql.java:37: .registerModule(new JavaTimeModule())
+sangam/sangam-resources/src/main/java/org/sangam/resources/support/Sql.java:38: .registerModule(new Jdk8Module());
+sangam/sangam-resources/src/test/java/org/sangam/resources/support/SqlJsonTest.java:19: * ({@code findAndRegisterModules}) the FEEL engine's jackson-module-scala (operaton-engine-dmn -> feel-engine) is
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAuditAdapter.java:46: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAuditExportAdapter.java:46: private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcAuditExportAdapter.java:375: e.payload() == null ? null : new ObjectMapper().writeValueAsString(plain(e.payload()))};
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcEventAdapter.java:66: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcIdempotencyAdapter.java:30: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcPackageAdapter.java:429: new com.fasterxml.jackson.databind.ObjectMapper()
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcPackageAdapter.java:430: .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcPowerTableAdapter.java:61: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcReconciliationSupport.java:34: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonAnalyticsAdapter.java:53: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDocumentAdapter.java:44: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonFormAdapter.java:58: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonFormAdapter.java:59: private static final ObjectMapper DRAFT_JSON = new ObjectMapper()
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java:72: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java:438: private static final ObjectMapper CONFIG_JSON = new ObjectMapper()
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java:439: .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonPackageToolsAdapter.java:98: private final ObjectMapper json = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkLedger.java:42: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/main/java/org/sangam/rest/support/DocumentStore.java:47: private static final ObjectMapper JSON = new ObjectMapper()
+sangam/sangam-rest/src/main/java/org/sangam/rest/support/DocumentStore.java:48: .registerModule(new JavaTimeModule())
+sangam/sangam-rest/src/main/java/org/sangam/rest/web/IdempotencyFilter.java:61: private static final ObjectMapper JSON = new ObjectMapper()
+sangam/sangam-rest/src/main/java/org/sangam/rest/web/Problems.java:19: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TenantCustomFieldsTest.java:25: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-security/src/main/java/org/sangam/security/support/Sql.java:25: public static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/AiBindings.java:39: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/CaseModuleNotifier.java:32: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/CellCrossCellInboxFilter.java:41: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/CellCrossCellInboxHandler.java:23: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/CellTenantMover.java:95: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/ComplianceAuthorityGateway.java:30: private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT)
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/ComplianceAuthorityGateway.java:31: .registerModule(new JavaTimeModule())
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/ComplianceAuthorityGateway.java:32: .registerModule(new Jdk8Module());
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/ComplianceNotifier.java:34: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/FieldEngineEvents.java:38: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/LedgerGlPublisher.java:24: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/PackGapConnectors.java:77: private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/RegistryPortBridges.java:57: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/RegistrySeedLoader.java:33: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/bridge/SecurityIdentityAdminBridge.java:50: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/config/AiWiring.java:70: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/config/OpsIntegrationWiring.java:65: private static final ObjectMapper JSON = new ObjectMapper()
+sangam/sangam-server/src/main/java/org/sangam/server/config/OpsWiring.java:61: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/plugins/PluginManager.java:64: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/main/java/org/sangam/server/security/ProblemResponses.java:25: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/contracts/ContractSupport.java:45: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/contracts/Ifms.java:25: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/fwt/FwtWorkerCompatIT.java:58: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ifms/IfmsPacksIT.java:151: ObjectMapper json = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/isolation/CrossTenantIsolationIT.java:97: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ix8/TScaleLoadIT.java:63: private static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/acceptance/plugandplay/AccHttp.java:18: public static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/bridge/BulkIngestRestH2Test.java:52: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/bridge/MixedRemittanceTest.java:66: "eraTraceNumber", "T1", "eraClaims", new ObjectMapper().writeValueAsString(era.get("claims"))));
+sangam/sangam-server/src/test/java/org/sangam/server/bridge/MixedRemittanceTest.java:125: String data = new ObjectMapper().writeValueAsString(Map.of("x12", x12, "eraTraceNumber", "T1",
+sangam/sangam-server/src/test/java/org/sangam/server/bridge/SignedChannelPublishH2Test.java:50: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/enginerest/EngineRestTenantRefusalTest.java:56: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/ui/EngineRestUiParityTest.java:53: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/ui/SangamUiParityApiTest.java:73: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sangam-server/src/test/java/org/sangam/server/web/RequestStatusContractH2Test.java:56: static final ObjectMapper JSON = new ObjectMapper();
+sangam/sdks/java/src/main/java/org/sangam/sdk/auth/ClientCredentialsTokenProvider.java:45: private final ObjectMapper json = new ObjectMapper();
+sangam/sdks/java/src/main/java/org/sangam/sdk/http/HttpTransport.java:69: return new ObjectMapper()
+sangam/sdks/java/src/main/java/org/sangam/sdk/http/HttpTransport.java:70: .registerModule(new JavaTimeModule())
+sangam/tools/sangam-cli/src/main/java/org/sangam/cli/Main.java:50: private static final ObjectMapper JSON = new ObjectMapper();
+spike/experiments-gov-a/src/test/java/org/sangam/spike/gova/support/IfmsClient.java:18: private static final ObjectMapper JSON = new ObjectMapper();
+spike/experiments-gov-b/src/test/java/org/sangam/spike/govb/support/GovTestBase.java:41: protected static final ObjectMapper JSON = new ObjectMapper();
+spike/experiments-gov-b/src/test/java/org/sangam/spike/govb/support/Report.java:26: private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+spike/experiments-integration/src/test/java/org/sangam/spike/it/support/Ifms.java:28: private static final ObjectMapper JSON = new ObjectMapper();
+spike/experiments-integration/src/test/java/org/sangam/spike/it/support/Results.java:17: private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+spike/experiments-load/src/test/java/org/sangam/spike/load/Results.java:28: private static final ObjectMapper JSON = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+spike/simulators/src/main/java/org/sangam/spike/sim/dlt/DltSmsSimulator.java:34: private static final ObjectMapper JSON = new ObjectMapper();
+spike/simulators/src/main/java/org/sangam/spike/sim/ifms/IfmsJitSimulator.java:58: private static final ObjectMapper JSON = new ObjectMapper();
+spike/simulators/src/test/java/org/sangam/spike/sim/dlt/DltSmsSimulatorTest.java:21: private static final ObjectMapper JSON = new ObjectMapper();
+spike/simulators/src/test/java/org/sangam/spike/sim/ifms/IfmsJitSimulatorTest.java:26: private static final ObjectMapper JSON = new ObjectMapper();

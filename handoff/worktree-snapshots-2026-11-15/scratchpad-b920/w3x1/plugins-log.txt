@@ -1,0 +1,124 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.fusesource.jansi.internal.JansiLoader in an unnamed module (file:/C:/Users/Lokendra%20Singh/.m2/wrapper/dists/apache-maven-3.9.9-bin/33b4b2b4/apache-maven-3.9.9/lib/jansi-2.4.1.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/C:/Users/Lokendra%20Singh/.m2/wrapper/dists/apache-maven-3.9.9-bin/33b4b2b4/apache-maven-3.9.9/lib/guava-33.2.1-jre.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Build Order:
+[INFO] 
+[INFO] Sangam BOM                                                         [pom]
+[INFO] Sangam                                                             [pom]
+[INFO] Sangam core (engine-neutral contracts and product-layer primitives) [jar]
+[INFO] Liquibase changelogs and dialect SQL for product tables (4 Tier-1 DBs + H2) [jar]
+[INFO] Government and universal workflow packs                            [jar]
+[INFO] Operaton process-engine plugins (fencing, L2, DST guard, expiry, MySQL, history) [jar]
+[INFO] Flowable strengths ported onto Operaton                            [jar]
+[INFO] Outbox, inbox, idempotency, reconciliation, connectors             [jar]
+[INFO] Authorization (deny-wins), OIDC, seats, delegation, maker-checker  [jar]
+[INFO] Generic health connectors: FHIR R4, SMART Backend Services, X12 005010, Da Vinci PAS, CDS Hooks [jar]
+[INFO] Sangam config (profile hierarchy, master data, document-type catalogue, locale) [jar]
+[INFO] Sangam ledger (generic limit / fund-control ledger)                [jar]
+[INFO] Sangam registry (registered-object kernel: numbering, registers, instruments, parties, assets, custody) [jar]
+[INFO] Sangam billing (tariffs, invoices, collection, receipts, refunds, penalties) [jar]
+[INFO] Sangam resources (booking, allotment, queue/token, rostering)      [jar]
+[INFO] Sangam case file, meetings and references                          [jar]
+[INFO] Sangam programmes, targets, indicators and returns                 [jar]
+[INFO] Sangam geo (geometry, jurisdiction layers, geofences, GIS connectors) [jar]
+[INFO] Sangam field (inspection, offline capture, evidence, dispatch)     [jar]
+[INFO] Sangam AI: provider-neutral LLM port, agent runtime, RAG, MCP, A2A, reviewed drafts [jar]
+[INFO] Sangam operations: migrators, usage metrics, global search, outlier analysis, index, variables, secrets, sequences, retention [jar]
+[INFO] Indian data-protection and cyber-security compliance (DPDP, CERT-In, IT Act) [jar]
+[INFO] Sangam channels: conversations, bots, messenger adapters, inbound mail and polled channels; SAP and ServiceNow connectors [jar]
+[INFO] Sangam modeller back ends: landscape, templates, edit leases, token walk, mocks, bulk tests, actions, catalogue [jar]
+[INFO] Sangam REST API (OpenAPI 3.1)                                      [jar]
+[INFO] Sangam onboarding (plug-and-play tenant onboarding, pack resolution, readiness, bundles) [jar]
+[INFO] Sangam cell-side scale ports (SCALE)                               [jar]
+[INFO] Sangam server (Spring Boot assembly)                               [jar]
+[INFO] Sangam Java SDK                                                    [jar]
+[INFO] Sangam Java SDK - Spring Boot adapter                              [jar]
+[INFO] Sangam control plane (SCALE)                                       [jar]
+[INFO] Sangam gateway (SCALE routing edge)                                [jar]
+[INFO] Sangam national roll-up (SCALE)                                    [jar]
+[INFO] Sangam command-line tool                                           [jar]
+[INFO] Sangam script worker (ADR-D-8)                                     [jar]
+[INFO] Sangam Spring Boot starter (embedded mode)                         [jar]
+[INFO] 
+[INFO] -----------------------< org.sangam:sangam-bom >------------------------
+[INFO] Building Sangam BOM 0.1.0-SNAPSHOT                                [1/36]
+[INFO]   from sangam-bom\pom.xml
+[INFO] --------------------------------[ pom ]---------------------------------
+[INFO] 
+[INFO] --- dependency:3.8.1:resolve-plugins (default-cli) @ sangam-bom ---
+[WARNING] The POM for org.apache.maven.reporting:maven-reporting-exec:jar:1.6.0 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven:maven-archiver:jar:3.5.2 is missing, no dependency information available
+[WARNING] The POM for org.codehaus.plexus:plexus-archiver:jar:4.2.7 is missing, no dependency information available
+[WARNING] The POM for org.codehaus.plexus:plexus-utils:jar:3.4.2 is missing, no dependency information available
+[WARNING] The POM for org.codehaus.plexus:plexus-component-annotations:jar:2.1.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-apt:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-xdoc:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-fml:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-markdown:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-confluence:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-docbook-simple:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.apache.maven.doxia:doxia-module-twiki:jar:1.11.1 is missing, no dependency information available
+[WARNING] The POM for org.eclipse.jetty:jetty-server:jar:9.4.46.v20220331 is missing, no dependency information available
+[WARNING] The POM for org.eclipse.jetty:jetty-servlet:jar:9.4.46.v20220331 is missing, no dependency information available
+[WARNING] The POM for org.eclipse.jetty:jetty-webapp:jar:9.4.46.v20220331 is missing, no dependency information available
+[WARNING] The POM for org.eclipse.jetty:jetty-util:jar:9.4.46.v20220331 is missing, no dependency information available
+[INFO] ------------------------------------------------------------------------
+[INFO] Reactor Summary for Sangam 0.1.0-SNAPSHOT:
+[INFO] 
+[INFO] Sangam BOM ......................................... FAILURE [ 11.647 s]
+[INFO] Sangam ............................................. SKIPPED
+[INFO] Sangam core (engine-neutral contracts and product-layer primitives) SKIPPED
+[INFO] Liquibase changelogs and dialect SQL for product tables (4 Tier-1 DBs + H2) SKIPPED
+[INFO] Government and universal workflow packs ............ SKIPPED
+[INFO] Operaton process-engine plugins (fencing, L2, DST guard, expiry, MySQL, history) SKIPPED
+[INFO] Flowable strengths ported onto Operaton ............ SKIPPED
+[INFO] Outbox, inbox, idempotency, reconciliation, connectors SKIPPED
+[INFO] Authorization (deny-wins), OIDC, seats, delegation, maker-checker SKIPPED
+[INFO] Generic health connectors: FHIR R4, SMART Backend Services, X12 005010, Da Vinci PAS, CDS Hooks SKIPPED
+[INFO] Sangam config (profile hierarchy, master data, document-type catalogue, locale) SKIPPED
+[INFO] Sangam ledger (generic limit / fund-control ledger)  SKIPPED
+[INFO] Sangam registry (registered-object kernel: numbering, registers, instruments, parties, assets, custody) SKIPPED
+[INFO] Sangam billing (tariffs, invoices, collection, receipts, refunds, penalties) SKIPPED
+[INFO] Sangam resources (booking, allotment, queue/token, rostering) SKIPPED
+[INFO] Sangam case file, meetings and references .......... SKIPPED
+[INFO] Sangam programmes, targets, indicators and returns . SKIPPED
+[INFO] Sangam geo (geometry, jurisdiction layers, geofences, GIS connectors) SKIPPED
+[INFO] Sangam field (inspection, offline capture, evidence, dispatch) SKIPPED
+[INFO] Sangam AI: provider-neutral LLM port, agent runtime, RAG, MCP, A2A, reviewed drafts SKIPPED
+[INFO] Sangam operations: migrators, usage metrics, global search, outlier analysis, index, variables, secrets, sequences, retention SKIPPED
+[INFO] Indian data-protection and cyber-security compliance (DPDP, CERT-In, IT Act) SKIPPED
+[INFO] Sangam channels: conversations, bots, messenger adapters, inbound mail and polled channels; SAP and ServiceNow connectors SKIPPED
+[INFO] Sangam modeller back ends: landscape, templates, edit leases, token walk, mocks, bulk tests, actions, catalogue SKIPPED
+[INFO] Sangam REST API (OpenAPI 3.1) ...................... SKIPPED
+[INFO] Sangam onboarding (plug-and-play tenant onboarding, pack resolution, readiness, bundles) SKIPPED
+[INFO] Sangam cell-side scale ports (SCALE) ............... SKIPPED
+[INFO] Sangam server (Spring Boot assembly) ............... SKIPPED
+[INFO] Sangam Java SDK .................................... SKIPPED
+[INFO] Sangam Java SDK - Spring Boot adapter .............. SKIPPED
+[INFO] Sangam control plane (SCALE) ....................... SKIPPED
+[INFO] Sangam gateway (SCALE routing edge) ................ SKIPPED
+[INFO] Sangam national roll-up (SCALE) .................... SKIPPED
+[INFO] Sangam command-line tool ........................... SKIPPED
+[INFO] Sangam script worker (ADR-D-8) ..................... SKIPPED
+[INFO] Sangam Spring Boot starter (embedded mode) ......... SKIPPED
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  16.061 s
+[INFO] Finished at: 2026-11-12T19:48:06+05:30
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-dependency-plugin:3.8.1:resolve-plugins (default-cli) on project sangam-bom: org.eclipse.aether.resolution.DependencyResolutionException: The following artifacts could not be resolved: org.apache.maven.reporting:maven-reporting-exec:jar:1.6.0 (absent), org.apache.maven:maven-archiver:jar:3.5.2 (absent), org.codehaus.plexus:plexus-archiver:jar:4.2.7 (absent), org.codehaus.plexus:plexus-utils:jar:3.4.2 (absent), org.codehaus.plexus:plexus-component-annotations:jar:2.1.1 (absent), org.apache.commons:commons-text:jar:1.3 (absent), org.apache.maven.doxia:doxia-module-apt:jar:1.11.1 (absent), org.apache.maven.doxia:doxia-module-xdoc:jar:1.11.1 (absent), org.apache.maven.doxia:doxia-module-fml:jar:1.11.1 (absent), org.apache.maven.doxia:doxia-module-markdown:jar:1.11.1 (absent), org.apache.maven.doxia:doxia-module-confluence:jar:1.11.1 (absent), org.apache.maven.doxia:doxia-module-docbook-simple:jar:1.11.1 (absent), org.apache.maven.doxia:doxia-module-twiki:jar:1.11.1 (absent), org.eclipse.jetty:jetty-server:jar:9.4.46.v20220331 (absent), org.eclipse.jetty:jetty-servlet:jar:9.4.46.v20220331 (absent), org.eclipse.jetty:jetty-webapp:jar:9.4.46.v20220331 (absent), org.eclipse.jetty:jetty-util:jar:9.4.46.v20220331 (absent): Cannot access central (https://repo.maven.apache.org/maven2) in offline mode and the artifact org.apache.maven.reporting:maven-reporting-exec:jar:1.6.0 has not been downloaded from it before. -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

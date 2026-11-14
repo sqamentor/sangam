@@ -1,0 +1,46 @@
+    /**
+     * multipart/form-data. A {@link FilePart} or byte[] value is a file part (a byte[] is named after its part); a
+     * collection or array value repeats the part once per element (e.g. several deployment files); anything else is
+     * a text part.
+     */
+    static void multipart(ApiRequest req, Map<String, Object> parts, RequestOptions o) {
+        if (parts == null) return;
+        String boundary = "sangam-" + UUID.randomUUID();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (Map.Entry<String, Object> e : parts.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof java.util.Collection<?> c) {
+                for (Object item : c) part(out, boundary, e.getKey(), item);
+            } else if (v instanceof Object[] arr) {
+                for (Object item : arr) part(out, boundary, e.getKey(), item);
+            } else {
+                part(out, boundary, e.getKey(), v);
+            }
+        }
+        write(out, "--" + boundary + "--\\r\\n");
+        req.rawBody(out.toByteArray(), "multipart/form-data; boundary=" + boundary);
+    }
+
+    private static void part(ByteArrayOutputStream out, String boundary, String partName, Object v) {
+        if (v == null) return;
+        String name = quote(partName);
+        write(out, "--" + boundary + "\\r\\n");
+        if (v instanceof FilePart f) {
+            write(out, "Content-Disposition: form-data; name=\\"" + name + "\\"; filename=\\"" + quote(f.filename()) + "\\"\\r\\n");
+            write(out, "Content-Type: " + (f.contentType() == null ? "application/octet-stream" : f.contentType()) + "\\r\\n\\r\\n");
+            out.writeBytes(f.content());
+        } else if (v instanceof byte[] file) {
+            write(out, "Content-Disposition: form-data; name=\\"" + name + "\\"; filename=\\"" + name + "\\"\\r\\n");
+            write(out, "Content-Type: application/octet-stream\\r\\n\\r\\n");
+            out.writeBytes(file);
+        } else {
+            write(out, "Content-Disposition: form-data; name=\\"" + name + "\\"\\r\\n\\r\\n");
+            write(out, String.valueOf(v));
+        }
+        write(out, "\\r\\n");
+    }
+
+    private static String quote(String s) {
+        return s.replace("\\"", "%22").replace("\\r", "").replace("\\n", "");
+    }
+

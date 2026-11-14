@@ -1,0 +1,8 @@
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/main/java/org/sangam/server/config/FieldReencryptionWiring.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/main/java/org/sangam/server/config/SamlWiring.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/main/java/org/sangam/server/web/BreakGlassController.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/main/java/org/sangam/server/config/EngineWiring.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/test/java/org/sangam/server/config/FieldReencryptionWiringTest.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/test/java/org/sangam/server/config/SamlWiringTest.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/test/java/org/sangam/server/web/BreakGlassControllerTest.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-server/src/test/java/org/sangam/server/config/EngineWiringFailClosedTest.java"

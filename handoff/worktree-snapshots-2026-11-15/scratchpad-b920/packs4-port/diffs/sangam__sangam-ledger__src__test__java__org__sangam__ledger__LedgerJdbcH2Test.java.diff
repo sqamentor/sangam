@@ -1,0 +1,54 @@
+diff --git a/sangam/sangam-ledger/src/test/java/org/sangam/ledger/LedgerJdbcH2Test.java b/sangam/sangam-ledger/src/test/java/org/sangam/ledger/LedgerJdbcH2Test.java
+index fec8a13e..1fe6761c 100644
+--- a/sangam/sangam-ledger/src/test/java/org/sangam/ledger/LedgerJdbcH2Test.java
++++ b/sangam/sangam-ledger/src/test/java/org/sangam/ledger/LedgerJdbcH2Test.java
+@@ -87,25 +87,44 @@ class LedgerJdbcH2Test {
+         LedgerConnector conn = new LedgerConnector(s, (t, d) -> "2026-27", null);
+         UUID op = UUID.randomUUID();
+         Map<String, Object> in = new LinkedHashMap<>(Map.of("ledgerId", "BUDGET", "headOfAccount", "2054-00-001-01-00-13",
+-                "ddoCode", "DDO-1", "amount", "100", "stage", "RELEASE"));
++                "ddoCode", "DDO-1", "amount", "10000", "stage", "RELEASE")); // pack money: paise (SD-398)
+         assertInstanceOf(ConnectorResult.Success.class, conn.invoke(req(op, "allocate", in)));
+         ConnectorResult enc = conn.invoke(req(UUID.randomUUID(), "encumber", Map.of("ledgerId", "BUDGET",
+-                "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1", "amount", "60")));
++                "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1", "amount", "6000")));
+         assertInstanceOf(ConnectorResult.Success.class, enc);
+         UUID pay = UUID.randomUUID();
+         Map<String, Object> payIn = Map.of("ledgerId", "BUDGET", "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1",
+-                "amount", "60");
++                "amount", "6000");
+         assertInstanceOf(ConnectorResult.Success.class, conn.invoke(req(pay, "consume", payIn)));
+         ConnectorResult again = conn.invoke(req(pay, "consume", payIn));
+         assertTrue(((ConnectorResult.Success) again).duplicate(), "a retried step never posts twice");
+         ConnectorResult avail = conn.invoke(req(UUID.randomUUID(), "available", payIn));
+-        assertEquals("40.00", ((ConnectorResult.Success) avail).output().get("available")); // INR minor units: exactly 2 fraction digits (SD-398)
++        assertEquals(4000L, ((ConnectorResult.Success) avail).output().get("available")); // INR minor units: 40.00 = 4000 paise (SD-398)
+         ConnectorResult over = conn.invoke(req(UUID.randomUUID(), "encumber", Map.of("ledgerId", "BUDGET",
+-                "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1", "amount", "41")));
++                "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1", "amount", "4100")));
+         assertInstanceOf(ConnectorResult.BusinessFailure.class, over);
+         assertFalse(conn.lookup(req(UUID.randomUUID(), "consume", payIn)) instanceof org.sangam.core.integration.LookupResult.Found);
+     }
+ 
++    /** The pack amount is integer minor units: 6000 paise is 60.00 in the store, and a fraction of a paisa is refused. */
++    @Test
++    void connectorAmountsAreMinorUnits() throws Exception {
++        LedgerService s = service(db("ledger3"));
++        LedgerConnector conn = new LedgerConnector(s, (t, d) -> "2026-27", null);
++        Map<String, Object> key = Map.of("ledgerId", "BUDGET", "headOfAccount", "2054-00-001-01-00-13", "ddoCode", "DDO-1",
++                "stage", "RELEASE");
++        Map<String, Object> in = new LinkedHashMap<>(key);
++        in.put("amount", "6000");
++        assertInstanceOf(ConnectorResult.Success.class, conn.invoke(req(UUID.randomUUID(), "allocate", in)));
++        ConnectorResult avail = conn.invoke(req(UUID.randomUUID(), "available", key));
++        assertEquals(6000L, ((ConnectorResult.Success) avail).output().get("available"), "paise in, paise out");
++        Map<String, Object> frac = new LinkedHashMap<>(key);
++        frac.put("amount", "60.5");
++        ConnectorResult bad = conn.invoke(req(UUID.randomUUID(), "allocate", frac));
++        assertInstanceOf(ConnectorResult.BusinessFailure.class, bad);
++        assertEquals("LEDGER_REQUEST_INVALID", ((ConnectorResult.BusinessFailure) bad).code());
++    }
++
+     static ConnectorRequest req(UUID op, String operation, Map<String, Object> in) {
+         return new ConnectorRequest("T", op, "att-1", 1, "root-1", "BK-1", operation, in, null);
+     }

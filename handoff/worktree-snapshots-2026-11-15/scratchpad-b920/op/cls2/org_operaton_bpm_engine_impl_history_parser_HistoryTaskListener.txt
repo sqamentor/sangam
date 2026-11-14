@@ -1,0 +1,51 @@
+Compiled from "HistoryTaskListener.java"
+public abstract class org.operaton.bpm.engine.impl.history.parser.HistoryTaskListener implements org.operaton.bpm.engine.delegate.TaskListener {
+  protected final org.operaton.bpm.engine.impl.history.producer.HistoryEventProducer eventProducer;
+
+  protected org.operaton.bpm.engine.impl.history.HistoryLevel historyLevel;
+
+  protected org.operaton.bpm.engine.impl.history.parser.HistoryTaskListener(org.operaton.bpm.engine.impl.history.producer.HistoryEventProducer);
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: aload_1
+         6: putfield      #7                  // Field eventProducer:Lorg/operaton/bpm/engine/impl/history/producer/HistoryEventProducer;
+         9: return
+
+  public void notify(org.operaton.bpm.engine.delegate.DelegateTask);
+    Code:
+         0: invokestatic  #13                 // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         3: invokevirtual #19                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryEventHandler:()Lorg/operaton/bpm/engine/impl/history/handler/HistoryEventHandler;
+         6: astore_2
+         7: aload_1
+         8: checkcast     #25                 // class org/operaton/bpm/engine/impl/persistence/entity/TaskEntity
+        11: invokevirtual #27                 // Method org/operaton/bpm/engine/impl/persistence/entity/TaskEntity.getExecution:()Lorg/operaton/bpm/engine/impl/persistence/entity/ExecutionEntity;
+        14: astore_3
+        15: aload_3
+        16: ifnull        40
+        19: aload_0
+        20: aload_1
+        21: aload_3
+        22: invokevirtual #31                 // Method createHistoryEvent:(Lorg/operaton/bpm/engine/delegate/DelegateTask;Lorg/operaton/bpm/engine/impl/persistence/entity/ExecutionEntity;)Lorg/operaton/bpm/engine/impl/history/event/HistoryEvent;
+        25: astore        4
+        27: aload         4
+        29: ifnull        40
+        32: aload_2
+        33: aload         4
+        35: invokeinterface #35,  2           // InterfaceMethod org/operaton/bpm/engine/impl/history/handler/HistoryEventHandler.handleEvent:(Lorg/operaton/bpm/engine/impl/history/event/HistoryEvent;)V
+        40: return
+
+  protected void ensureHistoryLevelInitialized();
+    Code:
+         0: aload_0
+         1: getfield      #41                 // Field historyLevel:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+         4: ifnonnull     17
+         7: aload_0
+         8: invokestatic  #13                 // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+        11: invokevirtual #45                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryLevel:()Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        14: putfield      #41                 // Field historyLevel:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        17: return
+
+  protected abstract org.operaton.bpm.engine.impl.history.event.HistoryEvent createHistoryEvent(org.operaton.bpm.engine.delegate.DelegateTask, org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity);
+}

@@ -1,0 +1,45 @@
+{
+  "result": {
+    "variant": "winpid-term",
+    "beats_after_kill": 0,
+    "waiter_acquired_within_5_leases": true,
+    "owner_at_end": "B",
+    "auto_release_lines": 0,
+    "heartbeat_subshell_alive_at_end": null,
+    "waiter_stdout": [
+      "acquired by B: waiter"
+    ],
+    "waiter_stderr": [],
+    "served_log": [
+      "2026-11-10T00:50:28+00:00 served sangam arrived=2026-11-10T00:50:28+00:00 pid=32532 lease=6s what=Trial 2 retest",
+      "2026-11-10T00:50:34+00:00 served B arrived=2026-11-10T00:50:29+00:00 what=waiter"
+    ],
+    "trap_log": [
+      "released by sangam"
+    ],
+    "job_info": {
+      "job_msys_pid": "142279",
+      "job_winpid": "32532",
+      "holder_pid": "32532",
+      "hb_msys_pid": "142292",
+      "hb_winpid": "12544"
+    },
+    "leftovers_killed_at_cleanup": [
+      [
+        44620,
+        "bash.exe"
+      ]
+    ]
+  },
+  "timeline": [
+    "[  1.93s] job started: {'job_msys_pid': '142279', 'job_winpid': '32532', 'holder_pid': '32532', 'hb_msys_pid': '142292', 'hb_winpid': '12544'}; acquire.log=['acquired by sangam: Trial 2 retest', 'holder pid 32532 (started 2026-11-10T00:50:26+00:00), lease 6s until 2026-11-10T00:50:34+00:00; run `heartbeat sangam` well inside every lease']",
+    "[  1.95s] waiter B started (pid 33232)",
+    "[  6.64s] before kill: owner=sangam holder_pid=32532 alive=yes lease_left=+4.23s beats=1 auto_release_lines=0 waiter_running=True",
+    "[  6.70s] job shell 32532 tree before kill: [(12544, 'bash.exe'), (44620, 'bash.exe'), (28824, 'python.exe'), (4636, 'bash.exe'), (14504, 'python.exe')]",
+    "[  6.70s] owned long-lived processes (pid, exe, start): [(32532, 'bash.exe', 1794271826.688456), (12544, 'bash.exe', 1794271828.2718482), (44620, 'bash.exe', 1794271828.5319552), (28824, 'python.exe', 1794271828.6040876), (4636, 'bash.exe', 1794271831.6860745), (14504, 'python.exe', 1794271831.7675023)]",
+    "[  6.95s] KILL (term) rc=0 out=''",
+    "[  8.01s] job shell exited rc=3840",
+    "[  8.14s] after kill: job shell alive=None heartbeat subshell 12544 alive=None; trap.log=['released by sangam']",
+    "[  8.33s] end of observation (5 leases after the kill): owner=B holder_pid=None alive=none lease_left=n/a beats=1 auto_release_lines=0 waiter_running=False"
+  ]
+}

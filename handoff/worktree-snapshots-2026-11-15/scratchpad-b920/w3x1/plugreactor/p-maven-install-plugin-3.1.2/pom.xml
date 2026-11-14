@@ -1,0 +1,5 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+<parent><groupId>w3x1</groupId><artifactId>plug-root</artifactId><version>1</version></parent>
+<artifactId>p-maven-install-plugin-3.1.2</artifactId><packaging>pom</packaging>
+<dependencies><dependency><groupId>org.apache.maven.plugins</groupId><artifactId>maven-install-plugin</artifactId><version>3.1.2</version><type>maven-plugin</type></dependency></dependencies>
+</project>

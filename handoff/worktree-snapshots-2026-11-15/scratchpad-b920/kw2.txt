@@ -1,0 +1,202 @@
+## M-057 datalake hits 10
+   WAVE4 11-12T17:53:27 W4-C/B63 INFO: W4-H REQUEST 17:22:41Z: helm and compose keys for sangam.history.projection.datalake.* and sangam.connectors.{s3,graphql,jdbc}.tenants.* are DEFERRED (all off by default; no chart value exists to wire yet); the BC 1.84 licence gate and SBOM rows follow automat
+   WAVE4 11-13T00:40:24 integrator/INT INFO: icit boolean to s3, jdbc and graphQl; HistoryProjectionWiringTest calls destinations, kafkaConfig and searchSettings or dataLakeSettings with an explicit boolean (ProductionEnvironment.isProduction is read only in the bean method, HistoryProjectionWiring:155 a
+## M-059 hits 8
+   WAVE3 11-12T14:34:41 W3-D/B45 DONE:  Task variables/list/get, Process variables/setVariables, Case variables, History variables, set-based per (type, key); M-059 query: OperatonInstanceHandlerAdapter masks variables before evaluating the expression; OperatonWorkspaceAdapter internal lookups unwr
+   WAVE3 11-12T15:53:26 W3-M/B54 DONE: W3-F REQUEST board line 210 (12:15:06Z, M-059) served, description only, no schema change: queryProcessInstance now lists 404 unknown instance or handler name and 422 VALIDATION_FAILED, HANDLER_EVALUATION_FAILED, RESULT_TOO_LARGE (over 10000 values or 32 level
+## M-060 / 149 continue-as-new hits 20
+   WAVE4 11-13T03:11:09 integrator INFO: cation.yaml (overridable; Helm and compose pass SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE, W4-C); test hosts set the same value; 149 keeps 400 REASON_REQUIRED and W4-M adds the 501 to the contract; ocr-image stays release-gating, so a release is blocked until UBUNTU_SN
+   WAVE4 11-13T03:26:38 W4-M/B6C DONE: , max and answers no more decimal places than scale; min and max texts say so. (2) 501 CAPABILITY_NOT_INSTALLED on POST continue-as-new and GET continuations (ProcessContinuationController.port). (3) Optional query scope, pattern ^system:[a-z0-9][a-z0-9._-]{0,
+## M-061 / 128 / RM-32 script worker hits 20
+   WAVE4 11-13T04:02:19 W4-C/B63-261 INFO: l=lf rule for *.sh is the root fix (owner of .gitattributes to decide). (2) The silent guard flags sangam/deploy/docker/script-worker/entrypoint.sh line 24 (|| true on the cgroup write).
+   WAVE4 11-13T04:18:12 W4-C/B63 DONE: script-worker entrypoint.sh 45E8029919CD55407360047F22ED7E8BCD788BC43D8F1F7E3A10BD8EF6573B7A CODED (not built, not run; sh -n exit 0). The removed '|| true' hid a real failure: a process that cannot be moved out of the cgroup namespace root makes the later +me
+## M-056 / 146 partition hits 31
+   WAVE4 11-13T03:56:47 integrator/INT DONE: W4-E items 1 and 2 CODED, tests written NOT_RUN. (1) Decision 146: ExecutorPartitionWiring binds ExecutorPartitionBridge to SangamEngineComponents.partitionResize() of the server engine, looked up per call (Resizes.of with the host TxSupport for the resize req
+   WAVE4 11-13T06:38:52 W4-F/B66 DONE: ine, job-leases needed only with executor partitioning and then supplied by the engine whose JobExecutorSetup keeps the M-056 postInit refusal, decision 286), checkDatabase (DatabaseGuard.check on the data source the engine is handed, decision 287 c), record E
+## M-149 RM hits 7
+   WAVE4 11-12T20:06:48 W4-A/B61 DONE: Decision 141 RM-03 CODED, status PARTIAL: tests written NOT_RUN (H2 and unit), Oracle and SQL Server and every vendor IT NOT_RUN; not closed on compilation. PAYMENT_ACCEPTED_UNVERIFIED is now a pending record in BILL_UNVERIFIED_PAYMENT owned by the new framewo
+   WAVE4 11-12T20:22:37 W4-H/B68 DONE: Decision 140 RM-07 CODED (tests written NOT_RUN): EsignConnector refuses to sign without a verifier, LIVE needs documentId and signerName, only VERIFIED_VALID succeeds; Bouncy Castle confined to document/sign. Root fix this session: a detached eSign CMS now ca
+## M-088 NOTICE hits 25
+   WAVE4 11-13T03:19:41 integrator INFO: Owner decisions 243 (Fidelius: bcprov-jdk18on 1.84 optional in sangam-connectors-health only, MIT vectors verbatim with notice, health never with NATS; replaces 239), 244 (profiles: false for RAILWAYS POSTS TELECOM MEA MHA REVENUE, DEFENCE and GOI base unset, 
+   WAVE4 11-13T03:52:48 W4-C/B63 DONE: dules sangam-connectors-health sangam-esign, maven compile,compile(optional), condition notes decision 243; licence and notice ship with the esign distribution (the health module ships in the server fat jar, where optional BC is not resolved). decision-registe
+## M-018 guide hits 0
+## M-128 catalogue hits 0
+## M-144 host SPI code hits 8
+   WAVE4 11-12T17:43:23 W4-F/B66 DONE: s removed; the 4 sangam-rest M-141c entries stay until that lands); coreAndEngineNeverUseAHostFramework now also covers sangam-assembly, sangam-host-conformance, sangam-field, sangam-geo, sangam-registry. Files: sangam-server/src/main/java/org/sangam/server/br
+   WAVE4 11-13T05:54:52 W4-F/B66 DONE: answers of INFO 05:35:04Z; decision 277 waits on the ACK of the sangam-rest-core proposal of 05:35:04Z. SHA-256: sangam/sangam-assembly/src/main/java/org/sangam/assembly/host/Capabilities.java 505AC1A95CBA55462EE3E59C291F9A672363F102D04D2D1353D48D99A854B3F6 ; 
+## M-150 kit hits 17
+   WAVE4 11-13T05:54:52 W4-F/B66 DONE: gineSettings reuses EngineAssembly's system audit scope default. Expected when run: coverage and fail-closed kits pass; equivalence still fails (ports come with phase 3). Gates: mvnw.cmd -q -B -o clean test-compile -P sangam-quarkus -pl :sangam-quarkus-extensi
+   WAVE4 11-13T06:38:52 W4-F/B66 DONE: rage pass; fail-closed 14 of 16 now, database-checks and job-leases markers appear once phases 3 2 5 leave no host gap; equivalence after phase 3. Gates: Quarkus profile EXIT=0, full reactor EXIT=0. SHA-256: EngineAssembly.java B985ACF72579F2F49929EA1967CAAD79
+## M-041 / 161 CMMN editor hits 9
+   WAVE4 11-12T18:28:07 integrator INFO: Owner decisions 158-161 recorded (W4Q-12 DMN 1.6 implement W4-E, W4Q-13 Arazzo operationRef runtime, W4Q-14 legacy history in scope W4-G, W4Q-15 own CMMN editor).
+   WAVE4 11-12T20:03:30 W4-J/B6A DONE: Decision 161 own CMMN 1.1 editor, status CODED (tests written NOT_RUN). NEW src/components/cmmn: cmmnModel.ts (parse CMMN 1.1 with default or prefixed namespace: plan items, stages, milestones, listeners, entry and exit criteria, sentry planItemOnPart links; C
+## M-109 / 162 / 213 Teams hits 16
+   WAVE4 11-13T01:36:02 W4-C/B63 DONE: Jersey 4.0.3 jars elected EPL-2.0); paranamer copyright via NEW attributions/ index read by notice_bundle.py; W4-J rows teams-js 2.59.0 and base64-js MIT, debug and ms now distribution, diagram-js direct (register regenerated, 422 rows); W4-K oracle-it: dedica
+   WAVE4 11-13T05:48:02 W4-C/B63 DONE:  pattern, the UI image check 17-sangam-dsc.envsh, /config.json dsc.agentUrl and connect-src of security-headers.inc and teams-headers.inc (since 01:20:08Z and 01:43:23Z). Only http://127.0.0.1:port or http://localhost:port are accepted; [::1] is refused everyw
+## M-047 component tests hits 1
+   WAVE4 11-13T00:41:24 W4-K/B6B-pfm DONE: -intl-pfm-budget-document-bundle; PFM-020, PFM-022), gov.intl.pfm-standard-reports (PFM-040), gov.intl.pfm-cash-plan (PFM-047), gov.intl.pfm-transfer-deadline (PFM-046), gov.intl.pfm-budget-accounting-reconciliation (PFM-055, exact SUM difference, no rounding 
+## M-048 playwright hits 3
+   WAVE4 11-12T17:19:01 W4-J/B6A DONE: d option (i18n/index.ts 57B5EBDA...), shared form hook components/taskFormSchema.ts B13E51CF... now used by TaskDetail. M-048: Playwright specs and config written under sangam-ui/e2e/** and playwright.config.ts, nothing installed or run. ui.yml steps requested
+   WAVE4 11-13T02:09:31 W4-C/B63 DONE: Coordinator item, ui.yml e2e: the existing check id is ui-e2e; it now FAILS unless Playwright ran at least one test, skipped none and failed none (JSON reporter stats checked after the run; a test.skip or an empty run is not a pass). A skipped e2e job leaves n
+## M-016 DB per tenant hits 11
+   WAVE3 11-12T14:19:13 W3-H/B49 DONE: M-016 control-plane API on W3-M contract round 2 (14:01:57Z): CellDirectory.Registration and Cell gain dedicatedTenant (stored in CP_CELL.dedicated_tenant trimmed and upper-case, echoed in the PUT answer, blank = shared, * or over 64 chars = 400, a change refu
+   WAVE3 11-12T15:00:23 W3-H/B49 DONE: ance start-up check passes when its tenant is recorded DATABASE and alone, refuses a SHARED record and a second tenant. M-016 doc AEFEDFB6D1C6D4BCFD01640F12C6052658A97C84A1763008F6298F4081CD5A1F. Gate -pl sangam-server -am exit 0 (waited for W3-F DONE 14:55:11
+## M-040 hits 8
+   WAVE3 11-12T14:01:57 W3-M/B54 CHANGE+DONE: W3-C 12:32:27Z channel hooks + M-040 (contract, generator only): receiveWeChatHook gains optional encrypt_type and msg_signature (security mode: msg_signature over Encrypt, decrypt with the encoding-aes-key-ref secret, app id must match); new receiveSlackHook 
+   WAVE4 11-13T00:41:24 W4-K/B6B-pfm DONE: ntl-pfm-budget-preparation, sangam-intl-pfm-budget-document-bundle; PFM-020, PFM-022), gov.intl.pfm-standard-reports (PFM-040), gov.intl.pfm-cash-plan (PFM-047), gov.intl.pfm-transfer-deadline (PFM-046), gov.intl.pfm-budget-accounting-reconciliation (PFM-055, 
+## M-078 / M-087 hits 6
+   WAVE3 11-12T12:59:38 W3-E/B46 DONE: owner decision 68 verified in code: VerifiableParentalConsentService refuses verifyLawfulGuardian (and verifyParent) with no verifier before anything is written; ConsentService needs a VERIFIED guardian verification (requireValid -> 403 GUARDIAN_CONSENT_REQUIR
+   WAVE3 11-12T13:00:35 W3-E/B46 DONE: M-078 (decision 67, W3-B grant 11:33:03Z): connector/gov/AadhaarSubAuaConnector.java (AUA-neutral JSON v1: otp, authenticate OTP or DEMOGRAPHIC, lookup by txn = operationId, class a; refuses before any call: no consent CONSENT_REQUIRED, biometrics BIOMETRIC_NO
+## M-081 / 114 / 119 validator hits 21
+   WAVE4 11-12T20:25:18 W4-M/B6C DONE: d E51A2D0BE014316307B4D988F364FC7958D1637D57472CE2AC24479FC496FACD (audit names wait on the integrator REQUEST below) ; sangam-pdf-validator-api.yaml 449D1430BFCBD1270EBC5296EEC09F8EAE6C14ACCF966157659511B347CA11E9 ; NEW sangam-ocr-api.yaml 393C4B6058C35038BE6
+   WAVE4 11-13T00:40:25 integrator/INT DONE: INT-H2 items. (1) CODED: root pom modules sangam-ocr-sidecar (after sangam-pdf-validator), sangam-kube and sangam-backup (before sangam-rest, so before deploy/operator too); version.jgit 7.8.0.202609011348-r plus dependencyManagement org.eclipse.jgit; inline J
+## M-102 / 220 VM backup hits 18
+   WAVE4 11-13T01:58:37 integrator/INT INFO: ndency in sangam-rest were already DONE before this batch; OpsRestConfiguration.Backup now imports BackupController and ScriptBackupWiring; SecurityConfig has /scim/v2/** authenticated.
+   WAVE4 11-13T02:02:18 W4-H/B68 INFO: 0; sangam-esign main and test javac EXIT 0. No W4-H file blocks a gate now (sangam-rest testCompile still stops on W4-I ScriptBackupWiringTest, BROKEN by W4-B 01:07:49Z). Remaining 227 and 228 work adds new files only plus tests
+## M-107 FC-18 hits 14
+   WAVE4 11-13T04:26:25 W4-B/B62 DONE: Decision 258 FC-18 permission CODED, test written NOT_RUN. Name: history.migrate (Permissions.HISTORY_MIGRATE, added by INT-H2 under its claim, ACK 04:18:54Z): among tenant personas only sangam-tenant-admin; bridge gate TENANT ADMIN (as tenant.admin), not plat
+   WAVE4 11-13T04:41:14 integrator/INT DONE: Wave 4b INT-H2 batch B, ruling 5 and FC-18, tests written NOT_RUN. CODED: decision 243 explicit health-with-NATS start-up refusal in AddonGuardWiring plus tests (W4-C REQUEST); decisions 236 237 DscSignatureVerificationsAdapter over DscSigningFlow wired in Pac
+## M-126 DMN hits 6
+   WAVE4 11-12T19:37:57 W4-E/B65 INFO: Decisions 156 and 158 below 97 percent, not coded, questions: 158 DMN 1.6: operaton-dmn-model 2.2.0 DmnModelConstants knows DMN 1.1 to 1.5 only (DMN15_NS https://www.omg.org/spec/DMN/20230324/MODEL/, no 20240513 namespace, no DMN16 schema), so engine-side acce
+   WAVE4 11-13T00:05:58 integrator INFO: Owner decisions 205-208 recorded (CockroachDB experimental with DB-only retry, DMN 1.6 XSD from omg.org, Oracle vector docs lookup, fidelius-cli for test vectors after licence check).
+## M-129 Oracle vector 207/247 hits 10
+   WAVE4 11-13T03:39:56 integrator/INT DONE: Decision 247 CODED: SchemaBootstrap.SangamSpringLiquibase checks first, in every Liquibase mode, that sangam.ai.kb.vector-index=oracle runs on Oracle with JDBC major version 23 or more (message names 23ai and the found version; a non-Oracle database is refused
+   WAVE4 11-13T03:52:48 W4-C/B63 DONE: Decision 247 CODED (not deployed): SANGAM_AI_KB_VECTOR_INDEX default portable. Helm server.aiKbVectorIndex with schema enum portable, pgvector, oracle; rendered in the server ConfigMap and, as a root-cause fix, in the pre-install migrate Job, which has no Conf
+## M-133 HAPI 183/209/226/254/263 hits 21
+   WAVE4 11-13T05:25:01 W4-C/B63 DONE: Decisions 263 and 275, CODED, tests NOT_RUN. 263: licence-policy conditional LicenseRef-IU-Extreme-Lab now on pkg:maven/io.github.x-stream/mxparser only (xpp3_min fails the gate); check_licences alias = the mxparser POM name; attributions/mxparser-1.2.2.txt (a
+   WAVE4 11-13T05:49:57 integrator/INT DONE: Decision 263 server pom CODED (W4-K REQUEST 04:41:42Z): profile sangam-health-validation of sangam-server/pom.xml, xpp3:xpp3_min 1.1.4c out, io.github.x-stream:mxparser 1.2.2 in (runtime), xmlpull 1.1.3.1 kept as the only org.xmlpull.v1 API, org.ogce xpp3 excl
+## M-133 CAQH 172 hits 3
+   WAVE4 11-12T18:29:22 integrator INFO: Owner decisions 170-173 recorded (W4Q-25 portable plus native vector adapters, W4Q-26 A2A and MCP implement, W4Q-27 CAQH headers gap, W4Q-28 Fidelius in optional health module).
+   WAVE4 11-12T19:07:59 W4-K/B6B-healt DONE: /README.md C06DC1EF35DC99178A981DA782C2CDFEA3B0B9CFDB19D9B7C1F11BC833165E61 (optional module section with on/off table, CAQH CORE envelope gap with no conformance claim and no terms accepted, HAPI held back on xpp3, Fidelius not implemented). No code or pom ch
+## M-089 GeM dossier hits 1
+   WAVE4 11-12T16:43:41 W4-K/B6B INFO:  Act items traceability only), M-134 PFM packs with [U] markers via packgen (decision 108: no consumer data), M-089 GeM local-content dossier generator and SKU template under deploy/evidence/procurement (decision 109: nothing listed by code), M-107 and M-135 e
+## M-135 / 231 hits 8
+   WAVE4 11-13T02:31:43 W4-G/B67 DONE: PLOYMENT, PK deployment_id, no tenant column, decision 144/197), all five dialects; also 0045-07-ops_fmig_ack (decision 231, W4-G own). SangamSchema PRODUCT_TABLES and timestamp inventory updated; Wave4bTablesH2Test resizeRegistryAndListenerAcknowledgementAreK
+   WAVE4 11-13T02:46:23 W4-G/B67 DONE: Round 4 items (1) and (3) CODED, tests written NOT_RUN. (1) Decision 231: StateClassifier SOURCE_DELETE_LISTENER and SOURCE_EVENT_LISTENER are REJECT unless the definition's listeners fingerprint (FlowableModelListeners.Found.fingerprint, SHA-256 of a canonica
+## M-136 replay hits 6
+   WAVE4 11-13T02:06:51 W4-G/B67 INFO: 53524437859E67FE2475E5F1ADC538C039A5ACE8B52D17F9F1384F3E3333 ; sangam-modeller/src/main/java/org/sangam/modeller/replay/ReplayVerifier.java A6BF830AF1C608F0670457C71B6931EFAA5376F073CC5BEAA23989862A7AEF14 ; sangam-modeller/src/main/java/org/sangam/modeller/rep
+   WAVE4 11-13T02:42:57 W4-E/B65 DONE: Decision 151 capture points CODED, tests written NOT_RUN (engine side of 151 now complete; the modeller adapter and the ReplayVerifier IT stay with W4-G). NEW replay/CapturePoints (built by SangamEngineComponents; NONE without a listener, nothing installed): T
+## M-114 UTC hits 11
+   WAVE4 11-13T03:09:50 W4-G/B67 DONE: Owner decision 240 CODED, tests written NOT_RUN. UtcDataset.sessionZone (named zone or whole-minute offset; fingerprint changes only when declared); OPS_UTC_RUN.session_zone via new alter changeset 0045-09-ops_utc_run-alter (five dialects, SangamSchema.ADDITIO
+   WAVE4 11-13T04:26:51 W4-G/B67 DONE:  resumed, with another table's run refused meanwhile). Wave4bTablesH2Test utcGateTableIsSeededOpenAndItsStateIsChecked. UtcConversionToolH2Test crash test: the stop moves from transaction 4 to 5 because the close adds one transaction; no assertion changed. Gat
+## M-099 SCIM hits 15
+   WAVE4 11-13T01:04:00 W4-I/B69 DONE: Wave 4b round 2 CODED, tests written not run (Oracle and SQL Server parts NOT_RUN). Decision 154 SCIM server: ScimService re-enable via PersonService.enableUser and group rename via GroupAdminService.updateGroup (501 stubs gone, source SCIM) 39D172A0D059E4D1F9
+   WAVE4 11-13T01:58:37 integrator/INT INFO: before this batch; OpsRestConfiguration.Backup now imports BackupController and ScriptBackupWiring; SecurityConfig has /scim/v2/** authenticated.
+## M-092 hits 7
+   WAVE4 11-12T20:20:29 W4-I/B69 DONE: M-092 remaining part (schema) CODED, tests written NOT_RUN: GET /api/v1/ops/schema-status (ops.read, plain JDBC: product DATABASECHANGELOG rows without engine patches and history partitioning, ACT_GE_PROPERTY schema.version, DATABASECHANGELOGLOCK) and sangam u
+   WAVE4 11-13T00:40:25 integrator/INT DONE: the deprecated path built); five MockEnvironment tests not changed (INFO above). (6) 21 register rows DEC-138..DEC-189, M-092, M-100, M-103, SL-183 (eSign BC 1.84 detached digest, CODED), SL-184 (unverified list 500 cap, OPEN owner W4-A). Gates (no tests run):
+## M-105 Camel hits 5
+   WAVE4 11-12T20:22:37 W4-H/B68 DONE: O. Decision 159 PARTIAL: ArazzoOperationStep and ArazzoExpressions CODED, ExternalWork glue REQUEST W4-E or integrator. Camel deferred. All W4-H claims released.
+   WAVE4 11-13T06:38:52 W4-F/B66 DONE: e=true (verified: the Operaton Quarkus recorder applies generic-config via PropertyHelper.applyProperties with kebab-to-camel before buildProcessEngine; marker M-056); jackson-feel-compatibility via QuarkusBootstrap.Builder.setForcedDependencies jackson-databi
+## M-080 PAdES / 140 eSign RM-07 hits 30
+   WAVE4 11-13T03:56:48 W4-H/B68 DONE:  theOcspMaximumAgeDefaultsTo24HoursAndMustBePositive; EsignTestPki mode AGED. Gate -pl sangam-integration,sangam-server,sangam-esign -am clean test-compile (target-w4h, offline, UTC, 03:49:30Z to 03:56:21Z) EXIT 0. Hashes in FILE-CLAIMS RELEASE 2026-11-13T03:5
+   WAVE4 11-13T05:58:28 W4-H/B68 DONE: gFlowTest case. README rows updated. Gate offline mvnw -q -B -o clean test-compile -pl sangam-integration,sangam-server,sangam-esign -am -Dsangam.target=target-w4h -Duser.timezone=UTC 05:53:24Z to 05:57:57Z EXIT 0. SHA-256 (sangam/sangam-integration): DscLoopb
+## M-079 DSC hits 75
+   WAVE4 11-13T06:51:56 W4-J/B6A DONE: 88888 (claim 2026-11-13T06:45:19Z), all CODED, tests written NOT_RUN: (1) CompletionProblem in the decision dialog: 422 DSC_ENROLMENT_REVOKED says sign again with the currently approved certificate, DSC_SIGNATURE_NOT_VERIFIED and all else keep the generic Prob
+   WAVE4 11-13T07:10:04 W4-E/B65 INFO: anceId, executionId, activityId, processDefinitionId, configuration, errorClass (per Q4), message, engineTenant, resolvedScope, resolutionReason. Class B. Same command as the incident. Emitted for failedJob, failedExternalTask (including LEASE_EXPIRED_HELD) an
+## M-083 hits 36
+   WAVE4 11-13T04:22:52 W4-M/B6C INFO: firmed (I missed it in my board checks; nothing open). Its limit fix matches the contract: listDscCertificates limit 1..200, outside is 400. The replay-mapping REQUEST in the same post is for W4-B, no contract change. W4-M holds no claims and stays available.
+   WAVE4 11-13T05:41:21 integrator/INT DONE:  X-Sangam-Resource-Ref bulk-job:<id> through the new BulkController.resourceRef (create uses it too), bodies and status 200 unchanged, the sink permission is still checked before any change. SecurityWiring: sangamSecurityPermissionPort passes W4-B's 4-argument
+## M-015 hits 8
+   WAVE4 11-13T05:54:52 W4-F/B66 DONE: sts written NOT_RUN. 278: Capabilities.SPRING_ONLY = http, oidc-http (only conveniences; CapabilitySetTest); README and M-015 design doc (2.2, 3.1, section 10 status with decisions 274 to 279) say the Quarkus host offers ports and engine only. 279: QuarkusConf
+   WAVE4 11-13T06:38:52 W4-F/B66 DONE: 443547625F ; sangam-quarkus-extension README.md B747FE1184D87C0B5606D83248C1502CE9E9E37F83295D654EB114AA27135CF7 ; docs/M-015-QUARKUS-EXTENSION-DESIGN.md 011597506A81451F8E99B57B185876CA07B35CB77297559376B2B9B18CCB40B9 ; EngineWithoutSpringTest.java unchanged 
+## M-143 hits 10
+   WAVE4 11-13T05:35:04 W4-F/B66 INFO: JacksonCompatibilityGuard. Q3 schema-before-engine on Quarkus: proposal: bind sangam.engine.apply-product-schema on the Quarkus host; false means the capability is missing and the start is refused (Quarkus has no other schema path). Q4 database-checks on Quark
+   WAVE4 11-13T05:54:52 W4-F/B66 DONE: iences; CapabilitySetTest); README and M-015 design doc (2.2, 3.1, section 10 status with decisions 274 to 279) say the Quarkus host offers ports and engine only. 279: QuarkusConfigSource, QuarkusLifecycle, QuarkusScheduling, QuarkusSecurityContext are optiona
+## M-022 hits 9
+   WAVE4 11-13T03:26:25 W4-C/B63-252 INFO: percent, sdks.yml not edited, no claim taken. The premise 'pinned by checksum like 1.27.4' does not match the code: the tier2-go job installs Go with actions/setup-go (SHA-pinned v5.6.0) and go-version 1.27.4 exact, and the sdks.yml header says the setup-* act
+   WAVE4 11-13T04:07:04 W4-C/B63 DONE: Decisions 260 and 252 CODED (not run in CI): sdks.yml 33587FD05463278D395AEA392C207F045469B6C9DE01C34A47E15F2B71C1C3BE. tier2-go (1.27.4, SHA-256 7226736c...4840) and new tier2-go-floor (1.26.11, SHA-256 9849f4e0...10ec; go build and go vet of sangam/sdks/go) 
+## M-027 hits 4
+   WAVE4 11-12T16:34:55 W4-M/B6C INFO:  regenerate AsyncAPI. Baseline: sangam-api.yaml 7622206C...F37A25 (Wave 3 close-out). Own items M-022 Tier-2 leftovers, M-027 within decisions 96/131/132. W4-C: ACK your 16:29:21Z results-ledger CHANGE; sdks.yml content requests from me will come as REQUESTs
+   WAVE4 11-12T16:47:29 W4-M/B6C DONE: M-027 within decisions 96/131/132 (RM-48, source side): sangam/sdks/dotnet/src/Sangam.Sdk.Hosting/Sangam.Sdk.Hosting.csproj IsPackable false (decision 132; dotnet pack of Sangam.Sdk.sln now yields only Sangam.Sdk.0.1.0.nupkg, checked into a scratch folder) 3DC
+## M-052 release step hits 3
+   WAVE3 11-12T15:47:58 integrator INFO: K (1135), scale changelogs --check OK, sdk surface --check OK (1089 ops; sangam-api.yaml FDC82DAB...6668023 unchanged), standards profile --check OK, profilegen/changelogs/realm second run no change. gen_openapi rebuilt sangam-events.asyncapi.yaml once from SA
+   WAVE3 11-12T16:00:10 integrator DONE: CLEAR. Full reactor offline clean test-compile EXIT 0 (enforcer on). packgen, scale changelogs, sdk surface (1089 ops), standards profile --check all exit 0; changelogs, profilegen, realm, gen_openapi second run no change (sangam-api.yaml 7622206CC4DB2E3034285
+## M-019 publish hits 4
+   WAVE4 11-13T01:23:54 W4-C/B63 DONE: Decision 210 CODED: Central job and central_bundle.py accept only groupId io.github.sqamentor (org.sangam now BLOCKED exit 2, test updated; a component under another groupId is still a finding); register_check.py and notice_bundle.py treat pkg:maven/io.github.
+   WAVE4 11-13T01:47:04 W4-C/B63 INFO: Round 2 deploy follow-up from my fork is DONE (fork line 01:43:23Z). Correction to the fork's decision 210 note: publish-packages.yml no longer accepts org.sangam; since my DONE at 01:23:54Z only io.github.sqamentor passes. W4-H: register rows for distribution
+## M-121 SG-15 hits 3
+   WAVE3 11-12T12:14Z integrator DONE: TECTURE.md 8.4 status paragraph (M-063 (a)(b) implemented, hooks named, not measured) and known gap 2 updated; register SG-15 note follows at close-out
+   WAVE3 11-12T12:23:57 W3-K/B52 DONE: 000630890F4D5FF995D0376C0D3A151BA72332026. Gate sangam-rollup -am clean test-compile exit 0. Measurement hooks written, SG-15 measurement not run
+## M-008 hits 5
+   WAVE4 11-12T16:43:07 W4-I/B69 INFO: del/config/deprecation scan; schema check waits on a W4-M route), M-102 backup console, M-108 and M-099 evidence first, M-008 close-out evidence. Owned: sangam/deploy/operator/**, sangam/tools/sangam-cli/**, sangam-rest ops routes via W4-M. No existing signatu
+   WAVE4 11-12T17:04:03 W4-I/B69 INFO: M-008 close-out evidence: nothing left to code. KafkaInboxConsumer.java:35-87 and JmsInboxListener.java:33-160 take TenantAdmission (REDELIVER for FROZEN/IMPORTING, PARK for MOVED/PURGED), BrokerInboxWiring.java:110-116 passes it; flowable-ports Rabbit/Kafka/J
+## M-044 SL-177 hits 14
+   WAVE4 11-12T16:45:35 W4-E/B65 DONE: SL-177 CODED: PROCESS_TRACE rows removed in the transaction that removes the instance history. Operaton HistoricProcessInstanceManager replaced through customSessionFactories (PATCHES B-36, I-23): by-id paths (history service, deletion batch, end-time cleanup,
+   WAVE4 11-12T16:47:03 W4-E/B65 INFO: W4-E status: SL-177 CODED (DONE above). M-055 verified, no change (default true SangamEngineSettings.java:179, env 537, plugin 130, Helm values.yaml:205, schema:68, configmap:60; A/B evidence stays test phase). M-106: D-10 not needed under decision 51 (PATCHES
+## M-145 M-146 hits 0
+## M-147 M-148 hits 3
+   WAVE4 11-12T16:29:21 W4-C/B63 INFO: W4-C started: M-147, M-148, decisions 116/117/118/122/123/127/129/130/133/134, RM-12, RM-13, M-019 (code only). Claimed .github/workflows/* and deploy/licence, helm, compose, airgap files in FILE-CLAIMS. Gate scripts go to sangam/deploy/licence/ (owned), not .
+   WAVE4 11-12T17:53:27 W4-C/B63 DONE: M-147/M-148 release side landed (tests written, not run): release.yml rewritten. Per distribution of distributions.json: SBOM matched to its artefact (sbom_matches_jar.py, lib-ext now from the server SBOM by select), strict licence gate, decision-register chec
+## M-142 hits 0
+## M-055 hits 3
+   WAVE4 11-12T16:47:03 W4-E/B65 INFO: W4-E status: SL-177 CODED (DONE above). M-055 verified, no change (default true SangamEngineSettings.java:179, env 537, plugin 130, Helm values.yaml:205, schema:68, configmap:60; A/B evidence stays test phase). M-106: D-10 not needed under decision 51 (PATCHES
+   WAVE4 11-13T00:41:24 W4-K/B6B-pfm DONE: ntl.pfm-cash-plan (PFM-047), gov.intl.pfm-transfer-deadline (PFM-046), gov.intl.pfm-budget-accounting-reconciliation (PFM-055, exact SUM difference, no rounding policy), gov.intl.pfm-replenishment (PFM-062, PFM-CH-6), gov.intl.pfm-do-not-pay (PFM-049), gov.int
+## M-064 SL-170 189 hits 13
+   WAVE4 11-13T00:10:30 integrator INFO: Owner decisions 217-220 recorded (sangam-esign optional module holds Bouncy Castle, Service Bus docs lookup, Event Grid Entra tokens, VM/compose backup adapter). Wave 4b round 2 assignments appended to WAVE4B-ASSIGNMENTS.md.
+   WAVE4 11-13T00:50:03 W4-H/B68 INFO: GridSecureWebhookSubscriber comes from Microsoft's setup script on the secure-webhook page (about 92 percent that every Event Grid token carries it in roles); a channel can set entraRequiredRole but cannot switch the check off. (b) The CloudEvents OPTIONS hand
+## M-070 Temporal hits 3
+   WAVE4 11-12T17:27:06 W4-H/B68 DONE: hat (M-105) already covered by M-071 MessengerConnectors. BLOCKED with owner questions: Camel (no camel-core in ~/.m2), M-070 Temporal (no API evidence offline), M-104 RPA, M-079 DSC agent, M-083 OPA/Cedar, M-103 OCR sidecar protocol. SL-170 stays OPEN: no Eve
+   WAVE4 11-12T20:22:37 W4-H/B68 DONE: Bus binary mode, both off by default and fail-closed; PortsEventBridge routes REQUEST integrator. Decision 163 PARTIAL: TemporalConnector CODED, payload form and server version INFO. Decision 159 PARTIAL: ArazzoOperationStep and ArazzoExpressions CODED, Extern
+## M-069 Arazzo hits 15
+   WAVE4 11-13T00:57:13 integrator INFO: Owner decision 221: SnakeYAML 2.6 (Boot-managed) for Arazzo YAML; W4-G's choice stands. Rulings: groupId sweep (decision 210) is done by the integrator at Wave 4 close-out when no lane holds pom claims; W4-G owns the decision 151 end-to-end verifier and checks
+   WAVE4 11-13T01:13:46 W4-E/B65 DONE: W4-H REQUEST 20:15:17Z (decision 159, Arazzo topic sangam.operation) CODED, tests written NOT_RUN: EngineAdapter.ExternalWork gains a 12th component Map<String,String> properties (never null, unmodifiable; the 11- and 10-argument constructors stay, so Flowable
+## M-101 presence hits 7
+   WAVE4 11-12T18:09:34 W4-J/B6A DONE: regions; 400 MODEL_UNREADABLE shown as a plain-English message with the server detail, other problems via ProblemAlert. M-101 presence UI: modules/presence.tsx (ModelPresenceBar in the workspace header) over GET /models/{file}/presence/stream (streamModelPrese
+   WAVE4 11-12T20:03:30 W4-J/B6A DONE: Presence/lease key mismatch fixed, status CODED (tests written NOT_RUN). LeaseBanner (modules/platform.tsx) is now one lease per package keyed by the package id, the same key as presence (streamModelPresence {file} = package id) and as the server save fence (M
+## M-043 hits 2
+   WAVE4 11-12T16:36:50 W4-J/B6A INFO: W4-J started: decisions 120/121 (RM-24: UI fonts from deploy/fonts, Sakal Bharati and @fontsource dropped), M-043 web components, M-048 Playwright specs (written only, nothing installed or run), evidence + questions for M-041, M-101, M-109. Files: sangam-ui/**
+   WAVE4 11-12T17:19:01 W4-J/B6A DONE: M-043 web components coded in sangam-ui only (no contract change: uses existing GET /tasks/{id}, GET /tasks/{id}/form, POST /tasks/{id}/complete, GET /process-definitions/{id}/xml, GET /process-instances/{id}/activity-tree): src/embed/{index.ts DE8398B856CB1A1
+## M-117 vite hits 0
+## M-024 net8 hits 0
+## M-091 hits 3
+   WAVE2 11-12T09:03Z W2-G/B35 DONE: 92F55F82473D4D8CDCE; templates/ingress.yaml 413D13237392CCAC2342CBF7D8E9A28C0F9BC4D364A88ED1ADDDCF32C4E4ADC9; templates/prometheusrule.yaml(new) 041CB3921BA491C69EFC628CD2283C6B5B7E0780BF4992B831A59E1F43D66DB7; templates/server-configmap.yaml 5CD7D303B4C52D1FC
+   WAVE2 11-12T10:07Z W2-J/B38 DONE: public className refused by schema and template, networkPolicy.ingressFrom.cidrs for ALB IP mode) and alerting (metrics.prometheusRule, Prometheus Operator CRD, all 10 rules and thresholds from values.yaml; compose rules mount) + §1.6 three leaf pools (8 per n
+## M-131 hits 5
+   WAVE4 11-12T18:40:33 W4-G/B67 INFO: new chain table, W4-E 150 M-114 timestamp inventory changesets (with W4-G), W4-I or W4-B 154 SCIM table. W4-G codes 160 M-131 (sangam-ops legacy history), 159 Arazzo importer emitting operationRef tasks, 169 M-135 Flowable pipeline on a synthetic corpus, 151 r
+   WAVE4 11-12T20:17:04 W4-G/B67 DONE: Decision 160 M-131 CODED (tests written NOT_RUN): NEW sangam-ops migrate/LegacyHistoryProjector projects the OPS_MIG_ROW copies of ACT_HI_PROCINST, ACT_HI_CASEINST, ACT_HI_ACTINST, ACT_HI_TASKINST into HRM_* with record_source LEGACY, legacy_ref job:table:sour
+## M-125 hits 8
+   WAVE4 11-12T17:33:12 W4-M/B6C DONE:  result, retry with the same key after Retry-After), and Problem.code lists AUDIT_UNAVAILABLE (and MODEL_UNREADABLE for M-125). gen_openapi.py 7A88AC60F86D83DF9FAC5F81390DAD0EB21781292A7BC40DFC3F5F75F1ECEF0D (gen_openapi.py run in place and again into a scratc
+   WAVE4 11-12T18:09:34 W4-J/B6A DONE: M-125 compare view: Compare tab in the package workspace (areas/modeller/ModelCompare.tsx) over POST /models/diff (diffModels): file name (max 255), before/after text or file (empty side sent as null), format, summary table per level ELEMENT/FLOW/EXPRESSION/PR
+## M-127 hits 3
+   WAVE4 11-12T17:09:57 W4-G/B67 DONE: M-125 back end and M-127 converter (new files only, no existing signature, bean, table or config change) under sangam/sangam-modeller/src/{main,test}/java/org/sangam/modeller/: ModelDiff.java B9C6D0E9FC332E2D8A9D5F1D8B5D5D08434F2FD6B893F573781365FB84A44816; Xm
+   WAVE4 11-12T17:30:54 W4-G/B67 DONE: M-127 conversion assessment rows: POST /packages/assessment on a CMMN file keeps cmmn:definitions SUPPORTED and adds cmmn:toBpmn MAPPED (draft to review) or REJECTED, plus one row per converter ERROR (REJECTED) or WARNING (PATTERN) named cmmn:toBpmn CODE. No R
+## M-130 hits 4
+   WAVE3 11-12T12:51:40 W3-L/B53 INFO: M-130 registry parties PARTIAL: no sink coded. W3-E has not posted DONE on the RegistryPortBridges connection defect (last W3-E status 12:07:26Z: design ready, waiting for GRANT). Evidence: PartyService.create has no natural key (id = Db.newId, PK id only); RE
+   WAVE3 11-12T13:34:51 W3-L/B53 DONE: xtractor, version from root dependencyManagement; gate -pl sangam-field -am clean test-compile (target-w3l) EXIT 0. (2) M-130 registry parties, decision 93: new sangam-server bridge/RegistryPartyBulkSink (object type registry.party, permission registry.write) 
+## M-063 hits 4
+   WAVE3 11-12T12:23:57 W3-K/B52 DONE: M-063 sangam-rollup (CHANGE 11:50:13Z): RollupProperties F52E16E28018C6E1E9A19EE0F536612D9984786BDD5CBB2F9D82C06A2434E6C6, RollupProjector 1D910BB89BE89ED41D9405BE51E1C920C8A09332E41E59F64979F9821C62AC9C (LocalDate.now hits = 2), RollupController 140445A5F9F3C
+   WAVE3 11-12T12:45:46 W3-M/B54 DONE: W3-K M-063 deploy (11:50:13Z): sangam-national rollup.states[] = one state instance each (SANGAM_RU_SCOPE, SANGAM_RU_INSTANCE_ID, SANGAM_RU_UPSTREAM_URL default national ingest, SANGAM_RU_UPSTREAM_TOKEN from Secret key upstreamToken, own DB), rollup.preAggrega
+## M-100 JGit hits 12
+   WAVE4 11-13T00:40:25 integrator/INT DONE: after sangam-pdf-validator), sangam-kube and sangam-backup (before sangam-rest, so before deploy/operator too); version.jgit 7.8.0.202609011348-r plus dependencyManagement org.eclipse.jgit; inline JGit version removed from sangam-integration/pom.xml (now W4-H'
+   WAVE4 11-13T00:43:53 W4-K/B6B-healt DONE: excluded, javassist 3.33.0-GA, jakarta.annotation-api 3.0.0 and caffeine 3.1.8 pinned in the module, Jackson 2.22.3 and JGit 7.8.0 from the root pom. New port validation/FhirProfileValidation, loader FhirProfileValidations (CAPABILITY_MISSING without HAPI), im
+## M-103 OCR hits 13
+   WAVE4 11-13T03:31:54 W4-C/B63-253 INFO: ests pinned today) does not hold: no Dockerfile pins a digest today. All 11 Dockerfiles (server, ui, simulators, scale, ocr, pdf-validator, script-worker, sdk-worker-native, operator; server-test-mode takes SERVER_IMAGE, a first-party image) carry tag-only ARG
+   WAVE4 11-13T04:17:53 W4-K/B6B DONE: :49Z; repository moved to prashantonomy/abdm-fidelius-dart, same id) with a directory .gitattributes '-text' so core.autocrlf never rewrites it; LICENSE-abdm_fidelius.txt kept unchanged. FideliusVectorsTest checks the copy's SHA-256 and all 7 vectors (keys, sh
+## M-104 RPA hits 16
+   WAVE4 11-13T03:29:48 W4-E/B65 DONE: ). Test WorkTenantsH2Test everyEngineExposesOnePartitionResizeEvenWithoutPartitioning (NOT_RUN). INT-H2 can bind ExecutorPartitionBridge.Resizes.of(components.partitionResize(), tx) now.
+   WAVE4 11-13T03:56:47 integrator/INT DONE: W4-E items 1 and 2 CODED, tests written NOT_RUN. (1) Decision 146: ExecutorPartitionWiring binds ExecutorPartitionBridge to SangamEngineComponents.partitionResize() of the server engine, looked up per call (Resizes.of with the host TxSupport for the resize req
+## M-108 cockroach hits 7
+   WAVE4 11-13T00:45:05 W4-E/B65 DONE: Decisions 156 and 205 CockroachDB CODED (PARTIAL, experimental and non-gating, tests written NOT_RUN, no CockroachDB server run, no support claim): EngineDialect.isCockroachDb reads version() on a server that reports PostgreSQL; DatabaseGuard refuses Cockroach
+   WAVE4 11-13T01:43:23 W4-C/B63 DONE: .ports.egress-hosts plus networkPolicy.extraEgress 443; without it deliveries get 503. (4) decisions 156 and 205 README CockroachDB experimental note (SANGAM_EXPERIMENTAL_COCKROACHDB default off, no support claim, sql.txn.read_committed_isolation.enabled). (5)
+## M-090 operator hits 32
+   WAVE4 11-13T06:12:59 integrator/INT DONE: low-code pages is user data entry, and it was every lowcode.read holder before, so default users keep it), which sangam-operator inherits; not sangam-auditor, sangam-dpo, sangam-citizen, sangam-worker, sangam-integration, sangam-system or the model reviewer, a
+   WAVE4 11-13T06:51:56 W4-J/B6A DONE: es with the same key; 501 not installed; numbers as exact Decimal; (5) RECORD_WRITERS (lowcode.record.write; TASK_USER, OPERATOR, ADMIN, PLATFORM_ADMIN, MODELLER) gates the create button. Gate: tsc exit 0, check-i18n exit 0, check-no-cdn exit 0, vitest NOT_RUN
+## M-073 / 126 checkpoints hits 4
+   WAVE4 11-12T16:49:17 W4-A/B61 INFO: W4-A started: RM-02, RM-03 (decision 136), RM-04, RM-05, decision 126 part 2, RM-08. Files claimed in FILE-CLAIMS (2026-11-12T16:47:23Z). RM-08 needs files of W4-B (sangam-security DelegationOfPowersService) and W4-K (sangam-packs PowerLimitGuardListener) plus
+   WAVE4 11-12T17:30:55 W4-A/B61 DONE: _PENDING row and GL outbox row inside the posting transaction; duplicate and refused postings write nothing). RM-05 and decision 126 part 2 CODED (LedgerWiring refuses a GL connector without OutboxWriter, PublisherRegistry or ConnectorInvoker, and a production
+## M-082 / 125 malware hits 11
+   WAVE4 11-12T20:33:06 W4-B/B62 DONE: 9953C6FE98497597602E712040F127FDE09C2B335E9B85C476ED11FED ; sangam/sangam-server/src/test/java/org/sangam/server/config/MalwareScanProductionRequirementTest.java D098B1789054ED94621B513729BC6D2184E5E3B7BADE759F899CE7AA663F129A ; sangam/sangam-server/src/test/j
+   WAVE4 11-13T01:02:52 W4-C/B63 DONE: lues.yaml, release.yml exit 0; docker compose config for postgres, sidecars pdf+ocr, ocr only, script-worker+simulators+malware+observability, scale, cells exit 0; helm 3.18.4 from the already cached alpine/helm image with --network none: lint exit 0 (defaults
+## M-077 hits 8
+   WAVE3 11-12T14:55:39 W3-M/B54 DONE: decision 113 + M-081 deploy (CHANGE 14:46:11Z): compose one-shot keycloak-broker-otp (keycloak:26.3.3, configure-broker-otp.sh mounted ro, depends_on keycloak service_started as keycloak has no healthcheck, restart on-failure, network sangam, dev fallback KEYC
+   WAVE3 11-12T15:49:30 integrator INFO: ak/README.md AA33096113A557064002D0863DAD18181CE51A69C88FFEDD647A1BFC553D5915; sangam/deploy/compose/keycloak/configure-broker-otp.sh EFF583FC0BFAA7BED443E1D440E14A4DB890E7A5FE274FFBCB4519914152BE87; sangam/deploy/compose/keycloak/generate_realm.py CDFA91C4564
+## M-076 hits 27
+   WAVE4 11-13T01:12:21 W4-A/B61 INFO:  means SERVICE, so billing refuses it before your UnverifiedPaymentPermissions is asked; your authMethod check (OIDC or SAML only) and this check agree, either alone refuses. Gate note for the owner of sangam-rest/src/test/java/org/sangam/rest/modules/ops/Scri
+   WAVE4 11-13T01:14:20 W4-B/B62 DONE: n 201 security side CODED (tests written NOT_RUN): UnverifiedPaymentPermissions.permits accepts only authMethod OIDC or SAML (STAFF_AUTH_METHODS); API_KEY, DEV_TOKEN, DEV_STATIC, service and system identities and a missing method are refused before the policy 
+## M-134 hits 5
+   WAVE4 11-12T20:00:42 W4-K/B6B DONE: utDirectiveTest CC64522D,ChangeAdoptionTest 38108004,CheckFailClosedTest 0AFEAF56,FundsCheckFailClosedTest D0AFD375,IntlPfmCasePacksTest ACBF2A5A,JointApprovalSeatsTest B18687A8,P3DuplicateSeatTest B3D82824,PackAcceptanceTest 8EA03A9C,PackBusinessCalendarTest 
+   WAVE4 11-13T00:41:24 W4-K/B6B-pfm DONE: Decision 175 (M-134) CODED through packgen (tests written NOT_RUN): 11 NEW packs at 1.0.0 (new, no bump): gov.intl.pfm-budget-preparation (processes sangam-intl-pfm-budget-preparation, sangam-intl-pfm-budget-document-bundle; PFM-020, PFM-022), gov.intl.pfm-sta
+## M-062 hits 8
+   WAVE2 11-12T10:15Z W2-B/B30 DONE: K surface regenerated against sangam-api.yaml 57B0F608 (1074 ops, 901 paths, 783 schemas; --check clean on second run). M-062 SDK side complete: TaskContext traceparent/tracestate from ExternalWork.traceContext in Java/.NET/Python/TS/PHP (+Go/Rust helpers), ha
+   WAVE4 11-13T00:41:24 W4-K/B6B-pfm DONE: pfm-budget-accounting-reconciliation (PFM-055, exact SUM difference, no rounding policy), gov.intl.pfm-replenishment (PFM-062, PFM-CH-6), gov.intl.pfm-do-not-pay (PFM-049), gov.intl.pfm-fiscal-transparency (PFM-056), gov.intl.pfm-procurement-complaint (PFM-065

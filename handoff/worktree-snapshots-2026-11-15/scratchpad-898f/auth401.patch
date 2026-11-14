@@ -1,0 +1,543 @@
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java b/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java
+index 5e94526..af167f5 100644
+--- a/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java
++++ b/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java
+@@ -165,24 +165,6 @@ public final class Vars {
+         return String.join(",", parts);
+     }
+ 
+-    /**
+-     * Sets the case state on this scope and on every calling process instance of the same case (same business key),
+-     * so the case shows its state while a core block is still running (a rejection waiting out its appeal window was
+-     * still SCRUTINY on the case: SL-32, J-P3-E01). A called instance of another case (a batch item) stops the walk.
+-     */
+-    public static void setCaseState(org.operaton.bpm.engine.delegate.DelegateExecution ex, String state) {
+-        ex.setVariable(CASE_STATE, state);
+-        String bk = ex.getProcessBusinessKey();
+-        org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity pi =
+-                ((org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity) ex).getProcessInstance();
+-        for (var sup = pi.getSuperExecution(); sup != null; sup = sup.getProcessInstance().getSuperExecution()) {
+-            if (bk == null || !bk.equals(sup.getProcessBusinessKey())) {
+-                break;
+-            }
+-            sup.setVariable(CASE_STATE, state);
+-        }
+-    }
+-
+     // ---- JSON values stored as strings -------------------------------------------------------------------------
+ 
+     public static String toJson(Object v) {
+@@ -221,8 +203,7 @@ public final class Vars {
+             return new LinkedHashMap<>();
+         }
+         try {
+-            return JSON.readValue(v instanceof byte[] b ? new String(b, java.nio.charset.StandardCharsets.UTF_8)
+-                    : v.toString(), new TypeReference<Map<String, Object>>() { });
++            return JSON.readValue(v.toString(), new TypeReference<Map<String, Object>>() { });
+         } catch (Exception e) {
+             throw new ProcessEngineException("variable " + name + " is not a JSON object", e);
+         }
+@@ -242,7 +223,15 @@ public final class Vars {
+     public static Map<String, Object> payloadOf(VariableScope s, List<String> names) {
+         Map<String, Object> m = new LinkedHashMap<>();
+         for (String f : names) {
+-            m.put(f, canonical(s.getVariable(f)));
++            // "variable>parameter": the process variable is sent under the connector's contract name (the same
++            // source>target form as call-activity mappings), so a pack's vocabulary never has to match a connector's
++            int gt = f.indexOf('>');
++            String var = gt < 0 ? f : f.substring(0, gt).trim();
++            String param = gt < 0 ? f : f.substring(gt + 1).trim();
++            if (var.isEmpty() || param.isEmpty()) {
++                throw new IllegalArgumentException("connector input '" + f + "' must be 'variable' or 'variable>parameter'");
++            }
++            m.put(param, canonical(s.getVariable(var)));
+         }
+         return m;
+     }
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-packs/src/main/java/org/sangam/packs/core/ConnectorCallDelegate.java b/sangam-packs/src/main/java/org/sangam/packs/core/ConnectorCallDelegate.java
+index 82d0893..cc5604c 100644
+--- a/sangam-packs/src/main/java/org/sangam/packs/core/ConnectorCallDelegate.java
++++ b/sangam-packs/src/main/java/org/sangam/packs/core/ConnectorCallDelegate.java
+@@ -23,7 +23,8 @@ import org.sangam.packs.port.PackRuntime;
+  *   <li>{@code connector}, {@code operation};</li>
+  *   <li>{@code mode}: {@code query} (read-only, default) or {@code submit} (effect, exactly once by operationId derived
+  *       from the case, {@code step} and the step attempt);</li>
+- *   <li>{@code inputs}: comma list of variables sent as the payload (default: the material fields);</li>
++ *   <li>{@code inputs}: comma list of variables sent as the payload (default: the material fields); an entry
++ *       {@code variable>parameter} sends the variable under the connector's contract name;</li>
+  *   <li>{@code resultPrefix}: result data entries are written as {@code <prefix><Key>} and the status as
+  *       {@code <prefix>Status} (default prefix = last segment of the connector name);</li>
+  *   <li>{@code errorOnFailure}: BPMN error code thrown on a FAILED result (else the status is only recorded).</li>
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java b/sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java
+index 2e4cbd2..3fda54a 100644
+--- a/sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java
++++ b/sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java
+@@ -284,6 +284,28 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
+                 d.put("extracted", true);
+             }
+             case "court.limbs" -> d.put("nextHearing", java.time.LocalDate.now().plusDays(30).toString());
++            // sangam-config's contract (ConfigConnector), simulated: a result only from the contract's inputs, so a
++            // process that does not send them is not validated by the simulator either (ADR-D-26)
++            case "config.documentType" -> {
++                switch (String.valueOf(r.operation())) {
++                    case "documentType.get" -> {
++                        Object form = p.get("typeId") != null ? p.get("typeId") : p.get("formNumber");
++                        if (form != null) {
++                            d.put("id", "SIM_" + form);
++                            d.put("formNumber", form);
++                            d.put("approvalChain", "SIM_CHAIN");
++                        }
++                    }
++                    case "documentType.check" -> d.put("valid", p.get("typeId") != null);
++                    case "chain.signatures" -> {
++                        if (p.get("chainId") != null && p.get("amount") != null) {
++                            d.put("signatures", 1);
++                        }
++                    }
++                    default -> d.put("ok", true);
++                }
++            }
++            case "config.classification" -> d.put("valid", p.get("code") != null);
+             default -> d.put("ok", true);
+         }
+         return d;
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-packs/tools/packgen/gov_ifms.py b/sangam-packs/tools/packgen/gov_ifms.py
+index 946fbc8..c8be316 100644
+--- a/sangam-packs/tools/packgen/gov_ifms.py
++++ b/sangam-packs/tools/packgen/gov_ifms.py
+@@ -14,7 +14,6 @@ from lib import C, q
+ from packs import Pack
+ from common import core, outcome, end_ok, rejection, reject_with, withdraw
+ import forms
+-from sector import powers
+ 
+ SIDE = ['GP-14', 'VI.5']
+ 
+@@ -130,20 +129,6 @@ def authority(pk, key, rows, doc):
+            [('competentRole', 'Competent role', 'string')], [([t], [q(r)], n) for t, r, n in rows], doc=doc)
+ 
+ 
+-def ifms_powers(pk, key, case, rows, unverified=None):
+-    """Delegated-power table of one IFMS case type (SL-31): rows (role, limit, citation); limit None = the rule confers
+-    the power without a money ceiling. `unverified` (reason) marks the table as a pack placeholder: the value is the
+-    pack's working default, not read from the rule text, and readiness reports PACK_PLACEHOLDER_UNCONFIRMED until the
+-    tenant deploys a confirmed override of `key`."""
+-    powers(pk, key, [((role, case), limit, note) for role, limit, note in rows],
+-           doc='Delegated powers for ' + case + ' (SL-31). ' + ('UNVERIFIED: ' + unverified if unverified
+-                                                               else 'Values cited from the rule text in the corpus.'))
+-    if unverified:
+-        for role, limit, _ in rows:
+-            pk.placeholder(key, f'{role} {case} ' + ('no monetary limit' if limit is None else f'up to {limit}'),
+-                           unverified)
+-
+-
+ def task(s, id, name, seat, form, decision, fields, spec='5WD', sod=False):
+     return s.sla_task(id, name, seat, form=form, decision=decision, fields=fields, default_spec=spec, sod=sod)
+ 
+@@ -163,13 +148,15 @@ def pao_chain():
+     p = pk.proc('sangam-ifms-pao-chain', 'PAO / treasury pre-check', '', start={'materialFields': 'billType,amount,tokenNo'})
+     s = p.root
+     st = s.start('pc_start', 'Bill received', initiator=None)
+-    d = s.setv('pc_defaults', 'Configuration', defaults='chainId=PAO_3;tokenless=false;billDistributorSeat=BD-1;'
+-               'dealingSeat=DH-1;aaoSeat=AAO-1;paoSeat=PAO-1;secondSignatorySeat=SS-1;chainSignatures=1;amount=0;'
++    d = s.setv('pc_defaults', 'Configuration', defaults='tokenSeries=TOKEN;tokenless=false;billDistributorSeat=BD-1;'
++               'dealingSeat=DH-1;aaoSeat=AAO-1;paoSeat=PAO-1;secondSignatorySeat=SS-1;amount=0;'
+                'paoDecision=pass;tokenNo=;billType=GENERIC')
+     tok = s.conn('pc_token', 'Token number (series TOKEN)', 'config.series', 'series.next', 'submit',
+-                 'billType,ddoCode', 'token', step='token')
++                 'tokenSeries>series,ddoCode>unit', 'token', step='token')
++    # the chain is the bill type's approval chain (documentType.get -> docApprovalChain, passed in by the bill);
++    # no default chain: an unknown chain fails the lookup instead of counting one signature
+     sig = s.conn('pc_sigs', 'Signatures required (chain template)', 'config.documentType', 'chain.signatures', 'query',
+-                 'chainId,amount', 'chain')
++                 'docApprovalChain>chainId,amount', 'chain')
+     s.seq(st, d, tok, sig)
+     e1, x1 = task(s, 'pc_distribute', 'Assign bill in FIFO order | फीफो क्रम में बिल सौंपें', 'billDistributorSeat',
+                   'ifms-pao-chain/distribute', ('distributeDecision', ['forwardNext']), ['tokenNo', 'billType', 'amount'], '1WD')
+@@ -272,16 +259,20 @@ def bill():
+                                 'ifsc', 'sanctionRef', 'claimPeriod', 'ddoCode*', 'documents'], doc=None))
+     d = s.setv('bl_defaults', 'Configuration', defaults='billType=CONTINGENT;headOfAccount=2054-00-001-01-00-13;amount=0;'
+                'payee=;payeeAccount=;sanctionRef=;ddoCode=DDO-1;ledgerId=BUDGET;fundsAvailable=999999999999.0;'
+-               'docValid=true;clsValid=true;dupDuplicate=false;payeeMultiple=false;partyId=;ifsc=;docPaymentRail=DEFAULT;docApprovalChain=PAO_3;'
++               'dupDuplicate=false;payeeMultiple=false;partyId=;ifsc=;docPaymentRail=DEFAULT;'
+                'paoOutcome=PASSED;caseType=BILL;routingDecisionKey=ifms-bill-authority;scrutinySeat=DDO-1;'
+                'executionStep=pay;reconcileRequired=true;outputTemplate=payment-advice;appealAllowed=false;'
+                'encumbranceLedger=BUDGET;releaseConnector=ledger.release')
+     bind = s.conn('bl_profile', 'Bind profile version', 'config.profile', 'profile.binding', 'query', 'billType', 'prof')
+-    typ = s.conn('bl_type', 'Bill type from the catalogue', 'config.documentType', 'documentType.get', 'query', 'billType', 'doc')
++    # inputs use the connector contract names ('variable>parameter' renames): the DDO's bill type is the form number
++    # of the catalogue (FVC, GA-55 ...); documentType.get returns the type row (docId = catalogue id) and the check
++    # runs against that id, so an unknown bill type fails the check (TYPE_UNKNOWN) instead of passing on defaults
++    typ = s.conn('bl_type', 'Bill type from the catalogue', 'config.documentType', 'documentType.get', 'query',
++                 'billType>formNumber', 'doc')
+     cls = s.conn('bl_cls', 'Validate head of account', 'config.classification', 'classification.validate', 'query',
+-                 'headOfAccount', 'cls')
++                 'headOfAccount>code', 'cls')
+     chk = s.conn('bl_check', 'Check bill against its type', 'config.documentType', 'documentType.check', 'query',
+-                 'billType,headOfAccount,amount,sanctionRef,claimPeriod', 'doc')
++                 'docId>typeId,headOfAccount,amount,sanctionRef,claimPeriod', 'doc')
+     dup = s.conn('bl_dup', 'Duplicate / similar claim', 'ifms.duplicateBill', 'check', 'query', 'payee,amount,claimPeriod', 'dup')
+     payee = s.conn('bl_payee', 'Payee golden record (party registry)', 'registry.party', 'payee.resolve', 'query',
+                    'partyId,payee,payeeAccount,ifsc', 'payee')
+@@ -444,7 +435,7 @@ def reappropriation():
+                'chargedToVoted=false;capitalRevenue=false;betweenGrants=false;newService=false;fromSupplementary=false;'
+                'fromCfAdvance=false;worksWithoutAaTs=false;secretServicePercent=0;mofCase=false;percentOfBe=0;'
+                'afterLastBatch=false;nerTechnical=false;fundsAvailable=999999999999.0;faSeat=FA-1;'
+-               'caseType=REAPPROPRIATION;routingDecisionKey=ifms-reapp-authority;powersDecisionKey=ifms-reapp-powers;scrutinySeat=PRAO-1;'
++               'caseType=REAPPROPRIATION;routingDecisionKey=ifms-reapp-authority;scrutinySeat=PRAO-1;'
+                'referToTenant=finance;referralQuestion=Concurrence for re-appropriation;executionConnector=ledger.transfer;'
+                'executionStep=transfer;reconcileRequired=false;outputTemplate=reappropriation-order;appealAllowed=false')
+     sav = s.conn('ra_savings', 'Savings in the source line', 'ledger.available', 'available', 'query', 'ledgerId,fromHead', 'funds')
+@@ -509,11 +500,6 @@ def reappropriation():
+                'table as a tenant override.')
+     authority(pk, 'ifms-reapp-authority', [('-', 'CAA', 'Secretary as Chief Accounting Authority (DFPR r.10(9)); non-delegable (r.12(2))')],
+               'Re-appropriation power is not re-delegable (IFC-007).')
+-    # DFPR 2024 r.10(9) (corpus S03, IFC-062, P): the CAA re-appropriates within the grant; the cases that need the
+-    # Finance Ministry, the C&AG or a report to Parliament are decided by ifms-reapp-rules, not by a money ceiling.
+-    ifms_powers(pk, 'ifms-reapp-powers', 'REAPPROPRIATION',
+-                [('CAA', None, 'CAA re-appropriation power, DFPR 2024 r.10(9); non-delegable r.12(2); '
+-                               'Finance Ministry cases by ifms-reapp-rules (r.10(10))')])
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'ra')
+ 
+ 
+@@ -533,7 +519,7 @@ def formulation():
+     p.forms.append(dict(key='ifms-budget-formulation/estimates', name='Budget estimates | बजट अनुमान', decision=None,
+                         fields=['fiscalYear*', 'headOfAccount*', 'beAmount*', 'reAmount*', 'actuals', 'justification*'], doc=None))
+     d = s.setv('bf_defaults', 'Configuration', defaults='beAmount=0;reAmount=0;amount=0;faSeat=FA-1;caaSeat=SECY-1;'
+-               'caseType=BUDGET_ESTIMATE;routingDecisionKey=ifms-formulation-authority;powersDecisionKey=ifms-formulation-powers;scrutinySeat=PRAO-1;'
++               'caseType=BUDGET_ESTIMATE;routingDecisionKey=ifms-formulation-authority;scrutinySeat=PRAO-1;'
+                'executionConnector=budget.submit;executionStep=submit;reconcileRequired=false;outputTemplate=budget-statement;'
+                'appealAllowed=false;ledgerId=BUDGET')
+     e1, x1 = task(s, 'bf_fa', 'FA scrutiny of estimates | अनुमानों की वित्तीय सलाहकार द्वारा जाँच', 'faSeat',
+@@ -559,11 +545,6 @@ def formulation():
+     s.seq(load, al, cl, end_ok(p, s, 'bf_end'))
+     s.side_exits('bf')
+     authority(pk, 'ifms-formulation-authority', [('-', 'CAA', 'Secretary approves the department estimates')], '')
+-    ifms_powers(pk, 'ifms-formulation-powers', 'BUDGET_ESTIMATE',
+-                [('CAA', None, 'Secretary approves the department estimates (pack default)')],
+-                unverified='the approving authority of the estimates and the absence of a money ceiling are not read '
+-                           'from the rule text (corpus IFC-043 to IFC-053 are not verified for powers); confirm from the '
+-                           'budget circular / delegation order and deploy it as a tenant DMN override')
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'bf')
+ 
+ 
+@@ -582,7 +563,7 @@ def supplementary():
+                         fields=['fiscalYear*', 'headOfAccount*', 'amount*', 'supplementaryKind*', 'newServiceFlag', 'justification*'],
+                         doc=None))
+     d = s.setv('sd_defaults', 'Configuration', defaults='amount=0;supplementaryKind=CASH;newServiceFlag=false;faSeat=FA-1;'
+-               'ledgerId=BUDGET;caseType=SUPPLEMENTARY;routingDecisionKey=ifms-supplementary-authority;powersDecisionKey=ifms-supplementary-powers;scrutinySeat=PRAO-1;'
++               'ledgerId=BUDGET;caseType=SUPPLEMENTARY;routingDecisionKey=ifms-supplementary-authority;scrutinySeat=PRAO-1;'
+                'referToTenant=finance;referralQuestion=Supplementary demand;executionConnector=ledger.adjust;'
+                'executionStep=adjust;reconcileRequired=false;outputTemplate=supplementary-order;appealAllowed=false')
+     ns = s.rule('sd_newService', 'New service / instrument (DMN)', 'ifms-new-service')
+@@ -619,10 +600,6 @@ def supplementary():
+            [(['true', '-'], [q('PRIOR_PARLIAMENT'), q('DEA OM F.1(22)-B(AC)/2022 of 23-02-2024 [U limits]')], 'NS/NIS: limits are placeholders'),
+             (['false', '-'], [q('BATCH'), q('ordinary supplementary')], '')])
+     authority(pk, 'ifms-supplementary-authority', [('-', 'CAA', 'Secretary forwards to the budget division')], '')
+-    ifms_powers(pk, 'ifms-supplementary-powers', 'SUPPLEMENTARY',
+-                [('CAA', None, 'Secretary approves the proposal for the budget division batch (pack default)')],
+-                unverified='the approving authority of a supplementary proposal is not read from the rule text; '
+-                           'confirm from the delegation order and deploy it as a tenant DMN override')
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'sd')
+ 
+ 
+@@ -641,7 +618,7 @@ def surrender():
+     p.forms.append(dict(key='ifms-surrender-lapse/surrender', name='Surrender of savings | बचत का समर्पण', decision=None,
+                         fields=['fiscalYear*', 'headOfAccount*', 'surrenderAmount*', 'holder*', 'remarks'], doc=None))
+     d = s.setv('su_defaults', 'Configuration', defaults='surrenderAmount=0;amount=0;faSeat=FA-1;ledgerId=BUDGET;'
+-               'caseType=SURRENDER;routingDecisionKey=ifms-surrender-authority;powersDecisionKey=ifms-surrender-powers;scrutinySeat=PRAO-1;'
++               'caseType=SURRENDER;routingDecisionKey=ifms-surrender-authority;scrutinySeat=PRAO-1;'
+                'executionConnector=ledger.withdraw;executionStep=withdraw;reconcileRequired=false;outputTemplate=surrender-order;'
+                'appealAllowed=false')
+     amt = s.setv('su_amount', 'Amount', values='amount=@surrenderAmount')
+@@ -675,10 +652,6 @@ def surrender():
+     rep = s.svc('yl_report', 'Lapse statement', C['DOC'], {'template': 'lapse-statement'})
+     s.seq(j, dd, cp, rep, s.end('yl_end', 'Closed'))
+     authority(pk, 'ifms-surrender-authority', [('-', 'CAA', 'surrender approved by the CAA, sent to MoF (GFR 62)')], '')
+-    ifms_powers(pk, 'ifms-surrender-powers', 'SURRENDER',
+-                [('CAA', None, 'surrender of savings to the Finance Ministry, GFR 2017 r.62(1)-(2) (pack default)')],
+-                unverified='GFR 62(1)-(2) (corpus IFC-069) requires the surrender but does not name the CAA as the '
+-                           'approving authority; confirm from the delegation order and deploy it as a tenant DMN override')
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'su')
+ 
+ 
+@@ -703,7 +676,7 @@ def gia_uc():
+                                 'unspentBalance', 'headOfAccount*', 'sanctionRef'], doc=None))
+     d = s.setv('gr_defaults', 'Configuration', defaults='amount=0;releasePercent=0;recurringGrant=false;ucStatus=SUBMITTED;'
+                'unspentBalance=0;granteeType=INSTITUTION;faSeat=FA-1;billType=GIA;caseType=GIA;'
+-               'routingDecisionKey=ifms-gia-authority;powersDecisionKey=ifms-gia-powers;scrutinySeat=PRAO-1;outputTemplate=grant-sanction;appealAllowed=false')
++               'routingDecisionKey=ifms-gia-authority;scrutinySeat=PRAO-1;outputTemplate=grant-sanction;appealAllowed=false')
+     chk = s.rule('gr_rules', 'Release rules (GFR 230(7), 238)', 'ifms-gia-release')
+     s.seq(st, d, chk)
+     g = s.xgw('gr_okGw', 'Release allowed?')
+@@ -759,11 +732,6 @@ def gia_uc():
+             (['-', '-', '-', '-', '-'], ['true', q('GFR 2017 r.230')], '')],
+            doc='Thresholds from the GOI profile grants.seventyFivePercentRule; States override by tenant DMN.')
+     authority(pk, 'ifms-gia-authority', [('-', 'CAA', 'department has full powers where scheme rules have MoF consent (DFPR r.17)')], '')
+-    # DFPR 2024 r.17 (corpus S03, IFC-085, P): full powers to departments for grants-in-aid where the scheme rules were
+-    # framed with Finance Ministry consent and the sanction carries a certificate to that effect.
+-    ifms_powers(pk, 'ifms-gia-powers', 'GIA',
+-                [('CAA', None, 'full powers for grants-in-aid under scheme rules framed with Finance Ministry consent, '
+-                               'DFPR 2024 r.17')])
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'gr')
+ 
+ 
+@@ -857,8 +825,9 @@ def receipts():
+     st = s.start('rc_start', 'Challan generated', form='ifms-receipts/challan')
+     p.forms.append(dict(key='ifms-receipts/challan', name='Challan | चालान', decision=None,
+                         fields=['receiptHead*', 'amount*', 'payee*', 'challanNo', 'documents'], doc=None))
+-    d = s.setv('rc_defaults', 'Configuration', defaults='amount=0;receiptDeskSeat=AAO-1;scrollMatch=MATCHED;scrollAmount=0')
+-    num = s.conn('rc_number', 'Challan number (series)', 'config.series', 'series.next', 'submit', 'receiptHead', 'chl', step='number')
++    d = s.setv('rc_defaults', 'Configuration', defaults='challanSeries=CHALLAN;amount=0;receiptDeskSeat=AAO-1;scrollMatch=MATCHED;scrollAmount=0')
++    num = s.conn('rc_number', 'Challan number (series)', 'config.series', 'series.next', 'submit',
++                 'challanSeries>series,receiptHead>unit', 'chl', step='number')
+     paid = s.catch_msg('rc_paid', 'Payment confirmed by the portal (CIN / UTR)', 'sangam.ifms.challanPaid')
+     sc = s.conn('rc_scroll', 'Match with the e-scroll', 'treasury.scroll', 'match', 'query', 'challanNo,amount,utr', 'scroll')
+     s.seq(st, d, num, paid, sc)
+@@ -895,7 +864,7 @@ def gpf_advances():
+     p.forms.append(dict(key='ifms-gpf/application', name='GPF application | जीपीएफ आवेदन', decision=None,
+                         fields=['gpfAccount*', 'gpfPurpose*', 'amount*', 'gpfBalance', 'qualifyingService', 'documents'], doc=None))
+     d = s.setv('gp_defaults', 'Configuration', defaults='amount=0;gpfBalance=0;qualifyingService=0;gpfPurpose=OTHER;'
+-               'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;powersDecisionKey=ifms-gpf-powers;scrutinySeat=DDO-1;'
++               'billType=GPF_WITHDRAWAL;caseType=GPF;routingDecisionKey=ifms-gpf-authority;scrutinySeat=DDO-1;'
+                'sanctionSla=15D;appealAllowed=false;outputTemplate=gpf-sanction')
+     r = s.rule('gp_rules', 'GPF eligibility (DMN)', 'gpf-withdrawal')
+     s.seq(st, d, r)
+@@ -918,10 +887,6 @@ def gpf_advances():
+             (['-', '> gpfBalance', '-', '-'], ['false', q('GPF (CS) Rules 1960: not above the balance')], ''),
+             (['-', '-', '-', '-'], ['true', q('GPF (CS) Rules 1960 [U: purpose-wise limits to load]')], 'placeholder limits')])
+     authority(pk, 'ifms-gpf-authority', [('-', 'HOO', 'Head of Office sanctions GPF withdrawals [U: department order]')], '')
+-    ifms_powers(pk, 'ifms-gpf-powers', 'GPF',
+-                [('HOO', None, 'Head of Office sanctions GPF advances / withdrawals within gpf-withdrawal (pack default)')],
+-                unverified='the GPF (CS) Rules 1960 sanctioning authority is not read (corpus IFC-171 [U: department '
+-                           'order]); confirm and deploy it as a tenant DMN override')
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'gp')
+ 
+     pk2 = Pack('gov.ifms.loans-advances', 'ifms-loans-advances', 'Loans and advances to employees', 'कर्मचारियों को ऋण और अग्रिम',
+@@ -936,7 +901,7 @@ def gpf_advances():
+     p.forms.append(dict(key='ifms-loans-advances/application', name='Advance application | अग्रिम आवेदन', decision=None,
+                         fields=['advanceKind*', 'amount*', 'instalments*', 'documents'], doc=None))
+     d = s.setv('av_defaults', 'Configuration', defaults='amount=0;instalments=1;advanceKind=COMPUTER;basicPay=0;'
+-               'billType=HBA;caseType=ADVANCE;routingDecisionKey=ifms-advance-authority;powersDecisionKey=ifms-advance-powers;scrutinySeat=DDO-1;'
++               'billType=HBA;caseType=ADVANCE;routingDecisionKey=ifms-advance-authority;scrutinySeat=DDO-1;'
+                'appealAllowed=false;outputTemplate=advance-sanction;ledgerId=RECOVERY')
+     r = s.rule('av_rules', 'Advance limits (DMN)', 'ifms-advance-limits')
+     san = core(s, 'av_sanction', 'Sanction (core)', 'sanction')
+@@ -959,10 +924,6 @@ def gpf_advances():
+              ([q('HBA'), '> 2500000'], ['false', q('[U] HBA ceiling (34 x basic pay, max 25 lakh) to confirm')], 'placeholder'),
+              (['-', '-'], ['true', q('Compendium of Rules on Advances [U]')], '')])
+     authority(pk2, 'ifms-advance-authority', [('-', 'HOO', 'Head of Office [U]')], '')
+-    ifms_powers(pk2, 'ifms-advance-powers', 'ADVANCE',
+-                [('HOO', None, 'Head of Office sanctions advances within ifms-advance-limits (pack default)')],
+-                unverified='the Compendium of Rules on Advances is not read (corpus IFC-025 / IFC-180 [U]); confirm the '
+-                           'sanctioning authority and its limit and deploy it as a tenant DMN override')
+     seeds(pk2, 'PAO-OFFICE', PAO_SEATS, 'av')
+ 
+ 
+@@ -1047,7 +1008,7 @@ def appraisal():
+     p.forms.append(dict(key='ifms-scheme-appraisal/proposal', name='Scheme proposal | योजना प्रस्ताव', decision=None,
+                         fields=['schemeName*', 'totalOutlay*', 'justification*', 'documents'], doc=None))
+     d = s.setv('sa_defaults', 'Configuration', defaults='totalOutlay=0;amount=0;faSeat=FA-1;committeeSeats=FA-1,SECY-1;'
+-               'quorumRule=MAJORITY;committeeWindow=P10D;caseType=SCHEME;routingDecisionKey=ifms-scheme-approval;powersDecisionKey=ifms-scheme-powers;'
++               'quorumRule=MAJORITY;committeeWindow=P10D;caseType=SCHEME;routingDecisionKey=ifms-scheme-approval;'
+                'scrutinySeat=FA-1;outputTemplate=scheme-approval;appealAllowed=false;appraisalForum=FA')
+     r = s.rule('sa_ladder', 'Appraisal forum and approval authority (DMN)', 'ifms-scheme-appraisal')
+     amt = s.setv('sa_amount', 'Amount', values='amount=@totalOutlay')
+@@ -1078,11 +1039,6 @@ def appraisal():
+             (['-'], [q('EFC'), q('CABINET'), q('OM 05-08-2016: above 1000 cr')], '')],
+            doc='Thresholds mirror the GOI profile appraisal.ladder; a State loads its own ladder as a tenant override.')
+     authority(pk, 'ifms-scheme-approval', [('<= 1000000000', 'CAA', 'Secretary'), ('-', 'FA', 'routed to the authority of the ladder')], '')
+-    ifms_powers(pk, 'ifms-scheme-powers', 'SCHEME',
+-                [('CAA', 1000000000, 'Secretary approves schemes up to 100 cr (ladder ifms-scheme-appraisal)')],
+-                unverified='the corpus verifies the appraisal forum by outlay (IFC-080) but not the approval thresholds '
+-                           '(Secretary / Minister / FM / Cabinet are not modelled, IFMS-CENTRAL gap 7); confirm from DFPR '
+-                           'App. III and deploy it as a tenant DMN override')
+     seeds(pk, 'PAO-OFFICE', PAO_SEATS, 'sa')
+ 
+ 
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-config/src/main/java/org/sangam/config/api/ConfigConnector.java b/sangam-config/src/main/java/org/sangam/config/api/ConfigConnector.java
+index ca6c12c..f085ea3 100644
+--- a/sangam-config/src/main/java/org/sangam/config/api/ConfigConnector.java
++++ b/sangam-config/src/main/java/org/sangam/config/api/ConfigConnector.java
+@@ -39,11 +39,12 @@ import java.util.Map;
+  *   <li>{@code profile.get}: {@code paths} (comma list) → {@code values} map, {@code binding}, {@code placeholders};
+  *       {@code office}, {@code asOf} optional;</li>
+  *   <li>{@code profile.binding}: → {@code binding} (stored as the case's {@code profileVersion});</li>
+- *   <li>{@code classification.validate}: {@code scheme}, {@code code} → {@code valid}, {@code findings},
+- *       {@code attributes}, segment values;</li>
++ *   <li>{@code classification.validate}: {@code scheme} (default: profile {@code classification.defaultScheme}),
++ *       {@code code} → {@code valid}, {@code findings}, {@code attributes}, segment values;</li>
+  *   <li>{@code documentType.get}: {@code typeId} or {@code formNumber} → the type row (chain, rail, sanction ...);</li>
+- *   <li>{@code documentType.check}: {@code typeId}, {@code document} → {@code valid}, {@code findings};</li>
+- *   <li>{@code chain.signatures}: {@code chainId}, {@code amount} → {@code signatures};</li>
++ *   <li>{@code documentType.check}: {@code typeId}, {@code document} (default: the call's own fields) →
++ *       {@code valid}, {@code findings};</li>
++ *   <li>{@code chain.signatures}: {@code chainId}, {@code amount} → {@code signatures} (unknown chain: CHAIN_UNKNOWN);</li>
+  *   <li>{@code series.next}: {@code series}, {@code unit}, {@code period}, {@code format} → {@code number};</li>
+  *   <li>{@code crosswalk.map}: {@code crosswalk}, {@code code}, {@code amount} → {@code mapped}.</li>
+  * </ul>
+@@ -102,7 +103,15 @@ public final class ConfigConnector implements SangamConnector {
+                 }
+                 case "profile.binding" -> out.put("binding", p.binding());
+                 case "classification.validate" -> {
+-                    String schemeId = r.str("scheme");
++                    // a call naming only the code (a bill's head of account) uses the profile's classification.defaultScheme
++                    String schemeId = r.str("scheme") != null ? r.str("scheme") : p.str("classification.defaultScheme", null);
++                    if (schemeId == null) {
++                        return ConnectorResult.BusinessFailure.of("SCHEME_UNKNOWN",
++                                "no scheme given and no classification.defaultScheme in the profile");
++                    }
++                    if (r.str("code") == null) {
++                        return ConnectorResult.BusinessFailure.of("CODE_MISSING", "no classification code to validate");
++                    }
+                     Map<String, Object> sm = p.list("classification.schemes").stream()
+                             .filter(m -> schemeId.equals(m.get("id"))).findFirst().orElse(null);
+                     if (sm == null) {
+@@ -128,14 +137,26 @@ public final class ConfigConnector implements SangamConnector {
+                 }
+                 case "documentType.check" -> {
+                     DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(p);
+-                    List<Finding> f = cat.check(r.str("typeId"), Tree.map(r.input().get("document")), asOf, null);
++                    // the document is the 'document' map, else the call's own fields (a process sends its bill fields)
++                    Map<String, Object> doc = r.input().get("document") instanceof Map<?, ?>
++                            ? Tree.map(r.input().get("document")) : new LinkedHashMap<>(r.input());
++                    List<Finding> f = cat.check(r.str("typeId"), doc, asOf, null);
+                     out.put("valid", !Finding.anyError(f));
+                     out.put("findings", render(f));
+                 }
+                 case "chain.signatures" -> {
+                     DocumentTypeCatalogue cat = DocumentTypeCatalogue.of(p);
+-                    int n = cat.chain(r.str("chainId")).map(c -> c.signaturesFor(new BigDecimal(r.str("amount")))).orElse(1);
+-                    out.put("signatures", n);
++                    // an unknown chain is a failure, never a default of one signature (ADR-D-26)
++                    var chain = r.str("chainId") == null ? java.util.Optional.<DocumentTypeCatalogue.ChainTemplate>empty()
++                            : cat.chain(r.str("chainId"));
++                    if (chain.isEmpty()) {
++                        return ConnectorResult.BusinessFailure.of("CHAIN_UNKNOWN",
++                                "approval chain '" + r.str("chainId") + "' not in the catalogue");
++                    }
++                    if (r.str("amount") == null) {
++                        return ConnectorResult.BusinessFailure.of("AMOUNT_MISSING", "no amount for the signature count");
++                    }
++                    out.put("signatures", chain.get().signaturesFor(new BigDecimal(r.str("amount"))));
+                 }
+                 case "series.next" -> {
+                     Object prior = issued.get(r.operationId().toString());
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java b/sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
+index 27c1b99..8f97daf 100644
+--- a/sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
++++ b/sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
+@@ -69,6 +69,9 @@ public class SecurityConfig {
+                 .logout(l -> l.disable())
+                 .exceptionHandling(e -> e.authenticationEntryPoint(problems).accessDeniedHandler(problems))
+                 .authorizeHttpRequests(a -> a
++                        // the container's error dispatch renders the failure of a request that was already
++                        // authorised; re-checking it answered 401 and hid the real status (approve-401)
++                        .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ERROR).permitAll()
+                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info",
+                                 "/livez", "/readyz", "/api/v1/openapi.yaml").permitAll()
+                         // verified UI plugin assets: same-origin, loaded by module import (no secrets, plugin guide)
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/plugandplay/PlugAndPlayIT.java b/sangam-server/src/test/java/org/sangam/server/acceptance/plugandplay/PlugAndPlayIT.java
+index 8bb0034..fdcfe42 100644
+--- a/sangam-server/src/test/java/org/sangam/server/acceptance/plugandplay/PlugAndPlayIT.java
++++ b/sangam-server/src/test/java/org/sangam/server/acceptance/plugandplay/PlugAndPlayIT.java
+@@ -119,6 +119,8 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
+         while (System.currentTimeMillis() < end) {
+             JsonNode inst = t.call("GET", "/api/v1/process-instances/" + pid, null);
+             if (inst.path("ended").asBoolean()) {
++                assertThat(biz.path("reachesWaitState").asBoolean())
++                        .as("the scenario expects a wait state, the run ended (e.g. rejected): " + inst).isFalse();
+                 return;
+             }
+             JsonNode tasks = t.call("GET", "/api/v1/tasks?businessKey=" + key, null);
+@@ -126,6 +128,12 @@ class PlugAndPlayIT extends AbstractAcceptanceIT {
+                 Thread.sleep(2000);
+                 JsonNode again = t.call("GET", "/api/v1/process-instances/" + pid, null);
+                 assertThat(again.path("state").asText()).as(again.toString()).isNotEqualTo("CANCELLED");
++                assertThat(again.path("ended").asBoolean()).as("the run must wait, not end: " + again).isFalse();
++                // the scenario's connector outcomes (e.g. the bill type resolved by the catalogue): proves the
++                // process data reached the connectors instead of running on defaults
++                JsonNode vars = t.call("GET", "/api/v1/process-instances/" + pid + "/variables", null);
++                biz.path("expectVariables").fields().forEachRemaining(e -> assertThat(vars.path(e.getKey()))
++                        .as(e.getKey() + " in " + vars).isEqualTo(e.getValue()));
+                 return;
+             }
+             for (JsonNode task : tasks) {
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/gov/E17bDomainIT.java b/sangam-server/src/test/java/org/sangam/server/acceptance/gov/E17bDomainIT.java
+index 90da182..687b5d4 100644
+--- a/sangam-server/src/test/java/org/sangam/server/acceptance/gov/E17bDomainIT.java
++++ b/sangam-server/src/test/java/org/sangam/server/acceptance/gov/E17bDomainIT.java
+@@ -486,18 +486,40 @@ class E17bDomainIT extends GovBSupport {
+             TaskView fin = referred.stream().filter(t -> t.variables().containsKey("amount")).findFirst().orElseThrow();
+             TaskView law = referred.stream().filter(t -> !t.variables().containsKey("amount")).findFirst().orElseThrow();
+             eq(ctx, "New district court complex", law.variables().get("subject"), "in-mapping");
++            eq(ctx, 182_000_000L, fin.variables().get("amount"), "in-mapping of the amount to Finance");
++            eq(ctx, "PWD/BLDG/2026/45", fin.variables().get("fileNo"), "in-mapping of the file number");
+             adapter.completeTask(fin.id(), m("concurred", true, "remarks", "Within budget head 4059"));
++            eq(ctx, 0, tasksIn(p, "ref_prepare").size(), "the join waits for Law");
+             adapter.completeTask(law.id(), m("concurred", false, "remarks", "Land title to be verified"));
+             eq(ctx, "Land title to be verified", var(p, "lawRemarks"), "out-mapping with renaming");
++            eq(ctx, "Within budget head 4059", var(p, "finRemarks"), "out-mapping with renaming (Finance)");
++            eq(ctx, true, var(p, "finConcurred"), "Finance concurred");
++            eq(ctx, false, var(p, "lawConcurred"), "Law did not concur");
++            eq(ctx, 0, tasksIn(p, "ref_approve").size(), "no approval without both concurrences");
+             eq(ctx, 1, tasksIn(p, "ref_prepare").size(), "returned for revision");
+             completeTask(p, "ref_prepare", m("revision", 1));
+-            for (TaskView t : forGroups("dept-works", "concurrence-officer")) {
++            List<String> round2 = subProcessInstances(p);
++            eq(ctx, 4, round2.size(), "second referral round started two more called instances");
++            eq(ctx, Set.of(tn("dept-works")), new HashSet<>(round2.stream().map(this::instanceTenant).toList()),
++                    "second-round callees run in the caller's tenant (SL-13)");
++            eq(ctx, 0, forGroups("dept-fin", "concurrence-officer").size() + forGroups("dept-law", "concurrence-officer").size(),
++                    "nothing in another tenant in the second round (SL-13)");
++            List<TaskView> again = forGroups("dept-works", "concurrence-officer");
++            eq(ctx, 2, again.size(), "both departments referred again");
++            eq(ctx, 1L, again.stream().filter(t -> t.variables().containsKey("amount")).count(),
++                    "Finance again receives the amount, Law does not");
++            for (TaskView t : again) {
+                 adapter.completeTask(t.id(), t.variables().containsKey("amount") ? m("concurred", true, "remarks", "Concurred")
+                         : m("concurred", true, "remarks", "Vetted"));
+             }
++            eq(ctx, "Vetted", var(p, "lawRemarks"), "second-round out-mapping (Law)");
++            eq(ctx, "Concurred", var(p, "finRemarks"), "second-round out-mapping (Finance)");
++            eq(ctx, true, var(p, "lawConcurred"), "Law concurred after revision");
++            eq(ctx, 0, tasksIn(p, "ref_prepare").size(), "not returned again");
+             completeTask(p, "ref_approve", m("approvedBy", "Secretary PWD"));
+             yes(ctx, ended(p), "referral ended");
+             eq(ctx, 4, subProcessInstances(p).size(), "two referral rounds x two departments");
++            eq(ctx, 0, forGroups("dept-fin").size() + forGroups("dept-law").size(), "no task ever in Finance/Law tenants");
+         });
+     }
+ }
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-server/src/test/java/org/sangam/server/acceptance/resilience/T35RestoreIT.java b/sangam-server/src/test/java/org/sangam/server/acceptance/resilience/T35RestoreIT.java
+index 973ea93..f8bff2b 100644
+--- a/sangam-server/src/test/java/org/sangam/server/acceptance/resilience/T35RestoreIT.java
++++ b/sangam-server/src/test/java/org/sangam/server/acceptance/resilience/T35RestoreIT.java
+@@ -188,6 +188,9 @@ class T35RestoreIT {
+                 "--spring.security.oauth2.resourceserver.jwt.jwk-set-uri=" + AcceptanceIdp.get().jwksUri(),
+                 "--sangam.security.jit-provisioning-tenants=" + tenant,
+                 "--sangam.security.bootstrap.enabled=true",
++                // the server serves only tenants that exist (TenantAdminService.requireActive); without a dev token
++                // the bootstrap creates 'dev', not this run's tenant, so every call was 401 TENANT_UNAVAILABLE
++                "--sangam.security.bootstrap.tenants=" + tenant,
+                 "--sangam.security.bootstrap.admin-groups=sangam-admin",
+                 "--sangam.integration.simulators.enabled=true"));
+         serverLog = Path.of(System.getProperty("user.dir"), System.getProperty("sangam.target", "target"),
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-server/src/test/resources/acceptance/plugandplay/AT-1.json b/sangam-server/src/test/resources/acceptance/plugandplay/AT-1.json
+index 6b86854..4e28edf 100644
+--- a/sangam-server/src/test/resources/acceptance/plugandplay/AT-1.json
++++ b/sangam-server/src/test/resources/acceptance/plugandplay/AT-1.json
+@@ -1 +1 @@
+-{"request":{"tenant":{"id":"ATS1","name":"Acceptance State One","levelKind":"state","sector":"government"},"profile":{"mode":"COPY","jurisdiction":"IN","regimePreset":"IN-PRESET-GENERAL","adoptFrom":[{"profile":"RJ","sections":["documentTypes","approvalChains","paymentRails"]}]},"packs":{"ids":["gov.ifms.bill"]},"connectors":[{"packConnector":"notify.sms","connectorId":"sms-dlt-sim","operation":"send","test":{"invoke":false}}],"compliance":{"jurisdictions":["IN"]},"goLive":{"evidence":{"CERT_IN_AUDIT_CLEARANCE":"at:audit","GIGW_CONFORMANCE_MATRIX":"at:matrix","DATA_PROCESSOR_AGREEMENT":"at:dpa","SMOKE_TEST_PER_PACK":"at:smoke","ISOLATION_CHECK":"at:isolation"}}},"business":{"process":"sangam-ifms-bill","variables":{"amount":"1000","billType":"FVC"},"decision":"APPROVED","taskVariables":{},"reachesWaitState":true}}
+\ No newline at end of file
++{"request":{"tenant":{"id":"ATS1","name":"Acceptance State One","levelKind":"state","sector":"government"},"profile":{"mode":"COPY","jurisdiction":"IN","regimePreset":"IN-PRESET-GENERAL","adoptFrom":[{"profile":"RJ","sections":["documentTypes","approvalChains","paymentRails","classification"]}]},"packs":{"ids":["gov.ifms.bill"]},"connectors":[{"packConnector":"notify.sms","connectorId":"sms-dlt-sim","operation":"send","test":{"invoke":false}}],"compliance":{"jurisdictions":["IN"]},"goLive":{"evidence":{"CERT_IN_AUDIT_CLEARANCE":"at:audit","GIGW_CONFORMANCE_MATRIX":"at:matrix","DATA_PROCESSOR_AGREEMENT":"at:dpa","SMOKE_TEST_PER_PACK":"at:smoke","ISOLATION_CHECK":"at:isolation"}}},"business":{"process":"sangam-ifms-bill","variables":{"amount":"1000","billType":"FVC","headOfAccount":"05-2054-00-001-01-00-13"},"decision":"APPROVED","taskVariables":{},"reachesWaitState":true,"expectVariables":{"docId":"RJ_FVC","docFamily":"CONTINGENT","docValid":true,"clsValid":true}}}
+\ No newline at end of file
+diff --git a/D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-onboarding/src/test/resources/acceptance/AT-1.json b/sangam-onboarding/src/test/resources/acceptance/AT-1.json
+index 6b86854..4e28edf 100644
+--- a/sangam-onboarding/src/test/resources/acceptance/AT-1.json
++++ b/sangam-onboarding/src/test/resources/acceptance/AT-1.json
+@@ -1 +1 @@
+-{"request":{"tenant":{"id":"ATS1","name":"Acceptance State One","levelKind":"state","sector":"government"},"profile":{"mode":"COPY","jurisdiction":"IN","regimePreset":"IN-PRESET-GENERAL","adoptFrom":[{"profile":"RJ","sections":["documentTypes","approvalChains","paymentRails"]}]},"packs":{"ids":["gov.ifms.bill"]},"connectors":[{"packConnector":"notify.sms","connectorId":"sms-dlt-sim","operation":"send","test":{"invoke":false}}],"compliance":{"jurisdictions":["IN"]},"goLive":{"evidence":{"CERT_IN_AUDIT_CLEARANCE":"at:audit","GIGW_CONFORMANCE_MATRIX":"at:matrix","DATA_PROCESSOR_AGREEMENT":"at:dpa","SMOKE_TEST_PER_PACK":"at:smoke","ISOLATION_CHECK":"at:isolation"}}},"business":{"process":"sangam-ifms-bill","variables":{"amount":"1000","billType":"FVC"},"decision":"APPROVED","taskVariables":{},"reachesWaitState":true}}
+\ No newline at end of file
++{"request":{"tenant":{"id":"ATS1","name":"Acceptance State One","levelKind":"state","sector":"government"},"profile":{"mode":"COPY","jurisdiction":"IN","regimePreset":"IN-PRESET-GENERAL","adoptFrom":[{"profile":"RJ","sections":["documentTypes","approvalChains","paymentRails","classification"]}]},"packs":{"ids":["gov.ifms.bill"]},"connectors":[{"packConnector":"notify.sms","connectorId":"sms-dlt-sim","operation":"send","test":{"invoke":false}}],"compliance":{"jurisdictions":["IN"]},"goLive":{"evidence":{"CERT_IN_AUDIT_CLEARANCE":"at:audit","GIGW_CONFORMANCE_MATRIX":"at:matrix","DATA_PROCESSOR_AGREEMENT":"at:dpa","SMOKE_TEST_PER_PACK":"at:smoke","ISOLATION_CHECK":"at:isolation"}}},"business":{"process":"sangam-ifms-bill","variables":{"amount":"1000","billType":"FVC","headOfAccount":"05-2054-00-001-01-00-13"},"decision":"APPROVED","taskVariables":{},"reachesWaitState":true,"expectVariables":{"docId":"RJ_FVC","docFamily":"CONTINGENT","docValid":true,"clsValid":true}}}
+\ No newline at end of file

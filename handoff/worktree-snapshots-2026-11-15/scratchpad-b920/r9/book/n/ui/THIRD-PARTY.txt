@@ -1,0 +1,4 @@
+x
+
+pkg:npm/react@18.3.1	declared: MIT	used: MIT
+pkg:maven/org.a/a@1.0	declared: Apache-2.0	used: Apache-2.0

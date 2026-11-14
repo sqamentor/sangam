@@ -1,0 +1,4 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+<groupId>x</groupId><artifactId>bare-consumer</artifactId><version>1</version>
+<dependencies><dependency><groupId>org.sangam</groupId><artifactId>sangam-engine</artifactId><version>0.1.0-SNAPSHOT</version></dependency></dependencies>
+</project>

@@ -1,0 +1,16 @@
+diff --git "a/D:\\GITHUB  Project\\Custom WorkFlow\\.claude\\worktrees\\workspace-scan-resume-06b524\\sangam/sangam-packs/tools/packgen/acceptance_runs.py" "b/C:\\Users\\Lokendra Singh\\AppData\\Local\\Temp\\claude\\5cef910d4d286f64\\898f1ff7-0dcc-4d95-b425-830a9a5ead44\\scratchpad\\wt-packs4\\sangam/sangam-packs/tools/packgen/acceptance_runs.py"
+index 9e833723..6656fec6 100644
+--- "a/D:\\GITHUB  Project\\Custom WorkFlow\\.claude\\worktrees\\workspace-scan-resume-06b524\\sangam/sangam-packs/tools/packgen/acceptance_runs.py"	
++++ "b/C:\\Users\\Lokendra Singh\\AppData\\Local\\Temp\\claude\\5cef910d4d286f64\\898f1ff7-0dcc-4d95-b425-830a9a5ead44\\scratchpad\\wt-packs4\\sangam/sangam-packs/tools/packgen/acceptance_runs.py"	
+@@ -43,8 +43,9 @@ RUNS = {
+     ('sec.bank.account-opening', 'SEC-BANK-AO-2'): dict(
+         answers={'ao_compliance': {'vars': {'screenDecision': 'reject'}}},
+         expect=dict(tasks=['ao_compliance'], audit=['CASE_REJECTED'], notAudit=['CASE_APPROVED'])),
+-    ('sec.bank.payment-dual-auth', 'SEC-BANK-PY-1'): dict(expect=dict(tasks=['sn_sanction', 'sn_sanction'],
+-                                                                      audit=['CASE_CLOSED'])),
+     ('sec.eu.gdpr-dsr', 'SEC-EU-GDPR-1'): dict(expect=dict(tasks=['gd_verify', 'gd_decide', 'gd_erasure', 'gd_respond'],
+                                                           ended=True)),
++    ('gov.intl.pfm-execution', 'PFM-CH-3'): dict(expect=dict(audit=['CASE_CLOSED'], ended=True)),
++    ('sec.bank.payment-dual-auth', 'SEC-BANK-PY-1'): dict(expect=dict(tasks=['sn_sanction', 'sn_sanction'],
++                                                                      audit=['CASE_CLOSED'])),
+ }

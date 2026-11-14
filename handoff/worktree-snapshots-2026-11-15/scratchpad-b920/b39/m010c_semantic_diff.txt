@@ -1,0 +1,33 @@
+sangam-breach-incident.bpmn  after-digest e9b0646c7d4f27ca30c35ed4c5121c3ac911b0024d44a8add67c2060f8748cfb  changed 5  other 0
+    userTask[3]#u_facts: candidateGroups 'DPO' -> '${dpoSeat}'
+    userTask[5]#u_notice: candidateGroups 'DPO' -> '${dpoSeat}'
+    userTask[8]#u_report: candidateGroups 'DPO' -> '${dpoSeat}'
+    userTask[10]#u_warn: candidateGroups 'CISO' -> '${cisoSeat}'
+    userTask[16]#u_close: candidateGroups 'CISO' -> '${cisoSeat}'
+sangam-breach-notification-plan.bpmn  after-digest 1ad70fa70110882d7e1f6627eba3a4d5b9724729a9887ae5430888da02a31c43  changed 0  other 0
+sangam-dsr-access.bpmn  after-digest fcd7ebceb2cf8b56497acc79f79d6ebe811b0037edc25f76a4190d07e801bd88  changed 2  other 0
+    userTask[3]#u_compile: candidateGroups 'DPO' -> '${dpoSeat}'
+    userTask[5]#u_release: candidateGroups 'DPO' -> '${dpoSeat}'
+sangam-dsr-accounting.bpmn  after-digest 2940bfb0448f1bb51b634c3b2ae4c3e795656bbc65e5d65ce07343db9b62130d  changed 2  other 0
+    userTask[3]#u_review: candidateGroups 'PRIVACY-OFFICER' -> '${privacyOfficerSeat}'
+    userTask[7]#u_review2: candidateGroups 'PRIVACY-OFFICER' -> '${privacyOfficerSeat}'
+sangam-dsr-automated-decision.bpmn  after-digest 3e847d2c9a8f92eed0acf5995dfc9aa0a18da1e1b4c8feecc15358cc979323a5  changed 1  other 0
+    userTask[3]#u_review: candidateGroups 'DPO' -> '${dpoSeat}'
+sangam-dsr-erasure.bpmn  after-digest 1d7fce49feb1518f5b028e81465a032d52b13f37e6c934790cd0ab252a087956  changed 1  other 0
+    userTask[3]#u_approve: candidateGroups 'RECORDS-OFFICER' -> '${recordsOfficerSeat}'
+sangam-dsr-grievance.bpmn  after-digest 9116fef70a44671a2107be2db961ad24fd28b7badb007c4fef6f6eb74acea15e  changed 2  other 0
+    userTask[3]#u_examine: candidateGroups 'GRIEVANCE-OFFICER' -> '${grievanceOfficerSeat}'
+    userTask[5]#u_warn: candidateGroups 'DPO' -> '${dpoSeat}'
+sangam-dsr-nomination.bpmn  after-digest 8ba9b23b0acc1e3e4ccab09ae5967fc31b24dcb29b56edd863d58bf2e40dc7d0  changed 1  other 0
+    userTask[3]#u_verify: candidateGroups 'DPO' -> '${dpoSeat}'
+sangam-dsr-objection.bpmn  after-digest 2d9463d5d0d9e2545c2d95011850e8e161055ba069bd3a7883e639b8e734e522  changed 1  other 0
+    userTask[3]#u_decide: candidateGroups 'DPO' -> '${dpoSeat}'
+sangam-dsr-rectification.bpmn  after-digest 425e8602197ad455c197da2627688db5b7ccb235d3832531d30405452dc45b1b  changed 1  other 0
+    userTask[3]#u_examine: candidateGroups 'DPO' -> '${dpoSeat}'
+sangam-dsr-restriction.bpmn  after-digest 6e1808713213a3e5f8a8392d6189ce10833b4c81aca8231749002f0b1809f2a3  changed 1  other 0
+    userTask[3]#u_decide: candidateGroups 'PRIVACY-OFFICER' -> '${privacyOfficerSeat}'
+sangam-incident-report.bpmn  after-digest 7eb462bd257bc10ea3246761a428c7051b4019663c87286cceba798624b4eb9c  changed 3  other 0
+    userTask[2]#u_prepare: candidateGroups 'CISO' -> '${cisoSeat}'
+    userTask[4]#u_warn: candidateGroups 'CISO-HEAD' -> '${cisoHeadSeat}'
+    userTask[10]#u_follow: candidateGroups 'CISO' -> '${cisoSeat}'
+ONLY candidateGroups CHANGED

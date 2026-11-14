@@ -1,0 +1,573 @@
+ M .githooks/pre-push
+ M .github/workflows/sdks.yml
+ M .github/workflows/security.yml
+ M .github/workflows/ui.yml
+ M README.md
+ M SANGAM.md
+ M sangam/TESTING-GAP-REGISTER.md
+ M sangam/deploy/README.md
+ M sangam/deploy/SUPPORT-MATRIX.md
+ M sangam/deploy/compose/docker-compose.yml
+ M sangam/deploy/compose/drivers/README.txt
+ M sangam/deploy/docker/lib-ext/README.txt
+ M sangam/deploy/docker/server.Dockerfile
+ M sangam/deploy/docker/server.Dockerfile.dockerignore
+ M sangam/deploy/docker/server/drivers-README.txt
+ M sangam/deploy/helm/sangam/examples/values-airgap.yaml
+ M sangam/deploy/helm/sangam/templates/liquibase-job.yaml
+ M sangam/deploy/helm/sangam/templates/server-configmap.yaml
+ M sangam/deploy/helm/sangam/values-india.example.yaml
+ M sangam/deploy/helm/sangam/values.yaml
+ M sangam/deploy/licence/dependency-check-suppressions.xml
+ M sangam/pom.xml
+ M sangam/sangam-bom/pom.xml
+ M sangam/sangam-config/src/test/java/org/sangam/config/ProfileDataTest.java
+ M sangam/sangam-core/src/main/java/org/sangam/core/layer/OperationLedger.java
+ M sangam/sangam-core/src/main/java/org/sangam/core/layer/Relay.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/OperatonEngineAdapter.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/SangamEngineConfigurer.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/SangamEngineFactory.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/clock/OperatonClock.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/deploy/SangamBpmnParseListener.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/deploy/SangamCmmnTransformListener.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/feel/SangamFeel.java
+ M sangam/sangam-engine/src/main/java/org/sangam/engine/job/GuardedJobHandler.java
+ M sangam/sangam-engine/src/test/java/org/sangam/engine/EngineSchemaUpdateTest.java
+ M sangam/sangam-flowable-ports/NOTICE
+ M sangam/sangam-flowable-ports/README.md
+ M sangam/sangam-flowable-ports/pom.xml
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/PortsSchema.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/app/AppBundle.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/app/AppDeploymentService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/BpmnExtensionsParseListener.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/SangamBpmn.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/CaseLifecycleService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/CmmnTaskPatterns.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/content/ContentService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/debug/DebuggerService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/dmn/PriorityHitPolicies.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/dynamic/DynamicInjectionService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventDispatcher.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventRegistry.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/channel/ChannelAdapters.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/channel/ChannelPublisher.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/channel/JmsAdapters.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/channel/KafkaAdapters.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/channel/RabbitAdapters.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/channel/WebhookInboundEndpoint.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/forms/FormJsConverter.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/AsyncJobHandOffInterceptor.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/migration/MigrationDocumentService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/modelimport/FlowableModelImporter.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/sla/SlaService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/support/EngineTx.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/task/TaskLifecycleService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/tenancy/ChangeTenantService.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/tenancy/TenantEngineRegistry.java
+ M sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/worker/FlowableWorkerCompat.java
+ M sangam/sangam-integration/README.md
+ M sangam/sangam-integration/pom.xml
+ M sangam/sangam-integration/src/main/java/org/sangam/integration/connector/http/HttpRestConnector.java
+ M sangam/sangam-integration/src/main/java/org/sangam/integration/inbox/WebhookInboxReceiver.java
+ M sangam/sangam-integration/src/main/java/org/sangam/integration/ledger/LedgerExpiryPolicy.java
+ M sangam/sangam-integration/src/main/java/org/sangam/integration/publish/HttpWebhookPublisher.java
+ M sangam/sangam-integration/src/main/java/org/sangam/integration/relay/OutboxRelayService.java
+ M sangam/sangam-integration/src/main/java/org/sangam/integration/schema/IntegrationSchema.java
+ M sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/api/OnboardingRequest.java
+ M sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/bundle/BundleService.java
+ M sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/bundle/TreeDiff.java
+ M sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingService.java
+ M sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/port/OnboardingPorts.java
+ M sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/readiness/ReadinessChecker.java
+ M sangam/sangam-onboarding/src/test/resources/acceptance/AT-1.json
+ M sangam/sangam-ops/README.md
+ M sangam/sangam-ops/pom.xml
+ M sangam/sangam-ops/src/main/java/org/sangam/ops/OpsSchema.java
+ M sangam/sangam-ops/src/main/java/org/sangam/ops/vars/ScopedVariables.java
+ M sangam/sangam-packs/README.md
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/ActorRecorderListener.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/BatchDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/CaseRecordDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/CommitteeDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/DecisionDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/LifecycleStateDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/PackStartListener.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/PowerLimitGuardListener.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/gov/MeritListDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/gov/ReconciliationMatchDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/gov/WaitlistDelegate.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/sim/WorkingDayCalendar.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/spi/ManifestPack.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/spi/PackDeployer.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/spi/PackDescriptor.java
+ M sangam/sangam-packs/src/main/java/org/sangam/packs/universal/EventWindowDelegate.java
+ M sangam/sangam-packs/src/main/resources/packs/assets/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/audit-para/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/billing-cycle/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/budget-reappropriation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/challan-reconciliation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/consultancy/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/contract-management/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/core/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/core/sangam-core-sanction.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/core/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/court-case/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/dbt-batch/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/dbt-batch/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/gem-purchase/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/grievance/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-audit-para-settlement/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-bill/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-bill/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-budget-allocation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-budget-formulation/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-budget-formulation/sangam-ifms-budget-formulation.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-budget-formulation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-gia-uc/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-gia-uc/sangam-ifms-gia-release.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-gia-uc/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-gpf/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-gpf/sangam-ifms-gpf.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-gpf/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-loans-advances/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-loans-advances/sangam-ifms-advance.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-loans-advances/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-monthly-accounts/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-pao-chain/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-pao-chain/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-reappropriation/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-reappropriation/sangam-ifms-reappropriation.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-reappropriation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-receipts/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-scheme-appraisal/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-scheme-appraisal/sangam-ifms-scheme-appraisal.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-scheme-appraisal/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-sna-sparsh/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-supplementary/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-supplementary/sangam-ifms-supplementary.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-supplementary/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-surrender-lapse/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-surrender-lapse/sangam-ifms-surrender.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/ifms-surrender-lapse/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/ifms-year-end-closing/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/inspection/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/land-acquisition/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/leave/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/p1-bill-payment/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/p1-bill-payment/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/p2-file-movement/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/p2-file-movement/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/p3-grant-sanction/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/p3-grant-sanction/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/p4-licence/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/p4-licence/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/pension/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/pension/sangam-pension-sanction.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/pension/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/records/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/recruitment/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/recruitment/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/rti/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/rti/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/rtps/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-account-opening/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-account-opening/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-aml-str/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-cheque-return/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-collections/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-emandate/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-inoperative-deposits/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-loan-closure/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-loan-origination/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-payment-dual-auth/pack.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-payment-dual-auth/sangam-sec-bank-payment.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-payment-dual-auth/sec-bank-pay-limits.dmn
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-payment-dual-auth/sec-bank-pay-powers.dmn
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-payment-dual-auth/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-rekyc/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-bank-txn-dispute/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-cap-corporate-action/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-cap-investor-onboarding/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-cap-ipo-allotment/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-cap-surveillance-alert/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ecom-gst-tcs/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ecom-order-to-cash/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ecom-return-refund/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ecom-seller-onboarding/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-edu-admission/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-edu-examination/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-edu-scholarship/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-fin-complaint/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-fin-cyber-incident/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-health-abdm-consent/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-health-admission-discharge/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-health-blood-bank/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-health-lab-order/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-health-ot-scheduling/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-health-pharmacy-dispense/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-hr-appraisal/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-hr-employee-exit/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-hr-payroll/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-hr-posh-complaint/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-death-claim/sangam-sec-ins-death-claim.bpmn
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-death-claim/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-health-claim/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-intermediary-licensing/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-motor-claim/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-proposal-underwriting/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ins-reinsurance/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-legal-dpdp-rights/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-legal-litigation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-mfg-batch-release/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-mfg-mrp-planning/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-nbfc-digital-lending/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-nbfc-dlg-arrangement/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-scm-eway-bill/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-scm-procure-to-pay/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-tel-mnp-port-in/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-tel-sim-swap/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-tel-tcccpr/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-access-request/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-baa/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-breach/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-claim/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-discharge/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-eligibility/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-gfe-ppdr/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-ushealth-prior-auth/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-util-disconnection/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-util-meter-to-cash/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/sec-util-new-connection/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/security-instrument/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/stores/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/tender/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up03-event-correlation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up04-skills-routing/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up06-hitl-ai-review/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up07-improvement-loop/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up08-entity-lifecycle/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up09-dynamic-case/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up10-incident-swarming/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up11-change-window/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up13-returns-refunds/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up14-three-way-match/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up15-recertification/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up16-provisioning/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up17-prior-authorisation/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up18-capa/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up19-contract-lifecycle/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up20-rpa/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up21-iot-storm-control/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/up22-external-collaboration/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/work-order/seed.json
+ M sangam/sangam-packs/src/main/resources/packs/works/seed.json
+ M sangam/sangam-packs/src/main/resources/profiles/README.md
+ M sangam/sangam-packs/src/main/resources/profiles/in/states/RJ.yaml
+ M sangam/sangam-packs/src/main/resources/profiles/intl/INTL.yaml
+ D sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog-divisions.csv
+ M sangam/sangam-packs/tools/README.md
+ M sangam/sangam-packs/tools/packgen/core.py
+ M sangam/sangam-packs/tools/packgen/gov1.py
+ M sangam/sangam-packs/tools/packgen/gov2.py
+ M sangam/sangam-packs/tools/packgen/gov_ifms.py
+ M sangam/sangam-packs/tools/packgen/lib.py
+ M sangam/sangam-packs/tools/packgen/packs.py
+ M sangam/sangam-packs/tools/packgen/sec_fin.py
+ M sangam/sangam-packs/tools/packgen/sec_more.py
+ M sangam/sangam-packs/tools/packgen/sector.py
+ M sangam/sangam-packs/tools/profilegen/central.py
+ M sangam/sangam-packs/tools/profilegen/coverage.py
+ M sangam/sangam-packs/tools/profilegen/main.py
+ M sangam/sangam-packs/tools/profilegen/states.py
+ M sangam/sangam-persistence/README.md
+ M sangam/sangam-persistence/src/main/java/org/sangam/persistence/SangamSchema.java
+ M sangam/sangam-persistence/src/main/resources/db/changelog/h2/sangam-0001-baseline.sql
+ M sangam/sangam-persistence/src/main/resources/db/changelog/mssql/sangam-0001-baseline.sql
+ M sangam/sangam-persistence/src/main/resources/db/changelog/mysql/sangam-0001-baseline.sql
+ M sangam/sangam-persistence/src/main/resources/db/changelog/oracle/sangam-0001-baseline.sql
+ M sangam/sangam-persistence/src/main/resources/db/changelog/postgresql/sangam-0001-baseline.sql
+ M sangam/sangam-persistence/tools/generate_changelogs.py
+ M sangam/sangam-programme/src/main/java/org/sangam/programme/config/ProgrammeConfig.java
+ M sangam/sangam-programme/src/main/java/org/sangam/programme/indicator/FormulaEvaluator.java
+ M sangam/sangam-programme/src/main/java/org/sangam/programme/returns/ValidationEngine.java
+ M sangam/sangam-rest/api/gen_openapi.py
+ M sangam/sangam-rest/api/routes/onboarding.py
+ M sangam/sangam-rest/api/routes/ops.py
+ M sangam/sangam-rest/api/sangam-api.yaml
+ M sangam/sangam-rest/pom.xml
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcEventAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/jdbc/JdbcReconciliationSupport.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/EngineAdapterWorkAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonFormAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonWorkAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonWorkspaceAdapter.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/config/SangamRestAutoConfiguration.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/modules/ops/OpsRestConfiguration.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/port/TaskPort.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/port/WorkPort.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/support/Permissions.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/web/ProblemHandler.java
+ M sangam/sangam-rest/src/main/java/org/sangam/rest/web/TaskController.java
+ M sangam/sangam-security/src/main/java/org/sangam/security/admin/TenantAdminService.java
+ M sangam/sangam-security/src/main/java/org/sangam/security/audit/SecurityEventType.java
+ M sangam/sangam-security/src/main/java/org/sangam/security/org/OrgUnitService.java
+ M sangam/sangam-security/src/main/resources/db/sangam-security-reference.sql
+ M sangam/sangam-server/README.md
+ M sangam/sangam-server/pom.xml
+ M sangam/sangam-server/src/main/java/org/sangam/server/bridge/EngineConfigurationCustomizer.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/bridge/EngineConfigurerHolder.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/bridge/OnboardingBridges.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/config/OpsWiring.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/config/PacksWiring.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/config/PortsWiring.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
+ M sangam/sangam-server/src/main/java/org/sangam/server/web/FlowableWorkerCompatController.java
+ M sangam/sangam-server/src/main/resources/application.yaml
+ M sangam/sangam-server/src/test/java/org/sangam/server/SangamServerApplicationTests.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/AbstractAcceptanceIT.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/AcceptanceDatabase.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/engine/E10PlatformFitIT.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/gov/E16bPatternsIT.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/gov/E17bDomainIT.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/gov/GovBSupport.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/acceptance/resilience/T35RestoreIT.java
+ M sangam/sangam-server/src/test/java/org/sangam/server/bridge/RollbackGuardSpringTxTest.java
+ M sangam/sangam-server/src/test/resources/acceptance/gov-b/concurrence.bpmn.tpl
+ M sangam/sangam-server/src/test/resources/acceptance/gov-b/gp32-works.bpmn.tpl
+ M sangam/sangam-server/src/test/resources/acceptance/gov-b/referral.bpmn.tpl
+ M sangam/sangam-server/src/test/resources/acceptance/plugandplay/AT-1.json
+ M sangam/sangam-ui/package-lock.json
+ M sangam/sangam-ui/package.json
+ M sangam/sangam-ui/src/api/endpoints.ts
+ M sangam/sangam-ui/src/api/types.ts
+ M sangam/sangam-ui/src/areas/tasklist/TaskDetail.tsx
+ M sangam/sangam-ui/src/components/embeddedForm.ts
+ M sangam/sangam-ui/src/i18n/locales/en.json
+ M sangam/sangam-ui/src/i18n/locales/hi.json
+ M sangam/sangam-ui/src/modules/engine.tsx
+ M sangam/sangam-ui/src/modules/operaton.tsx
+ M sangam/sangam-ui/src/modules/operaton2.tsx
+ M sangam/sangam-ui/src/modules/operaton3.tsx
+ M sangam/sdks/dotnet/src/Sangam.Sdk/Models.cs
+ M sangam/sdks/java/src/main/java/org/sangam/sdk/model/CompleteWorkRequest.java
+ M sangam/sdks/java/src/main/java/org/sangam/sdk/model/ExternalWork.java
+ M sangam/sdks/java/src/main/java/org/sangam/sdk/worker/SangamWorker.java
+ M sangam/sdks/java/src/main/java/org/sangam/sdk/worker/TaskContext.java
+ M sangam/sdks/php/composer.json
+ M sangam/sdks/php/src/Api/WorkApi.php
+ M sangam/sdks/php/src/Model/ExternalWork.php
+ M sangam/sdks/python/pyproject.toml
+ M sangam/sdks/python/src/sangam_sdk/api.py
+ M sangam/sdks/python/src/sangam_sdk/models.py
+ M sangam/sdks/typescript/src/models.ts
+ M spike/adapter-flowable/pom.xml
+ M spike/adapter-operaton/pom.xml
+ M spike/experiments-integration/pom.xml
+ M spike/experiments-integration/t28-old/pom.xml
+ M spike/experiments-load/pom.xml
+ M spike/experiments/pom.xml
+ M spike/pom.xml
+ M spike/results/PREMIUM-GAP-RECHECK.md
+ M spike/results/TRACEABILITY-REGISTER.csv
+ M spike/results/TRACEABILITY-REGISTER.md
+ M spike/simulators/README.md
+ M spike/simulators/pom.xml
+ M tools/governance/push-approval.mjs
+ M tools/governance/selftest-push-approval.mjs
+?? CmmnTimerEventListenerH2Test.java
+?? PackAcceptanceTest.java
+?? SECURITY.md
+?? gen_openapi.py
+?? sangam/COORDINATION.md
+?? sangam/SECTOR-CONFORMANCE.md
+?? sangam/deploy/licence/VULNERABILITY-TRIAGE.md
+?? sangam/sangam-core/src/main/java/org/sangam/core/layer/DefinitionVersions.java
+?? sangam/sangam-core/src/main/java/org/sangam/core/layer/OutboxRepair.java
+?? sangam/sangam-core/src/main/java/org/sangam/core/quota/QuotaLimit.java
+?? sangam/sangam-core/src/main/java/org/sangam/core/quota/TenantQuotaExceededException.java
+?? sangam/sangam-core/src/main/java/org/sangam/core/quota/TenantQuotas.java
+?? sangam/sangam-core/src/test/java/org/sangam/core/layer/OperationLedgerWorkerPathH2Test.java
+?? sangam/sangam-engine/src/main/java/org/sangam/engine/deploy/TenantIsolationException.java
+?? sangam/sangam-engine/src/main/java/org/sangam/engine/deploy/TenantIsolationGuard.java
+?? sangam/sangam-engine/src/main/java/org/sangam/engine/feel/JacksonCompatibilityGuard.java
+?? sangam/sangam-engine/src/main/java/org/sangam/engine/job/GuardedBatchJobHandler.java
+?? sangam/sangam-engine/src/test/java/org/sangam/engine/CrossTenantCallH2Test.java
+?? sangam/sangam-engine/src/test/java/org/sangam/engine/FwtScriptTaskDeployH2Test.java
+?? sangam/sangam-engine/src/test/java/org/sangam/engine/clock/OperatonClockRegistrationTest.java
+?? sangam/sangam-engine/src/test/java/org/sangam/engine/feel/JacksonCompatibilityGuardTest.java
+?? sangam/sangam-engine/src/test/java/org/sangam/engine/job/GuardedBatchJobHandlerTest.java
+?? sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/VariableChangeConditionalEventBehavior.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/PortsH2Engine.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/app/AppBundleTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/app/AppDeploymentServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/batch/ProductBatchServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/bpmn/SangamModelValidatorTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/cmmn/CaseLifecycleServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/cmmn/CmmnTaskPatternsH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/cmmn/CmmnTimerEventListenerH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/content/ContentServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/content/FileSystemDocumentStoreTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/debug/DebuggerServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/dmn/DmnPortsH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/dynamic/CrossInstanceStateChangeServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/dynamic/DynamicInjectionServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/EventDispatcherH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/EventRegistryH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/InboundEventFlowH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/ChannelAdaptersTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/ChannelPublisherH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/FwtKafkaInboundTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/HttpOutboundAdapterTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/InboundChannelManagerTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/JmsAdaptersTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/JmsStubs.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/RabbitAdaptersTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/channel/WebhookInboundEndpointTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/outbound/OutboundEventSerializerTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/events/outbound/OutboundEventServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/forms/FormsTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/forms/SangamFormServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtAdHocImportTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtEngine.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtHistoryTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtInjectionTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtJobsTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtServicesTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/engine/FwtTimerCyclesTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/events/FwtEventRegistryTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/events/FwtEventsFixture.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/parsing/FwtAppBundleTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/parsing/FwtChannelGuardsTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/parsing/FwtInputGuardsTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/parsing/FwtModelImporterTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/fwt/parsing/FwtXmlGuardsTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/history/EngineEventBusH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/idm/IdmFacadeTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/jobs/FilteredAcquireJobsCmdH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/migration/MigrationDocumentServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/modelimport/FlowableModelImporterTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/sla/SlaServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/support/EngineTxH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/task/TaskServicesH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/tenancy/ChangeTenantServiceH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/tenancy/TenantDefinitionResolverH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/tenancy/TenantEngineRegistryTest.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/variables/VariablesPortsH2Test.java
+?? sangam/sangam-flowable-ports/src/test/java/org/sangam/ports/worker/FlowableWorkerCompatTest.java
+?? sangam/sangam-integration/src/main/java/org/sangam/integration/connector/http/LiveHttpConnectors.java
+?? sangam/sangam-integration/src/main/java/org/sangam/integration/connector/http/OAuth2ClientCredentials.java
+?? sangam/sangam-integration/src/main/java/org/sangam/integration/publish/WebhookHealth.java
+?? sangam/sangam-integration/src/main/java/org/sangam/integration/publish/WebhookSignature.java
+?? sangam/sangam-integration/src/main/java/org/sangam/integration/relay/DeferPublishException.java
+?? sangam/sangam-integration/src/test/java/org/sangam/integration/connector/http/HttpRestConnectorServiceTokenTest.java
+?? sangam/sangam-integration/src/test/java/org/sangam/integration/connector/http/LiveHttpConnectorsTest.java
+?? sangam/sangam-integration/src/test/java/org/sangam/integration/publish/HttpWebhookPublisherTest.java
+?? sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/bundle/PromotionService.java
+?? sangam/sangam-onboarding/src/main/java/org/sangam/onboarding/readiness/OrgLevels.java
+?? sangam/sangam-onboarding/src/test/java/org/sangam/onboarding/bundle/PromotionServiceTest.java
+?? sangam/sangam-onboarding/src/test/java/org/sangam/onboarding/readiness/OrgLevelsTest.java
+?? sangam/sangam-onboarding/src/test/java/org/sangam/onboarding/readiness/PackPlaceholderReadinessTest.java
+?? sangam/sangam-ops/src/main/java/org/sangam/ops/bulk/BulkIngest.java
+?? sangam/sangam-ops/src/main/java/org/sangam/ops/bulk/BulkIngestWorker.java
+?? sangam/sangam-ops/src/main/java/org/sangam/ops/bulk/BulkSinks.java
+?? sangam/sangam-ops/src/test/java/org/sangam/ops/bulk/BulkIngestH2Test.java
+?? sangam/sangam-ops/src/test/java/org/sangam/ops/bulk/BulkIngestPostgresIT.java
+?? sangam/sangam-packs/src/main/java/org/sangam/packs/port/TenantWorkingDays.java
+?? sangam/sangam-packs/src/main/resources/packs/ifms-budget-formulation/ifms-formulation-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-gia-uc/ifms-gia-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-gpf/ifms-gpf-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-loans-advances/ifms-advance-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-reappropriation/ifms-reapp-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-scheme-appraisal/ifms-scheme-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-supplementary/ifms-supplementary-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/ifms-surrender-lapse/ifms-surrender-powers.dmn
+?? sangam/sangam-packs/src/main/resources/packs/pension/pension-powers.dmn
+?? sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog.csv
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/BankPaymentConcurrenceTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/ChangeAdoptionTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/FormAnswers.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/JsonDocumentVariablesTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/PackAcceptanceTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/PackBusinessCalendarTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/PackLifecycleTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/PackModelLintTest.java
+?? sangam/sangam-packs/src/test/java/org/sangam/packs/SectorConformanceTest.java
+?? sangam/sangam-packs/tools/packgen/acceptance_runs.py
+?? sangam/sangam-packs/tools/profilegen/cofog_data.py
+?? sangam/sangam-programme/src/test/java/org/sangam/programme/FormulaAndValidationEngineTest.java
+?? sangam/sangam-rest/API-LIFECYCLE-POLICY.md
+?? sangam/sangam-rest/api/baseline/sangam-api-0.1.0.yaml
+?? sangam/sangam-rest/api/sangam-api-deprecations.yaml
+?? sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkLedger.java
+?? sangam/sangam-rest/src/main/java/org/sangam/rest/extension/TenantCustomFieldRegistry.java
+?? sangam/sangam-rest/src/main/java/org/sangam/rest/lifecycle/ApiDeprecationRegistry.java
+?? sangam/sangam-rest/src/main/java/org/sangam/rest/lifecycle/DeprecationHeadersFilter.java
+?? sangam/sangam-rest/src/main/java/org/sangam/rest/modules/ops/BulkController.java
+?? sangam/sangam-rest/src/main/java/org/sangam/rest/modules/ops/BulkProblemAdvice.java
+?? sangam/sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TenantCustomFieldsTest.java
+?? sangam/sangam-rest/src/test/java/org/sangam/rest/lifecycle/DeprecationHeadersFilterTest.java
+?? sangam/sangam-rest/src/test/java/org/sangam/rest/lifecycle/OpenApiCompatibility.java
+?? sangam/sangam-rest/src/test/java/org/sangam/rest/lifecycle/OpenApiCompatibilityTest.java
+?? sangam/sangam-security/src/main/java/org/sangam/security/quota/JdbcTenantQuotas.java
+?? sangam/sangam-security/src/test/java/org/sangam/security/quota/JdbcTenantQuotasTest.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/bridge/ProfileWorkingDays.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/bridge/TenantQuotaEnginePlugin.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/bridge/TenantQuotaFilter.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/config/HostingWiring.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/config/HttpConnectorsProperties.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/config/HttpConnectorsWiring.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/config/QuotaWiring.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/config/WebhooksProperties.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/config/WebhooksWiring.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/enginerest/EngineRestProblemMappers.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/enginerest/EngineRestProblemWiring.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/security/EngineRestTenantFilter.java
+?? sangam/sangam-server/src/main/java/org/sangam/server/security/TrustedProxyFilter.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/NoClassPathAutoDeploymentTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/contracts/TenantQuotaIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/contracts/WebhookRelayIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/contracts/WorkApiLedgerIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/fwt/FwtWorkerCompatIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ifms/E46ConformanceIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ifms/IfmsPacksIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/isolation/CrossTenantIsolationIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/acceptance/ix8/TScaleLoadIT.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/bridge/BulkIngestRestH2Test.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/bridge/EngineSlotReleasedOnContextCloseTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/bridge/OnboardingOrgLevelsH2Test.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/bridge/OutboxRepairDeadLetterTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/bridge/ProfileWorkingDaysTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/config/HostingWiringTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/enginerest/EngineRestTenantRefusalTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/security/EngineRestRoleGateTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/security/EngineRestTenantFilterTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/security/TrustedProxyFilterTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/ui/EngineRestUiParityTest.java
+?? sangam/sangam-server/src/test/java/org/sangam/server/web/TaskFormEndpointTest.java
+?? sangam/sangam-server/src/test/resources/acceptance/e46/README.txt
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf1.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf2.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf3.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf4.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf5.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf6.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf7.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf8-child.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf8.bpmn.model
+?? sangam/sangam-server/src/test/resources/acceptance/e46/e46-wf9.bpmn.model
+?? sangam/sangam-ui/src/areas/tasklist/taskForm.test.ts
+?? sangam/sangam-ui/src/i18n/hindi-locale.test.ts
+?? sangam/sangam-ui/src/modules/operaton-parity.test.tsx
+?? sangam/sdks/java/src/main/java/org/sangam/sdk/model/WorkOperation.java
+?? sangam/sdks/java/src/main/java/org/sangam/sdk/model/WorkOutcome.java
+?? sangam/sdks/php/phpunit.xml.dist
+?? sangam/sdks/php/tests/TypedValueTest.php
+?? sangam/sdks/python/tests/test_typed.py

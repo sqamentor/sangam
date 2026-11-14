@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.engine.StrictExclusiveRoutingH2Test
+-------------------------------------------------------------------------------
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 49.66 s -- in org.sangam.engine.StrictExclusiveRoutingH2Test

@@ -1,0 +1,396 @@
+Compiled from "AbstractPersistenceSession.java"
+public abstract class org.operaton.bpm.engine.impl.db.AbstractPersistenceSession implements org.operaton.bpm.engine.impl.db.PersistenceSession {
+  protected static final org.operaton.bpm.engine.impl.db.EnginePersistenceLogger LOG;
+
+  protected java.util.List<org.operaton.bpm.engine.impl.db.EntityLoadListener> listeners;
+
+  public org.operaton.bpm.engine.impl.db.AbstractPersistenceSession();
+    Code:
+         0: aload_0
+         1: invokespecial #1                  // Method java/lang/Object."<init>":()V
+         4: aload_0
+         5: new           #7                  // class java/util/ArrayList
+         8: dup
+         9: iconst_1
+        10: invokespecial #9                  // Method java/util/ArrayList."<init>":(I)V
+        13: putfield      #12                 // Field listeners:Ljava/util/List;
+        16: return
+
+  public void executeDbOperation(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbOperation);
+    Code:
+         0: getstatic     #18                 // Field org/operaton/bpm/engine/impl/db/AbstractPersistenceSession$1.$SwitchMap$org$operaton$bpm$engine$impl$db$entitymanager$operation$DbOperationType:[I
+         3: aload_1
+         4: invokevirtual #24                 // Method org/operaton/bpm/engine/impl/db/entitymanager/operation/DbOperation.getOperationType:()Lorg/operaton/bpm/engine/impl/db/entitymanager/operation/DbOperationType;
+         7: invokevirtual #30                 // Method org/operaton/bpm/engine/impl/db/entitymanager/operation/DbOperationType.ordinal:()I
+        10: iaload
+        11: tableswitch   { // 1 to 5
+                       1: 44
+                       2: 55
+                       3: 66
+                       4: 77
+                       5: 88
+                 default: 96
+            }
+        44: aload_0
+        45: aload_1
+        46: checkcast     #36                 // class org/operaton/bpm/engine/impl/db/entitymanager/operation/DbEntityOperation
+        49: invokevirtual #38                 // Method insertEntity:(Lorg/operaton/bpm/engine/impl/db/entitymanager/operation/DbEntityOperation;)V
+        52: goto          96
+        55: aload_0
+        56: aload_1
+        57: checkcast     #36                 // class org/operaton/bpm/engine/impl/db/entitymanager/operation/DbEntityOperation
+        60: invokevirtual #42                 // Method deleteEntity:(Lorg/operaton/bpm/engine/impl/db/entitymanager/operation/DbEntityOperation;)V
+        63: goto          96
+        66: aload_0
+        67: aload_1
+        68: checkcast     #45                 // class org/operaton/bpm/engine/impl/db/entitymanager/operation/DbBulkOperation
+        71: invokevirtual #47                 // Method deleteBulk:(Lorg/operaton/bpm/engine/impl/db/entitymanager/operation/DbBulkOperation;)V
+        74: goto          96
+        77: aload_0
+        78: aload_1
+        79: checkcast     #36                 // class org/operaton/bpm/engine/impl/db/entitymanager/operation/DbEntityOperation
+        82: invokevirtual #51                 // Method updateEntity:(Lorg/operaton/bpm/engine/impl/db/entitymanager/operation/DbEntityOperation;)V
+        85: goto          96
+        88: aload_0
+        89: aload_1
+        90: checkcast     #45                 // class org/operaton/bpm/engine/impl/db/entitymanager/operation/DbBulkOperation
+        93: invokevirtual #54                 // Method updateBulk:(Lorg/operaton/bpm/engine/impl/db/entitymanager/operation/DbBulkOperation;)V
+        96: return
+
+  protected abstract void insertEntity(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbEntityOperation);
+
+  protected abstract void deleteEntity(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbEntityOperation);
+
+  protected abstract void deleteBulk(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbBulkOperation);
+
+  protected abstract void updateEntity(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbEntityOperation);
+
+  protected abstract void updateBulk(org.operaton.bpm.engine.impl.db.entitymanager.operation.DbBulkOperation);
+
+  protected abstract java.lang.String getDbVersion();
+
+  public void dbSchemaCreate();
+    Code:
+         0: invokestatic  #57                 // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         3: astore_1
+         4: aload_1
+         5: invokevirtual #63                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.getHistoryLevel:()Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+         8: astore_2
+         9: aload_1
+        10: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        13: ifne          39
+        16: aload_2
+        17: getstatic     #73                 // Field org/operaton/bpm/engine/impl/history/HistoryLevel.HISTORY_LEVEL_NONE:Lorg/operaton/bpm/engine/impl/history/HistoryLevel;
+        20: invokevirtual #79                 // Method java/lang/Object.equals:(Ljava/lang/Object;)Z
+        23: ifne          39
+        26: getstatic     #83                 // Field LOG:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+        29: aload_2
+        30: invokeinterface #87,  1           // InterfaceMethod org/operaton/bpm/engine/impl/history/HistoryLevel.getName:()Ljava/lang/String;
+        35: invokevirtual #91                 // Method org/operaton/bpm/engine/impl/db/EnginePersistenceLogger.databaseHistoryLevelException:(Ljava/lang/String;)Lorg/operaton/bpm/engine/ProcessEngineException;
+        38: athrow
+        39: aload_0
+        40: invokevirtual #97                 // Method isEngineTablePresent:()Z
+        43: ifeq          73
+        46: aload_0
+        47: invokevirtual #100                // Method getDbVersion:()Ljava/lang/String;
+        50: astore_3
+        51: ldc           #105                // String fox
+        53: aload_3
+        54: invokevirtual #107                // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+        57: ifne          70
+        60: getstatic     #83                 // Field LOG:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+        63: ldc           #105                // String fox
+        65: aload_3
+        66: invokevirtual #110                // Method org/operaton/bpm/engine/impl/db/EnginePersistenceLogger.wrongDbVersionException:(Ljava/lang/String;Ljava/lang/String;)Lorg/operaton/bpm/engine/WrongDbException;
+        69: athrow
+        70: goto          77
+        73: aload_0
+        74: invokevirtual #114                // Method dbSchemaCreateEngine:()V
+        77: aload_1
+        78: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        81: ifeq          88
+        84: aload_0
+        85: invokevirtual #117                // Method dbSchemaCreateHistory:()V
+        88: aload_1
+        89: invokevirtual #120                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbIdentityUsed:()Z
+        92: ifeq          99
+        95: aload_0
+        96: invokevirtual #123                // Method dbSchemaCreateIdentity:()V
+        99: aload_1
+       100: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+       103: ifeq          110
+       106: aload_0
+       107: invokevirtual #129                // Method dbSchemaCreateCmmn:()V
+       110: aload_1
+       111: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+       114: ifeq          128
+       117: aload_1
+       118: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+       121: ifeq          128
+       124: aload_0
+       125: invokevirtual #132                // Method dbSchemaCreateCmmnHistory:()V
+       128: aload_1
+       129: invokevirtual #135                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDmnEnabled:()Z
+       132: ifeq          150
+       135: aload_0
+       136: invokevirtual #138                // Method dbSchemaCreateDmn:()V
+       139: aload_1
+       140: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+       143: ifeq          150
+       146: aload_0
+       147: invokevirtual #141                // Method dbSchemaCreateDmnHistory:()V
+       150: return
+
+  protected abstract void dbSchemaCreateIdentity();
+
+  protected abstract void dbSchemaCreateHistory();
+
+  protected abstract void dbSchemaCreateEngine();
+
+  protected abstract void dbSchemaCreateCmmn();
+
+  protected abstract void dbSchemaCreateCmmnHistory();
+
+  protected abstract void dbSchemaCreateDmn();
+
+  protected abstract void dbSchemaCreateDmnHistory();
+
+  public void dbSchemaDrop();
+    Code:
+         0: invokestatic  #57                 // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         3: astore_1
+         4: aload_1
+         5: invokevirtual #135                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDmnEnabled:()Z
+         8: ifeq          26
+        11: aload_0
+        12: invokevirtual #144                // Method dbSchemaDropDmn:()V
+        15: aload_1
+        16: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        19: ifeq          26
+        22: aload_0
+        23: invokevirtual #147                // Method dbSchemaDropDmnHistory:()V
+        26: aload_1
+        27: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+        30: ifeq          37
+        33: aload_0
+        34: invokevirtual #150                // Method dbSchemaDropCmmn:()V
+        37: aload_0
+        38: invokevirtual #153                // Method dbSchemaDropEngine:()V
+        41: aload_1
+        42: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+        45: ifeq          59
+        48: aload_1
+        49: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        52: ifeq          59
+        55: aload_0
+        56: invokevirtual #156                // Method dbSchemaDropCmmnHistory:()V
+        59: aload_1
+        60: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        63: ifeq          70
+        66: aload_0
+        67: invokevirtual #159                // Method dbSchemaDropHistory:()V
+        70: aload_1
+        71: invokevirtual #120                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbIdentityUsed:()Z
+        74: ifeq          81
+        77: aload_0
+        78: invokevirtual #162                // Method dbSchemaDropIdentity:()V
+        81: return
+
+  protected abstract void dbSchemaDropIdentity();
+
+  protected abstract void dbSchemaDropHistory();
+
+  protected abstract void dbSchemaDropEngine();
+
+  protected abstract void dbSchemaDropCmmn();
+
+  protected abstract void dbSchemaDropCmmnHistory();
+
+  protected abstract void dbSchemaDropDmn();
+
+  protected abstract void dbSchemaDropDmnHistory();
+
+  public void dbSchemaPrune();
+    Code:
+         0: invokestatic  #57                 // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         3: astore_1
+         4: aload_0
+         5: invokevirtual #165                // Method isHistoryTablePresent:()Z
+         8: ifeq          22
+        11: aload_1
+        12: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        15: ifne          22
+        18: aload_0
+        19: invokevirtual #159                // Method dbSchemaDropHistory:()V
+        22: aload_0
+        23: invokevirtual #168                // Method isIdentityTablePresent:()Z
+        26: ifeq          40
+        29: aload_1
+        30: invokevirtual #120                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbIdentityUsed:()Z
+        33: ifne          40
+        36: aload_0
+        37: invokevirtual #162                // Method dbSchemaDropIdentity:()V
+        40: aload_0
+        41: invokevirtual #171                // Method isCmmnTablePresent:()Z
+        44: ifeq          58
+        47: aload_1
+        48: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+        51: ifne          58
+        54: aload_0
+        55: invokevirtual #150                // Method dbSchemaDropCmmn:()V
+        58: aload_0
+        59: invokevirtual #174                // Method isCmmnHistoryTablePresent:()Z
+        62: ifeq          83
+        65: aload_1
+        66: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+        69: ifeq          79
+        72: aload_1
+        73: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        76: ifne          83
+        79: aload_0
+        80: invokevirtual #156                // Method dbSchemaDropCmmnHistory:()V
+        83: aload_0
+        84: invokevirtual #177                // Method isDmnTablePresent:()Z
+        87: ifeq          101
+        90: aload_1
+        91: invokevirtual #135                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDmnEnabled:()Z
+        94: ifne          101
+        97: aload_0
+        98: invokevirtual #144                // Method dbSchemaDropDmn:()V
+       101: aload_0
+       102: invokevirtual #180                // Method isDmnHistoryTablePresent:()Z
+       105: ifeq          126
+       108: aload_1
+       109: invokevirtual #135                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDmnEnabled:()Z
+       112: ifeq          122
+       115: aload_1
+       116: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+       119: ifne          126
+       122: aload_0
+       123: invokevirtual #147                // Method dbSchemaDropDmnHistory:()V
+       126: return
+
+  public abstract boolean isEngineTablePresent();
+
+  public abstract boolean isHistoryTablePresent();
+
+  public abstract boolean isIdentityTablePresent();
+
+  public abstract boolean isCmmnTablePresent();
+
+  public abstract boolean isCmmnHistoryTablePresent();
+
+  public abstract boolean isDmnTablePresent();
+
+  public abstract boolean isDmnHistoryTablePresent();
+
+  public void dbSchemaUpdate();
+    Code:
+         0: invokestatic  #57                 // Method org/operaton/bpm/engine/impl/context/Context.getProcessEngineConfiguration:()Lorg/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl;
+         3: astore_1
+         4: aload_0
+         5: invokevirtual #97                 // Method isEngineTablePresent:()Z
+         8: ifne          15
+        11: aload_0
+        12: invokevirtual #114                // Method dbSchemaCreateEngine:()V
+        15: aload_0
+        16: invokevirtual #165                // Method isHistoryTablePresent:()Z
+        19: ifne          33
+        22: aload_1
+        23: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        26: ifeq          33
+        29: aload_0
+        30: invokevirtual #117                // Method dbSchemaCreateHistory:()V
+        33: aload_0
+        34: invokevirtual #168                // Method isIdentityTablePresent:()Z
+        37: ifne          51
+        40: aload_1
+        41: invokevirtual #120                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbIdentityUsed:()Z
+        44: ifeq          51
+        47: aload_0
+        48: invokevirtual #123                // Method dbSchemaCreateIdentity:()V
+        51: aload_0
+        52: invokevirtual #171                // Method isCmmnTablePresent:()Z
+        55: ifne          69
+        58: aload_1
+        59: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+        62: ifeq          69
+        65: aload_0
+        66: invokevirtual #129                // Method dbSchemaCreateCmmn:()V
+        69: aload_0
+        70: invokevirtual #174                // Method isCmmnHistoryTablePresent:()Z
+        73: ifne          94
+        76: aload_1
+        77: invokevirtual #126                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isCmmnEnabled:()Z
+        80: ifeq          94
+        83: aload_1
+        84: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+        87: ifeq          94
+        90: aload_0
+        91: invokevirtual #132                // Method dbSchemaCreateCmmnHistory:()V
+        94: aload_0
+        95: invokevirtual #177                // Method isDmnTablePresent:()Z
+        98: ifne          112
+       101: aload_1
+       102: invokevirtual #135                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDmnEnabled:()Z
+       105: ifeq          112
+       108: aload_0
+       109: invokevirtual #138                // Method dbSchemaCreateDmn:()V
+       112: aload_0
+       113: invokevirtual #180                // Method isDmnHistoryTablePresent:()Z
+       116: ifne          137
+       119: aload_1
+       120: invokevirtual #135                // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDmnEnabled:()Z
+       123: ifeq          137
+       126: aload_1
+       127: invokevirtual #69                 // Method org/operaton/bpm/engine/impl/cfg/ProcessEngineConfigurationImpl.isDbHistoryUsed:()Z
+       130: ifeq          137
+       133: aload_0
+       134: invokevirtual #141                // Method dbSchemaCreateDmnHistory:()V
+       137: return
+
+  public java.util.List<java.lang.String> getTableNamesPresent();
+    Code:
+         0: invokestatic  #183                // Method java/util/Collections.emptyList:()Ljava/util/List;
+         3: areturn
+
+  public void addEntityLoadListener(org.operaton.bpm.engine.impl.db.EntityLoadListener);
+    Code:
+         0: aload_0
+         1: getfield      #12                 // Field listeners:Ljava/util/List;
+         4: aload_1
+         5: invokeinterface #189,  2          // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+        10: pop
+        11: return
+
+  protected void fireEntityLoaded(java.lang.Object);
+    Code:
+         0: aload_1
+         1: instanceof    #194                // class org/operaton/bpm/engine/impl/db/DbEntity
+         4: ifeq          53
+         7: aload_1
+         8: checkcast     #194                // class org/operaton/bpm/engine/impl/db/DbEntity
+        11: astore_2
+        12: aload_0
+        13: getfield      #12                 // Field listeners:Ljava/util/List;
+        16: invokeinterface #196,  1          // InterfaceMethod java/util/List.iterator:()Ljava/util/Iterator;
+        21: astore_3
+        22: aload_3
+        23: invokeinterface #200,  1          // InterfaceMethod java/util/Iterator.hasNext:()Z
+        28: ifeq          53
+        31: aload_3
+        32: invokeinterface #205,  1          // InterfaceMethod java/util/Iterator.next:()Ljava/lang/Object;
+        37: checkcast     #209                // class org/operaton/bpm/engine/impl/db/EntityLoadListener
+        40: astore        4
+        42: aload         4
+        44: aload_2
+        45: invokeinterface #211,  2          // InterfaceMethod org/operaton/bpm/engine/impl/db/EntityLoadListener.onEntityLoaded:(Lorg/operaton/bpm/engine/impl/db/DbEntity;)V
+        50: goto          22
+        53: return
+
+  static {};
+    Code:
+         0: getstatic     #215                // Field org/operaton/bpm/engine/impl/ProcessEngineLogger.PERSISTENCE_LOGGER:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+         3: putstatic     #83                 // Field LOG:Lorg/operaton/bpm/engine/impl/db/EnginePersistenceLogger;
+         6: return
+}

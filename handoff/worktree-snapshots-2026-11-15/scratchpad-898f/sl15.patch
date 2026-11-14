@@ -1,0 +1,710 @@
+diff --git a/sangam/sangam-config/src/test/java/org/sangam/config/ProfileDataTest.java b/sangam/sangam-config/src/test/java/org/sangam/config/ProfileDataTest.java
+index 0ec5a0f..d75e318 100644
+--- a/sangam/sangam-config/src/test/java/org/sangam/config/ProfileDataTest.java
++++ b/sangam/sangam-config/src/test/java/org/sangam/config/ProfileDataTest.java
+@@ -135,6 +135,54 @@ class ProfileDataTest {
+         assertFalse(Finding.anyError(reg.validate("KA", kas, reg.parse(kas, "2054-00-095-0-03-240"), d, lookup)));
+     }
+ 
++    /** SL-15: the full official UN COFOG 1999 (UNSD) is loaded, verified, and class to group to division is consistent. */
++    @Test
++    void cofogSeedIsCompleteVerifiedAndHierarchical() throws Exception {
++        List<ProfileDocument> docs = ProfileLoader.loadDirectory(DIR);
++        ProfileResolver r = new ProfileResolver(InMemoryProfileRepository.active(docs), LayerModel.open());
++        LocalDate d = LocalDate.of(2026, 11, 5);
++        for (String id : List.of("INTL", "GOI", "RJ")) {
++            assertFalse(r.resolve(id, d).placeholders().containsKey("classification.schemes.COFOG"), id);
++        }
++        // GA-55 is an employee-wise yearly report template, not a code-list placeholder; its official form stays [U]
++        ResolvedProfile rj = r.resolve("RJ", d);
++        assertTrue(rj.placeholders().keySet().stream().noneMatch(k -> k.contains("GA-55")), rj.placeholders().toString());
++        var ga55 = DocumentTypeCatalogue.of(rj).all().stream().filter(t -> "GA-55".equals(t.formNumber())).findFirst().orElseThrow();
++        assertEquals("REPORT", ga55.raw().get("kind"));
++        assertEquals("U", ((java.util.Map<?, ?>) ((java.util.Map<?, ?>) ga55.raw().get("evidence")).get("officialFormDefinition")).get("status"));
++        ResolvedProfile intl = r.resolve("INTL", d);
++        List<org.sangam.config.master.MasterCode> rows =
++                SeedLoader.csv("INTL", Files.readString(DIR.resolve("intl/seeds/cofog.csv")));
++        java.util.Map<String, Long> bySeg = rows.stream().collect(java.util.stream.Collectors.groupingBy(
++                org.sangam.config.master.MasterCode::segment, java.util.stream.Collectors.counting()));
++        assertEquals(java.util.Map.of("division", 10L, "group", 69L, "class", 109L), bySeg);
++        java.util.Set<String> full = new java.util.HashSet<>();
++        for (var m : rows) {
++            assertEquals("V", m.flags().get("evidence"), m.code());
++            assertTrue(m.sourceRef().contains("5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5"), m.code());
++            assertFalse(m.name().containsKey("hi"), "no Hindi without an official source");
++            full.add(m.parentCode() == null ? m.code() : m.parentCode() + "." + m.code());
++        }
++        for (var m : rows) {
++            if (m.parentCode() != null) {
++                assertTrue(full.contains(m.parentCode()), "parent of " + m.parentCode() + "." + m.code());
++                assertEquals(m.segment().equals("group") ? 1 : 2, m.parentCode().split("\\.").length, m.code());
++            }
++        }
++        assertTrue(full.containsAll(List.of("01", "07.3.1", "10.9.0", "04.7.4")));
++        MasterStore store = new MasterStore.InMemory();
++        SeedLoader.load(store, rows);
++        ClassificationRegistry reg = new ClassificationRegistry(store);
++        ClassificationScheme cofog = ClassificationScheme.from(intl.map("classification.schemes.COFOG"));
++        for (String ok : List.of("01", "07.3", "07.3.1", "10.9.0", "0731")) {
++            List<Finding> f = reg.validate("INTL", cofog, reg.parse(cofog, ok), d);
++            assertTrue(f.isEmpty(), ok + ": " + f);
++        }
++        assertTrue(hasCode(reg.validate("INTL", cofog, reg.parse(cofog, "11"), d), "CODE_UNKNOWN"), "no division 11");
++        assertTrue(hasCode(reg.validate("INTL", cofog, reg.parse(cofog, "02.6"), d), "CODE_NOT_UNDER_PARENT"), "defence has 5 groups");
++        assertTrue(hasCode(reg.validate("INTL", cofog, reg.parse(cofog, "07.3.5"), d), "CODE_NOT_UNDER_PARENT"), "class under wrong group");
++    }
++
+     private static boolean hasCode(List<Finding> f, String code) {
+         return f.stream().anyMatch(x -> code.equals(x.code()));
+     }
+diff --git a/sangam/sangam-packs/src/main/resources/profiles/README.md b/sangam/sangam-packs/src/main/resources/profiles/README.md
+index afb88b8..6c17c39 100644
+--- a/sangam/sangam-packs/src/main/resources/profiles/README.md
++++ b/sangam/sangam-packs/src/main/resources/profiles/README.md
+@@ -8,7 +8,7 @@ Domain knowledge as data (ADR-D-20). Read by `sangam-config` (`ProfileLoader.loa
+ | File | Layer | Content |
+ |---|---|---|
+ | `layers.yaml` | - | the ordered layer model: international, regime, jurisdiction, category, government, department, office |
+-| `intl/INTL.yaml`, `intl/seeds/cofog-divisions.csv` | international | COFOG divisions (crosswalk target) |
++| `intl/INTL.yaml`, `intl/seeds/cofog.csv` | international | UN COFOG 1999 in full: 10 divisions, 69 groups, 109 classes (UNSD, verified; crosswalk target) |
+ | `regime/REGIME-WESTMINSTER-SUPPLY.yaml` | regime | default ledger stage chain and year-end lapse |
+ | `in/IN.yaml` | jurisdiction | locale (INR, lakh / crore grouping, April fiscal year, IST, calendars with 15:00 cut-off), the 15-digit head-of-account scheme (major / sub-major / minor locked), derivation (0/1 receipts, 2/3 revenue, 4/5 capital, 6/7 loans, 8000 Contingency Fund, 8001-8999 Public Account), crosswalk to COFOG, SNA-SPARSH constants, CSS sharing, payment-rail catalogue, unit types, public-account types |
+ | `in/presets/IN-PRESET-*.yaml` | category | GENERAL, NE-HIMALAYAN, UT-LEG, UT-NOLEG, UNION |
+diff --git a/sangam/sangam-packs/src/main/resources/profiles/in/states/RJ.yaml b/sangam/sangam-packs/src/main/resources/profiles/in/states/RJ.yaml
+index bc81673..0c5a71e 100644
+--- a/sangam/sangam-packs/src/main/resources/profiles/in/states/RJ.yaml
++++ b/sangam/sangam-packs/src/main/resources/profiles/in/states/RJ.yaml
+@@ -14,8 +14,6 @@ profile:
+     hi: राजस्थान
+   source: IFMS-STATES-REQUIREMENTS.md section 1 and 4 (sources RJ1-RJ4, accessed 2026-11-04)
+ placeholders:
+-- path: documentTypes.GA-55
+-  reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live (form GA-55)'
+ - path: rulebooks.own.PWFAR
+   reason: '[U] unverified in the 2026-11-04 research pass; configuration placeholder, confirm before go-live'
+ - path: locale.documentLanguages
+@@ -123,6 +121,31 @@ documentTypes:
+   approvalChain: TREASURY_STD
+   sanction: REFERENCE
+   integrations: {}
++- id: RJ_GA_55
++  formNumber: GA-55
++  kind: REPORT
++  family: EMPLOYEE_REPORT
++  sanction: NONE
++  report:
++    parameters: [employee, financialYear]
++    output: PDF
++    menu: Employee Management > GA-55
++    selfService: mobile app, next to the salary slip and Form 16
++  template:
++    ownerConfigurable: true
++    fields: []
++    note: field layout not published; the owner configures it from the official form
++  evidence:
++    report:
++      status: V
++      source: IFMS 3.0 Employee Module user manual 8.2.2; IFMS 3.0 mobile app user manual
++    purpose:
++      status: I
++      value: annual pay-and-allowances statement of the employee (inferred, not verified)
++    officialFormDefinition:
++      status: U
++      value: null
++      note: form definition in the State accounts rules not available; owner to supply
+ approvalChains:
+ - id: TREASURY_STD
+   steps:
+diff --git a/sangam/sangam-packs/src/main/resources/profiles/intl/INTL.yaml b/sangam/sangam-packs/src/main/resources/profiles/intl/INTL.yaml
+index 4da9b29..48d2f32 100644
+--- a/sangam/sangam-packs/src/main/resources/profiles/intl/INTL.yaml
++++ b/sangam/sangam-packs/src/main/resources/profiles/intl/INTL.yaml
+@@ -8,13 +8,12 @@ profile:
+   effectiveFrom: '2000-01-01'
+   name:
+     en: International public-finance reference
+-  source: IMF GFSM 2014; UN COFOG 1999 (divisions); ISO 4217
+-placeholders:
+-- path: classification.schemes.COFOG
+-  reason: COFOG groups/classes not loaded; divisions only (G3 [U])
++  source: 'IMF GFSM 2014; UN COFOG 1999 (divisions, groups, classes: UNSD COFOG 1999 COFOG_english_structure.txt (retrieved
++    2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5)); ISO 4217'
+ locked:
+ - classification.schemes.COFOG
+ classification:
++  seedStatus: OFFICIAL_UNSD_COFOG_1999
+   schemes:
+   - id: COFOG
+     separator: .
+@@ -25,9 +24,19 @@ classification:
+     - id: group
+       width: 1
+       optional: true
++      master: true
++      parent: division
++      hierarchy:
++        path: [division]
++        separator: .
+     - id: class
+       width: 1
+       optional: true
++      master: true
++      parent: group
++      hierarchy:
++        path: [division, group]
++        separator: .
+ seeds:
+ - scheme: COFOG
+-  file: intl/seeds/cofog-divisions.csv
++  file: intl/seeds/cofog.csv
+diff --git a/sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog-divisions.csv b/sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog-divisions.csv
+deleted file mode 100644
+index e9adc4a..0000000
+--- a/sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog-divisions.csv
++++ /dev/null
+@@ -1,12 +0,0 @@
+-# SPDX-License-Identifier: Apache-2.0
+-scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
+-COFOG,division,,01,General public services,,,,UN COFOG 1999,V
+-COFOG,division,,02,Defence,,,,UN COFOG 1999,V
+-COFOG,division,,03,Public order and safety,,,,UN COFOG 1999,V
+-COFOG,division,,04,Economic affairs,,,,UN COFOG 1999,V
+-COFOG,division,,05,Environmental protection,,,,UN COFOG 1999,V
+-COFOG,division,,06,Housing and community amenities,,,,UN COFOG 1999,V
+-COFOG,division,,07,Health,,,,UN COFOG 1999,V
+-COFOG,division,,08,"Recreation, culture and religion",,,,UN COFOG 1999,V
+-COFOG,division,,09,Education,,,,UN COFOG 1999,V
+-COFOG,division,,10,Social protection,,,,UN COFOG 1999,V
+diff --git a/sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog.csv b/sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog.csv
+new file mode 100644
+index 0000000..022df2c
+--- /dev/null
++++ b/sangam/sangam-packs/src/main/resources/profiles/intl/seeds/cofog.csv
+@@ -0,0 +1,190 @@
++# SPDX-License-Identifier: Apache-2.0
++scheme,segment,parent,code,name_en,flags,validFrom,validTo,source,status
++COFOG,division,,01,General public services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,1,"Executive and legislative organs, financial and fiscal affairs, external affairs",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.1,1,Executive and legislative organs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.1,2,Financial and fiscal affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.1,3,External affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,2,Foreign economic aid,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.2,1,Economic aid to developing countries and countries in transition,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.2,2,Economic aid routed through international organizations,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,3,General services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.3,1,General personnel services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.3,2,Overall planning and statistical services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.3,3,Other general services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,4,Basic research,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.4,0,Basic research,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,5,R&D General public services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.5,0,R&D General public services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,6,General public services n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.6,0,General public services n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,7,Public debt transactions,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.7,0,Public debt transactions,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,01,8,Transfers of a general character between different levels of government,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,01.8,0,Transfers of a general character between different levels of government,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,02,Defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,02,1,Military defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,02.1,0,Military defence,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,02,2,Civil defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,02.2,0,Civil defence,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,02,3,Foreign military aid,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,02.3,0,Foreign military aid,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,02,4,R&D Defence,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,02.4,0,R&D Defence,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,02,5,Defence n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,02.5,0,Defence n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,03,Public order and safety,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,03,1,Police services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,03.1,0,Police services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,03,2,Fire-protection services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,03.2,0,Fire-protection services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,03,3,Law courts,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,03.3,0,Law courts,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,03,4,Prisons,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,03.4,0,Prisons,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,03,5,R&D Public order and safety,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,03.5,0,R&D Public order and safety,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,03,6,Public order and safety n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,03.6,0,Public order and safety n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,04,Economic affairs,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,1,"General economic, commercial and labour affairs",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.1,1,General economic and commercial affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.1,2,General labour affairs,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,2,"Agriculture, forestry, fishing and hunting",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.2,1,Agriculture,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.2,2,Forestry,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.2,3,Fishing and hunting,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,3,Fuel and energy,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.3,1,Coal and other solid mineral fuels,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.3,2,Petroleum and natural gas,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.3,3,Nuclear fuel,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.3,4,Other fuels,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.3,5,Electricity,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.3,6,Non-electric energy,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,4,"Mining, manufacturing and construction",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.4,1,Mining of mineral resources other than mineral fuels,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.4,2,Manufacturing,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.4,3,Construction,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,5,Transport,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.5,1,Road transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.5,2,Water transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.5,3,Railway transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.5,4,Air transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.5,5,Pipeline and other transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,6,Communication,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.6,0,Communication,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,7,Other industries,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.7,1,"Distributive trades, storage and warehousing",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.7,2,Hotels and restaurants,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.7,3,Tourism,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.7,4,Multi-purpose development projects,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,8,R&D Economic affairs,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,1,"R&D General economic, commercial and labour affairs",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,2,"R&D Agriculture, forestry, fishing and hunting",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,3,R&D Fuel and energy,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,4,"R&D Mining, manufacturing and construction",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,5,R&D Transport,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,6,R&D Communication,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.8,7,R&D Other industries,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,04,9,Economic affairs n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,04.9,0,Economic affairs n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,05,Environmental protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,05,1,Waste management,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,05.1,0,Waste management,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,05,2,Waste water management,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,05.2,0,Waste water management,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,05,3,Pollution abatement,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,05.3,0,Pollution abatement,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,05,4,Protection of biodiversity and landscape,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,05.4,0,Protection of biodiversity and landscape,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,05,5,R&D Environmental protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,05.5,0,R&D Environmental protection,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,05,6,Environmental protection n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,05.6,0,Environmental protection n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,06,Housing and community amenities,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,06,1,Housing development,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,06.1,0,Housing development,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,06,2,Community development,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,06.2,0,Community development,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,06,3,Water supply,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,06.3,0,Water supply,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,06,4,Street lighting,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,06.4,0,Street lighting,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,06,5,R&D Housing and community amenities,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,06.5,0,R&D Housing and community amenities,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,06,6,Housing and community amenities n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,06.6,0,Housing and community amenities n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,07,Health,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,07,1,"Medical products, appliances and equipment",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.1,1,Pharmaceutical products,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.1,2,Other medical products,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.1,3,Therapeutic appliances and equipment,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,07,2,Outpatient services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.2,1,General medical services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.2,2,Specialized medical services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.2,3,Dental services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.2,4,Paramedical services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,07,3,Hospital services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.3,1,General hospital services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.3,2,Specialized hospital services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.3,3,Medical and maternity centre services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.3,4,Nursing and convalescent home services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,07,4,Public health services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.4,0,Public health services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,07,5,R&D Health,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.5,0,R&D Health,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,07,6,Health n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,07.6,0,Health n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,08,"Recreation, culture and religion",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,08,1,Recreational and sporting services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,08.1,0,Recreational and sporting services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,08,2,Cultural services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,08.2,0,Cultural services,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,08,3,Broadcasting and publishing services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,08.3,0,Broadcasting and publishing services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,08,4,Religious and other community services,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,08.4,0,Religious and other community services,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,08,5,"R&D Recreation, culture and religion",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,08.5,0,"R&D Recreation, culture and religion",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,08,6,"Recreation, culture and religion n.e.c.",,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,08.6,0,"Recreation, culture and religion n.e.c.",service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,09,Education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,1,Pre-primary and primary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.1,1,Pre-primary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.1,2,Primary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,2,Secondary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.2,1,Lower-secondary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.2,2,Upper-secondary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,3,Post-secondary non-tertiary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.3,0,Post-secondary non-tertiary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,4,Tertiary education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.4,1,First stage of tertiary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.4,2,Second stage of tertiary education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,5,Education not definable by level,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.5,0,Education not definable by level,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,6,Subsidiary services to education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.6,0,Subsidiary services to education,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,7,R&D Education,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.7,0,R&D Education,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,09,8,Education n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,09.8,0,Education n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,division,,10,Social protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,1,Sickness and disability,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.1,1,Sickness,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.1,2,Disability,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,2,Old age,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.2,0,Old age,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,3,Survivors,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.3,0,Survivors,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,4,Family and children,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.4,0,Family and children,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,5,Unemployment,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.5,0,Unemployment,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,6,Housing,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.6,0,Housing,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,7,Social exclusion n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.7,0,Social exclusion n.e.c.,service=IS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,8,R&D Social protection,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.8,0,R&D Social protection,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,group,10,9,Social protection n.e.c.,,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
++COFOG,class,10.9,0,Social protection n.e.c.,service=CS,,,UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5),V
+diff --git a/sangam/sangam-packs/tools/profilegen/central.py b/sangam/sangam-packs/tools/profilegen/central.py
+index 69d6adb..e64cbd0 100644
+--- a/sangam/sangam-packs/tools/profilegen/central.py
++++ b/sangam/sangam-packs/tools/profilegen/central.py
+@@ -20,20 +20,21 @@ LAYERS = {
+             'layer of the donor document. The regime-preset layer is approved by the integrator (INTERNATIONAL-PFM 4.1).',
+ }
+ 
+-COFOG = [('01', 'General public services'), ('02', 'Defence'), ('03', 'Public order and safety'),
+-         ('04', 'Economic affairs'), ('05', 'Environmental protection'), ('06', 'Housing and community amenities'),
+-         ('07', 'Health'), ('08', 'Recreation, culture and religion'), ('09', 'Education'), ('10', 'Social protection')]
++from cofog_data import COFOG_FULL, SOURCE as COFOG_SOURCE  # noqa: E402  (official UNSD transcription)
++
++COFOG = [(c, n) for c, n, _ in COFOG_FULL if '.' not in c]  # the 10 divisions
+ 
+ INTL = {
+     'profile': {'id': 'INTL', 'layer': 'international', 'version': '2026.11.0', 'effectiveFrom': '2000-01-01',
+                 'name': {'en': 'International public-finance reference'},
+-                'source': 'IMF GFSM 2014; UN COFOG 1999 (divisions); ISO 4217'},
+-    'placeholders': [{'path': 'classification.schemes.COFOG', 'reason': 'COFOG groups/classes not loaded; divisions only (G3 [U])'}],
++                'source': 'IMF GFSM 2014; UN COFOG 1999 (divisions, groups, classes: ' + COFOG_SOURCE + '); ISO 4217'},
+     'locked': ['classification.schemes.COFOG'],
+-    'classification': {'schemes': [{'id': 'COFOG', 'separator': '.', 'segments': [
+-        {'id': 'division', 'width': 2, 'master': True}, {'id': 'group', 'width': 1, 'optional': True},
+-        {'id': 'class', 'width': 1, 'optional': True}]}]},
+-    'seeds': [{'scheme': 'COFOG', 'file': 'intl/seeds/cofog-divisions.csv'}],
++    'classification': {'seedStatus': 'OFFICIAL_UNSD_COFOG_1999', 'schemes': [{'id': 'COFOG', 'separator': '.', 'segments': [
++        {'id': 'division', 'width': 2, 'master': True}, {'id': 'group', 'width': 1, 'optional': True, 'master': True, 'parent': 'division',
++         'hierarchy': {'path': FlowList(['division']), 'separator': '.'}},
++        {'id': 'class', 'width': 1, 'optional': True, 'master': True, 'parent': 'group',
++         'hierarchy': {'path': FlowList(['division', 'group']), 'separator': '.'}}]}]},
++    'seeds': [{'scheme': 'COFOG', 'file': 'intl/seeds/cofog.csv'}],
+ }
+ 
+ REGIME = {
+diff --git a/sangam/sangam-packs/tools/profilegen/cofog_data.py b/sangam/sangam-packs/tools/profilegen/cofog_data.py
+new file mode 100644
+index 0000000..c2db61f
+--- /dev/null
++++ b/sangam/sangam-packs/tools/profilegen/cofog_data.py
+@@ -0,0 +1,201 @@
++# SPDX-License-Identifier: Apache-2.0
++# UN COFOG 1999 (Classification of the Functions of Government), full structure: 10 divisions, 69 groups,
++# 109 classes. Transcribed by script from the UN Statistics Division classifications registry file
++#   https://unstats.un.org/unsd/classifications/Econ/Download/In%20Text/COFOG_english_structure.txt
++#   retrieved 2026-11-08, SHA-256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5
++# Divisions and groups cross-checked (codes and titles identical) against the Eurostat SDMX codelist ESTAT/COFOG99
++#   https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/codelist/ESTAT/COFOG99/latest?format=TSV&lang=en
++#   retrieved 2026-11-08, SHA-256 10ddd8e5155bd71a652b0771607c636c6ea73a9eabe3ac5fca16ea9982db06c2
++# service: CS = collective service, IS = individual service (classes only, as marked in the UNSD file).
++# No official Government of India Hindi rendering found: Hindi titles intentionally absent.
++SOURCE = ("UNSD COFOG 1999 COFOG_english_structure.txt (retrieved 2026-11-08; sha256 5368887bb253a1819bfefc6a9eedc74cb76f50c6a7c35133d2420b1d4a3b39b5)")
++COFOG_FULL = [
++    ('01', 'General public services', ''),
++    ('01.1', 'Executive and legislative organs, financial and fiscal affairs, external affairs', ''),
++    ('01.1.1', 'Executive and legislative organs', 'CS'),
++    ('01.1.2', 'Financial and fiscal affairs', 'CS'),
++    ('01.1.3', 'External affairs', 'CS'),
++    ('01.2', 'Foreign economic aid', ''),
++    ('01.2.1', 'Economic aid to developing countries and countries in transition', 'CS'),
++    ('01.2.2', 'Economic aid routed through international organizations', 'CS'),
++    ('01.3', 'General services', ''),
++    ('01.3.1', 'General personnel services', 'CS'),
++    ('01.3.2', 'Overall planning and statistical services', 'CS'),
++    ('01.3.3', 'Other general services', 'CS'),
++    ('01.4', 'Basic research', ''),
++    ('01.4.0', 'Basic research', 'CS'),
++    ('01.5', 'R&D General public services', ''),
++    ('01.5.0', 'R&D General public services', 'CS'),
++    ('01.6', 'General public services n.e.c.', ''),
++    ('01.6.0', 'General public services n.e.c.', 'CS'),
++    ('01.7', 'Public debt transactions', ''),
++    ('01.7.0', 'Public debt transactions', 'CS'),
++    ('01.8', 'Transfers of a general character between different levels of government', ''),
++    ('01.8.0', 'Transfers of a general character between different levels of government', 'CS'),
++    ('02', 'Defence', ''),
++    ('02.1', 'Military defence', ''),
++    ('02.1.0', 'Military defence', 'CS'),
++    ('02.2', 'Civil defence', ''),
++    ('02.2.0', 'Civil defence', 'CS'),
++    ('02.3', 'Foreign military aid', ''),
++    ('02.3.0', 'Foreign military aid', 'CS'),
++    ('02.4', 'R&D Defence', ''),
++    ('02.4.0', 'R&D Defence', 'CS'),
++    ('02.5', 'Defence n.e.c.', ''),
++    ('02.5.0', 'Defence n.e.c.', 'CS'),
++    ('03', 'Public order and safety', ''),
++    ('03.1', 'Police services', ''),
++    ('03.1.0', 'Police services', 'CS'),
++    ('03.2', 'Fire-protection services', ''),
++    ('03.2.0', 'Fire-protection services', 'CS'),
++    ('03.3', 'Law courts', ''),
++    ('03.3.0', 'Law courts', 'CS'),
++    ('03.4', 'Prisons', ''),
++    ('03.4.0', 'Prisons', 'CS'),
++    ('03.5', 'R&D Public order and safety', ''),
++    ('03.5.0', 'R&D Public order and safety', 'CS'),
++    ('03.6', 'Public order and safety n.e.c.', ''),
++    ('03.6.0', 'Public order and safety n.e.c.', 'CS'),
++    ('04', 'Economic affairs', ''),
++    ('04.1', 'General economic, commercial and labour affairs', ''),
++    ('04.1.1', 'General economic and commercial affairs', 'CS'),
++    ('04.1.2', 'General labour affairs', 'CS'),
++    ('04.2', 'Agriculture, forestry, fishing and hunting', ''),
++    ('04.2.1', 'Agriculture', 'CS'),
++    ('04.2.2', 'Forestry', 'CS'),
++    ('04.2.3', 'Fishing and hunting', 'CS'),
++    ('04.3', 'Fuel and energy', ''),
++    ('04.3.1', 'Coal and other solid mineral fuels', 'CS'),
++    ('04.3.2', 'Petroleum and natural gas', 'CS'),
++    ('04.3.3', 'Nuclear fuel', 'CS'),
++    ('04.3.4', 'Other fuels', 'CS'),
++    ('04.3.5', 'Electricity', 'CS'),
++    ('04.3.6', 'Non-electric energy', 'CS'),
++    ('04.4', 'Mining, manufacturing and construction', ''),
++    ('04.4.1', 'Mining of mineral resources other than mineral fuels', 'CS'),
++    ('04.4.2', 'Manufacturing', 'CS'),
++    ('04.4.3', 'Construction', 'CS'),
++    ('04.5', 'Transport', ''),
++    ('04.5.1', 'Road transport', 'CS'),
++    ('04.5.2', 'Water transport', 'CS'),
++    ('04.5.3', 'Railway transport', 'CS'),
++    ('04.5.4', 'Air transport', 'CS'),
++    ('04.5.5', 'Pipeline and other transport', 'CS'),
++    ('04.6', 'Communication', ''),
++    ('04.6.0', 'Communication', 'CS'),
++    ('04.7', 'Other industries', ''),
++    ('04.7.1', 'Distributive trades, storage and warehousing', 'CS'),
++    ('04.7.2', 'Hotels and restaurants', 'CS'),
++    ('04.7.3', 'Tourism', 'CS'),
++    ('04.7.4', 'Multi-purpose development projects', 'CS'),
++    ('04.8', 'R&D Economic affairs', ''),
++    ('04.8.1', 'R&D General economic, commercial and labour affairs', 'CS'),
++    ('04.8.2', 'R&D Agriculture, forestry, fishing and hunting', 'CS'),
++    ('04.8.3', 'R&D Fuel and energy', 'CS'),
++    ('04.8.4', 'R&D Mining, manufacturing and construction', 'CS'),
++    ('04.8.5', 'R&D Transport', 'CS'),
++    ('04.8.6', 'R&D Communication', 'CS'),
++    ('04.8.7', 'R&D Other industries', 'CS'),
++    ('04.9', 'Economic affairs n.e.c.', ''),
++    ('04.9.0', 'Economic affairs n.e.c.', 'CS'),
++    ('05', 'Environmental protection', ''),
++    ('05.1', 'Waste management', ''),
++    ('05.1.0', 'Waste management', 'CS'),
++    ('05.2', 'Waste water management', ''),
++    ('05.2.0', 'Waste water management', 'CS'),
++    ('05.3', 'Pollution abatement', ''),
++    ('05.3.0', 'Pollution abatement', 'CS'),
++    ('05.4', 'Protection of biodiversity and landscape', ''),
++    ('05.4.0', 'Protection of biodiversity and landscape', 'CS'),
++    ('05.5', 'R&D Environmental protection', ''),
++    ('05.5.0', 'R&D Environmental protection', 'CS'),
++    ('05.6', 'Environmental protection n.e.c.', ''),
++    ('05.6.0', 'Environmental protection n.e.c.', 'CS'),
++    ('06', 'Housing and community amenities', ''),
++    ('06.1', 'Housing development', ''),
++    ('06.1.0', 'Housing development', 'CS'),
++    ('06.2', 'Community development', ''),
++    ('06.2.0', 'Community development', 'CS'),
++    ('06.3', 'Water supply', ''),
++    ('06.3.0', 'Water supply', 'CS'),
++    ('06.4', 'Street lighting', ''),
++    ('06.4.0', 'Street lighting', 'CS'),
++    ('06.5', 'R&D Housing and community amenities', ''),
++    ('06.5.0', 'R&D Housing and community amenities', 'CS'),
++    ('06.6', 'Housing and community amenities n.e.c.', ''),
++    ('06.6.0', 'Housing and community amenities n.e.c.', 'CS'),
++    ('07', 'Health', ''),
++    ('07.1', 'Medical products, appliances and equipment', ''),
++    ('07.1.1', 'Pharmaceutical products', 'IS'),
++    ('07.1.2', 'Other medical products', 'IS'),
++    ('07.1.3', 'Therapeutic appliances and equipment', 'IS'),
++    ('07.2', 'Outpatient services', ''),
++    ('07.2.1', 'General medical services', 'IS'),
++    ('07.2.2', 'Specialized medical services', 'IS'),
++    ('07.2.3', 'Dental services', 'IS'),
++    ('07.2.4', 'Paramedical services', 'IS'),
++    ('07.3', 'Hospital services', ''),
++    ('07.3.1', 'General hospital services', 'IS'),
++    ('07.3.2', 'Specialized hospital services', 'IS'),
++    ('07.3.3', 'Medical and maternity centre services', 'IS'),
++    ('07.3.4', 'Nursing and convalescent home services', 'IS'),
++    ('07.4', 'Public health services', ''),
++    ('07.4.0', 'Public health services', 'IS'),
++    ('07.5', 'R&D Health', ''),
++    ('07.5.0', 'R&D Health', 'CS'),
++    ('07.6', 'Health n.e.c.', ''),
++    ('07.6.0', 'Health n.e.c.', 'CS'),
++    ('08', 'Recreation, culture and religion', ''),
++    ('08.1', 'Recreational and sporting services', ''),
++    ('08.1.0', 'Recreational and sporting services', 'IS'),
++    ('08.2', 'Cultural services', ''),
++    ('08.2.0', 'Cultural services', 'IS'),
++    ('08.3', 'Broadcasting and publishing services', ''),
++    ('08.3.0', 'Broadcasting and publishing services', 'CS'),
++    ('08.4', 'Religious and other community services', ''),
++    ('08.4.0', 'Religious and other community services', 'CS'),
++    ('08.5', 'R&D Recreation, culture and religion', ''),
++    ('08.5.0', 'R&D Recreation, culture and religion', 'CS'),
++    ('08.6', 'Recreation, culture and religion n.e.c.', ''),
++    ('08.6.0', 'Recreation, culture and religion n.e.c.', 'CS'),
++    ('09', 'Education', ''),
++    ('09.1', 'Pre-primary and primary education', ''),
++    ('09.1.1', 'Pre-primary education', 'IS'),
++    ('09.1.2', 'Primary education', 'IS'),
++    ('09.2', 'Secondary education', ''),
++    ('09.2.1', 'Lower-secondary education', 'IS'),
++    ('09.2.2', 'Upper-secondary education', 'IS'),
++    ('09.3', 'Post-secondary non-tertiary education', ''),
++    ('09.3.0', 'Post-secondary non-tertiary education', 'IS'),
++    ('09.4', 'Tertiary education', ''),
++    ('09.4.1', 'First stage of tertiary education', 'IS'),
++    ('09.4.2', 'Second stage of tertiary education', 'IS'),
++    ('09.5', 'Education not definable by level', ''),
++    ('09.5.0', 'Education not definable by level', 'IS'),
++    ('09.6', 'Subsidiary services to education', ''),
++    ('09.6.0', 'Subsidiary services to education', 'IS'),
++    ('09.7', 'R&D Education', ''),
++    ('09.7.0', 'R&D Education', 'CS'),
++    ('09.8', 'Education n.e.c.', ''),
++    ('09.8.0', 'Education n.e.c.', 'CS'),
++    ('10', 'Social protection', ''),
++    ('10.1', 'Sickness and disability', ''),
++    ('10.1.1', 'Sickness', 'IS'),
++    ('10.1.2', 'Disability', 'IS'),
++    ('10.2', 'Old age', ''),
++    ('10.2.0', 'Old age', 'IS'),
++    ('10.3', 'Survivors', ''),
++    ('10.3.0', 'Survivors', 'IS'),
++    ('10.4', 'Family and children', ''),
++    ('10.4.0', 'Family and children', 'IS'),
++    ('10.5', 'Unemployment', ''),
++    ('10.5.0', 'Unemployment', 'IS'),
++    ('10.6', 'Housing', ''),
++    ('10.6.0', 'Housing', 'IS'),
++    ('10.7', 'Social exclusion n.e.c.', ''),
++    ('10.7.0', 'Social exclusion n.e.c.', 'IS'),
++    ('10.8', 'R&D Social protection', ''),
++    ('10.8.0', 'R&D Social protection', 'CS'),
++    ('10.9', 'Social protection n.e.c.', ''),
++    ('10.9.0', 'Social protection n.e.c.', 'CS'),
++]
+diff --git a/sangam/sangam-packs/tools/profilegen/coverage.py b/sangam/sangam-packs/tools/profilegen/coverage.py
+index c1c5824..3a9f241 100644
+--- a/sangam/sangam-packs/tools/profilegen/coverage.py
++++ b/sangam/sangam-packs/tools/profilegen/coverage.py
+@@ -193,7 +193,7 @@ w('')
+ w('| File | Layer | Content |')
+ w('|---|---|---|')
+ w('| `layers.yaml` | - | the ordered layer model: international, regime, jurisdiction, category, government, department, office |')
+-w('| `intl/INTL.yaml`, `intl/seeds/cofog-divisions.csv` | international | COFOG divisions (crosswalk target) |')
++w('| `intl/INTL.yaml`, `intl/seeds/cofog.csv` | international | UN COFOG 1999 in full: 10 divisions, 69 groups, 109 classes (UNSD, verified; crosswalk target) |')
+ w('| `regime/REGIME-WESTMINSTER-SUPPLY.yaml` | regime | default ledger stage chain and year-end lapse |')
+ w('| `in/IN.yaml` | jurisdiction | locale (INR, lakh / crore grouping, April fiscal year, IST, calendars with 15:00 cut-off), the 15-digit head-of-account scheme (major / sub-major / minor locked), derivation (0/1 receipts, 2/3 revenue, 4/5 capital, 6/7 loans, 8000 Contingency Fund, 8001-8999 Public Account), crosswalk to COFOG, SNA-SPARSH constants, CSS sharing, payment-rail catalogue, unit types, public-account types |')
+ w('| `in/presets/IN-PRESET-*.yaml` | category | GENERAL, NE-HIMALAYAN, UT-LEG, UT-NOLEG, UNION |')
+diff --git a/sangam/sangam-packs/tools/profilegen/main.py b/sangam/sangam-packs/tools/profilegen/main.py
+index e5b91dc..2ca7ce4 100644
+--- a/sangam/sangam-packs/tools/profilegen/main.py
++++ b/sangam/sangam-packs/tools/profilegen/main.py
+@@ -2,7 +2,7 @@
+ import os, sys, copy
+ import yaml
+ sys.path.insert(0, os.path.dirname(__file__))
+-from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG, U
++from central import FlowList, LAYERS, INTL, REGIME, IN, PRESETS, COFOG_FULL, COFOG_SOURCE, U
+ from goi import GOI, DEPTS
+ from states import S, L
+ import delta
+@@ -136,6 +136,9 @@ for code, s in S.items():
+                                                                   {'role': 'TREASURY_OFFICER', 'sign': True}],
+                                   'returnBy': ['TREASURY_OFFICER'], 'mayEdit': False,
+                                   'queue': {'token': True, 'tokenSeries': 'TOKEN', 'fifo': True}}]
++    if s['reports']:
++        doc.setdefault('documentTypes', []).extend(
++            dict(copy.deepcopy(r), id=code + '_' + r['id']) for r in s['reports'])
+     for k, v in s['specials'].items():
+         deep_set(doc, k, copy.deepcopy(v))
+     extra = delta.apply(code, doc, IN['classification']['schemes'][0]['derive'])
+@@ -183,8 +186,10 @@ OBJ = [('01', 'Salaries', 'OTHER_15CR', 1, 'salaries=true'), ('02', 'Wages', 'OT
+ csv('in/seeds/object-heads.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
+     [('OBJECT', 'object', '', c, n, ';'.join(x for x in ['reappGroup=' + g, 'objectClass=' + str(k), f] if x), '', '2027-04-01',
+       'DFPR 2024 Annexure I (pre-2027 list; names/codes to verify)', 'U') for c, n, g, k, f in OBJ])
+-csv('intl/seeds/cofog-divisions.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
+-    [('COFOG', 'division', '', c, n, '', '', '', 'UN COFOG 1999', 'V') for c, n in COFOG])
++SEG = {1: 'division', 2: 'group', 3: 'class'}
++csv('intl/seeds/cofog.csv', ['scheme', 'segment', 'parent', 'code', 'name_en', 'flags', 'validFrom', 'validTo', 'source', 'status'],
++    [('COFOG', SEG[len(c.split('.'))], '.'.join(c.split('.')[:-1]), c.split('.')[-1], n, 'service=' + s if s else '',
++      '', '', COFOG_SOURCE, 'V') for c, n, s in COFOG_FULL])
+ 
+ with open(os.path.join(ROOT, 'profiles.idx'), 'w', encoding='utf-8', newline='\n') as f:
+     f.write('# Sangam configuration profiles (one resource path per line, relative to this index). Generated list.\n')
+diff --git a/sangam/sangam-packs/tools/profilegen/states.py b/sangam/sangam-packs/tools/profilegen/states.py
+index 529f829..86f32e9 100644
+--- a/sangam/sangam-packs/tools/profilegen/states.py
++++ b/sangam/sangam-packs/tools/profilegen/states.py
+@@ -1,6 +1,6 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # The 28 States and 8 UTs (IFMS-STATES section 1, 4). Unverified values are placeholders.
+-from central import U
++from central import U, FlowList
+ 
+ L = {'hi': ('hi', 'Deva'), 'en': ('en', 'Latn'), 'gu': ('gu', 'Gujr'), 'mr': ('mr', 'Deva'), 'kok': ('kok', 'Deva'),
+      'pa': ('pa', 'Guru'), 'kn': ('kn', 'Knda'), 'ta': ('ta', 'Taml'), 'ml': ('ml', 'Mlym'), 'te': ('te', 'Telu'),
+@@ -15,10 +15,10 @@ S = {}
+ 
+ 
+ def st(code, en, hi, preset, ifms, directorate, units, ddos, rules, rail, ss, langs, v8, src, hoa=None,
+-       specials=None, ph=None, lang_u=False, docs=None, adopt=None):
++       specials=None, ph=None, lang_u=False, docs=None, adopt=None, reports=None):
+     S[code] = dict(en=en, hi=hi, preset=preset, ifms=ifms, directorate=directorate, units=units, ddos=ddos, rules=rules,
+                    rail=rail, ss=ss, langs=langs, v8=v8, src=src, hoa=hoa, specials=specials or {}, ph=list(ph or []),
+-                   lang_u=lang_u, docs=docs or [], adopt=adopt)
++                   lang_u=lang_u, docs=docs or [], adopt=adopt, reports=reports or [])
+ 
+ 
+ G, NE, UL, UN = 'GENERAL', 'NE-HIMALAYAN', 'UT-LEG', 'UT-NOLEG'
+@@ -37,7 +37,19 @@ st('RJ', 'Rajasthan', 'राजस्थान', G, ['IFMS 3.0', 'Pay Manager',
+              'security': {'aadhaarVault': True, 'sso': 'RAJ_SSO_OTP'}, 'outputs': {'auditReports': ['hi']}},
+    docs=[('SALARY', 'ESTABLISHMENT_PAY', 'PAY_MANAGER'), ('GIA', 'GRANT', None), ('FVC', 'CONTINGENT', None),
+          ('GST_TDS', 'DEDUCTION', None), ('SD_REFUND', 'REFUND', None), ('WORKS', 'WORKS', 'WAM'), ('PENSION', 'PENSION', None)],
+-   ph=[('documentTypes.GA-55', U + ' (form GA-55)'), ('rulebooks.own.PWFAR', U)])
++   reports=[{
++       # Employee-wise yearly report of the State IFMS (not a classification, not a bill form).
++       'id': 'GA_55', 'formNumber': 'GA-55', 'kind': 'REPORT', 'family': 'EMPLOYEE_REPORT', 'sanction': 'NONE',
++       'report': {'parameters': FlowList(['employee', 'financialYear']), 'output': 'PDF',
++                  'menu': 'Employee Management > GA-55', 'selfService': 'mobile app, next to the salary slip and Form 16'},
++       'template': {'ownerConfigurable': True, 'fields': [],
++                    'note': 'field layout not published; the owner configures it from the official form'},
++       'evidence': {
++           'report': {'status': 'V', 'source': 'IFMS 3.0 Employee Module user manual 8.2.2; IFMS 3.0 mobile app user manual'},
++           'purpose': {'status': 'I', 'value': 'annual pay-and-allowances statement of the employee (inferred, not verified)'},
++           'officialFormDefinition': {'status': 'U', 'value': None,
++                                      'note': 'form definition in the State accounts rules not available; owner to supply'}}}],
++   ph=[('rulebooks.own.PWFAR', U)])
+ st('GJ', 'Gujarat', 'गुजरात', G, ['IFMS (2009-10, 18 modules)', 'Cyber Treasury', 'IFMS-III (in development)'],
+    'Directorate of Accounts & Treasuries', {'DISTRICT_TREASURY': 34, 'SUB_TREASURY': 111, 'PAO': 2, 'PENSION_TREASURY': 5,
+                                            'GST_TREASURY': 1}, 5042,

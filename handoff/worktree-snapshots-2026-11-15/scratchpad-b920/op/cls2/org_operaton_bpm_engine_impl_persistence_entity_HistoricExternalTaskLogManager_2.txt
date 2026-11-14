@@ -1,0 +1,36 @@
+Compiled from "HistoricExternalTaskLogManager.java"
+class org.operaton.bpm.engine.impl.persistence.entity.HistoricExternalTaskLogManager$2 extends org.operaton.bpm.engine.impl.history.event.HistoryEventProcessor$HistoryEventCreator {
+  final org.operaton.bpm.engine.externaltask.ExternalTask val$externalTask;
+
+  final org.operaton.bpm.engine.impl.persistence.entity.HistoricExternalTaskLogManager this$0;
+
+  org.operaton.bpm.engine.impl.persistence.entity.HistoricExternalTaskLogManager$2(org.operaton.bpm.engine.impl.persistence.entity.HistoricExternalTaskLogManager, org.operaton.bpm.engine.externaltask.ExternalTask);
+    Code:
+         0: aload_0
+         1: aload_1
+         2: putfield      #1                  // Field this$0:Lorg/operaton/bpm/engine/impl/persistence/entity/HistoricExternalTaskLogManager;
+         5: aload_0
+         6: aload_2
+         7: putfield      #7                  // Field val$externalTask:Lorg/operaton/bpm/engine/externaltask/ExternalTask;
+        10: aload_0
+        11: invokespecial #11                 // Method org/operaton/bpm/engine/impl/history/event/HistoryEventProcessor$HistoryEventCreator."<init>":()V
+        14: return
+
+  public org.operaton.bpm.engine.impl.history.event.HistoryEvent createHistoryEvent(org.operaton.bpm.engine.impl.history.producer.HistoryEventProducer);
+    Code:
+         0: aload_1
+         1: aload_0
+         2: getfield      #7                  // Field val$externalTask:Lorg/operaton/bpm/engine/externaltask/ExternalTask;
+         5: invokeinterface #17,  2           // InterfaceMethod org/operaton/bpm/engine/impl/history/producer/HistoryEventProducer.createHistoricExternalTaskLogFailedEvt:(Lorg/operaton/bpm/engine/externaltask/ExternalTask;)Lorg/operaton/bpm/engine/impl/history/event/HistoryEvent;
+        10: areturn
+
+  public void postHandleSingleHistoryEventCreated(org.operaton.bpm.engine.impl.history.event.HistoryEvent);
+    Code:
+         0: aload_0
+         1: getfield      #7                  // Field val$externalTask:Lorg/operaton/bpm/engine/externaltask/ExternalTask;
+         4: checkcast     #23                 // class org/operaton/bpm/engine/impl/persistence/entity/ExternalTaskEntity
+         7: aload_1
+         8: invokevirtual #25                 // Method org/operaton/bpm/engine/impl/history/event/HistoryEvent.getId:()Ljava/lang/String;
+        11: invokevirtual #31                 // Method org/operaton/bpm/engine/impl/persistence/entity/ExternalTaskEntity.setLastFailureLogId:(Ljava/lang/String;)V
+        14: return
+}

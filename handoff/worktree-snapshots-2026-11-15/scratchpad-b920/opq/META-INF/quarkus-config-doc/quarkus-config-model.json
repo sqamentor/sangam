@@ -1,0 +1,95 @@
+{
+  "configRoots" : [ {
+    "extension" : {
+      "artifactId" : "operaton-bpm-quarkus-engine",
+      "detected" : true,
+      "groupId" : "org.operaton.bpm.quarkus",
+      "guideUrl" : "https://docs.operaton.org/manual/latest/user-guide/quarkus-integration/",
+      "name" : "Operaton Engine",
+      "nameSource" : "EXTENSION_METADATA"
+    },
+    "items" : [ {
+      "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty",
+      "escapeDefaultValue" : true,
+      "map" : true,
+      "mapKey" : "generic-config",
+      "optional" : true,
+      "path" : {
+        "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty$PropertyPath",
+        "environmentVariable" : "QUARKUS_OPERATON_GENERIC_CONFIG__GENERIC_CONFIG_",
+        "property" : "quarkus.operaton.generic-config.\"generic-config\""
+      },
+      "phase" : "RUN_TIME",
+      "sourceElementName" : "genericConfig",
+      "sourceElementType" : "METHOD",
+      "sourceType" : "org.operaton.bpm.quarkus.engine.extension.OperatonEngineConfig",
+      "type" : "java.util.Map",
+      "typeDescription" : "Map<String,String>"
+    }, {
+      "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty",
+      "escapeDefaultValue" : true,
+      "map" : true,
+      "mapKey" : "generic-config",
+      "optional" : true,
+      "path" : {
+        "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty$PropertyPath",
+        "environmentVariable" : "QUARKUS_OPERATON_JOB_EXECUTOR_GENERIC_CONFIG__GENERIC_CONFIG_",
+        "property" : "quarkus.operaton.job-executor.generic-config.\"generic-config\""
+      },
+      "phase" : "RUN_TIME",
+      "sourceElementName" : "genericConfig",
+      "sourceElementType" : "METHOD",
+      "sourceType" : "org.operaton.bpm.quarkus.engine.extension.OperatonJobExecutorConfig",
+      "type" : "java.util.Map",
+      "typeDescription" : "Map<String,String>"
+    }, {
+      "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty",
+      "defaultValue" : "10",
+      "escapeDefaultValue" : true,
+      "path" : {
+        "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty$PropertyPath",
+        "environmentVariable" : "QUARKUS_OPERATON_JOB_EXECUTOR_THREAD_POOL_MAX_POOL_SIZE",
+        "property" : "quarkus.operaton.job-executor.thread-pool.max-pool-size"
+      },
+      "phase" : "RUN_TIME",
+      "sourceElementName" : "maxPoolSize",
+      "sourceElementType" : "METHOD",
+      "sourceType" : "org.operaton.bpm.quarkus.engine.extension.OperatonJobExecutorConfig.ThreadPoolConfig",
+      "type" : "int",
+      "typeDescription" : "int"
+    }, {
+      "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty",
+      "defaultValue" : "3",
+      "escapeDefaultValue" : true,
+      "path" : {
+        "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty$PropertyPath",
+        "environmentVariable" : "QUARKUS_OPERATON_JOB_EXECUTOR_THREAD_POOL_QUEUE_SIZE",
+        "property" : "quarkus.operaton.job-executor.thread-pool.queue-size"
+      },
+      "phase" : "RUN_TIME",
+      "sourceElementName" : "queueSize",
+      "sourceElementType" : "METHOD",
+      "sourceType" : "org.operaton.bpm.quarkus.engine.extension.OperatonJobExecutorConfig.ThreadPoolConfig",
+      "type" : "int",
+      "typeDescription" : "int"
+    }, {
+      "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty",
+      "escapeDefaultValue" : true,
+      "optional" : true,
+      "path" : {
+        "@class" : "io.quarkus.annotation.processor.documentation.config.model.ConfigProperty$PropertyPath",
+        "environmentVariable" : "QUARKUS_OPERATON_DATASOURCE",
+        "property" : "quarkus.operaton.datasource"
+      },
+      "phase" : "RUN_TIME",
+      "sourceElementName" : "datasource",
+      "sourceElementType" : "METHOD",
+      "sourceType" : "org.operaton.bpm.quarkus.engine.extension.OperatonEngineConfig",
+      "type" : "java.lang.String",
+      "typeDescription" : "string"
+    } ],
+    "prefix" : "quarkus.operaton",
+    "qualifiedNames" : [ "org.operaton.bpm.quarkus.engine.extension.OperatonEngineConfig" ],
+    "topLevelPrefix" : "quarkus.operaton"
+  } ]
+}

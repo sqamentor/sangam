@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="XunitStub.cs" />
+    <Compile Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\tests\Sangam.Sdk.Tests\Contract\ContractSupport.cs" />
+    <Compile Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\tests\Sangam.Sdk.Tests\Testing\EngineStepsTests.cs" />
+    <Compile Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\tests\Sangam.Sdk.Tests\Worker\DurableStepsTests.cs" />
+    <Compile Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\tests\Sangam.Sdk.Tests\Worker\SagaTests.cs" />
+    <Compile Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\tests\Sangam.Sdk.Tests\Hosting\SangamWorkerHostedServiceTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\src\Sangam.Sdk\Sangam.Sdk.csproj" />
+    <ProjectReference Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\src\Sangam.Sdk.Hosting\Sangam.Sdk.Hosting.csproj" />
+  </ItemGroup>
+</Project>

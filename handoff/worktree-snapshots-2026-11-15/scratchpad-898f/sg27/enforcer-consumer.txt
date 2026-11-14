@@ -1,0 +1,123 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< x:bare-consumer-enforcer >----------------------
+[INFO] Building bare-consumer-enforcer 1
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- enforcer:3.6.1:enforce (conv) @ bare-consumer-enforcer ---
+[INFO] Rule 1: org.codehaus.mojo.extraenforcer.dependencies.BanDuplicateClasses passed
+[WARNING] Rule 0: org.apache.maven.enforcer.rules.dependency.DependencyConvergence failed with message:
+Failed while enforcing releasability.
+
+Dependency convergence error for org.slf4j:slf4j-api:jar:2.0.17. Paths to dependency are:
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+      +-org.slf4j:slf4j-api:jar:2.0.17:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:compile
+      +-org.slf4j:slf4j-api:jar:2.0.17:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile
+      +-org.slf4j:slf4j-api:jar:2.0.17:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm:operaton-engine:jar:2.2.0:compile
+      +-org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile
+        +-org.slf4j:slf4j-api:jar:2.0.20:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-org.slf4j:slf4j-api:jar:1.7.25:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile
+          +-org.slf4j:slf4j-api:jar:1.7.36:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.slf4j:slf4j-api:jar:2.0.17:compile
+
+
+Dependency convergence error for com.fasterxml.jackson.core:jackson-databind:jar:2.22.3. Paths to dependency are:
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+      +-com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile
+      +-com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile
+          +-com.fasterxml.jackson.core:jackson-databind:jar:2.22.1:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile
+
+
+Dependency convergence error for org.scala-lang:scala-library:jar:2.13.18. Paths to dependency are:
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-org.scala-lang:scala-library:jar:2.13.18:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+          +-com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+            +-org.scala-lang:scala-library:jar:2.13.8:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+          +-com.lihaoyi:geny_2.13:jar:1.1.0:compile
+            +-org.scala-lang:scala-library:jar:2.13.8:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+          +-org.scala-lang:scala-library:jar:2.13.14:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile
+      +-org.camunda.feel:feel-engine:jar:1.22.1:compile
+        +-com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.1:compile
+          +-org.scala-lang:scala-library:jar:2.13.18:compile
+and
++-x:bare-consumer-enforcer:jar:1
+  +-org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+    +-org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+      +-org.scala-lang:scala-library:jar:2.13.18:compile
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.269 s
+[INFO] Finished at: 2026-11-08T07:58:44+05:30
+[INFO] ------------------------------------------------------------------------

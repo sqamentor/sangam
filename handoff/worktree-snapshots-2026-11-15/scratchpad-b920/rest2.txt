@@ -1,0 +1,4 @@
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-rest/src/main/java/org/sangam/rest/config/SangamRestAutoConfiguration.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-rest/src/main/java/org/sangam/rest/support/Permissions.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-rest/src/test/java/org/sangam/rest/config/PermissionFallbackFailClosedTest.java"
+"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-rest/src/test/java/org/sangam/rest/support/PermissionsTenantAdminTest.java"

@@ -1,0 +1,1 @@
+sangam/sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonTaskAdapter.java 26FC35CEE5FF284E0E01249D3F85A698377834A577749C7F19E68741230E9426 ; NEW sangam/sangam-rest/src/test/java/org/sangam/rest/adapter/operaton/TaskLocalSubmitTest.java C5A7424EB1891647D25D500313F10608841D15B60DD4C092B864F91AB0DFFD21

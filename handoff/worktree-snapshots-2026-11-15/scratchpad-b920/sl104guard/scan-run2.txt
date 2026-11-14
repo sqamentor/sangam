@@ -1,0 +1,8 @@
+files scanned: 1363  (allow-list: */connector/gov/*, */sim/*, sangam-connectors-health/*)
+RATCHET  system-name  sangam-integration/src/main/java/org/sangam/integration/packs/PackConnectorBindings.java:91  |  .bind("pfms.payment", "pfms-sim", "pay")
+RATCHET  system-name  sangam-integration/src/main/java/org/sangam/integration/packs/PackConnectorBindings.java:92  |  .bind("pfms.dbt", "pfms-sim", "pay")
+RATCHET  system-name  sangam-integration/src/main/java/org/sangam/integration/packs/PackConnectorBindings.java:94  |  .bind("digilocker.push", "digilocker-sim", "push")
+RATCHET  system-name  sangam-packs/src/main/java/org/sangam/packs/worker/PackWorkers.java:35  |  register(gatewayWorker("sangam.pfms.paymentFile", "pfms.payment", "submitPaymentFile", "c"));
+hits=4 violations=0 ratchet-entries=2 stale=0
+  ratchet: system-name sangam-integration/src/main/java/org/sangam/integration/packs/PackConnectorBindings.java -- SL-104 Q6a: gov-pack simulator bindings move to pack data (pending integrator decision on the pack.json field)
+  ratchet: system-name sangam-packs/src/main/java/org/sangam/packs/worker/PackWorkers.java -- SL-104 Q6a: the pfms payment-file worker topic moves to pack data (pending integrator decision)

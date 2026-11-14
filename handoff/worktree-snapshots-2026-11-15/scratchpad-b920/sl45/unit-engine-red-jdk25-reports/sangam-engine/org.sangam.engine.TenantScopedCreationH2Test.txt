@@ -1,0 +1,66 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.engine.TenantScopedCreationH2Test
+-------------------------------------------------------------------------------
+Tests run: 11, Failures: 6, Errors: 0, Skipped: 0, Time elapsed: 77.33 s <<< FAILURE! -- in org.sangam.engine.TenantScopedCreationH2Test
+org.sangam.engine.TenantScopedCreationH2Test.sharedDeploymentByAnIdentityOfOneTenantIsRefused -- Time elapsed: 23.12 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected java.lang.RuntimeException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.sangam.engine.TenantScopedCreationH2Test.lambda$sharedDeploymentByAnIdentityOfOneTenantIsRefused$0(TenantScopedCreationH2Test.java:155)
+	at org.sangam.engine.TenantScopedCreationH2Test.withTenants(TenantScopedCreationH2Test.java:84)
+	at org.sangam.engine.TenantScopedCreationH2Test.sharedDeploymentByAnIdentityOfOneTenantIsRefused(TenantScopedCreationH2Test.java:153)
+
+org.sangam.engine.TenantScopedCreationH2Test.aBatchNamingAnotherTenantsInstanceLeavesItUntouched -- Time elapsed: 6.507 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: tenant B's instance still exists and is active ==> expected: <true> but was: <false>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:69)
+	at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:41)
+	at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:228)
+	at org.sangam.engine.TenantScopedCreationH2Test.lambda$aBatchNamingAnotherTenantsInstanceLeavesItUntouched$0(TenantScopedCreationH2Test.java:240)
+	at org.sangam.engine.TenantScopedCreationH2Test.withTenants(TenantScopedCreationH2Test.java:84)
+	at org.sangam.engine.TenantScopedCreationH2Test.aBatchNamingAnotherTenantsInstanceLeavesItUntouched(TenantScopedCreationH2Test.java:235)
+
+org.sangam.engine.TenantScopedCreationH2Test.aBatchOfAnIdentityOfOneTenantBelongsToThatTenant -- Time elapsed: 6.347 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: the batch belongs to the caller's tenant ==> expected: <tenant-a> but was: <null>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:158)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:139)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:201)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:184)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1199)
+	at org.sangam.engine.TenantScopedCreationH2Test.lambda$aBatchOfAnIdentityOfOneTenantBelongsToThatTenant$0(TenantScopedCreationH2Test.java:205)
+	at org.sangam.engine.TenantScopedCreationH2Test.withTenants(TenantScopedCreationH2Test.java:84)
+	at org.sangam.engine.TenantScopedCreationH2Test.aBatchOfAnIdentityOfOneTenantBelongsToThatTenant(TenantScopedCreationH2Test.java:203)
+
+org.sangam.engine.TenantScopedCreationH2Test.deploymentIntoAnotherTenantIsRefused -- Time elapsed: 5.068 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected java.lang.RuntimeException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.sangam.engine.TenantScopedCreationH2Test.lambda$deploymentIntoAnotherTenantIsRefused$0(TenantScopedCreationH2Test.java:143)
+	at org.sangam.engine.TenantScopedCreationH2Test.withTenants(TenantScopedCreationH2Test.java:84)
+	at org.sangam.engine.TenantScopedCreationH2Test.deploymentIntoAnotherTenantIsRefused(TenantScopedCreationH2Test.java:142)
+
+org.sangam.engine.TenantScopedCreationH2Test.aBatchOfAnIdentityOfSeveralTenantsIsRefused -- Time elapsed: 4.156 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: Expected java.lang.RuntimeException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3223)
+	at org.sangam.engine.TenantScopedCreationH2Test.lambda$aBatchOfAnIdentityOfSeveralTenantsIsRefused$0(TenantScopedCreationH2Test.java:221)
+	at org.sangam.engine.TenantScopedCreationH2Test.withTenants(TenantScopedCreationH2Test.java:84)
+	at org.sangam.engine.TenantScopedCreationH2Test.aBatchOfAnIdentityOfSeveralTenantsIsRefused(TenantScopedCreationH2Test.java:216)
+
+org.sangam.engine.TenantScopedCreationH2Test.duplicateFilteringNeverReturnsAnotherTenantsDeployment -- Time elapsed: 4.967 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: the duplicate lookup in tenant B returned B's deployment 3888348c-dc79-11f1-9a59-00155d8b0100 ==> Expected java.lang.RuntimeException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:159)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:74)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:40)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3249)
+	at org.sangam.engine.TenantScopedCreationH2Test.lambda$duplicateFilteringNeverReturnsAnotherTenantsDeployment$0(TenantScopedCreationH2Test.java:167)
+	at org.sangam.engine.TenantScopedCreationH2Test.withTenants(TenantScopedCreationH2Test.java:84)
+	at org.sangam.engine.TenantScopedCreationH2Test.duplicateFilteringNeverReturnsAnotherTenantsDeployment(TenantScopedCreationH2Test.java:164)
+

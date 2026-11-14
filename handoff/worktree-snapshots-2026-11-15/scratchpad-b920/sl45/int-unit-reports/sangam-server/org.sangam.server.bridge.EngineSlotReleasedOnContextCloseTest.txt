@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.server.bridge.EngineSlotReleasedOnContextCloseTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 212.8 s -- in org.sangam.server.bridge.EngineSlotReleasedOnContextCloseTest

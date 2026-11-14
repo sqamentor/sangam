@@ -1,0 +1,3 @@
+Error: execution error at (sangam/templates/networkpolicy.yaml:113:8): backup.console.apiServer.cidrs is required with backup.console.enabled and networkPolicy.enabled (the Kubernetes API server addresses)
+
+Use --debug flag to render out invalid YAML

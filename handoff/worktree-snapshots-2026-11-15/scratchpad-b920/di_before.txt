@@ -1,0 +1,335 @@
+f8db127153567e29 n=34 di=35 seat=5 sangam-compliance/src/main/resources/packs/compliance/sangam-breach-incident.bpmn
+     startEvent start: 0 DI elements
+     parallelGateway fork: 0 DI elements
+     userTask u_facts: 0 DI elements
+     serviceTask s_authority: 0 DI elements
+     userTask u_notice: 0 DI elements
+     serviceTask s_subjects: 0 DI elements
+1ad70fa70110882d n=20 di=21 seat=2 sangam-compliance/src/main/resources/packs/compliance/sangam-breach-notification-plan.bpmn
+     startEvent start: 0 DI elements
+     userTask u_assess: 0 DI elements
+     serviceTask s_assess: 0 DI elements
+     exclusiveGateway g_n: 0 DI elements
+     endEvent end_no: 0 DI elements
+     serviceTask s_plan: 0 DI elements
+7ef669475a7ad007 n=18 di=19 seat=2 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-access.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_compile: 0 DI elements
+     serviceTask s_summary: 0 DI elements
+     userTask u_release: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+4e47a6dead775edb n=21 di=22 seat=2 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-accounting.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_review: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     exclusiveGateway g_ext: 0 DI elements
+     serviceTask s_extend: 0 DI elements
+f65e41f753bd2883 n=14 di=15 seat=1 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-automated-decision.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_review: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     serviceTask s_record: 0 DI elements
+     endEvent end: 0 DI elements
+2c8bc6d62e0995b5 n=20 di=21 seat=1 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-erasure.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_approve: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     exclusiveGateway g_decision: 0 DI elements
+     serviceTask s_erase: 0 DI elements
+1f57240b620fbadc n=19 di=20 seat=2 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-grievance.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_examine: 0 DI elements
+     boundaryEvent t_warn: 0 DI elements
+     userTask u_warn: 0 DI elements
+     endEvent end_warn: 0 DI elements
+88278644f6e40ab6 n=14 di=15 seat=1 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-nomination.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_verify: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     serviceTask s_register: 0 DI elements
+     endEvent end: 0 DI elements
+4e535992013c2482 n=14 di=15 seat=1 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-objection.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_decide: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     serviceTask s_apply: 0 DI elements
+     endEvent end: 0 DI elements
+779d4c102b2b9e2c n=14 di=15 seat=1 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-rectification.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_examine: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     serviceTask s_apply: 0 DI elements
+     endEvent end: 0 DI elements
+54e9e278d2b6916d n=14 di=15 seat=1 sangam-compliance/src/main/resources/packs/compliance/sangam-dsr-restriction.bpmn
+     startEvent start: 0 DI elements
+     serviceTask s_start: 0 DI elements
+     userTask u_decide: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+     serviceTask s_apply: 0 DI elements
+     endEvent end: 0 DI elements
+1abd8e463dd20d7b n=26 di=27 seat=3 sangam-compliance/src/main/resources/packs/compliance/sangam-incident-report.bpmn
+     startEvent start: 0 DI elements
+     userTask u_prepare: 0 DI elements
+     boundaryEvent t_warn: 0 DI elements
+     userTask u_warn: 0 DI elements
+     endEvent end_warn: 0 DI elements
+     boundaryEvent t_due: 0 DI elements
+32e09287df988ad3 n=50 di=0 seat=0 sangam-packs/src/main/resources/packs/assets/sangam-asset-lifecycle.bpmn
+e3d2bb7051d82cd3 n=21 di=0 seat=0 sangam-packs/src/main/resources/packs/audit-para/sangam-audit-inspection.bpmn
+8764ef9c2f6f40d8 n=42 di=0 seat=0 sangam-packs/src/main/resources/packs/audit-para/sangam-audit-para.bpmn
+e37e0e7cd049e707 n=75 di=0 seat=0 sangam-packs/src/main/resources/packs/billing-cycle/sangam-billing-account.bpmn
+789f27de97f6b5b1 n=27 di=0 seat=0 sangam-packs/src/main/resources/packs/billing-cycle/sangam-billing-cycle.bpmn
+5954cdb3d7ee288f n=75 di=0 seat=0 sangam-packs/src/main/resources/packs/budget-reappropriation/sangam-budget-reappropriation.bpmn
+07af86a08199ebe2 n=25 di=0 seat=0 sangam-packs/src/main/resources/packs/challan-reconciliation/sangam-challan-discrepancy.bpmn
+2fc0d04ef040615a n=30 di=0 seat=0 sangam-packs/src/main/resources/packs/challan-reconciliation/sangam-challan-reconciliation.bpmn
+01dc8f72018663e9 n=60 di=0 seat=3 sangam-packs/src/main/resources/packs/consultancy/sangam-consultancy.bpmn
+     userTask cs_techScores literal group 'CEC-1'
+     userTask cs_finOpen literal group 'CEC-1'
+     userTask cs_negotiate literal group 'CEC-1'
+4c4d69a99977e5da n=48 di=0 seat=0 sangam-packs/src/main/resources/packs/contract-management/sangam-contract-amendment.bpmn
+f50297bae4899998 n=37 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-appeal.bpmn
+5ecb5867e1c981d4 n=59 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-cancellation.bpmn
+67d8e4b6995de0e9 n=18 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-closure.bpmn
+b1b256ccfc16332b n=13 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-committee.bpmn
+8a1226b39586d1ad n=67 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-execution.bpmn
+983c68192ec4f87e n=69 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-recommendation.bpmn
+9a412f99c81cddc0 n=16 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-reconciliation.bpmn
+eb9fbe7d3f200ae0 n=25 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-referral-inbound.bpmn
+0825516848bffe47 n=20 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-referral.bpmn
+5ee20e4cca815aa9 n=35 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-rejection.bpmn
+1940706413c1bbcf n=73 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-sanction.bpmn
+38519b97fd9baa4f n=65 di=0 seat=0 sangam-packs/src/main/resources/packs/core/sangam-core-scrutiny.bpmn
+a28ffb5c9b4b349e n=73 di=0 seat=0 sangam-packs/src/main/resources/packs/court-case/sangam-court-case.bpmn
+7dbeb9bca6f21bf5 n=42 di=0 seat=0 sangam-packs/src/main/resources/packs/dbt-batch/sangam-dbt-batch.bpmn
+79001a34da52317d n=24 di=0 seat=0 sangam-packs/src/main/resources/packs/dbt-batch/sangam-dbt-beneficiary-payment.bpmn
+40fab8daece3e2b8 n=129 di=0 seat=1 sangam-packs/src/main/resources/packs/gem-purchase/sangam-gem-purchase.bpmn
+     userTask gm_bidDoc literal group 'SO-GM'
+8d0e6e59fd6a4faf n=88 di=0 seat=0 sangam-packs/src/main/resources/packs/gov-intl-pfm-execution/sangam-intl-pfm-execution.bpmn
+80c067ec96ad755e n=7 di=0 seat=1 sangam-packs/src/main/resources/packs/grievance/sangam-grievance-sla.bpmn
+     userTask gs_review literal group 'NODAL-GRV'
+0ea503c8ccc1edf8 n=91 di=0 seat=0 sangam-packs/src/main/resources/packs/grievance/sangam-grievance.bpmn
+a74c8f1ed79905bb n=85 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-audit-para-settlement/sangam-ifms-audit-para.bpmn
+0a1893acc3187da1 n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-advance.bpmn
+86b35f099c965621 n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-cddo.bpmn
+650a282197327f8f n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-classified.bpmn
+2b8de022e72c6df9 n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-contingency-fund.bpmn
+a7c199428978763c n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-contingent.bpmn
+aa1f3f4978389dff n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-establishment-pay.bpmn
+19d848fa9cafe724 n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-grant.bpmn
+dff6ed8c18e0882e n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-nil-bill.bpmn
+b760f17a30cbd305 n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-personal-claim.bpmn
+eb43d48177caa56f n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-provident-fund.bpmn
+1030c3d56d84d1dd n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-refund.bpmn
+cf349d334e7c5a6f n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-retirement.bpmn
+bbaea64ce3a54c3b n=7 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill-vendor.bpmn
+2e50816e3393d08f n=125 di=0 seat=1 sangam-packs/src/main/resources/packs/ifms-bill/sangam-ifms-bill.bpmn
+     userTask bl_payeeReview literal group 'PAO-1'
+1c856cfa8748dc6a n=50 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-budget-allocation/sangam-ifms-budget-allocation.bpmn
+0e060b1e7f0b7eac n=66 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-budget-formulation/sangam-ifms-budget-formulation.bpmn
+1750373a85d56e02 n=69 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-gia-uc/sangam-ifms-gia-release.bpmn
+c16db56b26861fed n=55 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-gia-uc/sangam-ifms-uc.bpmn
+dc094dd2993f9fa1 n=41 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-gpf/sangam-ifms-gpf.bpmn
+f551338c8a4523c5 n=43 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-loans-advances/sangam-ifms-advance.bpmn
+c54b2b251a783acf n=50 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-monthly-accounts/sangam-ifms-monthly-accounts.bpmn
+2ba6a4e65591f17e n=122 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-pao-chain/sangam-ifms-pao-chain.bpmn
+f91bd621f2d3aedf n=106 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-reappropriation/sangam-ifms-reappropriation.bpmn
+031bc221c866091e n=45 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-receipts/sangam-ifms-receipt.bpmn
+0a0d7f58697b6b4c n=58 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-scheme-appraisal/sangam-ifms-scheme-appraisal.bpmn
+8ae926f3c37bcb3e n=118 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-sna-sparsh/sangam-ifms-sna-sparsh-release.bpmn
+c2abaa9389552ac7 n=82 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-supplementary/sangam-ifms-supplementary.bpmn
+e8acfb4464617f02 n=63 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-surrender-lapse/sangam-ifms-surrender.bpmn
+4663fa94325e7124 n=13 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-surrender-lapse/sangam-ifms-year-end-lapse.bpmn
+29204f347c9c9314 n=48 di=0 seat=0 sangam-packs/src/main/resources/packs/ifms-year-end-closing/sangam-ifms-year-end-closing.bpmn
+d33d5c96140bbc31 n=25 di=0 seat=0 sangam-packs/src/main/resources/packs/inspection/sangam-inspection-programme.bpmn
+242b7e1af6620fb9 n=59 di=0 seat=0 sangam-packs/src/main/resources/packs/inspection/sangam-inspection.bpmn
+0a77f6685b896ec4 n=92 di=0 seat=0 sangam-packs/src/main/resources/packs/land-acquisition/sangam-land-acquisition.bpmn
+f47a24beb7fc204c n=11 di=0 seat=0 sangam-packs/src/main/resources/packs/land-acquisition/sangam-land-compensation-payment.bpmn
+b47eece06181fd02 n=11 di=0 seat=0 sangam-packs/src/main/resources/packs/leave/sangam-leave-credit.bpmn
+5fbcab377a5f38e6 n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/leave/sangam-leave-yearend.bpmn
+545cdbd620e2e2c2 n=69 di=0 seat=0 sangam-packs/src/main/resources/packs/leave/sangam-leave.bpmn
+8a4c774ce3a6674d n=138 di=0 seat=0 sangam-packs/src/main/resources/packs/p1-bill-payment/sangam-p1-bill-payment.bpmn
+e45cf3f5410bf546 n=108 di=0 seat=0 sangam-packs/src/main/resources/packs/p2-file-movement/sangam-p2-file-movement.bpmn
+ce84c48d49c196c5 n=210 di=0 seat=1 sangam-packs/src/main/resources/packs/p3-grant-sanction/sangam-p3-grant-application.bpmn
+     userTask p3_duplicate literal group 'DOCVERIFIER'
+361e6f1d82bf1b1a n=9 di=0 seat=1 sangam-packs/src/main/resources/packs/p4-licence/sangam-p4-case-sla.bpmn
+     userTask pcs_escalate literal group 'DC-MC'
+985c0eb439ab4d0c n=127 di=0 seat=0 sangam-packs/src/main/resources/packs/p4-licence/sangam-p4-licence.bpmn
+84b1958c6c0419c5 n=21 di=0 seat=0 sangam-packs/src/main/resources/packs/pension/sangam-pension-monthly.bpmn
+1654fc12997f395f n=20 di=0 seat=1 sangam-packs/src/main/resources/packs/pension/sangam-pension-payment.bpmn
+     userTask pp_life literal group 'PAO-P'
+c290a385faa072c4 n=99 di=0 seat=0 sangam-packs/src/main/resources/packs/pension/sangam-pension-sanction.bpmn
+a6367af74b47df61 n=51 di=0 seat=1 sangam-packs/src/main/resources/packs/records/sangam-record-retention.bpmn
+     userTask rr_appraise literal group 'NAI-APPRAISER'
+0057d8e7c42d4ade n=112 di=0 seat=0 sangam-packs/src/main/resources/packs/recruitment/sangam-recruitment-application.bpmn
+9cb58529cdda4b38 n=100 di=0 seat=0 sangam-packs/src/main/resources/packs/recruitment/sangam-recruitment-campaign.bpmn
+f8164eb6f40151f5 n=119 di=0 seat=0 sangam-packs/src/main/resources/packs/rti/sangam-rti-request.bpmn
+81e414ac3cc8164d n=70 di=0 seat=0 sangam-packs/src/main/resources/packs/rtps/sangam-rtps-service.bpmn
+4d8e670e547c54f5 n=27 di=0 seat=0 sangam-packs/src/main/resources/packs/salary-monthly/sangam-salary-monthly.bpmn
+bceaddce060d21c0 n=148 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-account-opening/sangam-sec-bank-account-opening.bpmn
+8d790748f1f5976a n=106 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-aml-str/sangam-sec-bank-aml-alert.bpmn
+f0670eb3156fd1a5 n=27 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-aml-str/sangam-sec-bank-ctr.bpmn
+308e2ad797f1dd59 n=72 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-bank-cheque-return/sangam-sec-bank-cheque-return.bpmn
+     userTask cq_withdraw literal group 'BRANCH-MGR'
+5ff4cf761c62c2b2 n=113 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-bank-collections/sangam-sec-bank-collections.bpmn
+     userTask co_next literal group 'AUTHORISED-OFFICER'
+d58709b6b75359d2 n=42 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-emandate/sangam-sec-bank-emandate-debit.bpmn
+00684c9825925d07 n=38 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-bank-emandate/sangam-sec-bank-emandate.bpmn
+     userTask em_check literal group 'MANDATE-CHECKER'
+e6702ea1afee4f4b n=22 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-inoperative-deposits/sangam-sec-bank-dea-claim.bpmn
+d9ece28d00398535 n=34 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-inoperative-deposits/sangam-sec-bank-dormancy-account.bpmn
+229ef816ee5211f1 n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-inoperative-deposits/sangam-sec-bank-dormancy-review.bpmn
+61d9a95ff8d7516b n=45 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-bank-loan-closure/sangam-sec-bank-loan-closure.bpmn
+     userTask lc_compute literal group 'BRANCH-MGR'
+80a575113ac612e6 n=166 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-bank-loan-origination/sangam-sec-bank-loan-origination.bpmn
+     userTask lo_legalofficer literal group 'LEGAL-OFFICER'
+     userTask lo_valuer literal group 'VALUER'
+bfd0aa978cf49972 n=115 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-payment-dual-auth/sangam-sec-bank-payment.bpmn
+3fac0fcf1bd621d1 n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-rekyc/sangam-sec-bank-rekyc-campaign.bpmn
+01fd37370cda5256 n=43 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-rekyc/sangam-sec-bank-rekyc-customer.bpmn
+8c3133d8e151863a n=110 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-bank-txn-dispute/sangam-sec-bank-txn-dispute.bpmn
+011ce8a68a03b995 n=11 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-cap-corporate-action/sangam-sec-cap-dividend-holder.bpmn
+e8b0a62d85e3b151 n=33 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-cap-corporate-action/sangam-sec-cap-dividend.bpmn
+11f4fae73370f838 n=78 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-cap-investor-onboarding/sangam-sec-cap-investor-onboarding.bpmn
+     userTask io_ipv literal group 'KYC-OFFICER'
+     userTask io_optout literal group 'KYC-OFFICER'
+a50c2b802920f3ae n=43 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-cap-ipo-allotment/sangam-sec-cap-ipo.bpmn
+db29f7e3ec90aa74 n=52 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-cap-surveillance-alert/sangam-sec-cap-surveillance.bpmn
+443d64134bcb334e n=43 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ecom-gst-tcs/sangam-sec-ecom-gst-tcs.bpmn
+f5d392e0911fab00 n=95 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-ecom-order-to-cash/sangam-sec-ecom-order.bpmn
+     userTask eo_review literal group 'RISK-DESK'
+     userTask eo_investigate literal group 'LOGISTICS-DESK'
+521553b7f3a919ab n=44 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-ecom-return-refund/sangam-sec-ecom-return.bpmn
+     userTask er_dispute literal group 'MARKETPLACE-ARB'
+b4ca11a88c8b833b n=88 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-ecom-seller-onboarding/sangam-sec-ecom-seller-onboarding.bpmn
+     userTask es_approve literal group 'SELLER-APPROVER'
+ff20665a61682ff0 n=72 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-edu-admission/sangam-sec-edu-admission.bpmn
+ded63c07f21645b4 n=22 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-edu-examination/sangam-sec-edu-exam-cycle.bpmn
+     userTask ex_evaluate literal group 'EVALUATOR'
+fa10db1676e9c40a n=29 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-edu-examination/sangam-sec-edu-revaluation.bpmn
+593cc6b2b6e3bbde n=57 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-edu-scholarship/sangam-sec-edu-scholarship.bpmn
+     userTask sc_l1 literal group 'INSTITUTE-NODAL'
+     userTask sc_fix literal group 'INSTITUTE-NODAL'
+3cbeb522c5c276db n=79 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-eu-gdpr-dsr/sangam-sec-eu-gdpr-dsr.bpmn
+473bf64137b62fc2 n=51 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-fin-complaint/sangam-sec-fin-complaint.bpmn
+dd6fed411d38a389 n=137 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-fin-cyber-incident/sangam-sec-fin-cyber-incident.bpmn
+8faade846135a4bd n=52 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-health-abdm-consent/sangam-sec-health-abdm-consent.bpmn
+     userTask hx_btgReview literal group 'PRIVACY-OFFICER'
+e45b077ec853efd8 n=80 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-health-admission-discharge/sangam-sec-health-admission.bpmn
+6a181c4d85941c3b n=23 di=0 seat=3 sangam-packs/src/main/resources/packs/sec-health-blood-bank/sangam-sec-health-blood-donation.bpmn
+     userTask bd_collect literal group 'BB-TECH'
+     userTask bd_tti literal group 'BB-TECH'
+     userTask bd_discard literal group 'BB-MO'
+9bc7f30f4c392a3c n=20 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-health-blood-bank/sangam-sec-health-transfusion.bpmn
+     userTask tf_xmatch literal group 'BB-TECH'
+     userTask tf_bedside literal group 'WARD-NURSE'
+f49a01895600729a n=77 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-health-lab-order/sangam-sec-health-lab-order.bpmn
+2af8e3e8abe43ac0 n=47 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-health-ot-scheduling/sangam-sec-health-ot.bpmn
+     userTask ot_recovery literal group 'RECOVERY-NURSE'
+0bd0a85538b9fc0b n=57 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-health-pharmacy-dispense/sangam-sec-health-pharmacy.bpmn
+     userTask ph_second literal group 'PHARMACIST-2'
+18067c66d147d8c2 n=23 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-hr-appraisal/sangam-sec-hr-appraisal-cycle.bpmn
+a864ae063354cab1 n=73 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-hr-appraisal/sangam-sec-hr-appraisal.bpmn
+     userTask ap_hr literal group 'HR-BP'
+dbafabdcba67a527 n=95 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-hr-employee-exit/sangam-sec-hr-exit.bpmn
+     userTask hx_itassets literal group 'IT-ASSETS'
+     userTask hx_financedues literal group 'FINANCE-DUES'
+026fe5caff10dce7 n=69 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-hr-payroll/sangam-sec-hr-payroll.bpmn
+53a68024355940ba n=97 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-hr-posh-complaint/sangam-sec-hr-posh.bpmn
+13a46e77cf5e5ba7 n=104 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ins-death-claim/sangam-sec-ins-death-claim.bpmn
+05d402635cdd864c n=167 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ins-health-claim/sangam-sec-ins-health-claim.bpmn
+673d5fbf6d0426d5 n=56 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-ins-intermediary-licensing/sangam-sec-ins-intermediary.bpmn
+     userTask ag_appoint literal group 'PRINCIPAL-OFFICER'
+f8368db7ad59e5bb n=146 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-ins-motor-claim/sangam-sec-ins-motor-claim.bpmn
+     userTask mc_tp literal group 'TP-LEGAL'
+     userTask mc_siu literal group 'SIU'
+b96e79669edb883b n=116 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ins-proposal-underwriting/sangam-sec-ins-proposal.bpmn
+456e37eb38abb509 n=35 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ins-reinsurance/sangam-sec-ins-reinsurance.bpmn
+c88e1a97d2c03d55 n=61 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-legal-dpdp-rights/sangam-sec-legal-dpdp-request.bpmn
+fadb123c4fb62f2f n=82 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-legal-litigation/sangam-sec-legal-litigation.bpmn
+     userTask lt_decide literal group 'LEGAL-HEAD'
+e26e63c3f405f3cd n=29 di=0 seat=2 sangam-packs/src/main/resources/packs/sec-mfg-batch-release/sangam-sec-mfg-batch-release.bpmn
+     userTask br_qc literal group 'QC-ANALYST'
+     userTask br_qa literal group 'QA-HEAD'
+b9d99941c1392a89 n=25 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-mfg-mrp-planning/sangam-sec-mfg-mrp.bpmn
+014667622b2d6a59 n=18 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-mfg-mrp-planning/sangam-sec-mfg-planned-order.bpmn
+     userTask po_firm literal group 'PLANNER'
+99c56602795d0924 n=107 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-nbfc-digital-lending/sangam-sec-nbfc-digital-loan.bpmn
+11d103a423b70229 n=57 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-nbfc-dlg-arrangement/sangam-sec-nbfc-dlg.bpmn
+785e12da2a5b702a n=41 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-scm-eway-bill/sangam-sec-scm-eway-bill.bpmn
+1b8edc074ee3c22d n=104 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-scm-procure-to-pay/sangam-sec-scm-p2p.bpmn
+     userTask pp_qc literal group 'QC-INSPECTOR'
+926ad67ed803999b n=48 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-tel-mnp-port-in/sangam-sec-tel-mnp.bpmn
+ad564afd59103614 n=33 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-tel-sim-swap/sangam-sec-tel-sim-swap.bpmn
+263ee797328eb9cc n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-tel-tcccpr/sangam-sec-tel-consent.bpmn
+698723563f481b9f n=38 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-tel-tcccpr/sangam-sec-tel-ucc-complaint.bpmn
+3d9137f85de8dcb2 n=65 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-access-request/sangam-sec-ushealth-access-request.bpmn
+5e807fd99d6182e4 n=66 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-baa/sangam-sec-ushealth-baa.bpmn
+c9a12d265fa25a11 n=86 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-breach/sangam-sec-ushealth-breach.bpmn
+9552f63d0addbf25 n=134 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-claim/sangam-sec-ushealth-claim.bpmn
+bc3b6149566fd2f3 n=22 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-claim/sangam-sec-ushealth-remittance.bpmn
+811030ae2d89fd14 n=108 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-discharge/sangam-sec-ushealth-discharge.bpmn
+58ae5dc72269817e n=54 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-eligibility/sangam-sec-ushealth-eligibility.bpmn
+29999db37ee85e43 n=73 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-gfe-ppdr/sangam-sec-ushealth-gfe-ppdr.bpmn
+e0a31d524fcc4800 n=87 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-ushealth-prior-auth/sangam-sec-ushealth-prior-auth.bpmn
+74eeff75719b8eec n=45 di=0 seat=1 sangam-packs/src/main/resources/packs/sec-util-disconnection/sangam-sec-util-disconnection.bpmn
+     userTask ds_disconnect literal group 'LINEMAN'
+24ca27ec09cf1456 n=52 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-util-meter-to-cash/sangam-sec-util-bill.bpmn
+aa1c7bb05c4aa43a n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/sec-util-meter-to-cash/sangam-sec-util-billing-cycle.bpmn
+f57e4d6b8b0bf75d n=88 di=0 seat=4 sangam-packs/src/main/resources/packs/sec-util-new-connection/sangam-sec-util-connection.bpmn
+     userTask uc_inspect literal group 'JE-FIELD'
+     userTask uc_estimate literal group 'AE-SUBDIV'
+     userTask uc_install literal group 'JE-FIELD'
+     userTask uc_compManual literal group 'AE-SUBDIV'
+0def2a81d41b4ced n=45 di=0 seat=0 sangam-packs/src/main/resources/packs/security-instrument/sangam-security-instrument.bpmn
+42f7c65c2334ddb1 n=41 di=0 seat=0 sangam-packs/src/main/resources/packs/stores/sangam-stock-discrepancy.bpmn
+56b88f7b3e83d6e3 n=32 di=0 seat=1 sangam-packs/src/main/resources/packs/stores/sangam-stock-verification.bpmn
+     userTask sv_count literal group 'VERIFY-BOARD'
+266eb7a397e0bce4 n=113 di=0 seat=1 sangam-packs/src/main/resources/packs/tender/sangam-tender.bpmn
+     userTask td_qualified literal group 'TEC-1'
+5736a38502700d78 n=22 di=0 seat=0 sangam-packs/src/main/resources/packs/up01-stp-order/sangam-up01-stp-order.bpmn
+bd619a9e4677a461 n=32 di=0 seat=0 sangam-packs/src/main/resources/packs/up02-saga/sangam-up02-saga.bpmn
+38e1969dc547a2b1 n=31 di=0 seat=1 sangam-packs/src/main/resources/packs/up03-event-correlation/sangam-up03-event-correlation.bpmn
+     userTask u3_review literal group 'ANALYST'
+016c6220007c9a2a n=27 di=0 seat=0 sangam-packs/src/main/resources/packs/up04-skills-routing/sangam-up04-skills-routing.bpmn
+6593dd91a8c61c11 n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/up05-four-eyes/sangam-up05-four-eyes.bpmn
+60d4692378a109b8 n=22 di=0 seat=0 sangam-packs/src/main/resources/packs/up06-hitl-ai-review/sangam-up06-hitl-ai.bpmn
+7aaea4e773710494 n=35 di=0 seat=0 sangam-packs/src/main/resources/packs/up07-improvement-loop/sangam-up07-improvement-loop.bpmn
+89e1d1ae13086b7d n=31 di=0 seat=0 sangam-packs/src/main/resources/packs/up08-entity-lifecycle/sangam-up08-entity-lifecycle.bpmn
+db6a13da403da843 n=55 di=0 seat=4 sangam-packs/src/main/resources/packs/up10-incident-swarming/sangam-up10-incident.bpmn
+     userTask u10_netops literal group 'NET-OPS'
+     userTask u10_appops literal group 'APP-OPS'
+     userTask u10_dbops literal group 'DB-OPS'
+     userTask u10_incidentmgr literal group 'INCIDENT-MGR'
+7bfaf81e7d153663 n=41 di=0 seat=0 sangam-packs/src/main/resources/packs/up11-change-window/sangam-up11-change.bpmn
+287a01035e8febaf n=33 di=0 seat=0 sangam-packs/src/main/resources/packs/up12-order-decomposition/sangam-up12-order.bpmn
+1e03782a2a79007e n=17 di=0 seat=0 sangam-packs/src/main/resources/packs/up12-order-decomposition/sangam-up12-suborder.bpmn
+0ec320c5a27b1d17 n=25 di=0 seat=0 sangam-packs/src/main/resources/packs/up13-returns-refunds/sangam-up13-returns.bpmn
+a6686f47be4dc41f n=23 di=0 seat=0 sangam-packs/src/main/resources/packs/up14-three-way-match/sangam-up14-three-way-match.bpmn
+085a558f6ea4d31f n=19 di=0 seat=0 sangam-packs/src/main/resources/packs/up15-recertification/sangam-up15-recertification.bpmn
+21707be8a51cb387 n=29 di=0 seat=0 sangam-packs/src/main/resources/packs/up15-recertification/sangam-up15-recertify.bpmn
+903be320194671c5 n=55 di=0 seat=0 sangam-packs/src/main/resources/packs/up16-provisioning/sangam-up16-provisioning.bpmn
+4e403284352cfa47 n=52 di=0 seat=1 sangam-packs/src/main/resources/packs/up17-prior-authorisation/sangam-up17-prior-auth.bpmn
+     userTask u17_peer literal group 'PEER-REVIEWER'
+7daca2c996462758 n=23 di=0 seat=1 sangam-packs/src/main/resources/packs/up18-capa/sangam-up18-capa.bpmn
+     userTask u18_check literal group 'QA-HEAD'
+cd752add35cbb4ae n=48 di=0 seat=6 sangam-packs/src/main/resources/packs/up19-contract-lifecycle/sangam-up19-clm.bpmn
+     userTask u19_draft literal group 'LEGAL-COUNSEL'
+     userTask u19_redline literal group 'COUNTERPARTY'
+     userTask u19_legalreview literal group 'LEGAL-REVIEW'
+     userTask u19_financereview literal group 'FINANCE-REVIEW'
+     userTask u19_dates literal group 'LEGAL-COUNSEL'
+     userTask u19_renewal literal group 'LEGAL-COUNSEL'
+d5d084f77039e772 n=16 di=0 seat=0 sangam-packs/src/main/resources/packs/up20-rpa/sangam-up20-rpa.bpmn
+1c2321d5efabac2b n=31 di=0 seat=0 sangam-packs/src/main/resources/packs/up21-iot-storm-control/sangam-up21-iot-alarm.bpmn
+031a6a02fa6be054 n=36 di=0 seat=0 sangam-packs/src/main/resources/packs/up22-external-collaboration/sangam-up22-supplier-onboarding.bpmn
+45595cb28cb78503 n=49 di=0 seat=0 sangam-packs/src/main/resources/packs/work-order/sangam-work-order.bpmn
+45aab826be15ae2c n=196 di=0 seat=0 sangam-packs/src/main/resources/packs/works/sangam-works-project.bpmn
+FILES 198 with-DI-problems 12 with-seat-problems 53

@@ -1,0 +1,65 @@
+{
+  "product": "Sangam",
+  "version": "9.9.9",
+  "commit": "unknown",
+  "createdUtc": "2026-11-07T20:06:45Z",
+  "dependencyVersions": {
+    "maven.compiler.release": "21",
+    "version.h2": "2.3.232",
+    "version.hikari": "6.3.0",
+    "version.jackson": "2.22.3",
+    "version.junit": "5.11.4",
+    "version.liquibase": "4.33.0",
+    "version.mariadb": "3.5.3",
+    "version.mssql": "12.10.1.jre11",
+    "version.operaton": "2.2.0",
+    "version.postgresql": "42.7.7",
+    "version.slf4j": "2.0.17",
+    "version.spring-boot": "4.1.2",
+    "version.testcontainers": "1.21.4"
+  },
+  "images": [],
+  "areas": {
+    "sbom": {
+      "directory": "01-sbom",
+      "files": 1,
+      "mandatory": true
+    },
+    "licence": {
+      "directory": "02-licence",
+      "files": 1,
+      "mandatory": true
+    },
+    "dependency-check": {
+      "directory": "03-dependency-check",
+      "files": 1,
+      "mandatory": true
+    },
+    "codeql": {
+      "directory": "04-codeql",
+      "files": 1,
+      "mandatory": true
+    },
+    "tests": {
+      "directory": "05-tests",
+      "files": 1,
+      "mandatory": true
+    },
+    "compliance": {
+      "directory": "06-compliance",
+      "files": 1,
+      "mandatory": true
+    },
+    "config": {
+      "directory": "07-config",
+      "files": 1,
+      "mandatory": true
+    },
+    "native": {
+      "directory": "08-native-profile",
+      "files": 0,
+      "mandatory": false
+    }
+  },
+  "missingMandatoryAreas": []
+}

@@ -1,0 +1,4 @@
+[["The UI quality requirements of §14 (WCAG 2.2 AA with automated accessibility checks, browser tests) still apply; `package.json` has no Playwright or axe today, so they are open UI gaps in XII.9.",
+"The UI quality requirement of Part I (WCAG 2.2 AA, axe/pa11y in CI) still applies; `package.json` has no axe, pa11y or Playwright today, so the accessibility audit and the browser test suite are open UI gaps in XII.9."],
+["I tables at lines naming webapps-neo as the UI base (I §2 comparison, ported-from-Operaton list, `ui/` layout, effort row \"Fork webapps-neo\")",
+"the other Part I statements that name webapps-neo as the UI base (the base comparison table, the ported-from-Operaton list, the `ui/` layout line, the effort row \"Fork webapps-neo\")"]]

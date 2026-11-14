@@ -1,0 +1,1 @@
+$CB prepare "$STAGING" --group "$GROUP" --version "$V"

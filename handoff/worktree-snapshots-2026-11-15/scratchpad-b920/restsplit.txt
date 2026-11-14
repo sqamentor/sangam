@@ -1,0 +1,51 @@
+classes=250 direct-spring=108 tainted=108 free=142
+package total free
+org.sangam.rest.adapter.jdbc 22 22
+org.sangam.rest.adapter.memory 1 1
+org.sangam.rest.adapter.operaton 40 40
+org.sangam.rest.compliance 5 3
+org.sangam.rest.config 3 0
+org.sangam.rest.extension 1 1
+org.sangam.rest.lifecycle 2 1
+org.sangam.rest.modules 1 0
+org.sangam.rest.modules.ai 5 1
+org.sangam.rest.modules.billing 4 0
+org.sangam.rest.modules.cases 6 0
+org.sangam.rest.modules.channels 7 2
+org.sangam.rest.modules.config 6 2
+org.sangam.rest.modules.connectorshealth 7 2
+org.sangam.rest.modules.field 3 0
+org.sangam.rest.modules.geo 1 0
+org.sangam.rest.modules.geo.web 2 1
+org.sangam.rest.modules.ledger 4 1
+org.sangam.rest.modules.modeller 5 1
+org.sangam.rest.modules.ops 10 2
+org.sangam.rest.modules.programme 3 0
+org.sangam.rest.modules.registry 3 1
+org.sangam.rest.modules.registry.web 7 0
+org.sangam.rest.modules.resources 6 2
+org.sangam.rest.port 44 44
+org.sangam.rest.support 12 12
+org.sangam.rest.web 40 3
+--- free classes that reference nothing tainted but sit in a mixed package
+org.sangam.rest.compliance free: ComplianceApiImpl, ComplianceRequests, ComplianceRestService
+org.sangam.rest.lifecycle free: ApiDeprecationRegistry
+org.sangam.rest.modules.ai free: AiApi
+org.sangam.rest.modules.channels free: ChannelStatusSource, InboundMedia
+org.sangam.rest.modules.config free: ConfigPermissions, ModuleConnectors
+org.sangam.rest.modules.connectorshealth free: CdsClientVerifier, HealthHooksPort
+org.sangam.rest.modules.geo.web free: GeoCallerResolver
+org.sangam.rest.modules.ledger free: LedgerTenantDefinitions
+org.sangam.rest.modules.modeller free: ModellerRequestScope
+org.sangam.rest.modules.ops free: OpsApi, SchemaStatusReader
+org.sangam.rest.modules.registry free: RegistryPermissions
+org.sangam.rest.modules.resources free: ResourcesIdentity, ResourcesPermissions
+org.sangam.rest.web free: Problems, RequestContexts, Telemetry
+--- tainted only through references (no Spring import of their own)
+--- consumers (module scope: references to free / tainted sangam-rest classes)
+sangam-geo main free=0 tainted=1
+sangam-host-conformance main free=9 tainted=0
+sangam-host-conformance test free=1 tainted=0
+sangam-quarkus-extension test free=1 tainted=0
+sangam-server main free=449 tainted=21
+sangam-server test free=374 tainted=52

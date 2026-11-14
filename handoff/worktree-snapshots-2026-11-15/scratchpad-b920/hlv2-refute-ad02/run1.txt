@@ -1,0 +1,39 @@
+01:14:23.286 20 queued acquires waiting behind H; each --pid is a live runner stand-in (pids [2184, 4368, 10068, 13444, 16340, 16448, 18736, 20540, 28748, 34356, 35908, 36720, 36776, 37132, 38020, 39052, 40880, 42252, 42308, 44064])
+01:14:23.916 runner stand-ins killed + handles closed; probe after kill: False/no such process
+01:14:23.916 queued acquires still alive after their runner died: 20/20
+01:14:30.199 group C: H released while the runner pid is dead -> Q exit codes [0]; records with holder_pid=<dead pid> and holder_start=null: 10/10
+      example record (r01): {"owner": "customwf-q01", "what": "queued job", "since": "2026-11-10T01:14:24+00:00", "epoch": 1794273264.6733515, "held_by": "owner name until release (not a pid)", "acquirer_pid": 16636, "acquirer_pid_note": "short-lived acquire process; exits at once (I-34)", "holder_pid": 39052, "holder_start": null, "lease_until": 1794273269.6733515, "lease_seconds": 5}
+01:14:45.053 pid 42308 (runner of r03, group C) handed to an unrelated suspended cmd.exe after 762 spawns / 14.9 s
+01:14:45.057 pid 2184 (runner of r05, group C) handed to an unrelated suspended cmd.exe after 763 spawns / 14.9 s
+01:14:45.062 pid 16448 (runner of r07, group C) handed to an unrelated suspended cmd.exe after 764 spawns / 14.9 s
+01:15:12.494 pid 16340 (runner of r00, group B) handed to an unrelated suspended cmd.exe after 1489 spawns / 42.3 s
+01:15:12.494 spin done: 1489 spawns in 42.3 s, hits [0, 3, 5, 7]
+--- r00 group B: Q exit 0; record holder_pid=16340 holder_start=1794273312.4580903 (2026-11-10T01:15:12+00:00); dead runner started 2026-11-10T01:14:20+00:00 (1794273260.641858); reuser started 2026-11-10T01:15:12+00:00 (1794273312.4580903)
+      status| holder pid: 16340 alive=yes (pid 16340 running, start time matches (2026-11-10T01:15:12+00:00))
+      status| lease remaining: 3 s (until 2026-11-10T01:15:18+00:00, lease_seconds=5)
+--- r03 group C: Q exit 0; record holder_pid=42308 holder_start=None (null); dead runner started 2026-11-10T01:14:20+00:00 (1794273260.7639089); reuser started 2026-11-10T01:14:45+00:00 (1794273285.049578)
+      status| holder pid: 42308 alive=yes (pid 42308 running; start time not recorded, so pid reuse cannot be detected)
+      status| lease remaining: -45 s (expired at 2026-11-10T01:14:29+00:00, lease_seconds=5)
+--- r05 group C: Q exit 0; record holder_pid=2184 holder_start=None (null); dead runner started 2026-11-10T01:14:20+00:00 (1794273260.8096817); reuser started 2026-11-10T01:14:45+00:00 (1794273285.0542092)
+      status| holder pid: 2184 alive=yes (pid 2184 running; start time not recorded, so pid reuse cannot be detected)
+      status| lease remaining: -45 s (expired at 2026-11-10T01:14:30+00:00, lease_seconds=5)
+--- r07 group C: Q exit 0; record holder_pid=16448 holder_start=None (null); dead runner started 2026-11-10T01:14:20+00:00 (1794273260.870592); reuser started 2026-11-10T01:14:45+00:00 (1794273285.0589993)
+      status| holder pid: 16448 alive=yes (pid 16448 running; start time not recorded, so pid reuse cannot be detected)
+      status| lease remaining: -45 s (expired at 2026-11-10T01:14:30+00:00, lease_seconds=5)
+01:15:36.542 r00: waiter W 14 s after the lease (5 s) expired, real holder long dead: STILL WAITING
+      W.err| MISSED HEARTBEAT: lock held by customwf-q00 since 2026-11-10T01:15:13+00:00 (queued job); holder pid 16340 alive=yes (pid 16340 running, start time matches (2026-11-10T01:15:12+00:00)), lease expired 0s ago; not auto-released, report to the main session
+01:15:36.612 r03: waiter W 14 s after the lease (5 s) expired, real holder long dead: STILL WAITING
+      W.err| MISSED HEARTBEAT: lock held by customwf-q03 since 2026-11-10T01:14:24+00:00 (queued job); holder pid 42308 alive=yes (pid 42308 running; start time not recorded, so pid reuse cannot be detected), lease expired 46s ago; not auto-released, report to the main session
+01:15:36.652 r05: waiter W 14 s after the lease (5 s) expired, real holder long dead: STILL WAITING
+      W.err| MISSED HEARTBEAT: lock held by customwf-q05 since 2026-11-10T01:14:25+00:00 (queued job); holder pid 2184 alive=yes (pid 2184 running; start time not recorded, so pid reuse cannot be detected), lease expired 46s ago; not auto-released, report to the main session
+01:15:36.738 r07: waiter W 14 s after the lease (5 s) expired, real holder long dead: STILL WAITING
+      W.err| MISSED HEARTBEAT: lock held by customwf-q07 since 2026-11-10T01:14:25+00:00 (queued job); holder pid 16448 alive=yes (pid 16448 running; start time not recorded, so pid reuse cannot be detected), lease expired 46s ago; not auto-released, report to the main session
+01:15:36.756 controls (pid not reused by the spin): 16/16 waiters got the lock (auto-release after the lease); still waiting: []
+01:15:39.855 r00: after the unrelated process was killed, waiter W: exit 0 (acquired by W: next heavy job)
+      served| 2026-11-10T01:15:36+00:00 auto-released stale lock owner=customwf-q00 pid=16340 since=2026-11-10T01:15:13+00:00 reason=dead-holder+expired-lease
+01:15:39.907 r03: after the unrelated process was killed, waiter W: exit 0 (acquired by W: next heavy job)
+      served| 2026-11-10T01:15:36+00:00 auto-released stale lock owner=customwf-q03 pid=42308 since=2026-11-10T01:14:24+00:00 reason=dead-holder+expired-lease
+01:15:39.985 r05: after the unrelated process was killed, waiter W: exit 0 (acquired by W: next heavy job)
+      served| 2026-11-10T01:15:36+00:00 auto-released stale lock owner=customwf-q05 pid=2184 since=2026-11-10T01:14:25+00:00 reason=dead-holder+expired-lease
+01:15:40.086 r07: after the unrelated process was killed, waiter W: exit 0 (acquired by W: next heavy job)
+      served| 2026-11-10T01:15:36+00:00 auto-released stale lock owner=customwf-q07 pid=16448 since=2026-11-10T01:14:25+00:00 reason=dead-holder+expired-lease

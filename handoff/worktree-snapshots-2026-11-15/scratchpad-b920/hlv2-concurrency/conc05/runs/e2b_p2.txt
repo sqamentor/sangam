@@ -1,0 +1,6 @@
+mode=log poll=0.002s lease=2.5s offsets=[-80,-10] ms trials=100 folder=C:\Users\LOKEND~2\AppData\Local\Temp\claude\b920001b93f0ae3b\6e98c2a7-cdac-4783-9098-832546572812\scratchpad\hlv2-concurrency\conc05\runs\e2b-log-p2-1794271979179673500
+    84  A:released by A | B acquired=True | lock after=B
+    10  A:refused: lock is held by B, not A | B acquired=True | lock after=B
+     6  A:no lock held | B acquired=True | lock after=B
+trials where A's os.remove hit PermissionError (sharing violation): 2
+BAD (B holds per its own output, lock file gone, A said 'released by A'): 0 / 100

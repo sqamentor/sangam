@@ -1,0 +1,1 @@
+[["export * from './worker.js';\n", "export * from './worker.js';\n/** The typed surface generated from sangam-api.yaml (M-020); wire models and API classes under one namespace. */\nexport * as generated from './generated/index.js';\n"]]

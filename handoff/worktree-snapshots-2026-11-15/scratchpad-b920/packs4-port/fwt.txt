@@ -1,0 +1,2 @@
+ 1.00 NEW        added= 259 present= 258  sangam/sangam-server/src/test/java/org/sangam/server/acceptance/fwt/FwtWorkerCompatIT.java
+        MISSING: String pid = start("010", topic);

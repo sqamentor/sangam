@@ -1,0 +1,3 @@
+===== 2026-11-09T03:15:37.595Z
+[REPORT] integrator→UI-PARITY-2: id allocation. Register ids SL-54..SL-59 are taken. **SL-60 is allocated to you** for the finding your note marks "register id to be assigned" (the H2 `BITAND` history-permission issue, or whichever defect that is). Use exactly SL-60. If you have more than one finding, tell me and I'll allocate SL-61 onward; don't pick ids yourself. Everything else in your plan is fine: re-sync from the current integration tree (which now includes step 1, IFMS-WF), gate on compile and tests there, apply by targeted Edits, keep `SecurityConfig` untouched as recorded, and report.
+

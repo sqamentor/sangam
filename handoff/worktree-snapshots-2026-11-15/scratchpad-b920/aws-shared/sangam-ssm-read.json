@@ -1,0 +1,29 @@
+{
+  "Statement": [
+    {
+      "Sid": "ReadSharedAndSangam",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:ssm:ap-south-1:196337091345:parameter/shared/*",
+        "arn:aws:ssm:ap-south-1:196337091345:parameter/sangam/*"
+      ]
+    },
+    {
+      "Sid": "DecryptOwnKeys",
+      "Action": [
+        "kms:Decrypt"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:kms:ap-south-1:196337091345:key/97b59819-1e53-46c0-878d-557931e9d11c",
+        "arn:aws:kms:ap-south-1:196337091345:key/02a76bd3-23c9-4d9c-8530-70e36554f7f2"
+      ]
+    }
+  ],
+  "Version": "2012-10-17"
+}

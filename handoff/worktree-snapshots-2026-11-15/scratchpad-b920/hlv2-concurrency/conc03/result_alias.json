@@ -1,0 +1,34 @@
+{
+ "part": "alias",
+ "elapsed_s": 0.1,
+ "result": {
+  "my_pid": 15632,
+  "probes": {
+   "pid+0": [
+    true,
+    1794271312.0223672,
+    "running"
+   ],
+   "pid+1": [
+    true,
+    1794271312.0223672,
+    "running"
+   ],
+   "pid+2": [
+    true,
+    1794271312.0223672,
+    "running"
+   ],
+   "pid+3": [
+    true,
+    1794271312.0223672,
+    "running"
+   ],
+   "pid+4": [
+    false,
+    null,
+    "no such process"
+   ]
+  }
+ }
+}

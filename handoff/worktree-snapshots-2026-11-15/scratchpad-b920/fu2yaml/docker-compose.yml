@@ -1,0 +1,643 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Sangam development / pilot stack. Pick exactly ONE database profile:
+#
+#   docker compose --profile postgres up -d                       # PostgreSQL 17 (default choice)
+#   docker compose --profile oracle up -d                         # Oracle Free 23 (needs ./drivers/ojdbc11.jar, LIC-2,
+#                                                                 #   and SANGAM_ACCEPT_ORACLE_FREE_TERMS=Y, decision 180)
+#   docker compose --profile sqlserver up -d                      # SQL Server 2022, READ_COMMITTED_SNAPSHOT ON
+#   docker compose --profile mysql up -d                          # MySQL 8.4, READ COMMITTED, utf8mb4 (MariaDB driver)
+#
+# Add-ons:   --profile simulators      government-system simulators (IFMS, PFMS, eSign, DLT, DigiLocker, PayGov, SMTP)
+#            --profile observability   Jaeger + Prometheus + Grafana (set OTEL_COLLECTOR_CONFIG=collector-observability.yaml)
+#            --profile malware         ClamAV for upload scanning (set SANGAM_MALWARE_SCANNER=clamd)
+#            --profile script-worker   BPMN script tasks in an nsjail sandbox (set NSJAIL_COMMIT, KAFEL_COMMIT,
+#                                      UBUNTU_SNAPSHOT and a worker token)
+#            --profile pdf / ocr       PDF validator and OCR sidecars (with -f docker-compose.sidecars.yml)
+#
+# Always started: Keycloak (tenant realm "sangam" with P1-P4 test seats, platform realm "sangam-platform") and its
+# one-shot keycloak-broker-otp (decision 113; add -f docker-compose.keycloak-secret.yml for a secret-file admin
+# password), OTel collector, UI.
+# Images and DB settings match the Stage B Testcontainers set (spike/RUN-QUEUE.md, simulators Databases.java).
+# Copy .env.example to .env and change the passwords before anything other than local development.
+# Run from this directory (deploy/compose); build contexts point at sangam/.
+
+name: sangam
+
+x-server-common: &server-common
+  image: ${SANGAM_REGISTRY:-sangam}/sangam-server:${SANGAM_VERSION:-dev}
+  build:
+    context: ../..
+    dockerfile: deploy/docker/server.Dockerfile
+    args:
+      APP_MODULE: sangam-server
+  restart: unless-stopped
+  depends_on: &server-depends
+    keycloak:
+      condition: service_started
+    otel-collector:
+      condition: service_started
+  ports:
+    - "${SANGAM_HTTP_PORT:-8080}:8080"
+    - "127.0.0.1:${SANGAM_MGMT_PORT:-8081}:8081"
+  volumes:
+    - ./drivers:/opt/sangam/drivers:ro
+    - ./config/server:/opt/sangam/config:ro
+    - pfms-files:/data/pfms
+    # compliance log archive (R51, 180 days) + cell exports
+    - server-state:/var/lib/sangam
+  networks:
+    sangam:
+      aliases: [sangam-server]
+  environment: &server-env
+    TZ: UTC
+    # Decisions 143 and 198: the production switch is always explicit (missing or invalid refuses to start). true here
+    # turns every production guard on (https and non-loopback endpoints, no dev tokens; a dev profile is ignored with a
+    # warning). false is only for local development on this file: with no dev profile the server runs NON_PRODUCTION
+    # (guards off, dev defaults still refused); dev defaults need false plus the dev profile (docker-compose.cells.yml).
+    SANGAM_SECURITY_PRODUCTION: ${SANGAM_SECURITY_PRODUCTION:-true}
+    SANGAM_LIQUIBASE_MODE: ${SANGAM_LIQUIBASE_MODE:-startup}
+    SANGAM_TENANT_DEFAULT: ${SANGAM_TENANT_DEFAULT:-dept-finance}
+    # This example is an India deployment; the server has no default jurisdiction.
+    SANGAM_COMPLIANCE_JURISDICTIONS: ${SANGAM_COMPLIANCE_JURISDICTIONS:-IN}
+    SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY: ${SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY:-IN}
+    # Profile "oidc" (application-oidc.yaml) reads SANGAM_OIDC_ISSUER = the iss the browser's tokens carry; the keys
+    # are fetched over the internal network (OidcConfig prefers jwk-set-uri and still validates iss).
+    SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
+    SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${SANGAM_OIDC_ISSUER_INTERNAL:-http://keycloak:8180/realms/sangam}/protocol/openid-connect/certs
+    # SL-70: the separate platform realm; only its tokens are platform identities (sangam-admin = platform admin)
+    SANGAM_SECURITY_PLATFORM_ISSUER: ${SANGAM_PLATFORM_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam-platform}
+    SANGAM_SECURITY_PLATFORM_JWK_SET_URI: ${SANGAM_PLATFORM_ISSUER_INTERNAL:-http://keycloak:8180/realms/sangam-platform}/protocol/openid-connect/certs
+    SANGAM_SECURITY_OIDC_AUDIENCE: sangam-server
+    SANGAM_SECURITY_OIDC_TENANT_CLAIM: tenant
+    SANGAM_SECURITY_OIDC_ROLES_CLAIM: roles
+    SANGAM_SECURITY_OIDC_SEATS_CLAIM: seats
+    SANGAM_CORS_ORIGINS: ${SANGAM_CORS_ORIGINS:-http://localhost:3000}
+    # OTLP export is off unless enabled (ARCHITECTURE 1.9, R56); the local collector drops it by default anyway.
+    SANGAM_OTLP_ENABLED: ${SANGAM_OTLP_ENABLED:-false}
+    SANGAM_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+    MANAGEMENT_OTLP_METRICS_EXPORT_URL: http://otel-collector:4318/v1/metrics
+    # SL-168 / M-062: engine spans (sangam.tracing.engine.enabled), exported only when OTLP is enabled above
+    SANGAM_TRACING_ENGINE_ENABLED: ${SANGAM_TRACING_ENGINE_ENABLED:-false}
+    # SL-168 / X1-05: the three leaf pools, each on top of the main pool (deploy/README.md section 1.6); server defaults
+    SANGAM_QUOTA_POOL_SIZE: ${SANGAM_QUOTA_POOL_SIZE:-4}
+    SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE: ${SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE:-2}
+    SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE: ${SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE:-2}
+    # M-082: upload malware scanning. none by default; SANGAM_MALWARE_SCANNER=clamd together with --profile malware
+    # (the clamav service below). ICAP: SANGAM_MALWARE_SCANNER=icap plus SANGAM_MALWARE_ICAP_URI in config/server.
+    SANGAM_MALWARE_SCANNER: ${SANGAM_MALWARE_SCANNER:-none}
+    SANGAM_MALWARE_FAIL_CLOSED: ${SANGAM_MALWARE_FAIL_CLOSED:-true}
+    SANGAM_MALWARE_CLAMD_HOST: ${SANGAM_MALWARE_CLAMD_HOST:-clamav}
+    SANGAM_MALWARE_CLAMD_PORT: ${SANGAM_MALWARE_CLAMD_PORT:-3310}
+    # M-075: platform secret providers are opt-in and NOT set here: an empty SANGAM_SECRETS_PROVIDERS would still
+    # switch the resolver on. Set sangam.secrets.* in config/server/application.yaml (deploy/README.md section 1.7).
+    # M-081 (decisions 94, 95): fonts the PDF/A and PDF/UA renderer embeds, as shipped in the image (/opt/sangam/fonts,
+    # SIL OFL 1.1). Comma or path-separator list; override only to point at other licensed fonts mounted in the container.
+    SANGAM_PDF_FONTS: ${SANGAM_PDF_FONTS:-/opt/sangam/fonts/NotoSans-Regular.ttf,/opt/sangam/fonts/NotoSansDevanagari-Regular.ttf}
+    # sangam-compliance (DPDP / CERT-In). The log archive is the server-state volume (image default path).
+    # (SANGAM_COMPLIANCE_JURISDICTIONS and _LOG_ARCHIVE_COUNTRY are set once, above: duplicate keys are a YAML error)
+    SANGAM_COMPLIANCE_ORGANISATION: ${SANGAM_COMPLIANCE_ORGANISATION:-Sangam development}
+    SANGAM_COMPLIANCE_TENANTS: ${SANGAM_COMPLIANCE_TENANTS:-dept-finance,dept-social-welfare,dept-industries}
+    # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.
+    SANGAM_INTEGRATION_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
+    SANGAM_CONNECTORS_IFMS_BASE_URL: http://sim-ifms:9000
+    SANGAM_CONNECTORS_ESIGN_BASE_URL: http://sim-esign:9000
+    SANGAM_CONNECTORS_DLT_BASE_URL: http://sim-dlt:9000
+    SANGAM_CONNECTORS_DIGILOCKER_BASE_URL: http://sim-digilocker:9000
+    SANGAM_CONNECTORS_PAYGOV_BASE_URL: http://sim-paygov:9000
+    SANGAM_CONNECTORS_PFMS_DIRECTORY: /data/pfms
+    SPRING_MAIL_HOST: sim-smtp
+    SPRING_MAIL_PORT: "2525"
+  healthcheck:
+    test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf \"GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q UP <&3'"]
+    interval: 15s
+    timeout: 5s
+    retries: 20
+    start_period: 90s
+
+x-sim-common: &sim-common
+  image: ${SANGAM_REGISTRY:-sangam}/sangam-simulators:${SANGAM_VERSION:-dev}
+  build:
+    context: ../..
+    dockerfile: deploy/docker/simulators.Dockerfile
+  restart: unless-stopped
+  profiles: [simulators]
+  networks: [sangam]
+
+services:
+
+  # ------------------------------------------------------------------------------------------------ databases
+  postgres:
+    image: postgres:17
+    profiles: [postgres]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sangam
+      POSTGRES_USER: sangam
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-sangam-dev-only}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8 --data-checksums"
+      TZ: UTC
+      PGTZ: UTC
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - timezone=UTC
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=5
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./db/postgres/init:/docker-entrypoint-initdb.d:ro
+      - backup:/backup
+    ports: ["127.0.0.1:${PG_PORT:-5432}:5432"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sangam -d sangam"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Decision 180 (decision 122 pattern): the oracle profile runs only after YOU accept the Oracle Database Free container
+  # image terms and set SANGAM_ACCEPT_ORACLE_FREE_TERMS=Y in .env. Without it the one-shot oracle-terms exits 1, so
+  # oracle and server-oracle never start (NOT-RUN, never a pass); the oracle entrypoint repeats the check before the
+  # image's own container-entrypoint.sh (the image has no CMD, so overriding the entrypoint drops nothing).
+  oracle-terms:
+    image: gvenzl/oracle-free:23-slim-faststart
+    profiles: [oracle]
+    restart: "no"
+    environment:
+      SANGAM_ACCEPT_ORACLE_FREE_TERMS: ${SANGAM_ACCEPT_ORACLE_FREE_TERMS:-N}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        [ "$${SANGAM_ACCEPT_ORACLE_FREE_TERMS}" = Y ] ||
+        { echo "NOT-RUN: SANGAM_ACCEPT_ORACLE_FREE_TERMS is not Y. Read the Oracle Free container image terms, then set it in .env yourself (decision 180)." >&2; exit 1; }
+
+  oracle:
+    image: gvenzl/oracle-free:23-slim-faststart
+    profiles: [oracle]
+    restart: unless-stopped
+    depends_on:
+      oracle-terms:
+        condition: service_completed_successfully
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        [ "$${SANGAM_ACCEPT_ORACLE_FREE_TERMS}" = Y ] ||
+        { echo "NOT-RUN: SANGAM_ACCEPT_ORACLE_FREE_TERMS is not Y (decision 180)." >&2; exit 1; };
+        exec container-entrypoint.sh
+    environment:
+      SANGAM_ACCEPT_ORACLE_FREE_TERMS: ${SANGAM_ACCEPT_ORACLE_FREE_TERMS:-N}
+      ORACLE_PASSWORD: ${ORACLE_SYSTEM_PASSWORD:-SangamDev_0nly}
+      APP_USER: sangam
+      APP_USER_PASSWORD: ${ORACLE_PASSWORD:-SangamDev_0nly}
+      TZ: UTC
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ./db/oracle/init:/container-entrypoint-initdb.d:ro
+    ports: ["127.0.0.1:${ORACLE_PORT:-1521}:1521"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: [sqlserver]
+    restart: unless-stopped
+    environment:
+      # Decision 122 (RM-35): this file never accepts Microsoft's licence terms. The operator who has read and accepts
+      # the SQL Server container EULA sets SANGAM_ACCEPT_MSSQL_EULA=Y in .env; without it SQL Server refuses to start.
+      ACCEPT_EULA: ${SANGAM_ACCEPT_MSSQL_EULA:-N}
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-SangamDev_0nly!}
+      MSSQL_COLLATION: Latin1_General_100_CI_AS_SC_UTF8
+      TZ: UTC
+    volumes:
+      - mssql-data:/var/opt/mssql
+      - backup:/backup
+    ports: ["127.0.0.1:${MSSQL_PORT:-1433}:1433"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q 'SELECT 1' -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # One-shot: database "sangam", login "sangam", READ_COMMITTED_SNAPSHOT ON (VI.1.6), FULL recovery (log backups).
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    profiles: [sqlserver]
+    restart: "no"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:-SangamDev_0nly!}
+      SANGAM_DB_PASSWORD: ${MSSQL_PASSWORD:-SangamDev_0nly!}
+    volumes:
+      - ./db/sqlserver/init.sql:/init/init.sql:ro
+    networks: [sangam]
+    entrypoint:
+      - /bin/bash
+      - -c
+      - /opt/mssql-tools18/bin/sqlcmd -C -S sqlserver -U sa -P "$${MSSQL_SA_PASSWORD}" -b -v SANGAM_DB_PASSWORD="$${SANGAM_DB_PASSWORD}" -i /init/init.sql
+
+  mysql:
+    image: mysql:8.4
+    profiles: [mysql]
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: sangam
+      MYSQL_USER: sangam
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sangam-dev-only}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-sangam-root-dev-only}
+      TZ: UTC
+    command:
+      - --transaction-isolation=READ-COMMITTED
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_bin
+      - --max-connections=300
+      - --default-time-zone=+00:00
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-expire-logs-seconds=604800
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/mysql/conf.d:/etc/mysql/conf.d:ro
+      - backup:/backup
+    ports: ["127.0.0.1:${MYSQL_PORT:-3306}:3306"]
+    networks: [sangam]
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  # ------------------------------------------------------------------------------------------------ server (one per DB profile)
+  server-postgres:
+    <<: *server-common
+    profiles: [postgres]
+    depends_on:
+      <<: *server-depends
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: postgres,oidc
+      SANGAM_DB_URL: jdbc:postgresql://postgres:5432/sangam?ApplicationName=sangam-server
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${PG_PASSWORD:-sangam-dev-only}
+
+  server-oracle:
+    <<: *server-common
+    profiles: [oracle]
+    depends_on:
+      <<: *server-depends
+      oracle:
+        condition: service_healthy
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: oracle,oidc
+      SANGAM_DB_URL: jdbc:oracle:thin:@//oracle:1521/FREEPDB1
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${ORACLE_PASSWORD:-SangamDev_0nly}
+
+  server-sqlserver:
+    <<: *server-common
+    profiles: [sqlserver]
+    depends_on:
+      <<: *server-depends
+      sqlserver-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: sqlserver,oidc
+      SANGAM_DB_URL: jdbc:sqlserver://sqlserver:1433;databaseName=sangam;encrypt=true;trustServerCertificate=true;sendTimeAsDatetime=false;applicationName=sangam-server
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${MSSQL_PASSWORD:-SangamDev_0nly!}
+
+  server-mysql:
+    <<: *server-common
+    profiles: [mysql]
+    depends_on:
+      <<: *server-depends
+      mysql:
+        condition: service_healthy
+    environment:
+      <<: *server-env
+      SPRING_PROFILES_ACTIVE: mysql,oidc
+      # MariaDB Connector/J (shipped, LIC-4/LIC-5) against MySQL 8.4; READ COMMITTED per session as well (P-1).
+      SANGAM_DB_URL: "jdbc:mariadb://mysql:3306/sangam?permitMysqlScheme=true&allowPublicKeyRetrieval=true&useServerPrepStmts=true&connectionCollation=utf8mb4_bin&sessionVariables=transaction_isolation='READ-COMMITTED',time_zone='+00:00'"
+      SANGAM_DB_USER: sangam
+      SANGAM_DB_PASSWORD: ${MYSQL_PASSWORD:-sangam-dev-only}
+
+  # ------------------------------------------------------------------------------------------------ UI
+  ui:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-ui:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/ui.Dockerfile
+    restart: unless-stopped
+    environment:
+      SANGAM_API_UPSTREAM: http://sangam-server:8080
+      SANGAM_PUBLIC_API_BASE: /api/v1
+      SANGAM_OIDC_ISSUER: ${SANGAM_OIDC_ISSUER_PUBLIC:-http://localhost:8180/realms/sangam}
+      SANGAM_OIDC_CLIENT_ID: sangam-ui
+      SANGAM_ENV_LABEL: ${SANGAM_ENV_LABEL:-dev}
+      # M-044: trace viewer link with {traceId}, e.g. http://localhost:16686/trace/{traceId} (Jaeger); empty = none
+      SANGAM_TRACE_URL_TEMPLATE: ${SANGAM_TRACE_URL_TEMPLATE:-}
+      # Decision 213: Microsoft Teams personal tab (/teams.html). false (default) keeps it unframeable like every page.
+      # SANGAM_TEAMS_FRAME_ANCESTORS: space-separated https origins allowed to frame it; empty = the image's built-in
+      # Microsoft list. The image refuses to start on any other value of SANGAM_TEAMS_ENABLED or a non-https origin.
+      SANGAM_TEAMS_ENABLED: ${SANGAM_TEAMS_ENABLED:-false}
+      SANGAM_TEAMS_FRAME_ANCESTORS: ${SANGAM_TEAMS_FRAME_ANCESTORS:-}
+      # Decision 165: DSC loopback agent on the signer's computer; empty (default) = DSC not set up. Only
+      # http://127.0.0.1:<port> or http://localhost:<port> (no path, no IPv6); the image refuses anything else.
+      SANGAM_DSC_AGENT_ORIGIN: ${SANGAM_DSC_AGENT_ORIGIN:-}
+    ports: ["${SANGAM_UI_PORT:-3000}:8080"]
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ add-ons
+  # M-082 / owner decision 71: ClamAV (GPL-2.0) as a separate service, never linked; pinned tag; pulled only when the
+  # profile is used (test phase). clamd 3310 is not published: only the server reaches it on the sangam network.
+  clamav:
+    image: clamav/clamav:1.4.3
+    restart: unless-stopped
+    profiles: [malware]
+    environment:
+      TZ: UTC
+    volumes:
+      - clamav-db:/var/lib/clamav
+    networks: [sangam]
+
+  # M-081 and M-103 (decisions 114, 119, 153, 167): the PDF validator (veraPDF; the only distribution with Rhino) and the
+  # OCR sidecar (Tesseract) as separate services. Each serves HTTPS with a key store and accepts only the bearer token
+  # in its mounted token file (decision 153). The one-shot sidecar-secrets-init makes demo tokens, key stores and the
+  # server's trust store at start into named volumes (sidecar-secrets-init.sh; nothing committed). Ports 8085 and 8086
+  # are never published and both containers sit only on the internal sidecars network (no outbound network).
+  # The server is wired to them by docker-compose.sidecars.yml:
+  #   docker compose -f docker-compose.yml -f docker-compose.sidecars.yml --profile postgres --profile pdf --profile ocr up -d
+  # Without it PDF output answers 422 FORMAT_NOT_AVAILABLE and OCR is unavailable (fail closed, nothing guessed).
+  sidecar-secrets-init:
+    image: ${SANGAM_SIDECAR_INIT_IMAGE:-eclipse-temurin:25.0.1_8-jre-noble}
+    profiles: [pdf, ocr]
+    restart: "no"
+    user: "0:0"
+    network_mode: none
+    entrypoint: ["/bin/sh", "/opt/sangam/sidecar-secrets-init.sh"]
+    environment:
+      SANGAM_SIDECAR_CERT_DAYS: ${SANGAM_SIDECAR_CERT_DAYS:-397}
+    volumes:
+      - ./sidecar-secrets-init.sh:/opt/sangam/sidecar-secrets-init.sh:ro
+      - pdf-validator-secrets:/secrets/pdf-validator
+      - ocr-secrets:/secrets/ocr
+      - sidecar-client-secrets:/secrets/client
+
+  pdf-validator:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-pdf-validator:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/pdf-validator.Dockerfile
+    restart: unless-stopped
+    profiles: [pdf]
+    depends_on:
+      sidecar-secrets-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs: ["/tmp:size=512m"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      TZ: UTC
+      SANGAM_PDF_VALIDATOR_TRANSPORT: tls
+      SANGAM_PDF_VALIDATOR_TOKEN_FILE: /run/sangam-secrets/token
+      SANGAM_PDF_VALIDATOR_TLS_KEYSTORE: /run/sangam-secrets/keystore.p12
+      SANGAM_PDF_VALIDATOR_TLS_KEYSTORE_PASSWORD_FILE: /run/sangam-secrets/keystore-password
+      SANGAM_PDF_VALIDATOR_MAX_BYTES: ${SANGAM_PDF_VALIDATOR_MAX_BYTES:-67108864}
+    volumes:
+      - pdf-validator-secrets:/run/sangam-secrets:ro
+    networks: [sidecars]
+
+  # M-103 (decisions 153, 157, 167): built with the required build arg UBUNTU_SNAPSHOT (deploy/licence/ocr-build-args.env;
+  # the Dockerfile fails without it).
+  ocr:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-ocr:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/ocr.Dockerfile
+      args:
+        UBUNTU_SNAPSHOT: ${UBUNTU_SNAPSHOT:-}
+    restart: unless-stopped
+    profiles: [ocr]
+    depends_on:
+      sidecar-secrets-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs: ["/tmp:size=256m"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      TZ: UTC
+      SANGAM_OCR_TRANSPORT: tls
+      SANGAM_OCR_TOKEN_FILE: /run/sangam-secrets/token
+      SANGAM_OCR_TLS_KEYSTORE: /run/sangam-secrets/keystore.p12
+      SANGAM_OCR_TLS_KEYSTORE_PASSWORD_FILE: /run/sangam-secrets/keystore-password
+      SANGAM_OCR_LANGUAGES: ${SANGAM_OCR_LANGUAGES:-eng,hin}
+    volumes:
+      - ocr-secrets:/run/sangam-secrets:ro
+    networks: [sidecars]
+
+  # M-061 (owner decisions 53, 77, 78, 79): the script worker runs BPMN script tasks in nsjail. Container privileges
+  # per decision 78 (private cgroup namespace, SYS_ADMIN, seccomp/AppArmor/systempaths unconfined at container level;
+  # nsjail applies its own per-script seccomp). It holds only the worker: no database credentials. The build needs
+  # every pinned build arg of deploy/licence/script-worker-build-args.env (decisions 128 and 157: NSJAIL_COMMIT,
+  # KAFEL_COMMIT and UBUNTU_SNAPSHOT; the Dockerfile fails without one): export them, or pass that file with
+  # --env-file; nothing is pulled before the test phase.
+  script-worker:
+    image: ${SANGAM_REGISTRY:-sangam}/sangam-script-worker:${SANGAM_VERSION:-dev}
+    build:
+      context: ../..
+      dockerfile: deploy/docker/script-worker.Dockerfile
+      args:
+        NSJAIL_COMMIT: ${NSJAIL_COMMIT:-}
+        KAFEL_COMMIT: ${KAFEL_COMMIT:-}
+        UBUNTU_SNAPSHOT: ${UBUNTU_SNAPSHOT:-}
+    restart: unless-stopped
+    profiles: [script-worker]
+    cgroup: private
+    cap_add: [SYS_ADMIN]
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+      - systempaths=unconfined
+    environment:
+      TZ: UTC
+      SANGAM_URL: http://sangam-server:8080
+      # a worker token (dev); or SANGAM_OIDC_TOKEN_URL + SANGAM_CLIENT_ID + SANGAM_CLIENT_SECRET
+      SANGAM_TOKEN: ${SANGAM_SCRIPT_WORKER_TOKEN:-}
+      SANGAM_SCRIPT_LANGUAGES: ${SANGAM_SCRIPT_LANGUAGES:-javascript,python}
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ identity
+  # Development mode (embedded H2 store). Production: external Keycloak (or Parichay/SAML via brokering, R50).
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm", "--http-port=8180", "--hostname-strict=false", "--health-enabled=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin-dev-only}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://localhost:8180}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      TZ: UTC
+    volumes:
+      - ./keycloak/realm:/opt/keycloak/data/import:ro
+    ports: ["${KEYCLOAK_PORT:-8180}:8180"]
+    networks: [sangam]
+
+  # Owner decision 113: one-shot, after the realm import. configure-broker-otp.sh (kcadm, idempotent on every start)
+  # adds the post-broker-login OTP flow to each brokered IdP and the amr mapper to the user clients, so a brokered
+  # sign-in carries amr otp (deploy/compose/keycloak/README.md). Keycloak has no health check here (its image has no
+  # client to probe /health), so it waits on service_started and the script itself waits up to WAIT_SECONDS.
+  # Admin password: dev falls back to KEYCLOAK_ADMIN_PASSWORD exactly like the keycloak service; for anything else add
+  # -f docker-compose.keycloak-secret.yml, which supplies KEYCLOAK_ADMIN_PASSWORD_FILE from a compose secret file.
+  keycloak-broker-otp:
+    image: quay.io/keycloak/keycloak:26.3.3
+    entrypoint: ["sh"]
+    command: ["/opt/sangam/keycloak/configure-broker-otp.sh"]
+    restart: on-failure
+    depends_on:
+      keycloak:
+        condition: service_started
+    environment:
+      KEYCLOAK_URL: http://keycloak:8180
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin-dev-only}
+      BROKER_ALIASES: ${KEYCLOAK_BROKER_ALIASES:-gov-sso-saml}
+      AMR_CLIENTS: ${KEYCLOAK_AMR_CLIENTS:-sangam-ui}
+      TZ: UTC
+    volumes:
+      - ./keycloak/configure-broker-otp.sh:/opt/sangam/keycloak/configure-broker-otp.sh:ro
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ telemetry
+  # Always present so the server has a local OTLP endpoint; by default it exports nowhere (R56: no outbound
+  # telemetry by default). OTEL_COLLECTOR_CONFIG=collector-observability.yaml forwards to Jaeger/Prometheus.
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.131.1
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/${OTEL_COLLECTOR_CONFIG:-collector-base.yaml}"]
+    volumes:
+      - ./otel:/etc/otelcol:ro
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    networks: [sangam]
+
+  jaeger:
+    image: jaegertracing/jaeger:2.9.0
+    profiles: [observability]
+    restart: unless-stopped
+    ports: ["127.0.0.1:16686:16686"]
+    networks: [sangam]
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [observability]
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+      - --web.enable-lifecycle
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [sangam]
+
+  grafana:
+    image: grafana/grafana-oss:12.1.1
+    profiles: [observability]
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin-dev-only}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PLUGIN_ADMIN_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports: ["127.0.0.1:3001:3000"]
+    networks: [sangam]
+
+  # ------------------------------------------------------------------------------------------------ simulators
+  sim-ifms:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: ifms, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9101:9000"]
+  sim-pfms:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: pfms, SANGAM_SIM_PORT: "9000", SANGAM_SIM_DATA: /data }
+    volumes: [pfms-files:/data]
+    ports: ["127.0.0.1:9102:9000"]
+  sim-esign:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: esign, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9103:9000"]
+  sim-dlt:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: dlt, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9104:9000"]
+  sim-digilocker:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: digilocker, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9105:9000"]
+  sim-paygov:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: paygov, SANGAM_SIM_PORT: "9000" }
+    ports: ["127.0.0.1:9106:9000"]
+  sim-smtp:
+    <<: *sim-common
+    environment: { SANGAM_SIM_KIND: smtp, SANGAM_SIM_PORT: "9000", SANGAM_SIM_SMTP_PORT: "2525" }
+    ports: ["127.0.0.1:9107:9000"]
+
+networks:
+  sangam:
+    name: sangam
+  # The PDF validator and OCR sidecars: internal (no route out); only the server joins it (docker-compose.sidecars.yml).
+  sidecars:
+    name: sangam-sidecars
+    internal: true
+
+volumes:
+  pdf-validator-secrets:
+  ocr-secrets:
+  sidecar-client-secrets:
+  server-state:
+  pg-data:
+  oracle-data:
+  mssql-data:
+  mysql-data:
+  backup:
+  pfms-files:
+  prometheus-data:
+  grafana-data:
+  clamav-db:

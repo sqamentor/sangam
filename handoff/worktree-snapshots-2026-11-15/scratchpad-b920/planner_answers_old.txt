@@ -1,0 +1,67 @@
+2026-11-07T20:18:40.909Z :: Your questions have been answered: "Who may use the UI screens that call Operaton's raw /engine-rest API? These calls bypass Sangam's reason capture, deny-wins policy and audit chain."="Platform roles only (Recommended)", "How should the first admin be created?"="Install-time bootstrap (Recommended)", "Operaton has a runtime UI plugin API. Should Sangam have one?"="Yes, signed plugins (Recommended)". You can now continue with these answers in mind.
+
+2026-11-07T21:54:34.504Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-07T23:48:59.237Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-07T23:49:51.715Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-07T23:50:14.089Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-07T23:51:56.773Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-07T23:55:35.634Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-07T23:58:23.368Z :: 40	import org.springframework.context.annotation.ConditionContext; 41	import org.springframework.context.annotation.Conditional; 42	import org.springframework.context.annotation.Configuration; 43	import org.springframework.core.env.Environment; 44	import org.springframework.core.type.AnnotatedTypeMetadata; 45	 46	/** 47	 * Product schema at startup, driven by {@code SANGAM_LIQUIBASE_MODE} ({@link LiquibaseMode}): 48	 * <ul> 49	 *   <li>when the sangam-persistence master changelog is on the class path ({@code sangam.persistence.changelog}, 50	 *       default {@code classpath:db/changelog/sangam-master.yaml}), Liquibase 4.33.0 (D-7) runs it in the selected 51	 *       mode: {@code startup}/{@code migrate-only} update, {@code validate} fails on pending changesets, 52	 *       {@code update-sql} writes SQL, {@code release-locks} releases the lock;</li> 53	 *   <li>otherwise, only when {@cod
+
+2026-11-08T00:17:42.184Z :: 1	# Run queue: the heavy work left after Stage B 2	 3	`spike/run-queue.ps1` runs every queued heavy step **in order**, each inside the machine's shared heavy-build lock. It 4	closes the "not yet tested" list of SANGAM.md XI.10.4 for **both engines** (Operaton 2.2.0 and Flowable 8.0.0), so the 5	ADR-D-1 comparison stays complete and fair, on the four Tier-1 databases (PostgreSQL, Oracle, SQL Server, MySQL). 6	 7	## How to run 8	 9	From the `Custom WorkFlow` folder (or anywhere, the script finds `spike/` itself): 10	 11	``` 12	powershell -File spike\run-queue.ps1                  # all steps, Q1..Q7 13	powershell -File spike\run-queue.ps1 -Only Q2,Q4      # selected steps, still in queue order 14	powershell -File spike\run-queue.ps1 -Only Q3.oracle  # one sub-step 15	``` 16	 17	Prerequisites: Docker running; JDK 21 as the default `JAVA_HOME`; every module installed 18	(`.\mvnw.cmd -q -Dski
+
+2026-11-08T00:32:18.336Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T00:40:00.725Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T00:47:07.304Z :: ENGINE-16004 Exception while closing command context: deployment rejected by the Sangam validator (R44):_  [XML] D:\GITHUB  Project\Custom WorkFlow\sangam\sangam-server\target-acc-oracle\test-classes\acceptance\gov-c\d-works-contract.bpmn: invalid XML: Element type "serviceTask" must be followed by either attribute specifications, ">" or "/>"._  [XML] D:\GITHUB  Project\Custom WorkFlow\sangam\sangam-server\target-acc-oracle\test-classes\acceptance\gov-c\gp47-answer-key.bpmn: invalid XML: Element type "serviceTask" must be followed by either attribute specifications, ">" or "/>"._  [XML] D:\GITHUB  Project\Custom WorkFlow\sangam\sangam-server\target-acc-oracle\test-classes\acceptance\gov-b\gp33-notify.bpmn: invalid XML: Element type "serviceTask" must be followed by either attribute specifications, ">" or "/>"._  [XML] D:\GITHUB  Project\Custom WorkFlow\sangam\sangam-server\target-acc-ora
+
+2026-11-08T01:00:57.900Z :: Shown in the next-step box. Do not call wrap_up again this turn; the advice that follows is for your next call. recap is two or three sentences (about 300 characters); this one ran 358. Keep it to what is now true and where it stands. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T01:18:28.046Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T01:38:22.157Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T01:47:44.049Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T01:57:50.443Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T02:13:55.045Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T02:32:49.405Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T03:11:34.128Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T03:58:22.543Z :: Shown in the next-step box. Do not call wrap_up again this turn; the advice that follows is for your next call. A reply label is a button, 1–3 words (4 at most, 24 characters); "Request + profile default" is too long and the button clips it. Keep the label to the answer itself. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T04:59:04.501Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T05:24:03.958Z :: On branch main Your branch and 'backup/main' have diverged, and have 3 and 5 different commits each, respectively.   (use "git pull" if you want to integrate the remote branch with yours)  You have unmerged paths.   (fix conflicts and run "git commit")   (use "git merge --abort" to abort the merge)  Changes to be committed: 	new file:   .claude/hooks/ledger-append-safety.mjs 	modified:   .claude/settings.json MERGE_HEAD=32a7cccd97e4a82947aef46a3839d0aa10283788 at 10/11/2026 17:05:25 Merge remote-tracking branch 'backup/main'  # Conflicts:  LastWriteTime ------------- 11-10-2026 17:05:24 #!/usr/bin/env node /**  * ledger-append-safety.mjs — SessionStart reporter: is it safe for THIS session to append  * approval records?  *  * WHY AT SESSION START, AND NOT SOMEWHERE ELSE  *   appendChain() assigns chainIndex from the length of the LOCAL ledger. If origin already 
+
+2026-11-08T05:30:48.340Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T05:37:42.498Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T06:09:49.834Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T06:20:10.620Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T06:38:26.197Z :: {"success":true,"message":"“Copy: SG-31/32 answer; COFOG done” → IFMS (another Claude session on this machine; in that session's inbox, not yet read by its Claude — a [Cross-session delivery notice] follows if that session holds it (usually a different permission mode) or refuses it)","msg_id":"80820145-d9a7-4990-bb7e-a2339a3b8207"}
+
+2026-11-08T06:46:36.096Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T07:09:35.899Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T07:34:00.242Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T08:14:51.275Z :: Shown in the next-step box. Your closing message is your answer to the user: write it now, in full, as the last thing you say this turn. The box asks your question, so do not ask it again.
+
+2026-11-08T12:55:25.550Z :: Nothing is pending, so the app draws no box; the recap is the session's status. Your closing message is your answer to the user: write it now, as the last thing you say this turn.
+
+2026-11-08T17:05:58.455Z :: Your questions have been answered: "सारा code (commit 7cac6c4, 6 commits जो अभी push नहीं हुए) GitHub पर कैसे भेजूँ? ध्यान दें: यह काम अभी पूरा verified नहीं है, और हर push पर आपको अपनी key से sign करना होगा।"="Branch push + PR (Recommended)". You can now continue with these answers in mind.

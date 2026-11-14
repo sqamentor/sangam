@@ -1,0 +1,208 @@
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java
+index 1234a3a..31ae1ff 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java
+@@ -159,8 +159,10 @@ public class SangamPortsPlugin implements ProcessEnginePlugin {
+     public void postInit(ProcessEngineConfigurationImpl cfg) {
+         if (settings.isCmmnEventListeners() && cfg.getDeployers() != null) {
+             for (Deployer d : cfg.getDeployers()) {
+-                if (d instanceof CmmnDeployer cd && cd.getTransformer() != null) {
+-                    cd.getTransformer().setCmmnElementHandlerRegistry(new SangamCmmnElementHandlerRegistry());
++                // In place on the configuration's shared registry: the deployment cache's CMMN deployer (a second
++                // instance, the one that deploys) uses the same registry object (SL-12).
++                if (d instanceof CmmnDeployer cd && cd.getTransformer() != null && cd.getTransformer().getCmmnElementHandlerRegistry() != null) {
++                    SangamCmmnElementHandlerRegistry.install(cd.getTransformer().getCmmnElementHandlerRegistry());
+                 }
+             }
+         }
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
+index cc768b8..cdf57d2 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
+@@ -270,11 +270,19 @@ public class ProductBatchService {
+     /** Puts failed items (below the attempt limit) back to PENDING. */
+     public int retryFailed(String batchId) {
+         return tx.inTransaction(c -> {
++            // Locked and state-checked first, so the item rows and the batch counters always change together: a
++            // retry of a paused batch keeps it paused (it resumes later) but still moves its failures back to
++            // pending; a cancelled, rejected or unapproved batch is refused instead of leaving PENDING items that
++            // no run would ever pick up, with failed_items still counting them.
++            Batch b = lock(c, batchId);
++            if (b.state() != State.RUNNING && b.state() != State.PAUSED && b.state() != State.COMPLETED_WITH_FAILURES) {
++                throw new BatchStateException("batch " + batchId + " is " + b.state() + "; failed items cannot be retried");
++            }
+             int n = Jdbc.update(c, "UPDATE PORT_BATCH_ITEM SET state = 'PENDING' WHERE batch_id = ? AND state = 'FAILED' AND attempts < ?",
+                     batchId, maxAttempts);
+             if (n > 0) {
+-                Jdbc.update(c, "UPDATE PORT_BATCH SET state = 'RUNNING', failed_items = failed_items - ?, completed_at = NULL WHERE id = ?"
+-                        + " AND state IN ('COMPLETED_WITH_FAILURES','RUNNING')", n, batchId);
++                Jdbc.update(c, "UPDATE PORT_BATCH SET state = ?, failed_items = failed_items - ?, completed_at = NULL, updated_at = "
++                        + dialect.now() + " WHERE id = ?", b.state() == State.PAUSED ? State.PAUSED.name() : State.RUNNING.name(), n, batchId);
+             }
+             return n;
+         });
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java
+index 773ffd4..8745fde 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java
+@@ -39,8 +39,12 @@ public final class StandardBatchHandlers {
+         batches.register("message-correlate", (tenant, ref, cfg) -> {
+             var b = engine.getRuntimeService().createMessageCorrelation(String.valueOf(cfg.get("messageName")))
+                     .processInstanceBusinessKey(ref).setVariables((Map<String, Object>) cfg.getOrDefault("variables", Map.of()));
++            // The batch stores the default tenant as "" (the engine: null). Without an explicit withoutTenantId() a
++            // default-tenant batch correlated the business key in every tenant (FW-29 rule, as EventDispatcher).
+             if (tenant != null && !tenant.isEmpty()) {
+                 b.tenantId(tenant);
++            } else {
++                b.withoutTenantId();
+             }
+             return "correlated " + b.correlateAllWithResult().size();
+         });
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java
+index 1998508..134c629 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java
+@@ -18,7 +18,19 @@ public class SangamCmmnElementHandlerRegistry extends DefaultCmmnElementHandlerR
+ 
+     public SangamCmmnElementHandlerRegistry() {
+         super();
+-        planItemElementHandlers.put(EventListener.class, new SangamEventListenerItemHandler());
++        install(this);
++    }
++
++    /**
++     * Registers the event-listener item handler in an existing registry, in place (SL-12). This is how the plugin
++     * installs it: Operaton builds its CMMN deployer twice ({@code initDeployers}: once for
++     * {@code configuration.deployers}, once more for the deployment cache, which is the one that actually deploys),
++     * and both transformers share the configuration's single {@code cmmnElementHandlerRegistry}. Replacing the
++     * registry on one transformer (the former approach) reached only the unused copy, so event listeners deployed with
++     * no handler and never fired; mutating the shared registry reaches every CMMN deployer of the engine.
++     */
++    public static void install(DefaultCmmnElementHandlerRegistry registry) {
++        registry.getPlanItemElementHandlers().put(EventListener.class, new SangamEventListenerItemHandler());
+     }
+ 
+     /** The item handler: Operaton's, with the Sangam behaviour. */
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventDispatcher.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventDispatcher.java
+index da3ddfe..854e6f4 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventDispatcher.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventDispatcher.java
+@@ -99,13 +99,16 @@ public class EventDispatcher implements Inbox.Handler {
+         if (ev.payload() != null) {
+             ev.payload().forEach((k, v) -> {
+                 if (!PortsProblem.isReservedVariable(k)) {      // FW-30
+-                    vars.put(k, v);
++                    vars.put(k, retype(v, field(def.payload(), k)));
+                 }
+             });
+         }
+ 
+         // 1. correlation to waiting executions
+-        Map<String, Object> corr = ev.correlation() == null ? Map.of() : ev.correlation();
++        Map<String, Object> corr = new LinkedHashMap<>();
++        if (ev.correlation() != null) {
++            ev.correlation().forEach((k, v) -> corr.put(k, retype(v, field(def.correlationParameters(), k))));
++        }
+         int matchers = ev.businessKey() != null ? 1 : 0;
+         for (EventDefinition.Field f : def.correlationParameters()) {
+             if (corr.get(f.name()) != null) {
+@@ -119,6 +122,11 @@ public class EventDispatcher implements Inbox.Handler {
+         boolean broadcastGuard = matchers == 0 && !def.correlationParameters().isEmpty();
+         if (!broadcastGuard) {
+             MessageCorrelationBuilder b = rs.createMessageCorrelation(ev.eventKey());
++            // Waiting executions only. correlateAll also fires matching message START events; step 2 owns starting
++            // (and its UNIQUE_START claim), so without this an event of a message-start process started one instance
++            // here, unguarded, and a second one in step 2, and every "duplicate" started yet another (route 1 on the
++            // impl class: executionsOnly() is not on the public builder interface).
++            ((org.operaton.bpm.engine.impl.MessageCorrelationBuilderImpl) b).executionsOnly();
+             tenant(b, tenantId);
+             if (ev.businessKey() != null) {
+                 // FW-03: Operaton matches the process-instance business key for executions at any depth (Flowable's
+@@ -212,6 +220,40 @@ public class EventDispatcher implements Inbox.Handler {
+         return new Delivery(correlated, startedPi, startedCase, duplicate);
+     }
+ 
++    private static EventDefinition.Field field(List<EventDefinition.Field> fields, String name) {
++        for (EventDefinition.Field f : fields) {
++            if (name.equals(f.name())) {
++                return f;
++            }
++        }
++        return null;
++    }
++
++    /**
++     * Restores the declared type of a payload/correlation value. The pipeline coerces values at intake, but the event
++     * then travels through the inbox as JSON, which loses Java types: a {@code long} below 2^31 came back as
++     * {@code Integer} and a {@code date} as epoch millis. The process variable type then depended on the magnitude
++     * (and {@code processInstanceVariableEquals} compares typed values, so a {@code long} correlation parameter never
++     * matched a {@code Long} process variable). Undeclared fields keep their JSON type.
++     */
++    static Object retype(Object v, EventDefinition.Field f) {
++        if (v == null || f == null || f.type() == null) {
++            return v;
++        }
++        if ("json".equalsIgnoreCase(f.type()) && v instanceof String) {
++            return v;                                        // already JSON text; re-writing it would double-encode
++        }
++        if ("date".equalsIgnoreCase(f.type())) {
++            if (v instanceof java.util.Date) {
++                return v;
++            }
++            if (v instanceof Number n) {
++                return new java.util.Date(n.longValue());
++            }
++        }
++        return org.sangam.ports.events.pipeline.InboundEventPipeline.coerce(Json.MAPPER.valueToTree(v), f.type(), f.name());
++    }
++
+     /** Process definition key whose latest version has a message start event named after the event key. */
+     private String startProcessDefinitionKey(StoredEvent ev) {
+         var q = engine.getRepositoryService().createProcessDefinitionQuery().messageEventSubscriptionName(ev.eventKey()).latestVersion();
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java
+index a49af2a..1a3c2a9 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java
+@@ -77,7 +77,9 @@ public class FilteredAcquireJobsCmd extends AcquireJobsCmd {
+         List<String> ids = Jdbc.query(c, sql, rs -> rs.getString(1), now, now, now);
+         Map<String, List<String>> exclusive = new LinkedHashMap<>();
+         for (String id : ids) {
+-            AcquirableJobEntity job = cc.getDbEntityManager().selectById(AcquirableJobEntity.class, id);
++            // JobEntity is an AcquirableJobEntity. selectById(AcquirableJobEntity.class, ..) needs a MyBatis statement
++            // "selectAcquirableJob" that Operaton does not map, so every split-executor acquisition failed.
++            AcquirableJobEntity job = cc.getJobManager().findJobById(id);
+             if (job == null) {
+                 continue;
+             }
+diff --git a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/modelimport/FlowableModelImporter.java b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/modelimport/FlowableModelImporter.java
+index f4b2ada..3f39e21 100644
+--- a/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/modelimport/FlowableModelImporter.java
++++ b/sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/modelimport/FlowableModelImporter.java
+@@ -55,7 +55,7 @@ public final class FlowableModelImporter {
+             Map.entry("assignee", "assignee"), Map.entry("candidateUsers", "candidateUsers"), Map.entry("candidateGroups", "candidateGroups"),
+             Map.entry("formKey", "formKey"), Map.entry("dueDate", "dueDate"), Map.entry("priority", "priority"),
+             Map.entry("category", "category"), Map.entry("exclusive", "exclusive"), Map.entry("initiator", "initiator"),
+-            Map.entry("calledElementType", "calledElementBinding"), Map.entry("processInstanceName", "processInstanceName"),
++            Map.entry("processInstanceName", "processInstanceName"),
+             Map.entry("collection", "collection"), Map.entry("elementVariable", "elementVariable"),
+             Map.entry("decisionTableReferenceKey", "decisionRef"), Map.entry("historyTimeToLive", "historyTimeToLive"),
+             Map.entry("asyncAfter", "asyncAfter"));
+@@ -201,6 +201,18 @@ public final class FlowableModelImporter {
+                     }
+                     out.add(new Finding(Classification.MAPPED, id, "flowable:sameDeployment", "D-12", "calledElementBinding=deployment"));
+                 }
++                // Flowable calledElementType is key|id (how calledElement is read), not a version binding: copying
++                // "key" into operaton:calledElementBinding made the model undeployable. "key" is Operaton's only mode
++                // (latest version by key, its default); "id" has no equivalent.
++                case "calledElementType" -> {
++                    if ("key".equals(value)) {
++                        out.add(new Finding(Classification.MAPPED, id, "flowable:calledElementType=key", "A-1",
++                                "calledElement is a key on Operaton (default binding latest)"));
++                    } else {
++                        out.add(new Finding(Classification.UNSUPPORTED, id, "flowable:calledElementType=" + value, "-",
++                                "Operaton calls a process by key only; replace the definition id by its key"));
++                    }
++                }
+                 case "fallbackToDefaultTenant" -> out.add(new Finding(Classification.PORTED, id, "flowable:fallbackToDefaultTenant", "FC-33",
+                         "use TenantDefinitionResolver in operaton:calledElementTenantId"));
+                 default -> {

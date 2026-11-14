@@ -1,0 +1,70 @@
+diff --git a/sangam/sangam-packs/src/main/java/org/sangam/packs/core/LedgerDelegate.java b/sangam/sangam-packs/src/main/java/org/sangam/packs/core/LedgerDelegate.java
+index cd22d021..949165e8 100644
+--- a/sangam/sangam-packs/src/main/java/org/sangam/packs/core/LedgerDelegate.java
++++ b/sangam/sangam-packs/src/main/java/org/sangam/packs/core/LedgerDelegate.java
+@@ -26,6 +26,11 @@ import org.sangam.packs.port.PackRuntime;
+  * (expression), {@code unit} (REQUIRED for ENCUMBER / CREDIT: an ISO 4217 currency for money, e.g. {@code INR}, stored
+  * in minor units; or a quantity unit such as {@code DAYS} / {@code POINTS}; SD-398: never implicit), {@code amount}
+  * (expression), {@code reference} (default: business key + ledger), {@code resultVar}.
++ *
++ * <p>Money (SD-398, packgen {@code money.py}): when {@code unit} is a currency, {@code amount} and the balance written to
++ * {@code resultVar} are integer MINOR units (paise for INR), the unit every pack variable carries; the store is
++ * addressed in major units, so the delegate converts exactly at this boundary (a fraction of a minor unit is refused).
++ * A quantity unit (DAYS, POINTS) or no unit is passed through unchanged.
+  */
+ public class LedgerDelegate implements JavaDelegate {
+ 
+@@ -46,10 +51,14 @@ public class LedgerDelegate implements JavaDelegate {
+         String ref = Vars.field(reference, ex, (ex.getProcessBusinessKey() == null ? ex.getProcessInstanceId()
+                 : ex.getProcessBusinessKey()) + ":" + l);
+         String rv = Vars.field(resultVar, ex, l + "Balance");
++        String u = Vars.field(unit, ex, null);
++        boolean money = u != null && LedgerStore.isMoney(u);
+         BigDecimal amt = Vars.decimal(Vars.field(amount, ex, "0"));
++        if (money) {
++            amt = minorToMajor(amt, u);
++        }
+         LedgerStore.Posting p;
+         String op0 = Vars.field(op, ex, "BALANCE");
+-        String u = Vars.field(unit, ex, null);
+         if (("ENCUMBER".equals(op0) || "CREDIT".equals(op0)) && (u == null || u.isBlank())) {
+             throw new IllegalStateException("LedgerDelegate " + op0 + " on ledger " + l + " needs field 'unit' (ISO 4217 "
+                     + "currency or a quantity unit such as DAYS)");
+@@ -58,7 +67,7 @@ public class LedgerDelegate implements JavaDelegate {
+             case "ENCUMBER" -> {
+                 p = store.post(Vars.tenant(ex), l, acct, u, amt.negate(), ref, false);
+                 if (!p.applied()) {
+-                    ex.setVariable(rv, Vars.engineValue(p.balanceAfter()));
++                    ex.setVariable(rv, toPack(p.balanceAfter(), u, money));
+                     Vars.audit(ex, "RULE_EVALUATED", Vars.map("ledger", l, "account", acct, "result",
+                             p.reason(), "available", p.balanceAfter().toPlainString(), "required",
+                             amt.toPlainString()));
+@@ -72,9 +81,27 @@ public class LedgerDelegate implements JavaDelegate {
+             case "CREDIT" -> p = store.post(Vars.tenant(ex), l, acct, u, amt, ref, true);
+             default -> p = new LedgerStore.Posting(true, null, store.balance(Vars.tenant(ex), l, acct));
+         }
+-        ex.setVariable(rv, Vars.engineValue(p.balanceAfter()));
++        ex.setVariable(rv, toPack(p.balanceAfter(), u, money));
+         Vars.audit(ex, "LEDGER_POSTED", Vars.map("ledger", l, "account", acct, "op", Vars.field(op, ex, "BALANCE"),
+                 "amount", amt.toPlainString(), "balanceAfter", p.balanceAfter().toPlainString(),
+                 "note", p.reason()));
+     }
++
++    /** Integer minor units of {@code currency} to the store's major units, exactly. */
++    static BigDecimal minorToMajor(BigDecimal minor, String currency) {
++        try {
++            return org.sangam.core.money.Money.ofMinor(minor.longValueExact(), currency).toMajor();
++        } catch (ArithmeticException e) {
++            throw new IllegalArgumentException("LedgerDelegate: amount " + minor.toPlainString() + " " + currency
++                    + " is not a whole number of minor units");
++        }
++    }
++
++    private static Object toPack(BigDecimal balance, String unit, boolean money) {
++        if (!money || balance == null) {
++            return Vars.engineValue(balance);
++        }
++        return org.sangam.core.money.Money.toMinorExact(balance,
++                java.util.Currency.getInstance(unit).getDefaultFractionDigits());
++    }
+ }

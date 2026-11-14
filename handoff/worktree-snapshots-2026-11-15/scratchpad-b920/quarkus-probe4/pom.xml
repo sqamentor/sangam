@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Throwaway resolving probe (W3-H B49, M-015 closure analysis, owner decision 56): the extension build plugin. Not a product file. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>probe</groupId>
+  <artifactId>quarkus-probe4</artifactId>
+  <version>0</version>
+  <dependencies>
+    <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-extension-maven-plugin</artifactId><version>3.40.1.1</version></dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,2 @@
+sangam-server/src/test/java/org/sangam/server/bridge/TokenAuthenticationFiltersTest.java
+sangam-server/src/test/java/org/sangam/server/config/OidcIssuerRoutingTest.java

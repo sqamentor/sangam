@@ -1,0 +1,31 @@
+269
+[('FIXED', 110), ('CODED', 37), ('OPEN', 25), ('CLOSED', 23), ('PASS', 17), ('CODE DONE', 16), ('PARTIAL', 13), ('P', 4), ('IN PROGRESS', 2), ('DONE', 2), ('DECISION', 2), ('PARTLY CODED', 2), ('Single-verified (OPE', 2), ('(a) CODED 2026-11-12', 1), ('(a)(b)(c) FIXED in c', 1), ('SECURITY', 1), ('DOCS FIXED', 1), ('PARTLY PASS', 1), ('COFOG FIXED', 1), ('PASSING', 1), ('Lint and docs are in', 1), ('PARTLY FIXED', 1), ('DECIDED', 1), ('Test phase only.', 1), ('The run with the pro', 1), ('EVIDENCE DONE', 1), ('DEFERRED', 1)]
+OPEN-ish 28
+24 SG-15 |OWN: ['B15', 'B40', 'W2-A', 'W2-D'] | OPEN, single-verified. Still open: (1) **throughput unmeasurable**: under load both trees deadlock the pool through SL-43 `JdbcTenantQuotas.overrides`, which takes a second connection while one is held (0 starts/s, 30 s pool timeo
+100 SL-75 |OWN: [] | OPEN (after apply step 3); P1 CODED 2026-11-12 (B4): CodeQL ignores handoff/**; the new .github/dependabot.yml excludes handoff/** with version-update PRs off (limit 0). P2 (removing the snapshots) is the owner's decision.
+104 SL-79 |OWN: ['B13', 'integrator', 'test phase'] | OPEN, diagnostic added 2026-11-12 (B13; integrator decision). When QuotaPoolDeadlockH2Support:151-153 nobody left waiting fails (and only then), the message carries the main pool active/idle/total/awaiting counts, every live threa
+144 SL-111 |OWN: [] | OPEN pending a test-phase re-run. Root cause in the 2026-11-09 run: the tenant's BUDGET ledger was never defined or funded, so the savings check and TRANSFER returned LEDGER_REQUEST_INVALID (ifmswf-it1.log:2105). IfmsPacksIT setup
+167 SL-134 |OWN: ['B23', 'B39', 'W2-E', 'W2-K', 'integrator'] | OPEN, Wave 2 (sangam-handoff WAVE2-CARRY-2026-11-12.md). M-004 (LMMH) is closed in tree: parent-aware validation coded and tested, stale docs fixed by B23; the seed is consistent to CS1127, with slips 1128-1132 waiting on owner Q-
+172 AC-08 |OWN: [] | OPEN.
+176 SL-53a |OWN: [] | OPEN; date waits on owner Q-08 (Q34).
+179 UI-UPGRADE-1 |OWN: [] | OPEN.
+182 IFMSPACKS-EXEC-RACE |OWN: [] | OPEN.
+199 SL-157 |OWN: ['W2-L'] | OPEN, Wave 2 (W2-L, evidence first).
+200 SL-158 |OWN: ['B29', 'W2-L'] | OPEN, Wave 2 (W2-L, evidence first).; ENFORCED and wired (B29): sangamWorkerTopicGuard, 403 WORKER_TOPIC_NOT_BOUND naming the worker and topic, migration step in application.yaml; WorkerTopicGuardWiringTest. Gap: OperatonWorkAdapt
+201 SL-159 |OWN: [] | OPEN, Wave 3.
+203 SL-161 |OWN: ['B29'] | OPEN, Wave 2 or 3.; Wired (B29): sangamFieldEncryptor on the sangam-security-audit leaf pool; test checks no main-pool connection.
+204 SL-162 |OWN: ['W2-E'] | OPEN, Wave 2 (W2-E).
+206 SL-164 |OWN: ['B29', 'B30', 'B31', 'B32', 'B34'] | OPEN, being fixed in Wave 2.; X1-02 FIXED (B31: fiscalStartMonth offered for FISCAL_YEAR and for {fy}/{fyStart} patterns; DAILY reset added).; X1-09 CLOSED (B38: billing README, sangam-rest README long-poll line, SANGAM.md XII.4 r
+210 SL-168 |OWN: ['B54', 'W3-M'] | OPEN, carried to Wave 3.; CODED (W3-M B54): Helm database.pool.leafPools + otel.engineTracing, compose env, deploy README 1.6, HelmLeafPoolsAndEngineTracingTraceTest (not run).
+212 SL-170 |OWN: [] | OPEN (deferred past 0.1.0)
+213 SL-171 |OWN: ['test phase'] | OPEN (test phase)
+214 SL-172 |OWN: [] | OPEN (tracked debt)
+215 SL-173 |OWN: [] | OPEN (deferred)
+218 SL-176 |OWN: [] | OPEN
+221 SL-179 |OWN: [] | OPEN
+222 SL-180 |OWN: [] | OPEN (Wave 4)
+259 DEC-246 |OWN: [] | OPEN: gap listed; no tender execution is claimed.
+260 DEC-248 |OWN: [] | OPEN: payroll stays blocked (owner decision 248); every row is UNVERIFIED + SYNTHETIC_DEMO_ONLY (decisions 288, 298: Rs 21,000 ceiling, Rs 176 exemption, continuation and contribution periods not found in current official text aft
+268 FW-07 |OWN: [] | PASS (ports) + PASS on PostgreSQL 2026-11-09 (`FwtWorkerCompatIT` 7/7 under I-45; with the FWT-D11/D12 fixes reverted 6/7 fail). Root fixes FWT-D11, FWT-D12 below. Single-verified (OPEN) until SD-428 re-check
+279 FWT-D11 |OWN: [] | Single-verified (OPEN): awaits SD-428 reviewer
+280 FWT-D12 |OWN: [] | Single-verified (OPEN): awaits SD-428 reviewer

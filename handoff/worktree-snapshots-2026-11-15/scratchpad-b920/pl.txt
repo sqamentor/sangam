@@ -1,0 +1,39 @@
+# Owner decision 142 (RM-08): the versioned power-limit decision of sangam-core org.sangam.core.power
+# (PowerLimitEvaluator.audit, contract sangam.power-decision/1; W4-A REQUEST 2026-11-12T18:48:41Z). Member names are the
+# audit payload's own (snake_case), so the REST layer and the audit record carry the same document.
+_PL_KINDS = ["DENY", "LIMITED", "UNLIMITED"]
+schema("PowerLimitEffective", "A delegated limit outcome: DENY, LIMITED(max_amount, currency) or explicit UNLIMITED.",
+       "rule kind max_amount:MoneyAmount currency reason", ["kind"], enums={"kind": _PL_KINDS},
+       descs={"rule": "<rule id>@<rule version> for an applicable limit; absent on the effective outcome",
+              "max_amount": "The ceiling when kind is LIMITED; absent otherwise",
+              "currency": "ISO 4217 code of max_amount (LIMITED only)",
+              "reason": "Why the limit denies (DENY only)"})
+schema("PowerLimitCap", "A mandatory cap that applied; UNLIMITED never lifts it.",
+       "cap max_amount:MoneyAmount currency", ["cap", "max_amount", "currency"],
+       descs={"cap": "<cap id>@<cap version>"})
+schema("PowerLimitScope", "Scope of a power-limit evaluation.", "tenant office")
+schema("PowerLimitDecision", "Versioned power-limit decision (owner decision 142). DENY, LIMITED(max_amount, currency) "
+                             "and explicitly authorised UNLIMITED stay distinct; unknown operation metadata, a missing "
+                             "amount or currency, no applicable rule, or a malformed, conflicting or failed evaluation "
+                             "is DENY, never permission. Every applicable limit and every mandatory cap must pass and "
+                             "the lowest ceiling binds; UNLIMITED lifts only the delegated ceiling, never a cap, budget "
+                             "control, role or scope check or maker-checker. Whether an operation is monetary comes "
+                             "from trusted versioned case-type metadata, never from the caller. Version 1 evaluates the "
+                             "gross single-operation amount by magnitude; aggregate limits are outside version 1.",
+       "contract_version decision effective:PowerLimitEffective actor action scope:PowerLimitScope case_type "
+       "case_type_version:int amount:MoneyAmount currency state_version:long monetary:bool metadata_version "
+       "applicable_limits:list:PowerLimitEffective mandatory_caps:list:PowerLimitCap reason "
+       "changed_since_approval:list:s",
+       ["contract_version", "decision", "effective", "applicable_limits", "mandatory_caps", "reason"],
+       enums={"contract_version": ["sangam.power-decision/1"], "decision": ["PERMIT", "DENY"]},
+       descs={"actor": "Authenticated actor (server-side identity, never a payload value)",
+              "amount": "The authoritative amount evaluated; re-read when the action is applied",
+              "currency": "ISO 4217 code of amount",
+              "state_version": "Version of the authoritative state the amount was read from",
+              "monetary": "From the trusted case-type metadata; absent when the metadata is unknown (then DENY)",
+              "metadata_version": "Version of the operation metadata used",
+              "changed_since_approval": "Fields that changed between an earlier approval and the re-read at apply "
+                                        "time; the earlier approval is never reused"})
+SCHEMAS["Problem"]["properties"]["powerLimit"] = {
+    "allOf": [{"$ref": "#/components/schemas/PowerLimitDecision"}],
+    "description": "Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142)"}

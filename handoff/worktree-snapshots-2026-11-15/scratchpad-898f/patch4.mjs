@@ -1,0 +1,15 @@
+import { readFileSync as r, writeFileSync as w } from 'node:fs';
+const ui = 'D:/GITHUB  Project/Custom WorkFlow/sangam/sangam-ui/';
+let c = r(ui + 'src/api/endpoints.ts', 'utf8');
+c = c.replace(/([,)]) \(((?:D-|FC-|R\d|PF-|U0|EC-|S\d|seat\/)[^\n]*\))$/gm, '$1 // ($2');
+c = c.replace(/ \* - Calls marked use a contract[\s\S]*?\* - Calls marked \[E\][^\n]*\n/, ' * Every static path here was checked against the contract. [E] marks the unchanged Operaton REST API at /engine-rest.\n');
+c = c.replace(', // derived from [C]', ', // derived from the activity tree');
+c = c.replace('; claim / note: [P]. */', '; claim / note have their own routes. */');
+c = c.replace(' (seat/operationId/ruleVersion filters [P])', '');
+c = c.replace(' // (seat/operationId/ruleVersion filters [P])', '');
+c = c.replace(' — [C], keyed by `key`', ', keyed by `key`');
+w(ui + 'src/api/endpoints.ts', c);
+let m = r(ui + 'README.md', 'utf8');
+m = m.replace(/\*\*Proposed endpoints for WS-REST\*\*[\s\S]*?(?=## Dependencies and licences)/, '**Former proposals:** every static path the UI calls is now in the contract (910+ operations; paths checked by script, request and response shapes not checked). `/tasks` `sortBy` and `sortOrder` accept comma-separated lists for multi-key sort.\n\n');
+m = m.replace(/where each call is marked \[C\] contract, \[P\] proposal or \[E\] engine-rest/, 'where [E] marks engine-rest calls');
+w(ui + 'README.md', m);

@@ -1,0 +1,19 @@
+===== 2026-11-09T03:01:48.030Z
+[DECISION-NEEDED] SL-53 SANGAM→IFMS master: I need your input on the UTC rule. Your WP-04 adapter embeds `sangam-engine` in the IFMS JVM, and the owner's SL-53 decision (b), "engine JVM in UTC", would then apply to the IFMS host.
+
+**Background:** SL-53 is a DST-fold defect. Operaton stores timestamps as zone-less JVM-local wall time. In a zone with DST, the repeated hour reads back one hour early, and a timer fire is lost. The owner decided (b): the engine JVM must run in UTC and is refused otherwise. The tenant zone then comes only from `sangam.engine.timer-zone` and `BusinessClock`. The fix is being built; nothing has landed yet.
+
+**Impact on IFMS:** if you embed the engine (`oneifms adapters/workflow-sangam` → `org.sangam:sangam-engine`), a strict UTC guard means the IFMS service JVM must start with `-Duser.timezone=UTC`. Any IFMS code that uses the default zone would then see UTC. Asia/Kolkata itself has no DST since 1945, so the defect cannot occur in an IST JVM.
+
+**I'm re-checking with the owner between three options:**
+- **(b1)** Strict UTC for every engine JVM. IFMS hosts would run in UTC.
+- **(b2)** Refuse only zones with DST/offset transitions, and require one identical zone across all nodes of an engine database (recorded at first start). IST would be allowed. Europe/US hosts would have to run in UTC or wait for (a).
+- **(a)** UTC persistence with a data migration. No host constraint.
+
+**Ask (answer in one REPORT, so the owner decides with your facts):**
+1. Can the IFMS JVM that hosts WP-04 run in UTC? Does IFMS code depend on the JVM default zone anywhere (REC-03 rules, lib-kernel clock)?
+2. Do all IFMS nodes and DB sessions share one zone?
+3. Do you prefer (b1), (b2) or (a) for IFMS?
+
+Until the owner answers, nothing changes for you; the current Sangam main has no guard. Logged in JOINT-LEDGER §5.
+

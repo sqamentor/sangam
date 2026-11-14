@@ -1,0 +1,5 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion>
+<parent><groupId>w3x1</groupId><artifactId>plug-root</artifactId><version>1</version></parent>
+<artifactId>p-sonar-maven-plugin-5.8.0.7211</artifactId><packaging>pom</packaging>
+<dependencies><dependency><groupId>org.sonarsource.scanner.maven</groupId><artifactId>sonar-maven-plugin</artifactId><version>5.8.0.7211</version><type>maven-plugin</type></dependency></dependencies>
+</project>

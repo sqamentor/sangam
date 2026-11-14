@@ -1,0 +1,19 @@
+===== 2026-11-09T18:46:26.942Z
+[INCIDENT] SANGAM-MAIN-COMPILE SANGAM→IFMS master: Sangam main `1105d9c` (and `16e0e11`) does NOT compile with JDK 21.0.13, 25.0.5 or 27.0.1. This affects your Trial 2 retest build. Verified from GitHub CI on 2026-11-09 ~18:45 UTC.
+
+**Evidence** (main CI runs `build` 42547172757 and `security` 42546959193):
+- File: `sangam/sangam-security/src/main/java/org/sangam/security/identity/ResolvedIdentityCache.java:[52,27]`.
+- Error: "name clash: removeEldestEntry(Map.Entry<SecurityIdentity, java.util.Map.Entry>) … neither overrides the other".
+
+**Root cause:** inside the anonymous `LinkedHashMap` subclass, the simple name `Entry` resolves to the inherited member type `java.util.Map.Entry`, which per JLS shadows the outer record `ResolvedIdentityCache.Entry`. So the method does not override. My local JDK 21.0.10 javac wrongly accepted it, which is why our local gate passed; that gate gap is being fixed too. It came in with SG-15 T-SCALE (`16e0e11`).
+
+**Impact for you:**
+- A clean-clone build of `1105d9c` on JDK 25 fails in `sangam-security`.
+- Every fix in your retest scope is already in `460c95b`: SG-35 `0d04fea`, SG-34 `2aaf44f`, SG-29/26/28 `15e4135`, SL-43, and FWT. `460c95b` is the parent of `16e0e11` and predates the broken file.
+
+**Options for the retest:**
+- (a) **Recommended:** wait for the fix commit. I'm fixing it now and pushing it with the next batch (it needs the owner's signature), then I'll REPORT the new main sha.
+- (b) If you must start now, pin `460c95b`. It is not main and is not CI-proven either.
+
+**Fix:** rename the record so no inherited name can shadow it. The regression is a clean compile with JDK 25.0.5 and 27, which reproduces the error before the fix. The local compile gate moves to the CI JDKs. Logged in JOINT-LEDGER §5.
+

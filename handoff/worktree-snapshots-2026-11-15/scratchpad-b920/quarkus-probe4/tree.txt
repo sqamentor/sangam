@@ -1,0 +1,94 @@
+probe:quarkus-probe4:jar:0
+\- io.quarkus:quarkus-extension-maven-plugin:jar:3.40.1.1:compile
+   +- io.quarkus:quarkus-bootstrap-core:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-classloader-commons:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-value-registry:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-bootstrap-app-model:jar:3.40.1.1:compile
+   |  |  +- io.smallrye.classfile:jdk-classfile-backport:jar:26:compile
+   |  |  \- org.jboss.logging:commons-logging-jboss-logging:jar:2.0.0.Final:runtime
+   |  +- io.quarkus:quarkus-bootstrap-json:jar:3.40.1.1:compile
+   |  \- io.smallrye.common:smallrye-common-io:jar:2.19.0:compile
+   |     +- io.smallrye.common:smallrye-common-annotation:jar:2.19.0:compile
+   |     \- io.smallrye.common:smallrye-common-search:jar:2.19.0:compile
+   +- io.quarkus:quarkus-bootstrap-maven-resolver:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-fs-util:jar:1.4.2:compile
+   |  +- org.jboss.logmanager:jboss-logmanager:jar:3.2.2.Final:compile
+   |  |  +- io.smallrye.common:smallrye-common-cpu:jar:2.15.0:compile
+   |  |  +- io.smallrye.common:smallrye-common-expression:jar:2.15.0:compile
+   |  |  +- io.smallrye.common:smallrye-common-net:jar:2.15.0:compile
+   |  |  +- io.smallrye.common:smallrye-common-ref:jar:2.15.0:compile
+   |  |  +- jakarta.json:jakarta.json-api:jar:2.1.3:compile
+   |  |  \- org.eclipse.parsson:parsson:jar:1.1.7:compile
+   |  +- org.jboss.slf4j:slf4j-jboss-logmanager:jar:1.1.0.Final:compile
+   |  +- org.jboss.logging:jboss-logging:jar:3.6.3.Final:compile
+   |  +- org.slf4j:slf4j-api:jar:2.0.18:compile
+   |  +- io.quarkus:quarkus-bootstrap-maven4-resolver:jar:3.40.1.1:compile
+   |  +- org.apache.maven:maven-embedder:jar:3.9.16:compile
+   |  |  +- org.apache.maven:maven-settings:jar:3.9.16:compile
+   |  |  +- org.apache.maven:maven-model:jar:3.9.16:compile
+   |  |  +- org.apache.maven:maven-model-builder:jar:3.9.16:compile
+   |  |  +- org.apache.maven:maven-builder-support:jar:3.9.16:compile
+   |  |  +- org.apache.maven.shared:maven-shared-utils:jar:3.4.2:compile
+   |  |  +- com.google.inject:guice:jar:classes:5.1.0:compile
+   |  |  |  \- aopalliance:aopalliance:jar:1.0:compile
+   |  |  +- com.google.guava:guava:jar:33.6.0-jre:compile
+   |  |  |  \- org.jspecify:jspecify:jar:1.0.0:compile
+   |  |  +- com.google.guava:failureaccess:jar:1.0.3:compile
+   |  |  +- javax.annotation:javax.annotation-api:jar:1.3.2:compile
+   |  |  +- org.codehaus.plexus:plexus-classworlds:jar:2.11.0:compile
+   |  |  +- org.codehaus.plexus:plexus-sec-dispatcher:jar:2.0:compile
+   |  |  +- org.codehaus.plexus:plexus-cipher:jar:2.0:compile
+   |  |  +- org.codehaus.plexus:plexus-interpolation:jar:1.29:compile
+   |  |  \- commons-cli:commons-cli:jar:1.11.0:compile
+   |  +- org.eclipse.sisu:org.eclipse.sisu.plexus:jar:1.0.1:compile
+   |  +- org.apache.maven:maven-settings-builder:jar:3.9.16:compile
+   |  \- org.apache.maven:maven-resolver-provider:jar:3.9.16:compile
+   |     +- org.apache.maven:maven-repository-metadata:jar:3.9.16:compile
+   |     \- org.codehaus.plexus:plexus-utils:jar:3.6.1:compile
+   +- io.quarkus:quarkus-devtools-common:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-devtools-registry-client:jar:3.40.1.1:compile
+   |  |  \- io.quarkus:quarkus-devtools-message-writer:jar:3.40.1.1:compile
+   |  +- io.quarkus:quarkus-devtools-base-codestarts:jar:3.40.1.1:compile
+   |  +- org.apache.commons:commons-compress:jar:1.28.0:compile
+   |  |  +- commons-codec:commons-codec:jar:1.19.0:compile
+   |  |  \- org.apache.commons:commons-lang3:jar:3.18.0:compile
+   |  +- io.smallrye.common:smallrye-common-version:jar:2.19.0:compile
+   |  +- io.smallrye.common:smallrye-common-os:jar:2.19.0:compile
+   |  +- io.smallrye.common:smallrye-common-process:jar:2.19.0:compile
+   |  |  \- io.smallrye.common:smallrye-common-function:jar:2.19.0:compile
+   |  +- io.fabric8:maven-model-helper:jar:41:compile
+   |  |  \- org.jdom:jdom2:jar:2.0.6.1:compile
+   |  +- com.networknt:json-schema-validator:jar:2.0.1:compile
+   |  |  \- com.ethlo.time:itu:jar:1.14.0:compile
+   |  +- com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.2:compile
+   |  +- org.apache.maven:maven-plugin-api:jar:3.9.16:compile
+   |  |  \- org.apache.maven:maven-artifact:jar:3.9.16:compile
+   |  +- org.apache.maven:maven-core:jar:3.9.16:compile
+   |  |  +- org.apache.maven.resolver:maven-resolver-impl:jar:1.9.27:compile
+   |  |  |  \- org.apache.maven.resolver:maven-resolver-named-locks:jar:1.9.27:compile
+   |  |  +- org.apache.maven.resolver:maven-resolver-api:jar:1.9.27:compile
+   |  |  +- org.apache.maven.resolver:maven-resolver-spi:jar:1.9.27:compile
+   |  |  +- org.apache.maven.resolver:maven-resolver-util:jar:1.9.27:compile
+   |  |  +- org.eclipse.sisu:org.eclipse.sisu.inject:jar:1.0.0:compile
+   |  |  +- org.ow2.asm:asm:jar:9.9.1:compile
+   |  |  \- org.codehaus.plexus:plexus-component-annotations:jar:2.2.0:compile
+   |  +- jakarta.enterprise:jakarta.enterprise.cdi-api:jar:4.1.0:compile
+   |  |  +- jakarta.enterprise:jakarta.enterprise.lang-model:jar:4.1.0:compile
+   |  |  +- jakarta.annotation:jakarta.annotation-api:jar:3.0.0:compile
+   |  |  +- jakarta.el:jakarta.el-api:jar:6.0.0:compile
+   |  |  \- jakarta.interceptor:jakarta.interceptor-api:jar:2.2.0:compile
+   |  \- org.codejive:java-properties:jar:0.0.7:compile
+   +- javax.inject:javax.inject:jar:1:compile
+   +- org.apache.maven.plugin-tools:maven-plugin-annotations:jar:3.15.1:compile
+   +- io.smallrye:jandex:jar:3.6.0:compile
+   +- commons-io:commons-io:jar:2.22.0:compile
+   +- com.fasterxml.jackson.core:jackson-databind:jar:2.22.2:compile
+   |  +- com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile
+   |  \- com.fasterxml.jackson.core:jackson-core:jar:2.22.2:compile
+   +- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.2:compile
+   |  \- org.yaml:snakeyaml:jar:2.5:compile
+   +- jakarta.inject:jakarta.inject-api:jar:2.0.1:compile
+   +- io.smallrye.beanbag:smallrye-beanbag:jar:1.6.1:compile
+   |  \- io.smallrye.common:smallrye-common-constraint:jar:2.15.0:compile
+   +- io.smallrye.beanbag:smallrye-beanbag-maven:jar:1.6.1:compile
+   \- io.smallrye.beanbag:smallrye-beanbag-sisu:jar:1.6.1:compile

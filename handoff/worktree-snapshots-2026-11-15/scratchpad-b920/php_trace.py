@@ -1,0 +1,38 @@
+import json,sys
+BS="\\"
+http=[
+ ["        ?HttpSender $sender = null,\n    ) {\n        $this->sender = $sender ?? new CurlSender();\n",
+  "        ?HttpSender $sender = null,\n        private readonly ?" + BS + "Closure $traceContext = null,\n    ) {\n        $this->sender = $sender ?? new CurlSender();\n"],
+ ["    /** The last successful response of this transport (status, headers incl. Idempotent-Replayed). */\n",
+  "    /** A well-formed version-00 traceparent whose trace-id and parent-id are not all zero (W3C Trace Context). */\n"
+  "    public static function validTraceparent(mixed $v): bool\n    {\n"
+  "        return is_string($v) && preg_match('/^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$/D', $v) === 1\n"
+  "            && substr($v, 3, 32) !== str_repeat('0', 32) && substr($v, 36, 16) !== str_repeat('0', 16);\n    }\n\n"
+  "    /** A tracestate of printable ASCII, at most 512 characters. */\n"
+  "    public static function validTracestate(mixed $v): bool\n    {\n"
+  "        return is_string($v) && preg_match('/^[" + BS + "x20-" + BS + "x7e]{1,512}$/D', $v) === 1;\n    }\n\n"
+  "    /**\n     * The W3C trace headers for this request (R13, M-062): none without a trace context, when the request sets its\n"
+  "     * own traceparent, when the context has no valid one, or when the provider throws (tracing never fails a call).\n"
+  "     * The trace context returns ['traceparent' => ..., 'tracestate' => ...] or null.\n     *\n"
+  "     * @return array<string, string>\n     */\n"
+  "    public function traceHeaders(ApiRequest $req): array\n    {\n"
+  "        $own = array_map('strtolower', array_keys($req->headers));\n"
+  "        if ($this->traceContext === null || in_array('traceparent', $own, true)) {\n            return [];\n        }\n"
+  "        try {\n            $ctx = ($this->traceContext)();\n        } catch (" + BS + "Throwable $e) {\n"
+  "            $this->log->debug('trace.context', 'trace context provider failed; request sent without trace headers: '\n"
+  "                . $e->getMessage(), ['method' => $req->method, 'path' => $req->path]);\n            return [];\n        }\n"
+  "        if (!is_array($ctx) || !self::validTraceparent($ctx['traceparent'] ?? null)) {\n            return [];\n        }\n"
+  "        $out = ['traceparent' => (string) $ctx['traceparent']];\n"
+  "        if (self::validTracestate($ctx['tracestate'] ?? null) && !in_array('tracestate', $own, true)) {\n"
+  "            $out['tracestate'] = (string) $ctx['tracestate'];\n        }\n        return $out;\n    }\n\n"
+  "    /** The last successful response of this transport (status, headers incl. Idempotent-Replayed). */\n"],
+ ["        foreach (array_merge($this->defaultHeaders, $req->headers) as $k => $v) {\n",
+  "        foreach (array_merge($this->defaultHeaders, $this->traceHeaders($req), $req->headers) as $k => $v) {\n"],
+]
+client=[
+ ["        ?HttpSender $sender = null,\n    ) {\n        // the curl requirement",
+  "        ?HttpSender $sender = null,\n        ?" + BS + "Closure $traceContext = null,\n    ) {\n        // the curl requirement"],
+ ["            $this->log, $userAgent, $seat, $actingForSeat, $sender);\n",
+  "            $this->log, $userAgent, $seat, $actingForSeat, $sender, $traceContext);\n"],
+]
+json.dump(http,open(sys.argv[1]+'/php_http2.json','w')); json.dump(client,open(sys.argv[1]+'/php_client2.json','w'))

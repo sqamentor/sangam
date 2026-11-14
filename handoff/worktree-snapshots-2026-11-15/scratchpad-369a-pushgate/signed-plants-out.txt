@@ -1,0 +1,12 @@
+error: No such remote: 'sbare'
+RESULT S1-record: accepted 
+RESULT S1-push: passed 
+RESULT S2: refused 
+RESULT S3: refused 
+RESULT S4: refused 
+RESULT S5-ref: refused 
+RESULT S5-sha: refused 
+RESULT S6-forged-record: PUSHED (gap: check trusts the stored flag, no re-verification) 
+RESULT S7-env-signers: PUSHED (gap: SANGAM_ALLOWED_SIGNERS env selects the trust root) record exit 0
+RESULT S8-edited-signers: PUSHED (gap: trust root is an editable working-tree file) record exit 0
+verify: push-approval ledger OK (8 records); mirror OK (C:\Users\LOKEND~2\AppData\Local\Temp\claude\369a6365dc7e1264\ff9f2caf-1246-4228-ae70-82a16cf209ae\scratchpad\pushgate\mirror-signed\mirror.jsonl)

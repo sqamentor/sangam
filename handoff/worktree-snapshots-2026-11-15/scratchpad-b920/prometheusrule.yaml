@@ -1,0 +1,72 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- /* M-091: the Sangam alert rules (deploy/compose/observability/rules/sangam-alerts.yml, kept equal by
+       PrometheusAlertRulesTraceTest) for the Prometheus Operator. Needs the PrometheusRule CRD, like the ServiceMonitor. */ -}}
+{{- if .Values.metrics.prometheusRule.enabled }}
+{{- $fullname := include "sangam.fullname" . -}}
+{{- $t := .Values.metrics.prometheusRule.thresholds -}}
+{{- /* The ServiceMonitor scrapes the -server-management Service, so its series carry job=<that Service name>. */ -}}
+{{- $sel := printf "job=%q, namespace=%q" (printf "%s-server-management" $fullname) .Release.Namespace -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ $fullname }}-alerts
+  labels:
+    {{- include "sangam.labels" . | nindent 4 }}
+    {{- with .Values.metrics.prometheusRule.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  groups:
+    - name: sangam
+      rules:
+        - alert: SangamServerDown
+          expr: 'up{ {{ $sel }} } == 0'
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: The Prometheus scrape of a Sangam server failed for 5 minutes.
+        - alert: SangamOutboxDeliveryStale
+          expr: 'max(sangam_outbox_oldest_age_seconds{ {{ $sel }} }) > {{ $t.outboxOldestAgeSeconds }}'
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: The oldest undelivered outbox event is older than the threshold.
+            description: >-
+              The relay is not draining, a destination is down, or an ordered delivery is PARKED and blocks its line
+              (SANGAM.md VI.2.3; PARKED rows count as undelivered). Repair a PARKED delivery with requeue or skip.
+        - alert: SangamRootLockWaitHigh
+          expr: 'max by (process) (sangam_engine_root_lock_wait_seconds_max{ {{ $sel }} }) > {{ $t.rootLockWaitSeconds }}'
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: A process definition waits on its root lock for more than the threshold.
+            description: >-
+              A hot root (SANGAM.md VI.1, R3): one root is serialized and is not designed for more than about 50
+              state-changing commands per second. Split the busy root, for example with message-started child processes.
+        - alert: SangamIncidentsOpen
+          expr: 'max(sangam_incidents_open{ {{ $sel }} }) > {{ $t.incidentsOpen }}'
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Operaton incidents are open.
+        - alert: SangamReconciliationItemsOpen
+          expr: 'max(sangam_reconciliation_items{ {{ $sel }}, state="OPEN" }) > {{ $t.reconciliationOpen }}'
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Reconciliation items are waiting for an operator.
+        {{- if .Values.metrics.prometheusRule.certManager.enabled }}
+        - alert: SangamCertificateExpiring
+          expr: '(min by (namespace, name) (certmanager_certificate_expiration_timestamp_seconds{ {{ .Values.metrics.prometheusRule.certManager.selector }} }) - time()) < {{ $t.certExpiryDays }} * 86400'
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: A cert-manager certificate expires within the threshold and has not been renewed.
+        {{- end }}
+{{- end }}

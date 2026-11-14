@@ -1,0 +1,21 @@
+diff --git "a/D:\\GITHUB  Project\\Custom WorkFlow\\.claude\\worktrees\\workspace-scan-resume-06b524\\sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java" "b/C:\\Users\\Lokendra Singh\\AppData\\Local\\Temp\\claude\\5cef910d4d286f64\\898f1ff7-0dcc-4d95-b425-830a9a5ead44\\scratchpad\\wt-packs4\\sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java"
+index 22c5f4d9..5e94526d 100644
+--- "a/D:\\GITHUB  Project\\Custom WorkFlow\\.claude\\worktrees\\workspace-scan-resume-06b524\\sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java"	
++++ "b/C:\\Users\\Lokendra Singh\\AppData\\Local\\Temp\\claude\\5cef910d4d286f64\\898f1ff7-0dcc-4d95-b425-830a9a5ead44\\scratchpad\\wt-packs4\\sangam/sangam-packs/src/main/java/org/sangam/packs/core/Vars.java"	
+@@ -242,15 +242,7 @@ public final class Vars {
+     public static Map<String, Object> payloadOf(VariableScope s, List<String> names) {
+         Map<String, Object> m = new LinkedHashMap<>();
+         for (String f : names) {
+-            // "variable>parameter": the process variable is sent under the connector's contract name (the same
+-            // source>target form as call-activity mappings), so a pack's vocabulary never has to match a connector's
+-            int gt = f.indexOf('>');
+-            String var = gt < 0 ? f : f.substring(0, gt).trim();
+-            String param = gt < 0 ? f : f.substring(gt + 1).trim();
+-            if (var.isEmpty() || param.isEmpty()) {
+-                throw new IllegalArgumentException("connector input '" + f + "' must be 'variable' or 'variable>parameter'");
+-            }
+-            m.put(param, canonical(s.getVariable(var)));
++            m.put(f, canonical(s.getVariable(f)));
+         }
+         return m;
+     }

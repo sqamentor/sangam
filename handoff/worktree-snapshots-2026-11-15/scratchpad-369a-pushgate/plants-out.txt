@@ -1,0 +1,57 @@
+== selftest
+  PASS  25 concurrent appends all succeeded
+  PASS  ledger has exactly 25 records (found 25)
+  PASS  indexes are contiguous 0..N-1 (no duplicate tail read)
+  PASS  chain verifies after concurrent appends
+  PASS  off-repo mirror holds exactly the same records in the same order
+  PASS  approval without --source user-message is refused (no agent-written approvals)
+  PASS  a lost or rewritten mirror is reported
+  PASS  tamper step really changed the ledger
+  PASS  tampered record is detected
+  PASS  append to a broken chain is refused (never healed)
+
+  all checks passed
+== P1 no approval
+RESULT P1: blocked
+== P2 record without --source/--tty
+RESULT P2: refused
+== P2b record with wrong --source
+RESULT P2b: refused
+== P3 valid approval
+  APPROVAL recorded #0 for 4bd5a2ef021e → refs/heads/main on C:/Users/LOKEND~2/AppData/Local/Temp/claude/369a6365dc7e1264/ff9f2caf-1246-4228-ae70-82a16cf209ae/scratchpad/pushgate/bare.git (source=user-message, ttyVerified=false; single use, 30 min)
+OK: no source file is hidden by .gitignore
+  push approved by record #0: "SYNTHETIC TEST APPROVAL ONE"
+RESULT P3: passed once
+== P4 reuse (same sha/ref to a fresh ref name is a different ref; reuse = replay hook input)
+RESULT P4: blocked
+== P5 non-fast-forward
+warning: in the working copy of 't2-nonff.txt', LF will be replaced by CRLF the next time Git touches it
+node:internal/modules/cjs/loader:1228
+  throw err;
+  ^
+
+Error: Cannot find module 'C:\Users\Lokendra Singh\AppData\Local\Temp\claude\369a6365dc7e1264\ff9f2caf-1246-4228-ae70-82a16cf209ae\scratchpad\pushgate\sg\tools\governance\push-approval.mjs'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function._load (node:internal/modules/cjs/loader:1055:27)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:220:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:170:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.14.0
+RESULT P5: FORCED (gate missed)
+== P6 deletion
+RESULT P6: blocked
+== verify before tamper
+  push-approval ledger OK (2 records); mirror OK (C:\Users\LOKEND~2\AppData\Local\Temp\claude\369a6365dc7e1264\ff9f2caf-1246-4228-ae70-82a16cf209ae\scratchpad\pushgate\mirror\mirror.jsonl)
+verify exit 0
+== P7 mirror deleted
+RESULT P7: verify fails
+== P8 one tampered byte
+RESULT P8: verify fails
+== P8 real case restored
+  push-approval ledger OK (2 records); mirror OK (C:\Users\LOKEND~2\AppData\Local\Temp\claude\369a6365dc7e1264\ff9f2caf-1246-4228-ae70-82a16cf209ae\scratchpad\pushgate\mirror\mirror.jsonl)
+verify exit 0

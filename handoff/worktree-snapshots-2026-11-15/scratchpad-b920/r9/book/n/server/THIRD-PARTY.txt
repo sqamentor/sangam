@@ -1,0 +1,4 @@
+Third-party components.
+
+pkg:maven/org.a/a@1.0	declared: Apache-2.0	used: Apache-2.0
+pkg:maven/org.b/b@2.0	declared: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0	used: EPL-2.0

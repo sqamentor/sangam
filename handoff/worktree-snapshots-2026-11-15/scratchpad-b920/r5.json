@@ -1,0 +1,2 @@
+[["| sangam-packs | A product-table `BusinessCalendar` (today the packs' `WorkingDayCalendar`) |",
+"| sangam-packs | Done (SL-34, M-011): `PacksWiring.packCalendar` installs `org.sangam.packs.calendar.WorkingDayCalendar` over the tenant's profile calendar (`bridge/ProfileWorkingDays`; calendar name `sangam.packs.calendar`, default `government`), so pack SLAs count the tenant's working days and holidays. Without a `ProfileResolver` bean the packs keep the default working days (logged at WARN) |"]]

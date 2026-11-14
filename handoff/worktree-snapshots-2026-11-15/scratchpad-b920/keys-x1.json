@@ -1,0 +1,14 @@
+{
+  "fld": {
+    "fiscalYearStartMonth": "Financial year starts in",
+    "fiscalYearStartMonthHint": "Required: the month the tenant's financial year starts in, for the reporting periods. No financial year is assumed.",
+    "definedAt": "Published at",
+    "definedBy": "Published by",
+    "contentHash": "Content hash"
+  },
+  "mod": {
+    "compliance": {
+      "basisHint": "A legal-basis code of the tenant's jurisdiction pack. The server checks it against the pack."
+    }
+  }
+}

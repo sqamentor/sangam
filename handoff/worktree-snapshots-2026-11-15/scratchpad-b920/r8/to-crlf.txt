@@ -1,0 +1,2 @@
+sangam/deploy/airgap/generate-sbom.ps1
+sangam/deploy/airgap/save-images.ps1

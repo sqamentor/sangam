@@ -1,0 +1,390 @@
+#################### sangam-flowable-ports/src/main/java/org/sangam/ports/history/HistoryQueryService.java
+--- 2aaf44f
++++ wt
+@@ -42,10 +42,21 @@
+  */
+ public class HistoryQueryService {
+ 
+-    /** Filter; null fields are ignored. {@code finished} true = ended only, false = running only. */
++    /**
++     * Filter; null fields are ignored. {@code finished} true = ended only, false = running only.
++     * {@code activityInstanceId} narrows activity instances (by id), variables and decisions (by scope) to one activity
++     * instance.
++     */
+     public record Filter(String tenantId, String definitionKey, String processInstanceId, String caseInstanceId,
+                          String businessKey, String activityId, String taskDefinitionKey, String assignee, String state,
+-                         Boolean finished, Instant from, Instant to) {
++                         Boolean finished, Instant from, Instant to, String activityInstanceId) {
++
++        public Filter(String tenantId, String definitionKey, String processInstanceId, String caseInstanceId,
++                      String businessKey, String activityId, String taskDefinitionKey, String assignee, String state,
++                      Boolean finished, Instant from, Instant to) {
++            this(tenantId, definitionKey, processInstanceId, caseInstanceId, businessKey, activityId, taskDefinitionKey,
++                    assignee, state, finished, from, to, null);
++        }
+     }
+ 
+     /** VI.4 predicate from WS-SECURITY over alias {@code r}; {@link #NONE} only for system callers. */
+@@ -114,6 +125,7 @@
+     public PageResult<ActivityRow> activityInstances(Filter f, AuthPredicate auth, PageRequest p) {
+         Where w = new Where(f, auth);
+         w.eq("r.process_instance_id", f.processInstanceId() != null ? f.processInstanceId() : f.caseInstanceId());
++        w.eq("r.id", f.activityInstanceId());
+         w.eq("r.activity_id", f.activityId());
+         w.eq("r.state", f.state());
+         w.finished(f.finished(), "r.end_time");
+@@ -171,6 +183,9 @@
+         if (f.definitionKey() != null) {
+             q.processDefinitionKey(f.definitionKey());
+         }
++        if (f.activityInstanceId() != null) {
++            q.activityInstanceIdIn(f.activityInstanceId());
++        }
+         boolean bounded = f.processInstanceId() != null || f.caseInstanceId() != null;
+         List<VariableRow> rows = new ArrayList<>();
+         List<HistoricVariableInstance> page = q.disableBinaryFetching().orderByVariableName().asc()
+@@ -200,6 +215,9 @@
+         if (f.activityId() != null) {
+             q.activityIdIn(f.activityId());
+         }
++        if (f.activityInstanceId() != null) {
++            q.activityInstanceIdIn(f.activityInstanceId());
++        }
+         if (f.from() != null) {
+             q.evaluatedAfter(Date.from(f.from()));
+         }
+#################### sangam-rest/src/main/java/org/sangam/rest/port/HistoryPort.java
+--- 2aaf44f
++++ wt
+@@ -10,10 +10,55 @@
+  */
+ public interface HistoryPort {
+ 
++    /**
++     * @param activityInstanceId only rows of this activity instance (activity instances, tasks, variables, decisions,
++     *                           external-task log); {@code 400 FILTER_UNSUPPORTED} on the other lists
++     * @param state              activity-instance lists only: {@link #RUNNING}, {@link #COMPLETED} or
++     *                           {@link #CANCELED} (case-insensitive); {@code 400} on the other lists or for another value
++     */
+     record HistoryFilter(String processDefinitionKey, String processInstanceId, String businessKey,
+                          String caseInstanceId, String activityId, String taskDefinitionKey, String assignee,
+-                         Boolean finished, Instant from, Instant to) {
++                         Boolean finished, Instant from, Instant to, String activityInstanceId, String state) {
++
++        public HistoryFilter(String processDefinitionKey, String processInstanceId, String businessKey,
++                             String caseInstanceId, String activityId, String taskDefinitionKey, String assignee,
++                             Boolean finished, Instant from, Instant to) {
++            this(processDefinitionKey, processInstanceId, businessKey, caseInstanceId, activityId, taskDefinitionKey,
++                    assignee, finished, from, to, null, null);
++        }
++
++        /** The activity-instance state filter, normalised; {@code 400 VALIDATION_FAILED} for an unknown value. */
++        public String activityState() {
++            if (state == null || state.isBlank()) {
++                return null;
++            }
++            String s = state.trim().toLowerCase(java.util.Locale.ROOT);
++            if (!STATES.contains(s)) {
++                throw ApiProblem.badRequest("VALIDATION_FAILED", "state must be one of " + STATES);
++            }
++            return s;
++        }
++
++        /**
++         * Refuses the filters a list cannot apply ({@code 400 FILTER_UNSUPPORTED}) instead of silently ignoring them,
++         * so a caller never reads an unfiltered list as a filtered one.
++         */
++        public HistoryFilter requireOnly(String list, boolean activityInstanceIdSupported, boolean stateSupported) {
++            if (!activityInstanceIdSupported && activityInstanceId != null && !activityInstanceId.isBlank()) {
++                throw ApiProblem.badRequest("FILTER_UNSUPPORTED", "activityInstanceId is not a filter of " + list);
++            }
++            if (!stateSupported && state != null && !state.isBlank()) {
++                throw ApiProblem.badRequest("FILTER_UNSUPPORTED", "state is not a filter of " + list);
++            }
++            return this;
++        }
+     }
++
++    /** Activity-instance states of the {@code state} filter (P14 tree quick filter). */
++    String RUNNING = "running";
++    String COMPLETED = "completed";
++    String CANCELED = "canceled";
++    java.util.List<String> STATES = java.util.List.of(RUNNING, COMPLETED, CANCELED);
+ 
+     record HistoricProcessInstance(String id, String processDefinitionId, String processDefinitionKey,
+                                    String businessKey, String state, Instant startTime, Instant endTime,
+#################### sangam-rest/src/main/java/org/sangam/rest/port/ProcessPort.java
+--- 2aaf44f
++++ wt
+@@ -91,6 +91,18 @@
+ 
+     Map<String, Object> variables(RequestContext ctx, String processInstanceId);
+ 
++    /**
++     * P13: the variables whose scope is one activity instance of this process instance (its local variables; the
++     * process instance's own id is the root scope). Same tenant check and permission as {@link #variables}; an
++     * activity instance of another process instance matches nothing. {@code null} means {@link #variables}.
++     */
++    default Map<String, Object> variables(RequestContext ctx, String processInstanceId, String activityInstanceId) {
++        if (activityInstanceId == null || activityInstanceId.isBlank()) {
++            return variables(ctx, processInstanceId);
++        }
++        throw ApiProblem.badRequest("FILTER_UNSUPPORTED", "activityInstanceId is not supported by this server");
++    }
++
+     Map<String, Object> setVariables(RequestContext ctx, String processInstanceId, Map<String, Object> variables);
+ 
+     TerminationResult cancel(RequestContext ctx, String processInstanceId, TerminateRequest request);
+#################### sangam-rest/src/main/java/org/sangam/rest/port/TaskPort.java
+--- 2aaf44f
++++ wt
+@@ -11,16 +11,64 @@
+  */
+ public interface TaskPort {
+ 
++    /**
++     * @param variableNames P45 task-card variables: each listed task carries these variables (when set), read as
++     *                      {@code GET /tasks/{id}/variables} reads them, so the caller gets nothing it could not read
++     *                      already; at most {@link #MAX_CARD_VARIABLES} names
++     */
+     record TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
+                       String processInstanceId, String caseInstanceId, String businessKey, String processDefinitionKey,
+-                      String taskDefinitionKey, String state, String sortBy, String sortOrder) {
++                      String taskDefinitionKey, String state, String sortBy, String sortOrder,
++                      List<String> variableNames) {
++
++        public TaskFilter {
++            variableNames = variableNames == null ? List.of() : variableNames.stream()
++                    .flatMap(n -> java.util.Arrays.stream(n.split(","))).map(String::trim).filter(n -> !n.isEmpty())
++                    .distinct().toList();
++            if (variableNames.size() > MAX_CARD_VARIABLES) {
++                throw ApiProblem.badRequest("VALIDATION_FAILED",
++                        "at most " + MAX_CARD_VARIABLES + " variableNames per request");
++            }
++        }
++
++        public TaskFilter(String assignee, Boolean mine, Boolean unassigned, String candidateGroup, String seatId,
++                          String processInstanceId, String caseInstanceId, String businessKey,
++                          String processDefinitionKey, String taskDefinitionKey, String state, String sortBy,
++                          String sortOrder) {
++            this(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId, caseInstanceId, businessKey,
++                    processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder, List.of());
++        }
+     }
+ 
+-    /** FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated. */
++    /** Upper bound of {@link TaskFilter#variableNames} (each name is one variable read per listed task). */
++    int MAX_CARD_VARIABLES = 20;
++
++    /**
++     * FLOWABLE-INTO-OPERATON FC-52 lifecycle fields included: state, claimTime/claimedBy, lastUpdated.
++     * {@code variables}: only on list rows asked for with {@code variableNames} (P45), otherwise null.
++     */
+     record Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
+                 String processDefinitionKey, String caseInstanceId, String businessKey, String assignee, String owner,
+                 String seatId, String tenantId, Instant created, Instant due, Instant followUp, Instant lastUpdated,
+-                Instant claimTime, String state, int priority, String formKey, String delegationState) {
++                Instant claimTime, String state, int priority, String formKey, String delegationState,
++                Map<String, Object> variables) {
++
++        public Task(String id, String name, String description, String taskDefinitionKey, String processInstanceId,
++                    String processDefinitionKey, String caseInstanceId, String businessKey, String assignee,
++                    String owner, String seatId, String tenantId, Instant created, Instant due, Instant followUp,
++                    Instant lastUpdated, Instant claimTime, String state, int priority, String formKey,
++                    String delegationState) {
++            this(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey, caseInstanceId,
++                    businessKey, assignee, owner, seatId, tenantId, created, due, followUp, lastUpdated, claimTime,
++                    state, priority, formKey, delegationState, null);
++        }
++
++        /** This task with card variables. */
++        public Task withVariables(Map<String, Object> vars) {
++            return new Task(id, name, description, taskDefinitionKey, processInstanceId, processDefinitionKey,
++                    caseInstanceId, businessKey, assignee, owner, seatId, tenantId, created, due, followUp,
++                    lastUpdated, claimTime, state, priority, formKey, delegationState, vars);
++        }
+     }
+ 
+     /** Where a return can go (by hierarchy level and seat). {@code activityId} feeds ReturnTaskRequest.targetActivityId. */
+#################### sangam-rest/src/main/java/org/sangam/rest/web/HistoryAuditController.java
+--- 2aaf44f
++++ wt
+@@ -39,10 +39,10 @@
+                                Boolean finished,
+                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
+                                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+-                               Integer page, Integer size) {
++                               Integer page, Integer size, String activityInstanceId, String state) {
+         HistoryPort.HistoryFilter filter() {
+             return new HistoryPort.HistoryFilter(processDefinitionKey, processInstanceId, businessKey, caseInstanceId,
+-                    activityId, taskDefinitionKey, assignee, finished, from, to);
++                    activityId, taskDefinitionKey, assignee, finished, from, to, activityInstanceId, state);
+         }
+     }
+ 
+@@ -50,50 +50,58 @@
+     public ResponseEntity<List<HistoryPort.HistoricProcessInstance>> processInstances(RequestContext ctx,
+                                                                                       @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.processInstances(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/process-instances", false, false);
++        return Lists.ok(history.processInstances(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/activity-instances")
+     public ResponseEntity<List<HistoryPort.HistoricActivityInstance>> activityInstances(RequestContext ctx,
+                                                                                         @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.activityInstances(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/activity-instances", true, true);
++        return Lists.ok(history.activityInstances(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/tasks")
+     public ResponseEntity<List<HistoryPort.HistoricTask>> tasks(RequestContext ctx, @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.tasks(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/tasks", false, false);
++        return Lists.ok(history.tasks(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/variables")
+     public ResponseEntity<List<HistoryPort.HistoricVariable>> variables(RequestContext ctx, @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.variables(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/variables", true, false);
++        return Lists.ok(history.variables(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/decisions")
+     public ResponseEntity<List<HistoryPort.HistoricDecision>> decisions(RequestContext ctx, @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.decisions(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/decisions", true, false);
++        return Lists.ok(history.decisions(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/incidents")
+     public ResponseEntity<List<HistoryPort.HistoricIncident>> incidents(RequestContext ctx, @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.incidents(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/incidents", false, false);
++        return Lists.ok(history.incidents(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/job-log")
+     public ResponseEntity<List<HistoryPort.HistoricJobLog>> jobLog(RequestContext ctx, @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.jobLog(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/job-log", false, false);
++        return Lists.ok(history.jobLog(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/history/operation-log")
+     public ResponseEntity<List<HistoryPort.UserOperation>> operationLog(RequestContext ctx, @ModelAttribute HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(history.operationLog(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        HistoryPort.HistoryFilter f = q.filter().requireOnly("/history/operation-log", false, false);
++        return Lists.ok(history.operationLog(ctx, f, Lists.page(q.page(), q.size())));
+     }
+ 
+     @GetMapping("/audit/{businessKey}/timeline")
+#################### sangam-rest/src/main/java/org/sangam/rest/web/InstanceControlController.java
+--- 2aaf44f
++++ wt
+@@ -96,6 +96,6 @@
+     public ResponseEntity<List<InstanceControlPort.ExternalTaskLogEntry>> externalTaskLog(RequestContext ctx,
+             @ModelAttribute HistoryAuditController.HistoryQuery q) {
+         permissions.require(ctx, Permissions.HISTORY_READ);
+-        return Lists.ok(control.externalTaskLog(ctx, q.filter(), Lists.page(q.page(), q.size())));
++        return Lists.ok(control.externalTaskLog(ctx, q.filter().requireOnly("/history/external-task-log", true, false), Lists.page(q.page(), q.size())));
+     }
+ }
+#################### sangam-rest/src/main/java/org/sangam/rest/web/ProcessController.java
+--- 2aaf44f
++++ wt
+@@ -94,9 +94,10 @@
+     }
+ 
+     @GetMapping("/process-instances/{id}/variables")
+-    public Map<String, Object> variables(RequestContext ctx, @PathVariable String id) {
+-        permissions.require(ctx, Permissions.PROCESS_READ);
+-        return processes.variables(ctx, id);
++    public Map<String, Object> variables(RequestContext ctx, @PathVariable String id,
++                                         @RequestParam(required = false) String activityInstanceId) {
++        permissions.require(ctx, Permissions.PROCESS_READ);
++        return processes.variables(ctx, id, activityInstanceId);
+     }
+ 
+     @PutMapping("/process-instances/{id}/variables")
+#################### sangam-rest/src/main/java/org/sangam/rest/web/TaskController.java
+--- 2aaf44f
++++ wt
+@@ -45,10 +45,12 @@
+             @RequestParam(required = false) String processDefinitionKey,
+             @RequestParam(required = false) String taskDefinitionKey, @RequestParam(required = false) String state,
+             @RequestParam(required = false) String sortBy, @RequestParam(required = false) String sortOrder,
+-            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
++            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
++            @RequestParam(required = false) List<String> variableNames) {
+         permissions.require(ctx, Permissions.TASK_READ);
+         var filter = new TaskPort.TaskFilter(assignee, mine, unassigned, candidateGroup, seatId, processInstanceId,
+-                caseInstanceId, businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder);
++                caseInstanceId, businessKey, processDefinitionKey, taskDefinitionKey, state, sortBy, sortOrder,
++                variableNames);
+         return Lists.ok(tasks.list(ctx, filter, Lists.page(page, size)));
+     }
+ 
+#################### sangam-rest/src/main/java/org/sangam/rest/config/SangamRestAutoConfiguration.java
+--- 2aaf44f
++++ wt
+@@ -219,7 +219,8 @@
+     @Bean
+     @ConditionalOnMissingBean
+     public HistoryPort sangamHistoryPort(ProcessEngine engine, RestProperties props) {
+-        return new OperatonHistoryAdapter(engine.getHistoryService(), engine.getRepositoryService(), props);
++        return new OperatonHistoryAdapter(engine.getHistoryService(), engine.getRepositoryService(),
++                engine.getManagementService(), props);
+     }
+ 
+     @Bean
+#################### sangam-server/src/main/java/org/sangam/server/bridge/PortsHistoryBridge.java
+--- 2aaf44f
++++ wt
+@@ -77,7 +77,14 @@
+     public Page<HistoricActivityInstance> activityInstances(RequestContext ctx, HistoryFilter filter,
+                                                             Page.PageRequest page) {
+         AuthPredicate auth = auth(ctx, ResourceRegistry.HISTORIC_PROCESS_INSTANCE, "process_instance_id");
+-        return map(PortsErrors.call(() -> queries.activityInstances(filter(ctx, filter), auth, pr(page))),
++        HistoryQueryService.Filter base = filter(ctx, filter);
++        // P14 state filter onto the read model's states (HistoryProjector: open, completed, canceled)
++        String state = filter == null ? null : filter.activityState();
++        HistoryQueryService.Filter f = state == null ? base : new HistoryQueryService.Filter(base.tenantId(),
++                base.definitionKey(), base.processInstanceId(), base.caseInstanceId(), base.businessKey(),
++                base.activityId(), base.taskDefinitionKey(), base.assignee(), RUNNING.equals(state) ? "open" : state,
++                base.finished(), base.from(), base.to(), base.activityInstanceId());
++        return map(PortsErrors.call(() -> queries.activityInstances(f, auth, pr(page))),
+                 r -> new HistoricActivityInstance(r.id(), r.activityId(), null, r.activityType(), r.processInstanceId(),
+                         null, null, null, r.startTime(), r.endTime(), r.durationMs(),
+                         r.state() != null && r.state().toUpperCase(java.util.Locale.ROOT).startsWith("CANCEL")));
+@@ -181,7 +188,7 @@
+         HistoryFilter x = f == null ? new HistoryFilter(null, null, null, null, null, null, null, null, null, null) : f;
+         return new HistoryQueryService.Filter(ctx.tenantId(), x.processDefinitionKey(), x.processInstanceId(),
+                 x.caseInstanceId(), x.businessKey(), x.activityId(), x.taskDefinitionKey(), x.assignee(), null,
+-                x.finished(), x.from(), x.to());
++                x.finished(), x.from(), x.to(), x.activityInstanceId());
+     }
+ 
+     private static Paging.PageRequest pr(Page.PageRequest p) {
+#################### sangam-server/src/main/java/org/sangam/server/config/PortsWiring.java
+--- 2aaf44f
++++ wt
+@@ -466,7 +466,7 @@
+             RestProperties props) {
+         return new org.sangam.server.bridge.PortsHistoryBridge(queries,
+                 new org.sangam.rest.adapter.operaton.OperatonHistoryAdapter(engine.getHistoryService(),
+-                        engine.getRepositoryService(), props),
++                        engine.getRepositoryService(), engine.getManagementService(), props),
+                 security.getIfAvailable(), tx, props.getCountCap());
+     }
+ 

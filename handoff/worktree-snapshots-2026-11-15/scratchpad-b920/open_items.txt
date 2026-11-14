@@ -1,0 +1,79 @@
+M-003 ⚠ | NONE | wave 1 (evidence) / 2 (code) | size M | Make the dispatch audit complete on the JavaDelegate connector path (today `auditOrNull = 
+M-008 ⚠ | NONE | wave 1 | size M | Kafka, JMS and Rabbit inbox consumers honour the tenant FROZEN/MOVING state (pause or park
+M-009 ⚠ | NONE | wave 1 | size S | Compliance denial audits must survive the caller's rollback (own transaction)
+M-010 ⚠ | NONE | wave 1 | size M | Generated pack BPMN gets DI layout and seat routing
+M-011 ⚠ | NONE | wave 1 | size S | Confirm that packs no longer use `WorkingDayCalendar` in production (probably resolved), a
+M-015 ⚠ | NONE | wave 3 | size XL | Quarkus extension (build-time and native surface; UTC rule inside the host)
+M-016 ⚠ | NONE | wave 3 | size XL | Database-per-tenant: an outbox, relay, inbox and idempotency store per tenant DB; Liquibas
+M-018 | NONE | wave 5 | size M | "Integrate Sangam into your application" guide: embed, REST and the worker lifecycle, oper
+M-019 | NOT_STARTED | wave 5 | size M | Publishing: signed Maven Central (BOM, starter, modules, Java SDK), npm, PyPI, NuGet, Pack
+M-020 ⚠ | NONE | wave 2 | size XL | Typed surface for all 879 paths in the 5 Tier-1 SDKs, **generated from the contract** (R16
+M-022 | PARTIAL | wave 2 | size L | Tier-2 generated SDKs for Go, Rust and Kotlin (openapi-generator) plus a minimal worker-lo
+M-024 | NONE | wave test phase | size S | .NET SDK built and tested on net8.0 (a run, no code expected)
+M-027 | PARTIAL | wave 3 | size L | Framework adapters as separate packages: Spring Boot (Java SDK), ASP.NET Core hosted servi
+M-040 | PARTIAL | wave 3 | size M | Channels live stream: a fetch-stream SSE client (bearer header) with `Last-Event-ID` recon
+M-041 ⚠ | NONE | wave 4 | size XL | Graphical CMMN editor (a diagram-js based modeller, or cmmn-js after a maintenance check)
+M-043 | NONE | wave 4 | size M | Embeddable web components `<sangam-task-form>` and `<sangam-process-diagram>` (Vite librar
+M-048 | NONE | wave 4 | size L | Playwright E2E suite plus a compose-backed CI job and seed data
+M-052 | PARTIAL | wave 1 (generator) / 5 (release ste | size M | R44 per-release standards profile (BPMN, DMN, CMMN, FEEL D-26 policy), generated from the 
+M-054 ⚠ | NONE | wave 2 | size M | Optional virtual-thread job executor plus per-job-type bulkheads (opt-in flag)
+M-055 ⚠ | NONE | wave 1 | size S | Default `jobExclusiveOverProcessHierarchies = true`, as §4.3 says (S-21)
+M-056 ⚠ | NONE | wave 2-3 | size XL | Partitioned executors `EXEC_PARTITION` / `EXEC_SLOT`: epochs, fencing, rebalance, count ch
+M-057 | PARTIAL | wave 3 | size L | History: per-element level overrides, an external projector (OpenSearch/ES HTTP, Kafka, da
+M-058 | IN_PROGRESS | wave 3 | size M | Wake-up bus for Oracle, SQL Server and MySQL: NATS and Redis notifiers (optional)
+M-060 | IN_PROGRESS | wave 3 | size L | Engine-level continue-as-new: atomic handover, moving pending message subscriptions and in
+M-064 | IN_PROGRESS | wave 3 | size XL | Event-gateway channel families, inbound and outbound, each classpath-optional: NATS JetStr
+M-065 | IN_PROGRESS | wave 3 | size M | CloudEvents binary content mode in and out (Kafka headers, JMS properties, HTTP `ce-*`), o
+M-066 ⚠ | NONE | wave 3 | size L | Broker task mode: external-task creation is dispatched through the outbox as a CloudEvent;
+M-069 | NONE | wave 4 | size M | Arazzo 1.1.0 import (to BPMN with HTTP tasks) and export, REST endpoints, a UI action
+M-070 ⚠ | NONE | wave 4 | size M | Temporal interop through Temporal's **HTTP API**: a start-and-await connector plus an inbo
+M-076 ⚠ | NONE | wave 3 | size M | SAML 2.0 adapter per R50 "MUST provide SAML 2.0 … adapters" (`SANGAM.md:4415`)
+M-077 | PARTIAL | wave 3 | size M | Parichay claims/profile mapper plus simulator conformance (T87, T89)
+M-078 | PARTIAL | wave 3 | size M | Aadhaar Sub-AUA connector stub plus simulator and data vault (no biometric storage)
+M-079 ⚠ | NONE | wave 4 | size L | A concrete `dsc.sign` DSC connector plus a local DSC agent (PKCS#11 USB-token bridge)
+M-080 | NONE | wave 4 | size L | PAdES/CMS: embed the ESP PKCS#7 into the PDF, RFC 3161 timestamp, LTV, signature validatio
+M-081 | PARTIAL | wave 3 | size L | PDF/A-2b and PDF/UA renderer (Apache PDFBox; never iText/AGPL) bound to `DocumentExtrasPor
+M-083 | NONE | wave 4 | size M | Optional OPA/Cedar `allow(principal, action, resource)` adapter for **object checks only**
+M-086 ⚠ | NONE | wave 3 | size M | Set-based field-mask projection for list views (instead of one object check per row)
+M-087 | PARTIAL | wave 3 | size S | DPDP: a data-processor agreement template (IN jurisdiction pack) plus a bound adult/guardi
+M-088 | NONE | wave 5 | size S | Licence process: an aggregated NOTICE (the Operaton NOTICE verbatim: Camunda, Odysseus JUE
+M-089 | NOT_STARTED | wave 5 | size S | GeM SKU catalogue plus a local-content dossier template and generator (PK-07 public method
+M-090 | NONE | wave 4 | size XL | Kubernetes operator: CRDs `SangamInstallation` and `SangamCell`, migration-Job orchestrati
+M-092 | NONE | wave 4 | size M | `sangam-cli upgrade check` (models, config, schema version, `ApiDeprecationRegistry`) plus
+M-097 ⚠ | NONE | wave 2 | size M | Determinism: ban `System.currentTimeMillis`, `new Date()`, `Instant.now()` and `ThreadLoca
+M-099 | PARTIAL | wave 4 | size L | SCIM 2.0 `/scim/v2/Users` and `/Groups`, mapped to seats and postings (replaces the 501 at
+M-100 | NONE | wave 4 | size M | Package Git pull/push through JGit (EDL-1.0, allowed), with credentialRef through `SecretR
+M-101 | NONE | wave 4 | size M | Modeller multi-user presence (SSE) plus UI indicators
+M-102 | NONE | wave 4 | size L | Platform console plus backup orchestration: a `BackupPort` with adapters (K8s CronJob trig
+M-103 | NONE | wave 4 | size L | IDP: an OCR and extraction port with a Tesseract sidecar (Apache-2.0, air-gap friendly), P
+M-104 ⚠ | NONE | wave 4 | size M | RPA: a generic external-worker RPA bridge plus product adapters (choose by evidence: Robot
+M-105 | NONE | wave 4 | size L | Connector breadth: GraphQL, JDBC, S3, chat through the connector SPI with EgressPolicy, pl
+M-106 ⚠ | NONE | wave 4 (evidence from 2) | size XL | Engine source patches D-19 (SKIP LOCKED `ExternalTask.xml`), D-10 (per-engine clock), FC-2
+M-107 | NONE | wave 4 | size XL | Flowable-ports: CMMN plan-item state-machine extensions and repetition with collections (P
+M-108 ⚠ | NONE | wave 4 | size XL | Experimental DB tier: CockroachDB and YugabyteDB (dialect, changelogs, a non-gating CI lan
+M-109 | NONE | wave 4 | size M | Teams app: manifest, tab task list, task module, IdP token exchange, live updates
+M-114 | NOT_STARTED | wave 4 | size L | UTC persistence of engine timestamps: a MyBatis date type handler set when the `SqlSession
+M-117 | NOT_STARTED | wave 5 | size M | Toolchain upgrade to vite 8 (React stays at 18.3.1) with a regenerated lockfile and update
+M-125 | NONE | wave 4 | size L | Semantic diff of BPMN, DMN and forms (element, flow and expression level) as a CLI, a REST
+M-126 ⚠ | NONE | wave 4 | size L | DMN: run 1.4 and 1.5 models natively (bundled schemas); accept 1.6 through Sangam namespac
+M-127 | NONE | wave 4 | size L | Bounded CMMN → BPMN converter for a supported subset, with a diagnostics report (T43), man
+M-128 | NONE | wave 4 | size M | Modeller catalogue: hosted publishing and install (optional; off in air-gapped installs), 
+M-129 ⚠ | NONE | wave 4 | size L | AI runtime: a vector-index port (pgvector on PG; native vector types where the Tier-1 DB h
+M-130 ⚠ | NONE | wave 3 | size M | Bulk sinks for more object types (registry parties, config master codes, roster duties, re
+M-131 ⚠ | NONE | wave 4 | size M | Map migrated legacy history (`OPS_MIG_ROW`) into product views and the audit chain
+M-133 ⚠ | NONE | wave 4 | size XL | US health: payer APIs (CMS-0057-F, in ADR-D-23); US Core and PAS profile validation; Fidel
+M-134 | NOT_STARTED | wave 4 | size XL | PFM / IFC P and G rows: the missing packs (budget preparation, the budget-document bundle,
+M-135 ⚠ | NONE | wave 4 | size XL | R48 live execution-state migration from Flowable: inventory, dry-run, rejection of unsuppo
+M-136 | NONE | wave 4 | size L | R42 replay fixtures: scenario regression of a new model against recorded fixtures (not Tem
+M-141 | NOT_STARTED | wave 4, if M-137 shows no release d | size L | Extraction phase 1: the smallest slice (e.g. engine construction) moved from Spring wiring
+M-141a | NOT_STARTED | wave 4 | size M | Security jar split: the 6 Spring files of sangam-security/oidc (ClientJwtVerifier, Identit
+M-141b | NOT_STARTED | wave 4 | size M | EngineAssembly in a plain-Java sangam-assembly module: settings record, engine plugin orde
+M-141c | NOT_STARTED | wave 4, else 0.2 | size S | The 4 sangam-rest non-host files naming Spring (TxSupport, ReadTransactions, OperatonOpsAd
+M-141d | NOT_STARTED | wave 4, else 0.2 | size S | The registry (7), field (1) and geo (1) controllers move into the REST host area or a modu
+M-142 | NOT_STARTED | wave 0.2 (phased) | size XL | Extraction phases 2..n (persistence/outbox/relay/inbox, security and authorization, integr
+M-143 | NOT_STARTED | wave 0.1.0 only if no delay (else O | size L | Quarkus JVM host adapter over the assembly layer (thin, optional, absent from the standalo
+M-144 | PARTIAL | wave design 3 (W3-H, in M-137 doc); | size M | Host-neutral host contract: one documented host SPI over the plain-Java assembly layer (li
+M-147 | NOT_STARTED | wave 4 | size M | Per-distribution SBOM (CycloneDX, server fat jar, starter, SDK packages, each image) and a
+M-148 | NOT_STARTED | wave 4 | size M | CI and release controls: licence gate over each SBOM against licence-policy and the decisi
+M-149 | NOT_STARTED | wave 4 | size L | Remediation of the M-145 and M-146 findings (conflicts, REVIEW REQUIRED items, SILENT-WEAK
+M-150 | NOT_STARTED | wave 4 (code), test phase (run) | size M | Cross-host equivalence: shared behavioural tests showing the same operation, inputs and ru

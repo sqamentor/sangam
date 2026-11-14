@@ -1,0 +1,1478 @@
+
+The following files have been resolved:
+   none
+
+
+The following files have been resolved:
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.liquibase:liquibase-core:jar:4.33.0:compile -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:compile -- module com.opencsv [auto]
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   javax.xml.bind:jaxb-api:jar:2.3.1:compile -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:compile -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:compile -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:compile -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:compile -- module org.apache.commons.io
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:test
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+   net.jqwik:jqwik:jar:1.10.2:test -- module net.jqwik
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   net.jqwik:jqwik-api:jar:1.10.2:test -- module net.jqwik.api
+   net.jqwik:jqwik-web:jar:1.10.2:test -- module net.jqwik.web
+   net.jqwik:jqwik-time:jar:1.10.2:test -- module net.jqwik.time
+   net.jqwik:jqwik-engine:jar:1.10.2:test -- module net.jqwik.engine
+   com.code-intelligence:jazzer-junit:jar:0.30.0:test -- module jazzer.junit (auto)
+   com.code-intelligence:jazzer-api:jar:0.30.0:test -- module jazzer.api (auto)
+   com.code-intelligence:jazzer:jar:0.30.0:test -- module jazzer (auto)
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.junit.platform:junit-platform-launcher:jar:6.0.3:test -- module org.junit.platform.launcher
+   io.cucumber:cucumber-java:jar:8.0.4:test -- module io.cucumber.java [auto]
+   io.cucumber:cucumber-core:jar:8.0.4:test -- module io.cucumber.core [auto]
+   io.cucumber:cucumber-gherkin:jar:8.0.4:test -- module io.cucumber.core.gherkin [auto]
+   io.cucumber:cucumber-gherkin-messages:jar:8.0.4:test -- module io.cucumber.core.gherkin.messages [auto]
+   io.cucumber:gherkin:jar:42.0.1:test -- module io.cucumber.gherkin
+   io.cucumber:messages:jar:34.2.1:test -- module io.cucumber.messages
+   io.cucumber:messages-ndjson:jar:0.5.2:test -- module io.cucumber.messages.ndjson
+   io.cucumber:pretty-formatter:jar:4.1.0:test -- module io.cucumber.prettyformatter
+   io.cucumber:query:jar:16.1.1:test -- module io.cucumber.query
+   io.cucumber:teamcity-formatter:jar:0.3.1:test -- module io.cucumber.teamcityformatter
+   io.cucumber:testng-xml-formatter:jar:0.9.0:test -- module io.cucumber.testngxmlformatter
+   io.cucumber:usage-formatter:jar:0.2.1:test -- module io.cucumber.usageformatter
+   io.cucumber:tag-expressions:jar:11.0.1:test -- module io.cucumber.tagexpressions
+   io.cucumber:cucumber-expressions:jar:20.1.0:test -- module io.cucumber.cucumberexpressions
+   io.cucumber:cucumber-json-formatter:jar:0.4.2:test -- module io.cucumber.jsonformatter
+   io.cucumber:datatable:jar:8.0.4:test -- module io.cucumber.datatable [auto]
+   io.cucumber:cucumber-plugin:jar:8.0.4:test -- module io.cucumber.plugin [auto]
+   io.cucumber:docstring:jar:8.0.4:test -- module io.cucumber.docstring [auto]
+   io.cucumber:html-formatter:jar:24.2.0:test -- module io.cucumber.htmlformatter
+   io.cucumber:junit-xml-formatter:jar:0.15.0:test -- module io.cucumber.junitxmlformatter
+   io.cucumber:ci-environment:jar:15.0.0:test -- module io.cucumber.cienvironment
+   io.cucumber:cucumber-junit-platform-engine:jar:8.0.4:test -- module io.cucumber.junit.platform.engine [auto]
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:compile
+   org.liquibase:liquibase-core:jar:4.33.0:compile -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:compile -- module com.opencsv [auto]
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   javax.xml.bind:jaxb-api:jar:2.3.1:compile -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:compile -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:compile -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:compile -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:compile -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:compile
+   org.liquibase:liquibase-core:jar:4.33.0:compile -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:compile -- module com.opencsv [auto]
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   javax.xml.bind:jaxb-api:jar:2.3.1:compile -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:compile -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:compile -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:compile -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:compile -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jdk8
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.apache.kafka:kafka-clients:jar:3.9.2:compile (optional) -- module kafka.clients (auto)
+   com.github.luben:zstd-jni:jar:1.5.6-4:runtime (optional) -- module com.github.luben.zstd_jni
+   at.yawk.lz4:lz4-java:jar:1.10.1:runtime (optional) -- module org.lz4.java [auto]
+   org.xerial.snappy:snappy-java:jar:1.1.10.5:runtime (optional) -- module snappy.java (auto)
+   jakarta.jms:jakarta.jms-api:jar:3.1.0:compile (optional) -- module jakarta.messaging
+   com.rabbitmq:amqp-client:jar:5.37.1:compile (optional) -- module com.rabbitmq.client [auto]
+   io.netty:netty-transport:jar:4.2.19.Final:compile (optional) -- module io.netty.transport
+   io.netty:netty-common:jar:4.2.19.Final:compile (optional) -- module io.netty.common
+   io.netty:netty-buffer:jar:4.2.19.Final:compile (optional) -- module io.netty.buffer
+   io.netty:netty-resolver:jar:4.2.19.Final:compile (optional) -- module io.netty.resolver
+   io.netty:netty-codec:jar:4.2.19.Final:compile (optional) -- module io.netty.codec.unused
+   io.netty:netty-codec-base:jar:4.2.19.Final:compile (optional) -- module io.netty.codec
+   io.netty:netty-codec-compression:jar:4.2.19.Final:compile (optional) -- module io.netty.codec.compression
+   io.netty:netty-codec-protobuf:jar:4.2.19.Final:compile (optional) -- module io.netty.codec.protobuf
+   io.netty:netty-codec-marshalling:jar:4.2.19.Final:compile (optional) -- module io.netty.codec.marshalling
+   io.netty:netty-handler:jar:4.2.19.Final:compile (optional) -- module io.netty.handler
+   io.netty:netty-transport-native-unix-common:jar:4.2.19.Final:compile (optional) -- module io.netty.transport.unix.common
+   org.eclipse.paho:org.eclipse.paho.client.mqttv3:jar:1.2.5:compile (optional) -- module org.eclipse.paho.client.mqttv3 (auto)
+   io.nats:jnats:jar:2.26.4:compile (optional) -- module io.nats.jnats [auto]
+   org.bouncycastle:bcprov-lts8on:jar:2.73.12.1:compile (optional) -- module org.bouncycastle.lts.prov
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:provided
+   org.liquibase:liquibase-core:jar:4.33.0:provided -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:provided -- module com.opencsv [auto]
+   javax.xml.bind:jaxb-api:jar:2.3.1:provided -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:provided -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:provided -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:provided -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:provided -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:provided
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.sangam:sangam-flowable-ports:jar:0.1.0-SNAPSHOT:compile (optional)
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile (optional) -- module com.fasterxml.jackson.datatype.jsr310
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile (optional) -- module com.fasterxml.jackson.datatype.jdk8
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile (optional)
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   com.networknt:json-schema-validator:jar:1.5.1:compile -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile -- module com.fasterxml.jackson.dataformat.yaml
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile (optional) -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile (optional) -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile (optional) -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile (optional) -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile (optional) -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile (optional) -- module spring.core [auto]
+   joda-time:joda-time:jar:2.15.0:compile (optional) -- module org.joda.time [auto]
+   org.eclipse.angus:angus-mail:jar:2.0.4:compile -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.2:runtime -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile -- module org.apache.commons.logging
+   org.apache.kafka:kafka-clients:jar:3.9.2:compile (optional) -- module kafka.clients (auto)
+   com.github.luben:zstd-jni:jar:1.5.6-4:runtime (optional) -- module com.github.luben.zstd_jni
+   at.yawk.lz4:lz4-java:jar:1.10.1:runtime (optional) -- module org.lz4.java [auto]
+   org.xerial.snappy:snappy-java:jar:1.1.10.5:runtime (optional) -- module snappy.java (auto)
+   jakarta.jms:jakarta.jms-api:jar:3.1.0:compile (optional) -- module jakarta.messaging
+   org.eclipse.paho:org.eclipse.paho.client.mqttv3:jar:1.2.5:compile (optional) -- module org.eclipse.paho.client.mqttv3 (auto)
+   io.nats:jnats:jar:2.26.4:compile (optional) -- module io.nats.jnats [auto]
+   org.bouncycastle:bcprov-lts8on:jar:2.73.12.1:compile (optional) -- module org.bouncycastle.lts.prov
+   redis.clients:jedis:jar:7.5.3:compile (optional) -- module redis.clients.jedis [auto]
+   org.apache.commons:commons-pool2:jar:2.13.1:compile (optional) -- module org.apache.commons.pool2
+   org.json:json:jar:20251224:compile (optional) -- module org.json
+   com.google.code.gson:gson:jar:2.13.2:compile (optional) -- module com.google.gson
+   com.google.errorprone:error_prone_annotations:jar:2.41.0:compile (optional) -- module com.google.errorprone.annotations
+   redis.clients.authentication:redis-authx-core:jar:0.1.1-beta2:compile (optional) -- module redis.clients.authentication.core [auto]
+   org.apache.pdfbox:pdfbox:jar:3.0.8:compile (optional) -- module org.apache.pdfbox [auto]
+   org.apache.pdfbox:pdfbox-io:jar:3.0.8:compile (optional) -- module org.apache.pdfbox.io [auto]
+   org.apache.pdfbox:fontbox:jar:3.0.8:compile (optional) -- module org.apache.fontbox [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile (optional) -- module org.apache.commons.logging
+   org.eclipse.jgit:org.eclipse.jgit:jar:7.8.0.202609011348-r:compile (optional) -- module org.eclipse.jgit [auto]
+   com.googlecode.javaewah:JavaEWAH:jar:1.2.3:compile (optional) -- module com.googlecode.javaewah
+   commons-codec:commons-codec:jar:1.21.0:compile (optional) -- module org.apache.commons.codec
+   jakarta.servlet:jakarta.servlet-api:jar:6.0.0:provided -- module jakarta.servlet
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:provided
+   org.liquibase:liquibase-core:jar:4.33.0:provided -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:provided -- module com.opencsv [auto]
+   org.yaml:snakeyaml:jar:2.6:provided -- module org.yaml.snakeyaml
+   javax.xml.bind:jaxb-api:jar:2.3.1:provided -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:provided -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:provided -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:provided -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:provided -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:provided
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:provided -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:provided -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:provided -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:provided
+   org.scala-lang:scala-library:jar:2.13.18:provided -- module scala.library [auto]
+   org.operaton.bpm:operaton-engine:jar:2.2.0:provided -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:provided -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:provided -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:provided -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:provided -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:provided -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:provided -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:provided -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:provided -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:provided -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:provided -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:provided -- module org.joda.time [auto]
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:provided -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:provided -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:provided -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:provided -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:provided -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:provided -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:provided
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:provided
+   com.lihaoyi:geny_2.13:jar:1.1.0:provided
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:provided
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:provided -- module paranamer (auto)
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+   com.nimbusds:nimbus-jose-jwt:jar:10.9.1:test -- module com.nimbusds.jose.jwt
+   net.jqwik:jqwik:jar:1.10.2:test -- module net.jqwik
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   net.jqwik:jqwik-api:jar:1.10.2:test -- module net.jqwik.api
+   net.jqwik:jqwik-web:jar:1.10.2:test -- module net.jqwik.web
+   net.jqwik:jqwik-time:jar:1.10.2:test -- module net.jqwik.time
+   net.jqwik:jqwik-engine:jar:1.10.2:test -- module net.jqwik.engine
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:test
+   com.networknt:json-schema-validator:jar:1.5.1:test -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:test -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:test -- module com.fasterxml.jackson.dataformat.yaml
+   org.eclipse.angus:angus-mail:jar:2.0.5:test -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:test -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:test -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:test -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:test -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:test -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:test -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:test -- module org.apache.commons.logging
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile
+   com.networknt:json-schema-validator:jar:1.5.1:compile -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile -- module com.fasterxml.jackson.dataformat.yaml
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.eclipse.angus:angus-mail:jar:2.0.5:compile -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:runtime -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile -- module org.apache.commons.logging
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   ca.uhn.hapi.fhir:hapi-fhir-validation:jar:8.12.1:compile (optional) -- module hapi.fhir.validation (auto)
+   ca.uhn.hapi.fhir:hapi-fhir-base:jar:8.12.1:compile (optional) -- module hapi.fhir.base (auto)
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile (optional) -- module com.fasterxml.jackson.datatype.jsr310
+   org.apache.commons:commons-lang3:jar:3.20.0:compile (optional) -- module org.apache.commons.lang3
+   org.apache.commons:commons-text:jar:1.10.0:compile (optional) -- module org.apache.commons.text [auto]
+   commons-codec:commons-codec:jar:1.21.0:compile (optional) -- module org.apache.commons.codec
+   commons-io:commons-io:jar:2.17.0:compile (optional) -- module org.apache.commons.io
+   com.google.code.findbugs:jsr305:jar:3.0.2:compile (optional) -- module jsr305 (auto)
+   io.opentelemetry:opentelemetry-api:jar:1.62.0:compile (optional) -- module io.opentelemetry.api [auto]
+   io.opentelemetry:opentelemetry-context:jar:1.62.0:compile (optional) -- module io.opentelemetry.context [auto]
+   io.opentelemetry:opentelemetry-common:jar:1.62.0:compile (optional) -- module io.opentelemetry.common [auto]
+   ca.uhn.hapi.fhir:hapi-fhir-converter:jar:8.12.1:compile (optional) -- module hapi.fhir.converter (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.convertors:jar:6.9.12:compile (optional) -- module org.hl7.fhir.convertors (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.r4b:jar:6.9.12:compile (optional) -- module org.hl7.fhir.r4b (auto)
+   ca.uhn.hapi.fhir:hapi-fhir-caching-api:jar:8.12.1:compile (optional) -- module hapi.fhir.caching.api (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.validation:jar:6.9.12:compile (optional) -- module org.hl7.fhir.validation (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.dstu2:jar:6.9.12:compile (optional) -- module org.hl7.fhir.dstu2 (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.dstu2016may:jar:6.9.12:compile (optional) -- module org.hl7.fhir.dstu2016may (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.dstu3:jar:6.9.12:compile (optional) -- module org.hl7.fhir.dstu3 (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.dstu3.support:jar:6.9.12:compile (optional) -- module org.hl7.fhir.dstu3.support (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.r5:jar:6.9.12:compile (optional) -- module org.hl7.fhir.r5 (auto)
+   org.eclipse.jgit:org.eclipse.jgit:jar:7.8.0.202609011348-r:compile (optional) -- module org.eclipse.jgit [auto]
+   com.googlecode.javaewah:JavaEWAH:jar:1.2.3:compile (optional) -- module com.googlecode.javaewah
+   com.nimbusds:nimbus-jose-jwt:jar:10.9.1:compile (optional) -- module com.nimbusds.jose.jwt
+   net.sourceforge.plantuml:plantuml-mit:jar:1.2026.1:compile (optional) -- module net.sourceforge.plantuml [auto]
+   ca.uhn.hapi.fhir:org.hl7.fhir.model:jar:6.9.12:compile (optional) -- module org.hl7.fhir.model (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.support:jar:6.9.12:compile (optional) -- module org.hl7.fhir.support (auto)
+   net.sf.saxon:Saxon-HE:jar:13.0:compile (optional) -- module Saxon.HE (auto)
+   org.xmlresolver:xmlresolver:jar:6.0.23:compile (optional) -- module org.xmlresolver.xmlresolver [auto]
+   org.xmlresolver:xmlresolver:jar:data:6.0.23:compile (optional) -- module org.xmlresolver.xmlresolver_data [auto]
+   org.apache.commons:commons-compress:jar:1.27.1:compile (optional) -- module org.apache.commons.compress
+   org.commonmark:commonmark:jar:0.21.0:compile (optional) -- module org.commonmark [auto]
+   org.commonmark:commonmark-ext-gfm-tables:jar:0.21.0:compile (optional) -- module org.commonmark.ext.gfm.tables [auto]
+   org.thymeleaf:thymeleaf:jar:3.1.5.RELEASE:compile (optional) -- module thymeleaf [auto]
+   ognl:ognl:jar:3.3.4:compile (optional) -- module ognl [auto]
+   org.javassist:javassist:jar:3.33.0-GA:compile (optional) -- module org.javassist [auto]
+   org.attoparser:attoparser:jar:2.0.7.RELEASE:compile (optional) -- module attoparser [auto]
+   org.unbescape:unbescape:jar:1.1.6.RELEASE:compile (optional) -- module unbescape [auto]
+   org.apache.santuario:xmlsec:jar:4.0.4:compile (optional) -- module org.apache.santuario.xmlsec
+   com.fasterxml.woodstox:woodstox-core:jar:7.1.0:runtime (optional) -- module com.ctc.wstx
+   org.codehaus.woodstox:stax2-api:jar:4.2.2:runtime (optional) -- module org.codehaus.stax2
+   ca.uhn.hapi.fhir:org.hl7.fhir.utilities:jar:6.9.12:compile (optional) -- module org.hl7.fhir.utilities (auto)
+   com.squareup.okhttp3:okhttp-jvm:jar:5.3.2:compile (optional) -- module okhttp3
+   com.squareup.okio:okio-jvm:jar:3.16.4:compile (optional) -- module okio [auto]
+   org.jetbrains.kotlin:kotlin-stdlib:jar:2.3.21:compile (optional) -- module kotlin.stdlib
+   com.squareup.okio:okio:jar:3.16.4:compile (optional) -- module okio (auto)
+   com.ibm.icu:icu4j:jar:78.1:compile (optional) -- module com.ibm.icu [auto]
+   org.fhir:ucum:jar:1.0.9:compile (optional) -- module ucum (auto)
+   jakarta.annotation:jakarta.annotation-api:jar:3.0.0:compile (optional) -- module jakarta.annotation
+   com.google.code.gson:gson:jar:2.13.2:compile (optional) -- module com.google.gson
+   com.google.errorprone:error_prone_annotations:jar:2.41.0:compile (optional) -- module com.google.errorprone.annotations
+   ca.uhn.hapi.fhir:hapi-fhir-structures-r5:jar:8.12.1:compile (optional) -- module hapi.fhir.structures.r5 (auto)
+   com.google.guava:guava:jar:33.2.1-jre:compile (optional) -- module com.google.common [auto]
+   com.google.guava:failureaccess:jar:1.0.2:compile (optional) -- module com.google.common.util.concurrent.internal [auto]
+   com.google.guava:listenablefuture:jar:9999.0-empty-to-avoid-conflict-with-guava:compile (optional) -- module listenablefuture (auto)
+   org.checkerframework:checker-qual:jar:3.42.0:compile (optional) -- module org.checkerframework.checker.qual [auto]
+   com.google.j2objc:j2objc-annotations:jar:3.0.0:compile (optional) -- module com.google.j2objc.annotations
+   org.apache.httpcomponents:httpclient:jar:4.5.14:compile (optional) -- module org.apache.httpcomponents.httpclient [auto]
+   org.apache.httpcomponents:httpcore:jar:4.4.16:compile (optional) -- module org.apache.httpcomponents.httpcore [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile (optional) -- module org.apache.commons.logging
+   io.opentelemetry.instrumentation:opentelemetry-instrumentation-annotations:jar:2.28.0:compile (optional) -- module io.opentelemetry.instrumentation_annotations [auto]
+   io.github.x-stream:mxparser:jar:1.2.2:compile (optional) -- module io.github.xstream.mxparser [auto]
+   xmlpull:xmlpull:jar:1.1.3.1:compile (optional) -- module xmlpull (auto)
+   ca.uhn.hapi.fhir:hapi-fhir-structures-r4:jar:8.12.1:compile (optional) -- module hapi.fhir.structures.r4 (auto)
+   ca.uhn.hapi.fhir:org.hl7.fhir.r4:jar:6.9.12:compile (optional) -- module org.hl7.fhir.r4 (auto)
+   ca.uhn.hapi.fhir:hapi-fhir-validation-resources-r4:jar:8.12.1:compile (optional) -- module hapi.fhir.validation.resources.r4 (auto)
+   ca.uhn.hapi.fhir:hapi-fhir-caching-caffeine:jar:8.12.1:compile (optional) -- module hapi.fhir.caching.caffeine (auto)
+   com.github.ben-manes.caffeine:caffeine:jar:3.1.8:compile (optional) -- module com.github.benmanes.caffeine
+   org.bouncycastle:bcprov-jdk18on:jar:1.84:compile (optional) -- module org.bouncycastle.provider
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+
+
+The following files have been resolved:
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+
+
+The following files have been resolved:
+   org.sangam:sangam-kube:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.sangam:sangam-config:jar:0.1.0-SNAPSHOT:compile
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.operaton.bpm:operaton-engine:jar:2.2.0:provided -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:provided -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:provided -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:provided -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:provided -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:provided -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:provided -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:provided -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:provided -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:provided -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:provided -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:provided
+   org.scala-lang:scala-library:jar:2.13.18:provided -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:provided -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:provided
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:provided
+   com.lihaoyi:geny_2.13:jar:1.1.0:provided
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:provided -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:provided
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:provided -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:provided -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:provided -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:provided -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:provided -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:provided -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:provided -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:provided -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:provided -- module org.joda.time [auto]
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-config:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.sangam:sangam-ledger:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-registry:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.jspecify:jspecify:jar:1.0.1:test -- module org.jspecify
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:provided
+   org.liquibase:liquibase-core:jar:4.33.0:provided -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:provided -- module com.opencsv [auto]
+   javax.xml.bind:jaxb-api:jar:2.3.1:provided -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:provided -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:provided -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:provided -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:provided -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:provided
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:provided -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:provided -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:provided -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:provided
+   org.scala-lang:scala-library:jar:2.13.18:provided -- module scala.library [auto]
+   org.sangam:sangam-config:jar:0.1.0-SNAPSHOT:compile
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.sangam:sangam-security:jar:0.1.0-SNAPSHOT:compile
+   org.operaton.bpm:operaton-engine:jar:2.2.0:provided -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:provided -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:provided -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:provided -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:provided -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:provided -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:provided -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:provided -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:provided -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:provided -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:provided -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:provided -- module org.joda.time [auto]
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:provided -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:provided -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:provided -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:provided -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:provided -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:provided -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:provided
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:provided
+   com.lihaoyi:geny_2.13:jar:1.1.0:provided
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:provided
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:provided -- module paranamer (auto)
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jdk8
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-flowable-ports:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jdk8
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-flowable-ports:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jdk8
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile (optional) -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile (optional) -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile (optional) -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile (optional) -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile (optional) -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile (optional) -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile (optional) -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile (optional) -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile (optional) -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile (optional) -- module operaton.engine.feel.juel (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile (optional) -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile (optional) -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile (optional) -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile (optional) -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile (optional) -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile (optional) -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile (optional) -- module org.joda.time [auto]
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile (optional)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile (optional) -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile (optional)
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile (optional)
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile (optional)
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile (optional) -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile (optional)
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile (optional) -- module paranamer (auto)
+   org.scala-lang:scala-library:jar:2.13.18:compile (optional) -- module scala.library [auto]
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile (optional) -- module operaton.engine.feel.api (auto)
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-geo:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile (optional) -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile (optional) -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile (optional) -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile (optional) -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile (optional) -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile (optional) -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile (optional) -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile (optional) -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile (optional) -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile (optional) -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile (optional) -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile (optional)
+   org.scala-lang:scala-library:jar:2.13.18:compile (optional) -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile (optional) -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile (optional)
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile (optional)
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile (optional)
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile (optional) -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile (optional)
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile (optional) -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile (optional) -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile (optional) -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile (optional) -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile (optional) -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile (optional) -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile (optional) -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile (optional) -- module org.joda.time [auto]
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   com.drewnoakes:metadata-extractor:jar:2.22.0:compile -- module com.drew.metadata [auto]
+   com.adobe.xmp:xmpcore:jar:6.1.11:compile -- module xmpcore (auto)
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:provided
+   org.liquibase:liquibase-core:jar:4.33.0:provided -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:provided -- module com.opencsv [auto]
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   javax.xml.bind:jaxb-api:jar:2.3.1:provided -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:provided -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:provided -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:provided -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:provided -- module org.apache.commons.io
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:provided
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:provided -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:provided -- module jakarta.el
+   org.operaton.bpm:operaton-engine:jar:2.2.0:provided -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:provided -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.mybatis:mybatis:jar:3.5.19:provided -- module org.mybatis [auto]
+   joda-time:joda-time:jar:2.15.0:provided -- module org.joda.time [auto]
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:provided -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:provided -- module operaton.engine.feel.juel (auto)
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile
+   com.networknt:json-schema-validator:jar:1.5.1:compile -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile -- module com.fasterxml.jackson.dataformat.yaml
+   org.eclipse.angus:angus-mail:jar:2.0.5:compile -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:runtime -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile -- module org.apache.commons.logging
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.sangam:sangam-security:jar:0.1.0-SNAPSHOT:test
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+   org.postgresql:postgresql:jar:42.7.12:test -- module org.postgresql.jdbc [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile
+   com.networknt:json-schema-validator:jar:1.5.1:compile -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile -- module com.fasterxml.jackson.dataformat.yaml
+   org.eclipse.angus:angus-mail:jar:2.0.5:compile -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:runtime -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile -- module org.apache.commons.logging
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile (optional) -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile (optional) -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile (optional) -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile (optional) -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile (optional) -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile (optional) -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile (optional) -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile (optional) -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile (optional) -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile (optional) -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile (optional) -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile (optional)
+   org.scala-lang:scala-library:jar:2.13.18:compile (optional) -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile (optional) -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile (optional)
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile (optional)
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile (optional)
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile (optional) -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile (optional)
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile (optional) -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile (optional) -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile (optional) -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile (optional) -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile (optional) -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile (optional) -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile (optional) -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile (optional) -- module org.joda.time [auto]
+   org.sangam:sangam-security:jar:0.1.0-SNAPSHOT:test
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:test
+   org.liquibase:liquibase-core:jar:4.33.0:test -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:test -- module com.opencsv [auto]
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   javax.xml.bind:jaxb-api:jar:2.3.1:test -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:test -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:test -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:test -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:test -- module org.apache.commons.io
+   org.postgresql:postgresql:jar:42.7.12:test -- module org.postgresql.jdbc [auto]
+   org.testcontainers:postgresql:jar:1.21.4:test -- module postgresql (auto)
+   org.testcontainers:jdbc:jar:1.21.4:test -- module jdbc (auto)
+   org.testcontainers:database-commons:jar:1.21.4:test -- module database.commons (auto)
+   org.testcontainers:testcontainers:jar:1.21.4:test -- module testcontainers (auto)
+   junit:junit:jar:4.13.2:test -- module junit [auto]
+   org.hamcrest:hamcrest-core:jar:3.0:test -- module org.hamcrest.core.deprecated [auto]
+   org.hamcrest:hamcrest:jar:3.0:test -- module org.hamcrest [auto]
+   org.apache.commons:commons-compress:jar:1.24.0:test -- module org.apache.commons.compress
+   org.rnorth.duct-tape:duct-tape:jar:1.0.8:test -- module duct.tape (auto)
+   org.jetbrains:annotations:jar:17.0.0:test -- module org.jetbrains.annotations [auto]
+   com.github.docker-java:docker-java-api:jar:3.4.2:test -- module com.github.dockerjava.api [auto]
+   com.github.docker-java:docker-java-transport-zerodep:jar:3.4.2:test -- module com.github.dockerjava.transport.zerodep [auto]
+   com.github.docker-java:docker-java-transport:jar:3.4.2:test -- module com.github.dockerjava.transport [auto]
+   net.java.dev.jna:jna:jar:5.13.0:test -- module com.sun.jna [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile (optional)
+   com.networknt:json-schema-validator:jar:1.5.1:compile (optional) -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile (optional) -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile (optional) -- module com.fasterxml.jackson.dataformat.yaml
+   org.yaml:snakeyaml:jar:2.6:compile (optional) -- module org.yaml.snakeyaml
+   org.eclipse.angus:angus-mail:jar:2.0.5:compile (optional) -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile (optional) -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile (optional) -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:runtime (optional) -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile (optional) -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile (optional) -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile (optional) -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile (optional) -- module org.apache.commons.logging
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile (optional) -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile (optional) -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile (optional) -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile (optional) -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile (optional) -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile (optional) -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile (optional) -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile (optional) -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile (optional) -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile (optional) -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile (optional) -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile (optional)
+   org.scala-lang:scala-library:jar:2.13.18:compile (optional) -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile (optional) -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile (optional)
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile (optional)
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile (optional)
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile (optional) -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile (optional)
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile (optional) -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile (optional) -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile (optional) -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile (optional) -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile (optional) -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile (optional) -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile (optional) -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile (optional) -- module org.joda.time [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile
+   com.networknt:json-schema-validator:jar:1.5.1:compile -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile -- module com.fasterxml.jackson.dataformat.yaml
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile -- module org.apache.commons.logging
+   org.sangam:sangam-flowable-ports:jar:0.1.0-SNAPSHOT:compile
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jdk8
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.eclipse.angus:angus-mail:jar:2.0.4:compile -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.2:runtime -- module org.eclipse.angus.activation
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile
+   com.networknt:json-schema-validator:jar:1.5.1:compile -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile -- module com.fasterxml.jackson.dataformat.yaml
+   org.eclipse.angus:angus-mail:jar:2.0.5:compile -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:runtime -- module org.eclipse.angus.activation
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile -- module org.apache.commons.logging
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+
+
+The following files have been resolved:
+   org.sangam:sangam-config:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-ledger:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-billing:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-registry:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-resources:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-security:jar:0.1.0-SNAPSHOT:compile (optional)
+   com.fasterxml.jackson.datatype:jackson-datatype-jdk8:jar:2.22.3:compile (optional) -- module com.fasterxml.jackson.datatype.jdk8
+   org.sangam:sangam-case:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-flowable-ports:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-programme:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-geo:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-field:jar:0.1.0-SNAPSHOT:compile (optional)
+   com.drewnoakes:metadata-extractor:jar:2.22.0:compile (optional) -- module com.drew.metadata [auto]
+   com.adobe.xmp:xmpcore:jar:6.1.11:compile (optional) -- module xmpcore (auto)
+   org.sangam:sangam-connectors-health:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-integration:jar:0.1.0-SNAPSHOT:compile (optional)
+   com.networknt:json-schema-validator:jar:1.5.1:compile (optional) -- module com.networknt.schema
+   com.ethlo.time:itu:jar:1.10.2:compile (optional) -- module com.ethlo.time
+   com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:jar:2.22.3:compile (optional) -- module com.fasterxml.jackson.dataformat.yaml
+   org.apache.sshd:sshd-sftp:jar:2.15.0:compile (optional) -- module org.apache.sshd.sftp [auto]
+   org.apache.sshd:sshd-core:jar:2.15.0:compile (optional) -- module org.apache.sshd.core [auto]
+   org.apache.sshd:sshd-common:jar:2.15.0:compile (optional) -- module org.apache.sshd.common [auto]
+   org.slf4j:jcl-over-slf4j:jar:2.0.20:compile (optional) -- module org.apache.commons.logging
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:provided
+   org.liquibase:liquibase-core:jar:4.33.0:provided -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:provided -- module com.opencsv [auto]
+   javax.xml.bind:jaxb-api:jar:2.3.1:provided -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:provided -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:provided -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:provided -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:provided -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:provided
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:provided
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.springframework:spring-webmvc:jar:7.0.10:compile -- module spring.webmvc [auto]
+   org.springframework:spring-aop:jar:7.0.10:compile -- module spring.aop [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-context:jar:7.0.10:compile -- module spring.context [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   org.springframework:spring-expression:jar:7.0.10:compile -- module spring.expression [auto]
+   org.springframework:spring-web:jar:7.0.10:compile -- module spring.web [auto]
+   org.springframework:spring-jdbc:jar:7.0.10:compile -- module spring.jdbc [auto]
+   org.springframework:spring-tx:jar:7.0.10:compile -- module spring.tx [auto]
+   org.springframework.boot:spring-boot-autoconfigure:jar:4.1.2:compile -- module spring.boot.autoconfigure [auto]
+   org.springframework.boot:spring-boot:jar:4.1.2:compile -- module spring.boot [auto]
+   jakarta.servlet:jakarta.servlet-api:jar:6.1.0:provided -- module jakarta.servlet
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   tools.jackson.core:jackson-databind:jar:3.1.7:provided -- module tools.jackson.databind
+   tools.jackson.core:jackson-core:jar:3.1.7:provided -- module tools.jackson.core
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   io.opentelemetry:opentelemetry-api:jar:1.62.0:compile -- module io.opentelemetry.api [auto]
+   io.opentelemetry:opentelemetry-context:jar:1.62.0:compile -- module io.opentelemetry.context [auto]
+   io.opentelemetry:opentelemetry-common:jar:1.62.0:compile -- module io.opentelemetry.common [auto]
+   io.micrometer:micrometer-core:jar:1.17.2:compile -- module micrometer.core [auto]
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   io.micrometer:micrometer-commons:jar:1.17.2:compile -- module micrometer.commons [auto]
+   io.micrometer:micrometer-observation:jar:1.17.2:compile -- module micrometer.observation [auto]
+   org.hdrhistogram:HdrHistogram:jar:2.2.2:runtime -- module HdrHistogram (auto)
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.sangam:sangam-ai:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.sangam:sangam-ops:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-backup:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-kube:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.sangam:sangam-compliance:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:test -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:test -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:test -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:test -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:test -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:test -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:test -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:test -- module org.junit.platform.engine
+   com.h2database:h2:jar:2.3.232:test -- module com.h2database [auto]
+   org.springframework:spring-test:jar:7.0.10:test -- module spring.test [auto]
+   org.sangam:sangam-channels:jar:0.1.0-SNAPSHOT:compile (optional)
+   org.eclipse.angus:angus-mail:jar:2.0.5:compile (optional) -- module org.eclipse.angus.mail
+   jakarta.activation:jakarta.activation-api:jar:2.1.4:compile (optional) -- module jakarta.activation
+   jakarta.mail:jakarta.mail-api:jar:2.1.5:compile (optional) -- module jakarta.mail
+   org.eclipse.angus:angus-activation:jar:2.0.3:runtime (optional) -- module org.eclipse.angus.activation
+   org.sangam:sangam-modeller:jar:0.1.0-SNAPSHOT:compile (optional)
+
+
+The following files have been resolved:
+   org.sangam:sangam-assembly:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-core:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-engine:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-persistence:jar:0.1.0-SNAPSHOT:compile
+   org.liquibase:liquibase-core:jar:4.33.0:compile -- module liquibase.core [auto]
+   com.opencsv:opencsv:jar:5.11.2:compile -- module com.opencsv [auto]
+   javax.xml.bind:jaxb-api:jar:2.3.1:compile -- module java.xml.bind
+   org.apache.commons:commons-collections4:jar:4.5.0:compile -- module org.apache.commons.collections4
+   org.apache.commons:commons-text:jar:1.13.1:compile -- module org.apache.commons.text
+   org.apache.commons:commons-lang3:jar:3.20.0:compile -- module org.apache.commons.lang3
+   commons-io:commons-io:jar:2.19.0:compile -- module org.apache.commons.io
+   org.sangam:sangam-feel:jar:0.1.0-SNAPSHOT:compile
+   org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT:compile
+   com.fasterxml.uuid:java-uuid-generator:jar:5.2.0:compile -- module com.fasterxml.uuid
+   org.operaton.bpm.juel:operaton-juel:jar:2.2.0:compile -- module operaton.juel (auto)
+   jakarta.el:jakarta.el-api:jar:6.0.1:compile -- module jakarta.el
+   org.operaton.bpm.dmn:operaton-engine-dmn:jar:2.2.0:compile -- module operaton.engine.dmn (auto)
+   org.operaton.commons:operaton-commons-utils:jar:2.2.0:compile -- module operaton.commons.utils (auto)
+   org.operaton.bpm.model:operaton-dmn-model:jar:2.2.0:compile -- module operaton.dmn.model (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-api:jar:2.2.0:compile -- module operaton.engine.feel.api (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-juel:jar:2.2.0:compile -- module operaton.engine.feel.juel (auto)
+   org.camunda.feel:feel-engine:jar:1.22.1:compile -- module feel.engine (auto)
+   com.lihaoyi:fastparse_2.13:jar:3.1.1:compile
+   com.lihaoyi:sourcecode_2.13:jar:0.4.0:compile
+   com.lihaoyi:geny_2.13:jar:1.1.0:compile
+   com.fasterxml.jackson.module:jackson-module-scala_2.13:jar:2.22.3:compile
+   com.thoughtworks.paranamer:paranamer:jar:2.8.3:compile -- module paranamer (auto)
+   org.operaton.bpm.dmn:operaton-engine-feel-scala:jar:2.2.0:compile
+   org.scala-lang:scala-library:jar:2.13.18:compile -- module scala.library [auto]
+   org.slf4j:slf4j-api:jar:2.0.17:compile -- module org.slf4j
+   org.sangam:sangam-rest:jar:0.1.0-SNAPSHOT:compile
+   org.springframework:spring-webmvc:jar:7.0.10:compile -- module spring.webmvc [auto]
+   org.springframework:spring-aop:jar:7.0.10:compile -- module spring.aop [auto]
+   org.springframework:spring-beans:jar:7.0.10:compile -- module spring.beans [auto]
+   org.springframework:spring-context:jar:7.0.10:compile -- module spring.context [auto]
+   org.springframework:spring-core:jar:7.0.10:compile -- module spring.core [auto]
+   commons-logging:commons-logging:jar:1.3.6:compile -- module org.apache.commons.logging
+   org.springframework:spring-expression:jar:7.0.10:compile -- module spring.expression [auto]
+   org.springframework:spring-web:jar:7.0.10:compile -- module spring.web [auto]
+   org.springframework:spring-jdbc:jar:7.0.10:compile -- module spring.jdbc [auto]
+   org.springframework:spring-tx:jar:7.0.10:compile -- module spring.tx [auto]
+   org.springframework.boot:spring-boot-autoconfigure:jar:4.1.2:compile -- module spring.boot.autoconfigure [auto]
+   org.springframework.boot:spring-boot:jar:4.1.2:compile -- module spring.boot [auto]
+   com.fasterxml.jackson.core:jackson-databind:jar:2.22.3:compile -- module com.fasterxml.jackson.databind
+   com.fasterxml.jackson.core:jackson-annotations:jar:2.22:compile -- module com.fasterxml.jackson.annotation
+   com.fasterxml.jackson.core:jackson-core:jar:2.22.3:compile -- module com.fasterxml.jackson.core
+   com.fasterxml.jackson.datatype:jackson-datatype-jsr310:jar:2.22.3:compile -- module com.fasterxml.jackson.datatype.jsr310
+   io.opentelemetry:opentelemetry-api:jar:1.62.0:compile -- module io.opentelemetry.api [auto]
+   io.opentelemetry:opentelemetry-context:jar:1.62.0:compile -- module io.opentelemetry.context [auto]
+   io.opentelemetry:opentelemetry-common:jar:1.62.0:compile -- module io.opentelemetry.common [auto]
+   io.micrometer:micrometer-core:jar:1.17.2:compile -- module micrometer.core [auto]
+   org.jspecify:jspecify:jar:1.0.1:compile -- module org.jspecify
+   io.micrometer:micrometer-commons:jar:1.17.2:compile -- module micrometer.commons [auto]
+   io.micrometer:micrometer-observation:jar:1.17.2:compile -- module micrometer.observation [auto]
+   org.hdrhistogram:HdrHistogram:jar:2.2.2:runtime -- module HdrHistogram (auto)
+   org.yaml:snakeyaml:jar:2.6:compile -- module org.yaml.snakeyaml
+   org.operaton.bpm:operaton-engine:jar:2.2.0:compile -- module operaton.engine (auto)
+   org.operaton.bpm.model:operaton-bpmn-model:jar:2.2.0:compile -- module operaton.bpmn.model (auto)
+   org.operaton.bpm.model:operaton-xml-model:jar:2.2.0:compile -- module operaton.xml.model (auto)
+   org.operaton.bpm.model:operaton-cmmn-model:jar:2.2.0:compile -- module operaton.cmmn.model (auto)
+   org.operaton.commons:operaton-commons-logging:jar:2.2.0:compile -- module operaton.commons.logging (auto)
+   org.operaton.commons:operaton-commons-typed-values:jar:2.2.0:compile -- module operaton.commons.typed.values (auto)
+   org.mybatis:mybatis:jar:3.5.19:compile -- module org.mybatis [auto]
+   joda-time:joda-time:jar:2.15.0:compile -- module org.joda.time [auto]
+   org.junit.jupiter:junit-jupiter:jar:6.0.3:compile -- module org.junit.jupiter
+   org.junit.jupiter:junit-jupiter-api:jar:6.0.3:compile -- module org.junit.jupiter.api
+   org.opentest4j:opentest4j:jar:1.3.0:compile -- module org.opentest4j
+   org.junit.platform:junit-platform-commons:jar:6.0.3:compile -- module org.junit.platform.commons
+   org.apiguardian:apiguardian-api:jar:1.1.2:compile -- module org.apiguardian.api
+   org.junit.jupiter:junit-jupiter-params:jar:6.0.3:compile -- module org.junit.jupiter.params
+   org.junit.jupiter:junit-jupiter-engine:jar:6.0.3:runtime -- module org.junit.jupiter.engine
+   org.junit.platform:junit-platform-engine:jar:6.0.3:runtime -- module org.junit.platform.engine
+

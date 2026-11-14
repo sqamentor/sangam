@@ -1,0 +1,105 @@
+NG-01	implemented	sangam-ai:draft/DraftService.java, draft/DraftValidators.java	AiRuntimeTest#draftNeedsValidationAndAnotherReviewerAndNeverDeploys	back end only; drafts never deploy; REST package validator is a further gate via Sink
+NG-02	implemented	sangam-ai:expr/ExpressionPlayground.java	AiRuntimeTest#playgroundEvaluatesFeel	FEEL only (JUEL refused by design); runaway evaluation abandoned on timeout
+NG-03	partial	sangam-ai:rag/KnowledgeBaseService.java	AiRuntimeTest#retrievalFiltersBeforeRankingWithThePolicyCompiler; AiRuntimeTest#typeWildcardDenyBlocksRetrieval	gap: brute-force cosine in the JVM, no pgvector index; text input only (no PDF/image extraction)
+NG-04	partial	sangam-ai:a2a/A2a.java	ProtocolLoopbackTest#a2aClientTalksToOurServerAndUnknownOutcomeParks; ProtocolLoopbackTest#a2aFallsBackTo03WhenThePeerRefuses10	gap: no streaming or push; protocol revision not conformance-tested
+NG-05	partial	sangam-ai:mcp/McpClient.java	ProtocolLoopbackTest#mcpClientTalksToOurServerAndFiltersTools; ProtocolLoopbackTest#mcpClientFallsBackToLegacyAndReadsSseWithNotifications	gap: no server-initiated requests
+NG-06	partial	sangam-ai:mcp/McpServer.java	AiRuntimeTest#mcpServerHidesWritesUntilEnabledAndUsesCallerToken; ProtocolLoopbackTest#mcpServerAnswersEachEra	gap: transport-neutral only; no HTTP endpoint / RestGateway wiring in the server
+NG-07	implemented	sangam-ai:agent/AgentDefinition.java, agent/AgentRuntime.java, agent/AgentTools.java (subAgent)	no test	sub-agents run as tools inside the run (not a BPMN ad-hoc sub-process); no test exercises the orchestrator/external types
+NG-08	partial	sangam-ai:classify/DocumentClassifier.java	AiRuntimeTest#lowConfidenceGoesToHuman	gap: text only, no OCR
+NG-09	implemented	sangam-ai:draft/DraftService.java (kinds DASHBOARD, TRANSLATION, AGENT_PROMPT)	AiRuntimeTest#translationKeepsPlaceholders	only the translation kind has a test; nothing activates without approval
+NG-10	implemented	sangam-ai:judge/LlmJudge.java	AiRuntimeTest#judgeNeverPassesWhenDisabled	verdict marked non-deterministic
+NG-11	partial	sangam-channels:messenger/MessengerConnectors.java (teams), WebhookVerifiers.java (botFramework), InboundMessageParsers.java	ChannelsTest#messengersNeedOptInAndMapResults; ChannelsTest#webhookSignatures	gap: no Teams app package/manifest, no tab task app, no live task-list updates, no IdP token acquisition
+NG-12	partial	sangam-channels:conversation/ConversationService.java	ChannelsTest#conversationAccessIdempotencySearchAndLiveDelivery	gap: no WebSocket endpoint or UI; search is a substring scan; retention on request only
+NG-13	partial	sangam-channels:bot/BotBridge.java, resources/bots/sample-bot.bpmn	ChannelsTest#sampleBotParses	gap: ProcessGateway adapter and bot.prompt worker not written; dialogue never run on the engine
+NG-14	partial	sangam-channels:messenger/MessengerConnectors.java (whatsApp, weChat), WebhookVerifiers.java, OptInRegistry.java	ChannelsTest#messengersNeedOptInAndMapResults; ChannelsTest#webhookSignatures	gap: WeChat encrypted mode, media download, provider token refresh, template approval rules
+NG-15	partial	sangam-channels:enterprise/EnterpriseConnectors.java (sapOData)	ChannelsTest#odataRetriesOnceWhenTheTokenExpired; ChannelsTest#serviceNowAndSapThroughSimulator	gap: no RFC, no update/delete, licence review not done
+NG-16	implemented	sangam-channels:enterprise/EnterpriseConnectors.java (serviceNow, serviceNowWebhookValid)	ChannelsTest#serviceNowAndSapThroughSimulator	simulator only; webhook HMAC is a Sangam convention
+NG-17	partial	sangam-modeller:catalogue/ExtensionCatalogue.java	ModellerTest#catalogueNeedsSignatureLicenceAndChecksum	gap: no hosted catalogue, publishing flow or install step; vendor feature [U]
+NG-18	partial	sangam-modeller:simulation/TokenWalk.java	ModellerTest#tokenWalkAsksForChoiceForksAndJoins	gap: no diagram animation in the UI; boundary events, event sub-processes and compensation not walked
+NG-19	partial	sangam-modeller:template/ElementTemplates.java	ModellerTest#templatesVersionAndValidate	gap: no properties panel, palette or form-editor integration
+NG-20	partial	sangam-modeller:landscape/ProcessLandscape.java	ModellerTest#landscapeFindsMissingDynamicAndCycles	gap: no graph screen
+NG-21	partial	sangam-modeller:lease/EditLeases.java	ModellerTest#leaseGivesOneEditorAndFencesLateSave	gap: package save must call checkFence; no read-only mode or takeover dialog
+NG-22	partial	sangam-modeller:mock/ServiceMocks.java, mock/ServiceMockStore.java	ModellerTest#mocksNeverOnProductionAndNeverFallThrough; ModellerTest#mockRulesPersistWithToggle	gap: no mock editor
+NG-23	partial	sangam/tools/sangam-cli:src/main/java/org/sangam/cli/Main.java (module in sangam/pom.xml)	MainTest#exitCodesAreStable; MainTest#testRunFailsOnFailedCases; MainTest#startSendsIdempotencyKey; MainTest#deployIsMultipart; MainTest#servicePrincipalLoginStoresTokenAndRefusesPlainHttp	CLI exists (the recheck's MISSING was wrong); fake HTTP layer only; gap: no token refresh or OS keychain; device-flow polling untested
+NG-24	partial	sangam-ops:metrics/UsageMetrics.java	OpsTest#usageRollupReplacesTheDay	gap: no daily schedule wired
+NG-25	partial	sangam-ops:migrate/LegacyHistoryMigrator.java	OpsTest#migratorResumesNeverCopiesPasswordsAndReconciles	gap: rows copied as JSON to OPS_MIG_ROW; no mapping into the audit chain or product views
+NG-26	partial	sangam-modeller:auth/TokenExchange.java	ModellerTest#tokenExchangeRefusesNoUserAndCachesPerUser	gap: no call site in the connector auth layer; loopback endpoint only
+NG-27	partial	sangam-channels:mail/InboundMail.java	ChannelsTest#mailIsIdempotentAndPoisonIsRecorded	gap: Simulated source only, no Microsoft Graph source; Poison port not bound to PoisonInbound
+NG-28	partial	sangam-modeller:action/ActionModels.java	ModellerTest#actionsCheckPermissionOnServerAndAreIdempotent	gap: Dispatcher binding not written; no action menu in the UI
+NG-29	implemented	sangam-ops:search/SearchIndexMaintenance.java	OpsTest#reindexSwitchesAliasAndDetectsDrift	index is a relational table (R65 has no external index)
+NG-30	partial	sangam-ops:search/GlobalSearch.java	OpsTest#searchCapsAndHiddenRowsDoNotCount; OpsTest#typeWildcardDenyBlocksSearchAndOutliersThroughThePolicyCompiler	gap: no Ctrl+K dialog; substring scan
+NG-31	partial	sangam-ops:outlier/OutlierAnalysis.java	OpsTest#outliersRespectMinSampleAndFindValue	gap: no screen; no multiple-comparison correction; readSamples untested
+NG-32	partial	sangam-modeller:test/BulkModelTests.java	ModellerTest#bulkRunContinuesAfterErrorsAndBundleIsSealed	gap: Executor not bound to the REST test endpoint; no report screen
+NG-33	partial	sangam-ui:src/app/App.tsx, src/areas/tasklist/MyWork.tsx (responsive shell, FieldVisits)	no test	gap: no native app, no camera upload, no connect-to-another-server
+NG-34	partial	sangam-ops:vars/ScopedVariables.java	OpsTest#variablesMergeTenantOverCluster	gap: no edit UI; expressions need the bean registered
+NG-35	implemented	sangam-ops:listener/GlobalTaskListeners.java	OpsTest#globalListenerAttachesOnlyToMatchingKeysAndValidatesHandler	test covers configuration; attachment to a running engine not run
+NG-36	partial	sangam-ops:retention/HierarchyRetention.java	OpsTest#retentionTreatsTreeAsOneUnit	gap: Purger not bound to the engine history service; no legal-hold check
+NG-37	partial	sangam/deploy/helm/sangam/templates/backup-cronjobs.yaml	no test	continuous WAL receiver for PostgreSQL only; Oracle archivelog and MySQL binlog are scheduled jobs, not continuous; design/Helm only, not run
+NG-38	partial	sangam-ops:secrets/SecretAdmin.java	OpsTest#secretsRoundTripThroughBundleAndListingHasNoValues	gap: no UI; tests use a fake encryptor
+NG-39	partial	sangam/deploy/DUAL-REGION.md	no test	design only (file says nothing deployed or tested); active-passive per cell
+NG-40	partial	sangam-channels:inbound/PolledChannels.java	ChannelsTest#fileChannelMovesAfterHandover; ChannelsTest#sqlChannelResumesFromCursor; ChannelsTest#serviceBusCompletesOnlyAfterHandover	gap: not wired into InboundChannelManager; SFTP tested with local transport only
+NG-41	partial	sangam-ops:sequence/SequenceAdmin.java	OpsTest#sequenceMovesForwardOnly	gap: no admin screen
+NG-42	implemented	sangam-integration:inbox/UniqueStartGuard.java	no test	no direct test of UniqueStartGuard found (used in MixedRemittanceTest set-up only)
+NG-43	implemented	sangam/deploy/helm/sangam/templates/backup-cronjobs.yaml	no test	Helm templates; not run in a cluster
+NG-44	implemented	sangam-ui:src/api/endpoints.ts:312 (/packages/{id}/diff)	no test	visual comparison not checked
+NG-45	implemented	sangam-ui:src/auth/AuthProvider.tsx:177 (signinRedirect state = path+query)	no test
+NG-46	not-replicated-by-decision	-	no test	vendor SaaS items; Sangam is self-hosted (R56)
+NG-47	owner-side	-	no test	services, not software (R68)
+FWT-001	implemented	sangam-flowable-ports	FwtXmlGuardsTest#fwt001_doctypeWithExternalEntitiesRejectedUtf8AndUtf16_noFileOrNetworkAccess	passed (target-fwt, 2026-11-08)
+FWT-002	implemented	sangam-flowable-ports	FwtXmlGuardsTest#fwt002_billionLaughsAfter4KiBCommentPaddingRejectedByParserFeature	passed (target-fwt, 2026-11-08)
+FWT-003	implemented	sangam-flowable-ports	FwtXmlGuardsTest#fwt003_elevenMiBModelIsModelTooLarge413	passed (target-fwt, 2026-11-08)
+FWT-004	implemented	sangam-flowable-ports	FwtXmlGuardsTest#fwt004_bpmnNested300DeepRejectedByDepthLimit	passed (target-fwt, 2026-11-08)
+FWT-005	implemented	sangam-flowable-ports	FwtChannelGuardsTest#fwt005_deepNestingHugeStringLongNumberRejectedInvalidInputWithoutThrowing; FwtEventRegistryTest#fwt005_hostilePayloadsAreRejectedAsInvalidInputAndAcknowledged	passed (target-fwt, 2026-11-08)
+FWT-006	implemented	sangam-flowable-ports	FwtChannelGuardsTest#fwt006_twoMiBWebhookBodyIs413BeforeHmac	passed (target-fwt, 2026-11-08)
+FWT-007	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt007_messageCatchInParallelBranchIsDeliveredToThatInstanceOnly	passed (target-fwt, 2026-11-08)
+FWT-008	implemented	sangam-flowable-ports	FwtJobsTest#fwt008_externalCompletionWhoseContinuationThrowsRollsBack	passed (target-fwt, 2026-11-08)
+FWT-009	partial	sangam-server	FwtWorkerCompatIT#fwt009_completeWithoutLockVersionIsFencingTokenRequired	gap: last recorded run FAILED (target-fwt 2026-11-08 13:29: 403 action-not-permitted); cause unverified
+FWT-010	partial	sangam-server	FwtWorkerCompatIT#fwt010_staleCallAfterReacquireIsStaleLease	gap: last recorded run FAILED (403 action-not-permitted); cause unverified
+FWT-011	partial	sangam-server	FwtWorkerCompatIT#fwt011_allowUnfencedRightAttemptAcceptedWrongAttemptRejected	gap: last recorded run FAILED (IllegalStateException instead of ApiProblem); cause unverified
+FWT-012	partial	sangam-flowable-ports; sangam-server	FwtInputGuardsTest#fwt012_malformedDurationsAndMissingWorkerIdAreInvalidInput_numberOfTasksClampedTo100; FwtWorkerCompatIT#fwt012_malformedInputIs422InvalidInput	module part passed; gap: REST part last run FAILED (403); cause unverified
+FWT-013	implemented	sangam-flowable-ports	FwtJobsTest#fwt013_expiredJobLockReacquiredExternalLeaseUntouched	passed (target-fwt, 2026-11-08)
+FWT-014	partial	sangam-flowable-ports; sangam-server	FwtAdHocImportTest#fwt014_adHocUserTaskCompensationHandlerCreated; FwtWorkerCompatIT#fwt014_adHocCompensationHandlerTaskOnPostgres	H2 and PostgreSQL passed; gap: Oracle, MSSQL, MySQL not run
+FWT-015	implemented	sangam-flowable-ports	FwtAdHocImportTest#fwt015_cancelRemainingCompensatesOnlyCompleted	passed (target-fwt, 2026-11-08)
+FWT-016	implemented	sangam-flowable-ports	FwtAdHocImportTest#fwt016_importedVariableListenerFiresOnChange	passed (target-fwt, 2026-11-08)
+FWT-017	partial	sangam-flowable-ports	FwtHistoryTest#fwt017_unfilteredVariablesListNeverCounts	passed on H2; gap: p95 is printed, not asserted against R19
+FWT-018	implemented	sangam-flowable-ports	FwtInputGuardsTest#fwt018_page300Size500IsPageTooDeep422	passed (target-fwt, 2026-11-08)
+FWT-019	implemented	sangam-flowable-ports	FwtInputGuardsTest#fwt019_historyQueryWithNullPredicateIsIllegalArgument	passed (target-fwt, 2026-11-08)
+FWT-020	implemented	sangam-flowable-ports	FwtModelImporterTest#fwt020_activitiNamespaceMappedLikeFlowable	passed (target-fwt, 2026-11-08)
+FWT-021	implemented	sangam-flowable-ports	FwtModelImporterTest#fwt021_dmnServiceTaskWithKeyBecomesBusinessRuleTaskWithDeploymentBinding_withoutKeyUnsupported	passed (target-fwt, 2026-11-08)
+FWT-022	implemented	sangam-flowable-ports	FwtModelImporterTest#fwt022_scriptTaskIsUnsupportedD46	passed (target-fwt, 2026-11-08)
+FWT-023	implemented	sangam-flowable-ports	FwtKafkaInboundTest#fwt023_poisonRecordsAreRejectedCommittedAndTheNextRecordIsProcessed	passed (target-fwt, 2026-11-08)
+FWT-024	implemented	sangam-flowable-ports	FwtKafkaInboundTest#fwt024_databaseDownDuringReceiveThrowsAndKafkaSeeksBackAndRetries	passed (target-fwt, 2026-11-08)
+FWT-025	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt025_messageIdOf300CharsIsRejectedAsInvalidInput	passed (target-fwt, 2026-11-08)
+FWT-026	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt026_payloadTenantDifferentFromChannelTenantIsTenantMismatch	passed (target-fwt, 2026-11-08)
+FWT-027	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt027_allowPayloadTenantWithoutAllowedTenantsIsRefusedAtDeploy	passed (target-fwt, 2026-11-08)
+FWT-028	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt028_allowedTenantsListDecidesAndDeliveryStaysInTheNamedTenant	passed (target-fwt, 2026-11-08)
+FWT-029	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt029_defaultTenantChannelCorrelatesAndStartsWithoutTenant	passed (target-fwt, 2026-11-08)
+FWT-030	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt030_reservedPayloadFieldIsRefusedAtDeploy	passed (target-fwt, 2026-11-08)
+FWT-031	partial	sangam-server	FwtWorkerCompatIT#fwt031_reservedVariableFromWorkerIs422AndNoSkip	gap: last recorded run FAILED (403 action-not-permitted); cause unverified
+FWT-032	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt032_eventWithoutCorrelationValuesIsNotBroadcastAndExpires	passed (target-fwt, 2026-11-08)
+FWT-033	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt033_uniqueStartWithoutReferenceIsRejectedAtIntake	passed (target-fwt, 2026-11-08)
+FWT-034	implemented	sangam-flowable-ports	FwtInjectionTest#fwt034_expressionInAssigneeRefusedNothingDeployed	passed (target-fwt, 2026-11-08)
+FWT-035	implemented	sangam-flowable-ports	FwtInjectionTest#fwt035_fragmentCompensationStaysInsideFragment	passed (target-fwt, 2026-11-08)
+FWT-036	implemented	sangam-flowable-ports	FwtInjectionTest#fwt036_invalidFragmentsRefused	passed (target-fwt, 2026-11-08)
+FWT-037	implemented	sangam-flowable-ports	FwtInjectionTest#fwt037_twentyFirstInjectionAndSuspendedInstanceRefused	passed (target-fwt, 2026-11-08)
+FWT-038	implemented	sangam-flowable-ports	FwtInjectionTest#fwt038_injectionWithEventScopeExecutionThenCompensate	passed (target-fwt, 2026-11-08)
+FWT-039	implemented	sangam-flowable-ports	FwtAdHocImportTest#fwt039_sequentialAdHocRaceExactlyOneStarts	passed (target-fwt, 2026-11-08)
+FWT-040	implemented	sangam-flowable-ports	FwtJobsTest#fwt040_exclusiveJobsOfOneInstanceNeverLockedOnTwoNodes	passed (target-fwt, 2026-11-08); two engines on one H2 database
+FWT-041	implemented	sangam-flowable-ports	FwtJobsTest#fwt041_handOffSaturatedPoolAndDeploymentAware	passed (target-fwt, 2026-11-08)
+FWT-042	implemented	sangam-flowable-ports	FwtServicesTest#fwt042_debuggerRefusesNonSandboxTenant	passed (target-fwt, 2026-11-08)
+FWT-043	implemented	sangam-flowable-ports	FwtServicesTest#fwt043_resumeStopsAtThousandSteps	passed (target-fwt, 2026-11-08)
+FWT-044	implemented	sangam-flowable-ports	FwtServicesTest#fwt044_uploadOverDefaultLimitRefusedNothingStored	passed (target-fwt, 2026-11-08)
+FWT-045	implemented	sangam-flowable-ports	FwtServicesTest#fwt045_openOtherTenantsItemIsNotFound	passed (target-fwt, 2026-11-08)
+FWT-046	implemented	sangam-flowable-ports	FwtChannelGuardsTest#fwt046_outboundTimeoutZeroIsOneSecond; #fwt046_outboundTimeoutNotANumberIsADeployError; #fwt046_outboundOneGiBResponseBodyIsDiscardedNotBuffered; #fwt046_outboundRedirectIsNotFollowed	passed (target-fwt, 2026-11-08)
+FWT-047	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt047_xmlDeserializerChannelIsRefused	passed (target-fwt, 2026-11-08)
+FWT-048	implemented	sangam-flowable-ports	FwtEventRegistryTest#fwt048_earlyEventIsBufferedAndDeliveredWhenTheInstanceReachesTheCatch	passed (target-fwt, 2026-11-08)
+FWT-049	implemented	sangam-flowable-ports	FwtAppBundleTest#fwt049_zipSlipRefused; #fwt049_nestedZipRefused; #fwt049_duplicateEntryRefused; #fwt049_sixHundredEntriesRefused; #fwt049_seventyMBUncompressedRefused	passed (target-fwt, 2026-11-08)
+FWT-050	implemented	sangam-flowable-ports	FwtServicesTest#fwt050_changeTenantItemWithoutTargetTenant	passed (target-fwt, 2026-11-08)
+FWT-051	implemented	sangam-flowable-ports	FwtChannelGuardsTest#fwt051_webhookSignatureMissingWrongRight	passed (target-fwt, 2026-11-08)
+FWT-052	partial	sangam-flowable-ports	FwtKafkaInboundTest#fwt052_soakOf10kMixedEventsLeavesNoStuckPartitionAndOneRejectedPerPoison	passed in-process; gap: MockConsumer + webhook only, no real Kafka broker and no JMS
+FWT-053	implemented	sangam-flowable-ports	FwtAdHocImportTest#fwt053_importedParallelMiExternalWorkerAllFetched	passed (target-fwt, 2026-11-08)
+FWT-054	implemented	sangam-flowable-ports	FwtInjectionTest#fwt054_claimedTaskKeepsIdentityDuringInjection; FwtInjectionTest#fwt054_claimedTaskKeepsIdentityDuringCrossInstanceMove	passed (target-fwt, 2026-11-08)
+FWT-055	implemented	sangam-flowable-ports	FwtTimerCyclesTest#fwt055_thirtySixTimerCyclesKeepRuntimeTablesFlat	passed (target-fwt, 2026-11-08); runtime part only
+FWT-056	implemented	sangam-flowable-ports	FwtServicesTest#fwt056_productRowRolledBackWhenEngineCommandFails	passed (target-fwt, 2026-11-08)
+FWT-057	implemented	sangam-flowable-ports; sangam-engine	FwtModelImporterTest#fwt057_shellTypeAndScriptTaskBothUnsupported; FwtScriptTaskDeployH2Test#fwt057_scriptTaskDeployedDirectlyIsRejected	both passed (target-fwt, 2026-11-08)
+D-12	implemented	sangam-engine:deploy/SangamBpmnParseListener.java:226-227 (call activity: binding set to DEPLOYMENT when absent), :253-258 (business rule task without decisionRefBinding is REJECTED at deploy, not defaulted)	InheritedWeaknessH2Test#businessRuleTaskWithoutBindingIsRejected; InheritedWeaknessH2Test#callActivityWithoutBindingCallsTheChildOfItsOwnDeployment; InheritedWeaknessH2Test#explicitLatestBindingIsHonoured	corrected: decision binding is not defaulted; a missing decisionRefBinding is a deploy error (setting isDefaultBindingDeployment); passed (target-unit/target-docs 2026-11-08)

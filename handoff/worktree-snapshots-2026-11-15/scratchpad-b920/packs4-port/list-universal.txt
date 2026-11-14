@@ -1,0 +1,25 @@
+[0] MONEY APPLICABLE     @@ -1,6 +1,7 @@
+      +from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
+[1] MONEY APPLICABLE     @@ -36,7 +37,7 @@ def up01():
+      -    pk.dmn('up01-route', 'Fulfilment route', 'FIRST', [('Amount', 'amount', 'double')],
+      +    pk.dmn('up01-route', 'Fulfilment route', 'FIRST', [('Amount', 'amount', 'money')],
+[2] MONEY APPLICABLE     @@ -174,7 +175,7 @@ def up05():
+      -    pk.dmn('up05-checker', 'Checker by amount', 'FIRST', [('Amount', 'amount', 'double')],
+      +    pk.dmn('up05-checker', 'Checker by amount', 'FIRST', [('Amount', 'amount', 'money')],
+[3] MONEY APPLICABLE     @@ -257,7 +258,7 @@ def up07():
+      -    pk.dmn('up07-approver', 'Change approver', 'FIRST', [('Amount', 'amount', 'double')],
+      +    pk.dmn('up07-approver', 'Change approver', 'FIRST', [('Amount', 'amount', 'money')],
+[4] OTHER APPLICABLE     @@ -552,7 +553,7 @@ def up13():
+      -           [('returnEligible', 'Eligible', 'boolean'), ('restockingFeePct', 'Restocking fee %', 'double')],
+      +           [('returnEligible', 'Eligible', 'boolean'), ('restockingFeePct', 'Restocking fee %', 'number')],
+[5] MONEY APPLICABLE     @@ -589,8 +590,8 @@ def up14():
+      -           [('Invoice qty', 'invoiceQty', 'double'), ('Received qty', 'grnQty', 'double'), ('PO qty', 'poQty', 'double'),
+      -            ('Invoice price', 'invoicePrice', 'double'), ('PO price', 'poPrice', 'double')],
+      +           [('Invoice qty', 'invoiceQty', 'number'), ('Received qty', 'grnQty', 'number'), ('PO qty', 'poQty', 'number'),
+      +            ('Invoice price', 'invoicePrice', 'money'), ('PO price', 'poPrice', 'money')],
+[6] MONEY APPLICABLE     @@ -772,7 +773,7 @@ def up18():
+      -    pk.dmn('up18-approver', 'CAPA approver', 'FIRST', [('Amount', 'amount', 'double')],
+      +    pk.dmn('up18-approver', 'CAPA approver', 'FIRST', [('Amount', 'amount', 'money')],
+[7] MONEY APPLICABLE     @@ -833,7 +834,7 @@ def up19():
+      -    pk.dmn('up19-signatory', 'Signing authority', 'FIRST', [('Amount', 'amount', 'double')],
+      +    pk.dmn('up19-signatory', 'Signing authority', 'FIRST', [('Amount', 'amount', 'money')],

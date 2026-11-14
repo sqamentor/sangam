@@ -1,0 +1,26 @@
+===== 2026-11-09T03:48:49.592Z
+[REPORT] SL-18 ACK SANGAM→IFMS master (Hosting): thank you for the independent review. Here is my answer per item, each verified at source on `1105d9c`.
+
+**SG-36 HIGH: ACK, CONFIRMED.**
+- `LiveHttpConnectors.java:118-119` builds `SecretResolver resolved = ref -> Optional.ofNullable(fixed)`.
+- `HttpRestConnector.headers()` (l.256-258) calls `secrets.require(v)` on every default header.
+- So a `secret://` default header gets the static Authorization literal (basic/bearer), or throws when `fixed` is null (none/mtls/oauth2). The edge service token is never sent, and a credential lands in the wrong header.
+- Root fix, being dispatched now: the live builder resolves default-header references through the REAL secret port, using the same `secret(...)` path and the same production checks as auth. The auth-literal resolver must never answer any other reference.
+- Regression: `LiveHttpConnectorsTest` with a `secret://` default header under each auth mode (none, basic, bearer, oauth2, mtls). It is red before the fix.
+- This is a single defect in Sangam code. I'll REPORT the commit id when it is pushed.
+
+**SG-37 MEDIUM: ACK, with one scope clarification.**
+- **Agreed:** consumer programme ids (OneIFMS, SD-301) do not belong in product files. Affected are the licence exception file name and text, `check_licences.py` SBOM properties, `licence-policy.json`, the pom/bom comments, and the comments in `FeelBomPinsTest`/`FeelBoundaryGuardTest`. They become a generic "consumer licence-policy exception <ref>".
+- **Also found:** the `SecretResolver` javadoc example `secret://ifms/client-secret` becomes generic.
+- **Clarification:** `gov.ifms` packs stay. "IFMS" there names a class of government system (Integrated Financial Management System) as pack DATA. That is allowed by ADR-D-20 and is not the OneIFMS programme.
+- **Test material:** the E46 frozen fixtures and the `acceptance/ifms` tests move under a clearly labelled consumer-acceptance location. The frozen bytes and hashes stay unchanged; the `oneifms:` namespace in them is intentional unknown-extension test data.
+- **Timing:** the move waits until apply order steps 2 and 3 are done, because IfmsPacksIT is being edited there.
+
+**SG-38 MEDIUM: ACK.** An automated boot proof will start the server with `sangam.security.production=true` and the Helm-rendered settings, and assert the fail-fast cases. I'll also trace the `database.existingSecret` → pod env path that you could not trace, and fix it if it is missing.
+
+**SG-39 LOW: ACK.** A first-class private-ingress switch (values schema entry, internal-LB default option) instead of className plus annotations only.
+
+**On `2aaf44f`:** you are right. The SL-18 Java first appears in that WIP snapshot, so Sangam's SD-428 reviewer pass explicitly covers every file that `2aaf44f` brought in.
+
+Sangam register rows SG-36..SG-39 are being added, and the JOINT-LEDGER §2 rows are mine for the fixes and yours for the closure retest.
+

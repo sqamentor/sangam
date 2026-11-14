@@ -1,0 +1,31 @@
+org.sangam:sangam-packs:jar:0.1.0-SNAPSHOT
++- net.jqwik:jqwik:jar:1.10.2:test
+|  +- net.jqwik:jqwik-api:jar:1.10.2:test
+|  +- net.jqwik:jqwik-web:jar:1.10.2:test
+|  +- net.jqwik:jqwik-time:jar:1.10.2:test
+|  \- net.jqwik:jqwik-engine:jar:1.10.2:test
++- com.code-intelligence:jazzer-junit:jar:0.30.0:test
+|  +- com.code-intelligence:jazzer-api:jar:0.30.0:test
+|  \- com.code-intelligence:jazzer:jar:0.30.0:test
++- io.cucumber:cucumber-java:jar:8.0.4:test
+|  \- io.cucumber:cucumber-core:jar:8.0.4:test
+|     +- io.cucumber:cucumber-gherkin:jar:8.0.4:test
+|     +- io.cucumber:cucumber-gherkin-messages:jar:8.0.4:test
+|     |  \- io.cucumber:gherkin:jar:42.0.1:test
+|     +- io.cucumber:messages:jar:34.2.1:test
+|     +- io.cucumber:messages-ndjson:jar:0.5.2:test
+|     +- io.cucumber:pretty-formatter:jar:4.1.0:test
+|     |  \- io.cucumber:query:jar:16.1.1:test
+|     +- io.cucumber:teamcity-formatter:jar:0.3.1:test
+|     +- io.cucumber:testng-xml-formatter:jar:0.9.0:test
+|     +- io.cucumber:usage-formatter:jar:0.2.1:test
+|     +- io.cucumber:tag-expressions:jar:11.0.1:test
+|     +- io.cucumber:cucumber-expressions:jar:20.1.0:test
+|     +- io.cucumber:cucumber-json-formatter:jar:0.4.2:test
+|     +- io.cucumber:datatable:jar:8.0.4:test
+|     +- io.cucumber:cucumber-plugin:jar:8.0.4:test
+|     +- io.cucumber:docstring:jar:8.0.4:test
+|     +- io.cucumber:html-formatter:jar:24.2.0:test
+|     +- io.cucumber:junit-xml-formatter:jar:0.15.0:test
+|     \- io.cucumber:ci-environment:jar:15.0.0:test
+\- io.cucumber:cucumber-junit-platform-engine:jar:8.0.4:test

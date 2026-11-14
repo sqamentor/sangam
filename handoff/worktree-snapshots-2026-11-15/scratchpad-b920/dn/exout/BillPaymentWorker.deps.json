@@ -1,0 +1,36 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v7.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v7.0": {
+      "BillPaymentWorker/1.0.0": {
+        "dependencies": {
+          "Sangam.Sdk": "0.1.0"
+        },
+        "runtime": {
+          "BillPaymentWorker.dll": {}
+        }
+      },
+      "Sangam.Sdk/0.1.0": {
+        "runtime": {
+          "Sangam.Sdk.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "BillPaymentWorker/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Sangam.Sdk/0.1.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

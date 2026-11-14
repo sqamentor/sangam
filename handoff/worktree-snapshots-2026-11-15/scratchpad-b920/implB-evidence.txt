@@ -1,0 +1,406 @@
+=== sangam-case/src/main/java/org/sangam/casefile/cmmn/CaseFileCmmnListener.java
+  DECL public class CaseFileCmmnListener implements CmmnTransformListener {
+  37: public class CaseFileCmmnListener implements CmmnTransformListener {
+  50: public void transformCasePlanModel(CasePlanModel casePlanModel, CmmnActivity activity) {
+  57: public void transformMilestone(PlanItem planItem, Milestone milestone, CmmnActivity activity) {
+=== sangam-case/src/main/java/org/sangam/casefile/cmmn/CaseFileEnginePlugin.java
+  DECL public class CaseFileEnginePlugin implements ProcessEnginePlugin {
+  17: public class CaseFileEnginePlugin implements ProcessEnginePlugin {
+  29: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  30: List<CmmnTransformListener> cmmn = cfg.getCustomPostCmmnTransformListeners() == null ? new ArrayList<>()
+  37: public void postInit(ProcessEngineConfigurationImpl cfg) {
+=== sangam-case/src/main/java/org/sangam/casefile/delegate/DelegateSupport.java
+  DECL final class DelegateSupport {
+  50: Authentication a = ex.getProcessEngineServices().getIdentityService().getCurrentAuthentication();
+=== sangam-cell/src/main/java/org/sangam/cell/id/CellIdGeneratorPlugin.java
+  DECL public final class CellIdGeneratorPlugin extends AbstractProcessEnginePlugin {
+  13: public final class CellIdGeneratorPlugin extends AbstractProcessEnginePlugin {
+  22: public void preInit(ProcessEngineConfigurationImpl cfg) {
+=== sangam-cell/src/main/java/org/sangam/cell/id/OperatonCellIdGenerator.java
+  DECL public final class OperatonCellIdGenerator implements IdGenerator {
+  6: /** Operaton {@link IdGenerator} producing {@code <cellId>.<uuidv7>} ids (replaces StrongUuidGenerator in a cell). */
+  7: public final class OperatonCellIdGenerator implements IdGenerator {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/adhoc/AdHocSubProcessActivityBehavior.java
+  DECL public class AdHocSubProcessActivityBehavior extends SubProcessActivityBehavior {
+  DECL public enum Ordering { PARALLEL, SEQUENTIAL }
+  31: public class AdHocSubProcessActivityBehavior extends SubProcessActivityBehavior {
+  58: public void execute(ActivityExecution execution) {
+  63: public void concurrentChildExecutionEnded(ActivityExecution scopeExecution, ActivityExecution endedExecution) {
+  71: public void complete(ActivityExecution scopeExecution) {
+  78: protected boolean conditionSatisfied(ActivityExecution execution) {
+  97: public void completeScope(ActivityExecution scopeExecution, boolean cancelRemaining) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/adhoc/AdHocSubProcessService.java
+  DECL public class AdHocSubProcessService {
+  DECL public record EnabledActivity(String adHocActivityId, String adHocActivityInstanceId, String activityId,
+  48: ReadOnlyProcessDefinition def = definitionOf(processInstanceId);
+  58: ReadOnlyProcessDefinition def = definitionOf(processInstanceId);
+  64: PvmActivity adHoc = def.findActivity(ah.activityId());
+  65: for (PvmActivity inner : adHoc.getActivities()) {
+  87: ExecutionEntity root = cc.getExecutionManager().findExecutionById(processInstanceId);
+  112: ExecutionEntity idle = idleScopeExecution(root, target);
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/adhoc/AdHocSupport.java
+  DECL final class AdHocSupport {
+  15: static boolean isAdHoc(PvmActivity a) {
+  20: static PvmActivity adHocActivityOf(PvmExecutionImpl exec) {
+  21: PvmActivity a = exec.getActivity();
+  26: a = a instanceof ActivityImpl ai ? ai.getParentFlowScopeActivity() : null;
+  31: static String adHocInstanceIdOf(PvmExecutionImpl exec, PvmActivity adHoc) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/adhoc/CompleteAdHocSubProcessCmd.java
+  DECL public class CompleteAdHocSubProcessCmd implements Command<Void> {
+  14: public class CompleteAdHocSubProcessCmd implements Command<Void> {
+  30: public Void execute(CommandContext commandContext) {
+  31: ExecutionEntity scope = findScopeExecution(commandContext, processInstanceId, adHocActivityInstanceId);
+  32: PvmActivity adHoc = AdHocSupport.adHocActivityOf(scope);
+  38: static ExecutionEntity findScopeExecution(CommandContext cc, String processInstanceId, String adHocActivityInstanceId) {
+  39: for (ExecutionEntity e : cc.getExecutionManager().findExecutionsByProcessInstanceId(processInstanceId)) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/adhoc/SangamBpmnParse.java
+  DECL public class SangamBpmnParse extends BpmnParse {
+  15: * Patch P-1 (PATCHES.md): a {@link BpmnParse} subclass, installed through
+  18: * <p>Operaton 2.2.0 {@code BpmnParse.parseActivity} logs "Ignoring unsupported activity type" for
+  20: * {@code BpmnParseListener} cannot help because the element never becomes an activity. This class intercepts the tag
+  26: public class SangamBpmnParse extends BpmnParse {
+  31: public SangamBpmnParse(BpmnParser parser) {
+  36: protected ActivityImpl parseActivity(Element activityElement, Element parentElement, ScopeImpl scopeElement) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/adhoc/SangamBpmnParseFactory.java
+  DECL public class SangamBpmnParseFactory implements BpmnParseFactory {
+  9: public class SangamBpmnParseFactory implements BpmnParseFactory {
+  12: public BpmnParse createBpmnParse(BpmnParser bpmnParser) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java
+  DECL public final class StandardBatchHandlers {
+  65: ((MessageCorrelationBuilderImpl) b).executionsOnly();
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/BpmnExtensionsParseListener.java
+  DECL public class BpmnExtensionsParseListener implements BpmnParseListener {
+  15: * Parse-time BPMN behaviour extensions (route 1, {@link BpmnParseListener}; handed to WS-PORTS by WS-ENGINE):
+  24: public class BpmnExtensionsParseListener implements BpmnParseListener {
+  26: private static final Namespace OPERATON = new Namespace("http://operaton.org/schema/1.0/bpmn", "http://camunda.org/schema/1.0/bpmn");
+  39: public void parseServiceTask(Element e, ScopeImpl scope, ActivityImpl a) {
+  49: public void parseUserTask(Element e, ScopeImpl scope, ActivityImpl a) {
+  51: if (skip != null && a.getActivityBehavior() instanceof UserTaskActivityBehavior u) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/SangamBpmn.java
+  DECL public final class SangamBpmn {
+  16: public static final Namespace NS = new Namespace(NS_URI);
+  39: public static String attr(Element e, String name) {
+  45: public static String attrDom(org.w3c.dom.Element e, String name) {
+  51: return Context.getProcessEngineConfiguration().getExpressionManager().createExpression(text);
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/SangamModelValidator.java
+  DECL public class SangamModelValidator {
+  DECL public enum Severity { ERROR, WARNING }
+  214: public Deployer deployer() {
+  218: Map<String, ResourceEntity> res = deployment.getResources();
+  220: for (ResourceEntity r : res.values()) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/SkipExpressionSupport.java
+  DECL public final class SkipExpressionSupport {
+  DECL public static class SkippableUserTask extends UserTaskActivityBehavior {
+  25: * {@link UserTaskActivityBehavior} subclass, so Operaton's migration and task code still recognise them; other
+  37: static boolean shouldSkip(ActivityExecution execution, Expression skip, boolean alwaysEnabled, EngineEventBus bus) {
+  55: /** User task with a skip expression; remains a {@link UserTaskActivityBehavior}. */
+  56: public static class SkippableUserTask extends UserTaskActivityBehavior {
+  61: public SkippableUserTask(UserTaskActivityBehavior original, Expression skip, boolean alwaysEnabled, EngineEventBus bus) {
+  69: public void performExecution(ActivityExecution execution) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/TerminateExtendedBehavior.java
+  DECL public class TerminateExtendedBehavior extends FlowNodeActivityBehavior {
+  DECL public enum Mode { ALL, MULTI_INSTANCE }
+  25: public class TerminateExtendedBehavior extends FlowNodeActivityBehavior {
+  36: public void execute(ActivityExecution execution) throws Exception {
+  37: PvmExecutionImpl exec = (PvmExecutionImpl) execution;
+  39: PvmExecutionImpl pi = exec.getProcessInstance();
+  43: ActivityImpl body = enclosingMiBody(execution.getActivity());
+  44: PvmExecutionImpl bodyExec = (PvmExecutionImpl) execution.findExecutionForFlowScope(body);
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/TriggerableServiceTaskBehavior.java
+  DECL public class TriggerableServiceTaskBehavior extends TaskActivityBehavior {
+  DECL public interface Trigger extends JavaDelegate {
+  20: public class TriggerableServiceTaskBehavior extends TaskActivityBehavior {
+  39: public void performExecution(ActivityExecution execution) throws Exception {
+  45: public void signal(ActivityExecution execution, String signalName, Object signalData) throws Exception {
+  53: private JavaDelegate delegate(ActivityExecution execution) {
+  54: Object o = className != null ? ReflectUtil.instantiate(className) : delegateExpression.getValue(execution);
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/bpmn/VariableChangeConditionalEventBehavior.java
+  DECL public class VariableChangeConditionalEventBehavior extends IntermediateConditionalEventBehavior {
+  13: public class VariableChangeConditionalEventBehavior extends IntermediateConditionalEventBehavior {
+  15: public VariableChangeConditionalEventBehavior(ConditionalEventDefinition definition) {
+  20: public void execute(ActivityExecution execution) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/CmmnEventListenerService.java
+  DECL public class CmmnEventListenerService {
+  33: CaseExecutionEntity ce = cc.getCaseExecutionManager().findCaseExecutionById(caseExecutionId);
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/CmmnTimerJobHandler.java
+  DECL public class CmmnTimerJobHandler implements JobHandler<CmmnTimerJobHandler.Config> {
+  DECL public record Config(String caseExecutionId) implements JobHandlerConfiguration {
+  15: public class CmmnTimerJobHandler implements JobHandler<CmmnTimerJobHandler.Config> {
+  19: public record Config(String caseExecutionId) implements JobHandlerConfiguration {
+  32: public void execute(Config configuration, ExecutionEntity execution, CommandContext commandContext, String tenantId) {
+  33: CaseExecutionEntity ce = commandContext.getCaseExecutionManager().findCaseExecutionById(configuration.caseExecutionId());
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/PortsCmmnTransformListener.java
+  DECL public class PortsCmmnTransformListener implements CmmnTransformListener {
+  DECL public interface PlanItemLifecycleListener {
+  37: public class PortsCmmnTransformListener implements CmmnTransformListener {
+  65: public void transformHumanTask(PlanItem planItem, HumanTask humanTask, CmmnActivity activity) {
+  70: public void transformProcessTask(PlanItem planItem, ProcessTask processTask, CmmnActivity activity) {
+  75: public void transformCaseTask(PlanItem planItem, CaseTask caseTask, CmmnActivity activity) {
+  80: public void transformDecisionTask(PlanItem planItem, DecisionTask decisionTask, CmmnActivity activity) {
+  85: public void transformTask(PlanItem planItem, Task task, CmmnActivity activity) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java
+  DECL public class SangamCmmnElementHandlerRegistry extends DefaultCmmnElementHandlerRegistry {
+  DECL public static class SangamEventListenerItemHandler extends EventListenerItemHandler {
+  11: * ({@code DefaultCmmnElementHandlerRegistry}: "EventListener is currently not supported"), so a timer or user event
+  17: public class SangamCmmnElementHandlerRegistry extends DefaultCmmnElementHandlerRegistry {
+  32: public static void install(DefaultCmmnElementHandlerRegistry registry) {
+  37: public static class SangamEventListenerItemHandler extends EventListenerItemHandler {
+  39: protected CmmnActivityBehavior getActivityBehavior() {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamEventListenerActivityBehavior.java
+  DECL public class SangamEventListenerActivityBehavior extends EventListenerActivityBehavior {
+  29: public class SangamEventListenerActivityBehavior extends EventListenerActivityBehavior {
+  35: public void created(CmmnActivityExecution execution) {
+  36: CmmnActivity activity = execution.getActivity();
+  42: Object evaluated = Context.getProcessEngineConfiguration().getExpressionManager().createExpression(text).getValue(execution);
+  49: String type = bare.startsWith("R") ? CycleBusinessCalendar.NAME : bare.startsWith("P") ? DurationBusinessCalendar.NAME
+  50: : DueDateBusinessCalendar.NAME;
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/debug/DebuggerService.java
+  DECL public class DebuggerService {
+  141: public BpmnParseListener parseListener() {
+  142: return new BpmnParseListener() {
+  144: public void parseUserTask(Element e, ScopeImpl s, ActivityImpl a) {
+  149: public void parseServiceTask(Element e, ScopeImpl s, ActivityImpl a) {
+  154: public void parseTask(Element e, ScopeImpl s, ActivityImpl a) {
+  159: public void parseBusinessRuleTask(Element e, ScopeImpl s, ActivityImpl a) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventRegistryParseListener.java
+  DECL public class EventRegistryParseListener implements BpmnParseListener {
+  13: * BPMN side of the event registry (FLOWABLE-INTO-OPERATON FC-02), read by a {@link BpmnParseListener} as the gap list prescribes.
+  22: public class EventRegistryParseListener implements BpmnParseListener {
+  25: public void parseIntermediateThrowEvent(Element e, ScopeImpl scope, ActivityImpl activity) {
+  30: public void parseEndEvent(Element e, ScopeImpl scope, ActivityImpl activity) {
+  35: public void parseSendTask(Element e, ScopeImpl scope, ActivityImpl activity) {
+  40: public void parseStartEvent(Element e, ScopeImpl scope, ActivityImpl activity) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/events/SendEventDelegate.java
+  DECL public class SendEventDelegate implements JavaDelegate, ExecutionListener {
+  63: String root = execution instanceof ExecutionEntity e && e.getRootProcessInstanceId() != null
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/history/HistoryEventMapper.java
+  DECL public final class HistoryEventMapper {
+  29: public static String kind(HistoryEvent e) {
+  30: if (e instanceof HistoricProcessInstanceEventEntity) {
+  33: if (e instanceof HistoricActivityInstanceEventEntity) {
+  36: if (e instanceof HistoricTaskInstanceEventEntity) {
+  39: if (e instanceof HistoricVariableUpdateEventEntity) {
+  42: if (e instanceof HistoricCaseInstanceEventEntity) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/history/PortsHistoryEventHandler.java
+  DECL public class PortsHistoryEventHandler implements HistoryEventHandler {
+  DECL private static final class Buffer {
+  38: public class PortsHistoryEventHandler implements HistoryEventHandler {
+  52: final CommandContext cc;
+  62: Buffer(CommandContext cc) {
+  87: public void handleEvent(HistoryEvent e) {
+  104: public void handleEvents(List<HistoryEvent> events) {
+  105: for (HistoryEvent e : events) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/AsyncJobHandOffInterceptor.java
+  DECL public class AsyncJobHandOffInterceptor extends CommandInterceptor {
+  31: public class AsyncJobHandOffInterceptor extends CommandInterceptor {
+  35: private final Supplier<JobExecutor> jobExecutor;
+  36: private final Supplier<ProcessEngineImpl> engine;
+  39: public AsyncJobHandOffInterceptor(Supplier<JobExecutor> jobExecutor, Supplier<ProcessEngineImpl> engine, boolean handOffExclusive) {
+  46: public <T> T execute(Command<T> command) {
+  48: CommandContext cc = Context.getCommandContext();
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java
+  DECL public class FilteredAcquireJobsCmd extends AcquireJobsCmd {
+  DECL public enum JobClass { TIMERS, NON_TIMERS }
+  21: * Job acquisition restricted to one job class (FLOWABLE-INTO-OPERATON FC-24, Flowable {@code AcquireTimerJobsRunnable} /
+  28: * <p>Locking reuses Operaton's own {@code AcquireJobsCmd.lockJob} and its optimistic-locking listener (a job taken by
+  33: public class FilteredAcquireJobsCmd extends AcquireJobsCmd {
+  37: private final JobExecutor jobExecutor;
+  42: public FilteredAcquireJobsCmd(JobExecutor jobExecutor, int numJobs, JobClass jobClass, Dialect dialect, String globalLockNameOrNull) {
+  51: public AcquiredJobs execute(CommandContext cc) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/SplitJobExecutors.java
+  DECL public class SplitJobExecutors implements AutoCloseable {
+  21: *   <li>a second {@link DefaultJobExecutor} with its own thread pool acquires only timers;</li>
+  35: private DefaultJobExecutor asyncExecutor;
+  36: private DefaultJobExecutor timerExecutor;
+  37: private volatile ProcessEngineImpl engine;
+  46: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  47: JobExecutor existing = cfg.getJobExecutor();
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java
+  DECL public class SangamPortsPlugin implements ProcessEnginePlugin {
+  54: public class SangamPortsPlugin implements ProcessEnginePlugin {
+  87: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  97: List<BpmnParseListener> bpmn = cfg.getCustomPostBPMNParseListeners() == null ? new ArrayList<>()
+  124: List<CmmnTransformListener> cmmn = cfg.getCustomPostCmmnTransformListeners() == null ? new ArrayList<>()
+  130: List<JobHandler<?>> handlers = cfg.getCustomJobHandlers() == null ? new ArrayList<>() : new ArrayList<>(cfg.getCustomJobHandlers());
+  135: List<HistoryEventHandler> history = cfg.getCustomHistoryEventHandlers() == null ? new ArrayList<>()
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/support/EngineTx.java
+  DECL public final class EngineTx {
+  26: return Context.getCommandContext() != null;
+  31: CommandContext cc = Context.getCommandContext();
+  40: private static final java.util.Set<CommandContext> GUARDED =
+  49: private static void guardRollback(CommandContext cc, Connection c) {
+  50: if (cc.getTransactionContext() instanceof org.operaton.bpm.engine.impl.cfg.standalone.StandaloneTransactionContext tc
+  52: tc.addTransactionListener(org.operaton.bpm.engine.impl.cfg.TransactionState.ROLLINGBACK, ctx -> {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/task/TaskEventDispatcher.java
+  DECL public class TaskEventDispatcher implements TaskListener {
+  46: if (!(task instanceof TaskEntity te)) {
+  49: Map<String, PropertyChange> changes = te.getPropertyChanges();
+  53: PropertyChange assignee = changes.get("assignee");
+  55: PropertyChange delegation = changes.get("delegation");
+  81: PropertyChange susp = changes.get("suspensionState");
+  118: private void derived(DelegateTask task, Map<String, PropertyChange> changes, String property, String type) {
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/tenancy/TenantEngineRegistry.java
+  DECL public class TenantEngineRegistry implements AutoCloseable {
+  DECL public static final class TenantContext {
+  58: private final BiFunction<String, DataSource, ProcessEngineConfigurationImpl> configFactory;
+  59: private final DefaultJobExecutor sharedJobExecutor;
+  65: public TenantEngineRegistry(BiFunction<String, DataSource, ProcessEngineConfigurationImpl> configFactory, int jobThreads) {
+  67: this.sharedJobExecutor = new DefaultJobExecutor();
+  79: ProcessEngineConfigurationImpl cfg = configFactory.apply(tenant, ds);
+  88: sharedJobExecutor.registerProcessEngine((ProcessEngineImpl) engine);
+=== sangam-flowable-ports/src/main/java/org/sangam/ports/variables/MultiInstanceAggregation.java
+  DECL public class MultiInstanceAggregation implements BpmnParseListener {
+  35: public class MultiInstanceAggregation implements BpmnParseListener {
+  46: public void parseUserTask(Element e, ScopeImpl scope, ActivityImpl a) {
+  51: public void parseServiceTask(Element e, ScopeImpl scope, ActivityImpl a) {
+  56: public void parseSubProcess(Element e, ScopeImpl scope, ActivityImpl a) {
+  61: public void parseCallActivity(Element e, ScopeImpl scope, ActivityImpl a) {
+  66: public void parseTask(Element e, ScopeImpl scope, ActivityImpl a) {
+=== sangam-geo/src/main/java/org/sangam/geo/feel/GeoEnginePlugin.java
+  DECL public final class GeoEnginePlugin extends AbstractProcessEnginePlugin {
+  15: public final class GeoEnginePlugin extends AbstractProcessEnginePlugin {
+  24: public void preInit(ProcessEngineConfigurationImpl cfg) {
+=== sangam-geo/src/main/java/org/sangam/geo/feel/GeoTenant.java
+  DECL public final class GeoTenant {
+  44: CoreExecutionContext<?> ec = Context.getCoreExecutionContext();
+  48: CommandContext cc = Context.getCommandContext();
+  50: Authentication a = cc.getAuthentication();
+=== sangam-integration/src/main/java/org/sangam/integration/bridge/operaton/EngineContext.java
+  DECL final class EngineContext {
+  19: CommandContext cc = Context.getCommandContext();
+  27: if (execution instanceof ExecutionEntity e && e.getRootProcessInstanceId() != null) {
+=== sangam-integration/src/main/java/org/sangam/integration/bridge/operaton/OutboxHistoryEventHandler.java
+  DECL public final class OutboxHistoryEventHandler implements HistoryEventHandler {
+  27: public final class OutboxHistoryEventHandler implements HistoryEventHandler {
+  41: public void handleEvent(HistoryEvent e) {
+  46: case HistoricProcessInstanceEventEntity pi -> {
+  53: case HistoricTaskInstanceEventEntity t -> {
+  61: case HistoricIncidentEventEntity i -> {
+  68: case HistoricActivityInstanceEventEntity a -> {
+=== sangam-integration/src/main/java/org/sangam/integration/bridge/operaton/SangamIntegrationEnginePlugin.java
+  DECL public final class SangamIntegrationEnginePlugin implements ProcessEnginePlugin {
+  13: * {@code ProcessEnginePlugin} of the integration layer (ADR-D-16: behaviour added only through plugins). Registers the
+  17: public final class SangamIntegrationEnginePlugin implements ProcessEnginePlugin {
+  27: public void preInit(ProcessEngineConfigurationImpl configuration) {
+  31: List<HistoryEventHandler> handlers = configuration.getCustomHistoryEventHandlers() == null ? new ArrayList<>()
+  39: public void postInit(ProcessEngineConfigurationImpl configuration) {
+=== sangam-integration/src/main/java/org/sangam/integration/packs/IntegrationConnectorGateway.java
+  DECL public final class IntegrationConnectorGateway implements ConnectorGateway {
+  DECL yield ConnectorResult.failed("NOT_FOUND", "the external system has no record of the operation");
+  324: CommandContext cc = Context.getCommandContext();
+=== sangam-integration/src/main/java/org/sangam/integration/pipeline/PipelineDelegate.java
+  DECL public final class PipelineDelegate implements JavaDelegate {
+  63: Connection c = Context.getCommandContext().getDbSqlSession().getSqlSession().getConnection();
+=== sangam-ops/src/main/java/org/sangam/ops/listener/GlobalTaskListeners.java
+  DECL public final class GlobalTaskListeners {
+  DECL public record Rule(String id, List<String> events, Pattern processKey, String handler, boolean failTask) {
+  48: public BpmnParseListener parseListener() {
+  49: return new BpmnParseListener() {
+  51: public void parseUserTask(Element element, ScopeImpl scope, ActivityImpl activity) {
+  52: if (!(activity.getActivityBehavior() instanceof UserTaskActivityBehavior b)) {
+  57: attach(b.getTaskDefinition(), pd instanceof org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity e ? e.getKey() : pd.getId());
+  62: void attach(TaskDefinition td, String processKey) {
+=== sangam-packs/src/main/java/org/sangam/packs/core/Vars.java
+  DECL public final class Vars {
+  185: org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity pi =
+  186: ((org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity) ex).getProcessInstance();
+=== sangam-registry/src/main/java/org/sangam/registry/bpmn/DelegateSupport.java
+  DECL public final class DelegateSupport {
+  42: CommandContext cc = Context.getCommandContext();
+=== sangam-resources/src/main/java/org/sangam/resources/bpmn/ResourcesRuntime.java
+  DECL public final class ResourcesRuntime {
+  54: CommandContext cc = Context.getCommandContext();
+=== sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonDebugAdapter.java
+  DECL public class OperatonDebugAdapter implements DebugPort {
+  111: if (job instanceof org.operaton.bpm.engine.impl.persistence.entity.JobEntity je) {
+=== sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonOpsAdapter.java
+  DECL public class OperatonOpsAdapter implements OpsPort, AutoCloseable {
+  DECL private static final class BatchRow {
+  416: String type = j instanceof JobEntity je ? je.getJobHandlerType() : "job";
+=== sangam-rest/src/main/java/org/sangam/rest/config/SangamRestAutoConfiguration.java
+  DECL public class SangamRestAutoConfiguration {
+  DECL public static class ComplianceRestConfiguration {
+  341: return cfg instanceof org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl impl
+=== sangam-security/src/main/java/org/sangam/security/assignment/EngineConnections.java
+  DECL public final class EngineConnections {
+  23: CommandContext cc = Context.getCommandContext();
+=== sangam-security/src/main/java/org/sangam/security/assignment/SangamSecurityEnginePlugin.java
+  DECL public final class SangamSecurityEnginePlugin extends AbstractProcessEnginePlugin {
+  23: public final class SangamSecurityEnginePlugin extends AbstractProcessEnginePlugin {
+  32: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  33: List<BpmnParseListener> post = cfg.getCustomPostBPMNParseListeners() == null
+=== sangam-security/src/main/java/org/sangam/security/assignment/SeatAssignmentParseListener.java
+  DECL public final class SeatAssignmentParseListener extends AbstractBpmnParseListener {
+  31: public final class SeatAssignmentParseListener extends AbstractBpmnParseListener {
+  40: public void parseUserTask(Element userTaskElement, ScopeImpl scope, ActivityImpl activity) {
+  41: if (!(activity.getActivityBehavior() instanceof UserTaskActivityBehavior behavior)) {
+  49: TaskDefinition def = behavior.getTaskDefinition();
+  57: public void parseProcess(Element processElement, ProcessDefinitionEntity processDefinition) {
+  86: static Map<String, String> properties(Element element) {
+=== sangam-security/src/main/java/org/sangam/security/tenant/SangamTenantIdProvider.java
+  DECL public final class SangamTenantIdProvider implements TenantIdProvider {
+  11: * Operaton {@link TenantIdProvider}: every new process, case and decision instance gets the tenant of the
+  21: public final class SangamTenantIdProvider implements TenantIdProvider {
+  24: public String provideTenantIdForProcessInstance(TenantIdProviderProcessInstanceContext ctx) {
+  35: public String provideTenantIdForCaseInstance(TenantIdProviderCaseInstanceContext ctx) {
+  46: public String provideTenantIdForHistoricDecisionInstance(TenantIdProviderHistoricDecisionInstanceContext ctx) {
+=== sangam-server/src/main/java/org/sangam/server/bridge/AiBindings.java
+  DECL public final class AiBindings {
+  131: Authentication previous = identity.getCurrentAuthentication();
+=== sangam-server/src/main/java/org/sangam/server/bridge/CompliancePurposePlugin.java
+  DECL public final class CompliancePurposePlugin extends AbstractProcessEnginePlugin {
+  DECL final class ParseListener extends AbstractBpmnParseListener {
+  44: public final class CompliancePurposePlugin extends AbstractProcessEnginePlugin {
+  59: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  60: List<BpmnParseListener> post = cfg.getCustomPostBPMNParseListeners();
+  68: final class ParseListener extends AbstractBpmnParseListener {
+  70: public void parseProcess(Element processElement, ProcessDefinitionEntity processDefinition) {
+  134: return Context.getCommandContext().getDbSqlSession().getSqlSession().getConnection();
+=== sangam-server/src/main/java/org/sangam/server/bridge/ConfigCaseBindingPlugin.java
+  DECL public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
+  34: public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
+  52: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  53: List<BpmnParseListener> post = cfg.getCustomPostBPMNParseListeners();
+  58: post.add(new AbstractBpmnParseListener() {
+  60: public void parseProcess(Element processElement, ProcessDefinitionEntity processDefinition) {
+  76: if (e instanceof ExecutionEntity x && x.getSuperExecution() != null) {
+=== sangam-server/src/main/java/org/sangam/server/bridge/EngineConfigurationCustomizer.java
+  DECL public final class EngineConfigurationCustomizer implements BeanPostProcessor, BeanFactoryAware {
+  DECL /** Plugin class names in their required order after {@link SangamProcessEnginePlugin} (README note 11). */
+  34: * integration notes 1, 2, 4, 11). It runs on the starter's {@link ProcessEngineConfigurationImpl} bean before the
+  47: * sangam-flowable-ports' plugins in that order (README note 11), then every other {@code ProcessEnginePlugin} bean,
+  83: if (!(bean instanceof ProcessEngineConfigurationImpl cfg) || done) {
+  122: private List<ProcessEnginePlugin> order(List<ProcessEnginePlugin> current, ProcessEnginePlugin sangam,
+  124: List<ProcessEnginePlugin> starter = new ArrayList<>();
+  125: Map<String, List<ProcessEnginePlugin>> ordered = new java.util.LinkedHashMap<>();
+=== sangam-server/src/main/java/org/sangam/server/bridge/OpsTaskListenerPlugin.java
+  DECL public final class OpsTaskListenerPlugin extends AbstractProcessEnginePlugin {
+  13: public final class OpsTaskListenerPlugin extends AbstractProcessEnginePlugin {
+  22: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  23: List<BpmnParseListener> post = cfg.getCustomPostBPMNParseListeners();
+=== sangam-server/src/main/java/org/sangam/server/bridge/PortsDebugBridge.java
+  DECL public final class PortsDebugBridge implements DebugPort {
+  94: String activity = job instanceof JobEntity je ? je.getActivityId() : null;
+=== sangam-server/src/main/java/org/sangam/server/bridge/TenantQuotaEnginePlugin.java
+  DECL public final class TenantQuotaEnginePlugin implements ProcessEnginePlugin {
+  DECL static final class QuotaInterceptor extends CommandInterceptor {
+  29: * engine-rest, Java API, a delegate). Process and case starts ({@code StartProcessInstanceCmd},
+  30: * {@code StartProcessInstanceAtActivitiesCmd}, {@code CreateCaseInstanceCmd}) take one unit of
+  37: public final class TenantQuotaEnginePlugin implements ProcessEnginePlugin {
+  46: public void preInit(ProcessEngineConfigurationImpl cfg) {
+  47: List<CommandInterceptor> post = cfg.getCustomPostCommandInterceptorsTxRequired() == null ? new ArrayList<>()
+  54: public void postInit(ProcessEngineConfigurationImpl cfg) {
+=== sangam-server/src/main/java/org/sangam/server/config/PortsWiring.java
+  DECL public class PortsWiring {
+  DECL public record PortsSchemaReady(Dialect dialect) {
+  104: *   <li>{@code sangamPortsPlugin}: {@link SangamPortsPlugin} as a {@link ProcessEnginePlugin} bean; WS-ENGINE's
+=== sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java
+  DECL public class SecurityConfig {
+  158: instanceof org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl c && c.getAdminGroups() != null) {
+=== sangam-server/src/main/java/org/sangam/server/plugins/PluginFeelEnginePlugin.java
+  DECL public final class PluginFeelEnginePlugin extends AbstractProcessEnginePlugin {
+  18: public final class PluginFeelEnginePlugin extends AbstractProcessEnginePlugin {
+  27: public void preInit(ProcessEngineConfigurationImpl cfg) {
+=== sangam-server/src/main/java/org/sangam/server/security/EngineRestTenantFilter.java
+  DECL public final class EngineRestTenantFilter extends OncePerRequestFilter {
+  74: Authentication previous = ids.getCurrentAuthentication();

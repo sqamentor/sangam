@@ -1,0 +1,13 @@
+01:18:24.192 H (old-style) acquire: (0, 'acquired by H: blocking holder')
+01:18:29.220 runner pwsh pid=12076 (started 2026-11-10T01:18:24+00:00) is queued; its child acquire pid=44100
+01:18:30.360 runner killed (TerminateProcess, no tree), handle closed: runner probe=(False, 'terminated'), orphaned acquire probe=(True, 'running')
+01:18:30.360 release H: (0, 'released by H')
+01:18:32.335 lock record after H released: {"owner": "customwf-s4", "what": "queued job", "since": "2026-11-10T01:18:30+00:00", "epoch": 1794273510.8129628, "held_by": "owner name until release (not a pid)", "acquirer_pid": 44100, "acquirer_pid_note": "short-lived acquire process; exits at once (I-34)", "holder_pid": 12076, "holder_start": 1794273504.9371004, "lease_until": 1794273518.8129628, "lease_seconds": 8}
+01:18:32.335 orphaned acquire still running: False | runner.log: runner start pid=12076
+01:18:38.906 next job W got the lock after 6.5 s (lease 8 s; the job it waited for never ran)
+    W.err| holder of lock customwf-s4 is not running (pid 12076 not running (no such process)); lease expires in 5s, then the lock is auto-released
+    W.err| auto-released stale lock held by customwf-s4 since 2026-11-10T01:18:30+00:00 (holder pid 12076 not running, lease expired 2026-11-10T01:18:38+00:00); continuing
+2026-11-10T01:18:24+00:00 served H arrived=2026-11-10T01:18:24+00:00 what=blocking holder
+2026-11-10T01:18:30+00:00 served customwf-s4 arrived=2026-11-10T01:18:28+00:00 pid=12076 lease=8s what=queued job
+2026-11-10T01:18:38+00:00 auto-released stale lock owner=customwf-s4 pid=12076 since=2026-11-10T01:18:30+00:00 reason=dead-holder+expired-lease
+2026-11-10T01:18:38+00:00 served W arrived=2026-11-10T01:18:33+00:00 what=next heavy job

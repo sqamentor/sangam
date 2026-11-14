@@ -1,0 +1,43 @@
+[0] MONEY APPLICABLE     @@ -5,6 +5,7 @@ licensing, OT scheduling, blood bank, GST TCS, TCCCPR, SIM swap, e-way bill, MRP
+      +from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
+[1] OTHER APPLICABLE     @@ -156,7 +157,7 @@ def nbfc_dlg():
+      -           [('Cover %', 'dlgPct', 'double'), ('Form', 'dlgForm', 'string')], [('dlgAllowed', 'Allowed', 'boolean')],
+      +           [('Cover %', 'dlgPct', 'number'), ('Form', 'dlgForm', 'string')], [('dlgAllowed', 'Allowed', 'boolean')],
+[2] OTHER PRESENT        @@ -339,7 +340,7 @@ def ins_death_claim():
+      -                        'appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS')
+      +                        'appellateSeat=CLAIMS-REVIEW-COMMITTEE;handlerSeat=LIFE-CLAIMS;investigatorSeat=INVESTIGATOR')
+[3] OTHER PRESENT        @@ -348,7 +349,7 @@ def ins_death_claim():
+      -    ie, idn = s.sla_task('dc_investigate', 'Claim investigation | दावा अन्वेषण', 'INVESTIGATOR',
+      +    ie, idn = s.sla_task('dc_investigate', 'Claim investigation | दावा अन्वेषण', 'investigatorSeat',
+[4] MONEY APPLICABLE     @@ -431,7 +432,7 @@ def ins_reinsurance():
+      -           'FIRST', [('Sum insured', 'sumInsured', 'double'), ('Line', 'lineOfBusiness', 'string')],
+      +           'FIRST', [('Sum insured', 'sumInsured', 'money'), ('Line', 'lineOfBusiness', 'string')],
+[5] MONEY APPLICABLE     @@ -486,7 +487,7 @@ def ins_intermediary():
+      -           [('Type', 'intermediaryType', 'string'), ('Qualification', 'qualification', 'string'), ('Net worth', 'netWorth', 'double')],
+      +           [('Type', 'intermediaryType', 'string'), ('Qualification', 'qualification', 'string'), ('Net worth', 'netWorth', 'money')],
+[6] OTHER APPLICABLE     @@ -609,7 +610,7 @@ def health_blood_bank():
+      -           [('Age', 'age', 'integer'), ('Haemoglobin g/dL', 'haemoglobin', 'double')], [('donorEligible', 'Eligible', 'boolean')],
+      +           [('Age', 'age', 'integer'), ('Haemoglobin g/dL', 'haemoglobin', 'number')], [('donorEligible', 'Eligible', 'boolean')],
+[7] MONEY APPLICABLE     @@ -646,8 +647,8 @@ def ecom_gst_tcs():
+      -    pk.dmn('sec-ecom-tcs-rate', 'GST TCS rate (CGST + SGST / IGST; verify notification)', 'FIRST', [('Supplies', 'netSupplies', 'double')],
+      -           [('tcsRatePct', 'Rate %', 'double')], [(['-'], ['0.5'], '0.5 % from 10 Jul 2024 (was 1 %) (verify)')])
+      +    pk.dmn('sec-ecom-tcs-rate', 'GST TCS rate (CGST + SGST / IGST; verify notification)', 'FIRST', [('Supplies', 'netSupplies', 'money')],
+      +           [('tcsRatePct', 'Rate %', 'number')], [(['-'], ['0.5'], '0.5 % from 10 Jul 2024 (was 1 %) (verify)')])
+[8] MONEY APPLICABLE     @@ -784,7 +785,7 @@ def scm_eway():
+      -           [('Value', 'consignmentValue', 'double'), ('Distance (km)', 'distanceKm', 'integer')],
+      +           [('Value', 'consignmentValue', 'money'), ('Distance (km)', 'distanceKm', 'integer')],
+[9] MONEY APPLICABLE     @@ -931,7 +932,7 @@ def edu_scholarship():
+      -           [('Income', 'income', 'double')], [('eligible', 'Eligible', 'boolean')],
+      +           [('Income', 'income', 'money')], [('eligible', 'Eligible', 'boolean')],
+[10] MONEY APPLICABLE     @@ -1005,8 +1006,8 @@ def util_billing():
+      -                                                                                   ('Units', 'units', 'double')],
+      -           [('fixedCharge', 'Fixed charge', 'double'), ('energyRate', 'Energy rate per unit', 'double'),
+      +                                                                                   ('Units', 'units', 'number')],
+      +           [('fixedCharge', 'Fixed charge', 'money'), ('energyRate', 'Energy rate per unit', 'money'),
+[11] MONEY APPLICABLE     @@ -1101,9 +1102,9 @@ def hr_payroll():
+      -           [('pfEmployeePct', 'PF employee %', 'double'), ('pfEmployerPct', 'PF employer %', 'double'),
+      -            ('esiEmployeePct', 'ESI employee %', 'double'), ('esiEmployerPct', 'ESI employer %', 'double'),
+      -            ('pfWageCeiling', 'PF wage ceiling', 'double'), ('esiWageLimit', 'ESI wage limit', 'double')],
+      +           [('pfEmployeePct', 'PF employee %', 'number'), ('pfEmployerPct', 'PF employer %', 'number'),
+      +            ('esiEmployeePct', 'ESI employee %', 'number'), ('esiEmployerPct', 'ESI employer %', 'number'),
+      +            ('pfWageCeiling', 'PF wage ceiling', 'money'), ('esiWageLimit', 'ESI wage limit', 'money')],

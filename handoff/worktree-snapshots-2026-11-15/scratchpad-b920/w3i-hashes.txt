@@ -1,0 +1,146 @@
+ M 64c2b3bb7c0a4c6edf05bfc70ea38db3f5432adb82e25df95c5e0b6d673c620a 564 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/EngineAdapterWorkAdapter.java
+ M d7a34c7de44e0c1f97982b52489cd28da9efef8ceb0d551e389f0e0b35980c9e 638 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonPackageToolsAdapter.java
+ M 27a6bc9ce7e116150f3cca8a10dfc1fdd565c620b01d1cb1d2b97a0af92392c1 572 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonWorkAdapter.java
+ M 32594271ddd0c42e0de9125e27fb875119f15ed66ab1ba8da1c6c0f61e278c99 386 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TrackingWorkPort.java
+ M 9b28df5bbdab8acba6459dff62b4172febee9d53a7d06bada0fd1a35bf969925 178 sangam-rest/src/main/java/org/sangam/rest/port/WorkPort.java
+ M fcaecbd1e86cbfd4b73dbc5da5e5d70256aa5abc42517c1f8dfd01f7cfef49ac 14284 sdks/codegen/surface-manifest.json OVER800
+ M 135ead2aadb4dd8528f8a050f32302d59ead0aeb655a68057741017e0cbba83b 286 sdks/dotnet/README.md
+ M ff1564baa3ed3347c46576fc5fa990729343fee7dac69b47a4d4e5afa804c406 59 sdks/dotnet/Sangam.Sdk.sln
+ M dec2b206da4178a7a74d3cad92b261108e12208c913824a9a44c0a3fd90ab09e 479 sdks/dotnet/src/Sangam.Sdk/Generated/Api/AdminApi.g.cs
+ M 293e7615809730106a59184db45429608698bb7e6f040d363ad2911e296d0009 326 sdks/dotnet/src/Sangam.Sdk/Generated/Api/ProgrammesApi.g.cs
+ M 79a7a19ae02d495643b605492d9166aa77e8ee21d76c6d36ee6bdbe193ec9e87 154 sdks/dotnet/src/Sangam.Sdk/Generated/SangamApis.g.cs
+ M 18fe497d628690171391967acbe730b2ef066999389a09fff9c54a83e269f420 759 sdks/dotnet/src/Sangam.Sdk/Testing/SangamTestEngine.cs
+ M 39c93c52aa99215552bdf3a509a54fce72d0ea2686a525fd32a779368acfce6d 162 sdks/dotnet/src/Sangam.Sdk/Worker/TaskContext.cs
+ M 576e6c96f85b0d32b81f9f53e3d6d5baf2895dac196b1f2fd6c7358e9837c891 31 sdks/dotnet/tests/Sangam.Sdk.Tests/Sangam.Sdk.Tests.csproj
+ M bf62260bfd2ab3a558635ab673c17c525bf85710c9031f4e4f7d6c5303b2b0da 234 sdks/java/README.md
+ M 8bc6309e1d3c7501bdf43a412b991b41f144fbe517060d16558231526762b94f 359 sdks/java/src/main/java/org/sangam/sdk/generated/SangamApis.java
+ M 1821ef14b1667b8efc27843f78a79bf66a90b32067ad636584d8a1aa3b76313b 718 sdks/java/src/main/java/org/sangam/sdk/generated/api/AdminApi.java
+ M 794bc5573da9356e6fa291d9c570fa19ef032f2616304315afbd757f9b64fcd6 503 sdks/java/src/main/java/org/sangam/sdk/generated/api/ProgrammesApi.java
+ M 28e695c1583fdf0504be83888863141eb57291ee3ad1fbb63fd6060841f5ef1e 277 sdks/java/src/main/java/org/sangam/sdk/generated/api/TasksApi.java
+ M 0375c4876a5ec756c5cf6e18b4879fc69140d25a163b2cccae5797968f359438 771 sdks/java/src/main/java/org/sangam/sdk/testing/SangamTestEngine.java
+ M d6100f99b096bc288bc3194b15c0ef5a82fe3803cabf528baf23dd059b547585 168 sdks/java/src/main/java/org/sangam/sdk/worker/TaskContext.java
+ M 933710ce5117eb89b573620b3addffab1be670d5997e8a4fa1bfbc506a256e59 275 sdks/php/README.md
+ M 6e8479294796bd2b99f5c6a3e6b1ad048b4992c53790e674597aee97f1e40699 684 sdks/php/src/Generated/Api/AdminApi.php
+ M e60b27f74d96b86cc2a84753842a7feea95b77dc50fd3cd8a9f0ce4c96b152e7 466 sdks/php/src/Generated/Api/ProgrammesApi.php
+ M 89104b3d30d451cb402fb15f6ec05f34f6b18d3aad206c5aa9631aacd1b43c85 226 sdks/php/src/Generated/SangamApis.php
+ M c55029fb94b6276b8b4ed37037b9f433d1e48ee22bc6e5d01c76785386d1ce08 709 sdks/php/src/Testing/SangamTestEngine.php
+ M d1a608b947fe2a29cd4d8b8014116b3afc1eca0ed9e04742ac1f4610aefa3ed4 331 sdks/php/src/Worker/TaskContext.php
+ M a4a16ac597ee557e03f1d3f68434f3d77d88625b7274a2add890642d04f18604 195 sdks/python/README.md
+ M c3c06a872d67880b3e330d4dc8568b9482ad1d17c9d3097c0d225dd35a051903 29 sdks/python/src/sangam_sdk/__init__.py
+ M ddc3711848298d6b8ec656e66911109df71df49750418a9f0ded26df3ae45ba7 11953 sdks/python/src/sangam_sdk/generated/api.py OVER800
+ M d8c1b3e0a3a752debb932303c734fc9c3478329e9192a2cf01eeb9768b948fa6 9885 sdks/python/src/sangam_sdk/generated/models.py OVER800
+ M 74278738d3247d6dfe8049b81418b0e4b5b987f00d4d320d4be4dac2593ae17f 651 sdks/python/src/sangam_sdk/testing.py
+ M 00956cc8506a9a7526c4c4fff095801c2893a34201d3e25f54f64b39a1876c11 755 sdks/python/src/sangam_sdk/worker.py
+ M d8557127855b8727174865ae67749eab70047a2a3059e1664fc836084adae7ae 244 sdks/typescript/README.md
+ M 908c6996502dff1498b305ecdab3ec7203d68e9c39978043cb015b4b77ac2e5e 14063 sdks/typescript/src/generated/api.ts OVER800
+ M f6a9e7422c1cf4313661fa70cbd206e42222bcd0341bf2c97c030a9963af3c6c 72 sdks/typescript/src/generated/index.ts
+ M 681de7b7e7444e968dbda5f97302f7da7e678d252a602703d82d4f0e8a51b18c 11393 sdks/typescript/src/generated/models.ts OVER800
+ M 19e63b5379eab910a401ccfd5e3b8e80fbf712eba46924a833467f5fd8ec5883 58 sdks/typescript/src/index.ts
+ M a88aa44ed65e947062e47e4271a7183d4fe1fa8b9e5ccc77764d10bf4b21de32 525 sdks/typescript/src/testing.ts
+ M 828ed611588dfe26225e9fb3e0be719c5648fac9c08702e7929a623a700e4eed 799 sdks/typescript/src/worker.ts
+?? b28e742c2638d4a1a9a0828de4f25d86cf13ace29d86746839ba69c6412b6ad2 204 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/OperatonInstanceHandlerAdapter.java
+?? 38237132650da66a0a9b1ba7a85c346458360a878560ed4dcf9144ff2f5a67b9 255 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/TaskIndex.java
+?? 46b36f673492ccd5e1949d915cbe1c01b164fbeb50cfdc518c1dadca0af8870e 221 sangam-rest/src/main/java/org/sangam/rest/adapter/operaton/WorkStepJournal.java
+?? 0ccd6534bc60732a23c80bc6ec724bfff91f7c4a3a41fd5b598b6c2330ce8459 132 sangam-rest/src/main/java/org/sangam/rest/web/WorkStepController.java
+?? e5729ba3040500b0e1ca77edaee04bb7fe544dec7733a48f75d93e007bea128b 225 sangam-server/src/test/java/org/sangam/server/restadapter/WorkStepJournalH2Test.java
+?? 831f08d34df77de1990765a44bd234045405b87ffe410d8cb5649a806ac7dadc 15 sdks/dotnet/src/Sangam.Sdk.Hosting/ISangamTaskHandler.cs
+?? 93c53cc5616c4b437b5164027936c74d41f64b77abbff82ddf328a5a364629cb 30 sdks/dotnet/src/Sangam.Sdk.Hosting/MicrosoftSangamLogger.cs
+?? 78026d06c1f6ab90378a003e9586bd882bf961e86ef6c3fd5911e21017ab69cc 34 sdks/dotnet/src/Sangam.Sdk.Hosting/Sangam.Sdk.Hosting.csproj
+?? 77c509cdf5d4b11b7cc4ea0f6587e98d83ba02bcae7e250c2801533563ab97e9 41 sdks/dotnet/src/Sangam.Sdk.Hosting/SangamServiceCollectionExtensions.cs
+?? e230a7630227a3d214a2a2a50d289500588dbb930d8a10b0a156c9dac98c11a5 19 sdks/dotnet/src/Sangam.Sdk.Hosting/SangamSubscriptionSource.cs
+?? 714153e4203eb4de33e48e9a83eadcd37f01b8e9a51a17532fbc0b0d1eabd515 81 sdks/dotnet/src/Sangam.Sdk.Hosting/SangamWorkerBuilder.cs
+?? 4ba9f9c4133096ecb3885a14d87b74d7144fc4cd3d6fff2677f1c37399b1730c 112 sdks/dotnet/src/Sangam.Sdk.Hosting/SangamWorkerHostedService.cs
+?? 248fd7203603c2e1a77327a4c5a751f3aa8bcbfcff5131d61e6930234da878e0 54 sdks/dotnet/src/Sangam.Sdk.Hosting/SangamWorkerHostingOptions.cs
+?? 211a3d3ee38b9a365fb14c7542c3c62735d87e6804945caf190d8fbd01ed70bc 91 sdks/dotnet/src/Sangam.Sdk/Generated/Api/AdminSecurityApi.g.cs
+?? 1fd0da9b80d507a9d19b1d3a47eed1a5a4bddf37d91018c6a196c984e368ae35 83 sdks/dotnet/src/Sangam.Sdk/Generated/Models/BreakGlassGrant.g.cs
+?? 2a42440d84df3b7209a7badb687d88b312fe680184d63848d2b4cad9ec8be6bd 29 sdks/dotnet/src/Sangam.Sdk/Generated/Models/BreakGlassIssued.g.cs
+?? 9ba8b7271a033c90349a2ce672ba015a105b3e4ab01847d393c9894ca458a01f 29 sdks/dotnet/src/Sangam.Sdk/Generated/Models/BreakGlassRequest.g.cs
+?? aba38853a4f46385f1b56ea23733cc53c26d375d8a4c2e794c6fff5e76562c1c 20 sdks/dotnet/src/Sangam.Sdk/Generated/Models/BreakGlassReview.g.cs
+?? 9997a7613dc854bc4e338d66fcb18eb649c95f01a2cfbe0ae3ed4ba3d779890c 35 sdks/dotnet/src/Sangam.Sdk/Generated/Models/PgCurrentConfig.g.cs
+?? d2f1163ba41113b7bc4544036f35dac30e6b0714195bd0ac52a0cfd49e19c5e2 202 sdks/dotnet/src/Sangam.Sdk/Testing/EngineSteps.cs
+?? 8898626e3c6d3d994ce42abbe69f2ba2fa8a03f05f59c1d22584640cf04d9cd3 40 sdks/dotnet/src/Sangam.Sdk/Worker/CompensationContext.cs
+?? f68042bccefe9ae6f51b15b24ba6a45501006f8326d6a4484a19985aa8f9bae0 152 sdks/dotnet/src/Sangam.Sdk/Worker/DurableSteps.cs
+?? bae3638271ed6b392dc6c2dcdcda6ddd9a75d02cc0898c37612018923059b92e 84 sdks/dotnet/src/Sangam.Sdk/Worker/Saga.cs
+?? 746782c56b659574eb930496bf511de2f57452f39dda1d2481351300d16f22c5 8 sdks/dotnet/src/Sangam.Sdk/Worker/SagaAction.cs
+?? c8db777e7770ed0340b02cb03172f5c8b37286fc50f9da2215575e82bcccf1bd 106 sdks/dotnet/src/Sangam.Sdk/Worker/SagaBuilder.cs
+?? affbc69875d091a2e8fd10b1605ebbab5f3eb01c24ec695eea86c4a8d6fcd541 8 sdks/dotnet/src/Sangam.Sdk/Worker/SagaCompensation.cs
+?? fca2d452c38a1ab8b0198bf4da69999468652d1261924b34a8c763c9898265ed 39 sdks/dotnet/src/Sangam.Sdk/Worker/SagaRecord.cs
+?? 48f1587ee4740b686c8e95869290e88134408184a318aacdaba4afdefa784c6e 43 sdks/dotnet/src/Sangam.Sdk/Worker/Step.cs
+?? 4f3d0d2e8ddc9a628668d8d1c017cead7d57b1b666eecd0aa8262372df4ff192 17 sdks/dotnet/src/Sangam.Sdk/Worker/StepCall.cs
+?? e81fe9c724ba1a95b695d4eef8682e1129464f0a2c13a71696961bde1e46cea6 15 sdks/dotnet/src/Sangam.Sdk/Worker/StepLookup.cs
+?? ea4f33235112d726216d69aa1923d38f521fac88d4a0418498bfec5f6a90a6a9 28 sdks/dotnet/src/Sangam.Sdk/Worker/StepLookupResult.cs
+?? 3b515f9964a68ae385a981fd0d5f2ce0537b07b6c11a34afe71391471e6ceb05 14 sdks/dotnet/src/Sangam.Sdk/Worker/StepNoEffectException.cs
+?? 50ffd64dfa28931a9c8672ca4b7649b881e51b7cca53235861b18a6cc67bca37 46 sdks/dotnet/src/Sangam.Sdk/Worker/StepOptions.cs
+?? f558cdebbb08eba4532ca9f42f3015cae455f7c7e1e193f4712d35f5ecbe0706 244 sdks/dotnet/tests/Sangam.Sdk.Tests/Hosting/SangamWorkerHostedServiceTests.cs
+?? b62d5077e4aa386dbeed6eea14f9c5fd4e1c49b7d6224df976a59f85225fd8b6 147 sdks/dotnet/tests/Sangam.Sdk.Tests/Testing/EngineStepsTests.cs
+?? ca26b4509f766d4b7e986abe77fdd56346fd618185eba452dbaa8e9b411b633c 313 sdks/dotnet/tests/Sangam.Sdk.Tests/Worker/DurableStepsTests.cs
+?? 7a0652252c62f07c5d518a4e1bb3b9be16b0bdd3c63af5a134b5400413749d5f 130 sdks/dotnet/tests/Sangam.Sdk.Tests/Worker/SagaTests.cs
+?? 18c6fda9694417edcd6b7aa95ec7a43b7e00616b553fcbeef22754db045b87e0 42 sdks/java-spring-boot/README.md
+?? 9bcacc64617de93c350a8d5766cdca8db2dd39725edb39f4a40444e6c2417f4c 36 sdks/java-spring-boot/pom.xml
+?? 232e828e27646f5b2c18a38dffef24ce6d9565c0ada0b773cc28ea8cfc98887d 110 sdks/java-spring-boot/src/main/java/org/sangam/sdk/spring/SangamWorkerAutoConfiguration.java
+?? 1b90a829e4be2d9e3978773c6a32df7ca6b6205f5ed7f31dea85d011345eb335 56 sdks/java-spring-boot/src/main/java/org/sangam/sdk/spring/SangamWorkerLifecycle.java
+?? e9a30a219d4d5c15261f48f98815e9a6f25be3fbdaa87d3350da79a4555fb581 45 sdks/java-spring-boot/src/main/java/org/sangam/sdk/spring/SangamWorkerProperties.java
+?? 4729158fac0be29f3e816931cc8a403e308db16b856d09234da1a8ca9a19343a 1 sdks/java-spring-boot/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+?? e577bc77196c0692a3acd7f51f7189511c18cb5301698c46cc47cd73e61c14b6 80 sdks/java-spring-boot/src/test/java/org/sangam/sdk/spring/SangamWorkerAutoConfigurationTest.java
+?? c9b4e986c1e0fac6886c3478451009415c4e75612c9dc8a43871c05ff3a82d0b 139 sdks/java/src/main/java/org/sangam/sdk/generated/api/AdminSecurityApi.java
+?? 8ece235b7bf0a499ac6bf9fc5ec2212abba6b82d69bb000e63ca5b7c200be3f6 50 sdks/java/src/main/java/org/sangam/sdk/generated/model/BreakGlassGrant.java
+?? b54b709c0541ae768f632ec2630e1741314e2017993f5de64ec57ff13d183b57 20 sdks/java/src/main/java/org/sangam/sdk/generated/model/BreakGlassIssued.java
+?? 26ca59c0071ba4203115226cd08b2d17f0163537a3a70302f3ed1091e0adb1bf 20 sdks/java/src/main/java/org/sangam/sdk/generated/model/BreakGlassRequest.java
+?? 9e57abd4dd10e3ce85f8c180b1c353db69cdef014fcc96476843b3c4c5ddfda2 18 sdks/java/src/main/java/org/sangam/sdk/generated/model/BreakGlassReview.java
+?? 732903be29b1219d636c035589778f8f863be3ab1f6bdfadd39918dcc2cf1aa7 24 sdks/java/src/main/java/org/sangam/sdk/generated/model/PgCurrentConfig.java
+?? 55b15b13cee6c488d477c7897b9b8391bd8d3ab767c9f8ad7a7cee1c42b08c2d 150 sdks/java/src/main/java/org/sangam/sdk/testing/EngineSteps.java
+?? 97b431c4907ec900bfcb59955bd51c2b8913b2e22fa50ab45b7a43cd865756fb 43 sdks/java/src/main/java/org/sangam/sdk/worker/CompensationContext.java
+?? 8eb639cb233983649c6485ce2f9833129ea343c2e915d666718dbba76c90522f 127 sdks/java/src/main/java/org/sangam/sdk/worker/DurableSteps.java
+?? 038045e742c47450af14f22eab9a4a0cec899e4315547feab9d2c5177af25de4 171 sdks/java/src/main/java/org/sangam/sdk/worker/Saga.java
+?? f7e0827fa5bf09ba7674a8bf3b3c9438f36455b45d3eaed9ac4c20ec7d70e767 10 sdks/java/src/main/java/org/sangam/sdk/worker/SagaAction.java
+?? af4666ccab5cf044d61b593ea45733afef4b46f0123acb5e3270796bb834f111 13 sdks/java/src/main/java/org/sangam/sdk/worker/SagaCompensation.java
+?? d57aa43f4e5a9bcd87f09aec2fbb29b43e59318d472c56b074f5dfb1efd67f4f 34 sdks/java/src/main/java/org/sangam/sdk/worker/SagaRecord.java
+?? 592fd2f7c1545e66e59cc8c82c860d8cb1fac3c217f177c69d6d32daec960e04 43 sdks/java/src/main/java/org/sangam/sdk/worker/Step.java
+?? a82f5f6949e3f9bb35bc3b56737e4f119ed783167f3771f1fe14ebfcb4d1bcd6 20 sdks/java/src/main/java/org/sangam/sdk/worker/StepCall.java
+?? 6c94f68e271dbbf900a8ad86852182ae34d1ec1d7a57cea05639818e1847c881 19 sdks/java/src/main/java/org/sangam/sdk/worker/StepLookup.java
+?? 06f6715dfeceba3d2817c691e5129d3b178815aa70fc083fafe69219a036f129 18 sdks/java/src/main/java/org/sangam/sdk/worker/StepNoEffectException.java
+?? 5ca8661c60ac2caa6223b0a5417645c0f201c9396bbd389d8cce1f54d0bd415c 62 sdks/java/src/main/java/org/sangam/sdk/worker/StepOptions.java
+?? 34fc627655f5fcd619a5e118d345568d946d93c8fca4baff2f2c8fb786396f39 260 sdks/java/src/test/java/org/sangam/sdk/worker/DurableStepsTest.java
+?? 45c89b9573cf24357a8b37a56786216551870c8f7c82cd95ae95b13a72133f24 133 sdks/java/src/test/java/org/sangam/sdk/worker/SagaTest.java
+?? 8c3a05d7a57f762bc9503392acb03cdc805c59971c395e6dc4c9c653b950da06 130 sdks/php/src/Generated/Api/AdminSecurityApi.php
+?? 3ebc5009d9a70466e6be79a98a7f7f00df53d5a7dba77734a7876a205f22dca0 162 sdks/php/src/Generated/Model/BreakGlassGrant.php
+?? 43fad13e99df2d1e8c219b41c7a5c63d8dbd1267b9863866b494339766b5ae12 57 sdks/php/src/Generated/Model/BreakGlassIssued.php
+?? 98d86364e6726b7be41644a160a15b2d3a44dafb113b22a4e07055908d558121 57 sdks/php/src/Generated/Model/BreakGlassRequest.php
+?? 4471053a390c9cfd81dd77e1f06518b631b3c36a77db51795b26d9766b1a032a 50 sdks/php/src/Generated/Model/BreakGlassReview.php
+?? a70a94283affb47d25aeec881f8827e55f7b9a08ad175f6be45d80daa60fac8d 71 sdks/php/src/Generated/Model/PgCurrentConfig.php
+?? 42283ef450130d806cc8568cb805bcf31d0418ba783cb5423060d7d628de7795 215 sdks/php/src/Testing/EngineSteps.php
+?? fbf49d1d3e94a04aec1cbbc896eea7ac8ee1dcd386742894d789dd41c76f9ae8 59 sdks/php/src/Worker/CompensationContext.php
+?? f197c1c72e4862b85760f507e21103acec6a6bf6d75100ea4ee283ab368ab461 127 sdks/php/src/Worker/DurableSteps.php
+?? 2fb239225900cc5a108c10eef652dda1bd13857e5726186e5c8ff3ee93cd3ed5 121 sdks/php/src/Worker/Saga.php
+?? d5bba979c22c4048b889ebde4dfde1bad155062d1ae8c02c9126261fc54ff2c8 131 sdks/php/src/Worker/SagaBuilder.php
+?? a703d6a18109df18cebff765d6e8b65f78530aec5eb0bbab049d78919dbb0f55 48 sdks/php/src/Worker/SagaRecord.php
+?? 30f37c4e9402d001ea57d09a9f88ca1ac02c3dead9ca49654a3c8af03bd80c2e 63 sdks/php/src/Worker/Step.php
+?? 0993470850036f2c24ec28ac25b8af15977e4e78b6baf211d927f7d7d304d16f 18 sdks/php/src/Worker/StepNoEffectException.php
+?? 84a91f3b94c2808508874a08c90d5e5189334278686dd093c54d812b0fc84e79 80 sdks/php/src/Worker/StepOptions.php
+?? be0af9b7d2e93f0c394b29f0904319c45b2a3487e3a1c399f61eccd077e28747 283 sdks/php/tests/DurableStepsTest.php
+?? 15725f31d340de5aba3ccfd9bff724d6a3a4f6ae303d9b36a99acaeb2654ab25 174 sdks/php/tests/EngineStepsTest.php
+?? 6081e7f8114e67c9d86236d1d17f501fde2d737fd4cb53ce0f018aa3839aa84b 179 sdks/php/tests/SagaTest.php
+?? 477b73d178ebe9057d1cb8a930f68e515196eebcebf610cf409102bdc4f550e0 29 sdks/python-frameworks/fastapi/README.md
+?? d0f5f8e6f7dec5d98184187649f9b67e6b0bda9195a500dd45192ae1a0ea0551 36 sdks/python-frameworks/fastapi/pyproject.toml
+?? 1eb21ed3dd7ca4b8df6e6d547b42c53933c7058e9a4caa930f22333caade8b0b 141 sdks/python-frameworks/fastapi/src/sangam_sdk_fastapi/__init__.py
+?? e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 0 sdks/python-frameworks/fastapi/src/sangam_sdk_fastapi/py.typed
+?? 7026becdc71978796165db7f298f3e740293998705ea0b7b9be218557da1b685 152 sdks/python-frameworks/fastapi/tests/test_lifespan.py
+?? a9429af2ab7a4108b46b5a6a741b476cea65b838e21d40c52cabb5ef3512aec3 254 sdks/python/src/sangam_sdk/saga.py
+?? cbd93787358e390e963374a22c29456b12eb1f8111e1b65753c67f5bc1f4a96d 203 sdks/python/src/sangam_sdk/steps.py
+?? 985b6d0f1c17d54dee859b917d14220ce48b6102c9f5dc97f06d846e2b433adb 145 sdks/python/src/sangam_sdk/testing_steps.py
+?? 5b966fc8f2dd074925c6590a455ae7d72e8633800b7677ece04f1354ec7c55a6 112 sdks/python/tests/test_saga.py
+?? d4ed686c53d296b5625ec3b5c42ed2b5cde682c9524babe8e0d3212711e7729c 273 sdks/python/tests/test_steps.py
+?? 50e861e1ee6b6b79b1fb2aa7da97473fe0d599013e26eada3e8fc8c866c8df03 206 sdks/python/tests/test_testing_steps.py
+?? 4e67871d2b342f35fa5598297a552cf0d7489f299f7ba39189897284ce2124b1 64 sdks/typescript-nestjs/README.md
+?? c893c783443fcf26f94d46dbccb2cd91e5395c26030dfca59c2fa1553288ed30 43 sdks/typescript-nestjs/package.json
+?? 5d06d7960a1d4d22618e40a08cfe66ecb8865b74d0406ef8fb4874593346e906 198 sdks/typescript-nestjs/src/index.ts
+?? 3f39511846d008de101d0b2450961edd2957ce6abae9da26fd7b4304ce2107ef 129 sdks/typescript-nestjs/test/sangam-module.test.ts
+?? fd777ec4b86725778985a9dd5c1fe33302da7b7f3c505e11d64bc1c2e73a3682 11 sdks/typescript-nestjs/test/tsconfig.json
+?? 821817151b341bbb3cf10f4e07ec553edcb753c47895e1a17a8cf9d43ab3e622 14 sdks/typescript-nestjs/tsconfig.check.json
+?? ec664fbb51258173d1ab802f06376f57c43588d56b27edec51a5f2827bdc9859 21 sdks/typescript-nestjs/tsconfig.json
+?? 17a893d1160761b25c336964fafd7dde815d2edb6918766b8d28c5e9c239cf71 223 sdks/typescript/src/saga.ts
+?? 0d0f9387000cbbef3b56bf9ee743a013061fcf53fb64435b684e031c7e057ea8 197 sdks/typescript/src/steps.ts
+?? b5d97183b81d384544b37545f333b9b49474c1b12c8294b38f60411e05f68271 165 sdks/typescript/src/testing-steps.ts
+?? ff451b99dc677448f6d00b6a6bb4d1af6a1195923332eb0d13e05a5d719e2fd4 129 sdks/typescript/test/saga.test.ts
+?? 4048f7244f3d53268aff66756b8efd83d93ad9bd4a1b336e59803dbf177cf1ec 246 sdks/typescript/test/steps.test.ts
+?? cf63b800c1c71345c523e1d0a2b6c3b96f307790497e94f7321ebe4a415788af 180 sdks/typescript/test/testing-steps.test.ts

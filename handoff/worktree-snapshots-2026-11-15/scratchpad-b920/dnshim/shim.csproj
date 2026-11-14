@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Shim.cs" />
+    <Compile Include="D:\GITHUB  Project\Custom WorkFlow\.claude\worktrees\workspace-scan-resume-06b524\sangam\sdks\dotnet\tests\Sangam.Sdk.Tests\*.cs" />
+    <Reference Include="Sangam.Sdk"><HintPath>../dn/out/Sangam.Sdk.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

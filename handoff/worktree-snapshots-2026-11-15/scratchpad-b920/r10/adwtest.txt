@@ -1,0 +1,66 @@
+    /**
+     * Decision 295 replaces the decision 271 expectations of wages per paid day (C 450,000 / 26 paid days, E 545,600 /
+     * 31, U 360,000 / 20): Social Security (Central) Rules 2026 rule 2(1)(h)(i) for time-rated pay, the wage of the
+     * complete wage period had every working day been worked, divided by 26 when monthly rated (evidence file section
+     * 3.1). October 2026, limit 17,600 a day at or below, minor units. R: monthly rate 468,000 (Rs 4,680, the evidence
+     * example), leave taken so the wages are 396,000 over 26 paid days: 468,000 / 26 = 18,000 (Rs 180) > 17,600, not
+     * exempt, whatever the leave (wages per paid day, 15,230.77, would wrongly exempt it); employee 2,970 -> CEILING
+     * 3,000, employer 12,870 -> 12,900. C: 450,000 / 26 = 17,307.69 <= 17,600: employee exempt, employer 14,625 ->
+     * 14,700 stays. E: 457,600 / 26 = 17,600.00, exactly the limit: exempt (AT_OR_BELOW); employer 14,872 -> 14,900.
+     */
+    @Test
+    void decision295TheLowWageExemptionUsesTheFullPeriodWageOverTheRatedDays() throws Exception {
+        String three = reg(rated("R", 396000, 468000L, "MONTHLY", 26, "TIME_RATED", "2026-04-01", null),
+                rated("C", 450000, 450000L, "MONTHLY", 26, "TIME_RATED", "2026-06-01", null),
+                rated("E", 457600, 457600L, "MONTHLY", 31, "TIME_RATED", "2026-04-01", null));
+        ProcessInstance pi = start("period-payroll-270", vars(three, "2026-10-01", "2026-10-31"));
+        Map<String, Object> out = engine.getRuntimeService().getVariables(pi.getId());
+        assertEquals(List.of("R:3000", "C:0:EXEMPT", "E:0:EXEMPT"), trail(pi, "esiEmployeeAmount"));
+        assertEquals(List.of("R:12900", "C:14700", "E:14900"), trail(pi, "esiEmployerAmount"));
+        Map<String, Map<String, Object>> byId = register(out);
+        assertEquals(Boolean.TRUE, byId.get("C").get("esiEmployeeEligible"), "the exemption keeps coverage");
+        assertEquals("18000", new BigDecimal(byId.get("R").get("esiEmployeeAverageDailyWage").toString())
+                .stripTrailingZeros().toPlainString(), "Rs 4,680 a month is Rs 180 a day (rule 2(1)(h)(i))");
+        assertTrue(byId.get("C").get("esiEmployeeAverageDailyWage").toString().startsWith("17307.6923"));
+        assertEquals("17600", new BigDecimal(byId.get("E").get("esiEmployeeAverageDailyWage").toString())
+                .stripTrailingZeros().toPlainString());
+        // a wage basis the rules do not define (piece-rated, rule 2(1)(h)(ii), not coded) is refused, never assumed;
+        // a missing basis, rating or full-period wage, and an unknown rating, are refused too
+        assertEquals("RULES_AVERAGE_DAILY_WAGE_UNDEFINED", refusal("period-payroll-270",
+                vars(reg(emp("K", 450000, 26, "PIECE_RATED", "2026-04-01", null)), "2026-10-01", "2026-10-31")));
+        assertEquals("ITEM_INVALID", refusal("period-payroll-270",
+                vars(reg(emp("K", 450000, 26, null, "2026-04-01", null)), "2026-10-01", "2026-10-31")));
+        assertEquals("ITEM_INVALID", refusal("period-payroll-270", vars(reg(rated("K", 450000, 450000L, null, 26,
+                "TIME_RATED", "2026-04-01", null)), "2026-10-01", "2026-10-31")));
+        assertEquals("ITEM_INVALID", refusal("period-payroll-270", vars(reg(rated("K", 450000, 450000L, "HOURLY", 26,
+                "TIME_RATED", "2026-04-01", null)), "2026-10-01", "2026-10-31")));
+        assertEquals("ITEM_INVALID", refusal("period-payroll-270", vars(reg(rated("K", 450000, null, "MONTHLY", 26,
+                "TIME_RATED", "2026-04-01", null)), "2026-10-01", "2026-10-31")));
+        // a rules row without the definition is refused; the round 7 method (wages per paid day) is not the rule
+        assertEquals("RULES_AVERAGE_DAILY_WAGE_UNDEFINED", refusal("period-payroll-270-undefined",
+                vars(three, "2026-10-01", "2026-10-31")));
+        assertEquals("RULES_INVALID", refusal("period-payroll-270-paid-day", vars(three, "2026-10-01", "2026-10-31")));
+    }
+
+    /**
+     * Decision 295, the divisors of rule 2(1)(h)(i) on their own: the full-period wage divided by 26 (monthly), 13
+     * (fortnightly), 6 (weekly) or 1 (daily); each example is Rs 180 a day. Which rating fits which wage period is not
+     * decided here (round 10 report question).
+     */
+    @Test
+    void decision295TheRatedDaysAre26And13And6And1() {
+        Map<String, Object> row = Map.of("adw", "TIME_RATED=FULL_PERIOD_WAGE_BY_RATING", "adwStatus", "UNVERIFIED");
+        AverageDailyWage d = AverageDailyWage.of("basis@adw@adwStatus", row, "r");
+        for (Object[] c : new Object[][] {{"MONTHLY", 468000}, {"FORTNIGHTLY", 234000}, {"WEEKLY", 108000},
+                {"DAILY", 18000}}) {
+            Map<String, Object> item = Map.of("basis", "TIME_RATED", "full", c[1], "rating", c[0]);
+            assertEquals("18000", d.perDay(item, "x", "full", "rating").stripTrailingZeros().toPlainString(),
+                    c[0].toString());
+        }
+        for (String bad : List.of("PIECE_RATED=FULL_PERIOD_WAGE_BY_RATING", "TIME_RATED=WAGES_PER_PAID_DAY",
+                "TIME_RATED=FULL_PERIOD_WAGE_BY_RATING,TIME_RATED=FULL_PERIOD_WAGE_BY_RATING")) {
+            assertTrue(assertThrows(ProcessEngineException.class, () -> AverageDailyWage.of("basis@adw@adwStatus",
+                    Map.of("adw", bad, "adwStatus", "UNVERIFIED"), "r")).getMessage().startsWith("RULES_INVALID"), bad);
+        }
+    }
+

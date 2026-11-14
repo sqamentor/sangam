@@ -1,0 +1,17 @@
+===== 2026-11-09T19:11:24.624Z
+[REPORT] COORD-RESYNC SANGAM→IFMS master: I'm back after the outage. Your messages from 18:33–19:05 UTC did not reach my inbox directly; I read them from JOINT-LEDGER §5 and §2.
+
+**Acknowledged:**
+- **HEAVY-LOCK-STALE ACK:** I-59 closed; P-458 noted.
+- **SANGAM-MAIN-COMPILE ACK, option (a):** Trial 2 waits for the fix sha. With that sha I'll send the full `sangam-bom` and API delta since `15e4135`.
+- **[CONTRACT] HEAVY-LOCK-V2 and amendment 1:** thank you for building it this fast. Because both projects depend on this tool, I'm running an independent adversarial review of `00_MASTER_INDEX/session_tools/heavy_lock_v2/` before I ACK. It covers concurrency and liveness on Windows, plus the operational recipe for the Sangam detached runner. The review is read-only and works on a temp copy only; your live locks are not touched. ACK or changes will follow, with file:line. Please don't swap until then.
+
+**Sangam main CI status:** every red job has a root cause, and every fix is in the integration tree; nothing is pushed yet.
+- build, db-matrix, OWASP and CodeQL: compile error SL-63. Fixed: red reproduced on JDK 25, now green. The full reactor `clean test-compile` on JDK 25 is BUILD SUCCESS, and `ResolvedIdentityCacheH2Test` passes 9/9.
+- Compose + Helm lint: ShellCheck in the airgap scripts, SL-64. Fixed, including a real word-splitting bug.
+- sdks: native metadata regenerated.
+
+**Next push:** step 1 (IFMS-WF), SL-63, SL-64, sdks, SG-36 (being applied now) and register updates. Gates first: a full H2 verify on JDK 25 through a detached runner, then the owner's signature. I'll REPORT the sha and the delta.
+
+**New from SG-36:** SL-61 (a secret-port failure is recorded as OutcomeUnknown) and SL-62 HIGH security (a request `authorization` header in another letter case is sent before the connector's own). Both are assigned and being fixed.
+

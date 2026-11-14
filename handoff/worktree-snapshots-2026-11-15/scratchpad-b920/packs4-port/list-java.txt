@@ -1,0 +1,168 @@
+########## sangam/sangam-packs/src/main/java/org/sangam/packs/sim/SimulatorConnectorGateway.java
+[0] MONEY APPLICABLE     @@ -236,7 +236,7 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
+      -            case "ifms.budget" -> d.put("available", new BigDecimal("10000000"));
+      +            case "ifms.budget" -> d.put("available", 1_000_000_000L); // 1 crore, in paise (pack money is minor units)
+[1] MONEY APPLICABLE     @@ -276,7 +276,7 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
+      -                d.put("l1Amount", new BigDecimal("950000"));
+      +                d.put("l1Amount", 95_000_000L); // 9.5 lakh, in paise
+########## sangam/sangam-packs/src/main/java/org/sangam/packs/core/LedgerDelegate.java
+[0] MONEY APPLICABLE     @@ -26,6 +26,11 @@ import org.sangam.packs.port.PackRuntime;
+      + *
+      + * <p>Money (SD-398, packgen {@code money.py}): when {@code unit} is a currency, {@code amount} and the balance written to
+      + * {@code resultVar} are integer MINOR units (paise for INR), the unit every pack variable carries; the store is
+      + * addressed in major units, so the delegate converts exactly at this boundary (a fraction of a minor unit is refused).
+      + * A quantity unit (DAYS, POINTS) or no unit is passed through unchanged.
+[1] MONEY APPLICABLE     @@ -46,10 +51,14 @@ public class LedgerDelegate implements JavaDelegate {
+      +        String u = Vars.field(unit, ex, null);
+      +        boolean money = u != null && LedgerStore.isMoney(u);
+      +        if (money) {
+      +            amt = minorToMajor(amt, u);
+      +        }
+      -        String u = Vars.field(unit, ex, null);
+[2] MONEY APPLICABLE     @@ -58,7 +67,7 @@ public class LedgerDelegate implements JavaDelegate {
+      -                    ex.setVariable(rv, Vars.engineValue(p.balanceAfter()));
+      +                    ex.setVariable(rv, toPack(p.balanceAfter(), u, money));
+[3] MONEY APPLICABLE     @@ -72,9 +81,27 @@ public class LedgerDelegate implements JavaDelegate {
+      -        ex.setVariable(rv, Vars.engineValue(p.balanceAfter()));
+      +        ex.setVariable(rv, toPack(p.balanceAfter(), u, money));
+      +
+      +    /** Integer minor units of {@code currency} to the store's major units, exactly. */
+      +    static BigDecimal minorToMajor(BigDecimal minor, String currency) {
+      +        try {
+      +            return org.sangam.core.money.Money.ofMinor(minor.longValueExact(), currency).toMajor();
+      +        } catch (ArithmeticException e) {
+      +            throw new IllegalArgumentException("LedgerDelegate: amount " + minor.toPlainString() + " " + currency
+      +                    + " is not a whole number of minor units");
+      +        }
+      +    }
+      +
+      +    private static Object toPack(BigDecimal balance, String unit, boolean money) {
+      +        if (!money || balance == null) {
+      +            return Vars.engineValue(balance);
+      +        }
+      +        return org.sangam.core.money.Money.toMinorExact(balance,
+      +                java.util.Currency.getInstance(unit).getDefaultFractionDigits());
+      +    }
+########## sangam/sangam-packs/src/main/java/org/sangam/packs/core/SetVariablesDelegate.java
+[0] MONEY APPLICABLE     @@ -9,7 +9,8 @@ import org.operaton.bpm.engine.delegate.JavaDelegate;
+      - * {@code true}/{@code false} become booleans, whole numbers become integers, {@code null} clears, anything else is a
+      + * {@code true}/{@code false} become booleans, whole numbers become integers (up to 9 digits) or longs (10 to 18 digits:
+      + * money is integer minor units, and 1 crore rupees is already 10 digits of paise), {@code null} clears, anything else is a
+[1] OTHER APPLICABLE     @@ -63,6 +64,9 @@ public class SetVariablesDelegate implements JavaDelegate, ExecutionListener {
+      +        if (raw.matches("-?\\d{10,18}")) {
+      +            return Long.parseLong(raw);
+      +        }
+########## sangam/sangam-packs/src/main/java/org/sangam/packs/core/BatchDelegate.java
+[0] OTHER PRESENT        @@ -97,7 +97,7 @@ public class BatchDelegate implements JavaDelegate {
+      -                ex.setVariable("batchFailures", Vars.toJson(ledger.failures(tenant, batchId, r)));
+      +                Vars.setJsonDocument(ex, "batchFailures", ledger.failures(tenant, batchId, r));
+[1] MONEY NOT-FOUND(0)   @@ -117,15 +117,15 @@ public class BatchDelegate implements JavaDelegate {
+      -            ex.setVariable(iv, Vars.toJson(l));
+      +            Vars.setJsonDocument(ex, iv, l);
+      -            synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 1000 * i));
+      +            synth.add(Vars.map("key", String.format("ITEM-%05d", i), "amount", 100_000L * i)); // i thousand rupees, in paise
+      -        ex.setVariable(iv, Vars.toJson(synth));
+      +        Vars.setJsonDocument(ex, iv, synth);
+[2] OTHER PRESENT        @@ -230,7 +230,7 @@ public class BatchDelegate implements JavaDelegate {
+      -        ex.setVariable(iv, Vars.toJson(next));
+      +        Vars.setJsonDocument(ex, iv, next);
+########## sangam/sangam-connectors-health/src/main/java/org/sangam/connectors/health/x12/X12Decoders.java
+[0] MONEY APPLICABLE     @@ -14,7 +14,9 @@ import java.util.Map;
+      - * Every decoder returns {@code type} and {@code controlNumber}; amounts are decimal strings (R33).
+      + * Every decoder returns {@code type} and {@code controlNumber}. Amounts (SD-398, the pack money contract) are integer
+      + * MINOR units of {@code currency} (cents for USD) as {@code Long}, with {@code amountUnit = MINOR}; an amount that is not
+      + * exact in the currency stays the raw text and is listed in {@code invalidAmounts}, never rounded or read as zero.
+[1] MONEY APPLICABLE     @@ -108,7 +110,7 @@ public final class X12Decoders {
+      -        return m;
+      +        return minorUnits(m);
+[2] MONEY APPLICABLE     @@ -165,7 +167,7 @@ public final class X12Decoders {
+      -        return m;
+      +        return minorUnits(m);
+[3] MONEY APPLICABLE     @@ -344,7 +346,7 @@ public final class X12Decoders {
+      -        return m;
+      +        return minorUnits(m);
+[4] MONEY APPLICABLE     @@ -525,4 +527,48 @@ public final class X12Decoders {
+      -}
+      +
+      +    static final java.util.Set<String> MONEY_KEYS = java.util.Set.of("amount", "paymentAmount", "chargeAmount", "paidAmount",
+      +            "patientResponsibility");
+      +
+      +    /** Rewrites every decoded amount to integer minor units of the transaction currency (one exact conversion). */
+      +    static Map<String, Object> minorUnits(Map<String, Object> m) {
+      +        String ccy = currency(m);
+      +        m.put("currency", ccy);
+      +        m.put("amountUnit", "MINOR");
+      +        toMinor(m, ccy);
+      +        return m;
+      +    }
+      +
+      +    @SuppressWarnings("unchecked")
+      +    private static void toMinor(Object node, String ccy) {
+      +        if (node instanceof Map<?, ?> raw) {
+      +            Map<String, Object> mm = (Map<String, Object>) raw;
+      +            for (Map.Entry<String, Object> e : mm.entrySet()) {
+      +                Object v = e.getValue();
+      +                if ((MONEY_KEYS.contains(e.getKey()) && (v instanceof String || v instanceof Number))) {
+      +                    e.setValue(minorOrRaw(v, ccy));
+      +                } else if ("adjustmentTotals".equals(e.getKey()) && v instanceof Map<?, ?> totals) {
+      +                    Map<String, Object> conv = new LinkedHashMap<>();
+      +                    totals.forEach((g, x) -> conv.put(String.valueOf(g), minorOrRaw(x, ccy)));
+      +                    e.setValue(conv);
+      +                } else {
+      +                    toMinor(v, ccy);
+      +                }
+      +            }
+      +        } else if (node instanceof List<?> l) {
+      +            l.forEach(x -> toMinor(x, ccy));
+      +        }
+      +    }
+      +
+      +    private static Object minorOrRaw(Object v, String ccy) {
+      +        String s = String.valueOf(v);
+      +        if (s.isBlank()) {
+      +            return 0L;
+      +        }
+      +        try {
+      +            return Money.parse(s, ccy).minor();
+      +        } catch (RuntimeException notExact) {
+      +            return s; // already reported in invalidAmounts by the balance checks
+      +        }
+      +    }}
+########## sangam/sangam-ledger/src/main/java/org/sangam/ledger/LedgerConnector.java
+[0] MONEY APPLICABLE     @@ -35,10 +35,13 @@ import java.util.function.BiFunction;
+      - *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount};</li>
+      + *   <li>amount: {@code amount}, {@code surrenderAmount}, {@code beAmount}: for a money ledger (request {@code currency}, or the
+      + *       ledger's currency) an integer number of MINOR units (paise for INR), the unit every pack variable carries
+      + *       (SD-398, packgen {@code money.py}); for a quantity ledger (no currency) the quantity itself;</li>
+      + * The output {@code available} is in the same unit as the amount: integer minor units for a money ledger.
+[1] OTHER APPLICABLE     @@ -82,12 +85,13 @@ public final class LedgerConnector implements SangamConnector {
+      -            BigDecimal amount = new BigDecimal(first(r, AMOUNT, "0"));
+      +            String ccy = r.str("currency") != null ? r.str("currency") : def.currency();
+      +            BigDecimal amount = fromPack(first(r, AMOUNT, "0"), ccy);
+      -                    out.put("available", ledger.available(acct).toPlainString());
+      +                    out.put("available", toPack(ledger.available(acct), ccy));
+[2] OTHER APPLICABLE     @@ -107,7 +111,7 @@ public final class LedgerConnector implements SangamConnector {
+      -                    out.put("available", ledger.available(acct).toPlainString());
+      +                    out.put("available", toPack(ledger.available(acct), ccy));
+[3] MONEY APPLICABLE     @@ -166,6 +170,27 @@ public final class LedgerConnector implements SangamConnector {
+      +    /**
+      +     * A pack amount to the ledger's major-unit {@link BigDecimal}: money is integer minor units (an amount with a
+      +     * fraction of a minor unit is refused, never rounded: SD-398); a quantity (no currency) is taken as it is.
+      +     */
+      +    static BigDecimal fromPack(String raw, String currency) {
+      +        BigDecimal v = new BigDecimal(raw.trim());
+      +        if (currency == null) {
+      +            return v;
+      +        }
+      +        try {
+      +            return JdbcLedgerStore.amount(v.longValueExact(), currency);
+      +        } catch (ArithmeticException e) {
+      +            throw new IllegalArgumentException("amount " + raw + " " + currency + " is not a whole number of minor units");
+      +        }
+      +    }
+      +
+      +    /** A ledger amount back to the pack unit: integer minor units for money, the quantity otherwise. */
+      +    static Object toPack(BigDecimal v, String currency) {
+      +        return currency == null ? v.toPlainString() : (Object) JdbcLedgerStore.units(v, currency);
+      +    }
+      +

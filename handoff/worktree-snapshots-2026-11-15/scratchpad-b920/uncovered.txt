@@ -1,0 +1,277 @@
+/actions/{key}/invoke
+/admin/agents/{id}
+/admin/agents/{id}/{action}
+/admin/cell/exports/{exportId}
+/admin/cell/tenants/{tenant}/activate
+/admin/cell/tenants/{tenant}/checksum
+/admin/cell/tenants/{tenant}/drain-status
+/admin/cell/tenants/{tenant}/export
+/admin/cell/tenants/{tenant}/freeze
+/admin/cell/tenants/{tenant}/import
+/admin/cell/tenants/{tenant}/import/drop
+/admin/cell/tenants/{tenant}/import/prepare
+/admin/cell/tenants/{tenant}/moved
+/admin/cell/tenants/{tenant}/purge
+/admin/cell/tenants/{tenant}/unfreeze
+/admin/conversation-channels/{id}
+/admin/conversation-channels/{id}/{action}
+/admin/retention-classes/{id}
+/admin/retention-classes/{id}/{action}
+/admin/routing-strategies/{id}
+/admin/routing-strategies/{id}/{action}
+/admin/seats/{id}
+/admin/security/module-defaults
+/admin/services/{id}
+/admin/services/{id}/{action}
+/admin/sla-models/{id}
+/admin/sla-models/{id}/{action}
+/admin/templates/{id}
+/admin/templates/{id}/{action}
+/ai/a2a/{agent}
+/ai/a2a/{agent}/card
+/ai/approvals
+/ai/approvals/{id}/decide
+/ai/classifications/evaluation
+/ai/classifications/{id}/correct
+/ai/knowledge-bases/{kb}/search
+/ai/knowledge-bases/{kb}/versions
+/ai/knowledge-bases/{kb}/versions/{version}/activate
+/ai/knowledge-bases/{kb}/versions/{version}/documents
+/ai/mcp
+/ai/runs
+/ai/runs/{id}
+/ai/runs/{id}/cancel
+/bulk/jobs
+/bulk/jobs/{id}
+/bulk/jobs/{id}/abort
+/bulk/jobs/{id}/chunks/{seq}
+/bulk/jobs/{id}/close
+/bulk/jobs/{id}/errors
+/bulk/jobs/{id}/rows
+/case-definitions
+/case-files/{id}/conflicts
+/case-files/{id}/documents/{docId}
+/case-files/{id}/documents/{docId}/content
+/case-files/{id}/links/{linkId}
+/case-files/{id}/notes/{noteId}
+/case-files/{id}/parties/{casePartyId}
+/case-files/{id}/records/{recordId}
+/case-instances/{id}/commands
+/case-instances/{id}/variables
+/channels/conversations/search
+/channels/conversations/{id}/attachments
+/channels/conversations/{id}/messages
+/channels/conversations/{id}/participants
+/channels/conversations/{id}/stream
+/compliance/consent-managers/{cm}/artefacts
+/compliance/incidents/{id}
+/compliance/notices/{key}
+/compliance/privacy-policy
+/config/master/seed
+/config/profiles/{id}/versions/{version}/activate
+/config/profiles/{id}/versions/{version}/approve
+/config/profiles/{id}/versions/{version}/reject
+/config/profiles/{id}/versions/{version}/submit
+/config/validate
+/connectors-health/x12/835
+/custom-fields
+/custom-fields/{objectType}/{key}
+/custom-fields/{objectType}/{key}/retire
+/deployments/{id}
+/deployments/{id}/resources/{resourceName}
+/events/channels/{key}/restore
+/events/channels/{key}/retire
+/events/definitions/{key}/restore
+/events/definitions/{key}/retire
+/field/evidence
+/field/evidence/{id}
+/field/evidence/{id}/content
+/field/evidence/{id}/reverify
+/field/jobs/{id}
+/field/offers/expire
+/field/offers/{id}/respond
+/field/sync/{deviceId}/pull
+/field/sync/{deviceId}/upload
+/field/trips
+/field/trips/{id}/{action}
+/field/units/{id}
+/field/units/{id}/eta
+/field/units/{id}/pings
+/geo/objects/{type}/{id}/geometry
+/hooks/channels/{tenant}/teams
+/hooks/channels/{tenant}/wechat
+/hooks/channels/{tenant}/whatsapp
+/hooks/fhir/{channel}
+/links
+/links/{id}
+/meeting-notices/{id}/ack
+/meetings/{id}/agenda/order
+/meetings/{id}/agenda/{itemId}
+/models/{file}/lease/acquire
+/models/{file}/lease/heartbeat
+/models/{file}/lease/release
+/models/{file}/lease/request-takeover
+/models/{file}/lease/takeover
+/onboarding/promotions
+/onboarding/promotions/plan
+/onboarding/promotions/{tenant}/bundle
+/ops-admin/index-drift
+/ops-admin/index-jobs
+/ops-admin/index-jobs/{generation}
+/ops-admin/migration
+/ops-admin/outliers
+/ops-admin/retention/execute
+/ops-admin/retention/plan
+/ops-admin/retention/runs
+/ops-admin/search
+/ops-admin/secrets
+/ops-admin/secrets/{ref}
+/ops-admin/sequences/{table}
+/ops-admin/sequences/{table}/advance
+/ops-admin/usage
+/ops-admin/variables
+/ops-admin/variables/entries
+/ops-admin/variables/{name}
+/ops/jobs/{id}/suspension
+/ops/retention/runs
+/packages/tests/verify-bundle
+/packages/{id}/tests/export
+/packages/{id}/tests/reports
+/packs/installed
+/packs/{id}/rollback
+/packs/{id}/uninstall
+/process-instances/{id}/attachments
+/process-instances/{id}/trigger
+/programme-milestones/{id}
+/programmes/{id}/achievements/children
+/programmes/{id}/achievements/series
+/programmes/{id}/dashboard/children
+/queues/service-points/{servicePointId}/call-events
+/queues/tokens/{tokenId}
+/queues/tokens/{tokenId}/cancel
+/queues/tokens/{tokenId}/position
+/queues/tokens/{tokenId}/transfer
+/registry/assets/plans/{planId}/status
+/registry/assets/plans/{planId}/trigger
+/registry/assets/readings/{readingId}/correct
+/registry/assets/readings/{readingId}/reject
+/registry/custody/disposal-orders/{orderId}
+/registry/custody/disposal-orders/{orderId}/cancel
+/registry/custody/disposal-orders/{orderId}/execute
+/registry/instruments/jobs/expire
+/registry/instruments/jobs/renewal-due
+/registry/instruments/public/verify-qr
+/registry/instruments/{id}/documents
+/registry/instruments/{id}/expire
+/registry/instruments/{id}/transfer-reissue
+/registry/objects/{id}/as-of
+/registry/parties/addresses/{addressId}/retire
+/registry/parties/config/identifier-types
+/registry/parties/identifiers/{identifierId}/retire
+/registry/parties/identifiers/{identifierId}/reveal
+/registry/parties/relationships/{relationshipId}/end
+/registry/parties/{id}/resolve
+/registry/registers/books/{bookId}/entries/{entryNo}
+/registry/types/{typeKey}/versions/{version}
+/resources/blackouts/{blackoutId}
+/resources/bookings/series/{recurrenceId}/cancel
+/resources/items/{resourceId}/availability
+/resources/jobs/expire-holds
+/resources/jobs/no-shows
+/resources/slot-templates/{templateId}
+/resources/waitlist/{entryId}
+/rosters/assignments/{assignmentId}
+/rosters/people/{personId}/duties
+/rosters/periods/{periodId}/demand/{demandId}
+/rosters/periods/{periodId}/on-call
+/rosters/swaps/{swapId}
+/tasks/{id}/variables
+/templates/{id}/apply
+/work/fetch-and-lock
+/work/{id}/bpmn-error
+/work/{id}/cancel-ack
+/work/{id}/complete
+/work/{id}/extend-lock
+/work/{id}/fail
+/work/{id}/outcome-unknown
+/work/{id}/unlock
+/account ['app\\App.tsx', 'app\\Layout.tsx', 'modules\\operaton.tsx']
+/admin/channels ['app\\App.tsx', 'app\\nav.ts']
+/admin/config ['app\\App.tsx', 'app\\nav.ts']
+/admin/engine ['app\\App.tsx', 'app\\nav.ts']
+/admin/idp ['app\\App.tsx', 'app\\nav.ts']
+/admin/onboarding ['app\\App.tsx', 'app\\nav.ts']
+/admin/org ['app\\App.tsx', 'app\\nav.ts']
+/admin/principals ['app\\App.tsx', 'app\\nav.ts']
+/admin/retention ['app\\App.tsx', 'app\\nav.ts']
+/admin/routing ['app\\App.tsx', 'app\\nav.ts']
+/admin/sla ['app\\App.tsx', 'app\\nav.ts']
+/admin/sod ['app\\App.tsx', 'app\\nav.ts']
+/analytics ['app\\App.tsx', 'app\\Layout.tsx', 'app\\nav.ts']
+/analytics/mining ['app\\App.tsx', 'app\\nav.ts']
+/analytics/reports ['app\\App.tsx', 'app\\nav.ts']
+/api/v1 ['config.ts']
+/audit ['app\\App.tsx', 'app\\Layout.tsx', 'app\\nav.ts']
+/audit/timeline/:businessKey ['app\\App.tsx']
+/cases ['app\\App.tsx', 'app\\nav.ts']
+/cases/:id ['app\\App.tsx']
+/cases/{} ['areas\\ops\\InstanceDetail.tsx', 'areas\\ops\\OpsMisc.tsx', 'areas\\tasklist\\StartAndCases.tsx', 'modules\\platform.tsx']
+/display/queue ['app\\App.tsx']
+/display/queue/:servicePointId ['app\\App.tsx']
+/field ['app\\App.tsx', 'app\\nav.ts']
+/help/about ['app\\App.tsx', 'app\\Layout.tsx']
+/help/accessibility ['app\\App.tsx', 'app\\Layout.tsx']
+/m/ai ['app\\App.tsx', 'app\\nav.ts']
+/m/billing ['app\\App.tsx', 'app\\nav.ts']
+/m/case-files ['app\\App.tsx', 'app\\nav.ts']
+/m/channels ['app\\App.tsx', 'app\\nav.ts']
+/m/committees ['app\\App.tsx', 'app\\nav.ts']
+/m/compliance ['app\\App.tsx', 'app\\nav.ts']
+/m/field ['app\\App.tsx', 'app\\nav.ts']
+/m/geo ['app\\App.tsx', 'app\\nav.ts']
+/m/ledger ['app\\App.tsx', 'app\\nav.ts']
+/m/programmes ['app\\App.tsx', 'app\\nav.ts']
+/m/queues ['app\\App.tsx', 'app\\nav.ts']
+/m/references ['app\\App.tsx', 'app\\nav.ts']
+/m/registry ['app\\App.tsx', 'app\\nav.ts']
+/m/resources ['app\\App.tsx', 'app\\nav.ts']
+/m/rosters ['app\\App.tsx', 'app\\nav.ts']
+/modeller ['app\\App.tsx', 'app\\Layout.tsx', 'app\\nav.ts', 'areas\\ops\\OpsMisc.tsx']
+/modeller/:id ['app\\App.tsx']
+/modeller/assess ['app\\App.tsx', 'app\\nav.ts']
+/modeller/compatibility ['app\\App.tsx', 'app\\nav.ts', 'areas\\modeller\\Modeller.tsx']
+/modeller/data-objects ['app\\App.tsx', 'app\\nav.ts']
+/modeller/pages ['app\\App.tsx', 'app\\nav.ts']
+/modeller/review ['app\\App.tsx', 'app\\nav.ts']
+/modeller/tools ['app\\App.tsx', 'app\\nav.ts']
+/modeller/{} ['areas\\modeller\\Modeller.tsx', 'areas\\ops\\InstanceDetail.tsx', 'areas\\ops\\OpsMisc.tsx']
+/my/delegations ['app\\App.tsx', 'app\\nav.ts']
+/notifications ['app\\App.tsx', 'app\\nav.ts']
+/ops ['app\\App.tsx', 'app\\Layout.tsx', 'app\\nav.ts']
+/ops/audit-log ['app\\App.tsx', 'app\\nav.ts']
+/ops/cases ['app\\App.tsx', 'app\\nav.ts']
+/ops/debugger ['app\\App.tsx', 'app\\nav.ts', 'areas\\modeller\\Modeller.tsx']
+/ops/decisions ['app\\App.tsx', 'app\\nav.ts']
+/ops/deployments ['app\\App.tsx', 'app\\nav.ts']
+/ops/drd/:id ['app\\App.tsx']
+/ops/drd/{} ['modules\\operaton.tsx']
+/ops/engine ['app\\App.tsx', 'app\\nav.ts']
+/ops/events ['app\\App.tsx', 'app\\nav.ts']
+/ops/instances/:id ['app\\App.tsx']
+/ops/instances/{} ['areas\\ops\\BatchMigration.tsx', 'areas\\ops\\IncidentsRecon.tsx', 'areas\\ops\\InstanceDetail.tsx', 'areas\\ops\\OpsMisc.tsx', 'areas\\ops\\Processes.tsx', 'modules\\platform.tsx']
+/ops/migration ['app\\App.tsx', 'app\\nav.ts', 'areas\\ops\\Processes.tsx']
+/ops/notifications ['app\\App.tsx', 'app\\nav.ts']
+/ops/processes ['app\\App.tsx', 'app\\nav.ts']
+/ops/processes/:id ['app\\App.tsx']
+/ops/processes/{} ['areas\\ops\\InstanceDetail.tsx', 'areas\\ops\\Processes.tsx']
+/ops/task-dashboard ['app\\App.tsx', 'app\\nav.ts']
+/ops/tools ['app\\App.tsx', 'app\\nav.ts']
+/portal ['app\\App.tsx', 'app\\Layout.tsx', 'app\\nav.ts', 'areas\\portal\\Portal.tsx']
+/portal/apply/:serviceKey ['app\\App.tsx']
+/portal/apply/{} ['areas\\portal\\Portal.tsx']
+/start ['app\\App.tsx', 'app\\Layout.tsx', 'app\\nav.ts']
+/verify ['app\\App.tsx']
+/verify/:tenant ['app\\App.tsx']
+/welcome ['app\\App.tsx']
+/x/:pluginId/:id ['app\\App.tsx']
+/x/{}/{} ['app\\Layout.tsx']

@@ -1,0 +1,728 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Sangam.Sdk</name>
+    </assembly>
+    <members>
+        <member name="T:Sangam.Sdk.Api.ApiBase">
+            <summary>Shared plumbing for the typed API groups.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ApiBase.ReadPageAsync``1(Sangam.Sdk.Http.ApiRequest,System.Threading.CancellationToken)">
+            <summary>Reads a list endpoint: bare JSON array or object with <c>items</c>; A-16 count headers.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.WorkApi">
+            <summary>
+            Worker API <c>/api/v1/work</c> (VI.3). Every call after fetch carries (workerId, lockVersion, attemptId); a stale
+            lockVersion raises <see cref="T:Sangam.Sdk.Errors.StaleLeaseException"/>. The endpoints are fenced; the derived
+            Idempotency-Key the worker sends is harmless and kept. Most applications use <see cref="T:Sangam.Sdk.Worker.SangamWorker"/>.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.WorkApi.FetchAndLockAsync(Sangam.Sdk.Models.FetchAndLockRequest,System.Threading.CancellationToken)">
+            <summary>Long-poll fetch-and-lock; HTTP timeout = async timeout + 15 s; not retried by the transport.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.WorkApi.ExtendLockAsync(System.String,Sangam.Sdk.Models.ExtendLockRequest,System.String,System.Threading.CancellationToken)">
+            <summary>Heartbeat; returns the LockState (new expiry, lockVersion, cancelRequested).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.WorkApi.OutcomeUnknownAsync(System.String,Sangam.Sdk.Models.OutcomeUnknownRequest,System.String,System.Threading.CancellationToken)">
+            <summary>VI.3.2 rule 4: 202 with the opened reconciliation item.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.WorkApi.CancelAckAsync(System.String,Sangam.Sdk.Models.UnlockRequest,System.String,System.Threading.CancellationToken)">
+            <summary>VI.3.1 / VI.5: CANCEL_REQUESTED --worker ack--&gt; CANCELLED.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.TaskQuery">
+            <summary>Filters for <c>GET /tasks</c>; results are always filtered by the caller's VI.4 policy.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Api.TaskQuery.Mine">
+            <summary>Tasks assigned to the caller.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Api.TaskQuery.SortOrder">
+            <summary><c>asc</c> or <c>desc</c>.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Api.TaskQuery.Extra">
+            <summary>Any other server-side filter.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.TasksApi">
+            <summary>User tasks <c>/api/v1/tasks</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.TasksApi.VariablesAsync(System.String,System.Threading.CancellationToken)">
+            <summary><c>GET /tasks/{id}/variables</c> (VariableMap).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.TasksApi.ClaimAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>Claim for the caller (no body, 204). The seat context comes from <c>X-Sangam-Seat</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.TasksApi.CompleteAsync(System.String,Sangam.Sdk.Models.CompleteTaskRequest,System.String,System.Threading.CancellationToken)">
+            <summary>Completes the task; <c>PayloadHash</c> must equal what the user approved (VI.4 rule 5).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.TasksApi.CompleteWithResponseAsync(System.String,Sangam.Sdk.Models.CompleteTaskRequest,System.String,System.Threading.CancellationToken)">
+            <summary>Same as <see cref="M:Sangam.Sdk.Api.TasksApi.CompleteAsync(System.String,Sangam.Sdk.Models.CompleteTaskRequest,System.String,System.Threading.CancellationToken)"/> but exposes headers (for example <c>Idempotent-Replayed</c>).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.TasksApi.ReturnAsync(System.String,Sangam.Sdk.Models.ReturnTaskRequest,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /tasks/{id}/return</c>; answers the CompleteTaskResult (200).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.ProcessesApi">
+            <summary>Process and case instances, messages and signals.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ProcessesApi.StartAsync(Sangam.Sdk.Models.StartProcessRequest,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /process-instances</c> (201). Pass a business-derived Idempotency-Key to make "start once" safe.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ProcessesApi.StartWithResponseAsync(Sangam.Sdk.Models.StartProcessRequest,System.String,System.Threading.CancellationToken)">
+            <summary>Same as <see cref="M:Sangam.Sdk.Api.ProcessesApi.StartAsync(Sangam.Sdk.Models.StartProcessRequest,System.String,System.Threading.CancellationToken)"/> but exposes headers (<c>Idempotent-Replayed</c>, <c>Location</c>).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ProcessesApi.VariablesAsync(System.String,System.Threading.CancellationToken)">
+            <summary><c>GET /process-instances/{id}/variables</c> (VariableMap).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ProcessesApi.CancelAsync(System.String,Sangam.Sdk.Models.TerminateRequest,System.String,System.Threading.CancellationToken)">
+            <summary>Business cancel (VI.5): needs CANCEL_INSTANCE and a reason; returns open operation ids and tombstones.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ProcessesApi.SignalAsync(Sangam.Sdk.Models.SignalRequest,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /signals</c> (204).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ProcessesApi.StartCaseAsync(Sangam.Sdk.Models.StartCaseRequest,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /case-instances</c> (CMMN 1.1).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.DecisionsApi">
+            <summary>DMN decisions; evaluation is side-effect free (no Idempotency-Key needed).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.AuditApi">
+            <summary>Audit timeline and hash-chain verification (R42, AC-01).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.AuditApi.TimelineAsync(System.String,System.Nullable{System.Boolean},System.Nullable{System.Int32},System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary><c>GET /audit/{businessKey}/timeline</c>: paged audit entries.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.ResourceApi">
+            <summary>Generic CRUD over one admin/ops collection; bodies are JSON objects.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ResourceApi.ActionAsync(System.String,System.String,System.Object,System.String,System.Threading.CancellationToken)">
+            <summary>
+            <c>POST {path}/{id}/{action}</c>, for example <c>/ops/incidents/{id}/resolve</c>, <c>/ops/outbox/{id}/skip</c>,
+            <c>/ops/jobs/{id}/execute</c>, <c>/ops/jobs/{id}/suspension</c>, <c>/admin/assignments/{id}/end</c>,
+            <c>/admin/delegations/{id}/revoke</c>.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.ResourceApi.GetSubAsync(System.String,System.Threading.CancellationToken)">
+            <summary><c>GET {path}/{sub}</c>, for example <c>/ops/outbox/stats</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.AdminApi">
+            <summary>Admin basics <c>/api/v1/admin/**</c>.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Api.AdminApi.Assignments">
+            <summary>End an assignment with <c>ActionAsync(id, "end", body)</c>.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Api.AdminApi.Delegations">
+            <summary>Revoke a delegation with <c>ActionAsync(id, "revoke", body)</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.OpsApi">
+            <summary>Operations: incidents, reconciliation workbench (VI.3 UNKNOWN_OUTCOME), outbox, jobs.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.OpsApi.RetryIncidentAsync(System.String,Sangam.Sdk.Models.IncidentAction,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /ops/incidents/{id}/retry</c> (reason mandatory).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.OpsApi.SetJobRetriesAsync(System.String,Sangam.Sdk.Models.JobRetriesRequest,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /ops/jobs/{id}/retries</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.OpsApi.RequeueOutboxAsync(System.String,Sangam.Sdk.Models.OutboxRepairRequest,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /ops/outbox/{outboxId}/requeue</c> (audited OUTBOX_REQUEUED).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.OpsApi.OutboxStatsAsync(System.Threading.CancellationToken)">
+            <summary><c>GET /ops/outbox/stats</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.OpsApi.ReconciliationAsync(System.String,System.String,System.Nullable{System.Int32},System.Nullable{System.Int32},System.Threading.CancellationToken)">
+            <summary>List reconciliation items; <c>state</c> = OPEN | RESOLVED, <c>kind</c> = UNKNOWN_OUTCOME | LATE_RESULT_AFTER_DELETE.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.OpsApi.ResolveAsync(System.String,Sangam.Sdk.Models.ReconciliationResolveRequest,System.String,System.Threading.CancellationToken)">
+            <summary>Resolve with CONFIRM_SUCCESS, RETRY_SAME_OPERATION or MARK_FAILED, plus mandatory evidence.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Api.RepositoryApi">
+            <summary>Deployments, event registry and forms.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.RepositoryApi.DeployAsync(System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Byte[]},System.String,System.Nullable{System.Boolean},System.String,System.Threading.CancellationToken)">
+            <summary>
+            <c>POST /deployments</c> (201) as multipart: fields <c>name</c>, <c>source</c>, <c>duplicateFiltering</c> and one
+            part named <c>files</c> per resource (file name = dictionary key, for example <c>bill.bpmn</c>).
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.RepositoryApi.PublishEventAsync(System.String,Sangam.Sdk.Models.CloudEvent,System.String,System.Threading.CancellationToken)">
+            <summary><c>POST /events/{channel}</c> with a CloudEvent (202). Status ACCEPTED, DUPLICATE or BUFFERED.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Api.RepositoryApi.FormAsync(System.String,System.Threading.CancellationToken)">
+            <summary><c>GET /forms/{key}</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.ITokenProvider">
+            <summary>
+            Supplies the credential for the <c>Authorization</c> header (ARCHITECTURE §4: <c>Bearer &lt;OIDC JWT&gt;</c>).
+            Implementations must be thread-safe.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Auth.ITokenProvider.GetAuthorizationAsync(System.Threading.CancellationToken)">
+            <summary>Full <c>Authorization</c> header value, or null for anonymous calls.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Auth.ITokenProvider.Invalidate">
+            <summary>Called after a 401; the next call must not return the cached credential.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.TokenProviders">
+            <summary>Factory helpers.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Auth.TokenProviders.None">
+            <summary>No authentication (local dev profile without a token).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Auth.TokenProviders.Static(System.String)">
+            <summary>Fixed bearer token (dev profile static token).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Auth.TokenProviders.Basic(System.String,System.String)">
+            <summary>HTTP Basic (Flowable external-client parity, FC-37); only for dev/test gateways.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.StaticTokenProvider">
+            <summary>A token that never changes.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.BasicTokenProvider">
+            <summary>HTTP Basic credentials.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.ClientAuthMethod">
+            <summary>How the client authenticates at the token endpoint.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.TokenException">
+            <summary>Raised when no token can be obtained.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Auth.ClientCredentialsTokenProvider">
+            <summary>
+            OIDC / OAuth 2.0 client-credentials grant (RFC 6749 §4.4). The token is cached and refreshed
+            <see cref="P:Sangam.Sdk.Auth.ClientCredentialsTokenProvider.RefreshSkew"/> before <c>expires_in</c> ends; refresh is single-flight.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Errors.Problem">
+            <summary>
+            RFC 9457 <c>application/problem+json</c> body. <c>Code</c> is the Sangam machine code (for example
+            <c>STALE_LEASE</c>, <c>GONE_INSTANCE_DELETED</c>); unknown members land in <see cref="P:Sangam.Sdk.Errors.Problem.Extensions"/>.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Errors.Problem.Is(System.String)">
+            <summary>True when <c>code</c> or the last segment of <c>type</c> equals <paramref name="name"/> (case and -/_ insensitive).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Errors.SangamException">
+            <summary>Root of all SDK exceptions.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Errors.SangamApiException">
+            <summary>A non-2xx answer, carrying the parsed problem+json body (synthetic when the server sent none).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Errors.SangamApiException.IsRetryable">
+            <summary>408, 425, 429, 500, 502, 503, 504: the same request (same Idempotency-Key) may be repeated.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Errors.StaleLeaseException">
+            <summary>
+            409 <c>stale-lease</c> (VI.3.2 rule 2, R20): our lockVersion is no longer current and the server changed nothing.
+            The worker abandons the work item.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Errors.GoneException">
+            <summary>410 <c>GONE_INSTANCE_DELETED</c> (VI.5, R23): the instance was deleted; abandon the work item.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Errors.TransportException">
+            <summary>Network failure (connect, reset, timeout) after the configured retries were used up.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Http.RetryPolicy">
+            <summary>
+            Exponential back-off with jitter for transport retries (R28). Only safe requests are retried: GET, or a
+            mutation that carries an Idempotency-Key (R41).
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.RetryPolicy.#ctor(System.Int32,System.TimeSpan,System.TimeSpan,System.Double)">
+            <summary>
+            Exponential back-off with jitter for transport retries (R28). Only safe requests are retried: GET, or a
+            mutation that carries an Idempotency-Key (R41).
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.RetryPolicy.Delay(System.Int32)">
+            <summary>Delay before retry number <paramref name="retry"/> (1-based), jittered in [cap/2, cap].</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Http.ApiRequest">
+            <summary>One logical API call.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.ApiRequest.WithContent(System.Net.Http.HttpContent)">
+            <summary>Raw content (multipart). Must be rebuildable: the transport buffers it once and resends the bytes.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.ApiRequest.WithIdempotencyKey(System.String)">
+            <summary>Idempotency-Key (R41). Null on a mutation = generated once per logical call.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.ApiRequest.NoRetry">
+            <summary>Disable transport retries (long-poll fetch has its own loop).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Http.ApiResponse`1">
+            <summary>Decoded response.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.ApiResponse`1.#ctor(System.Int32,System.Net.Http.Headers.HttpResponseHeaders,System.Net.Http.Headers.HttpContentHeaders,`0)">
+            <summary>Decoded response.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Http.ApiResponse`1.IdempotentReplayed">
+            <summary>True when the server answered from its idempotency store (<c>Idempotent-Replayed</c> header, R41).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Http.HttpTransport">
+            <summary>
+            The single HTTP path of the SDK: base URL + <c>/api/v1</c>, auth with one refresh on 401, Idempotency-Key on every
+            mutation (R41), problem+json decoding (RFC 9457) and jittered retries of safe calls.
+            </summary>
+        </member>
+        <member name="F:Sangam.Sdk.Http.HttpTransport.SeatHeader">
+            <summary>Seat context selected by the caller (IX.5 rule 1).</summary>
+        </member>
+        <member name="F:Sangam.Sdk.Http.HttpTransport.ActingForSeatHeader">
+            <summary>Acting authority for a substituted seat (IX.5 rule 4); part of the R41 fingerprint.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Http.HttpTransport.Seg(System.String)">
+            <summary>Percent-encodes one path segment.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Logging.SangamLogLevel">
+            <summary>Log levels of the structured hook.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Logging.ISangamLogger">
+            <summary>
+            Structured logging hook. Every line is a stable <c>event</c> name (for example <c>work.completed</c>) plus
+            key/value <c>fields</c> (workerId, workId, topic, operationId, attemptId, lockVersion, businessKey, ...).
+            Bridge it to Microsoft.Extensions.Logging, Serilog, JSON logs or metrics in the application.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Logging.SangamLoggers">
+            <summary>Convenience overloads and built-in loggers.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Logging.SangamLoggers.None">
+            <summary>Discards everything.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Logging.SangamLoggers.Console(Sangam.Sdk.Logging.SangamLogLevel)">
+            <summary>Writes <c>key=value</c> lines to stderr for Info and above.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Logging.SangamLoggers.From(System.Action{Sangam.Sdk.Logging.SangamLogLevel,System.String,System.String,System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object},System.Exception})">
+            <summary>Wraps a delegate.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.TypedValue">
+            <summary>
+            R33 typed value <c>{"type": ..., "value": ...}</c>. Money is never a binary float: Decimal, BigInteger, Long,
+            Date, LocalDate and Bytes (base64) travel as strings.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TypedValue.#ctor(System.String,System.Object)">
+            <summary>
+            R33 typed value <c>{"type": ..., "value": ...}</c>. Money is never a binary float: Decimal, BigInteger, Long,
+            Date, LocalDate and Bytes (base64) travel as strings.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TypedValue.Date(System.DateTimeOffset)">
+            <summary>Zoned instant, ISO-8601 UTC.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TypedValue.LocalDate(System.DateOnly)">
+            <summary>Unzoned calendar date <c>yyyy-MM-dd</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TypedValue.IsTyped(System.Text.Json.JsonElement)">
+            <summary>True when <paramref name="e"/> has the TypedValue shape with a known type.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TypedValue.Unwrap``1(System.Text.Json.JsonElement,System.Text.Json.JsonSerializerOptions)">
+            <summary>Converts a VariableMap value (plain JSON or TypedValue) to <typeparamref name="T"/>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.ExternalWork">
+            <summary>
+            A locked unit of external work (VI.3). The handler runs only after this LOCKED confirmation with its
+            <c>lockVersion</c> (A-1). <c>OperationId</c> is stable across retries and lease expiry (R36) and is the
+            idempotency key for downstream calls; <c>AttemptId</c> changes per lease (A-2).
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.ExternalWork.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Nullable{System.Int64},System.String,System.String,System.Nullable{System.DateTimeOffset},System.Nullable{System.Int32},System.Nullable{System.Int64},System.String)">
+            <summary>
+            A locked unit of external work (VI.3). The handler runs only after this LOCKED confirmation with its
+            <c>lockVersion</c> (A-1). <c>OperationId</c> is stable across retries and lease expiry (R36) and is the
+            idempotency key for downstream calls; <c>AttemptId</c> changes per lease (A-2).
+            </summary>
+        </member>
+        <member name="P:Sangam.Sdk.Models.ExternalWork.Operation">
+            <summary>SL-16: server-recorded ledger entry of <c>OperationId</c>; null from older servers.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.WorkOperation">
+            <summary>
+            Operation-ledger entry of a leased work item (SL-16, R37). <c>MayDispatch</c> false with state SUCCEEDED: complete
+            from <c>StoredOutcome</c> ({output, providerRef, duplicate}) without calling the downstream again.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.WorkOperation.#ctor(System.String,System.Nullable{System.Int32},System.String,System.Nullable{System.Boolean},System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary>
+            Operation-ledger entry of a leased work item (SL-16, R37). <c>MayDispatch</c> false with state SUCCEEDED: complete
+            from <c>StoredOutcome</c> ({output, providerRef, duplicate}) without calling the downstream again.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.WorkOutcome">
+            <summary>Downstream result recorded as the ledger outcome (<c>Reference</c> = providerRef).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.WorkOutcome.#ctor(System.String,System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary>Downstream result recorded as the ledger outcome (<c>Reference</c> = providerRef).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.FetchTopic">
+            <summary>TopicRequest: one topic in fetch-and-lock (lease default 5 min, max 24 h).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.FetchTopic.#ctor(System.String,System.Nullable{System.Int64},System.Collections.Generic.IReadOnlyList{System.String},System.Nullable{System.Boolean},System.String,System.String)">
+            <summary>TopicRequest: one topic in fetch-and-lock (lease default 5 min, max 24 h).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.FetchAndLockRequest">
+            <summary>Body of <c>POST /work/fetch-and-lock</c> (long poll up to <c>AsyncResponseTimeoutMs</c>).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.FetchAndLockRequest.#ctor(System.String,System.Collections.Generic.IReadOnlyList{Sangam.Sdk.Models.FetchTopic},System.Nullable{System.Int32},System.Nullable{System.Int64},System.Nullable{System.Boolean})">
+            <summary>Body of <c>POST /work/fetch-and-lock</c> (long poll up to <c>AsyncResponseTimeoutMs</c>).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.ExtendLockRequest">
+            <summary>Heartbeat body (VI.3.2 rule 3).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.ExtendLockRequest.#ctor(System.String,System.Int64,System.String,System.Int64)">
+            <summary>Heartbeat body (VI.3.2 rule 3).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.LockState">
+            <summary>LockState: heartbeat answer; <c>cancelRequested</c> tells the worker to stop and acknowledge (VI.3).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.LockState.#ctor(System.String,System.Nullable{System.Int64},System.Nullable{System.DateTimeOffset},System.Nullable{System.Boolean})">
+            <summary>LockState: heartbeat answer; <c>cancelRequested</c> tells the worker to stop and acknowledge (VI.3).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.FailWorkRequest">
+            <summary><c>Retries</c> left after this failure; 0 raises an incident. Absent (null) members are not sent.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.FailWorkRequest.#ctor(System.String,System.Int64,System.String,System.String,System.String,System.Nullable{System.Int32},System.Nullable{System.Int64})">
+            <summary><c>Retries</c> left after this failure; 0 raises an incident. Absent (null) members are not sent.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.UnlockRequest">
+            <summary>Body of <c>/unlock</c> (explicit release) and <c>/cancel-ack</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.UnlockRequest.#ctor(System.String,System.Int64,System.String)">
+            <summary>Body of <c>/unlock</c> (explicit release) and <c>/cancel-ack</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.OutcomeUnknownRequest">
+            <summary>VI.3.2 rule 4: the downstream effect may or may not have happened.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.OutcomeUnknownRequest.#ctor(System.String,System.Int64,System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary>VI.3.2 rule 4: the downstream effect may or may not have happened.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.OutcomeUnknownResult">
+            <summary>202 answer: the work moved to UNKNOWN_OUTCOME and a reconciliation item was opened.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.OutcomeUnknownResult.#ctor(System.String,System.String,System.String,System.String)">
+            <summary>202 answer: the work moved to UNKNOWN_OUTCOME and a reconciliation item was opened.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.Page`1">
+            <summary>
+            One page of a list: <c>X-Total-Count</c>, and <c>X-Total-Count-Capped: true</c> when capped (A-16), in which case
+            <c>TotalCount</c> is a lower bound.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.Page`1.#ctor(System.Collections.Generic.IReadOnlyList{`0},System.Int32,System.Int32,System.Nullable{System.Int64},System.Boolean)">
+            <summary>
+            One page of a list: <c>X-Total-Count</c>, and <c>X-Total-Count-Capped: true</c> when capped (A-16), in which case
+            <c>TotalCount</c> is a lower bound.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.TaskView">
+            <summary>A user task seen through the VI.4 policy. Variables: <c>GET /tasks/{id}/variables</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TaskView.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.DateTimeOffset},System.Nullable{System.DateTimeOffset},System.Nullable{System.DateTimeOffset},System.Nullable{System.DateTimeOffset},System.Nullable{System.DateTimeOffset},System.String,System.Nullable{System.Int32},System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>A user task seen through the VI.4 policy. Variables: <c>GET /tasks/{id}/variables</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.CompleteTaskRequest">
+            <summary><c>POST /tasks/{id}/complete</c>: <c>PayloadHash</c> (required) binds the approval to the payload (VI.4 rule 5).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.CompleteTaskRequest.#ctor(System.String,System.Collections.Generic.IDictionary{System.String,System.Object},System.String,System.String,System.Nullable{System.Int64},System.String,System.String,System.String,System.String)">
+            <summary><c>POST /tasks/{id}/complete</c>: <c>PayloadHash</c> (required) binds the approval to the payload (VI.4 rule 5).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.StartProcessRequest">
+            <summary><c>POST /process-instances</c>; the tenant comes from the token.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.StartProcessRequest.#ctor(System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object},System.Nullable{System.Int32},System.String,System.String,System.Collections.Generic.IReadOnlyList{System.String})">
+            <summary><c>POST /process-instances</c>; the tenant comes from the token.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.ProcessInstanceQuery">
+            <summary>Filters for <c>GET /process-instances</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.TerminateRequest">
+            <summary>Business cancel with a mandatory reason (VI.5, R23).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.TerminateRequest.#ctor(System.String,System.String)">
+            <summary>Business cancel with a mandatory reason (VI.5, R23).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.MessageRequest">
+            <summary><c>POST /messages</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.MessageRequest.#ctor(System.String,System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object},System.Collections.Generic.IDictionary{System.String,System.Object},System.Nullable{System.Boolean})">
+            <summary><c>POST /messages</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.SignalRequest">
+            <summary><c>POST /signals</c> (204).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.SignalRequest.#ctor(System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object})">
+            <summary><c>POST /signals</c> (204).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.DecisionEvaluateRequest">
+            <summary><c>POST /decisions/{key}/evaluate</c>; <c>Purpose</c> = ROUTING | AUTHORITY | OTHER.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.DecisionEvaluateRequest.#ctor(System.Collections.Generic.IDictionary{System.String,System.Object},System.Nullable{System.Int32},System.String,System.String)">
+            <summary><c>POST /decisions/{key}/evaluate</c>; <c>Purpose</c> = ROUTING | AUTHORITY | OTHER.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.DecisionEvaluateResult">
+            <summary>Decision output rows (VariableMaps), evaluated version, output digest and audit event (R33).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.DecisionEvaluateResult.#ctor(System.String,System.String,System.Nullable{System.Int32},System.Collections.Generic.IReadOnlyList{System.Collections.Generic.Dictionary{System.String,System.Object}},System.String,System.String)">
+            <summary>Decision output rows (VariableMaps), evaluated version, output digest and audit event (R33).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.AuditEntry">
+            <summary>One audit-chain entry (R42, AC-01).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.AuditEntry.#ctor(System.String,System.String,System.String,System.Nullable{System.Int64},System.String,System.Nullable{System.DateTimeOffset},System.String,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Text.Json.JsonElement},System.Nullable{System.Boolean},System.String,System.Nullable{System.Boolean},System.String,System.String,System.String)">
+            <summary>One audit-chain entry (R42, AC-01).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.ReconciliationItem">
+            <summary>An UNKNOWN_OUTCOME / LATE_RESULT_AFTER_DELETE reconciliation item (VI.3, VI.5).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.ReconciliationItem.#ctor(System.String,System.String,System.String,System.String,System.String,System.String,System.Nullable{System.Text.Json.JsonElement},System.String,System.String,System.Nullable{System.Text.Json.JsonElement},System.Nullable{System.DateTimeOffset},System.Nullable{System.DateTimeOffset})">
+            <summary>An UNKNOWN_OUTCOME / LATE_RESULT_AFTER_DELETE reconciliation item (VI.3, VI.5).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.ReconciliationResolveRequest">
+            <summary>Resolution with evidence: CONFIRM_SUCCESS (with result), RETRY_SAME_OPERATION or MARK_FAILED.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.ReconciliationResolveRequest.#ctor(System.String,System.String,System.Collections.Generic.IDictionary{System.String,System.Object},System.String)">
+            <summary>Resolution with evidence: CONFIRM_SUCCESS (with result), RETRY_SAME_OPERATION or MARK_FAILED.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.Reconciliation">
+            <summary>Reconciliation actions and kinds.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.CloudEvent">
+            <summary>CloudEvents 1.0 envelope for <c>POST /events/{channel}</c> (required: id, source, type, specversion).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.CloudEvent.Create(System.String,System.String,System.Object,System.String,System.String)">
+            <summary>A JSON event with a fresh id and the current time.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.PublishResult">
+            <summary>Status = ACCEPTED | DUPLICATE | BUFFERED.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.PublishResult.#ctor(System.String,System.String,System.String,System.Collections.Generic.IReadOnlyList{System.String},System.Collections.Generic.IReadOnlyList{System.String})">
+            <summary>Status = ACCEPTED | DUPLICATE | BUFFERED.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.IncidentAction">
+            <summary>Body of incident retry/resolve (reason mandatory).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.IncidentAction.#ctor(System.String,System.Nullable{System.Int32},System.String)">
+            <summary>Body of incident retry/resolve (reason mandatory).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.OutboxRepairRequest">
+            <summary>Body of outbox requeue/skip (audited).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.OutboxRepairRequest.#ctor(System.String,System.String)">
+            <summary>Body of outbox requeue/skip (audited).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Models.JobRetriesRequest">
+            <summary>Body of <c>POST /ops/jobs/{id}/retries</c>.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Models.JobRetriesRequest.#ctor(System.Int32,System.String)">
+            <summary>Body of <c>POST /ops/jobs/{id}/retries</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.SangamClientOptions">
+            <summary>Options for <see cref="T:Sangam.Sdk.SangamClient"/>.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.SangamClientOptions.BaseUrl">
+            <summary>Server root, for example <c>https://host:8080</c>; a trailing <c>/api/v1</c> is accepted.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.SangamClientOptions.HttpClient">
+            <summary>Optional shared HttpClient (its Timeout should be infinite; per-call timeouts are applied by the SDK).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.SangamClientOptions.SeatId">
+            <summary>Default <c>X-Sangam-Seat</c> (seat context, IX.5 rule 1); a request may override it.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.SangamClientOptions.ActingForSeatId">
+            <summary>Default <c>X-Sangam-Acting-For-Seat</c> (acting authority for a substituted seat, IX.5 rule 4).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.SangamClient">
+            <summary>
+            Entry point of the Sangam .NET SDK: a typed client for <c>/api/v1</c>. Thread-safe; share one instance.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.SangamClient.#ctor(System.String,System.String)">
+            <summary>Shortcut: base URL plus a static token (dev profile) or none.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.SangamClient.MeAsync(System.Threading.CancellationToken)">
+            <summary><c>GET /me</c>: the caller's identity, tenant, seats and roles (untyped).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.SangamClient.Work">
+            <summary>Worker API <c>/work/**</c>.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.BpmnErrorException">
+            <summary>A business error that the BPMN model routes (error boundary event). Not retried.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.OutcomeUnknownException">
+            <summary>
+            The handler cannot know whether the downstream effect happened (for example a payment timed out after sending).
+            The worker reports <c>outcome-unknown</c>; the engine opens an UNKNOWN_OUTCOME reconciliation item and never
+            repeats the effect automatically (VI.3.2 rules 4–5, AC-03).
+            </summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.OutcomeUnknownException.Variables">
+            <summary>Evidence for the reconciliation item (provider reference, request handle, ...).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.TaskFailedException">
+            <summary>
+            A technical failure where the handler asserts that no external effect happened, so a retry is safe.
+            <c>Retries</c>/<c>RetryTimeout</c> override the subscription defaults; <c>Retries = 0</c> raises an incident.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.Backoff">
+            <summary>Exponential back-off with jitter: min(max, initial * factor^(n-1)) +/- jitter fraction.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.Backoff.#ctor(System.TimeSpan,System.TimeSpan,System.Double,System.Double)">
+            <summary>Exponential back-off with jitter: min(max, initial * factor^(n-1)) +/- jitter fraction.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.Backoff.RetryDefaults">
+            <summary>R28 default: about one minute, growing, capped at 10 minutes.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.Backoff.Delay(System.Int32)">
+            <summary>Delay for the n-th consecutive failure (1-based).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.TaskHandler">
+            <summary>
+            Handles one locked work item, only after the LOCKED confirmation (A-1).
+            Return variables → <c>complete</c>; <see cref="T:Sangam.Sdk.Worker.BpmnErrorException"/> → <c>bpmn-error</c>;
+            <see cref="T:Sangam.Sdk.Worker.OutcomeUnknownException"/> → <c>outcome-unknown</c>; <see cref="T:Sangam.Sdk.Worker.TaskFailedException"/> → <c>fail</c>;
+            <see cref="T:System.OperationCanceledException"/> after a cancel request → <c>cancel-ack</c> (otherwise <c>unlock</c>);
+            any other exception → <c>fail</c> with retries, or <c>outcome-unknown</c> when the subscription is irreversible (VI.3.2 rule 5).
+            Downstream calls should send <see cref="P:Sangam.Sdk.Worker.TaskContext.OperationId"/> as their idempotency key (R36).
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.TopicSubscription">
+            <summary>Handler registration for one topic.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.LockDuration">
+            <summary>Lease per fetch (VI.3.2 rule 3: default 5 min, max 24 h); heartbeat at lease/3.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.Variables">
+            <summary>Variables to fetch (null = all).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.LocalVariables">
+            <summary>Fetch only local variables of the activity (TopicRequest.localVariables).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.ProcessDefinitionKey">
+            <summary>Only fetch work of this process definition key.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.BusinessKey">
+            <summary>Only fetch work of this business key.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.Retries">
+            <summary>Retries for the first failure when the work item carries none.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TopicSubscription.Irreversible">
+            <summary>
+            The topic has an irreversible external effect (VI.3.2 rule 5): unexpected handler exceptions are reported as
+            outcome-unknown instead of fail-with-retry. Contract 0.1.0 carries no per-item effect flag, so this is the source.
+            </summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.SangamWorkerOptions">
+            <summary>Options for <see cref="T:Sangam.Sdk.Worker.SangamWorker"/>.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.SangamWorkerOptions.MaxConcurrency">
+            <summary>Maximum handlers running at once (default 8).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.SangamWorkerOptions.AsyncResponseTimeout">
+            <summary>Long-poll wait on the server (default 30 s).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.SangamWorkerOptions.HeartbeatFraction">
+            <summary>Heartbeat interval as a fraction of the lease (VI.3: 1/3).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.SangamWorkerOptions.UsePriority">
+            <summary>Ask the server to hand out higher-priority work first (FetchAndLockRequest.usePriority).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.SangamWorker">
+            <summary>
+            External-worker runtime for the Sangam worker API (VI.3, A-1, A-2, R9, R20, R36).
+            <list type="bullet">
+            <item>Long-poll fetch-and-lock for all topics, asking only for free slots; fetch errors back off with jitter.</item>
+            <item>A-1: a handler starts only for items that came back LOCKED with a lockVersion and attemptId.</item>
+            <item>Heartbeat (<c>extend-lock</c>) every lease/3; the answer carries <c>cancelRequested</c>.</item>
+            <item>Fencing: every call carries (workerId, lockVersion, attemptId); 409 stale-lease / 410 gone means the lease is
+            lost: the handler token is cancelled and its result discarded.</item>
+            <item>Idempotency-Key per call <c>&lt;operationId&gt;:&lt;action&gt;:&lt;lockVersion&gt;</c> (R41).</item>
+            <item>Result calls are retried until the lease expires; failures report decreasing retries and growing back-off.</item>
+            <item>Graceful shutdown: <see cref="M:Sangam.Sdk.Worker.SangamWorker.StopAsync"/> stops fetching, waits for in-flight handlers, then cancels the
+            rest and unlocks their items.</item>
+            </list>
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.SangamWorker.Subscribe(Sangam.Sdk.Worker.TopicSubscription)">
+            <summary>Registers (or replaces) a handler; takes effect on the next fetch (Flowable-client parity).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.SangamWorker.Unsubscribe(System.String)">
+            <summary>Stops fetching a topic; running items finish normally.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.SangamWorker.Start">
+            <summary>Starts the poll loop and returns.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.SangamWorker.RunAsync(System.Threading.CancellationToken)">
+            <summary>Starts and runs until <paramref name="ct"/> is cancelled (for example Ctrl+C / SIGTERM), then stops gracefully.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.SangamWorker.StopAsync">
+            <summary>Stops fetching, waits up to ShutdownTimeout for in-flight handlers, then cancels the rest (they are unlocked).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.StoredOutcomeReplay">
+            <summary>Variables and downstream reference to complete with, taken from the stored ledger outcome (SL-16).</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.StoredOutcomeReplay.#ctor(System.Collections.Generic.IDictionary{System.String,System.Object},System.String)">
+            <summary>Variables and downstream reference to complete with, taken from the stored ledger outcome (SL-16).</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.StoredOutcome">
+            <summary>
+            SL-16 stored-outcome completion (same contract as every Sangam SDK): when the server reports the operation as
+            already SUCCEEDED and not dispatchable (<c>MayDispatch</c> false), the worker completes with
+            <c>storedOutcome.output</c> as variables and <c>storedOutcome.providerRef</c> as <c>outcome.reference</c>, without
+            calling the handler (the downstream effect already happened). Any other operation state runs the handler.
+            </summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.StoredOutcome.Completion(Sangam.Sdk.Models.WorkOperation)">
+            <summary>The completion to send instead of running the handler, or null when the handler must run.</summary>
+        </member>
+        <member name="T:Sangam.Sdk.Worker.TaskContext">
+            <summary>
+            What a handler sees while it holds the lease: the work item, its identities, the live lease state kept fresh by
+            the heartbeat, cancellation, a logger pre-filled with the work fields, and the client.
+            </summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.Topic">
+            <summary>The topic (the worker starts only items whose topic matches a subscription).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.OperationId">
+            <summary>R36 stable business-operation id (falls back to the work id).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.IdempotencyKey">
+            <summary>Idempotency key to forward downstream (= operationId, VI.3.2 rule 4).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.AttemptId">
+            <summary>Changes per lease (A-2).</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.Operation">
+            <summary>The server-recorded operation-ledger entry of <see cref="P:Sangam.Sdk.Worker.TaskContext.OperationId"/> (SL-16); null from older servers.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.OutcomeReference">
+            <summary>
+            Downstream reference of this work's effect (for example a payment reference). Set it in the handler; it is sent
+            as <c>outcome.reference</c> on complete and recorded as the operation-ledger providerRef (SL-16).
+            </summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.LockVersion">
+            <summary>Current fencing token.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.TaskContext.Variable``1(System.String)">
+            <summary>
+            A variable converted to <typeparamref name="T"/>. R33 TypedValues are unwrapped, so
+            <c>{"type":"Decimal","value":"12.50"}</c> reads as <c>12.50m</c>; plain JSON values convert directly.
+            </summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.IsCancelRequested">
+            <summary>True once a heartbeat reported <c>cancelRequested</c> (VI.3.1). The token is cancelled as well.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.IsLeaseLost">
+            <summary>True once the lease is gone (409, 410, or expiry while unreachable); results are discarded.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.CancellationToken">
+            <summary>Cancelled on lease loss, cancel request or forced shutdown.</summary>
+        </member>
+        <member name="M:Sangam.Sdk.Worker.TaskContext.ThrowIfCancelled">
+            <summary>Cooperative checkpoint.</summary>
+        </member>
+        <member name="P:Sangam.Sdk.Worker.TaskContext.Logger">
+            <summary>Logger whose lines always carry workerId, workId, topic, operationId, attemptId, lockVersion, businessKey.</summary>
+        </member>
+    </members>
+</doc>

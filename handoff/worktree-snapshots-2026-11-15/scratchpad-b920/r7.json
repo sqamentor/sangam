@@ -1,0 +1,4 @@
+[["`META-INF/sangam/jurisdictions.idx`. The BPMN files have no DI layout yet.",
+"`META-INF/sangam/jurisdictions.idx`. All 12 BPMN files carry a DI layout (`bpmndi:BPMNDiagram`; M-010b, 2026-11-12)."],
+["- **BPMN diagrams.** There is no diagram (DI) layout, and the user tasks use candidate groups, not seat routing.",
+"- **Seat routing (M-010c, in progress).** The 12 BPMN files now have their DI layout (M-010b), but their user tasks\n  still use candidate groups (for example `DPO`), not seat routing; the seat routing is being designed and coded under\n  M-010c."]]

@@ -1,0 +1,30 @@
+diff --git a/sangam/sangam-packs/tools/packgen/sec_ushealth.py b/sangam/sangam-packs/tools/packgen/sec_ushealth.py
+index c300f7e0..367336b0 100644
+--- a/sangam/sangam-packs/tools/packgen/sec_ushealth.py
++++ b/sangam/sangam-packs/tools/packgen/sec_ushealth.py
+@@ -8,6 +8,7 @@ systems are reached through ConnectorGateway; the generic connectors are in sang
+ (HealthConnectors.packBindings()). Values marked SYNTHETIC are pilot values the tenant replaces.
+ """
+ from lib import C, q
++from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units)
+ from packs import Pack, LOCALES
+ from common import end_ok
+ from sector import SIDE, clock, at_date, maybe
+@@ -149,7 +150,7 @@ ES_SUMMARY = 'Detalles del caso'
+ 
+ def upack(slug, en, es, desc, ids, connectors):
+     return Pack(f'sec.ushealth.{slug}', f'sec-ushealth-{slug}', en, es, 'Healthcare (USA)', desc, list(ids),
+-                connectors=list(connectors), depends=['sangam.core'], second='es')
++                connectors=list(connectors), depends=['sangam.core'], second='es', currency='USD')
+ 
+ 
+ def sform(p, s, sid, name, key, title, fields):
+@@ -627,7 +628,7 @@ def gfe():
+     s.side_exits('gf')
+     pk.dmn('sec-ushealth-gfe-config', 'GFE timeframes and PPDR threshold (45 CFR 149.610 / 149.620; tenant overridable)',
+            'FIRST', [('Business days until service', 'daysUntilService', 'integer')],
+-           [('gfeSpec', 'GFE due within', 'string'), ('ppdrThreshold', 'Dispute threshold (USD)', 'double'),
++           [('gfeSpec', 'GFE due within', 'string'), ('ppdrThreshold', 'Dispute threshold (USD)', 'money'),
+             ('ppdrWindowLead', 'Initiation window from the bill date', 'string')],
+            [(['0'], [q('3WD'), '400', q('-P120D')], 'on request: 3 business days'),
+             (['>= 10'], [q('3WD'), '400', q('-P120D')], 'scheduled 10+ business days ahead: 3 business days'),

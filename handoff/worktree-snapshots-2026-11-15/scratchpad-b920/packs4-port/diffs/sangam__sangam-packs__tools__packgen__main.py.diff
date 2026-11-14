@@ -1,0 +1,21 @@
+diff --git a/sangam/sangam-packs/tools/packgen/main.py b/sangam/sangam-packs/tools/packgen/main.py
+index aed42a48..ddd7e3a1 100644
+--- a/sangam/sangam-packs/tools/packgen/main.py
++++ b/sangam/sangam-packs/tools/packgen/main.py
+@@ -24,6 +24,7 @@ import gov1  # noqa: E402
+ import gov2  # noqa: E402
+ import gov3  # noqa: E402
+ import gov_ifms  # noqa: E402
++import gov_intl  # noqa: E402
+ import billing_pack  # noqa: E402
+ import universal  # noqa: E402
+ import sector  # noqa: E402
+@@ -34,7 +35,7 @@ GENERATED_ROOTS = ('packs', os.path.join('META-INF', 'sangam'))
+ 
+ def generate(resources, readme_path):
+     core.build()
+-    for mod in (gov1, gov2, gov3, gov_ifms, universal, billing_pack, sector):
++    for mod in (gov1, gov2, gov3, gov_ifms, gov_intl, universal, billing_pack, sector):
+         mod.build()
+     packs.write_all(resources)  # form titles, labels and options are resolved while writing
+     if packs.MISSING:

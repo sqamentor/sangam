@@ -1,0 +1,132 @@
+CHANGED gov.assets assets 1.0.0 1.0.0 6 assets-condemnation-authority.dmn forms/register.form.json forms/relist.form.json pack.json sangam-asset-lifecycle.bpmn seed.json
+CHANGED gov.audit-para audit-para 1.0.0 1.0.0 3 pack.json sangam-audit-para.bpmn seed.json
+CHANGED gov.consultancy consultancy 1.0.0 1.0.0 6 forms/financial.form.json forms/negotiation.form.json forms/requirement.form.json pack.json sangam-consultancy.bpmn seed.json
+CHANGED gov.contract-management contract-management 1.0.0 1.0.0 7 contract-amendment-authority.dmn contract-ld.dmn contract-price-escalation.dmn forms/proposal.form.json pack.json sangam-contract-amendment.bpmn seed.json
+CHANGED gov.court-case court-case 1.0.0 1.0.0 2 sangam-court-case.bpmn seed.json
+CHANGED gov.dbt.batch dbt-batch 1.0.0 1.0.0 4 pack.json sangam-dbt-batch.bpmn sangam-dbt-beneficiary-payment.bpmn seed.json
+CHANGED gov.gem-purchase gem-purchase 1.0.0 1.0.0 6 forms/indent.form.json gem-procurement-mode.dmn gem-purchase-authority.dmn pack.json sangam-gem-purchase.bpmn seed.json
+CHANGED gov.grievance grievance 1.0.0 1.0.0 2 sangam-grievance.bpmn seed.json
+CHANGED gov.ifms.audit-para-settlement ifms-audit-para-settlement 1.0.0 1.0.0 2 sangam-ifms-audit-para.bpmn seed.json
+CHANGED gov.ifms.bill ifms-bill 1.0.0 1.0.0 18 forms/advance.form.json forms/cddo.form.json forms/classified.form.json forms/contingency-fund.form.json forms/contingent.form.json forms/draft.form.json forms/establishment-pay.form.json forms/grant.form.json forms/nil-bill.form.json forms/personal-claim.form.json forms/provident-fund.form.json forms/refund.form.json forms/retirement.form.json forms/vendor.form.json ifms-bill-authority.dmn pack.json sangam-ifms-bill.bpmn seed.json
+CHANGED gov.ifms.budget-allocation ifms-budget-allocation 1.0.0 1.0.0 6 forms/proposal.form.json ifms-allocation-authority.dmn ifms-allocation-powers.dmn(added) pack.json sangam-ifms-budget-allocation.bpmn seed.json
+CHANGED gov.ifms.budget-formulation ifms-budget-formulation 1.0.0 1.0.0 5 forms/estimates.form.json ifms-formulation-powers.dmn(added) pack.json sangam-ifms-budget-formulation.bpmn seed.json
+CHANGED gov.ifms.budget-reappropriation budget-reappropriation 1.0.0 1.0.0 5 forms/proposal.form.json pack.json reapp-authority.dmn sangam-budget-reappropriation.bpmn seed.json
+CHANGED gov.ifms.challan-reconciliation challan-reconciliation 1.0.0 1.0.0 1 seed.json
+CHANGED gov.ifms.gia-uc ifms-gia-uc 1.0.0 1.0.0 5 forms/release.form.json ifms-gia-powers.dmn(added) pack.json sangam-ifms-gia-release.bpmn seed.json
+CHANGED gov.ifms.gpf ifms-gpf 1.0.0 1.0.0 5 forms/application.form.json ifms-gpf-powers.dmn(added) pack.json sangam-ifms-gpf.bpmn seed.json
+CHANGED gov.ifms.loans-advances ifms-loans-advances 1.0.0 1.0.0 6 forms/application.form.json ifms-advance-limits.dmn ifms-advance-powers.dmn(added) pack.json sangam-ifms-advance.bpmn seed.json
+CHANGED gov.ifms.monthly-accounts ifms-monthly-accounts 1.0.0 1.0.0 2 sangam-ifms-monthly-accounts.bpmn seed.json
+CHANGED gov.ifms.pao-chain ifms-pao-chain 1.0.0 1.0.0 4 forms/distribute.form.json pack.json sangam-ifms-pao-chain.bpmn seed.json
+CHANGED gov.ifms.reappropriation ifms-reappropriation 1.0.0 1.0.0 6 forms/proposal.form.json ifms-reapp-powers.dmn(added) ifms-reapp-rules.dmn pack.json sangam-ifms-reappropriation.bpmn seed.json
+CHANGED gov.ifms.receipts ifms-receipts 1.0.0 1.0.0 4 forms/challan.form.json pack.json sangam-ifms-receipt.bpmn seed.json
+SAME gov.ifms.salary-monthly salary-monthly 1.0.0 1.0.0 0 
+CHANGED gov.ifms.scheme-appraisal ifms-scheme-appraisal 1.0.0 1.0.0 7 forms/proposal.form.json ifms-scheme-appraisal.dmn ifms-scheme-approval.dmn ifms-scheme-powers.dmn(added) pack.json sangam-ifms-scheme-appraisal.bpmn seed.json
+CHANGED gov.ifms.sna-sparsh ifms-sna-sparsh 1.0.0 1.0.0 5 forms/claim.form.json forms/daily.form.json pack.json sangam-ifms-sna-sparsh-release.bpmn seed.json
+CHANGED gov.ifms.supplementary ifms-supplementary 1.0.0 1.0.0 5 forms/proposal.form.json ifms-supplementary-powers.dmn(added) pack.json sangam-ifms-supplementary.bpmn seed.json
+CHANGED gov.ifms.surrender-lapse ifms-surrender-lapse 1.0.0 1.0.0 5 forms/surrender.form.json ifms-surrender-powers.dmn(added) pack.json sangam-ifms-surrender.bpmn seed.json
+CHANGED gov.ifms.year-end-closing ifms-year-end-closing 1.0.0 1.0.0 2 sangam-ifms-year-end-closing.bpmn seed.json
+CHANGED gov.inspection inspection 1.0.0 1.0.0 3 pack.json sangam-inspection.bpmn seed.json
+CHANGED gov.land-acquisition land-acquisition 1.0.0 1.0.0 5 forms/award.form.json pack.json sangam-land-acquisition.bpmn sangam-land-compensation-payment.bpmn seed.json
+CHANGED gov.leave leave 1.0.0 1.0.0 2 sangam-leave.bpmn seed.json
+CHANGED gov.p1.bill-payment p1-bill-payment 1.0.0 1.0.0 7 forms/bill-draft.form.json forms/joint-approval.form.json forms/revise.form.json p1-competent-authority.dmn pack.json sangam-p1-bill-payment.bpmn seed.json
+CHANGED gov.p2.file-movement p2-file-movement 1.0.0 1.0.0 4 p2-disposal-powers.dmn pack.json sangam-p2-file-movement.bpmn seed.json
+CHANGED gov.p3.grant-sanction p3-grant-sanction 1.0.0 1.0.0 8 forms/application.form.json forms/recommend.form.json p3-eligibility.dmn p3-entitlement.dmn p3-sanction-authority.dmn pack.json sangam-p3-grant-application.bpmn seed.json
+CHANGED gov.p4.licence p4-licence 1.0.0 1.0.0 4 p4-fee.dmn pack.json sangam-p4-licence.bpmn seed.json
+CHANGED gov.pension pension 1.0.0 1.0.0 7 forms/papers.form.json pack.json pension-computation.dmn pension-powers.dmn(added) sangam-pension-payment.bpmn sangam-pension-sanction.bpmn seed.json
+CHANGED gov.records records 1.0.0 1.0.0 1 seed.json
+CHANGED gov.recruitment recruitment 1.0.0 1.0.0 5 pack.json recruit-fee.dmn sangam-recruitment-application.bpmn sangam-recruitment-campaign.bpmn seed.json
+CHANGED gov.rti rti 1.0.0 1.0.0 4 forms/pio-decision.form.json pack.json sangam-rti-request.bpmn seed.json
+CHANGED gov.rtps rtps 1.0.0 1.0.0 4 forms/penalty.form.json pack.json sangam-rtps-service.bpmn seed.json
+CHANGED gov.security-instrument security-instrument 1.0.0 1.0.0 4 forms/register.form.json pack.json sangam-security-instrument.bpmn seed.json
+CHANGED gov.stores stores 1.0.0 1.0.0 5 forms/investigate.form.json pack.json sangam-stock-discrepancy.bpmn seed.json stores-writeoff-authority.dmn
+CHANGED gov.tender tender 1.0.0 1.0.0 6 forms/negotiation.form.json forms/nit.form.json pack.json sangam-tender.bpmn seed.json tender-authority.dmn
+CHANGED gov.work-order work-order 1.0.0 1.0.0 3 forms/award.form.json pack.json seed.json
+CHANGED gov.works works 1.0.0 1.0.0 7 forms/estimate.form.json forms/measurement.form.json pack.json sangam-works-project.bpmn seed.json works-aa-authority.dmn works-ts-authority.dmn
+CHANGED sangam.core core 1.0.0 1.0.0 6 forms/recommendation.form.json pack.json sangam-core-competent-authority.dmn sangam-core-powers.dmn sangam-core-sanction.bpmn seed.json
+CHANGED sec.bank.account-opening sec-bank-account-opening 1.0.0 1.0.0 4 pack.json sangam-sec-bank-account-opening.bpmn sec-bank-ao-powers.dmn seed.json
+CHANGED sec.bank.aml-str sec-bank-aml-str 1.0.0 1.0.0 1 seed.json
+CHANGED sec.bank.cheque-return sec-bank-cheque-return 1.0.0 1.0.0 4 forms/return.form.json pack.json sec-bank-cheque-rules.dmn seed.json
+CHANGED sec.bank.collections sec-bank-collections 1.0.0 1.0.0 5 pack.json sangam-sec-bank-collections.bpmn sec-bank-ots-authority.dmn sec-bank-ots-powers.dmn seed.json
+CHANGED sec.bank.emandate sec-bank-emandate 1.0.0 1.0.0 5 forms/register.form.json pack.json sangam-sec-bank-emandate-debit.bpmn sec-bank-afa-limit.dmn seed.json
+CHANGED sec.bank.inoperative-deposits sec-bank-inoperative-deposits 1.0.0 1.0.0 2 sangam-sec-bank-dea-claim.bpmn seed.json
+CHANGED sec.bank.loan-closure sec-bank-loan-closure 1.0.0 1.0.0 4 forms/compensation.form.json pack.json sangam-sec-bank-loan-closure.bpmn seed.json
+CHANGED sec.bank.loan-origination sec-bank-loan-origination 1.0.0 1.0.0 7 forms/application.form.json forms/valuer.form.json pack.json sangam-sec-bank-loan-origination.bpmn sec-bank-loan-authority.dmn sec-bank-loan-powers.dmn seed.json
+CHANGED sec.bank.payment-dual-auth sec-bank-payment-dual-auth 1.0.0 1.0.0 7 forms/initiate.form.json pack.json sangam-sec-bank-payment.bpmn sec-bank-pay-authoriser.dmn sec-bank-pay-limits.dmn sec-bank-pay-powers.dmn seed.json
+CHANGED sec.bank.rekyc sec-bank-rekyc 1.0.0 1.0.0 1 seed.json
+CHANGED sec.bank.txn-dispute sec-bank-txn-dispute 1.0.0 1.0.0 4 forms/report.form.json pack.json sangam-sec-bank-txn-dispute.bpmn seed.json
+CHANGED sec.cap.corporate-action sec-cap-corporate-action 1.0.0 1.0.0 5 forms/declare.form.json pack.json sangam-sec-cap-dividend-holder.bpmn sangam-sec-cap-dividend.bpmn seed.json
+CHANGED sec.cap.investor-onboarding sec-cap-investor-onboarding 1.0.0 1.0.0 4 pack.json sangam-sec-cap-investor-onboarding.bpmn sec-cap-powers.dmn seed.json
+CHANGED sec.cap.ipo-allotment sec-cap-ipo-allotment 1.0.0 1.0.0 3 forms/compensation.form.json pack.json seed.json
+CHANGED sec.cap.surveillance-alert sec-cap-surveillance-alert 1.0.0 1.0.0 1 seed.json
+CHANGED sec.ecom.gst-tcs sec-ecom-gst-tcs 1.0.0 1.0.0 3 pack.json sangam-sec-ecom-gst-tcs.bpmn seed.json
+CHANGED sec.ecom.order-to-cash sec-ecom-order-to-cash 1.0.0 1.0.0 4 forms/order.form.json pack.json sangam-sec-ecom-order.bpmn seed.json
+CHANGED sec.ecom.return-refund sec-ecom-return-refund 1.0.0 1.0.0 4 forms/request.form.json pack.json sangam-sec-ecom-return.bpmn seed.json
+CHANGED sec.ecom.seller-onboarding sec-ecom-seller-onboarding 1.0.0 1.0.0 2 sangam-sec-ecom-seller-onboarding.bpmn seed.json
+CHANGED sec.edu.admission sec-edu-admission 1.0.0 1.0.0 2 sangam-sec-edu-admission.bpmn seed.json
+CHANGED sec.edu.examination sec-edu-examination 1.0.0 1.0.0 3 sangam-sec-edu-exam-cycle.bpmn sangam-sec-edu-revaluation.bpmn seed.json
+CHANGED sec.edu.scholarship sec-edu-scholarship 1.0.0 1.0.0 6 forms/apply.form.json pack.json sangam-sec-edu-scholarship.bpmn sec-edu-sch-eligibility.dmn sec-edu-sch-powers.dmn seed.json
+NEW sec.eu.gdpr-dsr sec-eu-gdpr-dsr 1.0.0 None 0 
+CHANGED sec.fin.complaint sec-fin-complaint 1.0.0 1.0.0 1 seed.json
+CHANGED sec.fin.cyber-incident sec-fin-cyber-incident 1.0.0 1.0.0 1 seed.json
+CHANGED sec.health.abdm-consent sec-health-abdm-consent 1.0.0 1.0.0 1 seed.json
+CHANGED sec.health.admission-discharge sec-health-admission-discharge 1.0.0 1.0.0 5 forms/admit.form.json forms/billing.form.json pack.json sangam-sec-health-admission.bpmn seed.json
+CHANGED sec.health.blood-bank sec-health-blood-bank 1.0.0 1.0.0 1 seed.json
+CHANGED sec.health.lab-order sec-health-lab-order 1.0.0 1.0.0 1 seed.json
+CHANGED sec.health.ot-scheduling sec-health-ot-scheduling 1.0.0 1.0.0 2 sangam-sec-health-ot.bpmn seed.json
+CHANGED sec.health.pharmacy-dispense sec-health-pharmacy-dispense 1.0.0 1.0.0 2 sangam-sec-health-pharmacy.bpmn seed.json
+CHANGED sec.hr.appraisal sec-hr-appraisal 1.0.0 1.0.0 2 sangam-sec-hr-appraisal-cycle.bpmn seed.json
+CHANGED sec.hr.employee-exit sec-hr-employee-exit 1.0.0 1.0.0 5 forms/fnf.form.json forms/gratuity.form.json pack.json sangam-sec-hr-exit.bpmn seed.json
+CHANGED sec.hr.payroll sec-hr-payroll 1.0.0 1.0.0 6 forms/make.form.json pack.json sangam-sec-hr-payroll.bpmn sec-hr-payroll-powers.dmn sec-hr-statutory.dmn seed.json
+CHANGED sec.hr.posh-complaint sec-hr-posh-complaint 1.0.0 1.0.0 2 sangam-sec-hr-posh.bpmn seed.json
+CHANGED sec.ins.death-claim sec-ins-death-claim 1.0.0 1.0.0 7 forms/assess.form.json forms/intimation.form.json pack.json sangam-sec-ins-death-claim.bpmn sec-ins-death-authority.dmn sec-ins-death-powers.dmn seed.json
+CHANGED sec.ins.health-claim sec-ins-health-claim 1.0.0 1.0.0 9 forms/assess.form.json forms/discharge.form.json forms/documents.form.json forms/enhance.form.json forms/preauth.form.json forms/request.form.json pack.json sangam-sec-ins-health-claim.bpmn seed.json
+CHANGED sec.ins.intermediary-licensing sec-ins-intermediary-licensing 1.0.0 1.0.0 5 forms/apply.form.json pack.json sangam-sec-ins-intermediary.bpmn sec-ins-intermediary.dmn seed.json
+CHANGED sec.ins.motor-claim sec-ins-motor-claim 1.0.0 1.0.0 9 forms/assess.form.json forms/fnol.form.json forms/survey.form.json pack.json sangam-sec-ins-motor-claim.bpmn sec-ins-claim-authority.dmn sec-ins-claim-powers.dmn sec-ins-motor-triage.dmn seed.json
+CHANGED sec.ins.proposal-underwriting sec-ins-proposal-underwriting 1.0.0 1.0.0 6 forms/decide.form.json forms/proposal.form.json pack.json sangam-sec-ins-proposal.bpmn sec-ins-uw.dmn seed.json
+CHANGED sec.ins.reinsurance sec-ins-reinsurance 1.0.0 1.0.0 4 forms/risk.form.json pack.json sec-ins-ri-cession.dmn seed.json
+CHANGED sec.legal.dpdp-rights sec-legal-dpdp-rights 1.0.0 1.0.0 1 seed.json
+CHANGED sec.legal.litigation sec-legal-litigation 1.0.0 1.0.0 4 forms/intake.form.json pack.json sangam-sec-legal-litigation.bpmn seed.json
+CHANGED sec.mfg.batch-release sec-mfg-batch-release 1.0.0 1.0.0 1 seed.json
+CHANGED sec.mfg.mrp-planning sec-mfg-mrp-planning 1.0.0 1.0.0 2 sangam-sec-mfg-planned-order.bpmn seed.json
+CHANGED sec.nbfc.digital-lending sec-nbfc-digital-lending 1.0.0 1.0.0 6 forms/application.form.json pack.json sangam-sec-nbfc-digital-loan.bpmn sec-nbfc-dl-authority.dmn sec-nbfc-dl-powers.dmn seed.json
+CHANGED sec.nbfc.dlg-arrangement sec-nbfc-dlg-arrangement 1.0.0 1.0.0 5 forms/proposal.form.json pack.json sangam-sec-nbfc-dlg.bpmn sec-nbfc-dlg-powers.dmn seed.json
+CHANGED sec.scm.eway-bill sec-scm-eway-bill 1.0.0 1.0.0 5 forms/dispatch.form.json pack.json sangam-sec-scm-eway-bill.bpmn sec-scm-ewb.dmn seed.json
+CHANGED sec.scm.procure-to-pay sec-scm-procure-to-pay 1.0.0 1.0.0 8 forms/requisition.form.json forms/rfq.form.json pack.json sangam-sec-scm-p2p.bpmn sec-scm-powers.dmn sec-scm-pr-authority.dmn sec-scm-sourcing.dmn seed.json
+CHANGED sec.tel.mnp-port-in sec-tel-mnp-port-in 1.0.0 1.0.0 2 sangam-sec-tel-mnp.bpmn seed.json
+CHANGED sec.tel.sim-swap sec-tel-sim-swap 1.0.0 1.0.0 2 sangam-sec-tel-sim-swap.bpmn seed.json
+CHANGED sec.tel.tcccpr sec-tel-tcccpr 1.0.0 1.0.0 1 seed.json
+CHANGED sec.ushealth.access-request sec-ushealth-access-request 1.0.0 1.0.0 4 forms/fee.form.json pack.json sangam-sec-ushealth-access-request.bpmn seed.json
+CHANGED sec.ushealth.baa sec-ushealth-baa 1.0.0 1.0.0 2 sangam-sec-ushealth-baa.bpmn seed.json
+CHANGED sec.ushealth.breach sec-ushealth-breach 1.0.0 1.0.0 2 sangam-sec-ushealth-breach.bpmn seed.json
+CHANGED sec.ushealth.claim sec-ushealth-claim 1.0.0 1.0.0 7 forms/encounter.form.json forms/patient-bill.form.json forms/scrub.form.json forms/write-off.form.json pack.json sangam-sec-ushealth-claim.bpmn seed.json
+CHANGED sec.ushealth.discharge sec-ushealth-discharge 1.0.0 1.0.0 2 sangam-sec-ushealth-discharge.bpmn seed.json
+CHANGED sec.ushealth.eligibility sec-ushealth-eligibility 1.0.0 1.0.0 4 forms/review.form.json pack.json sangam-sec-ushealth-eligibility.bpmn seed.json
+CHANGED sec.ushealth.gfe-ppdr sec-ushealth-gfe-ppdr 1.0.0 1.0.0 7 forms/apply.form.json forms/compare.form.json forms/estimate.form.json pack.json sangam-sec-ushealth-gfe-ppdr.bpmn sec-ushealth-gfe-config.dmn seed.json
+CHANGED sec.ushealth.prior-auth sec-ushealth-prior-auth 1.0.0 1.0.0 2 sangam-sec-ushealth-prior-auth.bpmn seed.json
+CHANGED sec.util.disconnection sec-util-disconnection 1.0.0 1.0.0 3 forms/start.form.json pack.json seed.json
+CHANGED sec.util.meter-to-cash sec-util-meter-to-cash 1.0.0 1.0.0 3 pack.json sec-util-tariff.dmn seed.json
+CHANGED sec.util.new-connection sec-util-new-connection 1.0.0 1.0.0 5 forms/estimate.form.json pack.json sangam-sec-util-connection.bpmn sec-util-sop.dmn seed.json
+CHANGED universal.billing-cycle billing-cycle 1.0.0 1.0.0 4 forms/approve.form.json forms/decide.form.json pack.json seed.json
+CHANGED universal.up01-stp-order up01-stp-order 1.0.0 1.0.0 2 pack.json up01-route.dmn
+CHANGED universal.up02-saga up02-saga 1.0.0 1.0.0 3 forms/order.form.json pack.json sangam-up02-saga.bpmn
+CHANGED universal.up03-event-correlation up03-event-correlation 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up04-skills-routing up04-skills-routing 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up05-four-eyes up05-four-eyes 1.0.0 1.0.0 4 forms/change.form.json pack.json sangam-up05-four-eyes.bpmn up05-checker.dmn
+CHANGED universal.up06-hitl-ai-review up06-hitl-ai-review 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up07-improvement-loop up07-improvement-loop 1.0.0 1.0.0 3 pack.json sangam-up07-improvement-loop.bpmn seed.json
+CHANGED universal.up08-entity-lifecycle up08-entity-lifecycle 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up09-dynamic-case up09-dynamic-case 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up10-incident-swarming up10-incident-swarming 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up11-change-window up11-change-window 1.0.0 1.0.0 2 sangam-up11-change.bpmn seed.json
+CHANGED universal.up12-order-decomposition up12-order-decomposition 1.0.0 1.0.0 1 sangam-up12-suborder.bpmn
+CHANGED universal.up13-returns-refunds up13-returns-refunds 1.0.0 1.0.0 4 forms/request.form.json pack.json sangam-up13-returns.bpmn seed.json
+CHANGED universal.up14-three-way-match up14-three-way-match 1.0.0 1.0.0 4 forms/invoice.form.json pack.json sangam-up14-three-way-match.bpmn seed.json
+CHANGED universal.up15-recertification up15-recertification 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up16-provisioning up16-provisioning 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up17-prior-authorisation up17-prior-authorisation 1.0.0 1.0.0 2 sangam-up17-prior-auth.bpmn seed.json
+CHANGED universal.up18-capa up18-capa 1.0.0 1.0.0 3 pack.json sangam-up18-capa.bpmn seed.json
+CHANGED universal.up19-contract-lifecycle up19-contract-lifecycle 1.0.0 1.0.0 5 forms/request.form.json pack.json sangam-up19-clm.bpmn seed.json up19-signatory.dmn
+CHANGED universal.up20-rpa up20-rpa 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up21-iot-storm-control up21-iot-storm-control 1.0.0 1.0.0 1 seed.json
+CHANGED universal.up22-external-collaboration up22-external-collaboration 1.0.0 1.0.0 1 seed.json
+dirs removed since base: []

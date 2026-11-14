@@ -1,0 +1,36 @@
+def _multipart(req: ApiRequest, parts: Optional[Mapping[str, Any]]) -> None:
+    """multipart/form-data. A ``(filename, bytes)`` or ``(filename, bytes, content_type)`` tuple or a bytes value is a
+    file part (bytes are named after the part); a list repeats the part per element (e.g. several deployment files);
+    anything else is a text part."""
+    if parts is None:
+        return
+    boundary = "sangam-" + str(uuid.uuid4())
+    out = bytearray()
+
+    def q(s: str) -> str:
+        return s.replace('"', "%22").replace("\\r", "").replace("\\n", "")
+
+    def part(name: str, value: Any) -> None:
+        if value is None:
+            return
+        out.extend(f"--{boundary}\\r\\n".encode())
+        if isinstance(value, tuple) and len(value) in (2, 3) and isinstance(value[1], (bytes, bytearray)):
+            ct = value[2] if len(value) == 3 else "application/octet-stream"
+            out.extend(f'Content-Disposition: form-data; name="{q(name)}"; filename="{q(str(value[0]))}"\\r\\n'.encode())
+            out.extend(f"Content-Type: {ct}\\r\\n\\r\\n".encode() + bytes(value[1]))
+        elif isinstance(value, (bytes, bytearray)):
+            out.extend(f'Content-Disposition: form-data; name="{q(name)}"; filename="{q(name)}"\\r\\n'.encode())
+            out.extend(b"Content-Type: application/octet-stream\\r\\n\\r\\n" + bytes(value))
+        else:
+            text = str(value).lower() if isinstance(value, bool) else str(value)
+            out.extend(f'Content-Disposition: form-data; name="{q(name)}"\\r\\n\\r\\n'.encode() + text.encode())
+        out.extend(b"\\r\\n")
+
+    for name, value in parts.items():
+        for item in (value if isinstance(value, list) else [value]):
+            part(name, item)
+    out.extend(f"--{boundary}--\\r\\n".encode())
+    req.raw_body = bytes(out)
+    req.raw_content_type = "multipart/form-data; boundary=" + boundary
+
+

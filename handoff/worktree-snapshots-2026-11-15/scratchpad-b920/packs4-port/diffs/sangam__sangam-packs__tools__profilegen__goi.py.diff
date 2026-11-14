@@ -1,0 +1,27 @@
+diff --git a/sangam/sangam-packs/tools/profilegen/goi.py b/sangam/sangam-packs/tools/profilegen/goi.py
+index 186d3ec0..950c638f 100644
+--- a/sangam/sangam-packs/tools/profilegen/goi.py
++++ b/sangam/sangam-packs/tools/profilegen/goi.py
+@@ -1,6 +1,11 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # GOI government profile, its department profiles and the central bill catalogue (RPR 2022 forms).
+-from central import U
++import os as _os
++import sys as _sys
++
++_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), '..', 'packgen'))
++from money import minor  # noqa: E402  (the one money helper: integer minor units)
++from central import U  # noqa: E402
+ 
+ 
+ def bt(id, family, form, en, legacy=None, chain='PAO_3', sanction='REQUIRED', allow=None, certs=None, att=None,
+@@ -81,7 +86,8 @@ CHAINS = [
+     {'id': 'PAO_3', 'steps': [{'role': 'BILL_DISTRIBUTOR'}, {'role': 'DEALING_HAND'}, {'role': 'AAO'}, {'role': 'PAO', 'sign': True}],
+      'returnBy': ['PAO'], 'mayEdit': False,
+      'queue': {'token': True, 'tokenSeries': 'TOKEN', 'fifo': True, 'distributorRole': 'BILL_DISTRIBUTOR'},
+-     'signatures': [{'atOrAbove': 1000000, 'count': 2, 'secondSignatoryRole': 'SECOND_SIGNATORY',
++     'signatures': [{'atOrAbove': minor(1000000), 'count': 2,  # paise: the pack amount is minor units (SD-398)
++                     'secondSignatoryRole': 'SECOND_SIGNATORY',
+                      'ruleRef': 'CAM 2024 2.2.9 note (two DSCs at Rs 10 lakh and above)'}],
+      'sequence': ['DDO', 'PAO'], 'ruleRef': 'CAM 2024 2.2.8 (only the PAO returns a bill)'},
+     {'id': 'CDDO', 'steps': [{'role': 'CDDO', 'sign': True}], 'returnBy': ['CDDO'], 'mayEdit': False},

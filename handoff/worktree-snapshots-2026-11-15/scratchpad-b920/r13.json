@@ -1,0 +1,5 @@
+[["- **TM-5 (I/E, high).**", "- **TM-5 (I/E, high; register SL-157).**"],
+["- **TM-6 (E, high).**", "- **TM-6 (E, high; register SL-158).**"],
+["- **TM-9 (E, high).**", "- **TM-9 (E, high; register SL-159, backlog M-061).**"],
+["- **TM-10 (E, high).**", "- **TM-10 (E, high; register SL-160).** Owner decision 2026-11-12: an allow-list at deploy (only reviewed delegate\n  classes and expression functions are deployable; `SANGAM.md` X.0k)."],
+["The gaps are not yet register rows; the integrator owns\n`TESTING-GAP-REGISTER.md`.", "TM-5, TM-6, TM-9 and TM-10 are register rows SL-157…SL-160;\nthe other gaps are not yet register rows. The integrator owns `TESTING-GAP-REGISTER.md`."]]

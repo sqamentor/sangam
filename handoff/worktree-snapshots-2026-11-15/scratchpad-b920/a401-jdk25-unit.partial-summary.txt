@@ -1,0 +1,37 @@
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 169.2 s -- in org.sangam.packs.AllPacksSmokeTest
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 21.61 s -- in org.sangam.packs.BankPaymentConcurrenceTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 19.12 s -- in org.sangam.packs.ChangeAdoptionTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.081 s -- in org.sangam.packs.ConnectorInputRenameTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.746 s -- in org.sangam.packs.CrossPackCallBindingTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in org.sangam.packs.JsonDocumentVariablesTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in org.sangam.packs.OperationIdAndSeedsTest
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 30.42 s -- in org.sangam.packs.PackAcceptanceTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.85 s -- in org.sangam.packs.PackBusinessCalendarTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 20.50 s -- in org.sangam.packs.PackDeploymentTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.053 s -- in org.sangam.packs.PackLifecycleTest
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.547 s -- in org.sangam.packs.PackModelLintTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 25.90 s -- in org.sangam.packs.PilotScenarioTest
+Tests run: 30, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 46.58 s -- in org.sangam.packs.SectorConformanceTest
+Tests run: 15, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.10 s -- in org.sangam.security.delegation.PowerBandBoundaryTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.221 s -- in org.sangam.security.quota.JdbcTenantQuotasTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.14 s -- in org.sangam.config.api.BillConnectorContractTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.277 s -- in org.sangam.config.locale.ProfileBusinessClockTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.039 s -- in org.sangam.config.ProfileDataTest
+Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 11.36 s -- in org.sangam.onboarding.acceptance.PlugAndPlayAcceptanceTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 5.433 s -- in org.sangam.onboarding.bundle.PromotionServiceTest
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.164 s -- in org.sangam.onboarding.DependencyResolutionTest
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.492 s -- in org.sangam.onboarding.readiness.OrgLevelsTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.756 s -- in org.sangam.onboarding.readiness.PackPlaceholderReadinessTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 484.0 s -- in org.sangam.server.bridge.BulkIngestRestH2Test
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 21.00 s <<< FAILURE! -- in org.sangam.server.bridge.EngineSlotReleasedOnContextCloseTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 17.04 s -- in org.sangam.server.bridge.MixedRemittanceTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 28.68 s -- in org.sangam.server.bridge.OnboardingOrgLevelsH2Test
+Tests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 8.889 s <<< FAILURE! -- in org.sangam.server.bridge.OutboxRepairDeadLetterTest
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.010 s -- in org.sangam.server.bridge.ProfileWorkingDaysTest
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 16.10 s <<< FAILURE! -- in org.sangam.server.bridge.QuotaPoolDeadlockTtl0H2Test
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 11.97 s <<< FAILURE! -- in org.sangam.server.bridge.QuotaPoolDeadlockTtl30sH2Test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.532 s -- in org.sangam.server.bridge.RemittanceAndSeedsTest
+Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 23.88 s -- in org.sangam.server.bridge.ResolvedIdentityCacheH2Test
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.169 s <<< FAILURE! -- in org.sangam.server.bridge.RollbackGuardSpringTxTest
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.011 s -- in org.sangam.server.config.HostingWiringTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in org.sangam.server.config.LegacyTimeZoneEnvironmentPostProcessorTest

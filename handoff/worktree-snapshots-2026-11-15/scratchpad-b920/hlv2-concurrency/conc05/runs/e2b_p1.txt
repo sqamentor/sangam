@@ -1,0 +1,27 @@
+mode=log poll=0.002s lease=2.5s offsets=[-80,-10] ms trials=100 folder=C:\Users\LOKEND~2\AppData\Local\Temp\claude\b920001b93f0ae3b\6e98c2a7-cdac-4783-9098-832546572812\scratchpad\hlv2-concurrency\conc05\runs\e2b-log-p1-1794271978955982400
+    83  A:released by A | B acquired=True | lock after=B
+     7  A:refused: lock is held by B, not A | B acquired=True | lock after=B
+     6  A:released by A | B acquired=True | lock after=None
+     4  A:no lock held | B acquired=True | lock after=B
+trials where A's os.remove hit PermissionError (sharing violation): 5
+BAD (B holds per its own output, lock file gone, A said 'released by A'): 6 / 100
+  trial 2: release called at lease_until-58.2 ms; A's os.remove attempts: +0.0394s read start, +0.0400s read done (owner=A); +0.0400s remove PermissionError; +0.1308s remove ok
+      2026-11-10T00:53:06+00:00 served A arrived=2026-11-10T00:53:06+00:00 pid=3480 lease=2.5s what=job A
+      2026-11-10T00:53:09+00:00 auto-released stale lock owner=A pid=3480 since=2026-11-10T00:53:06+00:00 reason=dead-holder+expired-lease
+      2026-11-10T00:53:09+00:00 served B arrived=2026-11-10T00:53:07+00:00 pid=42156 lease=1800s what=job B
+  trial 9: release called at lease_until-34.7 ms; A's os.remove attempts: +0.0397s read start, +0.0404s read done (owner=A); +0.0405s remove PermissionError; +0.1093s remove ok
+      2026-11-10T00:53:28+00:00 served A arrived=2026-11-10T00:53:28+00:00 pid=43020 lease=2.5s what=job A
+      2026-11-10T00:53:31+00:00 auto-released stale lock owner=A pid=43020 since=2026-11-10T00:53:28+00:00 reason=dead-holder+expired-lease
+      2026-11-10T00:53:31+00:00 served B arrived=2026-11-10T00:53:29+00:00 pid=42156 lease=1800s what=job B
+  trial 47: release called at lease_until-17.1 ms; A's os.remove attempts: +0.0106s read start, +0.0159s read done (owner=A); +0.0159s remove PermissionError; +0.0868s remove ok
+      2026-11-10T00:55:35+00:00 served A arrived=2026-11-10T00:55:35+00:00 pid=29700 lease=2.5s what=job A
+      2026-11-10T00:55:37+00:00 auto-released stale lock owner=A pid=29700 since=2026-11-10T00:55:35+00:00 reason=dead-holder+expired-lease
+      2026-11-10T00:55:37+00:00 served B arrived=2026-11-10T00:55:36+00:00 pid=42156 lease=1800s what=job B
+  trial 62: release called at lease_until-29.5 ms; A's os.remove attempts: +0.0210s read start, +0.0259s read done (owner=A); +0.0260s remove ok
+      2026-11-10T00:56:26+00:00 served A arrived=2026-11-10T00:56:26+00:00 pid=26824 lease=2.5s what=job A
+      2026-11-10T00:56:29+00:00 auto-released stale lock owner=A pid=26824 since=2026-11-10T00:56:26+00:00 reason=dead-holder+expired-lease
+      2026-11-10T00:56:29+00:00 served B arrived=2026-11-10T00:56:27+00:00 pid=42156 lease=1800s what=job B
+  trial 64: release called at lease_until-23.5 ms; A's os.remove attempts: +0.0059s read start, +0.0066s read done (owner=A); +0.0066s remove PermissionError; +0.0692s remove ok
+      2026-11-10T00:56:33+00:00 served A arrived=2026-11-10T00:56:33+00:00 pid=39888 lease=2.5s what=job A
+      2026-11-10T00:56:35+00:00 auto-released stale lock owner=A pid=39888 since=2026-11-10T00:56:33+00:00 reason=dead-holder+expired-lease
+      2026-11-10T00:56:35+00:00 served B arrived=2026-11-10T00:56:34+00:00 pid=42156 lease=1800s what=job B

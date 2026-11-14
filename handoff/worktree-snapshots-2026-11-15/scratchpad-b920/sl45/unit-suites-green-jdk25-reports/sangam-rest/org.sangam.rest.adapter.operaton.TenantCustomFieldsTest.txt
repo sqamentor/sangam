@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: org.sangam.rest.adapter.operaton.TenantCustomFieldsTest
+-------------------------------------------------------------------------------
+Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.835 s -- in org.sangam.rest.adapter.operaton.TenantCustomFieldsTest

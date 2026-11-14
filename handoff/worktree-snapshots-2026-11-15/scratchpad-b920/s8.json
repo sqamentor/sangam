@@ -1,0 +1,2 @@
+[["Engine-native lease expiry is not yet intercepted by the A-10 `ExpiryPolicy`. Long-poll blocks a servlet thread (up to 30 s).",
+"Engine-native lease expiry is not yet intercepted by the A-10 `ExpiryPolicy`. The long-poll no longer blocks a servlet thread: with `sangam.work.long-poll.enabled` (default true) the wait is an async response (`support/WorkLongPoll`, M-053 / SL-141; sangam-server README settings), and only above `max-waiters` per node does a request wait in its own thread (up to `sangam.rest.max-async-response-timeout`, 30 s)."]]

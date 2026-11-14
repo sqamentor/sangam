@@ -1,0 +1,10 @@
+<!-- REQUEST W4-F M-143 (decision 186): add inside <profiles> of sangam/pom.xml. Opt-in only; the default <modules>
+     stay as they are, so OptionalHosts.defaultModules never lists it and DefaultReactorHasNoOptionalHostTest stays green. -->
+<profile>
+  <id>sangam-quarkus</id>
+  <!-- M-143 optional Quarkus host (owner decision 186, decision 137): build with -Psangam-quarkus. Deployment
+       approval: NOT APPROVED. -->
+  <modules>
+    <module>sangam-quarkus-extension</module>
+  </modules>
+</profile>
