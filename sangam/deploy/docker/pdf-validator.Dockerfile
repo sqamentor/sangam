@@ -51,7 +51,7 @@ RUN --mount=type=cache,target=/root/.m2 \
  && ls -l /out /out/lib
 
 # Stage 2: runtime. Non-root, read-only friendly (no writable state; temporary files only under /tmp).
-FROM eclipse-temurin:25.0.1_8-jre-noble@sha256:ecbdcdbfae44ee61794a8ad36042b6b8e3c3124e5e9c171c3630fcd5ab856e33 AS runtime
+FROM eclipse-temurin:26.0.2.1_1-jre-noble@sha256:adfd44c114916dc79fa9a24087fbac34252096edb9892d1c2d9d82db3f8947b3 AS runtime
 LABEL org.opencontainers.image.title="sangam-pdf-validator" \
       org.opencontainers.image.description="Sangam PDF validator: PDF/A-2b and PDF/UA-1 checks with veraPDF (owner decision 114)" \
       org.opencontainers.image.licenses="Apache-2.0" \
