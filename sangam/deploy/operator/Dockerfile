@@ -7,7 +7,7 @@
 # Built from the reactor (-pl deploy/operator -am) because the operator depends on sangam-kube (decision 155).
 # Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 
-FROM maven:3.9.11-eclipse-temurin-21@sha256:6fdc855a6ed81d288ca7ca37ac6ff5e9308b612485c0801d70b25a858c83d237 AS build
+FROM maven:3.9-eclipse-temurin-26@sha256:b2c1ad85954592f9928e84327c65201f308ad9b5d8ed7d5b823717c97bf23fbb AS build
 ARG MAVEN_ARGS="-B -ntp"
 WORKDIR /src
 COPY . .
