@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/root/.m2 \
  && ls -l /out /out/lib
 
 # Stage 2: native-image (GraalVM CE). Metadata comes from the jars' META-INF/native-image directories.
-FROM ghcr.io/graalvm/native-image-community:25.0.1@sha256:2fec8f17e9eed1a14987ebf7610524622b91193ffd3d12619f47d7c2f2cab844 AS native
+FROM ghcr.io/graalvm/native-image-community:25.0.2@sha256:0d936f32bb8acb5bc60c41b33e05f064d7a6aaf36b726538296c54949bd4a3c0 AS native
 WORKDIR /build
 COPY --from=jars /out/ /build/
 RUN native-image -cp "$(ls /build/*.jar | head -n1):/build/lib/*" \
