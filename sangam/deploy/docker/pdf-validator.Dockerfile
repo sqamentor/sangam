@@ -34,7 +34,7 @@
 # Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 
 # Stage 1: the validator jar and its runtime class path (sangam-integration, veraPDF, Rhino, Jackson).
-FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS jars
+FROM maven:3.9-eclipse-temurin-26@sha256:b2c1ad85954592f9928e84327c65201f308ad9b5d8ed7d5b823717c97bf23fbb AS jars
 ARG MAVEN_ARGS="-B -ntp"
 WORKDIR /src
 COPY . .

@@ -52,7 +52,7 @@ ARG APP_MODULE=sangam-server
 # ---------------------------------------------------------------------------------------------------------------
 # Stage: build the fat jar from source with the reactor (needs Maven Central or an offline mirror, see README).
 # ---------------------------------------------------------------------------------------------------------------
-FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS build
+FROM maven:3.9-eclipse-temurin-26@sha256:b2c1ad85954592f9928e84327c65201f308ad9b5d8ed7d5b823717c97bf23fbb AS build
 ARG MAVEN_ARGS="-B -ntp"
 ARG MARIADB_VERSION=3.5.11
 ARG APP_MODULE
@@ -110,7 +110,7 @@ RUN --mount=type=cache,target=/root/.m2 \
 # ---------------------------------------------------------------------------------------------------------------
 # Stage: take a jar built elsewhere (CI artefact, air-gapped build host).
 # ---------------------------------------------------------------------------------------------------------------
-FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS prebuilt
+FROM maven:3.9-eclipse-temurin-26@sha256:b2c1ad85954592f9928e84327c65201f308ad9b5d8ed7d5b823717c97bf23fbb AS prebuilt
 ARG PREBUILT_JAR=sangam-server/target/sangam-server.jar
 ARG PREBUILT_LIB_EXT=deploy/docker/lib-ext
 COPY ${PREBUILT_JAR} /out/app.jar
@@ -122,7 +122,7 @@ FROM ${JAR_SOURCE} AS jar
 # ---------------------------------------------------------------------------------------------------------------
 # Stage: common file layout + licence guard.
 # ---------------------------------------------------------------------------------------------------------------
-FROM maven:3.9.11-eclipse-temurin-25@sha256:407c4423cec0cf2981055bc2c6c0dc211d9605b6669279b95997f2d1c7e91e2c AS layout
+FROM maven:3.9-eclipse-temurin-26@sha256:b2c1ad85954592f9928e84327c65201f308ad9b5d8ed7d5b823717c97bf23fbb AS layout
 COPY --from=jar /out/ /layout/opt/sangam/
 COPY deploy/docker/server/SOURCE-OFFER.txt /layout/opt/sangam/lib-ext/SOURCE-OFFER.txt
 COPY deploy/docker/server/drivers-README.txt /layout/opt/sangam/drivers/README.txt
