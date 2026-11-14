@@ -168,7 +168,7 @@ jobs:
               -DassemblyAnalyzerEnabled=false -DossindexAnalyzerEnabled=false \
               -DsuppressionFile=deploy/licence/dependency-check-suppressions.xml \
               "-DnvdApiKey=${NVD_API_KEY:?NVD_API_KEY not set: the SSM step must run first}"
-      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: always() && steps.oidc.outputs.run == 'true' && hashFiles('sangam/target/dependency-check-report.sarif') != ''
         with:
           sarif_file: sangam/target/dependency-check-report.sarif
@@ -297,7 +297,7 @@ jobs:
           path: |
             semgrep.sarif
             semgrep-pip-licences.json
-      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: always() && hashFiles('semgrep.sarif') != ''
         with:
           sarif_file: semgrep.sarif
@@ -327,7 +327,7 @@ jobs:
           # shellcheck disable=SC2086
           $RL run --check secret-scan --ledger-dir "$LEDGER" $REPORT_ONLY --tool-version gitleaks-8.30.1 -- \
             "$RUNNER_TEMP/bin/gitleaks" git --redact --no-banner --exit-code 1 --report-format sarif --report-path gitleaks.sarif .
-      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: always() && hashFiles('gitleaks.sarif') != ''
         with:
           sarif_file: gitleaks.sarif
@@ -358,7 +358,7 @@ jobs:
           results_file: scorecard.sarif
           results_format: sarif
           publish_results: false
-      - uses: github/codeql-action/upload-sarif@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: always() && hashFiles('scorecard.sarif') != ''
         with:
           sarif_file: scorecard.sarif
