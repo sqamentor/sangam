@@ -5818,7 +5818,7 @@ class ModellerApi:
     def walk_model_token(self, body: M.ModelTokenWalkRequest, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Token walk
 
-        Reads the model only; nothing runs.
+        Reads the model only; nothing runs. Walks gateways, boundary events, event sub-processes, error and escalation propagation, compensation and terminate end events; each move names how the token got there (via FLOW, BOUNDARY, EVENT_SUB_PROCESS or COMPENSATION). 422 MODELLER_REJECTED when a choice names no outgoing flow or boundary event, or an event sub-process trigger names no flow node.
 
         ``POST /models/token-walk`` (operationId ``walkModelToken``); permission ``package.read``; result stored atomically with the state change.
         """
@@ -7007,7 +7007,7 @@ class PackagesApi:
         return cast("M.EnvBinding", self._c.json(req, options))
 
 class PacksApi:
-    """``Packs`` (3 operations)."""
+    """``Packs`` (4 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -7043,6 +7043,16 @@ class PacksApi:
         req = ApiRequest("POST", f"/packs/{seg(str(id))}/rollback")
         req.body = body
         return cast("M.PackDeployResult", self._c.json(req, options))
+
+    def list_pack_document_slots(self, id: str, *, options: Optional[RequestOptions] = None) -> list[M.PackDocumentSlot]:
+        """Document slots of a pack
+
+        The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
+
+        ``GET /packs/{id}/document-slots`` (operationId ``listPackDocumentSlots``); permission ``tenant.admin``.
+        """
+        req = ApiRequest("GET", f"/packs/{seg(str(id))}/document-slots")
+        return cast("list[M.PackDocumentSlot]", self._c.json(req, options))
 
 class PluginsApi:
     """``Plugins`` (6 operations)."""
@@ -12664,7 +12674,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1147 operations on 965 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

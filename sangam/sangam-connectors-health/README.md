@@ -122,7 +122,8 @@ configuration in `PackConnectorBindings`.
 ## CMS-0057-F payer APIs (M-133, owner decision 107)
 
 The payer APIs are FHIR servers the payer hosts; Sangam runs the workflows behind them. The packs
-`sec.ushealth.payer-to-payer` (US-HLT-063, 064) and `sec.ushealth.provider-access` (US-HLT-062, 064) call these pack
+`sec.ushealth.payer-to-payer` (US-HLT-063, 064), `sec.ushealth.provider-access` (US-HLT-062, 064) and
+`sec.ushealth.patient-access` (US-HLT-061) call these pack
 connector ids, which a tenant binds to `FhirConnector` operations (Bulk Data `$export` and `$member-match` through
 the `operation` call) in `PackConnectorBindings`:
 
@@ -133,6 +134,9 @@ the `operation` call) in `PackConnectorBindings`:
 | `payer.memberRecord` | this payer's member record: `match` (`patientId`), `optOut` (`optedOut`), `export` (`bundleRef`), `ingest` (`recordRef`) |
 | `payer.attribution` | provider attribution check (answer `attributed`) |
 | `payer.providerAccess` | Provider Access answer (answer `receiptRef`) |
+| `payer.patientAccess` | this payer's Patient Access API: prior authorization information made available to the patient (answer `recordRef`) |
+| `payer.apiMetrics` | Patient Access API usage metrics of the reporting period (answer `reportRef`) |
+| `payer.metricsReport` | submit the usage metrics report to the recipient the tenant configures (answer `receiptRef`) |
 
 A previous payer that has the data ready later sends `sangam.ushealth.p2pDataReady` (message correlated on the
 business key). No Surprises Act items (US-HLT-114, 115, 116, 122) are traceability only (owner decision 107).

@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 965,
- "operations": 1147,
- "schemas": 876,
+ "paths": 966,
+ "operations": 1148,
+ "schemas": 877,
  "tags": [
   "AI",
   "Admin",
@@ -400,8 +400,8 @@
    "class": "PacksApi",
    "tag": "Packs",
    "pathPrefix": "",
-   "operations": 3,
-   "maxLines": 82
+   "operations": 4,
+   "maxLines": 99
   },
   {
    "class": "PluginsApi",
@@ -1159,6 +1159,7 @@
   "OutcomeUnknownRequest",
   "OutcomeUnknownResult",
   "PackDeployResult",
+  "PackDocumentSlot",
   "PackLifecycleRequest",
   "PackResolution",
   "PackResolveRequest",
@@ -11027,6 +11028,18 @@
    "python": "packs.rollback_pack",
    "dotnet": "PacksApi#RollbackPackAsync",
    "php": "PacksApi#rollbackPack"
+  },
+  {
+   "operationId": "listPackDocumentSlots",
+   "method": "GET",
+   "path": "/packs/{id}/document-slots",
+   "tag": "Packs",
+   "apiClass": "PacksApi",
+   "java": "PacksApi#listPackDocumentSlots",
+   "typescript": "packs.listPackDocumentSlots",
+   "python": "packs.list_pack_document_slots",
+   "dotnet": "PacksApi#ListPackDocumentSlotsAsync",
+   "php": "PacksApi#listPackDocumentSlots"
   },
   {
    "operationId": "programmePublishConfig",
