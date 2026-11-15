@@ -219,7 +219,7 @@ public class OperatonProcessAdapter implements ProcessPort {
         if (pi != null) {
             List<String> active = OperatonSupport.call(() -> runtime.getActiveActivityIds(id));
             Map<String, Object> vars = OperatonSupport.call(() -> runtime.getVariables(id));
-            long version = OperatonTaskAdapter.caseVersion(vars);
+            long version = TaskVersions.caseVersion(vars);
             Object status = vars.get("sangamBusinessStatus");
             String defId = pi.getProcessDefinitionId();
             org.operaton.bpm.engine.repository.ProcessDefinition def = OperatonSupport.call(() ->
@@ -433,7 +433,7 @@ public class OperatonProcessAdapter implements ProcessPort {
         return tx.inTx(() -> {
             requireRuntime(ctx, id);
             Map<String, Object> before = OperatonSupport.call(() -> runtime.getVariables(id));
-            long current = OperatonTaskAdapter.caseVersion(before);
+            long current = TaskVersions.caseVersion(before);
             if (r.expectedVersion() != null && r.expectedVersion() != current) {
                 throw ApiProblem.conflict("FORM_VERSION_STALE", "This case changed since you opened it (version "
                         + r.expectedVersion() + " to " + current + ")").with("currentVersion", current);

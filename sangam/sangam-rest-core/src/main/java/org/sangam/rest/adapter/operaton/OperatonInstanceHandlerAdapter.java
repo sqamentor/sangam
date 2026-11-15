@@ -106,7 +106,7 @@ public class OperatonInstanceHandlerAdapter implements InstanceHandlerPort {
                 throw ApiProblem.notFound("update handler", name);
             }
             Map<String, Object> before = OperatonSupport.call(() -> runtime.getVariables(id));
-            long current = OperatonTaskAdapter.caseVersion(before);
+            long current = TaskVersions.caseVersion(before);
             if (r.caseVersion() != null && r.caseVersion() != current) {
                 throw ApiProblem.conflict("REVISION_CONFLICT", "This case changed since you opened it (version "
                         + r.caseVersion() + " to " + current + ")").with("currentVersion", current);

@@ -53,6 +53,9 @@ class BusinessDateGuardTest {
         allow("sangam-rest/src/main/java/org/sangam/rest/modules/registry/web/AssetController.java", 1);
         // Onboarding plans a tenant that has no profile yet: the documented fallback (UTC on the injected clock).
         allow("sangam-onboarding/src/main/java/org/sangam/onboarding/flow/OnboardingService.java", 2);
+        // The upgrade check of the CLI has no tenant: without --as-of, API sunset dates are compared with the UTC date
+        // of the injected clock.
+        allow("tools/sangam-cli/src/main/java/org/sangam/cli/UpgradeCheck.java", 1);
     }
 
     static void allow(String path, int count) {
