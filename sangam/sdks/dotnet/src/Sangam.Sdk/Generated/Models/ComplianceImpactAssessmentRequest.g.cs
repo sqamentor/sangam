@@ -30,6 +30,9 @@ public sealed record ComplianceImpactAssessmentRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("assessor")]
     public string? Assessor { get; init; }
 
+    /// <summary>
+    /// The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("independent")]
     public bool? Independent { get; init; }
 

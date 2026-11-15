@@ -27,6 +27,9 @@ public sealed record ComplianceTransferRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("approvalRef")]
     public string? ApprovalRef { get; init; }
 
+    /// <summary>
+    /// The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("recipientSameProtectionAttested")]
     public bool? RecipientSameProtectionAttested { get; init; }
 
@@ -36,6 +39,9 @@ public sealed record ComplianceTransferRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("impactAssessmentRef")]
     public string? ImpactAssessmentRef { get; init; }
 
+    /// <summary>
+    /// The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("recipientConditionMet")]
     public bool? RecipientConditionMet { get; init; }
 }

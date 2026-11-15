@@ -326,3 +326,51 @@ corrections:
     to: "requestBody ComplianceDefinePurposeRequest: basis, standardsAttested and active required; no version; dataItems of ComplianceDataItemRequest with code and sensitive required"
     reason: "PurposeDefinition has primitive standardsAttested, version, active and DataItem.sensitive, and the server's JSON binding refuses a missing primitive (400), so a body without them never worked (CI ui e2e run 43717963671 on 209d2765: the e2e seed and the officer form both failed); the attestations are now explicit, version is the server's"
     decision: "integrator ruling 2026-11-15 to lane D1 (0.1.0 unreleased; owner rules: fail closed, never default a legal attestation)"
+  - method: POST
+    path: /compliance/lawful-requests/{id}/verify
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody ComplianceVerifyLawfulRequest with rankAdequate optional"
+    to: "rankAdequate required (true or false); an omitted one is 400 VALIDATION_FAILED naming the field"
+    reason: "VerifyLawfulRequest.rankAdequate was a primitive boolean: the server's JSON binding refused a body without it with a bare 400, while the contract did not require it; it is the checker's attestation, never read as false"
+    decision: "owner decision 362, 2026-11-15 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/evidence/audits
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody ComplianceAuditEvidenceRequest with independent optional"
+    to: "independent required (true or false); an omitted one is 400 VALIDATION_FAILED naming the field"
+    reason: "AuditEvidenceRequest.independent was a primitive boolean (bare 400 when omitted, not required by the contract); the auditor's independence is an attestation, never read as false"
+    decision: "owner decision 362, 2026-11-15 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/evidence/impact-assessments
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody ComplianceImpactAssessmentRequest with independent optional"
+    to: "independent required (true or false); an omitted one is 400 VALIDATION_FAILED naming the field"
+    reason: "ImpactAssessmentRequest.independent was a primitive boolean (bare 400 when omitted, not required by the contract); the assessor's independence is an attestation, never read as false"
+    decision: "owner decision 362, 2026-11-15 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/transfers/evaluate
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody ComplianceTransferRequest with recipientSameProtectionAttested and recipientConditionMet optional"
+    to: "recipientSameProtectionAttested and recipientConditionMet required (true or false); an omitted one is 400 VALIDATION_FAILED naming the field"
+    reason: "CrossBorderTransferGuard.TransferRequest bound both as primitive booleans (bare 400 when omitted, not required by the contract); the body is now ComplianceRequests.EvaluateTransferRequest with both boxed, never read as false"
+    decision: "owner decision 362, 2026-11-15 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/consent-managers/{cm}/artefacts
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody ComplianceConsentArtefact with noticeVersion optional"
+    to: "noticeVersion required; an omitted one is 400 VALIDATION_FAILED naming the field"
+    reason: "ConsentManagerPort.ConsentArtefact bound noticeVersion as a primitive int (bare 400 when omitted, not required by the contract); the body is now ComplianceRequests.ConsentArtefactRequest with it boxed, never read as version 0"
+    decision: "owner decision 362, 2026-11-15 (0.1.0 unreleased)"
+  - method: POST
+    path: /compliance/consents
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody ComplianceGiveConsentRequest without the data principal's category; the guardian verification was required and stored only when a principal directory said CHILD"
+    to: "declaredCategory required (ADULT or CHILD); an omitted or other value is 400 VALIDATION_FAILED naming the field; a declared CHILD needs guardianVerificationId, which the consent row carries"
+    reason: "without a principal directory (the standalone server) a child's consent was stored with no guardian verification; the channel's declaration now carries the category, and the more protective of it and the directory's applies"
+    decision: "owner decision 365, 2026-11-15 (0.1.0 unreleased)"

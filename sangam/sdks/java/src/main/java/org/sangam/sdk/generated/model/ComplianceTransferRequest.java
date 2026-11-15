@@ -13,10 +13,10 @@ package org.sangam.sdk.generated.model;
  * @param purposeCode wire field {@code purposeCode}
  * @param dataCategories wire field {@code dataCategories}
  * @param approvalRef wire field {@code approvalRef}
- * @param recipientSameProtectionAttested wire field {@code recipientSameProtectionAttested}
+ * @param recipientSameProtectionAttested wire field {@code recipientSameProtectionAttested} (required). The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  * @param mechanism wire field {@code mechanism}
  * @param impactAssessmentRef wire field {@code impactAssessmentRef}
- * @param recipientConditionMet wire field {@code recipientConditionMet}
+ * @param recipientConditionMet wire field {@code recipientConditionMet} (required). The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ComplianceTransferRequest(

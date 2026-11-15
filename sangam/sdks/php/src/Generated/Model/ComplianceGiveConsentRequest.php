@@ -22,6 +22,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $guardianVerificationId
  * @property-read string|null $consentManagerId
  * @property-read string|null $cmArtefactId
+ * @property-read string|null $declaredCategory (required) The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies. One of: ADULT, CHILD.
  */
 final class ComplianceGiveConsentRequest implements \JsonSerializable
 {
@@ -36,6 +37,7 @@ final class ComplianceGiveConsentRequest implements \JsonSerializable
      * @param string|null $guardianVerificationId
      * @param string|null $consentManagerId
      * @param string|null $cmArtefactId
+     * @param string|null $declaredCategory
      */
     public function __construct(
         public readonly ?string $principalRef = null,
@@ -48,6 +50,7 @@ final class ComplianceGiveConsentRequest implements \JsonSerializable
         public readonly ?string $guardianVerificationId = null,
         public readonly ?string $consentManagerId = null,
         public readonly ?string $cmArtefactId = null,
+        public readonly ?string $declaredCategory = null,
     ) {
     }
 
@@ -65,6 +68,7 @@ final class ComplianceGiveConsentRequest implements \JsonSerializable
             Support::str($data['guardianVerificationId'] ?? null),
             Support::str($data['consentManagerId'] ?? null),
             Support::str($data['cmArtefactId'] ?? null),
+            Support::str($data['declaredCategory'] ?? null),
         );
     }
 
@@ -100,6 +104,9 @@ final class ComplianceGiveConsentRequest implements \JsonSerializable
         }
         if ($this->cmArtefactId !== null) {
             $out['cmArtefactId'] = $this->cmArtefactId;
+        }
+        if ($this->declaredCategory !== null) {
+            $out['declaredCategory'] = $this->declaredCategory;
         }
         return $out === [] ? new \stdClass() : $out;
     }

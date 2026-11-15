@@ -63142,10 +63142,19 @@ components:
           type: string
         cmArtefactId:
           type: string
+        declaredCategory:
+          type: string
+          enum:
+          - ADULT
+          - CHILD
+          description: 'The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED
+            naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9),
+            which the consent row then carries; the more protective of the declared and the principal directory category applies.'
       required:
       - noticeKey
       - purposeCodes
       - affirmativeAction
+      - declaredCategory
     ComplianceConsent:
       type: object
       description: A consent record with its active purposes and evidence hash (DPDP s.6).
@@ -63210,6 +63219,8 @@ components:
         noticeVersion:
           type: integer
           format: int32
+          description: 'The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the
+            field, never read as version 0 (owner decision 362).'
         languageCode:
           type: string
         purposeCodes:
@@ -63224,6 +63235,8 @@ components:
           format: date-time
         signature:
           type: string
+      required:
+      - noticeVersion
     ComplianceRightsSubmission:
       type: object
       description: 'A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335):
@@ -63470,6 +63483,10 @@ components:
       properties:
         rankAdequate:
           type: boolean
+          description: 'The checker''s attestation that the requesting officer''s rank is adequate under the cited provision. Required, true or
+            false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).'
+      required:
+      - rankAdequate
     ComplianceRespondLawfulRequest:
       type: object
       description: The response and the disclosed principals (disclosure register).
@@ -63546,6 +63563,8 @@ components:
           type: string
         independent:
           type: boolean
+          description: 'The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED
+            naming the field, never read as false (owner decision 362).'
         findings:
           type: array
           items:
@@ -63557,6 +63576,7 @@ components:
       required:
       - kind
       - auditor
+      - independent
     ComplianceAuditEvidence:
       type: object
       description: Recorded audit evidence.
@@ -63613,6 +63633,8 @@ components:
           type: string
         independent:
           type: boolean
+          description: 'The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming
+            the field, never read as false (owner decision 362).'
         assessedAt:
           type: string
           format: date-time
@@ -63620,6 +63642,7 @@ components:
           type: string
       required:
       - scope
+      - independent
     ComplianceImpactAssessment:
       type: object
       description: Recorded impact assessment.
@@ -63672,14 +63695,20 @@ components:
           type: string
         recipientSameProtectionAttested:
           type: boolean
+          description: 'The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted
+            one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).'
         mechanism:
           type: string
         impactAssessmentRef:
           type: string
         recipientConditionMet:
           type: boolean
+          description: 'The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or
+            false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).'
       required:
       - destinationCountry
+      - recipientSameProtectionAttested
+      - recipientConditionMet
     ComplianceTransferDecision:
       type: object
       description: The recorded transfer decision.

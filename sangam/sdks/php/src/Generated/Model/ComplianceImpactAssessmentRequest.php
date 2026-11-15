@@ -18,7 +18,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read list<string>|null $measures
  * @property-read string|null $residualRisk
  * @property-read string|null $assessor
- * @property-read bool|null $independent
+ * @property-read bool|null $independent (required) The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  * @property-read string|null $assessedAt
  * @property-read string|null $authorityReportRef
  */

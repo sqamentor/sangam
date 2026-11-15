@@ -52980,6 +52980,7 @@ components:
       - noticeKey
       - purposeCodes
       - affirmativeAction
+      - declaredCategory
     ComplianceConsent:
       type: object
       description: A consent record with its active purposes and evidence hash (DPDP s.6).
@@ -53058,6 +53059,8 @@ components:
           format: date-time
         signature:
           type: string
+      required:
+      - noticeVersion
     ComplianceRightsSubmission:
       type: object
       description: A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.
@@ -53290,6 +53293,8 @@ components:
       properties:
         rankAdequate:
           type: boolean
+      required:
+      - rankAdequate
     ComplianceRespondLawfulRequest:
       type: object
       description: The response and the disclosed principals (disclosure register).
@@ -53374,6 +53379,7 @@ components:
       required:
       - kind
       - auditor
+      - independent
     ComplianceAuditEvidence:
       type: object
       description: Recorded audit evidence.
@@ -53437,6 +53443,7 @@ components:
           type: string
       required:
       - scope
+      - independent
     ComplianceImpactAssessment:
       type: object
       description: Recorded impact assessment.
@@ -53491,6 +53498,8 @@ components:
           type: boolean
       required:
       - destinationCountry
+      - recipientSameProtectionAttested
+      - recipientConditionMet
     ComplianceTransferDecision:
       type: object
       description: The recorded transfer decision.

@@ -47,4 +47,10 @@ public sealed record ComplianceGiveConsentRequest
 
     [global::System.Text.Json.Serialization.JsonPropertyName("cmArtefactId")]
     public string? CmArtefactId { get; init; }
+
+    /// <summary>
+    /// The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies. One of: ADULT, CHILD. Required.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("declaredCategory")]
+    public string? DeclaredCategory { get; init; }
 }

@@ -2797,6 +2797,7 @@ Schema ``ComplianceAuditEvidence``."""
 class _ComplianceAuditEvidenceRequestRequired(TypedDict):
     kind: str
     auditor: str
+    independent: bool
 
 
 class ComplianceAuditEvidenceRequest(_ComplianceAuditEvidenceRequestRequired, total=False):
@@ -2807,7 +2808,6 @@ Schema ``ComplianceAuditEvidenceRequest``."""
     periodTo: str
     completedAt: str
     accreditationRef: str
-    independent: bool
     findings: list[str]
     reportHash: str
     authorityReportRef: str
@@ -2872,7 +2872,11 @@ Schema ``ComplianceConsent``."""
     evidenceHash: str
 
 
-class ComplianceConsentArtefact(TypedDict, total=False):
+class _ComplianceConsentArtefactRequired(TypedDict):
+    noticeVersion: int
+
+
+class ComplianceConsentArtefact(_ComplianceConsentArtefactRequired, total=False):
     """A consent artefact from a registered consent manager (DPDP s.6(7), Rules r.4).
 
 Schema ``ComplianceConsentArtefact``."""
@@ -2881,7 +2885,6 @@ Schema ``ComplianceConsentArtefact``."""
     principalRef: str
     fiduciaryId: str
     noticeKey: str
-    noticeVersion: int
     languageCode: str
     purposeCodes: list[str]
     issuedAt: str
@@ -2954,6 +2957,7 @@ class _ComplianceGiveConsentRequestRequired(TypedDict):
     noticeKey: str
     purposeCodes: list[str]
     affirmativeAction: bool
+    declaredCategory: Literal["ADULT", "CHILD"]
 
 
 class ComplianceGiveConsentRequest(_ComplianceGiveConsentRequestRequired, total=False):
@@ -2989,6 +2993,7 @@ Schema ``ComplianceImpactAssessment``."""
 
 class _ComplianceImpactAssessmentRequestRequired(TypedDict):
     scope: str
+    independent: bool
 
 
 class ComplianceImpactAssessmentRequest(_ComplianceImpactAssessmentRequestRequired, total=False):
@@ -3000,7 +3005,6 @@ Schema ``ComplianceImpactAssessmentRequest``."""
     measures: list[str]
     residualRisk: str
     assessor: str
-    independent: bool
     assessedAt: str
     authorityReportRef: str
 
@@ -3256,6 +3260,8 @@ Schema ``ComplianceTransferDecision``."""
 
 class _ComplianceTransferRequestRequired(TypedDict):
     destinationCountry: str
+    recipientSameProtectionAttested: bool
+    recipientConditionMet: bool
 
 
 class ComplianceTransferRequest(_ComplianceTransferRequestRequired, total=False):
@@ -3266,13 +3272,11 @@ Schema ``ComplianceTransferRequest``."""
     purposeCode: str
     dataCategories: list[str]
     approvalRef: str
-    recipientSameProtectionAttested: bool
     mechanism: str
     impactAssessmentRef: str
-    recipientConditionMet: bool
 
 
-class ComplianceVerifyLawfulRequest(TypedDict, total=False):
+class ComplianceVerifyLawfulRequest(TypedDict):
     """Whether the requesting officer's rank is adequate.
 
 Schema ``ComplianceVerifyLawfulRequest``."""

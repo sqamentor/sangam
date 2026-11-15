@@ -3237,7 +3237,8 @@ export interface ComplianceAuditEvidenceRequest {
   completedAt?: string;
   auditor: string;
   accreditationRef?: string;
-  independent?: boolean;
+  /** The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). */
+  independent: boolean;
   findings?: Array<string>;
   reportHash?: string;
   authorityReportRef?: string;
@@ -3322,7 +3323,8 @@ export interface ComplianceConsentArtefact {
   principalRef?: string;
   fiduciaryId?: string;
   noticeKey?: string;
-  noticeVersion?: number;
+  /** The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the field, never read as version 0 (owner decision 362). */
+  noticeVersion: number;
   languageCode?: string;
   purposeCodes?: Array<string>;
   issuedAt?: string;
@@ -3410,6 +3412,8 @@ export interface ComplianceGiveConsentRequest {
   guardianVerificationId?: string;
   consentManagerId?: string;
   cmArtefactId?: string;
+  /** The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies. One of: ADULT, CHILD. */
+  declaredCategory: 'ADULT' | 'CHILD';
 }
 
 /**
@@ -3444,7 +3448,8 @@ export interface ComplianceImpactAssessmentRequest {
   measures?: Array<string>;
   residualRisk?: string;
   assessor?: string;
-  independent?: boolean;
+  /** The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). */
+  independent: boolean;
   assessedAt?: string;
   authorityReportRef?: string;
 }
@@ -3742,10 +3747,12 @@ export interface ComplianceTransferRequest {
   purposeCode?: string;
   dataCategories?: Array<string>;
   approvalRef?: string;
-  recipientSameProtectionAttested?: boolean;
+  /** The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). */
+  recipientSameProtectionAttested: boolean;
   mechanism?: string;
   impactAssessmentRef?: string;
-  recipientConditionMet?: boolean;
+  /** The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). */
+  recipientConditionMet: boolean;
 }
 
 /**
@@ -3754,7 +3761,8 @@ export interface ComplianceTransferRequest {
  * Schema `ComplianceVerifyLawfulRequest`.
  */
 export interface ComplianceVerifyLawfulRequest {
-  rankAdequate?: boolean;
+  /** The checker's attestation that the requesting officer's rank is adequate under the cited provision. Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). */
+  rankAdequate: boolean;
 }
 
 /**

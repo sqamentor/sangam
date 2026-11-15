@@ -24,6 +24,9 @@ public sealed record ComplianceConsentArtefact
     [global::System.Text.Json.Serialization.JsonPropertyName("noticeKey")]
     public string? NoticeKey { get; init; }
 
+    /// <summary>
+    /// The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the field, never read as version 0 (owner decision 362). Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("noticeVersion")]
     public int? NoticeVersion { get; init; }
 

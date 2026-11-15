@@ -49,7 +49,8 @@ public final class ConsentManagerGateway implements ConsentService.WithdrawalLis
         }
         return consents.give(c, tenantId, new ConsentService.GiveConsent(a.principalRef(), a.noticeKey(), a.noticeVersion(),
                 config.forTenant(tenantId).pack.requireLanguage(a.languageCode()), a.purposeCodes(), true, "consent-manager:" + a.consentManagerId(),
-                a.principalRef(), null, a.consentManagerId(), a.artefactId()));
+                a.principalRef(), null, a.consentManagerId(), a.artefactId(),
+                null /* an artefact declares no category: the principal directory decides (decision 365) */));
     }
 
     public ConsentService.Consent withdrawnAtManager(Connection c, String tenantId, String consentManagerId, String artefactId,

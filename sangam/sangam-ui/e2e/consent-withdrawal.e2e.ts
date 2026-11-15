@@ -46,6 +46,8 @@ test('the compliance officer records a consent on the published notice and withd
   await give.getByLabel(t('fld.purposeCodes')).fill(JSON.stringify([seed.compliance.purposeCode]));
   await give.getByLabel(t('fld.affirmativeAction')).check();
   await give.getByLabel(t('fld.channel')).fill('e2e-assisted');
+  // owner decision 365: the declared category is a required choice (an adult needs no guardian verification)
+  await give.getByLabel(t('fld.declaredCategory')).selectOption('ADULT');
   const before = Date.now();
   await give.getByRole('button', { name: t('common.confirm') }).click();
   await expect(give).toHaveCount(0);

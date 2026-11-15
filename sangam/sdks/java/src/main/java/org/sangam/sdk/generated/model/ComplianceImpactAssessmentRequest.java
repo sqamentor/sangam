@@ -14,7 +14,7 @@ package org.sangam.sdk.generated.model;
  * @param measures wire field {@code measures}
  * @param residualRisk wire field {@code residualRisk}
  * @param assessor wire field {@code assessor}
- * @param independent wire field {@code independent}
+ * @param independent wire field {@code independent} (required). The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  * @param assessedAt wire field {@code assessedAt}
  * @param authorityReportRef wire field {@code authorityReportRef}
  */
