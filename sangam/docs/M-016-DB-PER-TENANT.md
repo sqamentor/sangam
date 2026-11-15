@@ -16,7 +16,7 @@ Status: **PARTIAL**. The instance-side binding, its fail-closed checks, the dedi
    - a cell dedicated to tenant T hosts only T;
    - a tenant recorded with `isolation = DATABASE` is placed only on the cell dedicated to it.
 3. **Registration** of the dedication: the cell tells the control plane which tenant it is dedicated to.
-4. The **onboarding path**: create the dedicated cell, register it, create the tenant with `isolation = DATABASE`, and let the control plane place it.
+4. The **onboarding path**: create the dedicated cell, register it, have an administrator open it for placement, create the tenant with `isolation = DATABASE`, and let the control plane place it.
 
 ## 2. Coded in this lane (sangam-server, new files)
 
@@ -108,6 +108,11 @@ The fix: isolation in the security tenant record, create and update (with the de
 
    Liquibase creates the schema, and the directory check passes on an empty database.
 3. The cell registers with the control plane. After the REQUESTs land, it also sends `dedicatedTenant`.
-4. Create the tenant in the control plane with `isolation = DATABASE`. Placement puts it on its dedicated cell only.
-5. Onboard the tenant on the instance (tenant admin, isolation `DATABASE`). From then on the instance serves that tenant only.
-6. To move a shared tenant into its own database, use the existing IR-4 tenant move (freeze, export, import, activate) into the dedicated cell. The filter admits the bound tenant's admin path.
+4. An administrator opens the cell for placement (decision 327). Registering does not open a cell: a cell token can register and send heartbeats, and only a token with the ADMIN role opens it.
+
+   `POST /api/v1/admin/cells/<cell>/placement?open=true` (`Authorization: Bearer <admin token>`)
+
+   Until then the cell receives no tenant, and step 5 answers 409 with `placement is closed on [<cell>]`. Registering the cell again neither opens it nor closes it. The act is in the control-plane audit (`CELL_PLACEMENT_OPEN`).
+5. Create the tenant in the control plane with `isolation = DATABASE`. Placement puts it on its dedicated cell only.
+6. Onboard the tenant on the instance (tenant admin, isolation `DATABASE`). From then on the instance serves that tenant only.
+7. To move a shared tenant into its own database, use the existing IR-4 tenant move (freeze, export, import, activate) into the dedicated cell. The filter admits the bound tenant's admin path.

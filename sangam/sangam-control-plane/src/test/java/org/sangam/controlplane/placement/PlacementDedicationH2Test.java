@@ -56,8 +56,13 @@ class PlacementDedicationH2Test {
         cell("in-b", null);
     }
 
+    /**
+     * A cell that takes tenants: registered (what a cell token may do) and then opened for placement by an
+     * administrator (decision 327: a registration never opens a cell).
+     */
     private void cell(String id, String dedicatedTo) {
         register(id, dedicatedTo);
+        cells.setPlacementOpen(id, true, "admin");
     }
 
     private Cell register(String id, String dedicatedTo) {
@@ -151,12 +156,56 @@ class PlacementDedicationH2Test {
         assertTrue(e.getMessage().contains("OTHER"), e.getMessage());
         assertNull(cells.get(host).dedicatedTenant(), "unchanged");
 
-        register("in-d", "ACME");
+        cell("in-d", "ACME");
         tenant("ACME", TenantRegistry.DATABASE);
         assertEquals("in-d", placement.place("ACME", "test").cellId());
         IllegalStateException toShared = assertThrows(IllegalStateException.class, () -> register("in-d", null));
         assertTrue(toShared.getMessage().contains("ACME"), "a DATABASE tenant may not end up on a shared cell");
         assertEquals("ACME", cells.get("in-d").dedicatedTenant());
+    }
+
+    /** Decision 327: registering does not open a cell; until an administrator opens it, it receives no tenant. */
+    @Test
+    void aRegisteredCellReceivesNoTenantUntilAnAdministratorOpensIt() {
+        Cell registered = register("in-new", null);
+        assertEquals(false, registered.placementOpen(), "a registration leaves placement closed");
+        cells.setPlacementOpen("in-a", false, "admin");
+        cells.setPlacementOpen("in-b", false, "admin");
+        Tenant t = tenant("T1", TenantRegistry.SHARED);
+        assertEquals("placement closed", placement.reject(cells.get("in-new"), t));
+        assertEquals(List.of(), placement.candidates(t, null));
+        PlacementService.NoCapacity refused = assertThrows(PlacementService.NoCapacity.class,
+                () -> placement.place("T1", "test"));
+        assertTrue(refused.getMessage().contains("no cell can host T1"), refused.getMessage());
+        assertTrue(refused.getMessage().contains("placement is closed on [in-a, in-b, in-new]")
+                && refused.getMessage().contains("/admin/cells/{cellId}/placement?open=true"), refused.getMessage());
+        assertNull(registry.get("T1").cellId(), "nothing assigned");
+
+        assertEquals(false, register("in-new", null).placementOpen(), "registering again does not open it either");
+        cells.setPlacementOpen("in-new", true, "admin");
+        assertEquals(true, register("in-new", null).placementOpen(), "nor does it close what the administrator opened");
+        assertEquals("in-new", placement.place("T1", "test").cellId());
+        assertEquals(List.of("CELL_PLACEMENT_OPEN"), jdbc.queryForList(
+                "SELECT action FROM CP_AUDIT WHERE subject = 'cell:in-new' AND action LIKE 'CELL_PLACEMENT%'",
+                String.class), "the opening is an audited act");
+    }
+
+    @Test
+    void aDedicatedCellIsClosedUntilOpenedLikeAnyOther() {
+        register("in-d", "ACME");
+        Tenant acme = tenant("ACME", TenantRegistry.DATABASE);
+        assertEquals("placement closed", placement.reject(cells.get("in-d"), acme));
+        PlacementService.NoCapacity refused = assertThrows(PlacementService.NoCapacity.class,
+                () -> placement.place("ACME", "test"));
+        assertTrue(refused.getMessage().contains("placement is closed on [in-d]"), refused.getMessage());
+        assertNull(registry.get("ACME").cellId());
+    }
+
+    @Test
+    void openingAnUnknownCellIsRefusedAndNotAudited() {
+        assertThrows(TenantRegistry.NotFound.class, () -> cells.setPlacementOpen("in-ghost", true, "admin"));
+        assertEquals(0, jdbc.queryForObject("SELECT COUNT(*) FROM CP_AUDIT WHERE subject = 'cell:in-ghost'",
+                Integer.class));
     }
 
     @Test

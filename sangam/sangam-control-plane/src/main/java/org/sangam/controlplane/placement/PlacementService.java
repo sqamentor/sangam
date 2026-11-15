@@ -79,7 +79,7 @@ public class PlacementService {
             return "cell status " + c.status();
         }
         if (!c.placementOpen()) {
-            return "placement closed";
+            return CLOSED;
         }
         if (!ResidencyRules.cellSatisfies(c.residency(), t.residency())) {
             return "residency " + c.residency() + " outside tenant zone " + t.residency();
@@ -128,11 +128,24 @@ public class PlacementService {
         }
         boolean database = TenantRegistry.DATABASE.equals(registry.isolation(t.tenantCode()));
         Candidate best = candidates(t, null).stream().findFirst()
-                .orElseThrow(() -> new NoCapacity(database
+                .orElseThrow(() -> new NoCapacity((database
                         ? "no cell dedicated to " + t.tenantCode() + " can host it (isolation DATABASE): register the"
                                 + " tenant's dedicated cell (sangam.tenancy.dedicated-tenant=" + t.tenantCode() + ") first"
-                        : "no cell can host " + tenantCode + " (residency " + t.residency() + "): add a cell in that zone"));
+                        : "no cell can host " + tenantCode + " (residency " + t.residency() + "): add a cell in that zone")
+                        + closedHint(t)));
         return registry.assignCell(t.tenantCode(), best.cell().cellId(), t.routeEpoch(), actor, "placement: " + best.reason());
+    }
+
+    static final String CLOSED = "placement closed";
+
+    /**
+     * Decision 327: a registered cell takes no tenant until an administrator opens it. When that switch is the only
+     * thing between a cell and this tenant, the refusal names the cell and the act, instead of asking for a new cell.
+     */
+    private String closedHint(Tenant t) {
+        List<String> closed = cells.all().stream().filter(c -> CLOSED.equals(reject(c, t))).map(Cell::cellId).toList();
+        return closed.isEmpty() ? "" : "; placement is closed on " + closed + " (registering a cell does not open it):"
+                + " an administrator opens it with POST /api/v1/admin/cells/{cellId}/placement?open=true";
     }
 
     public Optional<Candidate> moveTarget(Tenant t) {
