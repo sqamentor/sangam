@@ -14,6 +14,8 @@ import org.operaton.bpm.engine.impl.interceptor.SessionFactory;
 import org.operaton.bpm.engine.impl.persistence.entity.BatchManager;
 import org.operaton.bpm.engine.impl.persistence.entity.DeploymentEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.DeploymentManager;
+import org.operaton.bpm.engine.impl.persistence.entity.ExecutionManager;
+import org.operaton.bpm.engine.impl.persistence.entity.ExternalTaskManager;
 import org.operaton.bpm.engine.impl.persistence.entity.JobDefinitionManager;
 import org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionManager;
 import org.operaton.bpm.engine.impl.persistence.entity.ResourceEntity;
@@ -62,6 +64,14 @@ import org.operaton.bpm.engine.impl.persistence.entity.TaskManager;
  * the process-definition and job-definition managers here and on the job manager in
  * {@link DelayedStateChangeTenant} (one replacement per manager); PATCHES.md SG-09.
  *
+ * <p><b>Shared instances by key</b> (decision 364). The same holds for process instances suspended or activated by
+ * process definition key ({@code RuntimeService#updateProcessInstanceSuspensionState().byProcessDefinitionKey}, and
+ * the instances a definition change includes): Operaton's command has no check
+ * ({@code checkUpdateProcessInstanceSuspensionStateByProcessDefinitionKey} is empty) and its execution, task and
+ * external-task UPDATEs match rows without a tenant. Such a call of a tenant-scoped identity is refused by name
+ * ({@link #refuseSharedInstancesByKey}) when a tenantless instance of the key exists and the call names no tenant; on
+ * the execution, task and external-task managers here.
+ *
  * <p>A refusal is a {@link TenantIsolationException} (403 {@code TENANT_ISOLATION_VIOLATION} on {@code /api} and
  * {@code /engine-rest}), and the command rolls back. Without a tenant-scoped engine authentication (platform code, jobs
  * of shared definitions, an Operaton admin, a command with its tenant check switched off) nothing changes: the
@@ -74,14 +84,71 @@ public final class TenantScopedCreation {
     }
 
     /**
-     * The session factories that replace Operaton's batch, deployment, resource, task, process-definition and
-     * job-definition managers.
+     * The session factories that replace Operaton's batch, deployment, resource, task, process-definition,
+     * job-definition, execution and external-task managers.
      */
     public static List<SessionFactory> sessionFactories() {
         return List.of(factory(BatchManager.class, Batches::new), factory(DeploymentManager.class, Deployments::new),
                 factory(ResourceManager.class, Resources::new), factory(TaskManager.class, Tasks::new),
                 factory(ProcessDefinitionManager.class, ProcessDefinitions::new),
-                factory(JobDefinitionManager.class, JobDefinitions::new));
+                factory(JobDefinitionManager.class, JobDefinitions::new),
+                factory(ExecutionManager.class, Executions::new),
+                factory(ExternalTaskManager.class, ExternalTasks::new));
+    }
+
+    /**
+     * Decision 364: refuses a suspend or activate by process definition key of a tenant-scoped identity that would
+     * change tenantless (shared) process instances, their tasks or their external tasks: Operaton's
+     * {@code AbstractSetProcessInstanceStateCmd} by key runs the execution, task and external-task UPDATEs with the
+     * caller's tenant check, which also matches rows without a tenant. Refused when a tenantless instance of the key
+     * exists ({@link #sharedProcessInstances}); a call naming a tenant ({@code tenantNamed}) addresses only that
+     * tenant's definitions, whose instances, tasks and external tasks carry that tenant (Operaton gives them the
+     * instance's tenant), so it changes no shared row. Unlike shared definitions (decision 355), naming the shared scope
+     * alone is not refused: instances of a shared definition may be the caller's own, and only tenantless ones are
+     * shared.
+     */
+    static void refuseSharedInstancesByKey(String what, String key, boolean tenantNamed) {
+        refuseSharedByKey(what, key, false, () -> tenantNamed ? 0L : sharedProcessInstances(key));
+    }
+
+    /** The tenantless (shared) process instances of {@code key} in the current command (decision 364). */
+    static long sharedProcessInstances(String key) {
+        return Context.getCommandContext().getExecutionManager().findProcessInstanceCountByQueryCriteria(
+                (org.operaton.bpm.engine.impl.ProcessInstanceQueryImpl)
+                        new org.operaton.bpm.engine.impl.ProcessInstanceQueryImpl().processDefinitionKey(key)
+                                .withoutTenantId());
+    }
+
+    /** Decision 364 on the executions of process instances by process definition key. */
+    static final class Executions extends ExecutionManager {
+        @Override
+        public void updateExecutionSuspensionStateByProcessDefinitionKey(String key, SuspensionState state) {
+            refuseSharedInstancesByKey("process instances", key, false);
+            super.updateExecutionSuspensionStateByProcessDefinitionKey(key, state);
+        }
+
+        @Override
+        public void updateExecutionSuspensionStateByProcessDefinitionKeyAndTenantId(String key, String tenantId,
+                                                                                    SuspensionState state) {
+            refuseSharedInstancesByKey("process instances", key, tenantId != null);
+            super.updateExecutionSuspensionStateByProcessDefinitionKeyAndTenantId(key, tenantId, state);
+        }
+    }
+
+    /** Decision 364 on the external tasks of process instances by process definition key. */
+    static final class ExternalTasks extends ExternalTaskManager {
+        @Override
+        public void updateExternalTaskSuspensionStateByProcessDefinitionKey(String key, SuspensionState state) {
+            refuseSharedInstancesByKey("external tasks", key, false);
+            super.updateExternalTaskSuspensionStateByProcessDefinitionKey(key, state);
+        }
+
+        @Override
+        public void updateExternalTaskSuspensionStateByProcessDefinitionKeyAndTenantId(String key, String tenantId,
+                                                                                      SuspensionState state) {
+            refuseSharedInstancesByKey("external tasks", key, tenantId != null);
+            super.updateExternalTaskSuspensionStateByProcessDefinitionKeyAndTenantId(key, tenantId, state);
+        }
     }
 
     /**
@@ -282,6 +349,7 @@ public final class TenantScopedCreation {
         @Override
         public void updateTaskSuspensionStateByProcessDefinitionKey(String processDefinitionKey,
                                                                     org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
+            refuseSharedInstancesByKey("tasks", processDefinitionKey, false); // decision 364
             var before = changing(q -> q.processDefinitionKey(processDefinitionKey), state, true);
             super.updateTaskSuspensionStateByProcessDefinitionKey(processDefinitionKey, state);
             report(before, state);
@@ -290,6 +358,7 @@ public final class TenantScopedCreation {
         @Override
         public void updateTaskSuspensionStateByProcessDefinitionKeyAndTenantId(String processDefinitionKey,
                 String processDefinitionTenantId, org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
+            refuseSharedInstancesByKey("tasks", processDefinitionKey, processDefinitionTenantId != null); // decision 364
             var before = changing(q -> {
                 q.processDefinitionKey(processDefinitionKey);
                 if (processDefinitionTenantId == null) {

@@ -114,20 +114,34 @@ SCHEMAS["MoneyAmount"] = {
 }
 SCHEMAS["DecimalString"] = {
     "type": "string",
-    "pattern": "^-?[0-9]+([.][0-9]+)?$",
+    # plain decimal text, or (answers only, decision 363) the canonical exponent form of java.math.BigDecimal#toString
+    # that the server writes when plain text cannot keep the scale: E+n for a negative scale, E-n (n >= 7) for a
+    # decimal whose plain text would exceed the 1000-character decimal limit
+    "pattern": "^-?[0-9]+([.][0-9]+)?$|^(0|-?[1-9]([.][0-9]+)?)E([+][1-9][0-9]*|-([7-9]|[1-9][0-9]+))$",
     "description": ("Exact decimal (owner decision 138) for a rate, percentage, quantity or financial intermediate: "
-                    "plain decimal text, no exponent, no JSON number, never a binary float, and clients never turn it "
-                    "into one. The scale is kept as given (\"1.50\" stays \"1.50\"). Rounding mode and scale are "
-                    "applied only at a business boundary by the rule that governs it, never silently in between; a "
-                    "value with more precision than that rule allows, an overflow or an unsupported conversion is "
-                    "refused with VALIDATION_FAILED, never rounded. Money amounts use MoneyAmount. This is also the "
-                    "text of a TypedValue of type Decimal."),
+                    "decimal text, no JSON number, never a binary float, and clients never turn it into one. A client "
+                    "writes plain decimal text, without an exponent. The scale is kept as given (\"1.50\" stays "
+                    "\"1.50\"). Rounding mode and scale are applied only at a business boundary by the rule that "
+                    "governs it, never silently in between; a value with more precision than that rule allows, an "
+                    "overflow or an unsupported conversion is refused with VALIDATION_FAILED, never rounded. Money "
+                    "amounts use MoneyAmount. This is also the text of a TypedValue of type Decimal. "
+                    "Answers (decision 363): a decimal whose scale is negative (it arises only inside the engine, for "
+                    "example 1000 with scale -3) has no plain text that keeps its scale and is written in canonical "
+                    "exponent form, the text of java.math.BigDecimal#toString (\"1E+3\", \"1.00E+4\", \"-2.5E+10\"), "
+                    "as is a decimal whose plain text would exceed 1000 characters (\"1E-2000\"). The pattern accepts "
+                    "exactly these answer forms besides plain text, so a client that validates an answer against it "
+                    "never rejects one. The asymmetry is deliberate: the exponent form is an answer form, not an input "
+                    "form; requests carry plain decimal text."),
+    # no exponent example: an unquoted 1E+3 (how the YAML writer emits it) is a float to a YAML 1.2 reader
     "examples": ["0.075", "18.00", "-1250.5"],
 }
 SCHEMAS["TypedValue"]["properties"]["value"]["description"] = (
     "String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is "
     "DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned "
-    "variable type (decision 138) and returned unchanged through history, export and import. A LocalDate value is a "
+    "variable type (decision 138) and returned unchanged through history, export and import. A request carries plain "
+    "decimal text; in an answer, a Decimal of negative scale (it arises only inside the engine) is written in "
+    "canonical exponent form (\"1E+3\" is 1000 with scale -3), the only text that keeps its scale (decision 363; see "
+    "DecimalString). Inside a Json map or list a Decimal is carried as this typed object (G24). A LocalDate value is a "
     "calendar date, ISO-8601 uuuu-MM-dd exactly (years 0000-9999; a date-time, an offset or an impossible date is "
     "refused with VALIDATION_FAILED, never coerced); the engine stores it as a variable type of its own and returns it "
     "as the same typed value, also inside a Json map or list, where it is carried as this typed object (decision 333). "
