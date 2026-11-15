@@ -14,8 +14,11 @@ import org.operaton.bpm.engine.impl.interceptor.SessionFactory;
 import org.operaton.bpm.engine.impl.persistence.entity.BatchManager;
 import org.operaton.bpm.engine.impl.persistence.entity.DeploymentEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.DeploymentManager;
+import org.operaton.bpm.engine.impl.persistence.entity.JobDefinitionManager;
+import org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionManager;
 import org.operaton.bpm.engine.impl.persistence.entity.ResourceEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.ResourceManager;
+import org.operaton.bpm.engine.impl.persistence.entity.SuspensionState;
 import org.operaton.bpm.engine.impl.persistence.entity.TaskEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TaskManager;
 
@@ -48,7 +51,18 @@ import org.operaton.bpm.engine.impl.persistence.entity.TaskManager;
  *       ({@link TaskManager#insertTask}); naming another tenant is refused. Tasks of process or case instances keep the
  *       tenant Operaton gives them from their instance.</li>
  * </ul>
- * A refusal is a {@link TenantIsolationException} (403 {@code TENANT_ISOLATION_VIOLATION} on {@code /api} and
+ * <p><b>Shared definitions by key</b> (decision 355, G29). Operaton's suspend and activate by process definition key
+ * (definitions, job definitions, jobs, start timers; immediate or delayed) has no command check
+ * ({@code TenantCommandChecker#checkUpdateProcessDefinitionSuspensionStateByKey} is empty), and its UPDATEs carry the
+ * caller's tenant check, which also matches rows without a tenant ({@code TENANT_ID_ is null or TENANT_ID_ in (...)}):
+ * a tenant-scoped identity changed the shared definitions of that key, which every tenant uses. Such a call is refused
+ * by name ({@link #refuseSharedByKey}) when it names the shared scope ({@code processDefinitionWithoutTenantId}) or
+ * when a shared row of the key exists; nothing changes (the whole command rolls back, the caller's own rows too). A
+ * call that names the caller's own tenant, a key without shared rows, and platform code are unchanged. Installed on
+ * the process-definition and job-definition managers here and on the job manager in
+ * {@link DelayedStateChangeTenant} (one replacement per manager); PATCHES.md SG-09.
+ *
+ * <p>A refusal is a {@link TenantIsolationException} (403 {@code TENANT_ISOLATION_VIOLATION} on {@code /api} and
  * {@code /engine-rest}), and the command rolls back. Without a tenant-scoped engine authentication (platform code, jobs
  * of shared definitions, an Operaton admin, a command with its tenant check switched off) nothing changes: the
  * predicate is Operaton's own {@code TenantManager#isTenantCheckEnabled}. Installed as session factories (Operaton's
@@ -59,10 +73,92 @@ public final class TenantScopedCreation {
     private TenantScopedCreation() {
     }
 
-    /** The session factories that replace Operaton's batch, deployment, resource and task managers. */
+    /**
+     * The session factories that replace Operaton's batch, deployment, resource, task, process-definition and
+     * job-definition managers.
+     */
     public static List<SessionFactory> sessionFactories() {
         return List.of(factory(BatchManager.class, Batches::new), factory(DeploymentManager.class, Deployments::new),
-                factory(ResourceManager.class, Resources::new), factory(TaskManager.class, Tasks::new));
+                factory(ResourceManager.class, Resources::new), factory(TaskManager.class, Tasks::new),
+                factory(ProcessDefinitionManager.class, ProcessDefinitions::new),
+                factory(JobDefinitionManager.class, JobDefinitions::new));
+    }
+
+    /**
+     * Decision 355: refuses a suspend or activate by process definition key of a tenant-scoped identity that would
+     * change shared rows: {@code sharedScopeNamed} (the call names "without tenant") or {@code sharedRows} (read with
+     * the command's authorization and tenant checks off; the count names {@code withoutTenantId} itself) above zero.
+     * Does nothing for platform code (Operaton's own predicate, {@link #callerTenants}).
+     */
+    static void refuseSharedByKey(String what, String key, boolean sharedScopeNamed,
+                                  java.util.function.LongSupplier sharedRows) {
+        List<String> caller = callerTenants();
+        if (caller == null || (!sharedScopeNamed && unchecked(sharedRows) == 0)) {
+            return;
+        }
+        String callers = String.join(",", caller);
+        throw new TenantIsolationException(what + " '" + key + "'", callers, null, "an identity of tenant " + callers
+                + " may not suspend or activate shared " + what + " (without a tenant, used by every tenant) by key '"
+                + key + "'; name the caller's own tenant (processDefinitionTenantId), or leave shared definitions to"
+                + " platform administration");
+    }
+
+    /** The tenantless (shared) process definitions of {@code key} in the current command. */
+    static long sharedProcessDefinitions(String key) {
+        return Context.getCommandContext().getProcessDefinitionManager().findProcessDefinitionCountByQueryCriteria(
+                (org.operaton.bpm.engine.impl.ProcessDefinitionQueryImpl)
+                        new org.operaton.bpm.engine.impl.ProcessDefinitionQueryImpl().processDefinitionKey(key)
+                                .withoutTenantId());
+    }
+
+    /** {@code count} with the command's authorization and tenant checks off, restored afterwards. */
+    private static long unchecked(java.util.function.LongSupplier count) {
+        CommandContext cc = Context.getCommandContext();
+        boolean auth = cc.isAuthorizationCheckEnabled();
+        boolean tenant = cc.isTenantCheckEnabled();
+        cc.disableAuthorizationCheck();
+        cc.disableTenantCheck();
+        try {
+            return count.getAsLong();
+        } finally {
+            cc.setAuthorizationCheckEnabled(auth);
+            cc.setTenantCheckEnabled(tenant);
+        }
+    }
+
+    /** Decision 355 on process definitions by key. */
+    static final class ProcessDefinitions extends ProcessDefinitionManager {
+        @Override
+        public void updateProcessDefinitionSuspensionStateByKey(String key, SuspensionState state) {
+            refuseSharedByKey("process definitions", key, false, () -> sharedProcessDefinitions(key));
+            super.updateProcessDefinitionSuspensionStateByKey(key, state);
+        }
+
+        @Override
+        public void updateProcessDefinitionSuspensionStateByKeyAndTenantId(String key, String tenantId,
+                                                                           SuspensionState state) {
+            refuseSharedByKey("process definitions", key, tenantId == null, () -> 0L);
+            super.updateProcessDefinitionSuspensionStateByKeyAndTenantId(key, tenantId, state);
+        }
+    }
+
+    /** Decision 355 on job definitions by process definition key. */
+    static final class JobDefinitions extends JobDefinitionManager {
+        @Override
+        public void updateJobDefinitionSuspensionStateByProcessDefinitionKey(String key, SuspensionState state) {
+            refuseSharedByKey("job definitions", key, false, () -> findJobDefinitionCountByQueryCriteria(
+                    (org.operaton.bpm.engine.impl.JobDefinitionQueryImpl)
+                            new org.operaton.bpm.engine.impl.JobDefinitionQueryImpl().processDefinitionKey(key)
+                                    .withoutTenantId()));
+            super.updateJobDefinitionSuspensionStateByProcessDefinitionKey(key, state);
+        }
+
+        @Override
+        public void updateJobDefinitionSuspensionStateByProcessDefinitionKeyAndTenantId(String key, String tenantId,
+                                                                                       SuspensionState state) {
+            refuseSharedByKey("job definitions", key, tenantId == null, () -> 0L);
+            super.updateJobDefinitionSuspensionStateByProcessDefinitionKeyAndTenantId(key, tenantId, state);
+        }
     }
 
     /**
