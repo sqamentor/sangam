@@ -97,8 +97,8 @@ Paths are relative to `src/main/java/org/sangam/security/` unless they start wit
 
 | File | Covers |
 |---|---|
-| `delegation/DmnPowerEvaluator.java` | Operaton standalone DMN engine. Table contract `maxAmount` / `allowed` / `ruleRef`. The amount comparison is exact `BigDecimal` (T18 boundaries). Parsed decisions are cached by content hash |
-| `delegation/DelegationOfPowersService.java` | **Versioned** tables `DRAFT → IN_REVIEW → APPROVED → PUBLISHED → RETIRED`. Draft test cases cover boundaries, overlaps and gaps. The reviewer must differ from the author (K5). Publishing sets the effective date and closes the previous version. The impact preview supports AJ-03 step 3. **Checked at action time** with the version in force on that date. A posting power cap limits a substitute. Writes `AUTHORITY_DECISION` with `decision_ref` (X.2.3.2) and `POWER_LIMIT_EXCEEDED` |
+| `delegation/DmnPowerRows.java` | Operaton standalone DMN engine, as a reader only: the matched rows of a table (`maxAmount` / `allowed` / `ruleRef`). It decides nothing (RM-08). Parsed decisions are cached by content hash |
+| `delegation/DelegationOfPowersService.java` | **Versioned** tables `DRAFT → IN_REVIEW → APPROVED → PUBLISHED → RETIRED`. Draft test cases cover boundaries, overlaps and gaps. The reviewer must differ from the author (K5). Publishing sets the effective date and closes the previous version. The impact preview supports AJ-03 step 3. **Checked at action time** with the version in force on that date, by the one power-limit evaluator of sangam-core (`PowerLimitEvaluator`, contract `sangam.power-decision/1`; owner decision 142, RM-08): the service supplies the request, the trusted case-type metadata the host binds with `useOperationMetadata` (the deployed pack manifests, decision 193; none bound: every check is denied) and the table rows as delegated limits (`LegacyPowerContracts.serviceRows`), so every row must pass, the lowest ceiling binds and `UNLIMITED` never lifts another ceiling or the posting power cap (a mandatory cap). The port carries no action, case-type version or currency: the caller states them in `extraInputs` (`action`, `caseTypeVersion`, `currency`, optional `stateVersion`); a missing one denies. No table, an inactive seat, no row, a row without a limit, a malformed value and a failed evaluation are denials with a reason. Writes `AUTHORITY_DECISION` with `decision_ref` (X.2.3.2) and `POWER_LIMIT_EXCEEDED`, both with the evaluator's payload under `power_decision` |
 
 ### Maker-checker / SoD (IX.5 rule 5, K5, CX-8, AJ-08, T17)
 
@@ -287,8 +287,8 @@ Versions come from the Spring Boot 4.1.2 BOM imported by the parent (no BOM in t
    `ApprovalBindingService.verifySubmittedHash`, then `DelegationOfPowersService.require`, then `recordApproval`. The
    case-update path calls `onMaterialChange`.
 10. **Packs (WS-PACKS).** User tasks declare `sangam.seat` / `sangam.level` + `sangam.designation` and `sangam.duty`
-    as `operaton:properties`. Power tables follow the `DmnPowerEvaluator` contract (inputs `designation`, `levelType`,
-    `caseType`, `amount`, …; outputs `maxAmount`, `allowed`, `ruleRef`).
+    as `operaton:properties`. Power tables follow the `DmnPowerRows` contract (inputs `designation`, `levelType`,
+    `caseType` (the manifest's rule case type, decision 222), `amount`, …; outputs `maxAmount`, `allowed`, `ruleRef`).
 11. **Server bridge.** `SecurityAdminBridge` / `SecurityIdentityAdminBridge` can drop their direct SQL:
     use `security.directory().orgUnits/seats/postings/powerTables/policies/roles/groups/users/sodExceptions(...)`
     (pass `offset`, `limit`, the count cap; map `Page.total().capped()` to `X-Total-Count-Capped`), and
