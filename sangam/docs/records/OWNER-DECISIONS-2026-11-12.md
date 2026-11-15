@@ -432,3 +432,9 @@ Decision 369 was taken on 2026-11-15 under the owner's words "Choose recommended
   - (g) Erasure is shown end to end by an e2e spec on a dedicated test citizen of its own, never the shared e2e citizen.
   - (h) `GiveConsentRequest.affirmativeAction` is boxed and required by the contract, as decision 362; a missing value is refused by name.
   - (i) The OTP settings of the IN pack (10-minute lifetime, 5 attempts, 30-minute lock-out, 6 digits) are the 0.1.0 values; a deployer changes them in the pack. Owner to confirm the numbers before release.
+
+Decision 370 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the points lane D5 left open after decision 368; the recommended option of each is recorded.
+
+- **370 (platform role rows of existing tenants; what a token may hold, owner chat 2026-11-15)**:
+  - (1) The server fills in the missing platform role rows of every existing tenant at start: idempotent, never overwriting a role an administrator defined, audited; the list is the code's platform groups, as for a new tenant. No one-off migration and no per-tenant admin call.
+  - (2) A requested token scope must be a role the owner holds (bindings of the person, its groups and its seats, and its IdP roles); an IdP group name alone is never a held role, so a group's name never becomes a token role.
