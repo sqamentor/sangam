@@ -31,6 +31,13 @@ changeset checksum, so databases migrated before the tag still validate (`Cockro
 checksums and that CockroachDB gets every PostgreSQL changeset). The optional pgvector changeset stays PostgreSQL only.
 The optional history partitioning (`sangam-history-partitioning.xml`) has no CockroachDB form and is skipped there.
 
+MariaDB (SL-112) runs the MySQL changelog. MariaDB Connector/J 3.5.11 reports a MariaDB server as `MariaDB`, and
+Liquibase 4.33.0 takes that for `MariaDBDatabase` (short name `mariadb`), not `MySQLDatabase` (which accepts only
+`MySQL` without mariadb in the version). So every MySQL product changeset is tagged `dbms:mysql,mariadb` (generator
+`dbms_tag`, onboarding changeset), the engine patches P-1/P-2 carry `dbms="mysql,mariadb"`, and the history partitioning
+precondition names `mariadb`. `MariaDbChangelogDbmsTest` checks the detection, that MariaDB gets every MySQL changeset
+of the master changelog and the engine patches, and that the checksums do not change.
+
 YugabyteDB YSQL (M-108, experimental) has no changelog of its own. It reports the product `PostgreSQL` through the
 PostgreSQL driver, and Liquibase 4.33.0 takes it for `postgresql` (Liquibase matches `dbms:` by the database's short
 name only), so the `dbms:postgresql` changesets run there. `YugabyteDbChangelogDbmsTest` pins the choice: a Liquibase

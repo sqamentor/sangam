@@ -28,6 +28,7 @@
   <preConditions onFail="HALT" onFailMessage="IR-8: build the Operaton engine first (ACT_HI_ACTINST missing)">
     <or>
       <dbms type="mysql"/>
+      <dbms type="mariadb"/>
       <dbms type="h2"/>
       <tableExists tableName="ACT_HI_ACTINST"/>
     </or>

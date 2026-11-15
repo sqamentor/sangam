@@ -1688,9 +1688,15 @@ def column_sql(dbms, col):
 def dbms_tag(dbms):
     """The dbms: value of a product changeset. Decisions 205 and 379: Liquibase 4.33.0 takes a CockroachDB server for its
     own CockroachDatabase (short name cockroachdb) and matches dbms: by short name only, so the PostgreSQL changesets
-    also name cockroachdb; otherwise the experimental CockroachDB mode would start on an empty product schema. A dbms
+    also name cockroachdb; otherwise the experimental CockroachDB mode would start on an empty product schema. Likewise
+    MariaDB (SL-112): MariaDB Connector/J reports the product MariaDB, Liquibase takes MariaDBDatabase (short name
+    mariadb), so the MySQL changesets also name mariadb (MariaDbChangelogDbmsTest). A dbms
     value is not part of a changeset checksum (CockroachDbChangelogDbmsTest)."""
-    return "postgresql,cockroachdb" if dbms == "postgresql" else dbms
+    if dbms == "postgresql":
+        return "postgresql,cockroachdb"
+    if dbms == "mysql":
+        return "mysql,mariadb"   # SL-112: MariaDB Connector/J reports MariaDB, Liquibase short name mariadb
+    return dbms
 
 
 def render(dbms):

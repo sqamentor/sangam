@@ -441,6 +441,13 @@ an empty product schema. The optional pgvector column and the optional history p
 are skipped on CockroachDB. Whether every PostgreSQL statement runs on CockroachDB is not tested (no CockroachDB lane):
 use it for testing only.
 
+**MariaDB (SL-112, Tier 2): the MySQL changelog under the `mariadb` type.** MariaDB uses the MySQL profile and the
+shipped MariaDB Connector/J. For a MariaDB server that driver reports the product name `MariaDB` (unless the URL sets
+`useMysqlMetadata=true`, which Sangam does not), and Liquibase 4.33.0 takes it for its own `mariadb` database type. The
+MySQL product changesets and the engine patches P-1/P-2 are therefore tagged `dbms:mysql,mariadb`, and the history
+partitioning precondition names `mariadb` too; before that fix the product changelog was skipped on MariaDB. The dbms
+value is not part of a changeset checksum, so databases migrated before keep validating.
+
 **YugabyteDB (YSQL): experimental only (M-108, decisions 156 and 323).** YugabyteDB is not a supported database, no
 release check runs on it, and nothing here claims it works. It is reached through the PostgreSQL driver and the
 `postgres` profile (YSQL port 5433). The PostgreSQL driver reports every such server as `PostgreSQL`, so Sangam reads
