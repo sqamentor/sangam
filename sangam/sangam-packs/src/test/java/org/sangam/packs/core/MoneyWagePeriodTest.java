@@ -745,17 +745,21 @@ class MoneyWagePeriodTest {
 
     /**
      * Decision 295, the divisors of rule 2(1)(h)(i) on their own: the full-period wage divided by 26 (monthly), 13
-     * (fortnightly), 6 (weekly) or 1 (daily); each example is Rs 180 a day. Which rating fits which wage period is not
-     * decided here (round 10 report question).
+     * (fortnightly), 6 (weekly) or 1 (daily); each example is Rs 180 a day. Decision 311 answered which rating fits
+     * which wage period, so each rating is computed here in its own wage period (a calendar month, 14 days, 7 days,
+     * one day).
      */
     @Test
     void decision295TheRatedDaysAre26And13And6And1() {
         Map<String, Object> row = Map.of("adw", "TIME_RATED=FULL_PERIOD_WAGE_BY_RATING", "adwStatus", "UNVERIFIED");
         AverageDailyWage d = AverageDailyWage.of("basis@adw@adwStatus", row, "r");
-        for (Object[] c : new Object[][] {{"MONTHLY", 468000}, {"FORTNIGHTLY", 234000}, {"WEEKLY", 108000},
-                {"DAILY", 18000}}) {
+        for (Object[] c : new Object[][] {{"MONTHLY", 468000, "2026-10-01", "2026-10-31"},
+                {"FORTNIGHTLY", 234000, "2026-10-05", "2026-10-18"}, {"WEEKLY", 108000, "2026-10-05", "2026-10-11"},
+                {"DAILY", 18000, "2026-10-05", "2026-10-05"}}) {
             Map<String, Object> item = Map.of("basis", "TIME_RATED", "full", c[1], "rating", c[0]);
-            assertEquals("18000", d.perDay(item, "x", "full", "rating").stripTrailingZeros().toPlainString(),
+            List<String> period = c[2].equals(c[3]) ? List.of(c[2].toString())
+                    : List.of(c[2].toString(), c[3].toString());
+            assertEquals("18000", d.perDay(item, "x", "full", "rating", period).stripTrailingZeros().toPlainString(),
                     c[0].toString());
         }
         for (String bad : List.of("PIECE_RATED=FULL_PERIOD_WAGE_BY_RATING", "TIME_RATED=WAGES_PER_PAID_DAY",
@@ -763,6 +767,66 @@ class MoneyWagePeriodTest {
             assertTrue(assertThrows(ProcessEngineException.class, () -> AverageDailyWage.of("basis@adw@adwStatus",
                     Map.of("adw", bad, "adwStatus", "UNVERIFIED"), "r")).getMessage().startsWith("RULES_INVALID"), bad);
         }
+    }
+
+    /**
+     * Decision 311: when the wage rating does not match the wage period the calculation is refused with
+     * WAGE_RATING_PERIOD_MISMATCH and no divisor is applied. The pack path first: October 2026 is one whole calendar
+     * month, so only a monthly rated employee can be computed in it (468,000 / 26 = 18,000, Rs 180, exactly); the same
+     * employee rated FORTNIGHTLY, WEEKLY or DAILY (234,000 / 13, 108,000 / 6 and 18,000 / 1 would each also give
+     * 18,000, which is why the mismatch must not be computed) is refused, and nothing is written. Then the rule on its
+     * own: every rating in every wage period that is not its own, and with no stated wage period.
+     */
+    @Test
+    void decision311ARatingThatDoesNotMatchTheWagePeriodIsRefusedAndNoDivisorIsApplied() throws Exception {
+        String monthly = reg(rated("R", 396000, 468000L, "MONTHLY", 26, "TIME_RATED", "2026-04-01", null));
+        ProcessInstance ok = start("period-payroll-270", vars(monthly, "2026-10-01", "2026-10-31"));
+        assertEquals(0, new BigDecimal("18000").compareTo(new BigDecimal(register(
+                engine.getRuntimeService().getVariables(ok.getId())).get("R").get("esiEmployeeAverageDailyWage")
+                .toString())), "a matching rating computes rule 2(1)(h)(i) exactly");
+        for (Object[] c : new Object[][] {{"FORTNIGHTLY", 234000L}, {"WEEKLY", 108000L}, {"DAILY", 18000L}}) {
+            String one = reg(rated("K", 396000, (Long) c[1], c[0].toString(), 26, "TIME_RATED", "2026-04-01", null));
+            assertEquals("WAGE_RATING_PERIOD_MISMATCH", refusal("period-payroll-270", vars(one, "2026-10-01",
+                    "2026-10-31")), c[0] + " in a calendar-month wage period");
+        }
+        Map<String, Object> row = Map.of("adw", "TIME_RATED=FULL_PERIOD_WAGE_BY_RATING", "adwStatus", "VERIFIED");
+        AverageDailyWage d = AverageDailyWage.of("basis@adw@adwStatus", row, "r");
+        Map<String, List<String>> periods = new java.util.LinkedHashMap<>();
+        periods.put("MONTHLY", List.of("2026-10-01", "2026-10-31"));
+        periods.put("FORTNIGHTLY", List.of("2026-10-05", "2026-10-18"));
+        periods.put("WEEKLY", List.of("2026-10-05", "2026-10-11"));
+        periods.put("DAILY", List.of("2026-10-05"));
+        // near misses of each rating's own period: a month from the 2nd, a month and a day, 13 and 15 days, 6 and 8 days
+        periods.put("month from the 2nd", List.of("2026-10-02", "2026-11-01"));
+        periods.put("30 days of a 31 day month", List.of("2026-10-01", "2026-10-30"));
+        periods.put("two months", List.of("2026-10-01", "2026-11-30"));
+        periods.put("13 days", List.of("2026-10-05", "2026-10-17"));
+        periods.put("15 days", List.of("2026-10-01", "2026-10-15"));
+        periods.put("6 days", List.of("2026-10-05", "2026-10-10"));
+        periods.put("8 days", List.of("2026-10-05", "2026-10-12"));
+        for (String rating : List.of("MONTHLY", "FORTNIGHTLY", "WEEKLY", "DAILY")) {
+            Map<String, Object> item = Map.of("basis", "TIME_RATED", "full", 468000, "rating", rating);
+            for (Map.Entry<String, List<String>> p : periods.entrySet()) {
+                if (p.getKey().equals(rating)) {
+                    assertEquals(0, new BigDecimal("468000").divide(AverageDailyWage.RATED_DAYS.get(rating),
+                            DecimalFormula.DIVISION).compareTo(d.perDay(item, "x", "full", "rating", p.getValue())),
+                            rating);
+                    continue;
+                }
+                String message = assertThrows(ProcessEngineException.class,
+                        () -> d.perDay(item, "x", "full", "rating", p.getValue())).getMessage();
+                assertTrue(message.startsWith("WAGE_RATING_PERIOD_MISMATCH: "), rating + " in " + p.getKey() + ": "
+                        + message);
+            }
+            for (List<String> none : java.util.Arrays.asList(null, List.<String>of())) {
+                assertTrue(assertThrows(ProcessEngineException.class, () -> d.perDay(item, "x", "full", "rating",
+                        none)).getMessage().startsWith("WAGE_RATING_PERIOD_MISMATCH: "), rating + " with no period");
+            }
+        }
+        // an unknown rating stays ITEM_INVALID: it is not a mismatch
+        assertTrue(assertThrows(ProcessEngineException.class, () -> d.perDay(Map.of("basis", "TIME_RATED", "full",
+                468000, "rating", "HOURLY"), "x", "full", "rating", periods.get("MONTHLY"))).getMessage()
+                .startsWith("ITEM_INVALID"));
     }
 
     /**

@@ -16,10 +16,15 @@
         <inputEntry id="p3-field-verification-required_r1_i1"><text>-</text></inputEntry>
         <outputEntry id="p3-field-verification-required_r1_o0"><text>true</text></outputEntry>
       </rule>
-      <rule id="p3-field-verification-required_r2">
-        <inputEntry id="p3-field-verification-required_r2_i0"><text>-</text></inputEntry>
+      <rule id="p3-field-verification-required_r2"><description>land holding not stated (optional field): no visit on that ground</description>
+        <inputEntry id="p3-field-verification-required_r2_i0"><text>null</text></inputEntry>
         <inputEntry id="p3-field-verification-required_r2_i1"><text>-</text></inputEntry>
         <outputEntry id="p3-field-verification-required_r2_o0"><text>false</text></outputEntry>
+      </rule>
+      <rule id="p3-field-verification-required_r3">
+        <inputEntry id="p3-field-verification-required_r3_i0"><text>-</text></inputEntry>
+        <inputEntry id="p3-field-verification-required_r3_i1"><text>-</text></inputEntry>
+        <outputEntry id="p3-field-verification-required_r3_o0"><text>false</text></outputEntry>
       </rule>
     </decisionTable>
   </decision>

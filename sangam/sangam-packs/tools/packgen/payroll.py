@@ -34,9 +34,13 @@ PF wages of an employee are used up to the ceiling) and three separate ESI rules
   esiAverageDailyWage definition for the employee's esiWageBasis (decision 295: TIME_RATED=FULL_PERIOD_WAGE_BY_RATING,
   Social Security (Central) Rules 2026 rule 2(1)(h)(i): esiFullPeriodWages divided by 26 if monthly rated, 13
   fortnightly, 6 weekly, 1 daily, never wages per paid day), refused for a basis it does not define (piece-rated pay,
-  rule 2(1)(h)(ii), not coded); esiAverageDailyWageStatus stays UNVERIFIED (see the decision 295 question in the round
-  10 report); the exemption threshold itself was not found in current official text after 8 May 2026 (decision 298),
-  so the exemption stays blocked; the exemption never removes the employer share or coverage;
+  rule 2(1)(h)(ii), not coded); decision 311: an employee whose esiRating is not the one of the wage period (MONTHLY
+  for a whole calendar month, FORTNIGHTLY for 14 days, WEEKLY for 7 days, DAILY for one day) is refused
+  (WAGE_RATING_PERIOD_MISMATCH), no divisor is applied; decision 310: esiAverageDailyWageStatus is VERIFIED, the
+  definition was read in the primary text (esiAverageDailyWageSource cites rule 2(1)(h)(i) and its effective date,
+  8 May 2026), while the row and its permitted use stay UNVERIFIED and SYNTHETIC_DEMO_ONLY; the exemption threshold
+  itself was not found in current official text after 8 May 2026 (decision 298), so the exemption stays blocked; the
+  exemption never removes the employer share or coverage;
 - contribution-bearing wages: the ESI wages of the wage period, times the rate, rounded per employee and per share
   (decision 272: CEILING to the next rupee, employee and employer shares separately; the unrounded amount and the
   rounding difference are kept on the register and in the audit trace).
@@ -76,6 +80,8 @@ OUTPUTS = [('ruleId', 'Rules', 'string'), ('ruleVersion', 'Rules version', 'stri
            ('esiAverageDailyWage', 'ESI low-wage exemption: average daily wage per wage basis (BASIS=METHOD)',
             'string'),
            ('esiAverageDailyWageStatus', 'ESI average daily wage definition (VERIFIED / UNVERIFIED)', 'string'),
+           ('esiAverageDailyWageSource', 'ESI average daily wage definition: provision read and its effective date',
+            'string'),
            ('pfCeilingApplication', 'How the PF ceiling is applied', 'string'),
            ('esiEligibility', 'How ESI eligibility is applied', 'string'),
            ('jurisdiction', 'Jurisdiction', 'string'), ('source', 'Source', 'string'),
@@ -126,15 +132,25 @@ NOTE = ('UNVERIFIED, SYNTHETIC_DEMO_ONLY (decisions 288, 298): the ESI Rs 21,000
 # decisions 271 and 295: the average daily wage of the low-wage exemption per wage basis: rule 2(1)(h)(i) for
 # time-rated pay (AverageDailyWage.FULL_PERIOD_WAGE_BY_RATING); a basis it does not define (piece-rated) is refused
 AVERAGE_DAILY_WAGE = 'TIME_RATED=FULL_PERIOD_WAGE_BY_RATING'
+# decision 310: that definition was read in the primary text, so its own status is VERIFIED; the citation carries the
+# effective date. The row's evidence and permitted use are not changed by it (UNVERIFIED, SYNTHETIC_DEMO_ONLY).
+ADW_STATUS = 'VERIFIED'
+ADW_EFFECTIVE_FROM = '2026-05-08'
+ADW_SOURCE = ('Social Security (Central) Rules, 2026 (G.S.R. 344(E), Gazette of India Extraordinary No. 310 of 8 May '
+              '2026) rule 2(1)(h)(i), in force from ' + ADW_EFFECTIVE_FROM + ': for a time-rated employee the wage '
+              'payable for the complete wage period had every working day been worked, divided by 26 if monthly '
+              'rated, 13 if fortnightly rated, 6 if weekly rated and 1 if daily rated; read in the primary text ('
+              + EVIDENCE + ' section 3.1; decision 310); it does not define the average daily wage of a wage period '
+              'before ' + ADW_EFFECTIVE_FROM + '; permitted use of the row stays SYNTHETIC_DEMO_ONLY')
 
 ROWS = [
     dict(version='demo-pf15k', frm='1900-01-01', to='2026-09-16', pf='15000', esi='21000',
          cont='CONTRIBUTION_PERIOD', low='176', cmp='AT_OR_BELOW', starts='04-01,10-01', basis='FIRST_DAY',
-         joiner='COVERED_TO_PERIOD_END', adw=AVERAGE_DAILY_WAGE, adw_status='UNVERIFIED',
+         joiner='COVERED_TO_PERIOD_END', adw=AVERAGE_DAILY_WAGE, adw_status=ADW_STATUS,
          source=SO_2702 + '; ' + ESI_REPORTED + '; ' + ESI_CONTINUATION),
     dict(version='demo-pf25k', frm='2026-09-17', to=OPEN_END, pf='25000', esi='21000',
          cont='CONTRIBUTION_PERIOD', low='176', cmp='AT_OR_BELOW', starts='04-01,10-01', basis='FIRST_DAY',
-         joiner='COVERED_TO_PERIOD_END', adw=AVERAGE_DAILY_WAGE, adw_status='UNVERIFIED',
+         joiner='COVERED_TO_PERIOD_END', adw=AVERAGE_DAILY_WAGE, adw_status=ADW_STATUS,
          source=SO_5109 + '; ' + ESI_REPORTED + '; ' + ESI_CONTINUATION),
 ]
 
@@ -151,7 +167,7 @@ def declare_rules(pk):
         rules.append(([f'[date({q(r["frm"])})..date({q(r["to"])})]'],
                       [q(RULES_KEY), q(r['version']), q(rounding.UNVERIFIED), q(rounding.DEMO_ONLY), q(NOTE), r['pf'],
                        r['esi'], q(r['cont']), r['low'], q(r['cmp']), q(r['starts']), q(r['basis']), q(r['joiner']),
-                       q(r['adw']), q(r['adw_status']), q(PF_APPLICATION), q(ESI_APPLICATION), q('IN'),
+                       q(r['adw']), q(r['adw_status']), q(ADW_SOURCE), q(PF_APPLICATION), q(ESI_APPLICATION), q('IN'),
                        q(r['source']), q(WHY), q(r['frm']), q(r['to'])],
                       f'{rounding.UNVERIFIED} {rounding.DEMO_ONLY} {r["version"]}'))
     pk.dmn(RULES_KEY, 'PF wage ceiling and ESI coverage (decision 223 versioned rules)', 'UNIQUE',

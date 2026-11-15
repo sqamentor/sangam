@@ -448,7 +448,7 @@ public class MoneyCalculationDelegate implements JavaDelegate {
             if (exempt != null) {
                 BigDecimal perDay;
                 if (daily != null) {
-                    perDay = daily.perDay(item, id, exempt.field(), exempt.per());
+                    perDay = daily.perDay(item, id, exempt.field(), exempt.per(), stated == null ? null : asOf);
                     item.put(out + "AverageDailyWage", perDay.toPlainString());
                 } else {
                     BigDecimal per = itemAmount(item, exempt.per(), id);
