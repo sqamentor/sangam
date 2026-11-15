@@ -38,7 +38,10 @@
 #
 # Both extra directories are put on the class path through Spring Boot's PropertiesLauncher (loader.path), so a
 # driver can be replaced without rebuilding the image. Writable state lives under /var/lib/sangam (compliance log
-# archive, cell exports); mount a volume there (R51: 180-day India-resident logs).
+# archive, cell exports, content store, channel attachments); mount a volume there (R51: 180-day India-resident logs).
+# /opt/sangam itself is not writable by the server user, so every directory the server writes to is named by an ENV
+# below. sangam.channels.documents-dir has the server default ./data/channels (relative to WORKDIR /opt/sangam): without
+# SANGAM_CHANNELS_DOCUMENTSDIR the server stops at start with "AccessDeniedException: /opt/sangam/data".
 
 # Base images are pinned by index digest in the FROM lines (decisions 253, 261; lookup in DOWNLOADS-WAVE4.md).
 # JRE_IMAGE and DISTROLESS_IMAGE stay build args (decision 253) because the JDK 21 variant above overrides them;
@@ -132,7 +135,7 @@ COPY deploy/fonts/*.ttf deploy/fonts/OFL-*.txt /layout/opt/sangam/fonts/
 # The last command is the licence guard (LIC-1/2/3/4/5/10): the build fails if a forbidden driver or script runtime
 # ended up inside the fat jar.
 RUN mkdir -p /layout/opt/sangam/config /layout/var/lib/sangam/compliance-logs /layout/var/lib/sangam/cell-exports \
-             /layout/var/lib/sangam/content \
+             /layout/var/lib/sangam/content /layout/var/lib/sangam/channels \
  && chown -R 10001:0 /layout/opt/sangam /layout/var/lib/sangam \
  && chmod -R g=u /layout/opt/sangam /layout/var/lib/sangam \
  && if jar tf /layout/opt/sangam/app.jar | grep -E -i 'BOOT-INF/lib/(ojdbc|ucp|db2jcc|jcc-|mysql-connector|mariadb-java-client|js-[0-9]|polyglot|rhino|nashorn|jython|jruby)'; then \
@@ -160,6 +163,7 @@ ENV TZ=UTC \
     SANGAM_COMPLIANCE_LOG_ARCHIVE=/var/lib/sangam/compliance-logs \
     SANGAM_CELL_EXPORT_DIR=/var/lib/sangam/cell-exports \
     SANGAM_CONTENT_ROOT=/var/lib/sangam/content \
+    SANGAM_CHANNELS_DOCUMENTSDIR=/var/lib/sangam/channels \
     SANGAM_PDF_FONTS=/opt/sangam/fonts/NotoSans-Regular.ttf,/opt/sangam/fonts/NotoSansDevanagari-Regular.ttf \
     SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/sangam/config/
 WORKDIR /opt/sangam
@@ -186,6 +190,7 @@ ENV TZ=UTC \
     SANGAM_COMPLIANCE_LOG_ARCHIVE=/var/lib/sangam/compliance-logs \
     SANGAM_CELL_EXPORT_DIR=/var/lib/sangam/cell-exports \
     SANGAM_CONTENT_ROOT=/var/lib/sangam/content \
+    SANGAM_CHANNELS_DOCUMENTSDIR=/var/lib/sangam/channels \
     SANGAM_PDF_FONTS=/opt/sangam/fonts/NotoSans-Regular.ttf,/opt/sangam/fonts/NotoSansDevanagari-Regular.ttf \
     SPRING_CONFIG_ADDITIONAL_LOCATION=optional:file:/opt/sangam/config/
 WORKDIR /opt/sangam
