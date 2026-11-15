@@ -109,6 +109,12 @@
       "capabilityClass": "c"
     }
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "la_decide": {

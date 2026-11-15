@@ -210,21 +210,46 @@ DSC_GATE = 'org.sangam.packs.core.DscSignatureGuardListener'
 _BPMN_NS = {'b': 'http://www.omg.org/spec/BPMN/20100524/MODEL', 'o': 'http://operaton.org/schema/1.0/bpmn'}
 
 
-def document_slots(xmls, pack_id):
-    """Decision 269: the documentType-to-slot pairs of a pack, read from its own generated BPMN (the create listener of
-    every DSC gate, core.dsc_gate), so the manifest never repeats them by hand. One type maps to one slot and one slot
-    to one type; anything else stops generation."""
+def gate_pairs(xml, where):
+    """Decision 269: the documentType-to-slot pairs of the DSC gates of one generated process (the create listener of
+    every DSC gate, core.dsc_gate), read from its BPMN so no manifest repeats them by hand."""
     import xml.etree.ElementTree as ET
+    pairs = []
+    for tl in ET.fromstring(xml.encode('utf-8')).iter('{%s}taskListener' % _BPMN_NS['o']):
+        if tl.get('class') != DSC_GATE or tl.get('event') != 'create':
+            continue
+        f = {fd.get('name'): (fd.findtext('o:string', default='', namespaces=_BPMN_NS) or '').strip()
+             for fd in tl.findall('o:field', _BPMN_NS)}
+        doc_type, slot = f.get('documentType', ''), f.get('documentSlot', '')
+        if not doc_type or not slot:
+            raise SystemExit(f'{where}: a DSC gate names no documentType or documentSlot')
+        pairs.append((doc_type, slot))
+    return pairs
+
+
+def reached_gate_pairs(pid, own, calls, seen=None):
+    """Decision 382: the pairs of the DSC gates process pid holds itself and of every gate it reaches through its call
+    activities, transitively (a called process that is not generated here stops generation)."""
+    seen = set() if seen is None else seen
+    if pid in seen:
+        return []
+    seen.add(pid)
+    if pid not in own:
+        raise SystemExit(f'decision 382: process {pid} is called but not generated, so its DSC gates are unknown')
+    out = list(own[pid])
+    for c in sorted(calls.get(pid, ())):
+        out += reached_gate_pairs(c, own, calls, seen)
+    return out
+
+
+def document_slots(pids, own, calls, pack_id):
+    """Decisions 269 and 382: the documentType-to-slot pairs of a pack are those of its own DSC gates and of every DSC
+    gate its processes call, so the document route fills the slot on the calling instance, before the call starts the
+    gate's process (in variables="all" copies the slot). One type maps to one slot and one slot to one type; anything
+    else stops generation."""
     pairs = {}
-    for xml in xmls:
-        for tl in ET.fromstring(xml.encode('utf-8')).iter('{%s}taskListener' % _BPMN_NS['o']):
-            if tl.get('class') != DSC_GATE or tl.get('event') != 'create':
-                continue
-            f = {fd.get('name'): (fd.findtext('o:string', default='', namespaces=_BPMN_NS) or '').strip()
-                 for fd in tl.findall('o:field', _BPMN_NS)}
-            doc_type, slot = f.get('documentType', ''), f.get('documentSlot', '')
-            if not doc_type or not slot:
-                raise SystemExit(f'{pack_id}: a DSC gate names no documentType or documentSlot')
+    for pid in pids:
+        for doc_type, slot in reached_gate_pairs(pid, own, calls):
             if pairs.get(doc_type, slot) != slot:
                 raise SystemExit(f'{pack_id}: document type {doc_type} maps to {pairs[doc_type]} and {slot}')
             pairs[doc_type] = slot
@@ -238,11 +263,14 @@ def write_all(root):
     idx = ['# Sangam pack manifests (generated). One manifest path per line.']
     owner = {p.pid: pk for pk in ALL for p in pk.procs}
     core_tables = {did: xml for pk in ALL if pk.id == 'sangam.core' for did, xml in pk.dmns}
+    # decision 382: every process is generated first, so a pack's manifest can name the DSC gates of the processes
+    # it calls, whichever pack holds them
+    xmls_of, resources_of, own_gates, calls_of = {}, {}, {}, {}
     for pk in ALL:
         base = os.path.join(root, 'packs', pk.dir)
         os.makedirs(os.path.join(base, 'forms'), exist_ok=True)
-        resources = []
-        xmls = {}
+        resources = resources_of[pk.id] = []
+        xmls = xmls_of[pk.id] = {}
         for p in pk.procs:
             for n in all_user_names(p):
                 if split_name(n)[1] is None:
@@ -259,6 +287,12 @@ def write_all(root):
             write(os.path.join(root, path), xml)
             resources.append({'kind': 'BPMN', 'path': path})
             xmls[p.pid] = xml
+            own_gates[p.pid] = gate_pairs(xml, path)
+            calls_of[p.pid] = set(p.calls)
+    for pk in ALL:
+        base = os.path.join(root, 'packs', pk.dir)
+        resources = resources_of[pk.id]
+        xmls = xmls_of[pk.id]
         for did, xml in pk.dmns:
             path = f'packs/{pk.dir}/{did}.dmn'
             write(os.path.join(root, path), xml)
@@ -318,7 +352,7 @@ def write_all(root):
         }
         if workers:
             manifest['workers'] = workers
-        slots = document_slots(xmls.values(), pk.id)
+        slots = document_slots([p.pid for p in pk.procs], own_gates, calls_of, pk.id)
         if slots:
             manifest['documentSlots'] = slots  # decision 269: the server document route reads these, no server table
         if pk.placeholders:

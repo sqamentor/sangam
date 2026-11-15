@@ -112,6 +112,12 @@
     "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "ba_sanction": {

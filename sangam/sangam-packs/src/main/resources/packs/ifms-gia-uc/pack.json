@@ -136,6 +136,12 @@
     "sangam-core-sanction",
     "sangam-ifms-bill"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "currency": "INR",
   "powers": {
     "gr_sanction": {

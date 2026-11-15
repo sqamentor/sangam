@@ -8,15 +8,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.junit.jupiter.api.Test;
 import org.operaton.bpm.model.bpmn.Bpmn;
 import org.operaton.bpm.model.bpmn.BpmnModelInstance;
+import org.operaton.bpm.model.bpmn.instance.CallActivity;
+import org.operaton.bpm.model.bpmn.instance.Process;
 import org.operaton.bpm.model.bpmn.instance.operaton.OperatonField;
 import org.operaton.bpm.model.bpmn.instance.operaton.OperatonTaskListener;
 
@@ -30,7 +37,8 @@ import org.sangam.packs.spi.SangamPack;
 /**
  * Decision 269: each pack declares its DSC documentType-to-slot pairs in its manifest ({@code documentSlots}); the server
  * reads them, there is no server table. The core pack publishes NOTING = notingDocumentId and SANCTION_NOTE =
- * sanctionDocumentId, and every pack's manifest pairs are exactly those its own DSC gates use.
+ * sanctionDocumentId, and every pack's manifest pairs are exactly those of its own DSC gates and (decision 382) of every
+ * DSC gate its processes reach through call activities, so the slot is filled on the calling instance.
  */
 class PackDocumentSlotsTest {
 
@@ -45,40 +53,88 @@ class PackDocumentSlotsTest {
     }
 
     @Test
-    void everyPacksManifestPairsAreExactlyThoseOfItsOwnDscGates() throws Exception {
-        int gated = 0;
+    void everyPacksManifestPairsAreExactlyThoseOfItsOwnAndItsCalledDscGates() throws Exception {
+        // read from the deployed models, independent of packgen: each process's own gates and its call activities
+        Map<String, Set<DocumentSlot>> own = new HashMap<>();
+        Map<String, Set<String>> calls = new HashMap<>();
+        Map<SangamPack, List<String>> processes = new LinkedHashMap<>();
         for (SangamPack p : PackRegistry.discover().all()) {
-            Set<DocumentSlot> fromModels = new LinkedHashSet<>();
+            List<String> ids = new ArrayList<>();
             for (PackDescriptor.PackResource r : p.descriptor().resources(PackDescriptor.PackResource.Kind.BPMN)) {
                 try (InputStream in = p.open(r.path())) {
                     BpmnModelInstance m = Bpmn.readModelFromStream(in);
-                    for (OperatonTaskListener tl : m.getModelElementsByType(OperatonTaskListener.class)) {
-                        if (!DscSignatureGuardListener.class.getName().equals(tl.getOperatonClass())
-                                || !"create".equals(tl.getOperatonEvent())) {
-                            continue;
+                    for (Process proc : m.getModelElementsByType(Process.class)) {
+                        ids.add(proc.getId());
+                        own.put(proc.getId(), gatesOf(m));
+                        Set<String> called = new TreeSet<>();
+                        for (CallActivity c : m.getModelElementsByType(CallActivity.class)) {
+                            called.add(c.getCalledElement());
                         }
-                        String type = null;
-                        String slot = null;
-                        for (OperatonField f : tl.getOperatonFields()) {
-                            if ("documentType".equals(f.getOperatonName())) {
-                                type = f.getOperatonStringValue() != null ? f.getOperatonStringValue()
-                                        : f.getOperatonString().getTextContent();
-                            } else if ("documentSlot".equals(f.getOperatonName())) {
-                                slot = f.getOperatonStringValue() != null ? f.getOperatonStringValue()
-                                        : f.getOperatonString().getTextContent();
-                            }
-                        }
-                        fromModels.add(new DocumentSlot(type.trim(), slot.trim()));
+                        calls.put(proc.getId(), called);
                     }
                 }
             }
-            if (!fromModels.isEmpty()) {
-                gated++;
+            processes.put(p, ids);
+        }
+        int gated = 0;
+        int byCall = 0;
+        for (Map.Entry<SangamPack, List<String>> e : processes.entrySet()) {
+            Set<DocumentSlot> expected = new LinkedHashSet<>();
+            Set<DocumentSlot> ownOnly = new LinkedHashSet<>();
+            for (String pid : e.getValue()) {
+                ownOnly.addAll(own.get(pid));
+                reach(pid, own, calls, new HashSet<>(), expected);
             }
-            assertEquals(fromModels, new LinkedHashSet<>(p.descriptor().documentSlots()),
-                    p.descriptor().id() + ": manifest documentSlots must equal its DSC gates");
+            gated += ownOnly.isEmpty() ? 0 : 1;
+            byCall += expected.size() > ownOnly.size() ? 1 : 0;
+            assertEquals(expected, new LinkedHashSet<>(e.getKey().descriptor().documentSlots()),
+                    e.getKey().descriptor().id() + ": manifest documentSlots must equal its own and its called DSC gates");
         }
         assertTrue(gated >= 1, "at least the core pack has DSC gates");
+        assertTrue(byCall >= 1, "at least one pack reaches a DSC gate only through a call");
+    }
+
+    @Test
+    void aPackThatCallsTheCoreSanctionDeclaresTheSanctionNoteSlot() {
+        // decision 382: a SANCTION_NOTE uploaded on the audit-para instance fills the slot that its call into
+        // sangam-core-sanction (sn_sanction) copies to the child, so the gate captures a filled slot at create
+        PackDescriptor auditPara = PackRegistry.discover().find("gov.audit-para").orElseThrow().descriptor();
+        assertEquals(Optional.of("sanctionDocumentId"), auditPara.slotFor("SANCTION_NOTE"));
+    }
+
+    private static void reach(String pid, Map<String, Set<DocumentSlot>> own, Map<String, Set<String>> calls,
+            Set<String> seen, Set<DocumentSlot> out) {
+        if (!seen.add(pid)) {
+            return;
+        }
+        assertTrue(own.containsKey(pid), "called process " + pid + " is in no pack");
+        out.addAll(own.get(pid));
+        for (String c : calls.get(pid)) {
+            reach(c, own, calls, seen, out);
+        }
+    }
+
+    private static Set<DocumentSlot> gatesOf(BpmnModelInstance m) {
+        Set<DocumentSlot> gates = new LinkedHashSet<>();
+        for (OperatonTaskListener tl : m.getModelElementsByType(OperatonTaskListener.class)) {
+            if (!DscSignatureGuardListener.class.getName().equals(tl.getOperatonClass())
+                    || !"create".equals(tl.getOperatonEvent())) {
+                continue;
+            }
+            String type = null;
+            String slot = null;
+            for (OperatonField f : tl.getOperatonFields()) {
+                if ("documentType".equals(f.getOperatonName())) {
+                    type = f.getOperatonStringValue() != null ? f.getOperatonStringValue()
+                            : f.getOperatonString().getTextContent();
+                } else if ("documentSlot".equals(f.getOperatonName())) {
+                    slot = f.getOperatonStringValue() != null ? f.getOperatonStringValue()
+                            : f.getOperatonString().getTextContent();
+                }
+            }
+            gates.add(new DocumentSlot(type.trim(), slot.trim()));
+        }
+        return gates;
     }
 
     @Test

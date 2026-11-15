@@ -224,6 +224,12 @@
     "sangam-core-sanction",
     "sangam-core-scrutiny"
   ],
+  "documentSlots": [
+    {
+      "documentType": "SANCTION_NOTE",
+      "slot": "sanctionDocumentId"
+    }
+  ],
   "placeholders": [
     {
       "decision": "p3-instalment-rounding",
