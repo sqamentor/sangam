@@ -36,7 +36,8 @@ import org.sangam.engine.job.JobIdentitySupport;
  * Decision 144 (owner 197) at the engine sites: a tenant-owned job runs as its engine tenant and a differing
  * {@code sangamTenantId} variable refuses it; an untenanted job of an unregistered deployment is not executed and its
  * incident goes to the system audit scope only with {@code TENANT_UNRESOLVED}; the same job of a registered shared
- * deployment runs as the system audit scope; the engine start refuses a missing or customer-tenant scope. H2 only;
+ * deployment runs as the system audit scope; an untenanted batch's seed job carries its source deployment and follows
+ * the same rule (decision 330); the engine start refuses a missing or customer-tenant scope. H2 only;
  * Oracle and SQL Server NOT_RUN. Written, NOT_RUN.
  */
 class WorkTenantsH2Test {
@@ -280,29 +281,79 @@ class WorkTenantsH2Test {
         }
     }
 
+    /** An untenanted migration batch over one untenanted instance, from version 1 to version 2 of {@code w144}. */
+    private record UntenantedBatch(String sourceDeployment, String v2, String pid, org.operaton.bpm.engine.batch.Batch batch,
+                                   Job seed) {
+    }
+
+    private static UntenantedBatch untenantedMigration(OperatonEngineAdapter a, String businessKey) {
+        String source = a.deploy(null, "w144", Map.of("w144.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
+        String pid = a.startProcess(null, "w144", businessKey, Map.of()); // an instance of version 1
+        a.deploy(null, "w144", Map.of("w144.bpmn", MODEL.replace("isExecutable=\"true\"",
+                "isExecutable=\"true\" name=\"v2\"").getBytes(StandardCharsets.UTF_8)));
+        var repo = a.processEngine().getRepositoryService();
+        String v1 = repo.createProcessDefinitionQuery().processDefinitionKey("w144").withoutTenantId()
+                .processDefinitionVersion(1).singleResult().getId();
+        String v2 = repo.createProcessDefinitionQuery().processDefinitionKey("w144").withoutTenantId()
+                .processDefinitionVersion(2).singleResult().getId();
+        var runtime = a.processEngine().getRuntimeService();
+        assertEquals(v1, runtime.createProcessInstanceQuery().processInstanceId(pid).singleResult()
+                .getProcessDefinitionId());
+        org.operaton.bpm.engine.batch.Batch batch = runtime.newMigration(runtime.createMigrationPlan(v1, v2)
+                .mapEqualActivities().build()).processInstanceIds(pid).executeAsync();
+        assertNull(batch.getTenantId());
+        Job seed = a.processEngine().getManagementService().createJobQuery()
+                .jobDefinitionId(batch.getSeedJobDefinitionId()).singleResult();
+        assertNull(seed.getTenantId());
+        assertNull(seed.getProcessInstanceId());
+        assertNull(seed.getProcessDefinitionId());
+        // Operaton 2.2 gives a batch's seed job the deployment of the batch's source definition, so the seed job is
+        // not an engine maintenance job (those have no deployment): decision 197 decides by that deployment
+        assertEquals(source, seed.getDeploymentId(), "the seed job carries its source deployment");
+        assertFalse(WorkTenants.isMaintenance((org.operaton.bpm.engine.impl.persistence.entity.JobEntity) seed));
+        return new UntenantedBatch(source, v2, pid, batch, seed);
+    }
+
+    /**
+     * Decisions 197 and 330: an untenanted batch's seed job is not maintenance regardless of its deployment. It carries
+     * the batch's source deployment and is refused while that deployment is not a registered shared deployment. (This
+     * test used to expect a seed job without a deployment that runs as engine maintenance; the owner ruled that premise
+     * wrong, decision 330.)
+     */
     @Test
-    void anUntenantedBatchsSeedJobRunsAsEngineMaintenance() {
+    void anUntenantedBatchsSeedJobOfAnUnregisteredDeploymentIsRefused() {
         try (OperatonEngineAdapter a = engine()) {
-            a.deploy(null, "w144", Map.of("w144.bpmn", MODEL.getBytes(StandardCharsets.UTF_8)));
-            a.deploy(null, "w144", Map.of("w144.bpmn", MODEL.replace("isExecutable=\"true\"",
-                    "isExecutable=\"true\" name=\"v2\"").getBytes(StandardCharsets.UTF_8)));
-            var repo = a.processEngine().getRepositoryService();
-            String v1 = repo.createProcessDefinitionQuery().processDefinitionKey("w144").withoutTenantId()
-                    .processDefinitionVersion(1).singleResult().getId();
-            String v2 = repo.createProcessDefinitionQuery().processDefinitionKey("w144").withoutTenantId()
-                    .processDefinitionVersion(2).singleResult().getId();
-            String pid = a.startProcess(null, "w144", "B-6", Map.of());
-            var runtime = a.processEngine().getRuntimeService();
-            org.operaton.bpm.engine.batch.Batch batch = runtime.newMigration(runtime.createMigrationPlan(v1, v2)
-                    .mapEqualActivities().build()).processInstanceIds(pid).executeAsync();
-            assertNull(batch.getTenantId());
+            UntenantedBatch b = untenantedMigration(a, "B-6");
             var mgmt = a.processEngine().getManagementService();
-            Job seed = mgmt.createJobQuery().jobDefinitionId(batch.getSeedJobDefinitionId()).singleResult();
-            assertNull(seed.getTenantId());
-            assertNull(seed.getProcessInstanceId());
-            assertNull(seed.getProcessDefinitionId());
-            assertNull(seed.getDeploymentId());
-            mgmt.executeJob(seed.getId()); // maintenance: runs in the system audit scope instead of failing closed
+            RuntimeException e = assertThrows(RuntimeException.class, () -> mgmt.executeJob(b.seed().getId()));
+            assertTrue(String.valueOf(rootMessage(e)).contains(TenantRefusal.MISSING_ENGINE_TENANT.code())
+                    || causeIs(e, TenantResolutionException.class), String.valueOf(rootMessage(e)));
+            assertEquals(0, mgmt.createJobQuery().jobDefinitionId(b.batch().getMonitorJobDefinitionId()).count(),
+                    "the seed job did not run: no monitor job");
+            assertEquals(0, mgmt.createJobQuery().jobDefinitionId(b.batch().getBatchJobDefinitionId()).count(),
+                    "and no execution job");
+            assertEquals(1, a.processEngine().getRuntimeService().createProcessInstanceQuery()
+                    .processInstanceId(b.pid()).count(), "the instance is untouched");
+            assertFalse(b.v2().equals(a.processEngine().getRuntimeService().createProcessInstanceQuery()
+                    .processInstanceId(b.pid()).singleResult().getProcessDefinitionId()), "not migrated");
+        }
+    }
+
+    /** Decisions 197 and 330: the same seed job runs once its source deployment is a registered shared deployment. */
+    @Test
+    void anUntenantedBatchsSeedJobOfARegisteredSharedDeploymentRuns() {
+        try (OperatonEngineAdapter a = engine()) {
+            UntenantedBatch b = untenantedMigration(a, "B-7");
+            new SharedDeployments(a).register(deployer(), b.sourceDeployment(), "platform migration");
+            var mgmt = a.processEngine().getManagementService();
+            mgmt.executeJob(b.seed().getId());
+            assertEquals(1, mgmt.createJobQuery().jobDefinitionId(b.batch().getMonitorJobDefinitionId()).count(),
+                    "the seed job ran: the monitor job exists");
+            Job execution = mgmt.createJobQuery().jobDefinitionId(b.batch().getBatchJobDefinitionId()).singleResult();
+            assertEquals(b.sourceDeployment(), execution.getDeploymentId(), "the execution job carries it too");
+            mgmt.executeJob(execution.getId());
+            assertEquals(b.v2(), a.processEngine().getRuntimeService().createProcessInstanceQuery()
+                    .processInstanceId(b.pid()).singleResult().getProcessDefinitionId(), "the batch migrated the instance");
             assertTrue(incidents.isEmpty());
             assertTrue(audited.stream().noneMatch(x -> WorkTenants.UNRESOLVED_EVENT.equals(x.type())));
         }
