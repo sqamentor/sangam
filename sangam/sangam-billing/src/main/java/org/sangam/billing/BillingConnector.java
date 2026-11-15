@@ -37,6 +37,19 @@ import java.util.function.BiFunction;
  * {@code tariffId}, {@code measures} (map) or {@code units}, {@code dueDays} (default 15), {@code amount},
  * {@code channel}, {@code paymentRef}, {@code head}, {@code orderRef}. Postings use the operationId-derived references of
  * {@link BillingService}, so retries are idempotent.
+ *
+ * <p><b>Who acted (RM-37; owner decisions 141 and 142).</b> The actor recorded with an invoice, a receipt, a penalty
+ * and a waiver is the authenticated server-side identity the host states through its {@link ActorSource}, never a
+ * value of the step input: a process (or anything else that can set step variables or a request body) cannot choose
+ * who collected or waived. With an authenticated actor, an input {@code actor} that names somebody else is refused
+ * ({@code ACTOR_MISMATCH}, nothing posted). Without one (an engine job, a host that wired no source) the posting is
+ * recorded as {@value #SYSTEM_ACTOR} and an input {@code actor} is not used.
+ *
+ * <p><b>References.</b> {@code paymentRef} is a business input: the reference the payment has on its channel. It is
+ * required, confirmed with the channel's rail before anything is recorded and receipted once per tenant
+ * ({@link DocumentNumbers#receiptKey}: a second collection of the same reference for another amount, consumer or
+ * ledger is refused); the receipt <i>number</i> is issued by the server. {@code orderRef} (the waiver order) is
+ * required and makes the waiver idempotent.
  */
 public final class BillingConnector implements SangamConnector {
 
@@ -46,20 +59,58 @@ public final class BillingConnector implements SangamConnector {
         List<Map<String, Object>> accounts(String tenant, String cycle);
     }
 
+    /**
+     * The authenticated server-side actor of a connector call. The host answers from its own authentication state (the
+     * principal of the request it is serving, the engine's authenticated user); it never reads
+     * {@link ConnectorRequest#input}.
+     */
+    @FunctionalInterface
+    public interface ActorSource {
+        /**
+         * @return the authenticated principal this call is made for, or null when no person is authenticated (an engine
+         *         job, another system execution)
+         */
+        String authenticatedActor(ConnectorRequest request);
+    }
+
+    /** The recorded actor of a posting that no authenticated person made (an engine job, an unwired host). */
+    public static final String SYSTEM_ACTOR = "system:billing-connector";
+
+    /** The operations that post (owner decision 320: the others are read-only); each records an actor. */
+    private static final java.util.Set<String> POSTING = java.util.Set.of("invoice", "collect", "penalty", "waive");
+
+    /** Refusal code: the step input names an actor other than the authenticated one. */
+    public static final String ACTOR_MISMATCH = "ACTOR_MISMATCH";
+
+    /** Refusal code: the host's {@link ActorSource} failed, so nobody can be recorded as having acted. */
+    public static final String ACTOR_UNRESOLVED = "ACTOR_UNRESOLVED";
+
     private final BillingService billing;
     private final LedgerService ledger;
     private final ProfileResolver profiles;
     private final AccountSource accounts;
     private final BiFunction<String, LocalDate, String> periodResolver;
     private final Clock clock;
+    private final ActorSource actors;
+
+    /**
+     * A host that states no authenticated actor: every posting is recorded as {@value #SYSTEM_ACTOR}, whatever the step
+     * input says. A host that serves authenticated callers passes its {@link ActorSource}.
+     */
+    public BillingConnector(BillingService billing, LedgerService ledger, ProfileResolver profiles, AccountSource accounts,
+                            BiFunction<String, LocalDate, String> periodResolver, Clock clock) {
+        this(billing, ledger, profiles, accounts, periodResolver, clock, request -> null);
+    }
 
     /**
      * @param periodResolver tenant and date to the current period label (the tenant profile's fiscal calendar, the same
      *                       resolver as the ledger connector's); it throws {@link FiscalYearNotConfiguredException} when
      *                       no fiscal year is configured. Null: a step without an explicit {@code period} is refused.
+     * @param actors         the host's authenticated actor of a call (RM-37); required
      */
     public BillingConnector(BillingService billing, LedgerService ledger, ProfileResolver profiles, AccountSource accounts,
-                            BiFunction<String, LocalDate, String> periodResolver, Clock clock) {
+                            BiFunction<String, LocalDate, String> periodResolver, Clock clock, ActorSource actors) {
+        this.actors = java.util.Objects.requireNonNull(actors, "actors");
         this.billing = billing;
         this.ledger = ledger;
         this.profiles = profiles;
@@ -102,6 +153,8 @@ public final class BillingConnector implements SangamConnector {
             String ledgerId = Tree.str(r.input().get("ledgerId"), "DEMAND");
             String consumer = r.str("consumer");
             Map<String, Object> out = new LinkedHashMap<>();
+            // who acts is settled before anything else is read or asked (RM-37); reads record nobody
+            String actor = POSTING.contains(op) ? actor(r) : null;
             switch (op) {
                 case "accounts" -> {
                     List<Map<String, Object>> items = accounts.accounts(tenant, r.str("cycle"));
@@ -116,14 +169,14 @@ public final class BillingConnector implements SangamConnector {
                         measures.put("units", Tree.decimal(r.input().get("units"), BigDecimal.ZERO));
                     }
                     BillingService.Invoice inv = billing.invoice(tenant, ledgerId, period(r, tenant, today), consumer, r.str("cycle"), tariff,
-                            measures, r.input(), today.plusDays(Tree.integer(r.input().get("dueDays"), 15)), r.str("actor"));
+                            measures, r.input(), today.plusDays(Tree.integer(r.input().get("dueDays"), 15)), actor);
                     out.put("invoiceNo", inv.number());
                     out.put("total", inv.total().toPlainString());
                     out.put("dueDate", inv.dueDate().toString());
                 }
                 case "collect" -> {
-                    BillingService.Receipt rc = billing.collect(tenant, ledgerId, consumer, r.str("channel"), r.str("paymentRef"),
-                            money(tenant, ledgerId, r.str("amount")), r.str("actor"));
+                    BillingService.Receipt rc = billing.collect(tenant, ledgerId, consumer, r.required("channel"),
+                            r.required("paymentRef"), money(tenant, ledgerId, r.str("amount")), actor);
                     out.put("receiptNo", rc.number());
                     out.put("collected", rc.amount().toPlainString());
                     out.put("outstanding", outstanding(tenant, ledgerId, consumer).toPlainString());
@@ -141,13 +194,14 @@ public final class BillingConnector implements SangamConnector {
                 }
                 case "penalty" -> {
                     List<LedgerService.Result> res = billing.levyPenalties(tenant, ledgerId, period(r, tenant, today), consumer,
-                            tariff(tenant, r.str("tariffId"), today), today, r.str("actor"));
+                            tariff(tenant, r.str("tariffId"), today), today, actor);
                     out.put("penalties", res.size());
                 }
                 case "waive" -> {
+                    String orderRef = r.required("orderRef");
                     AccountKey k = new AccountKey(tenant, ledgerId, period(r, tenant, today), r.str("head"), consumer, "DEMAND",
                             r.str("cycle"));
-                    LedgerService.Result res = billing.waive(k, money(tenant, ledgerId, r.str("amount")), r.str("orderRef"), r.str("actor"));
+                    LedgerService.Result res = billing.waive(k, money(tenant, ledgerId, r.str("amount")), orderRef, actor);
                     out.put("applied", res.applied());
                 }
                 default -> {
@@ -155,10 +209,47 @@ public final class BillingConnector implements SangamConnector {
                 }
             }
             return ConnectorResult.Success.of(out, r.operationId().toString());
+        } catch (ActorRefused e) {
+            return ConnectorResult.BusinessFailure.of(e.code, e.getMessage());
         } catch (FiscalYearNotConfiguredException e) {
             return ConnectorResult.BusinessFailure.of(FiscalYearNotConfiguredException.CODE, e.getMessage());
         } catch (RuntimeException e) {
             return ConnectorResult.BusinessFailure.of("BILLING_ERROR", e.getMessage());
+        }
+    }
+
+    /**
+     * The actor recorded with a posting (RM-37): the host's authenticated actor, else {@value #SYSTEM_ACTOR}. The step
+     * input never supplies it; with an authenticated actor, an input {@code actor} naming somebody else is refused
+     * before anything is posted.
+     */
+    private String actor(ConnectorRequest r) {
+        String authenticated;
+        try {
+            authenticated = actors.authenticatedActor(r);
+        } catch (RuntimeException e) {
+            throw new ActorRefused(ACTOR_UNRESOLVED, "the authenticated actor of operation " + r.operation()
+                    + " could not be established; nothing is posted", e);
+        }
+        if (authenticated == null || authenticated.isBlank()) {
+            return SYSTEM_ACTOR;
+        }
+        String claimed = r.str("actor");
+        if (claimed != null && !claimed.isBlank() && !claimed.equals(authenticated)) {
+            throw new ActorRefused(ACTOR_MISMATCH, "the input names actor " + claimed + " but the authenticated actor is "
+                    + authenticated + "; nothing is posted", null);
+        }
+        return authenticated;
+    }
+
+    /** A posting refused because of who is acting; carries the connector failure code. */
+    private static final class ActorRefused extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+        private final String code;
+
+        ActorRefused(String code, String message, Throwable cause) {
+            super(message, cause);
+            this.code = code;
         }
     }
 
