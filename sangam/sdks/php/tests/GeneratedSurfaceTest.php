@@ -17,6 +17,12 @@ use Sangam\Sdk\Tests\Support\FakeSender;
 /**
  * M-020 coverage guard: every operation of sangam-api.yaml has a generated method (named by the manifest that
  * sdks/codegen/generate_sdk_surface.py writes), every schema a class, and SangamApis exposes one property per tag.
+ *
+ * The one exception is explicit in the contract: an operation marked "x-sangam-sdk: false" is called by an outside
+ * system, never by an SDK user (the CloudEvents webhook handshake that Azure Event Grid sends as OPTIONS), and gets no
+ * SDK method. The generator (sdks/codegen/contract_ir.py) leaves out exactly the operations so marked and lists them in
+ * the manifest under notForSdk; this test expects the same split, so an operation can never be missing from the SDKs
+ * without the marker.
  */
 final class GeneratedSurfaceTest extends TestCase
 {
@@ -29,15 +35,72 @@ final class GeneratedSurfaceTest extends TestCase
         return json_decode((string) file_get_contents(self::MANIFEST), true, 512, JSON_THROW_ON_ERROR);
     }
 
+    /**
+     * The operationIds of the contract, each list sorted: [0] those an SDK method is generated for, [1] those marked
+     * x-sangam-sdk: false.
+     *
+     * @param list<string> $lines
+     * @return array{0: list<string>, 1: list<string>}
+     */
+    private static function contractOperations(array $lines): array
+    {
+        $forSdk = [];
+        $notForSdk = [];
+        $current = null;
+        foreach ($lines as $raw) {
+            $line = rtrim($raw, "\r\n");
+            if (preg_match('/^ {6}operationId: (\S+)$/', $line, $m) === 1) {
+                $current = $m[1];
+                $forSdk[$current] = true;
+            } elseif (preg_match('/^ {0,4}\S/', $line) === 1) {
+                // a key of a path item or above: the operation block of the last operationId has ended
+                $current = null;
+            } elseif (preg_match('/^ {6}x-sangam-sdk:(.*)$/', $line, $m) === 1) {
+                self::assertNotNull($current, 'x-sangam-sdk outside an operation (after its operationId): ' . $line);
+                self::assertSame('false', trim($m[1]), "only 'x-sangam-sdk: false' is written: " . $line);
+                unset($forSdk[$current]);
+                $notForSdk[$current] = true;
+            }
+        }
+        $a = array_map('strval', array_keys($forSdk));
+        $b = array_map('strval', array_keys($notForSdk));
+        sort($a, SORT_STRING);
+        sort($b, SORT_STRING);
+        return [$a, $b];
+    }
+
+    /** @return list<string> */
+    private static function operationIds(string $manifestKey): array
+    {
+        $ids = array_map(static fn (array $r): string => $r['operationId'], self::manifest()[$manifestKey]);
+        sort($ids, SORT_STRING);
+        return $ids;
+    }
+
     public function testManifestCoversEveryContractOperation(): void
     {
-        preg_match_all('/^ {6}operationId: (\S+)\r?$/m', (string) file_get_contents(self::YAML), $m);
-        $contract = $m[1];
-        sort($contract);
-        $generated = array_map(static fn (array $r): string => $r['operationId'], self::manifest()['surface']);
-        sort($generated);
-        self::assertGreaterThan(1000, count($contract), 'contract layout changed?');
-        self::assertSame($contract, $generated, 'the generated surface is stale: run sdks/codegen/generate_sdk_surface.py');
+        $lines = file(self::YAML);
+        self::assertIsArray($lines, 'contract not readable at ' . self::YAML);
+        [$forSdk, $notForSdk] = self::contractOperations($lines);
+        $generated = self::operationIds('surface');
+        $left = self::operationIds('notForSdk');
+        self::assertGreaterThan(1000, count($forSdk), 'contract layout changed?');
+        self::assertSame($forSdk, $generated, 'the generated surface is stale: run sdks/codegen/generate_sdk_surface.py');
+        self::assertSame($notForSdk, $left,
+            'the operations without an SDK method are exactly those the contract marks x-sangam-sdk: false');
+        self::assertSame(['eventGridHookHandshake'], $left, 'an operation leaves the SDKs only by a reviewed marker: '
+            . 'add it here with the reason (who calls it instead of an SDK user)');
+    }
+
+    public function testTheMarkerIsReadPerOperation(): void
+    {
+        [$forSdk, $notForSdk] = self::contractOperations([
+            'paths:', '  /hooks/x:', '    options:', '      operationId: handshake', '      responses:',
+            "        '200':", '          description: Success', '      x-sangam-sdk: false', '    post:',
+            '      operationId: deliver', '  /cases:', '    get:', '      operationId: listCases',
+        ]);
+        self::assertSame(['deliver', 'listCases'], $forSdk);
+        self::assertSame(['handshake'], $notForSdk);
     }
 
     public function testEveryOperationHasAGeneratedMethod(): void

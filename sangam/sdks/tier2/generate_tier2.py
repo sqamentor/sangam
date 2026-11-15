@@ -32,6 +32,17 @@ LANGS = {
     "rust": ("rust", "config-rust.yaml"),
     "kotlin": ("kotlin", "config-kotlin.yaml"),
 }
+# Generator switches a language needs beyond its config file.
+# kotlin, skipFormModel=false: caseFileAddDocument takes application/json (CfDocumentRequest) or multipart/form-data (an
+# inline object). The generator names the inline object caseFileAddDocument_request and, by default, writes no class
+# for a schema used only by form parameters ("not generated since it's marked as unused (due to form parameters) and
+# `skipFormModel` (global property) set to true"), but the operation's JSON body makes CaseFilesApi.kt import it all
+# the same: "CaseFilesApi.kt:22:33 Unresolved reference: CaseFileAddDocumentRequest" (sdks.yml tier2-kotlin,
+# 2026-11-15). With the switch off the form models are written, so every import resolves; no operation or schema is
+# left out. Go and Rust build without it (their generated code does not import the model).
+EXTRA_ARGS = {
+    "kotlin": ["--global-property", "skipFormModel=false"],
+}
 
 
 def command(lang: str, jar: str | None) -> list[str]:
@@ -40,7 +51,7 @@ def command(lang: str, jar: str | None) -> list[str]:
     args = ["generate", "-g", gen, "-c", f"sdks/tier2/{cfg}", "-o", out_rel,
             # the contract is validated by gen_openapi.py and its own CI gates; generator-side validation would only
             # repeat it with a different (stricter on 3.1 keywords) parser
-            "--skip-validate-spec"]
+            "--skip-validate-spec", *EXTRA_ARGS.get(lang, [])]
     if jar:
         return ["java", "-jar", jar, *args[:1], "-i", CONTRACT_REL, *args[1:]]
     return ["docker", "run", "--rm", "-u", f"{os.getuid()}:{os.getgid()}" if hasattr(os, "getuid") else "0:0",
