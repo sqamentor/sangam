@@ -42,16 +42,12 @@ public enum EngineDialect {
      * product name whatever the server is (pgjdbc 42.7.12 {@code PgDatabaseMetaData.getDatabaseProductName}).
      */
     public static String serverVersion(Connection c) {
-        try (Statement s = c.createStatement(); java.sql.ResultSet rs = s.executeQuery("SELECT version()")) {
-            return rs.next() ? rs.getString(1) : null;
-        } catch (SQLException e) {
-            throw new IllegalStateException("cannot read the server version", e);
-        }
+        return org.sangam.core.db.DatabaseIdentity.serverVersion(c); // shared with the scale modules (decision 384)
     }
 
     /** The {@code version()} text test of {@link #isCockroachDb}. */
     static boolean isCockroachDbVersion(String version) {
-        return version != null && version.trim().toLowerCase(Locale.ROOT).startsWith("cockroachdb");
+        return org.sangam.core.db.DatabaseIdentity.isCockroachDbVersion(version);
     }
 
     /**
@@ -62,7 +58,7 @@ public enum EngineDialect {
      * lane ran.
      */
     static boolean isYugabyteDbVersion(String version) {
-        return version != null && version.toUpperCase(Locale.ROOT).contains("-YB-");
+        return org.sangam.core.db.DatabaseIdentity.isYugabyteDbVersion(version);
     }
 
     public static EngineDialect fromProductName(String productName) {
