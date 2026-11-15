@@ -191,6 +191,8 @@ public final class JurisdictionPack {
     private final List<ChildExemption> childExemptions;
     private final List<VerificationMethod> childVerification;
     private final List<VerificationMethod> guardianVerification;
+    /** Owner decision 335: how a data principal is authenticated for a rights request ({@code verification.principal}). */
+    private final List<VerificationMethod> principalVerification;
     private final List<Right> rights;
     private final List<RetentionClass> retentionClasses;
     private final List<Authority> authorities;
@@ -276,6 +278,7 @@ public final class JurisdictionPack {
                 new LinkedHashSet<>(texts(x.path("covers"))), x.path("exemptsGuardianConsent").asBoolean(true), x.path("description").asText("")));
         childVerification = list(n.path("verification").path("child"), JurisdictionPack::method);
         guardianVerification = list(n.path("verification").path("guardian"), JurisdictionPack::method);
+        principalVerification = list(n.path("verification").path("principal"), JurisdictionPack::method);
         rights = list(n.path("rights"), x -> new Right(x.path("code").asText(), x.path("category").asText(), x.path("citation").asText(),
                 x.path("processKey").asText(), x.path("slaKey").asText(x.path("code").asText().toLowerCase(Locale.ROOT)),
                 x.path("defaultDays").asInt(30), x.path("maxDays").asInt(Integer.MAX_VALUE), x.path("defaultMonths").asInt(0),
@@ -377,6 +380,12 @@ public final class JurisdictionPack {
     public List<ChildExemption> childExemptions() { return childExemptions; }
     public List<VerificationMethod> childVerification() { return childVerification; }
     public List<VerificationMethod> guardianVerification() { return guardianVerification; }
+    /**
+     * Owner decision 335: the methods by which a data principal is authenticated for a rights request, codes
+     * {@code SIGNED_IN} (her own signed-in identity) and {@code OTP} (a one-time code to the published identifier);
+     * empty when the pack names none.
+     */
+    public List<VerificationMethod> principalVerification() { return principalVerification; }
     public List<Right> rights() { return rights; }
     public List<RetentionClass> retentionClasses() { return retentionClasses; }
     public List<Authority> authorities() { return authorities; }
