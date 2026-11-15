@@ -107,6 +107,11 @@ def run_suite(ctx: TaskContext) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     args_file = out_dir / "arguments.txt"
     args_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    # With ROBOT_OUTPUT_DIR the folder is per operation id, so a later attempt of the same operation finds the
+    # output.xml of the earlier one. Remove it first: the result read below must be the one this run wrote, and a run
+    # that ends without writing one is outcome-unknown, never the earlier attempt's statistics.
+    output_xml = out_dir / "output.xml"
+    output_xml.unlink(missing_ok=True)
     cmd = [sys.executable, "-m", "robot", "--argumentfile", str(args_file), "--outputdir", str(out_dir),
            "--output", "output.xml", "--report", "NONE", "--log", "log.html", "--consolecolors", "off", str(suite)]
     ctx.logger.info("rpa.robot.start", "running Robot Framework suite", {"suite": suite.name})
@@ -123,7 +128,7 @@ def run_suite(ctx: TaskContext) -> dict[str, Any]:
         raise TaskFailed(f"Robot Framework refused suite {suite.name} (invalid test data or options)",
                          proc.stderr[-2000:], retries=0)
     try:
-        result = statistics(out_dir / "output.xml")
+        result = statistics(output_xml)
     except (OSError, ValueError, ET.ParseError) as e:
         raise OutcomeUnknown(f"suite {suite.name} ended with exit code {rc} and no readable result",
                              proc.stderr[-2000:]) from e
