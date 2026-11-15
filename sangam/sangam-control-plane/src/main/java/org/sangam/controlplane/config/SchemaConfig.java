@@ -21,6 +21,9 @@ public class SchemaConfig {
     public SpringLiquibase controlPlaneLiquibase(DataSource dataSource,
                                                  @Value("${sangam.controlplane.schema.apply:true}") boolean apply) {
         org.sangam.core.licence.LiquibaseLicenceGuard.check(); // SG-26 / LIC-7
+        // Decision 384: before the changelog, refuse a database it does not apply on (it would start on an empty
+        // schema); checked whether or not the schema is applied here.
+        org.sangam.core.db.DatabaseIdentity.requireScaleDatabase(dataSource, "sangam-control-plane");
         SpringLiquibase lb = new SpringLiquibase();
         lb.setDataSource(dataSource);
         lb.setChangeLog("classpath:db/changelog/controlplane/cp-master.xml");

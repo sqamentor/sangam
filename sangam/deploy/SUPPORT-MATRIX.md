@@ -87,12 +87,14 @@ When SDK model records change, run `generate_native_config.py`. CI fails if the 
 | Application | Image | Ports (app / management) | Database | Helm |
 |---|---|---|---|---|
 | Server (includes config, ledger, registry, billing, case, programme, resources, geo, field, compliance, cell as libraries; connectors-health is optional and off by default, decision 187: `sangam.modules.connectors-health.enabled=true`, HAPI profile validation only with the build profile `sangam-health-validation`, decision 183; eSign signing only with `sangam-esign`, decision 217) | `sangam-server` | 8080 / 8081 | Tier 1 | Always |
-| Control plane | `sangam-control-plane` | 8090 / 8091 | Own | `scale.controlPlane.enabled` |
+| Control plane | `sangam-control-plane` | 8090 / 8091 | Own: PostgreSQL, Oracle, SQL Server, MySQL 8.4 or H2 (development); others refused at start (decision 384) | `scale.controlPlane.enabled` |
 | Gateway | `sangam-gateway` | 8000 / 8001 | None | `scale.gateway.enabled` |
-| Roll-up | `sangam-rollup` | 8095 / 8096 | Own | `scale.rollup.enabled` |
+| Roll-up | `sangam-rollup` | 8095 / 8096 | Own: PostgreSQL, Oracle, SQL Server, MySQL 8.4 or H2 (development); others refused at start (decision 384) | `scale.rollup.enabled` |
 | UI | `sangam-ui` | 8080 | None | `ui.enabled` |
 | Native worker | `sangam-sdk-worker` | None | None | Not in the chart |
 | Simulators (dev only) | `sangam-simulators` | 9000 | None | Not in the chart |
+
+Decision 384: the control plane and the roll-up check their own database at start, before their Liquibase changelog, and refuse MariaDB (`SCALE_DB_MARIADB_REFUSED`), CockroachDB (`SCALE_DB_COCKROACHDB_REFUSED`), YugabyteDB (`SCALE_DB_YUGABYTEDB_REFUSED`, told by its `version()` text as for the server) and any other database (`SCALE_DB_UNSUPPORTED`); a database they cannot identify stops them too (`SCALE_DB_CHECK_FAILED`). The MariaDB, CockroachDB and YugabyteDB rows of section 3 apply to the server only. The check reads the product, not the MySQL version, so it does not enforce 8.4.
 
 ## 7. Patch support
 

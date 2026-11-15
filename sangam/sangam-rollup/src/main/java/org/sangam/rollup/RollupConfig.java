@@ -42,6 +42,9 @@ public class RollupConfig {
     @Bean
     public SpringLiquibase rollupLiquibase(DataSource dataSource, @Value("${sangam.rollup.schema.apply:true}") boolean apply) {
         org.sangam.core.licence.LiquibaseLicenceGuard.check(); // SG-26 / LIC-7
+        // Decision 384: before the changelog, refuse a database it does not apply on (it would start on an empty
+        // schema); checked whether or not the schema is applied here.
+        org.sangam.core.db.DatabaseIdentity.requireScaleDatabase(dataSource, "sangam-rollup");
         SpringLiquibase lb = new SpringLiquibase();
         lb.setDataSource(dataSource);
         lb.setChangeLog("classpath:db/changelog/rollup/ru-master.xml");
