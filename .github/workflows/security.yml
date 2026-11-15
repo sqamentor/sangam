@@ -245,6 +245,7 @@ jobs:
       SEMGREP_GATE_PATHS: >-
         sangam/sangam-security/src/main
         sangam/sangam-rest/src/main
+        sangam/sangam-rest-core/src/main
         sangam/sangam-billing/src/main
         sangam/sangam-ledger/src/main
         sangam/sangam-control-plane/src/main/java/org/sangam/controlplane/audit

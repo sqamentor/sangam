@@ -102,6 +102,11 @@ class SemgrepGatePaths(unittest.TestCase):
         self.assertGreater(len(paths), 5, "the list was not read")
         self.assertEqual([p for p in paths if not os.path.exists(os.path.join(REPO, *p.split("/")))], [])
 
+    def test_the_rest_core_module_is_gated(self):
+        # decision 285 moved Permissions and the audit adapters from sangam-rest to sangam-rest-core; the gate list
+        # (decisions 133 and 177: authorisation, money and audit paths) must follow the code
+        self.assertIn("sangam/sangam-rest-core/src/main", self.gate_paths())
+
     def test_the_signing_module_is_gated(self):
         self.assertIn("sangam/sangam-esign/src/main", self.gate_paths())
 
