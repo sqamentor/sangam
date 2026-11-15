@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-patient-access/periodHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Reporting period not stated: state it before anything is compiled",
+    "es": "Período no indicado: indicarlo antes de compilar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "reportingPeriod",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Reporting period",
+        "es": "Período del informe"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

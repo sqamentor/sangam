@@ -92,5 +92,19 @@ class CitedTableTest(unittest.TestCase):
             self.write([cited.row([q('A')], [q('IN'), q('EXTRA')], cited.UNVERIFIED, cited.DEMO_ONLY, 'n', SOURCE)])
 
 
+class PatientAccessTablesTest(unittest.TestCase):
+    """The shipped US-HLT-061 tables pass the guard and say what was and was not read."""
+
+    def test_the_patient_access_sources_say_the_rule_text_was_not_read(self):
+        import sec_ushealth
+        self.assertTrue(sec_ushealth.SRC_061.startswith(cited.CITED_NOT_READ))
+        self.assertIn('US-HLT-061', sec_ushealth.SRC_061)
+        self.assertIn('spike/results/US-HEALTH-WORKFLOWS.md:102', sec_ushealth.SRC_061)
+        for note in (sec_ushealth.PA_SCOPE_NOTE, sec_ushealth.PA_TIMES_NOTE, sec_ushealth.METRICS_NOTE):
+            self.assertTrue(note.startswith('UNVERIFIED, SYNTHETIC_DEMO_ONLY (decision 288)'), note)
+        self.assertIn('SYNTHETIC demonstration values', sec_ushealth.PA_TIMES_NOTE)
+        self.assertIn('SYNTHETIC demonstration value', sec_ushealth.METRICS_NOTE)
+
+
 if __name__ == '__main__':
     unittest.main()

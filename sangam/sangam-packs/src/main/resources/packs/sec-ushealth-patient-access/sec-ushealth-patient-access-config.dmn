@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_patient_access_config" name="Patient Access API: scope, availability and retention of the prior authorization information (UNVERIFIED; tenant overridable)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- US-HLT-061 (requirement summary read; CMS-0057-F and 42 CFR 422.119 cited, not read). Override per tenant with the confirmed rule (GP-37). -->
+  <decision id="sec-ushealth-patient-access-config" name="Patient Access API: scope, availability and retention of the prior authorization information (UNVERIFIED; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ushealth-patient-access-config_t" hitPolicy="FIRST">
+      <input id="sec-ushealth-patient-access-config_i0" label="Item category"><inputExpression id="sec-ushealth-patient-access-config_ie0" typeRef="string"><text>itemCategory</text></inputExpression></input>
+      <output id="sec-ushealth-patient-access-config_o0" label="Part of the prior authorization information" name="paScope" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-config_o1" label="Available in the Patient Access API within" name="paPublishSpec" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-config_o2" label="Kept available after the last status change for at least" name="paRetentionSpec" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-config_o3" label="Evidence (VERIFIED / UNVERIFIED)" name="evidenceStatus" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-config_o4" label="Permitted use (PRODUCTION / SYNTHETIC_DEMO_ONLY)" name="permittedUse" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-config_o5" label="Why this evidence status and use" name="evidenceNote" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-config_o6" label="Source (citation)" name="source" typeRef="string"/>
+      <rule id="sec-ushealth-patient-access-config_r0"><description>US-HLT-061 excluding drugs UNVERIFIED SYNTHETIC_DEMO_ONLY</description>
+        <inputEntry id="sec-ushealth-patient-access-config_r0_i0"><text>"DRUG"</text></inputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o0"><text>"EXCLUDED_DRUG"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o1"><text>""</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o2"><text>""</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o3"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o4"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o5"><text>"UNVERIFIED, SYNTHETIC_DEMO_ONLY (decision 288): the requirement summary US-HLT-061 says the Patient Access API gains the prior authorization information, excluding drugs, from 1 Jan 2027; the primary rule text was not read"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r0_o6"><text>"cited, not read: CMS-0057-F; CMS-9115-F (42 CFR 422.119); requirement summary US-HLT-061 (spike/results/US-HEALTH-WORKFLOWS.md:102, read)"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-patient-access-config_r1"><description>US-HLT-061 items and services from 1 Jan 2027; 1WD and P1Y SYNTHETIC UNVERIFIED SYNTHETIC_DEMO_ONLY</description>
+        <inputEntry id="sec-ushealth-patient-access-config_r1_i0"><text>"ITEM_OR_SERVICE"</text></inputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o0"><text>"IN_SCOPE"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o1"><text>"1WD"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o2"><text>"P1Y"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o3"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o4"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o5"><text>"UNVERIFIED, SYNTHETIC_DEMO_ONLY (decision 288): the requirement summary US-HLT-061 says the Patient Access API gains the prior authorization information, excluding drugs, from 1 Jan 2027; the primary rule text was not read. 1WD (available within one business day) and P1Y (kept at least one year after the last status change) are SYNTHETIC demonstration values: no local source states the availability timeframe or the retention (open point); deploy the confirmed values as a tenant override"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r1_o6"><text>"cited, not read: CMS-0057-F; CMS-9115-F (42 CFR 422.119); requirement summary US-HLT-061 (spike/results/US-HEALTH-WORKFLOWS.md:102, read)"</text></outputEntry>
+      </rule>
+      <rule id="sec-ushealth-patient-access-config_r2"><description>unknown category: held UNVERIFIED SYNTHETIC_DEMO_ONLY</description>
+        <inputEntry id="sec-ushealth-patient-access-config_r2_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o0"><text>"UNCLASSIFIED"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o1"><text>""</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o2"><text>""</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o3"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o4"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o5"><text>"fail closed: a category the table does not know is neither published nor excluded; a person classifies it"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-config_r2_o6"><text>"none: pack fail-closed rule (no regulatory content)"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

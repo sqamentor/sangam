@@ -12,6 +12,7 @@ from money import M  # noqa: F401  (amounts inside FEEL expressions, minor units
 from packs import Pack, LOCALES
 from common import end_ok, checked_query, check_conditions, unconfirmed_hold
 from sector import SIDE, clock, at_date, maybe
+import cited
 import forms
 
 # --------------------------------------------------------------------------------------------- labels (en, es, type)
@@ -124,6 +125,12 @@ F = {
     'optInAttested': ('Requesting payer attests the patient opted in', 'El pagador solicitante certifica la aceptación del '
                       'paciente', 'boolean'),
     'interopNotes': ('Interoperability follow-up notes', 'Notas de seguimiento de interoperabilidad', 'text'),
+    # M-133 Patient Access API (US-HLT-061, decision 174)
+    'itemCategory': ('Item category (ITEM_OR_SERVICE, DRUG)', 'Categoría del artículo (ITEM_OR_SERVICE, DRUG)', 'select'),
+    'paStatus': ('Prior authorization status (as the payer recorded it)',
+                 'Estado de la autorización previa (según el registro del pagador)', 'string'),
+    'reportingPeriod': ('Reporting period', 'Período del informe', 'string'),
+    'metricsReview': ('Review of the usage metrics report', 'Revisión del informe de métricas de uso', 'text'),
 }
 
 O = {
@@ -144,6 +151,8 @@ O = {
     'renew': ('Renew', 'Renovar'), 'terminate': ('Terminate', 'Terminar'),
     'cured': ('Breach cured', 'Incumplimiento subsanado'),
     'closeUnanswered': ('Close: no data received', 'Cerrar: no se recibieron datos'),
+    'submitReport': ('Submit the report', 'Enviar el informe'),
+    'recompile': ('Compile the metrics again', 'Compilar las métricas de nuevo'),
 }
 
 LOCALES['es'] = ({k: v[1] for k, v in F.items()}, {k: v[1] for k, v in O.items()}, 'Detalles del caso')
@@ -1264,6 +1273,175 @@ def provider_access():
         ('MEMBER-SERVICES', 'MEMBERSVC', None, 'Member services', 'Servicios al afiliado')], 'upv')
 
 
+# ============================================================================================ Patient Access API (US-HLT-061)
+# M-133, owner decision 174 (US-only, decision 107): the payer-side workflows behind the CMS-0057-F additions to the
+# Patient Access API. The API is the payer's FHIR server (CMS-9115-F); Sangam makes each prior authorization change
+# available through it and runs the usage-metrics reporting cycle. The only local source is the requirement summary
+# US-HLT-061 (spike/results/US-HEALTH-WORKFLOWS.md:102); the rule texts CMS-0057-F and CMS-9115-F (42 CFR 422.119) were
+# cited there but not read, so every row is UNVERIFIED + SYNTHETIC_DEMO_ONLY (decision 288) and both tables are pack
+# placeholders (readiness blocks go-live until the tenant deploys confirmed overrides). Values the summary does not
+# state (the availability timeframe, the retention, the report due date) are SYNTHETIC demonstration values.
+
+SRC_061 = (cited.CITED_NOT_READ + 'CMS-0057-F; CMS-9115-F (42 CFR 422.119); requirement summary US-HLT-061 '
+           '(spike/results/US-HEALTH-WORKFLOWS.md:102, read)')
+PA_SCOPE_NOTE = ('UNVERIFIED, SYNTHETIC_DEMO_ONLY (decision 288): the requirement summary US-HLT-061 says the Patient '
+                 'Access API gains the prior authorization information, excluding drugs, from 1 Jan 2027; the primary '
+                 'rule text was not read')
+PA_TIMES_NOTE = (PA_SCOPE_NOTE + '. 1WD (available within one business day) and P1Y (kept at least one year after the '
+                 'last status change) are SYNTHETIC demonstration values: no local source states the availability '
+                 'timeframe or the retention (open point); deploy the confirmed values as a tenant override')
+METRICS_NOTE = ('UNVERIFIED, SYNTHETIC_DEMO_ONLY (decision 288): the requirement summary US-HLT-061 says usage metrics '
+                'are reported from 1 Jan 2026 and gives no frequency, due date, recipient or content; P90D is a '
+                'SYNTHETIC demonstration value (open point); deploy the confirmed rule as a tenant override')
+FAIL_CLOSED_SOURCE = 'none: pack fail-closed rule (no regulatory content)'
+
+
+def patient_access():
+    pk = upack('patient-access', 'Patient Access API: prior authorization information and usage metrics (CMS-0057-F)',
+               'API de acceso del paciente: información de autorizaciones previas y métricas de uso (CMS-0057-F)',
+               'Every prior authorization request or status change of an item or service is made available to the '
+               'patient through the Patient Access API within the timeframe from DMN, with the retention from DMN; a '
+               'drug is not part of it (US-HLT-061); an item category or status the table does not know is neither '
+               'published nor excluded but held for a person, and an unconfirmed publication is held, never closed '
+               'as done. The usage-metrics cycle compiles the metrics of the reporting period, a compliance officer '
+               'reviews them and the report is submitted with a confirmed receipt. Every rule row is UNVERIFIED '
+               '(decision 288): readiness blocks go-live until confirmed tenant overrides.',
+               ['US-HLT-061'] + SIDE,
+               [('payer.patientAccess', 'b', '', 'Patient Access API of this payer (FHIR): prior authorization '
+                                                 'information made available to the patient'),
+                ('payer.apiMetrics', 'a', '', 'Patient Access API usage metrics of the reporting period'),
+                ('payer.metricsReport', 'b', '', 'Submit the usage metrics report (recipient configured by the '
+                                                 'tenant)')])
+
+    # ------------------------------------------------------------------ prior authorization information (2027-01-01)
+    p = pk.proc('sangam-sec-ushealth-patient-access-pa', 'Patient Access API: prior authorization information', '',
+                start={'materialFields': 'memberId,priorAuthNumber,itemCategory'})
+    s = p.root
+    st = sform(p, s, 'pt_start', 'Prior authorization request or status change received',
+               'sec-ushealth-patient-access/pa-change',
+               'Prior authorization change | Cambio en una autorización previa',
+               ['patientName*', 'memberId*', 'payerProgram*', 'priorAuthNumber*', 'itemCategory*', 'paStatus*'])
+    # a missing category or status is a sentinel the scope gateway holds for a person (never published or excluded)
+    d = s.setv('pt_defaults', 'Configuration',
+               defaults='patientName=@customerId;memberId=@customerId;payerProgram=MA;priorAuthNumber=@customerId;'
+                        'itemCategory=UNCLASSIFIED;paStatus=NOT_STATED;interopSeat=INTEROP-ANALYST;'
+                        'memberSeat=MEMBER-SERVICES')
+    r = s.rule('pt_cfg', 'Patient Access API scope and timeframes (DMN)', 'sec-ushealth-patient-access-config')
+    s.seq(st, d, r)
+    g = s.xgw('pt_scopeGw', 'Part of the prior authorization information?')
+    s.flow(r, g)
+    s.flow(g, end_ok(p, s, 'pt_endExcluded', 'Drug: not part of the prior authorization information',
+                     outcome='NOT_IN_SCOPE'), "paScope == 'EXCLUDED_DRUG'", 'drug')
+    dl = clock(s, 'pt_deadline', 'paPublish', '${paPublishSpec}')
+    s.flow(g, dl, "paScope == 'IN_SCOPE' && paStatus != 'NOT_STATED'", 'item or service')
+    s.flow(g, unconfirmed_hold(p, s, 'pt_classifyHold', 'Item category or status not stated: classify before anything '
+                               'is published | Categoría o estado no indicados: clasificar antes de publicar',
+                               '${memberSeat}', r, fields=('itemCategory*', 'paStatus*', 'remarks*')),
+           None, 'not classified', default=True)
+    pe, pc = checked_query(s, 'pt_publish', 'Make the prior authorization information available (Patient Access API)',
+                           'payer.patientAccess', 'publish', 'memberId,priorAuthNumber,paStatus,paRetentionSpec',
+                           'publish', ['publishRecordRef'], mode='submit', step='pa-publish')
+    s.flow(dl, pe)
+    pg = s.xgw('pt_publishGw', 'Available to the patient?')
+    s.flow(pc, pg)
+    publish_unconfirmed, _ = check_conditions([('publish', ['publishRecordRef'])])
+    s.flow(pg, unconfirmed_hold(p, s, 'pt_publishHold', 'Publication not confirmed: check the Patient Access API | '
+                                'Publicación no confirmada: revisar la API de acceso del paciente', '${interopSeat}', pe,
+                                fields=('interopNotes*',)), publish_unconfirmed, 'not confirmed')
+    s.flow(pg, end_ok(p, s, 'pt_end', 'Prior authorization information available to the patient', outcome='PUBLISHED',
+                      data=['publishRecordRef']), None, 'available', default=True)
+    s.side_exits('pt')
+
+    # ------------------------------------------------------------------------------------ usage metrics (2026-01-01)
+    p = pk.proc('sangam-sec-ushealth-patient-access-metrics', 'Patient Access API: usage metrics report', '',
+                start={'materialFields': 'payerProgram,reportingPeriod'})
+    s = p.root
+    st = sform(p, s, 'pm_start', 'Usage metrics reporting cycle opened', 'sec-ushealth-patient-access/metrics-cycle',
+               'Usage metrics report | Informe de métricas de uso', ['payerProgram*', 'reportingPeriod*'])
+    d = s.setv('pm_defaults', 'Configuration',
+               defaults='payerProgram=MA;reportingPeriod=NOT_STATED;interopSeat=INTEROP-ANALYST;'
+                        'complianceSeat=COMPLIANCE-OFFICER')
+    pgw = s.xgw('pm_periodGw', 'Reporting period stated?')
+    s.seq(st, d, pgw)
+    s.flow(pgw, unconfirmed_hold(p, s, 'pm_periodHold', 'Reporting period not stated: state it before anything is '
+                                 'compiled | Período no indicado: indicarlo antes de compilar', '${interopSeat}', pgw,
+                                 fields=('reportingPeriod*', 'remarks*')), "reportingPeriod == 'NOT_STATED'",
+           'not stated')
+    r = s.rule('pm_cfg', 'Usage metrics report rule (DMN)', 'sec-ushealth-patient-access-metrics-config')
+    dl = clock(s, 'pm_deadline', 'metricsReport', '${metricsReportSpec}')
+    s.flow(pgw, r, None, 'stated', default=True)
+    s.flow(r, dl)
+    ce, cc = checked_query(s, 'pm_collect', 'Compile the usage metrics of the reporting period', 'payer.apiMetrics',
+                           'collect', 'payerProgram,reportingPeriod', 'metrics', ['metricsReportRef'])
+    s.flow(dl, ce)
+    cg = s.xgw('pm_collectGw', 'Metrics compiled?')
+    s.flow(cc, cg)
+    collect_unconfirmed, _ = check_conditions([('metrics', ['metricsReportRef'])])
+    s.flow(cg, unconfirmed_hold(p, s, 'pm_collectHold', 'Metrics not compiled: check the API usage records | '
+                                'Métricas no compiladas: revisar los registros de uso de la API', '${interopSeat}', ce,
+                                fields=('interopNotes*',)), collect_unconfirmed, 'not compiled')
+    rv = s.user('pm_review', 'Review the usage metrics report | Revisar el informe de métricas de uso',
+                '${complianceSeat}', form='sec-ushealth-patient-access/metrics-review',
+                decision=('metricsDecision', ['submitReport', 'recompile']), fields=['reportingPeriod', 'metricsReview*'],
+                due='${metricsReportDueAt}')
+    s.flow(cg, rv, None, 'compiled', default=True)
+    rg = s.xgw('pm_reviewGw', 'Submit?')
+    s.flow(rv, rg)
+    s.flow(rg, ce, "metricsDecision == 'recompile'", 'compile again')
+    se, sc = checked_query(s, 'pm_submit', 'Submit the usage metrics report', 'payer.metricsReport', 'submit',
+                           'payerProgram,reportingPeriod,metricsReportRef', 'mreport', ['mreportReceiptRef'],
+                           mode='submit', step='metrics-report')
+    s.flow(rg, se, None, 'submit', default=True)
+    sg = s.xgw('pm_submitGw', 'Receipt confirmed?')
+    s.flow(sc, sg)
+    submit_unconfirmed, _ = check_conditions([('mreport', ['mreportReceiptRef'])])
+    s.flow(sg, unconfirmed_hold(p, s, 'pm_submitHold', 'Submission not confirmed: confirm the receipt and resend | '
+                                'Envío no confirmado: confirmar el acuse y reenviar', '${interopSeat}', se,
+                                fields=('interopNotes*',)), submit_unconfirmed, 'not confirmed')
+    s.flow(sg, end_ok(p, s, 'pm_end', 'Usage metrics report submitted', outcome='REPORTED', data=['mreportReceiptRef']),
+           None, 'submitted', default=True)
+    s.side_exits('pm')
+
+    cited.table(pk, 'sec-ushealth-patient-access-config', 'Patient Access API: scope, availability and retention of the '
+                'prior authorization information (UNVERIFIED; tenant overridable)', 'FIRST',
+                [('Item category', 'itemCategory', 'string')],
+                [('paScope', 'Part of the prior authorization information', 'string'),
+                 ('paPublishSpec', 'Available in the Patient Access API within', 'string'),
+                 ('paRetentionSpec', 'Kept available after the last status change for at least', 'string')],
+                [cited.row([q('DRUG')], [q('EXCLUDED_DRUG'), q(''), q('')], cited.UNVERIFIED, cited.DEMO_ONLY,
+                           PA_SCOPE_NOTE, SRC_061, annotation='US-HLT-061 excluding drugs'),
+                 cited.row([q('ITEM_OR_SERVICE')], [q('IN_SCOPE'), q('1WD'), q('P1Y')], cited.UNVERIFIED,
+                           cited.DEMO_ONLY, PA_TIMES_NOTE, SRC_061,
+                           annotation='US-HLT-061 items and services from 1 Jan 2027; 1WD and P1Y SYNTHETIC'),
+                 cited.row(['-'], [q('UNCLASSIFIED'), q(''), q('')], cited.UNVERIFIED, cited.DEMO_ONLY,
+                           'fail closed: a category the table does not know is neither published nor excluded; a '
+                           'person classifies it', FAIL_CLOSED_SOURCE, annotation='unknown category: held')],
+                doc='US-HLT-061 (requirement summary read; CMS-0057-F and 42 CFR 422.119 cited, not read). Override per '
+                    'tenant with the confirmed rule (GP-37).',
+                placeholder=('UNVERIFIED (use SYNTHETIC_DEMO_ONLY) Patient Access API prior authorization scope '
+                             '(excluding drugs, from 1 Jan 2027) with SYNTHETIC availability 1WD and retention P1Y',
+                             'CMS-0057-F and 42 CFR 422.119 were not read (decision 288); the availability timeframe '
+                             'and the retention are in no local source; deploy the confirmed rule as a tenant '
+                             'override'))
+    cited.table(pk, 'sec-ushealth-patient-access-metrics-config', 'Patient Access API usage metrics report (UNVERIFIED; '
+                'tenant overridable)', 'FIRST',
+                [('Payer program', 'payerProgram', 'string')],
+                [('metricsReportSpec', 'Report due within', 'string')],
+                [cited.row(['-'], [q('P90D')], cited.UNVERIFIED, cited.DEMO_ONLY, METRICS_NOTE, SRC_061,
+                           annotation='US-HLT-061 usage metrics from 1 Jan 2026; P90D SYNTHETIC')],
+                doc='US-HLT-061 (requirement summary read; CMS-0057-F cited, not read). Override per tenant or payer '
+                    'program with the confirmed rule (GP-37).',
+                placeholder=('UNVERIFIED (use SYNTHETIC_DEMO_ONLY) Patient Access API usage metrics report due P90D '
+                             '(SYNTHETIC)',
+                             'CMS-0057-F was not read (decision 288); the frequency, due date, recipient and content of '
+                             'the usage metrics report are in no local source; deploy the confirmed rule as a tenant '
+                             'override'))
+    useeds(pk, 'PAYER', [
+        ('INTEROP-ANALYST', 'INTEROP', 'MEMBER-SERVICES', 'Interoperability analyst', 'Analista de interoperabilidad'),
+        ('MEMBER-SERVICES', 'MEMBERSVC', None, 'Member services', 'Servicios al afiliado'),
+        ('COMPLIANCE-OFFICER', 'PAYERCOMPLIANCE', None, 'Compliance officer', 'Oficial de cumplimiento')], 'upa')
+
+
 def build():
     eligibility()
     prior_auth()
@@ -1275,3 +1453,4 @@ def build():
     baa()
     payer_to_payer()
     provider_access()
+    patient_access()

@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-patient-access/publishHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Publication not confirmed: check the Patient Access API",
+    "es": "Publicación no confirmada: revisar la API de acceso del paciente"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "interopNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Interoperability follow-up notes",
+        "es": "Notas de seguimiento de interoperabilidad"
+      }
+    }
+  ]
+}

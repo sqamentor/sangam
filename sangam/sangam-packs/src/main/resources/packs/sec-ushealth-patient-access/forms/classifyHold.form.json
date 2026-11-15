@@ -1,0 +1,45 @@
+{
+  "key": "sec-ushealth-patient-access/classifyHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Item category or status not stated: classify before anything is published",
+    "es": "Categoría o estado no indicados: clasificar antes de publicar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "itemCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Item category (ITEM_OR_SERVICE, DRUG)",
+        "es": "Categoría del artículo (ITEM_OR_SERVICE, DRUG)"
+      }
+    },
+    {
+      "id": "paStatus",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Prior authorization status (as the payer recorded it)",
+        "es": "Estado de la autorización previa (según el registro del pagador)"
+      }
+    },
+    {
+      "id": "remarks",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Remarks",
+        "es": "Observaciones"
+      }
+    }
+  ]
+}

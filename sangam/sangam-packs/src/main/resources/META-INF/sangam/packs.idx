@@ -145,4 +145,5 @@ packs/sec-ushealth-breach/pack.json
 packs/sec-ushealth-baa/pack.json
 packs/sec-ushealth-payer-to-payer/pack.json
 packs/sec-ushealth-provider-access/pack.json
+packs/sec-ushealth-patient-access/pack.json
 packs/sec-eu-gdpr-dsr/pack.json
