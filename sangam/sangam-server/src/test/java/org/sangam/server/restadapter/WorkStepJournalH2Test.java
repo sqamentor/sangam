@@ -7,13 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -59,8 +55,7 @@ class WorkStepJournalH2Test {
 
     @BeforeAll
     static void setUp() throws Exception {
-        fx = new RestEngineFixture("m025steps");
-        createWorkStepTable();
+        fx = new RestEngineFixture("m025steps");   // the product schema: WORK_STEP is the generated baseline's
         for (String tenant : new String[]{"tA", "tB"}) {
             fx.engine.getRepositoryService().createDeployment().tenantId(tenant)
                     .addString("m025.bpmn", WorkerEngineFixture.BPMN).deploy();
@@ -88,28 +83,6 @@ class WorkStepJournalH2Test {
             }
         };
         steps = new WorkStepController(work, permissions, fx.tx);
-    }
-
-    /** The generated H2 baseline's WORK_STEP statements (changeset 0043-06), never a hand-written copy. */
-    static void createWorkStepTable() throws Exception {
-        String sql;
-        try (InputStream in = WorkStepJournalH2Test.class.getClassLoader()
-                .getResourceAsStream("db/changelog/h2/sangam-0001-baseline.sql")) {
-            if (in == null) {
-                throw new IOException("h2 baseline not on the test classpath");
-            }
-            sql = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        }
-        int start = sql.indexOf("CREATE TABLE WORK_STEP (");
-        int end = sql.indexOf("--rollback DROP TABLE WORK_STEP;", start);
-        assertTrue(start >= 0 && end > start, "WORK_STEP in the h2 baseline");
-        try (Connection c = fx.raw.getConnection(); Statement st = c.createStatement()) {
-            for (String stmt : sql.substring(start, end).split(";")) {
-                if (!stmt.isBlank()) {
-                    st.execute(stmt.trim());
-                }
-            }
-        }
     }
 
     @AfterAll
