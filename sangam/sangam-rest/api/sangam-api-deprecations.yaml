@@ -302,3 +302,27 @@ corrections:
     to: "success response 201"
     reason: "RosterController.requestSwap answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
     decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: GET
+    path: /compliance/consents
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "query parameter subject (a data principal reference)"
+    to: "no parameter: the caller's own records; another principal's are searched with POST /compliance/consents/search and the body {subject}; the server answers 400 SUBJECT_QUERY_WITHDRAWN to a subject query parameter"
+    reason: "owner decision 338: a principal reference never travels in a URL (access logs, proxies, browser history); the query form is withdrawn in 0.1.0 before release (listConsents)"
+    decision: "owner decision 338, 2026-11-15 (0.1.0 unreleased)"
+  - method: GET
+    path: /compliance/rights-requests
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "query parameter subject (a data principal reference)"
+    to: "no parameter: the caller's own records; another principal's are searched with POST /compliance/rights-requests/search and the body {subject}; the server answers 400 SUBJECT_QUERY_WITHDRAWN to a subject query parameter"
+    reason: "owner decision 338: a principal reference never travels in a URL (access logs, proxies, browser history); the query form is withdrawn in 0.1.0 before release (listRightsRequests)"
+    decision: "owner decision 338, 2026-11-15 (0.1.0 unreleased)"
+  - method: PUT
+    path: /compliance/purposes/{code}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "requestBody CompliancePurpose (only basis required; version an input; dataItems untyped)"
+    to: "requestBody ComplianceDefinePurposeRequest: basis, standardsAttested and active required; no version; dataItems of ComplianceDataItemRequest with code and sensitive required"
+    reason: "PurposeDefinition has primitive standardsAttested, version, active and DataItem.sensitive, and the server's JSON binding refuses a missing primitive (400), so a body without them never worked (CI ui e2e run 43717963671 on 209d2765: the e2e seed and the officer form both failed); the attestations are now explicit, version is the server's"
+    decision: "integrator ruling 2026-11-15 to lane D1 (0.1.0 unreleased; owner rules: fail closed, never default a legal attestation)"

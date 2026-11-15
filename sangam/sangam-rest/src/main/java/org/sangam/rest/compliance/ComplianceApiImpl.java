@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.sangam.compliance.ComplianceException;
 import org.sangam.compliance.SangamCompliance;
 import org.sangam.compliance.accountability.AccountabilityService;
 import org.sangam.compliance.accountability.ContactDirectory;
@@ -119,7 +120,11 @@ public final class ComplianceApiImpl implements ComplianceRestService {
 
     @Override
     public List<ConsentService.Consent> consents(SecurityIdentity id, String principalRef) {
-        return tx(c -> compliance.consents.history(c, id.tenantId(), principalRef));
+        return tx(c -> {
+            List<ConsentService.Consent> list = compliance.consents.history(c, id.tenantId(), principalRef);
+            compliance.audit.personalDataRead(c, id.tenantId(), principalRef, id.personId(), "consents", list.size(), null);
+            return list;
+        });
     }
 
     @Override
@@ -132,17 +137,43 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     @Override
     public DataSubjectRightsService.RightsRequest submitRightsRequest(String tenantId,
                                                                     DataSubjectRightsService.Submission submission) {
-        return tx(c -> compliance.rights.submit(c, tenantId, submission));
+        return submitRightsRequest(tenantId, submission, null);
+    }
+
+    @Override
+    public DataSubjectRightsService.RightsRequest submitRightsRequest(String tenantId,
+            DataSubjectRightsService.Submission submission, String signedInPrincipal) {
+        return tx(c -> compliance.rights.submit(c, tenantId, submission, signedInPrincipal));
     }
 
     @Override
     public DataSubjectRightsService.RightsRequest rightsRequest(SecurityIdentity id, String requestId) {
-        return tx(c -> compliance.rights.get(c, id.tenantId(), requestId));
+        return rightsRequest(id, requestId, true);
+    }
+
+    @Override
+    public DataSubjectRightsService.RightsRequest rightsRequest(SecurityIdentity id, String requestId, boolean officer) {
+        return tx(c -> {
+            DataSubjectRightsService.RightsRequest r = compliance.rights.get(c, id.tenantId(), requestId);
+            if (!id.personId().equals(r.principalRef())) {
+                if (!officer) {
+                    throw ComplianceException.notFound("rights request", requestId); // no existence leak
+                }
+                compliance.audit.personalDataRead(c, id.tenantId(), r.principalRef(), id.personId(), "rights-requests", 1,
+                        requestId);
+            }
+            return r;
+        });
     }
 
     @Override
     public List<DataSubjectRightsService.RightsRequest> rightsRequestsOf(SecurityIdentity id, String principalRef) {
-        return tx(c -> compliance.rights.forPrincipal(c, id.tenantId(), principalRef));
+        return tx(c -> {
+            List<DataSubjectRightsService.RightsRequest> list = compliance.rights.forPrincipal(c, id.tenantId(), principalRef);
+            compliance.audit.personalDataRead(c, id.tenantId(), principalRef, id.personId(), "rights-requests", list.size(),
+                    null);
+            return list;
+        });
     }
 
     // ---------------------------------------------------------------- breaches and incidents

@@ -16351,7 +16351,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompliancePurpose'
+              $ref: '#/components/schemas/ComplianceDefinePurposeRequest'
       responses:
         '200':
           description: Success
@@ -16441,14 +16441,10 @@ paths:
       operationId: listConsents
       tags:
       - Compliance
-      summary: Consent history
-      description: 'Consents of a principal (default: the caller). Another principal''s history needs compliance.read.'
-      parameters:
-      - name: subject
-        in: query
-        schema:
-          type: string
-      x-sangam-permission: owner / compliance.read
+      summary: Own consent history
+      description: 'The caller''s own consents. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another
+        principal''s history is searched with POST /compliance/consents/search.'
+      x-sangam-permission: authenticated (own)
       x-sangam-requirements:
       - GOV-4
       - R53
@@ -16528,6 +16524,46 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /compliance/consents/search:
+    post:
+      operationId: searchConsents
+      tags:
+      - Compliance
+      summary: Search a principal's consents
+      description: Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs
+        compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+      parameters:
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: owner / compliance.read
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      - DPDP s.6
+      - DPDP Rules r.6
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceSubjectSearch'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComplianceConsent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /compliance/consent-managers/{cm}/artefacts:
     post:
       operationId: ingestConsentArtefact
@@ -16605,8 +16641,10 @@ paths:
       tags:
       - Compliance
       summary: Submit a rights request (public)
-      description: Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by the published identifier; due dates from
-        the pack.
+      description: 'Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names
+        (owner decision 335: the caller''s signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED;
+        due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when
+        the compliance pack is not installed for the tenant (decision 336).'
       x-sangam-command-type: compliance.rights-request.submit
       x-sangam-idempotent: true
       parameters:
@@ -16673,17 +16711,52 @@ paths:
       operationId: listRightsRequests
       tags:
       - Compliance
-      summary: Rights requests of a principal
-      description: 'Default: the caller''s own; another principal''s needs compliance.read.'
+      summary: Own rights requests
+      description: 'The caller''s own rights requests. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN);
+        another principal''s are searched with POST /compliance/rights-requests/search.'
+      x-sangam-permission: authenticated (own)
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComplianceRightsRequest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /compliance/rights-requests/search:
+    post:
+      operationId: searchRightsRequests
+      tags:
+      - Compliance
+      summary: Search a principal's rights requests
+      description: Rights requests of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's need
+        compliance.read and write PERSONAL_DATA_READ on that principal's chain (owner decision 348).
       parameters:
-      - name: subject
-        in: query
-        schema:
-          type: string
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
       x-sangam-permission: owner / compliance.read
       x-sangam-requirements:
       - GOV-4
       - R53
+      - DPDP Rules r.6
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceSubjectSearch'
       responses:
         '200':
           description: Success
@@ -16707,7 +16780,8 @@ paths:
       tags:
       - Compliance
       summary: Get a rights request
-      description: Visible to its principal or with compliance.read (otherwise 404).
+      description: Visible to its principal or with compliance.read (otherwise 404); a compliance.read reader of another principal's request writes
+        PERSONAL_DATA_READ (owner decision 348).
       parameters:
       - name: id
         in: path
@@ -16739,7 +16813,9 @@ paths:
       tags:
       - Compliance
       summary: Register a personal-data breach
-      description: Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7).
+      description: Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7). incidentType, when given, is a code of
+        the authority catalogue of the jurisdiction pack, else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344); 409 COMPLIANCE_PACK_NOT_INSTALLED
+        when the compliance pack is not installed for the tenant (decision 336).
       x-sangam-command-type: compliance.breach.register
       x-sangam-idempotent: true
       parameters:
@@ -16826,7 +16902,9 @@ paths:
       tags:
       - Compliance
       summary: Register a reportable incident
-      description: 'A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing).'
+      description: 'A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing). type is a code of the
+        authority''s catalogue in the jurisdiction pack (GET /compliance/jurisdiction, authorities[].catalogue), else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE
+        (owner decision 344).'
       x-sangam-command-type: compliance.incident.register
       x-sangam-idempotent: true
       parameters:
@@ -62951,6 +63029,91 @@ components:
           type: string
       required:
       - basis
+    ComplianceDefinePurposeRequest:
+      type: object
+      description: A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's
+        sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version
+        is assigned by the server (previous + 1). Durations are ISO-8601.
+      properties:
+        code:
+          type: string
+          description: Optional; when given, it must equal the path code.
+        names:
+          type: object
+          additionalProperties:
+            type: string
+        descriptions:
+          type: object
+          additionalProperties:
+            type: string
+        dataItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceDataItemRequest'
+        basis:
+          type: string
+        legalRef:
+          type: string
+        subGround:
+          type: string
+        registerRef:
+          type: string
+        standardsAttested:
+          type: boolean
+          description: 'The processing meets the standards the legal basis or exemption requires (IN: DPDP Rules Second Schedule). A legal attestation:
+            required, true or false.'
+        exemptions:
+          type: array
+          items:
+            type: string
+        exemptionRef:
+          type: string
+        childExemptions:
+          type: array
+          items:
+            type: string
+        flags:
+          type: array
+          items:
+            type: string
+        retentionTrigger:
+          type: string
+        retention:
+          type: string
+        retentionClass:
+          type: string
+        recordClass:
+          type: string
+        recordRetention:
+          type: string
+        recordRetentionRef:
+          type: string
+        active:
+          type: boolean
+          description: Whether processing under the purpose may start (consent, notices and purpose binding refuse an inactive purpose). Required.
+        specialCondition:
+          type: string
+      required:
+      - basis
+      - standardsAttested
+      - active
+    ComplianceDataItemRequest:
+      type: object
+      description: One itemised personal-data item of a purpose.
+      properties:
+        code:
+          type: string
+        names:
+          type: object
+          additionalProperties:
+            type: string
+        sensitive:
+          type: boolean
+          description: 'A special category under the jurisdiction pack (IN: SPDI r.3, Aadhaar), masked in summaries. A legal attestation: required,
+            true or false.'
+      required:
+      - code
+      - sensitive
     ComplianceGiveConsentRequest:
       type: object
       description: Consent by the data principal (or a verified guardian, DPDP s.9). `language` is a code of the tenant's jurisdiction pack; principalRef
@@ -63063,7 +63226,9 @@ components:
           type: string
     ComplianceRightsSubmission:
       type: object
-      description: A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.
+      description: 'A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335):
+        identifierType SIGNED_IN for the caller''s own signed-in identity (identifierValue blank or that identity), else the published identifier
+        with its proof (OTP).'
       properties:
         principalRef:
           type: string
@@ -63118,6 +63283,18 @@ components:
         outcome:
           type: string
         responseText:
+          type: string
+        contact:
+          allOf:
+          - $ref: '#/components/schemas/ComplianceContact'
+          description: 'The published contact the data principal reaches about this request (owner decision 346): the DPO, else the pack''s next
+            published role; null when none is set.'
+    ComplianceSubjectSearch:
+      type: object
+      description: 'The principal whose records an officer searches (owner decision 338: in the body, never in the URL); blank = the caller''s
+        own.'
+      properties:
+        subject:
           type: string
     ComplianceBreachRequest:
       type: object
@@ -63323,6 +63500,7 @@ components:
       properties:
         role:
           type: string
+          description: Taken from the path on POST /compliance/contacts/{role}.
         name:
           type: string
         designation:
@@ -63339,6 +63517,8 @@ components:
           type: string
         resident:
           type: boolean
+          description: 'The person is resident in the pack''s home country (a residency attestation). Required by the server, true, for a role
+            the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.'
         validFrom:
           type: string
           format: date-time

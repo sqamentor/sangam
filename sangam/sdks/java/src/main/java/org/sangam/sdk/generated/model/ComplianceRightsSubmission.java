@@ -4,7 +4,7 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.
+ * A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335): identifierType SIGNED_IN for the caller's own signed-in identity (identifierValue blank or that identity), else the published identifier with its proof (OTP).
  *
  * <p>Schema {@code ComplianceRightsSubmission} of sangam-api.yaml 0.1.0.
  *

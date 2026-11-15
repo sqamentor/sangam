@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Compliance (32 operations). */
+/** Typed operations of Compliance (34 operations). */
 final class ComplianceApi
 {
     public function __construct(private readonly Calls $calls)
@@ -100,10 +100,10 @@ final class ComplianceApi
      * Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
      *
      * PUT /compliance/purposes/{code} (operationId defineCompliancePurpose); permission compliance.admin; result stored atomically with the state change.
-     * @param Model\CompliancePurpose|array $body request body
+     * @param Model\ComplianceDefinePurposeRequest|array $body request body
      * @return Model\CompliancePurpose|null
      */
-    public function defineCompliancePurpose(string $code, Model\CompliancePurpose|array $body, ?RequestOptions $options = null): ?Model\CompliancePurpose
+    public function defineCompliancePurpose(string $code, Model\ComplianceDefinePurposeRequest|array $body, ?RequestOptions $options = null): ?Model\CompliancePurpose
     {
         $req = ApiRequest::put('/compliance/purposes/' . HttpTransport::seg((string) $code));
         if ($body !== null) {
@@ -131,18 +131,16 @@ final class ComplianceApi
     }
 
     /**
-     * Consent history
+     * Own consent history
      *
-     * Consents of a principal (default: the caller). Another principal's history needs compliance.read.
+     * The caller's own consents. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's history is searched with POST /compliance/consents/search.
      *
-     * GET /compliance/consents (operationId listConsents); permission owner / compliance.read.
-     * @param string|null $subject query subject
+     * GET /compliance/consents (operationId listConsents); permission authenticated (own).
      * @return list<Model\ComplianceConsent>
      */
-    public function listConsents(?string $subject = null, ?RequestOptions $options = null): array
+    public function listConsents(?RequestOptions $options = null): array
     {
         $req = ApiRequest::get('/compliance/consents');
-        $req->query('subject', $subject);
         return $this->calls->models($req, $options, Model\ComplianceConsent::class);
     }
 
@@ -161,6 +159,23 @@ final class ComplianceApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\ComplianceConsent::class);
+    }
+
+    /**
+     * Search a principal's consents
+     *
+     * Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+     *
+     * POST /compliance/consents/search (operationId searchConsents); permission owner / compliance.read.
+     * @return list<Model\ComplianceConsent>
+     */
+    public function searchConsents(Model\ComplianceSubjectSearch|array|null $body = null, ?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::post('/compliance/consents/search');
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->models($req, $options, Model\ComplianceConsent::class);
     }
 
     /**
@@ -188,7 +203,7 @@ final class ComplianceApi
     /**
      * Submit a rights request (public)
      *
-     * Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by the published identifier; due dates from the pack.
+     * Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
      *
      * POST /compliance/rights-requests (operationId submitRightsRequest); result stored atomically with the state change.
      * @param Model\ComplianceRightsSubmission|array $body request body
@@ -208,25 +223,40 @@ final class ComplianceApi
     }
 
     /**
-     * Rights requests of a principal
+     * Own rights requests
      *
-     * Default: the caller's own; another principal's needs compliance.read.
+     * The caller's own rights requests. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's are searched with POST /compliance/rights-requests/search.
      *
-     * GET /compliance/rights-requests (operationId listRightsRequests); permission owner / compliance.read.
-     * @param string|null $subject query subject
+     * GET /compliance/rights-requests (operationId listRightsRequests); permission authenticated (own).
      * @return list<Model\ComplianceRightsRequest>
      */
-    public function listRightsRequests(?string $subject = null, ?RequestOptions $options = null): array
+    public function listRightsRequests(?RequestOptions $options = null): array
     {
         $req = ApiRequest::get('/compliance/rights-requests');
-        $req->query('subject', $subject);
+        return $this->calls->models($req, $options, Model\ComplianceRightsRequest::class);
+    }
+
+    /**
+     * Search a principal's rights requests
+     *
+     * Rights requests of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's need compliance.read and write PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+     *
+     * POST /compliance/rights-requests/search (operationId searchRightsRequests); permission owner / compliance.read.
+     * @return list<Model\ComplianceRightsRequest>
+     */
+    public function searchRightsRequests(Model\ComplianceSubjectSearch|array|null $body = null, ?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::post('/compliance/rights-requests/search');
+        if ($body !== null) {
+            $req->body($body);
+        }
         return $this->calls->models($req, $options, Model\ComplianceRightsRequest::class);
     }
 
     /**
      * Get a rights request
      *
-     * Visible to its principal or with compliance.read (otherwise 404).
+     * Visible to its principal or with compliance.read (otherwise 404); a compliance.read reader of another principal's request writes PERSONAL_DATA_READ (owner decision 348).
      *
      * GET /compliance/rights-requests/{id} (operationId getRightsRequest); permission owner / compliance.read.
      * @return Model\ComplianceRightsRequest|null
@@ -240,7 +270,7 @@ final class ComplianceApi
     /**
      * Register a personal-data breach
      *
-     * Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7).
+     * Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7). incidentType, when given, is a code of the authority catalogue of the jurisdiction pack, else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344); 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
      *
      * POST /compliance/breaches (operationId registerBreach); permission compliance.modify; result stored atomically with the state change.
      * @param Model\ComplianceBreachRequest|array $body request body
@@ -272,7 +302,7 @@ final class ComplianceApi
     /**
      * Register a reportable incident
      *
-     * A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing).
+     * A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing). type is a code of the authority's catalogue in the jurisdiction pack (GET /compliance/jurisdiction, authorities[].catalogue), else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344).
      *
      * POST /compliance/incidents (operationId registerComplianceIncident); permission compliance.modify; result stored atomically with the state change.
      * @param Model\ComplianceIncidentRequest|array $body request body

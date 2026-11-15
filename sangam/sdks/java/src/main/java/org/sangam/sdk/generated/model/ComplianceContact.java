@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code ComplianceContact} of sangam-api.yaml 0.1.0.
  *
- * @param role wire field {@code role}
+ * @param role wire field {@code role}. Taken from the path on POST /compliance/contacts/{role}.
  * @param name wire field {@code name} (required)
  * @param designation wire field {@code designation}
  * @param organisation wire field {@code organisation}
@@ -16,7 +16,7 @@ package org.sangam.sdk.generated.model;
  * @param phone wire field {@code phone}
  * @param mobile wire field {@code mobile}
  * @param address wire field {@code address}
- * @param resident wire field {@code resident}
+ * @param resident wire field {@code resident}. The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.
  * @param validFrom wire field {@code validFrom}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

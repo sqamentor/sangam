@@ -94,6 +94,19 @@ public class ComplianceController {
         return t.trim();
     }
 
+    /**
+     * Owner decision 335: the identity the server authenticated for a public call, when it is of {@code tenantId}
+     * (null for an anonymous call). Never taken from the request body.
+     */
+    private static String signedIn(HttpServletRequest req, String tenantId) {
+        var principal = RequestContexts.principal(req);
+        if (principal == null || principal.principalId() == null || principal.principalId().isBlank()
+                || !tenantId.equals(principal.tenantId())) {
+            return null;
+        }
+        return principal.principalId();
+    }
+
     // ---------------------------------------------------------------- notices, privacy policy, purposes
 
     @GetMapping("/notices/{key}")
@@ -126,18 +139,45 @@ public class ComplianceController {
 
     @PutMapping("/purposes/{code}")
     public PurposeDefinition definePurpose(RequestContext ctx, @PathVariable String code,
-                                           @RequestBody PurposeDefinition body) {
+                                           @RequestBody ComplianceRequests.DefinePurposeRequest body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
+        return api.definePurpose(id, toPurpose(code, body));
+    }
+
+    /**
+     * The purpose a define request describes. The attestations ({@code standardsAttested}, every data item's
+     * {@code sensitive}) and {@code active} must be given: an omitted one is refused by name, never defaulted. The
+     * version is the registry's (0 here; {@code LegitimateUseRegistry.define} assigns previous + 1).
+     */
+    static PurposeDefinition toPurpose(String code, ComplianceRequests.DefinePurposeRequest body) {
         if (body.code() != null && !body.code().equals(code)) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "body code " + body.code() + " differs from path " + code);
         }
-        PurposeDefinition p = body.code() == null ? new PurposeDefinition(code, body.names(), body.descriptions(),
-                body.dataItems(), body.basis(), body.legalRef(), body.subGround(), body.registerRef(),
-                body.standardsAttested(), body.exemptions(), body.exemptionRef(), body.childExemptions(), body.flags(),
-                body.retentionTrigger(), body.retention(), body.retentionClass(), body.recordClass(),
-                body.recordRetention(), body.recordRetentionRef(), body.version(), body.active(),
-                body.specialCondition()) : body;
-        return api.definePurpose(id, p);
+        requireChoice(body.standardsAttested(), "standardsAttested",
+                "whether the processing meets the standards the basis or exemption requires");
+        requireChoice(body.active(), "active", "whether processing under the purpose may start");
+        List<PurposeDefinition.DataItem> items = new java.util.ArrayList<>();
+        List<ComplianceRequests.PurposeDataItem> given = body.dataItems() == null ? List.of() : body.dataItems();
+        for (int i = 0; i < given.size(); i++) {
+            ComplianceRequests.PurposeDataItem d = given.get(i);
+            if (d == null) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "dataItems[" + i + "] is missing");
+            }
+            requireChoice(d.sensitive(), "dataItems[" + i + "].sensitive", "whether the item is a special category");
+            items.add(new PurposeDefinition.DataItem(d.code(), d.names(), d.sensitive()));
+        }
+        return new PurposeDefinition(code, body.names(), body.descriptions(), items, body.basis(), body.legalRef(),
+                body.subGround(), body.registerRef(), body.standardsAttested(), body.exemptions(), body.exemptionRef(),
+                body.childExemptions(), body.flags(), body.retentionTrigger(), body.retention(), body.retentionClass(),
+                body.recordClass(), body.recordRetention(), body.recordRetentionRef(), 0, body.active(),
+                body.specialCondition());
+    }
+
+    private static void requireChoice(Boolean value, String field, String meaning) {
+        if (value == null) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", field + " is required (true or false): " + meaning
+                    + "; it is never assumed");
+        }
     }
 
     // ---------------------------------------------------------------- consents
@@ -167,14 +207,43 @@ public class ComplianceController {
         return Lists.okRef(id, api.withdrawConsent(sid, id, purposes));
     }
 
+    /** The caller's own consents. Owner decision 338: another principal's are searched by {@code POST /consents/search}. */
     @GetMapping("/consents")
-    public ResponseEntity<List<ConsentService.Consent>> consents(RequestContext ctx,
-                                                                 @RequestParam(required = false) String subject) {
-        String principal = subject == null || subject.isBlank() ? ctx.principalId() : subject;
-        if (!principal.equals(ctx.principalId())) {
+    public ResponseEntity<List<ConsentService.Consent>> consents(RequestContext ctx, HttpServletRequest req) {
+        refuseSubjectQuery(req, "/consents/search");
+        return Lists.ok(api.consents(identity(ctx), ctx.principalId()));
+    }
+
+    /**
+     * Owner decision 338: the consents of the principal named in the body (blank: the caller's own); another
+     * principal's need compliance.read and write PERSONAL_DATA_READ (owner decision 348).
+     */
+    @PostMapping("/consents/search")
+    public ResponseEntity<List<ConsentService.Consent>> searchConsents(RequestContext ctx,
+            @RequestBody(required = false) ComplianceRequests.SubjectSearch body) {
+        return Lists.ok(api.consents(identity(ctx), subjectOf(ctx, body)));
+    }
+
+    /**
+     * Owner decision 338: the {@code ?subject=} form is withdrawn. A client that still sends it is refused by name,
+     * never answered with the caller's own records as if they were the subject's.
+     */
+    private static void refuseSubjectQuery(HttpServletRequest req, String searchPath) {
+        if (req.getParameter("subject") != null) {
+            throw ApiProblem.badRequest("SUBJECT_QUERY_WITHDRAWN",
+                    "the subject query parameter is withdrawn; search with POST /api/v1/compliance" + searchPath
+                            + " and the body {\"subject\": ...}");
+        }
+    }
+
+    /** The principal a search names: the caller's own when blank; another principal's needs compliance.read. */
+    private String subjectOf(RequestContext ctx, ComplianceRequests.SubjectSearch body) {
+        String subject = body == null || body.subject() == null || body.subject().isBlank() ? ctx.principalId()
+                : body.subject().trim();
+        if (!subject.equals(ctx.principalId())) {
             permissions.require(ctx, Permissions.COMPLIANCE_READ);
         }
-        return Lists.ok(api.consents(identity(ctx), principal));
+        return subject;
     }
 
     @PostMapping("/consent-managers/{cm}/artefacts")
@@ -196,27 +265,31 @@ public class ComplianceController {
             @RequestBody DataSubjectRightsService.Submission body,
             @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
             @RequestParam(required = false) String tenant) {
-        DataSubjectRightsService.RightsRequest r = api.submitRightsRequest(publicTenant(req, tenantHeader, tenant), body);
+        String tenantId = publicTenant(req, tenantHeader, tenant);
+        DataSubjectRightsService.RightsRequest r = api.submitRightsRequest(tenantId, body, signedIn(req, tenantId));
         return Lists.created("/api/v1/compliance/rights-requests/" + r.requestId(), r.requestId(), r);
     }
 
+    /** The caller's own rights requests. Owner decision 338: another principal's by {@code POST /rights-requests/search}. */
     @GetMapping("/rights-requests")
     public ResponseEntity<List<DataSubjectRightsService.RightsRequest>> rightsRequests(RequestContext ctx,
-            @RequestParam(required = false) String subject) {
-        String principal = subject == null || subject.isBlank() ? ctx.principalId() : subject;
-        if (!principal.equals(ctx.principalId())) {
-            permissions.require(ctx, Permissions.COMPLIANCE_READ);
-        }
-        return Lists.ok(api.rightsRequestsOf(identity(ctx), principal));
+                                                                                    HttpServletRequest req) {
+        refuseSubjectQuery(req, "/rights-requests/search");
+        return Lists.ok(api.rightsRequestsOf(identity(ctx), ctx.principalId()));
+    }
+
+    /** Owner decision 338: the rights requests of the principal named in the body (see {@link #searchConsents}). */
+    @PostMapping("/rights-requests/search")
+    public ResponseEntity<List<DataSubjectRightsService.RightsRequest>> searchRightsRequests(RequestContext ctx,
+            @RequestBody(required = false) ComplianceRequests.SubjectSearch body) {
+        return Lists.ok(api.rightsRequestsOf(identity(ctx), subjectOf(ctx, body)));
     }
 
     @GetMapping("/rights-requests/{id}")
     public DataSubjectRightsService.RightsRequest rightsRequest(RequestContext ctx, @PathVariable String id) {
-        DataSubjectRightsService.RightsRequest r = api.rightsRequest(identity(ctx), id);
-        if (!ctx.principalId().equals(r.principalRef()) && !permissions.has(ctx, Permissions.COMPLIANCE_READ)) {
-            throw ApiProblem.notFound("rights request", id); // no existence leak to other principals
-        }
-        return r;
+        // own request, or any with compliance.read (the read of another's is audited, owner decision 348); another
+        // principal's request is NOT_FOUND to everyone else, so its existence does not leak
+        return api.rightsRequest(identity(ctx), id, permissions.has(ctx, Permissions.COMPLIANCE_READ));
     }
 
     // ---------------------------------------------------------------- breaches and incidents
@@ -311,11 +384,12 @@ public class ComplianceController {
 
     @PostMapping("/contacts/{role}")
     public ResponseEntity<Void> setContact(RequestContext ctx, @PathVariable String role,
-                                           @RequestBody ContactDirectory.Contact body) {
+                                           @RequestBody ComplianceRequests.ContactRequest body) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
+        // an omitted residency attestation is "not attested" (refused for a role that must be resident), never true
         ContactDirectory.Contact c = new ContactDirectory.Contact(role, body.name(), body.designation(),
-                body.organisation(), body.email(), body.phone(), body.mobile(), body.address(), body.resident(),
-                body.validFrom());
+                body.organisation(), body.email(), body.phone(), body.mobile(), body.address(),
+                Boolean.TRUE.equals(body.resident()), body.validFrom());
         api.setContact(id, c);
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, role).build();
     }

@@ -776,6 +776,7 @@ components:
       - BREAK_GLASS_USED
       - BREAK_GLASS_REVIEWED
       - FIELD_REENCRYPTION_COMPLETED
+      - PERSONAL_DATA_READ
       x-sangam-groups:
         Identity:
         - AUTH_LOGIN
@@ -986,6 +987,7 @@ components:
         - BREAK_GLASS_USED
         - BREAK_GLASS_REVIEWED
         - FIELD_REENCRYPTION_COMPLETED
+        - PERSONAL_DATA_READ
       x-sangam-pending-change-control: {}
   messages:
     WebhookCaseFileEvent:

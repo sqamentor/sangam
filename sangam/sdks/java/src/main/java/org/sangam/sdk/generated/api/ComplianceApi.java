@@ -14,6 +14,7 @@ import org.sangam.sdk.generated.model.ComplianceBreachRequest;
 import org.sangam.sdk.generated.model.ComplianceConsent;
 import org.sangam.sdk.generated.model.ComplianceConsentArtefact;
 import org.sangam.sdk.generated.model.ComplianceContact;
+import org.sangam.sdk.generated.model.ComplianceDefinePurposeRequest;
 import org.sangam.sdk.generated.model.ComplianceGiveConsentRequest;
 import org.sangam.sdk.generated.model.ComplianceImpactAssessment;
 import org.sangam.sdk.generated.model.ComplianceImpactAssessmentRequest;
@@ -33,6 +34,7 @@ import org.sangam.sdk.generated.model.ComplianceRespondLawfulRequest;
 import org.sangam.sdk.generated.model.ComplianceRightsRequest;
 import org.sangam.sdk.generated.model.ComplianceRightsSubmission;
 import org.sangam.sdk.generated.model.ComplianceSealLogsRequest;
+import org.sangam.sdk.generated.model.ComplianceSubjectSearch;
 import org.sangam.sdk.generated.model.ComplianceSubmitIncidentRequest;
 import org.sangam.sdk.generated.model.ComplianceTransferDecision;
 import org.sangam.sdk.generated.model.ComplianceTransferRequest;
@@ -40,7 +42,7 @@ import org.sangam.sdk.generated.model.ComplianceVerifyLawfulRequest;
 import org.sangam.sdk.generated.model.ComplianceWithdrawConsentRequest;
 
 /**
- * Typed operations of {@code Compliance} (32 operations), generated from
+ * Typed operations of {@code Compliance} (34 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -56,9 +58,11 @@ public final class ComplianceApi {
     private static final TypeReference<ComplianceConsent> R_giveConsent = new TypeReference<>() { };
     private static final TypeReference<java.util.List<ComplianceConsent>> R_listConsents = new TypeReference<>() { };
     private static final TypeReference<ComplianceConsent> R_withdrawConsent = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<ComplianceConsent>> R_searchConsents = new TypeReference<>() { };
     private static final TypeReference<ComplianceConsent> R_ingestConsentArtefact = new TypeReference<>() { };
     private static final TypeReference<ComplianceRightsRequest> R_submitRightsRequest = new TypeReference<>() { };
     private static final TypeReference<java.util.List<ComplianceRightsRequest>> R_listRightsRequests = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<ComplianceRightsRequest>> R_searchRightsRequests = new TypeReference<>() { };
     private static final TypeReference<ComplianceRightsRequest> R_getRightsRequest = new TypeReference<>() { };
     private static final TypeReference<ComplianceBreach> R_registerBreach = new TypeReference<>() { };
     private static final TypeReference<ComplianceBreach> R_getBreach = new TypeReference<>() { };
@@ -171,7 +175,7 @@ public final class ComplianceApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public CompliancePurpose defineCompliancePurpose(String code, CompliancePurpose body, RequestOptions options) {
+    public CompliancePurpose defineCompliancePurpose(String code, ComplianceDefinePurposeRequest body, RequestOptions options) {
         ApiRequest req = ApiRequest.put("/compliance/purposes/" + HttpTransport.seg(String.valueOf(code)));
         req.body(body);
         return call.json(req, options, R_defineCompliancePurpose);
@@ -194,18 +198,16 @@ public final class ComplianceApi {
     }
 
     /**
-     * Consent history
+     * Own consent history
      *
-     * <p>Consents of a principal (default: the caller). Another principal's history needs compliance.read.
+     * <p>The caller's own consents. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's history is searched with POST /compliance/consents/search.
      *
-     * <p>{@code GET /compliance/consents} (operationId {@code listConsents}); permission {@code owner / compliance.read}.
-     * @param subject query parameter {@code subject}, or null
+     * <p>{@code GET /compliance/consents} (operationId {@code listConsents}); permission {@code authenticated (own)}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<ComplianceConsent> listConsents(String subject, RequestOptions options) {
+    public java.util.List<ComplianceConsent> listConsents(RequestOptions options) {
         ApiRequest req = ApiRequest.get("/compliance/consents");
-        req.query("subject", subject);
         return call.json(req, options, R_listConsents);
     }
 
@@ -224,6 +226,22 @@ public final class ComplianceApi {
         ApiRequest req = ApiRequest.post("/compliance/consents/" + HttpTransport.seg(String.valueOf(id)) + "/withdraw");
         req.body(body);
         return call.json(req, options, R_withdrawConsent);
+    }
+
+    /**
+     * Search a principal's consents
+     *
+     * <p>Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+     *
+     * <p>{@code POST /compliance/consents/search} (operationId {@code searchConsents}); permission {@code owner / compliance.read}.
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<ComplianceConsent> searchConsents(ComplianceSubjectSearch body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/consents/search");
+        req.body(body);
+        return call.json(req, options, R_searchConsents);
     }
 
     /**
@@ -250,7 +268,7 @@ public final class ComplianceApi {
     /**
      * Submit a rights request (public)
      *
-     * <p>Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by the published identifier; due dates from the pack.
+     * <p>Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
      *
      * <p>{@code POST /compliance/rights-requests} (operationId {@code submitRightsRequest}); result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -268,25 +286,39 @@ public final class ComplianceApi {
     }
 
     /**
-     * Rights requests of a principal
+     * Own rights requests
      *
-     * <p>Default: the caller's own; another principal's needs compliance.read.
+     * <p>The caller's own rights requests. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's are searched with POST /compliance/rights-requests/search.
      *
-     * <p>{@code GET /compliance/rights-requests} (operationId {@code listRightsRequests}); permission {@code owner / compliance.read}.
-     * @param subject query parameter {@code subject}, or null
+     * <p>{@code GET /compliance/rights-requests} (operationId {@code listRightsRequests}); permission {@code authenticated (own)}.
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<ComplianceRightsRequest> listRightsRequests(String subject, RequestOptions options) {
+    public java.util.List<ComplianceRightsRequest> listRightsRequests(RequestOptions options) {
         ApiRequest req = ApiRequest.get("/compliance/rights-requests");
-        req.query("subject", subject);
         return call.json(req, options, R_listRightsRequests);
+    }
+
+    /**
+     * Search a principal's rights requests
+     *
+     * <p>Rights requests of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's need compliance.read and write PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+     *
+     * <p>{@code POST /compliance/rights-requests/search} (operationId {@code searchRightsRequests}); permission {@code owner / compliance.read}.
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<ComplianceRightsRequest> searchRightsRequests(ComplianceSubjectSearch body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/rights-requests/search");
+        req.body(body);
+        return call.json(req, options, R_searchRightsRequests);
     }
 
     /**
      * Get a rights request
      *
-     * <p>Visible to its principal or with compliance.read (otherwise 404).
+     * <p>Visible to its principal or with compliance.read (otherwise 404); a compliance.read reader of another principal's request writes PERSONAL_DATA_READ (owner decision 348).
      *
      * <p>{@code GET /compliance/rights-requests/{id}} (operationId {@code getRightsRequest}); permission {@code owner / compliance.read}.
      * @param id path parameter {@code id}
@@ -301,7 +333,7 @@ public final class ComplianceApi {
     /**
      * Register a personal-data breach
      *
-     * <p>Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7).
+     * <p>Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7). incidentType, when given, is a code of the authority catalogue of the jurisdiction pack, else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344); 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
      *
      * <p>{@code POST /compliance/breaches} (operationId {@code registerBreach}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -332,7 +364,7 @@ public final class ComplianceApi {
     /**
      * Register a reportable incident
      *
-     * <p>A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing).
+     * <p>A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing). type is a code of the authority's catalogue in the jurisdiction pack (GET /compliance/jurisdiction, authorities[].catalogue), else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344).
      *
      * <p>{@code POST /compliance/incidents} (operationId {@code registerComplianceIncident}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body

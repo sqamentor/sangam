@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.
+/// A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335): identifierType SIGNED_IN for the caller's own signed-in identity (identifierValue blank or that identity), else the published identifier with its proof (OTP).
 /// Schema ComplianceRightsSubmission.
 /// </summary>
 public sealed record ComplianceRightsSubmission

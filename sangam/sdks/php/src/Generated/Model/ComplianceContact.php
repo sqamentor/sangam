@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema ComplianceContact of sangam-api.yaml 0.1.0.
  *
- * @property-read string|null $role
+ * @property-read string|null $role Taken from the path on POST /compliance/contacts/{role}.
  * @property-read string|null $name (required)
  * @property-read string|null $designation
  * @property-read string|null $organisation
@@ -20,7 +20,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $phone
  * @property-read string|null $mobile
  * @property-read string|null $address
- * @property-read bool|null $resident
+ * @property-read bool|null $resident The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.
  * @property-read string|null $validFrom
  */
 final class ComplianceContact implements \JsonSerializable

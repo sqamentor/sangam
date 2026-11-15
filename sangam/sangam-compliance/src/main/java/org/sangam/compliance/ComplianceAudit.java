@@ -94,6 +94,13 @@ public final class ComplianceAudit {
      * notices to data principals; written only for the IN pack (DPDP s.8(6), r.7), next to {@link #BREACH_REPORT_SUBMITTED}.
      */
     public static final String DPDP_BREACH_REPORTED = "DPDP_BREACH_REPORTED";
+    /**
+     * Owner decision 348 (X.4.0.3 Security): an officer read a data principal's records (consents, rights requests)
+     * that are not the officer's own. Written on that principal's chain, in the same transaction as the read, so the
+     * principal's access trail shows every read by someone else (IN: DPDP Rules r.6(1)(c)); payload: the records read,
+     * how many, the request id for a single record, and the reader.
+     */
+    public static final String PERSONAL_DATA_READ = "PERSONAL_DATA_READ";
     public static final String LOG_SEGMENT_SEALED = "CMP_LOG_SEGMENT_SEALED";
     public static final String LOG_SEGMENT_PURGED = "CMP_LOG_SEGMENT_PURGED";
     public static final String LOG_SOURCE_REGISTERED = "CMP_LOG_SOURCE_REGISTERED";
@@ -157,6 +164,28 @@ public final class ComplianceAudit {
     public AuditChain.AuditEvent principal(Connection c, String tenantId, String principalRef, String eventType,
                                            Map<String, ?> payload) {
         return chain.append(c, tenantId, principalChain(tenantId, principalRef), eventType, payload);
+    }
+
+    /**
+     * Owner decision 348: {@code reader} read {@code count} {@code records} of {@code principalRef} (a list, or the one
+     * record {@code recordId}); nothing is written when the reader is the principal (her own records).
+     *
+     * @return the event, or null when the read was the principal's own
+     */
+    public AuditChain.AuditEvent personalDataRead(Connection c, String tenantId, String principalRef, String reader, String records,
+                                                  int count, String recordId) {
+        if (principalRef == null || principalRef.equals(reader)) {
+            return null;
+        }
+        Map<String, Object> p = new java.util.LinkedHashMap<>();
+        p.put("records", records);
+        p.put("count", count);
+        if (recordId != null) {
+            p.put("recordId", recordId);
+        }
+        p.put("principal", principalToken(tenantId, principalRef));
+        p.put("actor", reader);
+        return principal(c, tenantId, principalRef, PERSONAL_DATA_READ, p);
     }
 
     public AuditChain.AuditEvent root(Connection c, String tenantId, String rootId, String eventType, Map<String, ?> payload) {

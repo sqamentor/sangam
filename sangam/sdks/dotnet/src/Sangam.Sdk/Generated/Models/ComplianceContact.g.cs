@@ -9,6 +9,9 @@ namespace Sangam.Sdk.Generated.Models;
 /// </summary>
 public sealed record ComplianceContact
 {
+    /// <summary>
+    /// Taken from the path on POST /compliance/contacts/{role}.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("role")]
     public string? Role { get; init; }
 
@@ -39,6 +42,9 @@ public sealed record ComplianceContact
     [global::System.Text.Json.Serialization.JsonPropertyName("address")]
     public string? Address { get; init; }
 
+    /// <summary>
+    /// The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("resident")]
     public bool? Resident { get; init; }
 
