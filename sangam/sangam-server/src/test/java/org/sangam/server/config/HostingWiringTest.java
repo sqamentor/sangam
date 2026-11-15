@@ -15,7 +15,8 @@ class HostingWiringTest {
 
     @Test
     void nonProductionAllowsLoopbackDefaults() {
-        MockEnvironment env = new MockEnvironment().withProperty("spring.datasource.url", "jdbc:postgresql://localhost:5432/s");
+        MockEnvironment env = new MockEnvironment().withProperty("sangam.security.production", "false")
+                .withProperty("spring.datasource.url", "jdbc:postgresql://localhost:5432/s");
         assertTrue(HostingWiring.loopbackViolations(env).isEmpty());
     }
 

@@ -47,9 +47,16 @@ class OutboxDestinationPublishersTest {
             "PortsHistoryEventHandler.java|x", "configured extra history destinations",
             "CaseModuleNotifier.java|destination()",
             "the same CaseModuleNotifier.destination() is registered by CaseWiring.notifier (publishers.register(n.destination(), ...))",
-            "CaseWiring.java|n.destination()", "registration of CaseModuleNotifier.destination() (see above)");
+            "CaseWiring.java|n.destination()", "registration of CaseModuleNotifier.destination() (see above)",
+            "LedgerJournal.java|gl.destination()",
+            "the destination of LedgerJournal.GlExport; its one construction (LedgerWiring.journal) is scanned as a"
+                    + " destination, see DESTINATION");
 
-    static final Pattern DESTINATION = Pattern.compile("Outbox\\.Destination\\.(?:un)?ordered\\(");
+    /**
+     * A destination: the argument of {@code Outbox.Destination.ordered/unordered}, or the first argument of a
+     * {@code LedgerJournal.GlExport}, which the journal hands to {@code Outbox.Destination.unordered} unchanged.
+     */
+    static final Pattern DESTINATION = Pattern.compile("Outbox\\.Destination\\.(?:un)?ordered\\(|new\\s+LedgerJournal\\.GlExport\\(");
     static final Pattern REGISTER = Pattern.compile("\\b(pubs|publishers|registry|p)\\.register\\(");
     static final Pattern CONSTANT = Pattern.compile("static\\s+final\\s+String\\s+(\\w+)\\s*=\\s*\"([^\"]*)\"\\s*;");
 

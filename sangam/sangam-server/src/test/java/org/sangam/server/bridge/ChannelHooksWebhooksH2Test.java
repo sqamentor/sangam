@@ -75,13 +75,15 @@ class ChannelHooksWebhooksH2Test {
         optIns.optIn("t", "MATRIX", "@bob:example.org", "bob", "consent form 2");
         optIns.optIn("t", "WECHAT", "openid1", "carol", "consent form 3");
         env = new MockEnvironment()
-                .withProperty("sangam.channels.webhooks.t.slack.signing-secret-ref", "slack-secret")
-                .withProperty("sangam.channels.webhooks.t.matrix.hs-token-ref", "hs")
+                .withProperty("sangam.channels.webhooks.t.slack.signing-secret-ref", "secret://channels/slack-secret")
+                .withProperty("sangam.channels.webhooks.t.matrix.hs-token-ref", "secret://channels/hs")
                 .withProperty("sangam.channels.webhooks.t.matrix.user-id", "@sangam:example.org")
-                .withProperty("sangam.channels.webhooks.t.wechat.token-ref", "wx-token")
-                .withProperty("sangam.channels.webhooks.t.wechat.encoding-aes-key-ref", "wx-aes")
+                .withProperty("sangam.channels.webhooks.t.wechat.token-ref", "secret://channels/wx-token")
+                .withProperty("sangam.channels.webhooks.t.wechat.encoding-aes-key-ref", "secret://channels/wx-aes")
                 .withProperty("sangam.channels.webhooks.t.wechat.app-id", "wx123");
-        secrets = SecretResolver.of(Map.of("slack-secret", "s3cret", "hs", "hs-token", "wx-token", "tok", "wx-aes", AES_KEY));
+        // references, as in a deployment: SecretResolver.require reads a value without secret:// as the literal itself
+        secrets = SecretResolver.of(Map.of("secret://channels/slack-secret", "s3cret", "secret://channels/hs", "hs-token",
+                "secret://channels/wx-token", "tok", "secret://channels/wx-aes", AES_KEY));
     }
 
     ChannelHooksController controller(boolean withMediaWorker) {

@@ -107,11 +107,18 @@ class PoolWaitBoundsTest {
 
     @Test
     void networkTimeoutPropertyDefaultsAndBinds() {
-        assertEquals(JdbcWaitBounds.DEFAULT_NETWORK_TIMEOUT, PoolWaitBounds.networkTimeout(new MockEnvironment()));
+        assertEquals(JdbcWaitBounds.DEFAULT_NETWORK_TIMEOUT, PoolWaitBounds.networkTimeout(bootEnvironment()));
         assertEquals(Duration.ofSeconds(45), PoolWaitBounds.networkTimeout(
-                new MockEnvironment().withProperty("sangam.db.network-timeout", "45s")));
+                bootEnvironment().withProperty("sangam.db.network-timeout", "45s")));
         assertEquals(Duration.ZERO, PoolWaitBounds.networkTimeout(
-                new MockEnvironment().withProperty("sangam.db.network-timeout", "0")));
+                bootEnvironment().withProperty("sangam.db.network-timeout", "0")));
+    }
+
+    /** An environment that converts as the running server's does (Spring Boot's conversion service: {@code 45s}). */
+    private static MockEnvironment bootEnvironment() {
+        MockEnvironment env = new MockEnvironment();
+        env.setConversionService(new org.springframework.boot.convert.ApplicationConversionService());
+        return env;
     }
 
     @Test
@@ -120,7 +127,7 @@ class PoolWaitBoundsTest {
         try {
             ds.setJdbcUrl("jdbc:postgresql://db/sangam");
             Object out = PoolWaitBounds.sangamPoolWaitBounds(
-                            new MockEnvironment().withProperty("sangam.db.network-timeout", "20s"))
+                            bootEnvironment().withProperty("sangam.db.network-timeout", "20s"))
                     .postProcessBeforeInitialization(ds, "dataSource");
             assertSame(ds, out);
             assertEquals("20", ds.getDataSourceProperties().getProperty("socketTimeout"));

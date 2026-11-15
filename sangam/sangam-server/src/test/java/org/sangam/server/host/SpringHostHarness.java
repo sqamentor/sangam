@@ -73,11 +73,13 @@ public final class SpringHostHarness implements HostHarness {
         if (removed.contains(Capabilities.AUTHORIZATION) || removed.contains(Capabilities.TENANT_SECURITY_PLUGIN)) {
             props.put("sangam.modules.security.enabled", "false");
         }
-        SpringApplicationBuilder app = new SpringApplicationBuilder(SangamServerApplication.class).properties(props);
+        SpringApplicationBuilder app = new SpringApplicationBuilder(SangamServerApplication.class);
         if (development) {
             app.profiles("h2");
         }
-        context = app.run();
+        // as command-line arguments: builder properties are only defaults, which application.yaml and the profile
+        // files override (server port 8080, the h2 profile's database URL and bootstrap tenants)
+        context = app.run(props.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue()).toArray(String[]::new));
     }
 
     @Override
@@ -194,6 +196,7 @@ public final class SpringHostHarness implements HostHarness {
     private static Map<String, Object> common() {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("server.port", "0");
+        p.put("management.server.port", "0");
         p.put("spring.datasource.url", "jdbc:h2:mem:conformance-" + UUID.randomUUID()
                 + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL");
         p.put("spring.datasource.username", "sa");

@@ -23,7 +23,6 @@ import org.sangam.core.api.EngineAdapter;
 import org.sangam.core.api.StaleLeaseException;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
-import org.sangam.core.layer.Schema;
 import org.sangam.rest.adapter.operaton.EngineAdapterWorkAdapter;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
@@ -57,11 +56,13 @@ class WorkCompleteAcknowledgementH2Test {
     void setUp() throws Exception {
         url = "jdbc:h2:mem:ack" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1";
         keepAlive = DriverManager.getConnection(url, "sa", "");
-        Schema.create(keepAlive, Dialect.POSTGRESQL);
-        Jdbc.update(keepAlive, "CREATE TABLE TEST_COMPLETION (work_id VARCHAR(64) PRIMARY KEY)");
         org.h2.jdbcx.JdbcDataSource ds = new org.h2.jdbcx.JdbcDataSource();
         ds.setURL(url);
         ds.setUser("sa");
+        // the product schema the server runs on: its OPERATION_LEDGER has engine_work_id (A-14), which the repeated
+        // completion check reads; sangam-core's Schema, the layer's own test DDL, does not
+        org.sangam.persistence.SangamSchema.apply(ds);
+        Jdbc.update(keepAlive, "CREATE TABLE TEST_COMPLETION (work_id VARCHAR(64) PRIMARY KEY)");
         TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), Dialect.POSTGRESQL);
         engine = new FakeEngine();
         work = new EngineAdapterWorkAdapter(engine, tx, new NoSeparateAudit(), new RestProperties());
