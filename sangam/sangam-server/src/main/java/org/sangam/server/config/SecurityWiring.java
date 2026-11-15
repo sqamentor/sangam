@@ -94,6 +94,8 @@ public class SecurityWiring {
         SangamSecurity.Options options = new SangamSecurity.Options(staleness, null, rest.getBatchFourEyesThreshold(),
                 denialTransactions(sangamSecurityAuditPool, sangamProductTransactions), null);
         SangamSecurity security = new SangamSecurity(dialect, options);
+        // decision 368: the platform groups used as token scopes are role rows of every tenant, from the code that grants them
+        security.roles().usePlatformRoles(platformRoles());
         // decision 193: the trusted case-type metadata of power checks; unbound, every power check is DENY
         security.powers().useOperationMetadata(operationMetadata(engine));
         // decision 97 / M-016: a dedicated instance creates no tenant but its own (as DATABASE isolation)
@@ -102,6 +104,16 @@ public class SecurityWiring {
             security.tenants().useDedicatedTenant(org.sangam.server.bridge.DedicatedTenant.of(dedicated).tenant());
         }
         return security;
+    }
+
+    /**
+     * Decision 368: the platform roles, derived from the code: the groups the server grants permissions to
+     * ({@link org.sangam.rest.support.Permissions#DEFAULT_GROUP_PERMISSIONS}). Each is a role row (SEC_ROLE) of every
+     * tenant, created at tenant set-up, so a service principal's scope binds through {@code RoleAdminService#bind}.
+     * {@code sangam-admin}, the platform and the engine groups are not in the map and so are never token scopes.
+     */
+    public static java.util.Set<String> platformRoles() {
+        return org.sangam.rest.support.Permissions.DEFAULT_GROUP_PERMISSIONS.keySet();
     }
 
     /**

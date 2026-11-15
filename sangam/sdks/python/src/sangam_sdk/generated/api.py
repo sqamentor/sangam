@@ -499,7 +499,7 @@ class AIApi:
         return cast("dict[str, Any]", self._c.json(req, options))
 
 class AdminApi:
-    """``Admin`` (36 operations)."""
+    """``Admin`` (37 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -837,6 +837,17 @@ class AdminApi:
         req = ApiRequest("POST", f"/admin/identity-providers/{seg(str(id))}/sync")
         return cast("M.IdentitySyncResult", self._c.json(req, options))
 
+    def define_role(self, role_id: str, body: M.RoleDefinition, *, options: Optional[RequestOptions] = None) -> M.RoleDefinition:
+        """Define a role
+
+        Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
+
+        ``PUT /admin/roles/{roleId}`` (operationId ``defineRole``); permission ``policy.admin``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/roles/{seg(str(role_id))}")
+        req.body = body
+        return cast("M.RoleDefinition", self._c.json(req, options))
+
     def list_service_principals(self, *, options: Optional[RequestOptions] = None) -> list[M.ServicePrincipal]:
         """Service principals
 
@@ -850,7 +861,7 @@ class AdminApi:
     def create_service_principal(self, body: M.ServicePrincipal, *, options: Optional[RequestOptions] = None) -> M.ServicePrincipalSecret:
         """Create a service principal
 
-        Returns the secret once; only its hash is stored (R26).
+        Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role (decisions 358, 368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller may not grant, both naming the scope.
 
         ``POST /admin/service-principals`` (operationId ``createServicePrincipal``); permission ``tenant.admin``; result stored atomically with the state change.
         """
@@ -12653,7 +12664,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1146 operations on 964 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1147 operations on 965 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

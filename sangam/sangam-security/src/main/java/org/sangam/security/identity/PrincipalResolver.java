@@ -101,6 +101,17 @@ public final class PrincipalResolver {
                 && !isDevelopmentIdentity(tokenIdentity);
     }
 
+    /**
+     * The roles {@code personId} holds now in {@code tenantId} (decision 358, the scope rule of
+     * {@code ApiTokenService#issue}): its role bindings and those of its groups and seats, the IdP roles mirrored as
+     * memberships, and {@value #AUTHENTICATED_ROLE}. Groups are not roles and are not returned.
+     */
+    public Set<String> heldRoles(Connection c, String tenantId, String personId) {
+        SecurityIdentity person = new SecurityIdentity(tenantId, personId, SecurityIdentity.USER + personId, Set.of(),
+                Set.of(), Set.of(), Set.of(), "INTERNAL", null, null, false, java.util.Map.of());
+        return Set.copyOf(enrich(c, person, Sql.dbNow(c, dialect)).roles());
+    }
+
     /** Adds Sangam groups, roles and current seats (also used for worker and system identities). */
     public SecurityIdentity enrich(Connection c, SecurityIdentity id, Instant at) {
         String tenant = id.tenantId();

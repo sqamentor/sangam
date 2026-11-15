@@ -676,6 +676,10 @@ schema("ServicePrincipal", "Service principal bound to tenant and topics (R26, K
        "id name scopes:list:s topics:list:s expiresAt:dt lastUsedAt:dt status", ["name"],
        enums={"status": ["PENDING", "ACTIVE", "REVOKED"]})
 schema("ServicePrincipalSecret", "Principal plus its secret, shown once (only a hash is stored).", "principal:ServicePrincipal secret")
+schema("RoleRule", "One rule of a role (decision 368): security permissions on a resource type and id; resourceId omitted or * ="
+       " every id, deny omitted = allow.", "resourceType resourceId permissions:list:s deny:bool", ["resourceType", "permissions"])
+schema("RoleDefinition", "A role of the tenant (SEC_ROLE, decision 368); rules omitted = a role that grants nothing itself.",
+       "id name rules:list:RoleRule", ["name"])
 schema("OrgUnitImportResult", "Bulk org-unit import result (CSV: id,parentId,code,name,nameHi,level).",
        "created:int updated:int errors:list:s")
 # Registries
@@ -1688,10 +1692,17 @@ op("post", "/admin/identity-providers/{id}/test", "testIdentityProvider", "Admin
    ["R50"], params=[ID], resp=(200, "IdentityTestResult"), perm="tenant.admin", errors=GET_E)
 op("post", "/admin/identity-providers/{id}/sync", "syncIdentityProvider", "Admin", "Sync users and groups", "Directory sync (R67).",
    ["R67", "R41"], params=[ID], resp=(200, "IdentitySyncResult"), cmd="admin.idp.sync", perm="tenant.admin")
+op("put", "/admin/roles/{roleId}", "defineRole", "Admin", "Define a role",
+   "Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested"
+   " token scope is bound to a service principal only when it is a defined role the caller may grant.",
+   ["VI.4", "R41"], params=[pp("roleId")], body="RoleDefinition", resp=(200, "RoleDefinition"), cmd="admin.role.define",
+   perm="policy.admin")
 op("get", "/admin/service-principals", "listServicePrincipals", "Admin", "Service principals", "Worker and integration principals (R26).",
    ["R26", "K14"], resp=(200, "array:ServicePrincipal"), perm="admin.read", errors=WS_E)
 op("post", "/admin/service-principals", "createServicePrincipal", "Admin", "Create a service principal",
-   "Returns the secret once; only its hash is stored (R26).", ["R26", "R41"], body="ServicePrincipal", resp=(201, "ServicePrincipalSecret"),
+   "Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role"
+   " (decisions 358, 368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller"
+   " may not grant, both naming the scope.", ["R26", "R41"], body="ServicePrincipal", resp=(201, "ServicePrincipalSecret"),
    cmd="admin.service-principal.create", perm="tenant.admin", created=True)
 op("post", "/admin/service-principals/{id}/rotate", "rotateServicePrincipal", "Admin", "Rotate a secret", "Returns the new secret once.",
    ["R26", "R41"], params=[ID], resp=(200, "ServicePrincipalSecret"), cmd="admin.service-principal.rotate", perm="tenant.admin")

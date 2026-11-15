@@ -11432,6 +11432,29 @@ export interface ReturnTaskRequest {
 }
 
 /**
+ * A role of the tenant (SEC_ROLE, decision 368); rules omitted = a role that grants nothing itself.
+ *
+ * Schema `RoleDefinition`.
+ */
+export interface RoleDefinition {
+  id?: string;
+  name: string;
+  rules?: Array<RoleRule>;
+}
+
+/**
+ * One rule of a role (decision 368): security permissions on a resource type and id; resourceId omitted or * = every id, deny omitted = allow.
+ *
+ * Schema `RoleRule`.
+ */
+export interface RoleRule {
+  resourceType: string;
+  resourceId?: string;
+  permissions: Array<string>;
+  deny?: boolean;
+}
+
+/**
  * Request record RosterOnCallRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/RosterController.java), typed from its source.
  *
  * Schema `RosterOnCallRequest`.

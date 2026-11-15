@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 964,
- "operations": 1146,
- "schemas": 874,
+ "paths": 965,
+ "operations": 1147,
+ "schemas": 876,
  "tags": [
   "AI",
   "Admin",
@@ -71,8 +71,8 @@
    "class": "AdminApi",
    "tag": "Admin",
    "pathPrefix": "",
-   "operations": 36,
-   "maxLines": 718
+   "operations": 37,
+   "maxLines": 737
   },
   {
    "class": "AdminAssignmentsApi",
@@ -1402,6 +1402,8 @@
   "ResubmitRequest",
   "ReturnTarget",
   "ReturnTaskRequest",
+  "RoleDefinition",
+  "RoleRule",
   "RosterOnCallRequest",
   "RosterRestPortAssignRequest",
   "RosterRestPortDecisionRequest",
@@ -4689,6 +4691,18 @@
    "python": "admin.sync_identity_provider",
    "dotnet": "AdminApi#SyncIdentityProviderAsync",
    "php": "AdminApi#syncIdentityProvider"
+  },
+  {
+   "operationId": "defineRole",
+   "method": "PUT",
+   "path": "/admin/roles/{roleId}",
+   "tag": "Admin",
+   "apiClass": "AdminApi",
+   "java": "AdminApi#defineRole",
+   "typescript": "admin.defineRole",
+   "python": "admin.define_role",
+   "dotnet": "AdminApi#DefineRoleAsync",
+   "php": "AdminApi#defineRole"
   },
   {
    "operationId": "listServicePrincipals",

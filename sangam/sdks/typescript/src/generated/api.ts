@@ -514,7 +514,7 @@ export class AIApi {
   }
 }
 
-/** Typed operations of `Admin` (36 operations). */
+/** Typed operations of `Admin` (37 operations). */
 export class AdminApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -916,6 +916,19 @@ export class AdminApi {
   }
 
   /**
+   * Define a role
+   *
+   * Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
+   *
+   * `PUT /admin/roles/{roleId}` (operationId `defineRole`); permission `policy.admin`; result stored atomically with the state change.
+   */
+  async defineRole(roleId: string, body: M.RoleDefinition, options?: RequestOptions): Promise<M.RoleDefinition> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/roles/${seg(String(roleId))}` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.RoleDefinition>(req, options);
+  }
+
+  /**
    * Service principals
    *
    * Worker and integration principals (R26).
@@ -930,7 +943,7 @@ export class AdminApi {
   /**
    * Create a service principal
    *
-   * Returns the secret once; only its hash is stored (R26).
+   * Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role (decisions 358, 368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller may not grant, both naming the scope.
    *
    * `POST /admin/service-principals` (operationId `createServicePrincipal`); permission `tenant.admin`; result stored atomically with the state change.
    */
@@ -14812,7 +14825,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1146 operations on 964 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1147 operations on 965 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

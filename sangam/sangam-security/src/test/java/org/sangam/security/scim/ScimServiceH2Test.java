@@ -104,7 +104,7 @@ class ScimServiceH2Test {
                 new PolicyCompiler(SecurityDialect.H2, new ResourceRegistry(), Duration.ZERO), audit);
         MembershipIndex memberships = new MembershipIndex(SecurityDialect.H2, new AuthEffectiveMaintainer(SecurityDialect.H2));
         scim = new ScimService(SecurityDialect.H2, authz, new PersonService(SecurityDialect.H2, authz, audit),
-                new GroupAdminService(SecurityDialect.H2, authz, memberships, audit), new ApiTokenService(SecurityDialect.H2, authz, audit),
+                new GroupAdminService(SecurityDialect.H2, authz, memberships, audit), new ApiTokenService(SecurityDialect.H2, authz, audit, (conn, tenant, person) -> Set.of()),
                 new FakeSeats(), new ScimStore(SecurityDialect.H2), ScimService.Config.defaults());
     }
 

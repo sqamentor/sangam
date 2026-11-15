@@ -174,6 +174,15 @@ public class IdentityAdminController {
         return Lists.okRef(id, identity.syncIdentityProvider(ctx, id));
     }
 
+    // ---------------------------------------------------------------- roles (decision 368)
+
+    @PutMapping("/roles/{roleId}")
+    public ResponseEntity<IdentityAdminPort.RoleDefinition> defineRole(RequestContext ctx, @PathVariable String roleId,
+            @RequestBody IdentityAdminPort.RoleDefinition body) {
+        permissions.require(ctx, Permissions.POLICY_ADMIN);
+        return Lists.okRef(roleId, identity.defineRole(ctx, roleId, body));
+    }
+
     // ---------------------------------------------------------------- service principals (R26)
 
     @GetMapping("/service-principals")

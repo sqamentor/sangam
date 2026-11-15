@@ -16,6 +16,7 @@ import org.sangam.sdk.generated.model.IdentityTestResult;
 import org.sangam.sdk.generated.model.Policy;
 import org.sangam.sdk.generated.model.PolicyVersion;
 import org.sangam.sdk.generated.model.ReasonRequest;
+import org.sangam.sdk.generated.model.RoleDefinition;
 import org.sangam.sdk.generated.model.Seat;
 import org.sangam.sdk.generated.model.ServicePrincipal;
 import org.sangam.sdk.generated.model.ServicePrincipalSecret;
@@ -24,7 +25,7 @@ import org.sangam.sdk.generated.model.Tenant;
 import org.sangam.sdk.generated.model.User;
 
 /**
- * Typed operations of {@code Admin} (36 operations), generated from
+ * Typed operations of {@code Admin} (37 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -53,6 +54,7 @@ public final class AdminApi {
     private static final TypeReference<IdentityProvider> R_updateIdentityProvider = new TypeReference<>() { };
     private static final TypeReference<IdentityTestResult> R_testIdentityProvider = new TypeReference<>() { };
     private static final TypeReference<IdentitySyncResult> R_syncIdentityProvider = new TypeReference<>() { };
+    private static final TypeReference<RoleDefinition> R_defineRole = new TypeReference<>() { };
     private static final TypeReference<java.util.List<ServicePrincipal>> R_listServicePrincipals = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipalSecret> R_createServicePrincipal = new TypeReference<>() { };
     private static final TypeReference<ServicePrincipalSecret> R_rotateServicePrincipal = new TypeReference<>() { };
@@ -655,6 +657,23 @@ public final class AdminApi {
     }
 
     /**
+     * Define a role
+     *
+     * <p>Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
+     *
+     * <p>{@code PUT /admin/roles/{roleId}} (operationId {@code defineRole}); permission {@code policy.admin}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param roleId path parameter {@code roleId}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public RoleDefinition defineRole(String roleId, RoleDefinition body, RequestOptions options) {
+        ApiRequest req = ApiRequest.put("/admin/roles/" + HttpTransport.seg(String.valueOf(roleId)));
+        req.body(body);
+        return call.json(req, options, R_defineRole);
+    }
+
+    /**
      * Service principals
      *
      * <p>Worker and integration principals (R26).
@@ -671,7 +690,7 @@ public final class AdminApi {
     /**
      * Create a service principal
      *
-     * <p>Returns the secret once; only its hash is stored (R26).
+     * <p>Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role (decisions 358, 368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller may not grant, both naming the scope.
      *
      * <p>{@code POST /admin/service-principals} (operationId {@code createServicePrincipal}); permission {@code tenant.admin}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body

@@ -4,10 +4,12 @@
  * (citizen), a signed-in user with no role, and a compliance officer, next to the test-mode server's one development
  * token (the platform administrator).
  *
- * How, without any server change and without touching a production guard: the development identity creates service
- * principals through the product's own administration API, POST /api/v1/admin/service-principals (tenant.admin;
- * IdentityAdminController.createServicePrincipal, SecurityIdentityAdminBridge.createServicePrincipal). The answer
- * carries an API token (sgm_<id>.<secret>, ApiTokenService.issue); the token's scopes are the caller's groups
+ * How, without touching a production guard: the development identity creates service principals through the product's
+ * own administration API, POST /api/v1/admin/service-principals (tenant.admin; IdentityAdminController.createServicePrincipal,
+ * SecurityIdentityAdminBridge.createServicePrincipal). Decisions 358 and 368: each scope is first bound to the principal as
+ * a defined role of the tenant (the platform groups are role rows created with the tenant; the role-less scope is
+ * defined here through PUT /api/v1/admin/roles/{roleId}, a role that grants nothing), so an undefined scope is refused.
+ * The answer carries an API token (sgm_<id>.<secret>, ApiTokenService.issue); the token's scopes are the caller's groups
  * (ApiTokenService.authenticate: roles = scopes; SecurityIdentityFilter keeps them for API_KEY), and GET /me turns the
  * groups into roles (OperatonWorkspaceAdapter.roles): sangam-citizen gives CITIZEN and portal.use, sangam-dpo gives the
  * compliance permissions (Permissions.java), a scope that names no group gives no role and no permission. The UI's
@@ -72,8 +74,21 @@ export async function createIdentity(admin: APIRequestContext, name: string, sco
   return { name, userId: me.userId, token: body.secret };
 }
 
+/**
+ * Defines `roleId` as a role of the tenant that grants nothing itself (PUT /admin/roles/{roleId}, decision 368), so a
+ * service principal may be given it as a scope. Re-running the set-up replaces it with the same definition.
+ */
+export async function defineEmptyRole(admin: APIRequestContext, roleId: string): Promise<void> {
+  const res = await admin.put(`admin/roles/${encodeURIComponent(roleId)}`, {
+    headers: { 'Idempotency-Key': randomUUID() },
+    data: { name: roleId, rules: [] },
+  });
+  if (res.status() !== 200) throw new Error(`PUT /admin/roles/${roleId} answered ${res.status()} ${await res.text()}`);
+}
+
 /** The three identities, each checked against what the specs rely on. */
 export async function createE2eIdentities(admin: APIRequestContext): Promise<{ citizen: E2eIdentity; roleless: E2eIdentity; complianceOfficer: E2eIdentity }> {
+  for (const scope of IDENTITY_SCOPES.roleless) await defineEmptyRole(admin, scope);
   const citizen = await createIdentity(admin, 'e2e-citizen', IDENTITY_SCOPES.citizen);
   const roleless = await createIdentity(admin, 'e2e-roleless', IDENTITY_SCOPES.roleless);
   const complianceOfficer = await createIdentity(admin, 'e2e-compliance-officer', IDENTITY_SCOPES.complianceOfficer);

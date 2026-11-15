@@ -68,6 +68,17 @@ public interface IdentityAdminPort {
     record ImportResult(int created, int updated, List<String> errors) {
     }
 
+    /**
+     * One rule of a role (decision 368): permissions (names of the security permissions, e.g. {@code READ}) on a
+     * resource type and id ({@code *} or omitted = every id); {@code deny} omitted = an allow rule.
+     */
+    record RoleRule(String resourceType, String resourceId, List<String> permissions, Boolean deny) {
+    }
+
+    /** A role of the tenant (SEC_ROLE, decision 368); {@code rules} omitted = a role that grants nothing itself. */
+    record RoleDefinition(String id, String name, List<RoleRule> rules) {
+    }
+
     AssignmentImpact assignmentImpact(RequestContext ctx, AdminPort.Assignment assignment);
 
     AdminPort.Assignment decideAssignment(RequestContext ctx, String assignmentId, boolean approve, String reason);
@@ -105,6 +116,14 @@ public interface IdentityAdminPort {
     ServicePrincipalSecret rotateServicePrincipal(RequestContext ctx, String id);
 
     ServicePrincipal revokeServicePrincipal(RequestContext ctx, String id, String reason);
+
+    /**
+     * {@code PUT /api/v1/admin/roles/{roleId}}: defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT
+     * on ROLE {@code roleId}). A requested token scope is bound only when it is such a defined role.
+     */
+    default RoleDefinition defineRole(RequestContext ctx, String roleId, RoleDefinition role) {
+        throw ApiProblem.notInstalled("role definition", "sangam-security");
+    }
 
     /** CSV columns: id,parentId,code,name,nameHi,level (header row required). */
     ImportResult importOrgUnits(RequestContext ctx, String fileName, byte[] content);

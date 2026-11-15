@@ -108,6 +108,20 @@ public final class TenantAdminService {
         this.dedicatedTenant = tenantId == null || tenantId.isBlank() ? null : tenantId.trim();
     }
 
+    /** What a new tenant gets in the transaction that creates it (decision 368: the platform role rows). */
+    @FunctionalInterface
+    public interface TenantSetup {
+        void setUp(Connection c, SecurityIdentity platformAdmin, String tenantId);
+    }
+
+    /** Unbound until the host binds it; {@link #createTenant} refuses without it (RM-27: nothing by default). */
+    private volatile TenantSetup tenantSetup;
+
+    /** Binds the tenant set-up step ({@code SangamSecurity} binds {@code RoleAdminService#ensurePlatformRoles}). */
+    public void useTenantSetup(TenantSetup setup) {
+        this.tenantSetup = java.util.Objects.requireNonNull(setup, "tenant setup");
+    }
+
     /** A stored isolation as read; a NULL from a database without the column default is SHARED. */
     private static String isolation(String stored) {
         return stored == null || stored.isBlank() ? SHARED : stored.trim().toUpperCase(java.util.Locale.ROOT);
@@ -196,6 +210,11 @@ public final class TenantAdminService {
     public Tenant createTenant(Connection c, SecurityIdentity platformAdmin, String tenantId, String nameEn, String nameHi,
                                String nameLocal, String hostingProfile, Map<String, Object> quotas, String isolation) {
         requirePlatformAdmin(platformAdmin);
+        TenantSetup setup = tenantSetup;
+        if (setup == null) {
+            throw new IllegalStateException("no tenant set-up is bound (decision 368: the platform role rows); "
+                    + "SangamSecurity binds it");
+        }
         validateQuotas(quotas);
         if (!tenantId.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,59}")) {
             throw new SangamSecurityException.AdminConflict("INVALID_TENANT_ID", "tenant id must be 1-60 safe characters");
@@ -214,6 +233,7 @@ public final class TenantAdminService {
         p.put("hosting_profile", hostingProfile);
         p.put("isolation", iso);
         audit.securityIn(c, tenantId, platformAdmin, SecurityEventType.TENANT_CREATED, p);
+        setup.setUp(c, platformAdmin, tenantId);
         return find(c, tenantId).orElseThrow();
     }
 

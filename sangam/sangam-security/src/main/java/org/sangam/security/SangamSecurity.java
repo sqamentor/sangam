@@ -110,15 +110,18 @@ public final class SangamSecurity {
         this.roles = new RoleAdminService(dialect, authorization, maintainer, memberships, audit);
         this.groups = new GroupAdminService(dialect, authorization, memberships, audit);
         this.privileges = new PrivilegeService(dialect, authorization, maintainer, audit);
-        this.tokens = new ApiTokenService(dialect, authorization, audit);
+        this.principals = new PrincipalResolver(dialect, persons, postings, memberships, tenants);
+        // decision 358: a token's scopes are roles its owner holds
+        this.tokens = new ApiTokenService(dialect, authorization, audit, principals::heldRoles);
         this.workers = new WorkerBindingService(dialect, authorization, maintainer, audit);
         this.bulk = new BulkOperationGuard(dialect, authorization, audit, o.bulkFourEyesAbove());
         this.masks = new FieldMaskService(authorization, audit);
-        this.principals = new PrincipalResolver(dialect, persons, postings, memberships, tenants);
         this.directory = new SecurityDirectoryService(dialect, authorization);
         this.defaults = new ModuleDefaults(roles, policies, registry);
         this.breakGlass = new BreakGlassService(dialect, authorization, audit, tenants, tokens);
         this.tokens.useBreakGlass(breakGlass::used);
+        // decision 368: a new tenant gets the role rows of the platform roles (RoleAdminService#usePlatformRoles)
+        this.tenants.useTenantSetup(roles::ensurePlatformRoles);
     }
 
     public SecurityDialect dialect() { return dialect; }

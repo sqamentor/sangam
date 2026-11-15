@@ -91,7 +91,7 @@ public final class BreakGlassService {
     private final AuthorizationService authz;
     private final SecurityAuditService audit;
     private final TenantAdminService tenants;
-    private final ApiTokenService tokens;
+    private final ApiTokenService.BreakGlassIssuer issuer;
     private volatile BreakGlassAlarm alarm = BreakGlassAlarm.LOG;
 
     public BreakGlassService(SecurityDialect dialect, AuthorizationService authz, SecurityAuditService audit,
@@ -100,7 +100,8 @@ public final class BreakGlassService {
         this.authz = authz;
         this.audit = audit;
         this.tenants = tenants;
-        this.tokens = tokens;
+        // decision 358: this service holds the token service's one break-glass issuer
+        this.issuer = tokens.breakGlassIssuer();
     }
 
     /** Binds the deployment's alarm (default {@link BreakGlassAlarm#LOG}). */
@@ -230,7 +231,8 @@ public final class BreakGlassService {
         Instant now = Sql.dbNow(c, dialect);
         int minutes = Math.min(g.validMinutes(), k.validMinutes());
         Instant expires = now.plusSeconds(60L * minutes);
-        ApiTokenService.IssuedToken token = tokens.issue(c, approver, g.holderPersonId(), TOKEN_NAME_PREFIX + k.name(),
+        // decision 358: the roles come from the token class after dual approval, through the one break-glass issuer
+        ApiTokenService.IssuedToken token = issuer.issue(c, approver, g.holderPersonId(), TOKEN_NAME_PREFIX + k.name(),
                 k.roles(), expires);
         Jdbc.update(c, "UPDATE SEC_BREAK_GLASS SET status='ISSUED', token_id=?, issued_at=?, expires_at=?, valid_minutes=?"
                 + " WHERE tenant_id=? AND grant_id=?", token.tokenId(), now, expires, minutes, approver.tenantId(), grantId);
