@@ -271,6 +271,39 @@ class MultiInstanceCompensationH2Test {
         }
     }
 
+    /**
+     * An external task is a scope activity in Operaton ({@code BpmnParse.parseExternalServiceTask}); it still leaves
+     * like any task, with a subscription that has no configuration and no event-scope snapshot. Sequential body: the
+     * instance execution is the body's own, reused by the next instance, so each handler must see the counter of the
+     * instance it compensates, not the last one.
+     */
+    @Test
+    void sequentialExternalTaskHandlersEachSeeTheirOwnInstance() {
+        try (OperatonEngineAdapter a = engine()) {
+            deploy(a, "tenderSeq.bpmn", EXTERNAL.replace("id=\"tender\"", "id=\"tenderSeq\"")
+                    .replace("isSequential=\"false\"", "isSequential=\"true\""));
+            ProcessEngine pe = a.processEngine();
+            String pid = a.startProcess("t1", "tenderSeq", null, Map.of("bidCount", 3));
+            for (int i = 0; i < 3; i++) {
+                List<LockedExternalTask> hold = pe.getExternalTaskService().fetchAndLock(10, "w")
+                        .topic("emd-hold", 60_000).execute();
+                assertEquals(1, hold.size(), "one instance at a time");
+                assertEquals(i, hold.getFirst().getVariables().get("loopCounter"));
+                pe.getExternalTaskService().complete(hold.getFirst().getId(), "w");
+            }
+            List<LockedExternalTask> refunds = pe.getExternalTaskService().fetchAndLock(10, "w")
+                    .topic("emd-refund", 60_000).execute();
+            List<Object> counters = new ArrayList<>();
+            refunds.forEach(t -> counters.add(t.getVariables().get("loopCounter")));
+            assertEquals(3, counters.size(), "one handler per completed instance: " + counters);
+            assertEquals(java.util.Set.of(0, 1, 2), new java.util.HashSet<>(counters), "each refund knows its EMD");
+            for (LockedExternalTask t : refunds) {
+                pe.getExternalTaskService().complete(t.getId(), "w");
+            }
+            assertTrue(pe.getRuntimeService().createProcessInstanceQuery().processInstanceId(pid).list().isEmpty());
+        }
+    }
+
     @Test
     void externalTaskHandlersOfTheTenderShapeSeeTheirInstanceAndRetryKeepsIt() {
         try (OperatonEngineAdapter a = engine()) {

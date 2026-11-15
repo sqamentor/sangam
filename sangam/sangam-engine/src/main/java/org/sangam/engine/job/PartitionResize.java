@@ -440,8 +440,11 @@ public final class PartitionResize {
                     + clusterId + " (sangam.engine.executor-partitioning is off on every node)"));
             Resize active = openResize(c).orElse(null);
             int[] committed = committedOf(c, active);
+            // the newest COMPLETED resize only: every completed resize of the cluster keeps its row, and Jdbc.one
+            // refuses more than one (the view failed from the second completed resize on)
             String algorithm = Jdbc.one(c, "SELECT algorithm_version FROM EXEC_RESIZE WHERE cluster_id = ? AND state ="
-                    + " 'COMPLETED' ORDER BY to_map_epoch DESC", rs -> rs.getString(1), clusterId).orElse(BOOTSTRAP_ALGORITHM);
+                    + " 'COMPLETED' AND to_map_epoch = (SELECT MAX(to_map_epoch) FROM EXEC_RESIZE WHERE cluster_id = ?"
+                    + " AND state = 'COMPLETED')", rs -> rs.getString(1), clusterId, clusterId).orElse(BOOTSTRAP_ALGORITHM);
             Map<Integer, List<SlotRange>> ranges = new LinkedHashMap<>();
             for (int s = 0; s < committed.length; s++) {
                 List<SlotRange> own = ranges.computeIfAbsent(committed[s], k -> new ArrayList<>());
