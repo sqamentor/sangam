@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Packs (3 operations). */
+/** Typed operations of Packs (4 operations). */
 final class PacksApi
 {
     public function __construct(private readonly Calls $calls)
@@ -70,5 +70,19 @@ final class PacksApi
             $req->body($body);
         }
         return $this->calls->model($req, $options, Model\PackDeployResult::class);
+    }
+
+    /**
+     * Document slots of a pack
+     *
+     * The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
+     *
+     * GET /packs/{id}/document-slots (operationId listPackDocumentSlots); permission tenant.admin.
+     * @return list<Model\PackDocumentSlot>
+     */
+    public function listPackDocumentSlots(string $id, ?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::get('/packs/' . HttpTransport::seg((string) $id) . '/document-slots');
+        return $this->calls->models($req, $options, Model\PackDocumentSlot::class);
     }
 }

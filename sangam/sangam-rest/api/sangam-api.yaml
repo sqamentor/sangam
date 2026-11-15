@@ -39624,6 +39624,47 @@ paths:
           $ref: '#/components/responses/MisdirectedRequest'
       x-sangam-groups:
       - sangam-admin
+  /packs/{id}/document-slots:
+    get:
+      operationId: listPackDocumentSlots
+      tags:
+      - Packs
+      summary: Document slots of a pack
+      description: The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares
+        none. 404 NOT_FOUND when no pack with this id is registered.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: pack id, e.g. sec.health.admission-discharge
+      x-sangam-permission: tenant.admin
+      x-sangam-requirements:
+      - SL-41
+      - ADR-D-20
+      - X.0e
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PackDocumentSlot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      x-sangam-groups:
+      - sangam-admin
   /programme-config:
     put:
       operationId: programmePublishConfig
@@ -70430,6 +70471,20 @@ components:
         newDeployment:
           type: boolean
           description: True when the call made a new engine deployment.
+    PackDocumentSlot:
+      type: object
+      description: 'One documentType-to-slot pair of a pack''s DSC steps (manifest documentSlots, decision 269): a PDF uploaded with this documentType
+        on a process instance of the pack fills this slot.'
+      properties:
+        documentType:
+          type: string
+          description: The document type the uploader names, for example NOTING or SANCTION_NOTE.
+        slot:
+          type: string
+          description: The case variable the DSC gate reads the document id from, for example notingDocumentId.
+      required:
+      - documentType
+      - slot
     PgPublished:
       type: object
       description: Published (Java IndicatorRegistry.Published).

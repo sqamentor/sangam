@@ -7801,6 +7801,18 @@ export interface PackDeployResult {
 }
 
 /**
+ * One documentType-to-slot pair of a pack's DSC steps (manifest documentSlots, decision 269): a PDF uploaded with this documentType on a process instance of the pack fills this slot.
+ *
+ * Schema `PackDocumentSlot`.
+ */
+export interface PackDocumentSlot {
+  /** The document type the uploader names, for example NOTING or SANCTION_NOTE. */
+  documentType: string;
+  /** The case variable the DSC gate reads the document id from, for example notingDocumentId. */
+  slot: string;
+}
+
+/**
  * The tenant whose packs change, and the audited reason.
  *
  * Schema `PackLifecycleRequest`.
