@@ -345,7 +345,7 @@ public final class EngineAssembly {
         List<RuntimeException> failures = new ArrayList<>();
         check(Capabilities.DATABASE_CHECKS, () -> DatabaseGuard.check(engineDataSource,
                 settings.isRequireSqlServerRcsi(), settings.getMysqlDatabaseType(),
-                settings.isExperimentalCockroachDb()), supplied, failures);
+                settings.isExperimentalCockroachDb(), settings.isExperimentalYugabyteDb()), supplied, failures);
         return new EngineChecks(Set.of(Capabilities.DATABASE_CHECKS), supplied, failures);
     }
 

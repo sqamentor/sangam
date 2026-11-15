@@ -22,6 +22,9 @@ import org.slf4j.LoggerFactory;
  *   <li>MySQL family (FLOWABLE-INTO-OPERATON D-05): the server is identified from the server, not from the driver. The MariaDB driver makes
  *       Operaton pick its MariaDB dialect (driver name check) even on a MySQL server; Sangam pins
  *       {@code databaseType} to the configured value so create/upgrade scripts always match the server.</li>
+ *   <li>PostgreSQL-compatible servers (the PostgreSQL driver always reports the product {@code PostgreSQL}): CockroachDB
+ *       (decision 205) and YugabyteDB YSQL (M-108) are told apart by their {@code version()} text and refused unless
+ *       the operator enabled their experimental mode.</li>
  * </ul>
  */
 public final class DatabaseGuard {
@@ -32,13 +35,37 @@ public final class DatabaseGuard {
     /**
      * @param experimentalCockroachDb decisions 156 and 205: the PostgreSQL-compatible server is CockroachDB (only when
      *        the operator enabled it; experimental, no support claim)
+     * @param experimentalYugabyteDb M-108 (decisions 156 and 323): the PostgreSQL-compatible server is YugabyteDB YSQL
+     *        (only when the operator enabled it and READ COMMITTED is in effect; experimental, no support claim)
      */
     public record Findings(EngineDialect dialect, String serverProduct, String driverName, String operatonDatabaseType,
-                           boolean experimentalCockroachDb) {
+                           boolean experimentalCockroachDb, boolean experimentalYugabyteDb) {
         public Findings(EngineDialect dialect, String serverProduct, String driverName, String operatonDatabaseType) {
-            this(dialect, serverProduct, driverName, operatonDatabaseType, false);
+            this(dialect, serverProduct, driverName, operatonDatabaseType, false, false);
+        }
+
+        public Findings(EngineDialect dialect, String serverProduct, String driverName, String operatonDatabaseType,
+                        boolean experimentalCockroachDb) {
+            this(dialect, serverProduct, driverName, operatonDatabaseType, experimentalCockroachDb, false);
         }
     }
+
+    /** M-108: stable code of the refusal of a YugabyteDB server while the experimental mode is off. */
+    public static final String YUGABYTEDB_EXPERIMENTAL_OFF = "YUGABYTEDB_EXPERIMENTAL_OFF";
+
+    /**
+     * M-108: stable code of the refusal of a YugabyteDB server that does not prove READ COMMITTED is in effect. Without
+     * the yb-tserver flag {@code yb_enable_read_committed_isolation=true} YugabyteDB runs a READ COMMITTED request as
+     * snapshot isolation, while the JDBC isolation the driver reports still says READ COMMITTED.
+     */
+    public static final String YUGABYTEDB_READ_COMMITTED_OFF = "YUGABYTEDB_READ_COMMITTED_OFF";
+
+    /**
+     * M-108: the read-only YugabyteDB setting that names the isolation a transaction really runs at; {@code true}
+     * (missing_ok) makes a server without it answer NULL, which refuses.
+     */
+    static final String YB_EFFECTIVE_ISOLATION_SQL =
+            "SELECT current_setting('yb_effective_transaction_isolation_level', true)";
 
     private DatabaseGuard() {
     }
@@ -54,13 +81,29 @@ public final class DatabaseGuard {
      */
     public static Findings check(DataSource ds, boolean requireRcsi, String mysqlDatabaseType,
                                  boolean allowExperimentalCockroachDb) {
+        return check(ds, requireRcsi, mysqlDatabaseType, allowExperimentalCockroachDb, false);
+    }
+
+    /**
+     * As {@link #check(DataSource, boolean, String, boolean)}; a YugabyteDB YSQL server is refused with
+     * {@value #YUGABYTEDB_EXPERIMENTAL_OFF} unless {@code allowExperimentalYugabyteDb} (M-108, decisions 156 and 323:
+     * experimental and non-gating, never picked up silently as PostgreSQL), and, when allowed, with
+     * {@value #YUGABYTEDB_READ_COMMITTED_OFF} unless the server itself names READ COMMITTED as the isolation in effect.
+     */
+    public static Findings check(DataSource ds, boolean requireRcsi, String mysqlDatabaseType,
+                                 boolean allowExperimentalCockroachDb, boolean allowExperimentalYugabyteDb) {
         try (Connection c = ds.getConnection()) {
             DatabaseMetaData md = c.getMetaData();
             String product = md.getDatabaseProductName();
             String version = md.getDatabaseProductVersion();
             String driver = md.getDriverName();
             EngineDialect d = EngineDialect.fromProductName(product);
-            boolean cockroach = d == EngineDialect.POSTGRESQL && EngineDialect.isCockroachDb(c);
+            String serverVersion = d == EngineDialect.POSTGRESQL ? EngineDialect.serverVersion(c) : null;
+            boolean cockroach = EngineDialect.isCockroachDbVersion(serverVersion);
+            boolean yugabyte = !cockroach && EngineDialect.isYugabyteDbVersion(serverVersion);
+            if (yugabyte) {
+                requireExperimentalYugabyteDb(c, serverVersion, allowExperimentalYugabyteDb);
+            }
             if (cockroach) {
                 if (!allowExperimentalCockroachDb) {
                     throw new IllegalStateException("decision 205: the server is CockroachDB, which is experimental "
@@ -100,10 +143,38 @@ public final class DatabaseGuard {
                 default -> {
                 }
             }
-            return new Findings(d, product + " " + version, driver, type, cockroach);
+            return new Findings(d, product + " " + version, driver, type, cockroach, yugabyte);
         } catch (SQLException e) {
             throw new IllegalStateException("database start-up check failed", e);
         }
+    }
+
+    /**
+     * M-108: YugabyteDB YSQL runs only in the operator's experimental mode, and only with READ COMMITTED really in
+     * effect (R84, FLOWABLE-INTO-OPERATON D-56): the setting must read exactly {@code read committed}; a missing
+     * setting (NULL), any other level or a failed read refuses. Neither Sangam nor Operaton 2.2's mappings use
+     * advisory locks or SERIALIZABLE, so nothing else is checked here; serialisation failures (40001) are retried by
+     * {@link Conflicts} as on every database.
+     */
+    static void requireExperimentalYugabyteDb(Connection c, String serverVersion, boolean allowed) throws SQLException {
+        if (!allowed) {
+            throw new IllegalStateException(YUGABYTEDB_EXPERIMENTAL_OFF + ": M-108: the server is YugabyteDB ("
+                    + serverVersion + "), which is experimental and not supported; set SangamEngineSettings "
+                    + "experimentalYugabyteDb (environment SANGAM_EXPERIMENTAL_YUGABYTEDB=true) to run on it for testing");
+        }
+        String effective;
+        try (PreparedStatement ps = c.prepareStatement(YB_EFFECTIVE_ISOLATION_SQL); ResultSet rs = ps.executeQuery()) {
+            effective = rs.next() ? rs.getString(1) : null;
+        }
+        if (effective == null || !effective.trim().equalsIgnoreCase("read committed")) {
+            throw new IllegalStateException(YUGABYTEDB_READ_COMMITTED_OFF + ": R84/FLOWABLE-INTO-OPERATON D-56: the "
+                    + "engine pool must run READ COMMITTED, but YugabyteDB reports the isolation in effect as "
+                    + (effective == null ? "unknown (no yb_effective_transaction_isolation_level)" : "'" + effective + "'")
+                    + "; start every yb-tserver with --yb_enable_read_committed_isolation=true");
+        }
+        LOG.warn("M-108: EXPERIMENTAL YugabyteDB server ({}), mapped to the PostgreSQL dialect and Operaton "
+                + "databaseType 'postgres'; READ COMMITTED in effect; serialisation failures (40001) are retried for "
+                + "engine commands; not supported, no support claim", serverVersion);
     }
 
     /**

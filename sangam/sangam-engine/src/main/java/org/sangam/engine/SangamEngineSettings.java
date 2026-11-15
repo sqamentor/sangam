@@ -64,6 +64,11 @@ public class SangamEngineSettings {
     private boolean requireSqlServerRcsi = true;
     /** Decisions 156 and 205: allow an experimental CockroachDB server (never supported, never silent); env SANGAM_EXPERIMENTAL_COCKROACHDB. */
     private boolean experimentalCockroachDb = false;
+    /**
+     * M-108, decisions 156 and 323: allow an experimental YugabyteDB YSQL server (never supported, never silent; READ
+     * COMMITTED must be in effect); env SANGAM_EXPERIMENTAL_YUGABYTEDB.
+     */
+    private boolean experimentalYugabyteDb = false;
     /** FLOWABLE-INTO-OPERATON D-06: MySQL JDBC statement timeout in seconds (also applied on the other databases; 0 = off). */
     private int jdbcStatementTimeoutSeconds = 30;
     /**
@@ -311,6 +316,8 @@ public class SangamEngineSettings {
     public void setRequireSqlServerRcsi(boolean v) { mutable("requireSqlServerRcsi"); requireSqlServerRcsi = v; }
     public boolean isExperimentalCockroachDb() { return experimentalCockroachDb; }
     public void setExperimentalCockroachDb(boolean v) { mutable("experimentalCockroachDb"); experimentalCockroachDb = v; }
+    public boolean isExperimentalYugabyteDb() { return experimentalYugabyteDb; }
+    public void setExperimentalYugabyteDb(boolean v) { mutable("experimentalYugabyteDb"); experimentalYugabyteDb = v; }
     public int getJdbcStatementTimeoutSeconds() { return jdbcStatementTimeoutSeconds; }
     public void setJdbcStatementTimeoutSeconds(int v) { mutable("jdbcStatementTimeoutSeconds"); jdbcStatementTimeoutSeconds = v; }
     public Duration getNetworkTimeout() { return networkTimeout; }
@@ -571,6 +578,7 @@ public class SangamEngineSettings {
         jobVirtualThreads = boolEnv(env, "SANGAM_JOB_VIRTUAL_THREADS", jobVirtualThreads);
         partitionedHistory = boolEnv(env, "SANGAM_PARTITIONED_HISTORY", partitionedHistory);
         experimentalCockroachDb = boolEnv(env, "SANGAM_EXPERIMENTAL_COCKROACHDB", experimentalCockroachDb);
+        experimentalYugabyteDb = boolEnv(env, "SANGAM_EXPERIMENTAL_YUGABYTEDB", experimentalYugabyteDb);
         String owner = env.get("SANGAM_JOB_LOCK_OWNER");
         if (owner != null && !owner.isBlank()) {
             jobLockOwner = owner.trim();
