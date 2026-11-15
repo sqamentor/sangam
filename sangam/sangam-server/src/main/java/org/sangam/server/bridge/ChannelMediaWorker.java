@@ -43,6 +43,8 @@ import org.slf4j.LoggerFactory;
 public final class ChannelMediaWorker implements InboundMedia, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ChannelMediaWorker.class);
+    /** How long {@link #close()} waits for a claim in flight; a claim is one short transaction. */
+    static final Duration POLLER_STOP_WAIT = Duration.ofSeconds(30);
 
     /** Downloads one media reference with a channel entry. */
     @FunctionalInterface
@@ -239,11 +241,24 @@ public final class ChannelMediaWorker implements InboundMedia, AutoCloseable {
         });
     }
 
-    /** Stops claiming; rows in work keep their claim and come back by lease (or at this node's next start). */
+    /**
+     * Stops claiming; rows in work keep their claim and come back by lease (or at this node's next start). Returns only
+     * after the poller has stopped, so no claim of this worker commits after it: a later start on the same node (its
+     * {@code resumeOwn()}) then sees every claim this worker made. Results of rows still in work are fenced by their
+     * claim epoch, so the worker threads are not waited for.
+     */
     @Override
     public void close() {
         poller.shutdownNow();
         workers.shutdownNow();
+        try {
+            if (!poller.awaitTermination(POLLER_STOP_WAIT.toMillis(), TimeUnit.MILLISECONDS)) {
+                LOG.warn("inbound media poller of node {} did not stop within {}; a claim still in flight comes back by its lease",
+                        queue.node(), POLLER_STOP_WAIT);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /** Waits for the worker threads after {@link #close}. */
