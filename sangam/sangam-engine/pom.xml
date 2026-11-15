@@ -110,5 +110,53 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Tests only (M-108): YugabyteDbIT (*IT, failsafe, profile sangam-db-it, lane yugabytedb) reaches YugabyteDB YSQL
+         through the PostgreSQL driver and starts it with Testcontainers' JDBC container base. -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
+
+  <profiles>
+    <!-- Database integration tests: -Dsangam.db=yugabytedb runs YugabyteDbIT (Docker and a digest-pinned
+         SANGAM_IT_IMAGE_YUGABYTEDB needed); on any other lane it is an assumption skip. -->
+    <profile>
+      <id>sangam-db-it</id>
+      <activation>
+        <property>
+          <name>sangam.db</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <configuration>
+              <!-- argLine (UTC, SL-53) from the root pom -->
+              <systemPropertyVariables>
+                <sangam.db>${sangam.db}</sangam.db>
+                <api.version>1.44</api.version>
+              </systemPropertyVariables>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

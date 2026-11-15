@@ -65,7 +65,7 @@ public final class SangamEngineConfigurer {
         DataSource ds = raw instanceof IsolationGuardDataSource ? raw
                 : new IsolationGuardDataSource(raw, settings.getNetworkTimeout());
         findings = DatabaseGuard.check(ds, settings.isRequireSqlServerRcsi(), settings.getMysqlDatabaseType(),
-                settings.isExperimentalCockroachDb());
+                settings.isExperimentalCockroachDb(), settings.isExperimentalYugabyteDb());
         if (findings.dialect() == EngineDialect.H2) {
             DatabaseGuard.prepareH2(ds);
         }

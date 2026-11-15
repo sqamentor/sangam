@@ -23,6 +23,13 @@ SQL Server `NVARCHAR`/`DATETIMEOFFSET`, primary keys above 900 bytes are `NONCLU
 `ascii_bin` so the keys fit the 3,072-byte limit; H2 (development only) uses `CHARACTER/BINARY LARGE OBJECT` and works
 with `MODE=PostgreSQL`. Booleans are `SMALLINT` 0/1 everywhere.
 
+YugabyteDB YSQL (M-108, experimental) has no changelog of its own. It reports the product `PostgreSQL` through the
+PostgreSQL driver, and Liquibase 4.33.0 takes it for `postgresql` (Liquibase matches `dbms:` by the database's short
+name only), so the `dbms:postgresql` changesets run there. `YugabyteDbChangelogDbmsTest` pins the choice: a Liquibase
+database that claimed such a server under another short name (a YugabyteDB extension on the class path, for example)
+would skip every product changeset silently. `YugabyteDbIT` in sangam-engine applies the changelog on a real server
+(NOT_RUN locally). The engine's `DatabaseGuard` refuses YugabyteDB unless its experimental mode is on.
+
 ## Java API
 
 `org.sangam.persistence.SangamSchema`: `apply(DataSource)`, `apply(DataSource, contexts)`, `apply(Connection, changelog,

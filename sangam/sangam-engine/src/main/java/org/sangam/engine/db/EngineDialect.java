@@ -33,8 +33,17 @@ public enum EngineDialect {
      * DB-matrix tests ran.
      */
     public static boolean isCockroachDb(Connection c) {
+        return isCockroachDbVersion(serverVersion(c));
+    }
+
+    /**
+     * The server's own {@code SELECT version()} text (null when the server returns no row). The JDBC metadata cannot
+     * tell PostgreSQL-compatible servers apart: the PostgreSQL driver returns the constant {@code PostgreSQL} as the
+     * product name whatever the server is (pgjdbc 42.7.12 {@code PgDatabaseMetaData.getDatabaseProductName}).
+     */
+    public static String serverVersion(Connection c) {
         try (Statement s = c.createStatement(); java.sql.ResultSet rs = s.executeQuery("SELECT version()")) {
-            return rs.next() && isCockroachDbVersion(rs.getString(1));
+            return rs.next() ? rs.getString(1) : null;
         } catch (SQLException e) {
             throw new IllegalStateException("cannot read the server version", e);
         }
@@ -43,6 +52,17 @@ public enum EngineDialect {
     /** The {@code version()} text test of {@link #isCockroachDb}. */
     static boolean isCockroachDbVersion(String version) {
         return version != null && version.trim().toLowerCase(Locale.ROOT).startsWith("cockroachdb");
+    }
+
+    /**
+     * M-108, decisions 156 and 323 (experimental, non-gating): true when the {@code version()} text of a server that
+     * reports itself as PostgreSQL is YugabyteDB YSQL, whose text carries the YugabyteDB release after {@code -YB-}
+     * (for example {@code PostgreSQL 11.2-YB-2.20.2.0-b0 on x86_64-pc-linux-gnu, ...}). Sangam maps it to
+     * {@link #POSTGRESQL} only in the experimental mode ({@link DatabaseGuard}); no support claim until the DB-matrix
+     * lane ran.
+     */
+    static boolean isYugabyteDbVersion(String version) {
+        return version != null && version.toUpperCase(Locale.ROOT).contains("-YB-");
     }
 
     public static EngineDialect fromProductName(String productName) {

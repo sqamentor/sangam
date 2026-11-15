@@ -436,6 +436,20 @@ runs on it, and nothing here claims it works. The server refuses a CockroachDB s
 PostgreSQL dialect. The engine pool still has to run READ COMMITTED, which CockroachDB offers only after
 `SET CLUSTER SETTING sql.txn.read_committed_isolation.enabled = true`. Use it for testing only.
 
+**YugabyteDB (YSQL): experimental only (M-108, decisions 156 and 323).** YugabyteDB is not a supported database, no
+release check runs on it, and nothing here claims it works. It is reached through the PostgreSQL driver and the
+`postgres` profile (YSQL port 5433). The PostgreSQL driver reports every such server as `PostgreSQL`, so Sangam reads
+`SELECT version()` (YugabyteDB answers `PostgreSQL 11.2-YB-<release> ...`) and the server refuses to start with
+`YUGABYTEDB_EXPERIMENTAL_OFF` unless `SANGAM_EXPERIMENTAL_YUGABYTEDB=true` (default off). In the experimental mode it
+also refuses with `YUGABYTEDB_READ_COMMITTED_OFF` unless the server itself reports READ COMMITTED as the isolation in
+effect (`yb_effective_transaction_isolation_level`): without the yb-tserver flag
+`--yb_enable_read_committed_isolation=true` YugabyteDB runs a READ COMMITTED request as snapshot isolation while the
+driver still reports READ COMMITTED. Then it logs an EXPERIMENTAL warning at every start and uses the PostgreSQL
+dialect and the PostgreSQL changelog (Liquibase 4.33.0 identifies the server as `postgresql`). Not yet settled, so do
+not keep data on it: identity (sequence) values are cached per connection by YugabyteDB, so their order across
+connections need not follow the insert order that some product tables rely on (M-108 open point). Use it for testing
+only; the `db-matrix.yml` lane `yugabytedb` runs `YugabyteDbIT` nightly and on request and never gates.
+
 ### 1.5 Adding the Oracle JDBC driver (customer-supplied, LIC-2)
 
 Sangam never ships the Oracle driver. The server starts through Spring Boot's `PropertiesLauncher` with
@@ -1207,7 +1221,7 @@ The workflows are at the repository root, in `.github/workflows/`. GitHub ignore
 | Workflow | Trigger | What |
 |---|---|---|
 | `ci-build.yml` | push/PR on `sangam/**` | Maven build + unit tests (H2, no Testcontainers); server image build (Temurin + distroless); `docker compose config` for every profile; realm generator drift; `helm lint --strict` + `helm template` for every example; kubeconform; shellcheck |
-| `db-matrix.yml` | PR, nightly, weekly, dispatch, `workflow_call` | **CF-11.** PR: PostgreSQL + affected dialects (path filters; shared migrations/mappings → all Tier-1). Nightly: PostgreSQL, Oracle, SQL Server, MySQL. Weekly: MariaDB + Db2 (experimental, non-blocking). Release: full Tier-1 |
+| `db-matrix.yml` | PR, nightly, weekly, dispatch, `workflow_call` | **CF-11.** PR: PostgreSQL + affected dialects (path filters; shared migrations/mappings → all Tier-1). Nightly: PostgreSQL, Oracle, SQL Server, MySQL, plus the report-only lanes SQL Server 2025 (SG-05) and YugabyteDB (M-108, experimental: `YugabyteDbIT` only, image pinned by digest, NOT-RUN while no digest is pinned). Weekly: MariaDB + Db2 (experimental, non-blocking). Release: full Tier-1 |
 | `ui.yml` | `sangam-ui/**` | npm ci, lint, type-check, tests, build, LIC-8 watermark check, CycloneDX npm SBOM + licence gate, image build |
 | `sdks.yml` | `sdks/**`, API spec | Java (JDK 21 + 25), .NET 8, Python 3.10/3.13, TypeScript, PHP 8.3; each skipped with a notice until its SDK exists |
 | `licence-check.yml` | pom/package changes, weekly | Aggregate CycloneDX SBOM + npm SBOM → `check_licences.py` (forbidden licences, components, versions, fat-jar contents); runtime dependency-tree grep |
