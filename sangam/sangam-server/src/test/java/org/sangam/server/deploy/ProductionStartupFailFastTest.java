@@ -213,6 +213,21 @@ class ProductionStartupFailFastTest {
     }
 
     @Test
+    void aLiteralKeyServingTwoPurposesIsRefused() {
+        // owner decision 37: the key-encryption key reused as the registry vault pepper
+        assertRefused("sg38-key-literal", m -> m.put("sangam.registry.vault.hmac-pepper", TEST_KEK),
+                "KEY_SHARED_ACROSS_PURPOSES");
+    }
+
+    @Test
+    void oneSecretReferenceServingTwoPurposesIsRefused() {
+        // owner decision 37: the audit checkpoint private key also as the compliance principal key (it is long enough
+        // to pass as one, so only the separation check refuses it)
+        assertRefused("sg38-key-ref", m -> m.put("sangam.compliance.principal-key-ref", "secret://audit/checkpoint-private"),
+                "KEY_SHARED_ACROSS_PURPOSES");
+    }
+
+    @Test
     void ledgerWithoutGlConnectorIsRefused() {
         assertRefused("sg38-gl", m -> m.remove("sangam.ledger.gl-connector"),
                 "sangam.ledger.gl-connector must be set in production");
