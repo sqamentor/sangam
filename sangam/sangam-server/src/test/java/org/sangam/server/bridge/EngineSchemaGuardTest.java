@@ -89,9 +89,14 @@ class EngineSchemaGuardTest {
         DataSource ds = h2();
         execute(ds, "create schema ENG");
         execute(ds, "create table ENG.ACT_RU_EXECUTION (ID_ varchar(64))");
+        // as Operaton's own probe (DbSqlSession.isTablePresent): without a configured schema every schema counts
+        assertDoesNotThrow(() -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update", "false"), ds));
         assertThrows(EngineSchemaGuard.EngineSchemaMissingException.class,
-                () -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update", "false"), ds),
-                "the default schema has no engine tables");
+                () -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update", "false",
+                        "operaton.bpm.database.schema-name", "OTHER"), ds), "the configured schema has no engine tables");
+        assertThrows(EngineSchemaGuard.EngineSchemaMissingException.class,
+                () -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update", "false",
+                        "operaton.bpm.database.table-prefix", "OTHER."), ds), "the prefix's schema has none");
         assertDoesNotThrow(() -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update", "false",
                 "operaton.bpm.database.table-prefix", "ENG."), ds));
         assertDoesNotThrow(() -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update", "false",

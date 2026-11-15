@@ -28,7 +28,8 @@ import org.springframework.core.env.Environment;
  * (the h2 profile, {@code SANGAM_ENGINE_SCHEMA_UPDATE}, the {@code migrate-only} run); it is the operator's decision.
  *
  * <p>The probe is the table Operaton's own check-only start looks for ({@value #PROBE_TABLE}, its
- * {@code isEngineTablePresent}), with the configured table prefix and schema. A database that cannot be asked is
+ * {@code isEngineTablePresent}), with the configured table prefix and schema; without a configured schema every schema
+ * counts, as in Operaton's probe. A database that cannot be asked is
  * refused as well (fail closed).
  */
 public final class EngineSchemaGuard {
