@@ -59,8 +59,14 @@ class EngineInternalsPinTest {
     }
 
     private static void withEngine(Consumer<OperatonEngineAdapter> test) {
+        withEngine("", test);
+    }
+
+    /** @param h2Options further H2 URL settings of the test's own database, for example {@code ;LOCK_TIMEOUT=30000} */
+    private static void withEngine(String h2Options, Consumer<OperatonEngineAdapter> test) {
         JdbcDataSource ds = new JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:p" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
+        ds.setURL("jdbc:h2:mem:p" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1"
+                + h2Options);
         SangamEngineSettings s = new SangamEngineSettings();
         s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
@@ -125,10 +131,24 @@ class EngineInternalsPinTest {
         });
     }
 
+    /** I-8: how long the test holds the root's row, and the lock wait of its database sessions (far above the hold). */
+    static final long I8_HOLD_MILLIS = 2000;
+    static final long I8_LOCK_WAIT_MILLIS = 30_000;
+
     /**
      * I-8: {@code CommandContext.tryCloseInternal} fires command-context close listeners before
      * {@code flushSessions}, which is where the L2 flush backstop locks the root of a command that did not go through
      * the adapter. Pinned: a plain {@code TaskService.complete} creates/locks the root's {@code ROOT_SEQ} row.
+     *
+     * <p>The test holds the root's row for {@link #I8_HOLD_MILLIS} and the plain command must still be waiting then.
+     * A plain engine command waits for the root's {@code ROOT_SEQ} row (the audit sequence of its history events, then
+     * the flush backstop) with the lock wait of its database session: the engine's own bound,
+     * {@code SangamEngineSettings.lockTimeout}, is set by the adapter's commands and the job handler, not on this
+     * path, and H2's session default is 2 s. The hold used to be 2 s as well, so whether the
+     * command was still waiting or had just given up with "Timeout trying to lock table ROOT_SEQ" depended on a few
+     * milliseconds (thread start, commit, timer granularity): green alone, red once in the full run on a loaded
+     * machine, and red every time with a hold of 2.6 s. The database of this test therefore gets a session lock wait
+     * far above the hold ({@link #I8_LOCK_WAIT_MILLIS}); the lock-wait bounds have their own tests.
      */
     @Test
     void i8_flushBackstopTakesRootLockForPlainEngineCommands() {
@@ -141,7 +161,7 @@ class EngineInternalsPinTest {
                     <userTask id="v"/>
                   </process>
                 """;
-        withEngine(a -> {
+        withEngine(";LOCK_TIMEOUT=" + I8_LOCK_WAIT_MILLIS, a -> {
             a.deploy("t1", "plain", Map.of("plain.bpmn", bpmn(m)));
             String pi = a.processEngine().getRuntimeService().startProcessInstanceByKey("plain").getId();
             var ts = a.processEngine().getTaskService();
@@ -160,7 +180,7 @@ class EngineInternalsPinTest {
                         rs -> rs.getString(1), pi).isPresent(), "root row exists");
                 worker.start();
                 try {
-                    worker.join(2000);
+                    worker.join(I8_HOLD_MILLIS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
