@@ -438,3 +438,12 @@ Decision 370 was taken on 2026-11-15 under the owner's words "Choose recommended
 - **370 (platform role rows of existing tenants; what a token may hold, owner chat 2026-11-15)**:
   - (1) The server fills in the missing platform role rows of every existing tenant at start: idempotent, never overwriting a role an administrator defined, audited; the list is the code's platform groups, as for a new tenant. No one-off migration and no per-tenant admin call.
   - (2) A requested token scope must be a role the owner holds (bindings of the person, its groups and its seats, and its IdP roles); an IdP group name alone is never a held role, so a group's name never becomes a token role.
+
+Decision 371 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the points lane D6 left open after decision 369; the recommended option of each is recorded.
+
+- **371 (OTP limits in deployment; the principal key, owner chat 2026-11-15)**:
+  - (1) The per-address OTP limit counts the address the server resolves, so `server.trustedProxies` must list the UI and the ingress; the deploy documentation says so now. Refusing to start in production while it is empty is a follow-up before release (gap register).
+  - (2) The count-then-insert check may overshoot a limit by the number of simultaneous requests; that bounded overshoot is accepted for 0.1.0.
+  - (3) The OTP issue limits of the IN pack (window 60 minutes, 5 per identifier, 20 per address) are the 0.1.0 values together with those of decision 369 (i); the owner confirms the numbers before release.
+  - (5) In production the server refuses to start without the compliance principal key (`sangam.compliance.principal-key-ref`); outside production a missing key still refuses every keyed operation by name.
+  - (6) The one-time code itself stays a salted SHA-256: short-lived and attempt-limited. (7) No migration of tokens written before the key: 0.1.0 is unreleased.
