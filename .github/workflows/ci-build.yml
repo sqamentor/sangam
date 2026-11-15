@@ -168,7 +168,7 @@ jobs:
           mkdir -p sangam-server/target deploy/docker/lib-ext
           cp ../dist/sangam-server.jar sangam-server/target/sangam-server.jar
           cp ../dist/lib-ext/*.jar deploy/docker/lib-ext/
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build sangam-server (temurin + distroless targets)
         run: |
           for target in runtime runtime-distroless; do

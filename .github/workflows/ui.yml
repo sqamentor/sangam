@@ -103,7 +103,7 @@ jobs:
           path: sangam/sangam-ui/dist-embed/
           if-no-files-found: error
           retention-days: 7
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Image build (no push)
         working-directory: sangam
         run: docker buildx build -f deploy/docker/ui.Dockerfile --build-arg DIST_SOURCE=prebuilt --load -t sangam-ui:ci .
@@ -130,7 +130,7 @@ jobs:
           node-version: "22.18.0"
           cache: npm
           cache-dependency-path: sangam/sangam-ui/package-lock.json
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Server jar and the test-mode server image
         run: |
           set -euo pipefail
