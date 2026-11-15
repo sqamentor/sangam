@@ -435,6 +435,37 @@ describe('instance detail', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/messages', expect.objectContaining({ variables: { utr: { type: 'String', value: 'N123' } } }), KEY));
     expect(api.post).toHaveBeenCalledTimes(1);
   });
+  it('move across a boundary refuses each blank required field by name and sends nothing', async () => {
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('ops.moveAcross') }));
+    const d = dialog();
+    type(d, 'ops.targetInstance', '   ');
+    reasonAndConfirm('Move to the parent case');
+    expect(await within(d).findAllByText(T('form.required'))).toHaveLength(3);
+    expect(api.post.mock.calls.some((c) => String(c[0]).endsWith('/cross-boundary-move'))).toBe(false);
+  });
+
+  it('inject refuses a blank name or after-activity by name and sends nothing', async () => {
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('ops.inject') }));
+    const d = dialog();
+    reasonAndConfirm('Add a legal opinion step');
+    expect(await within(d).findAllByText(T('form.required'))).toHaveLength(2);
+    type(d, 'common.name', 'Legal opinion');
+    type(d, 'ops.afterActivity', 'Task_Check');
+    fireEvent.click(confirmIn(d));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/process-instances/pi1/inject', expect.objectContaining({ kind: 'USER_TASK', name: 'Legal opinion', afterActivityId: 'Task_Check', reason: 'Add a legal opinion step' }), KEY));
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('restart refuses a blank start activity by name, never sending startBeforeActivityIds [""]', async () => {
+    open({ ...running, state: 'COMPLETED' });
+    fireEvent.click(await screen.findByRole('button', { name: T('ops.restart') }));
+    const d = dialog();
+    reasonAndConfirm('Re-run after data fix');
+    expect(await within(d).findByText(T('form.required'))).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+  });
   it('a missing instance is shown by name', async () => {
     routes['/process-instances/pi1'] = problem(404, 'INSTANCE_NOT_FOUND');
     show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');
