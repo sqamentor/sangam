@@ -589,9 +589,12 @@ public class IntegrationWiring {
 
     // ---------------------------------------------------------------- packs (sangam-packs README §8)
 
+    /** Decision 313: NOTIFICATION_SENT is written once, when a notification's connector call settles COMPLETED. */
     @Bean
     public PackOperationStore sangamPackOperationStore(TxSupport tx) {
-        return new PackOperationStore(tx.dialect());
+        PackOperationStore store = new PackOperationStore(tx.dialect());
+        org.sangam.integration.packs.NotificationSettlementAudit.register(store);
+        return store;
     }
 
     @Bean

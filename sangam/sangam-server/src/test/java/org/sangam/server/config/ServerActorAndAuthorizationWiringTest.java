@@ -24,7 +24,7 @@ import org.sangam.core.power.ManifestOperationMetadata;
 import org.sangam.core.power.OperationMetadata;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.resources.ResourcesContext;
-import org.sangam.resources.ResourcesDialect;
+import org.sangam.resources.dialect.ResourcesDialect;
 import org.sangam.rest.port.SangamPrincipal;
 import org.sangam.rest.support.RestProperties;
 import org.sangam.security.SangamSecurity;
@@ -98,10 +98,14 @@ class ServerActorAndAuthorizationWiringTest {
         helm.setActiveProfiles("postgres", "oidc");
         MockEnvironment prodProfile = new MockEnvironment();
         prodProfile.setActiveProfiles("postgres", "prod");
-        for (MockEnvironment env : new MockEnvironment[] {helm, prodProfile, new MockEnvironment()}) {
-            IllegalStateException refused = assertThrows(IllegalStateException.class,
+        IllegalStateException production = assertThrows(IllegalStateException.class,
+                () -> ResourcesWiring.authorization(ResourcesContext.builder(ResourcesDialect.H2), null, helm));
+        assertTrue(production.getMessage().contains("sangam-resources cannot run without authorization"),
+                production.getMessage());
+        // an environment that does not state the switch is refused as well (by the environment policy itself)
+        for (MockEnvironment env : new MockEnvironment[] {prodProfile, new MockEnvironment()}) {
+            assertThrows(IllegalStateException.class,
                     () -> ResourcesWiring.authorization(ResourcesContext.builder(ResourcesDialect.H2), null, env));
-            assertTrue(refused.getMessage().contains("sangam-resources cannot run without authorization"), refused.getMessage());
         }
     }
 
