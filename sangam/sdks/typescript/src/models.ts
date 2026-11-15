@@ -211,6 +211,15 @@ export interface TaskView {
   delegationState?: string;
   /** VariableMap (typed values still wrapped). */
   variables?: Variables;
+  /**
+   * M-042 task index: MoneyAmount, a decimal string in major units with exactly the currency's fraction digits (never a
+   * number); absent or null when the process has no index rule or the rule found no amount.
+   */
+  amount?: string | null;
+  /** ISO 4217 code of `amount`; absent or null with it. */
+  currency?: string | null;
+  /** Reference the process's index rule set at creation (at most 255 characters); absent or null without one. */
+  reference?: string | null;
 }
 
 export interface TaskQuery {
