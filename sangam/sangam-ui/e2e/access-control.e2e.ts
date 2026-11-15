@@ -36,11 +36,15 @@ test('a signed-in user with no role gets neither the compliance screens nor thei
 
   const ctx = await apiAs(roleless.token);
   try {
-    for (const path of ['compliance/contacts', 'compliance/purposes', `compliance/consents?subject=${encodeURIComponent(seed.identities.citizen.userId)}`]) {
+    for (const path of ['compliance/contacts', 'compliance/purposes']) {
       const res = await ctx.get(path);
       expect(res.status(), path).toBe(403);
       await expectNoInternals(res, path);
     }
+    // owner decision 338: another principal's consents are searched with the reference in the body, never in the URL
+    const search = await ctx.post('compliance/consents/search', { headers: { 'Idempotency-Key': randomUUID() }, data: { subject: seed.identities.citizen.userId } });
+    expect(search.status()).toBe(403);
+    await expectNoInternals(search, 'compliance/consents/search');
     const write = await ctx.post('compliance/contacts/DPO', { headers: { 'Idempotency-Key': randomUUID() }, data: { name: 'Not allowed', email: 'no@e2e.test' } });
     expect(write.status()).toBe(403);
   } finally {
@@ -62,8 +66,12 @@ test('a data principal gets the portal but not the operator or administration sc
       expect(res.status(), path).toBe(403);
     }
     // another data principal's consents: compliance.read is needed for any subject other than oneself
-    const other = await ctx.get('compliance/consents', { params: { subject: seed.identities.roleless.userId } });
+    const other = await ctx.post('compliance/consents/search', { headers: { 'Idempotency-Key': randomUUID() }, data: { subject: seed.identities.roleless.userId } });
     expect(other.status()).toBe(403);
+    // the withdrawn query form is refused by name, never answered with the caller's own consents (decision 338)
+    const query = await ctx.get('compliance/consents', { params: { subject: seed.identities.roleless.userId } });
+    expect(query.status()).toBe(400);
+    expect(((await query.json()) as { code?: string }).code).toBe('SUBJECT_QUERY_WITHDRAWN');
   } finally {
     await ctx.dispose();
   }

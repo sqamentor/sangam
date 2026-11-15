@@ -49,8 +49,8 @@ How to read the table:
 | ID | Control (source) | Status | Covered by | Note |
 |---|---|---|---|---|
 | C-01 | Clocks synchronised to NIC/NPL NTP ([D] dir.(i)) | EXISTS (server) | none | `NtpTimeSourceVerifier`; server test. |
-| C-02 | Annexure I incidents reported to CERT-In within 6 h ([D] dir.(ii)) | PARTIAL | none | Owner list 2 (no spec) and 9 (`type` is free text). |
-| C-03 | Point of contact in the Annexure II format ([D] dir.(iii)) | PARTIAL | `rights-requests` (the role select offers `CERT_IN_POC` and every India pack role) | Owner list 10: designation, mobile and address only through "more fields". |
+| C-02 | Annexure I incidents reported to CERT-In within 6 h ([D] dir.(ii)) | EXISTS (round 4 D1: the type is a pick-list of the pack catalogue; the server refuses a free-text type, `INCIDENT_TYPE_NOT_IN_CATALOGUE`, decision 344) | `breach-and-incident` (written, NOT_RUN locally) | The 6-hour report itself is sent by the operator; the spec checks registration, the catalogue and the deadline. |
+| C-03 | Point of contact in the Annexure II format ([D] dir.(iii)) | EXISTS (round 4 D1: the contact form shows the role's `requiredFields`, decision 345) | `rights-requests` (the role select offers `CERT_IN_POC` and every India pack role) | |
 | C-04 | Logs kept 180 days in India and provided on order ([D] dir.(iv)) | EXISTS (server) | `audit-evidence` (India pack, floors; report hash = SHA-256 of the report served) | Owner list 7: the UI cannot generate the report. |
 | C-05 | All ICT systems, including the nginx proxy ([F] Q37) | PARTIAL | none | nginx has no retention or forwarding of its own; ops. |
 | C-06 | Logs and information on order ([D] dir.(iii)-(iv)) | EXISTS | none | `/audit/exports`, lawful requests. |
@@ -59,26 +59,26 @@ How to read the table:
 | D-01 | Notice: itemised data, purposes, links to withdraw, rights and the Board ([A] s.5(1); [R] r.3) | PARTIAL | `consent-notice` (the public policy signed out and the published notice: links, data items, purpose, DPO, version, hash) | Owner list 4: the portal form shows a fixed string, not the published notice. |
 | D-02 | Notice in English or an Eighth Schedule language ([A] s.5(3)) | PARTIAL (owner decision Q-06: English-only UI) | none | The server templates exist for more languages; the UI chrome is English. Accepted gap. |
 | D-03 | Free, specific, unbundled consent ([A] s.6(1)) | PARTIAL | none | Owner list 6: one checkbox for all purposes; a draft is saved before consent. |
-| D-04 | Proof of notice and consent ([A] s.6(10), wording UNVERIFIED) | PARTIAL (was MISSING: the operator path now shows the consent id and purposes; fixed in this lane) | `consent-withdrawal` (records on the published notice; the register row and the API show the key, version, purposes and `givenAt`) | Owner list 4: the portal application records no consent. |
-| D-05 | Withdrawal as easy as giving ([A] s.6(4); [R] r.3(c)(i)) | PARTIAL (operator only) | `consent-withdrawal` (withdraw → `WITHDRAWN`, `withdrawnAt`) | Owner list 5: no self-service withdrawal for the data principal. |
+| D-04 | Proof of notice and consent ([A] s.6(10), wording UNVERIFIED) | PARTIAL (was MISSING: the operator path now shows the consent id and purposes; fixed in this lane) | `consent-withdrawal` (the officer finds the consents by `POST /compliance/consents/search`, decision 338; records on the published notice; the register row and the API show the key, version, purposes and `givenAt`) | Owner list 4: the portal application records no consent. |
+| D-05 | Withdrawal as easy as giving ([A] s.6(4); [R] r.3(c)(i)) | PARTIAL (operator only) | `consent-withdrawal` (the officer finds the consents by `POST /compliance/consents/search`, decision 338; withdraw → `WITHDRAWN`, `withdrawnAt`) | Owner list 5: no self-service withdrawal for the data principal. |
 | D-06 | Processing stops after withdrawal ([A] s.6(5)-(6)) | PARTIAL | none | `PurposeBindingGuard`; the end-to-end stop is not shown. |
 | D-07 | Consent managers ([A] s.6(7)-(9); [R] r.4) | EXISTS (server) | none | Server test. |
 | D-08 | Legitimate uses ([A] s.7) | EXISTS (server) | none | Server test. |
 | D-09 | Safeguards: encryption, masking, tokens ([A] s.8(5); [R] r.6(1)(a)) | PARTIAL | `client-storage-and-urls`, `xss-rendering` (UI side only) | |
 | D-10 | Access control ([R] r.6(1)(b)) | EXISTS | `access-control` (user with no role and citizen refused in the UI and with 403; the officer passes by permission) | |
-| D-11 | Visibility of access to personal data ([R] r.6(1)(c)) | PARTIAL | none | Owner list 13: reads are not shown to be audited. |
+| D-11 | Visibility of access to personal data ([R] r.6(1)(c)) | EXISTS (server; round 4 D1: an officer's read of another principal's consents or rights requests writes `PERSONAL_DATA_READ` on the principal's chain, decision 348) | none (not visible through the API; `CompliancePrincipalReadsH2Test`) | |
 | D-12 | Logs and data kept for at least one year ([R] r.6(1)(e), r.8(3)) | EXISTS | `audit-evidence` (pack floors 365 days) | |
 | D-13 | Continuity, backups ([R] r.6(1)(d)) | PARTIAL (not verified) | none | Ops drill record. |
-| D-14 | Breach: intimation, then a report to the Board within 72 h ([A] s.8(6); [R] r.7(2)) | EXISTS (server) | none | Owner list 2: registration needs the compliance processes, which nothing deploys. |
+| D-14 | Breach: intimation, then a report to the Board within 72 h ([A] s.8(6); [R] r.7(2)) | EXISTS (server; the processes come from the installed compliance pack, else `COMPLIANCE_PACK_NOT_INSTALLED`, decision 336) | `breach-and-incident` (written, NOT_RUN locally: registration, the 72 h deadline and the linked CERT-In incident) | |
 | D-15 | Breach notice to each affected data principal ([R] r.7(1)) | PARTIAL | none | Owner list 12. |
-| D-16 | Erasure ([A] s.8(7), s.12(3)) | EXISTS (server) | none | Owner list 1: rights requests are refused in the standalone server. |
-| D-17 | Legal hold overrides erasure ([A] s.8(7)) | EXISTS | none | Owner list 1 (same block as D-16). |
+| D-16 | Erasure ([A] s.8(7), s.12(3)) | PARTIAL (round 4 D1: intake by the signed-in data principal, decision 335) | `erasure-legal-hold` (written, NOT_RUN locally: intake, refusals, the officer's search) | Executing an erasure needs a personal-data port, which the standalone server does not wire; OTP intake needs an authenticator (round 4 D1 open points A and B). |
+| D-17 | Legal hold overrides erasure ([A] s.8(7)) | EXISTS (server) | none (`erasure-legal-hold` shows the intake only) | No REST legal-hold API on a process root and no personal-data port in the standalone server, so the override is shown by server tests only (round 4 D1 open point B). |
 | D-18 | 48-hour pre-erasure intimation ([R] r.8(2)) | EXISTS (server) | none | Time-based; server test. |
 | D-19 | Third Schedule 3-year inactivity erasure ([R] r.8(1)) | EXISTS | none | Counsel: does it apply to deployers? |
 | D-20 | Purpose deemed no longer served ([A] s.8(8)) | EXISTS | none | `/admin/retention`. |
-| D-21 | DPO contact published, and given in rights responses ([A] s.8(9); [R] r.9) | PARTIAL | `consent-notice` (the DPO name and e-mail on the public policy, signed out, and in the notice) | Owner list 11: rights and grievance responses do not carry the contact. |
+| D-21 | DPO contact published, and given in rights responses ([A] s.8(9); [R] r.9) | EXISTS for rights requests (round 4 D1: every rights-request read carries `contact`, decision 346); the portal grievance is lane D2's | `consent-notice` (the DPO on the public policy and the notice); `erasure-legal-hold` (the contact on the acknowledgement) | |
 | D-22 | Grievance redressal within the published period, at most 90 days ([A] s.8(10), s.13; [R] r.14(3)) | EXISTS | `rights-requests` (reference shown, the published period shown, due date ≤ the pack maximum) | Owner list 15: due date fixed in code. |
-| D-23 | Rights: access, correction, completion, updating, erasure, nomination ([A] s.11, s.12, s.14; [R] r.14) | PARTIAL (the UPDATE / UPDATING mismatch fixed in this lane) | `rights-requests` (the select offers exactly the India pack rights, `UPDATING` included) | Owner list 1: submission is refused in the standalone server; the portal offers only a generic data-rights kind. |
+| D-23 | Rights: access, correction, completion, updating, erasure, nomination ([A] s.11, s.12, s.14; [R] r.14) | PARTIAL (round 4 D1: submission by the signed-in data principal works, decision 335) | `rights-requests` (the select offers exactly the India pack rights); `erasure-legal-hold` (an ERASURE submission) | The portal offers only a generic data-rights kind; OTP intake has no authenticator yet. |
 | D-24 | Children: guardian consent, no tracking or targeted advertising ([A] s.9; [R] r.10, r.12) | PARTIAL | `no-tracking` ((a): no request, beacon, WebSocket, subresource or third-party cookie off the origin) | Owner list 8: no age or guardian flow in the portal. |
 | D-25 | Guardian of a person with a disability ([R] r.11) | PARTIAL | none | Owner list 8. |
 | D-26 | Significant Data Fiduciary duties ([A] s.10; [R] r.13) | PARTIAL | none | Applies only if a deployer is notified as an SDF. |
@@ -91,7 +91,7 @@ How to read the table:
 | W-05 | Clickjacking | EXISTS | `security-headers` (`X-Frame-Options DENY` and `frame-ancestors 'none'`, `/teams.html` too while Teams is off) | |
 | W-06 | Other headers | PARTIAL | `security-headers` (nosniff, Referrer-Policy, Permissions-Policy, COOP, no server version) | HSTS belongs to the TLS ingress, not this image. |
 | W-07 | No tokens or PII in persistent storage; clean-up at sign-out | PARTIAL | `client-storage-and-urls` (token in sessionStorage only; none in any web storage after sign-out) | Owner list 3: saved inbox filters stay in localStorage. |
-| W-08 | No PII in URLs | PARTIAL | `client-storage-and-urls` (no token or typed text in any URL of the citizen's grievance flow) | Owner list 3: the register filters put the principal reference in the query string. |
+| W-08 | No PII in URLs | EXISTS (round 4 D1: principal look-ups are `POST .../consents/search` and `.../rights-requests/search` with the reference in the body; the `subject` query is refused, `SUBJECT_QUERY_WITHDRAWN`, decision 338) | `client-storage-and-urls`; `access-control`; `consent-withdrawal`; `erasure-legal-hold` | |
 | W-09 | Session lifetime and idle timeout | PARTIAL (expiry; idle MISSING) | `session-expiry` (an expired token is refused with 401, and the UI returns to sign-in) | Owner list 14: idle timeout (legal source UNVERIFIED). |
 | W-10 | No stack traces or internals in errors | EXISTS | `access-control` (compliance, portal and notice ids that do not exist) | |
 | W-11 | No public production source maps | EXISTS (fixed in this lane: `build.sourcemap: false` in both Vite builds) | `security-headers` (no `sourceMappingURL`; every `.map` gives 404); `scripts/build-sourcemaps.test.mjs` | |
@@ -109,18 +109,21 @@ How to read the table:
 ## Open points for the owner (gap, options, recommendation)
 
 1. **Rights intake is refused in the standalone server.** `ComplianceWiring` passes no principal authenticator, so `DataSubjectRightsService.submit` always fails with `PRINCIPAL_NOT_AUTHENTICATED`. This blocks D-16, D-17 and the D-23 submission.
+   - **Decided and done (decision 335, round 4 D1).** The pack names the methods (`verification.principal`: IN `SIGNED_IN`, `OTP`, r.14(1)). `SIGNED_IN` uses the identity the server authenticated, never the body; another person's identifier is refused. OTP stays refused until an authenticator is wired (round 4 D1 open point A).
    - Options:
      - (a) an authenticator over the signed-in Sangam identity, for the data principal's own request;
      - (b) OTP to the published identifier;
      - (c) both, chosen by the pack.
    - Recommendation: (c), with (a) first.
 2. **Breach and incident registration in a standalone server.** The registration starts `sangam-breach-incident` and `sangam-incident-report`. The server has `auto-deployment-enabled: false`, and nothing deploys `packs/compliance/*.bpmn`, so the e2e spec was not written. Not confirmed by running.
+   - **Decided and done (decision 336, round 4 D1).** The processes come only from the installed pack `sangam.compliance`; without it the start is refused with `COMPLIANCE_PACK_NOT_INSTALLED` (409). The test-mode server deploys the packs at start-up (h2 profile), so `breach-and-incident.e2e.ts` was written.
    - Options:
      - (a) deploy the compliance processes at start-up when a jurisdiction is set;
      - (b) install a compliance pack through the pack lifecycle API;
      - (c) refuse with a clear problem until the pack is installed.
    - Recommendation: (b) for production, plus (c) as the fail-closed refusal. The e2e setup would install the pack.
 3. **Saved inbox filters and data-principal references in URLs.**
+   - **W-08 decided and done (decision 338, round 4 D1):** option (a), `POST .../search` with `ComplianceSubjectSearch`; the `subject` query is a 400 `SUBJECT_QUERY_WITHDRAWN`, recorded as a 0.1.0 correction. The inbox filters (decision 337) are lane D3's.
    - Inbox filters (W-07): they stay in localStorage after sign-out. This is intended (P35, the "Saved filters are kept in this browser" copy). Options:
      - (a) clear them at sign-out, or keep them in sessionStorage;
      - (b) keep them, but never store the free-text query, and key them by a hash of the user;
@@ -148,6 +151,7 @@ How to read the table:
    - For the draft: counsel decides whether it is a legitimate use under s.7(a).
    - Recommendation: (a), plus counsel on the draft.
 7. **The evidence report cannot be generated from the UI.** `ComplianceController.report` requires `from` and `to` as instants. The UI sends optional date-only values, so the server refuses the request (found in this lane, not run).
+   - **Decided and done (decision 342, round 4 D1):** option (a). The UI sends the start of the first day and of the day after the last as instants in the tenant zone (`/me` `locale.zone`, `compliancePeriod.ts`); with no zone it sends nothing.
    - Options:
      - (a) the UI requires both dates and sends the start of `from` and the end of `to` in the tenant's time zone;
      - (b) the server defaults the period.
@@ -158,16 +162,19 @@ How to read the table:
      - (b) operator-assisted only.
    - Recommendation: (a).
 9. **CERT-In incident type is free text** (C-02).
+   - **Decided and done (decision 344, round 4 D1):** option (a), and the server refuses a type outside the catalogue (`INCIDENT_TYPE_NOT_IN_CATALOGUE`, 422), for an incident and for a breach, before anything is written.
    - Options:
      - (a) a pick-list from the pack's `authorities[].catalogue`, through the same pack-code field as the rights;
      - (b) keep the free text, which the server already checks.
    - Recommendation: (a).
 10. **Point-of-contact Annexure II fields** (C-03). The server requires designation, mobile and address for `CERT_IN_POC` (`contactRoles[].requiredFields`). The form exposes them only through the JSON "more fields".
+    - **Decided and done (decision 345, round 4 D1):** option (a). The form shows the chosen role's `requiredFields`, and the residency attestation for a `mustBeResident` role.
     - Options:
       - (a) render the `requiredFields` of the chosen role;
       - (b) fixed extra fields.
     - Recommendation: (a), which is pack-driven.
 11. **DPO contact in rights and grievance responses** (D-21).
+    - **Decided and done for rights requests (decision 346, round 4 D1):** option (a), `contact` on every rights-request read. The portal grievance (`OperatonPortalAdapter`) is lane D2's.
     - Options:
       - (a) the acknowledgement and the response template carry the published contact;
       - (b) a link to the privacy page.
@@ -178,6 +185,7 @@ How to read the table:
       - (b) e-mail or SMS only, if counsel agrees.
     - Recommendation: (a).
 13. **Audit of reads of personal data** (D-11).
+    - **Decided and done (decision 348, round 4 D1):** option (a), `PERSONAL_DATA_READ` (SANGAM.md X.4.0.3).
     - Options:
       - (a) an audit event when an officer reads a principal's consents or rights;
       - (b) access logs only.
@@ -201,6 +209,14 @@ How to read the table:
       - (a) add `@types/node` as a pinned devDependency (needs approval);
       - (b) keep the filtered check.
     - Recommendation: (a).
+
+## Round 4, lane D1 (2026-11-15)
+
+- Owner decisions 335, 336, 338, 342, 344, 345, 346 and 348: see the rows and the owner list above.
+- **Integrator finding, CI ui e2e run 43717963671 (main 209d2765):** `PUT /compliance/purposes/{code}` bound its body to `PurposeDefinition`, whose `standardsAttested`, `version`, `active` and `DataItem.sensitive` are primitives; the JSON binding refuses a missing primitive, so the e2e seed failed with 400. The body is now `ComplianceDefinePurposeRequest`: `standardsAttested` and `active` required, every data item's `sensitive` required, no `version` (the server assigns it), each an explicit Yes / No in the form, never defaulted. The contact body's `resident` is boxed: omitted is not attested. Recorded as a 0.1.0 correction.
+- Open point A, OTP intake. Options: (a) a compliance-owned OTP challenge sent through `PrincipalNotifier` [recommended]; (b) the Aadhaar OTP connector; (c) the IdP.
+- Open point B, erasure execution: the standalone server wires no `PersonalDataPort`, and there is no legal-hold API on a process root, so D-16 execution and D-17 are not shown end to end. Options: (a) a port over the process-instance and document stores [recommended]; (b) operator-only erasure.
+- Open point C, other compliance request bodies with primitives the contract does not require: `VerifyLawfulRequest.rankAdequate`, `AuditEvidenceRequest.independent`, `ImpactAssessmentRequest.independent`, `TransferRequest.recipientSameProtectionAttested` and `recipientConditionMet`, `ConsentArtefact.noticeVersion`. Options: (a) box and require them, as was done for purposes [recommended]; (b) leave them.
 
 ## Carried over as UNVERIFIED
 
