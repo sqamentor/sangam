@@ -10,9 +10,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -178,15 +177,23 @@ public final class TrustedProxyFilter extends OncePerRequestFilter {
         }
     }
 
-    /** IPv4/IPv6 CIDR; literals only, never DNS. */
+    /**
+     * IPv4/IPv6 CIDR; literals only, never DNS. Every address on this path, the configured ones and the entries of a
+     * forwarding header (which a client writes), goes through {@link #literal}: a parser over the text that asks no
+     * resolver and throws nothing, so a malformed entry is "not an address", never a lookup and never an exception.
+     */
     record Cidr(BigInteger network, int bits, int width) {
+
+        /** Longest text read as an address: 8 groups, an embedded IPv4 and a zone fit well inside it. */
+        private static final int MAX_LITERAL = 128;
+
         static Cidr parse(String s) {
             int slash = s.indexOf('/');
             String addr = slash < 0 ? s : s.substring(0, slash);
-            if (!isLiteral(addr)) {
+            byte[] b = literal(addr);
+            if (b == null) {
                 throw new IllegalArgumentException("sangam.http.trusted-proxies: not an IP literal/CIDR: " + s);
             }
-            byte[] b = bytes(addr);
             int width = b.length * 8;
             int bits = slash < 0 ? width : Integer.parseInt(s.substring(slash + 1));
             if (bits < 0 || bits > width) {
@@ -196,11 +203,8 @@ public final class TrustedProxyFilter extends OncePerRequestFilter {
         }
 
         boolean contains(String addr) {
-            if (!isLiteral(addr)) {
-                return false;
-            }
-            byte[] b = bytes(addr);
-            if (b.length * 8 != width) {
+            byte[] b = literal(addr);
+            if (b == null || b.length * 8 != width) {
                 return false;
             }
             return mask(new BigInteger(1, b), bits, width).equals(network);
@@ -213,16 +217,152 @@ public final class TrustedProxyFilter extends OncePerRequestFilter {
         }
 
         static boolean isLiteral(String s) {
-            return s.matches("[0-9.]+") && s.split("\\.").length == 4 || s.contains(":") && s.matches("[0-9A-Fa-f:.%a-zA-Z]+");
+            return literal(s) != null;
         }
 
-        private static byte[] bytes(String addr) {
-            try {
-                int pct = addr.indexOf('%');
-                return InetAddress.getByName(pct > 0 ? addr.substring(0, pct) : addr).getAddress();
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException("not an IP literal: " + addr, e);
+        /**
+         * The address bytes of an IP literal, or null when {@code s} is not one.
+         * <ul>
+         *   <li>IPv4: four decimal octets 0-255 separated by dots, no leading zero (a leading zero is octal to some
+         *       parsers and decimal to others, so it is refused), 4 bytes.</li>
+         *   <li>IPv6: groups of 1-4 hex digits, at most one {@code ::}, optionally an IPv4 address as the last 32
+         *       bits and a {@code %zone} suffix (checked, then ignored), 16 bytes. An IPv4-mapped address
+         *       ({@code ::ffff:a.b.c.d}) is that IPv4 address and yields its 4 bytes, as the JDK's own address type
+         *       does, so one host does not have two identities here.</li>
+         * </ul>
+         */
+        static byte[] literal(String s) {
+            if (s == null || s.isEmpty() || s.length() > MAX_LITERAL) {
+                return null;
             }
+            if (s.indexOf(':') < 0) {
+                return ipv4(s);
+            }
+            String addr = s;
+            int pct = s.indexOf('%');
+            if (pct >= 0) {
+                if (!zone(s.substring(pct + 1))) {
+                    return null;
+                }
+                addr = s.substring(0, pct);
+            }
+            byte[] b = ipv6(addr);
+            return b != null && ipv4Mapped(b) ? Arrays.copyOfRange(b, 12, 16) : b;
+        }
+
+        private static byte[] ipv4(String s) {
+            byte[] out = new byte[4];
+            int n = 0;
+            int i = 0;
+            int len = s.length();
+            while (true) {
+                int start = i;
+                int v = 0;
+                while (i < len && s.charAt(i) >= '0' && s.charAt(i) <= '9') {
+                    if (i - start == 3) {
+                        return null;
+                    }
+                    v = v * 10 + (s.charAt(i) - '0');
+                    i++;
+                }
+                int digits = i - start;
+                if (digits == 0 || v > 255 || (digits > 1 && s.charAt(start) == '0')) {
+                    return null;
+                }
+                out[n++] = (byte) v;
+                if (i == len) {
+                    return n == 4 ? out : null;
+                }
+                if (s.charAt(i) != '.' || n == 4) {
+                    return null;
+                }
+                i++;
+            }
+        }
+
+        private static byte[] ipv6(String s) {
+            int gap = s.indexOf("::");
+            if (gap < 0) {
+                byte[] all = groups(s, true);
+                return all != null && all.length == 16 ? all : null;
+            }
+            if (s.indexOf("::", gap + 1) >= 0) {
+                return null;
+            }
+            byte[] head = groups(s.substring(0, gap), false);
+            byte[] tail = groups(s.substring(gap + 2), true);
+            // "::" stands for at least one group of zeros
+            if (head == null || tail == null || head.length + tail.length > 14) {
+                return null;
+            }
+            byte[] out = new byte[16];
+            System.arraycopy(head, 0, out, 0, head.length);
+            System.arraycopy(tail, 0, out, 16 - tail.length, tail.length);
+            return out;
+        }
+
+        /** The bytes of colon-separated hex groups ("" is none); the last one may be an IPv4 address when allowed. */
+        private static byte[] groups(String part, boolean ipv4Last) {
+            if (part.isEmpty()) {
+                return new byte[0];
+            }
+            String[] g = part.split(":", -1);
+            if (g.length > 8) {
+                return null;
+            }
+            byte[] out = new byte[g.length * 2 + 2];
+            int n = 0;
+            for (int k = 0; k < g.length; k++) {
+                String group = g[k];
+                if (group.indexOf('.') >= 0) {
+                    byte[] v4 = ipv4Last && k == g.length - 1 ? ipv4(group) : null;
+                    if (v4 == null) {
+                        return null;
+                    }
+                    System.arraycopy(v4, 0, out, n, 4);
+                    n += 4;
+                    continue;
+                }
+                if (group.isEmpty() || group.length() > 4) {
+                    return null;
+                }
+                int v = 0;
+                for (int i = 0; i < group.length(); i++) {
+                    int d = Character.digit(group.charAt(i), 16);
+                    if (d < 0 || group.charAt(i) > 'f') {
+                        return null;
+                    }
+                    v = v << 4 | d;
+                }
+                out[n++] = (byte) (v >> 8);
+                out[n++] = (byte) v;
+            }
+            return Arrays.copyOf(out, n);
+        }
+
+        private static boolean ipv4Mapped(byte[] b) {
+            for (int i = 0; i < 10; i++) {
+                if (b[i] != 0) {
+                    return false;
+                }
+            }
+            return b[10] == (byte) 0xff && b[11] == (byte) 0xff;
+        }
+
+        /** A zone id (an interface name or number): 1-64 unreserved characters. */
+        private static boolean zone(String z) {
+            if (z.isEmpty() || z.length() > 64) {
+                return false;
+            }
+            for (int i = 0; i < z.length(); i++) {
+                char c = z.charAt(i);
+                boolean ok = c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+                        || c == '.' || c == '-' || c == '_' || c == '~';
+                if (!ok) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 

@@ -44,7 +44,7 @@ The fat jar does **not** contain the MariaDB driver (LGPL-2.1, LIC-4/LIC-5). It 
 | `mysql` | MySQL 8.4 LTS | **no**: MariaDB Connector/J via `loader.path` (Connector/J is never shipped) | Tier 1 under R84. Session READ COMMITTED, utf8mb4, binary collation. P-1 datetime precision comes from sangam-engine |
 | `oidc` | — | — | JWT resource server from `SANGAM_OIDC_ISSUER`. Combine it with a database profile |
 
-All database profiles read `SANGAM_DB_URL`, `SANGAM_DB_USER` and `SANGAM_DB_PASSWORD`. The non-h2 profiles write JSON (ECS) logs.
+All database profiles read `SANGAM_DB_URL`, `SANGAM_DB_USER` and `SANGAM_DB_PASSWORD`. Every profile, h2 included, writes JSON (ECS) console logs, one object per line (`logging.structured.format.console: ecs` in `application.yaml`): a value from a request that reaches a log message is escaped inside the JSON string and cannot forge a log line.
 
 ## Deployment contract (deploy/README.md §10)
 

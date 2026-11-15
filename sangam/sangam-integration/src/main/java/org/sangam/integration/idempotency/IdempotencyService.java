@@ -103,12 +103,10 @@ public final class IdempotencyService {
             fp = IdempotencyStore.fingerprint(req.commandType(), req.method(), req.pathTemplate(), req.pathParams(),
                     semanticParams(req), req.body());
             begin = beginWithWait(req, fp);
-        } catch (IllegalArgumentException e) {
-            String msg = String.valueOf(e.getMessage());
-            if (msg.contains("IDEMPOTENCY_KEY_INVALID")) {
-                return IdempotentResponse.problem(400, "IDEMPOTENCY_KEY_INVALID", msg.replace("400 IDEMPOTENCY_KEY_INVALID: ", ""), null);
-            }
-            return IdempotentResponse.problem(400, "INVALID_REQUEST", msg, null);
+        } catch (IdempotencyStore.InvalidRequestException e) {
+            // the one exception made for the caller (code and fixed detail). Every other IllegalArgumentException from
+            // the fingerprint or the claim is an internal error: it propagates and is answered 500 without its text.
+            return IdempotentResponse.problem(400, e.code(), e.detail(), null);
         }
         return switch (begin) {
             case IdempotencyStore.Conflict c -> {

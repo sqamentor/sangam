@@ -257,13 +257,27 @@ public class EventFormController {
         return out;
     }
 
-    /** The port's answer as is: status, headers and body (JSON unless the answer names its own content type). */
+    /**
+     * The port's success answer: status and headers, and a body only for a 200 that has one (the Event Grid validation
+     * response, JSON the port serialised). An error is never an answer: the port throws an {@code ApiProblem} and
+     * {@link ProblemHandler} writes it. An answer that is not 2xx is therefore a defect of the port and is refused
+     * here (500) instead of being written out under a JSON label.
+     */
     static ResponseEntity<String> answer(EventPort.HookAnswer a) {
-        HttpHeaders h = new HttpHeaders();
-        a.headers().forEach(h::set);
-        if (!a.body().isEmpty() && h.getContentType() == null) {
-            h.setContentType(MediaType.APPLICATION_JSON);
+        if (a.status() < 200 || a.status() >= 300) {
+            throw new IllegalStateException("an Event Grid hook error must be an ApiProblem, not an answer (status "
+                    + a.status() + ")");
         }
-        return ResponseEntity.status(a.status()).headers(h).body(a.body().isEmpty() ? null : a.body());
+        HttpHeaders h = new HttpHeaders();
+        a.headers().forEach((name, value) -> {
+            if (!HttpHeaders.CONTENT_TYPE.equalsIgnoreCase(name)) {
+                h.set(name, value);
+            }
+        });
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(a.status()).headers(h);
+        if (a.status() != 200 || a.body().isEmpty()) {
+            return response.build();
+        }
+        return response.contentType(MediaType.APPLICATION_JSON).body(a.body());
     }
 }

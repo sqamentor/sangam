@@ -25,6 +25,8 @@ import org.sangam.ports.events.channel.ChannelAdapters;
 import org.sangam.ports.events.model.ChannelDefinition;
 import org.sangam.ports.events.pipeline.CloudEventsFormat;
 import org.sangam.ports.support.PortsProblem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Owner decision 189 (SL-170): Azure Event Grid push delivery into an inbound {@code eventgrid} channel. The channel is
@@ -60,12 +62,47 @@ public final class EventGridInboundEndpoint {
     static final String VALIDATION_EVENT = "Microsoft.EventGrid.SubscriptionValidationEvent";
     static final String BATCH_CONTENT_TYPE = "application/cloudevents-batch+json";
     private static final Pattern VALIDATION_CODE = Pattern.compile("[A-Za-z0-9-]{1,128}");
+    private static final Logger LOG = LoggerFactory.getLogger(EventGridInboundEndpoint.class);
 
-    /** What the REST layer answers: status, headers and body. */
-    public record Answer(int status, Map<String, String> headers, String body) {
+    /** 400: the handshake carries no {@code WebHook-Request-Origin}. */
+    public static final String CODE_ORIGIN_REQUIRED = "WEBHOOK_ORIGIN_REQUIRED";
+    /** 403: the handshake's origin is not one the channel allows. */
+    public static final String CODE_ORIGIN_NOT_ALLOWED = "WEBHOOK_ORIGIN_NOT_ALLOWED";
+    /** 503: an event of the delivery must be offered again. */
+    public static final String CODE_REDELIVERY_REQUIRED = "EVENT_REDELIVERY_REQUIRED";
+    /** 503: the delivery token cannot be checked now (signing keys unavailable). */
+    public static final String CODE_AUTHENTICATION_UNAVAILABLE = "WEBHOOK_AUTHENTICATION_UNAVAILABLE";
+
+    /**
+     * What the REST layer answers. A 2xx answer carries the headers and the body this endpoint built (the handshake
+     * echo, the validation response). Every other answer is a refusal ({@link #refused}): a stable {@code code} and,
+     * as its body, a fixed message. A refusal never carries text from the request or from an exception (this route is
+     * reachable before the caller is authenticated; that detail goes to the log), and the caller renders it as a
+     * problem, never as a body of its own.
+     */
+    public record Answer(int status, Map<String, String> headers, String body, String code, Integer retryAfterSeconds) {
         public Answer {
             headers = headers == null ? Map.of() : Map.copyOf(headers);
             body = body == null ? "" : body;
+            boolean success = status >= 200 && status < 300;
+            if (success == (code != null)) {
+                throw new IllegalArgumentException("a 2xx answer has no code and every other answer has one");
+            }
+        }
+
+        /** A 2xx answer. */
+        public static Answer ok(Map<String, String> headers, String body) {
+            return new Answer(200, headers, body, null, null);
+        }
+
+        /** A refusal; {@code retryAfterSeconds} (may be null) is also sent as {@code Retry-After}. */
+        public static Answer refusal(int status, String code, String fixedMessage, Integer retryAfterSeconds) {
+            return new Answer(status, retryAfterSeconds == null ? Map.of()
+                    : Map.of("Retry-After", Integer.toString(retryAfterSeconds)), fixedMessage, code, retryAfterSeconds);
+        }
+
+        public boolean refused() {
+            return code != null;
         }
     }
 
@@ -98,30 +135,33 @@ public final class EventGridInboundEndpoint {
         }
         String origin = h.get("webhook-request-origin");
         if (origin == null || origin.isBlank()) {
-            return new Answer(400, Map.of(), "WebHook-Request-Origin is required");
+            return Answer.refusal(400, CODE_ORIGIN_REQUIRED, "The WebHook-Request-Origin header is required", null);
         }
         String allowed = CloudChannels.prop(ch, "allowedOrigins", DEFAULT_ORIGIN);
         boolean ok = Arrays.stream(allowed.split(",")).map(String::trim)
                 .anyMatch(a -> a.equalsIgnoreCase(origin.trim()));
         if (!ok) {
-            return new Answer(403, Map.of(), "origin not allowed for channel " + ch.key());
+            return Answer.refusal(403, CODE_ORIGIN_NOT_ALLOWED, "The request origin is not allowed for this channel", null);
         }
-        return new Answer(200, Map.of("WebHook-Allowed-Origin", origin.trim(), "Allow", "POST, OPTIONS"), "");
+        return Answer.ok(Map.of("WebHook-Allowed-Origin", origin.trim(), "Allow", "POST, OPTIONS"), "");
     }
 
-    /** A delivery (or the Event Grid schema validation event). */
+    /**
+     * A delivery (or the Event Grid schema validation event). The channel's authentication comes first: it reads the
+     * headers and the query only, so the body (empty, oversized, malformed) is judged for an authenticated caller alone.
+     */
     public Answer post(String tenant, String channelKey, Map<String, String> headers, Map<String, String> query, String body) {
         ChannelDefinition ch = channel(tenant, channelKey);
+        Map<String, String> h = lower(headers);
+        Answer unavailable = authenticate(ch, h, query);
+        if (unavailable != null) {
+            return unavailable;
+        }
         if (body == null || body.isEmpty()) {
             throw new PortsProblem("INVALID_INPUT", 422, "channel " + channelKey + ": empty body");
         }
         if (body.length() > processor.maxPayloadBytes()) {
             throw PortsProblem.tooLarge("PAYLOAD_TOO_LARGE", "Event Grid delivery", body.length(), processor.maxPayloadBytes());
-        }
-        Map<String, String> h = lower(headers);
-        Answer unavailable = authenticate(ch, h, query);
-        if (unavailable != null) {
-            return unavailable;
         }
         JsonNode root = Json.tree(body);
         if (root == null) {
@@ -147,11 +187,13 @@ public final class EventGridInboundEndpoint {
             eh.put("content-type", CloudEventsFormat.STRUCTURED_CONTENT_TYPE);
             InboundEventProcessor.Delivery d = processor.deliver(tenant, ch.key(), Json.write(e), eh, e.path("id").asText());
             if (!d.ack()) {
-                return new Answer(503, Map.of("Retry-After", "30"), "event " + e.path("id").asText()
-                        + " is to be offered again: " + d.reason());
+                // which event and why stay in the server log: the event id is the sender's text
+                LOG.warn("Event Grid delivery on channel {}: an event is to be offered again ({})", ch.key(), d.reason());
+                return Answer.refusal(503, CODE_REDELIVERY_REQUIRED,
+                        "An event of this delivery could not be accepted yet; send the delivery again", 30);
             }
         }
-        return new Answer(200, Map.of(), "");
+        return Answer.ok(Map.of(), "");
     }
 
     private static Answer validation(JsonNode root) {
@@ -165,7 +207,7 @@ public final class EventGridInboundEndpoint {
         }
         ObjectNode out = Json.MAPPER.createObjectNode();
         out.put("validationResponse", code);
-        return new Answer(200, Map.of("Content-Type", "application/json"), Json.write(out));
+        return Answer.ok(Map.of("Content-Type", "application/json"), Json.write(out));
     }
 
     /** One structured CloudEvent 1.0 with an id, a type and a source. */
@@ -230,7 +272,10 @@ public final class EventGridInboundEndpoint {
                 entra.validate(lowerHeaders.get("authorization"), expected);
                 return null;
             } catch (EntraTokenValidator.KeysUnavailable e) {
-                return new Answer(503, Map.of("Retry-After", "60"), "channel " + ch.key() + ": " + e.getMessage());
+                // the key set URI and the cause stay in the server log
+                LOG.warn("Event Grid channel {}: the delivery token cannot be checked: {}", ch.key(), e.getMessage());
+                return Answer.refusal(503, CODE_AUTHENTICATION_UNAVAILABLE,
+                        "The delivery cannot be authenticated at the moment; send it again", 60);
             } catch (SecurityException e) {
                 throw new SecurityException("channel " + ch.key() + ": " + e.getMessage());
             }

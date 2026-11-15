@@ -114,7 +114,10 @@ public interface EventPort {
 
     /** Re-activates the newest retired version of an event definition. */
     EventDefinition restoreDefinition(RequestContext ctx, String key, String reason);
-    /** SL-170 (decisions 189 and 219): what an Event Grid hook answers, sent as is (status, headers, body). */
+    /**
+     * SL-170 (decisions 189 and 219): what an Event Grid hook answers on success (2xx): status, headers and, for a 200
+     * validation response, a JSON body. A refusal is never an answer; the port throws an {@link ApiProblem}.
+     */
     record HookAnswer(int status, Map<String, String> headers, String body) {
         public HookAnswer {
             headers = headers == null ? Map.of() : Map.copyOf(headers);

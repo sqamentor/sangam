@@ -52,11 +52,9 @@ public class JdbcIdempotencyAdapter implements IdempotencyPort {
         IdempotencyStore.BeginResult r;
         try {
             r = store.begin(tenant, commandType, key, principal, fingerprint);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("400 IDEMPOTENCY_KEY_INVALID")) {
-                return new Rejected(400, "IDEMPOTENCY_KEY_INVALID", 0);
-            }
-            throw e;
+        } catch (IdempotencyStore.InvalidRequestException e) {
+            // typed, not recognised by its message; any other IllegalArgumentException is an internal error (500)
+            return new Rejected(400, e.code(), 0);
         }
         return switch (r) {
             case IdempotencyStore.New n -> new Claimed(n.claim());

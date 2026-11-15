@@ -444,8 +444,14 @@ management:
       export:
         enabled: ${SANGAM_OTLP_ENABLED:false}
 
-# JSON (ECS) console logs are switched on by the database profiles (postgres, oracle, sqlserver, mysql); h2 keeps plain text.
+# Console logs are structured (ECS JSON), one JSON object per line, in every profile (h2 included). The encoder escapes
+# every value, so text that reaches a log message from a request (a tenant id, a path, a header) cannot start a second,
+# forged log line (code scanning java/log-injection): CR and LF in a message are written as \r and \n inside the string.
+# The database profiles name the same format again; that is redundant, not a second switch.
 logging:
+  structured:
+    format:
+      console: ecs
   level:
     org.sangam: INFO
     org.operaton.bpm: WARN

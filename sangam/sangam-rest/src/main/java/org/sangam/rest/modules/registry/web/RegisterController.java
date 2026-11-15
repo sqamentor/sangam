@@ -5,6 +5,7 @@ import org.sangam.registry.register.RegisterBookService;
 import org.sangam.registry.register.RegisterDefinition;
 import org.sangam.registry.rest.RegistryRestSupport;
 import org.sangam.registry.support.Maps;
+import org.sangam.rest.port.ApiProblem;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +27,7 @@ import java.util.Map;
 public class RegisterController {
 
     private static final String IDEM = "Idempotency-Key";
+    static final long MAX_ENTRIES_PER_READ = 1000;
 
     private final RegisterBookService registers;
     private final RegistryRestSupport support;
@@ -78,9 +80,23 @@ public class RegisterController {
     @GetMapping("/books/{bookId}/entries")
     public List<Map<String, Object>> entries(@PathVariable String bookId, @RequestParam(defaultValue = "1") long from,
                                              @RequestParam(defaultValue = "100") long count) {
-        long to = from + Math.max(1, Math.min(count, 1000)) - 1;
+        long to = lastEntry(from, count);
         return support.tx((c, ctx) -> registers.entries(c, ctx, bookId, from, to).stream()
                 .map(RegisterBookService.Entry::toMap).toList());
+    }
+
+    /**
+     * The last entry number of a read of {@code count} entries (1..{@value #MAX_ENTRIES_PER_READ}) starting at
+     * {@code from}. Entry numbers start at 1; a {@code from} below 1, or so large that the range would pass
+     * {@code Long.MAX_VALUE}, is refused before any arithmetic on it (the sum used to wrap to a negative number).
+     */
+    static long lastEntry(long from, long count) {
+        long span = Math.max(1, Math.min(count, MAX_ENTRIES_PER_READ)) - 1;
+        if (from < 1 || from > Long.MAX_VALUE - span) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "from must be an entry number from 1 that leaves room for"
+                    + " the requested count").with("field", "from");
+        }
+        return from + span;
     }
 
     @GetMapping("/books/{bookId}/entries/{entryNo}")

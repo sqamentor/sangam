@@ -18,6 +18,18 @@ public final class CanonicalJson {
     private CanonicalJson() {
     }
 
+    /**
+     * The value holds a number that is not integral. A type of its own, so a caller that canonicalises a request can
+     * tell this content error from any other {@link IllegalArgumentException} without reading a message.
+     */
+    public static final class NonIntegralNumberException extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        NonIntegralNumberException(Number n) {
+            super("non-integral number " + n + ": carry decimals as strings (R33)");
+        }
+    }
+
     public static String write(Object value) {
         StringBuilder sb = new StringBuilder();
         append(sb, value);
@@ -35,7 +47,7 @@ public final class CanonicalJson {
         } else if (v instanceof Integer || v instanceof Long || v instanceof Short || v instanceof Byte || v instanceof BigInteger) {
             sb.append(v);
         } else if (v instanceof Number n) {
-            throw new IllegalArgumentException("non-integral number " + n + ": carry decimals as strings (R33)");
+            throw new NonIntegralNumberException(n);
         } else if (v instanceof Map<?, ?> m) {
             TreeMap<String, Object> sorted = new TreeMap<>();
             for (Map.Entry<?, ?> e : m.entrySet()) {

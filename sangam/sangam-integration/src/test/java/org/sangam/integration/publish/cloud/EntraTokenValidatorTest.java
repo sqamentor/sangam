@@ -363,6 +363,10 @@ class EntraTokenValidatorTest {
         EventGridInboundEndpoint.Answer noKeys = e.post("T1", "ege", h, Map.of(), CE);
         assertEquals(503, noKeys.status(), "keys unavailable: Event Grid retries");
         assertTrue(noKeys.headers().containsKey("Retry-After"));
+        // code scanning #296: the answer names no key set URI and carries no exception text (that is logged)
+        assertEquals(EventGridInboundEndpoint.CODE_AUTHENTICATION_UNAVAILABLE, noKeys.code());
+        assertEquals("The delivery cannot be authenticated at the moment; send it again", noKeys.body());
+        assertEquals(Integer.valueOf(60), noKeys.retryAfterSeconds());
         assertTrue(delivered.isEmpty());
 
         publishV2("k1", signer);
