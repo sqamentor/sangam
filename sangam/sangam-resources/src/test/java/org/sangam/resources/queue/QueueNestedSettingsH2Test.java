@@ -27,6 +27,11 @@ import org.sangam.resources.dialect.ResourcesDialect;
  */
 class QueueNestedSettingsH2Test {
 
+    /** A validated development environment (decision 143): the only one in which a context runs without authorization. */
+    static final org.sangam.core.security.EnvironmentPolicy.Resolution DEVELOPMENT =
+            org.sangam.core.security.EnvironmentPolicy.resolve("false", "test",
+                    org.sangam.core.security.EnvironmentPolicy.signals(java.util.List.of("test")));
+
     private static final SecurityIdentity ADMIN = new SecurityIdentity("t1", "admin", "user:admin", Set.of(),
             Set.of("admin"), Set.of(), Set.of(), "OIDC", null, null, false, Map.of());
 
@@ -40,7 +45,7 @@ class QueueNestedSettingsH2Test {
         ResourcesDialect d = ResourcesDialect.detect(c);
         assertEquals(ResourcesDialect.H2, d);
         ResourcesSchema.create(c, d);
-        queue = new QueueService(ResourcesContext.builder(d).deliverDirectly(true).build());
+        queue = new QueueService(ResourcesContext.builder(d).deliverDirectly(true).withoutAuthorization(DEVELOPMENT).build());
     }
 
     @AfterEach

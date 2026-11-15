@@ -60,7 +60,71 @@ Engine settings (`QuarkusEngineSettings`):
 Parts of the plugin that cannot run on the Quarkus engine, and how they fail closed:
 
 - The virtual-thread and bulkhead job executor options need Sangam's own job executor. Quarkus supplies its managed job executor, so `JobExecutorSetup` throws at engine build when they are set. Those keys are also refused by `QuarkusEngineSettings`.
-- The module ports (audit sink, authorization, idempotency and the rest) are not assembled on this host. Their capabilities are missing, so the guard refuses start-up.
+- The module ports (audit sink, authorization, idempotency and the rest) are not assembled on this host yet. Their capabilities are missing, so the guard refuses start-up.
+
+## Integration services on this host (extraction phase 3; owner decisions 315, 316, 317)
+
+Phase 3 (decision 276) brings the audit chain, the idempotency store, the outbox relay and the inbox to this host. It is **not finished**. This section says exactly what works today and what does not.
+
+### What works today
+
+| Item | Where | State |
+|---|---|---|
+| Broker inbox refusal (decision 317) | `BrokerInboxRefusal`, called by `QuarkusHost` | Works. See below. |
+| Relay wake-up mode (decision 316) | `RelayWakeup` in `sangam-assembly`; `QuarkusHost.relayWakeup` | Decided in code and documented. Nothing calls it until the relay is assembled on this host. |
+| Start and stop order of the integration services | `IntegrationLifecycles` in `sangam-assembly` | Plain Java, tested. Not called by this host yet. |
+| Refusal without the scheduling seam (decision 315) | `HostSeams`, `SangamRuntime`, `IntegrationLifecycles.builder` | Works: the start is refused with `CAPABILITY_MISSING` naming `scheduling`, and no integration service is assembled. |
+| The assembly's own sweeps on the host scheduler (decision 315) | `IntegrationSweeps` in `sangam-assembly` | Plain Java, tested. Not called by this host yet. |
+
+### What does not work yet
+
+The integration services themselves are **not constructed on this host**. `audit-chain`, `idempotency-store` and `outbox-relay-inbox` are still reported missing, so every start is still refused with `CAPABILITY_MISSING`. A capability is reported present only when its service really runs; none of the three does.
+
+The rest of phase 3 waits for these decisions and changes, none of which this module can make alone:
+
+1. **Attribution tenant.** The history-to-outbox handler needs the attribution tenant. Its one resolver, `AttributionTenant`, lives in `sangam-server` and reads Spring's `Environment`. It must become a plain-Java function before the assembly can call it.
+2. **Outbox destinations.** The rule that adds the roll-up and history-projection destinations is a static method of the Spring class `IntegrationWiring`. It must move to plain Java, or this host must refuse those settings by name.
+3. **Transactions for the idempotency store and the audit port.** `JdbcIdempotencyAdapter` and `JdbcAuditAdapter` need a `TxSupport` (join, always-new transaction, rollback-only, after-commit). The only implementation is Spring's. `ConnectionBinding` offers one joining transaction and nothing else, so a JTA `TxSupport` needs a design decision (suspend and resume on Narayana) and its own integrity tests.
+4. **Lifecycle authorizer.** The maintenance sweeps call the instance lifecycle service, which needs an authorizer from the security area (phase 2). Without security the Spring wiring uses a no-op authorizer; on this host that would be a silent downgrade.
+5. **Order of engine build and capability check.** The inbox, the reconciliation engine and the audit port need the built engine, but this host checks its capabilities before the engine is built. The rule for claiming such a capability is not decided.
+
+### Scheduling (decision 315)
+
+- The integration services keep their own executors. No service takes a `HostScheduler`.
+- A host without the scheduling seam is refused at start (`CAPABILITY_MISSING` naming `scheduling`). `IntegrationLifecycles.builder` gives the same refusal, so nothing is assembled for such a host.
+- The assembly's own two sweeps run on the `HostScheduler` (`IntegrationSweeps`):
+  - the pending-audit sweep, every `sangam.audit.pending.sweep-interval` (default 30 s; 0 means no sweep);
+  - the idempotency cleanup, every `sangam.rest.idempotency-cleanup-minutes` (default 60), on the leader node only.
+
+### Host difference: the relay wake-up on PostgreSQL (decision 316)
+
+**What the wake-up is.** After a cycle that published something, the outbox relay sends a hint so that waiting subscribers (the worker long-poll, the task-list push) poll again at once. It is only a hint: every subscriber keeps its own poll, and the relay always polls the outbox at its own interval.
+
+**What the Spring host does on PostgreSQL.** The relay sends `pg_notify`. Every node holds a `LISTEN` session on a dedicated physical connection, opened outside the pool with the HikariCP pool's driver settings. A cycle on any node wakes the subscribers on every node.
+
+**What this host does.** The Agroal pool offers no physical connection outside the pool, so this host never opens a `LISTEN` session. `QuarkusHost.relayWakeup` always returns the polling mode (`RelayWakeup.Mode.POLLING`), on every database:
+
+- A relay cycle on this node wakes this node's subscribers in-JVM.
+- A relay cycle on another node is seen at the subscribers' next poll.
+- On PostgreSQL the relay still sends `pg_notify`, so nodes that do listen (Spring nodes on the same database) are woken by this node.
+
+**The intervals.** These are fixed in code on both hosts; **no configuration key sets them**:
+
+- the relay polls the outbox every 1 s (`OutboxRelayService.Settings.defaults`);
+- a waiting worker long-poll polls again after 100 ms, doubling up to 1 s (`WorkLongPoll.Settings.defaults`).
+
+**The effect.** Only latency differs, never a result: at worst a subscriber on this host notices another node's delivery up to 1 s later. In 0.1.0 this host has no HTTP surface (decision 278), so it has no worker long-poll and no subscriber of its own yet.
+
+**Why it is never silent.** The mode is chosen by name. `RelayWakeup.listen` refuses a host that cannot listen; it does not fall back. `RelayWakeup.polling` builds a listener that never opens a connection.
+
+### Broker inbox (decision 317)
+
+The Kafka and JMS broker inbox for this host comes in extraction phase 5 (still 0.1.0). Until then the host refuses to start when either switch is on:
+
+- `sangam.integration.kafka.enabled=true`
+- `sangam.integration.jms.enabled=true`
+
+These are the Spring host's own keys. The refusal is an `IllegalStateException` whose message starts with `BROKER_INBOX_NOT_ON_QUARKUS` and names each switch that is on. `on`, `yes` and `1` are refused like `true`. A value that is not a boolean fails with the key named. `QuarkusHost` raises the refusal when it is constructed, which is before the engine is built.
 
 ## What stays available without it
 
@@ -70,11 +134,15 @@ Everything. The supported host is the Spring standalone server (`sangam-server`)
 
 The engine area (utc-jvm, database-checks, schema-before-engine, jackson-feel-compatibility, and job-leases while executor partitioning is on) is checked by the engine step itself on every start (extraction phase 1b). A failed check returns `CAPABILITY_MISSING` with the check's own exception kept as a suppressed exception.
 
-Every other required capability outside the five seams returns `CAPABILITY_MISSING` until its extraction phase (3, 2, 5) assembles it. These are:
+Every other required capability outside the five seams returns `CAPABILITY_MISSING` until its extraction phase assembles it. All six are still missing today:
 
-- tenant-security-plugin, authorization
-- audit-chain, idempotency-store, outbox-relay-inbox
-- money-invariants
+| Capability | Phase | State |
+|---|---|---|
+| audit-chain, idempotency-store, outbox-relay-inbox | 3 | Started, not finished. See "Integration services on this host". |
+| tenant-security-plugin, authorization | 2 | Not started. |
+| money-invariants | 5 | Not started. |
+
+A broker inbox switched on is refused by name until phase 5 (decision 317, `BROKER_INBOX_NOT_ON_QUARKUS`).
 
 The host refuses at two points, so it never downgrades silently:
 
@@ -94,6 +162,14 @@ The module depends on:
 - `operaton-bpm-quarkus-engine` 2.2.0;
 - `quarkus-arc`, `quarkus-agroal` and `quarkus-narayana-jta` 3.40.1.1. This is the Quarkus version Operaton 2.2.0 pins.
 
+Since extraction phase 3 started, `sangam-assembly` depends on `sangam-integration`, so these also reach this host's closure. They are the versions the default reactor resolves, and they were already in the local repository; none was downloaded:
+
+- `json-schema-validator` 1.5.1 with `itu` 1.10.2, `jackson-dataformat-yaml` 2.22.3 and `snakeyaml` 2.6;
+- `angus-mail` 2.0.4 with `angus-activation` 2.0.2, `jakarta.mail-api` 2.1.5 and `jakarta.activation-api` 2.1.4;
+- `sshd-sftp`, `sshd-core` and `sshd-common` 2.15.0 with `jcl-over-slf4j` 2.0.20.
+
+The Quarkus BOM would move the SSHD and Angus artefacts to other versions, so this module's pom pins them. These artefacts are **not yet in the D-5 licence record for this host**; they are reviewed for the Spring server only.
+
 The closure has these adjustments:
 
 - **Jackson** is held at 2.22.3, the licence policy minimum.
@@ -106,7 +182,10 @@ All downloads, licences and checksums are recorded in `sangam/docs/records/DOWNL
 
 ## Tests
 
-Tests are written but have not been run (status NOT_RUN). They are plain JUnit and do not boot Quarkus:
+The tests in this table are plain JUnit and do not boot Quarkus. They were run on 2026-11-15 (H2, offline, JDK 25): all pass except one.
+
+- **Failing:** `JtaTransactionsTest.engineAndProductRowsCommitOrRollBackTogether`. Its plain engine cannot create `ACT_GE_BYTEARRAY` on the fixture's H2 in `MODE=PostgreSQL` (`Unknown data type: "BLOB"`). A check run showed that `DatabaseGuard.prepareH2`, which the Sangam engine step uses to add the `BLOB` alias, leaves no alias on the fixture's Agroal data source; it logs its failure only at debug level. The cause is not yet known, and the same step runs when this host starts on H2. The other five tests of that class pass.
+- **Not run:** the two conformance kit classes below (they boot Quarkus).
 
 | Test | What it checks |
 |---|---|
@@ -117,6 +196,11 @@ Tests are written but have not been run (status NOT_RUN). They are plain JUnit a
 | `EngineWithoutSpringTest` | no Spring on the class path; the engine builds, deploys and runs |
 | `SangamEngineConfigurationTest` | the Quarkus engine configuration carries `SangamProcessEnginePlugin` first, the guard and after-build step, `EngineSettingsReapplyPlugin` last, the host's data source and transaction manager, and the system audit scope; the bean refuses before any database access, also without the product schema (decision 287 b) |
 | `QuarkusEngineSettingsTest` | default and configured system audit scope; the product schema and executor partitioning switches and their defaults; unbound `sangam.engine.*` keys and `SANGAM_ENGINE_*` environment forms refused; test mode refused in production |
+| `BrokerInboxRefusalTest` | decision 317: the host is refused by name while the Kafka or JMS broker inbox is switched on; off or absent, nothing is refused |
+| `QuarkusRelayWakeupTest` | decision 316: the polling wake-up on every dialect, no `LISTEN` session; a notification that cannot be sent leaves no JTA transaction behind |
+| `RelayWakeupTest` (sangam-assembly) | decision 316: polling never opens a connection, wakes its own JVM and still sends `pg_notify`; `LISTEN` is never chosen or left silently |
+| `IntegrationLifecyclesTest` (sangam-assembly) | phase 3, decision 315: the integration services' start and stop order; nothing assembled without the scheduling seam |
+| `IntegrationSweepsTest` (sangam-assembly) | decision 315: the pending-audit sweep and the idempotency cleanup run on the host scheduler with the Spring host's keys and defaults |
 | `EngineChecksTest` (sangam-assembly) | phase 1b engine checks: job leases needed only with partitioning (decision 286); schema step; database checks on the engine's data source (decision 287 c); one refusal keeps every reason |
 
 ### M-150 conformance kit on Quarkus (owner decision 229)
@@ -143,7 +227,7 @@ Every required capability is removable, and there are no gaps:
 
 Expected results until the extraction phases supply the rest:
 
-- **Equivalence scenarios:** do not pass. Every start is refused with `CAPABILITY_MISSING`, and the host offers no ports (they come with phase 3).
+- **Equivalence scenarios:** do not pass. Every start is refused with `CAPABILITY_MISSING`, and the host offers no ports. The audit and idempotency ports come when phase 3 is finished (see "Integration services on this host"); the others with phases 2 and 5.
 - **Coverage:** expected to pass. All 16 required capabilities are removable and there are no gaps.
 - **Fail-closed kit:** expected to pass for 14. database-checks and job-leases are checked after the host gaps (the database check after the database-free refusal, the job leases at engine build), so their markers appear once phases 3, 2 and 5 leave no host gap.
 

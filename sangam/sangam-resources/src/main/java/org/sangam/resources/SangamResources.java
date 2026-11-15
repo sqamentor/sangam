@@ -25,7 +25,7 @@ import org.sangam.resources.roster.RosterService;
  * <pre>{@code
  * ResourcesContext ctx = ResourcesContext.builder(ResourcesDialect.POSTGRESQL)
  *         .decisions(decisionSource)                       // DMN tables (entitlement, priority, tariff, refund, queue, roster)
- *         .guard(ResourcesContext.Guard.of(security.authorization()))
+ *         .authorization(security.authorization())         // object guard and list visibility; there is no default
  *         .billing(billingAdapter).notifications(notifier).displayFeed(feed)
  *         .approvals(new OperatonApprovalPort(runtimeService))
  *         .leave(new SecurityLeaveCalendar()).seatLink(new SecurityDutySeatLink(postingService))

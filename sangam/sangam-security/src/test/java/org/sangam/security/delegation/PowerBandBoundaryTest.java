@@ -4,13 +4,33 @@ package org.sangam.security.delegation;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import org.sangam.core.power.OperationMetadata;
+import org.sangam.core.power.PowerLimitEvaluator;
+import org.sangam.core.power.PowerRequest;
+
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** SG-01: delegation-of-powers amount bands are exact at 99,999 / 1,00,000 / 1,00,001 (major) and at one paisa. */
+/**
+ * SG-01: delegation-of-powers amount bands are exact at 99,999 / 1,00,000 / 1,00,001 (major) and at one paisa. Since
+ * RM-08 (owner decision 142) the comparison is the core evaluator's: the table only supplies its rows
+ * ({@link DmnPowerRows}), which the service maps to delegated limits ({@link DelegationOfPowersService#applicable}).
+ */
 class PowerBandBoundaryTest {
+
+    static final OperationMetadata.Classification MONETARY =
+            new OperationMetadata.Classification(true, "INR", "powers", "pack:test@1");
+
+    /** Whether {@code amount} is within the power the service derives from {@code rows}, as the core evaluator decides. */
+    static boolean withinPower(BigDecimal amount, List<Map<String, Object>> rows) {
+        return new PowerLimitEvaluator((tenant, caseType, version, action) -> Optional.of(MONETARY),
+                (request, cls) -> DelegationOfPowersService.applicable("powers", 1, rows, cls, request.currency(), "S1", null))
+                .evaluate(new PowerRequest("seat:S1", "SANCTION", "t", null, "CASE", 1, amount, "INR", 0)).permitted();
+    }
 
     /** Two bands on the amount: up to 1,00,000 the seat's power is 1,00,000 (BAND-1); above it BAND-2 (10,00,000). */
     static final String DMN = """
@@ -29,25 +49,31 @@ class PowerBandBoundaryTest {
               </decision>
             </definitions>""";
 
-    static final DmnPowerEvaluator EVAL = new DmnPowerEvaluator();
+    static final DmnPowerRows EVAL = new DmnPowerRows();
 
     @ParameterizedTest
     @CsvSource({"99999,BAND-1", "99999.99,BAND-1", "100000,BAND-1", "100000.00,BAND-1", "100000.01,BAND-2", "100001,BAND-2"})
     void dmnBandSelectionAtTheBoundary(String amount, String band) {
-        DmnPowerEvaluator.Evaluation e = EVAL.evaluate("h1", "powers", DMN, Map.of("amount", new BigDecimal(amount)));
-        assertEquals(band, e.ruleRef(), amount);
+        List<Map<String, Object>> rows = EVAL.rows("h1", "powers", DMN, Map.of("amount", new BigDecimal(amount)));
+        assertEquals(1, rows.size(), "hit policy UNIQUE: one band for " + amount);
+        assertEquals(band, rows.get(0).get("ruleRef"), amount);
     }
 
     @ParameterizedTest
     @CsvSource({"99999,true", "99999.99,true", "100000,true", "100000.00,true", "100000.01,false", "100001,false"})
     void limitIsInclusiveAndExact(String amount, boolean within) {
-        assertEquals(within, DelegationOfPowersService.withinPower(new BigDecimal(amount), new BigDecimal("100000"), false));
+        assertEquals(within, withinPower(new BigDecimal(amount), List.of(Map.of("maxAmount", new BigDecimal("100000")))));
+        // and through the table itself: every amount of the first band meets the ceiling that band states
+        if (within) {
+            BigDecimal a = new BigDecimal(amount);
+            assertEquals(true, withinPower(a, EVAL.rows("h1", "powers", DMN, Map.of("amount", a))), amount);
+        }
     }
 
     @ParameterizedTest
     @CsvSource({"99999,true", "100000,true", "100001,false"})
     void limitBandInMinorUnits(long paise, boolean within) {
         // 1,00,000 paise = 1,000.00
-        assertEquals(within, DelegationOfPowersService.withinPower(BigDecimal.valueOf(paise, 2), new BigDecimal("1000.00"), false));
+        assertEquals(within, withinPower(BigDecimal.valueOf(paise, 2), List.of(Map.of("maxAmount", "1000.00"))));
     }
 }

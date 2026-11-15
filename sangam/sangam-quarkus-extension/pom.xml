@@ -51,6 +51,36 @@
         <artifactId>jspecify</artifactId>
         <version>1.0.1</version>
       </dependency>
+      <!-- Extraction phase 3 (decision 276): sangam-assembly now brings sangam-integration. Its SFTP transport keeps
+           the version sangam-integration declares (2.15.0, the one the default reactor resolves and the licence review
+           covers); the Quarkus BOM would move sshd-core and sshd-common to 2.19.0 under an sshd-sftp 2.15.0. -->
+      <dependency>
+        <groupId>org.apache.sshd</groupId>
+        <artifactId>sshd-core</artifactId>
+        <version>2.15.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.sshd</groupId>
+        <artifactId>sshd-common</artifactId>
+        <version>2.15.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.sshd</groupId>
+        <artifactId>sshd-sftp</artifactId>
+        <version>2.15.0</version>
+      </dependency>
+      <!-- The same for its SMTP connector: angus-mail 2.0.4 with angus-activation 2.0.2, as the default reactor resolves
+           them (dependency:list of sangam-integration, 2026-11-15); the Quarkus BOM would move them to 2.0.5 and 2.0.3. -->
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>angus-mail</artifactId>
+        <version>2.0.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.angus</groupId>
+        <artifactId>angus-activation</artifactId>
+        <version>2.0.2</version>
+      </dependency>
       <!-- the project's JUnit (the Quarkus BOM would move the tests to another JUnit) -->
       <dependency>
         <groupId>org.junit</groupId>

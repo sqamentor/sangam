@@ -29,6 +29,13 @@
       <artifactId>sangam-engine</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- extraction phase 3 (owner decision 276): the integration area is assembled over sangam-integration's plain-Java
+         services (relay, inbox, wake-up); that module names no host framework and does not depend on this one -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-integration</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>

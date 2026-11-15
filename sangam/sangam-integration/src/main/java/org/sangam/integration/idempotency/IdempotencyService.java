@@ -77,14 +77,22 @@ public final class IdempotencyService {
      *                     transaction is treated as a programming error (P-1, X.2.2.7 rule 1): the claim is abandoned
      *                     and the response returned without protection, and an error is logged. When false, the result
      *                     is stored afterwards in its own transaction (not atomic; development only).
+     * @param profile      which commands require a key; required. There is no default: a host that wants commands to
+     *                     run without a key says so with {@link IdempotencyProfile#optional()}
+     * @param authorizer   the replay re-authorisation and field masking (X.2.2.4 step 4); required. There is no
+     *                     default (RM-27): a missing authorizer used to mean "replay every stored response to its
+     *                     caller unchecked and unmasked", which a production wiring could reach by passing null
+     * @throws NullPointerException when {@code profile} or {@code authorizer} is null
      */
     public IdempotencyService(IdempotencyStore store, Dialect dialect, Transactions tx, IdempotencyProfile profile,
                               ReplayAuthorizer authorizer, boolean strictAtomic) {
         this.store = store;
         this.dialect = dialect;
         this.tx = tx;
-        this.profile = profile == null ? IdempotencyProfile.optional() : profile;
-        this.authorizer = authorizer == null ? ReplayAuthorizer.ALLOW_ALL : authorizer;
+        this.profile = java.util.Objects.requireNonNull(profile, "profile: state the idempotency profile explicitly"
+                + " (IdempotencyProfile.optional() lets every command run without a key)");
+        this.authorizer = java.util.Objects.requireNonNull(authorizer, "authorizer: a replay is re-authorised and masked"
+                + " by an explicit ReplayAuthorizer; there is no permissive default (RM-27)");
         this.strictAtomic = strictAtomic;
     }
 

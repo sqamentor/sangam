@@ -164,18 +164,29 @@ class UnverifiedPaymentsH2Test {
                 .orElse(0L));
     }
 
+    /**
+     * The audit events of a type, wherever they are at this instant: still pending ({@code AUDIT_PENDING}) or already
+     * appended to the record's chain ({@code AUDIT_EVENT}). The store signals the drainer after every write and the
+     * drain moves a row from the first table to the second on its own thread, in one transaction, so a count of
+     * {@code AUDIT_PENDING} alone depends on how far that thread has got. One statement reads both tables in one
+     * snapshot: an event is counted once, before or after its drain.
+     */
     static long audit(Fixture f, String type) {
-        return f.tx().inTransaction(c -> Jdbc.one(c, "SELECT COUNT(*) FROM AUDIT_PENDING WHERE event_type=?",
-                rs -> rs.getLong(1), type).orElse(0L));
+        return f.tx().inTransaction(c -> Jdbc.one(c, "SELECT (SELECT COUNT(*) FROM AUDIT_PENDING WHERE event_type=?)"
+                + " + (SELECT COUNT(*) FROM AUDIT_EVENT WHERE event_type=?)", rs -> rs.getLong(1), type, type)
+                .orElse(0L));
     }
 
     static BigDecimal outstanding(Fixture f) {
         return BillingRetryTest.outstanding(f.ledger(), "C-1");
     }
 
+    /** The payloads of the audit events of a type, pending or already on the chain (see {@link #audit}). */
     static String auditPayload(Fixture f, String type) {
         return f.tx().inTransaction(c -> String.join("\n", Jdbc.query(c,
-                "SELECT payload FROM AUDIT_PENDING WHERE event_type=?", rs -> rs.getString(1), type)));
+                "SELECT payload FROM AUDIT_PENDING WHERE event_type=? UNION ALL SELECT p.payload FROM AUDIT_PAYLOAD p"
+                        + " JOIN AUDIT_EVENT e ON e.event_id = p.event_id WHERE e.event_type=?",
+                rs -> rs.getString(1), type, type)));
     }
 
     static void refused(Code code, org.junit.jupiter.api.function.Executable call) {

@@ -17,7 +17,7 @@ import org.sangam.security.assignment.SeatAssignmentResolver;
 import org.sangam.security.audit.SecurityAuditService;
 import org.sangam.security.breakglass.BreakGlassService;
 import org.sangam.security.delegation.DelegationOfPowersService;
-import org.sangam.security.delegation.DmnPowerEvaluator;
+import org.sangam.security.delegation.DmnPowerRows;
 import org.sangam.security.dialect.SecurityDialect;
 import org.sangam.security.identity.PrincipalResolver;
 import org.sangam.security.mask.FieldMaskService;
@@ -102,7 +102,7 @@ public final class SangamSecurity {
         this.postings = new PostingService(dialect, authorization, audit, seats, memberships);
         this.persons = new PersonService(dialect, authorization, audit);
         this.sod = new SegregationOfDutiesService(dialect, authorization, audit, seats, postings, o.sodConflicts());
-        this.powers = new DelegationOfPowersService(dialect, authorization, audit, seats, orgUnits, postings, new DmnPowerEvaluator());
+        this.powers = new DelegationOfPowersService(dialect, authorization, audit, seats, orgUnits, postings, new DmnPowerRows());
         this.approvals = new ApprovalBindingService(dialect, audit);
         this.assignment = new SeatAssignmentResolver(seats, postings, sod, maintainer, audit);
         this.tenants = new TenantAdminService(dialect, authorization, audit);

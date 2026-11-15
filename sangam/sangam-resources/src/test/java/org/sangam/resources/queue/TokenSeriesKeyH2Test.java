@@ -35,7 +35,8 @@ class TokenSeriesKeyH2Test {
         ds.setURL("jdbc:h2:mem:sl84-queue-" + mode + ";MODE=" + mode + ";DB_CLOSE_DELAY=-1");
         try (Connection c = ds.getConnection()) {
             ResourcesSchema.create(c, ResourcesDialect.H2);
-            QueueService queue = new QueueService(ResourcesContext.builder(ResourcesDialect.H2).deliverDirectly(true).build());
+            QueueService queue = new QueueService(ResourcesContext.builder(ResourcesDialect.H2).deliverDirectly(true)
+                    .withoutAuthorization(QueueNestedSettingsH2Test.DEVELOPMENT).build());
             SecurityIdentity actor = SecurityIdentity.system("t1", null);
             queue.defineServicePoint(c, actor, "SP1", "Front desk", null, null, "A", 0, null, null, Map.of());
 
