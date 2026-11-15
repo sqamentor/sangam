@@ -162,7 +162,7 @@ class GraphMailSourceTest {
     }
 
     static TokenSource fixed(String token) {
-        return TokenSource.ofSecret(SecretResolver.of(Map.of("t", token)), "t");
+        return TokenSource.ofSecret(SecretResolver.of(Map.of("secret://graph/token", token)), "secret://graph/token");
     }
 
     GraphMailSource source(TokenSource tokens) {

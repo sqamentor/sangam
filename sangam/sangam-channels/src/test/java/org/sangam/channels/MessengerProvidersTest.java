@@ -36,7 +36,8 @@ class MessengerProvidersTest {
         return new ConnectorRequest("t", UUID.randomUUID(), "a", 1, "root", null, "send", in, null);
     }
 
-    static final SecretResolver SECRETS = SecretResolver.of(Map.of("app-secret", "s3cret", "bad-secret", "bad", "tok", "matrix-token", "bot", "xoxb-sim"));
+    static final SecretResolver SECRETS = SecretResolver.of(Map.of("app-secret", "s3cret", "bad-secret", "bad", "tok", "matrix-token", "bot", "xoxb-sim",
+            "secret://mx/token", "matrix-token", "secret://slack/token", "xoxb-sim")); // a reference is secret://...; any other text is a literal value
 
     @Test
     void weChatStableTokenIsCachedAcrossRuntimeRebuildsAndRefreshedOnceWhenRevoked() {
@@ -119,7 +120,7 @@ class MessengerProvidersTest {
     void matrixAndSlackHaveAdaptersNow() {
         try (MessengerSimulator sim = new MessengerSimulator().start()) {
             HttpTransport tr = HttpTransport.forSimulator();
-            SangamConnector matrix = ChannelRuntime.connector(Map.of("key", "mx", "channel", "matrix", "apiBase", sim.baseUri().toString(), "tokenRef", "tok"),
+            SangamConnector matrix = ChannelRuntime.connector(Map.of("key", "mx", "channel", "matrix", "apiBase", sim.baseUri().toString(), "tokenRef", "secret://mx/token"),
                     ConnectorProfile.SIMULATOR, tr, SECRETS, r -> true);
             assertEquals("matrix", matrix.descriptor().type());
             ConnectorRequest one = req(Map.of("to", "!room:example.org", "text", "hello"));
@@ -129,7 +130,7 @@ class MessengerProvidersTest {
             assertEquals("Bearer matrix-token", sim.sent().get(0).authorization());
             assertTrue(sim.sent().get(0).path().endsWith("/send/m.room.message/" + one.operationId()));
 
-            SangamConnector slack = ChannelRuntime.connector(Map.of("key", "sl", "channel", "SLACK", "apiBase", sim.uri("/slack").toString(), "tokenRef", "bot"),
+            SangamConnector slack = ChannelRuntime.connector(Map.of("key", "sl", "channel", "SLACK", "apiBase", sim.uri("/slack").toString(), "tokenRef", "secret://slack/token"),
                     ConnectorProfile.SIMULATOR, tr, SECRETS, r -> true);
             ConnectorResult.Success posted = assertInstanceOf(ConnectorResult.Success.class, slack.invoke(req(Map.of("to", "C1", "text", "hi"))));
             assertEquals("1700000000.000100", posted.providerRef());
@@ -192,7 +193,7 @@ class MessengerProvidersTest {
             assertArrayEquals(MessengerSimulator.MEDIA, wc.content());
             assertEquals("image/jpeg", wc.contentType());
             MediaDownloads.MediaUnavailableException refused = assertThrows(MediaDownloads.MediaUnavailableException.class,
-                    () -> media.weChat("t", sim.baseUri(), TokenSource.ofSecret(SecretResolver.of(Map.of("b", "bad")), "b"), "MEDIA_1"));
+                    () -> media.weChat("t", sim.baseUri(), TokenSource.ofSecret(SecretResolver.of(Map.of("secret://wc/token", "bad")), "secret://wc/token"), "MEDIA_1"));
             assertFalse(refused.retryable());
 
             MediaDownloads.Media wa = media.whatsApp("t", sim.uri("/wa-media"), TokenSource.ofSecret(SECRETS, "tok"), "m-1");

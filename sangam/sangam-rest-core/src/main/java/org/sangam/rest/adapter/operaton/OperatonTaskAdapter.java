@@ -265,7 +265,7 @@ public class OperatonTaskAdapter implements TaskPort {
                 .toList();
         String delegatedFrom = t.getDelegationState() == org.operaton.bpm.engine.task.DelegationState.PENDING
                 ? t.getOwner() : null;
-        return new TaskDetail(map(t, bk, vars), TypedVariables.toJson(vars), PayloadHash.hash(vars), caseVersion(vars),
+        return new TaskDetail(map(t, bk, vars), TypedVariables.toJson(vars), PayloadHash.hash(vars), TaskVersions.caseVersion(vars),
                 formVersion == null ? null : String.valueOf(formVersion), PayloadHash.materialFields(vars), actions,
                 users, groups, returnTargets(t, vars), sodCheck(ctx, t, vars), candidates,
                 codedReasons(vars.get(REJECT_REASONS)), codedReasons(vars.get(RETURN_REASONS)),
@@ -589,7 +589,7 @@ public class OperatonTaskAdapter implements TaskPort {
             Map<String, Object> vars = OperatonSupport.call(() -> tasks.getVariables(taskId));
             ensureMayAct(ctx, t);
             checkSod(ctx, t, vars);
-            checkVersions(vars, req.caseVersion(), req.payloadHash(), req.formVersion());
+            TaskVersions.check(vars, req.caseVersion(), req.payloadHash(), req.formVersion());
             if (t.getAssignee() == null) {
                 OperatonSupport.run(() -> tasks.claim(taskId, ctx.principalId()));
             }
@@ -651,7 +651,7 @@ public class OperatonTaskAdapter implements TaskPort {
             Map<String, Object> vars = OperatonSupport.call(() -> tasks.getVariables(taskId));
             ensureMayAct(ctx, t);
             checkSod(ctx, t, vars);
-            checkVersions(vars, r.caseVersion(), r.payloadHash(), null);
+            TaskVersions.check(vars, r.caseVersion(), r.payloadHash(), null);
             String pi = t.getProcessInstanceId();
             Map<String, Object> submit = TypedVariables.fromJson(r.variables());
             submit.put(DECISION, "RETURNED");
@@ -705,7 +705,7 @@ public class OperatonTaskAdapter implements TaskPort {
             extra.put("target_activity_id", resolvedTarget);
             extra.put("target_seat_id", r.targetSeatId());
             extra.put("target_level", r.targetLevel());
-            extra.put("version", caseVersion(vars));
+            extra.put("version", TaskVersions.caseVersion(vars));
             extra.put("payload_hash", PayloadHash.hash(vars));
             audit.record(ctx, root(t), "CASE_RETURNED", taskPayload(ctx, t, extra));
             return new CompleteTaskResult(taskId, pi, "RETURNED", PayloadHash.hash(vars), ended(pi), nextTasks(pi));
@@ -852,44 +852,7 @@ public class OperatonTaskAdapter implements TaskPort {
         }
     }
 
-    /** K9 + K4: case version, form version and material payload hash must match what the caller saw. */
-    private static void checkVersions(Map<String, Object> vars, Long caseVersion, String payloadHash, String formVersion) {
-        long current = caseVersion(vars);
-        if (caseVersion != null && caseVersion != current) {
-            throw ApiProblem.conflict("FORM_VERSION_STALE", "This case changed since you opened it (version "
-                    + caseVersion + " to " + current + ")").with("currentVersion", current);
-        }
-        Object fv = vars.get(FORM_VERSION);
-        if (formVersion != null && fv != null && !formVersion.equals(String.valueOf(fv))) {
-            throw ApiProblem.conflict("FORM_VERSION_STALE", "The form version of this task is " + fv)
-                    .with("currentFormVersion", String.valueOf(fv));
-        }
-        if (payloadHash != null) {
-            String now = PayloadHash.hash(vars);
-            if (!now.equalsIgnoreCase(payloadHash)) {
-                throw ApiProblem.conflict("APPROVAL_INVALIDATED",
-                        "The material payload differs from the one you reviewed; reload before deciding")
-                        .with("currentPayloadHash", now);
-            }
-        }
-    }
-
     // ------------------------------------------------------------------ mapping
-
-    static long caseVersion(Map<String, ?> vars) {
-        Object v = vars == null ? null : vars.get(CASE_VERSION);
-        if (v instanceof Number n) {
-            return n.longValue();
-        }
-        if (v instanceof String s && !s.isBlank()) {
-            try {
-                return Long.parseLong(s.trim());
-            } catch (NumberFormatException ignored) {
-                return 1;
-            }
-        }
-        return 1;
-    }
 
     private static List<String> appendActor(Object existing, String actor) {
         List<String> list = new ArrayList<>();

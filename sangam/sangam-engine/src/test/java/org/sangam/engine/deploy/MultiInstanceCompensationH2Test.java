@@ -45,12 +45,12 @@ class MultiInstanceCompensationH2Test {
                     </userTask>
                     <boundaryEvent id="holdComp" attachedToRef="hold"><compensateEventDefinition/></boundaryEvent>
                     <userTask id="refund" isForCompensation="true"/>
-                    <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
                     <sequenceFlow id="f2" sourceRef="hold" targetRef="decide"/>
                     <userTask id="decide"/>
                     <sequenceFlow id="f3" sourceRef="decide" targetRef="comp"/>
                     <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
                     <sequenceFlow id="f4" sourceRef="comp" targetRef="e"/><endEvent id="e"/>
+                    <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
                   </process>
                 </definitions>
                 """.formatted(id, loop, completion);
@@ -69,10 +69,10 @@ class MultiInstanceCompensationH2Test {
                 </serviceTask>
                 <boundaryEvent id="emdComp" attachedToRef="emd"><compensateEventDefinition/></boundaryEvent>
                 <serviceTask id="refund" isForCompensation="true" operaton:type="external" operaton:topic="emd-refund"/>
-                <association id="a1" associationDirection="One" sourceRef="emdComp" targetRef="refund"/>
                 <sequenceFlow id="f2" sourceRef="emd" targetRef="comp"/>
                 <intermediateThrowEvent id="comp"><compensateEventDefinition/></intermediateThrowEvent>
                 <sequenceFlow id="f3" sourceRef="comp" targetRef="e"/><endEvent id="e"/>
+                <association id="a1" associationDirection="One" sourceRef="emdComp" targetRef="refund"/>
               </process>
             </definitions>
             """;
@@ -229,8 +229,8 @@ class MultiInstanceCompensationH2Test {
                   <userTask id="hold"/>
                   <boundaryEvent id="holdComp" attachedToRef="hold"><compensateEventDefinition/></boundaryEvent>
                   <userTask id="refund" isForCompensation="true"/>
-                  <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
                   <sequenceFlow id="g2" sourceRef="hold" targetRef="se"/><endEvent id="se"/>
+                  <association id="a1" associationDirection="One" sourceRef="holdComp" targetRef="refund"/>
                 </subProcess>
                 <sequenceFlow id="f2" sourceRef="perBidder" targetRef="decide"/>
                 <userTask id="decide"/>

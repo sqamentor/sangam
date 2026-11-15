@@ -233,7 +233,9 @@ class Wave4bTablesH2Test {
             assertEquals(java.util.List.of("tenant_id", "prepare_id", "task_id", "document_id", "document_version",
                     "document_sha256", "principal_id", "signer_cert_sha256", "intended_signer_name", "algorithm",
                     "prepared_digest_sha256", "signed_attributes", "signing_time", "prepared_pdf", "created_at", "expires_at",
-                    "used_at", "outcome", "reason_code", "signed_document_version", "completed_at"), cols);
+                    "used_at", "outcome", "reason_code", "signed_document_version", "completed_at",
+                    // decision 241 identity binding (changeset 0045-12)
+                    "enrolment_id", "enrolment_approval_seq"), cols);
         }
         for (String dbms : new String[]{"postgresql", "oracle", "mssql", "mysql", "h2"}) {
             String sql = read("db/changelog/" + dbms + "/sangam-0001-baseline.sql");

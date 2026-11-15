@@ -100,10 +100,12 @@ class VariableMaskingPortsTest {
             if (m.getDeclaringClass() == Object.class) {
                 return m.getName().equals("equals") ? p == args[0] : m.getName().equals("hashCode") ? 1 : "stub";
             }
-            if (m.isDefault()) {
+            // an answered name covers every form of the method (a port's default form may refuse, as the activity-scope
+            // form of ProcessPort#variables does on a server without it); other default methods run as written
+            Function<Object[], Object> a = answers.get(m.getName());
+            if (a == null && m.isDefault()) {
                 return java.lang.reflect.InvocationHandler.invokeDefault(p, m, args);
             }
-            Function<Object[], Object> a = answers.get(m.getName());
             if (a == null) {
                 throw new UnsupportedOperationException(m.getName());
             }

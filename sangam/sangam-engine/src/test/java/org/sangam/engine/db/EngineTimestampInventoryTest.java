@@ -58,7 +58,7 @@ class EngineTimestampInventoryTest {
     @Test
     void inventoryEqualsOperatonsTimestampColumnsAndIsAllEventInstant() throws Exception {
         Set<String> listed = new TreeSet<>();
-        String[] lines = EngineTimestampInventory.csv().split("\n");
+        String[] lines = EngineTimestampInventory.csv().lines().toArray(String[]::new); // LF or CRLF checkout
         assertEquals("table,column,token,class,changeset", lines[0]);
         for (int i = 1; i < lines.length; i++) {
             if (lines[i].isBlank()) {

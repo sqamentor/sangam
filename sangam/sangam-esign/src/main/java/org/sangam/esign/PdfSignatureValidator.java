@@ -100,6 +100,23 @@ public final class PdfSignatureValidator {
         return new Report(valid, out, LIMITS);
     }
 
+    /**
+     * The CMS of a signature's {@code /Contents}: its first ASN.1 structure, byte for byte, without the zero padding that
+     * fills the rest of the space reserved for the signature. Bouncy Castle's {@code CMSSignedData(byte[])} refuses
+     * bytes after the structure ({@code ASN1Primitive.fromByteArray}: "Extra data detected in stream", reported as
+     * "IOException reading content."), so the structure is cut out before it is parsed.
+     *
+     * @throws IOException when the bytes do not start with an ASN.1 structure (for example an unfilled placeholder)
+     */
+    static byte[] cmsOf(byte[] contents) throws IOException {
+        java.io.ByteArrayInputStream in = new java.io.ByteArrayInputStream(contents);
+        // reads exactly one structure from the stream (no read-ahead), so what is left of it is the padding
+        org.bouncycastle.asn1.ASN1InputStream asn1 = new org.bouncycastle.asn1.ASN1InputStream(in, contents.length);
+        if (asn1.readObject() == null) {
+            throw new IOException("the signature /Contents holds no ASN.1 structure");
+        }
+        return java.util.Arrays.copyOf(contents, contents.length - in.available());
+    }
     private SignatureReport check(PDSignature sig, byte[] pdf) {
         int[] br = sig.getByteRange();
         boolean whole = br != null && br.length == 4 && br[0] == 0 && (long) br[2] + br[3] == pdf.length;
@@ -116,8 +133,7 @@ public final class PdfSignatureValidator {
         SignerInformation signer;
         X509CertificateHolder holder;
         try {
-            // /Contents is zero-padded after the DER: the parser reads one structure and ignores the padding
-            cms = new CMSSignedData(new CMSProcessableByteArray(content), contents);
+            cms = new CMSSignedData(new CMSProcessableByteArray(content), cmsOf(contents));
             if (cms.getSignerInfos().size() != 1) {
                 return fail(sig, whole, digest, "CMS_INVALID: expected one signer, found " + cms.getSignerInfos().size());
             }

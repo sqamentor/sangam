@@ -85,7 +85,9 @@ class IncidentOpenedH2Test {
                 <userTask id="prep"/><sequenceFlow id="f1" sourceRef="prep" targetRef="gw"/>
                 <exclusiveGateway id="gw"/>
                 <sequenceFlow id="fLow" sourceRef="gw" targetRef="low"><conditionExpression xsi:type="tFormalExpression">${amount &lt;= 100}</conditionExpression></sequenceFlow>
+                <sequenceFlow id="fMid" sourceRef="gw" targetRef="mid"><conditionExpression xsi:type="tFormalExpression">${amount &gt; 100 &amp;&amp; amount &lt;= 1000}</conditionExpression></sequenceFlow>
                 <userTask id="low"/>
+                <userTask id="mid"/>
               </process>
             </definitions>
             """;
@@ -305,7 +307,14 @@ class IncidentOpenedH2Test {
         assertEquals(IncidentErrorClass.BUSINESS, IncidentErrorClass.of(false, new BpmnError("E-1")));
         assertEquals(IncidentErrorClass.BUSINESS, IncidentErrorClass.of(false,
                 new ProcessEngineException("wrapped", new BpmnError("E-2"))));
-        assertEquals(IncidentErrorClass.UNKNOWN, IncidentErrorClass.of(false, new BpmnError(" ")), "a blank code proves nothing");
+        // the engine's BpmnError refuses a blank code in its constructor; a subclass can still answer one
+        BpmnError blank = new BpmnError("E-3") {
+            @Override
+            public String getErrorCode() {
+                return " ";
+            }
+        };
+        assertEquals(IncidentErrorClass.UNKNOWN, IncidentErrorClass.of(false, blank), "a blank code proves nothing");
         assertEquals(IncidentErrorClass.UNKNOWN, IncidentErrorClass.of(false, new IllegalStateException("boom")));
     }
 }

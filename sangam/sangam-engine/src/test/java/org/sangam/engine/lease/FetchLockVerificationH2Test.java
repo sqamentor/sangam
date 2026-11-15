@@ -62,7 +62,12 @@ class FetchLockVerificationH2Test {
                          xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="t">
               <process id="fl" isExecutable="true">
                 <startEvent id="s"/><sequenceFlow id="f1" sourceRef="s" targetRef="x"/>
-                <serviceTask id="x" operaton:type="external" operaton:topic="verify"/>
+                <serviceTask id="x" operaton:type="external" operaton:topic="verify">
+                  <!-- class (a): expired work is offered again; undeclared work is held at expiry (A-8 default) -->
+                  <extensionElements><operaton:properties>
+                    <operaton:property name="sangam:capabilityClass" value="a"/>
+                  </operaton:properties></extensionElements>
+                </serviceTask>
                 <sequenceFlow id="f2" sourceRef="x" targetRef="e"/><endEvent id="e"/>
               </process>
             </definitions>

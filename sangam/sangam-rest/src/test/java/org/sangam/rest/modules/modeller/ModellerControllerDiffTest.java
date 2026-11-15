@@ -104,7 +104,7 @@ class ModellerControllerDiffTest {
         for (ModellerController.ModelDiffRequest bad : List.of(
                 new ModellerController.ModelDiffRequest(null, V1, V2),
                 new ModellerController.ModelDiffRequest(" ", V1, V2),
-                new ModellerController.ModelDiffRequest("x".repeat(250) + ".bpmn", V1, V2),
+                new ModellerController.ModelDiffRequest("x".repeat(ModellerController.MAX_RESOURCE_LENGTH) + ".bpmn", V1, V2),
                 new ModellerController.ModelDiffRequest("order.bpmn", "x".repeat(ModellerController.MAX_MODEL_BYTES + 1), V2))) {
             ApiProblem p = assertThrows(ApiProblem.class, () -> c.diffModels(CTX, bad));
             assertEquals(400, p.status());

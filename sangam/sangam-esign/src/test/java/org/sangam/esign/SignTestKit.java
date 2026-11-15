@@ -52,7 +52,9 @@ final class SignTestKit {
     static byte[] onePagePdf() throws IOException {
         try (PDDocument doc = new PDDocument(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doc.addPage(new PDPage());
-            doc.save(out);
+            // plain objects (PDFBox 3 writes compressed object streams by default): a test can then find and change a
+            // dictionary entry such as /MediaBox in the bytes
+            doc.save(out, org.apache.pdfbox.pdfwriter.compress.CompressParameters.NO_COMPRESSION);
             return out.toByteArray();
         }
     }

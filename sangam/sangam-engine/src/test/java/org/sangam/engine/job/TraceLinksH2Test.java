@@ -109,9 +109,6 @@ class TraceLinksH2Test {
     void creatingContextIsStoredLinkedAndRemoved() throws Exception {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:m062l" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
-        try (Connection c = ds.getConnection()) {
-            JobSideTablesDdl.create(c);
-        }
         Recorder r = new Recorder();
         SangamEngineSettings s = new SangamEngineSettings();
         s.setSystemAuditScope("system:platform"); // decision 144: required at engine start

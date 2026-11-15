@@ -109,8 +109,12 @@ final class RevocationChecker {
             CertificateID id = new CertificateID(digests.get(CertificateID.HASH_SHA1), issuerHolder, cert.getSerialNumber());
             byte[] nonce = new byte[16];
             NONCES.nextBytes(nonce);
+            // RFC 8954: the extension value is the DER encoding of Nonce ::= OCTET STRING, so the nonce is an OCTET
+            // STRING inside the extension's own OCTET STRING (the echo below is read the same way). Raw nonce bytes
+            // as the value are not a Nonce, and a responder that parses the extension refuses the request.
             byte[] req = new OCSPReqBuilder().addRequest(id).setRequestExtensions(new Extensions(new Extension(
-                    OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(nonce)))).build().getEncoded();
+                    OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(new DEROctetString(nonce)))))
+                    .build().getEncoded();
             HttpTransport.Outcome.Response r = fetch(tenant, new HttpTransport.Call("POST", URI.create(url),
                     Map.of("Content-Type", "application/ocsp-request", "Accept", "application/ocsp-response"), req,
                     timeout, true));
@@ -219,7 +223,9 @@ final class RevocationChecker {
     }
 
     private HttpTransport.Outcome.Response fetch(String tenant, HttpTransport.Call call) {
-        HttpTransport.Outcome o = transport.execute(tenant, call, clock.millis() + timeout.toMillis());
+        // The transport's deadline is wall-clock time (it compares with System.currentTimeMillis()). The injected clock is
+        // the verification time the answers are judged at; as a deadline it would refuse every call whenever it is not now.
+        HttpTransport.Outcome o = transport.execute(tenant, call, System.currentTimeMillis() + timeout.toMillis());
         return o instanceof HttpTransport.Outcome.Response r && r.status() == 200 ? r : null;
     }
 

@@ -386,8 +386,9 @@ public final class EsignTestPki implements AutoCloseable {
             if (nonce != null && ocspMode != Mode.NO_NONCE && ocspMode != Mode.NO_NONCE_OPEN) {
                 ASN1Encodable value = ocspMode == Mode.WRONG_NONCE ? new DEROctetString(new byte[16])
                         : nonce.getParsedValue();
+                // RFC 8954: the extension value is the DER encoding of the Nonce OCTET STRING (as in the request)
                 b.setResponseExtensions(new Extensions(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false,
-                        new DEROctetString(((org.bouncycastle.asn1.ASN1OctetString) value).getOctets()))));
+                        new DEROctetString(value))));
             }
             KeyPair signing = ocspMode == Mode.WRONG_SIGNER ? stranger.keys() : ca.keys();
             ContentSigner cs = new JcaContentSignerBuilder("SHA256withRSA").build(signing.getPrivate());

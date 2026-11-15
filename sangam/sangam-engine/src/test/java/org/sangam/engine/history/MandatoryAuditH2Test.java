@@ -285,7 +285,10 @@ class MandatoryAuditH2Test {
     @Test
     void perDefinitionNoneStillAuditsTheParent() {
         Run legacy = run(parentNone(), true);
-        assertTrue(legacy.audit().isEmpty(), "precondition: an empty audited set audits nothing");
+        // INCIDENT_OPENED is not a history event: the incident handler writes it whatever the audited set is (class B,
+        // decisions 299 to 303)
+        assertTrue(legacy.audit().stream().allMatch(e -> e.startsWith("INCIDENT_OPENED|")),
+                "precondition: an empty audited set audits no history event: " + legacy.audit());
         Run current = run(parentNone(), false);
         assertTrue(current.audit().containsAll(PARENT_CLASS_B), "class-B events of the none definition: " + current.audit());
         assertEquals(0, current.history().get("ACT_HI_PROCINST").stream().filter(r -> r.contains("m012P")).count(),

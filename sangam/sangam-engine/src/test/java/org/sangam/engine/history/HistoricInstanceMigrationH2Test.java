@@ -93,7 +93,8 @@ class HistoricInstanceMigrationH2Test {
         var ext = engine.getExternalTaskService();
         var locked = ext.fetchAndLock(1, "w-1").topic("fc18", 60_000L).execute();
         ext.complete(locked.get(0).getId(), "w-1");
-        engine.getIdentityService().setAuthenticatedUserId("u1");
+        // the user of the operation log row, authenticated for the instance's tenant (the engine checks the tenant)
+        engine.getIdentityService().setAuthentication("u1", List.of(), tenant == null ? List.of() : List.of(tenant));
         try {
             engine.getRuntimeService().setVariable(pid, "checked", true); // ACT_HI_OP_LOG row of the instance
             String task = engine.getTaskService().createTaskQuery().processInstanceId(pid).singleResult().getId();

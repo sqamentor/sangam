@@ -186,6 +186,7 @@ class AppDeploymentServiceH2Test {
         AppDeploymentService.AppDeployment d = svc.deploy(null, bundle("{\"key\":\"eventsOnly\"}", "e.event", EVENT), "kim");
         assertEquals(null, d.engineDeploymentId());
         assertTrue(events.event("", "claimFiled").isPresent(), "default tenant");
-        assertEquals(1, count("SELECT COUNT(*) FROM APP_DEPLOYMENT WHERE tenant_id = ''"));
+        // SL-86: a row of no tenant is stored under the shared key, never '' (Oracle stores '' as NULL)
+        assertEquals(1, count("SELECT COUNT(*) FROM APP_DEPLOYMENT WHERE tenant_id = '" + org.sangam.core.layer.TenantKey.SHARED + "'"));
     }
 }

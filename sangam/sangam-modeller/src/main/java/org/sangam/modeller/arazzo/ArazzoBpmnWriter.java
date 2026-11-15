@@ -71,6 +71,7 @@ final class ArazzoBpmnWriter {
         for (Process p : processes) {
             defs.appendChild(process(doc, p));
         }
+        org.sangam.modeller.bpmn.FlowReferences.write(doc);
         return serialize(doc);
     }
 

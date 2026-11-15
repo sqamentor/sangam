@@ -98,7 +98,10 @@ public final class ChecklistValidator {
                 // decision 212: exact decimal comparison; answer text must already be canonical so every client hashes one form
                 BigDecimal d = exactNumber(a);
                 if (d == null) {
-                    return "number expected";
+                    // a number written with blanks around it is a number in another form, not a missing number: the
+                    // answer is refused all the same, and the message names the form to send
+                    BigDecimal padded = a instanceof String s ? exactNumber(s.strip()) : null;
+                    return padded == null ? "number expected" : "number not canonical: expected " + canonical(padded);
                 }
                 if (a instanceof String s && !s.equals(canonical(d))) {
                     return "number not canonical: expected " + canonical(d);

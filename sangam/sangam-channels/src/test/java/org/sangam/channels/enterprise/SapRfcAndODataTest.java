@@ -29,8 +29,8 @@ class SapRfcAndODataTest {
         return new ConnectorRequest("t", UUID.randomUUID(), "a", 1, "root", null, op, in, null);
     }
 
-    static final SapRfc.Destination DEST = new SapRfc.Destination("sangam-t-erp", "127.0.0.1", "00", "100", "RFC_USER", "sap-pw", "EN", Map.of());
-    static final SecretResolver SECRETS = SecretResolver.of(Map.of("sap-pw", "sim-password"));
+    static final SapRfc.Destination DEST = new SapRfc.Destination("sangam-t-erp", "127.0.0.1", "00", "100", "RFC_USER", "secret://erp/password", "EN", Map.of());
+    static final SecretResolver SECRETS = SecretResolver.of(Map.of("secret://erp/password", "sim-password"));
 
     /** Records what it was asked and answers with a scripted result or failure. */
     static final class FakeClient implements SapRfc.Client {

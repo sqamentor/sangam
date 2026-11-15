@@ -24,10 +24,13 @@ class SangamDefaultsDriftTest {
     static final List<String> SERVER_ONLY = List.of("server.", "management.", "logging.", "spring.application.",
             "spring.profiles.", "spring.lifecycle.");
 
-    /** Modules a host gets off until it enables them (all on in the server). */
+    /** Modules a host gets off until it enables them (on in the server, except {@link #SERVER_OFF}). */
     static final List<String> HOST_OFF = List.of("compliance", "pipelines", "telemetry", "config", "packs", "onboarding",
             "ledger", "billing", "registry", "resources", "case", "programme", "geo", "field", "connectors-health",
             "channels", "ai", "ops", "modeller");
+
+    /** The optional modules that are off in the server as well (decision 187: sangam-connectors-health). */
+    static final List<String> SERVER_OFF = List.of("connectors-health");
 
     static Map<String, Object> flat(MapPropertySource s) {
         return new TreeMap<>(s.getSource());
@@ -49,7 +52,9 @@ class SangamDefaultsDriftTest {
         for (String module : HOST_OFF) {
             String key = "sangam.modules." + module + ".enabled";
             String env = "SANGAM_MODULE_" + module.toUpperCase(java.util.Locale.ROOT).replace('-', '_');
-            assertEquals("${" + env + ":true}", String.valueOf(expected.get(key)), "the server sets " + key + " on");
+            boolean on = !SERVER_OFF.contains(module);
+            assertEquals("${" + env + ":" + on + "}", String.valueOf(expected.get(key)),
+                    "the server sets " + key + (on ? " on" : " off"));
             expected.put(key, "${" + env + ":false}");
         }
         assertEquals(expected, defaults);

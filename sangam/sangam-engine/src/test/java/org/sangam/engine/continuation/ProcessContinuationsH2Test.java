@@ -111,6 +111,7 @@ class ProcessContinuationsH2Test {
         s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setApplyEnvironment(false);
         s.setAllowMultipleEnginesPerJvm(true);
+        s.setEngineSchemaUpdate("true"); // the engine creates its own tables in this test database
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL("jdbc:h2:mem:can" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
         engine = SangamEngineFactory.build(ds, s, "h2");
