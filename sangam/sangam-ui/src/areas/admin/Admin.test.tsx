@@ -728,7 +728,7 @@ describe('registry screens', () => {
     type(d, 'admin.endpoint', 'https://pfms.example.gov.in/api');
     fireEvent.click(within(d).getByLabelText(T('recon.classLabel.b')));
     fireEvent.click(buttonIn(d, 'common.save'));
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/services', { key: 'pfms', name: 'PFMS', connector: 'PFMS', endpoint: 'https://pfms.example.gov.in/api', capabilityClass: 'b' }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/services', { key: 'pfms', name: 'PFMS', connector: 'PFMS', endpoint: 'https://pfms.example.gov.in/api', capabilityClass: 'b', simulator: false }));
   });
 
   it('routing strategies: the claim limit is a number and below its minimum is refused', async () => {
@@ -772,7 +772,18 @@ describe('registry screens', () => {
     expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
     expect(screen.getByRole('button', { name: T('common.retry') })).toBeTruthy();
   });
-});
+
+  it('a new agent definition starts from the field defaults: human review on, as the box shows and the body sends', async () => {
+    api.post.mockImplementation(async (_p: string, body: Record<string, unknown>) => ({ id: 'a1', ...body }));
+    show(<AgentDefinitions />);
+    fireEvent.click(screen.getByRole('button', { name: T('common.new') }));
+    const d = dialog();
+    expect((within(d).getByLabelText(L('admin.humanReview')) as HTMLInputElement).checked).toBe(true);
+    type(d, 'ops.key', 'triage-bot');
+    fireEvent.change(within(d).getByLabelText(L('admin.modelProvider')), { target: { value: 'SELF_HOSTED' } });
+    fireEvent.click(buttonIn(d, 'common.save'));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/agents', expect.objectContaining({ key: 'triage-bot', provider: 'SELF_HOSTED', humanReview: true })));
+  });});
 
 // ====================================================================== M-032 module security defaults
 

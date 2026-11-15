@@ -28,6 +28,24 @@ export interface CrudRowAction<R> {
   visible?: (r: R & Record<string, any>) => boolean;
 }
 
+/**
+ * The values a new entry starts with: each field's defaultValue (fields inside groups too); a checkbox without one
+ * starts unchecked, so it is sent as false, the value its box shows (a primitive the server refuses when missing,
+ * Jackson 3); then the screen's newDefaults, which win.
+ */
+export function newEntryValues(fields: FormField[], newDefaults: Record<string, unknown> = {}): FormValues {
+  const out: FormValues = {};
+  const walk = (fs: FormField[]) => {
+    for (const f of fs) {
+      if (f.type === 'group') walk(f.components ?? []);
+      else if (f.key && f.defaultValue !== undefined) out[f.key] = f.defaultValue;
+      else if (f.key && f.type === 'checkbox') out[f.key] = false;
+    }
+  };
+  walk(fields);
+  return { ...out, ...newDefaults };
+}
+
 function translateFields(fields: FormField[], t: (k: string) => string): FormField[] {
   return fields.map((f) => ({
     ...f,
@@ -137,7 +155,8 @@ export function CrudPage<R extends { id?: string }>({
           <>
             {extraToolbar}
             {canCreate && (
-              <button type="button" className="primary" onClick={() => edit({ ...newDefaults }, true)}>
+              <button type="button" className="primary" onClick={() => edit(newEntryValues(fields, newDefaults), true)}>
+
                 {t('common.new')}
               </button>
             )}
