@@ -55,6 +55,7 @@ class ReplayRulesContractTest {
             Map.entry("compliance.consent.withdraw", new Expected("owner / compliance.modify", OWN)),
             Map.entry("compliance.consent-artefact.ingest", new Expected(null, OWN)),
             Map.entry("compliance.rights-request.submit", new Expected(null, OWN)),
+            Map.entry("compliance.rights.otp.issue", new Expected(null, OWN)),
             Map.entry("cell.tenant.import.prepare", new Expected("role CELL_ADMIN", CELL)),
             Map.entry("cell.tenant.freeze", new Expected("role CELL_ADMIN", CELL)),
             Map.entry("cell.tenant.export", new Expected("role CELL_ADMIN", CELL)),

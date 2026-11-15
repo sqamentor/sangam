@@ -92,6 +92,8 @@ final class ReplayRules {
             // public routes (SecurityConfig permitAll); an anonymous call never reaches the idempotency store
             Map.entry("compliance.consent-artefact.ingest", new Explicit(null, new Authenticated())),
             Map.entry("compliance.rights-request.submit", new Explicit(null, new Authenticated())),
+            // owner decision 360: the one-time-code challenge of a rights request, public like the submission
+            Map.entry("compliance.rights.otp.issue", new Explicit(null, new Authenticated())),
             // cell service role (CellTenantAdminController, CellParkedInboundController requireRole)
             Map.entry("cell.tenant.import.prepare", new Explicit(CELL_TEXT, CELL_ADMIN)),
             Map.entry("cell.tenant.freeze", new Explicit(CELL_TEXT, CELL_ADMIN)),
