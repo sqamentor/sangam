@@ -15,7 +15,9 @@ export default defineConfig({
   build: {
     outDir: 'dist-embed',
     emptyOutDir: true,
-    sourcemap: true,
+    // CERT-In / DPDP matrix W-11: the module is served publicly by every host page, so it ships no source map, as the
+    // UI build (vite.config.ts); scripts/build-sourcemaps.test.mjs.
+    sourcemap: false,
     // Everything inline: the module must work from any path on the host without extra files.
     assetsInlineLimit: Number.MAX_SAFE_INTEGER,
     cssCodeSplit: false,
