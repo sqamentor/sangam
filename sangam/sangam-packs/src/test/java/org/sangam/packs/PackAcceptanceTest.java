@@ -129,6 +129,8 @@ class PackAcceptanceTest {
         }
         Map<String, JsonNode> rows = new java.util.LinkedHashMap<>();
         jsonOf(driver.var(bk, "meritList")).forEach(r -> rows.put(r.path("key").asText(), r));
+        // a ranked candidate without a post is on the waitlist with the score the ranking used (MeritListDelegate)
+        jsonOf(driver.var(bk, "waitlist")).forEach(r -> rows.putIfAbsent(r.path("key").asText(), r));
         if (merit.has("waitlist")) {
             List<String> want = new ArrayList<>();
             merit.path("waitlist").forEach(n -> want.add(p + n.asText()));

@@ -177,7 +177,7 @@ class MoneyEachOperationTest {
     }
 
     private static final java.util.regex.Pattern CODE =
-            java.util.regex.Pattern.compile("(REGISTER|ITEM|RULES)_[A-Z]+(?=:)");
+            java.util.regex.Pattern.compile("(REGISTER|ITEM|RULES)_[A-Z_]+(?=:)"); // a code has several words
 
     /** The refusal code ({@code CODE: message}) of a start that must fail. */
     private static String refusal(String key, Map<String, Object> v) {

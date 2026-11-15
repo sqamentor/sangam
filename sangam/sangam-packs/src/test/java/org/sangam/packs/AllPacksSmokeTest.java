@@ -82,7 +82,7 @@ class AllPacksSmokeTest {
         }
         // money is integer minor units (SD-398, packgen money.py): 1,000.00 rupees = 100000 paise
         for (String n : List.of("amount", "estimateAmount", "income", "unitPrice", "lastPay", "bgAmount", "contractValue",
-                "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount")) {
+                "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount", "debtAmount")) {
             v.put(n, 100_000L);
         }
         for (String n : List.of("age", "durationYears", "leaveDays", "extensionDays", "delayDays", "retentionYears",
