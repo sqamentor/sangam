@@ -390,3 +390,12 @@ Decisions 335 to 356 were taken on 2026-11-15. The owner's words: "Go Ahead I Ap
 - **354 (replay capture of dates, owner chat 2026-11-15)**: A LocalDate variable is captured as `LOCAL_DATE` with the tenant's zone, never dropped.
 - **355 (by-key suspension and tenantless definitions, owner chat 2026-11-15)**: A tenant-scoped identity cannot suspend or activate tenantless (shared) definitions or jobs by key; such a call is refused by name at Sangam's seam.
 - **356 (explicit schema update in production, owner chat 2026-11-15)**: An explicit `schema-update=true` in production is honoured, as the server already does, and logged at warn level.
+
+Decision 357 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the open ROUTING-INCIDENT-KEYS question (joint ledger 2026-11-15), on the evidence below; IFMS had not answered.
+
+- **357 (routing-incident payload keys, owner chat 2026-11-15)**: The three keys of decision 144 (`engineTenant`, `resolvedScope`, `resolutionReason`) are additive within ROUTING-INCIDENT v1, after the six v1 keys, which keep their order. Evidence: the one consumer, the OneIFMS adapter, takes the code as the incident message prefix and parses nothing else (oneifms `adapters/workflow-sangam/.../SangamRoutingIncidents.java`, `code(String)`, commit c8c3b204, P-452). A change to the six keys, their order, the codes or the event type stays a v2 with the consumers first.
+
+Decisions 358 and 359 were taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the points lane D3 left open; the recommended option is recorded.
+
+- **358 (API token scopes, refines 351, owner chat 2026-11-15)**: `ApiTokenService.issue` refuses, by name, scopes that are not a subset of the owner's roles. Two narrow documented paths stay open: break-glass issues through its own method (roles from tenant configuration after dual approval; every use raises an alarm), and service-principal creation first binds the requested roles to the new principal, which requires the caller to hold the right to grant each role, then issues. The e2e set-up binds roles the same way.
+- **359 (idle timeout on the hall display, owner chat 2026-11-15)**: The queue hall display (`/display/queue/`) is exempt from the idle sign-out, because nobody gives it input; every other page has it. The Teams app gets the same idle sign-out when it is enabled.
