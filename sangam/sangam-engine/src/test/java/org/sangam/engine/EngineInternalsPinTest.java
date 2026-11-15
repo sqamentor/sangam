@@ -410,6 +410,63 @@ class EngineInternalsPinTest {
         });
     }
 
+    /**
+     * I-18 (SL-45, round 3 item 3): Operaton's {@code TenantCommandChecker} has no check for a suspension-state change
+     * by process definition key; what keeps an identity of tenant B off tenant A's rows is the tenant check inside
+     * each by-key UPDATE statement ({@code queryTenantCheckWithPrefix} in the {@code processDefinitionKey} branch).
+     * Sangam's task-suspension report ({@code TenantScopedCreation.Tasks}) reads by key with the same check. Pinned:
+     * every by-key suspension UPDATE of the 2.2 mappings has the include inside that branch, and the fragment is the
+     * check on the authenticated tenants. {@code SuspensionByKeyTenantH2Test} is the behaviour.
+     */
+    @Test
+    void i18_byKeySuspensionUpdatesCarryTheCallersTenantCheck() throws Exception {
+        String include = "org.operaton.bpm.engine.impl.persistence.entity.TenantEntity.queryTenantCheckWithPrefix";
+        String[][] statements = {
+                {"ProcessDefinition.xml", "<update id=\"updateProcessDefinitionSuspensionStateByParameters\""},
+                {"JobDefinition.xml", "<update id=\"updateJobDefinitionSuspensionStateByParameters\""},
+                {"Execution.xml", "<update id=\"updateExecutionSuspensionStateByParameters\""},
+                {"Job.xml", "<update id=\"updateJobSuspensionStateByParameters\""},
+                {"ExternalTask.xml", "<update id=\"updateExternalTaskSuspensionStateByParameters\""},
+                {"Task.xml", "<sql id=\"updateTaskSuspensionStateByParametersSql\""}};
+        for (String[] s : statements) {
+            String xml = mapping(s[0]);
+            int start = xml.indexOf(s[1]);
+            assertTrue(start >= 0, "I-18: " + s[0] + " has " + s[1]);
+            String statement = xml.substring(start, xml.indexOf(s[1].startsWith("<sql") ? "</sql>" : "</update>", start));
+            String branch = ifBlock(statement, "<if test=\"parameter.processDefinitionKey != null\">");
+            assertTrue(branch.contains("<include refid=\"" + include + "\""),
+                    "I-18: the by-key branch of " + s[1] + " (" + s[0] + ") carries the tenant check: " + branch);
+        }
+        String tenant = mapping("Tenant.xml");
+        String fragment = tenant.substring(tenant.indexOf("<sql id=\"queryTenantCheckWithPrefix\">"));
+        fragment = fragment.substring(0, fragment.indexOf("</sql>"));
+        assertTrue(fragment.contains("tenantCheck.isTenantCheckEnabled") && fragment.contains("tenantCheck.authTenantIds"),
+                "I-18: the fragment checks the authenticated tenants: " + fragment);
+    }
+
+    private static String mapping(String file) throws java.io.IOException {
+        try (var in = EngineInternalsPinTest.class.getClassLoader()
+                .getResourceAsStream("org/operaton/bpm/engine/impl/mapping/entity/" + file)) {
+            assertTrue(in != null, "I-18: mapping " + file);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    /** The {@code <if>} element that starts with {@code open}, up to its own {@code </if>}. */
+    private static String ifBlock(String text, String open) {
+        int start = text.indexOf(open);
+        assertTrue(start >= 0, "I-18: " + open + " in " + text);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("<if\\b|</if>").matcher(text);
+        int depth = 0;
+        m.region(start, text.length());
+        while (m.find()) {
+            depth += m.group().equals("</if>") ? -1 : 1;
+            if (depth == 0) {
+                return text.substring(start, m.end());
+            }
+        }
+        throw new AssertionError("I-18: unbalanced <if> in " + text);
+    }
     /** Throws {@link #failure} from an async service task (I-19). */
     public static class FailingDelegate implements JavaDelegate {
         static volatile RuntimeException failure;

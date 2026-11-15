@@ -170,7 +170,7 @@ public final class TenantScopedCreation {
         @Override
         public void updateTaskSuspensionStateByProcessInstanceId(String processInstanceId,
                                                                  org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
-            var before = changing(q -> q.processInstanceId(processInstanceId), state);
+            var before = changing(q -> q.processInstanceId(processInstanceId), state, false);
             super.updateTaskSuspensionStateByProcessInstanceId(processInstanceId, state);
             report(before, state);
         }
@@ -178,7 +178,7 @@ public final class TenantScopedCreation {
         @Override
         public void updateTaskSuspensionStateByProcessDefinitionId(String processDefinitionId,
                                                                    org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
-            var before = changing(q -> q.processDefinitionId(processDefinitionId), state);
+            var before = changing(q -> q.processDefinitionId(processDefinitionId), state, false);
             super.updateTaskSuspensionStateByProcessDefinitionId(processDefinitionId, state);
             report(before, state);
         }
@@ -186,7 +186,7 @@ public final class TenantScopedCreation {
         @Override
         public void updateTaskSuspensionStateByProcessDefinitionKey(String processDefinitionKey,
                                                                     org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
-            var before = changing(q -> q.processDefinitionKey(processDefinitionKey), state);
+            var before = changing(q -> q.processDefinitionKey(processDefinitionKey), state, true);
             super.updateTaskSuspensionStateByProcessDefinitionKey(processDefinitionKey, state);
             report(before, state);
         }
@@ -201,7 +201,7 @@ public final class TenantScopedCreation {
                 } else {
                     q.tenantIdIn(processDefinitionTenantId);
                 }
-            }, state);
+            }, state, true);
             super.updateTaskSuspensionStateByProcessDefinitionKeyAndTenantId(processDefinitionKey,
                     processDefinitionTenantId, state);
             report(before, state);
@@ -210,7 +210,7 @@ public final class TenantScopedCreation {
         @Override
         public void updateTaskSuspensionStateByCaseExecutionId(String caseExecutionId,
                                                                org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
-            var before = changing(q -> q.caseExecutionId(caseExecutionId), state);
+            var before = changing(q -> q.caseExecutionId(caseExecutionId), state, false);
             super.updateTaskSuspensionStateByCaseExecutionId(caseExecutionId, state);
             report(before, state);
         }
@@ -227,12 +227,20 @@ public final class TenantScopedCreation {
 
         /**
          * The tasks of the scope in the opposite state (they are the ones the UPDATE changes), read with the command's
-         * authorization and tenant checks off: the command has already been authorised, and the UPDATE itself is not
-         * filtered, so the events cover exactly the rows it changes. Empty when the engine has no listener.
+         * authorization check off (the command has already been authorised) and with the tenant check exactly as the
+         * UPDATE has it, so the events cover exactly the rows it changes. Empty when the engine has no listener.
+         *
+         * <p>{@code tenantChecked}: Operaton's UPDATE by process definition key (with or without a tenant id) carries
+         * the caller's tenant check in its statement ({@code Task.xml updateTaskSuspensionStateByParametersSql},
+         * {@code queryTenantCheckWithPrefix} in the {@code processDefinitionKey} branch), so the read keeps the
+         * command's tenant check: an identity of tenant B changing a key by key changes none of tenant A's tasks, and
+         * none of them may be reported (SL-45). The UPDATEs by instance, definition id and case execution have no tenant
+         * check of their own (Operaton's {@code TenantCommandChecker} checked the addressed object first), so the read
+         * has none either.
          */
         private List<org.sangam.core.engine.TaskSuspensionEvents.ChangedTask> changing(
                 java.util.function.Consumer<org.operaton.bpm.engine.impl.TaskQueryImpl> scope,
-                org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state) {
+                org.operaton.bpm.engine.impl.persistence.entity.SuspensionState state, boolean tenantChecked) {
             if (!org.sangam.core.engine.TaskSuspensionEvents.hasListeners(engineName())) {
                 return List.of();
             }
@@ -247,7 +255,9 @@ public final class TenantScopedCreation {
             boolean auth = cc.isAuthorizationCheckEnabled();
             boolean tenant = cc.isTenantCheckEnabled();
             cc.disableAuthorizationCheck();
-            cc.disableTenantCheck();
+            if (!tenantChecked) {
+                cc.disableTenantCheck();
+            }
             try {
                 List<org.sangam.core.engine.TaskSuspensionEvents.ChangedTask> out = new java.util.ArrayList<>();
                 for (org.operaton.bpm.engine.task.Task t : findTasksByQueryCriteria(q)) {
