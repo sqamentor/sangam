@@ -3,6 +3,7 @@ package org.sangam.server.config;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -273,6 +274,29 @@ public class SecurityWiring {
     @Bean
     public IdentityExtrasPort sangamIdentityExtrasPort(SangamSecurity security) {
         return new SecurityIdentityExtras(security.privileges(), security.tokens());
+    }
+
+    /** Actor id of the start-time platform role rows (decision 370), recorded as their {@code updated_by}. */
+    static final String PLATFORM_ROLE_ROWS_ACTOR = "platform-role-rows";
+
+    /**
+     * Decision 370 (1): at start, every existing tenant gets the platform role rows it lacks (the same code-derived
+     * list as a new tenant, {@link #platformRoles()}): idempotent, never overwriting a role an administrator defined,
+     * audited per tenant. A failure stops the start (fail closed): a tenant without its rows would refuse its service
+     * principals' scopes.
+     */
+    @Bean
+    public org.springframework.boot.ApplicationRunner sangamPlatformRoleRows(SangamSecurity security,
+                                                                             Transactions sangamProductTransactions) {
+        return args -> fillPlatformRoleRows(security, sangamProductTransactions);
+    }
+
+    static Map<String, List<String>> fillPlatformRoleRows(SangamSecurity security, Transactions tx) {
+        Map<String, List<String>> created = security.roles().ensurePlatformRolesOfEveryTenant(tx, PLATFORM_ROLE_ROWS_ACTOR);
+        if (!created.isEmpty()) {
+            LOG.info("platform role rows created at start (decision 370): {}", created);
+        }
+        return created;
     }
 
     /** Dev only: tenant + administrator grants on an empty database (see {@link SecurityBootstrap}). */

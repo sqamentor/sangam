@@ -43,6 +43,8 @@ class OnboardingOrgLevelsH2Test {
         try (Connection c = ds.getConnection()) {
             security = new SangamSecurity(SecurityDialect.detect(c), null);
         }
+        // as SecurityWiring.sangamSecurity binds it (decisions 368, 370)
+        security.roles().usePlatformRoles(org.sangam.server.config.SecurityWiring.platformRoles());
         tx = Transactions.of(ds);
         port = new OnboardingBridges.Security(security, tx, () -> true, () -> true);
     }
