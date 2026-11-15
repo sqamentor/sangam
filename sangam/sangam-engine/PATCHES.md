@@ -10,7 +10,7 @@ This ledger records every place where Sangam changes engine behaviour, so each u
 | Engine source or bytecode patches | **0** |
 | Engine schema patches (DDL on `ACT_*` after the engine created them) | **2**: P-1, P-2 (MySQL only) |
 | Behaviour changed through public extension points | B-1 … B-45 |
-| Internal (`impl`) classes used | I-1 … I-25 (sangam-engine); every file that uses one, in any module, is on allow-list A or B |
+| Internal (`impl`) classes used | I-1 … I-26 (sangam-engine); every file that uses one, in any module, is on allow-list A or B |
 | Reflection | **2** reads of a protected engine field, each failing closed and pinned by a test: `DmnBusinessRuleTaskActivityBehavior.callableElement` (`deploy/SangamBpmnParseListener.callableElementOf`, SL-13: a deployment fails loudly); `AbstractQueryVariableValueCondition.wrappedQueryValue` (sangam-packs `packs/engine/DecimalValueSerializer.operatorOf`, B-37: a decimal query is refused) |
 
 ## Schema patches
@@ -104,6 +104,7 @@ Upstream PRs to offer: MySQL create/upgrade scripts with `datetime(3)` and `utf8
 | I-23 | `persistence.entity.HistoricProcessInstanceManager` (subclassed: `deleteHistoricProcessInstanceByIds(List)`, `deleteHistoricProcessInstancesByRemovalTime(Date,int,int,int)`, `isHistoryEnabled`, `getCommandContext`), `db.DbEntity`, `db.entitymanager.operation.DbOperation`, `db.sql.DbSqlSessionFactory` (public static `getDatabaseSpecificDatepart1/2/3`, `getDatabaseSpecificConstants`, `ORACLE`), `interceptor.Session`, `interceptor.SessionFactory`, `cfg.ProcessEngineConfigurationImpl#getDatabaseType` / `getDatabaseTablePrefix` | `trace/ProcessTraceHistoryRemoval` | B-36; pinned by `ProcessTraceHistoryRemovalH2Test` (`theEngineUsesTheTraceAwareHistoricProcessInstanceManager`, both removal paths) |
 | I-24 | `variable.serializer.PrimitiveValueSerializer` (subclassed: `getName`, `canWriteValue`, `convertToTypedValue`, `writeValue`, `readValue(ValueFields,boolean)`), `variable.serializer.TypedValueSerializer`, `variable.serializer.ValueFields`, `cfg.ProcessEngineConfigurationImpl#get/setCustomPreVariableSerializers`, `AbstractQueryVariableValueCondition` (protected field `wrappedQueryValue`, read reflectively), `QueryVariableValue#getOperator`, `QueryOperator`; outside `engine.impl`: `variable.impl.type.PrimitiveValueTypeImpl` (subclassed), `variable.impl.value.PrimitiveTypeValueImpl` | sangam-packs `packs/engine/DecimalValueSerializer`, `packs/engine/DecimalValueType` (allow-list B) | B-37; pinned by `DecimalValueSerializerH2Test` (`equalityQueriesMatchValueAndScaleAndRangeQueriesAreRefused` asserts the operator is readable, `untypedNullStaysNullTypeAndTypedNullKeepsTheDecimalType`) |
 | I-25 | `bpmn.behavior.MultiInstanceActivityBehavior` (type check), `context.Context#getCommandContext().getExecutionManager().findExecutionById`, `persistence.entity.EventSubscriptionEntity` (`getActivity`, `getActivityId`, `getCreated`, `get/setConfiguration`), `persistence.entity.ExecutionEntity` (`createExecution`, `setActivity`, `setActive`, `setConcurrent`, `setEventScope`, `isEventScope`, `isCanceled`, `getCompensateEventSubscriptions`, typed local variables), `pvm.process.ActivityImpl` / `ScopeImpl` (`findCompensationHandler`, `isSubProcessScope`, `isScope`, `getFlowScope`), `pvm.runtime.PvmExecutionImpl#findExecutionForFlowScope` | `deploy/MultiInstanceCompensationContext` | B-38; pinned by `MultiInstanceCompensationH2Test` |
+| I-26 | `impl.ServiceImpl#getCommandExecutor` (the public services are `ServiceImpl`s; their executor is the required-transaction one), `interceptor.Command`, `interceptor.CommandContext` (a command issued inside a command of that executor reuses its context: `CommandContextInterceptor`) | `replay/CorrelationKeyHandover`, `replay/CapturePoints` (command depth in its interceptor), `tx/CommandState` | decision 332: an adapter that is not in an engine command opens one around its message correlation, so the correlation key it was called with reaches the capture point of the delivery through the command state; no engine behaviour changes, and an engine without replay capture reads nothing |
 
 ### SG-09: internal behaviours with no public API, pinned by tests
 
@@ -120,6 +121,7 @@ pinned by `EngineInternalsPinTest`, so an upgrade that changes it fails the buil
 | I-17 `CronTimer.parse` (cron-utils `SPRING53`, shaded) and its evaluation | `ZonedCron` (cron in the timer zone) | `i17_cronParsedAndEvaluatedAsOperatonDoes` |
 | I-18 custom session factories replace the built-in manager of the same session type; the Operaton `TaskManager` methods Sangam overrides (`insertTask`, the five `updateTaskSuspensionStateBy*`) and the ones its overrides call (`findTasksByQueryCriteria(TaskQueryImpl)`, `TaskQueryImpl()`, the `CommandContext` authorization/tenant-check getters and setters, which really switch the checks) keep their signatures | B-26 tenant-scoped creation, one Sangam TaskManager | `i18_customSessionFactoriesReplaceTheBuiltInManagers` |
 | I-19 `JobRetryCmd.shouldDecrementRetriesFor` spares only `OptimisticLockingException`; `executeJob` failures run the configured failed-job factory | B-16 / SL-89 retry kept on transient conflicts | `i19_retryIsKeptOnlyForOptimisticLockingFailures` |
+| I-26 the engine's services are `ServiceImpl`s with a public `getCommandExecutor()`, and a command issued inside a command of that executor shares its `CommandContext` (and so Sangam's `CommandState`) | decision 332 correlation-key hand-over of an adapter outside a command | `i26_aServiceCommandInsideACommandReusesItsContext`, `CapturePointsH2Test.theCorrelationKeyIsTheAdaptersOwnAndNullOnEveryOtherPath` |
 | I-20 `DefaultJobExecutor.startExecutingJobs` keeps a pool that is already set; `ExecuteJobsRunnable` runs each job through the overridable `executeJob` and hands one back through `unlockJob` without touching its retries | B-27 virtual pool and bulkheads | `SangamJobExecutorTest.operatonsStartKeepsTheVirtualPoolAcrossARestart`, `JobBulkheadH2Test.aFullBulkheadHandsTheJobBackAndAFreePermitRunsIt` |
 
 ### Stage D engine patches: extension-point evidence (M-106, 2026-11-12)
@@ -154,12 +156,13 @@ ADR-D-16 allows an engine source patch only where no extension point exists. The
 16. Re-run `WorkTenantsH2Test` and `SharedDeploymentsH2Test`, and re-read (javap) `JobDeclaration.createJobInstance` (job deployment id), the `TYPE` constants of `HistoryCleanupJobHandler`, `BatchSeedJobHandler` and `BatchMonitorJobHandler`, and `ProcessDefinitionManager.findLatestProcessDefinitionById` (B-42).
 17. Re-run `HistoricInstanceMigrationH2Test` and `UtcConversionHardStopH2Test`, and re-read the history DDL (`activiti.*.create.history.sql`: tables with `PROC_DEF_ID_` / `PROCESS_DEF_ID_`), `JobAcquisitionContext.areAllEnginesIdle`, `AcquireJobsCmd` and `FetchExternalTasksCmd` (B-43, B-44).
 18. Re-run `IncidentOpenedH2Test` and `CountingFailedJobCommandFactoryTest`, and re-read (javap) `FailedJobListener$FailedJobListenerCmd` and `BpmnExceptionHandler.propagateException` (B-45).
+19. Re-run `EngineInternalsPinTest.i26_aServiceCommandInsideACommandReusesItsContext` and `CapturePointsH2Test`, and re-read (javap) `ServiceImpl.getCommandExecutor` and `CommandContextInterceptor.execute` (a command inside a command of the same engine reuses its context) (I-26).
 
 ## Allow-lists (checked by `EnginePatchLedgerGuardTest`, SL-105)
 
 The guard scans the main Java sources of every reactor module and fails on a file that is not listed here, and on a listed file that no longer matches. Record a new use with its B-n / I-n entry first. Test sources are not in scope (the pin tests use `impl` classes on purpose).
 
-### Allow-list A: main sources of sangam-engine that use `org.operaton.bpm.engine.impl` (I-1 … I-25)
+### Allow-list A: main sources of sangam-engine that use `org.operaton.bpm.engine.impl` (I-1 … I-26)
 
 | File | `impl` types used |
 |---|---|
@@ -209,6 +212,7 @@ The guard scans the main Java sources of every reactor module and fails on a fil
 | `sangam-engine/src/main/java/org/sangam/engine/packs/ProductJdbc.java` | `context.Context` |
 | `sangam-engine/src/main/java/org/sangam/engine/replay/CapturePoints.java` | `context.Context`, `db.entitymanager.DbEntityManager`, `db.entitymanager.cache.CachedDbEntity`, `db.entitymanager.cache.DbEntityState`, `event.EventHandlerImpl`, `event.EventType`, `interceptor.Command`, `interceptor.CommandContext`, `interceptor.CommandContextListener`, `interceptor.CommandInterceptor`, `interceptor.Session`, `persistence.entity.EventSubscriptionEntity`, `persistence.entity.ExecutionEntity`, `persistence.entity.ExternalTaskEntity`, `persistence.entity.TimerEntity` |
 | `sangam-engine/src/main/java/org/sangam/engine/replay/CapturingFeelClock.java` | `context.BpmnExecutionContext`, `context.CaseExecutionContext`, `context.Context` |
+| `sangam-engine/src/main/java/org/sangam/engine/replay/CorrelationKeyHandover.java` | `ServiceImpl`, `interceptor.Command`, `interceptor.CommandContext` |
 | `sangam-engine/src/main/java/org/sangam/engine/timer/DstSafeCycleBusinessCalendar.java` | `ProcessEngineLogger`, `calendar.CycleBusinessCalendar`, `context.Context`, `interceptor.CommandContext`, `persistence.entity.JobEntity`, `persistence.entity.TimerEntity` |
 | `sangam-engine/src/main/java/org/sangam/engine/timer/TaggedDurationBusinessCalendar.java` | `ProcessEngineLogger`, `calendar.DurationBusinessCalendar` |
 | `sangam-engine/src/main/java/org/sangam/engine/tenant/SharedDeployments.java` | `cfg.ProcessEngineConfigurationImpl` |

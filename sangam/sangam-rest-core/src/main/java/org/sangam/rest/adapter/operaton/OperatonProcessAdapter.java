@@ -726,10 +726,10 @@ public class OperatonProcessAdapter implements ProcessPort {
             if (!vars.isEmpty()) {
                 b = b.setVariables(vars);
             }
-            MessageCorrelationBuilder fb = b;
-            List<MessageCorrelationResult> results = r.all()
-                    ? OperatonSupport.call(fb::correlateAllWithResult)
-                    : List.of(OperatonSupport.call(fb::correlateWithResult));
+            MessageCorrelationBuilder fb = b; // decision 332: the business key goes to the replay capture point
+            List<MessageCorrelationResult> results = OperatonSupport.call(() ->
+                    org.sangam.engine.replay.CorrelationKeyHandover.call(runtime, r.businessKey(), () -> r.all()
+                            ? fb.correlateAllWithResult() : List.of(fb.correlateWithResult())));
             List<String> instances = new ArrayList<>();
             List<String> executions = new ArrayList<>();
             for (MessageCorrelationResult res : results) {

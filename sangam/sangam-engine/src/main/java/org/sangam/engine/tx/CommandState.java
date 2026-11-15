@@ -282,4 +282,52 @@ public final class CommandState {
     public synchronized void jobFailure(Throwable failure) {
         jobFailure = failure;
     }
+
+    /**
+     * Decision 332: a correlation key an adapter handed over, with the command depth it was handed over at.
+     *
+     * @param key   the key the adapter was called with
+     * @param depth the number of engine commands open on this context when the adapter handed the key over
+     */
+    public record CorrelationKey(String key, int depth) {
+    }
+
+    private int commandDepth;
+    private CorrelationKey correlationKey;
+
+    /**
+     * One more engine command runs on this context (the capture interceptor calls this around every command of an
+     * engine with replay capture; nested commands reuse the context, so the count is the nesting depth).
+     */
+    public synchronized void enterCommand() {
+        commandDepth++;
+    }
+
+    public synchronized void exitCommand() {
+        commandDepth--;
+    }
+
+    /**
+     * Decision 332: hands the correlation key an adapter was called with to the capture point of the message it is
+     * about to correlate. Returns what was handed over before; the adapter gives it back to
+     * {@link #restoreCorrelationKey} when its correlation has returned, so the key never outlives the call.
+     */
+    public synchronized CorrelationKey handOverCorrelationKey(String key) {
+        CorrelationKey previous = correlationKey;
+        correlationKey = key == null ? null : new CorrelationKey(key, commandDepth);
+        return previous;
+    }
+
+    public synchronized void restoreCorrelationKey(CorrelationKey previous) {
+        correlationKey = previous;
+    }
+
+    /**
+     * The handed-over key for a message that is being delivered now, or null. It applies only to a delivery made by
+     * the correlation command the adapter itself issued (exactly one command deeper than the hand-over). A correlation
+     * issued further inside, by a delegate or a listener the delivery runs, is another path and gets null.
+     */
+    public synchronized String deliveredCorrelationKey() {
+        return correlationKey != null && commandDepth == correlationKey.depth() + 1 ? correlationKey.key() : null;
+    }
 }

@@ -369,8 +369,8 @@ public final class OperatonEngineAdapter implements SangamEngineAdapter {
             if (variables != null) {
                 b.setVariables(variables);
             }
-            c.capture().messageStart(roots.isEmpty(), messageName, businessKey, variables); // decision 151
-            MessageCorrelationResult r = b.correlateWithResult();
+            MessageCorrelationResult r = c.capture().correlate(cc, roots.isEmpty(), messageName, businessKey, variables,
+                    b::correlateWithResult); // decisions 151 and 332
             return r.getResultType() == MessageCorrelationResultType.ProcessDefinition
                     ? r.getProcessInstance().getId() : r.getExecution().getProcessInstanceId();
         });

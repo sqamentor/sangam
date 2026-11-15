@@ -41,7 +41,7 @@ import org.sangam.engine.timer.ZonedCron;
 
 /**
  * SG-09: Sangam relies on behaviours of engine-internal Operaton classes for which Operaton 2.2 has no public
- * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, upgrade checklist items 2, 3, 6 and 7). Each test pins one of them through
+ * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, I-26, upgrade checklist items 2, 3, 6, 7 and 19). Each test pins one of them through
  * its observable effect, so an Operaton upgrade that changes the internal behaviour fails here, loudly, instead of
  * silently weakening Sangam.
  */
@@ -325,6 +325,26 @@ class EngineInternalsPinTest {
             });
             assertEquals(List.of(false, false, true, true), flags,
                     "I-18: disable* switches the command's checks off and set* restores them");
+        });
+    }
+
+    /**
+     * I-26 (decision 332): the engine's public services are {@code ServiceImpl}s whose {@code getCommandExecutor()} is
+     * the required-transaction executor, and a command issued inside a command of that executor reuses its
+     * {@code CommandContext}. {@code CorrelationKeyHandover.call} relies on both to hand a key to the capture point.
+     */
+    @Test
+    void i26_aServiceCommandInsideACommandReusesItsContext() throws Exception {
+        org.operaton.bpm.engine.impl.ServiceImpl.class.getMethod("getCommandExecutor");
+        withEngine(a -> {
+            var runtime = a.processEngine().getRuntimeService();
+            assertTrue(runtime instanceof org.operaton.bpm.engine.impl.ServiceImpl, "I-26: " + runtime.getClass());
+            var executor = ((org.operaton.bpm.engine.impl.ServiceImpl) runtime).getCommandExecutor();
+            List<Boolean> same = executor.execute(outer -> List.of(
+                    executor.execute(inner -> inner == outer),
+                    org.sangam.engine.tx.CommandState.of(outer) == executor.execute(
+                            inner -> org.sangam.engine.tx.CommandState.of(inner))));
+            assertEquals(List.of(true, true), same, "I-26: a nested command shares the context and the command state");
         });
     }
 
