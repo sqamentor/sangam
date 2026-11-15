@@ -23,7 +23,14 @@ import org.sangam.sdk.generated.model.ComplianceIncidentRequest;
 import org.sangam.sdk.generated.model.ComplianceJurisdiction;
 import org.sangam.sdk.generated.model.ComplianceLawfulRequest;
 import org.sangam.sdk.generated.model.ComplianceLawfulRequestBody;
+import org.sangam.sdk.generated.model.ComplianceLegalHold;
+import org.sangam.sdk.generated.model.ComplianceLegalHoldRelease;
+import org.sangam.sdk.generated.model.ComplianceLegalHoldRequest;
 import org.sangam.sdk.generated.model.ComplianceLogSegment;
+import org.sangam.sdk.generated.model.ComplianceOtpChallenge;
+import org.sangam.sdk.generated.model.ComplianceOtpChallengeRequest;
+import org.sangam.sdk.generated.model.ComplianceOtpVerification;
+import org.sangam.sdk.generated.model.ComplianceOtpVerifyRequest;
 import org.sangam.sdk.generated.model.CompliancePublishNoticeRequest;
 import org.sangam.sdk.generated.model.CompliancePublishResult;
 import org.sangam.sdk.generated.model.CompliancePurpose;
@@ -42,7 +49,7 @@ import org.sangam.sdk.generated.model.ComplianceVerifyLawfulRequest;
 import org.sangam.sdk.generated.model.ComplianceWithdrawConsentRequest;
 
 /**
- * Typed operations of {@code Compliance} (34 operations), generated from
+ * Typed operations of {@code Compliance} (39 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -76,6 +83,10 @@ public final class ComplianceApi {
     private static final TypeReference<ComplianceLawfulRequest> R_respondLawfulRequest = new TypeReference<>() { };
     private static final TypeReference<ComplianceLawfulRequest> R_rejectLawfulRequest = new TypeReference<>() { };
     private static final TypeReference<java.util.List<ComplianceContact>> R_listComplianceContacts = new TypeReference<>() { };
+    private static final TypeReference<ComplianceOtpChallenge> R_issueRightsRequestOtp = new TypeReference<>() { };
+    private static final TypeReference<ComplianceOtpVerification> R_verifyRightsRequestOtp = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<ComplianceLegalHold>> R_listComplianceLegalHolds = new TypeReference<>() { };
+    private static final TypeReference<ComplianceLegalHold> R_placeComplianceLegalHold = new TypeReference<>() { };
     private static final TypeReference<ComplianceAuditEvidence> R_recordComplianceAudit = new TypeReference<>() { };
     private static final TypeReference<ComplianceImpactAssessment> R_recordImpactAssessment = new TypeReference<>() { };
     private static final TypeReference<ComplianceTransferDecision> R_evaluateTransfer = new TypeReference<>() { };
@@ -532,6 +543,96 @@ public final class ComplianceApi {
      */
     public void setComplianceContact(String role, ComplianceContact body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/compliance/contacts/" + HttpTransport.seg(String.valueOf(role)));
+        req.body(body);
+        call.none(req, options);
+    }
+
+    /**
+     * Send a one-time code for a rights request
+     *
+     * <p>Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).
+     *
+     * <p>{@code POST /compliance/rights-requests/otp-challenges} (operationId {@code issueRightsRequestOtp}); result stored atomically with the state change (x-sangam-idempotent).
+     * @param body request body
+     * @param tenant query parameter {@code tenant}, or null. Tenant of an unauthenticated call (else X-Sangam-Tenant)
+     * @param xSangamTenant header parameter {@code X-Sangam-Tenant}, or null. Tenant of an unauthenticated call (else ?tenant=)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public ComplianceOtpChallenge issueRightsRequestOtp(ComplianceOtpChallengeRequest body, String tenant, String xSangamTenant, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/rights-requests/otp-challenges");
+        req.body(body);
+        req.query("tenant", tenant);
+        req.header("X-Sangam-Tenant", xSangamTenant == null ? null : String.valueOf(xSangamTenant));
+        return call.json(req, options, R_issueRightsRequestOtp);
+    }
+
+    /**
+     * Verify a one-time code
+     *
+     * <p>Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner decision 360).
+     *
+     * <p>{@code POST /compliance/rights-requests/otp-challenges/{challengeId}/verify} (operationId {@code verifyRightsRequestOtp}).
+     * @param challengeId path parameter {@code challengeId}
+     * @param body request body
+     * @param tenant query parameter {@code tenant}, or null. Tenant of an unauthenticated call (else X-Sangam-Tenant)
+     * @param xSangamTenant header parameter {@code X-Sangam-Tenant}, or null. Tenant of an unauthenticated call (else ?tenant=)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public ComplianceOtpVerification verifyRightsRequestOtp(String challengeId, ComplianceOtpVerifyRequest body, String tenant, String xSangamTenant, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/rights-requests/otp-challenges/" + HttpTransport.seg(String.valueOf(challengeId)) + "/verify");
+        req.body(body);
+        req.query("tenant", tenant);
+        req.header("X-Sangam-Tenant", xSangamTenant == null ? null : String.valueOf(xSangamTenant));
+        return call.json(req, options, R_verifyRightsRequestOtp);
+    }
+
+    /**
+     * Active legal holds of a process root
+     *
+     * <p>The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
+     *
+     * <p>{@code GET /compliance/process-roots/{rootId}/legal-holds} (operationId {@code listComplianceLegalHolds}); permission {@code compliance.read}.
+     * @param rootId path parameter {@code rootId}
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<ComplianceLegalHold> listComplianceLegalHolds(String rootId, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds");
+        return call.json(req, options, R_listComplianceLegalHolds);
+    }
+
+    /**
+     * Place a legal hold on a process root
+     *
+     * <p>Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
+     *
+     * <p>{@code POST /compliance/process-roots/{rootId}/legal-holds} (operationId {@code placeComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param rootId path parameter {@code rootId}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public ComplianceLegalHold placeComplianceLegalHold(String rootId, ComplianceLegalHoldRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds");
+        req.body(body);
+        return call.json(req, options, R_placeComplianceLegalHold);
+    }
+
+    /**
+     * Release a legal hold
+     *
+     * <p>Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
+     *
+     * <p>{@code POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release} (operationId {@code releaseComplianceLegalHold}); permission {@code compliance.modify}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param rootId path parameter {@code rootId}
+     * @param holdId path parameter {@code holdId}
+     * @param body request body
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     */
+    public void releaseComplianceLegalHold(String rootId, String holdId, ComplianceLegalHoldRelease body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/compliance/process-roots/" + HttpTransport.seg(String.valueOf(rootId)) + "/legal-holds/" + HttpTransport.seg(String.valueOf(holdId)) + "/release");
         req.body(body);
         call.none(req, options);
     }

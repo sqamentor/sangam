@@ -18,7 +18,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $completedAt
  * @property-read string|null $auditor (required)
  * @property-read string|null $accreditationRef
- * @property-read bool|null $independent
+ * @property-read bool|null $independent (required) The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  * @property-read list<string>|null $findings
  * @property-read string|null $reportHash
  * @property-read string|null $authorityReportRef

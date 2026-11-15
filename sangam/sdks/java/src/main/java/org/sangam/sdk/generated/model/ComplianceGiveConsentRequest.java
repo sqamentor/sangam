@@ -18,6 +18,7 @@ package org.sangam.sdk.generated.model;
  * @param guardianVerificationId wire field {@code guardianVerificationId}
  * @param consentManagerId wire field {@code consentManagerId}
  * @param cmArtefactId wire field {@code cmArtefactId}
+ * @param declaredCategory wire field {@code declaredCategory} (required). The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies. One of: ADULT, CHILD.
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ComplianceGiveConsentRequest(
@@ -30,5 +31,6 @@ public record ComplianceGiveConsentRequest(
         @com.fasterxml.jackson.annotation.JsonProperty("channel") String channel,
         @com.fasterxml.jackson.annotation.JsonProperty("guardianVerificationId") String guardianVerificationId,
         @com.fasterxml.jackson.annotation.JsonProperty("consentManagerId") String consentManagerId,
-        @com.fasterxml.jackson.annotation.JsonProperty("cmArtefactId") String cmArtefactId) {
+        @com.fasterxml.jackson.annotation.JsonProperty("cmArtefactId") String cmArtefactId,
+        @com.fasterxml.jackson.annotation.JsonProperty("declaredCategory") String declaredCategory) {
 }

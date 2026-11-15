@@ -17517,6 +17517,276 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /compliance/rights-requests/otp-challenges:
+    post:
+      operationId: issueRightsRequestOtp
+      tags:
+      - Compliance
+      summary: Send a one-time code for a rights request
+      description: Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's
+        open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes
+        RIGHTS_OTP_ISSUED (owner decision 360).
+      x-sangam-command-type: compliance.rights.otp.issue
+      x-sangam-idempotent: true
+      parameters:
+      - name: X-Sangam-Tenant
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Tenant of an unauthenticated call (else ?tenant=)
+      - name: tenant
+        in: query
+        schema:
+          type: string
+        description: Tenant of an unauthenticated call (else X-Sangam-Tenant)
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      - DPDP s.13
+      - DPDP Rules r.14(1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceOtpChallengeRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceOtpChallenge'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
+  /compliance/rights-requests/otp-challenges/{challengeId}/verify:
+    post:
+      operationId: verifyRightsRequestOtp
+      tags:
+      - Compliance
+      summary: Verify a one-time code
+      description: Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out
+        identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner
+        decision 360).
+      parameters:
+      - name: challengeId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Sangam-Tenant
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Tenant of an unauthenticated call (else ?tenant=)
+      - name: tenant
+        in: query
+        schema:
+          type: string
+        description: Tenant of an unauthenticated call (else X-Sangam-Tenant)
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      - DPDP Rules r.14(1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceOtpVerifyRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceOtpVerification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
+  /compliance/process-roots/{rootId}/legal-holds:
+    get:
+      operationId: listComplianceLegalHolds
+      tags:
+      - Compliance
+      summary: Active legal holds of a process root
+      description: The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
+      parameters:
+      - name: rootId
+        in: path
+        required: true
+        schema:
+          type: string
+      x-sangam-permission: compliance.read
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      - DPDP s.8(7)
+      - R61
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComplianceLegalHold'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    post:
+      operationId: placeComplianceLegalHold
+      tags:
+      - Compliance
+      summary: Place a legal hold on a process root
+      description: Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the
+        hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
+      x-sangam-command-type: compliance.legal-hold.place
+      x-sangam-idempotent: true
+      parameters:
+      - name: rootId
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: compliance.modify
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      - DPDP s.8(7)
+      - R61
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceLegalHoldRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceLegalHold'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /compliance/process-roots/{rootId}/legal-holds/{holdId}/release:
+    post:
+      operationId: releaseComplianceLegalHold
+      tags:
+      - Compliance
+      summary: Release a legal hold
+      description: Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes
+        LEGAL_HOLD_RELEASED on the root's chain.
+      x-sangam-command-type: compliance.legal-hold.release
+      x-sangam-idempotent: true
+      parameters:
+      - name: rootId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: holdId
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: compliance.modify
+      x-sangam-requirements:
+      - GOV-4
+      - R53
+      - DPDP s.8(7)
+      - R61
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceLegalHoldRelease'
+      responses:
+        '204':
+          description: Success
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /compliance/evidence/audits:
     post:
       operationId: recordComplianceAudit
@@ -63343,10 +63613,19 @@ components:
           type: string
         cmArtefactId:
           type: string
+        declaredCategory:
+          type: string
+          enum:
+          - ADULT
+          - CHILD
+          description: 'The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED
+            naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9),
+            which the consent row then carries; the more protective of the declared and the principal directory category applies.'
       required:
       - noticeKey
       - purposeCodes
       - affirmativeAction
+      - declaredCategory
     ComplianceConsent:
       type: object
       description: A consent record with its active purposes and evidence hash (DPDP s.6).
@@ -63411,6 +63690,8 @@ components:
         noticeVersion:
           type: integer
           format: int32
+          description: 'The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the
+            field, never read as version 0 (owner decision 362).'
         languageCode:
           type: string
         purposeCodes:
@@ -63425,6 +63706,8 @@ components:
           format: date-time
         signature:
           type: string
+      required:
+      - noticeVersion
     ComplianceRightsSubmission:
       type: object
       description: 'A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335):
@@ -63671,6 +63954,10 @@ components:
       properties:
         rankAdequate:
           type: boolean
+          description: 'The checker''s attestation that the requesting officer''s rank is adequate under the cited provision. Required, true or
+            false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).'
+      required:
+      - rankAdequate
     ComplianceRespondLawfulRequest:
       type: object
       description: The response and the disclosed principals (disclosure register).
@@ -63747,6 +64034,8 @@ components:
           type: string
         independent:
           type: boolean
+          description: 'The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED
+            naming the field, never read as false (owner decision 362).'
         findings:
           type: array
           items:
@@ -63758,6 +64047,7 @@ components:
       required:
       - kind
       - auditor
+      - independent
     ComplianceAuditEvidence:
       type: object
       description: Recorded audit evidence.
@@ -63814,6 +64104,8 @@ components:
           type: string
         independent:
           type: boolean
+          description: 'The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming
+            the field, never read as false (owner decision 362).'
         assessedAt:
           type: string
           format: date-time
@@ -63821,6 +64113,7 @@ components:
           type: string
       required:
       - scope
+      - independent
     ComplianceImpactAssessment:
       type: object
       description: Recorded impact assessment.
@@ -63873,14 +64166,20 @@ components:
           type: string
         recipientSameProtectionAttested:
           type: boolean
+          description: 'The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted
+            one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).'
         mechanism:
           type: string
         impactAssessmentRef:
           type: string
         recipientConditionMet:
           type: boolean
+          description: 'The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or
+            false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).'
       required:
       - destinationCountry
+      - recipientSameProtectionAttested
+      - recipientConditionMet
     ComplianceTransferDecision:
       type: object
       description: The recorded transfer decision.
@@ -64006,6 +64305,105 @@ components:
           type: string
         privacyPolicyUrl:
           type: string
+    ComplianceOtpChallengeRequest:
+      type: object
+      description: 'A one-time code for a rights request (owner decision 360), sent through the principal notifier to an identifier the tenant
+        accepts (rights.otp.identifier-types; IN pack: MOBILE, EMAIL; DPDP Rules r.14(1)). `language` is a code of the jurisdiction pack.'
+      properties:
+        identifierType:
+          type: string
+        identifierValue:
+          type: string
+        language:
+          type: string
+      required:
+      - identifierType
+      - identifierValue
+    ComplianceOtpChallenge:
+      type: object
+      description: An issued challenge; the code itself is only sent to the identifier.
+      properties:
+        challengeId:
+          type: string
+        identifierType:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+      - challengeId
+      - expiresAt
+    ComplianceOtpVerifyRequest:
+      type: object
+      description: The code the data principal received.
+      properties:
+        code:
+          type: string
+      required:
+      - code
+    ComplianceOtpVerification:
+      type: object
+      description: 'A verified challenge: the rights submission then names it in proof.challengeId (single use).'
+      properties:
+        challengeId:
+          type: string
+        outcome:
+          type: string
+          enum:
+          - VERIFIED
+          - WRONG_CODE
+          - LOCKED
+          - EXPIRED
+          - INVALID
+        attemptsLeft:
+          type: integer
+          format: int32
+      required:
+      - challengeId
+      - outcome
+    ComplianceLegalHoldRequest:
+      type: object
+      description: 'A legal hold to place on a process root (owner decision 361). `kind` is one of RTI, AUDIT, LITIGATION, VIGILANCE, OTHER (SANGAM.md
+        X.2.3.5 #5); the stored reason is `KIND reference: reason`.'
+      properties:
+        kind:
+          type: string
+          enum:
+          - RTI
+          - AUDIT
+          - LITIGATION
+          - VIGILANCE
+          - OTHER
+        reference:
+          type: string
+        reason:
+          type: string
+      required:
+      - kind
+      - reason
+    ComplianceLegalHoldRelease:
+      type: object
+      description: The reason a legal hold is released; the releaser must not be the person who placed it (FOUR_EYES_REQUIRED).
+      properties:
+        reason:
+          type: string
+      required:
+      - reason
+    ComplianceLegalHold:
+      type: object
+      description: An active legal hold on a process root.
+      properties:
+        holdId:
+          type: string
+        rootId:
+          type: string
+        reason:
+          type: string
+        heldBy:
+          type: string
+      required:
+      - holdId
+      - rootId
     CellMoveRequest:
       type: object
       description: A tenant-move step; `moveId` identifies the move (also in the Idempotency-Key).

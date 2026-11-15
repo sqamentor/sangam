@@ -13,7 +13,7 @@ package org.sangam.sdk.generated.model;
  * @param principalRef wire field {@code principalRef}
  * @param fiduciaryId wire field {@code fiduciaryId}
  * @param noticeKey wire field {@code noticeKey}
- * @param noticeVersion wire field {@code noticeVersion}
+ * @param noticeVersion wire field {@code noticeVersion} (required). The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the field, never read as version 0 (owner decision 362).
  * @param languageCode wire field {@code languageCode}
  * @param purposeCodes wire field {@code purposeCodes}
  * @param issuedAt wire field {@code issuedAt}

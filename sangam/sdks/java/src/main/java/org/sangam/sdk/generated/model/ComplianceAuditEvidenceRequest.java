@@ -14,7 +14,7 @@ package org.sangam.sdk.generated.model;
  * @param completedAt wire field {@code completedAt}
  * @param auditor wire field {@code auditor} (required)
  * @param accreditationRef wire field {@code accreditationRef}
- * @param independent wire field {@code independent}
+ * @param independent wire field {@code independent} (required). The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  * @param findings wire field {@code findings}
  * @param reportHash wire field {@code reportHash}
  * @param authorityReportRef wire field {@code authorityReportRef}

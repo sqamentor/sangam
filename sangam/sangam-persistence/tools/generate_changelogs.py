@@ -1377,6 +1377,15 @@ TABLES = [
         ("header", "{str64}", ""), ("body", "{text}", ""), ("variable_count", "{int}", ""),
         ("registered_by", "{str}", "NOT NULL"), ("registered_at", "{ts}", "NOT NULL"), ("updated_at", "{ts}", "NOT NULL"),
     ], ["tenant_id", "kind", "item_key"], []),
+    # Owner decision 360: the compliance-owned one-time code of a rights request (PrincipalOtpChallenges); the code is
+    # stored only as a salted hash, the identifier only as a hash.
+    ("0045-21", "compliance: cmp_otp_challenge (decision 360)", "CMP_OTP_CHALLENGE", [
+        ("tenant_id", "{str64}", "NOT NULL"), ("challenge_id", "{str64}", "NOT NULL"),
+        ("identifier_type", "{str64}", "NOT NULL"), ("identifier_hash", "{str64}", "NOT NULL"),
+        ("code_hash", "{str64}", "NOT NULL"), ("salt", "{str64}", "NOT NULL"), ("status", "{str64}", "NOT NULL"),
+        ("attempts", "{int}", "NOT NULL"), ("issued_at", "{ts}", "NOT NULL"), ("expires_at", "{ts}", "NOT NULL"),
+        ("locked_until", "{ts}", ""), ("verified_at", "{ts}", ""), ("consumed_at", "{ts}", ""),
+    ], ["tenant_id", "challenge_id"], [("CMP_OTP_IDENTIFIER", False, ["tenant_id", "identifier_hash", "status"])]),
 ]
 
 # Column additions to tables created above, each its own changeset (applied changesets are never edited).

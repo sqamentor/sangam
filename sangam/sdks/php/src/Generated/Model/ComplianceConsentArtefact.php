@@ -17,7 +17,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $principalRef
  * @property-read string|null $fiduciaryId
  * @property-read string|null $noticeKey
- * @property-read int|null $noticeVersion
+ * @property-read int|null $noticeVersion (required) The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the field, never read as version 0 (owner decision 362).
  * @property-read string|null $languageCode
  * @property-read list<string>|null $purposeCodes
  * @property-read string|null $issuedAt

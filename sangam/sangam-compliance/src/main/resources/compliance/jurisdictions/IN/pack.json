@@ -69,7 +69,12 @@
   ],
   "defaults": {
     "ntp.servers": "samay1.nic.in,samay2.nic.in,time.nplindia.org",
-    "authority.CERT-IN.recipients": "incident@cert-in.org.in"
+    "authority.CERT-IN.recipients": "incident@cert-in.org.in",
+    "rights.otp.identifier-types": "MOBILE,EMAIL",
+    "rights.otp.ttl-minutes": "10",
+    "rights.otp.max-attempts": "5",
+    "rights.otp.lockout-minutes": "30",
+    "rights.otp.code-length": "6"
   },
   "legalBases": [
     {"code": "CONSENT", "citation": "s.4(1)(a), s.6", "kind": "CONSENT", "description": "Consent of the Data Principal"},

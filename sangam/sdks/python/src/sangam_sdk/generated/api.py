@@ -3170,7 +3170,7 @@ class ChannelsApi:
         return cast("M.ChannelHookResult", self._c.json(req, options))
 
 class ComplianceApi:
-    """``Compliance`` (34 operations)."""
+    """``Compliance`` (39 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -3462,6 +3462,62 @@ class ComplianceApi:
         ``POST /compliance/contacts/{role}`` (operationId ``setComplianceContact``); permission ``compliance.admin``; result stored atomically with the state change.
         """
         req = ApiRequest("POST", f"/compliance/contacts/{seg(str(role))}")
+        req.body = body
+        self._c.none(req, options)
+
+    def issue_rights_request_otp(self, body: M.ComplianceOtpChallengeRequest, *, tenant: Optional[str] = None, x_sangam_tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ComplianceOtpChallenge:
+        """Send a one-time code for a rights request
+
+        Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).
+
+        ``POST /compliance/rights-requests/otp-challenges`` (operationId ``issueRightsRequestOtp``); result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/compliance/rights-requests/otp-challenges", query={"tenant": tenant})
+        _headers(req, {"X-Sangam-Tenant": x_sangam_tenant})
+        req.body = body
+        return cast("M.ComplianceOtpChallenge", self._c.json(req, options))
+
+    def verify_rights_request_otp(self, challenge_id: str, body: M.ComplianceOtpVerifyRequest, *, tenant: Optional[str] = None, x_sangam_tenant: Optional[str] = None, options: Optional[RequestOptions] = None) -> M.ComplianceOtpVerification:
+        """Verify a one-time code
+
+        Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner decision 360).
+
+        ``POST /compliance/rights-requests/otp-challenges/{challengeId}/verify`` (operationId ``verifyRightsRequestOtp``).
+        """
+        req = ApiRequest("POST", f"/compliance/rights-requests/otp-challenges/{seg(str(challenge_id))}/verify", query={"tenant": tenant})
+        _headers(req, {"X-Sangam-Tenant": x_sangam_tenant})
+        req.body = body
+        return cast("M.ComplianceOtpVerification", self._c.json(req, options))
+
+    def list_compliance_legal_holds(self, root_id: str, *, options: Optional[RequestOptions] = None) -> list[M.ComplianceLegalHold]:
+        """Active legal holds of a process root
+
+        The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.
+
+        ``GET /compliance/process-roots/{rootId}/legal-holds`` (operationId ``listComplianceLegalHolds``); permission ``compliance.read``.
+        """
+        req = ApiRequest("GET", f"/compliance/process-roots/{seg(str(root_id))}/legal-holds")
+        return cast("list[M.ComplianceLegalHold]", self._c.json(req, options))
+
+    def place_compliance_legal_hold(self, root_id: str, body: M.ComplianceLegalHoldRequest, *, options: Optional[RequestOptions] = None) -> M.ComplianceLegalHold:
+        """Place a legal hold on a process root
+
+        Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.
+
+        ``POST /compliance/process-roots/{rootId}/legal-holds`` (operationId ``placeComplianceLegalHold``); permission ``compliance.modify``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/compliance/process-roots/{seg(str(root_id))}/legal-holds")
+        req.body = body
+        return cast("M.ComplianceLegalHold", self._c.json(req, options))
+
+    def release_compliance_legal_hold(self, root_id: str, hold_id: str, body: M.ComplianceLegalHoldRelease, *, options: Optional[RequestOptions] = None) -> None:
+        """Release a legal hold
+
+        Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.
+
+        ``POST /compliance/process-roots/{rootId}/legal-holds/{holdId}/release`` (operationId ``releaseComplianceLegalHold``); permission ``compliance.modify``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/compliance/process-roots/{seg(str(root_id))}/legal-holds/{seg(str(hold_id))}/release")
         req.body = body
         self._c.none(req, options)
 
@@ -12597,7 +12653,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1141 operations on 960 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1146 operations on 964 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

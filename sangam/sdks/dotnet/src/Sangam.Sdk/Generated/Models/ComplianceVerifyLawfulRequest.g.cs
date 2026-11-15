@@ -9,6 +9,9 @@ namespace Sangam.Sdk.Generated.Models;
 /// </summary>
 public sealed record ComplianceVerifyLawfulRequest
 {
+    /// <summary>
+    /// The checker's attestation that the requesting officer's rank is adequate under the cited provision. Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("rankAdequate")]
     public bool? RankAdequate { get; init; }
 }

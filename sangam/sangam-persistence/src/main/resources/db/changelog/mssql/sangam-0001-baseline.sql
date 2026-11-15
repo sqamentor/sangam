@@ -6290,6 +6290,27 @@ CREATE TABLE DLT_REGISTRATION_ITEM (
 );
 --rollback DROP TABLE DLT_REGISTRATION_ITEM;
 
+--changeset sangam:0045-21-cmp_otp_challenge dbms:mssql
+--comment: compliance: cmp_otp_challenge (decision 360)
+CREATE TABLE CMP_OTP_CHALLENGE (
+  tenant_id NVARCHAR(64) NOT NULL,
+  challenge_id NVARCHAR(64) NOT NULL,
+  identifier_type NVARCHAR(64) NOT NULL,
+  identifier_hash NVARCHAR(64) NOT NULL,
+  code_hash NVARCHAR(64) NOT NULL,
+  salt NVARCHAR(64) NOT NULL,
+  status NVARCHAR(64) NOT NULL,
+  attempts INT NOT NULL,
+  issued_at DATETIMEOFFSET NOT NULL,
+  expires_at DATETIMEOFFSET NOT NULL,
+  locked_until DATETIMEOFFSET,
+  verified_at DATETIMEOFFSET,
+  consumed_at DATETIMEOFFSET,
+  CONSTRAINT PK_CMP_OTP_CHALLENGE PRIMARY KEY (tenant_id, challenge_id)
+);
+CREATE INDEX CMP_OTP_IDENTIFIER ON CMP_OTP_CHALLENGE (tenant_id, identifier_hash, status);
+--rollback DROP TABLE CMP_OTP_CHALLENGE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mssql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD form_version_hash NVARCHAR(64);

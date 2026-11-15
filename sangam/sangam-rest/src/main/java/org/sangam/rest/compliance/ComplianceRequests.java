@@ -53,13 +53,38 @@ public final class ComplianceRequests {
                                  String phone, String mobile, String address, Boolean resident, Instant validFrom) {
     }
 
-    /** {@code language} is a language code of the tenant's jurisdiction pack (default: the pack default). */
+    /**
+     * {@code language} is a language code of the tenant's jurisdiction pack (default: the pack default).
+     * {@code declaredCategory} (owner decision 365) is {@code ADULT} or {@code CHILD}: required, an omitted or other
+     * value refused by name, never defaulted; a declared child needs {@code guardianVerificationId}.
+     */
     public record GiveConsentRequest(String principalRef, String noticeKey, Integer noticeVersion, String language,
                                      Set<String> purposeCodes, boolean affirmativeAction, String channel,
-                                     String guardianVerificationId, String consentManagerId, String cmArtefactId) {
+                                     String guardianVerificationId, String consentManagerId, String cmArtefactId,
+                                     String declaredCategory) {
     }
 
     public record WithdrawConsentRequest(Set<String> purposes) {
+    }
+
+    /**
+     * Owner decision 360: a one-time code for a rights request, to an identifier the tenant accepts
+     * ({@code rights.otp.identifier-types}, e.g. MOBILE or EMAIL); {@code language} a code of the pack (default: the
+     * pack default).
+     */
+    public record OtpChallengeRequest(String identifierType, String identifierValue, String language) {
+    }
+
+    /** Owner decision 360: the code the data principal received. */
+    public record OtpVerifyRequest(String code) {
+    }
+
+    /** Owner decision 361: a legal hold on a process root; {@code kind} RTI | AUDIT | LITIGATION | VIGILANCE | OTHER. */
+    public record LegalHoldRequest(String kind, String reference, String reason) {
+    }
+
+    /** Owner decision 361: the release reason (the releaser is not the placer). */
+    public record LegalHoldRelease(String reason) {
     }
 
     public record BreachRequest(Map<String, String> facts, Instant awareAt, Set<String> subjects, Set<String> roots,
@@ -85,7 +110,11 @@ public final class ComplianceRequests {
                                     String reference, String scope, Instant dueAt) {
     }
 
-    public record VerifyLawfulRequest(boolean rankAdequate) {
+    /**
+     * Owner decision 362: {@code rankAdequate} is the checker's attestation that the requesting officer's rank is
+     * adequate under the cited provision; boxed so that an omitted value is refused by name, never read as false.
+     */
+    public record VerifyLawfulRequest(Boolean rankAdequate) {
     }
 
     public record RespondLawfulRequest(String responseRef, List<String> principalRefs, Set<String> dataCategories) {
@@ -94,14 +123,40 @@ public final class ComplianceRequests {
     public record ReasonBody(String reason) {
     }
 
+    /** Owner decision 362: {@code independent} (the auditor's independence, an attestation) is required, never defaulted. */
     public record AuditEvidenceRequest(String kind, Instant periodFrom, Instant periodTo, Instant completedAt,
-                                       String auditor, String accreditationRef, boolean independent,
+                                       String auditor, String accreditationRef, Boolean independent,
                                        List<String> findings, String reportHash, String authorityReportRef) {
     }
 
+    /** Owner decision 362: {@code independent} (the assessor's independence, an attestation) is required, never defaulted. */
     public record ImpactAssessmentRequest(String activityId, String scope, List<String> risks, List<String> measures,
-                                          String residualRisk, String assessor, boolean independent,
+                                          String residualRisk, String assessor, Boolean independent,
                                           Instant assessedAt, String authorityReportRef) {
+    }
+
+    /**
+     * Owner decision 362: the body of {@code POST /transfers/evaluate}, the input shape of
+     * {@code CrossBorderTransferGuard.TransferRequest} with its two attestations boxed:
+     * {@code recipientSameProtectionAttested} (the recipient gives the same protection) and
+     * {@code recipientConditionMet} (the recipient meets the adequacy condition of the destination). An omitted one is
+     * refused by name ({@code VALIDATION_FAILED}), never read as false.
+     */
+    public record EvaluateTransferRequest(String destinationCountry, String recipient, String purposeCode,
+                                          Set<String> dataCategories, String approvalRef,
+                                          Boolean recipientSameProtectionAttested, String mechanism,
+                                          String impactAssessmentRef, Boolean recipientConditionMet) {
+    }
+
+    /**
+     * Owner decision 362: the body of {@code POST /consent-managers/{cm}/artefacts}, the input shape of
+     * {@code ConsentManagerPort.ConsentArtefact} with {@code noticeVersion} boxed: the artefact names the notice version
+     * the principal consented to, and an omitted one is refused by name, never read as version 0.
+     */
+    public record ConsentArtefactRequest(String consentManagerId, String artefactId, String principalRef,
+                                         String fiduciaryId, String noticeKey, Integer noticeVersion,
+                                         String languageCode, Set<String> purposeCodes, Instant issuedAt,
+                                         Instant expiresAt, String signature) {
     }
 
     public record SealLogsRequest(Instant from, Instant to) {

@@ -6290,6 +6290,27 @@ CREATE TABLE DLT_REGISTRATION_ITEM (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 --rollback DROP TABLE DLT_REGISTRATION_ITEM;
 
+--changeset sangam:0045-21-cmp_otp_challenge dbms:mysql
+--comment: compliance: cmp_otp_challenge (decision 360)
+CREATE TABLE CMP_OTP_CHALLENGE (
+  tenant_id VARCHAR(64) NOT NULL,
+  challenge_id VARCHAR(64) NOT NULL,
+  identifier_type VARCHAR(64) NOT NULL,
+  identifier_hash VARCHAR(64) NOT NULL,
+  code_hash VARCHAR(64) NOT NULL,
+  salt VARCHAR(64) NOT NULL,
+  status VARCHAR(64) NOT NULL,
+  attempts INT NOT NULL,
+  issued_at DATETIME(6) NOT NULL,
+  expires_at DATETIME(6) NOT NULL,
+  locked_until DATETIME(6),
+  verified_at DATETIME(6),
+  consumed_at DATETIME(6),
+  CONSTRAINT PK_CMP_OTP_CHALLENGE PRIMARY KEY (tenant_id, challenge_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+CREATE INDEX CMP_OTP_IDENTIFIER ON CMP_OTP_CHALLENGE (tenant_id, identifier_hash, status);
+--rollback DROP TABLE CMP_OTP_CHALLENGE;
+
 --changeset sangam:0016-03-form_draft-alter dbms:mysql
 --comment: R47 form version is the hash triple (X.2.5.1): drafts keep it next to the legacy int
 ALTER TABLE FORM_DRAFT ADD COLUMN form_version_hash VARCHAR(64);

@@ -22,6 +22,20 @@ export function yesNo(key: string, label = `fld.${key}`): FormField {
   return { key, label, type: 'select', json: true, values: [{ value: 'true', label: 'common.yes' }, { value: 'false', label: 'common.no' }], validate: { required: true } };
 }
 
+/**
+ * Owner decision 362: a form whose attestations are explicit Yes / No choices sends each as a JSON boolean; one left
+ * unanswered is refused here, as the server refuses it by name (never read as false).
+ */
+export function checkChoices(keys: (string | [key: string, label: string])[]): (body: Record<string, unknown>, t: (k: string, o?: Record<string, unknown>) => string) => string | undefined {
+  return (body, t) => {
+    for (const e of keys) {
+      const [k, label] = typeof e === 'string' ? [e, `fld.${e}`] : e;
+      if (typeof body[k] !== 'boolean') return t('mod.compliance.choiceRequired', { field: t(label) });
+    }
+    return undefined;
+  };
+}
+
 /** The define-purpose form (ComplianceDefinePurposeRequest in sangam-api.yaml). */
 export const purposeFields: FormField[] = [
   f.text('code', undefined, true),
@@ -83,7 +97,10 @@ export const consents: PrincipalSearchDef = {
     id: 'give',
     label: 'act.recordConsent',
     path: '/compliance/consents',
-    fields: [f.text('principalRef'), f.text('noticeKey', undefined, true), f.num('noticeVersion'), f.select('language', ['en', 'hi'], 'fld.language', false, 'lang.'), f.json('purposeCodes', undefined, true), f.bool('affirmativeAction', 'fld.affirmativeAction'), f.text('channel'), f.text('guardianVerificationId')],
+    fields: [f.text('principalRef'), f.text('noticeKey', undefined, true), f.num('noticeVersion'), f.select('language', ['en', 'hi'], 'fld.language', false, 'lang.'), f.json('purposeCodes', undefined, true), f.bool('affirmativeAction', 'fld.affirmativeAction'), f.text('channel'), f.select('declaredCategory', ['ADULT', 'CHILD'], 'fld.declaredCategory', true), f.text('guardianVerificationId')],
+    // owner decision 365: the declared category (adult or child) is a required choice with no default; a declared child
+    // needs the guardian verification id, which the consent row then carries
+    check: (body, t) => (body.declaredCategory === 'ADULT' || body.declaredCategory === 'CHILD' ? undefined : t('mod.compliance.choiceRequired', { field: t('fld.declaredCategory') })),
     hint: 'mod.compliance.consentHint',
   },
   // M-051: WithdrawConsentRequest(purposes) (ComplianceRequests.java:27)
@@ -231,7 +248,7 @@ export function breachesScreen(pack: JurisdictionView | undefined): ScreenDef {
   };
 }
 
-const lawful: ScreenDef = {
+export const lawful: ScreenDef = {
   id: 'lawful',
   title: 'mod.compliance.lawful',
   description: 'mod.compliance.lawfulDesc',
@@ -247,7 +264,7 @@ const lawful: ScreenDef = {
     // authority and reference required (LawfulRequestService.java:51-52), basis a code of the jurisdiction pack (:53)
     { id: 'receive', label: 'act.receiveLawful', path: '/compliance/lawful-requests', fields: [f.text('authority', undefined, true), f.text('officerName', 'fld.officerName'), f.text('officerDesignation', 'fld.officerDesignation'), f.text('basis', 'fld.legalProvision', true), f.text('reference', 'fld.orderRef', true), f.area('scope', undefined, true), f.dt('dueAt')], showResult: true },
     // M-051: VerifyLawfulRequest(rankAdequate) (ComplianceRequests.java:45)
-    { id: 'verify', label: 'act.verifyLawful', path: '/compliance/lawful-requests/{id}/verify', fields: [f.bool('rankAdequate', 'fld.rankAdequate')] },
+    { id: 'verify', label: 'act.verifyLawful', path: '/compliance/lawful-requests/{id}/verify', fields: [yesNo('rankAdequate')], check: checkChoices(['rankAdequate']) },
     { id: 'approve', label: 'act.approve', path: '/compliance/lawful-requests/{id}/approve', noJson: true, hint: 'mod.compliance.lawfulApproveHint' },
     // M-051: RespondLawfulRequest(responseRef, principalRefs, dataCategories) (ComplianceRequests.java:48); responseRef required
     { id: 'respond', label: 'act.respond', path: '/compliance/lawful-requests/{id}/respond', fields: [f.text('responseRef', 'fld.responseRef', true), f.json('principalRefs', 'fld.disclosedRefs'), f.json('dataCategories', 'fld.categories')] },
@@ -354,7 +371,7 @@ export function ContactsTab({ pack, hasLabel }: { pack: JurisdictionView | undef
   );
 }
 
-const evidence: ScreenDef = {
+export const evidence: ScreenDef = {
   id: 'evidence',
   title: 'mod.compliance.evidence',
   list: '/compliance/jurisdiction',
@@ -365,13 +382,15 @@ const evidence: ScreenDef = {
   toolbar: [
     // M-051: ImpactAssessmentRequest(activityId, scope, risks, measures, residualRisk, assessor, independent, assessedAt, authorityReportRef)
     // (ComplianceRequests.java:59); scope and assessor required (AccountabilityService.java:85-86)
-    { id: 'dpia', label: 'act.recordDpia', path: '/compliance/evidence/impact-assessments', fields: [f.text('scope', 'fld.system', true), f.text('assessor', undefined, true), f.dt('assessedAt', 'fld.assessedOn'), f.json('risks', undefined, true), f.json('measures'), f.text('authorityReportRef', 'fld.documentRef')], showResult: true },
+    { id: 'dpia', label: 'act.recordDpia', path: '/compliance/evidence/impact-assessments', fields: [f.text('scope', 'fld.system', true), f.text('assessor', undefined, true), f.dt('assessedAt', 'fld.assessedOn'), f.json('risks', undefined, true), f.json('measures'), yesNo('independent', 'fld.independentAssessor'), f.text('authorityReportRef', 'fld.documentRef')], check: checkChoices([['independent', 'fld.independentAssessor']]), showResult: true },
     // M-051: AuditEvidenceRequest(kind, periodFrom, periodTo, completedAt, auditor, accreditationRef, independent, findings, reportHash,
     // authorityReportRef) (ComplianceRequests.java:54); kind is an evidence kind of the jurisdiction pack, auditor and reportHash are
     // required, and a kind may require independence or an accreditation reference (AccountabilityService.java:106-118)
-    { id: 'audit', label: 'act.recordAudit', path: '/compliance/evidence/audits', fields: [f.text('kind', 'fld.evidenceKind', true), f.text('auditor', undefined, true), f.dt('periodFrom', 'fld.from'), f.dt('periodTo', 'fld.to'), f.text('reportHash', 'fld.reportHash', true), f.bool('independent', 'fld.independent'), f.text('accreditationRef', 'fld.accreditationRef'), f.json('findings')], showResult: true },
-    // M-051: TransferRequest(destinationCountry, recipient, purposeCode, dataCategories, ...) (CrossBorderTransferGuard.java:37)
-    { id: 'transfer', label: 'act.evaluateTransfer', path: '/compliance/transfers/evaluate', fields: [f.text('destinationCountry', undefined, true), f.json('dataCategories', 'fld.categories', true), f.text('purposeCode', undefined, true)], showResult: true },
+    { id: 'audit', label: 'act.recordAudit', path: '/compliance/evidence/audits', fields: [f.text('kind', 'fld.evidenceKind', true), f.text('auditor', undefined, true), f.dt('periodFrom', 'fld.from'), f.dt('periodTo', 'fld.to'), f.text('reportHash', 'fld.reportHash', true), yesNo('independent'), f.text('accreditationRef', 'fld.accreditationRef'), f.json('findings')], check: checkChoices(['independent']), showResult: true },
+    // M-051: TransferRequest(destinationCountry, recipient, purposeCode, dataCategories, ...) (CrossBorderTransferGuard.java:37);
+    // owner decision 362: recipientSameProtectionAttested and recipientConditionMet are required Yes / No choices (never
+    // defaulted), as independent and rankAdequate are on the evidence and lawful-request forms
+    { id: 'transfer', label: 'act.evaluateTransfer', path: '/compliance/transfers/evaluate', fields: [f.text('destinationCountry', undefined, true), f.json('dataCategories', 'fld.categories', true), f.text('purposeCode', undefined, true), yesNo('recipientSameProtectionAttested'), yesNo('recipientConditionMet')], check: checkChoices(['recipientSameProtectionAttested', 'recipientConditionMet']), showResult: true },
     // M-051: SealLogsRequest(from, to) (ComplianceRequests.java:64); from required (ComplianceController.java:348-352), to defaults to now
     { id: 'seal', label: 'act.sealLogs', path: '/compliance/logs/segments/seal', fields: [f.dt('from', undefined, true), f.dt('to', 'fld.upTo')], showResult: true },
     { id: 'verifyLogs', label: 'act.verifyLogs', method: 'GET', path: '/compliance/logs/verify', showResult: true, noJson: true },

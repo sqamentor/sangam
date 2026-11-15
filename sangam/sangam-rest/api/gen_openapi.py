@@ -1867,14 +1867,17 @@ schema("ComplianceDataItemRequest", "One itemised personal-data item of a purpos
        descs={"sensitive": "A special category under the jurisdiction pack (IN: SPDI r.3, Aadhaar), masked in summaries. A legal attestation: required, true or false."})
 schema("ComplianceGiveConsentRequest", "Consent by the data principal (or a verified guardian, DPDP s.9). `language` is a code of the tenant's jurisdiction pack; principalRef defaults to the caller.",
        "principalRef noticeKey noticeVersion:int language purposeCodes:list:s affirmativeAction:bool channel "
-       "guardianVerificationId consentManagerId cmArtefactId", ["noticeKey", "purposeCodes", "affirmativeAction"])
+       "guardianVerificationId consentManagerId cmArtefactId declaredCategory", ["noticeKey", "purposeCodes", "affirmativeAction", "declaredCategory"],
+       enums={"declaredCategory": ["ADULT", "CHILD"]},
+       descs={"declaredCategory": "The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies."})
 schema("ComplianceConsent", "A consent record with its active purposes and evidence hash (DPDP s.6).",
        "consentId principalRef noticeKey noticeVersion:int language status givenAt:dt withdrawnAt:dt consentManagerId "
        "cmArtefactId legacy:bool activePurposes:list:s evidenceHash", enums={"status": ["ACTIVE", "PARTIALLY_WITHDRAWN", "WITHDRAWN"]})
 schema("ComplianceWithdrawConsentRequest", "Purposes to withdraw; empty = all (DPDP s.6(4)).", "purposes:list:s")
 schema("ComplianceConsentArtefact", "A consent artefact from a registered consent manager (DPDP s.6(7), Rules r.4).",
        "consentManagerId artefactId principalRef fiduciaryId noticeKey noticeVersion:int languageCode purposeCodes:list:s "
-       "issuedAt:dt expiresAt:dt signature")
+       "issuedAt:dt expiresAt:dt signature", ["noticeVersion"],
+       descs={"noticeVersion": "The version of the notice the data principal consented to. Required: an omitted one is 400 VALIDATION_FAILED naming the field, never read as version 0 (owner decision 362)."})
 schema("ComplianceRightsSubmission", "A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335): identifierType SIGNED_IN for the caller's own signed-in identity (identifierValue blank or that identity), else the published identifier with its proof (OTP).",
        "principalRef right identifierType identifierValue proof:smap nomineeRef channel details:obj", ["right"])
 schema("ComplianceRightsRequest", "A rights request with its statutory due date.",
@@ -1897,7 +1900,8 @@ schema("ComplianceLawfulRequestBody", "A request from a lawful authority (maker-
        "authority officerName officerDesignation basis reference scope dueAt:dt", ["authority", "basis", "reference"])
 schema("ComplianceLawfulRequest", "A lawful-authority request and its maker-checker state.",
        "requestId authority officerName officerDesignation basis reference scope status dueAt:dt late:bool")
-schema("ComplianceVerifyLawfulRequest", "Whether the requesting officer's rank is adequate.", "rankAdequate:bool")
+schema("ComplianceVerifyLawfulRequest", "Whether the requesting officer's rank is adequate.", "rankAdequate:bool", ["rankAdequate"],
+       descs={"rankAdequate": "The checker's attestation that the requesting officer's rank is adequate under the cited provision. Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362)."})
 schema("ComplianceRespondLawfulRequest", "The response and the disclosed principals (disclosure register).",
        "responseRef principalRefs:list:s dataCategories:list:s", ["responseRef"])
 schema("ComplianceReasonBody", "A reason.", "reason", ["reason"])
@@ -1907,19 +1911,24 @@ schema("ComplianceContact", "A published contact (DPO / grievance officer, DPDP 
               "role": "Taken from the path on POST /compliance/contacts/{role}."})
 schema("ComplianceAuditEvidenceRequest", "Independent data audit evidence (Significant Data Fiduciary, DPDP s.10).",
        "kind periodFrom:dt periodTo:dt completedAt:dt auditor accreditationRef independent:bool findings:list:s reportHash authorityReportRef",
-       ["kind", "auditor"])
+       ["kind", "auditor", "independent"],
+       descs={"independent": "The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362)."})
 schema("ComplianceAuditEvidence", "Recorded audit evidence.",
        "auditId kind periodFrom:dt periodTo:dt auditor accreditationRef independent:bool completedAt:dt findings:list:s "
        "reportHash nextDueAt:dt authorityReportRef")
 schema("ComplianceImpactAssessmentRequest", "Data protection impact assessment (DPDP s.10(2)(c)).",
        "activityId scope risks:list:s measures:list:s residualRisk assessor independent:bool assessedAt:dt authorityReportRef",
-       ["scope"])
+       ["scope", "independent"],
+       descs={"independent": "The assessor is independent (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362)."})
 schema("ComplianceImpactAssessment", "Recorded impact assessment.",
        "assessmentId activityId scope risks:list:s measures:list:s residualRisk assessor independent:bool assessedAt:dt "
        "nextDueAt:dt authorityReportRef evidenceHash")
 schema("ComplianceTransferRequest", "A cross-border transfer to evaluate (DPDP s.16, localisation rules).",
        "destinationCountry recipient purposeCode dataCategories:list:s approvalRef recipientSameProtectionAttested:bool "
-       "mechanism impactAssessmentRef recipientConditionMet:bool", ["destinationCountry"])
+       "mechanism impactAssessmentRef recipientConditionMet:bool",
+       ["destinationCountry", "recipientSameProtectionAttested", "recipientConditionMet"],
+       descs={"recipientSameProtectionAttested": "The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).",
+              "recipientConditionMet": "The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362)."})
 schema("ComplianceTransferDecision", "The recorded transfer decision.", "decisionId allowed:bool rule reason")
 schema("ComplianceSealLogsRequest", "Seal the log segment [from, to) (CERT-In 180-day logs, hash-chained).", "from:dt to:dt", ["from"])
 schema("ComplianceLogSegment", "A sealed, hash-chained log segment in the home-country archive.",
@@ -2034,6 +2043,39 @@ op("post", C + "/contacts/{role}", "setComplianceContact", "Compliance", "Set a 
    "Sets the effective contact for a role of the jurisdiction pack (residency checked where required).",
    CR + ["DPDP s.8(9)", "DPDP s.10(2)", "R41"], params=[pp("role")], body="ComplianceContact", resp=(204, None),
    cmd="compliance.contact.set", perm="compliance.admin")
+# owner decision 360: the compliance-owned one-time code of a rights request (public, as the submission)
+schema("ComplianceOtpChallengeRequest", "A one-time code for a rights request (owner decision 360), sent through the principal notifier to an identifier the tenant accepts (rights.otp.identifier-types; IN pack: MOBILE, EMAIL; DPDP Rules r.14(1)). `language` is a code of the jurisdiction pack.",
+       "identifierType identifierValue language", ["identifierType", "identifierValue"])
+schema("ComplianceOtpChallenge", "An issued challenge; the code itself is only sent to the identifier.", "challengeId identifierType expiresAt:dt", ["challengeId", "expiresAt"])
+schema("ComplianceOtpVerifyRequest", "The code the data principal received.", "code", ["code"])
+schema("ComplianceOtpVerification", "A verified challenge: the rights submission then names it in proof.challengeId (single use).", "challengeId outcome attemptsLeft:int", ["challengeId", "outcome"],
+       enums={"outcome": ["VERIFIED", "WRONG_CODE", "LOCKED", "EXPIRED", "INVALID"]})
+op("post", C + "/rights-requests/otp-challenges", "issueRightsRequestOtp", "Compliance", "Send a one-time code for a rights request",
+   "Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).",
+   CR + ["DPDP s.13", "DPDP Rules r.14(1)"], params=TENANT_PUBLIC, body="ComplianceOtpChallengeRequest", resp=(201, "ComplianceOtpChallenge"),
+   cmd="compliance.rights.otp.issue", created=True, errors=("BadRequest", "Conflict"))
+public(C + "/rights-requests/otp-challenges", "post")
+op("post", C + "/rights-requests/otp-challenges/{challengeId}/verify", "verifyRightsRequestOtp", "Compliance", "Verify a one-time code",
+   "Public. A wrong, unknown, used or other tenant's challenge is 401 OTP_INVALID, an expired one 401 OTP_EXPIRED, a locked-out identifier 429 OTP_LOCKED; the attempt is recorded and counts toward the lock-out. Writes RIGHTS_OTP_VERIFIED or RIGHTS_OTP_FAILED (owner decision 360).",
+   CR + ["DPDP Rules r.14(1)"], params=[pp("challengeId")] + TENANT_PUBLIC, body="ComplianceOtpVerifyRequest", resp=(200, "ComplianceOtpVerification"),
+   errors=("BadRequest", "Unauthorized"))
+public(C + "/rights-requests/otp-challenges/{challengeId}/verify", "post")
+# owner decision 361: legal holds on a process root (SANGAM.md X.2.3.5 #5); a hold overrides erasure (X.2.3.8 #4)
+schema("ComplianceLegalHoldRequest", "A legal hold to place on a process root (owner decision 361). `kind` is one of RTI, AUDIT, LITIGATION, VIGILANCE, OTHER (SANGAM.md X.2.3.5 #5); the stored reason is `KIND reference: reason`.",
+       "kind reference reason", ["kind", "reason"], enums={"kind": ["RTI", "AUDIT", "LITIGATION", "VIGILANCE", "OTHER"]})
+schema("ComplianceLegalHoldRelease", "The reason a legal hold is released; the releaser must not be the person who placed it (FOUR_EYES_REQUIRED).", "reason", ["reason"])
+schema("ComplianceLegalHold", "An active legal hold on a process root.", "holdId rootId reason heldBy", ["holdId", "rootId"])
+op("get", C + "/process-roots/{rootId}/legal-holds", "listComplianceLegalHolds", "Compliance", "Active legal holds of a process root",
+   "The active holds of a process root of the tenant (owner decision 361); an unknown root is 404.", CR + ["DPDP s.8(7)", "R61"],
+   params=[pp("rootId")], resp=(200, "array:ComplianceLegalHold"), perm="compliance.read", errors=GET_E)
+op("post", C + "/process-roots/{rootId}/legal-holds", "placeComplianceLegalHold", "Compliance", "Place a legal hold on a process root",
+   "Places a legal hold (owner decision 361); while it is active the root's data is not erased, and an erasure request names the hold (LEGAL_HOLD). Writes LEGAL_HOLD_SET on the root's chain.",
+   CR + ["DPDP s.8(7)", "R61"], params=[pp("rootId")], body="ComplianceLegalHoldRequest", resp=(201, "ComplianceLegalHold"),
+   cmd="compliance.legal-hold.place", perm="compliance.modify", created=True)
+op("post", C + "/process-roots/{rootId}/legal-holds/{holdId}/release", "releaseComplianceLegalHold", "Compliance", "Release a legal hold",
+   "Releases an active hold (owner decision 361); a different person from the one who placed it (422 FOUR_EYES_REQUIRED). Writes LEGAL_HOLD_RELEASED on the root's chain.",
+   CR + ["DPDP s.8(7)", "R61"], params=[pp("rootId"), pp("holdId")], body="ComplianceLegalHoldRelease", resp=(204, None),
+   cmd="compliance.legal-hold.release", perm="compliance.modify")
 op("post", C + "/evidence/audits", "recordComplianceAudit", "Compliance", "Record audit evidence",
    "Independent data audit (Significant Data Fiduciary obligations).", CR + ["DPDP s.10", "R41"],
    body="ComplianceAuditEvidenceRequest", resp=(201, "ComplianceAuditEvidence"), cmd="compliance.evidence.audit",

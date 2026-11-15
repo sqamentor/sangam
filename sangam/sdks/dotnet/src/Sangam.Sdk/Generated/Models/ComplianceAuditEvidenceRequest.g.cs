@@ -33,6 +33,9 @@ public sealed record ComplianceAuditEvidenceRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("accreditationRef")]
     public string? AccreditationRef { get; init; }
 
+    /// <summary>
+    /// The auditor is independent of the fiduciary (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362). Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("independent")]
     public bool? Independent { get; init; }
 

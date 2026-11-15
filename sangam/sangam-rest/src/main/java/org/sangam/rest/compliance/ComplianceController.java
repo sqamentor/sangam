@@ -180,6 +180,47 @@ public class ComplianceController {
         }
     }
 
+    /**
+     * Owner decision 362: the artefact a consent manager sends. {@code noticeVersion} must be given (the notice version
+     * the principal consented to); an omitted one is refused by name, never read as version 0.
+     */
+    static ConsentManagerPort.ConsentArtefact toArtefact(String cm, ComplianceRequests.ConsentArtefactRequest b) {
+        if (b.consentManagerId() != null && !b.consentManagerId().equals(cm)) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "artefact consentManagerId differs from the path");
+        }
+        if (b.noticeVersion() == null) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "noticeVersion is required: the version of the notice the"
+                    + " data principal consented to; it is never assumed");
+        }
+        return new ConsentManagerPort.ConsentArtefact(b.consentManagerId(), b.artefactId(), b.principalRef(),
+                b.fiduciaryId(), b.noticeKey(), b.noticeVersion(), b.languageCode(), b.purposeCodes(), b.issuedAt(),
+                b.expiresAt(), b.signature());
+    }
+
+    /**
+     * Owner decision 362: the transfer to evaluate. Both attestations must be given: an omitted one is refused by name,
+     * never read as false.
+     */
+    static CrossBorderTransferGuard.TransferRequest toTransfer(ComplianceRequests.EvaluateTransferRequest b) {
+        requireChoice(b.recipientSameProtectionAttested(), "recipientSameProtectionAttested",
+                "whether the recipient is attested to give the same protection");
+        requireChoice(b.recipientConditionMet(), "recipientConditionMet",
+                "whether the recipient meets the condition the destination requires");
+        return new CrossBorderTransferGuard.TransferRequest(b.destinationCountry(), b.recipient(), b.purposeCode(),
+                b.dataCategories(), b.approvalRef(), b.recipientSameProtectionAttested(), b.mechanism(),
+                b.impactAssessmentRef(), b.recipientConditionMet());
+    }
+
+    /** Owner decision 362: the independence of an auditor or assessor is an attestation: required, never defaulted. */
+    static void requireIndependence(Boolean independent) {
+        requireChoice(independent, "independent", "whether the auditor or assessor is independent");
+    }
+
+    /** Owner decision 362: the checker's attestation that the requesting officer's rank is adequate. */
+    static void requireRank(ComplianceRequests.VerifyLawfulRequest b) {
+        requireChoice(b.rankAdequate(), "rankAdequate", "whether the requesting officer's rank is adequate");
+    }
+
     // ---------------------------------------------------------------- consents
 
     @PostMapping("/consents")
@@ -248,13 +289,11 @@ public class ComplianceController {
 
     @PostMapping("/consent-managers/{cm}/artefacts")
     public ResponseEntity<ConsentService.Consent> ingestArtefact(HttpServletRequest req, @PathVariable String cm,
-            @RequestBody ConsentManagerPort.ConsentArtefact body,
+            @RequestBody ComplianceRequests.ConsentArtefactRequest body,
             @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
             @RequestParam(required = false) String tenant) {
-        if (body.consentManagerId() != null && !body.consentManagerId().equals(cm)) {
-            throw ApiProblem.badRequest("VALIDATION_FAILED", "artefact consentManagerId differs from the path");
-        }
-        ConsentService.Consent k = api.ingestArtefact(publicTenant(req, tenantHeader, tenant), body);
+        ConsentManagerPort.ConsentArtefact artefact = toArtefact(cm, body);
+        ConsentService.Consent k = api.ingestArtefact(publicTenant(req, tenantHeader, tenant), artefact);
         return Lists.created("/api/v1/compliance/consents/" + k.consentId(), k.consentId(), k);
     }
 
@@ -268,6 +307,29 @@ public class ComplianceController {
         String tenantId = publicTenant(req, tenantHeader, tenant);
         DataSubjectRightsService.RightsRequest r = api.submitRightsRequest(tenantId, body, signedIn(req, tenantId));
         return Lists.created("/api/v1/compliance/rights-requests/" + r.requestId(), r.requestId(), r);
+    }
+
+    /**
+     * Owner decision 360: a one-time code for a rights request, sent to the identifier (public, like the submission;
+     * the tenant from the header or query). The submission then carries {@code proof.challengeId}.
+     */
+    @PostMapping("/rights-requests/otp-challenges")
+    public ResponseEntity<org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge> issueRightsOtp(HttpServletRequest req,
+            @RequestBody ComplianceRequests.OtpChallengeRequest body,
+            @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
+            @RequestParam(required = false) String tenant) {
+        String tenantId = publicTenant(req, tenantHeader, tenant);
+        org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge ch = api.issueRightsOtp(tenantId, body);
+        return Lists.created("/api/v1/compliance/rights-requests/otp-challenges/" + ch.challengeId(), ch.challengeId(), ch);
+    }
+
+    @PostMapping("/rights-requests/otp-challenges/{challengeId}/verify")
+    public ResponseEntity<org.sangam.compliance.rights.PrincipalOtpChallenges.Verification> verifyRightsOtp(HttpServletRequest req,
+            @PathVariable String challengeId, @RequestBody ComplianceRequests.OtpVerifyRequest body,
+            @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
+            @RequestParam(required = false) String tenant) {
+        String tenantId = publicTenant(req, tenantHeader, tenant);
+        return Lists.okRef(challengeId, api.verifyRightsOtp(tenantId, challengeId, body == null ? null : body.code()));
     }
 
     /** The caller's own rights requests. Owner decision 338: another principal's by {@code POST /rights-requests/search}. */
@@ -348,6 +410,7 @@ public class ComplianceController {
     public ResponseEntity<LawfulRequestService.LawfulRequest> verifyLawfulRequest(RequestContext ctx,
             @PathVariable String id, @RequestBody ComplianceRequests.VerifyLawfulRequest b) {
         SecurityIdentity sid = require(ctx, Permissions.COMPLIANCE_MODIFY);
+        requireRank(b);
         return Lists.okRef(id, api.verifyLawfulRequest(sid, id, b.rankAdequate()));
     }
 
@@ -394,10 +457,34 @@ public class ComplianceController {
         return ResponseEntity.noContent().header(Lists.RESOURCE_REF, role).build();
     }
 
+    // ---------------------------------------------------------------- legal holds on a process root (decision 361)
+
+    @GetMapping("/process-roots/{rootId}/legal-holds")
+    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(RequestContext ctx, @PathVariable String rootId) {
+        return api.legalHolds(require(ctx, Permissions.COMPLIANCE_READ), rootId);
+    }
+
+    @PostMapping("/process-roots/{rootId}/legal-holds")
+    public ResponseEntity<org.sangam.compliance.ports.CompliancePorts.ActiveHold> placeLegalHold(RequestContext ctx,
+            @PathVariable String rootId, @RequestBody ComplianceRequests.LegalHoldRequest body) {
+        SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
+        org.sangam.compliance.ports.CompliancePorts.ActiveHold h = api.placeLegalHold(id, rootId, body);
+        return Lists.created("/api/v1/compliance/process-roots/" + rootId + "/legal-holds", h.holdId(), h);
+    }
+
+    @PostMapping("/process-roots/{rootId}/legal-holds/{holdId}/release")
+    public ResponseEntity<Void> releaseLegalHold(RequestContext ctx, @PathVariable String rootId, @PathVariable String holdId,
+                                                 @RequestBody ComplianceRequests.LegalHoldRelease body) {
+        SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
+        api.releaseLegalHold(id, rootId, holdId, body == null ? null : body.reason());
+        return ResponseEntity.noContent().header(Lists.RESOURCE_REF, holdId).build();
+    }
+
     @PostMapping("/evidence/audits")
     public ResponseEntity<AccountabilityService.AuditEvidence> recordAudit(RequestContext ctx,
             @RequestBody ComplianceRequests.AuditEvidenceRequest b) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
+        requireIndependence(b.independent());
         AccountabilityService.AuditEvidence e = api.recordAudit(id, b);
         return Lists.created("/api/v1/compliance/evidence/audits/" + e.auditId(), e.auditId(), e);
     }
@@ -406,6 +493,7 @@ public class ComplianceController {
     public ResponseEntity<AccountabilityService.ImpactAssessment> recordImpactAssessment(RequestContext ctx,
             @RequestBody ComplianceRequests.ImpactAssessmentRequest b) {
         SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_ADMIN);
+        requireIndependence(b.independent());
         AccountabilityService.ImpactAssessment a = api.recordImpactAssessment(id, b);
         return Lists.created("/api/v1/compliance/evidence/impact-assessments/" + a.assessmentId(), a.assessmentId(), a);
     }
@@ -414,8 +502,9 @@ public class ComplianceController {
 
     @PostMapping("/transfers/evaluate")
     public CrossBorderTransferGuard.Decision evaluateTransfer(RequestContext ctx,
-                                                              @RequestBody CrossBorderTransferGuard.TransferRequest body) {
-        return api.evaluateTransfer(require(ctx, Permissions.COMPLIANCE_MODIFY), body);
+                                                              @RequestBody ComplianceRequests.EvaluateTransferRequest body) {
+        SecurityIdentity id = require(ctx, Permissions.COMPLIANCE_MODIFY);
+        return api.evaluateTransfer(id, toTransfer(body));
     }
 
     @PostMapping("/logs/segments/seal")

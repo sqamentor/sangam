@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code ComplianceVerifyLawfulRequest} of sangam-api.yaml 0.1.0.
  *
- * @param rankAdequate wire field {@code rankAdequate}
+ * @param rankAdequate wire field {@code rankAdequate} (required). The checker's attestation that the requesting officer's rank is adequate under the cited provision. Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ComplianceVerifyLawfulRequest(

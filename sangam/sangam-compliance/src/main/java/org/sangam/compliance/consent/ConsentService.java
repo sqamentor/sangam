@@ -48,10 +48,19 @@ public final class ConsentService {
 
     public enum Status { ACTIVE, PARTIALLY_WITHDRAWN, WITHDRAWN }
 
-    /** A grant request. {@code givenBy} is the principal, or the parent / lawful guardian. */
+    /**
+     * A grant request. {@code givenBy} is the principal, or the parent / lawful guardian.
+     *
+     * <p>{@code declaredCategory} (owner decision 365) is the category the channel declared for the data principal,
+     * {@link PrincipalCategory#ADULT} or {@link PrincipalCategory#CHILD}: a declared child needs the verifiable consent
+     * of the parent ({@code guardianVerificationId}), which the consent row then carries, with no principal directory.
+     * The more protective of the declared and the directory category applies. {@code null} only for a channel that
+     * declares nothing (a consent manager's artefact), where the directory alone decides as before.
+     */
     public record GiveConsent(String principalRef, String noticeKey, Integer noticeVersion, Language language,
                               Set<String> purposeCodes, boolean affirmativeAction, String channel, String givenBy,
-                              String guardianVerificationId, String consentManagerId, String cmArtefactId) {
+                              String guardianVerificationId, String consentManagerId, String cmArtefactId,
+                              PrincipalCategory declaredCategory) {
     }
 
     public record Consent(String consentId, String principalRef, String noticeKey, int noticeVersion, String language,
@@ -123,7 +132,7 @@ public final class ConsentService {
             }
             defs.add(d);
         }
-        PrincipalCategory category = principals.category(c, tenantId, g.principalRef());
+        PrincipalCategory category = effectiveCategory(g.declaredCategory(), principals.category(c, tenantId, g.principalRef()));
         String verificationId = null;
         boolean guardianNeeded = (category == PrincipalCategory.CHILD || category == PrincipalCategory.PERSON_WITH_DISABILITY_WITH_GUARDIAN)
                 && !defs.stream().allMatch(d -> ChildDataGuard.guardianConsentExempt(cfg.pack, d));
@@ -154,6 +163,7 @@ public final class ConsentService {
         proof.put("channel", g.channel());
         proof.put("givenAt", now.toString());
         proof.put("category", category.name());
+        proof.put("declaredCategory", g.declaredCategory() == null ? null : g.declaredCategory().name());
         proof.put("guardianVerification", verificationId);
         proof.put("consentManager", g.consentManagerId());
         proof.put("artefact", g.cmArtefactId());
@@ -173,6 +183,24 @@ public final class ConsentService {
         notices.recordDelivery(c, tenantId, g.principalRef(), g.noticeKey(), notice.version(), lang,
                 ConsentNoticeService.DeliveryKind.CONSENT_REQUEST, g.channel(), id);
         return get(c, tenantId, id);
+    }
+
+    /**
+     * Owner decision 365: a channel declares {@code ADULT} or {@code CHILD} (any other value is refused by name); the more
+     * protective of the declared category and the directory's applies, so a declared child is a child without a directory
+     * and a directory child or guarded person is never lowered by a declaration of adult.
+     */
+    static PrincipalCategory effectiveCategory(PrincipalCategory declared, PrincipalCategory directory) {
+        if (declared != null && declared != PrincipalCategory.ADULT && declared != PrincipalCategory.CHILD) {
+            throw ComplianceException.invalid("declaredCategory must be ADULT or CHILD");
+        }
+        if (declared == PrincipalCategory.CHILD) {
+            return PrincipalCategory.CHILD;
+        }
+        if (declared == PrincipalCategory.ADULT && (directory == null || directory == PrincipalCategory.UNKNOWN)) {
+            return PrincipalCategory.ADULT;
+        }
+        return directory == null ? PrincipalCategory.UNKNOWN : directory;
     }
 
     /**

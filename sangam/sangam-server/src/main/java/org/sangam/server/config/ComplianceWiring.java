@@ -32,6 +32,7 @@ import org.sangam.server.bridge.ComplianceConfigProvider;
 import org.sangam.server.bridge.ComplianceConnectors;
 import org.sangam.server.bridge.ComplianceLogArchiveStore;
 import org.sangam.server.bridge.ComplianceNotifier;
+import org.sangam.server.bridge.CompliancePersonalData;
 import org.sangam.server.bridge.CompliancePurposePlugin;
 import org.sangam.server.bridge.ComplianceScheduler;
 import org.sangam.server.bridge.ComplianceWorkflowStarter;
@@ -56,7 +57,7 @@ import com.zaxxer.hikari.HikariDataSource;
  *   <li>M-009: denial audits (purpose binding, child safeguards) commit on their own through the leaf pool
  *       {@code sangam-compliance-audit} ({@link ComplianceAuditPool}), so they survive the refused operation's
  *       rollback without taking a second connection from the pool the caller holds (SL-43);</li>
- *   <li>ports: legal holds → integration {@code LegalHoldStore}; erasure → integration {@code ErasureService};
+ *   <li>ports: legal holds → integration {@code LegalHoldStore}; erasure → integration {@code ErasureService}; personal data → the process-instance store ({@link CompliancePersonalData}, decision 361);
  *       principal messages → outbox + DLT SMS / e-mail connectors ({@link ComplianceNotifier}); supervisory and incident
  *       authorities → e-mail / HTTP connectors; workflow starts → the engine; log archive → a home-country filesystem
  *       store. The other ports stay at the module's "not configured" defaults (reported as gaps by the evidence report);</li>
@@ -198,7 +199,7 @@ public class ComplianceWiring {
         SangamCompliance.Ports ports = new SangamCompliance.Ports(holds, erasurePort, notifier,
                 null /* principals: owned by packs / sangam-security person directory */,
                 null /* authenticator: OTP / SSO against the published identifier */,
-                null /* personalData: owned by the packs */,
+                new CompliancePersonalData(engine) /* owner decision 361: process-instance store + retention register */,
                 // M-087 / M-072: any bean of the verifier ports (the DigiLocker requester publishes the adult verifier)
                 adultVerifier.getIfUnique(), guardianshipVerifier.getIfUnique(), null /* processors */,
                 new ComplianceWorkflowStarter(engine), authorities, authorities, archive,

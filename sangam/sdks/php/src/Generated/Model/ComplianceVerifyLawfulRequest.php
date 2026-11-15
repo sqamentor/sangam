@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema ComplianceVerifyLawfulRequest of sangam-api.yaml 0.1.0.
  *
- * @property-read bool|null $rankAdequate
+ * @property-read bool|null $rankAdequate (required) The checker's attestation that the requesting officer's rank is adequate under the cited provision. Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  */
 final class ComplianceVerifyLawfulRequest implements \JsonSerializable
 {

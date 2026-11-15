@@ -74,6 +74,18 @@ public final class ComplianceConfig {
     public final boolean allowLanguageFallback;
     public final List<String> noticeLintPhrases;
     public final Map<String, Integer> rightSlaDays;
+    /**
+     * Owner decision 360: the rights-request one-time code ({@code rights.otp.*}; tenant configuration over the pack
+     * defaults). The numbers are null when unset: nothing is defaulted in code, and an unset one refuses the issue.
+     */
+    public final Integer otpTtlMinutes;
+    public final Integer otpMaxAttempts;
+    public final Integer otpLockoutMinutes;
+    public final Integer otpCodeLength;
+    /** Identifier types a code may be sent to (upper case, e.g. MOBILE, EMAIL). */
+    public final List<String> otpIdentifierTypes;
+    /** The tenant's DLT template id for the SMS code (blank: no SMS code). */
+    public final String otpSmsTemplateId;
     public final int preErasureNoticeHours;
     public final int minimumRetentionDays;
     public final int legalHoldRecheckHours;
@@ -141,6 +153,13 @@ public final class ComplianceConfig {
             sla.put(r.code(), integer(p, "sla." + r.slaKey() + "-days", r.defaultDays()));
         }
         rightSlaDays = Collections.unmodifiableMap(sla);
+        otpTtlMinutes = optionalInt(p, "rights.otp.ttl-minutes");
+        otpMaxAttempts = optionalInt(p, "rights.otp.max-attempts");
+        otpLockoutMinutes = optionalInt(p, "rights.otp.lockout-minutes");
+        otpCodeLength = optionalInt(p, "rights.otp.code-length");
+        otpIdentifierTypes = csvOr(p, "rights.otp.identifier-types", List.of()).stream()
+                .map(s -> s.toUpperCase(Locale.ROOT)).toList();
+        otpSmsTemplateId = str(p, "rights.otp.sms-template-id", "");
         preErasureNoticeHours = integer(p, "retention.pre-erasure-notice-hours", limit(PRE_ERASURE_MIN, 0));
         minimumRetentionDays = integer(p, "retention.minimum-days", limit(MIN_RETENTION, 0));
         legalHoldRecheckHours = integer(p, "retention.legal-hold-recheck-hours", 24);
@@ -432,6 +451,11 @@ public final class ComplianceConfig {
         if (hasLimit(key) && value < limit(key, 0)) {
             v.add(property + " must be >= " + limit(key, 0) + " (" + pack.limitCitation(key) + ")");
         }
+    }
+
+    private static Integer optionalInt(Function<String, String> p, String key) {
+        String v = str(p, key, "");
+        return v.isBlank() ? null : Integer.valueOf(v.strip());
     }
 
     private static String str(Function<String, String> p, String key, String def) {

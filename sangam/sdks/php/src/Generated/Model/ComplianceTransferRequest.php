@@ -17,10 +17,10 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $purposeCode
  * @property-read list<string>|null $dataCategories
  * @property-read string|null $approvalRef
- * @property-read bool|null $recipientSameProtectionAttested
+ * @property-read bool|null $recipientSameProtectionAttested (required) The recipient is attested to give the same protection to the data (an attestation). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  * @property-read string|null $mechanism
  * @property-read string|null $impactAssessmentRef
- * @property-read bool|null $recipientConditionMet
+ * @property-read bool|null $recipientConditionMet (required) The recipient meets the condition the destination requires (for example an adequacy certification). Required, true or false: an omitted one is 400 VALIDATION_FAILED naming the field, never read as false (owner decision 362).
  */
 final class ComplianceTransferRequest implements \JsonSerializable
 {

@@ -89,7 +89,7 @@ use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1141 operations on 960 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1146 operations on 964 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis

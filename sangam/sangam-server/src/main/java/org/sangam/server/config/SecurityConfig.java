@@ -105,7 +105,11 @@ public class SecurityConfig {
                         // exp, jti) and refuses every call when no client is registered. The bearer resolver hands
                         // no token from these paths to the Sangam JWT decoder (bearerResolver).
                         .requestMatchers(CDS_SERVICES_PATHS).permitAll()
+                        // owner decision 360: the one-time code of a rights request is asked for and verified before the
+                        // request is made, by a data principal who is not signed in (as the submission above)
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/compliance/rights-requests",
+                                "/api/v1/compliance/rights-requests/otp-challenges",
+                                "/api/v1/compliance/rights-requests/otp-challenges/*/verify",
                                 "/api/v1/compliance/consent-managers/*/artefacts").permitAll()
                         .requestMatchers("/engine-rest/**")
                         .hasAnyAuthority(org.sangam.rest.support.Permissions.ENGINE_REST_GROUPS.stream()

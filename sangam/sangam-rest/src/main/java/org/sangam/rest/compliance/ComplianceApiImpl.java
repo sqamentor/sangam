@@ -22,6 +22,7 @@ import org.sangam.compliance.consent.ConsentService;
 import org.sangam.compliance.jurisdiction.JurisdictionPack;
 import org.sangam.compliance.lawful.LawfulRequestService;
 import org.sangam.compliance.lawful.PurposeDefinition;
+import org.sangam.compliance.ports.CompliancePorts.PrincipalCategory;
 import org.sangam.compliance.logs.AuditIntegrityVerifier;
 import org.sangam.compliance.logs.LogArchiveService;
 import org.sangam.compliance.report.ComplianceEvidenceReportGenerator;
@@ -29,6 +30,7 @@ import org.sangam.compliance.rights.DataSubjectRightsService;
 import org.sangam.compliance.transfer.CrossBorderTransferGuard;
 import org.sangam.core.engine.SangamClockHolder;
 import org.sangam.core.security.SecurityIdentity;
+import org.sangam.rest.port.ApiProblem;
 
 /**
  * Delegates every compliance endpoint to the {@link SangamCompliance} services, one transaction per call (the
@@ -101,7 +103,19 @@ public final class ComplianceApiImpl implements ComplianceRestService {
         String subject = r.principalRef() == null || r.principalRef().isBlank() ? id.personId() : r.principalRef();
         return new ConsentService.GiveConsent(subject, r.noticeKey(), r.noticeVersion(), language(id.tenantId(), r.language()),
                 r.purposeCodes(), r.affirmativeAction(), r.channel() == null ? "api" : r.channel(), id.personId(),
-                r.guardianVerificationId(), r.consentManagerId(), r.cmArtefactId());
+                r.guardianVerificationId(), r.consentManagerId(), r.cmArtefactId(), declaredCategory(r.declaredCategory()));
+    }
+
+    /** Owner decision 365: the declared category is required, ADULT or CHILD, refused by name otherwise (never defaulted). */
+    static PrincipalCategory declaredCategory(String declared) {
+        if (declared == null || declared.isBlank()) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "declaredCategory is required: ADULT or CHILD (owner decision 365)");
+        }
+        return switch (declared) {
+            case "ADULT" -> PrincipalCategory.ADULT;
+            case "CHILD" -> PrincipalCategory.CHILD;
+            default -> throw ApiProblem.badRequest("VALIDATION_FAILED", "declaredCategory must be ADULT or CHILD");
+        };
     }
 
     @Override
@@ -313,6 +327,36 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     @Override
     public LogArchiveService.Segment sealLogs(SecurityIdentity id, Instant from, Instant to) {
         return tx(c -> compliance.logs.seal(c, id.tenantId(), from, to == null ? now() : to, id.personId()));
+    }
+
+    @Override
+    public org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r) {
+        return tx(c -> compliance.otp.issue(c, tenantId, r.identifierType(), r.identifierValue(), language(tenantId, r.language())));
+    }
+
+    @Override
+    public org.sangam.compliance.rights.PrincipalOtpChallenges.Verification verifyRightsOtp(String tenantId, String challengeId, String code) {
+        // the attempt commits first (attempt limit), then a refusal is thrown by name
+        return tx(c -> compliance.otp.verify(c, tenantId, challengeId, code)).require();
+    }
+
+    @Override
+    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> legalHolds(SecurityIdentity id, String rootId) {
+        return tx(c -> compliance.legalHolds.active(c, id.tenantId(), rootId));
+    }
+
+    @Override
+    public org.sangam.compliance.ports.CompliancePorts.ActiveHold placeLegalHold(SecurityIdentity id, String rootId,
+                                                                                 ComplianceRequests.LegalHoldRequest r) {
+        return tx(c -> compliance.legalHolds.place(c, id.tenantId(), rootId, r.kind(), r.reference(), r.reason(), id.personId()));
+    }
+
+    @Override
+    public void releaseLegalHold(SecurityIdentity id, String rootId, String holdId, String reason) {
+        tx(c -> {
+            compliance.legalHolds.release(c, id.tenantId(), rootId, holdId, reason, id.personId());
+            return null;
+        });
     }
 
     @Override

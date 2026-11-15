@@ -27,6 +27,12 @@ public final class IntegrationLegalHoldAdapter implements LegalHoldPort {
     }
 
     @Override
+    public List<org.sangam.compliance.ports.CompliancePorts.ActiveHold> active(Connection c, String tenantId, String rootId) {
+        return store.active(c, tenantId, rootId).stream().map(h -> new org.sangam.compliance.ports.CompliancePorts.ActiveHold(
+                h.holdId(), h.rootId(), h.reason(), h.heldBy())).toList();
+    }
+
+    @Override
     public void place(Connection c, String tenantId, String rootId, String holdId, String reason, String actor) {
         store.place(c, tenantId, rootId, holdId, reason, actor);
     }
