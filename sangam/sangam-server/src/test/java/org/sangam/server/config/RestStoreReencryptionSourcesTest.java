@@ -84,6 +84,12 @@ class RestStoreReencryptionSourcesTest {
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 Object o = rs.getObject(1);
+                if (o instanceof java.sql.Clob clob) {   // H2 answers a LOB column with its locator, not its text
+                    return clob.getSubString(1, (int) clob.length());
+                }
+                if (o instanceof java.sql.Blob blob) {
+                    return new String(blob.getBytes(1, (int) blob.length()), StandardCharsets.UTF_8);
+                }
                 return o instanceof byte[] b ? new String(b, StandardCharsets.UTF_8) : String.valueOf(o);
             }
         }

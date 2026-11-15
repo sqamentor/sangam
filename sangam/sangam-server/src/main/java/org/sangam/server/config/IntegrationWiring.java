@@ -618,17 +618,30 @@ public class IntegrationWiring {
     /**
      * packs' {@code port.ConnectorGateway}: outbox in the caller's (engine) transaction, relay delivers the result.
      * Unbound pack connectors fall back to the packs' simulator only when {@code sangam.packs.simulator-fallback} is
-     * true (default: the h2 profile); otherwise they fail with {@code CONNECTOR_NOT_CONFIGURED}.
+     * true ({@link #simulatorFallback}); otherwise they fail with {@code CONNECTOR_NOT_CONFIGURED}.
      */
+    /**
+     * {@code sangam.packs.simulator-fallback}: the configured value, else the default of the h2 profile. That default is
+     * a development default (decision 143): it holds only in a validated development environment. In production with a
+     * development profile next to it the server starts as production with the fallback off (decision 198); a
+     * configured {@code true} in production is refused by the callers.
+     */
+    static boolean simulatorFallback(Boolean configured, Environment env) {
+        if (configured != null) {
+            return configured;
+        }
+        return java.util.Arrays.asList(env.getActiveProfiles()).contains("h2")
+                && ProductionEnvironment.developmentDefaultsAllowed(env);
+    }
+
     @Bean
     public IntegrationConnectorGateway sangamIntegrationConnectorGateway(TxSupport tx, ObjectProvider<EngineAdapter> adapter,
             ProcessEngine engine, PackOperationStore store, PackConnectorBindings bindings, ConnectorRegistry registry,
             ConnectorCallJournal journal, ReconciliationQueue queue, OutboxWriter writer, BackpressureGate gate,
             @org.springframework.beans.factory.annotation.Qualifier("sangamPackBindingsProperties")
             PackBindingsProperties properties, Environment env) {
-        boolean fallback = properties.getSimulatorFallback() != null ? properties.getSimulatorFallback()
-                : java.util.Arrays.asList(env.getActiveProfiles()).contains("h2");
-        if (fallback && ProductionEnvironment.isProduction(env)) { // SL-109
+        boolean fallback = simulatorFallback(properties.getSimulatorFallback(), env);
+        if (fallback && ProductionEnvironment.isProduction(env)) { // SL-109: only an explicit true reaches this
             throw new IllegalStateException("sangam.packs.simulator-fallback must not be enabled on a production profile");
         }
         return new IntegrationConnectorGateway(engineTx(adapter, tx), engine, store, bindings, registry, journal, queue,

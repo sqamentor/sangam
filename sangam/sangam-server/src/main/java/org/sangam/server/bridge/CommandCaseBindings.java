@@ -26,8 +26,9 @@ public final class CommandCaseBindings implements CaseBindings {
 
     @Override
     public Optional<String> binding(String tenantId, String rootId) {
-        CommandContext cc = Context.getCommandContext();
-        if (cc != null) {
+        // Operaton's Context.getCommandContext() throws outside a command (ENGINE-09025); it never answers null
+        if (Context.hasActiveCommandContext()) {
+            CommandContext cc = Context.getCommandContext();
             return store.caseBinding(cc.getDbSqlSession().getSqlSession().getConnection(), tenantId, rootId);
         }
         return store.caseBinding(tenantId, rootId);

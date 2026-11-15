@@ -23,6 +23,14 @@ sangam:
     response-timeout: 60s
     max-in-flight-per-tenant: 400
 
+# Console logs are structured (ECS JSON), one JSON object per line: the encoder escapes every value, so text that
+# reaches a log message from a request cannot start a second, forged log line (code scanning java/log-injection).
+# Owner decision 324: the default of every runnable application, in every profile.
+logging:
+  structured:
+    format:
+      console: ecs
+
 management:
   server:
     port: ${SANGAM_GW_MANAGEMENT_PORT:8001}

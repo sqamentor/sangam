@@ -58,9 +58,25 @@ public class SecurityKeysWiring {
                         + " allowed only on the h2/dev profiles");
             }
             LOG.warn("Using the ephemeral DEVELOPMENT key-encryption key: encrypted data does not survive a restart");
-            kek = MasterKeyProvider.ephemeralForDevelopment();
+            kek = developmentKey();
         }
         return security.newFieldEncryptor(keyStoreTransactions(sangamSecurityAuditPool, dataSource), kek, production);
+    }
+
+    /**
+     * The ephemeral development key-encryption key: one per JVM, not one per application context. The h2 profile's
+     * in-memory database lives as long as the JVM ({@code DB_CLOSE_DELAY=-1}), so a second context in the same JVM (a
+     * restart inside an embedding host or a development reload, the next test class) finds the tenant data keys the
+     * first one wrapped; with a key of its own it could not unwrap them ("key unwrap failed ... wrong KEK"). It still
+     * does not survive a restart of the JVM.
+     */
+    static MasterKeyProvider developmentKey() {
+        return DevelopmentKey.INSTANCE;
+    }
+
+    /** Created on first use, so a server with a configured key never generates one. */
+    private static final class DevelopmentKey {
+        static final MasterKeyProvider INSTANCE = MasterKeyProvider.ephemeralForDevelopment();
     }
 
     /**

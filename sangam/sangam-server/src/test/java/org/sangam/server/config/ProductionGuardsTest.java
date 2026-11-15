@@ -85,6 +85,23 @@ class ProductionGuardsTest {
                 null, null, null, null, null, null, null, props, env), "simulator-fallback must not be enabled");
     }
 
+    /**
+     * The h2 profile's simulator fallback is a development default (decision 143): on in a validated development
+     * environment only. Production next to the h2 profile starts as production with the fallback off (decision 198)
+     * instead of refusing the start for a value nobody configured; a configured value is taken as it is.
+     */
+    @Test
+    void simulatorFallbackDefaultIsADevelopmentDefault() {
+        assertTrue(IntegrationWiring.simulatorFallback(null, development()));
+        MockEnvironment productionWithH2 = helm();
+        productionWithH2.setActiveProfiles("h2");
+        assertFalse(IntegrationWiring.simulatorFallback(null, productionWithH2));
+        assertFalse(IntegrationWiring.simulatorFallback(null, developmentProfileWithoutSwitch()));
+        assertFalse(IntegrationWiring.simulatorFallback(null, helm()));
+        assertTrue(IntegrationWiring.simulatorFallback(true, productionWithH2), "a configured value is not rewritten");
+        assertFalse(IntegrationWiring.simulatorFallback(false, development()));
+    }
+
     @Test
     void healthSimulator() {
         HealthConnectorsProperties props = new HealthConnectorsProperties();

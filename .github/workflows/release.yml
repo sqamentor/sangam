@@ -122,7 +122,7 @@ jobs:
         run: $RL run --check build-unit-tests --ledger-dir "$LEDGER" -- mvn $MAVEN_ARGS -Dsangam.db=h2 -DskipITs -Psimulators-app verify
       - name: Unit test reports
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-unit-test-reports
           path: sangam/**/target/surefire-reports/
@@ -320,7 +320,7 @@ jobs:
         if: ${{ !cancelled() }}
         working-directory: dist
         run: echo "hashes=$(sha256sum *.jar *.tgz sbom/*.cdx.json | base64 -w0)" >> "$GITHUB_OUTPUT"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
           name: release-dist
@@ -329,7 +329,7 @@ jobs:
             sangam/sangam-ui/dist/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledger-build
@@ -382,8 +382,8 @@ jobs:
           sim="../dist/$($RD field simulators jar --version "$V")"
           if [ -f "$sim" ]; then mkdir -p sangam-integration/target && cp "$sim" sangam-integration/target/sangam-integration-simulators.jar; fi
           cp ../dist/lib-ext/*.jar deploy/docker/lib-ext/
-      - uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         if: needs.meta.outputs.push == 'true'
         with:
@@ -511,7 +511,7 @@ jobs:
             for img in $(sed -n "s/^product[[:space:]]\{1,\}\${SANGAM_REGISTRY}\/\([^:]*\):.*/\1/p" deploy/airgap/images.txt); do
               grep -Eq "/$img[@:]" "$1"/*.ref || { echo "::error::air-gap product image $img was not built in this release"; exit 1; }
             done' _ "$IMG"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
           name: image-release-files
@@ -523,7 +523,7 @@ jobs:
             image-vuln/
           if-no-files-found: error
           retention-days: 7
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledger-images
@@ -568,13 +568,13 @@ jobs:
         run: |
           mkdir -p ../chart
           helm package deploy/helm/sangam --version "$V" --app-version "$V" -d ../chart
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
           name: release-chart
           path: chart/
           if-no-files-found: error
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledger-chart
@@ -608,7 +608,7 @@ jobs:
       - name: Results-ledger gate (release mode, every line PASS)
         if: ${{ !cancelled() }}
         run: $RL gate --required sangam/deploy/licence/release-checks.json --mode release --set release --ledger-dir results --out results/release-gate.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: release-gate-ledger
@@ -630,7 +630,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with: { name: image-release-files, path: . }
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
@@ -720,7 +720,7 @@ jobs:
           set -euo pipefail
           python3 -I sangam/deploy/evidence/gen_standards_profile.py --check
           python3 -I sangam/deploy/evidence/gen_standards_profile.py --version "$V" --out-dir evidence-input/standards
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: standards-profile
           path: evidence-input/standards/
@@ -752,7 +752,7 @@ jobs:
           cd "evidence/sangam-evidence-$V"
           cosign sign-blob --yes --bundle SHA256SUMS.sigstore.json SHA256SUMS
           cd .. && rm -f "sangam-evidence-$V.tar.gz" && tar -czf "sangam-evidence-$V.tar.gz" "sangam-evidence-$V"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: evidence-pack
           path: evidence/*.tar.gz
@@ -822,7 +822,7 @@ jobs:
         run: |
           find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
           cat SHA256SUMS
-      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
+      - uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
         with:
           name: Sangam ${{ needs.meta.outputs.version }}
           tag_name: v${{ needs.meta.outputs.version }}

@@ -54,8 +54,10 @@ public class PackageSigningWiring {
         List<String> trusted = new ArrayList<>();
         AuditCheckpoints.Signer signer = null;
         if (privateRef != null && !privateRef.isBlank()) {
+            // the private key first: a literal key is refused as such before any other reference is looked up
+            String privateKey = resolve(secrets, PREFIX + "private-key-ref", privateRef);
             String publicKey = resolve(secrets, PREFIX + "public-key-ref", env.getProperty(PREFIX + "public-key-ref"));
-            signer = AuditCheckpoints.ed25519(resolve(secrets, PREFIX + "private-key-ref", privateRef), publicKey);
+            signer = AuditCheckpoints.ed25519(privateKey, publicKey);
             trusted.add(publicKey);
         }
         for (String ref : env.getProperty(PREFIX + "trusted-public-key-refs", "").split(",")) {

@@ -100,6 +100,8 @@ class ProductionStartupFailFastTest {
         // the h2 profile's development conveniences, which production refuses or must not use
         m.put("sangam.security.bootstrap.enabled", "false");
         m.put("sangam.security.dev-token.enabled", "false");
+        // decision 152: the h2 profile names the development token issuer as platform issuer; production has none
+        m.put("sangam.security.platform-issuer", "");
         m.put("sangam.debug.enabled", "false");
         m.put("server.port", "0");
         m.put("management.server.port", "0");

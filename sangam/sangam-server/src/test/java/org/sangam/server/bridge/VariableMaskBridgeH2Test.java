@@ -47,6 +47,13 @@ class VariableMaskBridgeH2Test {
         SangamSecurity security;
         try (Connection c = ds.getConnection()) {
             security = new SangamSecurity(SecurityDialect.detect(c), null);
+            // the object check reads the instance's own engine row (tenant and id); the two instances of the scenario
+            Jdbc.update(c, "CREATE TABLE ACT_RU_EXECUTION (ID_ VARCHAR(64) NOT NULL PRIMARY KEY, PROC_INST_ID_ VARCHAR(64),"
+                    + " BUSINESS_KEY_ VARCHAR(255), PROC_DEF_ID_ VARCHAR(64), SUSPENSION_STATE_ INTEGER, TENANT_ID_ VARCHAR(64))");
+            for (String id : List.of("pi-1", "pi-ok")) {
+                Jdbc.update(c, "INSERT INTO ACT_RU_EXECUTION(ID_, PROC_INST_ID_, PROC_DEF_ID_, SUSPENSION_STATE_, TENANT_ID_)"
+                        + " VALUES (?,?,?,1,?)", id, id, "payroll:1:1", T);
+            }
             Jdbc.update(c, "INSERT INTO SEC_FIELD_RULE(tenant_id, resource_type, scope_key, field_name, required_perm)"
                     + " VALUES (?,?,?,?,?)", T, VariableMaskPort.PROCESS_INSTANCE, "payroll", "salary", "READ_SENSITIVE");
             Jdbc.update(c, "INSERT INTO AUTH_POLICY_VERSION(tenant_id, policy_version) VALUES (?, 1)", T);

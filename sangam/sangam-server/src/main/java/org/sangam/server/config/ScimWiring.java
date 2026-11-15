@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
 /**
- * Wires SCIM provisioning (M-099, owner decision 154, ADR-D-154): {@link ScimService} over the security module's
+ * Wires SCIM provisioning (M-099, owner decision 154): {@link ScimService} over the security module's
  * person, group, token and posting services, with {@link ScimStore} on {@code SEC_SCIM_RESOURCE}. The web adapter is
  * {@code web.ScimController}. On with the security module ({@code sangam.modules.security.enabled}); the identity
  * provider's service principal needs {@code scim.provision} at the endpoint and, for the object checks, USER and GROUP

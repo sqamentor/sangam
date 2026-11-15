@@ -135,9 +135,10 @@ class TaskReadTransactionsH2Test {
     @Test
     void anInternalLookupReadsNoAuditAndWritesNoAuditViewed() {
         long before = viewed();
+        fx.resetCounters();   // viewed() is a transaction of its own: only the lookup is counted
         TaskPort.TaskDetail d = withReads.detail(CTX, taskId, false);
-        assertEquals(before, viewed());
         assertEquals(1, fx.commits.get(), "the engine reads only");
+        assertEquals(before, viewed());
         assertTrue(d.changedSinceLastSeen().isEmpty() && d.ruleEvidence().isEmpty());
         assertEquals(taskId, d.task().id());
     }
@@ -157,14 +158,15 @@ class TaskReadTransactionsH2Test {
         fx.resetCounters();
         TaskPort.TaskDetail d = withReads.get(CTX, standalone.getId());
         assertEquals(standalone.getId(), d.task().id());
+        assertEquals(1, fx.commits.get(), "the engine reads only");   // before viewed(), a transaction of its own
         assertEquals(before, viewed(), "no audit read, so no AUDIT_VIEWED");
-        assertEquals(1, fx.commits.get(), "the engine reads only");
         assertTrue(d.changedSinceLastSeen().isEmpty() && d.ruleEvidence().isEmpty());
     }
 
     @Test
     void aProblemInsideTheReadTransactionIsRethrownUnchanged() {
         long before = viewed();
+        fx.resetCounters();   // viewed() is a transaction of its own: only the two refused reads are counted
         ApiProblem p = assertThrows(ApiProblem.class, () -> withReads.get(CTX, "no-such-task"));
         assertEquals(404, p.status());
         RequestContext otherTenant = new RequestContext("t2", "anil", Set.of("clerks"), null, null, null, null, null,

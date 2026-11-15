@@ -12,15 +12,14 @@ import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
 import org.operaton.bpm.engine.ProcessEngine;
-import org.operaton.bpm.engine.spring.SpringProcessEngineConfiguration;
+import org.operaton.bpm.engine.spring.SpringTransactionsProcessEngineConfiguration;
 import org.sangam.core.layer.Dialect;
-import org.sangam.core.layer.Schema;
 import org.sangam.rest.support.TxSupport;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 
 /**
  * The production shape of the REST adapters' transactions on H2 (PostgreSQL mode): one DataSource and one Spring
- * {@link DataSourceTransactionManager} shared by an Operaton {@link SpringProcessEngineConfiguration} engine and
+ * {@link DataSourceTransactionManager} shared by an Operaton {@link SpringTransactionsProcessEngineConfiguration} engine and
  * {@link TxSupport}, so engine commands join an outer Spring transaction exactly as in sangam-server. The DataSource
  * counts commits, connections handed out and the largest number held at the same time by one thread (a second
  * connection while one is held is the SL-43 pool-deadlock pattern).
@@ -44,16 +43,19 @@ final class RestEngineFixture implements AutoCloseable {
         h2.setURL("jdbc:h2:mem:" + name + UUID.randomUUID().toString().replace("-", "")
                 + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=5000");
         h2.setUser("sa");
-        try (Connection c = h2.getConnection()) {
-            Schema.create(c, Dialect.POSTGRESQL);   // AUDIT_EVENT, AUDIT_PAYLOAD, ROOT_SEQ, OPERATION_LEDGER, ...
-        } catch (java.sql.SQLException e) {
-            throw new IllegalStateException(e);
-        }
+        // first the BLOB alias Operaton's H2 scripts need in MODE=PostgreSQL: H2 refuses to create it once a
+        // large-object column exists (the order of the server's SchemaBootstrap)
+        org.sangam.engine.db.DatabaseGuard.prepareH2(h2);
+        // the product schema the server runs on (AUDIT_EVENT, ROOT_SEQ, WORK_STEP, ...): its OPERATION_LEDGER has the
+        // engine_work_id the work adapters read; sangam-core's Schema, the layer's own test DDL, does not
+        org.sangam.persistence.SangamSchema.apply(h2);
         this.raw = h2;
         this.dataSource = counting(h2);
         this.txManager = new DataSourceTransactionManager(dataSource);
         this.tx = new SpringTxSupport(dataSource, txManager, Dialect.POSTGRESQL);
-        SpringProcessEngineConfiguration cfg = new SpringProcessEngineConfiguration();
+        // the engine on Spring transactions only: SpringProcessEngineConfiguration also resolves beans for scripts and
+        // expressions and needs an ApplicationContext for that, which this fixture does not have
+        SpringTransactionsProcessEngineConfiguration cfg = new SpringTransactionsProcessEngineConfiguration();
         cfg.setProcessEngineName(name + "-" + UUID.randomUUID());
         cfg.setDataSource(dataSource);
         cfg.setTransactionManager(txManager);

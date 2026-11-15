@@ -18,6 +18,8 @@ import org.sangam.assembly.host.ConnectionBinding;
 import org.sangam.assembly.host.HostSeams;
 import org.sangam.assembly.host.SangamProperties;
 import org.sangam.assembly.host.SangamRuntime;
+import org.sangam.assembly.integration.RelayWakeup;
+import org.sangam.core.layer.Dialect;
 import org.sangam.engine.SangamEngineSettings;
 
 /**
@@ -82,6 +84,8 @@ public class QuarkusHost {
         QuarkusConfigSource config = supplied.config() != null ? supplied.config()
                 : new QuarkusConfigSource(SangamProperties.empty(), List.of(), List.of());
         this.properties = config.properties();
+        // decision 317: no broker inbox on this host before phase 5; a switched-on one refuses the start by name
+        BrokerInboxRefusal.refuseIfEnabled(properties);
         this.engineSettings = QuarkusEngineSettings.from(properties, config.names(), config.profiles());
         this.transactions = new JtaTransactions(transactionManager, dataSource);
         HostSeams.Builder b = HostSeams.builder(HOST_NAME)
@@ -145,6 +149,18 @@ public class QuarkusHost {
 
     public HostSeams seams() {
         return seams;
+    }
+
+    /**
+     * Owner decision 316: how this host receives the relay wake-up, always {@link RelayWakeup.Mode#POLLING}. The
+     * PostgreSQL {@code LISTEN} session needs a physical connection opened outside the pool; the Spring host takes the
+     * driver settings for it from its HikariCP pool, and the Agroal pool of this host offers no such connection. So
+     * this host never tries to {@code LISTEN}: a relay cycle on this node wakes this node's subscribers in-JVM, a cycle
+     * on another node is seen at the subscribers' next poll, and on PostgreSQL {@code pg_notify} is still sent (in a
+     * JTA transaction of its own on the relay's thread) for nodes that listen. Only latency differs, never results.
+     */
+    public RelayWakeup relayWakeup(Dialect dialect) {
+        return RelayWakeup.polling(dialect, transactions);
     }
 
     /** Every required capability outside {@link EngineAssembly#ENGINE_AREA}, in catalogue order. */

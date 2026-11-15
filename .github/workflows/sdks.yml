@@ -76,7 +76,7 @@ jobs:
         run: |
           ./sangam-sdk-worker --smoke | tee native-smoke.txt
           ls -l sangam-sdk-worker >> native-smoke.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-worker-evidence
           path: sangam/deploy/native/sdk-worker/target/native-smoke.txt
@@ -108,7 +108,7 @@ jobs:
           dotnet test --no-build -c Release --logger trx
           # Pack the one packable project: pack on the .sln (examples are IsPackable=false) with -o fails, MSB1009.
           dotnet pack src/Sangam.Sdk/Sangam.Sdk.csproj --no-build -c Release -o ../../../out/dotnet
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: steps.d.outputs.present == 'true'
         with: { name: sdk-dotnet, path: out/dotnet, if-no-files-found: error }
 
@@ -345,7 +345,7 @@ jobs:
         run: |
           mvn -B -ntp -pl sdks/java -am -DskipTests install
           mvn -B -ntp -C -f sdks/kotlin/pom.xml verify
-      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4.4.3
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with: { gradle-version: "8.10.2" }
       - name: Fetch openapi-generator-cli 7.10.0 (Maven Central, strict checksum)
         run: |

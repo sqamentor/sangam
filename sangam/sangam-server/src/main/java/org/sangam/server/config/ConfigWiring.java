@@ -106,8 +106,15 @@ public class ConfigWiring {
     @Bean
     public org.sangam.core.time.BusinessClock sangamBusinessClock(ProfileResolver resolver) {
         org.sangam.core.time.BusinessClock b = new org.sangam.config.locale.ProfileBusinessClock(resolver, engineClock());
-        org.sangam.core.time.BusinessClock.install(b);   // for value types built without injection
+        BusinessClockInstallation.install(b);   // process-wide, for value types built without injection
         return b;
+    }
+
+    /** Gives the process-wide business clock back when this context closes ({@link BusinessClockInstallation}). */
+    @Bean
+    public org.springframework.beans.factory.DisposableBean sangamBusinessClockRelease(
+            org.sangam.core.time.BusinessClock sangamBusinessClock) {
+        return () -> BusinessClockInstallation.release(sangamBusinessClock);
     }
 
     @Bean

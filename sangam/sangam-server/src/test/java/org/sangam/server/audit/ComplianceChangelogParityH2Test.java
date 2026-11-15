@@ -31,6 +31,20 @@ class ComplianceChangelogParityH2Test {
     record Column(String type, Long length, String nullable) {
     }
 
+    /** H2's unbounded {@code CHARACTER VARYING}: how it reads PostgreSQL's {@code TEXT}. */
+    static final long H2_UNBOUNDED = 1_000_000_000L;
+
+    /**
+     * The column in portable terms. Both sides are H2 here, and H2 has two spellings of the portable {@code {text}}
+     * type: the h2 changelog writes {@code CHARACTER LARGE OBJECT}, and the reference DDL is the PostgreSQL dialect's
+     * {@code TEXT}, which H2 reads as {@code CHARACTER VARYING(1000000000)}. On PostgreSQL both are {@code TEXT}. Every
+     * other type (bounded strings with their length, numbers, timestamps) is compared as H2 reports it.
+     */
+    static Column portable(String type, long size, String nullable) {
+        boolean text = "CHARACTER LARGE OBJECT".equals(type) || "CHARACTER VARYING".equals(type) && size == H2_UNBOUNDED;
+        return text ? new Column("{text}", null, nullable) : new Column(type, size, nullable);
+    }
+
     static Map<String, Map<String, Column>> columns(Connection c, List<String> tables) throws Exception {
         Map<String, Map<String, Column>> out = new TreeMap<>();
         for (String t : tables) {
@@ -38,7 +52,7 @@ class ComplianceChangelogParityH2Test {
             try (ResultSet rs = c.getMetaData().getColumns(null, null, t, null)) {
                 while (rs.next()) {
                     cols.put(rs.getString("COLUMN_NAME").toLowerCase(java.util.Locale.ROOT),
-                            new Column(rs.getString("TYPE_NAME"), rs.getLong("COLUMN_SIZE"), rs.getString("IS_NULLABLE")));
+                            portable(rs.getString("TYPE_NAME"), rs.getLong("COLUMN_SIZE"), rs.getString("IS_NULLABLE")));
                 }
             }
             List<String> pk = new ArrayList<>();

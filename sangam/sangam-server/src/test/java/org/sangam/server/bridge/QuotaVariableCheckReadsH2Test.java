@@ -77,6 +77,11 @@ class QuotaVariableCheckReadsH2Test {
         @Override
         public long limit(String tenantId, QuotaLimit limit) {
             limitCalls.get(limit).incrementAndGet();
+            return configured(limit);
+        }
+
+        /** The configured limit, not counted: the counters are the calls the plugin makes, not this stub's own. */
+        private long configured(QuotaLimit limit) {
             return switch (limit) {
                 case VARIABLE_BYTES -> variableBytes;
                 case STARTS_PER_SECOND -> startsPerSecond;
@@ -87,7 +92,7 @@ class QuotaVariableCheckReadsH2Test {
         @Override
         public void acquire(String tenantId, QuotaLimit limit, long permits) {
             acquireCalls.get(limit).incrementAndGet();
-            long max = limit(tenantId, limit);
+            long max = configured(limit);
             if (max >= 0 && permits > max) {
                 throw new TenantQuotaExceededException(tenantId, limit, max, permits, 1);
             }
@@ -96,7 +101,7 @@ class QuotaVariableCheckReadsH2Test {
         @Override
         public void checkSize(String tenantId, QuotaLimit limit, long amount) {
             checkSizeCalls.incrementAndGet();
-            long max = limit(tenantId, limit);
+            long max = configured(limit);
             if (!TenantQuotas.within(max, amount)) {
                 throw new TenantQuotaExceededException(tenantId, limit, max, amount, null);
             }

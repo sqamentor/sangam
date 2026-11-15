@@ -130,8 +130,8 @@ public class OnboardingWiring {
                         env.getProperty("sangam.onboarding.control-plane.token"), env.getProperty("sangam.cell.id")),
                 new OnboardingBridges.Packs(engine, deployer, tenantDeployer),
                 new OnboardingBridges.Connectors(connectors, bindings,
-                        () -> env.getProperty("sangam.packs.simulator-fallback", Boolean.class,
-                                Arrays.asList(env.getActiveProfiles()).contains("h2"))),
+                        () -> IntegrationWiring.simulatorFallback(
+                                env.getProperty("sangam.packs.simulator-fallback", Boolean.class), env)),
                 new OnboardingBridges.Security(security, tx, () -> SecurityKeysWiring.masterKey(env) != null,
                         () -> notBlank(env, "sangam.registry.signer.private-key")
                                 || notBlank(env, "sangam.onboarding.bundle.private-key")),
