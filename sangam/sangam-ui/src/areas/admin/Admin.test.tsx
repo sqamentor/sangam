@@ -384,6 +384,19 @@ describe('A04 delegation tables', () => {
     await waitFor(() => expect((screen.getByRole('button', { name: T('admin.submitForApproval') }) as HTMLButtonElement).disabled).toBe(false));
   });
 
+  it('test cases that are not JSON, or not a list of {id, inputs, expected}, are refused by name and nothing is saved', async () => {
+    routes['/admin/power-tables/pt1'] = table();
+    openEditor();
+    const save = (await screen.findByRole('button', { name: T('common.save') })) as HTMLButtonElement;
+    fireEvent.click(screen.getByTestId('dmn'));
+    fireEvent.change(screen.getByLabelText(L('admin.testCasesJson')), { target: { value: '[{"id":"tc2",' } });
+    fireEvent.click(save);
+    expect(await screen.findByText(T('mod.common.invalidJson'))).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(L('admin.testCasesJson')), { target: { value: '[{"id":"tc2","inputs":"5000"}]' } });
+    fireEvent.click(save);
+    expect(await screen.findByText(T('form.jsonListOfObjects'))).toBeTruthy();
+    expect(api.put).not.toHaveBeenCalled();
+  });
   it('the check shows gaps, overlaps and each test case result', async () => {
     routes['/admin/power-tables/pt1'] = table();
     api.post.mockResolvedValueOnce({ hitPolicy: 'UNIQUE', gaps: ['amount > 1 crore'], overlaps: ['rule 2 and 3'], tests: [{ id: 'tc1', passed: false, actual: { level: 'AO' } }] });

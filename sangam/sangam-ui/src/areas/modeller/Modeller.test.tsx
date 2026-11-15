@@ -238,6 +238,15 @@ describe('package workspace', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/packages/p1/comments', { text: 'Fixed the rounding', elementId: 'Task_Fee' }));
   });
 
+  it('play: start variables that are not a JSON object are refused by name, never sent as {}', async () => {
+    open();
+    fireEvent.click(await screen.findByRole('tab', { name: T('modeller.play') }));
+    type(document.body, 'modeller.processKey', 'grievance');
+    fireEvent.change(screen.getAllByLabelText(L('ops.variablesJson'))[0], { target: { value: '"amount"' } });
+    fireEvent.click(screen.getByRole('button', { name: T('modeller.startSandbox') }));
+    expect(await screen.findByText(T('form.jsonObject'))).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+  });
   it('a missing package is shown by name', async () => {
     routes['/packages/p1'] = problem(404, 'PACKAGE_NOT_FOUND');
     show(<PackageWorkspace />, '/modeller/p1', '/modeller/:id');

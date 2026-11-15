@@ -16,6 +16,7 @@ import type { DecisionDefinition } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtDuration, fmtNumber } from '../../i18n';
 import { wholeNumberProblem } from '../../lib/wholeNumber';
+import { jsonObjectInput } from '../../lib/jsonInput';
 import { DmnView } from '../../components/DmnView';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import {
@@ -88,6 +89,9 @@ export function Decisions() {
   const xml = useAsync(() => api.decisions.xml(sel!.id), [sel?.id], !!sel);
   const inst = usePaged((p) => api.decisions.instances({ ...p, decisionKey: sel?.key }), [sel?.key]);
   const [vars, setVars] = useState('{}');
+  // the variables box is refused by name when it is not a JSON object; it is never evaluated as {} instead
+  const [varsTouched, setVarsTouched] = useState(false);
+  const varsInput = jsonObjectInput(vars, 'object');
   const evalAct = useAction();
   const [out, setOut] = useState<unknown>();
   const [hit, setHit] = useState<string[]>([]);
@@ -122,18 +126,16 @@ export function Decisions() {
         <>
           {xml.data && <DmnView xml={xml.data.dmnXml} title={sel.name ?? sel.key} highlightRules={hit} />}
           <Section title={t('ops.evaluate')}>
-            <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} />
+            <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} error={varsTouched && varsInput.problem ? t(varsInput.problem) : undefined} />
             <button
               type="button"
               onClick={() => {
-                let v: Record<string, unknown> = {};
-                try {
-                  v = JSON.parse(vars) as Record<string, unknown>;
-                } catch {
-                  /* empty */
-                }
+                setVarsTouched(true);
+                if (varsInput.problem) return;
+                const v = varsInput.value ?? {};
                 void evalAct.run(() => api.decisions.evaluate(sel.key, v)).then((r) => r && setOut(r.outputs));
               }}
+
             >
               {t('ops.evaluate')}
             </button>

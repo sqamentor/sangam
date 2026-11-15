@@ -14,6 +14,7 @@ import type { ActivityInstance, ActivitySelection, ActivityState, ConsequencePre
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { textIncludes } from '../../lib/text';
+import { jsonObjectInput } from '../../lib/jsonInput';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import { http } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
@@ -686,6 +687,9 @@ function MessageDialog({ instanceId, businessKey, onClose, onDone }: { instanceI
   const [branch, setBranch] = useState('');
   const [vars, setVars] = useState('{}');
   const [kind, setKind] = useState<'message' | 'signal'>('message');
+  // the variables box is refused by name when it is not a JSON object; the message is never sent with {} instead
+  const [varsTouched, setVarsTouched] = useState(false);
+  const varsInput = jsonObjectInput(vars, 'object');
   const act = useAction();
   return (
     <Dialog
@@ -702,12 +706,9 @@ function MessageDialog({ instanceId, businessKey, onClose, onDone }: { instanceI
             className="primary"
             disabled={!name || act.busy}
             onClick={() => {
-              let v: Record<string, unknown> = {};
-              try {
-                v = JSON.parse(vars) as Record<string, unknown>;
-              } catch {
-                /* invalid JSON → empty */
-              }
+              setVarsTouched(true);
+              if (varsInput.problem) return;
+              const v = varsInput.value ?? {};
               void act
                 .run((k) =>
                   (kind === 'message'
@@ -731,9 +732,10 @@ function MessageDialog({ instanceId, businessKey, onClose, onDone }: { instanceI
       <SelectField label={t('ops.eventKind')} value={kind} onChange={(v) => setKind(v as 'message' | 'signal')} options={[{ value: 'message', label: t('ops.message') }, { value: 'signal', label: t('ops.signal') }]} />
       <TextField label={t('common.name')} value={name} onChange={setName} required />
       {kind === 'message' && <TextField label={t('ops.branchKey')} hint={t('ops.branchKeyHint')} value={branch} onChange={setBranch} />}
-      <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} />
+      <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} error={varsTouched && varsInput.problem ? t(varsInput.problem) : undefined} />
       <ProblemAlert error={act.error} />
     </Dialog>
+
   );
 }
 

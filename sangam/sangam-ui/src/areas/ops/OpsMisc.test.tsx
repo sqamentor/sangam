@@ -112,7 +112,19 @@ describe('decisions', () => {
     expect(await screen.findByText(T('error.validation'))).toBeTruthy();
     expect(screen.getByText('Input amount is missing')).toBeTruthy();
   });
-});
+
+  it('variables that are not a JSON object are refused by name, never evaluated as {}', async () => {
+    pages['/decision-definitions'] = pageOf([def]);
+    show(<Decisions />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Fee table' }));
+    fireEvent.change(screen.getByLabelText(L('ops.variablesJson')), { target: { value: '{"amount": 1200' } });
+    fireEvent.click(screen.getByRole('button', { name: T('ops.evaluate') }));
+    expect(await screen.findByText(T('mod.common.invalidJson'))).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(L('ops.variablesJson')), { target: { value: '[1200]' } });
+    fireEvent.click(screen.getByRole('button', { name: T('ops.evaluate') }));
+    expect(await screen.findByText(T('form.jsonObject'))).toBeTruthy();
+    expect(api.post).not.toHaveBeenCalled();
+  });});
 
 // ====================================================================== jobs
 

@@ -16,6 +16,7 @@ import { http } from '../../api/client';
 import type { Assignment, AssignmentImpact, DelegationCheckResult, OrgUnit, Policy, SeatHoldingKind, Tenant } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, todayIso } from '../../i18n';
+import { jsonListOfObjectsInput } from '../../lib/jsonInput';
 import { CrudPage } from '../../components/CrudPage';
 import { useAuth } from '../../auth/AuthProvider';
 import { DmnEditor, EMPTY_DMN, type EditorHandle } from '../../components/Editors';
@@ -567,6 +568,10 @@ export function DelegationTableEditor() {
   const [dirty, setDirty] = useState(false);
   const [check, setCheck] = useState<DelegationCheckResult>();
   const [tests, setTests] = useState('');
+  // the test cases box (PowerTableTestCase list) is refused by name when it is not a list of {id, inputs, expected};
+  // the save never keeps the previous cases in its place
+  const [testsTouched, setTestsTouched] = useState(false);
+  const testsInput = tests.trim() ? jsonListOfObjectsInput(tests, ['inputs', 'expected']) : undefined;
   const [tr, setTr] = useState<'submit' | 'approve' | 'reject' | null>(null);
   const [eff, setEff] = useState('');
   const act = useAction();
@@ -575,13 +580,10 @@ export function DelegationTableEditor() {
   const x = d.data;
   const editable = x.state === 'DRAFT' || x.state === 'REJECTED';
   const save = async () => {
+    setTestsTouched(true);
+    if (testsInput?.problem) return;
     const xml = await handle!.getContent();
-    let tc = x.testCases;
-    try {
-      if (tests.trim()) tc = JSON.parse(tests) as typeof tc;
-    } catch {
-      /* keep previous */
-    }
+    const tc = testsInput ? (testsInput.value as typeof x.testCases) : x.testCases;
     const r = await act.run(() => api.admin.saveDelegationTable({ ...x, dmnXml: xml, testCases: tc }));
     if (r) {
       setDirty(false);
@@ -660,7 +662,8 @@ export function DelegationTableEditor() {
         </Section>
       )}
       <Section title={t('admin.testCases')}>
-        <TextArea label={t('admin.testCasesJson')} hint={t('admin.testCasesHint')} value={tests || JSON.stringify(x.testCases ?? [], null, 2)} onChange={(v) => (setTests(v), setDirty(true))} disabled={!editable} />
+        <TextArea label={t('admin.testCasesJson')} hint={t('admin.testCasesHint')} value={tests || JSON.stringify(x.testCases ?? [], null, 2)} onChange={(v) => (setTests(v), setDirty(true))} disabled={!editable} error={testsTouched && testsInput?.problem ? t(testsInput.problem) : undefined} />
+
       </Section>
       <ReasonDialog
         open={tr !== null}

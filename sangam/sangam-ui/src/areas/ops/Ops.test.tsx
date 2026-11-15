@@ -36,7 +36,7 @@ vi.mock('../../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () =>
 
 import apiYaml from '../../../../sangam-rest/api/sangam-api.yaml?raw';
 import { fmtNumber, initI18n } from '../../i18n';
-import { EMPTY_PAGE, KEY, L, T, confirmIn, contractOperations, dialog, noDialog, outsideContract, pageOf, problem, reasonAndConfirm, recordCalls, rowWith, show, type } from '../../test/screens';
+import { EMPTY_PAGE, KEY, L, T, buttonIn, confirmIn, contractOperations, dialog, noDialog, outsideContract, pageOf, problem, reasonAndConfirm, recordCalls, rowWith, show, type } from '../../test/screens';
 import { OpsDashboard } from './OpsDashboard';
 import { DefinitionDetail, InstanceSearch, ProcessDefinitions } from './Processes';
 import { IncidentDetail, Incidents } from './IncidentsRecon';
@@ -155,7 +155,18 @@ describe('definition detail', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/batches', expect.objectContaining({ type: 'SUSPEND', filter: expect.objectContaining({ processInstanceIds: ['pi1'] }), reason: 'Office closed for audit' }), KEY));
     expect(await screen.findByTestId('elsewhere')).toBeTruthy();
   });
-});
+
+  it('a batch payload that is not a JSON object is refused by name, never sent as no payload', async () => {
+    setup();
+    api.post.mockImplementation(async (path: string) => (path === '/ops/batches/preview' ? { count: 1, summary: [] } : {}));
+    show(<DefinitionDetail />, '/ops/processes/grv-4', '/ops/processes/:id');
+    fireEvent.click(await screen.findByRole('button', { name: T('batch.type.SET_VARIABLES') }));
+    const d = dialog();
+    fireEvent.change(within(d).getByLabelText(L('batch.payload')), { target: { value: '{"office": "Ajmer"' } });
+    reasonAndConfirm('Office renamed by order');
+    expect(await within(d).findByText(T('mod.common.invalidJson'))).toBeTruthy();
+    expect(api.post.mock.calls.some((c) => c[0] === '/ops/batches')).toBe(false);
+  });});
 
 /** Evidence: Processes.tsx:293-311; endpoints.ts:238-257 (INCIDENT is withIncidents, history reads /history/process-instances). */
 describe('instance search', () => {
@@ -411,6 +422,19 @@ describe('instance detail', () => {
     expect((await within(d).findByRole('link', { name: T('batch.created', { id: 'b5' }) })).getAttribute('href')).toBe('/ops/batches/b5');
   });
 
+  it('message variables that are not a JSON object are refused by name, never sent as {}', async () => {
+    open();
+    fireEvent.click(await screen.findByRole('button', { name: T('ops.sendMessage') }));
+    const d = dialog();
+    type(d, 'common.name', 'PaymentReceived');
+    fireEvent.change(within(d).getByLabelText(L('ops.variablesJson')), { target: { value: '{"utr": ' } });
+    fireEvent.click(buttonIn(d, 'common.send'));
+    expect(await within(d).findByText(T('mod.common.invalidJson'))).toBeTruthy();
+    fireEvent.change(within(d).getByLabelText(L('ops.variablesJson')), { target: { value: '{"utr": "N123"}' } });
+    fireEvent.click(buttonIn(d, 'common.send'));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/messages', expect.objectContaining({ variables: { utr: { type: 'String', value: 'N123' } } }), KEY));
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
   it('a missing instance is shown by name', async () => {
     routes['/process-instances/pi1'] = problem(404, 'INSTANCE_NOT_FOUND');
     show(<InstanceDetail />, '/ops/instances/pi1', '/ops/instances/:id');
