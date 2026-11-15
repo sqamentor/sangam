@@ -14,7 +14,10 @@ vi.mock('../../api/endpoints', () => ({ api: { models: { diff: (b: unknown) => d
 import { ModelCompare, ModelDiffView, diffRequest, isModelUnreadable } from './ModelCompare';
 
 beforeAll(() => initI18n('en'));
-beforeEach(() => diff.mockReset());
+// A block body: vitest runs a function returned from beforeEach as the test's teardown, and mockReset() returns the mock.
+beforeEach(() => {
+  diff.mockReset();
+});
 afterEach(cleanup);
 
 const REPORT: ModelDiffReport = {

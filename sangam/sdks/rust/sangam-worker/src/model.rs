@@ -222,6 +222,10 @@ pub struct Problem {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace_id: Option<String>,
+    /// Present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142), kept as the server
+    /// sent it (schema PowerLimitDecision).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub power_limit: Option<Value>,
     #[serde(flatten)]
     pub extensions: Map<String, Value>,
 }

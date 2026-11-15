@@ -77,6 +77,55 @@ class Match(unittest.TestCase):
         self.assertEqual(ex, {M["purl"]})
         self.assertEqual(tool, ["spring-boot-jarmode-tools-4.1.2.jar"])
 
+    def repo_with(self, d, comp, manifest):
+        """Writes the component's jar, with this manifest, at its Maven repository path under d."""
+        folder = os.path.join(d, *comp["group"].split("."), comp["name"], comp["version"])
+        os.makedirs(folder)
+        with zipfile.ZipFile(os.path.join(folder, f"{comp['name']}-{comp['version']}.jar"), "w") as z:
+            z.writestr("META-INF/MANIFEST.MF", manifest)
+
+    def test_spring_boot_starter_jar_type_is_omitted_not_a_finding(self):
+        # licence-check on main, 2026-11-14: 14 spring-boot-starter-* components "IN SBOM BUT NOT SHIPPED". The Spring
+        # Boot plugin never writes a dependencies-starter jar to BOOT-INF/lib, so the SBOM of the artefact drops it.
+        s = lib("org.springframework.boot", "spring-boot-starter-jdbc", "4.1.2", "Apache-2.0")
+        with tempfile.TemporaryDirectory() as d:
+            self.repo_with(d, s, "Manifest-Version: 1.0\r\nSpring-Boot-Jar-Type: dependencies-starter\r\n")
+            self.assertIn("IN SBOM BUT NOT SHIPPED", sm.match(bom(A, s), ["a-1.0.jar"])[0][0])  # no repository: finding
+            omitted = {}
+            f, ex, _ = sm.match(bom(A, s), ["a-1.0.jar"], boot_repo=d, omitted=omitted)
+            self.assertEqual((f, ex, omitted), ([], {s["purl"]}, {s["purl"]: "dependencies-starter"}))
+
+    def test_only_the_manifest_excuses_a_missing_jar(self):
+        # the name alone excuses nothing: a starter-named jar without the manifest line, a jar that is not in the
+        # repository, and an ordinary library that is missing all stay findings
+        s = lib("org.springframework.boot", "spring-boot-starter-web", "4.1.2", "Apache-2.0")
+        with tempfile.TemporaryDirectory() as d:
+            self.repo_with(d, s, "Manifest-Version: 1.0\n")
+            self.repo_with(d, B, "Manifest-Version: 1.0\nSpring-Boot-Jar-Type: something-else\n")
+            f, ex, _ = sm.match(bom(A, B, s, Q), ["a-1.0.jar"], boot_repo=d)
+            self.assertEqual(len(f), 3, f)
+            self.assertEqual(ex, set())
+
+    def test_cli_drops_the_omitted_starter_from_the_artefact_sbom(self):
+        s = lib("org.springframework.boot", "spring-boot-starter", "4.1.2", "Apache-2.0")
+        with tempfile.TemporaryDirectory() as d:
+            repo = os.path.join(d, "repo")
+            self.repo_with(repo, s, "Spring-Boot-Jar-Type: dependencies-starter\n")
+            fat_jar(os.path.join(d, "app.jar"), {"a-1.0.jar": None})
+            with open(os.path.join(d, "in.json"), "w", encoding="utf-8") as f:
+                json.dump(bom(A, s, deps=[{"ref": A["purl"], "dependsOn": [s["purl"]]}]), f)
+            with open(os.path.join(d, "dists.json"), "w", encoding="utf-8") as f:
+                json.dump({"distributions": [{"id": "x"}]}, f)
+            args = [os.path.join(d, "in.json"), "--distribution", "x", "--distributions", os.path.join(d, "dists.json"),
+                    "--out", os.path.join(d, "out.json")]
+            self.assertEqual(sm.main(args + ["--jar", os.path.join(d, "app.jar"), "--maven-repo", repo]), 0)
+            with open(os.path.join(d, "out.json"), encoding="utf-8") as f:
+                out = json.load(f)
+            self.assertEqual([c["name"] for c in out["components"]], ["a"])
+            self.assertEqual(out["dependencies"], [{"ref": A["purl"], "dependsOn": []}])
+            # the same input without a repository that holds the jar is still a mismatch
+            self.assertEqual(sm.main(args + ["--jar", os.path.join(d, "app.jar"), "--maven-repo", d]), 1)
+
     def test_prune_drops_component_and_edges(self):
         b = bom(A, M, deps=[{"ref": A["purl"], "dependsOn": [M["purl"]]}, {"ref": M["purl"], "dependsOn": []}])
         out = sm.prune(b, {M["purl"]})

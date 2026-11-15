@@ -15,6 +15,12 @@ Rules:
   4. a distribution with "select" (lib-ext: the MariaDB driver that the server build keeps out of its fat jar) takes
      only the components whose purl starts with a "select" entry from the input SBOM (the SBOM of the module that
      declares them, "sbom_from" in distributions.json); every other component is dropped before rules 1 and 2.
+  5. (--jar only) the Spring Boot plugin leaves out of the fat jar every dependency whose own manifest says
+     "Spring-Boot-Jar-Type: dependencies-starter", "annotation-processor" or "development-tool" (the spring-boot-starter-*
+     jars carry no classes). A component that is not shipped is looked up in the local Maven repository
+     (--maven-repo, default ~/.m2/repository) and, only when its jar's manifest carries one of these types, is
+     reported as "omitted by the Spring Boot plugin" and removed from the output SBOM like rule 2. A jar that is not
+     in the repository, or has no such manifest line, stays a finding: nothing is excused by name.
 --out writes the SBOM of the artefact (the input minus the excluded components); that file is the release asset.
 Components of type other than library/framework (the module itself, BOM imports with type=pom) are not shipped jars.
 
@@ -30,6 +36,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from check_licences import InputError, iter_components, load_json  # noqa: E402
 
 LIB_TYPES = ("library", "framework")
+# org.springframework.boot.loader.tools.Packager (JarTypeFilter): these jar types are never written to BOOT-INF/lib.
+BOOT_OMITTED_JAR_TYPES = ("dependencies-starter", "annotation-processor", "development-tool")
 
 
 def distribution(dists, dist_id):
@@ -73,8 +81,30 @@ def expected_file(comp):
     return f"{name}-{version}" + (f"-{q['classifier']}" if q.get("classifier") else "") + ".jar"
 
 
-def match(sbom, jars, excluded_prefixes=(), tooling_prefixes=()):
-    """Returns (findings, excluded_refs, tooling_jars)."""
+def boot_jar_type(comp, repo):
+    """The Spring-Boot-Jar-Type of the component's jar in the local Maven repository, or None (no repository, no jar,
+    unreadable jar, no manifest line)."""
+    f = expected_file(comp)
+    group, name, version = comp.get("group"), comp.get("name"), comp.get("version")
+    if not (repo and f and group and name and version):
+        return None
+    path = os.path.join(repo, *group.split("."), name, version, f)
+    try:
+        with zipfile.ZipFile(path) as z:
+            manifest = z.read("META-INF/MANIFEST.MF").decode("utf-8", "replace")
+    except (OSError, KeyError, zipfile.BadZipFile):
+        return None
+    for line in manifest.replace("\r\n", "\n").split("\n"):
+        key, _, value = line.partition(":")
+        if key.strip() == "Spring-Boot-Jar-Type":
+            return value.strip()
+    return None
+
+
+def match(sbom, jars, excluded_prefixes=(), tooling_prefixes=(), boot_repo=None, omitted=None):
+    """Returns (findings, excluded_refs, tooling_jars). With boot_repo (a fat jar is being matched), a component that
+    is not shipped because the Spring Boot plugin omits its jar type joins excluded_refs and, when the caller passes
+    a dict as `omitted`, is recorded there as bom-ref -> jar type."""
     findings, excluded_refs = [], set()
     by_file = {}
     for comp in iter_components(sbom):
@@ -90,6 +120,13 @@ def match(sbom, jars, excluded_prefixes=(), tooling_prefixes=()):
     for j in sorted(shipped - set(by_file) - set(tooling)):
         findings.append(f"{j}: SHIPPED BUT NOT IN SBOM")
     for f in sorted(set(by_file) - shipped):
+        jar_type = boot_jar_type(by_file[f], boot_repo)
+        if jar_type in BOOT_OMITTED_JAR_TYPES:
+            ref = by_file[f].get("bom-ref") or by_file[f].get("purl")
+            excluded_refs.add(ref)
+            if omitted is not None:
+                omitted[ref] = jar_type
+            continue
         findings.append(f"{by_file[f].get('purl')}: IN SBOM BUT NOT SHIPPED (expected {f})")
     return findings, excluded_refs, tooling
 
@@ -132,6 +169,8 @@ def main(argv=None):
     src.add_argument("--dir")
     ap.add_argument("--distributions", default=os.path.join(here, "distributions.json"))
     ap.add_argument("--out", help="write the SBOM of the artefact here")
+    ap.add_argument("--maven-repo", default=os.path.join(os.path.expanduser("~"), ".m2", "repository"),
+                    help="local Maven repository used for rule 5 (--jar only)")
     a = ap.parse_args(argv)
     try:
         sbom = load_json(a.sbom)
@@ -146,11 +185,15 @@ def main(argv=None):
     except InputError as e:
         print(f"::error title=SBOM match BLOCKED::{e}")
         return 2
-    findings, excluded, tooling = match(sbom, jars, d.get("excluded_from_jar", []), d.get("boot_tooling", []))
+    omitted = {}
+    findings, excluded, tooling = match(sbom, jars, d.get("excluded_from_jar", []), d.get("boot_tooling", []),
+                                        boot_repo=a.maven_repo if a.jar else None, omitted=omitted)
     for j in tooling:
         print(f"launcher tooling (not a dependency): {j}")
-    for r in sorted(excluded):
+    for r in sorted(excluded - set(omitted)):
         print(f"kept out of the artefact by the build (excluded_from_jar): {r}")
+    for r in sorted(omitted):
+        print(f"omitted by the Spring Boot plugin (Spring-Boot-Jar-Type: {omitted[r]}): {r}")
     for f in findings:
         print(f"::error title=SBOM match {a.distribution}::{f}")
     if a.out and not findings:

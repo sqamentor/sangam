@@ -90,7 +90,7 @@ describe('fmtMoneyAmount (M-042, decisions 138 and 211: MoneyAmount major-unit d
     expect(fmtMoneyAmount('123456789012345678901.99', 'EUR').replace(/\D/g, '')).toBe('12345678901234567890199');
   });
   it('never cuts fraction digits the server sent', () => {
-    expect(fmtMoneyAmount('1.005', 'EUR')).toMatch(/1\.005/);
+    expect(fmtMoneyAmount('1.005', 'EUR')).toMatch(/1\.005\b/);
   });
   it('accepts a lower-case currency code from a record', () => {
     expect(fmtMoneyAmount('1.00', 'eur')).toBe(nf('EUR').format(1));

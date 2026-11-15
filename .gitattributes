@@ -71,3 +71,8 @@ entrypoint      text eol=lf
 *.p12           binary
 *.jks           binary
 *.der           binary
+
+# Archive copies (handoff records and worktree snapshots, 2026-11-08 and 2026-11-15) are stored byte for byte:
+# no end-of-line conversion in either direction. Nothing under handoff/ is built or run. Keep this rule last
+# (the last matching line wins). Guard: test_workflow_guards.py LineEndings.
+handoff/** -text

@@ -9,6 +9,7 @@ import { api } from '../../api/endpoints';
 import { taskFormToSchema } from '../../components/embeddedForm';
 import type { TaskForm } from '../../api/types';
 import taskDetailSource from './TaskDetail.tsx?raw';
+import taskFormSchemaSource from '../../components/taskFormSchema.ts?raw';
 
 describe('task form loading', () => {
   afterEach(() => {
@@ -28,9 +29,12 @@ describe('task form loading', () => {
   });
 
   it('the task detail screen no longer calls /engine-rest', () => {
-    const src = taskDetailSource;
-    expect(src).not.toContain('/engine-rest');
-    expect(src).toContain('api.tasks.form(');
+    // M-043: the screen resolves its form through the shared hook useTaskFormSchema (components/taskFormSchema.ts),
+    // which the embeddable <sangam-task-form> uses too; the hook is where the form is read from the Sangam API.
+    expect(taskDetailSource).not.toContain('/engine-rest');
+    expect(taskDetailSource).toContain('useTaskFormSchema(');
+    expect(taskFormSchemaSource).not.toContain('/engine-rest');
+    expect(taskFormSchemaSource).toContain('api.tasks.form(');
   });
 
   it('turns the served form into a schema', () => {

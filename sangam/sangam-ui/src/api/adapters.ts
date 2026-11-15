@@ -9,7 +9,7 @@ import type * as T from './types';
 import { DECIMAL_TEXT, DecimalValue } from '../lib/decimal';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Contract payloads are read defensively; ny keeps the adapters tolerant of both shapes.
+// Contract payloads are read defensively; `any` keeps the adapters tolerant of both shapes.
 type Any = any;
 
 export function mapPage<A, B>(p: Page<A>, fn: (a: A) => B): Page<B> {

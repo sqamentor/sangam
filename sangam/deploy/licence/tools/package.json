@@ -5,6 +5,6 @@
   "license": "Apache-2.0",
   "description": "SPDX-License-Identifier: Apache-2.0. Pinned SBOM generator for CI (CR-12): installed with npm ci --ignore-scripts from the committed package-lock.json, never through npx. The lockfile is generated once with npm install --package-lock-only --ignore-scripts (decision 134 download line) and reviewed like any other lockfile.",
   "devDependencies": {
-    "@cyclonedx/cyclonedx-npm": "2.1.0"
+    "@cyclonedx/cyclonedx-npm": "7.0.1"
   }
 }

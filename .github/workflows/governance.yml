@@ -72,7 +72,7 @@ jobs:
         env:
           RL_PY: python -I sangam/deploy/licence/results_ledger.py
       - name: Actions pinned to commit SHAs (CR-10)
-        run: python -I $L/results_ledger.py run --check workflow-pins --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check pins .github/workflows
+        run: python -I $L/results_ledger.py run --check workflow-pins --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check pins --check contexts .github/workflows
       - name: No status-masking construct (CR-01)
         run: python -I $L/results_ledger.py run --check workflow-silent --ledger-dir "$LEDGER" -- python -I $L/workflow_guards.py --check silent .github/workflows sangam/deploy
       - name: No curl-pipe-shell installs (CR-11)

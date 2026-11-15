@@ -166,7 +166,7 @@ describe('M-037 action menu', () => {
     show(<ActionMenu scope="TASK" subjectRef="task-7" />);
     await waitFor(() => expect(api.get).toHaveBeenCalledWith('/actions', { scope: 'TASK', targetRef: 'task-7' }, expect.anything()));
     fireEvent.click(await screen.findByText('Notify applicant'));
-    fireEvent.change(within(dialog()).getByLabelText(new RegExp(T('actions.input'))), { target: { value: '{"channel":"sms"}' } });
+    fireEvent.change(within(dialog()).getByLabelText(T('actions.input')), { target: { value: '{"channel":"sms"}' } });
     fireEvent.click(within(dialog()).getByRole('button', { name: T('actions.run') }));
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/actions/notify/run', { subjectRef: 'task-7', input: { channel: 'sms' } }, expect.any(String)));
     expect(await within(dialog()).findByText('op-1')).toBeTruthy();

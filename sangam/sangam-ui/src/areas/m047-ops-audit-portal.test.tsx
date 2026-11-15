@@ -265,7 +265,8 @@ describe('M-047 migration', () => {
       return {};
     });
     show(<Migration />, '/ops/migration', '/ops/migration');
-    await screen.findByRole('option', { name: 'p v1' });
+    // both selects list the definitions (any other definition may be a target), so the option is looked up in the source select
+    await within(screen.getByLabelText(T('mig.source'))).findByRole('option', { name: 'p v1' });
     fireEvent.change(screen.getByLabelText(T('mig.source')), { target: { value: 'd1' } });
     fireEvent.change(screen.getByLabelText(T('mig.target')), { target: { value: 'd2' } });
     fireEvent.click(screen.getByRole('button', { name: T('mig.generate') }));

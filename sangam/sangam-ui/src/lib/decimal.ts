@@ -143,17 +143,23 @@ export function canonicalDecimalOrUndefined(text: string): string | undefined {
 
 /**
  * The value of a number input, without a float step: '' is no value; a whole number within the safe range stays a
- * number (sent as Long as before); a fraction or a larger whole number becomes a DecimalValue holding exactly what was
- * typed. Text that is not a number (a half-typed "-") is kept as text so validation can say so.
+ * number (sent as Long as before); a fraction or a larger whole number becomes a DecimalValue holding the digits that
+ * were typed: leading zeros of the whole part carry no value and are dropped ("007.50" is 7.50, as "007" is 7), while
+ * trailing zeros of the fraction carry the scale and stay (decision 138). Text that is not a number (a half-typed "-")
+ * is kept as text so validation can say so.
  */
 export function fromNumberInput(raw: string): number | DecimalValue | string | undefined {
   const s = raw.trim();
   if (s === '') return undefined;
   if (!PLAIN_DECIMAL_TEXT.test(s)) return s;
-  const normalised = s.replace(/^\+/, '').replace(/^(-?)\./, '$10.').replace(/\.$/, '');
+  const normalised = s
+    .replace(/^\+/, '')
+    .replace(/^(-?)\./, '$10.')
+    .replace(/\.$/, '')
+    .replace(/^(-?)0+(?=\d)/, '$1');
   if (/^-?\d+$/.test(normalised)) {
     const n = Number(normalised);
-    if (Number.isSafeInteger(n) && String(n) === normalised.replace(/^(-?)0+(?=\d)/, '$1')) return n;
+    if (Number.isSafeInteger(n) && String(n) === normalised) return n;
     return new DecimalValue(normalised, 'BigInteger');
   }
   return new DecimalValue(normalised);

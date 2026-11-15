@@ -26,7 +26,8 @@ function fileIds(parsed: ParsedCmmn): Set<string> {
   return ids;
 }
 
-export function CmmnDiagramEditor({ xml, onChange, onReady, height = 560 }: { xml: string; onChange?: () => void; onReady: (h: CmmnDiagramHandle) => void; height?: number }) {
+/** onReady receives the handle when the diagram is up, and null when it is taken down (the handle must not outlive it). */
+export function CmmnDiagramEditor({ xml, onChange, onReady, height = 560 }: { xml: string; onChange?: () => void; onReady: (h: CmmnDiagramHandle | null) => void; height?: number }) {
   const { t } = useTranslation();
   const host = useRef<HTMLDivElement>(null);
   const modeler = useRef<CmmnModelerApi | null>(null);
@@ -67,6 +68,7 @@ export function CmmnDiagramEditor({ xml, onChange, onReady, height = 560 }: { xm
     // each getXml starts again from the original text, so saving twice gives the same file
     onReady({ getXml: () => serializeCmmn(parseCmmn(xml), api.exportModel()) });
     return () => {
+      onReady(null);
       modeler.current = null;
       api.destroy();
     };

@@ -45,9 +45,10 @@ describe('parseCmmn', () => {
     expect(node(model.nodes, 'PI_Review')).toMatchObject({ kind: 'humanTask', name: 'Review grievance', parent: 'CasePlan', definitionId: 'Review' });
     expect(node(model.nodes, 'PI_Senior')).toMatchObject({ kind: 'humanTask', parent: 'PI_Stage' });
     expect(node(model.nodes, 'Entry_Notify')).toMatchObject({ kind: 'entryCriterion', host: 'PI_Notify', sentryId: 'S_Reviewed' });
-    expect(model.links.map((l) => [l.source, l.target, l.onPartId])).toEqual([
-      ['PI_Review', 'Entry_Notify', 'OP_Reviewed'],
+    // exactly these two links; their order in the list carries no meaning (each is drawn on its own), so it is not asserted
+    expect(model.links.map((l) => [l.source, l.target, l.onPartId]).sort()).toEqual([
       ['PI_Done', 'Exit_Review', 'OP_Close'],
+      ['PI_Review', 'Entry_Notify', 'OP_Reviewed'],
     ]);
   });
 

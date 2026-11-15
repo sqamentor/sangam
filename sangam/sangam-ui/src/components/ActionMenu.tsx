@@ -57,7 +57,9 @@ export async function availableActions(scope: ActionScope, subjectRef: string, s
 
 function RunDialog({ action, subjectRef, onClose }: { action: ActionModel; subjectRef: string; onClose: () => void }) {
   const { t } = useTranslation();
-  const form = useAsync(() => (action.formKey ? api.forms.get(action.formKey) : Promise.resolve<FormSchema | null>(null)), [action.formKey]);
+  // Only an action with a form has something to load. Without a formKey the JSON input is there at once: no loading
+  // state and no disabled Run button for a request that is never made.
+  const form = useAsync<FormSchema | null>(() => api.forms.get(action.formKey ?? ''), [action.formKey], !!action.formKey);
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [json, setJson] = useState('');

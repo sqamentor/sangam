@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { defineConfig, loadEnv } from 'vite';
+import { loadEnv } from 'vite';
+// defineConfig from vitest/config: the same function, typed for the `test` block below.
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 // Owner decisions 120/121: the approved deploy/fonts Noto TTFs, hash-checked, become dist/fonts/noto/ (FONTS.md).
 import deployFonts from './scripts/deploy-fonts.mjs';
@@ -16,6 +18,11 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), deployFonts()],
     base: env.SANGAM_UI_BASE ?? '/',
+    // One setup file for every test file: what jsdom lacks is filled once (src/test/setup.ts), not per test file.
+    // Vitest replaces every CSS import with an empty string unless test.css includes it, and that covers `?raw` too.
+    // A `?raw` import asks for the file's text, not for a stylesheet to apply, so those are let through: a test that
+    // checks a rule of the app stylesheet (BpmnDiagram.watermark.test.tsx, M-049) reads the real file.
+    test: { setupFiles: ['src/test/setup.ts'], css: { include: [/\.css\?(?:.*&)?raw(?:&|$)/] } },
     server: {
       port: 5173,
       proxy: {

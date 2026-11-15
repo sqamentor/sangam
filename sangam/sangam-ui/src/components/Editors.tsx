@@ -199,6 +199,12 @@ export function CmmnEditor({ xml, onReady, onChange }: { xml: string; onReady: (
   textRef.current = text;
   const viewRef = useRef(view);
   viewRef.current = view;
+  /**
+   * The mounted diagram view's handle. The diagram view sets it when it is up and clears it when it is taken down
+   * (CmmnDiagramEditor onReady). It is not cleared in the effect below: a child's effect runs before its parent's, so
+   * that cleared the handle the diagram had just registered, and a save from the diagram view returned the text the
+   * diagram opened from, without the diagram's edits.
+   */
   const diagram = useRef<CmmnDiagramHandle | null>(null);
   const current = () => (viewRef.current === 'diagram' && diagram.current ? diagram.current.getXml() : textRef.current);
   useEffect(() => {
@@ -206,7 +212,6 @@ export function CmmnEditor({ xml, onReady, onChange }: { xml: string; onReady: (
     setText(xml);
     setProblem(p);
     setView(p ? 'xml' : 'diagram');
-    diagram.current = null;
     onReady({ getContent: async () => current() });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xml]);

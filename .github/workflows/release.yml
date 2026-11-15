@@ -344,7 +344,6 @@ jobs:
     env:
       V: ${{ needs.meta.outputs.version }}
       PUSH: ${{ needs.meta.outputs.push }}
-      BIN: ${{ runner.temp }}/bin
       IMG: ${{ github.workspace }}/image-refs
       ISBOM: ${{ github.workspace }}/image-sbom
       ILIC: ${{ github.workspace }}/image-licence
@@ -358,6 +357,10 @@ jobs:
       server-digest: ${{ steps.digests.outputs.server }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Tool directory
+        # BIN is set here, not in the job-level env: the runner context does not exist there, and one such
+        # expression makes the whole workflow file invalid (guard: workflow_guards.py --check contexts).
+        run: echo "BIN=$RUNNER_TEMP/bin" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with: { name: release-dist, path: . }
       - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3.9.1

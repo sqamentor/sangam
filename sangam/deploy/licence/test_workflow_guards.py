@@ -50,6 +50,62 @@ class Pins(unittest.TestCase):
                     self.assertEqual(PINS["actions"].get(m.group(1)), f"{m.group(2)} {m.group(3)}", f"{name}: {m.group(0)}")
 
 
+class Contexts(unittest.TestCase):
+    """A `runner.*` expression outside steps makes GitHub reject the whole file (release.yml, 2026-11-14: the images
+    job had `BIN: ${{ runner.temp }}/bin` in its job-level env, so no release job could start)."""
+
+    JOB = "jobs:\n  images:\n    runs-on: ubuntu-24.04\n"
+
+    def test_job_level_env_fails(self):
+        found = scan("contexts", self.JOB + "    env:\n      BIN: ${{ runner.temp }}/bin\n    steps:\n      - run: x\n")
+        self.assertEqual([f[1] for f in found], [5])
+
+    def test_workflow_level_env_and_job_if_fail(self):
+        self.assertEqual(len(scan("contexts", "env:\n  T: ${{ runner.temp }}\njobs:\n")), 1)
+        self.assertEqual(len(scan("contexts", self.JOB + "    if: ${{ runner.os == 'Linux' }}\n")), 1)
+
+    def test_inside_steps_and_next_job(self):
+        text = (self.JOB + "    steps:\n      - run: echo ${{ runner.temp }}\n        env:\n          T: ${{ runner.os }}\n"
+                "  next:\n    env:\n      T: ${{ runner.temp }}\n")
+        self.assertEqual([f[1] for f in scan("contexts", text)], [10])
+
+    def test_comment_shell_variable_and_other_files(self):
+        self.assertEqual(scan("contexts", self.JOB + "    # ${{ runner.temp }}\n    env:\n      B: $RUNNER_TEMP/bin\n"), [])
+        self.assertEqual(wg.CHECKS["contexts"]("x.sh", ["T=${{ runner.temp }}"], PINS), [])
+
+    def test_committed_workflows(self):
+        for name in sorted(os.listdir(WORKFLOWS)):
+            with open(os.path.join(WORKFLOWS, name), encoding="utf-8") as f:
+                self.assertEqual(wg.CHECKS["contexts"](name, f.read().splitlines(), PINS), [], name)
+
+
+class SemgrepGatePaths(unittest.TestCase):
+    """security.yml SEMGREP_GATE_PATHS (decisions 133 and 177): every listed path exists. The list named
+    sangam-integration .../document/sign after that code had moved to sangam-esign, so the Semgrep gate step failed
+    on its own path check (main, 2026-11-14) before scanning anything."""
+
+    def gate_paths(self):
+        with open(os.path.join(WORKFLOWS, "security.yml"), encoding="utf-8") as f:
+            lines = f.read().splitlines()
+        start = next(i for i, line in enumerate(lines) if line.strip().startswith("SEMGREP_GATE_PATHS:"))
+        self.assertEqual(lines[start].split(":", 1)[1].strip(), ">-", "the list is a folded block scalar")
+        indent = len(lines[start]) - len(lines[start].lstrip())
+        paths = []
+        for line in lines[start + 1:]:
+            if line.strip() and len(line) - len(line.lstrip()) <= indent:
+                break
+            paths += line.split()
+        return paths
+
+    def test_every_gate_path_exists(self):
+        paths = self.gate_paths()
+        self.assertGreater(len(paths), 5, "the list was not read")
+        self.assertEqual([p for p in paths if not os.path.exists(os.path.join(REPO, *p.split("/")))], [])
+
+    def test_the_signing_module_is_gated(self):
+        self.assertIn("sangam/sangam-esign/src/main", self.gate_paths())
+
+
 class Images(unittest.TestCase):
     def test_images(self):
         ok = "ARG JRE_IMAGE=eclipse-temurin:25@sha256:" + "a" * 64
@@ -91,7 +147,9 @@ class LineEndings(unittest.TestCase):
 
     def lf_files(self):
         for d, dirs, names in os.walk(REPO):
-            dirs[:] = [x for x in dirs if x not in wg.SKIP_DIRS and x != ".git"]
+            # handoff/ holds byte-for-byte archive copies of old worktrees (.gitattributes: -text); nothing there is
+            # ever run or built, and converting them would break the byte-for-byte record.
+            dirs[:] = [x for x in dirs if x not in wg.SKIP_DIRS and x != ".git" and not (d == REPO and x == "handoff")]
             for n in names:
                 if self.LF_NAMES.search(n):
                     yield os.path.join(d, n)
@@ -119,6 +177,9 @@ class LineEndings(unittest.TestCase):
             self.assertIn((pattern, "text", "eol=lf"), rules, pattern)
         for pattern in ("*.ps1", "*.cmd", "*.bat"):
             self.assertIn((pattern, "text", "eol=crlf"), rules, pattern)
+        with open(os.path.join(REPO, ".gitattributes"), encoding="utf-8") as f:
+            last = [line.split() for line in f if line.strip() and not line.startswith("#")][-1]
+        self.assertEqual(last, ["handoff/**", "-text"], "the archive rule must stay last so that it wins")
 
 
 class Downloads(unittest.TestCase):

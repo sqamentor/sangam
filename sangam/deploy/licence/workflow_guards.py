@@ -4,6 +4,9 @@
   --check pins         every external `uses:` is pinned to a 40-hex commit SHA with a version comment
                        ("@<sha> # vX.Y.Z"); the allowlist in ci-tool-pins.json ("tag_pinned_actions") holds the
                        slsa-github-generator, which verifies its own tag (CR-10)
+  --check contexts     no `runner.*` expression outside a job's `steps:` (workflow-level or job-level `env`, `if`,
+                       `with` of a reusable call, ...): the runner context exists only inside steps, and GitHub
+                       rejects the whole workflow file ("Unrecognized named-value: 'runner'"), so no job starts
   --check images       every image reference on a release path carries @sha256: (images.txt lines, Dockerfile
                        `ARG *_IMAGE=` defaults and direct `FROM <image>` lines, decisions 253 and 261); a tag alone,
                        `latest` or `nonroot` fails (CR-10)
@@ -167,6 +170,29 @@ def npm_rules(code):
     return [(m and "--ignore-scripts" not in code, "npm install without --ignore-scripts (decision 130)")]
 
 
+RUNNER_EXPR = re.compile(r"\$\{\{[^}]*\brunner\.")
+JOB_KEY = re.compile(r"^  [A-Za-z0-9_-]+:\s*(#.*)?$")
+TOP_KEY = re.compile(r"^[A-Za-z0-9_-]+:")
+
+
+def check_contexts(path, lines, _cfg):
+    """The runner context is available only inside jobs.<id>.steps; anywhere else the workflow file is invalid."""
+    if not path.endswith((".yml", ".yaml")):
+        return []
+    out, in_steps = [], False
+    for i, line in enumerate(lines):
+        if TOP_KEY.match(line) or JOB_KEY.match(line):
+            in_steps = False
+        elif re.match(r"^    steps:\s*(#.*)?$", line):
+            in_steps = True
+        if in_steps or line.lstrip().startswith("#"):
+            continue
+        if RUNNER_EXPR.search(line):
+            out.append((path, i + 1, "runner context used outside steps (the workflow file is invalid; set the value "
+                                     f"in a step, e.g. from $RUNNER_TEMP): {line.strip()}"))
+    return out
+
+
 def check_lockfiles(roots):
     pairs = {"package.json": ["package-lock.json"], "composer.json": ["composer.lock"], "Cargo.toml": ["Cargo.lock"]}
     out = []
@@ -182,7 +208,7 @@ def check_lockfiles(roots):
     return out
 
 
-CHECKS = {"pins": check_pins, "images": check_images, "silent": per_line(silent_rules),
+CHECKS = {"pins": check_pins, "contexts": check_contexts, "images": check_images, "silent": per_line(silent_rules),
           "curl": per_line(curl_rules), "npx": per_line(npx_rules), "npm-scripts": per_line(npm_rules)}
 
 

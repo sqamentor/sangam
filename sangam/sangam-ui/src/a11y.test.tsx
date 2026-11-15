@@ -63,7 +63,8 @@ describe('M-046 axe: shared components', () => {
 describe('M-046 axe: W2-C screens', () => {
   it('bulk ingest', async () => {
     const { container } = show(<BulkIngestPage />);
-    await screen.findByText(/./);
+    // the loaded screen (the job list has answered), not the first paint
+    await screen.findByText('No bulk jobs for the object types you may load.');
     expect(await blockingA11yIssues(container)).toEqual([]);
   });
   it('pack lifecycle', async () => {

@@ -153,4 +153,7 @@ type Problem struct {
 	Instance string `json:"instance,omitempty"`
 	Code     string `json:"code,omitempty"`
 	TraceID  string `json:"traceId,omitempty"`
+	// PowerLimit is present with POWER_LIMIT_EXCEEDED: the decision that refused the action (decision 142), kept as the
+	// server sent it (schema PowerLimitDecision).
+	PowerLimit map[string]any `json:"powerLimit,omitempty"`
 }

@@ -42,7 +42,10 @@ describe('deploy-fonts', () => {
     const dir = fakeDir((f) => ({ ...f, 'OFL-NotoSans.txt': undefined }));
     const readme = join(dir, 'README.md');
     writeFileSync(readme, readFileSync(readme, 'utf8').split('\n').filter((l) => !l.includes('NotoSansDevanagari-Regular.ttf')).join('\n'));
-    expect(() => loadFonts(dir)).toThrow(/OFL-NotoSans\.txt: missing[\s\S]*NotoSansDevanagari-Regular\.ttf: no SHA-256 row/);
+    // One error names both problems. They are listed in FONT_FILES order, which is not part of the requirement.
+    const refused = () => loadFonts(dir);
+    expect(refused).toThrow(/OFL-NotoSans\.txt: missing/);
+    expect(refused).toThrow(/NotoSansDevanagari-Regular\.ttf: no SHA-256 row/);
   });
 
   it('refuses a folder without the README record', () => {

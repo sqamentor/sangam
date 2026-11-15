@@ -65,6 +65,17 @@ describe('number input without a float step', () => {
     expect(big.text).toBe('12345678901234567890');
     expect(fromNumberInput('-')).toBe('-');
   });
+
+  it('drops leading zeros of the whole part, which carry no value, and keeps the scale', () => {
+    expect((fromNumberInput('0012345678901234567.890') as DecimalValue).text).toBe('12345678901234567.890');
+    expect((fromNumberInput('-007.50') as DecimalValue).text).toBe('-7.50');
+    expect((fromNumberInput('000.5') as DecimalValue).text).toBe('0.5');
+    const big = fromNumberInput('0012345678901234567890') as DecimalValue;
+    expect([big.type, big.text]).toEqual(['BigInteger', '12345678901234567890']);
+    expect(fromNumberInput('007')).toBe(7);
+    expect(fromNumberInput('-007')).toBe(-7);
+    expect(fromNumberInput('00')).toBe(0);
+  });
 });
 
 describe('formatting from the digits', () => {

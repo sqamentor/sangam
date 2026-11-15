@@ -66,7 +66,7 @@ jobs:
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         if: matrix.language == 'java-kotlin'
         with: { distribution: temurin, java-version: "25.0.1", cache: maven, cache-dependency-path: "sangam/**/pom.xml" }
-      - uses: github/codeql-action/init@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+      - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -83,7 +83,7 @@ jobs:
         if: matrix.language == 'java-kotlin'
         working-directory: sangam
         run: mvn -B -ntp -DskipTests compile test-compile
-      - uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3.39.3
+      - uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: /language:${{ matrix.language }}
 
@@ -241,7 +241,9 @@ jobs:
     env:
       # decision 133: Semgrep errors in the authorisation, money or audit paths fail the release. Decision 177 widens
       # the set to the core audit chain, the pack money code (sangam-packs), the server bridges and the eSign
-      # connector with its signature verification. Every path must exist: a moved path fails the gate step below.
+      # connector with its signature verification. Every path must exist: a moved path fails the gate step below
+      # and, on every push, test_workflow_guards.py SemgrepGatePaths. The signing code itself is the sangam-esign
+      # module (decisions 173 and 187 moved it out of sangam-integration .../document/sign).
       SEMGREP_GATE_PATHS: >-
         sangam/sangam-security/src/main
         sangam/sangam-rest/src/main
@@ -256,7 +258,7 @@ jobs:
         sangam/sangam-server/src/main/java/org/sangam/server/bridge
         sangam/sangam-integration/src/main/java/org/sangam/integration/connector/gov/EsignConnector.java
         sangam/sangam-integration/src/main/java/org/sangam/integration/signature
-        sangam/sangam-integration/src/main/java/org/sangam/integration/document/sign
+        sangam/sangam-esign/src/main
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
