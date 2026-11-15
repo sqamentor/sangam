@@ -41,6 +41,13 @@ sangam:
       max-batch: 200
       timeout: 10s
 
+# Console logs are structured (ECS JSON), one JSON object per line: the encoder escapes every value, so text that
+# reaches a log message from a request cannot start a second, forged log line (code scanning java/log-injection).
+logging:
+  structured:
+    format:
+      console: ecs
+
 management:
   server:
     port: ${SANGAM_RU_MANAGEMENT_PORT:8096}

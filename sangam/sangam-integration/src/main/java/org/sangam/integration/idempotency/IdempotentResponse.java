@@ -5,6 +5,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.sangam.integration.connector.Json;
+
 /**
  * HTTP answer produced by {@link IdempotencyService}: either the command's own response or a replay / refusal with the
  * headers of X.2.2.4 ({@code Idempotent-Replayed}, {@code Idempotency-Key-Expires}, {@code Retry-After},
@@ -17,11 +21,18 @@ public record IdempotentResponse(int status, byte[] body, String contentType, Ma
         headers = headers == null ? Map.of() : Map.copyOf(headers);
     }
 
+    /** The problem document, written by the JSON serialiser so that every value is escaped (control characters too). */
     public static IdempotentResponse problem(int status, String code, String detail, Map<String, String> headers) {
-        String json = "{\"type\":\"urn:sangam:problem:" + code.toLowerCase(java.util.Locale.ROOT).replace('_', '-')
-                + "\",\"title\":\"" + code + "\",\"status\":" + status + ",\"code\":\"" + code + "\""
-                + (detail == null ? "" : ",\"detail\":\"" + detail.replace("\\", "\\\\").replace("\"", "\\\"") + "\"") + "}";
-        return new IdempotentResponse(status, json.getBytes(StandardCharsets.UTF_8), "application/problem+json", headers);
+        ObjectNode json = Json.MAPPER.createObjectNode();
+        json.put("type", "urn:sangam:problem:" + code.toLowerCase(java.util.Locale.ROOT).replace('_', '-'));
+        json.put("title", code);
+        json.put("status", status);
+        json.put("code", code);
+        if (detail != null) {
+            json.put("detail", detail);
+        }
+        return new IdempotentResponse(status, Json.write(json).getBytes(StandardCharsets.UTF_8), "application/problem+json",
+                headers);
     }
 
     public IdempotentResponse withHeader(String name, String value) {

@@ -204,26 +204,31 @@ public class JdbcAuditExportAdapter implements AuditExportPort, AutoCloseable {
     }
 
 
-    private List<AuditPort.AuditEntry> collect(RequestContext ctx, Map<String, Object> scope) {
+    /** The audit entries of a scope, oldest page first, never more than the count cap ({@code sangam.rest.count-cap}). */
+    List<AuditPort.AuditEntry> collect(RequestContext ctx, Map<String, Object> scope) {
         String bk = str(scope.get("businessKey"));
-        long cap = props.getCountCap();
-        List<AuditPort.AuditEntry> out = new ArrayList<>();
+        // the cap as an int, once: a list holds at most Integer.MAX_VALUE rows, and the loop compares int with int
+        int cap = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, props.getCountCap()));
         if (bk != null && scope.keySet().stream().allMatch(k -> k.equals("businessKey") || scope.get(k) == null)) {
-            for (int p = 0; out.size() < cap; p++) {
-                Page<AuditPort.AuditEntry> page = audit.timeline(ctx, bk, false, new Page.PageRequest(p, PAGE));
-                out.addAll(page.items());
-                if (page.items().size() < PAGE) {
-                    break;
-                }
-            }
-            return out;
+            return paged(cap, page -> audit.timeline(ctx, bk, false, page));
         }
         AuditPort.AuditFilter f = new AuditPort.AuditFilter(bk != null ? bk : str(scope.get("chainId")),
                 str(scope.get("type")), str(scope.get("actor")), instant(scope.get("from")), instant(scope.get("to")));
+        return paged(cap, page -> audit.search(ctx, f, page));
+    }
+
+    /**
+     * Reads pages of {@value #PAGE} until a page comes back short or {@code cap} rows are held. The last page is cut to
+     * the cap, so the result never exceeds it, and the loop ends for every cap because both sides of the comparison
+     * are ints.
+     */
+    static <T> List<T> paged(int cap, java.util.function.Function<Page.PageRequest, Page<T>> read) {
+        List<T> out = new ArrayList<>();
         for (int p = 0; out.size() < cap; p++) {
-            Page<AuditPort.AuditEntry> page = audit.search(ctx, f, new Page.PageRequest(p, PAGE));
-            out.addAll(page.items());
-            if (page.items().size() < PAGE) {
+            List<T> items = read.apply(new Page.PageRequest(p, PAGE)).items();
+            int room = cap - out.size();
+            out.addAll(items.size() > room ? items.subList(0, room) : items);
+            if (items.size() < PAGE) {
                 break;
             }
         }

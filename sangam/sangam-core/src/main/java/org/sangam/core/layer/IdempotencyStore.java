@@ -70,6 +70,40 @@ public final class IdempotencyStore {
         }
     }
 
+    /** 400: the {@code Idempotency-Key} is not 1..128 printable ASCII characters. */
+    public static final String CODE_KEY_INVALID = "IDEMPOTENCY_KEY_INVALID";
+    /** 400: the request content cannot be fingerprinted. */
+    public static final String CODE_REQUEST_INVALID = "INVALID_REQUEST";
+
+    /**
+     * The caller's request is refused by a check of this store (the key, the fingerprint input), with an answer made
+     * for the caller: a stable {@code code} and a {@code detail} that is fixed text of this class, never a value from
+     * the request and never the message of another exception. It is the only exception of this store whose text may
+     * be put in a response; any other {@link IllegalArgumentException} (a driver, a dialect, a programming error) is
+     * an internal error and must not be answered with its message. It stays an {@code IllegalArgumentException} with
+     * the message {@code "400 <code>: <detail>"} for callers that predate the type.
+     */
+    public static final class InvalidRequestException extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        private final String code;
+        private final String detail;
+
+        InvalidRequestException(String code, String detail, Throwable cause) {
+            super("400 " + code + ": " + detail, cause);
+            this.code = code;
+            this.detail = detail;
+        }
+
+        public String code() {
+            return code;
+        }
+
+        public String detail() {
+            return detail;
+        }
+    }
+
     private final Dialect dialect;
     private final Transactions tx;
     private final String node;
@@ -163,7 +197,14 @@ public final class IdempotencyStore {
         m.put("pathParams", pathParams == null ? Map.of() : pathParams);
         m.put("semanticQueryParams", semanticQueryParams == null ? Map.of() : semanticQueryParams);
         m.put("body", body);
-        return Hashes.sha256(CanonicalJson.write(m));
+        String canonical;
+        try {
+            canonical = CanonicalJson.write(m);
+        } catch (CanonicalJson.NonIntegralNumberException e) {
+            throw new InvalidRequestException(CODE_REQUEST_INVALID,
+                    "the request holds a number with a fraction; decimals must be sent as strings", e);
+        }
+        return Hashes.sha256(canonical);
     }
 
     /** Begin without a distinct principal (the principal check is then vacuous). */
@@ -290,12 +331,12 @@ public final class IdempotencyStore {
 
     private static void validateKey(String key) {
         if (key == null || key.isEmpty() || key.length() > 128) {
-            throw new IllegalArgumentException("400 IDEMPOTENCY_KEY_INVALID: length must be 1..128");
+            throw new InvalidRequestException(CODE_KEY_INVALID, "length must be 1..128", null);
         }
         for (int i = 0; i < key.length(); i++) {
             char ch = key.charAt(i);
             if (ch < 0x20 || ch > 0x7e) {
-                throw new IllegalArgumentException("400 IDEMPOTENCY_KEY_INVALID: printable ASCII only");
+                throw new InvalidRequestException(CODE_KEY_INVALID, "printable ASCII only", null);
             }
         }
     }

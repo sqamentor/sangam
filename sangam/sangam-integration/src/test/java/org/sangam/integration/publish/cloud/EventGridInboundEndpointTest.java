@@ -158,6 +158,68 @@ class EventGridInboundEndpointTest {
         assertEquals(400, endpoint().options("T1", "eg", auth(), Map.of()).status());
     }
 
+    // ---- code scanning #290 #291 #295 #296: a refusal is a code and a fixed message, never the sender's text -----------
+
+    @Test
+    void aRefusalCarriesAStableCodeAndAFixedMessage() throws Exception {
+        headerChannel();
+        EventGridInboundEndpoint.Answer noOrigin = endpoint().options("T1", "eg", auth(), Map.of());
+        assertEquals(400, noOrigin.status());
+        assertTrue(noOrigin.refused());
+        assertEquals(EventGridInboundEndpoint.CODE_ORIGIN_REQUIRED, noOrigin.code());
+
+        String evil = "evil\"<script>.example";
+        EventGridInboundEndpoint.Answer badOrigin = endpoint().options("T1", "eg", auth("WebHook-Request-Origin", evil),
+                Map.of());
+        assertEquals(403, badOrigin.status());
+        assertEquals(EventGridInboundEndpoint.CODE_ORIGIN_NOT_ALLOWED, badOrigin.code());
+        assertEquals("The request origin is not allowed for this channel", badOrigin.body());
+        assertTrue(badOrigin.headers().isEmpty(), "the refused origin is not echoed in a header either");
+
+        EventGridInboundEndpoint.Answer ok = endpoint().options("T1", "eg", auth("WebHook-Request-Origin",
+                "eventgrid.azure.net"), Map.of());
+        assertEquals(false, ok.refused());
+        assertEquals(null, ok.code());
+    }
+
+    @Test
+    void anEventToOfferAgainIsRefusedWithoutItsIdOrTheReason() throws Exception {
+        headerChannel();
+        EventGridInboundEndpoint.Answer retry = endpoint().post("T1", "eg",
+                auth("Content-Type", "application/cloudevents+json"), Map.of(), ce("later-\\\"<script>"));
+        assertEquals(List.of("later-\"<script>"), processor.ids, "the event reached the processor with its id");
+        assertEquals(503, retry.status());
+        assertEquals(EventGridInboundEndpoint.CODE_REDELIVERY_REQUIRED, retry.code());
+        assertEquals(Integer.valueOf(30), retry.retryAfterSeconds());
+        assertEquals("30", retry.headers().get("Retry-After"));
+        assertEquals("An event of this delivery could not be accepted yet; send the delivery again", retry.body());
+        assertTrue(!retry.body().contains("script") && !retry.body().contains("later") && !retry.body().contains("LOCKED"),
+                "neither the sender's event id nor the processor's reason");
+    }
+
+    @Test
+    void anAnswerIsEitherASuccessOrARefusalWithACode() {
+        assertThrows(IllegalArgumentException.class, () -> new EventGridInboundEndpoint.Answer(503, Map.of(), "text", null, null),
+                "an error without a code cannot be built");
+        assertThrows(IllegalArgumentException.class, () -> new EventGridInboundEndpoint.Answer(200, Map.of(), "", "CODE", null));
+    }
+
+    @Test
+    void theBodyIsJudgedOnlyAfterTheChannelAuthenticated() throws Exception {
+        headerChannel();
+        EventGridInboundEndpoint e = endpoint();
+        Map<String, String> none = Map.of("Content-Type", "application/cloudevents+json");
+        assertThrows(SecurityException.class, () -> e.post("T1", "eg", none, Map.of(), ""), "empty body, no secret");
+        assertThrows(SecurityException.class, () -> e.post("T1", "eg", none, Map.of(), null));
+        String oversized = "x".repeat(processor.maxPayloadBytes() + 1);
+        assertThrows(SecurityException.class, () -> e.post("T1", "eg", none, Map.of(), oversized), "oversized, no secret");
+        // authenticated, the same bodies are refused for what they are
+        Map<String, String> ok = auth("Content-Type", "application/cloudevents+json");
+        assertEquals(422, assertThrows(PortsProblem.class, () -> e.post("T1", "eg", ok, Map.of(), "")).status());
+        assertEquals(413, assertThrows(PortsProblem.class, () -> e.post("T1", "eg", ok, Map.of(), oversized)).status());
+        assertTrue(processor.ids.isEmpty());
+    }
+
     private static String validationBody(String code) {
         return "[{\"id\":\"v-1\",\"topic\":\"/subscriptions/x/resourceGroups/y\",\"subject\":\"\",\"eventType\":\""
                 + EventGridInboundEndpoint.VALIDATION_EVENT + "\",\"eventTime\":\"2026-11-12T10:00:00Z\","

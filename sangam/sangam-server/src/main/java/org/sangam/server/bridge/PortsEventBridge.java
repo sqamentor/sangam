@@ -288,8 +288,10 @@ public final class PortsEventBridge implements EventPort {
     /**
      * The Event Grid inbound route (W4-H REQUEST 00:50:03Z): only a deployed INBOUND {@code eventgrid} channel of the
      * tenant is reachable (anything else 404, so channel names are not probed through it); a failed channel
-     * authentication (SecurityException) is 401 WEBHOOK_SIGNATURE_INVALID with no detail from the check; every other
-     * answer of {@link EventGridInboundEndpoint} (200, 403 origin, 400, 503 retry) is passed on as is.
+     * authentication (SecurityException) is 401 WEBHOOK_SIGNATURE_INVALID with no detail from the check. A 2xx answer of
+     * {@link EventGridInboundEndpoint} is passed on as is; every refusal (403 origin, 400, 503 retry) becomes an
+     * {@link ApiProblem} with the endpoint's code, its fixed message and its Retry-After, so the route answers
+     * {@code application/problem+json} like every other and no error body is assembled outside the problem writer.
      */
     @Override
     public HookAnswer eventGridHook(String method, String tenant, String channel, Map<String, String> headers,
@@ -309,6 +311,9 @@ public final class PortsEventBridge implements EventPort {
             throw new ApiProblem(p.status(), p.code(), p.getMessage());
         } catch (IllegalArgumentException e) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", e.getMessage());
+        }
+        if (a.refused()) {
+            throw new ApiProblem(a.status(), a.code(), null, a.body(), null, a.retryAfterSeconds());
         }
         return new HookAnswer(a.status(), a.headers(), a.body());
     }
