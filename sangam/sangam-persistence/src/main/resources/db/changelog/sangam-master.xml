@@ -7,6 +7,7 @@
   postgresql, oracle, mssql (SQL Server), mysql (MySQL 8.4, utf8mb4, InnoDB) and h2 (development only).
   The PostgreSQL changesets also name cockroachdb (decisions 205 and 379): Liquibase takes a CockroachDB server for its
   own cockroachdb database type and matches dbms by short name only; the dbms value is not part of the checksum.
+  Likewise the MySQL changesets also name mariadb (SL-112): MariaDB Connector/J reports a MariaDB server as MariaDB.
   The session lock is Liquibase's DATABASECHANGELOGLOCK (R12: one controlled migration job at a time).
 
   The Operaton engine tables (ACT_*) are NOT created here: the engine owns them. Engine schema patches
