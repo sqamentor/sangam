@@ -457,5 +457,5 @@ Pipeline definitions are read from `classpath:pipelines/<id>.json`. Pipelines st
 | `sangam.ops.task-listeners-json` | unset | Global task listener rules |
 | `sangam.ops.outliers.allowed-variables` | empty | Variables outlier analysis may read |
 | `sangam.ops.notification-destinations` | `notify*,email*,mail*,sms*,dlt*` | Connector ids treated as notifications |
-| `sangam.modules.connectors-health.enabled` | true | Enables `POST /api/v1/connectors-health/x12/835` (`application/edi-x12` or `text/plain`, needs `ops.write`; one inbox message per claim, deduplicated on trace and patient control number) |
+| `sangam.modules.connectors-health.enabled` (env `SANGAM_MODULE_CONNECTORS_HEALTH`) | false (decision 187: optional module, off by default) | Switches the health connectors module on (FHIR subscription hooks, CDS Hooks, `POST /api/v1/connectors-health/x12/835`). Off, those routes answer 501 `CAPABILITY_NOT_INSTALLED` and nothing else changes. On, the 835 route takes `application/edi-x12` or `text/plain`, and needs `ops.write`: one inbox message per claim, deduplicated on trace and patient control number |
 **Concurrent builds.** Each concurrent build of one checkout needs its own `-Dsangam.target=<folder>`.
