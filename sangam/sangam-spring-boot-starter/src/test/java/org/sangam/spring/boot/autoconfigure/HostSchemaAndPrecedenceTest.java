@@ -168,10 +168,13 @@ class HostSchemaAndPrecedenceTest {
         ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs =
                 new ch.qos.logback.core.read.ListAppender<>();
         logs.start();
-        logger.addAppender(logs);
         Map<String, String> settings = productionSettings(db);
         settings.put(SangamDefaultsEnvironmentPostProcessor.ENGINE_SCHEMA_UPDATE, "true");
-        try (ConfigurableApplicationContext ctx = production().run(args(settings))) {
+        // Spring Boot resets the logging system while it prepares the environment, which drops an appender added
+        // before run(); attach it once the context is prepared, before any bean (and so the schema guard) is created
+        ApplicationListener<org.springframework.boot.context.event.ApplicationPreparedEvent> attach =
+                event -> logger.addAppender(logs);
+        try (ConfigurableApplicationContext ctx = production().listeners(attach).run(args(settings))) {
             assertTrue(ctx.isActive());
             assertEquals("true", ctx.getEnvironment().getProperty(SangamDefaultsEnvironmentPostProcessor.ENGINE_SCHEMA_UPDATE),
                     "the host's explicit setting is honoured");
