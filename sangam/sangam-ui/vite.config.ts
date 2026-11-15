@@ -32,7 +32,12 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: 'dist',
-      sourcemap: true,
+      // CERT-In / DPDP matrix W-11: no source maps in the production build. dist/ is what the UI image serves
+      // (ui.Dockerfile copies it to the nginx root), so a map here is the whole original source, comments included,
+      // for anyone (OWASP WSTG information gathering, the web testing scope of the CERT-In audit guidelines). The
+      // dev server (npm run dev) keeps its own maps for debugging. Checked by scripts/build-sourcemaps.test.mjs and,
+      // on the image, by e2e/security-headers.e2e.ts.
+      sourcemap: false,
       chunkSizeWarningLimit: 2500,
       // Inline nothing from remote origins; keep assets as hashed files under /assets.
       assetsInlineLimit: 4096,

@@ -158,8 +158,16 @@ jobs:
           echo "::add-mask::$token"
           echo "SANGAM_DEV_TOKEN=$token" >> "$GITHUB_ENV"
           docker network create e2e
+          # CERT-In / DPDP specs (docs/compliance/CERTIN-DPDP-CONTROL-MATRIX.md): the test-mode tenant on the India
+          # jurisdiction pack, with the notice links ConsentNoticeService.publish requires and the M-010c seats the
+          # compliance processes route to (no default, application.yaml sangam.compliance.seats). The jurisdiction and
+          # organisation use their documented variables; links and seats have none, so they go in as Spring Boot's
+          # SPRING_APPLICATION_JSON. Test values of the throw-away test-mode server, nothing else changes.
+          compliance='{"sangam":{"compliance":{"links":{"withdraw-consent":"http://127.0.0.1:8080/portal","rights-portal":"http://127.0.0.1:8080/portal/grievances","authority-complaint":"https://www.dpb.gov.in/"},"seats":{"DPO":"e2e-seat-dpo","GRIEVANCE-OFFICER":"e2e-seat-grievance","RECORDS-OFFICER":"e2e-seat-records","PRIVACY-OFFICER":"e2e-seat-privacy","CISO":"e2e-seat-ciso","CISO-HEAD":"e2e-seat-ciso-head"}}}}'
           docker run -d --name sangam-server --network e2e -e SANGAM_DEV_TOKEN="$token" \
-            -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test sangam-server:dev-test-mode
+            -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test \
+            -e SANGAM_COMPLIANCE_JURISDICTIONS=IN -e SANGAM_COMPLIANCE_ORGANISATION="Sangam e2e" \
+            -e SPRING_APPLICATION_JSON="$compliance" sangam-server:dev-test-mode
           docker run -d --name sangam-ui --network e2e -p 127.0.0.1:8080:8080 \
             -e SANGAM_API_UPSTREAM=http://sangam-server:8080 sangam-ui:e2e
           # Readiness as in deploy/compose/docker-compose.yml. bash, not sh: /dev/tcp is a bash feature and the image's

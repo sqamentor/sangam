@@ -113,6 +113,18 @@ must be set to that server's development token. `e2e/support/global-setup.ts` se
 `e2e/fixtures/e2e-simple.bpmn` to the sandbox, starts an instance and records the ids. Specs that change data start
 their own instance.
 
+CERT-In / DPDP prerequisites (`docs/compliance/CERTIN-DPDP-CONTROL-MATRIX.md`):
+
+- **Identities.** Besides the dev token (platform administrator), global-setup creates three service principals through
+  the product's own `POST /api/v1/admin/service-principals` and signs specs in with their `sgm_` tokens
+  (`e2e/support/identities.ts`): a citizen (scope `sangam-citizen`), a signed-in user with no role, and a compliance
+  officer (`sangam-dpo`). Each is checked through `GET /me` first. No server setting or guard changes.
+- **India pack.** The server must run with `SANGAM_COMPLIANCE_JURISDICTIONS=IN`, the notice links and the compliance
+  seats (`ui.yml` "Start the stack"); global-setup refuses another jurisdiction and publishes the baseline
+  (`e2e/support/compliance.ts`): DPO contact, one consent purpose, one published notice.
+- **Headers.** The suite runs against the UI image (nginx), where the security headers are set
+  (`deploy/docker/ui/*.template`); only `a11y.e2e.ts` uses `bypassCSP`, so header and CSP checks never do.
+
 | Spec | Covers |
 |---|---|
 | `shell.e2e.ts` | dev sign-in; no request leaves the origin (R56); `/fonts/noto/*` byte-identical to `deploy/fonts`; Devanagari renders in Noto Sans Devanagari; Sakal Bharati and @fontsource never requested (decisions 120, 121) |
@@ -120,6 +132,16 @@ their own instance.
 | `ops-diagram.e2e.ts` | definition and instance diagrams; the bpmn.io watermark visible, inside the canvas and uncovered, checked by rendered geometry (LIC-8, RM-47) |
 | `a11y.e2e.ts` | axe-core with colour contrast on the main screens; serious and critical violations fail (M-046) |
 | `embed.e2e.ts` | the M-043 module in a host page: same origin, and cross origin when `SANGAM_E2E_CORS_ORIGIN` names an origin the server allows |
+| `consent-notice.e2e.ts` | CERT-In / DPDP D-01, D-21, D-28: public privacy policy signed out (links, DPO, version, hash = SHA-256 of the text); the published notice; a waiver clause refused (422) and never published |
+| `consent-withdrawal.e2e.ts` | D-04, D-05 (operator path): the compliance officer records a consent on the published notice and withdraws it in the register |
+| `rights-requests.e2e.ts` | D-23, C-03, D-22: rights and contact-role selects offer exactly the India pack codes; a citizen files a data-rights request, gets a reference, due within the pack maximum |
+| `security-headers.e2e.ts` | W-01, W-05, W-06, W-11: headers on every route and asset of the image; no source map; no CSP violation |
+| `client-storage-and-urls.e2e.ts` | W-07, W-08 (partial): after sign-out no token in web storage; no URL carries the token or typed text |
+| `xss-rendering.e2e.ts` | W-03: markup in a grievance subject and a purpose name is shown as text |
+| `no-tracking.e2e.ts` | W-04, D-24(a): no request, beacon, WebSocket, subresource or third-party cookie off the origin on compliance, admin, portal and privacy routes |
+| `access-control.e2e.ts` | D-10, W-10: role-less user and citizen refused in the UI and with 403; the officer passes by permission; errors carry no internals |
+| `audit-evidence.e2e.ts` | C-04, D-12: India pack, one-year floors; the evidence report hash is the SHA-256 of the served report |
+| `session-expiry.e2e.ts` | W-09 (expiry only): an expired API token is refused (401) and the UI returns to sign-in |
 
 Status: written in Wave 4. `@playwright/test` (owner decision 106) is a pinned devDependency in `package-lock.json`;
 its Chromium and Firefox browsers are installed by the local binary (`node_modules/.bin/playwright install`, never

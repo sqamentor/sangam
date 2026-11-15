@@ -2,7 +2,8 @@
 /**
  * M-048 seed data: deploys e2e/fixtures/e2e-simple.bpmn to the sandbox target through the Sangam API (POST
  * /deployments, multipart name/target/files, as the modeller does), starts one instance (POST /process-instances) and
- * finds its user task (GET /tasks?processInstanceId=). The ids go to e2e/.seed/seed.json for the specs.
+ * finds its user task (GET /tasks?processInstanceId=), creates the CERT-In / DPDP e2e identities (identities.ts) and
+ * publishes the India-pack compliance baseline (compliance.ts). The ids go to e2e/.seed/seed.json for the specs.
  * Every mutation carries an Idempotency-Key (R41). The test-mode server starts empty on every run (in-memory H2).
  */
 import { randomUUID } from 'node:crypto';
@@ -10,6 +11,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { request, type APIResponse } from '@playwright/test';
 import { API_BASE, SEED_FILE, UI_ROOT, devToken, type Seed } from './env';
+import { createE2eIdentities } from './identities';
+import { seedCompliance } from './compliance';
 
 const KEY = 'sangamE2eSimple';
 
@@ -67,7 +70,12 @@ export default async function globalSetup(): Promise<void> {
       return items<{ id: string }>(body)[0]?.id;
     });
 
-    const seed: Seed = { definitionKey: KEY, definitionId, processInstanceId: started.id, taskId };
+    // CERT-In / DPDP prerequisites: the extra identities and the India-pack compliance baseline (identities.ts,
+    // compliance.ts; docs/compliance/CERTIN-DPDP-CONTROL-MATRIX.md)
+    const identities = await createE2eIdentities(api);
+    const compliance = await seedCompliance(api);
+
+    const seed: Seed = { definitionKey: KEY, definitionId, processInstanceId: started.id, taskId, identities, compliance };
     mkdirSync(dirname(SEED_FILE), { recursive: true });
     writeFileSync(SEED_FILE, JSON.stringify(seed, null, 2));
   } finally {

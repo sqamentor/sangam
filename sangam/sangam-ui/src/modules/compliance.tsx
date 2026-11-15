@@ -6,11 +6,12 @@
  * respond / reject), contacts (DPO, grievance officer, CERT-In PoC), impact assessments and audit evidence,
  * cross-border transfer evaluation, log sealing and integrity verification, and the **compliance evidence report**.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { download, http } from '../api/client';
+import type { FormField } from '../api/types';
 import { useAction, useAsync } from '../lib/hooks';
-import { Checkbox, JsonView, KeyValues, Notice, ProblemAlert, Section, TextField } from '../components/ui';
+import { Checkbox, JsonView, KeyValues, Loading, Notice, ProblemAlert, Section, TextField } from '../components/ui';
 import { ModulePage, c, f, type ScreenDef } from './engine';
 
 const purposes: ScreenDef = {
@@ -30,7 +31,7 @@ const purposes: ScreenDef = {
   ],
 };
 
-const consents: ScreenDef = {
+export const consents: ScreenDef = {
   id: 'consents',
   title: 'mod.compliance.consents',
   description: 'mod.compliance.consentsDesc',
@@ -38,7 +39,10 @@ const consents: ScreenDef = {
   unpaged: true,
   filters: [f.text('subject', 'fld.principalRef', true)],
   requireFilters: ['subject'],
-  columns: [c('id'), c('noticeKey'), c('noticeVersion'), c('purposeCodes'), c('status'), c('givenAt'), c('withdrawnAt')],
+  // the fields of a consent record as the server returns it (ComplianceConsent in sangam-api.yaml; ConsentService.Consent):
+  // its id is consentId and its purposes are activePurposes, so the id and purposes columns were always empty
+  // (CERT-In / DPDP matrix D-04, compliancePackCodes.test.ts)
+  columns: [c('consentId', 'fld.id'), c('noticeKey'), c('noticeVersion'), c('activePurposes', 'fld.purposeCodes'), c('status'), c('givenAt'), c('withdrawnAt')],
   rowKey: ['id', 'consentId'],
   create: {
     id: 'give',
@@ -51,18 +55,50 @@ const consents: ScreenDef = {
   actions: [{ id: 'withdraw', label: 'act.withdrawConsent', path: '/compliance/consents/{id}/withdraw', fields: [f.json('purposes', 'fld.purposeCodes')], reason: 'body' }],
 };
 
-const rights: ScreenDef = {
-  id: 'rights',
-  title: 'mod.compliance.rights',
-  list: '/compliance/rights-requests',
-  unpaged: true,
-  filters: [f.text('subject', 'fld.principalRef', true)],
-  requireFilters: ['subject'],
-  columns: [c('id'), c('right'), c('status'), c('submittedAt'), c('dueAt')],
-  rowKey: ['id', 'requestId'],
-  detail: '/compliance/rights-requests/{id}',
-  create: { id: 'submit', label: 'act.submitRightsRequest', path: '/compliance/rights-requests', fields: [f.text('principalRef'), f.select('right', ['ACCESS', 'CORRECTION', 'COMPLETION', 'UPDATE', 'ERASURE', 'GRIEVANCE', 'NOMINATION'], undefined, true), f.text('identifierType'), f.text('identifierValue', undefined, false, { sensitive: true }), f.text('nomineeRef'), f.text('channel'), f.json('details')] },
-};
+/**
+ * The tenant's jurisdiction pack as GET /compliance/jurisdiction gives it (ComplianceApiImpl.jurisdiction), as far as
+ * the screens read it: the right codes (JurisdictionPack.Right) and the contact roles (JurisdictionPack.ContactRole).
+ */
+export interface JurisdictionView {
+  code?: string;
+  rights?: unknown;
+  contactRoles?: unknown;
+}
+
+/** The codes of one pack list, in pack order; an absent or malformed list gives none. */
+export function packCodes(list: unknown): string[] {
+  if (!Array.isArray(list)) return [];
+  return list.map((x) => (x && typeof x === 'object' ? (x as { code?: unknown }).code : undefined)).filter((v): v is string => typeof v === 'string' && v.length > 0);
+}
+
+/**
+ * A field over codes the jurisdiction pack defines. The pack is the one source: the server looks a code up exactly
+ * (JurisdictionPack.right / contactRole) and refuses any other (DataSubjectRightsService.submit, ContactDirectory.set),
+ * so the UI never keeps its own list (a fixed list once offered UPDATE where the India pack defines UPDATING). With
+ * the pack, a select of its codes, labelled by opt.<code> where the UI has that label, else by the code itself (pack
+ * data, not UI copy); without it (not readable, or no jurisdiction yet), a text field for the code, checked by the
+ * server like any other.
+ */
+export function packCodeField(key: string, codes: string[], hasLabel: (i18nKey: string) => boolean, required: boolean): FormField {
+  if (codes.length === 0) return f.text(key, undefined, required);
+  return { ...f.select(key, [], undefined, required), values: codes.map((v) => ({ value: v, label: hasLabel(`opt.${v}`) ? `opt.${v}` : v })) };
+}
+
+export function rightsScreen(pack: JurisdictionView | undefined, hasLabel: (i18nKey: string) => boolean): ScreenDef {
+  return {
+    id: 'rights',
+    title: 'mod.compliance.rights',
+    list: '/compliance/rights-requests',
+    unpaged: true,
+    filters: [f.text('subject', 'fld.principalRef', true)],
+    requireFilters: ['subject'],
+    // ComplianceRightsRequest (sangam-api.yaml; DataSubjectRightsService.RightsRequest): requestId and receivedAt
+    columns: [c('requestId', 'fld.requestId'), c('right'), c('status'), c('receivedAt'), c('dueAt')],
+    rowKey: ['id', 'requestId'],
+    detail: '/compliance/rights-requests/{id}',
+    create: { id: 'submit', label: 'act.submitRightsRequest', path: '/compliance/rights-requests', fields: [f.text('principalRef'), packCodeField('right', packCodes(pack?.rights), hasLabel, true), f.text('identifierType'), f.text('identifierValue', undefined, false, { sensitive: true }), f.text('nomineeRef'), f.text('channel'), f.json('details')] },
+  };
+}
 
 const breaches: ScreenDef = {
   id: 'breaches',
@@ -109,15 +145,17 @@ const lawful: ScreenDef = {
   ],
 };
 
-const contacts: ScreenDef = {
-  id: 'contacts',
-  title: 'mod.compliance.contacts',
-  list: '/compliance/contacts',
-  unpaged: true,
-  columns: [c('role'), c('name'), c('email'), c('phone')],
-  rowKey: ['role'],
-  toolbar: [{ id: 'set', label: 'act.setContact', path: '/compliance/contacts/{role}', fields: [f.select('role', ['DPO', 'GRIEVANCE_OFFICER', 'CERT_IN_POC', 'CISO'], undefined, true), f.text('name', undefined, true), f.text('email', undefined, true), f.text('phone')] }],
-};
+export function contactsScreen(pack: JurisdictionView | undefined, hasLabel: (i18nKey: string) => boolean): ScreenDef {
+  return {
+    id: 'contacts',
+    title: 'mod.compliance.contacts',
+    list: '/compliance/contacts',
+    unpaged: true,
+    columns: [c('role'), c('name'), c('email'), c('phone')],
+    rowKey: ['role'],
+    toolbar: [{ id: 'set', label: 'act.setContact', path: '/compliance/contacts/{role}', fields: [packCodeField('role', packCodes(pack?.contactRoles), hasLabel, true), f.text('name', undefined, true), f.text('email', undefined, true), f.text('phone')] }],
+  };
+}
 
 const evidence: ScreenDef = {
   id: 'evidence',
@@ -179,7 +217,15 @@ export function EvidenceReport() {
 }
 
 export function CompliancePage() {
-  return <ModulePage title="mod.compliance.title" description="mod.compliance.desc" screens={[purposes, consents, rights, breaches, lawful, contacts, evidence]} extra={[{ id: 'report', label: 'mod.compliance.report', node: <EvidenceReport /> }, { id: 'privacy', label: 'privacy.title', node: <PrivacyAdmin /> }]} />;
+  const { i18n } = useTranslation();
+  // the pack's codes for the rights and contact-role fields (packCodeField); the evidence tab shows the same answer
+  const pack = useAsync((signal) => http.get<JurisdictionView>('/compliance/jurisdiction', undefined, signal), []);
+  const screens = useMemo(() => {
+    const hasLabel = (k: string) => i18n.exists(k);
+    return [purposes, consents, rightsScreen(pack.data, hasLabel), breaches, lawful, contactsScreen(pack.data, hasLabel), evidence];
+  }, [pack.data, i18n]);
+  if (pack.loading && !pack.data && !pack.error) return <Loading />;
+  return <ModulePage title="mod.compliance.title" description="mod.compliance.desc" screens={screens} extra={[{ id: 'report', label: 'mod.compliance.report', node: <EvidenceReport /> }, { id: 'privacy', label: 'privacy.title', node: <PrivacyAdmin /> }]} />;
 }
 
 /** RenderedNotice (ConsentNoticeService.java:45-46; language: JurisdictionPack.Language, JurisdictionPack.java:39). */
