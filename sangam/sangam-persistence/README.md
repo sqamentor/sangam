@@ -23,6 +23,14 @@ SQL Server `NVARCHAR`/`DATETIMEOFFSET`, primary keys above 900 bytes are `NONCLU
 `ascii_bin` so the keys fit the 3,072-byte limit; H2 (development only) uses `CHARACTER/BINARY LARGE OBJECT` and works
 with `MODE=PostgreSQL`. Booleans are `SMALLINT` 0/1 everywhere.
 
+CockroachDB (decisions 205 and 379, experimental) has no changelog of its own either, but Liquibase 4.33.0 takes a
+CockroachDB server for its own `CockroachDatabase` (short name `cockroachdb`, priority above `PostgresDatabase`), so every
+PostgreSQL product changeset is tagged `dbms:postgresql,cockroachdb` (generator `dbms_tag`, and the onboarding
+changeset). Without that tag the product schema would stay empty on CockroachDB. A `dbms` value is not part of a
+changeset checksum, so databases migrated before the tag still validate (`CockroachDbChangelogDbmsTest` checks the
+checksums and that CockroachDB gets every PostgreSQL changeset). The optional pgvector changeset stays PostgreSQL only.
+The optional history partitioning (`sangam-history-partitioning.xml`) has no CockroachDB form and is skipped there.
+
 YugabyteDB YSQL (M-108, experimental) has no changelog of its own. It reports the product `PostgreSQL` through the
 PostgreSQL driver, and Liquibase 4.33.0 takes it for `postgresql` (Liquibase matches `dbms:` by the database's short
 name only), so the `dbms:postgresql` changesets run there. `YugabyteDbChangelogDbmsTest` pins the choice: a Liquibase
