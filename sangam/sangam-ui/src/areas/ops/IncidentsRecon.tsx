@@ -175,7 +175,11 @@ export function IncidentDetail() {
       {hasRole('PLATFORM_OPERATOR') && i.jobId && (
         <Section title={t('ops.stacktrace')}>
           {!trace ? (
-            <button type="button" onClick={() => void api.ops.jobStacktrace(i.jobId!).then(setTrace)}>
+            <button
+              type="button"
+              // through act.run, so a refused read (no job, no right) is shown in the alert above instead of an unhandled rejection
+              onClick={() => void act.run(() => api.ops.jobStacktrace(i.jobId!)).then((s) => typeof s === 'string' && setTrace(s))}
+            >
               {t('ops.showStacktrace')}
             </button>
           ) : (

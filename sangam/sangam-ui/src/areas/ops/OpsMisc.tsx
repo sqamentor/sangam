@@ -15,6 +15,7 @@ import { api, type EventChannel, type EventDefinition } from '../../api/endpoint
 import type { DecisionDefinition } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtDuration, fmtNumber } from '../../i18n';
+import { wholeNumberProblem } from '../../lib/wholeNumber';
 import { DmnView } from '../../components/DmnView';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import {
@@ -180,6 +181,9 @@ export function Jobs() {
   const summary = useAsync(() => api.ops.jobSummary(), []);
   const [retry, setRetry] = useState<string | null>(null);
   const [retries, setRetries] = useState('1');
+  // JobRetriesRequest.retries is a required int: an empty box or a fraction is refused by name, never sent as 0 or rounded.
+  const [retriesTouched, setRetriesTouched] = useState(false);
+  const retriesProblem = wholeNumberProblem(retries);
   const [due, setDue] = useState('');
   const act = useAction();
   return (
@@ -221,7 +225,14 @@ export function Jobs() {
               key: 'a',
               header: t('common.actions'),
               render: (r) => (
-                <button type="button" className="link" onClick={() => setRetry(r.id)}>
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => {
+                    setRetriesTouched(false);
+                    setRetry(r.id);
+                  }}
+                >
                   {t('ops.setRetries')}
                 </button>
               ),
@@ -236,16 +247,18 @@ export function Jobs() {
         busy={act.busy}
         error={act.error}
         onClose={() => setRetry(null)}
-        onConfirm={(reason) =>
-          void act.run(() => api.ops.jobRetry(retry!, Number(retries), reason, due ? new Date(due).toISOString() : undefined).then(() => true)).then((ok) => {
+        onConfirm={(reason) => {
+          setRetriesTouched(true);
+          if (retriesProblem) return;
+          void act.run(() => api.ops.jobRetry(retry!, Number(retries.trim()), reason, due ? new Date(due).toISOString() : undefined).then(() => true)).then((ok) => {
             if (ok) {
               setRetry(null);
               list.reload();
             }
-          })
-        }
+          });
+        }}
       >
-        <TextField label={t('ops.retries')} type="number" min={0} value={retries} onChange={setRetries} />
+        <TextField label={t('ops.retries')} type="number" min={0} step={1} required value={retries} onChange={setRetries} error={retriesTouched && retriesProblem ? t(retriesProblem) : undefined} />
         <TextField label={t('ops.newDueDate')} type="datetime-local" value={due} onChange={setDue} />
       </ReasonDialog>
     </>
@@ -710,6 +723,10 @@ export function Cleanup() {
   const st = useAsync(() => api.ops.cleanup(), []);
   const [run, setRun] = useState(false);
   const [ttl, setTtl] = useState<{ key: string; days: string } | null>(null);
+  // TtlRequest.ttlDays is a required int: a definition without a TTL opens with an empty box, which is refused by name and
+  // never sent as Number('') = 0 days (that would make every finished instance of it cleanable at once).
+  const [ttlTouched, setTtlTouched] = useState(false);
+  const ttlProblem = ttl ? wholeNumberProblem(ttl.days) : undefined;
   const act = useAction();
   const s = st.data;
   return (
@@ -744,7 +761,11 @@ export function Cleanup() {
                 key: 'a',
                 header: t('common.actions'),
                 render: (r) => (
-                  <button type="button" className="link" onClick={() => setTtl({ key: r.key, days: String(r.ttlDays ?? '') })}>
+                  <button type="button" className="link" onClick={() => {
+                      setTtlTouched(false);
+                      setTtl({ key: r.key, days: String(r.ttlDays ?? '') });
+                    }}
+                  >
                     {t('ops.changeTtl')}
                   </button>
                 ),
@@ -774,16 +795,29 @@ export function Cleanup() {
         busy={act.busy}
         error={act.error}
         onClose={() => setTtl(null)}
-        onConfirm={(reason) =>
-          void act.run(() => api.ops.cleanupTtl(ttl!.key, Number(ttl!.days), reason).then(() => true)).then((ok) => {
+        onConfirm={(reason) => {
+          setTtlTouched(true);
+          if (!ttl || ttlProblem) return;
+          void act.run(() => api.ops.cleanupTtl(ttl.key, Number(ttl.days.trim()), reason).then(() => true)).then((ok) => {
             if (ok) {
               setTtl(null);
               st.reload();
             }
-          })
-        }
+          });
+        }}
       >
-        {ttl && <TextField label={t('ops.ttlDays')} type="number" min={0} value={ttl.days} onChange={(v) => setTtl({ ...ttl, days: v })} />}
+        {ttl && (
+          <TextField
+            label={t('ops.ttlDays')}
+            type="number"
+            min={0}
+            step={1}
+            required
+            value={ttl.days}
+            onChange={(v) => setTtl({ ...ttl, days: v })}
+            error={ttlTouched && ttlProblem ? t(ttlProblem) : undefined}
+          />
+        )}
       </ReasonDialog>
     </>
   );
