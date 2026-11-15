@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.ocrsidecar;
 
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import org.sangam.integration.document.ocr.RemoteOcrClient;
+import org.sangam.integration.sidecar.SidecarLogging;
 import org.sangam.integration.sidecar.SidecarSettings;
 
 /**
@@ -27,9 +29,12 @@ import org.sangam.integration.sidecar.SidecarSettings;
  *   <li>{@value #TEMP_ENV}: the folder for the per-request temporary files, default {@code java.io.tmpdir}.</li>
  * </ul>
  * Without a token file the service starts, reports {@code NOT_READY} and refuses every call. No secret is printed.
+ * The console log is ECS JSON from the first line on (owner decision 324, {@link SidecarLogging}).
  */
 public final class OcrSidecarMain {
 
+    /** The {@code service.name} of every log line. */
+    public static final String SERVICE = "sangam-ocr-sidecar";
     public static final String PREFIX = "SANGAM_OCR";
     public static final String TESSERACT_ENV = "SANGAM_OCR_TESSERACT";
     public static final String LANGUAGES_ENV = "SANGAM_OCR_LANGUAGES";
@@ -42,6 +47,7 @@ public final class OcrSidecarMain {
     public static final long DEFAULT_MAX_PIXELS = 100_000_000L;
     /** Recognised text larger than this is an error. */
     static final long MAX_TEXT_BYTES = 4L * 1024 * 1024;
+    private static final System.Logger LOG = System.getLogger(OcrSidecarMain.class.getName());
 
     private OcrSidecarMain() {
     }
@@ -79,7 +85,20 @@ public final class OcrSidecarMain {
         }
     }
 
+    /** Installs the JSON console logging of this sidecar on {@code out} (decision 324); the first step of main. */
+    static void logging(OutputStream out) {
+        SidecarLogging.install(SERVICE, out);
+    }
+
+    /** The start-up line, logged as one JSON object; the not-ready reason is escaped like any other value. */
+    static void logStarted(String bind, int port, String transport, String engine, List<String> languages,
+                           String notReady) {
+        LOG.log(System.Logger.Level.INFO, SERVICE + " listening on " + bind + ":" + port + " (" + transport + ") with "
+                + engine + " for " + languages + (notReady == null ? "" : "; NOT READY: " + notReady));
+    }
+
     public static void main(String[] args) throws Exception {
+        logging(System.out);
         Settings s = Settings.from(System.getenv());
         if (!Files.isDirectory(s.temp()) || !Files.isWritable(s.temp())) {
             throw new IllegalStateException("the temporary folder " + s.temp() + " is not a writable folder");
@@ -99,9 +118,8 @@ public final class OcrSidecarMain {
             stopped.countDown();
         }, "ocr-sidecar-shutdown"));
         String notReady = s.sidecar().authenticator().notReadyReason();
-        System.out.println("sangam-ocr-sidecar listening on " + s.sidecar().bind() + ":" + service.port() + " ("
-                + s.sidecar().transport().name().toLowerCase(Locale.ROOT) + ") with " + engine.name() + " for "
-                + s.languages() + (notReady == null ? "" : "; NOT READY: " + notReady));
+        logStarted(s.sidecar().bind(), service.port(), s.sidecar().transport().name().toLowerCase(Locale.ROOT),
+                engine.name(), s.languages(), notReady);
         stopped.await();
     }
 }

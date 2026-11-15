@@ -52,25 +52,55 @@ import org.bouncycastle.tsp.TimeStampToken;
  *       SHA-256 of the signature value and the token's signature must verify with the TSA certificate it carries.</li>
  *   <li><b>Trust.</b> With configured trust anchors (for example a national root CA list), the signer certificate must
  *       chain to one of them at the time-stamp time (else the signing time, else now); without anchors the chain is not
- *       judged ({@code chainTrusted} null). Revocation (OCSP, CRL) and the long-term validation material of PAdES LTV
- *       are <b>not</b> checked here: the report says so in {@code limits}.</li>
+ *       judged ({@code chainTrusted} null). Online revocation is not checked here (the callers that need it, such as
+ *       {@link DscSignatureVerification}, check it through the egress-controlled transport).</li>
+ *   <li><b>Long-term validation (M-080, PAdES B-LT).</b> {@link PadesLtv}: from the material embedded in the PDF only
+ *       (the document security store, the CMS and the signature time-stamp), with nothing fetched: the signer's and the
+ *       time-stamp authority's paths to a configured anchor at the time-stamp time, and an authentic, fresh revocation
+ *       answer for every certificate on them. Every signature gets an {@link Ltv} with a stable code; with
+ *       {@code requireLtv} a signature that is not {@code LTV_VALID} makes the report invalid.</li>
+ *   <li><b>After the last signature.</b> {@code afterLastSignature} is null when the last signature covers the whole
+ *       file, {@code VALIDATION_DATA_ONLY} when the only later change is the catalog's {@code /DSS} (how PAdES adds
+ *       validation data), else {@code MODIFIED_AFTER_SIGNING} with what changed.</li>
  * </ul>
  * The report states what was checked; it is not a statement of legal validity.
  */
 public final class PdfSignatureValidator {
 
     /** What this validator does not check (reported with every result). */
-    public static final String LIMITS = "revocation (OCSP/CRL) and PAdES LTV material are not checked";
+    public static final String LIMITS = "online revocation (OCSP/CRL fetch) is not checked; long-term validation uses"
+            + " only the DSS material embedded in the PDF; document time-stamps (PAdES B-LTA) and"
+            + " adbe-revocationInfoArchival are not evaluated";
+
+    /**
+     * The long-term validation of one signature ({@link PadesLtv}): {@code code} is {@code LTV_VALID} or the first
+     * failed rule ({@code LTV_NO_TRUST_ANCHORS}, {@code LTV_NO_TIMESTAMP}, {@code LTV_NO_DSS}, {@code LTV_DSS_INVALID},
+     * {@code LTV_CHAIN_INCOMPLETE}, {@code LTV_REVOCATION_MISSING}, {@code LTV_REVOCATION_STALE}, {@code LTV_REVOKED});
+     * {@code evidence} names the embedded revocation answers that were used.
+     */
+    public record Ltv(String code, String detail, List<String> evidence) {
+        public Ltv {
+            Objects.requireNonNull(code, "code");
+            evidence = List.copyOf(evidence);
+        }
+
+        public boolean valid() {
+            return PadesLtv.VALID.equals(code);
+        }
+    }
 
     /** One signature's findings; {@code problem} names the first failed check, null when none failed. */
     public record SignatureReport(String subFilter, boolean coversWholeDocument, boolean integrityValid,
                                   String byteRangeDigestSha256, String signerSubject, String signerCertificateSha256,
                                   Instant signingTime, boolean timestamped, Boolean timestampValid, Instant timestampTime,
-                                  Boolean chainTrusted, String problem) {
+                                  Boolean chainTrusted, Ltv ltv, String problem) {
     }
 
-    /** {@code valid}: at least one signature, all intact, the last covers the whole file, time-stamps and chains OK. */
-    public record Report(boolean valid, List<SignatureReport> signatures, String limits) {
+    /**
+     * {@code valid}: at least one signature, all intact; the last covers the whole file or only validation data was
+     * added after it; time-stamps and chains OK; with {@code requireLtv} every signature {@code LTV_VALID}.
+     */
+    public record Report(boolean valid, List<SignatureReport> signatures, String afterLastSignature, String limits) {
         public Report {
             signatures = List.copyOf(signatures);
         }
@@ -78,26 +108,45 @@ public final class PdfSignatureValidator {
 
     private final Set<TrustAnchor> anchors;
     private final Clock clock;
+    private final boolean requireLtv;
 
+    /** Long-term validation is reported for every signature but not required. */
     public PdfSignatureValidator(Set<TrustAnchor> anchors, Clock clock) {
+        this(anchors, clock, false);
+    }
+
+    /** @param requireLtv a signature that is not {@code LTV_VALID} makes the report invalid (its problem says why) */
+    public PdfSignatureValidator(Set<TrustAnchor> anchors, Clock clock, boolean requireLtv) {
         this.anchors = anchors == null ? Set.of() : Set.copyOf(anchors);
         this.clock = clock == null ? Clock.systemUTC() : clock;
+        this.requireLtv = requireLtv;
     }
 
     public Report validate(byte[] pdf) {
         Objects.requireNonNull(pdf, "pdf");
         List<SignatureReport> out = new ArrayList<>();
+        int[] br = null;
         try (PDDocument doc = Loader.loadPDF(pdf)) {
+            PadesLtv.Material material = PadesLtv.material(doc);
             for (PDSignature sig : doc.getSignatureDictionaries()) {
-                out.add(check(sig, pdf));
+                out.add(check(sig, pdf, material));
+                br = sig.getByteRange();
             }
         } catch (IOException e) {
             return new Report(false, List.of(new SignatureReport(null, false, false, null, null, null, null, false, null,
-                    null, null, "PDF_INVALID: " + e.getMessage())), LIMITS);
+                    null, null, null, "PDF_INVALID: " + e.getMessage())), null, LIMITS);
         }
-        boolean valid = !out.isEmpty() && out.get(out.size() - 1).coversWholeDocument()
+        if (out.isEmpty()) {
+            return new Report(false, out, null, LIMITS);
+        }
+        SignatureReport last = out.get(out.size() - 1);
+        boolean wellFormed = br != null && br.length == 4 && br[0] == 0 && br[2] >= 0 && br[3] >= 0
+                && (long) br[2] + br[3] <= pdf.length;
+        String after = last.coversWholeDocument() ? null : !wellFormed ? PadesLtv.MODIFIED_AFTER_SIGNING
+                + ": the last signature has no valid byte range" : PadesLtv.afterLastSignature(pdf, (long) br[2] + br[3]);
+        boolean valid = (last.coversWholeDocument() || PadesLtv.VALIDATION_DATA_ONLY.equals(after))
                 && out.stream().allMatch(s -> s.integrityValid() && s.problem() == null);
-        return new Report(valid, out, LIMITS);
+        return new Report(valid, out, after, LIMITS);
     }
 
     /**
@@ -117,7 +166,8 @@ public final class PdfSignatureValidator {
         }
         return java.util.Arrays.copyOf(contents, contents.length - in.available());
     }
-    private SignatureReport check(PDSignature sig, byte[] pdf) {
+
+    private SignatureReport check(PDSignature sig, byte[] pdf, PadesLtv.Material material) {
         int[] br = sig.getByteRange();
         boolean whole = br != null && br.length == 4 && br[0] == 0 && (long) br[2] + br[3] == pdf.length;
         byte[] content;
@@ -170,9 +220,10 @@ public final class PdfSignatureValidator {
                 : signer.getUnsignedAttributes().get(PKCSObjectIdentifiers.id_aa_signatureTimeStampToken);
         Boolean tsValid = null;
         Instant tsTime = null;
+        TimeStampToken token = null;
         if (tsAttr != null) {
             try {
-                TimeStampToken token = new TimeStampToken(new CMSSignedData(
+                token = new TimeStampToken(new CMSSignedData(
                         ContentInfo.getInstance(tsAttr.getAttrValues().getObjectAt(0))));
                 tsTime = token.getTimeStampInfo().getGenTime().toInstant();
                 byte[] imprint = token.getTimeStampInfo().getMessageImprintDigest();
@@ -200,9 +251,26 @@ public final class PdfSignatureValidator {
                 problem = "UNTRUSTED: the signer certificate does not chain to a configured trust anchor";
             }
         }
+        Ltv ltv = PadesLtv.check(anchors, cert, certificates(cms), token, tsValid, material, clock.instant());
+        if (requireLtv && !ltv.valid() && problem == null) {
+            problem = "LTV: " + ltv.code() + ": " + ltv.detail();
+        }
         return new SignatureReport(sig.getSubFilter(), whole, intact, digest,
                 cert.getSubjectX500Principal().getName(), certSha, signingTime, tsAttr != null, tsValid, tsTime, trusted,
-                problem);
+                ltv, problem);
+    }
+
+    private static List<X509Certificate> certificates(CMSSignedData cms) {
+        List<X509Certificate> out = new ArrayList<>();
+        JcaX509CertificateConverter conv = new JcaX509CertificateConverter();
+        for (Object o : cms.getCertificates().getMatches(null)) {
+            try {
+                out.add(conv.getCertificate((X509CertificateHolder) o));
+            } catch (CertificateException e) {
+                // an unreadable extra certificate cannot help a path
+            }
+        }
+        return out;
     }
 
     private boolean chains(X509Certificate cert, CMSSignedData cms, Instant at) {
@@ -262,6 +330,6 @@ public final class PdfSignatureValidator {
 
     private static SignatureReport fail(PDSignature sig, boolean whole, String digest, String problem) {
         return new SignatureReport(sig.getSubFilter(), whole, false, digest, null, null, null, false, null, null, null,
-                problem);
+                null, problem);
     }
 }
