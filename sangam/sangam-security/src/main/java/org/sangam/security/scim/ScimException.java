@@ -51,7 +51,7 @@ public final class ScimException extends RuntimeException {
         return new ScimException(400, "noTarget", detail);
     }
 
-    /** Owner decision 154 (ADR-D-154): postings and seats are read-only in SCIM. */
+    /** Owner decision 154: postings and seats are read-only in SCIM. */
     static ScimException mutability(String detail) {
         return new ScimException(400, "mutability", detail);
     }

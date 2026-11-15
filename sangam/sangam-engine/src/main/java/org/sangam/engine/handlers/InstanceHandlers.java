@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 import org.sangam.core.engine.RoutingPolicy;
 
 /**
- * M-059 (SANGAM.md §3.3d L6, E21; R19, R25, R42, R49; ADR-D-26): the named query and update handlers a BPMN process
+ * M-059 (SANGAM.md §3.3d L6, E21; R19, R25, R42, R49; ADR-D-26 strict FEEL): the named query and update handlers a BPMN process
  * declares, read from its {@code extensionElements} in the Sangam namespace ({@value #NS}):
  *
  * <pre>{@code

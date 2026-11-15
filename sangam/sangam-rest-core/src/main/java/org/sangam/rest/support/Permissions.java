@@ -36,7 +36,7 @@ public final class Permissions {
      */
     public static final String DSC_CERTIFICATE_APPROVE = "dsc.certificate.approve";
     /**
-     * Decision 258 (FC-18, W4-B 04:13:28Z): move the history of an ended process instance to a later version of its
+     * Decision 258 (FLOWABLE-INTO-OPERATON FC-18, W4-B 04:13:28Z): move the history of an ended process instance to a later version of its
      * definition (POST /admin/history/process-instances/{id}/migrate). Tenant-scoped, tenant administrators only.
      */
     public static final String HISTORY_MIGRATE = "history.migrate";
@@ -168,7 +168,7 @@ public final class Permissions {
                     COMPLIANCE_MODIFY, COMPLIANCE_ADMIN,
                     // decision 227: DSC certificate enrolment approval
                     DSC_CERTIFICATE_APPROVE,
-                    // decision 258: FC-18 historic instance migration
+                    // decision 258: FLOWABLE-INTO-OPERATON FC-18 historic instance migration
                     HISTORY_MIGRATE,
                     // decision 305: the tenant's DLT registration (entity, headers, templates, URL prefixes)
                     DLT_REGISTRATION_READ, DLT_REGISTRATION_WRITE))),

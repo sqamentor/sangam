@@ -29156,6 +29156,7 @@ paths:
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
       security: []
+      x-sangam-sdk: false
     post:
       operationId: receiveEventGridDelivery
       tags:
@@ -30623,8 +30624,7 @@ paths:
             schema:
               type: array
               items:
-                type: object
-                additionalProperties: true
+                $ref: '#/components/schemas/FieldWorkUploadBody'
       responses:
         '200':
           description: Success
@@ -73094,6 +73094,164 @@ components:
         node: ''
       - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.setUnitStatus
         var: b
+        node: ''
+    CapturePacket:
+      type: object
+      description: Request record CapturePacket (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its source.
+      properties:
+        packetId:
+          type: string
+        type:
+          type: string
+        operationId:
+          type: string
+        deviceId:
+          type: string
+        deviceSeq:
+          type: integer
+          format: int64
+        appVersion:
+          type: string
+        assignmentId:
+          type: string
+        baseVersion:
+          type: integer
+          format: int32
+        deviceTime:
+          type: string
+          format: date-time
+        answers:
+          type: object
+          additionalProperties: true
+        notes:
+          type: string
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturePacketMediaRef'
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+        payload:
+          type: object
+          additionalProperties: true
+        prevHash:
+          type: string
+        packetHash:
+          type: string
+        signature:
+          type: string
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    CapturePacketMediaRef:
+      type: object
+      description: Request record CapturePacketMediaRef (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from
+        its source.
+      properties:
+        evidenceId:
+          type: string
+        itemId:
+          type: string
+        sha256:
+          type: string
+        mediaType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        capturedAt:
+          type: string
+          format: date-time
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    CapturePacketGpsFix:
+      type: object
+      description: Request record CapturePacketGpsFix (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its
+        source.
+      properties:
+        lat:
+          type: number
+          format: double
+        lon:
+          type: number
+          format: double
+        accuracyM:
+          type: number
+          format: double
+        altitudeM:
+          type: number
+          format: double
+        provider:
+          type: string
+        mockLocation:
+          type: boolean
+        fixTime:
+          type: string
+          format: date-time
+      additionalProperties: true
+      x-sangam-record: sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java
+    FieldWorkUploadBody:
+      type: object
+      description: Request body of FieldWorkController.upload, read by the service as a JSON object; typed from the keys the service reads (M-051).
+        Members it does not read are accepted and ignored.
+      properties:
+        packetId:
+          type: string
+        type:
+          type: string
+        operationId:
+          type: string
+        deviceId:
+          type: string
+        deviceSeq:
+          type: integer
+          format: int64
+        appVersion:
+          type: string
+        assignmentId:
+          type: string
+        baseVersion:
+          type: integer
+          format: int32
+        deviceTime:
+          type: string
+          format: date-time
+        answers:
+          type: object
+          additionalProperties: true
+        notes:
+          type: string
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/CapturePacketMediaRef'
+        fix:
+          $ref: '#/components/schemas/CapturePacketGpsFix'
+        payload:
+          type: object
+          additionalProperties: true
+        prevHash:
+          type: string
+        packetHash:
+          type: string
+        signature:
+          type: string
+      additionalProperties: true
+      x-sangam-body-readers:
+      - method: sangam-rest/src/main/java/org/sangam/rest/modules/field/FieldWorkController.java#FieldWorkController.upload
+        var: packets
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.upload
+        var: packets
+        node: ''
+      - method: sangam-field/src/main/java/org/sangam/field/rest/FieldRestService.java#FieldRestService.upload
+        var: p
+        node: ''
+        declaration: 1
+      x-sangam-body-records:
+      - class: org.sangam.field.evidence.CapturePacket
+        schema: CapturePacket
         node: ''
     DispatchServiceUnitInput:
       type: object

@@ -48,8 +48,19 @@ public class SangamFeelEngine extends ScalaFeelEngine {
      * @param clock what {@code now()} and {@code today()} read (decision 151); null keeps feel-scala's default clock
      */
     public SangamFeelEngine(List<FeelCustomFunctionProvider> providers, FeelClock clock) {
-        super(providers);
+        super(withSpecificationFunctions(providers));
         this.clock = clock;
+    }
+
+    /**
+     * Decision 158: the host's function providers, then {@link Dmn16Functions} (the DMN 1.6 function the pinned engine
+     * lacks). Last, because Operaton keeps one custom function per name and the later provider wins: a specification
+     * function is not replaced by a host function of the same name.
+     */
+    private static List<FeelCustomFunctionProvider> withSpecificationFunctions(List<FeelCustomFunctionProvider> providers) {
+        List<FeelCustomFunctionProvider> all = new java.util.ArrayList<>(providers == null ? List.of() : providers);
+        all.add(Dmn16Functions.INSTANCE);
+        return all;
     }
 
     /**

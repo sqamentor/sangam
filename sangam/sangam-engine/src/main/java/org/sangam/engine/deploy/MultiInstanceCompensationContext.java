@@ -16,7 +16,7 @@ import org.operaton.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 import org.operaton.bpm.engine.variable.value.TypedValue;
 
 /**
- * <b>Decision 148 (FIO D-27): a multi-instance compensation handler sees the instance it compensates.</b>
+ * <b>Decision 148 (FLOWABLE-INTO-OPERATON D-27): a multi-instance compensation handler sees the instance it compensates.</b>
  *
  * <p><b>Root cause</b> (javap, Operaton 2.2.0). A compensation boundary event does not make its activity a scope
  * ({@code BpmnParse.parseBoundaryEvents}: only non-compensation boundary events call {@code setScope(true)}), so the
@@ -25,25 +25,36 @@ import org.operaton.bpm.engine.variable.value.TypedValue;
  * ({@code loopCounter}, the element variable, locals) live on the instance execution (parallel: the concurrent child;
  * sequential: the body execution, overwritten by the next instance), which is removed. When compensation is thrown,
  * {@code CompensationUtil.throwCompensationEvent} creates a fresh empty execution for a subscription without
- * configuration, so every handler runs without its instance: the D-27 symptom (E16a #7, D-TENDER). For an inner
- * <i>scope</i> activity, {@code CompensationUtil.createEventScopeExecution} snapshots only the scope execution's own
+ * configuration, so every handler runs without its instance: the FLOWABLE-INTO-OPERATON D-27 symptom (E16a #7, D-TENDER). For an inner
+ * <i>sub-process</i>, {@code CompensationUtil.createEventScopeExecution} snapshots only the scope execution's own
  * locals; {@code loopCounter} is on its parent (the concurrent execution or the body execution) and is lost too.
+ *
+ * <p><b>A task that is a scope is not a sub-process.</b> Operaton makes every external task a scope
+ * ({@code BpmnParse.parseExternalServiceTask} calls {@code setScope(true)}, javap 2.2.0), but only a sub-process (and
+ * the multi-instance body) gets an event-scope snapshot when it ends. A scope <i>task</i> leaves through
+ * {@code AbstractBpmnActivityBehavior.doLeave} exactly like a task that is no scope: its subscription is created on
+ * the body's scope execution with no configuration, and its own scope execution (a child of the instance execution) is
+ * removed. It therefore needs the snapshot of the first case below; the instance's variables are read from that scope
+ * execution upwards. (This class used to leave every scope with a configuration-less subscription alone, so the
+ * handlers of an external task, the D-TENDER shape itself, still ran without {@code loopCounter}.)
  *
  * <p><b>Fix</b> (built-in END listener on the inner activity of every multi-instance body, added by
  * {@link SangamBpmnParseListener}): when an instance completes (not when it is cancelled), the variables of the
  * instance, read from the ending execution up to the body's scope execution (the nearest execution wins), are kept
  * with the subscription that completion created, the way Operaton keeps a scope's snapshot:
  * <ul>
- *   <li>non-scope inner activity: a snapshot <i>event-scope</i> execution under the body's scope execution (activity =
- *       the inner activity, inactive, not concurrent, the instance's variables as local copies) becomes the
+ *   <li>inner task (a scope or not, never a sub-process): a snapshot <i>event-scope</i> execution under the body's
+ *       scope execution (activity = the inner activity, inactive, not concurrent, the instance's variables as local
+ *       copies) becomes the
  *       subscription's configuration; Operaton's own {@code throwCompensationEvent} then reuses it as the compensating
  *       execution (moves it under the throwing execution, clears the event-scope flag), so the handler runs in the
  *       instance's context. While the body runs, the snapshot counts like Operaton's own event-scope executions of
  *       scope instances (inactive, in the inner activity) in {@code ParallelMultiInstanceActivityBehavior
  *       .allExecutionsEnded}; when the body ends, {@code createEventScopeExecution} moves it under the body's event
  *       scope with the subscription;</li>
- *   <li>scope inner activity: the variables the snapshot lacks are added to the event-scope execution Operaton created
- *       (existing values are never replaced).</li>
+ *   <li>inner sub-process: the variables the snapshot lacks are added to the event-scope execution Operaton created
+ *       (existing values are never replaced). A sub-process whose subscription has no configuration (its own
+ *       compensation handler, no compensable child) keeps Operaton's behaviour.</li>
  * </ul>
  * Only completed instances have a subscription, so only they are compensated, each exactly once (the subscription is
  * deleted when handled). Instances completed before this listener existed keep Operaton's behaviour (their variables
@@ -84,9 +95,10 @@ public final class MultiInstanceCompensationContext implements ExecutionListener
         }
         List<ExecutionEntity> chain = chain(ex, body);
         if (sub.getConfiguration() == null) {
-            if (act.isScope()) {
-                return; // a scope with a configuration-less subscription: Operaton's behaviour unchanged (narrow fix)
+            if (act.isSubProcessScope()) {
+                return; // a sub-process with a configuration-less subscription: Operaton's behaviour unchanged
             }
+            // a task, whether Operaton made it a scope (every external task) or not: no snapshot exists yet
             ExecutionEntity snapshot = body.createExecution();
             snapshot.setActivity(act);
             snapshot.setActive(false);

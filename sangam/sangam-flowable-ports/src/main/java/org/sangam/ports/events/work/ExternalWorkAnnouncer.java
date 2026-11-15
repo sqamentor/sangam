@@ -98,7 +98,8 @@ public final class ExternalWorkAnnouncer implements ProcessEnginePlugin, AutoClo
             public <T> T execute(Command<T> command) {
                 T result = next.execute(command);
                 try {
-                    CommandContext cc = Context.getCommandContext();
+                    // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+                    CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
                     if (cc != null && createdExternalWork(cc.getDbEntityManager().getDbEntityCache().getCachedEntities())) {
                         registerAfterCommit(cc);
                     }

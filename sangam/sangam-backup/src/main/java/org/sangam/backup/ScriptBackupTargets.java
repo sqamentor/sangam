@@ -32,7 +32,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * Backup targets on VM and docker compose installs (owner decision 220, ADR-D-220, completing decision 155): each
+ * Backup targets on VM and docker compose installs (owner decision 220, completing decision 155): each
  * target is a backup command the operator configured (the documented procedure of {@code deploy/README.md} section 3 as
  * a script on the host), started on demand, with the run history kept as files.
  *

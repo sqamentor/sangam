@@ -84,7 +84,9 @@ def manifest(c: contract_ir.Contract, groups: list[api_groups.Group]) -> str:
                for g in groups]
     doc = {"contractVersion": c.version, "paths": c.path_count, "operations": len(c.operations),
            "schemas": len(c.models), "tags": c.tags, "lineLimit": api_groups.LIMIT, "apiClasses": classes,
-           "models": list(c.models), "surface": rows}
+           "models": list(c.models), "surface": rows,
+           # operations the contract marks x-sangam-sdk: false (contract_ir.SDK_EXTENSION): no method in any SDK
+           "notForSdk": c.not_for_sdk}
     return json.dumps(doc, indent=1, ensure_ascii=False) + "\n"
 
 

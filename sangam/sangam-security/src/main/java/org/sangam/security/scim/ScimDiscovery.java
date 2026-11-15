@@ -8,7 +8,7 @@ import org.sangam.security.support.Sql;
 /**
  * The SCIM discovery documents (RFC 7643 sections 5 to 7) for what {@link ScimService} supports: PATCH, filters
  * (eq, co, sw on userName, externalId, displayName; at most {@link ScimService#MAX_COUNT} results), ETags; no bulk, no
- * sort, no password change. Postings are read-only in the Sangam extension (decision 154, ADR-D-154).
+ * sort, no password change. Postings are read-only in the Sangam extension (owner decision 154).
  */
 public final class ScimDiscovery {
 

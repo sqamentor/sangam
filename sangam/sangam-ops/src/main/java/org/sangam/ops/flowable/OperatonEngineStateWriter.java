@@ -5,7 +5,12 @@ import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.RuntimeService;
 import org.operaton.bpm.engine.TaskService;
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.operaton.bpm.engine.impl.db.DbEntity;
+import org.operaton.bpm.engine.impl.db.entitymanager.DbEntityManager;
+import org.operaton.bpm.engine.impl.db.entitymanager.cache.CachedDbEntity;
+import org.operaton.bpm.engine.impl.db.entitymanager.cache.DbEntityState;
 import org.operaton.bpm.engine.impl.persistence.entity.JobEntity;
+import org.operaton.bpm.engine.impl.persistence.entity.TaskEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import org.operaton.bpm.engine.repository.ProcessDefinitionQuery;
 import org.operaton.bpm.engine.runtime.ActivityInstance;
@@ -47,6 +52,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * M-135: the Operaton implementation of {@link OperatonStateWriter} and its {@link OperatonStateWriter.TargetModel}.
@@ -57,6 +63,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * identity, delegation, priority and due date, the candidate links (exactly the source set), task-local variables, the
  * original timer due dates and suspension. A count that does not match the plan (no task, two tasks, a missing timer
  * job) throws, and the engine rolls the whole instance back.
+ *
+ * <p><b>Reading what the command created.</b> Operaton writes a command's entities to the database once, when the
+ * command ends (the {@code DbEntityManager} flush); a query inside the command reads the database, so it cannot see the
+ * tasks and timer jobs the instance start has just created, and a flush in the middle of the command is not possible
+ * ({@code DbEntityManager.flush()} keeps its operations, so the closing flush inserts every row a second time). The
+ * created tasks and timers are therefore read from the command's entity cache ({@link #createdHere}), where every
+ * entity of a new instance is. A task is then addressed by id through the public {@code TaskService} (its by-id read
+ * answers from the same cache); nothing is saved with {@code TaskService.saveTask}, which inserts a second task for
+ * one not yet written. A timer's due date is set on the cached entity, because the job services read a job by id with
+ * a query.
  *
  * <p>Provenance: the process variable {@value #PROVENANCE_VARIABLE} holds {@code <source system>:<Flowable instance
  * id>}; {@link #findMigrated} finds an instance created by an earlier attempt whose answer was lost.
@@ -138,10 +154,10 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
             throw new IllegalArgumentException("only a SUPPORTED plan with a target definition is applied: " + plan.sourceInstanceId());
         }
         ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration();
-        return cfg.getCommandExecutorTxRequired().execute(ctx -> applyInTransaction(plan, provenance));
+        return cfg.getCommandExecutorTxRequired().execute(ctx -> applyInTransaction(plan, provenance, ctx.getDbEntityManager()));
     }
 
-    private String applyInTransaction(InstancePlan plan, String provenance) {
+    private String applyInTransaction(InstancePlan plan, String provenance, DbEntityManager command) {
         RuntimeService rs = engine.getRuntimeService();
         Map<String, Object> vars = new LinkedHashMap<>();
         for (VariableValue v : plan.variables()) {
@@ -156,25 +172,28 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
         String pid = b.execute(true, true).getId();
         TaskService ts = engine.getTaskService();
         for (TaskState t : plan.tasks()) {
-            List<Task> created = ts.createTaskQuery().processInstanceId(pid).taskDefinitionKey(t.activityId()).list();
+            List<TaskEntity> created = createdHere(command, TaskEntity.class,
+                    x -> pid.equals(x.getProcessInstanceId()) && t.activityId().equals(x.getTaskDefinitionKey()));
             if (created.size() != 1) {
                 throw new IllegalStateException("expected one task at " + t.activityId() + " of " + plan.sourceInstanceId()
                         + ", found " + created.size());
             }
-            recreateTask(ts, created.get(0), t);
+            recreateTask(ts, created.get(0).getId(), t);
         }
         Map<String, List<TimerState>> timersByActivity = new LinkedHashMap<>();
         plan.timers().forEach(t -> timersByActivity.computeIfAbsent(t.activityId(), k -> new ArrayList<>()).add(t));
         for (Map.Entry<String, List<TimerState>> e : timersByActivity.entrySet()) {
-            List<Job> jobs = new ArrayList<>(engine.getManagementService().createJobQuery().processInstanceId(pid)
-                    .activityId(e.getKey()).timers().list());
+            List<TimerEntity> jobs = createdHere(command, TimerEntity.class,
+                    x -> pid.equals(x.getProcessInstanceId()) && e.getKey().equals(x.getActivityId()));
             if (jobs.size() != e.getValue().size()) {
                 throw new IllegalStateException("expected " + e.getValue().size() + " timer(s) at " + e.getKey() + " of "
                         + plan.sourceInstanceId() + ", found " + jobs.size());
             }
             jobs.sort(Comparator.comparing(Job::getId));
             for (int i = 0; i < jobs.size(); i++) {
-                engine.getManagementService().setJobDuedate(jobs.get(i).getId(), new Date(e.getValue().get(i).dueDateMillis()));
+                // on the entity itself: ManagementService.setJobDuedate reads the job with a query (JobManager
+                // .findJobById is a select, not a cache read), so it answers "No job found" for a job not written yet
+                jobs.get(i).setDuedate(new Date(e.getValue().get(i).dueDateMillis()));
             }
         }
         if (plan.suspended()) {
@@ -183,14 +202,32 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
         return pid;
     }
 
-    private static void recreateTask(TaskService ts, Task task, TaskState t) {
-        if (t.name() != null) {
-            task.setName(t.name());
+    /**
+     * The entities of one type that this command created and has not written yet (state TRANSIENT in the entity cache)
+     * and that match: what a query returns after the command, read before it ends. The whole cache is walked and the
+     * entity's own class is tested: {@code DbEntityManager.getCachedEntitiesByType} answers nothing for a type that is
+     * not the cache key of its family (jobs are cached under {@code AcquirableJobEntity}; for {@code TimerEntity} or
+     * {@code JobEntity} it compares the wanted type with the cache wrapper's class, javap 2.2.0).
+     */
+    private static <T extends DbEntity> List<T> createdHere(DbEntityManager command, Class<T> type, Predicate<T> matches) {
+        List<T> out = new ArrayList<>();
+        for (CachedDbEntity cached : command.getDbEntityCache().getCachedEntities()) {
+            if (cached.getEntityState() == DbEntityState.TRANSIENT && type.isInstance(cached.getEntity())) {
+                T e = type.cast(cached.getEntity());
+                if (matches.test(e)) {
+                    out.add(e);
+                }
+            }
         }
-        task.setPriority(t.priority());
-        task.setDueDate(t.dueDateMillis() == null ? null : new Date(t.dueDateMillis()));
-        ts.saveTask(task);
-        String id = task.getId();
+        return out;
+    }
+
+    private static void recreateTask(TaskService ts, String id, TaskState t) {
+        if (t.name() != null) {
+            ts.setName(id, t.name());
+        }
+        ts.setPriority(id, t.priority());
+        ts.setDueDate(id, t.dueDateMillis() == null ? null : new Date(t.dueDateMillis()));
         if (("PENDING".equals(t.delegation()) || "RESOLVED".equals(t.delegation())) && t.owner() != null) {
             ts.setAssignee(id, t.owner());
             ts.delegateTask(id, t.assignee());     // owner = the previous assignee, delegation PENDING
@@ -201,7 +238,11 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
                 }
             }
         } else {
-            ts.setOwner(id, t.owner());
+            // a task created by the instance start has no owner (BPMN has no owner attribute), and Operaton 2.2 refuses
+            // setOwner(id, null) (AbstractAddIdentityLinkCmd.validateParameters: only the assignee may be null)
+            if (t.owner() != null) {
+                ts.setOwner(id, t.owner());
+            }
             ts.setAssignee(id, t.assignee());
         }
         Set<String> users = new HashSet<>(t.candidateUsers());
@@ -226,8 +267,17 @@ public final class OperatonEngineStateWriter implements OperatonStateWriter, Ope
         }
     }
 
+    /**
+     * Read in one engine command: a timer's activity ({@code JobEntity#getActivityId}) is resolved lazily from its job
+     * definition, which Operaton reads through the command context (ENGINE-09025 outside a command).
+     */
     @Override
     public TargetState state(String pid) {
+        ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration();
+        return cfg.getCommandExecutorTxRequired().execute(ctx -> stateInCommand(pid));
+    }
+
+    private TargetState stateInCommand(String pid) {
         RuntimeService rs = engine.getRuntimeService();
         ProcessInstance pi = rs.createProcessInstanceQuery().processInstanceId(pid).singleResult();
         if (pi == null) {

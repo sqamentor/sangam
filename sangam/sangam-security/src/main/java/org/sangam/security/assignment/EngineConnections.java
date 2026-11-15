@@ -20,7 +20,8 @@ public final class EngineConnections {
     }
 
     public static Connection current() {
-        CommandContext cc = Context.getCommandContext();
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         if (cc == null) {
             throw new IllegalStateException("no Operaton command context: call only from engine listeners");
         }

@@ -70,7 +70,8 @@ public final class TenantScopedCreation {
      * authentication, an Operaton admin, or the tenant check switched off (Operaton's own predicate).
      */
     static List<String> callerTenants() {
-        CommandContext cc = Context.getCommandContext();
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         if (cc == null || !cc.getTenantManager().isTenantCheckEnabled()) {
             return null;
         }

@@ -44,6 +44,12 @@ class MapRequestBodyContractTest {
     static final String DECL_TYPE = "(?:final\\s+)?(" + MAPLIKE
             + "|(?:java\\.util\\.)?(?:List|Collection)\\s*<\\s*(?:Map\\s*<[^;=(){}]*>|JsonNode)\\s*>|var)";
     static final Pattern DECL = Pattern.compile("(for\\s*\\(\\s*)?" + DECL_TYPE + "\\s+(\\w+)\\s*([=:])");
+    /**
+     * A single untyped lambda parameter that opens a call's argument list, {@code (x -> ...)} (_BK_LAMBDA): the generator
+     * reads an element of a list of maps through it ({@code list.forEach(x -> ...)}, {@code list.stream().map(x -> ...)}),
+     * so it is a declaration site whose scope is that call.
+     */
+    static final Pattern LAMBDA = Pattern.compile("\\(\\s*(\\w+)\\s*->");
 
     private final Map<String, String> masked = new HashMap<>();
     private final Map<String, String> sources = new HashMap<>();
@@ -146,6 +152,38 @@ class MapRequestBodyContractTest {
         assertEquals(Map.of("", Set.of("params"), "params", Set.of("name")), out);
     }
 
+    /**
+     * A list-of-maps body read element by element in a lambda: the lambda parameter is a declaration (numbered with the
+     * typed locals of the same name, in source order) and its scope is the call it opens.
+     */
+    @Test
+    void keysAreReadThroughTheLambdaParameterOfAListPipeline() {
+        String src = """
+                class T {
+                    Object m(List<Map<String, Object>> packets) {
+                        for (Map<String, Object> p : packets) { Maps.str(p, "loop"); }
+                        packets.forEach(p -> Maps.str(p, "each"));
+                        return packets.stream().filter(q -> q.containsKey("kept")).map(p -> Maps.str(p, "mapped")).toList();
+                    }
+                }
+                """;
+        String m = mask(src);
+        int b0 = m.indexOf('{', m.indexOf("packets)")) + 1;
+        int b1 = m.lastIndexOf('}', m.lastIndexOf('}') - 1);
+        List<Object[]> sites = declarationSites(m, b0, b1);
+        assertEquals(List.of("p#1", "p#2", "q#1", "p#3"), sites.stream().map(x -> x[0] + "#" + x[1]).toList(),
+                "the for-each variable, then the lambda parameters, in source order");
+        Map<String, Set<String>> out = new TreeMap<>();
+        readsIn(src, m, b0, b1, "p", 2, "", out);
+        assertEquals(Map.of("", Set.of("each")), out, "the forEach lambda reads only inside its call");
+        out.clear();
+        readsIn(src, m, b0, b1, "q", 1, "", out);
+        assertEquals(Map.of("", Set.of("kept")), out);
+        out.clear();
+        readsIn(src, m, b0, b1, "p", 3, "", out);
+        assertEquals(Map.of("", Set.of("mapped")), out);
+    }
+
     // ------------------------------------------------------------------ source reading (mirrors _v2_bodykeys.py)
 
     private void keysRead(String reader, String var, int decl, String node, Map<String, Set<String>> out) throws IOException {
@@ -233,16 +271,17 @@ class MapRequestBodyContractTest {
         }
     }
 
-    /** [name, ordinal, scope start, scope end] of the map, JSON-node and list-of-map locals (_bk_decl_sites). */
+    /**
+     * [name, ordinal, scope start, scope end] of the map, JSON-node and list-of-map locals and of the single lambda
+     * parameters, in source order; the ordinal counts the declarations of one name (_bk_decl_sites).
+     */
     static List<Object[]> declarationSites(String m, int a, int b) {
-        List<Object[]> out = new ArrayList<>();
-        Map<String, Integer> count = new HashMap<>();
+        List<Object[]> found = new ArrayList<>();     // [name, position, scope end]
         Matcher d = DECL.matcher(m);
         d.region(a, b);
         while (d.find()) {
             String name = d.group(3);
             int pos = d.start(3);
-            int n = count.merge(name, 1, Integer::sum);
             int end;
             if (d.group(1) != null && ":".equals(d.group(4))) {
                 int close = close(m, d.start() + d.group(0).indexOf('(') + 1, '(', ')');
@@ -268,7 +307,18 @@ class MapRequestBodyContractTest {
                 }
                 end = k > a ? close(m, k + 1, '{', '}') - 1 : b;
             }
-            out.add(new Object[] {name, n, pos, Math.min(end, b)});
+            found.add(new Object[] {name, pos, Math.min(end, b)});
+        }
+        Matcher l = LAMBDA.matcher(m);
+        l.region(a, b);
+        while (l.find()) {
+            found.add(new Object[] {l.group(1), l.start(1), Math.min(close(m, l.start() + 1, '(', ')') - 1, b)});
+        }
+        found.sort(java.util.Comparator.comparingInt(f -> (int) f[1]));
+        List<Object[]> out = new ArrayList<>();
+        Map<String, Integer> count = new HashMap<>();
+        for (Object[] f : found) {
+            out.add(new Object[] {f[0], count.merge((String) f[0], 1, Integer::sum), f[1], f[2]});
         }
         return out;
     }

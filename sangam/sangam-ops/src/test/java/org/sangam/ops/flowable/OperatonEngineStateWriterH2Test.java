@@ -102,6 +102,33 @@ class OperatonEngineStateWriterH2Test {
         assertEquals(List.of("clerks"), t.candidateGroups());
     }
 
+    /**
+     * The tasks are found in the command that created them (entity cache) and changed there; what the command writes
+     * at its end is one row per task, and the task history of the instance says what the open task says.
+     */
+    @Test
+    void theTaskHistoryOfARecreatedInstanceMatchesItsOpenTasks() {
+        int tasks = 0;
+        for (InstancePlan p : supportedPlans()) {
+            String target = writer.apply(p, "flowable-prod:" + p.sourceInstanceId());
+            List<org.operaton.bpm.engine.task.Task> open = engine.getTaskService().createTaskQuery().processInstanceId(target).list();
+            assertEquals(p.tasks().size(), open.size(), p.sourceInstanceId());
+            assertEquals(open.size(), engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(target).count(),
+                    p.sourceInstanceId());
+            for (org.operaton.bpm.engine.task.Task t : open) {
+                var h = engine.getHistoryService().createHistoricTaskInstanceQuery().taskId(t.getId()).singleResult();
+                assertNotNull(h, p.sourceInstanceId());
+                assertEquals(t.getName(), h.getName(), p.sourceInstanceId());
+                assertEquals(t.getAssignee(), h.getAssignee(), p.sourceInstanceId());
+                assertEquals(t.getOwner(), h.getOwner(), p.sourceInstanceId());
+                assertEquals(t.getPriority(), h.getPriority(), p.sourceInstanceId());
+                assertEquals(t.getDueDate(), h.getDueDate(), p.sourceInstanceId());
+                tasks++;
+            }
+        }
+        assertTrue(tasks > 0, "the corpus has plans with tasks");
+    }
+
     @Test
     void suspendedPlanIsSuspendedOnTheTarget() {
         InstancePlan s8 = supportedPlans().stream().filter(p -> p.sourceInstanceId().equals("s8")).findFirst().orElseThrow();

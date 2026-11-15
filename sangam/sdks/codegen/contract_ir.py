@@ -127,6 +127,19 @@ class Contract:
     operations: list[Operation]
     tags: list[str]
     path_count: int
+    # operations of the contract marked x-sangam-sdk: false: {"operationId", "method", "path"}, in contract order
+    not_for_sdk: list[dict[str, str]] = field(default_factory=list)
+
+
+# The fields of an OpenAPI 3.1 path item that are operations.
+HTTP_METHODS = ("get", "put", "post", "delete", "options", "head", "patch", "trace")
+# The methods the SDK transports send.
+SDK_METHODS = ("get", "post", "put", "patch", "delete")
+# Vendor extension of an operation. false: the operation belongs to the HTTP contract but gets no SDK method, because an
+# outside system calls it and never an SDK user (the CloudEvents webhook handshake that Azure Event Grid sends). Only
+# an explicit false leaves an operation out: an operation with a method outside SDK_METHODS and no marker stops the
+# generator, so nothing is dropped silently.
+SDK_EXTENSION = "x-sangam-sdk"
 
 
 def pascal(s: str) -> str:
@@ -156,6 +169,7 @@ class _Builder:
         self.models: dict[str, Model] = {}
         self.aliases: dict[str, T] = {}
         self._resolving: set[str] = set()
+        self.not_for_sdk: list[dict[str, str]] = []
 
     # ---------------------------------------------------------------- schemas
 
@@ -299,9 +313,19 @@ class _Builder:
         for path, item in self.doc["paths"].items():
             shared = item.get("parameters") or []
             for method, op in item.items():
-                if method not in ("get", "post", "put", "patch", "delete"):
-                    continue
+                if method not in HTTP_METHODS:
+                    continue  # parameters, summary, description, servers: not an operation
                 op_id = op["operationId"]
+                marker = op.get(SDK_EXTENSION, True)
+                if not isinstance(marker, bool):
+                    raise ValueError(f"{op_id}: {SDK_EXTENSION} must be true or false, found {marker!r}")
+                if not marker:
+                    self.not_for_sdk.append({"operationId": op_id, "method": method.upper(), "path": path})
+                    continue
+                if method not in SDK_METHODS:
+                    raise ValueError(f"{op_id}: {method.upper()} {path} has no SDK method (the SDKs send "
+                                     f"{', '.join(m.upper() for m in SDK_METHODS)}); mark an operation that no SDK "
+                                     f"user calls with {SDK_EXTENSION}: false")
                 params = [self.param(p) for p in shared + (op.get("parameters") or [])]
                 path_params, query, headers, common = [], [], [], []
                 for p in params:
@@ -366,7 +390,7 @@ def build(doc: dict[str, Any]) -> Contract:
     for name in doc["components"]["schemas"]:
         b.component(name)
     ops = b.operations()
-    ids = [o.op_id for o in ops]
+    ids = [o.op_id for o in ops] + [r["operationId"] for r in b.not_for_sdk]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate operationId in the contract")
     # every ref must name a model (aliases are already resolved)
@@ -376,4 +400,5 @@ def build(doc: dict[str, Any]) -> Contract:
                 if r not in b.models:
                     raise ValueError(f"{m.name}.{p.wire}: unresolved ref {r}")
     tags = sorted({o.tag for o in ops})
-    return Contract(str(doc["info"]["version"]), dict(sorted(b.models.items())), ops, tags, len(doc["paths"]))
+    return Contract(str(doc["info"]["version"]), dict(sorted(b.models.items())), ops, tags, len(doc["paths"]),
+                    list(b.not_for_sdk))

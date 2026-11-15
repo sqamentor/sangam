@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * SCIM provisioning state in {@code SEC_SCIM_RESOURCE} (owner decision 154, ADR-D-154; table from the W4-G generator):
+ * SCIM provisioning state in {@code SEC_SCIM_RESOURCE} (owner decision 154; table from the W4-G generator):
  * which persons and groups SCIM manages, the keys that carry the RFC 7644 uniqueness of {@code userName} and
  * {@code externalId}, the core attributes Sangam keeps verbatim, and the ETag counter. Persons, groups and memberships
  * themselves stay in {@code SEC_PERSON}, {@code SEC_GROUP} and {@code SEC_GROUP_MEMBER}; postings are never written.

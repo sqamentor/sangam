@@ -119,6 +119,9 @@ for _opid, _m in [('fieldWorkPublishTemplate', 'publishTemplate'), ('fieldWorkCr
                   ('fieldWorkRespondOffer', 'respondOffer'), ('fieldWorkStartTrip', 'startTrip'),
                   ('fieldWorkTripAction', 'tripAction')]:
     map_body(_opid, _FW, 'FieldWorkController.' + _m, 'body')
+# The upload body is a JSON array of packets (FieldWorkController.upload binds List<Map<String, Object>> packets): each
+# packet is typed from the keys the sync service reads, like a List<Map> body of a derived route (_v2_spring.py).
+map_body('fieldWorkUpload', _FW, 'FieldWorkController.upload', 'packets', array=True)
 bk_opaque({
     ("FieldRestService.createJob", "new DispatchService.JobInput"): "free-form job attributes, stored as given",
 })

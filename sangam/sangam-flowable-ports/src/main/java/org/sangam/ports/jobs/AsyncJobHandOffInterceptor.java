@@ -45,7 +45,8 @@ public class AsyncJobHandOffInterceptor extends CommandInterceptor {
     @Override
     public <T> T execute(Command<T> command) {
         T result = next.execute(command);
-        CommandContext cc = Context.getCommandContext();
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         JobExecutor je = jobExecutor.get();
         ProcessEngineImpl pe = engine.get();
         if (cc == null || je == null || pe == null || !je.isActive()

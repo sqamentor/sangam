@@ -110,6 +110,13 @@ public final class DatabaseGuard {
      * H2 (development only). The core product layer needs {@code MODE=PostgreSQL} ({@code INSERT .. ON CONFLICT DO
      * NOTHING}); in that mode H2 2.3 does not know the {@code BLOB} type that Operaton's H2 create scripts use. A
      * domain alias makes both work on one database. Harmless in the default H2 mode.
+     *
+     * <p><b>Order.</b> H2 creates a domain named like a data type only while the database has no table ("Domain BLOB
+     * (PUBLIC.SOME_TABLE) already exists" otherwise, in every mode; the failure is only logged here). So this runs on
+     * the empty database, before the product changelog: {@code SangamEngineConfigurer.prepare} and the server's
+     * {@code SchemaBootstrap} call it first. A caller that applies {@code SangamSchema} itself and only then builds an
+     * engine that creates its tables gets Operaton's "Unknown data type: BLOB" ({@code H2BlobDomainOrderH2Test} pins the
+     * H2 rule and the product order).
      */
     public static void prepareH2(DataSource ds) {
         try (Connection c = ds.getConnection(); java.sql.Statement s = c.createStatement()) {

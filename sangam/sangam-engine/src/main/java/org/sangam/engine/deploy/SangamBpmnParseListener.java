@@ -320,7 +320,7 @@ public class SangamBpmnParseListener implements BpmnParseListener {
                     || a.getActivityBehavior() instanceof org.operaton.bpm.engine.impl.bpmn.behavior.MultiInstanceActivityBehavior) {
                 a.addBuiltInListener(ExecutionListener.EVENTNAME_END, SequentialCompensation.OrderListener.INSTANCE);
             }
-            // decision 148 (FIO D-27): after the order listener, so the instance's subscription is the newest
+            // decision 148 (FLOWABLE-INTO-OPERATON D-27): after the order listener, so the instance's subscription is the newest
             if (MultiInstanceCompensationContext.applies(a)) {
                 a.addBuiltInListener(ExecutionListener.EVENTNAME_END, MultiInstanceCompensationContext.INSTANCE);
             }

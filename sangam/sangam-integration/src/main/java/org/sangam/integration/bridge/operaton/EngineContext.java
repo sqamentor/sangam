@@ -16,7 +16,8 @@ final class EngineContext {
 
     /** The JDBC connection of the current engine command (product rows commit with engine state, Q1). */
     static Connection connection() {
-        CommandContext cc = Context.getCommandContext();
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         if (cc == null) {
             throw new IllegalStateException("no Operaton command context on this thread");
         }

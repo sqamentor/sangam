@@ -319,6 +319,37 @@ class PartitionResizeH2Test {
         assertEquals(java.util.Arrays.toString(r.committedAssignment()), java.util.Arrays.toString(slotsOf(after)));
     }
 
+    /**
+     * Every completed resize keeps its EXEC_RESIZE row. The view read "the" completed resize with a one-row read, so it
+     * failed ("expected at most one row") from the second completed resize of a cluster on.
+     */
+    @Test
+    void mapViewAfterSeveralResizesNamesTheNewestCompletedResize() throws Exception {
+        JdbcDataSource ds = h2();
+        PartitionResize r = resize(ds);
+        PartitionLeaseManager a = node(ds, "a", 8, r);
+        long epoch = coordinator(ds, a);
+        r.request("first", "ops", "scale in", 4, 1L);
+        assertEquals(Optional.of(PartitionResize.State.COMPLETED), step(r, a, epoch, Duration.ofHours(1)));
+        exec(ds, "UPDATE EXEC_RESIZE SET algorithm_version = 'EARLIER-0' WHERE resize_id = 'first'");
+        assertEquals("EARLIER-0", r.map().algorithmVersion(), "one completed resize: its allocation");
+
+        r.request("second", "ops", "scale out", 6, 2L);
+        assertEquals(Optional.of(PartitionResize.State.COMPLETED), step(r, a, epoch, Duration.ofHours(1)));
+        assertEquals(2, count(ds, "SELECT COUNT(*) FROM EXEC_RESIZE WHERE cluster_id = 'c1' AND state = 'COMPLETED'"));
+        PartitionResize.PartitionMap m = r.map();
+        assertEquals("STABLE", m.state());
+        assertEquals(3L, m.currentMapEpoch());
+        assertEquals(null, m.activeResize());
+        assertEquals(PartitionAllocation.ALGORITHM_VERSION, m.algorithmVersion(),
+                "the allocation of the newest completed resize, not of an earlier one");
+        assertEquals(java.util.Arrays.toString(r.committedAssignment()), java.util.Arrays.toString(slotsOf(m)));
+
+        r.request("third", "ops", "scale out again", 8, 3L);
+        assertEquals(Optional.of(PartitionResize.State.COMPLETED), step(r, a, epoch, Duration.ofHours(1)));
+        assertEquals(4L, r.map().currentMapEpoch(), "and after a third");
+    }
+
     @Test
     void aDeposedCoordinatorChangesNothingAndASecondCoordinatorContinues() throws Exception {
         JdbcDataSource ds = h2();
