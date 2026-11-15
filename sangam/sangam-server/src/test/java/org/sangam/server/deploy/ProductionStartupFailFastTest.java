@@ -68,6 +68,12 @@ class ProductionStartupFailFastTest {
             // exact bytes, no trailing line break (SL-65)
             Files.writeString(audit.resolve("checkpoint-private"), checkpoint[0], StandardCharsets.UTF_8);
             Files.writeString(audit.resolve("checkpoint-public"), checkpoint[1], StandardCharsets.UTF_8);
+            // decision 371: production refuses to start without the compliance principal key (base64, >= 32 bytes)
+            Path compliance = Files.createDirectories(root.resolve("compliance"));
+            byte[] principalKey = new byte[32];
+            new java.security.SecureRandom().nextBytes(principalKey);
+            Files.writeString(compliance.resolve("principal-key"), Base64.getEncoder().encodeToString(principalKey),
+                    StandardCharsets.UTF_8);
             return root;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -95,6 +101,7 @@ class ProductionStartupFailFastTest {
         m.put("sangam.secrets.file.root", SECRETS.toString());
         m.put("sangam.audit.checkpoint.private-key-ref", "secret://audit/checkpoint-private");
         m.put("sangam.audit.checkpoint.public-key-ref", "secret://audit/checkpoint-public");
+        m.put("sangam.compliance.principal-key-ref", "secret://compliance/principal-key");
         // decision 126 part 2 (W4-A): the ledger module is on by default and needs its GL export connector id
         m.put("sangam.ledger.gl-connector", "gl-test");
         // the h2 profile's development conveniences, which production refuses or must not use
@@ -198,6 +205,11 @@ class ProductionStartupFailFastTest {
     @Test
     void missingAuditCheckpointKeyIsRefused() {
         assertRefused("sg38-checkpoint", m -> m.remove("sangam.audit.checkpoint.private-key-ref"), "(decision 126)");
+    }
+
+    @Test
+    void missingCompliancePrincipalKeyIsRefused() {
+        assertRefused("sg38-principal", m -> m.remove("sangam.compliance.principal-key-ref"), "(owner decision 371)");
     }
 
     @Test

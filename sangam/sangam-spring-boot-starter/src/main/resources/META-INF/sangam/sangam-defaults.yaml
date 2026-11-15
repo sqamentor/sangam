@@ -146,6 +146,11 @@ sangam:
     # SL-117: optional extra tenants on top of the tenant directory (no fallback; sangam.tenant.default is not a tenant
     # list). An empty schedule logs a WARN every cycle and counts sangam.schedule.empty{scheduler=compliance}.
     tenants: ${SANGAM_COMPLIANCE_TENANTS:}
+    # Owner decision 369 (e): the key of the data-principal tokens and one-time-code identifier hashes (HMAC), a
+    # secret reference (secret://compliance/principal-key; the value is base64 of at least 32 bytes), never the key.
+    # Unset: consents, guardian verifications, nominations, personal-data read audits and one-time codes are refused
+    # with 409 PRINCIPAL_KEY_NOT_CONFIGURED. One key per environment; changing it changes every token written after.
+    principal-key-ref: ${SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF:}
     log-archive:
       root: ${SANGAM_COMPLIANCE_LOG_ARCHIVE:data/compliance-logs}
       country: ${SANGAM_COMPLIANCE_LOG_ARCHIVE_COUNTRY:}
