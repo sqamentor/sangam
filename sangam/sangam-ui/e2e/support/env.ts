@@ -37,11 +37,30 @@ export function t(key: string, vars: Record<string, string | number> = {}): stri
 // Not under test-results/: Playwright empties its output folder at the start of a run.
 export const SEED_FILE = join(UI_ROOT, 'e2e', '.seed', 'seed.json');
 
+/** An e2e identity: a service principal of the test-mode tenant whose token scopes are its groups (identities.ts). */
+export interface E2eIdentity {
+  name: string;
+  /** The person the server resolved for the token (GET /me userId). */
+  userId: string;
+  token: string;
+}
+
+/** The compliance baseline global-setup publishes on the India pack (compliance.ts). */
+export interface ComplianceSeed {
+  jurisdiction: string;
+  purposeCode: string;
+  noticeKey: string;
+  noticeVersion: number;
+  dpo: { name: string; email: string };
+}
+
 export interface Seed {
   definitionKey: string;
   definitionId: string;
   processInstanceId: string;
   taskId: string;
+  identities: { citizen: E2eIdentity; roleless: E2eIdentity; complianceOfficer: E2eIdentity };
+  compliance: ComplianceSeed;
 }
 
 export function readSeed(): Seed {

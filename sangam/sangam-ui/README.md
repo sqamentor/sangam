@@ -113,6 +113,18 @@ must be set to that server's development token. `e2e/support/global-setup.ts` se
 `e2e/fixtures/e2e-simple.bpmn` to the sandbox, starts an instance and records the ids. Specs that change data start
 their own instance.
 
+CERT-In / DPDP prerequisites (`docs/compliance/CERTIN-DPDP-CONTROL-MATRIX.md`):
+
+- **Identities.** Besides the dev token (platform administrator), global-setup creates three service principals through
+  the product's own `POST /api/v1/admin/service-principals` and signs specs in with their `sgm_` tokens
+  (`e2e/support/identities.ts`): a citizen (scope `sangam-citizen`), a signed-in user with no role, and a compliance
+  officer (`sangam-dpo`). Each is checked through `GET /me` first. No server setting or guard changes.
+- **India pack.** The server must run with `SANGAM_COMPLIANCE_JURISDICTIONS=IN`, the notice links and the compliance
+  seats (`ui.yml` "Start the stack"); global-setup refuses another jurisdiction and publishes the baseline
+  (`e2e/support/compliance.ts`): DPO contact, one consent purpose, one published notice.
+- **Headers.** The suite runs against the UI image (nginx), where the security headers are set
+  (`deploy/docker/ui/*.template`); only `a11y.e2e.ts` uses `bypassCSP`, so header and CSP checks never do.
+
 | Spec | Covers |
 |---|---|
 | `shell.e2e.ts` | dev sign-in; no request leaves the origin (R56); `/fonts/noto/*` byte-identical to `deploy/fonts`; Devanagari renders in Noto Sans Devanagari; Sakal Bharati and @fontsource never requested (decisions 120, 121) |

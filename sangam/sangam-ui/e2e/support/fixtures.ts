@@ -8,7 +8,7 @@
  * - `offOrigin`: every request the page sent to another origin, for the air-gapped rule (R56).
  */
 import { randomUUID } from 'node:crypto';
-import { test as base, expect, type APIRequestContext, type Page } from '@playwright/test';
+import { test as base, expect, request, type APIRequestContext, type Page } from '@playwright/test';
 import { API_BASE, BASE_URL, devToken, readSeed, type Seed } from './env';
 
 export interface SangamApi {
@@ -18,7 +18,14 @@ export interface SangamApi {
 }
 
 async function signIn(page: Page): Promise<void> {
-  const token = devToken();
+  await signInAs(page, devToken());
+}
+
+/**
+ * Signs `page` in with `token` before its first navigation (the dev sign-in's sessionStorage key). The init script runs
+ * on every navigation of the page, so a spec that signs out uses the sign-in screen instead (client-storage spec).
+ */
+export async function signInAs(page: Page, token: string): Promise<void> {
   await page.addInitScript((tok) => window.sessionStorage.setItem('sangam.devToken', tok), token);
 }
 
@@ -41,7 +48,9 @@ export const test = base.extend<{ signedIn: Page; api: SangamApi; offOrigin: str
     await use(page);
   },
   api: async ({ seed }, use) => {
-    const ctx = await base.request.newContext({
+    // the module's `request` (APIRequest): a test object has no `request` member, so `base.request` was undefined at
+    // run time (found by type-checking the suite, CERT-In / DPDP lane)
+    const ctx = await request.newContext({
       baseURL: `${API_BASE.replace(/\/$/, '')}/`,
       extraHTTPHeaders: { Authorization: `Bearer ${devToken()}`, Accept: 'application/json, application/problem+json' },
     });
@@ -69,3 +78,4 @@ export const test = base.extend<{ signedIn: Page; api: SangamApi; offOrigin: str
 });
 
 export { expect };
+export { apiAs } from './identities';
