@@ -18,11 +18,10 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import org.operaton.bpm.engine.ProcessEngine;
-import org.sangam.core.integration.ConnectorRequest;
-import org.sangam.core.integration.ConnectorResult;
 import org.sangam.core.integration.SangamConnector;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Dialect;
+import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.ConnectorRegistry;
 import org.sangam.integration.connector.EgressPolicy;
 import org.sangam.integration.connector.HttpTransport;
@@ -115,11 +114,12 @@ public class ModellerWiring {
 
     @Bean
     public ActionModels sangamActionModels(TxSupport tx, PermissionPort permissions, ObjectProvider<ProcessEngine> engine,
-                                           ObjectProvider<ConnectorRegistry> connectors, ObjectProvider<CasePort> cases,
+                                           ObjectProvider<ConnectorInvoker> sangamConnectorInvoker, ObjectProvider<CasePort> cases,
                                            ObjectProvider<ProcessPort> processes, ObjectProvider<TaskPort> tasks) {
         Dialect d = tx.dialect();
         return new ActionModels(d, tx.newTransactions(), new AuditChain(d), new SubjectPermission(permissions, cases, processes, tasks),
-                (tenant, operationId, action, targetRef, input) -> dispatch(engine, connectors, tenant, operationId, action, targetRef, input));
+                (tenant, operationId, action, targetRef, input) -> dispatch(engine, sangamConnectorInvoker, tenant, operationId, action,
+                        targetRef, input));
     }
 
     /**
@@ -181,8 +181,13 @@ public class ModellerWiring {
         }
     }
 
-    /** BPMN: starts the process keyed by the operation id. REST: {@code connectorId:operation} (decision 65). SCRIPT has no worker binding yet. */
-    private static Map<String, Object> dispatch(ObjectProvider<ProcessEngine> engine, ObjectProvider<ConnectorRegistry> connectors,
+    /**
+     * BPMN: starts the process keyed by the operation id. REST: {@code connectorId:operation} (decision 65), dispatched through
+     * the server's {@link ConnectorInvoker} (R36): the action's operation id is the ledger's operation id, so the call has an
+     * {@code OPERATION_LEDGER} intent and outcome, a {@code CONNECTOR_CALL} row and the {@code OPERATION_*} audit on the chain
+     * {@value #ACTION_ROOT_PREFIX}{@code <operationId>} that also holds {@code ACTION_INVOKED}. SCRIPT has no worker binding yet.
+     */
+    private static Map<String, Object> dispatch(ObjectProvider<ProcessEngine> engine, ObjectProvider<ConnectorInvoker> invokers,
             String tenant, UUID operationId, ActionModels.Action action, String targetRef, Map<String, Object> input) {
         switch (action.targetType()) {
             case BPMN -> {
@@ -194,17 +199,43 @@ public class ModellerWiring {
                 if (!action.target().matches(ActionModels.REST_TARGET_PATTERN)) {
                     throw new IllegalArgumentException("ACTION_TARGET_INVALID: a REST target is connectorId:operation");
                 }
-                String[] parts = action.target().split(":", 2);
-                ConnectorRequest request = new ConnectorRequest(tenant, operationId, operationId.toString(), 1, null, targetRef,
-                        parts[1], input, null);
-                ConnectorResult result = connectors.getObject().require(tenant, parts[0]).invoke(request);
-                if (result instanceof ConnectorResult.Success s) {
-                    return s.output();
+                ConnectorInvoker invoker = invokers.getIfAvailable();
+                if (invoker == null) {
+                    throw ApiProblem.notInstalled("REST actions", "the integration module");
                 }
-                throw new IllegalStateException("ACTION_TARGET_FAILED: " + result);
+                return restAction(invoker, tenant, operationId, action.target(), targetRef, input);
             }
             default -> throw new IllegalArgumentException("ACTION_TARGET_UNSUPPORTED: " + action.targetType());
         }
+    }
+
+    /** The audit chain root and ledger root of one action run: the root {@code ActionModels} writes {@code ACTION_INVOKED} on. */
+    static final String ACTION_ROOT_PREFIX = "action:";
+
+    /**
+     * One REST action target through the invoker. The ledger row is keyed by the action's own operation id (explicit, never
+     * derived), its root and activity are {@value #ACTION_ROOT_PREFIX}{@code <operationId>}, the subject is the business key,
+     * and the downstream request carries the same operation id as its idempotency key. Only a completed operation returns;
+     * every other outcome is a named failure, and an unknown outcome stays in reconciliation (R28).
+     */
+    static Map<String, Object> restAction(ConnectorInvoker invoker, String tenant, UUID operationId, String target, String targetRef,
+                                          Map<String, Object> input) {
+        String[] parts = target.split(":", 2);
+        if (parts[0].length() > 64 || parts[1].length() > 64) {
+            // the journal columns CONNECTOR_CALL.connector_id and .operation hold 64 characters: refuse by name, not by SQL error
+            throw new IllegalArgumentException("ACTION_TARGET_INVALID: a REST target's connector id and operation are at most 64 characters");
+        }
+        String root = ACTION_ROOT_PREFIX + operationId;
+        ConnectorInvoker.Outcome outcome = invoker.invoke(new ConnectorInvoker.Invocation(tenant, root, root, 0, null, targetRef,
+                parts[0], parts[1], input == null ? Map.of() : input, operationId.toString(), 0L, null, operationId));
+        return switch (outcome) {
+            case ConnectorInvoker.Completed c -> c.output() == null ? Map.of() : c.output();
+            case ConnectorInvoker.Failed f -> throw new IllegalStateException("ACTION_TARGET_FAILED: " + f.code() + " " + f.message());
+            case ConnectorInvoker.Unknown u -> throw new IllegalStateException("ACTION_OUTCOME_UNKNOWN: " + operationId
+                    + " (reconciliation item " + u.reconciliationItemId() + ")");
+            case ConnectorInvoker.Retry r -> throw new IllegalStateException("ACTION_TARGET_FAILED: retryable: " + r.message());
+            case ConnectorInvoker.Stale s -> throw new IllegalStateException("ACTION_TARGET_FAILED: stale: " + s.message());
+        };
     }
 
     @Bean
