@@ -196,6 +196,7 @@ How to read the table:
       - (a) enforce the subset, fail closed;
       - (b) correct the Javadoc.
     - Recommendation: (a), owned by the security lane. The e2e identities do not rely on either behaviour.
+    - Decision 351 chose (a). NOT YET IMPLEMENTED (lane D3, 2026-11-15): three callers of `issue` give scopes the owner does not hold, by design. (1) `BreakGlassService.approve` issues the class roles (for example `tenant-admin`) to a holder who lacks them, after dual approval. (2) `SecurityIdentityAdminBridge.createServicePrincipal` creates a new `svc-<name>` person with no role, then issues the requested scopes. (3) Every e2e identity is such a service principal (`e2e/support/identities.ts`), so the sentence above does not hold. Enforcing the subset inside `issue` alone would break all three. The options are with the owner.
 17. **Type-checking the e2e suite needs `@types/node`.** DONE (decision 352, lane D3): `@types/node` 22.20.5 (the CI Node line, ui.yml `node-version` 22.18.0) is an exact-pinned dev dependency, recorded in `docs/records/DOWNLOADS-2026-11-15.md`. `npm run typecheck:e2e` (`tsc -p e2e/tsconfig.json`) reports 0 errors. Not yet a CI step: ui.yml is outside the lane's scope.
     - Options were:
       - (a) add `@types/node` as a pinned devDependency (needs approval);
