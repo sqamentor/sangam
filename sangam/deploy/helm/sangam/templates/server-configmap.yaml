@@ -134,6 +134,10 @@ data:
   SANGAM_COMPLIANCE_EMAIL_CONNECTOR: {{ $c.connectors.email | quote }}
   SANGAM_COMPLIANCE_AUTHORITY_EMAIL_CONNECTOR: {{ $c.connectors.authorityEmail | quote }}
   SANGAM_COMPLIANCE_AUTHORITY_HTTP_CONNECTOR: {{ $c.connectors.authorityHttp | quote }}
+  {{- with $c.principalKeyRef }}
+  # Decisions 369, 371: the compliance principal key reference (required in production; a secret:// reference only)
+  SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: {{ . | quote }}
+  {{- end }}
   SANGAM_CELL_EXPORT_DIR: /var/lib/sangam/cell-exports
   # Document content store (ContentService); on the shared state volume, never the read-only root filesystem
   SANGAM_CONTENT_ROOT: /var/lib/sangam/content

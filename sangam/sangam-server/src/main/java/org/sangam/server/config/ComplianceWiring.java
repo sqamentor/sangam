@@ -179,11 +179,22 @@ public class ComplianceWiring {
         return principalKey(env, secrets.getIfAvailable(SecretResolver::fromEnvironment));
     }
 
-    /** The key behind {@value #PRINCIPAL_KEY_REF}; refuses a literal (keys are never configuration values). */
+    /**
+     * The key behind {@value #PRINCIPAL_KEY_REF}; refuses a literal (keys are never configuration values). Unset, the
+     * start is refused in production (owner decision 371 (5); {@link ProductionEnvironment#isProduction}, which
+     * also counts a missing or contradictory environment setting as production); elsewhere every keyed operation is
+     * refused by name with {@code PRINCIPAL_KEY_NOT_CONFIGURED} (decision 369 (e)).
+     */
     static PrincipalKey principalKey(Environment env, SecretResolver secrets) {
         String ref = env.getProperty(PRINCIPAL_KEY_REF);
         if (ref == null || ref.isBlank()) {
-            LOG.warn("{} is not set: consents, guardian verifications, nominations, personal-data read audits and"
+            if (ProductionEnvironment.isProduction(env)) {
+                throw new IllegalStateException(PRINCIPAL_KEY_REF + " (env SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF) is"
+                        + " required in production: a secret:// reference to the compliance principal key (base64 of at"
+                        + " least 32 bytes) that keys the data-principal references of the compliance audit and the"
+                        + " one-time-code hashes; see deploy/README.md section 1 (owner decision 371)");
+            }
+            LOG.warn("DEVELOPMENT: {} is not set: consents, guardian verifications, nominations, personal-data read audits and"
                     + " one-time codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED (owner decision 369)", PRINCIPAL_KEY_REF);
             return PrincipalKey.unconfigured();
         }

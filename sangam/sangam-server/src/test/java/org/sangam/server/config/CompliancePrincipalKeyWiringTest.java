@@ -19,15 +19,19 @@ import org.springframework.mock.env.MockEnvironment;
 /**
  * Owner decision 369 (e): the compliance principal key comes from the secrets store through
  * {@code sangam.compliance.principal-key-ref}. A secret reference only (a literal key is refused at start), base64 of
- * at least 32 bytes; unset, the server starts and every keyed reference is refused by name (fail closed).
+ * at least 32 bytes; unset, the server starts and every keyed reference is refused by name (fail closed). Owner
+ * decision 371 (5): unset in production (a missing or contradictory environment setting counts as production), the
+ * start is refused.
  */
 class CompliancePrincipalKeyWiringTest {
 
     static final byte[] KEY = "sangam-server-test-principal-key-0001".getBytes(StandardCharsets.UTF_8);
     static final String REF = "secret://compliance/principal-key";
 
+    /** A development installation (decision 143: it states the switch and a development profile). */
     static MockEnvironment env(String ref) {
-        MockEnvironment env = new MockEnvironment();
+        MockEnvironment env = new MockEnvironment().withProperty("sangam.security.production", "false");
+        env.setActiveProfiles("h2");
         if (ref != null) {
             env.setProperty(ComplianceWiring.PRINCIPAL_KEY_REF, ref);
         }
@@ -43,7 +47,31 @@ class CompliancePrincipalKeyWiringTest {
     }
 
     @Test
-    void unsetTheServerStartsAndEveryKeyedReferenceIsRefused() {
+    void unsetInProductionTheStartIsRefusedByName() {
+        MockEnvironment helm = new MockEnvironment().withProperty("sangam.security.production", "true");
+        helm.setActiveProfiles("postgres", "oidc");
+        MockEnvironment prodProfile = new MockEnvironment();
+        prodProfile.setActiveProfiles("postgres", "prod");
+        MockEnvironment unset = new MockEnvironment();
+        MockEnvironment contradictory = new MockEnvironment().withProperty("sangam.security.production", "true");
+        contradictory.setActiveProfiles("h2");
+        MockEnvironment blank = new MockEnvironment().withProperty("sangam.security.production", "true")
+                .withProperty(ComplianceWiring.PRINCIPAL_KEY_REF, "  ");
+        for (MockEnvironment e : java.util.List.of(helm, prodProfile, unset, contradictory, blank)) {
+            IllegalStateException refused = assertThrows(IllegalStateException.class,
+                    () -> ComplianceWiring.principalKey(e, SecretResolver.of(Map.of())));
+            assertTrue(refused.getMessage().startsWith(ComplianceWiring.PRINCIPAL_KEY_REF + " "), refused.getMessage());
+            assertTrue(refused.getMessage().contains("required in production"), refused.getMessage());
+        }
+        // a configured key is used in production as everywhere else
+        MockEnvironment configured = new MockEnvironment().withProperty("sangam.security.production", "true")
+                .withProperty(ComplianceWiring.PRINCIPAL_KEY_REF, REF);
+        assertTrue(ComplianceWiring.principalKey(configured,
+                SecretResolver.of(Map.of(REF, Base64.getEncoder().encodeToString(KEY)))).configured());
+    }
+
+    @Test
+    void unsetOutsideProductionTheServerStartsAndEveryKeyedReferenceIsRefused() {
         PrincipalKey k = ComplianceWiring.principalKey(env(null), SecretResolver.of(Map.of()));
         assertFalse(k.configured());
         assertEquals(ComplianceException.Code.PRINCIPAL_KEY_NOT_CONFIGURED,
