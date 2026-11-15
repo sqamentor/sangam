@@ -56,11 +56,11 @@ How to read the table:
 | C-06 | Logs and information on order ([D] dir.(iii)-(iv)) | EXISTS | none | `/audit/exports`, lawful requests. |
 | C-07 | KYC records of hosting providers ([D] dir.(v)) | N/A | none | Only if Sangam is offered as a hosted service. |
 | C-08 | Annual audit, OWASP WSTG, SBOM ([C] §6, §8) | PARTIAL | the W-rows below are the UI-side WSTG evidence | The audit report is a record; [S] is UNVERIFIED. |
-| D-01 | Notice: itemised data, purposes, links to withdraw, rights and the Board ([A] s.5(1); [R] r.3) | PARTIAL | `consent-notice` (the public policy signed out and the published notice: links, data items, purpose, DPO, version, hash) | Owner list 4: the portal form shows a fixed string, not the published notice. |
+| D-01 | Notice: itemised data, purposes, links to withdraw, rights and the Board ([A] s.5(1); [R] r.3) | EXISTS (portal form fixed by owner decision 339) | `consent-notice` (the public policy signed out and the published notice: links, data items, purpose, DPO, version, hash; citizen path: the portal form shows the service's published notice, `GET /portal/services/{key}/notice`) | Owner list 4, done. A service without a `noticeKey` in its registry entry takes no consent and shows no notice. |
 | D-02 | Notice in English or an Eighth Schedule language ([A] s.5(3)) | PARTIAL (owner decision Q-06: English-only UI) | none | The server templates exist for more languages; the UI chrome is English. Accepted gap. |
-| D-03 | Free, specific, unbundled consent ([A] s.6(1)) | PARTIAL | none | Owner list 6: one checkbox for all purposes; a draft is saved before consent. |
-| D-04 | Proof of notice and consent ([A] s.6(10), wording UNVERIFIED) | PARTIAL (was MISSING: the operator path now shows the consent id and purposes; fixed in this lane) | `consent-withdrawal` (records on the published notice; the register row and the API show the key, version, purposes and `givenAt`) | Owner list 4: the portal application records no consent. |
-| D-05 | Withdrawal as easy as giving ([A] s.6(4); [R] r.3(c)(i)) | PARTIAL (operator only) | `consent-withdrawal` (withdraw → `WITHDRAWN`, `withdrawnAt`) | Owner list 5: no self-service withdrawal for the data principal. |
+| D-03 | Free, specific, unbundled consent ([A] s.6(1)) | PARTIAL (unbundled: EXISTS, owner decision 341; draft before consent: OPEN for counsel) | `consent-notice` (citizen path: one box per purpose, none pre-ticked, consent only for the ticked purposes) | Owner list 6: one checkbox per purpose, done. "Save draft" still stores the form before any consent and sends no consent; whether that is a legitimate use under s.7(a) is OPEN for counsel, and the draft behaviour is unchanged. |
+| D-04 | Proof of notice and consent ([A] s.6(10), wording UNVERIFIED) | EXISTS (operator path fixed earlier; portal path by owner decision 339) | `consent-withdrawal` (operator: records on the published notice; the register row and the API show the key, version, purposes and `givenAt`); `consent-notice` (citizen: the portal submission records the consent on the notice key and version, channel `portal:<service>`, in the transaction that starts the application; a stale or other notice is refused, 409 `NOTICE_NOT_CURRENT`) | Owner list 4, done. Gap: a child's consent row carries no guardian verification id in the standalone server (no principal directory); the id is kept on the application. |
+| D-05 | Withdrawal as easy as giving ([A] s.6(4); [R] r.3(c)(i)) | EXISTS (self-service by owner decision 340) | `consent-withdrawal` (operator: withdraw → `WITHDRAWN`, `withdrawnAt`; citizen: "My consents", one click per purpose or for the whole consent, no reason) | Owner list 5, done. |
 | D-06 | Processing stops after withdrawal ([A] s.6(5)-(6)) | PARTIAL | none | `PurposeBindingGuard`; the end-to-end stop is not shown. |
 | D-07 | Consent managers ([A] s.6(7)-(9); [R] r.4) | EXISTS (server) | none | Server test. |
 | D-08 | Legitimate uses ([A] s.7) | EXISTS (server) | none | Server test. |
@@ -70,16 +70,16 @@ How to read the table:
 | D-12 | Logs and data kept for at least one year ([R] r.6(1)(e), r.8(3)) | EXISTS | `audit-evidence` (pack floors 365 days) | |
 | D-13 | Continuity, backups ([R] r.6(1)(d)) | PARTIAL (not verified) | none | Ops drill record. |
 | D-14 | Breach: intimation, then a report to the Board within 72 h ([A] s.8(6); [R] r.7(2)) | EXISTS (server) | none | Owner list 2: registration needs the compliance processes, which nothing deploys. |
-| D-15 | Breach notice to each affected data principal ([R] r.7(1)) | PARTIAL | none | Owner list 12. |
+| D-15 | Breach notice to each affected data principal ([R] r.7(1)) | EXISTS (server; portal notification by owner decision 347) | `portal-breach-notice` (a fresh citizen has none; the affected citizen gets one notice with the five r.7(1) items under the pack's labels and citations, another citizen none; the full flow is fixme until the compliance processes are deployed, owner list 2 / decision 336) | Owner list 12, done: the notice is also a portal notification, written in the delivery transaction. Server: `BreachSubjectNoticeListenerH2Test`, `PortalComplianceAdapterH2Test`. |
 | D-16 | Erasure ([A] s.8(7), s.12(3)) | EXISTS (server) | none | Owner list 1: rights requests are refused in the standalone server. |
 | D-17 | Legal hold overrides erasure ([A] s.8(7)) | EXISTS | none | Owner list 1 (same block as D-16). |
 | D-18 | 48-hour pre-erasure intimation ([R] r.8(2)) | EXISTS (server) | none | Time-based; server test. |
 | D-19 | Third Schedule 3-year inactivity erasure ([R] r.8(1)) | EXISTS | none | Counsel: does it apply to deployers? |
 | D-20 | Purpose deemed no longer served ([A] s.8(8)) | EXISTS | none | `/admin/retention`. |
 | D-21 | DPO contact published, and given in rights responses ([A] s.8(9); [R] r.9) | PARTIAL | `consent-notice` (the DPO name and e-mail on the public policy, signed out, and in the notice) | Owner list 11: rights and grievance responses do not carry the contact. |
-| D-22 | Grievance redressal within the published period, at most 90 days ([A] s.8(10), s.13; [R] r.14(3)) | EXISTS | `rights-requests` (reference shown, the published period shown, due date ≤ the pack maximum) | Owner list 15: due date fixed in code. |
+| D-22 | Grievance redressal within the published period, at most 90 days ([A] s.8(10), s.13; [R] r.14(3)) | EXISTS | `rights-requests` (reference shown, the published period shown, due date ≤ the pack maximum) | Owner list 15, done (owner decision 350): the portal grievance due date is the pack's GRIEVANCE period (`defaultDays`, the tenant's `sla.grievance-days` within `maxDays`); with no jurisdiction set it has no due date. Server: `PortalGrievanceDueH2Test`. |
 | D-23 | Rights: access, correction, completion, updating, erasure, nomination ([A] s.11, s.12, s.14; [R] r.14) | PARTIAL (the UPDATE / UPDATING mismatch fixed in this lane) | `rights-requests` (the select offers exactly the India pack rights, `UPDATING` included) | Owner list 1: submission is refused in the standalone server; the portal offers only a generic data-rights kind. |
-| D-24 | Children: guardian consent, no tracking or targeted advertising ([A] s.9; [R] r.10, r.12) | PARTIAL | `no-tracking` ((a): no request, beacon, WebSocket, subresource or third-party cookie off the origin) | Owner list 8: no age or guardian flow in the portal. |
+| D-24 | Children: guardian consent, no tracking or targeted advertising ([A] s.9; [R] r.10, r.12) | PARTIAL | `no-tracking` ((a): no request, beacon, WebSocket, subresource or third-party cookie off the origin); `portal-children` ((b): the portal asks the age when the pack has a child-age limit; a declared child without a valid parent verification is refused, 403 `GUARDIAN_CONSENT_REQUIRED`, a missing age 422 `AGE_DECLARATION_REQUIRED`) | Owner list 8, done for the portal (owner decision 343, fail closed through the existing guardian verifier). The accepted child path needs a parent verification, which only an integrator-bound `AdultIdentityVerifier` creates (decision 68); it is proven by `PortalComplianceAdapterH2Test`, not e2e. D-25 is unchanged. |
 | D-25 | Guardian of a person with a disability ([R] r.11) | PARTIAL | none | Owner list 8. |
 | D-26 | Significant Data Fiduciary duties ([A] s.10; [R] r.13) | PARTIAL | none | Applies only if a deployer is notified as an SDF. |
 | D-27 | Transfer outside India ([A] s.16; [R] r.15) | EXISTS (server) | none | Server test. |
@@ -136,17 +136,20 @@ How to read the table:
      - (a) show the published notice on the form and send `noticeKey`, `noticeVersion` and the purposes with the submission, written in the same transaction;
      - (b) a separate consent step before the form.
    - Recommendation: (a).
+   - **Done (owner decision 339): option (a).** The service's registry entry names its notice (`noticeKey`); the form shows it (`GET /portal/services/{key}/notice`) and the final submission sends `consent` (key, version, language, purposes, age). The server records it through `ConsentService.give` in the transaction that starts the application and refuses, by name, a notice that is not the current published one (409 `NOTICE_NOT_CURRENT`) and a missing consent (403 `CONSENT_REQUIRED`). Without the compliance module a consent is refused with 501.
 5. **Self-service withdrawal** (D-05).
    - Options:
      - (a) a "My consents" portal page using the existing withdraw endpoint, which already lets the owner withdraw their own consent;
      - (b) a link from the notice only.
    - Recommendation: (a).
+   - **Done (owner decision 340): option (a)**, `/portal/consents`. Purpose names come from the current notices of the caller's portal services; any other purpose is shown by its code.
 6. **Bundled consent, and a draft saved before consent** (D-03).
    - Options:
      - (a) one checkbox per purpose;
      - (b) keep one checkbox when the notice has one purpose.
    - For the draft: counsel decides whether it is a legitimate use under s.7(a).
    - Recommendation: (a), plus counsel on the draft.
+   - **Done (owner decision 341): option (a).** **OPEN for counsel:** whether "Save draft" may store personal data before consent. The draft behaviour is unchanged; a draft never carries a consent (400 if one is sent).
 7. **The evidence report cannot be generated from the UI.** `ComplianceController.report` requires `from` and `to` as instants. The UI sends optional date-only values, so the server refuses the request (found in this lane, not run).
    - Options:
      - (a) the UI requires both dates and sends the start of `from` and the end of `to` in the tenant's time zone;
@@ -157,6 +160,7 @@ How to read the table:
      - (a) an age declaration with a guardian-consent step through the existing verifier, which fails closed (decision 68);
      - (b) operator-assisted only.
    - Recommendation: (a).
+   - **Done for D-24 (b) (owner decision 343): option (a).** The form asks the age when the pack has `limits.childAgeYears`; a declared child needs a parent verification that `VerifiableParentalConsentService.requireValid` accepts for that child, unless every purpose is exempt by the pack. Open: no REST endpoint creates a parent verification and no `AdultIdentityVerifier` is bound by default (decision 68), so a child cannot apply in the standalone server; and the consent row carries no guardian verification id there, because `ConsentService` takes it only when a principal directory says CHILD (none in the server). Options: (a) `GiveConsent` carries the declared category; (b) a principal directory fed by the declarations. Recommendation: (a), owned by the compliance lane.
 9. **CERT-In incident type is free text** (C-02).
    - Options:
      - (a) a pick-list from the pack's `authorities[].catalogue`, through the same pack-code field as the rights;
@@ -177,6 +181,7 @@ How to read the table:
       - (a) a portal notification with the five r.7(1) items;
       - (b) e-mail or SMS only, if counsel agrees.
     - Recommendation: (a).
+    - **Done (owner decision 347): option (a).** `BreachIncidentService.notifySubjects` tells its subject-notice listeners after each delivery; the REST layer writes the notice to the principal's portal account (`GET /portal/notifications`, page "My notices") in the same transaction, so a failed write rolls the delivery back.
 13. **Audit of reads of personal data** (D-11).
     - Options:
       - (a) an audit event when an officer reads a principal's consents or rights;
@@ -191,6 +196,7 @@ How to read the table:
       - (a) read `defaultDays` from the pack;
       - (b) keep it.
     - Recommendation: (a).
+    - **Done (owner decision 350): option (a).** The due date is the pack's GRIEVANCE period through `ComplianceConfig.rightSlaDays` (default `defaultDays`, the tenant's `sla.grievance-days`, capped at `maxDays`). Open: with no jurisdiction set (or without the compliance module) the grievance has no due date. Options: (a) keep no due date; (b) refuse the grievance until a jurisdiction is set. Recommendation: (a), a grievance is never lost for a missing setting.
 16. **The Javadoc of `ApiTokenService.issue` says the scopes are a subset of the owner's roles, but the code does not check it.**
     - Options:
       - (a) enforce the subset, fail closed;

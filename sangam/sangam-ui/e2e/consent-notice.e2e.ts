@@ -3,21 +3,28 @@
  * CERT-In / DPDP e2e: the consent notice and the public privacy policy (docs/compliance/CERTIN-DPDP-CONTROL-MATRIX.md).
  *
  * Matrix rows and the clauses they give evidence for:
- * - D-01 (partial: the published notice and the public policy; the portal form still shows a fixed string, see the
- *   matrix): notice with itemised personal data, the purposes, and the links to withdraw, exercise rights and complain to
- *   the Board (DPDP Act s.5(1); DPDP Rules r.3(a)-(c));
+ * - D-01: notice with itemised personal data, the purposes, and the links to withdraw, exercise rights and complain to
+ *   the Board (DPDP Act s.5(1); DPDP Rules r.3(a)-(c)); on the citizen path the portal form shows the service's
+ *   published notice and the submission names its key and version (owner decision 339);
+ * - D-03 (citizen path): one checkbox per purpose, nothing pre-ticked, consent only for the ticked purposes
+ *   (s.6(1), decision 341); whether "Save draft" may send personal data before consent stays open for counsel;
+ * - D-04 (citizen path): the consent is recorded in the register with the notice key and version and the portal
+ *   channel, in the same transaction as the application; a notice that is not the current published one is refused
+ *   by name (409 NOTICE_NOT_CURRENT);
  * - D-21: the Data Protection Officer's business contact is published (s.8(9); r.9), here on the public policy page,
  *   signed out;
  * - D-28: a notice whose purpose text waives a right ("irrevocable", the India pack's noticeLint list) is refused and is
  *   never published (s.6(2)).
  * Server side: ConsentNoticeService.publish / privacyPolicy (links, contact block, lint, content hash = SHA-256 of the
  * text); UI: PublicPrivacy and NoticeView (Portal.tsx, compliance.tsx), rendered as text. The baseline (DPO contact,
- * the E2E_SERVICE purpose and its notice) is published by global-setup (support/compliance.ts).
+ * the E2E_SERVICE purpose and its notice) is published by global-setup (support/compliance.ts). Citizen path: the
+ * portal service of support/portal.ts; server PortalController.apply + PortalComplianceAdapter.recordConsent.
  */
 import { randomUUID } from 'node:crypto';
-import { expect, test } from './support/fixtures';
+import { apiAs, expect, signInAs, test } from './support/fixtures';
 import { API_BASE, t } from './support/env';
 import { E2E_LINKS, definePurpose, indiaPack, sha256Hex, tenantOf, uniqueCode } from './support/compliance';
+import { applyAsCitizen, portalNotice, registerPortalService } from './support/portal';
 
 interface Rendered {
   noticeKey: string;
@@ -91,5 +98,82 @@ test('a notice whose purpose text waives a right is refused and not published (D
   } finally {
     // the purpose would otherwise stay on the tenant's public privacy policy
     await definePurpose(admin.ctx, code, { name: 'E2E lint check', description: 'Retired by the e2e suite.' }, false);
+  }
+});
+
+interface RegisterRow {
+  consentId: string;
+  principalRef: string;
+  noticeKey: string;
+  noticeVersion: number;
+  status: string;
+  activePurposes?: string[];
+}
+
+const rows = (body: unknown): RegisterRow[] => (Array.isArray(body) ? (body as RegisterRow[]) : ((body as { items?: RegisterRow[] }).items ?? []));
+
+test('citizen: the portal form shows the published notice, one box per purpose, and the consent is recorded on its version (D-01, D-03, D-04)', async ({ page, api: admin, seed }) => {
+  const citizen = seed.identities.citizen;
+  const serviceKey = await registerPortalService(admin.ctx, 'E2E consent notice service');
+  const citizenApi = await apiAs(citizen.token);
+  try {
+    const before = rows(await (await citizenApi.get('compliance/consents')).json()).map((c) => c.consentId);
+    // the notice the portal serves is the published one (decision 339), with the purpose named
+    const notice = await portalNotice(citizenApi, serviceKey);
+    expect(notice.noticeKey).toBe(seed.compliance.noticeKey);
+    expect(notice.version).toBe(seed.compliance.noticeVersion);
+    expect(notice.contentHash.toLowerCase()).toBe(sha256Hex(notice.text));
+    const purpose = notice.purposes.find((p) => p.code === seed.compliance.purposeCode);
+    expect(purpose, JSON.stringify(notice.purposes)).toBeDefined();
+
+    await signInAs(page, citizen.token);
+    await page.goto(`/portal/apply/${encodeURIComponent(serviceKey)}`);
+    await expect(page.locator('.notice-text')).toContainText(E2E_LINKS.withdrawConsent);
+    // decision 341: one box per purpose, nothing pre-ticked, no bundled "I agree" box
+    const box = page.getByLabel(t('portal.consentPurpose', { purpose: purpose!.name }));
+    await expect(box).not.toBeChecked();
+    await expect(page.getByLabel(t('portal.consent'))).toHaveCount(0);
+    const submit = page.getByRole('button', { name: t('portal.submit') });
+    await expect(submit).toBeDisabled();
+    await box.check();
+    if (notice.childAgeYears) await page.getByLabel(t('portal.ageDeclaration')).selectOption('ADULT');
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    await expect(page).toHaveURL(/\/portal\/applications\/[^/]+$/);
+
+    const after = rows(await (await citizenApi.get('compliance/consents')).json());
+    const given = after.filter((c) => !before.includes(c.consentId));
+    expect(given, JSON.stringify(after)).toHaveLength(1);
+    expect(given[0].principalRef).toBe(citizen.userId);
+    expect(given[0].noticeKey).toBe(seed.compliance.noticeKey);
+    expect(given[0].noticeVersion).toBe(seed.compliance.noticeVersion);
+    expect(given[0].activePurposes).toEqual([seed.compliance.purposeCode]);
+  } finally {
+    await citizenApi.dispose();
+  }
+});
+
+test('citizen: a notice version that is not the current published one is refused by name and starts nothing (D-04)', async ({ api: admin, seed }) => {
+  const serviceKey = await registerPortalService(admin.ctx, 'E2E stale notice service');
+  const citizenApi = await apiAs(seed.identities.citizen.token);
+  try {
+    const consent = { noticeKey: seed.compliance.noticeKey, language: 'en', purposeCodes: [seed.compliance.purposeCode], ageDeclaration: 'ADULT' as const };
+    const stale = await applyAsCitizen(citizenApi, serviceKey, { ...consent, noticeVersion: seed.compliance.noticeVersion + 1000 });
+    const body = await stale.text();
+    expect(stale.status(), body).toBe(409);
+    expect(body).toContain('NOTICE_NOT_CURRENT');
+    const other = await applyAsCitizen(citizenApi, serviceKey, { ...consent, noticeKey: 'e2e-not-this-notice', noticeVersion: seed.compliance.noticeVersion });
+    expect(other.status(), await other.text()).toBe(409);
+    // no consent at all on a noticed service: refused, never an application without consent
+    const none = await applyAsCitizen(citizenApi, serviceKey);
+    const noneBody = await none.text();
+    expect(none.status(), noneBody).toBe(403);
+    expect(noneBody).toContain('CONSENT_REQUIRED');
+    const mine = await citizenApi.get('portal/applications');
+    const apps = (await mine.json()) as { items?: { serviceKey?: string }[] } | { serviceKey?: string }[];
+    const list = Array.isArray(apps) ? apps : (apps.items ?? []);
+    expect(list.filter((a) => a.serviceKey === serviceKey)).toHaveLength(0);
+  } finally {
+    await citizenApi.dispose();
   }
 });
