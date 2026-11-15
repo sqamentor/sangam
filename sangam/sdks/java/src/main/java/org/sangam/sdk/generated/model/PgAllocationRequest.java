@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param explicit wire field {@code explicit}
  * @param weights wire field {@code weights}
- * @param allowOverAllocation wire field {@code allowOverAllocation}
+ * @param allowOverAllocation wire field {@code allowOverAllocation} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record PgAllocationRequest(

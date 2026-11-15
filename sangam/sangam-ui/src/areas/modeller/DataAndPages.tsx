@@ -188,7 +188,8 @@ export function DataObjects() {
               className="primary"
               disabled={!edit.key || !edit.name}
               onClick={() =>
-                void act.run(() => api.dataObjects.save(edit)).then((r) => {
+                // DataObjectField's required and sensitive are primitives (refused when missing, Jackson 3): each is sent as its box shows it
+                void act.run(() => api.dataObjects.save({ ...edit, fields: edit.fields.map((x) => ({ ...x, required: !!x.required, sensitive: !!x.sensitive })) })).then((r) => {
                   if (r) {
                     setEdit(null);
                     announce(t('common.saved'));

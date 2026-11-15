@@ -10,6 +10,8 @@ import { lazy, Suspense, useState, type ComponentType } from 'react';
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../auth/AuthProvider';
+import { IdleSession } from '../auth/IdleSession';
+import { config } from '../config';
 import { Loading, Notice, PageHeader, ProblemAlert } from '../components/ui';
 import { signInFromTab, TeamsSignInError } from './teamsAuth';
 import type { UserManager } from 'oidc-client-ts';
@@ -51,6 +53,11 @@ export function TeamsSignIn({ authenticate, userManager, origin, base }: TeamsTa
   return (
     <main className="teams-signin">
       <PageHeader title={t('teams.title')} description={t('teams.signInDesc')} />
+      {auth.signedOutReason === 'idle' && (
+        <p className="alert alert-info" role="status">
+          {t('auth.idleSignedOut', { minutes: config().session.idleMinutes })}
+        </p>
+      )}
       {failure && <Notice tone={failure.reason === 'cancelled' ? 'info' : 'bad'}>{t(failure.reason === 'cancelled' ? 'teams.cancelled' : failure.reason === 'invalid' ? 'teams.invalid' : 'teams.failed')}</Notice>}
       <button type="button" className="primary" disabled={busy} onClick={() => void signIn()}>
         {t('teams.signIn')}
@@ -73,6 +80,8 @@ export function TeamsTab(props: TeamsTabProps) {
   }
   return (
     <MemoryRouter initialEntries={['/tasks']}>
+      {/* decision 359: the same idle sign-out as the console (warning, then the session ends; IdleSession.tsx) */}
+      <IdleSession />
       <div className="teams-bar toolbar">
         <span className="muted small">{auth.me?.displayName ?? auth.me?.userId}</span>
         <button

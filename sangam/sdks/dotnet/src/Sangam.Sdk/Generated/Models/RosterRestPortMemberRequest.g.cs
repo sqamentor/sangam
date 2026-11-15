@@ -18,6 +18,9 @@ public sealed record RosterRestPortMemberRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("rotationId")]
     public string? RotationId { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("rotationOffset")]
     public int? RotationOffset { get; init; }
 

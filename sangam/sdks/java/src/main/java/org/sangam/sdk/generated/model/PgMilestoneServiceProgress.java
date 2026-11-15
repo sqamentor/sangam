@@ -9,12 +9,12 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code PgMilestoneServiceProgress} of sangam-api.yaml 0.1.0.
  *
  * @param milestoneId wire field {@code milestoneId}
- * @param expectedVersion wire field {@code expectedVersion}
+ * @param expectedVersion wire field {@code expectedVersion} (required)
  * @param percentComplete wire field {@code percentComplete}
  * @param actualStart wire field {@code actualStart}
  * @param actualEnd wire field {@code actualEnd}
  * @param addEvidence wire field {@code addEvidence}
- * @param drop wire field {@code drop}
+ * @param drop wire field {@code drop} (required)
  * @param reason wire field {@code reason}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

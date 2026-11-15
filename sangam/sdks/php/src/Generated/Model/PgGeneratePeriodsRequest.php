@@ -13,8 +13,8 @@ use Sangam\Sdk\Generated\Support;
  * Schema PgGeneratePeriodsRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $frequency
- * @property-read int|null $fiscalStartYear
- * @property-read int|null $dueOffsetDays
+ * @property-read int|null $fiscalStartYear (required)
+ * @property-read int|null $dueOffsetDays (required)
  */
 final class PgGeneratePeriodsRequest implements \JsonSerializable
 {

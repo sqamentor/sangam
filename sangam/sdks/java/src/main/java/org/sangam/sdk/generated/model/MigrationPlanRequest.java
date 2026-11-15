@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param sourceDefinitionId wire field {@code sourceDefinitionId} (required)
  * @param targetDefinitionId wire field {@code targetDefinitionId} (required)
- * @param mapEqualActivities wire field {@code mapEqualActivities}
+ * @param mapEqualActivities wire field {@code mapEqualActivities} (required)
  * @param instructions wire field {@code instructions}
  * @param formMappings wire field {@code formMappings}
  * @param variables wire field {@code variables}

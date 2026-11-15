@@ -14,9 +14,9 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $name (required)
  * @property-read string|null $type (required)  One of: string, number, boolean, date, reference, json.
- * @property-read bool|null $required
+ * @property-read bool|null $required (required)
  * @property-read string|null $reference
- * @property-read bool|null $sensitive
+ * @property-read bool|null $sensitive (required)
  */
 final class DataObjectField implements \JsonSerializable
 {

@@ -320,6 +320,13 @@ export interface FormField {
   inQuery?: boolean;
   /** Generic module screens: the value only fills a {placeholder} of the action path; it is not sent. */
   inPath?: boolean;
+  /**
+   * Generic module screens: a checkbox the user did not touch is left out of the body, so the server applies its
+   * documented default for a missing value (e.g. a committee kind's chairRequired). Without it a body checkbox is always
+   * sent as true / false (its defaultValue when untouched, else false): a request member bound to a Java primitive is
+   * refused when missing (Jackson 3, 400 VALIDATION_FAILED).
+   */
+  omitUntouched?: boolean;
 }
 
 export interface FormSchema {

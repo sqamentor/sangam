@@ -21,6 +21,9 @@ public sealed record RosterRestPortDemandRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("dutyDay")]
     public global::System.DateOnly? DutyDay { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("requiredCount")]
     public int? RequiredCount { get; init; }
 

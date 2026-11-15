@@ -12,6 +12,9 @@ public sealed record AiClassify
     [global::System.Text.Json.Serialization.JsonPropertyName("key")]
     public string? Key { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("version")]
     public int? Version { get; init; }
 

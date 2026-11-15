@@ -12,6 +12,9 @@ public sealed record RosterRestPortDecisionRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("version")]
     public long? Version { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("approved")]
     public bool? Approved { get; init; }
 

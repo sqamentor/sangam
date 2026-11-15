@@ -33,9 +33,10 @@ const caseFiles: ScreenDef = {
     // long rowVersion of 0 would be checked as version 0 (CaseFileService.bump, expected >= 0), so the row's version is sent
     { id: 'stage', label: 'act.moveStage', path: '/case-files/{caseId}/stage', fields: [f.text('stage', undefined, true), f.num('rowVersion', 'fld.rowVersion', true)], defaults: (r) => ({ rowVersion: r?.rowVersion as number }), reason: 'body' },
     { id: 'assign', label: 'act.assign', path: '/case-files/{caseId}/assign', fields: [f.text('ownerSeat', undefined, true), f.text('orgUnit'), f.num('rowVersion', 'fld.rowVersion', true)], defaults: (r) => ({ rowVersion: r?.rowVersion as number }), reason: 'body' },
-    { id: 'party', label: 'act.addParty', path: '/case-files/{caseId}/parties', fields: [f.text('partyId', undefined, true), f.text('role', undefined, true)], hint: 'mod.cases.conflictHint' },
-    // M-051: DocumentRequest(folderId, contentItemId, title, ...) (CaseFileRestPort.java:53)
-    { id: 'document', label: 'act.attachDocument', path: '/case-files/{caseId}/documents', fields: [f.text('contentItemId', 'fld.documentId', true), f.text('folderId'), f.text('title')] },
+    { id: 'party', label: 'act.addParty', path: '/case-files/{caseId}/parties', fields: [f.text('partyId', undefined, true), f.text('role', undefined, true), f.bool('masked', 'fld.maskParty')], hint: 'mod.cases.conflictHint' },
+    // M-051: DocumentRequest(folderId, contentItemId, title, docType, confidentiality, boolean exhibit, exhibitRef)
+    // (CaseFileRestPort.java:53-54); exhibit is a primitive, so the box is always sent
+    { id: 'document', label: 'act.attachDocument', path: '/case-files/{caseId}/documents', fields: [f.text('contentItemId', 'fld.documentId', true), f.text('folderId'), f.text('title'), f.bool('exhibit', 'fld.exhibit'), f.text('exhibitRef', 'fld.exhibitRef')] },
     // M-051: FolderRequest(parentFolderId, name) (CaseFileController.java:63)
     { id: 'folder', label: 'act.addFolder', path: '/case-files/{caseId}/folders', fields: [f.text('name', undefined, true), f.text('parentFolderId', 'fld.parentId')] },
     // M-051: NoteRequest(body, visibility ALL | INTERNAL | PRIVATE) (CaseFileController.java:66; CaseContentsService.java:48)
@@ -173,12 +174,12 @@ const committees: ScreenDef = {
     id: 'constitute',
     label: 'act.constitute',
     path: '/committees',
-    fields: [f.text('kind', undefined, true), f.text('name', undefined, true), f.text('orgUnit'), f.text('constitutionRef', undefined, true), f.dt('validFrom'), f.dt('validTo'), f.text('quorumRule'), f.bool('chairRequired'), f.num('minNoticeHours'), f.json('members')],
+    fields: [f.text('kind', undefined, true), f.text('name', undefined, true), f.text('orgUnit'), f.text('constitutionRef', undefined, true), f.dt('validFrom'), f.dt('validTo'), f.text('quorumRule'), f.bool('chairRequired', undefined, { omitUntouched: true }), f.num('minNoticeHours'), f.json('members')],
   },
   actions: [
     // M-051: MemberInput(personRef, seatRef, displayName, role, voting) (CommitteeService.java:44); default roles CHAIR, MEMBER,
     // MEMBER_SECRETARY, INVITEE (CaseConfig.java:318-320), checked at CommitteeService.java:102
-    { id: 'member', label: 'act.addMember', path: '/committees/{committeeId}/members', fields: [f.text('personRef', 'fld.personId'), f.text('seatRef', 'fld.seatId'), f.text('displayName'), f.select('role', ['CHAIR', 'MEMBER', 'MEMBER_SECRETARY', 'INVITEE'], undefined, true), f.bool('voting')] },
+    { id: 'member', label: 'act.addMember', path: '/committees/{committeeId}/members', fields: [f.text('personRef', 'fld.personId'), f.text('seatRef', 'fld.seatId'), f.text('displayName'), f.select('role', ['CHAIR', 'MEMBER', 'MEMBER_SECRETARY', 'INVITEE'], undefined, true), f.bool('voting', undefined, { omitUntouched: true })] },
     { id: 'removeMember', label: 'act.removeMember', method: 'DELETE', path: '/committees/{committeeId}/members/{memberId}', fields: [f.text('memberId', undefined, true)], reason: 'query', danger: true },
     { id: 'reconstitute', label: 'act.reconstitute', path: '/committees/{committeeId}/reconstitute', fields: [f.text('constitutionRef', undefined, true), f.json('members')], reason: 'body' },
     { id: 'dissolve', label: 'act.dissolve', path: '/committees/{committeeId}/dissolve', reason: 'body', danger: true },
@@ -210,7 +211,7 @@ const meetings: ScreenDef = {
     { id: 'start', label: 'act.startMeeting', path: '/meetings/{meetingId}/start', noJson: true, hint: 'mod.committees.quorumChecked' },
     // M-051: DecisionInput(itemId, text, outcome, votesFor, votesAgainst, abstentions, dissent: list of objects) (MeetingService.java:76-77);
     // outcome required, one of APPROVED, REJECTED, DEFERRED, NOTED, MODIFIED, WITHDRAWN (:41, :445-447)
-    { id: 'decision', label: 'act.recordDecision', path: '/meetings/{meetingId}/decisions', fields: [f.text('itemId', 'fld.agendaItemId', true), f.area('text', 'fld.decisionText', true), f.select('outcome', ['APPROVED', 'REJECTED', 'DEFERRED', 'NOTED', 'MODIFIED', 'WITHDRAWN'], undefined, true), f.num('votesFor', 'fld.votesFor'), f.num('votesAgainst', 'fld.votesAgainst'), f.num('abstentions', 'fld.abstentions'), f.json('dissent')] },
+    { id: 'decision', label: 'act.recordDecision', path: '/meetings/{meetingId}/decisions', fields: [f.text('itemId', 'fld.agendaItemId', true), f.area('text', 'fld.decisionText', true), f.select('outcome', ['APPROVED', 'REJECTED', 'DEFERRED', 'NOTED', 'MODIFIED', 'WITHDRAWN'], undefined, true), f.num('votesFor', 'fld.votesFor', true, { defaultValue: 0 }), f.num('votesAgainst', 'fld.votesAgainst', true, { defaultValue: 0 }), f.num('abstentions', 'fld.abstentions', true, { defaultValue: 0 }), f.json('dissent')] },
     // M-051: AdjournRequest(reason, newAt) (MeetingRestPort.java:35)
     { id: 'adjourn', label: 'act.adjourn', path: '/meetings/{meetingId}/adjourn', fields: [f.dt('newAt', 'fld.newDate', true)], reason: 'body' },
     { id: 'end', label: 'act.endMeeting', path: '/meetings/{meetingId}/end', noJson: true },
@@ -299,3 +300,6 @@ const pendency: ScreenDef = {
 export function ReferencesPage() {
   return <ModulePage title="mod.references.title" description="mod.references.desc" screens={[references, pendency]} />;
 }
+
+/** The screen definitions, for the tests of the request bodies their actions send. */
+export const caseworkScreens = { caseFiles, hearings, committees, meetings, actionItems, references };

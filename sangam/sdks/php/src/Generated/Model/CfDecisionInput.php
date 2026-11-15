@@ -15,9 +15,9 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $itemId
  * @property-read string|null $text
  * @property-read string|null $outcome
- * @property-read int|null $votesFor
- * @property-read int|null $votesAgainst
- * @property-read int|null $abstentions
+ * @property-read int|null $votesFor (required)
+ * @property-read int|null $votesAgainst (required)
+ * @property-read int|null $abstentions (required)
  * @property-read list<array<string, mixed>>|null $dissent
  */
 final class CfDecisionInput implements \JsonSerializable

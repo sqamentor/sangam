@@ -30,6 +30,9 @@ public sealed record RosterRestPortAssignRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("locationId")]
     public string? LocationId { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("override")]
     public bool? Override { get; init; }
 

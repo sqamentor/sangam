@@ -7,7 +7,7 @@ TAGS.append(('Programmes', 'Programme monitoring: programmes, targets, milestone
 schema('PgPublished', 'Published (Java IndicatorRegistry.Published).',
        'version:int contentHash:s changed:bool')
 schema('PgGeneratePeriodsRequest', 'GeneratePeriodsRequest (Java ProgrammeController.GeneratePeriodsRequest).',
-       'frequency:s fiscalStartYear:int dueOffsetDays:int')
+       'frequency:s fiscalStartYear:int dueOffsetDays:int', ['fiscalStartYear', 'dueOffsetDays'])
 schema('PgPeriod', 'Period (Java PeriodService.Period).',
        'id:s frequency:s startsOn:date endsOn:date label:s fiscalYear:s seqInYear:int dueOn:date state:s stateReason:s changedBy:s changedAt:dt')
 schema('PgPeriodStateRequest', 'PeriodStateRequest (Java ProgrammeController.PeriodStateRequest).',
@@ -17,7 +17,7 @@ schema('PgProgrammeInput', 'ProgrammeInput (Java ProgrammeService.ProgrammeInput
 schema('PgProgramme', 'Programme (Java ProgrammeService.Programme).',
        'id:s parentId:s kind:s code:s name:s ownerOrg:s startsOn:date endsOn:date status:s budget:s currency:s indicators:list:s attributes:obj rowVersion:int createdBy:s createdAt:dt updatedAt:dt')
 schema('PgUpdateProgrammeRequest', 'UpdateProgrammeRequest (Java ProgrammeController.UpdateProgrammeRequest).',
-       'expectedVersion:int programme:PgProgrammeInput')
+       'expectedVersion:int programme:PgProgrammeInput', ['expectedVersion'])
 schema('PgStatusRequest', 'StatusRequest (Java ProgrammeController.StatusRequest).',
        'status:s')
 schema('PgNode', 'Node (Java ProgrammeService.Node).',
@@ -31,13 +31,13 @@ schema('PgReasonBody', 'ReasonBody (Java ProgrammeController.ReasonBody).',
 schema('PgReviseTargetRequest', 'ReviseTargetRequest (Java ProgrammeController.ReviseTargetRequest).',
        'value:s reason:s')
 schema('PgAllocationRequest', 'AllocationRequest (Java ProgrammeRestPort.AllocationRequest).',
-       'explicit:obj weights:obj allowOverAllocation:bool')
+       'explicit:obj weights:obj allowOverAllocation:bool', ['allowOverAllocation'])
 schema('PgMilestoneRequest', 'MilestoneRequest (Java ProgrammeController.MilestoneRequest).',
-       'orgUnit:s name:s seq:int plannedStart:date plannedEnd:date weight:s dependsOn:list:s')
+       'orgUnit:s name:s seq:int plannedStart:date plannedEnd:date weight:s dependsOn:list:s', ['seq'])
 schema('PgMilestone', 'Milestone (Java MilestoneService.Milestone).',
        'id:s programmeId:s orgUnit:s name:s seq:int plannedStart:date plannedEnd:date actualStart:date actualEnd:date weight:s percentComplete:s status:s dependsOn:list:any evidence:list:any delayDays:int rowVersion:int updatedBy:s updatedAt:dt')
 schema('PgMilestoneServiceProgress', 'Progress (Java MilestoneService.Progress).',
-       'milestoneId:s expectedVersion:int percentComplete:s actualStart:date actualEnd:date addEvidence:list:any drop:bool reason:s')
+       'milestoneId:s expectedVersion:int percentComplete:s actualStart:date actualEnd:date addEvidence:list:any drop:bool reason:s', ['expectedVersion', 'drop'])
 schema('PgCampaignRequest', 'CampaignRequest (Java ProgrammeController.CampaignRequest).',
        'returnKey:s periodId:s rootNode:s programmeId:s')
 schema('PgCampaignResult', 'CampaignResult (Java ReturnService.CampaignResult).',
@@ -53,9 +53,9 @@ schema('PgStoredFinding', 'StoredFinding (Java ReturnService.StoredFinding).',
 schema('PgEvent', 'Event (Java ReturnService.Event).',
        'seq:int fromState:s toState:s approvalLevel:int actor:s reason:s at:dt')
 schema('PgReturnValuesRequest', 'ReturnValuesRequest (Java ProgrammeController.ReturnValuesRequest).',
-       'expectedVersion:int values:obj remarks:smap')
+       'expectedVersion:int values:obj remarks:smap', ['expectedVersion'])
 schema('PgVersionBody', 'VersionBody (Java ProgrammeController.VersionBody).',
-       'expectedVersion:int')
+       'expectedVersion:int', ['expectedVersion'])
 schema('PgOutcome', 'Outcome (Java ReturnService.Outcome).',
        'returnRow:PgReturnRow findings:list:PgFinding advanced:bool')
 schema('PgFinding', 'Finding (Java ValidationEngine.Finding).',

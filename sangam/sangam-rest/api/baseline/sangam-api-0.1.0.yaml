@@ -42941,6 +42941,9 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - slotMinutes
+              - unitsPerSlot
       responses:
         '200':
           description: Success
@@ -43172,6 +43175,9 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - bump
+              - waitlistIfFull
       responses:
         '200':
           description: Success
@@ -43214,6 +43220,9 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - bump
+              - waitlistIfFull
       responses:
         '201':
           description: Success
@@ -43508,6 +43517,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - approved
       responses:
         '200':
           description: Success
@@ -44580,6 +44591,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - version
       responses:
         '200':
           description: Success
@@ -44790,6 +44803,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - slaMinutes
       responses:
         '200':
           description: Success
@@ -46096,6 +46111,9 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - durationMinutes
+              - night
       responses:
         '200':
           description: Success
@@ -46632,6 +46650,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - rotationOffset
       responses:
         '200':
           description: Success
@@ -46782,6 +46802,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - requiredCount
       responses:
         '201':
           description: Success
@@ -47057,6 +47079,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - approved
       responses:
         '200':
           description: Success
@@ -47312,6 +47336,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - override
       responses:
         '201':
           description: Success
@@ -47809,6 +47835,8 @@ paths:
             schema:
               type: object
               additionalProperties: true
+              required:
+              - approved
       responses:
         '200':
           description: Success
@@ -48933,6 +48961,8 @@ components:
       required:
       - instructions
       - reason
+      - skipCustomListeners
+      - skipIoMappings
     TriggerRequest:
       type: object
       description: Signal one waiting execution (FC-12 triggerable tasks, receive tasks).
@@ -50530,6 +50560,7 @@ components:
       required:
       - sourceActivityIds
       - targetActivityIds
+      - updateEventTrigger
     MigrationPlanRequest:
       type: object
       description: Migration plan input (R48).
@@ -50551,6 +50582,7 @@ components:
       required:
       - sourceDefinitionId
       - targetDefinitionId
+      - mapEqualActivities
     MigrationPlan:
       type: object
       description: Validated plan with dry-run count.
@@ -50593,6 +50625,8 @@ components:
       required:
       - plan
       - reason
+      - skipCustomListeners
+      - skipIoMappings
     RestartRequest:
       type: object
       description: Restart completed or cancelled instances (R63, PF-05).
@@ -50617,6 +50651,8 @@ components:
       - processDefinitionId
       - processInstanceIds
       - reason
+      - initialVariables
+      - skipCustomListeners
     CleanupStatus:
       type: object
       description: History cleanup status (R29, PF-10).
@@ -51997,6 +52033,7 @@ components:
       - operator
       - threshold
       - channel
+      - active
     AgentUsage:
       type: object
       description: Agent usage and budgets (R72).
@@ -52393,6 +52430,8 @@ components:
       required:
       - name
       - protocol
+      - mfaRequired
+      - sessionTimeoutMin
     IdentityTestResult:
       type: object
       description: Connection test result.
@@ -52584,6 +52623,8 @@ components:
       required:
       - name
       - type
+      - required
+      - sensitive
     DataObjectDef:
       type: object
       description: Data object definition (R78, EC-06).
@@ -53802,6 +53843,8 @@ components:
           type: string
         reason:
           type: string
+      required:
+      - approve
     AiKbVersion:
       type: object
       description: KbVersion.
@@ -53944,6 +53987,8 @@ components:
           type: string
         text:
           type: string
+      required:
+      - version
     AiClassification:
       type: object
       description: Classification.
@@ -54510,6 +54555,9 @@ components:
         rowVersion:
           type: integer
           format: int64
+      required:
+      - replace
+      - rowVersion
     CfStageRequest:
       type: object
       description: StageRequest (Java CaseFileRestPort.StageRequest).
@@ -54521,6 +54569,8 @@ components:
         rowVersion:
           type: integer
           format: int64
+      required:
+      - rowVersion
     CfCaseFileRestPortAssignRequest:
       type: object
       description: AssignRequest (Java CaseFileRestPort.AssignRequest).
@@ -54532,6 +54582,8 @@ components:
         rowVersion:
           type: integer
           format: int64
+      required:
+      - rowVersion
     CfReasonRequest:
       type: object
       description: ReasonRequest (Java CaseFileRestPort.ReasonRequest).
@@ -54543,6 +54595,8 @@ components:
         rowVersion:
           type: integer
           format: int64
+      required:
+      - rowVersion
     CfMilestoneRequest:
       type: object
       description: MilestoneRequest (Java CaseFileController.MilestoneRequest).
@@ -54584,6 +54638,8 @@ components:
           type: string
         masked:
           type: boolean
+      required:
+      - masked
     CfPartyResult:
       type: object
       description: PartyResult (Java CaseFileRestPort.PartyResult).
@@ -54662,6 +54718,8 @@ components:
           type: boolean
         exhibitRef:
           type: string
+      required:
+      - exhibit
     CfNote:
       type: object
       description: Note (Java CaseContentsService.Note).
@@ -54782,6 +54840,8 @@ components:
         nextDate:
           type: string
           format: date-time
+      required:
+      - adjourned
     CfCaseFileRestPortExtendRequest:
       type: object
       description: ExtendRequest (Java CaseFileRestPort.ExtendRequest).
@@ -55351,6 +55411,10 @@ components:
           items:
             type: object
             additionalProperties: true
+      required:
+      - votesFor
+      - votesAgainst
+      - abstentions
     CfTextBody:
       type: object
       description: TextBody (Java MeetingController.TextBody).
@@ -55368,6 +55432,8 @@ components:
           type: string
         esignRef:
           type: string
+      required:
+      - version
     CfCreateRequest:
       type: object
       description: CreateRequest (Java ActionItemService.CreateRequest).
@@ -55403,6 +55469,8 @@ components:
           type: boolean
         reason:
           type: string
+      required:
+      - accept
     CfReassignBody:
       type: object
       description: ReassignBody (Java MeetingController.ReassignBody).
@@ -55452,6 +55520,8 @@ components:
           type: string
         allowDuplicate:
           type: boolean
+      required:
+      - allowDuplicate
     CfReference:
       type: object
       description: Reference (Java ReferenceService.Reference).
@@ -55700,6 +55770,8 @@ components:
           format: int64
         sha256:
           type: string
+      required:
+      - sizeBytes
     ChannelMessage:
       type: object
       description: A conversation message.
@@ -56209,6 +56281,9 @@ components:
       required:
       - operation
       - account
+      - fromCommitment
+      - fromEncumbrance
+      - holdIfShort
     LedgerAccountingEntry:
       type: object
       description: An accounting entry of the event mapping.
@@ -56884,6 +56959,8 @@ components:
           format: int64
         reason:
           type: string
+      required:
+      - value
     OpsReason:
       type: object
       description: ReasonRequest.
@@ -56939,6 +57016,9 @@ components:
         dueOffsetDays:
           type: integer
           format: int32
+      required:
+      - fiscalStartYear
+      - dueOffsetDays
     PgPeriod:
       type: object
       description: Period (Java PeriodService.Period).
@@ -57066,6 +57146,8 @@ components:
           format: int32
         programme:
           $ref: '#/components/schemas/PgProgrammeInput'
+      required:
+      - expectedVersion
     PgStatusRequest:
       type: object
       description: StatusRequest (Java ProgrammeController.StatusRequest).
@@ -57161,6 +57243,8 @@ components:
           additionalProperties: true
         allowOverAllocation:
           type: boolean
+      required:
+      - allowOverAllocation
     PgMilestoneRequest:
       type: object
       description: MilestoneRequest (Java ProgrammeController.MilestoneRequest).
@@ -57184,6 +57268,8 @@ components:
           type: array
           items:
             type: string
+      required:
+      - seq
     PgMilestone:
       type: object
       description: Milestone (Java MilestoneService.Milestone).
@@ -57258,6 +57344,9 @@ components:
           type: boolean
         reason:
           type: string
+      required:
+      - expectedVersion
+      - drop
     PgCampaignRequest:
       type: object
       description: CampaignRequest (Java ProgrammeController.CampaignRequest).
@@ -57445,6 +57534,8 @@ components:
           type: object
           additionalProperties:
             type: string
+      required:
+      - expectedVersion
     PgVersionBody:
       type: object
       description: VersionBody (Java ProgrammeController.VersionBody).
@@ -57452,6 +57543,8 @@ components:
         expectedVersion:
           type: integer
           format: int32
+      required:
+      - expectedVersion
     PgOutcome:
       type: object
       description: Outcome (Java ReturnService.Outcome).

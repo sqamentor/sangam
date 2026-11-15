@@ -57,6 +57,9 @@ public sealed record CfRegisterRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("parentReferenceId")]
     public string? ParentReferenceId { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("allowDuplicate")]
     public bool? AllowDuplicate { get; init; }
 }

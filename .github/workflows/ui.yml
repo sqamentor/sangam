@@ -51,6 +51,8 @@ jobs:
         run: $RL run --check ui-lint --ledger-dir "$LEDGER" --expect node_modules -- npm run lint
       - name: Type-check
         run: $RL run --check ui-typecheck --ledger-dir "$LEDGER" --expect node_modules -- npm run typecheck
+      - name: Type-check the end-to-end specs (decision 352)
+        run: $RL run --check ui-typecheck-e2e --ledger-dir "$LEDGER" --expect node_modules -- npm run typecheck:e2e
       - name: Unit tests
         # The "test" script is already "vitest --run"; vitest 4 rejects a repeated --run flag.
         run: $RL run --check ui-test --ledger-dir "$LEDGER" --expect node_modules -- npm run test

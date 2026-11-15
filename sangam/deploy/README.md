@@ -594,6 +594,12 @@ All of these are off by default; the chart's `values.schema.json` checks each va
   agent is IPv4 loopback only, so `http://[::1]:<port>` is not accepted. The UI image refuses anything else, and the
   same value is the only agent origin in the UI's CSP `connect-src` and in `/config.json` `dsc.agentUrl`. Start the
   agent with `--origin` set to the UI's own origin. Compose: the same variable in `.env`.
+- **Idle sign-out (decisions 349, 359).** `ui.idleMinutes` (`SANGAM_UI_IDLE_MINUTES`, whole minutes 1-480, default 15)
+  is served as `/config.json` `session.idleMinutes`. After that long without input the UI shows a warning with "Stay
+  signed in", then ends the session and returns to sign-in. It cannot be switched off: the UI image refuses to start
+  on any other value (`18-sangam-session.envsh`), and the chart schema refuses it too. Every page has it, the Teams tab
+  (`/teams.html`) included; only the queue hall display (`/display/queue/`) is exempt, because nobody gives it input.
+  The legal source of a specific period is UNVERIFIED (decision 349). Compose: the same variable in `.env`.
 - **eSign and DSC add-on (decision 217).** Bouncy Castle is only in the optional module `sangam-esign`, never in the
   default server. To add it: build the server image with `--build-arg WITH_ESIGN=true` (it adds the sangam-esign jar
   and the Bouncy Castle jars the server does not ship to `/opt/sangam/lib-ext`, listed in `ESIGN-ADDON.txt`), or put

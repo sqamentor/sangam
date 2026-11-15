@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema AiDecide of sangam-api.yaml 0.1.0.
  *
- * @property-read bool|null $approve
+ * @property-read bool|null $approve (required)
  * @property-read string|null $argsHash
  * @property-read string|null $reason
  */

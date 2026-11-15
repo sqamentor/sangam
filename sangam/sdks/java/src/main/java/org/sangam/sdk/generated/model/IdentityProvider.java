@@ -14,8 +14,8 @@ package org.sangam.sdk.generated.model;
  * @param issuer wire field {@code issuer}
  * @param metadataUrl wire field {@code metadataUrl}
  * @param attributeMapping wire field {@code attributeMapping}
- * @param mfaRequired wire field {@code mfaRequired}
- * @param sessionTimeoutMin wire field {@code sessionTimeoutMin}
+ * @param mfaRequired wire field {@code mfaRequired} (required)
+ * @param sessionTimeoutMin wire field {@code sessionTimeoutMin} (required)
  * @param status wire field {@code status}.  One of: DRAFT, TESTED, ACTIVE.
  * @param lastTestAt wire field {@code lastTestAt}
  */

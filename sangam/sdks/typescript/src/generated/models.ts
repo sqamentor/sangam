@@ -305,7 +305,7 @@ export interface AiClassification {
  */
 export interface AiClassify {
   key?: string;
-  version?: number;
+  version: number;
   labels?: Array<string>;
   fields?: Array<string>;
   threshold?: number;
@@ -328,7 +328,7 @@ export interface AiCorrect {
  * Schema `AiDecide`.
  */
 export interface AiDecide {
-  approve?: boolean;
+  approve: boolean;
   argsHash?: string;
   reason?: string;
 }
@@ -582,7 +582,7 @@ export interface AlertRule {
   /**  One of: IN_APP, EMAIL, WEBHOOK. */
   channel: 'IN_APP' | 'EMAIL' | 'WEBHOOK';
   recipients?: Array<string>;
-  active?: boolean;
+  active: boolean;
 }
 
 /**
@@ -1089,10 +1089,10 @@ export interface BookingModelHoldRequest {
   priorityLevel?: number;
   attributes?: Record<string, unknown>;
   businessKey?: string;
-  bump?: boolean;
+  bump: boolean;
   authorityRef?: string;
   reason?: string;
-  waitlistIfFull?: boolean;
+  waitlistIfFull: boolean;
   holdMinutes?: number;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
@@ -1106,11 +1106,11 @@ export interface BookingModelHoldRequest {
 export interface BookingModelRecurrence {
   /**  One of: DAILY, WEEKLY, MONTHLY. */
   frequency?: 'DAILY' | 'WEEKLY' | 'MONTHLY';
-  interval?: number;
+  interval: number;
   byDays?: Array<'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY'>;
   count?: number;
   until?: string;
-  allOrNothing?: boolean;
+  allOrNothing: boolean;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
 }
@@ -1388,8 +1388,8 @@ export interface CalendarServiceSlotTemplate {
   from?: string;
   /** Local time (HH:mm[:ss]) */
   to?: string;
-  slotMinutes?: number;
-  unitsPerSlot?: number;
+  slotMinutes: number;
+  unitsPerSlot: number;
   validFrom?: string;
   validTo?: string;
   attributes?: Record<string, unknown>;
@@ -1803,7 +1803,7 @@ export interface CfAddPartyRequest {
   role?: string;
   capacity?: string;
   representedBy?: string;
-  masked?: boolean;
+  masked: boolean;
 }
 
 /**
@@ -1874,7 +1874,7 @@ export interface CfApproveBody {
  * Schema `CfApproveMinutesRequest`.
  */
 export interface CfApproveMinutesRequest {
-  version?: number;
+  version: number;
   contentHash?: string;
   esignRef?: string;
 }
@@ -1966,7 +1966,7 @@ export interface CfCaseFile {
 export interface CfCaseFileRestPortAssignRequest {
   ownerSeat?: string;
   orgUnit?: string;
-  rowVersion?: number;
+  rowVersion: number;
 }
 
 /**
@@ -2189,9 +2189,9 @@ export interface CfDecisionInput {
   itemId?: string;
   text?: string;
   outcome?: string;
-  votesFor?: number;
-  votesAgainst?: number;
-  abstentions?: number;
+  votesFor: number;
+  votesAgainst: number;
+  abstentions: number;
   dissent?: Array<Record<string, unknown>>;
 }
 
@@ -2227,7 +2227,7 @@ export interface CfDocumentRequest {
   title?: string;
   docType?: string;
   confidentiality?: string;
-  exhibit?: boolean;
+  exhibit: boolean;
   exhibitRef?: string;
 }
 
@@ -2607,7 +2607,7 @@ export interface CfOpenRequest {
 export interface CfOutcomeRequest {
   outcome?: string;
   outcomeText?: string;
-  adjourned?: boolean;
+  adjourned: boolean;
   nextDate?: string;
 }
 
@@ -2682,7 +2682,7 @@ export interface CfQuorumStatus {
 export interface CfReasonRequest {
   reason?: string;
   stage?: string;
-  rowVersion?: number;
+  rowVersion: number;
 }
 
 /**
@@ -2838,7 +2838,7 @@ export interface CfRegisterRequest {
   fixedDueAt?: string;
   attributes?: Record<string, unknown>;
   parentReferenceId?: string;
-  allowDuplicate?: boolean;
+  allowDuplicate: boolean;
 }
 
 /**
@@ -2902,7 +2902,7 @@ export interface CfSplitRequest {
 export interface CfStageRequest {
   stage?: string;
   reason?: string;
-  rowVersion?: number;
+  rowVersion: number;
 }
 
 /**
@@ -2932,11 +2932,11 @@ export interface CfTransferRequest {
  */
 export interface CfUpdateRequest {
   attributes?: Record<string, unknown>;
-  replace?: boolean;
+  replace: boolean;
   title?: string;
   priority?: string;
   confidentiality?: string;
-  rowVersion?: number;
+  rowVersion: number;
 }
 
 /**
@@ -2945,7 +2945,7 @@ export interface CfUpdateRequest {
  * Schema `CfVerifyRequest`.
  */
 export interface CfVerifyRequest {
-  accept?: boolean;
+  accept: boolean;
   reason?: string;
 }
 
@@ -2980,7 +2980,7 @@ export interface ChannelAttachment {
   key?: string;
   name?: string;
   contentType?: string;
-  sizeBytes?: number;
+  sizeBytes: number;
   sha256?: string;
 }
 
@@ -4196,9 +4196,9 @@ export interface DataObjectField {
   name: string;
   /**  One of: string, number, boolean, date, reference, json. */
   type: 'string' | 'number' | 'boolean' | 'date' | 'reference' | 'json';
-  required?: boolean;
+  required: boolean;
   reference?: string;
-  sensitive?: boolean;
+  sensitive: boolean;
 }
 
 /**
@@ -6233,8 +6233,8 @@ export interface IdentityProvider {
   issuer?: string;
   metadataUrl?: string;
   attributeMapping?: Record<string, string>;
-  mfaRequired?: boolean;
-  sessionTimeoutMin?: number;
+  mfaRequired: boolean;
+  sessionTimeoutMin: number;
   /**  One of: DRAFT, TESTED, ACTIVE. */
   status?: 'DRAFT' | 'TESTED' | 'ACTIVE';
   lastTestAt?: string;
@@ -6634,9 +6634,9 @@ export interface LedgerOperationRequest {
   reference?: string;
   auditRef?: string;
   asOf?: string;
-  fromCommitment?: boolean;
-  fromEncumbrance?: boolean;
-  holdIfShort?: boolean;
+  fromCommitment: boolean;
+  fromEncumbrance: boolean;
+  holdIfShort: boolean;
   attrs?: Record<string, unknown>;
 }
 
@@ -6791,8 +6791,8 @@ export interface MigrationExecuteRequest {
   plan: MigrationPlanRequest;
   processInstanceIds?: Array<string>;
   filter?: BatchFilter;
-  skipCustomListeners?: boolean;
-  skipIoMappings?: boolean;
+  skipCustomListeners: boolean;
+  skipIoMappings: boolean;
   reason: string;
 }
 
@@ -6804,7 +6804,7 @@ export interface MigrationExecuteRequest {
 export interface MigrationInstruction {
   sourceActivityIds: Array<string>;
   targetActivityIds: Array<string>;
-  updateEventTrigger?: boolean;
+  updateEventTrigger: boolean;
 }
 
 /**
@@ -6829,7 +6829,7 @@ export interface MigrationPlan {
 export interface MigrationPlanRequest {
   sourceDefinitionId: string;
   targetDefinitionId: string;
-  mapEqualActivities?: boolean;
+  mapEqualActivities: boolean;
   instructions?: Array<MigrationInstruction>;
   formMappings?: Record<string, unknown>;
   variables?: Record<string, unknown>;
@@ -7038,8 +7038,8 @@ export interface ModifyPreviewRequest {
 export interface ModifyRequest {
   instructions: Array<ModificationInstruction>;
   reason: string;
-  skipCustomListeners?: boolean;
-  skipIoMappings?: boolean;
+  skipCustomListeners: boolean;
+  skipIoMappings: boolean;
 }
 
 /**
@@ -7439,7 +7439,7 @@ export interface OpenTaskCount {
 export interface OpsAdvance {
   series?: string;
   period?: string;
-  value?: number;
+  value: number;
   reason?: string;
 }
 
@@ -8053,7 +8053,7 @@ export interface PgAlert {
 export interface PgAllocationRequest {
   explicit?: Record<string, unknown>;
   weights?: Record<string, unknown>;
-  allowOverAllocation?: boolean;
+  allowOverAllocation: boolean;
 }
 
 /**
@@ -8166,8 +8166,8 @@ export interface PgFinding {
  */
 export interface PgGeneratePeriodsRequest {
   frequency?: string;
-  fiscalStartYear?: number;
-  dueOffsetDays?: number;
+  fiscalStartYear: number;
+  dueOffsetDays: number;
 }
 
 /**
@@ -8223,7 +8223,7 @@ export interface PgMilestone {
 export interface PgMilestoneRequest {
   orgUnit?: string;
   name?: string;
-  seq?: number;
+  seq: number;
   plannedStart?: string;
   plannedEnd?: string;
   weight?: string;
@@ -8237,12 +8237,12 @@ export interface PgMilestoneRequest {
  */
 export interface PgMilestoneServiceProgress {
   milestoneId?: string;
-  expectedVersion?: number;
+  expectedVersion: number;
   percentComplete?: string;
   actualStart?: string;
   actualEnd?: string;
   addEvidence?: Array<unknown>;
-  drop?: boolean;
+  drop: boolean;
   reason?: string;
 }
 
@@ -8443,7 +8443,7 @@ export interface PgReturnRow {
  * Schema `PgReturnValuesRequest`.
  */
 export interface PgReturnValuesRequest {
-  expectedVersion?: number;
+  expectedVersion: number;
   values?: Record<string, unknown>;
   remarks?: Record<string, string>;
 }
@@ -8565,7 +8565,7 @@ export interface PgTarget {
  * Schema `PgUpdateProgrammeRequest`.
  */
 export interface PgUpdateProgrammeRequest {
-  expectedVersion?: number;
+  expectedVersion: number;
   programme?: PgProgrammeInput;
 }
 
@@ -8599,7 +8599,7 @@ export interface PgVarianceRequest {
  * Schema `PgVersionBody`.
  */
 export interface PgVersionBody {
-  expectedVersion?: number;
+  expectedVersion: number;
 }
 
 /**
@@ -9192,7 +9192,7 @@ export interface QueueRestPortServicePointRequest {
   resourceId?: string;
   calendarId?: string;
   tokenPrefix?: string;
-  slaMinutes?: number;
+  slaMinutes: number;
   priorityDecision?: string;
   routingDecision?: string;
   config?: Record<string, unknown>;
@@ -11059,7 +11059,7 @@ export interface ResourcesAllotNextRequest {
  * Schema `ResourcesApprovalRequest`.
  */
 export interface ResourcesApprovalRequest {
-  approved?: boolean;
+  approved: boolean;
   reason?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
@@ -11146,7 +11146,7 @@ export interface ResourcesDrawVerifyRequest {
  */
 export interface ResourcesExtendRequest {
   newValidTo?: string;
-  version?: number;
+  version: number;
   reason?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
@@ -11302,8 +11302,8 @@ export interface RestartRequest {
   processDefinitionId: string;
   processInstanceIds: Array<string>;
   startBeforeActivityIds?: Array<string>;
-  initialVariables?: boolean;
-  skipCustomListeners?: boolean;
+  initialVariables: boolean;
+  skipCustomListeners: boolean;
   reason: string;
 }
 
@@ -11373,7 +11373,7 @@ export interface RosterRestPortAssignRequest {
   demandId?: string;
   dutySeatId?: string;
   locationId?: string;
-  override?: boolean;
+  override: boolean;
   overrideReason?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
@@ -11386,7 +11386,7 @@ export interface RosterRestPortAssignRequest {
  */
 export interface RosterRestPortDecisionRequest {
   version?: number;
-  approved?: boolean;
+  approved: boolean;
   reason?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
@@ -11402,7 +11402,7 @@ export interface RosterRestPortDemandRequest {
   skill?: string;
   weekdays?: Array<string>;
   dutyDay?: string;
-  requiredCount?: number;
+  requiredCount: number;
   dutySeatId?: string;
   locationId?: string;
   /** Members not named in the schema (additionalProperties). */
@@ -11418,7 +11418,7 @@ export interface RosterRestPortMemberRequest {
   seatId?: string;
   skills?: Array<string>;
   rotationId?: string;
-  rotationOffset?: number;
+  rotationOffset: number;
   attributes?: Record<string, unknown>;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
@@ -11475,8 +11475,8 @@ export interface RosterRestPortShiftRequest {
   code?: string;
   name?: string;
   fromTime?: string;
-  durationMinutes?: number;
-  night?: boolean;
+  durationMinutes: number;
+  night: boolean;
   skills?: Array<string>;
   zoneId?: string;
   attributes?: Record<string, unknown>;

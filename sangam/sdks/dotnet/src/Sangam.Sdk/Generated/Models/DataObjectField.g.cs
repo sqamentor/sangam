@@ -21,12 +21,18 @@ public sealed record DataObjectField
     [global::System.Text.Json.Serialization.JsonPropertyName("type")]
     public string? Type { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("required")]
     public bool? Required { get; init; }
 
     [global::System.Text.Json.Serialization.JsonPropertyName("reference")]
     public string? Reference { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("sensitive")]
     public bool? Sensitive { get; init; }
 }

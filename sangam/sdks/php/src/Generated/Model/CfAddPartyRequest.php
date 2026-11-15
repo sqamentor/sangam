@@ -17,7 +17,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $role
  * @property-read string|null $capacity
  * @property-read string|null $representedBy
- * @property-read bool|null $masked
+ * @property-read bool|null $masked (required)
  */
 final class CfAddPartyRequest implements \JsonSerializable
 {

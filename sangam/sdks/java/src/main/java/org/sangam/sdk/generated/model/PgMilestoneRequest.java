@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param orgUnit wire field {@code orgUnit}
  * @param name wire field {@code name}
- * @param seq wire field {@code seq}
+ * @param seq wire field {@code seq} (required)
  * @param plannedStart wire field {@code plannedStart}
  * @param plannedEnd wire field {@code plannedEnd}
  * @param weight wire field {@code weight}

@@ -21,9 +21,15 @@ public sealed record ModifyRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("reason")]
     public string? Reason { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("skipCustomListeners")]
     public bool? SkipCustomListeners { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("skipIoMappings")]
     public bool? SkipIoMappings { get; init; }
 }

@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code CfApproveMinutesRequest} of sangam-api.yaml 0.1.0.
  *
- * @param version wire field {@code version}
+ * @param version wire field {@code version} (required)
  * @param contentHash wire field {@code contentHash}
  * @param esignRef wire field {@code esignRef}
  */

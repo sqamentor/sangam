@@ -59,7 +59,8 @@ async function boot() {
   const theme = await teamsSdk.theme();
   if (theme === 'dark' || theme === 'contrast') document.documentElement.dataset.theme = 'dark';
   render(
-    <AuthProvider>
+    // decision 359: the idle sign-out forgets this tab's tokens; the provider's sign-out page cannot run in a Teams frame
+    <AuthProvider providerSignOut={false}>
       <TeamsTab authenticate={teamsSdk.authenticate} userManager={mgr} origin={window.location.origin} base={base} />
     </AuthProvider>,
   );

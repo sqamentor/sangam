@@ -12,6 +12,9 @@ public sealed record PgMilestoneServiceProgress
     [global::System.Text.Json.Serialization.JsonPropertyName("milestoneId")]
     public string? MilestoneId { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("expectedVersion")]
     public int? ExpectedVersion { get; init; }
 
@@ -27,6 +30,9 @@ public sealed record PgMilestoneServiceProgress
     [global::System.Text.Json.Serialization.JsonPropertyName("addEvidence")]
     public global::System.Collections.Generic.List<object>? AddEvidence { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("drop")]
     public bool? Drop { get; init; }
 

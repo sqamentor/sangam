@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param reason wire field {@code reason}
  * @param stage wire field {@code stage}
- * @param rowVersion wire field {@code rowVersion}
+ * @param rowVersion wire field {@code rowVersion} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record CfReasonRequest(

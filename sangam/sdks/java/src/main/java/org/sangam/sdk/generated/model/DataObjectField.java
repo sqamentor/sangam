@@ -10,9 +10,9 @@ package org.sangam.sdk.generated.model;
  *
  * @param name wire field {@code name} (required)
  * @param type wire field {@code type} (required).  One of: string, number, boolean, date, reference, json.
- * @param required wire field {@code required}
+ * @param required wire field {@code required} (required)
  * @param reference wire field {@code reference}
- * @param sensitive wire field {@code sensitive}
+ * @param sensitive wire field {@code sensitive} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record DataObjectField(

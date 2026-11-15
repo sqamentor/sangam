@@ -9,11 +9,11 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code CfUpdateRequest} of sangam-api.yaml 0.1.0.
  *
  * @param attributes wire field {@code attributes}
- * @param replace wire field {@code replace}
+ * @param replace wire field {@code replace} (required)
  * @param title wire field {@code title}
  * @param priority wire field {@code priority}
  * @param confidentiality wire field {@code confidentiality}
- * @param rowVersion wire field {@code rowVersion}
+ * @param rowVersion wire field {@code rowVersion} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record CfUpdateRequest(

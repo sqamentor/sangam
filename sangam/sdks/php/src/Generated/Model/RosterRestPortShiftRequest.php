@@ -16,8 +16,8 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $code
  * @property-read string|null $name
  * @property-read string|null $fromTime
- * @property-read int|null $durationMinutes
- * @property-read bool|null $night
+ * @property-read int|null $durationMinutes (required)
+ * @property-read bool|null $night (required)
  * @property-read list<string>|null $skills
  * @property-read string|null $zoneId
  * @property-read array<string, mixed>|null $attributes

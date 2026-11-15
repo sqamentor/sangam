@@ -9,6 +9,9 @@ namespace Sangam.Sdk.Generated.Models;
 /// </summary>
 public sealed record ResourcesApprovalRequest
 {
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("approved")]
     public bool? Approved { get; init; }
 

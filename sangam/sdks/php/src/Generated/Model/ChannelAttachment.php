@@ -15,7 +15,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $key
  * @property-read string|null $name
  * @property-read string|null $contentType
- * @property-read int|null $sizeBytes
+ * @property-read int|null $sizeBytes (required)
  * @property-read string|null $sha256
  */
 final class ChannelAttachment implements \JsonSerializable

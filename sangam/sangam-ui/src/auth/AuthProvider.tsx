@@ -96,7 +96,13 @@ function manager(): UserManager {
   return userManager;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+/**
+ * providerSignOut (default true): when the UI ends the session (idle, decision 349), also end the identity provider's
+ * session, so the next sign-in asks for the credentials again. The Teams tab (decision 359) passes false: the provider's
+ * sign-out page cannot run inside a Teams frame, so there the session ends by forgetting the tab's tokens, as its Sign
+ * out button does (TeamsApp.tsx).
+ */
+export function AuthProvider({ children, providerSignOut = true }: { children: ReactNode; providerSignOut?: boolean }) {
   const mode = config().authMode;
   const [status, setStatus] = useState<Status>('loading');
   const [me, setMe] = useState<Me | null>(null);
@@ -141,6 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTenantLocale(m.locale);
       const claimRoles = rolesFromClaims(decodeClaims(token));
       setMe({ ...m, roles: m.roles?.length ? m.roles : claimRoles, seats: m.seats ?? [] });
+      // signed in again (console or Teams tab): the reason the last session ended is no longer news
+      safeSession()?.removeItem(SIGNED_OUT_KEY);
+      setSignedOutReason(null);
       setError(null);
       setStatus('authenticated');
     } catch (e) {
@@ -235,9 +244,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const m = manager();
       const u = await m.getUser().catch(() => null);
       await m.removeUser().catch(() => undefined);
+      if (!providerSignOut) return;
       await m.signoutRedirect(u?.id_token ? { id_token_hint: u.id_token } : undefined).catch(() => undefined);
     },
-    [mode],
+    [mode, providerSignOut],
   );
 
   const completeCallback = useCallback(async () => {

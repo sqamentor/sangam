@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param sourceActivityIds wire field {@code sourceActivityIds} (required)
  * @param targetActivityIds wire field {@code targetActivityIds} (required)
- * @param updateEventTrigger wire field {@code updateEventTrigger}
+ * @param updateEventTrigger wire field {@code updateEventTrigger} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record MigrationInstruction(

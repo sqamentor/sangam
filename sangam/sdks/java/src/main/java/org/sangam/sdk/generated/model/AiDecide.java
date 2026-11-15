@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code AiDecide} of sangam-api.yaml 0.1.0.
  *
- * @param approve wire field {@code approve}
+ * @param approve wire field {@code approve} (required)
  * @param argsHash wire field {@code argsHash}
  * @param reason wire field {@code reason}
  */

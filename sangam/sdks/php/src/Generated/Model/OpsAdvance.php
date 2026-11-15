@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $series
  * @property-read string|null $period
- * @property-read int|null $value
+ * @property-read int|null $value (required)
  * @property-read string|null $reason
  */
 final class OpsAdvance implements \JsonSerializable

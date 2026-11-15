@@ -15,7 +15,7 @@ package org.sangam.sdk.generated.model;
  * @param threshold wire field {@code threshold} (required)
  * @param channel wire field {@code channel} (required).  One of: IN_APP, EMAIL, WEBHOOK.
  * @param recipients wire field {@code recipients}
- * @param active wire field {@code active}
+ * @param active wire field {@code active} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record AlertRule(

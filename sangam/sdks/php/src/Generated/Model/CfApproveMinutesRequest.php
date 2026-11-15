@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema CfApproveMinutesRequest of sangam-api.yaml 0.1.0.
  *
- * @property-read int|null $version
+ * @property-read int|null $version (required)
  * @property-read string|null $contentHash
  * @property-read string|null $esignRef
  */

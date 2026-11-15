@@ -15,8 +15,8 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $processDefinitionId (required)
  * @property-read list<string>|null $processInstanceIds (required)
  * @property-read list<string>|null $startBeforeActivityIds
- * @property-read bool|null $initialVariables
- * @property-read bool|null $skipCustomListeners
+ * @property-read bool|null $initialVariables (required)
+ * @property-read bool|null $skipCustomListeners (required)
  * @property-read string|null $reason (required)
  */
 final class RestartRequest implements \JsonSerializable

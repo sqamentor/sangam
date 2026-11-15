@@ -9,11 +9,11 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code BookingModelRecurrence} of sangam-api.yaml 0.1.0.
  *
  * @param frequency wire field {@code frequency}.  One of: DAILY, WEEKLY, MONTHLY.
- * @param interval wire field {@code interval}
+ * @param interval wire field {@code interval} (required)
  * @param byDays wire field {@code byDays}
  * @param count wire field {@code count}
  * @param until wire field {@code until}
- * @param allOrNothing wire field {@code allOrNothing}
+ * @param allOrNothing wire field {@code allOrNothing} (required)
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */
 public record BookingModelRecurrence(

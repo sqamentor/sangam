@@ -147,6 +147,7 @@
   "ui-install",
   "ui-lint",
   "ui-typecheck",
+  "ui-typecheck-e2e",
   "ui-test",
   "ui-build",
   "bpmn-watermark",

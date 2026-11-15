@@ -21,6 +21,9 @@ public sealed record MigrationPlanRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("targetDefinitionId")]
     public string? TargetDefinitionId { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("mapEqualActivities")]
     public bool? MapEqualActivities { get; init; }
 

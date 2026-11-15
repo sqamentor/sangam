@@ -20,10 +20,10 @@ package org.sangam.sdk.generated.model;
  * @param priorityLevel wire field {@code priorityLevel}
  * @param attributes wire field {@code attributes}
  * @param businessKey wire field {@code businessKey}
- * @param bump wire field {@code bump}
+ * @param bump wire field {@code bump} (required)
  * @param authorityRef wire field {@code authorityRef}
  * @param reason wire field {@code reason}
- * @param waitlistIfFull wire field {@code waitlistIfFull}
+ * @param waitlistIfFull wire field {@code waitlistIfFull} (required)
  * @param holdMinutes wire field {@code holdMinutes}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */

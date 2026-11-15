@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $sourceDefinitionId (required)
  * @property-read string|null $targetDefinitionId (required)
- * @property-read bool|null $mapEqualActivities
+ * @property-read bool|null $mapEqualActivities (required)
  * @property-read list<MigrationInstruction>|null $instructions
  * @property-read array<string, mixed>|null $formMappings
  * @property-read array<string, mixed>|null $variables

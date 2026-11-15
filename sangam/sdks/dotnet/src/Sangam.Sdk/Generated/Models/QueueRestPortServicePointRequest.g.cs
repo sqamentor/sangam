@@ -21,6 +21,9 @@ public sealed record QueueRestPortServicePointRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("tokenPrefix")]
     public string? TokenPrefix { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("slaMinutes")]
     public int? SlaMinutes { get; init; }
 

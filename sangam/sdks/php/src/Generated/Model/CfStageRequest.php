@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $stage
  * @property-read string|null $reason
- * @property-read int|null $rowVersion
+ * @property-read int|null $rowVersion (required)
  */
 final class CfStageRequest implements \JsonSerializable
 {

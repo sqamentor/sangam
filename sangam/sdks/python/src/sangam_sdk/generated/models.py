@@ -263,12 +263,15 @@ Schema ``AiClassification``."""
     model: str
 
 
-class AiClassify(TypedDict, total=False):
+class _AiClassifyRequired(TypedDict):
+    version: int
+
+
+class AiClassify(_AiClassifyRequired, total=False):
     """ClassifyRequest.
 
 Schema ``AiClassify``."""
     key: str
-    version: int
     labels: list[str]
     fields: list[str]
     threshold: Number
@@ -283,11 +286,14 @@ Schema ``AiCorrect``."""
     label: str
 
 
-class AiDecide(TypedDict, total=False):
+class _AiDecideRequired(TypedDict):
+    approve: bool
+
+
+class AiDecide(_AiDecideRequired, total=False):
     """DecideRequest.
 
 Schema ``AiDecide``."""
-    approve: bool
     argsHash: str
     reason: str
 
@@ -492,6 +498,7 @@ class _AlertRuleRequired(TypedDict):
     operator: Literal[">", "<", ">=", "<="]
     threshold: Number
     channel: Literal["IN_APP", "EMAIL", "WEBHOOK"]
+    active: bool
 
 
 class AlertRule(_AlertRuleRequired, total=False):
@@ -500,7 +507,6 @@ class AlertRule(_AlertRuleRequired, total=False):
 Schema ``AlertRule``."""
     id: str
     recipients: list[str]
-    active: bool
 
 
 AnalyticsSummary = TypedDict("AnalyticsSummary", {"processDefinitionKey": "str", "from": "str", "to": "str", "started": "int", "completed": "int", "active": "int", "cancelled": "int", "openIncidents": "int", "avgDurationMs": "int", "p50DurationMs": "int", "p95DurationMs": "int"}, total=False)
@@ -914,7 +920,12 @@ The schema allows members it does not name (additionalProperties); they are kept
     attributes: dict[str, Any]
 
 
-class BookingModelHoldRequest(TypedDict, total=False):
+class _BookingModelHoldRequestRequired(TypedDict):
+    bump: bool
+    waitlistIfFull: bool
+
+
+class BookingModelHoldRequest(_BookingModelHoldRequestRequired, total=False):
     """Request record BookingModelHoldRequest (sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java), typed from its source.
 
 Schema ``BookingModelHoldRequest``.
@@ -932,25 +943,26 @@ The schema allows members it does not name (additionalProperties); they are kept
     priorityLevel: int
     attributes: dict[str, Any]
     businessKey: str
-    bump: bool
     authorityRef: str
     reason: str
-    waitlistIfFull: bool
     holdMinutes: int
 
 
-class BookingModelRecurrence(TypedDict, total=False):
+class _BookingModelRecurrenceRequired(TypedDict):
+    interval: int
+    allOrNothing: bool
+
+
+class BookingModelRecurrence(_BookingModelRecurrenceRequired, total=False):
     """Request record BookingModelRecurrence (sangam-resources/src/main/java/org/sangam/resources/booking/BookingModel.java), typed from its source.
 
 Schema ``BookingModelRecurrence``.
 
 The schema allows members it does not name (additionalProperties); they are kept as received."""
     frequency: Literal["DAILY", "WEEKLY", "MONTHLY"]
-    interval: int
     byDays: list[Literal["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]]
     count: int
     until: str
-    allOrNothing: bool
 
 
 class BookingModelWaitlistRequest(TypedDict, total=False):
@@ -1186,7 +1198,9 @@ CalendarServiceSlotTemplate.__doc__ = """Request record CalendarServiceSlotTempl
 
 Schema ``CalendarServiceSlotTemplate``.
 
-The schema allows members it does not name (additionalProperties); they are kept as received."""
+The schema allows members it does not name (additionalProperties); they are kept as received.
+
+Required keys: slotMinutes, unitsPerSlot."""
 
 class _CancelAckRequestRequired(TypedDict):
     workerId: str
@@ -1539,7 +1553,11 @@ Schema ``CfActionItemServicePendency``."""
     overdue: int
 
 
-class CfAddPartyRequest(TypedDict, total=False):
+class _CfAddPartyRequestRequired(TypedDict):
+    masked: bool
+
+
+class CfAddPartyRequest(_CfAddPartyRequestRequired, total=False):
     """AddPartyRequest (Java CaseFileRestPort.AddPartyRequest).
 
 Schema ``CfAddPartyRequest``."""
@@ -1548,7 +1566,6 @@ Schema ``CfAddPartyRequest``."""
     role: str
     capacity: str
     representedBy: str
-    masked: bool
 
 
 class CfAdjournRequest(TypedDict, total=False):
@@ -1603,11 +1620,14 @@ Schema ``CfApproveBody``."""
     draftHash: str
 
 
-class CfApproveMinutesRequest(TypedDict, total=False):
+class _CfApproveMinutesRequestRequired(TypedDict):
+    version: int
+
+
+class CfApproveMinutesRequest(_CfApproveMinutesRequestRequired, total=False):
     """ApproveMinutesRequest (Java MeetingRestPort.ApproveMinutesRequest).
 
 Schema ``CfApproveMinutesRequest``."""
-    version: int
     contentHash: str
     esignRef: str
 
@@ -1681,13 +1701,16 @@ Schema ``CfCaseFile``."""
     rowVersion: int
 
 
-class CfCaseFileRestPortAssignRequest(TypedDict, total=False):
+class _CfCaseFileRestPortAssignRequestRequired(TypedDict):
+    rowVersion: int
+
+
+class CfCaseFileRestPortAssignRequest(_CfCaseFileRestPortAssignRequestRequired, total=False):
     """AssignRequest (Java CaseFileRestPort.AssignRequest).
 
 Schema ``CfCaseFileRestPortAssignRequest``."""
     ownerSeat: str
     orgUnit: str
-    rowVersion: int
 
 
 class CfCaseFileRestPortExtendRequest(TypedDict, total=False):
@@ -1877,16 +1900,19 @@ Schema ``CfDecision``."""
     recordedAt: str
 
 
-class CfDecisionInput(TypedDict, total=False):
+class _CfDecisionInputRequired(TypedDict):
+    votesFor: int
+    votesAgainst: int
+    abstentions: int
+
+
+class CfDecisionInput(_CfDecisionInputRequired, total=False):
     """DecisionInput (Java MeetingService.DecisionInput).
 
 Schema ``CfDecisionInput``."""
     itemId: str
     text: str
     outcome: str
-    votesFor: int
-    votesAgainst: int
-    abstentions: int
     dissent: list[dict[str, Any]]
 
 
@@ -1909,7 +1935,11 @@ Schema ``CfDocument``."""
     removedAt: str
 
 
-class CfDocumentRequest(TypedDict, total=False):
+class _CfDocumentRequestRequired(TypedDict):
+    exhibit: bool
+
+
+class CfDocumentRequest(_CfDocumentRequestRequired, total=False):
     """DocumentRequest (Java CaseFileRestPort.DocumentRequest).
 
 Schema ``CfDocumentRequest``."""
@@ -1918,7 +1948,6 @@ Schema ``CfDocumentRequest``."""
     title: str
     docType: str
     confidentiality: str
-    exhibit: bool
     exhibitRef: str
 
 
@@ -2240,13 +2269,16 @@ Schema ``CfOpenRequest``."""
     processInstanceId: str
 
 
-class CfOutcomeRequest(TypedDict, total=False):
+class _CfOutcomeRequestRequired(TypedDict):
+    adjourned: bool
+
+
+class CfOutcomeRequest(_CfOutcomeRequestRequired, total=False):
     """OutcomeRequest (Java CaseFileRestPort.OutcomeRequest).
 
 Schema ``CfOutcomeRequest``."""
     outcome: str
     outcomeText: str
-    adjourned: bool
     nextDate: str
 
 
@@ -2303,13 +2335,16 @@ Schema ``CfQuorumStatus``."""
     met: bool
 
 
-class CfReasonRequest(TypedDict, total=False):
+class _CfReasonRequestRequired(TypedDict):
+    rowVersion: int
+
+
+class CfReasonRequest(_CfReasonRequestRequired, total=False):
     """ReasonRequest (Java CaseFileRestPort.ReasonRequest).
 
 Schema ``CfReasonRequest``."""
     reason: str
     stage: str
-    rowVersion: int
 
 
 class CfReassignBody(TypedDict, total=False):
@@ -2425,7 +2460,11 @@ Schema ``CfReferenceView``."""
     history: list[CfEvent]
 
 
-class CfRegisterRequest(TypedDict, total=False):
+class _CfRegisterRequestRequired(TypedDict):
+    allowDuplicate: bool
+
+
+class CfRegisterRequest(_CfRegisterRequestRequired, total=False):
     """RegisterRequest (Java ReferenceService.RegisterRequest).
 
 Schema ``CfRegisterRequest``."""
@@ -2445,7 +2484,6 @@ Schema ``CfRegisterRequest``."""
     fixedDueAt: str
     attributes: dict[str, Any]
     parentReferenceId: str
-    allowDuplicate: bool
 
 
 class CfReplyRequest(TypedDict, total=False):
@@ -2493,13 +2531,16 @@ Schema ``CfSplitRequest``."""
     reason: str
 
 
-class CfStageRequest(TypedDict, total=False):
+class _CfStageRequestRequired(TypedDict):
+    rowVersion: int
+
+
+class CfStageRequest(_CfStageRequestRequired, total=False):
     """StageRequest (Java CaseFileRestPort.StageRequest).
 
 Schema ``CfStageRequest``."""
     stage: str
     reason: str
-    rowVersion: int
 
 
 class CfTextBody(TypedDict, total=False):
@@ -2518,23 +2559,29 @@ Schema ``CfTransferRequest``."""
     remarks: str
 
 
-class CfUpdateRequest(TypedDict, total=False):
+class _CfUpdateRequestRequired(TypedDict):
+    replace: bool
+    rowVersion: int
+
+
+class CfUpdateRequest(_CfUpdateRequestRequired, total=False):
     """UpdateRequest (Java CaseFileRestPort.UpdateRequest).
 
 Schema ``CfUpdateRequest``."""
     attributes: dict[str, Any]
-    replace: bool
     title: str
     priority: str
     confidentiality: str
-    rowVersion: int
 
 
-class CfVerifyRequest(TypedDict, total=False):
+class _CfVerifyRequestRequired(TypedDict):
+    accept: bool
+
+
+class CfVerifyRequest(_CfVerifyRequestRequired, total=False):
     """VerifyRequest (Java MeetingRestPort.VerifyRequest).
 
 Schema ``CfVerifyRequest``."""
-    accept: bool
     reason: str
 
 
@@ -2556,14 +2603,17 @@ Schema ``ChannelAddParticipant``."""
     principal: str
 
 
-class ChannelAttachment(TypedDict, total=False):
+class _ChannelAttachmentRequired(TypedDict):
+    sizeBytes: int
+
+
+class ChannelAttachment(_ChannelAttachmentRequired, total=False):
     """A stored conversation attachment.
 
 Schema ``ChannelAttachment``."""
     key: str
     name: str
     contentType: str
-    sizeBytes: int
     sha256: str
 
 
@@ -3656,15 +3706,15 @@ Schema ``DataObjectDef``."""
 class _DataObjectFieldRequired(TypedDict):
     name: str
     type: Literal["string", "number", "boolean", "date", "reference", "json"]
+    required: bool
+    sensitive: bool
 
 
 class DataObjectField(_DataObjectFieldRequired, total=False):
     """Data-object field (R78).
 
 Schema ``DataObjectField``."""
-    required: bool
     reference: str
-    sensitive: bool
 
 
 class _DataObjectRecordOperationRequired(TypedDict):
@@ -5354,6 +5404,8 @@ Schema ``HistoryInstanceMigrationResult``."""
 class _IdentityProviderRequired(TypedDict):
     name: str
     protocol: Literal["OIDC", "SAML2", "LDAP"]
+    mfaRequired: bool
+    sessionTimeoutMin: int
 
 
 class IdentityProvider(_IdentityProviderRequired, total=False):
@@ -5364,8 +5416,6 @@ Schema ``IdentityProvider``."""
     issuer: str
     metadataUrl: str
     attributeMapping: dict[str, str]
-    mfaRequired: bool
-    sessionTimeoutMin: int
     status: Literal["DRAFT", "TESTED", "ACTIVE"]
     lastTestAt: str
 
@@ -5696,6 +5746,9 @@ Schema ``LedgerHeldRequest``."""
 class _LedgerOperationRequestRequired(TypedDict):
     operation: str
     account: LedgerAccountRef
+    fromCommitment: bool
+    fromEncumbrance: bool
+    holdIfShort: bool
 
 
 class LedgerOperationRequest(_LedgerOperationRequestRequired, total=False):
@@ -5709,9 +5762,6 @@ Schema ``LedgerOperationRequest``."""
     reference: str
     auditRef: str
     asOf: str
-    fromCommitment: bool
-    fromEncumbrance: bool
-    holdIfShort: bool
     attrs: dict[str, Any]
 
 
@@ -5836,6 +5886,8 @@ Schema ``MessageResult``."""
 
 class _MigrationExecuteRequestRequired(TypedDict):
     plan: MigrationPlanRequest
+    skipCustomListeners: bool
+    skipIoMappings: bool
     reason: str
 
 
@@ -5845,19 +5897,14 @@ class MigrationExecuteRequest(_MigrationExecuteRequestRequired, total=False):
 Schema ``MigrationExecuteRequest``."""
     processInstanceIds: list[str]
     filter: BatchFilter
-    skipCustomListeners: bool
-    skipIoMappings: bool
 
 
-class _MigrationInstructionRequired(TypedDict):
-    sourceActivityIds: list[str]
-    targetActivityIds: list[str]
-
-
-class MigrationInstruction(_MigrationInstructionRequired, total=False):
+class MigrationInstruction(TypedDict):
     """Activity mapping; 1:N and N:1 allowed.
 
 Schema ``MigrationInstruction``."""
+    sourceActivityIds: list[str]
+    targetActivityIds: list[str]
     updateEventTrigger: bool
 
 
@@ -5876,13 +5923,13 @@ Schema ``MigrationPlan``."""
 class _MigrationPlanRequestRequired(TypedDict):
     sourceDefinitionId: str
     targetDefinitionId: str
+    mapEqualActivities: bool
 
 
 class MigrationPlanRequest(_MigrationPlanRequestRequired, total=False):
     """Migration plan input (R48).
 
 Schema ``MigrationPlanRequest``."""
-    mapEqualActivities: bool
     instructions: list[MigrationInstruction]
     formMappings: dict[str, Any]
     variables: dict[str, Any]
@@ -6060,15 +6107,12 @@ Schema ``ModifyPreviewRequest``."""
     instructions: list[ModificationInstruction]
 
 
-class _ModifyRequestRequired(TypedDict):
-    instructions: list[ModificationInstruction]
-    reason: str
-
-
-class ModifyRequest(_ModifyRequestRequired, total=False):
+class ModifyRequest(TypedDict):
     """Modify a running instance; a reason is mandatory (R63).
 
 Schema ``ModifyRequest``."""
+    instructions: list[ModificationInstruction]
+    reason: str
     skipCustomListeners: bool
     skipIoMappings: bool
 
@@ -6404,13 +6448,16 @@ Schema ``OpenTaskCount``."""
     count: int
 
 
-class OpsAdvance(TypedDict, total=False):
+class _OpsAdvanceRequired(TypedDict):
+    value: int
+
+
+class OpsAdvance(_OpsAdvanceRequired, total=False):
     """AdvanceRequest; forward only.
 
 Schema ``OpsAdvance``."""
     series: str
     period: str
-    value: int
     reason: str
 
 
@@ -6938,13 +6985,16 @@ Schema ``PgAlert``."""
     acknowledgedAt: str
 
 
-class PgAllocationRequest(TypedDict, total=False):
+class _PgAllocationRequestRequired(TypedDict):
+    allowOverAllocation: bool
+
+
+class PgAllocationRequest(_PgAllocationRequestRequired, total=False):
     """AllocationRequest (Java ProgrammeRestPort.AllocationRequest).
 
 Schema ``PgAllocationRequest``."""
     explicit: dict[str, Any]
     weights: dict[str, Any]
-    allowOverAllocation: bool
 
 
 class PgCampaignRequest(TypedDict, total=False):
@@ -7038,13 +7088,16 @@ Schema ``PgFinding``."""
     message: str
 
 
-class PgGeneratePeriodsRequest(TypedDict, total=False):
+class _PgGeneratePeriodsRequestRequired(TypedDict):
+    fiscalStartYear: int
+    dueOffsetDays: int
+
+
+class PgGeneratePeriodsRequest(_PgGeneratePeriodsRequestRequired, total=False):
     """GeneratePeriodsRequest (Java ProgrammeController.GeneratePeriodsRequest).
 
 Schema ``PgGeneratePeriodsRequest``."""
     frequency: str
-    fiscalStartYear: int
-    dueOffsetDays: int
 
 
 class PgImportRequest(TypedDict, total=False):
@@ -7086,30 +7139,36 @@ Schema ``PgMilestone``."""
     updatedAt: str
 
 
-class PgMilestoneRequest(TypedDict, total=False):
+class _PgMilestoneRequestRequired(TypedDict):
+    seq: int
+
+
+class PgMilestoneRequest(_PgMilestoneRequestRequired, total=False):
     """MilestoneRequest (Java ProgrammeController.MilestoneRequest).
 
 Schema ``PgMilestoneRequest``."""
     orgUnit: str
     name: str
-    seq: int
     plannedStart: str
     plannedEnd: str
     weight: str
     dependsOn: list[str]
 
 
-class PgMilestoneServiceProgress(TypedDict, total=False):
+class _PgMilestoneServiceProgressRequired(TypedDict):
+    expectedVersion: int
+    drop: bool
+
+
+class PgMilestoneServiceProgress(_PgMilestoneServiceProgressRequired, total=False):
     """Progress (Java MilestoneService.Progress).
 
 Schema ``PgMilestoneServiceProgress``."""
     milestoneId: str
-    expectedVersion: int
     percentComplete: str
     actualStart: str
     actualEnd: str
     addEvidence: list[Any]
-    drop: bool
     reason: str
 
 
@@ -7280,11 +7339,14 @@ Schema ``PgReturnRow``."""
     updatedAt: str
 
 
-class PgReturnValuesRequest(TypedDict, total=False):
+class _PgReturnValuesRequestRequired(TypedDict):
+    expectedVersion: int
+
+
+class PgReturnValuesRequest(_PgReturnValuesRequestRequired, total=False):
     """ReturnValuesRequest (Java ProgrammeController.ReturnValuesRequest).
 
 Schema ``PgReturnValuesRequest``."""
-    expectedVersion: int
     values: dict[str, Any]
     remarks: dict[str, str]
 
@@ -7384,11 +7446,14 @@ Schema ``PgTarget``."""
     createdAt: str
 
 
-class PgUpdateProgrammeRequest(TypedDict, total=False):
+class _PgUpdateProgrammeRequestRequired(TypedDict):
+    expectedVersion: int
+
+
+class PgUpdateProgrammeRequest(_PgUpdateProgrammeRequestRequired, total=False):
     """UpdateProgrammeRequest (Java ProgrammeController.UpdateProgrammeRequest).
 
 Schema ``PgUpdateProgrammeRequest``."""
-    expectedVersion: int
     programme: PgProgrammeInput
 
 
@@ -7412,7 +7477,7 @@ Schema ``PgVarianceRequest``."""
     asOf: str
 
 
-class PgVersionBody(TypedDict, total=False):
+class PgVersionBody(TypedDict):
     """VersionBody (Java ProgrammeController.VersionBody).
 
 Schema ``PgVersionBody``."""
@@ -7915,7 +7980,11 @@ The schema allows members it does not name (additionalProperties); they are kept
     attributes: dict[str, Any]
 
 
-class QueueRestPortServicePointRequest(TypedDict, total=False):
+class _QueueRestPortServicePointRequestRequired(TypedDict):
+    slaMinutes: int
+
+
+class QueueRestPortServicePointRequest(_QueueRestPortServicePointRequestRequired, total=False):
     """Request record QueueRestPortServicePointRequest (sangam-resources/src/main/java/org/sangam/resources/rest/QueueRestPort.java), typed from its source.
 
 Schema ``QueueRestPortServicePointRequest``.
@@ -7925,7 +7994,6 @@ The schema allows members it does not name (additionalProperties); they are kept
     resourceId: str
     calendarId: str
     tokenPrefix: str
-    slaMinutes: int
     priorityDecision: str
     routingDecision: str
     config: dict[str, Any]
@@ -9484,13 +9552,16 @@ Schema ``ResourcesAllotNextRequest``.
 
 The schema allows members it does not name (additionalProperties); they are kept as received."""
 
-class ResourcesApprovalRequest(TypedDict, total=False):
+class _ResourcesApprovalRequestRequired(TypedDict):
+    approved: bool
+
+
+class ResourcesApprovalRequest(_ResourcesApprovalRequestRequired, total=False):
     """Request record ResourcesApprovalRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java), typed from its source.
 
 Schema ``ResourcesApprovalRequest``.
 
 The schema allows members it does not name (additionalProperties); they are kept as received."""
-    approved: bool
     reason: str
 
 
@@ -9551,14 +9622,17 @@ The schema allows members it does not name (additionalProperties); they are kept
     seed: str
 
 
-class ResourcesExtendRequest(TypedDict, total=False):
+class _ResourcesExtendRequestRequired(TypedDict):
+    version: int
+
+
+class ResourcesExtendRequest(_ResourcesExtendRequestRequired, total=False):
     """Request record ResourcesExtendRequest (sangam-rest/src/main/java/org/sangam/rest/modules/resources/ResourcesController.java), typed from its source.
 
 Schema ``ResourcesExtendRequest``.
 
 The schema allows members it does not name (additionalProperties); they are kept as received."""
     newValidTo: str
-    version: int
     reason: str
 
 
@@ -9679,6 +9753,8 @@ The schema allows members it does not name (additionalProperties); they are kept
 class _RestartRequestRequired(TypedDict):
     processDefinitionId: str
     processInstanceIds: list[str]
+    initialVariables: bool
+    skipCustomListeners: bool
     reason: str
 
 
@@ -9687,8 +9763,6 @@ class RestartRequest(_RestartRequestRequired, total=False):
 
 Schema ``RestartRequest``."""
     startBeforeActivityIds: list[str]
-    initialVariables: bool
-    skipCustomListeners: bool
 
 
 class _ResubmitRequestRequired(TypedDict):
@@ -9742,7 +9816,11 @@ The schema allows members it does not name (additionalProperties); they are kept
     day: str
 
 
-class RosterRestPortAssignRequest(TypedDict, total=False):
+class _RosterRestPortAssignRequestRequired(TypedDict):
+    override: bool
+
+
+class RosterRestPortAssignRequest(_RosterRestPortAssignRequestRequired, total=False):
     """Request record RosterRestPortAssignRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java), typed from its source.
 
 Schema ``RosterRestPortAssignRequest``.
@@ -9755,22 +9833,28 @@ The schema allows members it does not name (additionalProperties); they are kept
     demandId: str
     dutySeatId: str
     locationId: str
-    override: bool
     overrideReason: str
 
 
-class RosterRestPortDecisionRequest(TypedDict, total=False):
+class _RosterRestPortDecisionRequestRequired(TypedDict):
+    approved: bool
+
+
+class RosterRestPortDecisionRequest(_RosterRestPortDecisionRequestRequired, total=False):
     """Request record RosterRestPortDecisionRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java), typed from its source.
 
 Schema ``RosterRestPortDecisionRequest``.
 
 The schema allows members it does not name (additionalProperties); they are kept as received."""
     version: int
-    approved: bool
     reason: str
 
 
-class RosterRestPortDemandRequest(TypedDict, total=False):
+class _RosterRestPortDemandRequestRequired(TypedDict):
+    requiredCount: int
+
+
+class RosterRestPortDemandRequest(_RosterRestPortDemandRequestRequired, total=False):
     """Request record RosterRestPortDemandRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java), typed from its source.
 
 Schema ``RosterRestPortDemandRequest``.
@@ -9780,12 +9864,15 @@ The schema allows members it does not name (additionalProperties); they are kept
     skill: str
     weekdays: list[str]
     dutyDay: str
-    requiredCount: int
     dutySeatId: str
     locationId: str
 
 
-class RosterRestPortMemberRequest(TypedDict, total=False):
+class _RosterRestPortMemberRequestRequired(TypedDict):
+    rotationOffset: int
+
+
+class RosterRestPortMemberRequest(_RosterRestPortMemberRequestRequired, total=False):
     """Request record RosterRestPortMemberRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java), typed from its source.
 
 Schema ``RosterRestPortMemberRequest``.
@@ -9794,7 +9881,6 @@ The schema allows members it does not name (additionalProperties); they are kept
     seatId: str
     skills: list[str]
     rotationId: str
-    rotationOffset: int
     attributes: dict[str, Any]
 
 
@@ -9833,7 +9919,12 @@ The schema allows members it does not name (additionalProperties); they are kept
     cycle: list[str]
 
 
-class RosterRestPortShiftRequest(TypedDict, total=False):
+class _RosterRestPortShiftRequestRequired(TypedDict):
+    durationMinutes: int
+    night: bool
+
+
+class RosterRestPortShiftRequest(_RosterRestPortShiftRequestRequired, total=False):
     """Request record RosterRestPortShiftRequest (sangam-resources/src/main/java/org/sangam/resources/rest/RosterRestPort.java), typed from its source.
 
 Schema ``RosterRestPortShiftRequest``.
@@ -9843,8 +9934,6 @@ The schema allows members it does not name (additionalProperties); they are kept
     code: str
     name: str
     fromTime: str
-    durationMinutes: int
-    night: bool
     skills: list[str]
     zoneId: str
     attributes: dict[str, Any]

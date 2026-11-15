@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Process instances, definitions, messages and signals (ARCHITECTURE §4). Cancel runs the model's cancel paths and
  * moves open external work to CANCEL_REQUESTED; delete additionally writes tombstones (VI.5). Resubmit raises the case
@@ -80,8 +83,24 @@ public interface ProcessPort {
     record DefinitionFilter(String key, Boolean latest, String deploymentId) {
     }
 
+    /**
+     * Correlates exactly one instance unless {@code all} is true. Optional on a request (SL-81): an omitted
+     * {@code all} is false.
+     */
     record MessageRequest(String messageName, String businessKey, String processInstanceId,
                           Map<String, Object> correlationKeys, Map<String, Object> variables, boolean all) {
+
+        /** Request binding: an omitted optional flag takes the documented default above, never a guess. */
+        @JsonCreator
+        public static MessageRequest fromRequest(@JsonProperty("messageName") String messageName,
+                                                 @JsonProperty("businessKey") String businessKey,
+                                                 @JsonProperty("processInstanceId") String processInstanceId,
+                                                 @JsonProperty("correlationKeys") Map<String, Object> correlationKeys,
+                                                 @JsonProperty("variables") Map<String, Object> variables,
+                                                 @JsonProperty("all") Boolean all) {
+            return new MessageRequest(messageName, businessKey, processInstanceId, correlationKeys, variables,
+                    all != null && all);
+        }
     }
 
     record MessageResult(String messageName, List<String> processInstanceIds, List<String> executionIds) {

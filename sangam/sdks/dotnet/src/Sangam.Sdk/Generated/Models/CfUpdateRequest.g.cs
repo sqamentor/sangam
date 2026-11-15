@@ -12,6 +12,9 @@ public sealed record CfUpdateRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("attributes")]
     public global::System.Collections.Generic.Dictionary<string, object?>? Attributes { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("replace")]
     public bool? Replace { get; init; }
 
@@ -24,6 +27,9 @@ public sealed record CfUpdateRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("confidentiality")]
     public string? Confidentiality { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("rowVersion")]
     public long? RowVersion { get; init; }
 }

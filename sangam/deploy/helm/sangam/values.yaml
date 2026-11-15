@@ -666,6 +666,10 @@ ui:
   # Decision 165: SANGAM_DSC_AGENT_ORIGIN, the DSC signing agent on the signer's computer (dsc.agentUrl, connect-src).
   # Empty = DSC not set up; else exactly http://127.0.0.1:<port> or http://localhost:<port> (no path; IPv4 loopback only, never [::1]).
   dscAgentOrigin: ""
+  # Decisions 349 and 359: SANGAM_UI_IDLE_MINUTES, the UI idle period in whole minutes (1-480, default 15). After it a
+  # warning with "Stay signed in", then the session ends. Every page has it, the Teams tab too; only the queue hall
+  # display (/display/queue/) is exempt. The legal source of a specific period is UNVERIFIED (decision 349).
+  idleMinutes: 15
   resources:
     requests: { cpu: 50m, memory: 64Mi }
     limits: { memory: 128Mi }

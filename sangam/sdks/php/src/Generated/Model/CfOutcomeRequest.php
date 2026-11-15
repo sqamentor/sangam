@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $outcome
  * @property-read string|null $outcomeText
- * @property-read bool|null $adjourned
+ * @property-read bool|null $adjourned (required)
  * @property-read string|null $nextDate
  */
 final class CfOutcomeRequest implements \JsonSerializable

@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param ownerSeat wire field {@code ownerSeat}
  * @param orgUnit wire field {@code orgUnit}
- * @param rowVersion wire field {@code rowVersion}
+ * @param rowVersion wire field {@code rowVersion} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record CfCaseFileRestPortAssignRequest(

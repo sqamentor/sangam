@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $orgUnit
  * @property-read string|null $name
- * @property-read int|null $seq
+ * @property-read int|null $seq (required)
  * @property-read string|null $plannedStart
  * @property-read string|null $plannedEnd
  * @property-read string|null $weight

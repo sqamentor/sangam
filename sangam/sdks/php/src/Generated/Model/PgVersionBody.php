@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema PgVersionBody of sangam-api.yaml 0.1.0.
  *
- * @property-read int|null $expectedVersion
+ * @property-read int|null $expectedVersion (required)
  */
 final class PgVersionBody implements \JsonSerializable
 {

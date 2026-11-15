@@ -17,7 +17,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $title
  * @property-read string|null $docType
  * @property-read string|null $confidentiality
- * @property-read bool|null $exhibit
+ * @property-read bool|null $exhibit (required)
  * @property-read string|null $exhibitRef
  */
 final class CfDocumentRequest implements \JsonSerializable

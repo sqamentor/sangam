@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code ResourcesApprovalRequest} of sangam-api.yaml 0.1.0.
  *
- * @param approved wire field {@code approved}
+ * @param approved wire field {@code approved} (required)
  * @param reason wire field {@code reason}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */

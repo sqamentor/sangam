@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read array<string, mixed>|null $explicit
  * @property-read array<string, mixed>|null $weights
- * @property-read bool|null $allowOverAllocation
+ * @property-read bool|null $allowOverAllocation (required)
  */
 final class PgAllocationRequest implements \JsonSerializable
 {

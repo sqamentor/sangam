@@ -54,6 +54,12 @@ export interface Act {
   hint?: string; // i18n key
   /** Fixed body fields merged after the form values. */
   bodyExtra?: Row;
+  /**
+   * Body values sent when neither the form nor the "more fields" JSON sets them (dotted keys reach nested objects, e.g.
+   * 'first.bump'): an operator flag the screen does not offer, sent as an explicit false because the server binds it to
+   * a Java primitive and refuses a missing one (Jackson 3, 400 VALIDATION_FAILED).
+   */
+  bodyDefaults?: Row;
   /** Send these fields as null when left empty (clear a value). */
   sendNulls?: string[];
   /**
@@ -200,12 +206,50 @@ export function filterQuery(fields: FormField[], values: FormValues, enginePath:
   return Object.fromEntries(Object.entries(values).map(([k, v]) => [k, enginePath && dt.has(k) && typeof v === 'string' && v ? engineDate(v) : (v as string)]));
 }
 
-export function buildRequest(fields: FormField[], values: FormValues, extraJson: string, dateOut: (v: string) => string = isoDate): { body: Row; query: Query; error?: string } {
+/**
+ * The value an untouched body checkbox is sent with: its declared default, else false. A request member bound to a Java
+ * primitive boolean is refused when it is missing (Jackson 3: 400 VALIDATION_FAILED), and the box the user saw unchecked
+ * means false. undefined when the box is left out (query fields, omitUntouched, or explicitBooleans off: a GET, /engine-rest).
+ */
+function untouchedCheckbox(f: FormField, explicitBooleans: boolean): boolean | undefined {
+  if (f.type !== 'checkbox' || f.inQuery || f.omitUntouched || !explicitBooleans) return undefined;
+  return typeof f.defaultValue === 'boolean' ? f.defaultValue : false;
+}
+
+/** The fields' declared defaults (defaultValue), shown in the controls when a dialog opens. */
+export function fieldDefaults(fields: FormField[]): FormValues {
+  const out: FormValues = {};
+  for (const x of flat(fields)) if (x.key && !x.inPath && x.defaultValue !== undefined) out[x.key] = x.defaultValue as FormValues[string];
+  return out;
+}
+
+function getPath(o: Row, key: string): unknown {
+  let cur: unknown = o;
+  for (const p of key.split('.')) {
+    if (!cur || typeof cur !== 'object') return undefined;
+    cur = (cur as Row)[p];
+  }
+  return cur;
+}
+
+/** Body values the form and the "more fields" JSON did not set (dotted keys reach into nested objects). */
+export function applyBodyDefaults(body: Row, defaults: Row | undefined): void {
+  for (const [k, v] of Object.entries(defaults ?? {})) if (getPath(body, k) === undefined) setPath(body, k, v);
+}
+
+export function buildRequest(
+  fields: FormField[],
+  values: FormValues,
+  extraJson: string,
+  dateOut: (v: string) => string = isoDate,
+  explicitBooleans = true,
+): { body: Row; query: Query; error?: string } {
   const body: Row = {};
   const query: Query = {};
   for (const f of flat(fields)) {
     if (!f.key || f.inPath) continue;
     let v = values[f.key];
+    if (v === undefined) v = untouchedCheckbox(f, explicitBooleans);
     if (v === undefined || v === '' || (Array.isArray(v) && v.length === 0)) continue;
     if (f.json && typeof v === 'string') {
       try {
@@ -230,7 +274,9 @@ export function buildRequest(fields: FormField[], values: FormValues, extraJson:
 
 export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act; row?: Row; context?: FormValues; onClose: () => void; onDone: (result: unknown) => void }) {
   const { t } = useTranslation();
-  const [values, setValuesRaw] = useState<FormValues>(() => act.defaults?.(row) ?? {});
+  // the fields' declared defaults are shown (and sent unless changed); the action's own defaults (from the row) win
+  const [declared] = useState<FormValues>(() => fieldDefaults(act.fields ?? []));
+  const [values, setValuesRaw] = useState<FormValues>(() => ({ ...declared, ...(act.defaults?.(row) ?? {}) }));
   const dyn = act.dynamicValues;
   const dynKey = dyn ? JSON.stringify(Object.keys(dyn).map((k) => dyn[k](values).map((o) => o.value))) : '';
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -263,8 +309,11 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
       .then((body) => {
         if (ctl.signal.aborted) return;
         const p = prefillFrom(act.fields ?? [], body, act.load?.omit);
-        // what the user typed while the answer was on its way wins
-        setValuesRaw((cur) => ({ ...p.values, ...Object.fromEntries(Object.entries(cur).filter(([, v]) => v !== undefined && v !== '')) }));
+        // what the user typed while the answer was on its way wins; a declared default the user left alone does not
+        setValuesRaw((cur) => ({
+          ...p.values,
+          ...Object.fromEntries(Object.entries(cur).filter(([k, v]) => v !== undefined && v !== '' && !(k in p.values && k in declared && v === declared[k]))),
+        }));
         setJson((cur) => (cur.trim() ? cur : p.json));
         setPrefilled(Object.keys(p.values).length > 0 || p.json !== '');
       })
@@ -283,11 +332,16 @@ export function ActionDialog({ act, row, context, onClose, onDone }: { act: Act;
     const errs = validateForm(schema, values, t);
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    const req = buildRequest(fields, values, json, isEnginePath(act.path) ? engineDate : undefined);
+    // Untouched body checkboxes are sent as false for the Sangam API, whose primitives are refused when missing (Jackson 3). Not
+    // for a GET (its values are query parameters: only what the user set, as for a filter) nor for the unchanged Operaton REST
+    // API at /engine-rest, which applies its own defaults to a missing flag.
+    const engine = isEnginePath(act.path);
+    const req = buildRequest(fields, values, json, engine ? engineDate : undefined, method !== 'GET' && !engine);
     if (req.error) {
       setJsonErr(req.error === 'json' ? t('mod.common.invalidJson') : t('mod.common.invalidJsonField', { field: req.error }));
       return;
     }
+    if (method !== 'GET') applyBodyDefaults(req.body, act.bodyDefaults);
     const refused = act.check?.(req.body, t);
     if (refused) {
       setJsonErr(refused);
@@ -617,13 +671,25 @@ export function ModulePage({ title, description, screens, extra }: { title: stri
 
 export const f = {
   text: (key: string, label = `fld.${key}`, required = false, extra: Partial<FormField> = {}): FormField => ({ key, label, type: 'textfield', validate: required ? { required } : undefined, ...extra }),
-  num: (key: string, label = `fld.${key}`, required = false): FormField => ({ key, label, type: 'number', validate: required ? { required } : undefined }),
+  /** A number; `extra.defaultValue` is shown in the control when the dialog opens and sent unless the user changes it. */
+  num: (key: string, label = `fld.${key}`, required = false, extra: Partial<FormField> = {}): FormField => ({ key, label, type: 'number', validate: required ? { required } : undefined, ...extra }),
   money: (key: string, label = `fld.${key}`, required = false): FormField => ({ key, label, type: 'textfield', description: 'fld.decimalHint', validate: { required, pattern: '-?\\d+(\\.\\d{1,4})?' } }),
   date: (key: string, label = `fld.${key}`, required = false, extra: Partial<FormField> = {}): FormField => ({ key, label, type: 'datetime', subtype: 'date', validate: required ? { required } : undefined, ...extra }),
   dt: (key: string, label = `fld.${key}`, required = false): FormField => ({ key, label, type: 'datetime', subtype: 'datetime', validate: required ? { required } : undefined }),
   area: (key: string, label = `fld.${key}`, required = false): FormField => ({ key, label, type: 'textarea', validate: required ? { required } : undefined }),
   json: (key: string, label = `fld.${key}`, required = false): FormField => ({ key, label, type: 'textarea', json: true, description: 'fld.jsonHint', validate: required ? { required } : undefined }),
-  bool: (key: string, label = `fld.${key}`): FormField => ({ key, label, type: 'checkbox' }),
+  /**
+   * A checkbox. In a body it is always sent as true / false (buildRequest): `defaultValue` is shown checked or not when the
+   * dialog opens and sent when untouched (false when none is given); `omitUntouched` leaves an untouched box out so the
+   * server's documented default for a missing value applies. Filters and query fields send only what the user set.
+   */
+  bool: (key: string, label = `fld.${key}`, opts: { defaultValue?: boolean; omitUntouched?: boolean } = {}): FormField => ({
+    key,
+    label,
+    type: 'checkbox',
+    ...(opts.defaultValue !== undefined ? { defaultValue: opts.defaultValue } : {}),
+    ...(opts.omitUntouched ? { omitUntouched: true } : {}),
+  }),
   select: (key: string, opts: string[], label = `fld.${key}`, required = false, prefix = 'opt.'): FormField => ({
     key,
     label,

@@ -18,12 +18,21 @@ public sealed record CfDecisionInput
     [global::System.Text.Json.Serialization.JsonPropertyName("outcome")]
     public string? Outcome { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("votesFor")]
     public int? VotesFor { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("votesAgainst")]
     public int? VotesAgainst { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("abstentions")]
     public int? Abstentions { get; init; }
 

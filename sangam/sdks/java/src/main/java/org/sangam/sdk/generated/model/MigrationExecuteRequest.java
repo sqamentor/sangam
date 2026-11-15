@@ -11,8 +11,8 @@ package org.sangam.sdk.generated.model;
  * @param plan wire field {@code plan} (required)
  * @param processInstanceIds wire field {@code processInstanceIds}
  * @param filter wire field {@code filter}
- * @param skipCustomListeners wire field {@code skipCustomListeners}
- * @param skipIoMappings wire field {@code skipIoMappings}
+ * @param skipCustomListeners wire field {@code skipCustomListeners} (required)
+ * @param skipIoMappings wire field {@code skipIoMappings} (required)
  * @param reason wire field {@code reason} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

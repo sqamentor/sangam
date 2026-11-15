@@ -33,9 +33,15 @@ public sealed record IdentityProvider
     [global::System.Text.Json.Serialization.JsonPropertyName("attributeMapping")]
     public global::System.Collections.Generic.Dictionary<string, string?>? AttributeMapping { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("mfaRequired")]
     public bool? MfaRequired { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("sessionTimeoutMin")]
     public int? SessionTimeoutMin { get; init; }
 

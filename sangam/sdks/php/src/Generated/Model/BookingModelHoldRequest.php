@@ -24,10 +24,10 @@ use Sangam\Sdk\Generated\Support;
  * @property-read int|null $priorityLevel
  * @property-read array<string, mixed>|null $attributes
  * @property-read string|null $businessKey
- * @property-read bool|null $bump
+ * @property-read bool|null $bump (required)
  * @property-read string|null $authorityRef
  * @property-read string|null $reason
- * @property-read bool|null $waitlistIfFull
+ * @property-read bool|null $waitlistIfFull (required)
  * @property-read int|null $holdMinutes
  */
 final class BookingModelHoldRequest implements \JsonSerializable

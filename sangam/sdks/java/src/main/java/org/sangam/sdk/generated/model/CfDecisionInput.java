@@ -11,9 +11,9 @@ package org.sangam.sdk.generated.model;
  * @param itemId wire field {@code itemId}
  * @param text wire field {@code text}
  * @param outcome wire field {@code outcome}
- * @param votesFor wire field {@code votesFor}
- * @param votesAgainst wire field {@code votesAgainst}
- * @param abstentions wire field {@code abstentions}
+ * @param votesFor wire field {@code votesFor} (required)
+ * @param votesAgainst wire field {@code votesAgainst} (required)
+ * @param abstentions wire field {@code abstentions} (required)
  * @param dissent wire field {@code dissent}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

@@ -40,8 +40,13 @@ def _v2_param_list(sig):
 
 # ---------------------------------------------------------------- request records (M-051)
 # A @RequestBody whose Java type is a record gets a typed schema derived from the record's source: one property per
-# component, in declaration order. Typing is additive (0.1.0): no `required`, and additionalProperties stays true
-# (Jackson ignores unknown members, and SL-40 custom fields travel as extra members). A Map body is typed from the keys
+# component, in declaration order. In a @RequestBody record (and the records nested in it) a primitive component
+# (boolean, int, long, ...) is `required`: the server's Jackson 3 mapper refuses a missing or null member for it (SL-81,
+# FAIL_ON_NULL_FOR_PRIMITIVES), so the contract says so
+# (PrimitiveRequestFieldContractTest). A record bound through a @JsonCreator factory (the SL-81 pattern: boxed
+# parameters, the documented default applied once) is required by the creator's primitive parameters instead. Every
+# other member stays optional, and additionalProperties stays true (Jackson ignores unknown members, and SL-40 custom
+# fields travel as extra members). A Map body is typed from the keys
 # its service reads (_v2_bodykeys.py, MapRequestBodyContractTest). RequestBodyContractTest checks every record body of
 # the contract against the compiled record.
 _V2_SCALAR = {"String": "s", "char": "s", "Character": "s", "int": "int", "Integer": "int", "short": "int",
@@ -52,6 +57,7 @@ _V2_SCALAR = {"String": "s", "char": "s", "Character": "s", "int": "int", "Integ
 _V2_STRINGS = {"BigDecimal": "Decimal number as a string", "BigInteger": "Integer as a string", "UUID": "UUID",
                "LocalTime": "Local time (HH:mm[:ss])", "LocalDateTime": "Local date-time (ISO-8601, no offset)",
                "Duration": "ISO-8601 duration"}
+_V2_PRIMITIVES = {"boolean", "int", "long", "short", "byte", "double", "float", "char"}
 _V2_DAYS = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
 _V2_SOURCES = {}
 
@@ -113,7 +119,7 @@ def _v2_split_type(t):
     return t[:t.index("<")].strip(), _v2_param_list(t[t.index("<") + 1:t.rindex(">")])
 
 
-def _v2_type_schema(t, src_path, owner):
+def _v2_type_schema(t, src_path, owner, strict=False):
     raw, args = _v2_split_type(_v2_re.sub(r"@[\w.]+(\([^)]*\))?\s*", "", t))
     simple = raw.split(".")[-1] if raw.startswith(("java.", "javax.")) else raw
     if simple in _V2_SCALAR:
@@ -123,7 +129,7 @@ def _v2_type_schema(t, src_path, owner):
     if simple == "DayOfWeek":
         return {"type": "string", "enum": list(_V2_DAYS)}
     if simple in ("List", "Set", "Collection", "SortedSet", "LinkedHashSet", "ArrayList", "[]"):
-        return {"type": "array", "items": _v2_type_schema(args[0], src_path, owner) if args else {}}
+        return {"type": "array", "items": _v2_type_schema(args[0], src_path, owner, strict) if args else {}}
     if simple in ("Map", "LinkedHashMap", "TreeMap", "SortedMap", "JsonNode", "ObjectNode"):
         return {"type": "object", "additionalProperties": True}
     found = _v2_find_type(src_path, raw)
@@ -132,11 +138,12 @@ def _v2_type_schema(t, src_path, owner):
     if kind == "enum":
         consts = [_v2_re.match(r"\s*(\w+)", c).group(1) for c in _v2_param_list(body.split(";")[0]) if c.strip()]
         return {"type": "string", "enum": consts}
-    return R(_v2_record_schema(path, body, display, owner))
+    return R(_v2_record_schema(path, body, display, owner, strict))
 
 
-def _v2_record_schema(path, body, display, owner):
-    """Registers the record's component schema (once) and returns its name."""
+def _v2_record_schema(path, body, display, owner, strict=False):
+    """Registers the record's component schema (once) and returns its name. strict: the record is bound by the
+    server's Jackson 3 mapper as (part of) a @RequestBody, so its primitive members are required (SL-81)."""
     name = display
     if name in SCHEMAS:
         assert SCHEMAS[name].get("x-sangam-record") == _v2_os.path.relpath(path, _V2_SANGAM).replace(_v2_os.sep, "/"), \
@@ -144,16 +151,46 @@ def _v2_record_schema(path, body, display, owner):
         return name
     rel = _v2_os.path.relpath(path, _V2_SANGAM).replace(_v2_os.sep, "/")
     SCHEMAS[name] = {"type": "object", "x-sangam-record": rel}   # placeholder first: records may nest
-    props = {}
+    props, required = {}, []
     for comp in _v2_param_list(body):
         comp = _v2_re.sub(r"@[\w.]+(\([^)]*\))?\s*", "", comp).strip()
         cm = _v2_re.match(r"(.+?)\s+(\w+)$", comp)
         assert cm, "%s: cannot read record component '%s' in %s" % (owner, comp, rel)
-        props[cm.group(2)] = _v2_type_schema(cm.group(1), path, owner)
+        props[cm.group(2)] = _v2_type_schema(cm.group(1), path, owner, strict)
+        if strict and cm.group(1).strip() in _V2_PRIMITIVES:
+            required.append(cm.group(2))
+    creator = _v2_creator_params(path, body) if strict else None
+    if creator is not None:
+        required = [n for n, t in creator if t in _V2_PRIMITIVES]
     SCHEMAS[name] = {"type": "object",
                      "description": "Request record %s (%s), typed from its source." % (display, rel),
                      "properties": props, "additionalProperties": True, "x-sangam-record": rel}
+    if required:
+        SCHEMAS[name]["required"] = required
     return name
+
+
+def _v2_creator_params(path, components):
+    """[(json name, Java type)] of the @JsonCreator of the record whose component list is `components`, or None."""
+    src = _v2_source(path)
+    at = src.find(components)
+    assert at >= 0, path
+    block = _v2_block(src, at + len(components))
+    cm = _v2_re.search(r"@JsonCreator(?:\([^)]*\))?\s*(?:public\s+|static\s+|private\s+|protected\s+)*"
+                       r"[\w<>.]+\s*\w*\s*\(", block)
+    if not cm:
+        return None
+    k, depth = cm.end(), 1
+    while depth:
+        depth += {"(": 1, ")": -1}.get(block[k], 0)
+        k += 1
+    out = []
+    for prm in _v2_param_list(block[cm.end():k - 1]):
+        jp = _v2_re.search(r"@JsonProperty\(\s*\"([^\"]+)\"\s*\)", prm)
+        assert jp, "%s: a @JsonCreator parameter without @JsonProperty: %s" % (path, prm)
+        t = _v2_re.sub(r"@[\w.]+(\([^)]*\))?\s*", "", prm).strip()
+        out.append((jp.group(1), _v2_re.match(r"(?:final\s+)?(.+?)\s+\w+$", t).group(1).strip()))
+    return out
 
 
 def _v2_body_schema(param, src_path, owner):
@@ -166,7 +203,7 @@ def _v2_body_schema(param, src_path, owner):
     found = _v2_find_type(src_path, raw)
     if not found or found[1] != "record":
         return _V2_OBJECT
-    return R(_v2_record_schema(found[0], found[2], found[3], owner))
+    return R(_v2_record_schema(found[0], found[2], found[3], owner, strict=True))
 
 
 def record_body(java_file, record, required=True):
@@ -175,7 +212,7 @@ def record_body(java_file, record, required=True):
     path = _v2_os.path.join(_V2_SANGAM, *java_file.split("/"))
     found = _v2_find_type(path, record)
     assert found and found[1] == "record", "%s: no record %s" % (java_file, record)
-    name = _v2_record_schema(found[0], found[2], found[3], java_file + ":" + record)
+    name = _v2_record_schema(found[0], found[2], found[3], java_file + ":" + record, strict=True)
     return {"required": required, "content": {"application/json": {"schema": R(name)}}}
 
 

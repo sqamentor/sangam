@@ -16,7 +16,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $resourceId
  * @property-read string|null $calendarId
  * @property-read string|null $tokenPrefix
- * @property-read int|null $slaMinutes
+ * @property-read int|null $slaMinutes (required)
  * @property-read string|null $priorityDecision
  * @property-read string|null $routingDecision
  * @property-read array<string, mixed>|null $config

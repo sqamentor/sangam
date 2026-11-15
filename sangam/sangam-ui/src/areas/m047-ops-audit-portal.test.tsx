@@ -274,6 +274,9 @@ describe('M-047 migration', () => {
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/ops/migrations/plan', { sourceDefinitionId: 'd1', targetDefinitionId: 'd2', mapEqualActivities: true }));
     fireEvent.click(await screen.findByRole('button', { name: T('mig.validate') }));
     expect(await screen.findByText(T('mig.valid'))).toBeTruthy();
+    // MigrationPlanRequest.mapEqualActivities and MigrationInstruction.updateEventTrigger are primitives (Jackson 3): always sent
+    const sentPlan = { ...plan, mapEqualActivities: false, instructions: [{ sourceActivityIds: ['a'], targetActivityIds: ['a'], updateEventTrigger: false }] };
+    expect(api.post).toHaveBeenCalledWith('/ops/migrations/plan', sentPlan);
     fireEvent.click(screen.getByRole('button', { name: T('mig.dryRun') }));
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith('/ops/batches/preview', {
@@ -290,7 +293,8 @@ describe('M-047 migration', () => {
     await waitFor(() =>
       expect(api.post).toHaveBeenCalledWith(
         '/ops/migrations/execute',
-        expect.objectContaining({ plan, reason: 'Move to version two', filter: expect.objectContaining({ processDefinitionId: 'd1' }) }),
+        // MigrationExecuteRequest.skipCustomListeners / skipIoMappings and the nested plan's primitives are sent explicitly
+        expect.objectContaining({ plan: sentPlan, skipCustomListeners: false, skipIoMappings: false, reason: 'Move to version two', filter: expect.objectContaining({ processDefinitionId: 'd1' }) }),
         KEY,
       ),
     );

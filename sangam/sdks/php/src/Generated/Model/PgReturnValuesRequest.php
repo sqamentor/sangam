@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema PgReturnValuesRequest of sangam-api.yaml 0.1.0.
  *
- * @property-read int|null $expectedVersion
+ * @property-read int|null $expectedVersion (required)
  * @property-read array<string, mixed>|null $values
  * @property-read array<string, string>|null $remarks
  */

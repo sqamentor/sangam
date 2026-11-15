@@ -15,6 +15,9 @@ public sealed record CfOutcomeRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("outcomeText")]
     public string? OutcomeText { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("adjourned")]
     public bool? Adjourned { get; init; }
 
