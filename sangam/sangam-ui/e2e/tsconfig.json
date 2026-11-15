@@ -1,5 +1,5 @@
 {
-  "//": "SPDX-License-Identifier: Apache-2.0. M-048: type-check of the Playwright suite (npx tsc -p e2e/tsconfig.json), possible once @playwright/test and @types/node are installed in the test phase (owner decision 106). Kept apart from the app's tsconfig, whose gate must not depend on them.",
+  "//": "SPDX-License-Identifier: Apache-2.0. M-048: type-check of the Playwright suite (npm run typecheck:e2e, i.e. tsc -p e2e/tsconfig.json); @playwright/test (owner decision 106) and @types/node 22.x, the CI Node line (owner decision 352), are pinned dev dependencies. Kept apart from the app's tsconfig, whose gate must not depend on them.",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

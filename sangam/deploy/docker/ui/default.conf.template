@@ -34,11 +34,13 @@ server {
         default_type application/json;
         add_header Cache-Control "no-store" always;
         include /etc/nginx/conf.d/security-headers.inc;
-        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"${SANGAM_TRACE_URL_TEMPLATE}","teams":{"enabled":${SANGAM_TEAMS_ENABLED_JSON}},"dsc":{"agentUrl":"${SANGAM_DSC_AGENT_ORIGIN_CHECKED}"}}';
+        return 200 '{"apiBase":"${SANGAM_PUBLIC_API_BASE}","oidc":{"issuer":"${SANGAM_OIDC_ISSUER}","clientId":"${SANGAM_OIDC_CLIENT_ID}"},"defaultLocale":"${SANGAM_DEFAULT_LOCALE}","locales":"${SANGAM_LOCALES}","environment":"${SANGAM_ENV_LABEL}","traceUrlTemplate":"${SANGAM_TRACE_URL_TEMPLATE}","teams":{"enabled":${SANGAM_TEAMS_ENABLED_JSON}},"dsc":{"agentUrl":"${SANGAM_DSC_AGENT_ORIGIN_CHECKED}"},"session":{"idleMinutes":${SANGAM_UI_IDLE_MINUTES_CHECKED}}}';
     }
     # teams.enabled (decision 162): true or false from SANGAM_TEAMS_ENABLED, validated by 16-sangam-teams.envsh.
     # dsc.agentUrl (decision 165): the DSC loopback agent origin from SANGAM_DSC_AGENT_ORIGIN, validated by
     # 17-sangam-dsc.envsh; empty = DSC not set up. The same value is in connect-src.
+    # session.idleMinutes (decision 349): the UI idle period from SANGAM_UI_IDLE_MINUTES, validated by
+    # 18-sangam-session.envsh (1-480 minutes, default 15; a bad value stops the container).
 
     # Teams tab page (decisions 162, 213): its own headers only when SANGAM_TEAMS_ENABLED=true (teams-headers.inc,
     # framed by the SANGAM_TEAMS_FRAME_ANCESTORS hosts); otherwise the same headers as every other page, so it cannot

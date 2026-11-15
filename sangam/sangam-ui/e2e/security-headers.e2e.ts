@@ -8,6 +8,9 @@
  * guidelines name, OWASP WSTG, and the reasonable security safeguards of DPDP Act s.8(5) / DPDP Rules r.6(1)):
  * - W-01: a strict Content-Security-Policy on every route (script-src 'self', object-src 'none', base-uri 'self',
  *   frame-ancestors 'none'), and the app runs under it without one violation;
+ * - W-02 (decision 349): Trusted Types in report-only mode first: Content-Security-Policy-Report-Only
+ *   "require-trusted-types-for 'script'" on every route, never in the enforced policy; what the app reports under it is
+ *   attached to the run (trusted-types-reports.json) and nothing is blocked;
  * - W-05: no framing: X-Frame-Options DENY and frame-ancestors 'none', on /teams.html too while Teams is not enabled
  *   (decisions 162, 213: the Teams exception exists only with SANGAM_TEAMS_ENABLED=true, which the e2e job leaves off);
  * - W-06: nosniff, Referrer-Policy, Permissions-Policy, Cross-Origin-Opener-Policy, and no server version;
@@ -52,6 +55,9 @@ function expectSecurityHeaders(path: string, res: APIResponse): void {
   for (const d of ['connect-src', 'frame-src', 'form-action']) expect(policy.get(d)?.[0], `${path} ${d}`).toBe("'self'");
   expect(policy.get('script-src'), path).not.toContain("'unsafe-inline'");
   expect(policy.get('script-src'), path).not.toContain("'unsafe-eval'");
+  // W-02, decision 349: Trusted Types in report-only mode first, in a policy of its own; the enforced one is unchanged
+  expect(h['content-security-policy-report-only'], path).toBe("require-trusted-types-for 'script'");
+  expect(policy.has('require-trusted-types-for'), `${path} enforced Trusted Types`).toBe(false);
   // server_tokens off: "nginx" at most, never a version
   expect(h['server'] ?? '', path).not.toMatch(/\d/);
 }
@@ -91,7 +97,10 @@ test('the app runs under the policy without a single violation (W-01)', async ({
   await page.addInitScript(() => {
     const seen: string[] = [];
     (window as unknown as { __cspViolations: string[] }).__cspViolations = seen;
-    document.addEventListener('securitypolicyviolation', (e) => seen.push(`${e.violatedDirective} ${e.blockedURI}`));
+    // the enforced policy only: the report-only Trusted Types policy (W-02) is the next test's subject
+    document.addEventListener('securitypolicyviolation', (e) => {
+      if (e.disposition === 'enforce') seen.push(`${e.violatedDirective} ${e.blockedURI}`);
+    });
   });
   const tenant = await tenantOf(api.ctx);
   for (const path of ['/', '/tasks', `/tasks/${seed.taskId}`, `/ops/processes/${seed.definitionId}`, '/m/compliance', `/privacy/${encodeURIComponent(tenant)}`]) {
@@ -100,4 +109,27 @@ test('the app runs under the policy without a single violation (W-01)', async ({
     const violations = await page.evaluate(() => (window as unknown as { __cspViolations: string[] }).__cspViolations);
     expect(violations, path).toEqual([]);
   }
+});
+
+test('Trusted Types run in report-only mode: sinks are reported, nothing is blocked (W-02, decision 349)', async ({ signedIn: page, seed }, testInfo) => {
+  await page.addInitScript(() => {
+    const seen: { disposition: string; directive: string; sample: string }[] = [];
+    (window as unknown as { __ttReports: typeof seen }).__ttReports = seen;
+    document.addEventListener('securitypolicyviolation', (e) => {
+      if (e.violatedDirective === 'require-trusted-types-for') seen.push({ disposition: e.disposition, directive: e.violatedDirective, sample: e.sample });
+    });
+  });
+  const reports: { path: string; disposition: string; sample: string }[] = [];
+  // the BPMN viewer (bpmn-js writes innerHTML) is the page most likely to report a sink
+  for (const path of ['/', '/tasks', `/tasks/${seed.taskId}`, `/ops/processes/${seed.definitionId}`]) {
+    await page.goto(path);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('#page-title')).toBeVisible(); // the page rendered: nothing was blocked
+    for (const r of await page.evaluate(() => (window as unknown as { __ttReports: { disposition: string; sample: string }[] }).__ttReports)) {
+      reports.push({ path, disposition: r.disposition, sample: r.sample });
+    }
+  }
+  // the evidence for the enforcement step: every sink found, kept with the run
+  await testInfo.attach('trusted-types-reports.json', { body: JSON.stringify(reports, null, 2), contentType: 'application/json' });
+  for (const r of reports) expect(r.disposition, `${r.path} ${r.sample}`).toBe('report');
 });

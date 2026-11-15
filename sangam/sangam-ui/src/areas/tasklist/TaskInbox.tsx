@@ -14,29 +14,16 @@ import { fmtDate, fmtDecimal, fmtMoneyAmount, isCurrencyCode } from '../../i18n'
 import { DecimalValue } from '../../lib/decimal';
 import { Badge, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, SearchBox, SelectField, Tabs, TextField } from '../../components/ui';
 import { useAuth } from '../../auth/AuthProvider';
+import { browserStore, loadSavedFilters, savedFiltersKey, storeSavedFilters, type CardVariable, type SavedInboxFilter } from './savedFilters';
 
 const SECTIONS: TaskSection[] = ['MY_SEAT', 'ACTING_FOR', 'POOL', 'ESCALATED', 'RETURNED'];
 const BULK_LIMIT = 50;
 /** Server bound of GET /tasks?variableNames= (TaskPort.MAX_CARD_VARIABLES). */
 export const MAX_CARD_VARIABLES = 20;
 
-export interface CardVariable {
-  name: string;
-  label: string;
-}
-
-/** P35 saved inbox filter: criteria of the Sangam task API plus the card variables shown on each task (P45). */
-export interface InboxFilter {
-  id: string;
-  name: string;
-  section: TaskSection;
-  q: string;
-  sla: string;
-  packKey: string;
-  /** M-042: ISO 4217 currency filter (absent in filters saved before it existed). */
-  currency?: string;
-  variables: CardVariable[];
-}
+export type { CardVariable } from './savedFilters';
+/** P35 saved inbox filter (decision 337: never the free-text search); stored by ./savedFilters. */
+export type InboxFilter = SavedInboxFilter;
 
 /** Whether a sort key ('amount' or '-amount') orders by the M-042 task amount. */
 export const isAmountSort = (key: string) => key.replace(/^-/, '') === 'amount';
@@ -63,29 +50,6 @@ export function parseCardVariables(s: string): CardVariable[] {
   return out.slice(0, MAX_CARD_VARIABLES);
 }
 
-/**
- * Saved filters are a per-person view preference kept in this browser (no server preference API in the contract);
- * the criteria themselves always run on the server, so a stale or edited entry can never widen what is visible.
- */
-const storeKey = (user?: string) => `sangam.inbox.filters.${user ?? 'anonymous'}`;
-
-export function loadInboxFilters(user?: string): InboxFilter[] {
-  try {
-    const raw = window.localStorage.getItem(storeKey(user));
-    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-    return Array.isArray(parsed) ? (parsed as InboxFilter[]).filter((f) => f && typeof f.id === 'string' && typeof f.name === 'string').map((f) => ({ ...f, variables: Array.isArray(f.variables) ? f.variables : [] })) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveInboxFilters(user: string | undefined, filters: InboxFilter[]) {
-  try {
-    window.localStorage.setItem(storeKey(user), JSON.stringify(filters));
-  } catch {
-    /* storage unavailable: the filter lives for this session only */
-  }
-}
 
 // decision 138: a decimal variable is shown with every digit it has, formatted from its text (never a float)
 const show = (v: unknown) => (v === undefined || v === null || v === '' ? '—' : v instanceof DecimalValue ? fmtDecimal(v) : typeof v === 'object' ? JSON.stringify(v) : String(v));
@@ -105,10 +69,33 @@ export function TaskInbox() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkResult, setBulkResult] = useState<string>();
   const [bulkComplete, setBulkComplete] = useState<TaskAction | null>(null);
-  const [filters, setFilters] = useState<InboxFilter[]>(() => loadInboxFilters(me?.userId));
+  // Decision 337: saved filters are a per-person view preference kept in this browser (no server preference API in
+  // the contract), under a hash of the user and without the free-text search (savedFilters.ts).
+  const [filters, setFilters] = useState<InboxFilter[]>([]);
+  const filterKey = useRef<string | null>(null);
+  // filters saved on this page before the key was computed: kept and stored once it is known
+  const pending = useRef<InboxFilter[]>([]);
   const [activeId, setActiveId] = useState<string>();
   const [saving, setSaving] = useState<{ name: string; vars: string } | null>(null);
-  useEffect(() => setFilters(loadInboxFilters(me?.userId)), [me?.userId]);
+  useEffect(() => {
+    let live = true;
+    filterKey.current = null;
+    pending.current = [];
+    setFilters([]);
+    const owner = { tenantId: me?.tenantId ?? '', userId: me?.userId ?? '' };
+    void savedFiltersKey(typeof window === 'undefined' ? undefined : window.crypto, owner).then((key) => {
+      if (!live) return;
+      filterKey.current = key;
+      const stored = loadSavedFilters(browserStore(), key, owner);
+      const merged = [...stored, ...pending.current.filter((p) => !stored.some((s) => s.id === p.id))];
+      if (pending.current.length) storeSavedFilters(browserStore(), key, merged);
+      pending.current = [];
+      setFilters(merged);
+    });
+    return () => {
+      live = false;
+    };
+  }, [me?.tenantId, me?.userId]);
   const active = filters.find((f) => f.id === activeId);
   const cardVars = useMemo(() => active?.variables ?? [], [active]);
   const variableNames = cardVars.map((v) => v.name);
@@ -127,18 +114,19 @@ export function TaskInbox() {
   const applyFilter = (f?: InboxFilter) => {
     setActiveId(f?.id);
     setSection(f?.section ?? 'MY_SEAT');
-    setQ(f?.q ?? '');
+    setQ(''); // a saved filter carries no free text (decision 337)
     setSla(f?.sla ?? '');
     setPackKey(f?.packKey ?? '');
     setCurrency(f?.currency ?? '');
   };
   const storeFilters = (next: InboxFilter[]) => {
     setFilters(next);
-    saveInboxFilters(me?.userId, next);
+    if (filterKey.current) storeSavedFilters(browserStore(), filterKey.current, next);
+    else pending.current = next;
   };
   const saveCurrent = () => {
     if (!saving?.name.trim()) return;
-    const f: InboxFilter = { id: `f${Date.now().toString(36)}`, name: saving.name.trim(), section, q, sla, packKey, currency: cur, variables: parseCardVariables(saving.vars) };
+    const f: InboxFilter = { id: `f${Date.now().toString(36)}`, name: saving.name.trim(), section, sla, packKey, ...(cur ? { currency: cur } : {}), variables: parseCardVariables(saving.vars) };
     storeFilters([...filters, f]);
     setActiveId(f.id);
     setSaving(null);

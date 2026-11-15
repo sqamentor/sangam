@@ -4,9 +4,10 @@
  *
  * Matrix rows and the clauses they give evidence for (reasonable security safeguards, DPDP Act s.8(5); DPDP Rules
  * r.6(1)(a)-(b)):
- * - W-07 (partial): the bearer token lives in sessionStorage only and sign-out removes it and the seat; after sign-out
- *   no web storage holds the token, an API token or a JWT. Not covered and listed for the owner: the saved inbox filters
- *   that localStorage keeps after sign-out (TaskInbox.tsx, an intended feature today);
+ * - W-07: the bearer token lives in sessionStorage only and sign-out removes it and the seat; after sign-out no web
+ *   storage holds the token, an API token or a JWT. The saved inbox filters stay in localStorage after sign-out (P35,
+ *   an intended feature), but, by owner decision 337, without the free-text search and under a hash of the user, never
+ *   the user id (savedFilters.ts);
  * - W-08 (partial): during the data principal's grievance flow no request URL and no address-bar URL carries the token or
  *   the text the data principal typed. Not covered and listed for the owner: the compliance register filters, which
  *   put the data-principal reference in the query string (the REST contract has only a `subject` query parameter).
@@ -66,4 +67,34 @@ test('after sign-out no storage holds a token, and no URL carried the token or w
     expect(url, 'URL carries an API token').not.toContain('sgm_');
     expect(url, 'URL carries what the data principal typed').not.toContain(marker);
   }
+});
+
+test('a saved inbox filter keeps neither the search text nor the user id in localStorage (W-07, decision 337)', async ({ signedIn: page, api }) => {
+  const me = (await (await api.ctx.get('me')).json()) as { userId: string };
+  expect(me.userId).toBeTruthy();
+  const marker = `E2E-SEARCH-${randomUUID().slice(0, 8)}`;
+  const filterName = `E2E filter ${randomUUID().slice(0, 8)}`;
+
+  await page.goto('/tasks');
+  const search = page.getByRole('searchbox', { name: t('task.search'), exact: true });
+  await search.fill(marker);
+  await search.press('Enter');
+  await page.getByRole('button', { name: t('task.saveFilter') }).click();
+  const side = page.getByRole('complementary', { name: t('task.filterSidebar') });
+  await side.getByLabel(t('common.name')).fill(filterName);
+  await side.getByRole('button', { name: t('common.save') }).click();
+  await expect(side.getByRole('button', { name: filterName })).toBeVisible();
+
+  await expect.poll(async () => JSON.stringify((await webStorage(page)).local)).toContain(filterName);
+  const { local } = await webStorage(page);
+  const keys = Object.keys(local).filter((k) => k.startsWith('sangam.inbox.'));
+  expect(keys.length, 'one saved-filter key').toBeGreaterThan(0);
+  for (const k of keys) expect(k).toMatch(/^sangam\.inbox\.savedFilters\.[0-9a-f]{64}$/);
+  expect(Object.keys(local).filter((k) => k.includes(me.userId)), 'a storage key names the user').toEqual([]);
+  expect(JSON.stringify(local), 'the search text is stored').not.toContain(marker);
+
+  // the filter survives a reload (it is kept), and applying it does not bring the search text back
+  await page.reload();
+  await side.getByRole('button', { name: filterName }).click();
+  await expect(page.getByRole('searchbox', { name: t('task.search'), exact: true })).toHaveValue('');
 });

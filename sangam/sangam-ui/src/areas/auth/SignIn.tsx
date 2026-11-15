@@ -10,7 +10,7 @@ import { ProblemAlert, TextField } from '../../components/ui';
 
 export function SignIn() {
   const { t } = useTranslation();
-  const { login, mode, status, error, reload } = useAuth();
+  const { login, mode, status, error, reload, signedOutReason } = useAuth();
   const [token, setToken] = useState(config().devToken);
   const [busy, setBusy] = useState(false);
   return (
@@ -21,6 +21,11 @@ export function SignIn() {
           {t('auth.title')}
         </h1>
         <p>{t('auth.intro')}</p>
+        {signedOutReason === 'idle' && (
+          <p className="alert alert-info" role="status">
+            {t('auth.idleSignedOut', { minutes: config().session.idleMinutes })}
+          </p>
+        )}
         {status === 'error' && <ProblemAlert error={error} onRetry={reload} />}
         {mode === 'oidc' ? (
           <button
