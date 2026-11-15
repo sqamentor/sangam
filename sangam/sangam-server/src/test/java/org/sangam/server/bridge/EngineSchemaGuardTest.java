@@ -11,13 +11,19 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 
@@ -110,6 +116,59 @@ class EngineSchemaGuardTest {
                 "operaton.bpm.generic-properties.properties.databaseSchemaUpdate", "true"), ds));
         assertTrue(EngineSchemaGuard.checkOnly(env("operaton.bpm.database.schema-update", "true",
                 "operaton.bpm.generic-properties.properties.database-schema-update", "false")));
+    }
+
+    /** Decision 356: the WARN lines {@link EngineSchemaGuard} logs while {@code run} runs. */
+    static List<String> warnings(Runnable run) {
+        Logger logger = (Logger) LoggerFactory.getLogger(EngineSchemaGuard.class);
+        ListAppender<ILoggingEvent> logs = new ListAppender<>();
+        logs.start();
+        logger.addAppender(logs);
+        try {
+            run.run();
+        } finally {
+            logger.detachAppender(logs);
+        }
+        return logs.list.stream().filter(e -> e.getLevel() == Level.WARN).map(ILoggingEvent::getFormattedMessage).toList();
+    }
+
+    @Test
+    void anExplicitSchemaUpdateInProductionIsHonouredAndWarnedOnceNamingTheSetting() {
+        DataSource ds = h2();
+        StandardEnvironment production = env("sangam.security.production", "true",
+                "operaton.bpm.database.schema-update", "true");
+        List<String> w = warnings(() -> {
+            assertDoesNotThrow(() -> EngineSchemaGuard.require(production, ds), "honoured: not refused");
+            assertDoesNotThrow(() -> EngineSchemaGuard.require(production, ds)); // SchemaBootstrap, then the engine
+        });
+        assertEquals(1, w.size(), "once per start: " + w);
+        assertTrue(w.get(0).contains("operaton.bpm.database.schema-update=true"), w.get(0));
+        assertFalse(EngineSchemaGuard.checkOnly(production), "the engine may create or change its schema, as before");
+
+        List<String> generic = warnings(() -> EngineSchemaGuard.require(env("sangam.security.production", "true",
+                "operaton.bpm.generic-properties.properties.databaseSchemaUpdate", "create"), ds));
+        assertEquals(1, generic.size(), generic.toString());
+        assertTrue(generic.get(0).contains("operaton.bpm.generic-properties.properties.databaseSchemaUpdate=create"),
+                generic.get(0));
+
+        List<String> unset = warnings(() -> EngineSchemaGuard.require(env("sangam.security.production", "true"), ds));
+        assertEquals(1, unset.size(), "the starter's own default true is a schema update too");
+        assertTrue(unset.get(0).contains("the Operaton starter's default"), unset.get(0));
+
+        List<String> failClosed = warnings(() -> EngineSchemaGuard.require(env("operaton.bpm.database.schema-update",
+                "true"), ds));
+        assertEquals(1, failClosed.size(), "no stated environment is production (fail closed)");
+    }
+
+    @Test
+    void developmentAndCheckOnlyStartsLogNoSchemaUpdateWarning() throws SQLException {
+        DataSource ds = h2();
+        StandardEnvironment dev = env("sangam.security.production", "false", "operaton.bpm.database.schema-update", "true");
+        dev.setActiveProfiles("dev");
+        assertEquals(List.of(), warnings(() -> EngineSchemaGuard.require(dev, ds)), "development");
+        execute(ds, "create table ACT_RU_EXECUTION (ID_ varchar(64))");
+        assertEquals(List.of(), warnings(() -> EngineSchemaGuard.require(env("sangam.security.production", "true",
+                "operaton.bpm.database.schema-update", "false"), ds)), "check only");
     }
 
     @Test

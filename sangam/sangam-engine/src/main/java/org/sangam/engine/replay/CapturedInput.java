@@ -25,8 +25,9 @@ import java.util.Set;
  * @param outcome            one of {@link #OUTCOMES} for {@code EXTERNAL_TASK_RESULT}, else null
  * @param retriesLeft        for an {@code EXTERNAL_TASK_RESULT} failure, the retries the worker reported, else null
  * @param payload            typed values only: {@link BigDecimal}, {@link Long}, {@link Boolean}, {@link String},
- *                           {@link Instant}, {@link ZonedDateTime} or null; anything else is refused here, so a
- *                           capture point cannot hand the adapter a value the fixture cannot carry
+ *                           {@link Instant}, {@link ZonedDateTime}, {@link LocalDateInZone} (decision 354: a
+ *                           {@code LOCAL_DATE} with its zone) or null; anything else is refused here, so a capture point
+ *                           cannot hand the adapter a value the fixture cannot carry
  */
 public record CapturedInput(String type, String executionId, String activityId, String activityInstanceId, int attempt,
                             Instant at, String outcome, Integer retriesLeft, Map<String, Object> payload) {
@@ -73,10 +74,11 @@ public record CapturedInput(String type, String executionId, String activityId, 
                 }
                 Object v = e.getValue();
                 if (v != null && !(v instanceof BigDecimal || v instanceof Long || v instanceof Boolean
-                        || v instanceof String || v instanceof Instant || v instanceof ZonedDateTime)) {
+                        || v instanceof String || v instanceof Instant || v instanceof ZonedDateTime
+                        || v instanceof LocalDateInZone)) {
                     throw new IllegalArgumentException("decision 151: payload '" + e.getKey() + "' is a "
-                            + v.getClass().getName() + "; only BigDecimal, Long, Boolean, String, Instant and "
-                            + "ZonedDateTime can be replayed");
+                            + v.getClass().getName() + "; only BigDecimal, Long, Boolean, String, Instant, "
+                            + "ZonedDateTime and LocalDateInZone can be replayed");
                 }
                 copy.put(e.getKey(), v);
             }

@@ -444,6 +444,54 @@ class EngineInternalsPinTest {
                 "I-18: the fragment checks the authenticated tenants: " + fragment);
     }
 
+    /**
+     * I-18 / decision 355: the caller's tenant check of the by-key UPDATEs also matches rows without a tenant (so a
+     * tenant-scoped identity's by-key change reached shared definitions), and the manager methods Sangam's seam
+     * overrides to refuse it ({@code TenantScopedCreation.ProcessDefinitions}, {@code JobDefinitions},
+     * {@code DelayedStateChangeTenant.Jobs}) and the counts it reads keep their signatures. If Operaton ever stops
+     * matching null tenants here, the refusal is still right (it only refuses changes of shared rows), but this pin says
+     * the premise of PATCHES.md SG-09 changed.
+     */
+    @Test
+    void i18_byKeyTenantCheckAlsoMatchesSharedRowsAndTheOverriddenMethodsExist() throws Exception {
+        String tenant = mapping("Tenant.xml");
+        String fragment = tenant.substring(tenant.indexOf("<sql id=\"queryTenantCheckWithPrefix\">"));
+        fragment = fragment.substring(0, fragment.indexOf("</sql>"));
+        assertTrue(fragment.replaceAll("\\s+", " ").contains("and (${columnPrefix}TENANT_ID_ is null"),
+                "I-18: the tenant check lets rows without a tenant through: " + fragment);
+
+        Class<?> state = org.operaton.bpm.engine.impl.persistence.entity.SuspensionState.class;
+        Class<?> pd = org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionManager.class;
+        Class<?> jd = org.operaton.bpm.engine.impl.persistence.entity.JobDefinitionManager.class;
+        Class<?> job = org.operaton.bpm.engine.impl.persistence.entity.JobManager.class;
+        Object[][] methods = {
+                {pd, "updateProcessDefinitionSuspensionStateByKey", new Class<?>[] {String.class, state}},
+                {pd, "updateProcessDefinitionSuspensionStateByKeyAndTenantId", new Class<?>[] {String.class, String.class, state}},
+                {jd, "updateJobDefinitionSuspensionStateByProcessDefinitionKey", new Class<?>[] {String.class, state}},
+                {jd, "updateJobDefinitionSuspensionStateByProcessDefinitionKeyAndTenantId",
+                        new Class<?>[] {String.class, String.class, state}},
+                {job, "updateJobSuspensionStateByProcessDefinitionKey", new Class<?>[] {String.class, state}},
+                {job, "updateJobSuspensionStateByProcessDefinitionKeyAndTenantId",
+                        new Class<?>[] {String.class, String.class, state}},
+                {job, "updateStartTimerJobSuspensionStateByProcessDefinitionKey", new Class<?>[] {String.class, state}},
+                {job, "updateStartTimerJobSuspensionStateByProcessDefinitionKeyAndTenantId",
+                        new Class<?>[] {String.class, String.class, state}},
+                {pd, "findProcessDefinitionCountByQueryCriteria",
+                        new Class<?>[] {org.operaton.bpm.engine.impl.ProcessDefinitionQueryImpl.class}},
+                {jd, "findJobDefinitionCountByQueryCriteria",
+                        new Class<?>[] {org.operaton.bpm.engine.impl.JobDefinitionQueryImpl.class}},
+                {job, "findJobCountByQueryCriteria", new Class<?>[] {org.operaton.bpm.engine.impl.JobQueryImpl.class}}};
+        for (Object[] m : methods) {
+            java.lang.reflect.Method method = ((Class<?>) m[0]).getDeclaredMethod((String) m[1], (Class<?>[]) m[2]);
+            assertTrue(java.lang.reflect.Modifier.isPublic(method.getModifiers()), "I-18: public " + m[1]);
+        }
+        // the seam's managers are the ones every command gets (one replacement per session type, I-18)
+        java.util.Set<Class<?>> replaced = new java.util.HashSet<>();
+        org.sangam.engine.deploy.TenantScopedCreation.sessionFactories().forEach(f -> replaced.add(f.getSessionType()));
+        replaced.add(org.sangam.engine.deploy.DelayedStateChangeTenant.sessionFactory().getSessionType());
+        assertTrue(replaced.containsAll(java.util.List.of(pd, jd, job)), "decision 355 seam installed: " + replaced);
+    }
+
     private static String mapping(String file) throws java.io.IOException {
         try (var in = EngineInternalsPinTest.class.getClassLoader()
                 .getResourceAsStream("org/operaton/bpm/engine/impl/mapping/entity/" + file)) {

@@ -5,12 +5,17 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import javax.sql.DataSource;
 
+import org.sangam.server.config.ProductionEnvironment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 
 /**
@@ -26,6 +31,11 @@ import org.springframework.core.env.Environment;
  * engine property {@code databaseSchemaUpdate} when that is given. Only {@code false} is a check-only start; every
  * other value lets the engine create its tables. An explicit {@code true} is honoured in production as in the server
  * (the h2 profile, {@code SANGAM_ENGINE_SCHEMA_UPDATE}, the {@code migrate-only} run); it is the operator's decision.
+ *
+ * <p><b>Decision 356.</b> That explicit value is honoured in production and logged once per start at WARN level,
+ * naming the setting that gave it and its value ({@link #warnSchemaUpdateInProduction}), so an operator sees that this
+ * production start may create or change the engine schema. Production is the platform's one resolution
+ * ({@link ProductionEnvironment#isProduction}, fail closed); a development or test environment logs nothing.
  *
  * <p>The probe is the table Operaton's own check-only start looks for ({@value #PROBE_TABLE}, its
  * {@code isEngineTablePresent}), with the configured table prefix and schema; without a configured schema every schema
@@ -45,6 +55,11 @@ public final class EngineSchemaGuard {
     /** The table Operaton's check-only start probes. */
     static final String PROBE_TABLE = "ACT_RU_EXECUTION";
 
+    private static final Logger LOG = LoggerFactory.getLogger(EngineSchemaGuard.class);
+    /** The environments (one per start) whose decision 356 warning was logged; weak, so a closed context goes. */
+    private static final Set<Environment> WARNED = Collections.synchronizedSet(
+            Collections.newSetFromMap(new WeakHashMap<>()));
+
     private EngineSchemaGuard() {
     }
 
@@ -59,14 +74,38 @@ public final class EngineSchemaGuard {
 
     /** The value the engine will use for its schema operation at start. */
     static String schemaUpdate(Environment env) {
-        for (String generic : new String[] {GENERIC + "database-schema-update", GENERIC + "databaseSchemaUpdate"}) {
-            String v = env.getProperty(generic);
+        String setting = schemaUpdateSetting(env);
+        return setting == null ? STARTER_DEFAULT : env.getProperty(setting).trim();
+    }
+
+    /** The property that gives {@link #schemaUpdate} its value, or null when none does (the starter's default). */
+    static String schemaUpdateSetting(Environment env) {
+        for (String setting : new String[] {GENERIC + "database-schema-update", GENERIC + "databaseSchemaUpdate",
+                SCHEMA_UPDATE}) {
+            String v = env.getProperty(setting);
             if (v != null && !v.isBlank()) {
-                return v.trim();
+                return setting;
             }
         }
-        String v = env.getProperty(SCHEMA_UPDATE);
-        return v == null || v.isBlank() ? STARTER_DEFAULT : v.trim();
+        return null;
+    }
+
+    /**
+     * Decision 356: in production, an engine that may create or change its schema at start (any value but
+     * {@code false}) is honoured and logged at WARN level, once per environment (one start), naming the setting and
+     * its value. Returns whether it logged.
+     */
+    public static boolean warnSchemaUpdateInProduction(Environment env) {
+        if (checkOnly(env) || !ProductionEnvironment.isProduction(env) || !WARNED.add(env)) {
+            return false;
+        }
+        String setting = schemaUpdateSetting(env);
+        LOG.warn("Decision 356: production start with {}={} (from {}): the engine may create or change its schema at"
+                        + " this start; honoured as the operator's decision. Production normally starts check-only"
+                        + " ({}=false) and changes schema only in the one-shot SANGAM_LIQUIBASE_MODE=migrate-only run.",
+                setting == null ? SCHEMA_UPDATE : setting, schemaUpdate(env),
+                setting == null ? "no setting: the Operaton starter's default" : "the configuration", SCHEMA_UPDATE);
+        return true;
     }
 
     /** True when the engine will only check its schema at start (it creates nothing). */
@@ -80,6 +119,7 @@ public final class EngineSchemaGuard {
      */
     public static void require(Environment env, DataSource dataSource) {
         if (!checkOnly(env)) {
+            warnSchemaUpdateInProduction(env);
             return;
         }
         String prefix = env.getProperty(TABLE_PREFIX, "");

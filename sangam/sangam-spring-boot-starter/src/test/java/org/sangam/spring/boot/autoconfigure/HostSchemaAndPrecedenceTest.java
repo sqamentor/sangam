@@ -154,6 +154,40 @@ class HostSchemaAndPrecedenceTest {
         }
     }
 
+    /**
+     * Decision 356: a production host that sets {@code operaton.bpm.database.schema-update=true} itself is honoured
+     * (the host's setting wins over Sangam's production default, decision 334) and the start logs one WARN naming the
+     * setting.
+     */
+    @Test
+    void anExplicitSchemaUpdateInProductionIsHonouredAndWarnedOnce() throws SQLException {
+        String db = "prod-update-" + UUID.randomUUID();
+        development(db, "optional:classpath:/no-host-config/").run().close();
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(
+                org.sangam.server.bridge.EngineSchemaGuard.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs =
+                new ch.qos.logback.core.read.ListAppender<>();
+        logs.start();
+        Map<String, String> settings = productionSettings(db);
+        settings.put(SangamDefaultsEnvironmentPostProcessor.ENGINE_SCHEMA_UPDATE, "true");
+        // Spring Boot resets the logging system while it prepares the environment, which drops an appender added
+        // before run(); attach it once the context is prepared, before any bean (and so the schema guard) is created
+        ApplicationListener<org.springframework.boot.context.event.ApplicationPreparedEvent> attach =
+                event -> logger.addAppender(logs);
+        try (ConfigurableApplicationContext ctx = production().listeners(attach).run(args(settings))) {
+            assertTrue(ctx.isActive());
+            assertEquals("true", ctx.getEnvironment().getProperty(SangamDefaultsEnvironmentPostProcessor.ENGINE_SCHEMA_UPDATE),
+                    "the host's explicit setting is honoured");
+            List<String> warnings = logs.list.stream()
+                    .filter(e -> e.getLevel() == ch.qos.logback.classic.Level.WARN)
+                    .map(ch.qos.logback.classic.spi.ILoggingEvent::getFormattedMessage).toList();
+            assertEquals(1, warnings.size(), "logged once at start: " + warnings);
+            assertTrue(warnings.get(0).contains("operaton.bpm.database.schema-update=true"), warnings.get(0));
+        } finally {
+            logger.detachAppender(logs);
+        }
+    }
+
     /** A production host: no profile, the switch and the production settings on the command line. */
     static SpringApplicationBuilder production() {
         return new SpringApplicationBuilder(SampleHostApplication.class);

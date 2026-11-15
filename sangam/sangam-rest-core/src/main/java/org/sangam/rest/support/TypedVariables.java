@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.sangam.packs.engine.DecimalText;
 import org.sangam.packs.engine.LocalDateText;
 import org.sangam.rest.port.ApiProblem;
 
@@ -51,9 +52,11 @@ public final class TypedVariables {
             if (value == null) {
                 return null;
             }
+            if ("Decimal".equals(type) || "decimal".equals(type)) {
+                return decimal(value);
+            }
             String s = String.valueOf(value);
             return switch (type) {
-                case "Decimal", "decimal" -> new BigDecimal(s);
                 case "BigInteger", "integer-string" -> new BigInteger(s);
                 case "Long", "long" -> Long.parseLong(s);
                 case "Integer", "integer" -> Integer.parseInt(s);
@@ -90,7 +93,7 @@ public final class TypedVariables {
 
     public static Object toJsonValue(Object v) {
         if (v instanceof BigDecimal d) {
-            return typed("Decimal", d.toPlainString());
+            return typed("Decimal", decimalText(d));
         }
         if (v instanceof BigInteger i) {
             return typed("BigInteger", i.toString());
@@ -122,6 +125,37 @@ public final class TypedVariables {
             return v;
         }
         return String.valueOf(v);
+    }
+
+    /**
+     * G25 (decision 138): the exact decimal of a typed {@code Decimal} value, through the engine's strict
+     * {@link DecimalText} rules: decimal text ({@link DecimalText#parse}: no blanks, no plus sign, no {@code NaN}, at
+     * most {@value DecimalText#MAX_CHARS} characters) or an exact JSON integer; a JSON number with a fraction arrives as
+     * a binary float and is refused, as is anything else. Every refusal is {@code VALIDATION_FAILED}.
+     */
+    static BigDecimal decimal(Object value) {
+        try {
+            return DecimalText.exact(value);
+        } catch (DecimalText.DecimalFormatException e) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "typed variable Decimal: " + e.getMessage());
+        }
+    }
+
+    /**
+     * G25: the text of a decimal on the way out, lossless: plain decimal text (the DecimalString form, scale kept as
+     * written, {@code 1.50} stays {@code 1.50}) whenever that keeps value and scale, which is every decimal of scale 0
+     * or more; a decimal of negative scale ({@code 1E+3}) has no plain text of the same scale ({@code toPlainString}
+     * gave {@code 1000}, scale 0) and is written as its {@link DecimalText} canonical text, as is one whose plain text
+     * would exceed {@value DecimalText#MAX_CHARS} characters. Either text reads back through {@link #decimal} to the same
+     * value and scale.
+     */
+    static String decimalText(BigDecimal d) {
+        String canonical = DecimalText.format(d);
+        if (d.scale() < 0 || d.scale() > DecimalText.MAX_CHARS) {
+            return canonical;
+        }
+        String plain = d.toPlainString();
+        return plain.length() <= DecimalText.MAX_CHARS ? plain : canonical;
     }
 
     /** Decision 333: strict ISO date text as a {@link LocalDate}; invalid text is a validation problem. */

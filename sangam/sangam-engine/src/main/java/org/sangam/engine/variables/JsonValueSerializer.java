@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import org.operaton.bpm.engine.impl.variable.serializer.AbstractObjectValueSerializer;
+import org.sangam.packs.engine.DecimalText;
 import org.sangam.packs.engine.LocalDateText;
 
 /**
@@ -38,8 +39,21 @@ import org.sangam.packs.engine.LocalDateText;
  * and {@code value} is that typed date (the R33 typed-value shape, as the REST layer reads it); its text must be format
  * v1, else the read is refused ({@code LOCAL_DATE_INVALID}). The same shape handed in as a plain map is checked the
  * same way on write, so nothing is stored that cannot be read back. A date outside years 0000-9999 is refused
- * ({@code LOCAL_DATE_OUT_OF_RANGE}). Every other leaf keeps its JSON form (a nested {@code BigDecimal} stays a JSON
- * number).
+ * ({@code LOCAL_DATE_OUT_OF_RANGE}).
+ *
+ * <p>Decision 138 (G24): a {@link BigDecimal} inside a map or list is carried the same way, as the R33 typed JSON object
+ * {@code {"type":"Decimal","value":"1.50"}} with {@link DecimalText} format v1 text (canonical
+ * {@code BigDecimal.toString()}, so value and scale round-trip: {@code 15} stays a {@code BigDecimal} of scale 0, never
+ * an {@code Integer}, and {@code 1E+3} keeps scale -3), and reads back as that {@code BigDecimal}. An object with
+ * exactly the two members {@code type} = {@value #DECIMAL_TYPE} and {@code value} is that typed decimal on read and on
+ * write; its value must be decimal text ({@link DecimalText#parse}: no float, no blanks, no sign other than a leading
+ * minus), else it is refused ({@code DECIMAL_INVALID}); a decimal whose text exceeds {@link DecimalText#MAX_CHARS} is
+ * refused ({@code DECIMAL_TOO_LARGE}).
+ *
+ * <p>Stored rows written before G24 hold a nested decimal as a bare JSON number; they read exactly as before (a
+ * number with a fraction as {@code BigDecimal}, a whole number as {@code Integer} / {@code Long} /
+ * {@code BigInteger}): a plain number is never converted silently. {@link TypedJsonShapeInventory} lists the stored
+ * rows that hold either typed shape (decision 353). Every other leaf keeps its JSON form.
  */
 public class JsonValueSerializer extends AbstractObjectValueSerializer {
 
@@ -48,13 +62,16 @@ public class JsonValueSerializer extends AbstractObjectValueSerializer {
     private static final int MAX_DOCUMENT_BYTES = 16 * 1024 * 1024;
     /** The R33 type name of a nested local date. */
     public static final String LOCAL_DATE_TYPE = "LocalDate";
+    /** The R33 type name of a nested decimal. */
+    public static final String DECIMAL_TYPE = "Decimal";
 
     private static final ObjectMapper MAPPER = JsonMapper.builder(JsonFactory.builder()
                     .streamReadConstraints(StreamReadConstraints.builder()
                             .maxNestingDepth(64).maxStringLength(10 * 1024 * 1024).build())
                     .build())
             .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-            .addModule(new SimpleModule("sangam-json-local-date").addSerializer(LocalDate.class, new TypedLocalDate()))
+            .addModule(new SimpleModule("sangam-json-typed-leaves").addSerializer(LocalDate.class, new TypedLocalDate())
+                    .addSerializer(BigDecimal.class, new TypedDecimal()))
             .build();
 
     public JsonValueSerializer() {
@@ -133,10 +150,25 @@ public class JsonValueSerializer extends AbstractObjectValueSerializer {
         return m.size() == 2 && LOCAL_DATE_TYPE.equals(m.get("type")) && m.containsKey("value");
     }
 
+    /** True for the R33 typed decimal shape: exactly {@code type} = {@value #DECIMAL_TYPE} and {@code value}. */
+    static boolean isTypedDecimal(Map<?, ?> m) {
+        return m.size() == 2 && DECIMAL_TYPE.equals(m.get("type")) && m.containsKey("value");
+    }
+
+    /** The decimal of a typed decimal shape; refused ({@code DECIMAL_INVALID}) unless its value is decimal text. */
+    static BigDecimal typedDecimal(Map<?, ?> m) {
+        Object text = m.get("value");
+        if (!(text instanceof String s)) {
+            throw new DecimalText.DecimalFormatException("DECIMAL_INVALID", "a typed Decimal needs decimal text as its"
+                    + " value, not " + (text == null ? "null" : text.getClass().getName()));
+        }
+        return DecimalText.parse(s);
+    }
+
     /**
-     * Walks a JSON tree. On write ({@code read == false}) it checks every typed local-date shape (its text must be
-     * format v1) and every {@link LocalDate} leaf (its year must be in range); on read it replaces every typed
-     * local-date shape by its {@link LocalDate}. Returns the (possibly replaced) node.
+     * Walks a JSON tree. On write ({@code read == false}) it checks every typed local-date or decimal shape (its text
+     * must be format v1, or decimal text) and every {@link LocalDate} or {@link BigDecimal} leaf (in range); on read it
+     * replaces every typed shape by its {@link LocalDate} or {@link BigDecimal}. Returns the (possibly replaced) node.
      */
     @SuppressWarnings("unchecked")
     static Object typedLeaves(Object v, int depth, boolean read) {
@@ -147,7 +179,15 @@ public class JsonValueSerializer extends AbstractObjectValueSerializer {
             LocalDateText.format(d);
             return d;
         }
+        if (v instanceof BigDecimal d) {
+            DecimalText.format(d);
+            return d;
+        }
         if (v instanceof Map<?, ?> m) {
+            if (isTypedDecimal(m)) {
+                BigDecimal d = typedDecimal(m);
+                return read ? d : m;
+            }
             if (isTypedLocalDate(m)) {
                 Object text = m.get("value");
                 if (!(text instanceof String s)) {
@@ -181,6 +221,21 @@ public class JsonValueSerializer extends AbstractObjectValueSerializer {
             }
         }
         return v;
+    }
+
+    /** Writes a {@link BigDecimal} as {@code {"type":"Decimal","value":"<format v1 text>"}}. */
+    private static final class TypedDecimal extends StdSerializer<BigDecimal> {
+        TypedDecimal() {
+            super(BigDecimal.class);
+        }
+
+        @Override
+        public void serialize(BigDecimal value, JsonGenerator gen, SerializerProvider provider) throws java.io.IOException {
+            gen.writeStartObject();
+            gen.writeStringField("type", DECIMAL_TYPE);
+            gen.writeStringField("value", DecimalText.format(value));
+            gen.writeEndObject();
+        }
     }
 
     /** Writes a {@link LocalDate} as {@code {"type":"LocalDate","value":"uuuu-MM-dd"}}. */

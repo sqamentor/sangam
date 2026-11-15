@@ -19,6 +19,7 @@ import org.operaton.bpm.engine.impl.jobexecutor.TimerSuspendProcessDefinitionHan
 import org.operaton.bpm.engine.impl.persistence.entity.JobDefinitionEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.JobManager;
 import org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionEntity;
+import org.operaton.bpm.engine.impl.persistence.entity.SuspensionState;
 import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import org.operaton.bpm.engine.repository.ProcessDefinition;
 import org.sangam.core.tenant.ExecutionTenantPolicy;
@@ -59,7 +60,8 @@ import org.sangam.engine.tenant.WorkTenants;
  * refused when it comes due, exactly as before this class: a timer scheduled by tenant B never runs as tenant A.
  *
  * <p>Installed as a session factory that replaces Operaton's {@link JobManager} (the {@code customSessionFactories}
- * extension point, PATCHES.md B-46 / I-27); only {@link JobManager#schedule} is overridden, and it always delegates.
+ * extension point, PATCHES.md B-46 / I-27); {@link JobManager#schedule} and, for decision 355, the four job
+ * suspension UPDATEs by process definition key are overridden, and each delegates unless it refuses.
  */
 public final class DelayedStateChangeTenant {
 
@@ -97,13 +99,78 @@ public final class DelayedStateChangeTenant {
         };
     }
 
-    /** Operaton's job manager; a delayed state change timer gets its definition's tenant before it is inserted. */
+    /**
+     * Operaton's job manager; a delayed state change timer gets its definition's tenant before it is inserted.
+     * Decision 355 ({@link TenantScopedCreation#refuseSharedByKey}): a tenant-scoped identity's change of jobs by
+     * process definition key, and its delayed change of definitions by key, are refused when they would change shared
+     * rows.
+     */
     static final class Jobs extends JobManager {
         @Override
         public void schedule(TimerEntity timer) {
+            refuseSharedByKey(timer);
             stamp(Context.getCommandContext(), timer);
             super.schedule(timer);
         }
+
+        @Override
+        public void updateJobSuspensionStateByProcessDefinitionKey(String key, SuspensionState state) {
+            TenantScopedCreation.refuseSharedByKey("jobs", key, false, () -> sharedJobs(key));
+            super.updateJobSuspensionStateByProcessDefinitionKey(key, state);
+        }
+
+        @Override
+        public void updateJobSuspensionStateByProcessDefinitionKeyAndTenantId(String key, String tenantId,
+                                                                              SuspensionState state) {
+            TenantScopedCreation.refuseSharedByKey("jobs", key, tenantId == null, () -> 0L);
+            super.updateJobSuspensionStateByProcessDefinitionKeyAndTenantId(key, tenantId, state);
+        }
+
+        @Override
+        public void updateStartTimerJobSuspensionStateByProcessDefinitionKey(String key, SuspensionState state) {
+            TenantScopedCreation.refuseSharedByKey("jobs", key, false, () -> sharedJobs(key));
+            super.updateStartTimerJobSuspensionStateByProcessDefinitionKey(key, state);
+        }
+
+        @Override
+        public void updateStartTimerJobSuspensionStateByProcessDefinitionKeyAndTenantId(String key, String tenantId,
+                                                                                        SuspensionState state) {
+            TenantScopedCreation.refuseSharedByKey("jobs", key, tenantId == null, () -> 0L);
+            super.updateStartTimerJobSuspensionStateByProcessDefinitionKeyAndTenantId(key, tenantId, state);
+        }
+
+        private long sharedJobs(String key) {
+            return findJobCountByQueryCriteria((org.operaton.bpm.engine.impl.JobQueryImpl)
+                    new org.operaton.bpm.engine.impl.JobQueryImpl().processDefinitionKey(key).withoutTenantId());
+        }
+    }
+
+    /**
+     * Decision 355: a delayed suspension or activation by process definition key, scheduled by a tenant-scoped
+     * identity, is refused when it addresses the shared scope ("without tenant") or when shared definitions of the key
+     * exist, as the immediate change is: its timer would run without a tenant (the shared deployment's work) and change
+     * them. A configuration that cannot be read is left to {@link #stamp} (it stays without a tenant, fail closed).
+     */
+    static void refuseSharedByKey(TimerEntity timer) {
+        if (timer == null || !(PROCESS_DEFINITION_TYPES.contains(timer.getJobHandlerType())
+                || JOB_DEFINITION_TYPES.contains(timer.getJobHandlerType()))) {
+            return;
+        }
+        JsonNode cfg;
+        try {
+            String raw = timer.getJobHandlerConfigurationRaw();
+            cfg = raw == null ? null : JSON.readTree(raw);
+        } catch (java.io.IOException e) {
+            return;
+        }
+        if (cfg == null || !cfg.isObject() || !PROCESS_DEFINITION_KEY.equals(cfg.path(BY).asText(""))) {
+            return;
+        }
+        String key = cfg.path(PROCESS_DEFINITION_KEY).asText(null);
+        boolean sharedScopeNamed = cfg.has(PROCESS_DEFINITION_TENANT_ID) && cfg.get(PROCESS_DEFINITION_TENANT_ID).isNull();
+        boolean tenantNamed = cfg.has(PROCESS_DEFINITION_TENANT_ID) && !sharedScopeNamed;
+        TenantScopedCreation.refuseSharedByKey("definitions (delayed change)", key, sharedScopeNamed,
+                () -> tenantNamed || key == null ? 0L : TenantScopedCreation.sharedProcessDefinitions(key));
     }
 
     static void stamp(CommandContext cc, TimerEntity timer) {
