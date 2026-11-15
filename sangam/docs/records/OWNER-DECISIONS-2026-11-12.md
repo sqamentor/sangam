@@ -447,3 +447,9 @@ Decision 371 was taken on 2026-11-15 under the owner's words "Choose recommended
   - (3) The OTP issue limits of the IN pack (window 60 minutes, 5 per identifier, 20 per address) are the 0.1.0 values together with those of decision 369 (i); the owner confirms the numbers before release.
   - (5) In production the server refuses to start without the compliance principal key (`sangam.compliance.principal-key-ref`); outside production a missing key still refuses every keyed operation by name.
   - (6) The one-time code itself stays a salted SHA-256: short-lived and attempt-limited. (7) No migration of tokens written before the key: 0.1.0 is unreleased.
+
+Decision 372 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the points lane D6 left open after decision 371; the recommended option of each is recorded.
+
+- **372 (where the principal key is enforced; compose users, owner chat 2026-11-15)**:
+  - (1) The server's start refusal (decision 371 (5)) is the one enforcement of the compliance principal key; the Helm chart does not refuse a render without it, so the CI render with production defaults keeps working.
+  - (2) A compose stack in its default production mode needs the key: `deploy/compose/.env.example` and `deploy/README.md` say how to make one, and the 0.1.0 release notes, when written, carry it as an upgrade note (the repository has no release-notes file yet).
