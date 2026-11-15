@@ -41,7 +41,7 @@ import org.sangam.engine.timer.ZonedCron;
 
 /**
  * SG-09: Sangam relies on behaviours of engine-internal Operaton classes for which Operaton 2.2 has no public
- * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, I-26, upgrade checklist items 2, 3, 6, 7 and 19). Each test pins one of them through
+ * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, I-26, I-27, upgrade checklist items 2, 3, 6, 7 and 19). Each test pins one of them through
  * its observable effect, so an Operaton upgrade that changes the internal behaviour fails here, loudly, instead of
  * silently weakening Sangam.
  */
@@ -345,6 +345,68 @@ class EngineInternalsPinTest {
                     org.sangam.engine.tx.CommandState.of(outer) == executor.execute(
                             inner -> org.sangam.engine.tx.CommandState.of(inner))));
             assertEquals(List.of(true, true), same, "I-26: a nested command shares the context and the command state");
+        });
+    }
+
+    /**
+     * I-27 (B-46, decision 331): Operaton's delayed state change ({@code AbstractSetStateCmd.scheduleSuspensionStateUpdate})
+     * creates a {@code TimerEntity} with the handler type and the canonical handler configuration below and hands it to
+     * {@code JobManager.schedule(TimerEntity)}; the custom session factory makes that Sangam's JobManager. Pinned: the
+     * handler types, the configuration keys {@code DelayedStateChangeTenant} reads, the method it overrides, and that
+     * every command gets Sangam's JobManager.
+     */
+    @Test
+    void i27_delayedStateChangeTimersAreScheduledThroughTheJobManagerWithThisConfiguration() throws Exception {
+        org.operaton.bpm.engine.impl.persistence.entity.JobManager.class.getMethod("schedule",
+                org.operaton.bpm.engine.impl.persistence.entity.TimerEntity.class);
+        assertEquals("suspend-processdefinition",
+                org.operaton.bpm.engine.impl.jobexecutor.TimerSuspendProcessDefinitionHandler.TYPE);
+        assertEquals("activate-processdefinition",
+                org.operaton.bpm.engine.impl.jobexecutor.TimerActivateProcessDefinitionHandler.TYPE);
+        assertEquals("suspend-job-definition", org.operaton.bpm.engine.impl.jobexecutor.TimerSuspendJobDefinitionHandler.TYPE);
+        assertEquals("activate-job-definition",
+                org.operaton.bpm.engine.impl.jobexecutor.TimerActivateJobDefinitionHandler.TYPE);
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        var pd = org.operaton.bpm.engine.impl.jobexecutor.TimerChangeProcessDefinitionSuspensionStateJobHandler
+                .ProcessDefinitionSuspensionStateConfiguration.class;
+        var byId = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionId", String.class, boolean.class).invoke(null, "d1", true))
+                .toCanonicalString());
+        assertEquals("processDefinitionId", byId.path("by").asText());
+        assertEquals("d1", byId.path("processDefinitionId").asText());
+        var byKey = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionKey", String.class, boolean.class).invoke(null, "k1", true))
+                .toCanonicalString());
+        assertEquals("processDefinitionKey", byKey.path("by").asText());
+        assertEquals("k1", byKey.path("processDefinitionKey").asText());
+        assertTrue(!byKey.has("processDefinitionTenantId"), "I-27: no tenant key when no tenant was named: " + byKey);
+        var byKeyAndTenant = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionKeyAndTenantId", String.class, String.class, boolean.class)
+                .invoke(null, "k1", "t9", true)).toCanonicalString());
+        assertEquals("processDefinitionKey", byKeyAndTenant.path("by").asText());
+        assertEquals("t9", byKeyAndTenant.path("processDefinitionTenantId").asText());
+        var byKeyWithoutTenant = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionKeyAndTenantId", String.class, String.class, boolean.class)
+                .invoke(null, "k1", null, true)).toCanonicalString());
+        assertTrue(byKeyWithoutTenant.has("processDefinitionTenantId")
+                && byKeyWithoutTenant.get("processDefinitionTenantId").isNull(),
+                "I-27: 'without tenant' is the key with a JSON null: " + byKeyWithoutTenant);
+        var jd = org.operaton.bpm.engine.impl.jobexecutor.TimerChangeJobDefinitionSuspensionStateJobHandler
+                .JobDefinitionSuspensionStateConfiguration.class;
+        var byJobDefinition = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) jd
+                .getMethod("byJobDefinitionId", String.class, boolean.class).invoke(null, "j1", true))
+                .toCanonicalString());
+        assertEquals("jobDefinitionId", byJobDefinition.path("by").asText());
+        assertEquals("j1", byJobDefinition.path("jobDefinitionId").asText());
+        withEngine(a -> {
+            ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) a.processEngine()
+                    .getProcessEngineConfiguration();
+            Class<?> type = org.operaton.bpm.engine.impl.persistence.entity.JobManager.class;
+            assertTrue(cfg.getCustomSessionFactories().contains(cfg.getSessionFactories().get(type)),
+                    "I-27: the registered custom factory is the engine's factory for JobManager");
+            Class<?> used = cfg.getCommandExecutorTxRequired().execute(cc -> cc.getJobManager().getClass());
+            assertTrue(type.isAssignableFrom(used) && used != type && used.getName().startsWith("org.sangam."),
+                    "I-27: commands use Sangam's JobManager, got " + used.getName());
         });
     }
 
