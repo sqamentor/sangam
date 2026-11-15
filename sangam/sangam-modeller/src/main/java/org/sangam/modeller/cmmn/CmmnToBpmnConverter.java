@@ -178,6 +178,7 @@ public final class CmmnToBpmnConverter {
         }
         diag.add(new Diagnostic(Severity.INFO, "BPMN-NO-DIAGRAM", "", "the draft has no diagram; open it in the "
                 + "modeller to lay it out"));
+        org.sangam.modeller.bpmn.FlowReferences.write(out);
         return new CmmnConversion(resource, Status.REVIEW_REQUIRED, serialize(out), diag, mapping);
     }
 

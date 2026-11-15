@@ -93,5 +93,12 @@
       <artifactId>junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Test only: slf4j-api alone binds the no-operation MDC, so a test of the MDC carried to a poll thread
+         (WorkLongPollTest) needs a provider with a real one. Level in src/test/resources/logback-test.xml. -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

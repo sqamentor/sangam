@@ -192,7 +192,9 @@ class AsyncApiConsistencyTest {
      * never events. Each needs its reason. A name the table means to publish must be written outside parentheses.
      */
     static final Map<String, String> NOTE_VALUES = Map.of(
-            "UNRESOLVED_TENANT", "decision 144: the resolutionReason value in the TENANT_UNRESOLVED payload note");
+            "UNRESOLVED_TENANT", "decision 144: the resolutionReason value in the TENANT_UNRESOLVED payload note",
+            "LEASE_EXPIRED_HELD", "decisions 299 to 303: an incidentType value (the A-10 hold) in the INCIDENT_OPENED note",
+            "JOB_RECOVERY_LOOP", "decisions 299 to 303: an incidentType value (X.2.1.6 recovery loop) in the INCIDENT_OPENED note");
 
     /**
      * No event name is written only inside parentheses: the rule drops it silently, so every backticked upper-case word
