@@ -71,3 +71,8 @@ entrypoint      text eol=lf
 *.p12           binary
 *.jks           binary
 *.der           binary
+
+# Licence texts and the hash table of the deployed fonts are checked by SHA-256 (sangam-ui scripts/deploy-fonts.mjs);
+# a CRLF checkout changed the bytes and failed the check on a fresh Windows clone. LF in every checkout.
+sangam/deploy/fonts/*.txt text eol=lf
+sangam/deploy/fonts/README.md text eol=lf
