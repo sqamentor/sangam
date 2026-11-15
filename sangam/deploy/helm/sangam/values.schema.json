@@ -22,12 +22,13 @@
           "properties": {
             "connectionTimeoutMs": { "type": "integer", "minimum": 1 },
             "leafPools": {
-              "$comment": "SL-168: SANGAM_QUOTA_POOL_SIZE, SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE, SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE; each on top of maximumPoolSize per pod.",
+              "$comment": "SL-168: SANGAM_QUOTA_POOL_SIZE, SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE, SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE, SANGAM_CONFIG_STORE_POOL_SIZE; each on top of maximumPoolSize per pod.",
               "type": "object",
               "properties": {
                 "quota": { "type": "integer", "minimum": 1 },
                 "securityDenialAudit": { "type": "integer", "minimum": 1 },
-                "complianceDenialAudit": { "type": "integer", "minimum": 1 }
+                "complianceDenialAudit": { "type": "integer", "minimum": 1 },
+                "configStore": { "type": "integer", "minimum": 1 }
               }
             }
           }
@@ -63,6 +64,21 @@
         "aiKbVectorIndex": { "type": "string", "enum": ["portable", "pgvector", "oracle"], "$comment": "Decision 247 (170, 207): SANGAM_AI_KB_VECTOR_INDEX, the names VectorIndex.named accepts; oracle needs Oracle AI Database 23ai or later and applies the oracle-vector changelog." },
         "dscOcspMaxAge": { "type": "string", "pattern": "^([1-9][0-9]*(ms|s|m|h|d)|P[1-9][0-9]*D|PT[1-9][0-9]*[HMS])$", "$comment": "Decision 259: SANGAM_DSC_OCSP_MAX_AGE, a positive duration with one unit: Spring form (24h, 90m) or ISO-8601 (PT24H, P1D)." },
         "integrationReconciliationMaxRedispatches": { "type": "integer", "minimum": 1, "maximum": 2147483647, "$comment": "Decision 290: SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES, automatic re-dispatches of a pack operation with no process instance before reconciliation hands it to a person; a positive integer (the server refuses any other value)." },
+        "dlt": {
+          "$comment": "Decisions 304 and 305: SANGAM_DLT_DELIVERY_REPORT_TOLERANCE, SANGAM_DLT_DELIVERY_STATUS_ENABLED, SANGAM_DLT_DELIVERY_STATUS_INTERVAL, SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL. Durations are positive with one unit: Spring form (5m, 90s) or ISO-8601 (PT5M); the server refuses zero and negative durations at start.",
+          "type": "object",
+          "properties": {
+            "deliveryReportTolerance": { "type": "string", "pattern": "^([1-9][0-9]*(s|m|h|d)|P[1-9][0-9]*D|PT[1-9][0-9]*[HMS])$" },
+            "deliveryStatus": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "interval": { "type": "string", "pattern": "^([1-9][0-9]*(s|m|h|d)|P[1-9][0-9]*D|PT[1-9][0-9]*[HMS])$" }
+              }
+            },
+            "registrationRefreshInterval": { "type": "string", "pattern": "^([1-9][0-9]*(s|m|h|d)|P[1-9][0-9]*D|PT[1-9][0-9]*[HMS])$" }
+          }
+        },
         "systemAuditScope": { "type": "string", "pattern": "^system:[a-z0-9][a-z0-9._-]{0,47}$", "$comment": "Decision 144: SANGAM_ENGINE_SYSTEM_AUDIT_SCOPE, the same grammar as SystemAuditScope (sangam-core); the server refuses to start on any other value." },
         "replicaCount": { "type": "integer", "minimum": 1 },
         "preStopSleepSeconds": { "type": "integer", "minimum": 0 },

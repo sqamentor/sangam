@@ -10,6 +10,7 @@ import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.ResourceLoaderAware;
@@ -30,6 +31,10 @@ import org.springframework.core.type.AnnotationMetadata;
  * {@link SangamAutoConfiguration}), which is where the server's own scan puts them. The one visible difference: a
  * class imported this way is registered under its fully qualified name instead of its short bean name; the beans its
  * {@code @Bean} methods declare keep their names.
+ *
+ * <p>The scan checks each class's conditions with the application's bean factory, as the server's scan does
+ * ({@link #candidates()}): a condition that needs it ({@code @ConditionalOnExpression} on {@code BillingWiring} and
+ * {@code MalwareScanWiring}) answers "no bean factory" without one, and the class would never be imported.
  */
 public class SangamProductImportSelector implements ImportSelector, EnvironmentAware, ResourceLoaderAware,
         BeanFactoryAware, BeanClassLoaderAware {
@@ -72,8 +77,17 @@ public class SangamProductImportSelector implements ImportSelector, EnvironmentA
 
     /** The component classes of {@link #BASE_PACKAGES}, in scan order, without the server's entry point. */
     public List<String> candidates() {
+        // The scanner's condition check gets the host's bean factory as its registry. The base class has none, and
+        // without a bean factory @ConditionalOnExpression never matches (OnExpressionCondition: "no BeanFactory
+        // available"), so BillingWiring and MalwareScanWiring were dropped here whatever the settings said.
+        BeanDefinitionRegistry registry = beanFactory instanceof BeanDefinitionRegistry r ? r : null;
         ClassPathScanningCandidateComponentProvider scanner =
-                new ClassPathScanningCandidateComponentProvider(true, environment);
+                new ClassPathScanningCandidateComponentProvider(true, environment) {
+                    @Override
+                    protected BeanDefinitionRegistry getRegistry() {
+                        return registry;
+                    }
+                };
         if (resourceLoader != null) {
             scanner.setResourceLoader(resourceLoader);
         }

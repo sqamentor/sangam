@@ -22,6 +22,11 @@ data:
   SANGAM_DSC_OCSP_MAX_AGE: {{ .Values.server.dscOcspMaxAge | quote }}
   # Decision 290: automatic re-dispatches of a pack operation with no process instance (positive integer)
   SANGAM_INTEGRATION_RECONCILIATION_MAX_REDISPATCHES: {{ .Values.server.integrationReconciliationMaxRedispatches | int | quote }}
+  # Decisions 304, 305: India DLT SMS delivery reports, status lookups, registration refresh (deploy/README.md section 1.8)
+  SANGAM_DLT_DELIVERY_REPORT_TOLERANCE: {{ .Values.server.dlt.deliveryReportTolerance | quote }}
+  SANGAM_DLT_DELIVERY_STATUS_ENABLED: {{ .Values.server.dlt.deliveryStatus.enabled | quote }}
+  SANGAM_DLT_DELIVERY_STATUS_INTERVAL: {{ .Values.server.dlt.deliveryStatus.interval | quote }}
+  SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL: {{ .Values.server.dlt.registrationRefreshInterval | quote }}
   SANGAM_TRUSTED_PROXIES: {{ join "," .Values.server.trustedProxies | quote }}
   SANGAM_CLIENT_IP_HEADERS: {{ join "," .Values.server.clientIpHeaders | quote }}
   SANGAM_PORT: {{ .Values.server.service.port | quote }}
@@ -46,6 +51,7 @@ data:
   SANGAM_QUOTA_POOL_SIZE: {{ .Values.database.pool.leafPools.quota | quote }}
   SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE: {{ .Values.database.pool.leafPools.securityDenialAudit | quote }}
   SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE: {{ .Values.database.pool.leafPools.complianceDenialAudit | quote }}
+  SANGAM_CONFIG_STORE_POOL_SIZE: {{ .Values.database.pool.leafPools.configStore | quote }}
   {{- with .Values.database.networkTimeout }}
   # SL-59: socket read bound on every pooled connection
   SANGAM_DB_NETWORK_TIMEOUT: {{ . | quote }}

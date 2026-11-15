@@ -234,6 +234,22 @@ Chart behaviour worth knowing:
   (`application-<db>.yaml`); a value set directly must not be blank. The message names the variable and never prints the
   value. The user name `sangam` stays allowed, because it is the documented application user
   (`config/ProductionDatabaseCredentials`, run inside the `HostingWiring` production guard before any bean is created).
+- **Start checks that fail closed (decisions 143 and 152).** Three more refusals stop the start by name:
+  - `DOCUMENT_ERASER_REQUIRED`: data erasure has no document eraser, so an erasure would scrub the database, report
+    success and leave every document of the instance in the document store. The server's own eraser
+    (`ContentDocumentEraser`) comes with the ports module: keep `sangam.modules.ports.enabled=true` (the default).
+  - `SHARED_ISOLATION_DIRECTORY_REQUIRED`: a shared instance (no `sangam.tenancy.dedicated-tenant`) has no tenant
+    directory (`AdminPort`), so it could not refuse tenants recorded with isolation `DATABASE` or `SCHEMA`
+    (decision 97) and would serve them.
+  - `AUDIT_CHECKPOINT_VERIFICATION_UNAVAILABLE`: `sangam.audit.checkpoint.trusted-public-key-refs` is set, but the
+    audit port is not the JDBC audit adapter, so audit verification would not check the signed checkpoints. Use the
+    JDBC audit adapter or remove the property.
+
+  The first two apply everywhere except a validated development environment (`SANGAM_SECURITY_PRODUCTION=false`
+  together with a dev profile, section 1.1; a missing or contradictory setting counts as production), where the
+  server starts with a `DEVELOPMENT:` warning instead. The third applies in every environment. In the same way
+  `sangam.packs.simulator-fallback` is a development default only: unset, it is on only with the `h2` profile in a
+  validated development environment; set to `true` in production it refuses the start.
 - **No country defaults (SL-104, ADR-D-20).** `SANGAM_CELL_JURISDICTION` (`sangam.cell.jurisdiction`) is required on a
   cell: start-up fails naming the property (`CellWiring.jurisdictionAndResidency`), and the chart refuses to render
   `scale.cell.id` without `scale.cell.jurisdiction`; the residency defaults to the jurisdiction.
@@ -384,7 +400,7 @@ targets in `config/server/application.yaml`.
 
 | DB | Must have | Recommended |
 |---|---|---|
-| PostgreSQL 15–17 | UTF8 database, `timezone=UTC`, `default_transaction_isolation='read committed'`, user owning schema | `wal_level=replica`, physical replica at DR site, `max_connections` ≥ pods × pool + 20 |
+| PostgreSQL 15–17 | UTF8 database, `timezone=UTC`, `default_transaction_isolation='read committed'`, user owning schema | `wal_level=replica`, physical replica at DR site, `max_connections` ≥ pods × (pool + leaf pools, section 1.6) + 20 |
 | Oracle 19c/21c/23ai | AL32UTF8, app user with CONNECT, RESOURCE, CREATE VIEW/SEQUENCE/PROCEDURE/TRIGGER/TYPE, quota | ARCHIVELOG mode, FRA, Data Guard standby at DR |
 | SQL Server 2019/2022 | `ALTER DATABASE sangam SET READ_COMMITTED_SNAPSHOT ON` (the server refuses to start without it), UTF-8 collation (`*_UTF8`) | FULL recovery model, Always On AG (async replica at DR) |
 | MySQL 8.4 | `transaction_isolation=READ-COMMITTED`, `utf8mb4` / `utf8mb4_bin`, `default_time_zone='+00:00'`, `binlog_format=ROW` | GTID on, `sync_binlog=1`, `innodb_flush_log_at_trx_commit=1`, async replica at DR |
@@ -444,7 +460,7 @@ Oracle. To check a running container: `docker exec <c> ls -l /opt/sangam/drivers
 
 ### 1.6 Connection pool sizing (SG-15 T-SCALE)
 
-`SANGAM_DB_POOL_SIZE` (Helm `database.pool.maximumPoolSize`, default 20) is the number of database connections
+`SANGAM_DB_POOL_SIZE` (server default 20; Helm `database.pool.maximumPoolSize`, chart default 30) is the number of database connections
 one server node may hold. Size it from measurement, not from request concurrency. A request holds a connection
 for about `R × t_rt + t_db`, where `R` is the JDBC round trips of the request, `t_rt` the network plus driver time
 of one round trip and `t_db` the database work. By Little's law a node serving `X` requests per second needs
@@ -459,11 +475,17 @@ denial-audit pool `sangam-compliance-audit` (SL-137, `sangam.compliance.denial-a
 denial-audit pool `sangam-security-audit` is the third (SL-132, `sangam.security.denial-audit.pool.maximum-size`, env
 `SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE`, default 2; `SecurityAuditPoolWiring`): sangam-security writes `AUTH_DENIED`,
 `SOD_VIOLATION_BLOCKED` and `POWER_LIMIT_EXCEEDED` to their `sec:d:` denial chains through it (`Options.denialTx`), and
-the tenant data-key store uses it too (SL-161). With the defaults that is 8 connections per node on top of `pool`; a
-read replica pool counts against the replica's own limit. The three sizes are set in Helm under
-`database.pool.leafPools` (`quota`, `securityDenialAudit`, `complianceDenialAudit`) and in compose by the env
-`SANGAM_QUOTA_POOL_SIZE`, `SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE` and `SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE`
-(SL-168); keep the security pool at 2 or more (SL-161). Engine spans (M-062, `sangam.tracing.engine.enabled`, env
+the tenant data-key store uses it too (SL-161). The config store pool `sangam-config` is the fourth
+(`sangam.config.store.pool.maximum-size`, env `SANGAM_CONFIG_STORE_POOL_SIZE`, default 4, while the config module is
+enabled; `ConfigWiring.ConfigStorePool`): the config store (profiles, change marker, master codes, number series,
+change register, case bindings) works on it, because a process start reads the profile change marker while its
+engine command holds a main-pool connection, and a second main-pool connection there is the SL-43 pool deadlock.
+With the defaults that is 12 connections per node on top of `pool` (4 + 2 + 2 + 4), so 32 per node with the server's
+default pool of 20 and 42 per pod with the chart's default of 30; a read replica pool counts against the replica's
+own limit. The four sizes are set in Helm under `database.pool.leafPools` (`quota`, `securityDenialAudit`,
+`complianceDenialAudit`, `configStore`) and in compose by the env `SANGAM_QUOTA_POOL_SIZE`,
+`SANGAM_SECURITY_DENIAL_AUDIT_POOL_SIZE`, `SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE` and
+`SANGAM_CONFIG_STORE_POOL_SIZE` (SL-168); keep the security pool at 2 or more (SL-161). Engine spans (M-062, `sangam.tracing.engine.enabled`, env
 `SANGAM_TRACING_ENGINE_ENABLED`, default off) are Helm `otel.engineTracing`; they leave the pod only with OTLP
 enabled (`otel.enabled`). Read `R`
 from the T-SCALE probe (`jdbc_round_trips_per_op` in `report.txt` of `TScaleLoadIT`, `-Dsangam.tscale=true`) and
@@ -613,6 +635,105 @@ All of these are off by default; the chart's `values.schema.json` checks each va
   `sangam.connectors.{s3,graphql,jdbc}.tenants.<tenant>.<id>.*` are off until set in `server.config` (Helm) or
   `config/server/application.yaml` (compose), with `secret://` references for credentials and a
   `networkPolicy.extraEgress` rule to each endpoint.
+- **Connectors behind an API read are read-only (decisions 320 and 321).** A low-code data object backed by a
+  connector (`endpointRef`) and the geo external-layer query call the connector from an API read. The call is made
+  only when the connector declares that request read-only; for an HTTP connector that is a request that resolves to
+  `GET` or `HEAD` (the request's `method`, else the connector's default method) on a connector without an async
+  callback. The operation name plays no part. Anything else is refused with 422
+  `CONNECTOR_OPERATION_NOT_READ_ONLY` and a warning in the log, the connector is not called, and the refusal is
+  permanent (not a retryable 503); a data object whose binding is not read-only is refused when it is defined. So an
+  HTTP connector bound to a data object must resolve its list request to `GET` or `HEAD`.
+
+### 1.8 India DLT SMS: delivery reports and the stored registration (decisions 304, 305)
+
+Wired by `DltWiring` while `sangam.modules.integration.enabled` is true (the default); the settings are
+`sangam.integration.dlt.*` (`DltProperties`).
+
+**Delivery-report webhook (decision 304).** The SMS gateway posts delivery reports to
+
+    POST /api/v1/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports
+
+`{tenant}` is the tenant id and `{connectorId}` the id of that tenant's DLT SMS connector; the tenant in the path
+only selects that tenant's connector and signing secret. The route asks for no Sangam token (it is public in
+`SecurityConfig`, for exactly this path shape and `POST`), so expose it to the gateway through the same ingress or
+edge that serves `/api`. A report is authenticated by its signature alone:
+
+- **Header.** `X-Sangam-Signature: t=<epoch seconds>,v1=<hex HMAC-SHA256(secret, t + "." + raw body)>`
+  (`WebhookSignature`, the same scheme as the SL-39 outbound webhooks). The header may carry several `v1` values
+  (a secret rotation on the sender's side); one that verifies is enough.
+- **Time window.** `t` must be within `sangam.integration.dlt.delivery-reports.tolerance` of the server clock,
+  earlier or later (default `5m`; whole seconds are compared). A captured request replayed outside the window is
+  refused.
+- **Signing secret, by reference only.** One entry per connector, in `server.config` (Helm) or
+  `config/server/application.yaml` (compose):
+
+  ```yaml
+  sangam:
+    integration:
+      dlt:
+        delivery-reports:
+          secrets:
+            main:                              # any name
+              connector: sms-dlt               # required: the connector id
+              tenant: acme                     # optional: only this tenant's connector
+              secret-ref: secret://dlt/webhook # a reference, never the secret
+  ```
+
+  An entry with a `tenant` wins over one without for that tenant; an entry without a `tenant` serves the connector
+  of every tenant that has no entry of its own. The server refuses to start, naming the property, when `connector`
+  is missing, when `secret-ref` does not start with `secret://` (a literal secret), or when two entries name the
+  same connector (and tenant). The reference is resolved by the platform secret resolver when `secrets.providers` is
+  set (section 1.7), otherwise from the environment (`SecretResolver.fromEnvironment`).
+- **Fail closed.** A connector with no configured secret, or one whose reference cannot be resolved, refuses every
+  report.
+- **Answers.** `200` with `accepted`, `duplicates` and `ignored` counts; `404 NOT_FOUND` when the tenant has no DLT
+  SMS connector with that id (checked first); `401 WEBHOOK_SIGNATURE_INVALID` for a missing or wrong signature or one
+  outside the time window, before anything is read or written; `422 DLT_DELIVERY_REPORT_INVALID` for a body over
+  1 MiB, a body that is not one report object or an array of 1 to 500 of them, an unknown `status`, or a report that
+  names neither `clientRef` (the operation id) nor `messageId`. Nothing the sender wrote is echoed in a refusal.
+- **Effect.** A report is recorded once by its `reportId` (without one, by the SHA-256 of the report), so a repeated
+  report changes nothing; the state of a message only moves forward (`ACCEPTED`/`SUBMITTED`, `SENT`, then one final
+  state: `DELIVERED`, `UNDELIVERED`, `FAILED`, `REJECTED` or `EXPIRED`), and `NOTIFICATION_DELIVERED` is written
+  once per message, without the mobile number.
+
+**Status-lookup fallback (decision 304).** For a message whose report did not arrive, every node looks the status
+up through the connector (`DltDeliveryStatusPoller`; the claim is skip-locked, so two nodes never look up one
+message at once). It runs every `delivery-status.interval` unless `delivery-status.enabled=false`, and only while
+`sangam.integration.background.enabled` is true (the default); the first pass comes one interval after the start.
+Without an environment variable of their own (set them in `server.config` or `config/server/application.yaml`):
+`delivery-status.first-lookup-after` (`15m`), `.lookup-every` (`30m`), `.window` (`3d`, older sends are not looked
+up), `.max-lookups` (`12`) and `.batch-size` (`100`). A duration that is zero or negative, or `max-lookups` or
+`batch-size` below 1, refuses the start and names the property.
+
+**Stored registration (decision 305).** The DLT registration of a tenant (entity id, headers, content templates,
+URL prefixes) is stored in the database and is what the DLT SMS connector validates against. It is read and changed
+through the admin routes, always for the caller's tenant:
+
+| Route | Permission |
+|---|---|
+| `GET /api/v1/admin/dlt-registration` | `dlt.registration.read` |
+| `PUT /api/v1/admin/dlt-registration/entity` | `dlt.registration.write` |
+| `POST /api/v1/admin/dlt-registration/headers` | `dlt.registration.write` |
+| `POST /api/v1/admin/dlt-registration/templates` | `dlt.registration.write` |
+| `POST /api/v1/admin/dlt-registration/urls` | `dlt.registration.write` |
+
+Both permissions are tenant-scoped and for tenant administrators. A change writes `DLT_TEMPLATE_REGISTERED`; an
+entry the store's checks refuse is `422` with the code `ENTITY_INVALID`, `HEADER_INVALID`, `TEMPLATE_INVALID` or
+`URL_INVALID`. Start-up configuration only seeds the store:
+`sangam.integration.dlt.registration.seed.<tenant>.entity-id`, `.headers[]`, `.templates[]` (`template-id`,
+`header`, `body`) and `.urls[]` are added where absent and never overwrite a stored entry; a seed entry the checks
+refuse stops the start. Every node loads the stored registrations at start and then every
+`registration.refresh-interval`, which is how a change made on another node arrives.
+
+| Env | Property (`sangam.integration.dlt.`) | Helm | Default |
+|---|---|---|---|
+| `SANGAM_DLT_DELIVERY_REPORT_TOLERANCE` | `delivery-reports.tolerance` | `server.dlt.deliveryReportTolerance` | `5m` |
+| `SANGAM_DLT_DELIVERY_STATUS_ENABLED` | `delivery-status.enabled` | `server.dlt.deliveryStatus.enabled` | `true` |
+| `SANGAM_DLT_DELIVERY_STATUS_INTERVAL` | `delivery-status.interval` | `server.dlt.deliveryStatus.interval` | `5m` |
+| `SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL` | `registration.refresh-interval` | `server.dlt.registrationRefreshInterval` | `1m` |
+
+Compose passes the same four from `.env` (`.env.example`). The Helm schema accepts a positive duration with one unit
+(`5m`, `90s`, `PT5M`).
 
 ---
 
@@ -1043,7 +1164,9 @@ Third-party images in the bundle are separate, unmodified programs:
   The database-read gauges report the same value on every pod, so those rules take `max()`; the relay heartbeat is
   per pod and is checked per pod. The gauge names are a contract with `PrometheusAlertRulesTraceTest`. Without
   cert-manager the certificate rule has no series and never fires; `certManager.selector` narrows the certificates.
-- **Logs.** JSON logs (ECS) go to stdout. Ship them to an India-resident store with **≥ 180 days** retention (R51, CERT-In).
+- **Logs.** JSON logs (ECS) go to stdout: structured console logging, one JSON object per line, is the default in
+  every profile, development included (decision 324; `logging.structured.format.console: ecs` in the server's
+  `application.yaml`), so text from a request cannot start a second log line. Ship them to an India-resident store with **≥ 180 days** retention (R51, CERT-In).
 - **Time.** Nodes sync time with NIC/NPL NTP.
 
 ---

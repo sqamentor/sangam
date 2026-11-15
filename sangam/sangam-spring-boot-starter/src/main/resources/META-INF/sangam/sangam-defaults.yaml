@@ -20,12 +20,13 @@ spring:
       connection-timeout: ${SANGAM_DB_CONNECTION_TIMEOUT_MS:2000}
       validation-timeout: ${SANGAM_DB_VALIDATION_TIMEOUT_MS:1000}
       pool-name: sangam
-      # Leaf pools (X1-05): three small pools on this pool's database and settings (ComplianceWiring.leafPool), whose
+      # Leaf pools (X1-05): four small pools on this pool's database and settings (ComplianceWiring.leafPool), whose
       # connections are never held while another connection is requested, so the SL-43 pool deadlock cannot form.
       # Each comes ON TOP of maximum-pool-size on every node; count them in the database's connection budget:
       #   sangam.quotas.pool.maximum-size                      sangam-quota            (default 4, quota counting)
       #   sangam.security.denial-audit.pool.maximum-size       sangam-security-audit   (default 2, SL-132, SL-161)
       #   sangam.compliance.denial-audit.pool.maximum-size     sangam-compliance-audit (default 2, SL-137)
+      #   sangam.config.store.pool.maximum-size                sangam-config           (default 4, config store reads)
   # OIDC: activate the 'oidc' profile with SANGAM_OIDC_ISSUER (application-oidc.yaml), or set
   # spring.security.oauth2.resourceserver.jwt.issuer-uri / jwk-set-uri directly. Left unset here on purpose: an empty
   # issuer would make Spring Boot try to build a JWT decoder.
@@ -161,6 +162,14 @@ sangam:
     denial-audit:
       pool:
         maximum-size: ${SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE:2}
+  config:
+    # The config store (profiles, change marker, master codes, number series) works on its own leaf pool
+    # sangam-config (ConfigWiring.ConfigStorePool): a process start reads the profile change marker while its engine
+    # command holds a main-pool connection, and a second main-pool connection there is the SL-43 pool deadlock. These
+    # connections come on top of SANGAM_DB_POOL_SIZE on every node; count them in the database's connection budget.
+    store:
+      pool:
+        maximum-size: ${SANGAM_CONFIG_STORE_POOL_SIZE:4}
   history:
     # Exactly one writer of history events to the outbox: integration (OutboxHistoryEventHandler, default) | engine
     # (sangam-engine EngineEventSink) | none. sangam-flowable-ports' PortsHistoryEventHandler only feeds the read model.
@@ -228,6 +237,27 @@ sangam:
     default-destinations: ${SANGAM_OUTBOX_DESTINATIONS:}
     outbox:
       retention: 7d
+    # India DLT SMS (decisions 304, 305; DltProperties, DltWiring).
+    dlt:
+      # Decision 304: the provider posts signed delivery reports to
+      # POST /api/v1/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports (X-Sangam-Signature t=,v1= HMAC-SHA256).
+      # The signing secret of a connector is a reference, never a value:
+      #   delivery-reports.secrets.<name>.connector / .tenant (optional) / .secret-ref (secret://...)
+      # A connector without one refuses every report (401).
+      delivery-reports:
+        tolerance: ${SANGAM_DLT_DELIVERY_REPORT_TOLERANCE:5m}
+      # Decision 304: the status-lookup fallback for messages whose report did not arrive, on every node (skip-locked
+      # claim); only with background.enabled. Also first-lookup-after (15m), lookup-every (30m), window (3d),
+      # max-lookups (12), batch-size (100).
+      delivery-status:
+        enabled: ${SANGAM_DLT_DELIVERY_STATUS_ENABLED:true}
+        interval: ${SANGAM_DLT_DELIVERY_STATUS_INTERVAL:5m}
+      # Decision 305: the per-tenant registration is stored and changed through /api/v1/admin/dlt-registration;
+      # registration.seed.<tenant>.entity-id / .headers[] / .templates[].template-id,.header,.body / .urls[] only
+      # seeds it at start (never overwrites a stored entry; an invalid entry stops the start). Every node reloads the
+      # registrations other nodes changed at this interval.
+      registration:
+        refresh-interval: ${SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL:1m}
     # SL-39 outbound webhooks (WebhooksProperties): subscriptions.<name>.url / .secret-ref, destination webhook:<name>
     webhooks:
       disable-after: ${SANGAM_WEBHOOKS_DISABLE_AFTER:50}

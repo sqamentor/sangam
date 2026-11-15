@@ -37,8 +37,8 @@ database:
     # with Retry-After (the server default, application.yaml). 0 (wait for ever) is refused by the server.
     connectionTimeoutMs: 2000
     maxLifetimeMs: 1500000
-    # SL-168 / X1-05: the three leaf pools (separate HikariCP pools on the same database, with the main pool's settings).
-    # Each is ON TOP of maximumPoolSize on every pod: budget max_connections >= pods x (maximumPoolSize + the three) +
+    # SL-168 / X1-05: the four leaf pools (separate HikariCP pools on the same database, with the main pool's settings).
+    # Each is ON TOP of maximumPoolSize on every pod: budget max_connections >= pods x (maximumPoolSize + the four) +
     # admin/replication slots (deploy/README.md section 1.6). Defaults are the server's.
     leafPools:
       # SANGAM_QUOTA_POOL_SIZE: sangam.quotas.pool.maximum-size, quota counting and audit (SL-43), default 4
@@ -48,6 +48,9 @@ database:
       securityDenialAudit: 2
       # SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE: sangam.compliance.denial-audit.pool.maximum-size (SL-137), default 2
       complianceDenialAudit: 2
+      # SANGAM_CONFIG_STORE_POOL_SIZE: sangam.config.store.pool.maximum-size, the config store's own pool sangam-config
+      # (profiles, change marker, master codes, number series; ConfigWiring.ConfigStorePool), default 4
+      configStore: 4
   # SL-59, optional (empty = the server default). Socket read bound on every pooled connection, a duration such as
   # 300s (server default 300s; 0 disables it): SANGAM_DB_NETWORK_TIMEOUT.
   networkTimeout: ""
@@ -191,6 +194,23 @@ server:
   # Automatic re-dispatches of a pack operation that has no process instance (a REST-backed record create) before
   # reconciliation hands it to a person. A positive integer; any other value refuses the server start.
   integrationReconciliationMaxRedispatches: 3
+  # Decisions 304 and 305: India DLT SMS (sangam.integration.dlt.*, deploy/README.md section 1.8). The defaults are the
+  # server's. Each duration is positive, with one unit: s, m, h or d (5m), or ISO-8601 (PT5M); the server refuses to
+  # start on zero or a negative duration. The signing secret references (delivery-reports.secrets.*) and the
+  # registration seed (registration.seed.*) are maps: put them into server.config below.
+  dlt:
+    # SANGAM_DLT_DELIVERY_REPORT_TOLERANCE (delivery-reports.tolerance): accepted distance of the timestamp in a
+    # delivery report's X-Sangam-Signature from the server clock
+    deliveryReportTolerance: 5m
+    deliveryStatus:
+      # SANGAM_DLT_DELIVERY_STATUS_ENABLED (delivery-status.enabled): the status-lookup fallback for messages whose
+      # delivery report did not arrive
+      enabled: true
+      # SANGAM_DLT_DELIVERY_STATUS_INTERVAL (delivery-status.interval): time between two lookup passes on a pod
+      interval: 5m
+    # SANGAM_DLT_REGISTRATION_REFRESH_INTERVAL (registration.refresh-interval): how often a pod loads the stored
+    # registrations that other pods changed
+    registrationRefreshInterval: 1m
   # CIDRs of the ingress controller / edge proxies whose X-Forwarded-*/Forwarded headers are trusted. Empty = none.
   trustedProxies: []
   # Client-IP headers in priority order (read only from trustedProxies), e.g. [CF-Connecting-IP, X-Forwarded-For].
