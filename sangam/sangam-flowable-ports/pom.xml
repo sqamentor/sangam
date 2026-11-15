@@ -22,6 +22,11 @@
       <groupId>io.github.sqamentor</groupId>
       <artifactId>sangam-core</artifactId>
     </dependency>
+    <!-- G27: the engine's decimal and local-date text formats (DecimalText, LocalDateText) for correlation matching -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-packs</artifactId>
+    </dependency>
     <!-- Operaton 2.2.0 from the BOM (ADR-D-16: dependency plus plugins) -->
     <dependency>
       <groupId>org.operaton.bpm</groupId>

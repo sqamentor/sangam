@@ -9,6 +9,12 @@ import org.operaton.bpm.engine.runtime.MessageCorrelationBuilder;
 import org.operaton.bpm.engine.runtime.ProcessInstance;
 import org.sangam.core.layer.Inbox;
 import org.sangam.core.ports.UniqueStartPort;
+import org.sangam.packs.engine.DecimalText;
+import org.sangam.packs.engine.DecimalValueSerializer;
+import org.sangam.packs.engine.DecimalValueType;
+import org.sangam.packs.engine.LocalDateText;
+import org.sangam.packs.engine.LocalDateValueSerializer;
+import org.sangam.packs.engine.LocalDateValueType;
 import org.sangam.ports.events.InboundEventProcessor.StoredEvent;
 import org.sangam.ports.events.model.EventDefinition;
 import org.sangam.ports.links.InstanceLinkService;
@@ -123,29 +129,7 @@ public class EventDispatcher implements Inbox.Handler {
             // Waiting executions only. Operaton's correlateAll also fires matching message start events; the start is
             // step 2's decision (unique-start claim first, one instance), so correlateAll here started a second
             // instance for every message-start event and bypassed UNIQUE_START.
-            var q = rs.createExecutionQuery().messageEventSubscriptionName(ev.eventKey());
-            if (tenantId == null) {
-                q.withoutTenantId();
-            } else {
-                q.tenantIdIn(tenantId);
-            }
-            if (ev.businessKey() != null) {
-                // FW-03: the process-instance business key, for executions at any depth (Flowable's one-argument form
-                // compared the child execution's own key and missed parallel branches)
-                q.processInstanceBusinessKey(ev.businessKey());
-            }
-            for (EventDefinition.Field f : def.correlationParameters()) {
-                Object v = corr.get(f.name());
-                if (v == null) {
-                    continue;
-                }
-                if (f.local()) {
-                    q.variableValueEquals(f.name(), v);
-                } else {
-                    q.processVariableValueEquals(f.name(), v);
-                }
-            }
-            for (var execution : q.list()) {
+            for (var execution : waiting(rs, ev, tenantId, def, corr)) {
                 rs.messageEventReceived(ev.eventKey(), execution.getId(), vars);
                 correlatedInstances.add(execution.getProcessInstanceId());
             }
@@ -215,6 +199,112 @@ public class EventDispatcher implements Inbox.Handler {
             }
         }
         return new Delivery(correlated, startedPi, startedCase, duplicate);
+    }
+
+    /**
+     * The executions waiting for the event's message that match every correlation value given (and the business key).
+     *
+     * <p>G27: Operaton's variable equality compares typed values, so a {@code string} correlation value (Flowable's
+     * event payload types have no decimal or local-date type, so such a value always arrives as a string) never matched
+     * a process variable stored as the engine decimal ({@code sangam-decimal-v1}) or local-date
+     * ({@code sangam-local-date-v1}) type. A string now also matches such a variable whose stored canonical text is
+     * exactly that string: {@link LocalDateText} format v1 ({@code 2026-03-31}) or {@link DecimalText} format v1
+     * ({@code 1250.50} matches {@code 1250.50}, not {@code 1250.5}: value and scale, as the decimal type's own equality).
+     * Text that is not canonical for a type, and an engine that does not register the type, match as before (string
+     * only). Each such parameter is one query per candidate type within the same message, tenant and business key, the
+     * results are intersected with the query of every other parameter, so the number of queries grows with the
+     * parameters, not with their combinations. No other value type is widened.
+     */
+    private List<org.operaton.bpm.engine.runtime.Execution> waiting(RuntimeService rs, StoredEvent ev, String tenantId,
+                                                                    EventDefinition def, Map<String, Object> corr) {
+        Map<EventDefinition.Field, Object> fixed = new LinkedHashMap<>();
+        Map<EventDefinition.Field, List<Object>> widened = new LinkedHashMap<>();
+        for (EventDefinition.Field f : def.correlationParameters()) {
+            Object v = corr.get(f.name());
+            if (v == null) {
+                continue;
+            }
+            List<Object> typed = v instanceof String s ? storedTypeAlternatives(engine, s) : List.of();
+            if (typed.isEmpty()) {
+                fixed.put(f, v);
+            } else {
+                List<Object> all = new ArrayList<>();
+                all.add(v);
+                all.addAll(typed);
+                widened.put(f, all);
+            }
+        }
+        List<org.operaton.bpm.engine.runtime.Execution> base = waitingQuery(rs, ev, tenantId, fixed).list();
+        if (widened.isEmpty() || base.isEmpty()) {
+            return base;
+        }
+        java.util.Set<String> keep = null;
+        for (Map.Entry<EventDefinition.Field, List<Object>> w : widened.entrySet()) {
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            for (Object alternative : w.getValue()) {
+                Map<EventDefinition.Field, Object> one = new LinkedHashMap<>(fixed);
+                one.put(w.getKey(), alternative);
+                waitingQuery(rs, ev, tenantId, one).list().forEach(e -> ids.add(e.getId()));
+            }
+            if (keep == null) {
+                keep = ids;
+            } else {
+                keep.retainAll(ids);
+            }
+        }
+        java.util.Set<String> matched = keep;
+        return base.stream().filter(e -> matched.contains(e.getId())).toList();
+    }
+
+    private static org.operaton.bpm.engine.runtime.ExecutionQuery waitingQuery(RuntimeService rs, StoredEvent ev,
+            String tenantId, Map<EventDefinition.Field, Object> values) {
+        var q = rs.createExecutionQuery().messageEventSubscriptionName(ev.eventKey());
+        if (tenantId == null) {
+            q.withoutTenantId();
+        } else {
+            q.tenantIdIn(tenantId);
+        }
+        if (ev.businessKey() != null) {
+            // FW-03: the process-instance business key, for executions at any depth (Flowable's one-argument form
+            // compared the child execution's own key and missed parallel branches)
+            q.processInstanceBusinessKey(ev.businessKey());
+        }
+        values.forEach((f, v) -> {
+            if (f.local()) {
+                q.variableValueEquals(f.name(), v);
+            } else {
+                q.processVariableValueEquals(f.name(), v);
+            }
+        });
+        return q;
+    }
+
+    /**
+     * G27: the typed values a string correlation value also stands for, one per engine type whose canonical text it is
+     * exactly and that {@code engine} registers; empty for every other string.
+     */
+    static List<Object> storedTypeAlternatives(ProcessEngine engine, String text) {
+        if (!(engine.getProcessEngineConfiguration()
+                instanceof org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl cfg)
+                || cfg.getVariableSerializers() == null) {
+            return List.of();
+        }
+        List<Object> out = new ArrayList<>();
+        if (cfg.getVariableSerializers().getSerializerByName(LocalDateValueSerializer.NAME) != null) {
+            try {
+                out.add(LocalDateValueType.localDate(LocalDateText.parse(text)));
+            } catch (LocalDateText.LocalDateFormatException notADate) {
+                // not format v1 text: no date alternative
+            }
+        }
+        if (cfg.getVariableSerializers().getSerializerByName(DecimalValueSerializer.NAME) != null) {
+            try {
+                out.add(DecimalValueType.decimal(DecimalText.parseCanonical(text)));
+            } catch (DecimalText.DecimalFormatException notADecimal) {
+                // not canonical decimal text: no decimal alternative
+            }
+        }
+        return out;
     }
 
     private static EventDefinition.Field field(List<EventDefinition.Field> fields, String name) {
