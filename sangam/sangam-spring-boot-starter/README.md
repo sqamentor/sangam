@@ -47,11 +47,25 @@ Enable a module with a property, for example `sangam.modules.billing.enabled=tru
 ## Defaults
 
 Sangam's defaults (`META-INF/sangam/sangam-defaults.yaml`) are added as the lowest-precedence property source,
-`sangamDefaults`: your `application.yaml`, profiles, system properties and environment override every key. They are
+`sangamDefaults`, below Spring Boot's `defaultProperties` too: your `application.yaml`, profiles, default properties
+(`SpringApplicationBuilder.properties`), system properties, environment and command line override every key
+(decision 334). They are
 the server's `application.yaml` without the server's own deployment settings (`server.*`, `management.*`,
 `logging.*`, `spring.application`, `spring.profiles`, `spring.lifecycle`), plus the module defaults above.
 `sangam.starter.defaults.enabled=false` switches them off.
 
+## Database schema
+
+Decision 334. In a validated development environment (`sangam.security.production=false` with a development profile
+`dev`, `h2`, `test` or `local`, decision 143) the starter applies the product changelog at start and lets the engine
+create its tables, so a host starts on an empty database. Everywhere else, a missing or contradictory production
+setting included, it creates and changes no schema: `operaton.bpm.database.schema-update` defaults to `false` and
+`sangam.liquibase.mode` to `validate`; a start on a database without the engine tables is refused with
+`ENGINE_SCHEMA_MISSING` before anything is created, and one with pending product changesets is refused by `validate`.
+Create or upgrade the schema with a one-shot run of your application with `SANGAM_LIQUIBASE_MODE=migrate-only` (it
+applies the product changelog and the engine schema, then exits; deploy README section 1.3), or apply the SQL of
+`SANGAM_LIQUIBASE_MODE=update-sql`. A value you set yourself wins, as for every default: an explicit
+`schema-update: true` or `SANGAM_LIQUIBASE_MODE=startup` is honoured in production, as in the server.
 ## Your own routes and security
 
 Sangam's `SecurityFilterChain` applies to every request and ends with `denyAll()`. To serve your own routes,

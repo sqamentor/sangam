@@ -708,7 +708,7 @@ public class OperatonProcessAdapter implements ProcessPort {
                 requireRuntime(ctx, r.processInstanceId());
             }
             MessageCorrelationBuilder b = runtime.createMessageCorrelation(r.messageName());
-            if (ctx.tenantId() != null) {
+            if (ctx.tenantId() != null && r.processInstanceId() == null) { // Operaton refuses both; requireRuntime checked
                 b = b.tenantId(ctx.tenantId());
             }
             if (r.businessKey() != null) {

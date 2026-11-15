@@ -30,6 +30,7 @@ import org.sangam.core.layer.Schema;
 import org.sangam.engine.db.DatabaseGuard;
 import org.sangam.core.licence.LiquibaseLicenceGuard;
 import org.sangam.rest.support.TxSupport;
+import org.sangam.server.bridge.EngineSchemaGuard;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -74,6 +75,7 @@ public class SchemaBootstrap {
     @Conditional(ChangelogPresent.class)
     public SpringLiquibase sangamLiquibase(DataSource dataSource, Environment env) {
         LiquibaseMode mode = mode(env);
+        requireEngineSchema(mode, env, dataSource);
         String changelog = env.getProperty(CHANGELOG_PROPERTY, DEFAULT_CHANGELOG);
         // H2 (development) only: the BLOB alias Operaton's H2 scripts need must exist before Liquibase's own tables,
         // because H2 2.x rejects CREATE DOMAIN BLOB once any large-object column exists.
@@ -105,6 +107,7 @@ public class SchemaBootstrap {
             if (mode == LiquibaseMode.STARTUP || mode == LiquibaseMode.MIGRATE_ONLY) {
                 return;
             }
+            requireEngineSchema(mode, env, dataSource);
             String changelog = env.getProperty(CHANGELOG_PROPERTY, DEFAULT_CHANGELOG);
             String path = changelog.startsWith("classpath:") ? changelog.substring("classpath:".length()) : changelog;
             Contexts contexts = new Contexts(env.getProperty("sangam.persistence.contexts", ""));
@@ -160,8 +163,23 @@ public class SchemaBootstrap {
     @Bean
     @Conditional(ChangelogAbsent.class)
     @ConditionalOnProperty(name = "sangam.persistence.dev-schema", havingValue = "true")
-    public InitializingBean sangamDevSchema(DataSource dataSource) {
-        return () -> createDevSchema(dataSource);
+    public InitializingBean sangamDevSchema(DataSource dataSource, Environment env) {
+        return () -> {
+            requireEngineSchema(mode(env), env, dataSource);
+            createDevSchema(dataSource);
+        };
+    }
+
+    /**
+     * Decision 334: a serving start ({@code startup}, {@code validate}) whose engine only checks its schema is refused
+     * by name ({@link EngineSchemaGuard}) before any schema step, when the engine tables are missing: it would create
+     * the product tables (or Liquibase's own) and then fail in the engine. A one-shot run does its schema task; the
+     * engine check before the engine is configured ({@code EngineConfigurationCustomizer}) still applies to it.
+     */
+    static void requireEngineSchema(LiquibaseMode mode, Environment env, DataSource dataSource) {
+        if (!mode.oneShot()) {
+            EngineSchemaGuard.require(env, dataSource);
+        }
     }
 
     /** Exits 0 once the context is ready in a one-shot mode (the Operaton job executor is disabled for those runs). */

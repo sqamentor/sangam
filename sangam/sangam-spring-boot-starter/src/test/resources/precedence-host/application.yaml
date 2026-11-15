@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# HostSchemaAndPrecedenceTest: a host's own application.yaml (decision 334: it wins over Sangam's defaults).
+sangam:
+  db:
+    unavailable-retry-after: 7s

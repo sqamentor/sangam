@@ -346,6 +346,12 @@ the run fails without it. The one-shot modes already bind both ports to 0 (rando
 
 Then start every node with `SANGAM_LIQUIBASE_MODE=validate`.
 
+A serving start never creates the engine tables (`operaton.bpm.database.schema-update: false`, the server's default
+and, outside a validated development environment, the embedding starter's, decision 334). On a database without them
+the start is refused with `ENGINE_SCHEMA_MISSING` before the product changelog or anything else touches the database,
+instead of the engine's raw `ENGINE-03057`: run the `migrate-only` step above (or apply the SQL of `update-sql`) first.
+An explicit `SANGAM_ENGINE_SCHEMA_UPDATE=true` (database profiles) is the operator's decision and is honoured.
+
 #### Backup console in script mode (decision 220)
 
 Without Kubernetes, the operations backup console (Ops > Backups) can run **your** backup scripts on the server host

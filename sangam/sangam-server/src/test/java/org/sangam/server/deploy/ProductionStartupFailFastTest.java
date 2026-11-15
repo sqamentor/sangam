@@ -205,4 +205,34 @@ class ProductionStartupFailFastTest {
         assertRefused("sg38-gl", m -> m.remove("sangam.ledger.gl-connector"),
                 "sangam.ledger.gl-connector must be set in production");
     }
+
+    /**
+     * Decision 334, item 2: the server's own default is a check-only engine ({@code schema-update: false},
+     * application.yaml and every database profile). On a database without the engine tables the start is refused by
+     * name before the product changelog runs, instead of Operaton's raw ENGINE-03057 after it, and no table is created.
+     */
+    @Test
+    void anEmptyDatabaseWithACheckOnlyEngineIsRefusedByNameAndNothingIsCreated() throws Exception {
+        String db = "sg38-noschema-" + UUID.randomUUID();
+        Map<String, String> settings = baseline(db);
+        settings.put("operaton.bpm.database.schema-update", "false");
+        StringBuilder chain = new StringBuilder();
+        try (ConfigurableApplicationContext ctx = start(settings)) {
+            fail("start-up succeeded on a database without the engine tables");
+        } catch (RuntimeException e) {
+            for (Throwable t = e; t != null; t = t.getCause()) {
+                chain.append(t.getClass().getSimpleName()).append(": ").append(t.getMessage()).append('\n');
+            }
+        }
+        assertTrue(chain.toString().contains("ENGINE_SCHEMA_MISSING"), chain::toString);
+        assertTrue(chain.toString().contains("SANGAM_LIQUIBASE_MODE=migrate-only"), chain::toString);
+        assertTrue(!chain.toString().contains("ENGINE-03057"), () -> "the named refusal, not the raw one:\n" + chain);
+        try (java.sql.Connection c = java.sql.DriverManager.getConnection(settings.get("spring.datasource.url"),
+                settings.get("SANGAM_DB_USER"), settings.get("SANGAM_DB_PASSWORD"));
+             java.sql.ResultSet rs = c.createStatement().executeQuery(
+                     "select count(*) from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = 'PUBLIC'")) {
+            rs.next();
+            org.junit.jupiter.api.Assertions.assertEquals(0, rs.getInt(1), "no table was created");
+        }
+    }
 }

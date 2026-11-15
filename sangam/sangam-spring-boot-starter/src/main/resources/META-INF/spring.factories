@@ -1,2 +1,4 @@
 org.springframework.boot.EnvironmentPostProcessor=\
 org.sangam.spring.boot.autoconfigure.SangamDefaultsEnvironmentPostProcessor
+org.springframework.context.ApplicationContextInitializer=\
+org.sangam.spring.boot.autoconfigure.SangamDefaultsOrder
