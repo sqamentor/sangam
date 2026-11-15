@@ -21,15 +21,24 @@ public sealed record ModelTokenWalkRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("processId")]
     public string? ProcessId { get; init; }
 
+    /// <summary>
+    /// Element id to the values to take, in order for repeated visits (M-128): for a gateway the outgoing flow id; for an activity with boundary events its own id (it completes) or the id of the boundary event that fires; for the start event of an event sub-process the flow node ids at which its event occurs (never asked for)
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("choices")]
     public global::System.Collections.Generic.Dictionary<string, object?>? Choices { get; init; }
 
     [global::System.Text.Json.Serialization.JsonPropertyName("maxSteps")]
     public int? MaxSteps { get; init; }
 
+    /// <summary>
+    /// The previous answer's state; with choice, the step-by-step form
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("state")]
     public global::System.Collections.Generic.Dictionary<string, object?>? State { get; init; }
 
+    /// <summary>
+    /// The value for the element the previous answer waits for; added after its earlier choices
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("choice")]
     public string? Choice { get; init; }
 }

@@ -151,9 +151,14 @@ public class ModellerController {
     }
 
     @PostMapping("/models/token-walk")
-    @SuppressWarnings("unchecked")
     public TokenWalkView tokenWalk(RequestContext ctx, @RequestBody TokenWalkRequest b) {
         permissions.require(ctx, Permissions.PACKAGE_READ);
+        return walk(b);
+    }
+
+    /** The walk of {@link #tokenWalk}, without the permission check. */
+    @SuppressWarnings("unchecked")
+    static TokenWalkView walk(TokenWalkRequest b) {
         int steps = b.maxSteps() == null ? 1000 : Math.min(Math.max(b.maxSteps(), 1), 10_000);
         String xml = b.bpmnXml() != null ? b.bpmnXml() : b.xml();
         if (xml == null || xml.isBlank()) {
@@ -168,7 +173,12 @@ public class ModellerController {
             pendingGateway = b.state().get("pendingGateway");
         }
         if (b.choice() != null && pendingGateway != null) {
-            choices.put(String.valueOf(pendingGateway), List.of(b.choice()));
+            // appended: an element visited again (a loop, a non-interrupting boundary event) keeps its earlier choices,
+            // since every step walks again from the start with all choices
+            List<String> earlier = choices.getOrDefault(String.valueOf(pendingGateway), List.of());
+            List<String> all = new ArrayList<>(earlier);
+            all.add(b.choice());
+            choices.put(String.valueOf(pendingGateway), all);
         }
         TokenWalk.Result r = TokenWalk.walk(xml, b.processId(), choices, steps);
         Map<String, Object> state = new java.util.LinkedHashMap<>();

@@ -5,7 +5,13 @@
 TAGS.append(("Modeller", "Landscape, token walk, edit leases, templates, actions, test reports, catalogue (sangam-modeller)"))
 MR = ["R43", "R80"]
 
-schema("ModelTokenWalkRequest", "Walk a token through a BPMN model.", "bpmnXml xml file processId choices:obj maxSteps:int state:obj choice", [])
+schema("ModelTokenWalkRequest", "Walk a token through a BPMN model.", "bpmnXml xml file processId choices:obj maxSteps:int state:obj choice", [],
+       descs={"choices": "Element id to the values to take, in order for repeated visits (M-128): for a gateway the "
+                         "outgoing flow id; for an activity with boundary events its own id (it completes) or the id "
+                         "of the boundary event that fires; for the start event of an event sub-process the flow "
+                         "node ids at which its event occurs (never asked for)",
+              "state": "The previous answer's state; with choice, the step-by-step form",
+              "choice": "The value for the element the previous answer waits for; added after its earlier choices"})
 schema("ModelEditLease", "The holder of a model file's edit lease.", "fileId holder fence:long expiresAt:dt requestedBy", ["fileId", "holder", "fence"])
 schema("ModelLeaseOutcome", "Whether the caller may edit.", "editable:bool lease:ModelEditLease", ["editable"])
 schema("ModelFenceRequest", "The fence given with the lease.", "fence:long packageId", [])
@@ -51,7 +57,11 @@ ML = "/models/{file}/lease"
 F = pp("file", "model file: the package id")
 op("get", "/landscape", "getProcessLandscape", "Modeller", "Process landscape", "Call graph across packages, with cycles.", MR,
    resp=(200, "object"), perm="package.read")
-op("post", "/models/token-walk", "walkModelToken", "Modeller", "Token walk", "Reads the model only; nothing runs.", MR,
+op("post", "/models/token-walk", "walkModelToken", "Modeller", "Token walk",
+   "Reads the model only; nothing runs. Walks gateways, boundary events, event sub-processes, error and escalation "
+   "propagation, compensation and terminate end events; each move names how the token got there (via FLOW, "
+   "BOUNDARY, EVENT_SUB_PROCESS or COMPENSATION). 422 MODELLER_REJECTED when a choice names no outgoing flow or "
+   "boundary event, or an event sub-process trigger names no flow node.", MR,
    body="ModelTokenWalkRequest", resp=(200, "object"), cmd="modeller.tokenWalk", perm="package.read")
 op("post", "/models/diff", "diffModels", "Modeller", "Semantic model diff",
    "Compares two versions of a BPMN, DMN, CMMN or form file by meaning (elements, flows, expressions, properties), "

@@ -34921,7 +34921,9 @@ paths:
       tags:
       - Modeller
       summary: Token walk
-      description: Reads the model only; nothing runs.
+      description: Reads the model only; nothing runs. Walks gateways, boundary events, event sub-processes, error and escalation propagation,
+        compensation and terminate end events; each move names how the token got there (via FLOW, BOUNDARY, EVENT_SUB_PROCESS or COMPENSATION).
+        422 MODELLER_REJECTED when a choice names no outgoing flow or boundary event, or an event sub-process trigger names no flow node.
       x-sangam-command-type: modeller.tokenWalk
       x-sangam-idempotent: true
       parameters:
@@ -68964,14 +68966,19 @@ components:
         choices:
           type: object
           additionalProperties: true
+          description: 'Element id to the values to take, in order for repeated visits (M-128): for a gateway the outgoing flow id; for an activity
+            with boundary events its own id (it completes) or the id of the boundary event that fires; for the start event of an event sub-process
+            the flow node ids at which its event occurs (never asked for)'
         maxSteps:
           type: integer
           format: int32
         state:
           type: object
           additionalProperties: true
+          description: The previous answer's state; with choice, the step-by-step form
         choice:
           type: string
+          description: The value for the element the previous answer waits for; added after its earlier choices
     ModelEditLease:
       type: object
       description: The holder of a model file's edit lease.

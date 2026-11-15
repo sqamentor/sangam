@@ -28,7 +28,7 @@ public sealed class ModellerApi
 
     /// <summary>
     /// Token walk
-    /// Reads the model only; nothing runs.
+    /// Reads the model only; nothing runs. Walks gateways, boundary events, event sub-processes, error and escalation propagation, compensation and terminate end events; each move names how the token got there (via FLOW, BOUNDARY, EVENT_SUB_PROCESS or COMPENSATION). 422 MODELLER_REJECTED when a choice names no outgoing flow or boundary event, or an event sub-process trigger names no flow node.
     /// POST /models/token-walk (operationId walkModelToken); permission package.read; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.Dictionary<string, object?>?> WalkModelTokenAsync(M.ModelTokenWalkRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

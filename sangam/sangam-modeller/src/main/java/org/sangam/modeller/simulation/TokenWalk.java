@@ -1,39 +1,56 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.modeller.simulation;
 
-import org.operaton.bpm.model.bpmn.Bpmn;
-import org.operaton.bpm.model.bpmn.BpmnModelInstance;
-import org.operaton.bpm.model.bpmn.instance.EventBasedGateway;
-import org.operaton.bpm.model.bpmn.instance.ExclusiveGateway;
-import org.operaton.bpm.model.bpmn.instance.FlowNode;
-import org.operaton.bpm.model.bpmn.instance.Gateway;
-import org.operaton.bpm.model.bpmn.instance.InclusiveGateway;
-import org.operaton.bpm.model.bpmn.instance.ParallelGateway;
-import org.operaton.bpm.model.bpmn.instance.Process;
-import org.operaton.bpm.model.bpmn.instance.SequenceFlow;
-import org.operaton.bpm.model.bpmn.instance.StartEvent;
-import org.operaton.bpm.model.bpmn.instance.SubProcess;
-
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Token-flow simulation as a pure model walk: no engine, no variables, no effects. The client passes choices for gateways and the walk
- * returns ordered token moves for the diagram to animate, or the gateway waiting for a choice. Parallel joins wait for all incoming
- * tokens. A walk stops at {@code maxSteps}, so loops terminate. Limits: an inclusive join continues per token instead of computing
- * reachability; boundary events, event sub-processes and compensation are not walked; a sub-process is entered at its start event.
+ * Token-flow simulation as a pure model walk: no engine, no variables, no effects. The client passes choices and the
+ * walk returns ordered token moves for the diagram to animate, or the element waiting for a choice. A walk stops at
+ * {@code maxSteps}, so loops terminate.
+ *
+ * <p>Choices ({@code choices}: element id to the values to take, consumed in order for repeated visits):
+ * <ul>
+ *   <li>a gateway with more than one outgoing flow (exclusive, event-based, inclusive): the outgoing flow id to take;</li>
+ *   <li>an activity with boundary events (every kind but compensation): the activity's own id when it completes
+ *       normally, or the id of the boundary event that fires. An interrupting boundary event ends the activity; a
+ *       non-interrupting one starts a token on its outgoing flows and the activity waits for its next choice;</li>
+ *   <li>the start event of an event sub-process: the ids of the flow nodes at which its event occurs, in order. When a
+ *       token reaches such a node in the event sub-process's scope (or a scope inside it), the event sub-process
+ *       starts; an interrupting one first cancels everything else running in that scope. These are never asked for:
+ *       without them the event does not occur.</li>
+ * </ul>
+ *
+ * <p>Model-thrown events follow BPMN: an error end event is caught by the innermost matching error event
+ * sub-process or error boundary event on an enclosing sub-process (code or error element, or a catch-all), which
+ * interrupts; an escalation is caught the same way and interrupts only when its catcher does; an uncaught one is
+ * warned and the thrower carries on as a none event. A compensation throw event runs, newest first and each once, the
+ * handlers of the activities completed in its scope (or the one named by {@code activityRef}); a completed sub-process
+ * without a handler is compensated through its compensation event sub-process or its inner activities; the thrower
+ * waits for all handlers. A terminate end event ends its scope. A sub-process is entered at its start event and
+ * continues on its outgoing flows when nothing runs in it any more; parallel joins wait for all incoming tokens.
+ *
+ * <p>Limits: an inclusive join continues per token instead of computing reachability; conditions are not evaluated;
+ * multi-instance activities, call activities and link events are walked as single plain activities or events.
  */
 public final class TokenWalk {
 
-    public record Move(int step, String flowId, String fromNode, String toNode) {
+    /** How a token got from one node to the next. */
+    public enum Via {
+        /** Along the sequence flow {@code flowId}. */
+        FLOW,
+        /** From the activity (or the event thrown inside it) to one of its boundary events; {@code flowId} is null. */
+        BOUNDARY,
+        /** From the node a token was at to the start event of a triggered event sub-process; {@code flowId} is null. */
+        EVENT_SUB_PROCESS,
+        /** From a compensation boundary event to its handler ({@code flowId}: the association), or into a compensation event sub-process. */
+        COMPENSATION
     }
 
+    public record Move(int step, String flowId, String fromNode, String toNode, Via via) {
+    }
+
+    /** {@code gatewayId}: the gateway or activity waiting; {@code options}: the values {@code choices} accepts for it. */
     public record Choice(String gatewayId, List<String> options) {
     }
 
@@ -45,94 +62,12 @@ public final class TokenWalk {
     private TokenWalk() {
     }
 
-    /** {@code choices}: gateway id to outgoing flow ids to take, consumed in order for repeated visits. */
+    /**
+     * Walks the process {@code processIdOrNull} (the first process when null). An unknown process, a process without a
+     * start event, a choice that names no outgoing flow or boundary event, and an event sub-process trigger that names
+     * no flow node are {@link IllegalArgumentException}s.
+     */
     public static Result walk(String bpmnXml, String processIdOrNull, Map<String, List<String>> choices, int maxSteps) {
-        BpmnModelInstance model = Bpmn.readModelFromStream(new ByteArrayInputStream(bpmnXml.getBytes(StandardCharsets.UTF_8)));
-        Process process = model.getModelElementsByType(Process.class).stream().filter(p -> processIdOrNull == null || processIdOrNull.equals(p.getId())).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("no such process: " + processIdOrNull));
-        StartEvent start = process.getChildElementsByType(StartEvent.class).stream().findFirst().orElseThrow(() -> new IllegalArgumentException("the process has no start event"));
-
-        // From the flows themselves: the <incoming> and <outgoing> child elements are optional in BPMN.
-        Map<String, List<SequenceFlow>> outgoing = new HashMap<>();
-        Map<String, Integer> incoming = new HashMap<>();
-        for (SequenceFlow f : model.getModelElementsByType(SequenceFlow.class)) {
-            outgoing.computeIfAbsent(f.getSource().getId(), k -> new ArrayList<>()).add(f);
-            incoming.merge(f.getTarget().getId(), 1, Integer::sum);
-        }
-        List<Move> moves = new ArrayList<>();
-        List<String> visited = new ArrayList<>();
-        List<String> warnings = new ArrayList<>();
-        // ADR-D-25: the same strict-XOR deploy rule the engine applies (shared org.sangam.core.engine.RoutingPolicy)
-        for (ExclusiveGateway g : model.getModelElementsByType(ExclusiveGateway.class)) {
-            List<org.sangam.core.engine.RoutingPolicy.FlowSpec> specs = new ArrayList<>();
-            for (SequenceFlow f : outgoing.getOrDefault(g.getId(), List.of())) {
-                specs.add(new org.sangam.core.engine.RoutingPolicy.FlowSpec(f.getId(), f.getConditionExpression() != null,
-                        f.getAttributeValueNs(org.sangam.core.engine.RoutingPolicy.NS_URI,
-                                org.sangam.core.engine.RoutingPolicy.ATTR_PRIORITY)));
-            }
-            for (String p : org.sangam.core.engine.RoutingPolicy.validate(g.getId(),
-                    g.getAttributeValueNs(org.sangam.core.engine.RoutingPolicy.NS_URI, org.sangam.core.engine.RoutingPolicy.ATTR_POLICY),
-                    g.getAttributeValueNs(org.sangam.core.engine.RoutingPolicy.NS_URI,
-                            org.sangam.core.engine.RoutingPolicy.ATTR_POLICY_VERSION), specs,
-                    g.getDefault() == null ? null : g.getDefault().getId())) {
-                warnings.add("ADR-D-25: " + p + " (deployment will reject this model)");
-            }
-        }
-        Map<String, Integer> used = new HashMap<>();
-        Map<String, Integer> joinArrivals = new HashMap<>();
-        Deque<FlowNode> tokens = new ArrayDeque<>();
-        tokens.add(start);
-        int step = 0;
-        while (!tokens.isEmpty()) {
-            if (step >= maxSteps) {
-                return new Result(Status.STEP_LIMIT, moves, visited, null, warnings);
-            }
-            FlowNode node = tokens.poll();
-            visited.add(node.getId());
-            if (node instanceof SubProcess sp) {
-                sp.getChildElementsByType(StartEvent.class).stream().findFirst().ifPresentOrElse(tokens::add, () -> warnings.add("sub-process " + sp.getId() + " has no start event"));
-            }
-            List<SequenceFlow> out = outgoing.getOrDefault(node.getId(), List.of());
-            List<SequenceFlow> taken;
-            if (out.isEmpty()) {
-                continue;
-            }
-            if (node instanceof ExclusiveGateway || node instanceof EventBasedGateway || node instanceof InclusiveGateway) {
-                if (out.size() > 1) {
-                    List<String> c = choices.getOrDefault(node.getId(), List.of());
-                    int i = used.getOrDefault(node.getId(), 0);
-                    if (i >= c.size()) {
-                        return new Result(Status.NEEDS_CHOICE, moves, visited, new Choice(node.getId(), out.stream().map(SequenceFlow::getId).toList()), warnings);
-                    }
-                    used.put(node.getId(), i + 1);
-                    String pick = c.get(i);
-                    taken = out.stream().filter(f -> pick.equals(f.getId())).toList();
-                    if (taken.isEmpty()) {
-                        throw new IllegalArgumentException("gateway " + node.getId() + " has no outgoing flow " + pick);
-                    }
-                } else {
-                    taken = out;
-                }
-            } else {
-                taken = out;
-            }
-            for (SequenceFlow f : taken) {
-                FlowNode target = f.getTarget();
-                moves.add(new Move(++step, f.getId(), node.getId(), target.getId()));
-                int arriving = incoming.getOrDefault(target.getId(), 0);
-                if (target instanceof ParallelGateway && arriving > 1) {
-                    int n = joinArrivals.merge(target.getId(), 1, Integer::sum);
-                    if (n < arriving) {
-                        continue;
-                    }
-                    joinArrivals.put(target.getId(), 0);
-                }
-                tokens.add(target);
-            }
-            if (node instanceof Gateway && taken.isEmpty()) {
-                warnings.add("gateway " + node.getId() + " sends no token");
-            }
-        }
-        return new Result(Status.COMPLETED, moves, visited, null, warnings);
+        return new WalkRun(WalkModel.read(bpmnXml, processIdOrNull), choices, maxSteps).run();
     }
 }

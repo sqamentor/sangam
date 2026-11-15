@@ -7046,9 +7046,12 @@ export interface ModelTokenWalkRequest {
   xml?: string;
   file?: string;
   processId?: string;
+  /** Element id to the values to take, in order for repeated visits (M-128): for a gateway the outgoing flow id; for an activity with boundary events its own id (it completes) or the id of the boundary event that fires; for the start event of an event sub-process the flow node ids at which its event occurs (never asked for) */
   choices?: Record<string, unknown>;
   maxSteps?: number;
+  /** The previous answer's state; with choice, the step-by-step form */
   state?: Record<string, unknown>;
+  /** The value for the element the previous answer waits for; added after its earlier choices */
   choice?: string;
 }
 
