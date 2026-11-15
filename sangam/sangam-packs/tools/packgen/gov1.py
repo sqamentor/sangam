@@ -419,7 +419,11 @@ def p3():
         'correctedAccount=null;correctedIfsc=null;'
         # read by p3-field-verification-required: false unless the DigiLocker pull failed (p3_selfUploaded sets true);
         # a decision input is never left undefined (ADR-D-26: strict FEEL refuses an unknown variable)
-        'documentsSelfUploaded=false'))
+        'documentsSelfUploaded=false;'
+        # landHolding is an optional field of the application form and the other input of that decision: an
+        # application that does not state it carries it as null (defined, never invented as 0), and the decision has
+        # an explicit rule for a holding that is not stated (ADR-D-26: a null input needs a null rule)
+        'landHolding=null'))
     cg = s.xgw('p3_childGw', 'Child applicant?')
     s.seq(st, d, cg)
     child = s.setv('p3_child', 'Child record: guardian, analytics blocked (GOV-4)',
@@ -561,6 +565,7 @@ def p3():
            [('fieldVerification', 'Field verification', 'boolean')],
            [(['-', 'true'], ['true'], 'documents not from DigiLocker'),
             (['> 2', '-'], ['true'], 'larger holdings are visited'),
+            (['null', '-'], ['false'], 'land holding not stated (optional field): no visit on that ground'),
             (['-', '-'], ['false'], '')])
     pk.dmn('p3-entitlement', 'P3 entitlement amount and instalments', 'FIRST',
            [('Scheme', 'schemeId', 'string'), ('Social category', 'socialCategory', 'string')],
