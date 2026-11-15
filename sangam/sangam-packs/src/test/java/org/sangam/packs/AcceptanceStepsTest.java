@@ -85,8 +85,18 @@ class AcceptanceStepsTest {
     }
 
     private static List<String> drive(String bk, AcceptanceSteps s, String decision) {
+        return drive(bk, s, occurrence -> decision);
+    }
+
+    /**
+     * As {@link #drive(String, AcceptanceSteps, String)}, with a configuration answer that depends on the occurrence
+     * of the task (1 for the first time it is open), as a configuration whose answer changes on a later round.
+     */
+    private static List<String> drive(String bk, AcceptanceSteps s, java.util.function.IntFunction<String> decisionAt) {
         List<String> progress = new ArrayList<>();
-        return driver.run(bk, t -> s.answer(t, PackDriver.Answer.of("p", "S", "decision", decision), progress), 20,
+        return driver.run(bk, t -> s.answer(t, PackDriver.Answer.of("p", "S", "decision",
+                        decisionAt.apply(java.util.Collections.frequency(progress, t.getTaskDefinitionKey()) + 1)),
+                        progress), 20,
                 d -> {
                     progress.clear();
                     progress.addAll(d);
@@ -156,7 +166,13 @@ class AcceptanceStepsTest {
         start("steps-loop", "SL/1");
         AcceptanceSteps s = new AcceptanceSteps(engine, driver, "SL/1", steps(
                 "[{\"at\":\"level\",\"action\":\"complete\",\"n\":2,\"vars\":{\"decision\":\"again\"},\"person\":\"q\"}]"));
-        assertEquals(List.of("level", "level", "level"), drive("SL/1", s, "ok"),
+        // The configuration answer loops on the first occurrence only ("again", then "ok"), so a second occurrence
+        // exists and would end the case; the step's "again" on exactly that second occurrence is the only reason for a
+        // third. The step on any other occurrence gives two completions (on the first: the second then takes "ok"),
+        // on more than one gives four or more. With the constant answer "ok" used before (written, never run) the case
+        // ended at the first completion and the second occurrence the step names could not happen, as
+        // aStepThatIsNeverReachedStaysPending shows for the same model and answer.
+        assertEquals(List.of("level", "level", "level"), drive("SL/1", s, occurrence -> occurrence == 1 ? "again" : "ok"),
                 "the second completion loops once more; the first and third take the configuration answer");
         assertTrue(s.pending().isEmpty());
         assertTrue(driver.ended("SL/1"));

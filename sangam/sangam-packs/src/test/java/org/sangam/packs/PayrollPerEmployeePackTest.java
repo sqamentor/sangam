@@ -159,6 +159,20 @@ class PayrollPerEmployeePackTest {
         assertTrue(problems.isEmpty(), problems.size() + " problem(s):\n" + String.join("\n", problems));
     }
 
+    /** The cells of output column {@code name} of a generated decision table, one per rule, in rule order. */
+    private static List<String> column(String dmn, String name) {
+        Matcher out = Pattern.compile("<output id=\"[^\"]*_o(\\d+)\"[^>]* name=\"" + Pattern.quote(name) + "\"")
+                .matcher(dmn);
+        assertTrue(out.find(), "column " + name);
+        Matcher cell = Pattern.compile("<outputEntry id=\"[^\"]*_r\\d+_o" + out.group(1)
+                + "\"><text>(.*?)</text></outputEntry>", Pattern.DOTALL).matcher(dmn);
+        List<String> cells = new ArrayList<>();
+        while (cell.find()) {
+            cells.add(cell.group(1));
+        }
+        return cells;
+    }
+
     @Test
     void theWageRulesAreVersionedAndBlockedUntilVerified() throws IOException {
         Path dir = PACKS.resolve("sec-hr-payroll");
@@ -190,14 +204,26 @@ class PayrollPerEmployeePackTest {
                 "SYNTHETIC_DEMO_ONLY")) {
             assertEquals(2, dmn.split("<text>\"" + v + "\"</text>", -1).length - 1, v + " in both rows");
         }
-        // decision 288: each row's evidence is UNVERIFIED (use SYNTHETIC_DEMO_ONLY), and so is each row's average daily
-        // wage definition (decision 271): four UNVERIFIED values in two rows
-        assertEquals(4, dmn.split("<text>\"UNVERIFIED\"</text>", -1).length - 1, "UNVERIFIED evidence and definition");
+        // decision 288: each row's evidence is UNVERIFIED and its use SYNTHETIC_DEMO_ONLY. Owner decision 310
+        // (2026-11-13) replaces the round 9 expectation that the average daily wage definition is UNVERIFIED too: that
+        // definition alone is VERIFIED, citing rule 2(1)(h)(i) and its effective date; nothing else in a row is.
         assertTrue(dmn.contains("name=\"evidenceStatus\"") && dmn.contains("name=\"permittedUse\"")
                 && !dmn.contains("name=\"status\""), "evidence and use are separate columns (decision 288)");
-        assertTrue(!dmn.contains("&quot;VERIFIED&quot;") && !dmn.contains("\"VERIFIED\"<")
-                        && !dmn.contains("\"PRODUCTION\"<"),
-                "no rules row is VERIFIED or for PRODUCTION until its source text is read");
+        assertEquals(List.of("\"UNVERIFIED\"", "\"UNVERIFIED\""), column(dmn, "evidenceStatus"),
+                "no rules row is VERIFIED until its source text is read");
+        assertEquals(List.of("\"SYNTHETIC_DEMO_ONLY\"", "\"SYNTHETIC_DEMO_ONLY\""), column(dmn, "permittedUse"),
+                "no rules row is for PRODUCTION (decision 310: the permitted use stays SYNTHETIC_DEMO_ONLY)");
+        assertEquals(List.of("\"VERIFIED\"", "\"VERIFIED\""), column(dmn, "esiAverageDailyWageStatus"),
+                "decision 310: the average daily wage definition is VERIFIED from rule 2(1)(h)(i)");
+        for (String cited : column(dmn, "esiAverageDailyWageSource")) {
+            assertTrue(cited.contains("G.S.R. 344(E)") && cited.contains("rule 2(1)(h)(i)")
+                    && cited.contains("in force from 2026-05-08") && cited.contains("SYNTHETIC_DEMO_ONLY"), cited);
+        }
+        assertEquals(2, column(dmn, "esiAverageDailyWageSource").size());
+        assertEquals(2, dmn.split("<text>\"UNVERIFIED\"</text>", -1).length - 1, "only the two rows' own evidence");
+        assertEquals(2, dmn.split("<text>\"VERIFIED\"</text>", -1).length - 1,
+                "VERIFIED is the average daily wage definition of each row and nothing else");
+        assertTrue(!dmn.contains("\"PRODUCTION\"<"), "no rules row is for PRODUCTION");
         JsonNode pack = JSON.readTree(dir.resolve("pack.json").toFile());
         List<String> placeholders = new ArrayList<>();
         pack.path("placeholders").forEach(p -> placeholders.add(p.path("decision").asText()));

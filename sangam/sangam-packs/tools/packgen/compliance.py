@@ -24,6 +24,11 @@ from xml.sax.saxutils import escape
 import lib
 
 STEP = 'org.sangam.compliance.bpmn.ComplianceStepDelegate'
+# OJ-06 step 8 (coordinator ruling 2026-11-13): closing a security incident without the root cause and the lessons
+# learned is refused when the follow-up task is completed (422 INCIDENT_CLOSURE_INCOMPLETE), not later as a failed job
+INCIDENT_CLOSURE_GUARD = 'org.sangam.compliance.bpmn.IncidentClosureGuardListener'
+# the task listener classes a compliance model may name on a user task (each a class of sangam-compliance)
+GUARDS = (INCIDENT_CLOSURE_GUARD,)
 NAMESPACE = 'http://sangam.org/packs/compliance'
 EXPORTER = 'sangam-compliance'
 KIND = {'startEvent': 'event', 'endEvent': 'event', 'boundaryEvent': 'event', 'userTask': 'task',
@@ -75,11 +80,20 @@ class Model:
         return self._node('exclusiveGateway', id,
                           f'<exclusiveGateway id="{id}" name="{lib.a(name)}" default="{default}"/>')
 
-    def user(self, id, name, group, form):
+    def user(self, id, name, group, form, complete_guard=None):
+        """A user task. `complete_guard` names a task listener class run when the task is completed: it refuses the
+        completion in the caller's own command (the caller sees the refusal and nothing is committed), where the same
+        check in a later asynchronous step could only fail a job. The class must be one of the compliance module's
+        own listeners (GUARDS) and on the engine's model code allow-list (SL-160)."""
         lib.check_group_expression(id, group)
-        return self._node('userTask', id, f'<userTask id="{id}" name="{lib.a(name)}" '
-                                          f'operaton:candidateGroups="{lib.a(group)}" '
-                                          f'operaton:formKey="sangam:{lib.a(form)}"/>')
+        head = (f'<userTask id="{id}" name="{lib.a(name)}" operaton:candidateGroups="{lib.a(group)}" '
+                f'operaton:formKey="sangam:{lib.a(form)}"')
+        if complete_guard is None:
+            return self._node('userTask', id, head + '/>')
+        if complete_guard not in GUARDS:
+            raise ValueError(f'{self.proc.pid}/{id}: {complete_guard} is not a compliance completion guard')
+        return self._node('userTask', id, head + '><extensionElements><operaton:taskListener event="complete" '
+                                                 f'class="{lib.a(complete_guard)}"/></extensionElements></userTask>')
 
     def step(self, id, name, step):
         return self._node('serviceTask', id, f'<serviceTask id="{id}" name="{lib.a(name)}" operaton:class="{STEP}" '
@@ -465,7 +479,8 @@ def p_incident_report():
     p.step('s_overdue', 'Record overdue report', 'incident.overdue')
     p.end('end_due', 'Overdue recorded')
     p.step('s_submit', 'Submit to the authority and secondary recipients', 'incident.submit')
-    p.user('u_follow', 'Follow up with remaining details or close', seat('CISO'), 'compliance/incident-follow-up')
+    p.user('u_follow', 'Follow up with remaining details or close', seat('CISO'), 'compliance/incident-follow-up',
+           complete_guard=INCIDENT_CLOSURE_GUARD)
     p.xgw('g_follow', 'Follow-up needed?', default='f_close')
     p.step('s_follow', 'Send follow-up', 'incident.followUp')
     p.step('s_close', 'Close incident', 'incident.close')

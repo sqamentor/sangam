@@ -24,7 +24,8 @@ SHAPED = {'startEvent', 'endEvent', 'boundaryEvent', 'userTask', 'serviceTask', 
 # form (sorted attributes, stripped text). Baseline: the hand-written models before packgen took them over (B23 M-010
 # di_before.txt, confirmed by B39 on checkpoint 0e53f91b); the takeover (M-010b) added the diagram only. M-010c then
 # changed only operaton:candidateGroups of the 22 user tasks of all 12 models (role code -> ${<role>Seat}; the breach
-# notification plan's two tasks in a second step, when BreachNotificationPlanner got its start). A deliberate semantic
+# notification plan's two tasks in a second step, when BreachNotificationPlanner got its start). 2026-11-15: the incident
+# report's u_follow got its completion guard (IncidentClosureGuardListener, OJ-06 step 8). A deliberate semantic
 # change of a model updates its digest here in the same change.
 FROZEN = {
     'sangam-breach-incident.bpmn': 'e9b0646c7d4f27ca30c35ed4c5121c3ac911b0024d44a8add67c2060f8748cfb',
@@ -38,7 +39,7 @@ FROZEN = {
     'sangam-dsr-objection.bpmn': '2d9463d5d0d9e2545c2d95011850e8e161055ba069bd3a7883e639b8e734e522',
     'sangam-dsr-rectification.bpmn': '425e8602197ad455c197da2627688db5b7ccb235d3832531d30405452dc45b1b',
     'sangam-dsr-restriction.bpmn': '6e1808713213a3e5f8a8392d6189ce10833b4c81aca8231749002f0b1809f2a3',
-    'sangam-incident-report.bpmn': '7eb462bd257bc10ea3246761a428c7051b4019663c87286cceba798624b4eb9c',
+    'sangam-incident-report.bpmn': '717393d3f75ecf3cd1afdc35956013394d88f7b3f2ff18e934fefc59835c3230',
 }
 
 
@@ -150,6 +151,11 @@ class ComplianceModelValidationTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             p.user('u', 'Task', '${DPO}', 'compliance/x')
 
+    def test_a_completion_guard_must_be_a_compliance_listener(self):
+        p = compliance.Model('sangam-x', 'X', '0.1.0', 'doc')
+        with self.assertRaises(ValueError):
+            p.user('u', 'Task', compliance.seat('CISO'), 'compliance/x', complete_guard='org.example.Anything')
+
     def test_the_layout_writer_is_the_packgen_one(self):
         p = compliance.Model('sangam-x', 'X', '0.1.0', 'doc')
         p.start('start', 'Start')
@@ -158,6 +164,30 @@ class ComplianceModelValidationTest(unittest.TestCase):
         xml = p.xml()
         self.assertIn(f'<bpmndi:BPMNDiagram id="{p.proc.short()}_diagram">', xml)
         self.assertEqual('x', lib.Proc('sangam-x', 'X').short())
+
+
+class IncidentClosureGuardTest(unittest.TestCase):
+    """OJ-06 step 8: the incident follow-up task refuses a close without root cause and lessons at completion."""
+
+    OP = '{http://operaton.org/schema/1.0/bpmn}'
+
+    def test_only_the_incident_follow_up_task_carries_the_closure_guard(self):
+        guarded = {}
+        for m in compliance.build():
+            root = ET.fromstring(m.xml())
+            for u in root.iter(M + 'userTask'):
+                listeners = [(x.get('event'), x.get('class')) for x in u.iter(self.OP + 'taskListener')]
+                if listeners:
+                    guarded[(m.proc.pid, u.get('id'))] = listeners
+        self.assertEqual({('sangam-incident-report', 'u_follow'):
+                          [('complete', 'org.sangam.compliance.bpmn.IncidentClosureGuardListener')]}, guarded)
+
+    def test_the_guard_class_exists_in_sangam_compliance(self):
+        here = os.path.dirname(os.path.abspath(__file__))
+        for cls in compliance.GUARDS:
+            src = os.path.normpath(os.path.join(here, '..', '..', '..', 'sangam-compliance', 'src', 'main', 'java',
+                                                *cls.split('.')) + '.java')
+            self.assertTrue(os.path.isfile(src), src)
 
 
 class ComplianceSeatRoutingTest(unittest.TestCase):
