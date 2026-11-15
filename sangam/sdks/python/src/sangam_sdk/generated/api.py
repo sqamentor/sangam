@@ -4464,7 +4464,7 @@ class FieldApi:
         req = ApiRequest("GET", f"/field/devices/{seg(str(id))}/chain")
         return cast("dict[str, Any]", self._c.json(req, options))
 
-    def field_work_upload(self, device_id: str, body: list[dict[str, Any]], *, options: Optional[RequestOptions] = None) -> list[Any]:
+    def field_work_upload(self, device_id: str, body: list[M.FieldWorkUploadBody], *, options: Optional[RequestOptions] = None) -> list[Any]:
         """Upload offline packets from a device (idempotent per packet)
 
         Upload offline packets from a device (idempotent per packet).

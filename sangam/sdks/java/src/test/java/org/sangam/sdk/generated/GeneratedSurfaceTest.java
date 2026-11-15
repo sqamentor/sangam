@@ -30,12 +30,22 @@ import org.sangam.sdk.http.HttpTransport;
  * M-020 coverage guard: every operation of sangam-api.yaml has a generated method (the manifest written by
  * sdks/codegen/generate_sdk_surface.py names it), every schema has a record, and SangamClient.api() exposes the
  * surface. CI also runs the generator with --check, so a stale tree fails before this test.
+ *
+ * <p>The one exception is explicit in the contract: an operation marked {@code x-sangam-sdk: false} is called by an
+ * outside system, never by an SDK user (the CloudEvents webhook handshake that Azure Event Grid sends as OPTIONS), and
+ * gets no SDK method. The generator (sdks/codegen/contract_ir.py) leaves out exactly the operations so marked, lists
+ * them in the manifest under {@code notForSdk}, and stops on an operation with any other method it cannot generate;
+ * this test expects the same split, so an operation can never be missing from the SDKs without the marker.
  */
 class GeneratedSurfaceTest {
 
     private static final Path CONTRACT = Paths.get("..", "..", "sangam-rest", "api", "sangam-api.yaml");
     private static final Path MANIFEST = Paths.get("..", "codegen", "surface-manifest.json");
     private static final Pattern OPERATION_ID = Pattern.compile("^ {6}operationId: (\\S+)$");
+    /** A key of a path item or above: the operation block of the last operationId has ended. */
+    private static final Pattern OPERATION_END = Pattern.compile("^ {0,4}\\S.*$");
+    private static final Pattern NOT_FOR_SDK = Pattern.compile("^ {6}x-sangam-sdk: false$");
+    private static final Pattern SDK_MARKER = Pattern.compile("^ {6}x-sangam-sdk:.*$");
     private static final ObjectMapper JSON = HttpTransport.defaultMapper();
 
     private static JsonNode manifest() throws IOException {
@@ -43,17 +53,62 @@ class GeneratedSurfaceTest {
         return JSON.readTree(Files.readString(MANIFEST, StandardCharsets.UTF_8));
     }
 
+    /** The operationIds of the contract: [0] those an SDK method is generated for, [1] those marked x-sangam-sdk: false. */
+    private static List<TreeSet<String>> contractOperations(List<String> lines) {
+        TreeSet<String> forSdk = new TreeSet<>();
+        TreeSet<String> notForSdk = new TreeSet<>();
+        String current = null;
+        for (String line : lines) {
+            Matcher m = OPERATION_ID.matcher(line);
+            if (m.find()) {
+                current = m.group(1);
+                forSdk.add(current);
+            } else if (OPERATION_END.matcher(line).matches()) {
+                current = null;
+            } else if (SDK_MARKER.matcher(line).matches()) {
+                assertNotNull(current, "x-sangam-sdk outside an operation (after its operationId): " + line);
+                assertTrue(NOT_FOR_SDK.matcher(line).matches(), "only 'x-sangam-sdk: false' is written: " + line);
+                forSdk.remove(current);
+                notForSdk.add(current);
+            }
+        }
+        return List.of(forSdk, notForSdk);
+    }
+
     @Test
     void manifestCoversEveryContractOperation() throws IOException {
-        TreeSet<String> contract = new TreeSet<>();
-        for (String line : Files.readAllLines(CONTRACT, StandardCharsets.UTF_8)) {
-            Matcher m = OPERATION_ID.matcher(line);
-            if (m.find()) contract.add(m.group(1));
-        }
+        List<TreeSet<String>> contract = contractOperations(Files.readAllLines(CONTRACT, StandardCharsets.UTF_8));
         TreeSet<String> generated = new TreeSet<>();
         manifest().get("surface").forEach(r -> generated.add(r.get("operationId").asText()));
-        assertTrue(contract.size() > 1000, "contract layout changed? only " + contract.size() + " operationIds read");
-        assertEquals(contract, generated, "the generated surface is stale: run sdks/codegen/generate_sdk_surface.py");
+        TreeSet<String> left = new TreeSet<>();
+        manifest().get("notForSdk").forEach(r -> left.add(r.get("operationId").asText()));
+        assertTrue(contract.get(0).size() > 1000,
+                "contract layout changed? only " + contract.get(0).size() + " operationIds read");
+        assertEquals(contract.get(0), generated, "the generated surface is stale: run sdks/codegen/generate_sdk_surface.py");
+        assertEquals(contract.get(1), left, "the operations without an SDK method are exactly those the contract marks "
+                + "x-sangam-sdk: false");
+        assertEquals(new TreeSet<>(List.of("eventGridHookHandshake")), left, "an operation leaves the SDKs only by a "
+                + "reviewed marker: add it here with the reason (who calls it instead of an SDK user)");
+    }
+
+    @Test
+    void theMarkerIsReadPerOperation() {
+        List<TreeSet<String>> ops = contractOperations(List.of(
+                "paths:",
+                "  /hooks/x:",
+                "    options:",
+                "      operationId: handshake",
+                "      responses:",
+                "        '200':",
+                "          description: Success",
+                "      x-sangam-sdk: false",
+                "    post:",
+                "      operationId: deliver",
+                "  /cases:",
+                "    get:",
+                "      operationId: listCases"));
+        assertEquals(new TreeSet<>(List.of("deliver", "listCases")), ops.get(0));
+        assertEquals(new TreeSet<>(List.of("handshake")), ops.get(1));
     }
 
     @Test

@@ -19,6 +19,7 @@ import org.sangam.sdk.generated.model.FieldWorkRespondOfferBody;
 import org.sangam.sdk.generated.model.FieldWorkSelectBody;
 import org.sangam.sdk.generated.model.FieldWorkStartTripBody;
 import org.sangam.sdk.generated.model.FieldWorkTripActionBody;
+import org.sangam.sdk.generated.model.FieldWorkUploadBody;
 import org.sangam.sdk.generated.model.VisitRecord;
 
 /**
@@ -341,7 +342,7 @@ public final class FieldApi {
      * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
      * @return the 200 response
      */
-    public java.util.List<Object> fieldWorkUpload(String deviceId, java.util.List<java.util.Map<String, Object>> body, RequestOptions options) {
+    public java.util.List<Object> fieldWorkUpload(String deviceId, java.util.List<FieldWorkUploadBody> body, RequestOptions options) {
         ApiRequest req = ApiRequest.post("/field/sync/" + HttpTransport.seg(String.valueOf(deviceId)) + "/upload");
         req.body(body);
         return call.json(req, options, R_fieldWorkUpload);

@@ -1423,6 +1423,67 @@ export interface CandidateSeat {
 }
 
 /**
+ * Request record CapturePacket (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its source.
+ *
+ * Schema `CapturePacket`.
+ */
+export interface CapturePacket {
+  packetId?: string;
+  type?: string;
+  operationId?: string;
+  deviceId?: string;
+  deviceSeq?: number;
+  appVersion?: string;
+  assignmentId?: string;
+  baseVersion?: number;
+  deviceTime?: string;
+  answers?: Record<string, unknown>;
+  notes?: string;
+  media?: Array<CapturePacketMediaRef>;
+  fix?: CapturePacketGpsFix;
+  payload?: Record<string, unknown>;
+  prevHash?: string;
+  packetHash?: string;
+  signature?: string;
+  /** Members not named in the schema (additionalProperties). */
+  [key: string]: unknown;
+}
+
+/**
+ * Request record CapturePacketGpsFix (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its source.
+ *
+ * Schema `CapturePacketGpsFix`.
+ */
+export interface CapturePacketGpsFix {
+  lat?: number;
+  lon?: number;
+  accuracyM?: number;
+  altitudeM?: number;
+  provider?: string;
+  mockLocation?: boolean;
+  fixTime?: string;
+  /** Members not named in the schema (additionalProperties). */
+  [key: string]: unknown;
+}
+
+/**
+ * Request record CapturePacketMediaRef (sangam-field/src/main/java/org/sangam/field/evidence/CapturePacket.java), typed from its source.
+ *
+ * Schema `CapturePacketMediaRef`.
+ */
+export interface CapturePacketMediaRef {
+  evidenceId?: string;
+  itemId?: string;
+  sha256?: string;
+  mediaType?: string;
+  sizeBytes?: number;
+  capturedAt?: string;
+  fix?: CapturePacketGpsFix;
+  /** Members not named in the schema (additionalProperties). */
+  [key: string]: unknown;
+}
+
+/**
  * Comment on a case.
  *
  * Schema `CaseComment`.
@@ -5336,6 +5397,33 @@ export interface FieldWorkTripActionBody {
  */
 export interface FieldWorkUnitStatusBody {
   status?: string;
+  /** Members not named in the schema (additionalProperties). */
+  [key: string]: unknown;
+}
+
+/**
+ * Request body of FieldWorkController.upload, read by the service as a JSON object; typed from the keys the service reads (M-051). Members it does not read are accepted and ignored.
+ *
+ * Schema `FieldWorkUploadBody`.
+ */
+export interface FieldWorkUploadBody {
+  packetId?: string;
+  type?: string;
+  operationId?: string;
+  deviceId?: string;
+  deviceSeq?: number;
+  appVersion?: string;
+  assignmentId?: string;
+  baseVersion?: number;
+  deviceTime?: string;
+  answers?: Record<string, unknown>;
+  notes?: string;
+  media?: Array<CapturePacketMediaRef>;
+  fix?: CapturePacketGpsFix;
+  payload?: Record<string, unknown>;
+  prevHash?: string;
+  packetHash?: string;
+  signature?: string;
   /** Members not named in the schema (additionalProperties). */
   [key: string]: unknown;
 }

@@ -2,7 +2,7 @@
  "contractVersion": "0.1.0",
  "paths": 951,
  "operations": 1132,
- "schemas": 849,
+ "schemas": 853,
  "tags": [
   "AI",
   "Admin",
@@ -260,7 +260,7 @@
    "tag": "Field",
    "pathPrefix": "",
    "operations": 35,
-   "maxLines": 622
+   "maxLines": 623
   },
   {
    "class": "FieldAssignmentsApi",
@@ -716,6 +716,9 @@
   "CalendarServiceSlotTemplate",
   "CancelAckRequest",
   "CandidateSeat",
+  "CapturePacket",
+  "CapturePacketGpsFix",
+  "CapturePacketMediaRef",
   "CaseComment",
   "CaseDefinition",
   "CaseExecution",
@@ -978,6 +981,7 @@
   "FieldWorkTransitionBody",
   "FieldWorkTripActionBody",
   "FieldWorkUnitStatusBody",
+  "FieldWorkUploadBody",
   "FieldWorkUpsertUnitBody",
   "FlowableDefinitionMapping",
   "FlowableMigrationFinding",
@@ -15048,6 +15052,13 @@
    "python": "admin_security.install_module_defaults",
    "dotnet": "AdminSecurityApi#InstallModuleDefaultsAsync",
    "php": "AdminSecurityApi#installModuleDefaults"
+  }
+ ],
+ "notForSdk": [
+  {
+   "operationId": "eventGridHookHandshake",
+   "method": "OPTIONS",
+   "path": "/hooks/eventgrid/{tenant}/{channel}"
   }
  ]
 }

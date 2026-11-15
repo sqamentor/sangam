@@ -10,6 +10,9 @@
 #   - a local copy or alias of the map (Map<String, Object> b = body == null ? Map.of() : body) is read the same way;
 #     a nested map (Map<String, Object> d = Maps.map(body, "definition")) or list element (for (Map<String, Object> l :
 #     Maps.maps(body, "lines"))) types the nested object;
+#   - a list of maps (a List<Map> body, or a nested list) may also be read element by element in a lambda:
+#     list.forEach(x -> ...), list.stream().filter(x -> ...).map(y -> ...); each lambda parameter is one element and is
+#     read like a for-each variable (_bk_element_lambdas). Any other use of the list as a whole stops the generator;
 #   - when the whole map is passed to another method, that method is analysed too: the receiver's declared type gives
 #     the class, an interface method is followed to its implementations, and the parameter at the same position is the
 #     new variable;
@@ -357,6 +360,16 @@ _BK_MEMBERS_HARMLESS = {"isEmpty", "size", "put", "putAll", "equals", "hashCode"
 _BK_MAPLIKE = r"(?:java\.util\.)?(?:Map|LinkedHashMap|HashMap|TreeMap|SortedMap)\s*<[^;=(){}]*>|JsonNode|ObjectNode"
 _BK_DECL_TYPE = (r"(?:final\s+)?(" + _BK_MAPLIKE + r"|(?:java\.util\.)?(?:List|Collection)\s*<\s*(?:Map\s*<[^;=(){}]*>|"
                  r"JsonNode)\s*>|var)")
+# A single untyped lambda parameter that opens a call's argument list: (x -> ...). A declaration site like a typed local
+# (_bk_decl_sites); it is bound only when the call belongs to a pipeline over a list of maps (_bk_element_lambdas).
+_BK_LAMBDA = r"\(\s*(\w+)\s*->"
+# Calls on a list of maps (or its stream) that keep the elements: name -> 1 when the call takes one lambda whose
+# parameter is an element, 0 when it takes no argument.
+_BK_ELEMENT_KEEP = {"stream": 0, "parallelStream": 0, "distinct": 0, "sorted": 0, "filter": 1, "peek": 1}
+# Calls that end the part of a pipeline in which the values are still the elements (after them they are whatever the
+# lambda returns, or the pipeline is over).
+_BK_ELEMENT_END = {"map": 1, "flatMap": 1, "mapToInt": 1, "mapToLong": 1, "mapToDouble": 1, "forEach": 1,
+                   "forEachOrdered": 1, "anyMatch": 1, "allMatch": 1, "noneMatch": 1, "count": 0}
 _BK_OPAQUE = {}           # ("Type.method", use) -> reason; use = callee name, "var.member" or "var"
 _BK_OPAQUE_TARGETS = {}   # "Type.method" a map may be passed to without its keys being read -> reason
 _BK_FOLLOW = {}           # ("Type.method", callee) -> [("file", "Type.method", "param")]
@@ -636,6 +649,16 @@ class _BkWalk:
                     if mm and vk == "map":
                         k = _bk_literal(path, e0 + m[e0:e1].index(expr) + mm.end() - 1)
                         changed |= add(x, dpos, "map", [n + (k, "[]") for n in vn])
+            # the elements of a list of maps in a lambda: v.forEach(x -> ...), v.stream().filter(x -> ...).map(y -> ...)
+            for (v, _o), (vk, vn, _sc) in list(vars_.items()):
+                if vk != "list":
+                    continue
+                for t in _bk_re.finditer(r"(?<![\w.])" + v + r"\b", m[a:b]):
+                    p = a + t.start()
+                    if binding_at(v, p)[0] != (v, _o):
+                        continue
+                    for x, xpos in _bk_element_lambdas(m, p + len(v)) or []:
+                        changed |= add(x, xpos, "map", list(vn))
         where = "%s#%s" % (_bk_rel(path), _bk_where(method))
         for (v, o), (vk, vn, sc) in vars_.items():
             for n in vn:
@@ -696,6 +719,8 @@ class _BkWalk:
             return
         mm = _bk_re.match(r"\s*\.\s*(\w+)\s*\(", after)
         if mm:
+            if vk == "list" and _bk_element_lambdas(m, p + len(v)) is not None:
+                return     # read element by element: each lambda parameter is bound as one element in run()
             if mm.group(1) not in _BK_MEMBERS_HARMLESS and not self.opaque(path, method, v + "." + mm.group(1)):
                 self.fail(path, p, "the whole map is used (%s.%s): declare it with bk_opaque and a reason" % (v, mm.group(1)))
             return
@@ -863,11 +888,12 @@ class _BkWalk:
 def _bk_decl_sites(m, a, b):
     """Declarations of map, JSON-node and list-of-map locals in m[a:b], in order: (name, ordinal among the declarations
     of that name, position of the name, scope). The scope of a for-each variable is its loop; of any other local, the
-    rest of the enclosing block. MapRequestBodyContractTest numbers declarations the same way."""
-    out, count = [], {}
+    rest of the enclosing block. A single untyped lambda parameter that opens a call's argument list, (x -> ...), is a
+    declaration too (an element of a list of maps is read through it, _bk_element_lambdas); its scope is that call.
+    MapRequestBodyContractTest numbers declarations the same way."""
+    found = []
     for d in _bk_re.finditer(r"(for\s*\(\s*)?" + _BK_DECL_TYPE + r"\s+(\w+)\s*([=:])", m[a:b]):
         name, pos = d.group(3), a + d.start(3)
-        count[name] = count.get(name, 0) + 1
         if d.group(1) and d.group(4) == ":":
             close = _bk_close(m, a + d.start() + d.group(0).index("(") + 1, "(", ")")
             nxt = _bk_re.match(r"\s*", m[close:]).end() + close
@@ -883,8 +909,44 @@ def _bk_decl_sites(m, a, b):
                         break
                     depth -= 1
             end = _bk_close(m, k + 1, "{", "}") - 1 if k > a else b
-        out.append((name, count[name], pos, (pos, min(end, b))))
+        found.append((pos, name, min(end, b)))
+    for d in _bk_re.finditer(_BK_LAMBDA, m[a:b]):
+        found.append((a + d.start(1), d.group(1), min(_bk_close(m, a + d.start() + 1, "(", ")") - 1, b)))
+    out, count = [], {}
+    for pos, name, end in sorted(found):
+        count[name] = count.get(name, 0) + 1
+        out.append((name, count[name], pos, (pos, end)))
     return out
+
+
+def _bk_element_lambdas(m, e):
+    """m[e:] follows a list-of-maps variable. When it is a call chain this analysis understands, the (name, position)
+    of every lambda parameter that is one element of the list, in order; else None. Understood: an optional stream(),
+    then any of filter(x -> ...), peek(x -> ...), distinct(), sorted() (_BK_ELEMENT_KEEP), then one of map, flatMap,
+    mapToInt, mapToLong, mapToDouble, forEach, forEachOrdered, anyMatch, allMatch, noneMatch with one single-parameter
+    lambda, or count() (_BK_ELEMENT_END). A method reference, a comparator, a collector or any other call is not
+    understood: the caller then treats the list as used as a whole (fail closed)."""
+    out, i = [], e
+    while True:
+        cm = _bk_re.match(r"\s*\.\s*(\w+)\s*\(", m[i:i + 400])
+        if not cm:
+            return None
+        op, k = cm.group(1), i + cm.end() - 1
+        want = _BK_ELEMENT_KEEP.get(op, _BK_ELEMENT_END.get(op))
+        if want is None:
+            return None
+        args, close = _bk_args(m, k)
+        if want == 0:
+            if args:
+                return None
+        else:
+            lm = _bk_re.match(r"\s*(\w+)\s*->", m[k + 1:close]) if len(args) == 1 else None
+            if not lm:
+                return None
+            out.append((lm.group(1), k + 1 + lm.start(1)))
+        if op in _BK_ELEMENT_END:
+            return out
+        i = close + 1
 
 
 def _bk_stmt_end(s):

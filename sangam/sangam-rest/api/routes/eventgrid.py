@@ -44,6 +44,10 @@ PATHS[_EG]["options"]["responses"]["200"]["headers"] = {
     "WebHook-Allowed-Origin": {"description": "The accepted origin", "schema": {"type": "string"}},
     "WebHook-Allowed-Rate": {"description": "Accepted deliveries per minute, or *", "schema": {"type": "string"}}}
 public(_EG, "options")
+# x-sangam-sdk: false = part of the HTTP contract, but no SDK method is generated (sdks/codegen/contract_ir.py). The
+# handshake is sent by Azure Event Grid to the hook; no SDK user ever calls it, and the SDK transports send GET, POST,
+# PUT, PATCH and DELETE only. The SDK surface tests expect exactly the operations so marked to be absent.
+PATHS[_EG]["options"]["x-sangam-sdk"] = False
 op("post", _EG, "receiveEventGridDelivery", "EventGridHooks", "Receive an Event Grid delivery",
    "Public at the Sangam layer; the channel's authentication is checked first: a Microsoft Entra ID delivery token "
    "(Authorization: Bearer; issuer, audience and signature validated against the channel's configured tenant and "

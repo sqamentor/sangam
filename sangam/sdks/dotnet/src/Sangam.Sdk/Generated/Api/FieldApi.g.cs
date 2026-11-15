@@ -215,7 +215,7 @@ public sealed class FieldApi
     /// Upload offline packets from a device (idempotent per packet).
     /// POST /field/sync/{deviceId}/upload (operationId fieldWorkUpload); permission field.capture; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> FieldWorkUploadAsync(string deviceId, global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<object>?> FieldWorkUploadAsync(string deviceId, global::System.Collections.Generic.List<M.FieldWorkUploadBody> body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Post($"/field/sync/{HttpTransport.Seg(GeneratedCalls.Str(deviceId)!)}/upload");
         if (body is not null) req.WithBody(body);

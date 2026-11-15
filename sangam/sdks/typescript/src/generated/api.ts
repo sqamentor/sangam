@@ -5180,7 +5180,7 @@ export class FieldApi {
    *
    * `POST /field/sync/{deviceId}/upload` (operationId `fieldWorkUpload`); permission `field.capture`; result stored atomically with the state change.
    */
-  async fieldWorkUpload(deviceId: string, body: Array<Record<string, unknown>>, options?: RequestOptions): Promise<Array<unknown>> {
+  async fieldWorkUpload(deviceId: string, body: Array<M.FieldWorkUploadBody>, options?: RequestOptions): Promise<Array<unknown>> {
     const req: ApiRequest = { method: 'POST', path: `/field/sync/${seg(String(deviceId))}/upload` };
     if (body !== undefined) req.body = body;
     return this.calls.json<Array<unknown>>(req, options);

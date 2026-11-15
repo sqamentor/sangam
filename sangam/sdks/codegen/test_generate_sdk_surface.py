@@ -94,6 +94,31 @@ class TypeMapping(unittest.TestCase):
         self.assertEqual([p.wire for p in rows.required_params], ["If-Match"])
         self.assertEqual((export.response.kind, export.response.media), ("raw", "text/csv"))
 
+    def test_an_operation_leaves_the_sdks_only_by_the_explicit_marker(self):
+        ok = {"responses": {"200": {"description": "ok"}}}
+        paths = {"/hooks/{c}": {
+            "parameters": [{"name": "c", "in": "path", "required": True, "schema": {"type": "string"}}],
+            "options": {"operationId": "handshake", "tags": ["H"], "x-sangam-sdk": False, **ok},
+            "post": {"operationId": "deliver", "tags": ["H"], **ok}}}
+        c = ir.build(doc({}, paths))
+        self.assertEqual(["deliver"], [o.op_id for o in c.operations], "the path item's parameters are not an operation")
+        self.assertEqual([{"operationId": "handshake", "method": "OPTIONS", "path": "/hooks/{c}"}], c.not_for_sdk)
+
+        unmarked = {"/hooks/x": {"options": {"operationId": "handshake", "tags": ["H"], **ok}}}
+        with self.assertRaisesRegex(ValueError, "handshake: OPTIONS /hooks/x has no SDK method"):
+            ir.build(doc({}, unmarked))     # never dropped silently (it was, before the marker existed)
+        for method in ("head", "trace"):
+            with self.assertRaisesRegex(ValueError, "has no SDK method"):
+                ir.build(doc({}, {"/x": {method: {"operationId": "probe", "tags": ["H"], **ok}}}))
+
+        wrong = {"/x": {"get": {"operationId": "read", "tags": ["H"], "x-sangam-sdk": "no", **ok}}}
+        with self.assertRaisesRegex(ValueError, "read: x-sangam-sdk must be true or false"):
+            ir.build(doc({}, wrong))
+        marked_get = {"/x": {"get": {"operationId": "read", "tags": ["H"], "x-sangam-sdk": False, **ok},
+                             "put": {"operationId": "read", "tags": ["H"], **ok}}}
+        with self.assertRaisesRegex(ValueError, "duplicate operationId"):
+            ir.build(doc({}, marked_get))   # an excluded operation still owns its operationId
+
 
 class Citations(unittest.TestCase):
     def test_decision_ids_are_removed_from_generated_docs(self):
@@ -156,9 +181,13 @@ class RealContract(unittest.TestCase):
         cls.c = ir.build(cls.raw)
 
     def test_every_operation_exactly_once(self):
-        ids = [op["operationId"] for item in self.raw["paths"].values() for m, op in item.items()
-               if m in ("get", "post", "put", "patch", "delete")]
+        ops = [op for item in self.raw["paths"].values() for m, op in item.items() if m in ir.HTTP_METHODS]
+        ids = [op["operationId"] for op in ops if op.get(ir.SDK_EXTENSION) is not False]
+        left = [op["operationId"] for op in ops if op.get(ir.SDK_EXTENSION) is False]
         self.assertEqual(sorted(ids), sorted(o.op_id for o in self.c.operations))
+        self.assertEqual(sorted(left), sorted(r["operationId"] for r in self.c.not_for_sdk),
+                         "left out of the SDKs: exactly the operations marked x-sangam-sdk: false")
+        self.assertEqual(["eventGridHookHandshake"], left, "the handshake Azure Event Grid sends; nothing else")
         self.assertEqual(self.c.path_count, len(self.raw["paths"]))
 
     def test_component_models_invent_no_field(self):
