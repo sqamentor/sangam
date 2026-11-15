@@ -196,11 +196,11 @@ How to read the table:
       - (a) enforce the subset, fail closed;
       - (b) correct the Javadoc.
     - Recommendation: (a), owned by the security lane. The e2e identities do not rely on either behaviour.
-17. **Type-checking the e2e suite needs `@types/node`.** It is not in the lockfile, and no dependency was added. Until it is, `tsc -p e2e` reports only the missing node built-ins.
-    - Options:
+17. **Type-checking the e2e suite needs `@types/node`.** DONE (decision 352, lane D3): `@types/node` 22.20.5 (the CI Node line, ui.yml `node-version` 22.18.0) is an exact-pinned dev dependency, recorded in `docs/records/DOWNLOADS-2026-11-15.md`. `npm run typecheck:e2e` (`tsc -p e2e/tsconfig.json`) reports 0 errors. Not yet a CI step: ui.yml is outside the lane's scope.
+    - Options were:
       - (a) add `@types/node` as a pinned devDependency (needs approval);
       - (b) keep the filtered check.
-    - Recommendation: (a).
+    - Chosen: (a).
 
 ## Carried over as UNVERIFIED
 
