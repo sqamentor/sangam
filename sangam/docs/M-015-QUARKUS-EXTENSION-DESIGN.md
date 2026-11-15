@@ -337,8 +337,25 @@ Spring is today's host and Quarkus a possible second one; neither is special. A 
     - **286:** `job-leases` is required only while executor partitioning is on; the default is unchanged on both hosts.
     - **287:** the engine area's three removals on Quarkus: (a) jackson-databind 2.21.7 forced into the application; (b) `sangam.engine.apply-product-schema` bound on Quarkus, `false` refused (no host schema step); (c) the database checks also run on the very data source the engine is handed, on every host, refused with the database guard's own message.
   - **Phase 1b on Quarkus (decisions 276, 286, 287) is code:** `EngineAssembly.checkBeforeDatabase` (UTC, Jackson line, schema step, job leases while partitioning is on) and `EngineAssembly.checkDatabase` (the guard on the engine's data source) give `EngineChecks`; a new `requireCapabilities` overload takes them. The Quarkus host leaves `EngineAssembly.ENGINE_AREA` to the engine step and refuses its host gaps with the database-free checks in one refusal before any database access. The Spring host keeps the three-argument check until its owner switches `EngineConfigurationCustomizer` (REQUEST to INT-H2).
+  - **Owner decisions 315 to 317 (phase 3 on Quarkus, 2026-11-13):**
+    - **315:** the integration services keep their own executors. A host without the scheduling seam is refused at start. The assembly's own sweeps (idempotency cleanup, pending audit) run on `HostScheduler`.
+    - **316:** on Quarkus the Agroal pool offers no physical connection outside the pool, so the host holds no PostgreSQL `LISTEN` session. The relay wake-up is the polling mode: a cycle on the node wakes its own subscribers in-JVM, a cycle on another node is seen at the subscribers' next poll, and `pg_notify` is still sent for nodes that listen. The intervals are fixed in code on both hosts (relay 1 s, `OutboxRelayService.Settings.defaults`; worker long-poll 100 ms doubling to 1 s, `WorkLongPoll.Settings.defaults`); no configuration key sets them. Only latency differs, never results.
+    - **317:** the Kafka and JMS broker inbox on Quarkus comes in phase 5. Until then Quarkus refuses to start, by name (`BROKER_INBOX_NOT_ON_QUARKUS`), while `sangam.integration.kafka.enabled` or `sangam.integration.jms.enabled` is true.
+  - **Phase 3 on Quarkus (decisions 276, 315 to 317) is started, not finished** (lane GAP-F, 2026-11-15):
+    - **Code, in `sangam-assembly` package `org.sangam.assembly.integration`** (the assembly now depends on `sangam-integration`):
+      - `RelayWakeup`: the wake-up mode chosen by name, `LISTEN` or `POLLING` (decision 316). `listen` refuses a host that cannot listen; it never falls back.
+      - `IntegrationLifecycles`: the start and stop order of the integration services (inbox, relay, reconciliation, maintenance, connector worker; the order of the Spring host's `IntegrationServices`), refused without the scheduling seam (decision 315).
+      - `IntegrationSweeps`: the pending-audit sweep and the idempotency cleanup on `HostScheduler`, with the Spring host's keys and defaults (decision 315).
+    - **Code, in `sangam-quarkus-extension`:** `BrokerInboxRefusal` (decision 317) and `QuarkusHost.relayWakeup`, always the polling mode (decision 316).
+    - **Not done:** the integration services are not constructed on Quarkus. `audit-chain`, `idempotency-store` and `outbox-relay-inbox` stay `CAPABILITY_MISSING`. The Spring host does not call the three assembly classes yet (REQUEST per file to their owners, decision 276).
+    - **What the rest waits for:**
+      1. `AttributionTenant` (sangam-server, over Spring's `Environment`) as a plain-Java function.
+      2. The outbox destination rule (`IntegrationWiring.subscriptions`, roll-up and history projection) as plain Java, or a named refusal of those settings on Quarkus.
+      3. A `TxSupport` for a JTA host. `ConnectionBinding` offers one joining transaction; `TxSupport` also needs an always-new transaction, rollback-only and after-commit.
+      4. The lifecycle authorizer, which comes from the security area (phase 2); the Spring wiring's no-op authorizer without security would be a silent downgrade on Quarkus.
+      5. The rule for claiming a capability whose service needs the built engine, since Quarkus checks capabilities before the engine is built.
   - **Still open:**
-    - the phase 3, 2 and 5 capabilities on Quarkus (decision 276);
+    - the rest of phase 3 (above) and the phase 2 and 5 capabilities on Quarkus (decision 276);
     - the Spring host's switch to the phase 1b engine checks (INT-H2);
     - the P-1 money scenario on four databases;
     - the M-150 kit run on Quarkus (written, not run).
