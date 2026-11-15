@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Owner decision 258 (FC-18), contract {@code routes/history_migration.py}: POST
+ * Owner decision 258 (FLOWABLE-INTO-OPERATON FC-18), contract {@code routes/history_migration.py}: POST
  * /api/v1/admin/history/process-instances/{id}/migrate moves the history of an ended instance to a later version of its
  * definition. Needs {@value Permissions#HISTORY_MIGRATE}; the R41 command {@code history.process-instance.migrate} and
  * its idempotency handling come from the contract (a replay re-checks the permission, SecurityPermissionBridge). The

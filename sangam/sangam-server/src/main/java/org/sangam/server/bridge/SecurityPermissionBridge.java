@@ -101,7 +101,7 @@ public final class SecurityPermissionBridge implements PermissionPort {
             "dsc.certificate.revoke-own", Permissions.TASK_WRITE);
 
     /**
-     * Decision 258 (FC-18): the idempotent command of {@code POST /admin/history/process-instances/{id}/migrate}. Its
+     * Decision 258 (FLOWABLE-INTO-OPERATON FC-18): the idempotent command of {@code POST /admin/history/process-instances/{id}/migrate}. Its
      * replay re-checks {@link Permissions#HISTORY_MIGRATE}; the default rule would only ask for {@code process.read}.
      */
     static final String HISTORY_MIGRATE_COMMAND = "history.process-instance.migrate";
@@ -161,7 +161,7 @@ public final class SecurityPermissionBridge implements PermissionPort {
             // decision 227: binding a person's signing certificate is user administration (tenant grant); the
             // controller refuses self-approval as a second check
             Map.entry(Permissions.DSC_CERTIFICATE_APPROVE, new Mapping(ResourceRegistry.USER, Permission.ADMIN)),
-            // decision 258 (FC-18): admin-only, so the tenant administration gate (as tenant.admin), never a grant on
+            // decision 258 (FLOWABLE-INTO-OPERATON FC-18): admin-only, so the tenant administration gate (as tenant.admin), never a grant on
             // historic instances; untenanted history needs a platform identity (HistoricInstanceMigration)
             Map.entry(Permissions.HISTORY_MIGRATE, new Mapping(ResourceRegistry.TENANT, Permission.ADMIN)),
             // decision 305: the tenant's DLT registration is tenant administration, read and write alike

@@ -38,8 +38,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * SCIM 2.0 endpoint {@code /scim/v2} (M-099, contract {@code sangam-rest/api/routes/scim.py}; owner decision 154,
- * ADR-D-154). A thin adapter: the endpoint permission {@code scim.provision} (SecurityPermissionBridge), then
+ * SCIM 2.0 endpoint {@code /scim/v2} (M-099, contract {@code sangam-rest/api/routes/scim.py}; owner decision 154).
+ * A thin adapter: the endpoint permission {@code scim.provision} (SecurityPermissionBridge), then
  * {@link ScimService} in one product transaction, which applies the object checks, the read-only postings rule and the
  * audit. Bodies are read and written as text with the {@code application/scim+json} media type, and every error is a
  * SCIM error body (RFC 7644 section 3.12), not RFC 9457, because identity providers follow the RFC.
