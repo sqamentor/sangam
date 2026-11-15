@@ -128,6 +128,34 @@ class ContractT18TypedValuesTest {
         }
     }
 
+    /** The null vector on the way out: a worker that sets a variable to null sends the key with JSON null. */
+    @Test
+    void t18_aNullOutputVariableIsSentAsNullNotLeftOut() throws Exception {
+        Map<String, Object> variables = new LinkedHashMap<>();
+        variables.put("note", null);
+        variables.put("amount", TypedValue.decimal(new BigDecimal("1234.50")));
+        JsonNode body = JSON.readTree(JSON.writeValueAsBytes(
+                new org.sangam.sdk.model.CompleteWorkRequest("w-1", 1L, "a-1", variables, null, null)));
+        assertTrue(body.get("variables").has("note"), "the null variable is in the body: " + body);
+        assertTrue(body.get("variables").get("note").isNull());
+        assertTrue(!body.has("localVariables"), "an unset request property stays out of the body: " + body);
+        try (SangamTestEngine engine = SangamTestEngine.start()) {
+            String id = engine.addWork("t18-null", Map.of());
+            SangamWorker w = ContractSupport.worker(engine, "w-t18-null", ContractSupport.logs())
+                    .subscribe(TopicSubscription.topic("t18-null", ctx -> variables)
+                            .lockDuration(Duration.ofMinutes(1)).build()).build().start();
+            try {
+                engine.awaitState(id, "COMPLETED", Duration.ofSeconds(10));
+            } finally {
+                w.close();
+            }
+            Map<String, Object> back = engine.completedVariableMap(id);
+            assertNotNull(back);
+            assertTrue(back.containsKey("note"), "the engine received the null variable: " + back);
+            assertNull(back.get("note"));
+        }
+    }
+
     @Test
     void t18_valuesSurviveAWorkerRoundTripThroughTheEngine() throws Exception {
         List<Vector> vectors = vectors().stream().filter(v -> v.wire() != null).toList();

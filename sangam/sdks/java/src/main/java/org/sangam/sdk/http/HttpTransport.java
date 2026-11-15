@@ -74,13 +74,19 @@ public final class HttpTransport {
         this.json = defaultMapper();
     }
 
+    /**
+     * The SDK's JSON mapper. An unset (null) property of a request object is left out of the body; a null entry of a
+     * map is written as JSON null: a variable map {@code {"note": null}} sets the variable to null (T18, R33), it does
+     * not leave the variable out.
+     */
     public static ObjectMapper defaultMapper() {
         return new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+                .setDefaultPropertyInclusion(
+                        JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.ALWAYS));
     }
 
     public ObjectMapper json() {
