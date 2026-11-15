@@ -95,6 +95,10 @@ public class SecurityConfig {
                         // channel's Entra token or shared secret first (401 when it fails); 404 unless enabled
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/hooks/eventgrid/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/api/v1/hooks/eventgrid/**").permitAll()
+                        // Decision 304, DLT SMS delivery reports: public only because the port verifies the provider's
+                        // X-Sangam-Signature over the raw body first (401 WEBHOOK_SIGNATURE_INVALID, nothing read or
+                        // written); a connector without a configured signing secret refuses every report
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, DLT_DELIVERY_REPORTS).permitAll()
                         // CDS Hooks discovery and services (HL7 CDS Hooks paths, outside /api/v1). M-006 / SL-138: the
                         // caller is a CDS client (an EHR) with a JWT signed by its own key, which no Sangam decoder
                         // knows; HealthHooksController verifies it against the client's registered JWKS (iss, aud,
@@ -231,6 +235,9 @@ public class SecurityConfig {
     private static final RequestMatcher CDS_SERVICES = new OrRequestMatcher(
             java.util.Arrays.stream(CDS_SERVICES_PATHS)
                     .map(p -> (RequestMatcher) PathPatternRequestMatcher.pathPattern(p)).toList());
+
+    /** Decision 304: the signed delivery-report webhook of a tenant's DLT SMS connector (exactly this shape). */
+    static final String DLT_DELIVERY_REPORTS = "/api/v1/hooks/sms-dlt/*/*/delivery-reports";
 
     /** SL-170: Event Grid hooks; their Authorization header is a Microsoft Entra delivery token, checked by the channel. */
     static final RequestMatcher EVENT_GRID_HOOKS = PathPatternRequestMatcher.pathPattern("/api/v1/hooks/eventgrid/**");

@@ -27,6 +27,7 @@ import org.sangam.sdk.generated.api.DebugApi;
 import org.sangam.sdk.generated.api.DecisionsApi;
 import org.sangam.sdk.generated.api.DeploymentsApi;
 import org.sangam.sdk.generated.api.DltHooksApi;
+import org.sangam.sdk.generated.api.DltRegistrationApi;
 import org.sangam.sdk.generated.api.DocumentsApi;
 import org.sangam.sdk.generated.api.DscCertificatesApi;
 import org.sangam.sdk.generated.api.EventGridHooksApi;
@@ -85,7 +86,7 @@ import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
@@ -114,6 +115,7 @@ public final class SangamApis {
     private final DecisionsApi decisions;
     private final DeploymentsApi deployments;
     private final DltHooksApi dltHooks;
+    private final DltRegistrationApi dltRegistration;
     private final DocumentsApi documents;
     private final DscCertificatesApi dscCertificates;
     private final EventGridHooksApi eventGridHooks;
@@ -195,6 +197,7 @@ public final class SangamApis {
         this.decisions = new DecisionsApi(http);
         this.deployments = new DeploymentsApi(http);
         this.dltHooks = new DltHooksApi(http);
+        this.dltRegistration = new DltRegistrationApi(http);
         this.documents = new DocumentsApi(http);
         this.dscCertificates = new DscCertificatesApi(http);
         this.eventGridHooks = new EventGridHooksApi(http);
@@ -299,6 +302,8 @@ public final class SangamApis {
     public DeploymentsApi deployments() { return deployments; }
     /** {@code DltHooks}: 1 operations. */
     public DltHooksApi dltHooks() { return dltHooks; }
+    /** {@code DltRegistration}: 5 operations. */
+    public DltRegistrationApi dltRegistration() { return dltRegistration; }
     /** {@code Documents}: 10 operations. */
     public DocumentsApi documents() { return documents; }
     /** {@code DscCertificates}: 8 operations. */

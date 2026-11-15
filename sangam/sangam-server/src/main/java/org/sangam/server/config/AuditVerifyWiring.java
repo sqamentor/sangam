@@ -25,7 +25,8 @@ import org.springframework.core.env.Environment;
  * verify ({@code JdbcAuditAdapter.setCheckpoints}) also checks every checkpoint of the tenant (numbering, statement,
  * hash links, signatures, Merkle roots) and that each chain still holds its sealed head. A verify-only
  * {@link AuditCheckpoints} (no signer): verification works on every node, signing only where the private key is
- * configured ({@link AuditCheckpointWiring}). Keys are references only (Q-04); a literal key fails the start-up.
+ * configured ({@link AuditCheckpointWiring}). Keys are references only (Q-04); a literal key fails the start-up, and so
+ * does an audit port that cannot verify checkpoints ({@link #bindOrRefuse}).
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(name = AuditVerifyWiring.KEYS_PROPERTY)
@@ -59,11 +60,28 @@ public class AuditVerifyWiring {
         return () -> {
             AuditCheckpoints.KeyLookup keys = AuditCheckpoints.ed25519Keys(trustedKeys(
                     secrets.getIfAvailable(SecretResolver::fromEnvironment), env.getProperty(KEYS_PROPERTY, "")));
-            if (!bind(audit.getIfAvailable(), tx, keys)) {
-                LOG.warn("M-073: {} is set but the audit port is not the JDBC audit adapter; checkpoints are not verified",
-                        KEYS_PROPERTY);
-            }
+            bindOrRefuse(audit.getIfAvailable(), tx, keys);
         };
+    }
+
+    /** The name of the refusal of {@link #bindOrRefuse}. */
+    static final String REFUSAL = "AUDIT_CHECKPOINT_VERIFICATION_UNAVAILABLE";
+
+    /**
+     * Decisions 143 and 152 (no permissive fallback): the trusted checkpoint keys are configured, so audit verification
+     * must include the signed checkpoints. An audit port that cannot take them (not the JDBC audit adapter) would
+     * answer every verify without that check while the configuration says it is on; the start is refused instead, in
+     * every environment (the setting is explicit, there is no development default to fall back to).
+     *
+     * @throws IllegalStateException {@value #REFUSAL}
+     */
+    static void bindOrRefuse(AuditPort audit, TxSupport tx, AuditCheckpoints.KeyLookup keys) {
+        if (!bind(audit, tx, keys)) {
+            throw new IllegalStateException(REFUSAL + ": " + KEYS_PROPERTY + " is set but the audit port ("
+                    + (audit == null ? "none" : audit.getClass().getName()) + ") is not the JDBC audit adapter, so audit"
+                    + " verification would not check the signed checkpoints. Use the JDBC audit adapter, or remove "
+                    + KEYS_PROPERTY + " to state that checkpoints are not verified on this node");
+        }
     }
 
     /** Binds verify-only checkpoints with {@code keys} on the JDBC audit adapter; false for another audit port. */

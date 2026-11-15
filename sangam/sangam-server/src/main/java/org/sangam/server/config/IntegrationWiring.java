@@ -41,7 +41,7 @@ import org.sangam.integration.connector.ConnectorCallJournal;
 import org.sangam.integration.connector.ConnectorInvoker;
 import org.sangam.integration.connector.ConnectorRegistry;
 import org.sangam.integration.connector.Connectors;
-import org.sangam.integration.connector.gov.DltRegistry;
+import org.sangam.integration.connector.gov.DltRegistrationStore;
 import org.sangam.integration.inbox.CorrelatingInboxHandler;
 import org.sangam.integration.inbox.EventDefinitionPolicy;
 import org.sangam.integration.inbox.InboxService;
@@ -280,13 +280,15 @@ public class IntegrationWiring {
     /**
      * Connector catalogue. With {@code sangam.integration.simulators.enabled=true} (dev) the simulator catalogue;
      * otherwise empty until connectors are registered (air-gapped default: no outbound calls unless configured, §1.9).
+     * Decision 305: the DLT SMS connector validates against the stored per-tenant registration ({@link DltWiring}).
      */
     @Bean
-    public ConnectorRegistry sangamConnectorRegistry(ObjectProvider<SimulatorProfile> sims, Environment env) {
+    public ConnectorRegistry sangamConnectorRegistry(ObjectProvider<SimulatorProfile> sims, Environment env,
+                                                     DltRegistrationStore sangamDltRegistrationStore) {
         SimulatorProfile profile = sims.getIfAvailable();
         if (profile != null) {
             LOG.warn("Connector catalogue: SIMULATORS (development)");
-            return Connectors.simulatorRegistry(profile, new DltRegistry(), defaultTenant(env));
+            return Connectors.simulatorRegistry(profile, sangamDltRegistrationStore.registry(), defaultTenant(env));
         }
         return new ConnectorRegistry();
     }
@@ -412,10 +414,11 @@ public class IntegrationWiring {
     public ErasureService sangamErasureService(TxSupport tx, ObjectProvider<EngineAdapter> adapter,
             AuditChain sangamIntegrationAuditChain, ConnectorCallJournal journal, DeadLetterStore deadLetters,
             OperatonLifecyclePorts ports, ObjectProvider<LifecyclePorts.DocumentEraser> documents,
-            LifecyclePorts.Authorizer authorizer) {
+            LifecyclePorts.Authorizer authorizer, Environment env) {
         Dialect d = tx.dialect();
+        // decisions 143, 152: never the no-op document eraser outside a development environment (start refused)
         return new ErasureService(d, engineTx(adapter, tx), sangamIntegrationAuditChain, new LegalHoldStore(d), journal,
-                deadLetters, ports, ports, documents.getIfAvailable(() -> LifecyclePorts.DocumentEraser.NONE), authorizer,
+                deadLetters, ports, ports, DocumentEraserRequirement.require(documents.getIfAvailable(), env), authorizer,
                 denialChains());
     }
 
@@ -526,13 +529,17 @@ public class IntegrationWiring {
         };
     }
 
+    /**
+     * A reconciliation {@code CONFIRM_SUCCESS} (the engine's lookup or an officer) writes the connector's catalogued
+     * events through the direct-audit invoker, in the resolving transaction, once whichever path confirms.
+     */
     @Bean(destroyMethod = "")
     public ReconciliationEngine sangamReconciliationEngine(TxSupport tx, DataSource ds, ReconciliationQueue queue,
             OperationLedger ledger, ConnectorCallJournal journal, ConnectorRegistry registry, ProcessEngine engine,
-            ObjectProvider<ReconciliationTaskPort> humans, RestProperties rest) {
+            ObjectProvider<ReconciliationTaskPort> humans, RestProperties rest, ConnectorInvoker sangamConnectorInvoker) {
         return new ReconciliationEngine(tx.dialect(), productTx(ds), queue, ledger, journal, registry,
                 humans.getIfAvailable(), new OperatonHeldWorkReleaser(engine),
-                ReconciliationEngine.Settings.defaults(rest.getNode()));
+                ReconciliationEngine.Settings.defaults(rest.getNode())).confirmations(sangamConnectorInvoker);
     }
 
     @Bean(destroyMethod = "")

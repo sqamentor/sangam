@@ -343,6 +343,14 @@ public class SangamRestAutoConfiguration {
         return new NotInstalledDynamicAdapter();
     }
 
+    /** Decisions 304, 305: without sangam-integration the DLT hook knows no connector (404), the registration is 501. */
+    @Bean
+    @ConditionalOnMissingBean
+    public org.sangam.rest.port.DltPort sangamDltPort() {
+        return new org.sangam.rest.port.DltPort() {
+        };
+    }
+
     @Bean
     @ConditionalOnMissingBean
     public HistoryPort sangamHistoryPort(ProcessEngine engine, RestProperties props) {

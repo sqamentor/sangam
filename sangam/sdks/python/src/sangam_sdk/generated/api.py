@@ -3862,6 +3862,66 @@ class DltHooksApi:
         req.body = body
         return cast("M.DltDeliveryReportResult", self._c.json(req, options))
 
+class DltRegistrationApi:
+    """``DltRegistration`` (5 operations)."""
+
+    def __init__(self, calls: _Calls) -> None:
+        self._c = calls
+
+    def get_dlt_registration(self, *, options: Optional[RequestOptions] = None) -> M.DltRegistration:
+        """The tenant's DLT registration
+
+        The caller's tenant's stored registration: entity, headers, templates, URL prefixes and revision. Start-up configuration only seeds it; what is stored here is what the DLT SMS connector validates against. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+
+        ``GET /admin/dlt-registration`` (operationId ``getDltRegistration``); permission ``dlt.registration.read``.
+        """
+        req = ApiRequest("GET", f"/admin/dlt-registration")
+        return cast("M.DltRegistration", self._c.json(req, options))
+
+    def set_dlt_entity(self, body: M.DltEntityRequest, *, options: Optional[RequestOptions] = None) -> M.DltRegistrationChange:
+        """Set the principal entity
+
+        Sets the tenant's principal-entity id. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+
+        ``PUT /admin/dlt-registration/entity`` (operationId ``setDltEntity``); permission ``dlt.registration.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("PUT", f"/admin/dlt-registration/entity")
+        req.body = body
+        return cast("M.DltRegistrationChange", self._c.json(req, options))
+
+    def add_dlt_header(self, body: M.DltHeaderRequest, *, options: Optional[RequestOptions] = None) -> M.DltRegistrationChange:
+        """Register a sender header
+
+        Registers a sender header. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+
+        ``POST /admin/dlt-registration/headers`` (operationId ``addDltHeader``); permission ``dlt.registration.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/dlt-registration/headers")
+        req.body = body
+        return cast("M.DltRegistrationChange", self._c.json(req, options))
+
+    def add_dlt_template(self, body: M.DltTemplate, *, options: Optional[RequestOptions] = None) -> M.DltRegistrationChange:
+        """Register a content template
+
+        Registers a content template, or replaces the header and body of the template with the same id. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+
+        ``POST /admin/dlt-registration/templates`` (operationId ``addDltTemplate``); permission ``dlt.registration.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/dlt-registration/templates")
+        req.body = body
+        return cast("M.DltRegistrationChange", self._c.json(req, options))
+
+    def add_dlt_url_prefix(self, body: M.DltUrlPrefixRequest, *, options: Optional[RequestOptions] = None) -> M.DltRegistrationChange:
+        """Whitelist a URL prefix
+
+        Whitelists a URL prefix. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+
+        ``POST /admin/dlt-registration/urls`` (operationId ``addDltUrlPrefix``); permission ``dlt.registration.write``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/admin/dlt-registration/urls")
+        req.body = body
+        return cast("M.DltRegistrationChange", self._c.json(req, options))
+
 class DocumentsApi:
     """``Documents`` (10 operations)."""
 
@@ -12495,7 +12555,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)
@@ -12522,6 +12582,7 @@ class SangamApis:
         self.decisions = DecisionsApi(calls)
         self.deployments = DeploymentsApi(calls)
         self.dlt_hooks = DltHooksApi(calls)
+        self.dlt_registration = DltRegistrationApi(calls)
         self.documents = DocumentsApi(calls)
         self.dsc_certificates = DscCertificatesApi(calls)
         self.event_grid_hooks = EventGridHooksApi(calls)

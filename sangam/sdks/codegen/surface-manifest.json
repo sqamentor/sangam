@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 951,
- "operations": 1132,
- "schemas": 849,
+ "paths": 956,
+ "operations": 1137,
+ "schemas": 855,
  "tags": [
   "AI",
   "Admin",
@@ -21,6 +21,7 @@
   "Decisions",
   "Deployments",
   "DltHooks",
+  "DltRegistration",
   "Documents",
   "DscCertificates",
   "EventGridHooks",
@@ -219,6 +220,13 @@
    "pathPrefix": "",
    "operations": 1,
    "maxLines": 47
+  },
+  {
+   "class": "DltRegistrationApi",
+   "tag": "DltRegistration",
+   "pathPrefix": "",
+   "operations": 5,
+   "maxLines": 114
   },
   {
    "class": "DocumentsApi",
@@ -913,6 +921,12 @@
   "DispatchServiceUnitInput",
   "DltDeliveryReport",
   "DltDeliveryReportResult",
+  "DltEntityRequest",
+  "DltHeaderRequest",
+  "DltRegistration",
+  "DltRegistrationChange",
+  "DltTemplate",
+  "DltUrlPrefixRequest",
   "Document",
   "DocumentGenerateRequest",
   "DocumentTemplate",
@@ -8220,6 +8234,66 @@
    "python": "dlt_hooks.receive_dlt_delivery_reports",
    "dotnet": "DltHooksApi#ReceiveDltDeliveryReportsAsync",
    "php": "DltHooksApi#receiveDltDeliveryReports"
+  },
+  {
+   "operationId": "getDltRegistration",
+   "method": "GET",
+   "path": "/admin/dlt-registration",
+   "tag": "DltRegistration",
+   "apiClass": "DltRegistrationApi",
+   "java": "DltRegistrationApi#getDltRegistration",
+   "typescript": "dltRegistration.getDltRegistration",
+   "python": "dlt_registration.get_dlt_registration",
+   "dotnet": "DltRegistrationApi#GetDltRegistrationAsync",
+   "php": "DltRegistrationApi#getDltRegistration"
+  },
+  {
+   "operationId": "setDltEntity",
+   "method": "PUT",
+   "path": "/admin/dlt-registration/entity",
+   "tag": "DltRegistration",
+   "apiClass": "DltRegistrationApi",
+   "java": "DltRegistrationApi#setDltEntity",
+   "typescript": "dltRegistration.setDltEntity",
+   "python": "dlt_registration.set_dlt_entity",
+   "dotnet": "DltRegistrationApi#SetDltEntityAsync",
+   "php": "DltRegistrationApi#setDltEntity"
+  },
+  {
+   "operationId": "addDltHeader",
+   "method": "POST",
+   "path": "/admin/dlt-registration/headers",
+   "tag": "DltRegistration",
+   "apiClass": "DltRegistrationApi",
+   "java": "DltRegistrationApi#addDltHeader",
+   "typescript": "dltRegistration.addDltHeader",
+   "python": "dlt_registration.add_dlt_header",
+   "dotnet": "DltRegistrationApi#AddDltHeaderAsync",
+   "php": "DltRegistrationApi#addDltHeader"
+  },
+  {
+   "operationId": "addDltTemplate",
+   "method": "POST",
+   "path": "/admin/dlt-registration/templates",
+   "tag": "DltRegistration",
+   "apiClass": "DltRegistrationApi",
+   "java": "DltRegistrationApi#addDltTemplate",
+   "typescript": "dltRegistration.addDltTemplate",
+   "python": "dlt_registration.add_dlt_template",
+   "dotnet": "DltRegistrationApi#AddDltTemplateAsync",
+   "php": "DltRegistrationApi#addDltTemplate"
+  },
+  {
+   "operationId": "addDltUrlPrefix",
+   "method": "POST",
+   "path": "/admin/dlt-registration/urls",
+   "tag": "DltRegistration",
+   "apiClass": "DltRegistrationApi",
+   "java": "DltRegistrationApi#addDltUrlPrefix",
+   "typescript": "dltRegistration.addDltUrlPrefix",
+   "python": "dlt_registration.add_dlt_url_prefix",
+   "dotnet": "DltRegistrationApi#AddDltUrlPrefixAsync",
+   "php": "DltRegistrationApi#addDltUrlPrefix"
   },
   {
    "operationId": "prepareDscSignature",

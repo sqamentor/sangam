@@ -25,6 +25,7 @@ export { DebugApi } from './api.js';
 export { DecisionsApi } from './api.js';
 export { DeploymentsApi } from './api.js';
 export { DltHooksApi } from './api.js';
+export { DltRegistrationApi } from './api.js';
 export { DocumentsApi } from './api.js';
 export { DscCertificatesApi } from './api.js';
 export { EventGridHooksApi } from './api.js';
