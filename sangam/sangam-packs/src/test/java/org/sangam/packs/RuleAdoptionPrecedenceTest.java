@@ -59,9 +59,9 @@ class RuleAdoptionPrecedenceTest {
     static String dmn(String value) {
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
-                <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="d_%1$s" name="Rule adoption"
+                <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="d_%1$s" name="Rule adoption"
                              namespace="http://sangam.org/test">
-                  <decision id="%1$s" name="Rule adoption limit">
+                  <decision operaton:historyTimeToLive="30" id="%1$s" name="Rule adoption limit">
                     <decisionTable id="t_%1$s" hitPolicy="UNIQUE">
                       <input id="i1" label="Kind"><inputExpression id="ie1" typeRef="string"><text>kind</text></inputExpression></input>
                       <output id="o1" name="rule" typeRef="string"/>

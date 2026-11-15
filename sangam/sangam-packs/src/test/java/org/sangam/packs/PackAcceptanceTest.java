@@ -50,7 +50,9 @@ import org.sangam.packs.spi.PackRegistry;
  */
 class PackAcceptanceTest {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Decision 138: a fraction in scenario data becomes a BigDecimal case variable, never a Double. */
+    private static final ObjectMapper JSON = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();
     static ProcessEngine engine;
     static PackDriver driver;
 

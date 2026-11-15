@@ -93,7 +93,7 @@ class SectorConformanceTest {
         assertTrue(audit.stream().filter(e -> "TASK_COMPLETED".equals(e.type()))
                 .allMatch(e -> e.actorPersonId() != null && e.actorSeatId() != null), "actor person and seat on audit");
         assertTrue(audit.stream().filter(e -> "TASK_COMPLETED".equals(e.type()))
-                .filter(e -> PackRuntime.seats().roleOf(null, e.actorSeatId()).isPresent())
+                .filter(e -> PackRuntime.seats().roleOf(PackTestTenant.ID, e.actorSeatId()).isPresent())
                 .noneMatch(e -> e.actorPersonId().startsWith("user.")), key + ": a seed seat has no holder today");
         if (!p.resources(PackDescriptor.PackResource.Kind.DMN).isEmpty()) {
             assertTrue(types.contains("RULE_EVALUATED"), key + ": DMN shipped but no RULE_EVALUATED; " + types);
@@ -251,7 +251,7 @@ class SectorConformanceTest {
         // Every step is acted by the real holder of its seat, so segregation of duties by person and by seat holds;
         // the old data (scrutiny on PRAO-1 and approval by PR_AO, also PRAO-1) was refused with 422 SOD_VIOLATION
         java.time.LocalDate today = java.time.LocalDate.now();
-        String initiator = PackRuntime.seats().holderOf(null, "FA-1", today).orElseThrow();
+        String initiator = PackRuntime.seats().holderOf(PackTestTenant.ID, "FA-1", today).orElseThrow();
         String bk = throughSanction("sangam-ifms-budget-allocation", answers(), "amount", 250_000_000L,
                 "headOfAccount", "2052-00-090-01", "initiator", initiator, "actingSeat", "FA-1");
         assertSanctionedWithinPower(bk, "ifms-allocation-powers");
@@ -259,8 +259,8 @@ class SectorConformanceTest {
                 .filter(e -> "TASK_COMPLETED".equals(e.type())).toList();
         assertEquals(List.of("DH-1", "PAO-1"), done.stream().map(PackAuditEvent::actorSeatId).limit(2).toList(),
                 "entered by the Dealing Hand, then checked and approved by the Pay and Accounts Officer");
-        assertEquals(List.of(PackRuntime.seats().holderOf(null, "DH-1", today).orElseThrow(),
-                PackRuntime.seats().holderOf(null, "PAO-1", today).orElseThrow()),
+        assertEquals(List.of(PackRuntime.seats().holderOf(PackTestTenant.ID, "DH-1", today).orElseThrow(),
+                PackRuntime.seats().holderOf(PackTestTenant.ID, "PAO-1", today).orElseThrow()),
                 done.stream().map(PackAuditEvent::actorPersonId).limit(2).toList(), "each seat's own holder acted");
         org.sangam.packs.port.ConnectorRequest distribute = sim().journal().stream()
                 .filter(r -> bk.equals(r.businessKey()) && "ledger.distribute".equals(r.connector())).findFirst()

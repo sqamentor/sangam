@@ -104,6 +104,9 @@ class DepartmentClassLookupTest {
         PackRuntime.reset();
         gateway = new ProfileGateway();
         PackRuntime.install(PackRuntime.defaults().withGateway(gateway));
+        // the profile binding of a case start (PackStartListener, operation profile.binding) is not under test and is
+        // bound directly, so every config.profile request the gateway sees is a value read of the model
+        org.sangam.packs.port.ProfileBindings.install((tenant, pack, businessKey) -> null);
         StandaloneInMemProcessEngineConfiguration cfg = new StandaloneInMemProcessEngineConfiguration();
         cfg.setJdbcUrl("jdbc:h2:mem:sangam-d225;DB_CLOSE_DELAY=-1");
         cfg.setDatabaseSchemaUpdate("create-drop");
@@ -119,6 +122,7 @@ class DepartmentClassLookupTest {
     static void tearDown() {
         engine.close();
         PackRuntime.reset();
+        org.sangam.packs.port.ProfileBindings.install(null); // back to the default binder
     }
 
     /** Starts {@code key} with the smoke bag plus {@code kv}, the profile answering {@code profile}; returns the key. */

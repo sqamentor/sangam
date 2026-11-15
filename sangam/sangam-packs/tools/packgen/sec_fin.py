@@ -1568,7 +1568,13 @@ def ins_motor_claim():
            [('surveyorRequired', 'Licensed surveyor', 'boolean'), ('siuReferral', 'SIU', 'boolean'),
             ('surveyorAppointSpec', 'Appoint surveyor within', 'string'), ('surveyReportSpec', 'Survey report within', 'string'),
             ('sanctionSla', 'Settle within (after the report)', 'string')],
-           [(['-', '>= 70'], ['true', 'true', q('1D'), q('15D'), q('7D')], 'high fraud score'),
+           [# SL-115 with ADR-D-26: an unconfirmed fraud score is null, and a null input needs its own rows (a catch-all
+            # does not take it). The claim goes to the SIU (mc_siuGw routes on the unconfirmed check as well); the
+            # surveyor follows the amount as for a confirmed score
+            (['>= 50000', 'null'], ['true', 'true', q('1D'), q('15D'), q('7D')],
+             'fraud score not confirmed: SIU; licensed surveyor at or above the threshold (Insurance Act s.64UM)'),
+            (['-', 'null'], ['false', 'true', q('1D'), q('15D'), q('7D')], 'fraud score not confirmed: SIU'),
+            (['-', '>= 70'], ['true', 'true', q('1D'), q('15D'), q('7D')], 'high fraud score'),
             (['>= 50000', '-'], ['true', 'false', q('1D'), q('15D'), q('7D')], 'licensed surveyor at or above the threshold (Insurance Act s.64UM)'),
             (['-', '-'], ['false', 'false', q('1D'), q('15D'), q('7D')],
              'desk assessment; survey report 15 days, settlement 7 days after it (PPHI 2024, verify)')])

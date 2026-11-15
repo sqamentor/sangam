@@ -22,6 +22,15 @@
         "en": "Certification (certifying officer, personal liability recorded)",
         "hi": "प्रमाणन (प्रमाणन अधिकारी, व्यक्तिगत दायित्व दर्ज)"
       }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
     }
   ],
   "decision": {

@@ -47,6 +47,9 @@ class RecordsCatalogueEventsTest {
     @BeforeAll
     static void setUp() {
         PackRuntime.reset();
+        // no configuration profile in this test: bound directly, so the simulator journal of a record holds only what
+        // the record itself requested (the default binder reads config.profile through the gateway at every start)
+        org.sangam.packs.port.ProfileBindings.install((tenant, pack, businessKey) -> null);
         StandaloneInMemProcessEngineConfiguration cfg = new StandaloneInMemProcessEngineConfiguration();
         cfg.setJdbcUrl("jdbc:h2:mem:sangam-records-events;DB_CLOSE_DELAY=-1");
         cfg.setDatabaseSchemaUpdate("create-drop");
@@ -65,12 +68,13 @@ class RecordsCatalogueEventsTest {
     static void tearDown() {
         engine.close();
         PackRuntime.reset();
+        org.sangam.packs.port.ProfileBindings.install(null); // back to the default binder
     }
 
     private static String unsettledTransfer() {
         return "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\""
                 + " xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" targetNamespace=\"t\">"
-                + "<process id=\"records-unsettled\" isExecutable=\"true\"><startEvent id=\"s\"/>"
+                + "<process id=\"records-unsettled\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>"
                 + "<serviceTask id=\"d\" operaton:class=\"" + CaseRecordDelegate.class.getName() + "\">"
                 + "<extensionElements><operaton:field name=\"op\"><operaton:string>NAI_TRANSFERRED</operaton:string>"
                 + "</operaton:field></extensionElements></serviceTask><endEvent id=\"e\"/>"
@@ -90,7 +94,7 @@ class RecordsCatalogueEventsTest {
     private static Answer asSeat(Task t, Object... kv) {
         String seat = engine.getTaskService().getIdentityLinksForTask(t.getId()).stream()
                 .map(IdentityLink::getGroupId).filter(java.util.Objects::nonNull).findFirst().orElse("none");
-        String person = PackRuntime.seats().holderOf(null, seat, java.time.LocalDate.now()).orElse("user." + seat);
+        String person = PackRuntime.seats().holderOf(PackTestTenant.ID, seat, java.time.LocalDate.now()).orElse("user." + seat);
         return Answer.of(person, seat, kv);
     }
 

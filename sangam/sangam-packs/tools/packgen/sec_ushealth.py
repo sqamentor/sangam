@@ -434,7 +434,11 @@ def claim():
     # default stands in); an unconfirmed acknowledgment goes to the biller like a front-end rejection
     sube, sub = checked_query(s, 'cl_submit', 'Submit claim 837P / 837I (999 acknowledgment)', 'x12.claim', 'submitClaim',
                               'memberId,payerId,providerNpi,patientControlNumber,totalCharge,serviceDate,claimType,'
-                              'priorAuthNumber,frequency', 'clm', ['clmAccepted'], mode='submit', step='claim-submit')
+                              'priorAuthNumber,frequency', 'clm', ['clmAccepted'], mode='submit',
+                              # a corrected claim (frequency 7, cl_corrected) is a new submission with its own
+                              # operationId, as its receivable adjustment below: the first claim's id with another
+                              # payload is refused by the payer side (R41, IDEMPOTENCY_PAYLOAD_MISMATCH)
+                              step='claim-submit:${correctionNo}')
     s.flow(scrub, sube)
     ag = s.xgw('cl_ackGw', 'Accepted at the front end?')
     s.flow(sub, ag)

@@ -50,7 +50,7 @@ class PilotScenarioTest {
     static Answer asSeat(Task t, Object... kv) {
         String seat = engine.getTaskService().getIdentityLinksForTask(t.getId()).stream()
                 .map(IdentityLink::getGroupId).filter(java.util.Objects::nonNull).findFirst().orElse("none");
-        String person = PackRuntime.seats().holderOf(null, seat, java.time.LocalDate.now()).orElse("user." + seat);
+        String person = PackRuntime.seats().holderOf(PackTestTenant.ID, seat, java.time.LocalDate.now()).orElse("user." + seat);
         return Answer.of(person, seat, kv);
     }
 
@@ -124,7 +124,7 @@ class PilotScenarioTest {
         start("sangam-p3-grant-application", bk, vars(
                 "applicantName", "Sita Devi", "applicantRef", "mobile:98XXXXXX10", "schemeId", "HOUSING-GRANT",
                 "beneficiaryId", "VAULT-7f3a", "bankAccount", "3210987654", "ifsc", "PUNB0123400",
-                "income", 12_000_000L, "age", 41, "socialCategory", "SC", "landHolding", 0.5, "district", "A",
+                "income", 12_000_000L, "age", 41, "socialCategory", "SC", "landHolding", new java.math.BigDecimal("0.5"), "district", "A",
                 "officeId", "BLOCK-A1", "actingSeat", "DEO-A1", "initiator", "p3.deo-a1", "instalmentInterval", "PT1S"));
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> asSeat(t, "scrutinyDecision", "accept");
@@ -143,7 +143,7 @@ class PilotScenarioTest {
         String bk = "LIC/2026/0007";
         start("sangam-p4-licence", bk, vars(
                 "applicantName", "Ramesh Traders", "applicantRef", "mobile:97XXXXXX21", "licenceType", "TRADE",
-                "tradeName", "Ramesh General Store", "premisesAddress", "Shop 4, Ward 7", "premisesArea", 35.0,
+                "tradeName", "Ramesh General Store", "premisesAddress", "Shop 4, Ward 7", "premisesArea", new java.math.BigDecimal("35"),
                 "durationYears", 1, "officeId", "WARD-7", "initiator", "citizen.ramesh"));
         List<String> done = driver.run(bk, t -> switch (t.getTaskDefinitionKey()) {
             case "sc_scrutiny" -> asSeat(t, "scrutinyDecision", "accept");
@@ -285,7 +285,9 @@ class PilotScenarioTest {
         }, 30);
         assertTrue(!driver.ended(bk), "held for the first bill");
         assertTrue(sim().journal().stream().noneMatch(r -> "billing.credit".equals(r.connector()) && bk.equals(r.businessKey())));
-        var due = sim().query(new org.sangam.packs.port.ConnectorRequest(null, "mdm.consumersDue", "list", null, null, null, Map.of(), null));
+        // the simulator keeps the installed connections by tenant: ask as the tenant of the case
+        var due = sim().query(new org.sangam.packs.port.ConnectorRequest(PackTestTenant.ID, "mdm.consumersDue", "list", null, null,
+                null, Map.of(), null));
         assertTrue(String.valueOf(due.data().get("items")).contains("connectionCaseKey=" + bk), String.valueOf(due.data()));
         String bill = "UTIL/BILL/77";
         start("sangam-sec-util-bill", bill, vars("key", "CONS-77", "batchId", "CYCLE-1", "units", 100, "connectionCaseKey", bk,

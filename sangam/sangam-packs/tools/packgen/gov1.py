@@ -416,7 +416,10 @@ def p3():
         'duplicateSeat=DOCVERIFIER-A2;instalmentNo=0;instalmentInterval=P90D;retentionCategory=C;retentionYears=10;'
         'amount=0;executionPayloadFields=beneficiaryId,bankAccount,ifsc,instalmentAmount,instalmentNo,schemeId;'
         'entitlementOverride=null;childApplicant=false;scrutinySla=7WD;sanctionSla=5WD;'
-        'correctedAccount=null;correctedIfsc=null'))
+        'correctedAccount=null;correctedIfsc=null;'
+        # read by p3-field-verification-required: false unless the DigiLocker pull failed (p3_selfUploaded sets true);
+        # a decision input is never left undefined (ADR-D-26: strict FEEL refuses an unknown variable)
+        'documentsSelfUploaded=false'))
     cg = s.xgw('p3_childGw', 'Child applicant?')
     s.seq(st, d, cg)
     child = s.setv('p3_child', 'Child record: guardian, analytics blocked (GOV-4)',

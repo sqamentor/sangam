@@ -83,7 +83,7 @@ def execution():
     s.flow(sn, 'pe_snGw')
     vf = s.user('pe_verify', 'Verify receipt (not the committer, PFM-041) | प्राप्ति का सत्यापन', '${verifierSeat}',
                 form='gov-intl-pfm-execution/verify', decision=('verifyDecision', ['approve', 'reject']),
-                fields=['verificationNote*'], sod=True, sod_steps='sn_sanction')
+                fields=['verificationNote*', 'rejectionReasonCodes'], sod=True, sod_steps='sn_sanction')
     s.flow(enc, vf)
     vg = s.xgw('pe_verifyGw')
     s.flow(vf, vg)
@@ -96,10 +96,13 @@ def execution():
     payee_unconfirmed, payee_excluded = check_conditions([('payee', ['payeeClear'])], '!payeeClear')
     s.flow(pg, reject_with(p, s, 'pe_rjPayee', 'PAYEE_CHECK_NOT_CONFIRMED'), payee_unconfirmed,
            'payee check not confirmed')
-    s.flow(pg, rej, payee_excluded, 'payee excluded')
+    # SL-55: an automatic rejection carries its coded reason (nobody is there to give one)
+    px = s.setv('pe_payeeExcluded', 'Reason: PAYEE_EXCLUDED', values='rejectionReasonCodes=PAYEE_EXCLUDED')
+    s.flow(pg, px, payee_excluded, 'payee excluded')
+    s.flow(px, rej)
     cf = s.user('pe_certify', 'Certify the payment order (PFM-048) | भुगतान आदेश प्रमाणित करें', '${certifierSeat}',
                 form='gov-intl-pfm-execution/certify', decision=('certifyDecision', ['certify', 'reject']),
-                fields=['certificationNote*'], sod=True, sod_steps='pe_verify,sn_sanction')
+                fields=['certificationNote*', 'rejectionReasonCodes'], sod=True, sod_steps='pe_verify,sn_sanction')
     s.flow(pg, cf, None, 'clear', default=True)
     cg = s.xgw('pe_certGw')
     s.flow(cf, cg)

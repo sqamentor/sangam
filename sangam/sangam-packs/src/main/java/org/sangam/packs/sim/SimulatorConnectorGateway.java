@@ -172,7 +172,7 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
             String second = d.substring(d.indexOf("_THEN_") + 6);
             ConnectorResult resolved = second.startsWith("FAILED")
                     ? ConnectorResult.failed(reason(second), "found failed on lookup")
-                    : ConnectorResult.completed("SIM-" + operationId.substring(0, 8), Map.of("lookedUp", true));
+                    : ConnectorResult.completed(reference(operationId), Map.of("lookedUp", true));
             operations.put(operationId, new Stored(s.payloadHash(), resolved, null, s.connector()));
             return resolved;
         }
@@ -240,10 +240,10 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
                     data.put(pair.substring(0, eq).trim(), coerce(pair.substring(eq + 1).trim()));
                 }
             }
-            return ConnectorResult.completed("SIM-" + r.operationId().substring(0, 8), data);
+            return ConnectorResult.completed(reference(r.operationId()), data);
         }
         if (directive == null || directive.isBlank() || directive.equals("COMPLETED")) {
-            return ConnectorResult.completed("SIM-" + r.operationId().substring(0, 8), effectData(r));
+            return ConnectorResult.completed(reference(r.operationId()), effectData(r));
         }
         if (directive.startsWith("FAILED")) {
             return ConnectorResult.failed(reason(directive), "simulated failure");
@@ -252,9 +252,9 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
             return ConnectorResult.unknown("simulated lost response");
         }
         if (directive.startsWith("PENDING")) {
-            return ConnectorResult.pending("SIM-" + r.operationId().substring(0, 8));
+            return ConnectorResult.pending(reference(r.operationId()));
         }
-        return ConnectorResult.completed("SIM-" + r.operationId().substring(0, 8), effectData(r));
+        return ConnectorResult.completed(reference(r.operationId()), effectData(r));
     }
 
     private Map<String, Object> effectData(ConnectorRequest r) {
@@ -377,7 +377,12 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
      * #SELECT} without selectors) is refused, never guessed.
      */
     public static String selected(String directive, String businessKey, Map<String, Object> payload) {
-        for (String alternative : directive.split(java.util.regex.Pattern.quote(OR), -1)) {
+        // the whole directive is checked before any alternative is chosen: a malformed alternative after the one
+        // that applies is refused too, whatever the request
+        String[] alternatives = directive.split(java.util.regex.Pattern.quote(OR), -1);
+        List<String> bases = new ArrayList<>();
+        List<List<String>> selectors = new ArrayList<>();
+        for (String alternative : alternatives) {
             String alt = alternative.trim();
             if (alt.isEmpty()) {
                 throw new IllegalArgumentException("simulator directive with an empty alternative: " + directive);
@@ -385,24 +390,42 @@ public class SimulatorConnectorGateway implements ConnectorGateway {
             String padded = " " + alt + " "; // "@ x" (no directive) and "X @" (no selector) are still found
             int at = padded.indexOf(SELECT);
             if (at < 0) {
-                return alt;
+                bases.add(alt);
+                selectors.add(List.of());
+                continue;
             }
-            String base = padded.substring(0, at).trim();
             String sel = padded.substring(at + SELECT.length()).trim();
             if (sel.isEmpty()) {
                 throw new IllegalArgumentException("simulator directive selector is empty: " + directive);
             }
-            for (String token : sel.split("\\|")) {
+            List<String> tokens = new ArrayList<>();
+            for (String token : sel.split("\\|", -1)) {
                 String s = token.trim();
                 if (s.isEmpty()) {
                     throw new IllegalArgumentException("simulator directive with an empty selector: " + directive);
                 }
+                tokens.add(s);
+            }
+            bases.add(padded.substring(0, at).trim());
+            selectors.add(tokens);
+        }
+        for (int i = 0; i < bases.size(); i++) {
+            List<String> tokens = selectors.get(i);
+            if (tokens.isEmpty()) {
+                return bases.get(i); // no selector: applies to every request
+            }
+            for (String s : tokens) {
                 if (matches(s, businessKey, payload)) {
-                    return base.isEmpty() ? null : base;
+                    return bases.get(i).isEmpty() ? null : bases.get(i);
                 }
             }
         }
         return null;
+    }
+
+    /** The simulated external reference of an operation: {@code SIM-} and the first characters of its id. */
+    private static String reference(String operationId) {
+        return "SIM-" + operationId.substring(0, Math.min(8, operationId.length()));
     }
 
     private static boolean matches(String selector, String businessKey, Map<String, Object> payload) {

@@ -256,12 +256,12 @@ def execution():
                   'hash is re-verified first (K4: a change after approval throws APPROVAL_INVALIDATED, J-P1-E01); the '
                   'effect goes through the ConnectorGateway with operationId = UUIDv5(businessKey, step, attempt); an '
                   'unknown outcome opens a reconciliation item and nothing is repeated automatically for class (c). '
-                  'Inputs: executionConnector, executionOperation, executionStep, reconcileRequired, ackWindow. '
+                  'Inputs: executionConnector, executionOperation, executionStep, reconcileRequired, ackWindow, maxLookups. '
                   'Output: executionOutcome DONE / FAILED (opReasonCode).')
     s = p.root
     st = s.start('ex_start', 'Execution requested', initiator=None)
     d = s.setv('ex_defaults', 'Defaults', defaults='ackWindow=PT4H;reconcileRequired=false;verifyApproval=true;'
-               'executionStep=execute;executionOperation=execute;executionPayloadFields=;reconRetry=PT1H;'
+               'executionStep=execute;executionOperation=execute;executionPayloadFields=;reconRetry=PT1H;maxLookups=3;'
                'reconciliationSeat=reconciliation-desk')
     lc = s.state('ex_state', 'EXECUTION')
     prep = s.svc('ex_prepare', 'Verify approval, derive operationId', C['OP'],

@@ -55,7 +55,7 @@ class DscSignatureGuardListenerTest {
             <?xml version="1.0" encoding="UTF-8"?>
             <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
                          xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="http://sangam.org/test">
-              <process id="dsc-guard" isExecutable="true">
+              <process id="dsc-guard" isExecutable="true" operaton:historyTimeToLive="30">
                 <startEvent id="s"/>
                 <userTask id="sanction" operaton:candidateGroups="SECRETARY">
                   <extensionElements>

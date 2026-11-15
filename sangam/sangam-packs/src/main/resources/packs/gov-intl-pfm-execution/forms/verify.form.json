@@ -22,6 +22,15 @@
         "en": "Goods / services received and verified",
         "hi": "वस्तु / सेवा प्राप्त एवं सत्यापित"
       }
+    },
+    {
+      "id": "rejectionReasonCodes",
+      "type": "multiselect",
+      "required": false,
+      "label": {
+        "en": "Rejection reasons (coded)",
+        "hi": "अस्वीकृति के कारण (कूटबद्ध)"
+      }
     }
   ],
   "decision": {

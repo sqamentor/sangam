@@ -162,6 +162,7 @@ final class PackDriver {
     boolean waitForSoonTimer() {
         java.util.Date soon = new java.util.Date(ClockUtil.getCurrentTime().getTime() + 5000);
         List<Job> jobs = engine.getManagementService().createJobQuery().timers().list().stream()
+                .filter(j -> j.getProcessInstanceId() != null) // a timer of a running case, as dueJobs()
                 .filter(j -> j.getDuedate() != null && j.getDuedate().before(soon)).toList();
         if (jobs.isEmpty()) {
             return false;
@@ -179,8 +180,15 @@ final class PackDriver {
         return !dueJobs().isEmpty();
     }
 
+    /**
+     * The due jobs of running cases. A job that belongs to no process instance is left alone: the timer start event of
+     * a deployed definition (a monthly cycle, a campaign) is the scheduler's start of a new case and is part of no
+     * scenario; once a scenario moved the clock past its cron time it would start a case nobody set up, and that
+     * case's jobs would run, and fail, inside this and every later scenario of the engine.
+     */
     private List<Job> dueJobs() {
         return engine.getManagementService().createJobQuery().executable().list().stream()
+                .filter(j -> j.getProcessInstanceId() != null)
                 .filter(j -> j.getDuedate() == null || !j.getDuedate().after(ClockUtil.getCurrentTime()))
                 .filter(j -> j.getRetries() > 0).toList();
     }
@@ -194,6 +202,9 @@ final class PackDriver {
                 break;
             }
             for (Job j : jobs) {
+                if (engine.getManagementService().createJobQuery().jobId(j.getId()).count() == 0) {
+                    continue; // removed by a job that ran before it in this pass (an interrupting event, an ended case)
+                }
                 try {
                     engine.getManagementService().executeJob(j.getId());
                 } catch (RuntimeException e) {
@@ -272,8 +283,8 @@ final class PackDriver {
         var pis = engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceBusinessKey(businessKey)
                 .list().stream().map(p -> p.getId()).toList();
         return h.stream().filter(v -> pis.contains(v.getProcessInstanceId()))
-                .filter(v -> v.getProcessInstanceId().equals(rootId(businessKey))).map(v -> v.getValue())
-                .findFirst().orElse(null);
+                .filter(v -> v.getProcessInstanceId().equals(rootId(businessKey))).findFirst()
+                .map(v -> v.getValue()).orElse(null); // a variable set to null reads as null (findFirst refuses null)
     }
 
     String rootId(String businessKey) {

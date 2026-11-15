@@ -48,7 +48,7 @@ class NotificationAndCaseAuditTest {
      * {@code again} is true, a user task that leads back to the same step at the same case version.
      */
     private static String process(String id, String initialState) {
-        return "<definitions " + NS + "><process id=\"" + id + "\" isExecutable=\"true\"><extensionElements>"
+        return "<definitions " + NS + "><process id=\"" + id + "\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><extensionElements>"
                 + "<operaton:executionListener event=\"start\" class=\"" + PackStartListener.class.getName() + "\">"
                 + field("packId", "test-pack") + field("packVersion", "1.0.0")
                 + (initialState == null ? "" : field("initialState", initialState))
