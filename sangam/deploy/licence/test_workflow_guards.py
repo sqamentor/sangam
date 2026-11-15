@@ -190,7 +190,15 @@ class Downloads(unittest.TestCase):
 
     def test_npx(self):
         self.assertEqual(len(scan("npx", "npx --yes @cyclonedx/cyclonedx-npm@2.1.0")), 1)
-        self.assertEqual(scan("npx", "npx tsc -p ."), [])
+        self.assertEqual(scan("npx", "npx --no tsc -p ."), [])
+        self.assertEqual(scan("npx", "npm exec --no -- tsc -p ."), [])
+        self.assertEqual(scan("npx", "npx --no-install tsc"), [])
+        # A bare npx on a CI runner installs a missing package without asking (the 2026-11-15 ui e2e run fetched
+        # playwright@1.65.1 that way): it must pass --no so a package missing from the lockfile fails the step.
+        self.assertEqual(len(scan("npx", "npx tsc -p .")), 1)
+        self.assertEqual(len(scan("npx", "npx playwright install --with-deps chromium")), 1)
+        self.assertEqual(len(scan("npx", "npm exec -- tsc")), 1)
+        self.assertEqual(len(scan("npx", "npx --yes @cyclonedx/cyclonedx-npm@2.1.0")), 1)
 
     def test_npm_scripts(self):
         self.assertEqual(len(scan("npm-scripts", "run: npm ci --no-audit")), 1)
