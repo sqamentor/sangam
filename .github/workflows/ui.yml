@@ -2,8 +2,10 @@
 # sangam-ui (React + TypeScript + Vite): install, lint, type-check, unit tests, build, CycloneDX SBOM, licence and
 # register gates, image build. Every check writes a results-ledger line (CR-01); the gate step fails the job on FAIL,
 # SKIPPED, BLOCKED or a missing line. A missing sangam-ui is BLOCKED, never a silent skip.
-# npm runs with --ignore-scripts (decision 130, CR-14); esbuild, the one package whose install script the build
-# needs (it checks its platform binary), is rebuilt explicitly by name. The CycloneDX generator comes from the
+# npm runs with --ignore-scripts (decision 130, CR-14) and nothing is rebuilt afterwards: since Vite 8 (M-117) the
+# build needs no install script. rolldown and lightningcss take their native binary from a prebuilt optional package
+# (@rolldown/binding-*, lightningcss-*) that npm ci installs for the runner's os and cpu, and esbuild, which used to be
+# rebuilt by name, is no longer in package-lock.json. The CycloneDX generator comes from the
 # committed tools lockfile in sangam/deploy/licence/tools (CR-12), not from npx.
 name: ui
 
@@ -44,7 +46,7 @@ jobs:
           cache: npm
           cache-dependency-path: sangam/sangam-ui/package-lock.json
       - name: Install (lockfile, no install scripts)
-        run: $RL run --check ui-install --ledger-dir "$LEDGER" --expect package.json --expect package-lock.json -- bash -c 'npm ci --ignore-scripts --no-audit --no-fund && npm rebuild esbuild'
+        run: $RL run --check ui-install --ledger-dir "$LEDGER" --expect package.json --expect package-lock.json -- npm ci --ignore-scripts --no-audit --no-fund
       - name: Lint
         run: $RL run --check ui-lint --ledger-dir "$LEDGER" --expect node_modules -- npm run lint
       - name: Type-check
@@ -142,7 +144,8 @@ jobs:
       - name: UI build (install scripts off, decision 130) and the UI image
         run: |
           set -euo pipefail
-          (cd sangam-ui && npm ci --ignore-scripts --no-audit --no-fund && npm rebuild esbuild && npm run build && npm run build:embed)
+          # no rebuild step: Vite 8 needs no install script (see the header of this file)
+          (cd sangam-ui && npm ci --ignore-scripts --no-audit --no-fund && npm run build && npm run build:embed)
           docker buildx build -f deploy/docker/ui.Dockerfile --build-arg DIST_SOURCE=prebuilt --load -t sangam-ui:e2e .
       - name: Start the stack
         run: |

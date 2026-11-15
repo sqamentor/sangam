@@ -43,7 +43,7 @@ cp "$SANGAM/target/sangam-maven.cdx.json" "$OUT/"
 npm_sbom() { # dir name
   [ -f "$1/package.json" ] || { echo "ERROR: $1/package.json is missing" >&2; exit 2; }
   echo ">> npm SBOM $2"
-  # decision 130: install scripts off; esbuild (build-time only) is not needed for an SBOM
+  # decision 130: install scripts off; an SBOM needs none (nor does the Vite 8 build: no esbuild since M-117)
   ( cd "$1" && { [ -d node_modules ] || npm ci --ignore-scripts --no-audit --no-fund $NPM_OFF; } \
       && "$CYCLONEDX_TOOLS/node_modules/.bin/cyclonedx-npm" --omit dev --spec-version 1.6 --output-format JSON \
          --output-file "$OUT/$2.cdx.json" )

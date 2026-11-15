@@ -169,6 +169,9 @@ jobs:
             -DincludeTestScope=true -DincludeProvidedScope=true -DincludeSystemScope=true
           $RL run --check build-scope-review --ledger-dir "$LEDGER" --expect-glob '**/target/sangam-build-scope.cdx.json=1' -- \
             bash -c 'args=(); for s in $(find . -name sangam-build-scope.cdx.json -path "*/target/*"); do args+=(--sbom "$s"); done; '"$CL"' --build-scope "${args[@]}"'
+      # No rebuild step after npm ci (M-117): Vite 8 builds with rolldown, whose native binary comes as a prebuilt
+      # optional package (@rolldown/binding-*, like lightningcss-*) with no install script. esbuild, the one package
+      # that used to be rebuilt here by name, is no longer in package-lock.json.
       - name: UI build (install scripts off, decision 130)
         if: ${{ !cancelled() }}
         working-directory: sangam/sangam-ui
@@ -176,7 +179,6 @@ jobs:
           $RL run --check ui-build --ledger-dir "$LEDGER" --expect package.json --expect package-lock.json -- bash -c '
             set -euo pipefail
             npm ci --ignore-scripts --no-audit --no-fund
-            npm rebuild esbuild
             npm version --no-git-tag-version --allow-same-version "$V"
             npm run build
             test -f dist/index.html'
