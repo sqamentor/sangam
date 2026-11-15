@@ -18,7 +18,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Development bootstrap ({@code sangam.security.bootstrap.enabled=true}, h2 profile only): on an empty database there
  * are no tenants and no grants, so every VI.4 object check would deny. For each configured tenant this creates the
- * tenant and one ALLOW policy {@code bootstrap-admin} for the configured admin groups on every resource type, then
+ * tenant and one ALLOW policy {@code bootstrap-admin} for the configured admin groups on every resource type (every
+ * permission except the explicit-only ones of decision 141, which no wildcard grant confers), then
  * approves it with a second system identity when the tenant requires four-eyes. Idempotent; never use in production
  * ({@code sangam.security.production=true} refuses it).
  */
@@ -28,6 +29,18 @@ public final class SecurityBootstrap {
     static final String POLICY_ID = "bootstrap-admin";
 
     private SecurityBootstrap() {
+    }
+
+    /**
+     * Every permission a grant on {@code *} may confer. The explicit-only permissions (decision 141: unverified
+     * payments) are never granted on a wildcard, not even here: a development administrator who needs one gets an
+     * explicit grant on the payment channel like everybody else. Asking for them made the policy, and with it the whole
+     * bootstrap of the tenant, be refused.
+     */
+    static Set<Permission> wildcardPermissions() {
+        EnumSet<Permission> all = EnumSet.allOf(Permission.class);
+        all.removeIf(Permission::explicitOnly);
+        return all;
     }
 
     public static void run(SangamSecurity security, Transactions tx, List<String> tenants, List<String> adminGroups,
@@ -50,7 +63,7 @@ public final class SecurityBootstrap {
                         List<String> subjects = adminGroups.stream().map(g -> SecurityIdentity.GROUP + g).toList();
                         PolicyAdminService.PolicyDefinition def = new PolicyAdminService.PolicyDefinition(POLICY_ID,
                                 "Development bootstrap: administrators", PolicyAdminService.Effect.ALLOW, subjects, "*",
-                                "*", EnumSet.allOf(Permission.class), null);
+                                "*", wildcardPermissions(), null);
                         PolicyAdminService.PolicyChange change = security.policies().create(c, platform, def,
                                 "development bootstrap");
                         if (change != null && "PENDING".equalsIgnoreCase(change.status())) {
@@ -59,8 +72,8 @@ public final class SecurityBootstrap {
                                     null, "bootstrap", true, Map.of());
                             security.policies().approve(c, approver, change.changeId());
                         }
-                        LOG.warn("DEV bootstrap: granted every permission on every resource to groups {} in tenant '{}'",
-                                adminGroups, tenant);
+                        LOG.warn("DEV bootstrap: granted every permission a wildcard may confer on every resource to groups {}"
+                                + " in tenant '{}'", adminGroups, tenant);
                     }
                     return null;
                 });
