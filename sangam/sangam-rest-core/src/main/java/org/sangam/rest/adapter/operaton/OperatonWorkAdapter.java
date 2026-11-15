@@ -266,7 +266,7 @@ public class OperatonWorkAdapter implements WorkPort {
                     TypedVariables.fromJson(r.variables()), TypedVariables.fromJson(r.localVariables())));
             ledger.onComplete(c, op, r.lockVersion(), outcome);
             LeaseTable.remove(c, workId);
-            audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_ACKNOWLEDGED", payload(task, r.workerId(),
+            audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_ACKNOWLEDGED", payload(task, op, r.workerId(),
                     r.lockVersion(), r.attemptId(), Map.of("variables", names(r.variables()))));
         });
     }
@@ -301,7 +301,7 @@ public class OperatonWorkAdapter implements WorkPort {
             extra.put("errorMessage", r.errorMessage());
             extra.put("retriesLeft", retries);
             audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_FAILED",
-                    payload(task, r.workerId(), r.lockVersion(), r.attemptId(), extra));
+                    payload(task, op, r.workerId(), r.lockVersion(), r.attemptId(), extra));
         });
     }
 
@@ -326,7 +326,7 @@ public class OperatonWorkAdapter implements WorkPort {
             extra.put("errorCode", r.errorCode());
             extra.put("errorMessage", r.errorMessage());
             audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_BPMN_ERROR",
-                    payload(task, r.workerId(), r.lockVersion(), r.attemptId(), extra));
+                    payload(task, op, r.workerId(), r.lockVersion(), r.attemptId(), extra));
         });
     }
 
@@ -338,10 +338,11 @@ public class OperatonWorkAdapter implements WorkPort {
             Connection c = tx.connection();
             ExternalTask task = requireTask(ctx, workId);
             fence(c, workId, r.workerId(), r.lockVersion(), r.attemptId());
+            UUID op = operationIds.of(task);
             OperatonSupport.run(() -> externalTasks.unlock(workId));
             LeaseTable.end(c, workId);
             audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_RELEASED",
-                    payload(task, r.workerId(), r.lockVersion(), r.attemptId(), Map.of()));
+                    payload(task, op, r.workerId(), r.lockVersion(), r.attemptId(), Map.of()));
         });
     }
 
@@ -375,7 +376,7 @@ public class OperatonWorkAdapter implements WorkPort {
             extra.put("reconciliationItemId", String.valueOf(item));
             extra.put("detail", r.detail());
             audit.record(ctx, task.getProcessInstanceId(), "EXT_OP_UNKNOWN",
-                    payload(task, r.workerId(), r.lockVersion(), r.attemptId(), extra));
+                    payload(task, op, r.workerId(), r.lockVersion(), r.attemptId(), extra));
             return new OutcomeUnknownResult(workId, op.toString(), String.valueOf(item), "UNKNOWN_OUTCOME");
         });
     }
@@ -539,14 +540,18 @@ public class OperatonWorkAdapter implements WorkPort {
         }
     }
 
-    private Map<String, Object> payload(ExternalTask t, String workerId, long lockVersion, String attemptId,
+    /**
+     * The audit payload of a work command. {@code op} is the operation id read before the engine call: once the engine
+     * has completed the task its execution is gone, so the id cannot be derived from the task again.
+     */
+    private Map<String, Object> payload(ExternalTask t, UUID op, String workerId, long lockVersion, String attemptId,
                                                Map<String, ?> extra) {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("work_id", t.getId());
         p.put("topic", t.getTopicName());
         p.put("activity_id", t.getActivityId());
         p.put("activity_instance_id", t.getActivityInstanceId());
-        p.put("operation_id", operationIds.of(t).toString());
+        p.put("operation_id", op.toString());
         p.put("worker_id", workerId);
         p.put("lock_version", lockVersion);
         p.put("attempt_id", attemptId);
