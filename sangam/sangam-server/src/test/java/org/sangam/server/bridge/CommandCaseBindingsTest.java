@@ -33,6 +33,11 @@ class CommandCaseBindingsTest {
     void theStartTransactionSeesItsOwnUncommittedBinding() throws Exception {
         JdbcDataSource ds = new JdbcDataSource();
         ds.setURL(URL);
+        ds.setUser("sa");   // the first connection creates the database: the same user the engine configuration uses
+        ds.setPassword("");
+        // MODE=PostgreSQL (the product layer's ON CONFLICT) has no BLOB type, which Operaton's H2 scripts use: the alias
+        // the server creates before any other table (SchemaBootstrap)
+        org.sangam.engine.db.DatabaseGuard.prepareH2(ds);
         try (Connection c = ds.getConnection()) {
             ConfigSchema.create(c, Dialect.POSTGRESQL);
         }
