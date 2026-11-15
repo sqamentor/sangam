@@ -765,14 +765,15 @@ describe('registry screens', () => {
 
 /** Evidence: Admin.tsx:1492-1524 (POST /admin/security/module-defaults {selfService}); also in w2c-screens.test.tsx. */
 describe('M-032 module security defaults', () => {
-  it('a server without sangam-security answers 501 and the refusal is shown with its detail', async () => {
+  it('a server without sangam-security answers 501 and the refusal is shown by name with its detail', async () => {
     api.post.mockRejectedValueOnce(problem(501, 'CAPABILITY_NOT_INSTALLED', 'sangam-security is not installed'));
     show(<ModuleSecurityDefaults />);
     fireEvent.click(screen.getByLabelText(L('secdef.selfService')));
     fireEvent.click(screen.getByRole('button', { name: T('secdef.installButton') }));
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/admin/security/module-defaults', { selfService: false }, KEY));
     const alert = await screen.findByRole('alert');
-    expect(within(alert).getByText(T('error.generic'))).toBeTruthy();
+    // named as a module this server does not have, not as "something went wrong"
+    expect(within(alert).getByText(T('error.notInstalled'))).toBeTruthy();
     expect(within(alert).getByText('sangam-security is not installed')).toBeTruthy();
   });
 });

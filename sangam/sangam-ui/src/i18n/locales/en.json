@@ -64,6 +64,7 @@
     "network": "The server could not be reached",
     "notAvailable": "Not available for your current seat",
     "notAvailableHint": "If you hold another seat that can act on this, switch seat in the header.",
+    "notInstalled": "This feature is not installed on this server",
     "reference": "Reference",
     "retryExhausted": "The change could not be applied after several attempts",
     "stale": "This item changed since you opened it",

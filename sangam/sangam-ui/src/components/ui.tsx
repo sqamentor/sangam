@@ -124,10 +124,29 @@ export function TraceRef({ id }: { id: string }) {
   );
 }
 
+/**
+ * The i18n key of the title a refusal is shown under: by its stable code first, then by its status. A 501 is a module
+ * this installation does not have (CAPABILITY_NOT_INSTALLED), named as such rather than "something went wrong".
+ */
+export function problemTitleKey(error: Error): string {
+  if (!(error instanceof ApiError)) return 'error.generic';
+  const p = error.problem;
+  if (error.isNotAvailable) return 'error.notAvailable';
+  if (p.status === 0) return 'error.network';
+  if (p.code === 'stale-lease' || p.code === 'FORM_VERSION_STALE') return 'error.stale';
+  if (p.code === 'APPROVAL_INVALIDATED') return 'error.approvalInvalidated';
+  if (p.code === 'CONFLICT_RETRY_EXHAUSTED') return 'error.retryExhausted';
+  if (p.code === 'CAPABILITY_NOT_INSTALLED' || p.status === 501) return 'error.notInstalled';
+  if (p.status === 409) return 'error.conflict';
+  if (p.status === 503) return 'error.backpressure';
+  if (p.status === 422 || p.status === 400) return 'error.validation';
+  return 'error.generic';
+}
+
 export function ProblemAlert({ error, onRetry }: { error?: Error | null; onRetry?: () => void }) {
   const { t } = useTranslation();
   if (!error) return null;
-  let title = t('error.generic');
+  const title = t(problemTitleKey(error));
   let detail: string | undefined;
   let ref: string | undefined;
   let fieldErrors: { field?: string; message: string }[] = [];
@@ -135,14 +154,6 @@ export function ProblemAlert({ error, onRetry }: { error?: Error | null; onRetry
     const p = error.problem;
     ref = p.traceId;
     fieldErrors = p.errors ?? [];
-    if (error.isNotAvailable) title = t('error.notAvailable');
-    else if (p.status === 0) title = t('error.network');
-    else if (p.code === 'stale-lease' || p.code === 'FORM_VERSION_STALE') title = t('error.stale');
-    else if (p.code === 'APPROVAL_INVALIDATED') title = t('error.approvalInvalidated');
-    else if (p.code === 'CONFLICT_RETRY_EXHAUSTED') title = t('error.retryExhausted');
-    else if (p.status === 409) title = t('error.conflict');
-    else if (p.status === 503) title = t('error.backpressure');
-    else if (p.status === 422 || p.status === 400) title = t('error.validation');
     // Never show stack traces or SQL to users (R28): only title/detail from problem+json.
     detail = p.detail ?? (p.title !== title ? p.title : undefined);
   } else {
