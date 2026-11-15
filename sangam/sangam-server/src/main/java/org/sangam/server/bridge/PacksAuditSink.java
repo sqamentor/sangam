@@ -46,6 +46,20 @@ public final class PacksAuditSink implements PackAuditSink {
 
     @Override
     public void record(PackAuditEvent e) {
+        append(null, e);
+    }
+
+    /**
+     * Appends on the caller's connection {@code c}, so the event commits or rolls back with the caller's transaction
+     * (a connector settlement of the integration relay: decision 313). No engine command is looked for: outside one
+     * the engine's context lookup throws, which would roll the settlement back.
+     */
+    @Override
+    public void record(java.sql.Connection c, PackAuditEvent e) {
+        append(java.util.Objects.requireNonNull(c, "connection"), e);
+    }
+
+    private void append(java.sql.Connection given, PackAuditEvent e) {
         String tenant = requireTenant(e);
         String chainId = e.businessKey() != null ? e.businessKey()
                 : e.processInstanceId() != null ? e.processInstanceId() : "sec:" + tenant;
@@ -66,7 +80,9 @@ public final class PacksAuditSink implements PackAuditSink {
             put(payload, "reported_at", e.at().toString());
         }
         Map<String, Object> safe = jsonSafe(payload);
-        if (EngineTx.inCommand()) {
+        if (given != null) {
+            chain.append(given, tenant, chainId, e.type(), safe);
+        } else if (EngineTx.inCommand()) {
             chain.append(EngineTx.connection(), tenant, chainId, e.type(), safe);
         } else {
             tx.withConnection(c -> chain.append(c, tenant, chainId, e.type(), safe));

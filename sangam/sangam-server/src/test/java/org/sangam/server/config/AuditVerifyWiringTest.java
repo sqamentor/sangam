@@ -70,6 +70,48 @@ class AuditVerifyWiringTest {
         assertFalse(AuditVerifyWiring.bind(other, tx, keys), "another audit port is left as it is");
     }
 
+    /**
+     * Decisions 143, 152: with the trusted keys configured, an audit port that cannot take the checkpoints refuses the
+     * start by name; before, the server logged a warning and every audit verify silently skipped the checkpoints.
+     */
+    @Test
+    void aConfiguredVerificationThatCannotBeBoundRefusesTheStart() throws Exception {
+        JdbcDataSource ds = new JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:auditverifyrefuse" + UUID.randomUUID() + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
+        TxSupport tx = new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds));
+        AuditCheckpoints.KeyLookup keys = AuditCheckpoints.ed25519Keys(List.of(publicKey()));
+        AuditPort other = (AuditPort) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] {AuditPort.class},
+                (p, m, a) -> switch (m.getName()) {
+                    case "hashCode" -> System.identityHashCode(p);
+                    case "equals" -> p == a[0];
+                    case "toString" -> "another audit port";
+                    default -> null;
+                });
+        IllegalStateException refused = assertThrows(IllegalStateException.class,
+                () -> AuditVerifyWiring.bindOrRefuse(other, tx, keys));
+        assertTrue(refused.getMessage().startsWith(AuditVerifyWiring.REFUSAL), refused.getMessage());
+        assertEquals("AUDIT_CHECKPOINT_VERIFICATION_UNAVAILABLE", AuditVerifyWiring.REFUSAL);
+        assertTrue(refused.getMessage().contains(AuditVerifyWiring.KEYS_PROPERTY), refused.getMessage());
+        assertTrue(assertThrows(IllegalStateException.class, () -> AuditVerifyWiring.bindOrRefuse(null, tx, keys))
+                .getMessage().startsWith(AuditVerifyWiring.REFUSAL), "no audit port at all");
+
+        // the bean the server registers refuses the same way (the start fails in afterPropertiesSet)
+        String ref = "secret://audit/cp-current";
+        org.springframework.beans.factory.support.StaticListableBeanFactory beans =
+                new org.springframework.beans.factory.support.StaticListableBeanFactory();
+        beans.addBean("audit", other);
+        beans.addBean("secrets", SecretResolver.of(Map.of(ref, publicKey())));
+        org.springframework.beans.factory.InitializingBean start = new AuditVerifyWiring().sangamAuditCheckpointVerification(
+                beans.getBeanProvider(AuditPort.class), tx, beans.getBeanProvider(SecretResolver.class),
+                new org.springframework.mock.env.MockEnvironment().withProperty(AuditVerifyWiring.KEYS_PROPERTY, ref));
+        assertTrue(assertThrows(IllegalStateException.class, start::afterPropertiesSet).getMessage()
+                .startsWith(AuditVerifyWiring.REFUSAL));
+
+        // the JDBC audit adapter binds and starts
+        JdbcAuditAdapter adapter = new JdbcAuditAdapter(tx, null, null, new RestProperties());
+        AuditVerifyWiring.bindOrRefuse(adapter, tx, keys);
+    }
+
     @Test
     void offWithoutTrustedKeys() {
         assertEquals(AuditVerifyWiring.KEYS_PROPERTY, String.join(",", AuditVerifyWiring.class.getAnnotation(

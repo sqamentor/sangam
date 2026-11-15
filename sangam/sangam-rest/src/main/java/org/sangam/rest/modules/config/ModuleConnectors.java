@@ -27,6 +27,9 @@ public final class ModuleConnectors {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ModuleConnectors.class);
 
+    /** 422: the request body names an actor that is not the authenticated caller (as BillingConnector.ACTOR_MISMATCH). */
+    public static final String ACTOR_MISMATCH = "ACTOR_MISMATCH";
+
     public static Map<String, Object> call(SangamConnector connector, RequestContext ctx, String tenantOrScope,
                                            String operation, Map<String, Object> input) {
         return call(connector, ctx, tenantOrScope, operation, input, false);
@@ -44,7 +47,15 @@ public final class ModuleConnectors {
                 : Hashes.uuidV5(UUID.nameUUIDFromBytes("sangam-rest-module-connector".getBytes()),
                 ctx.tenantId() + "|" + operation + "|" + ctx.idempotencyKey());
         Map<String, Object> in = new java.util.LinkedHashMap<>(input == null ? Map.of() : input);
-        in.putIfAbsent("actor", ctx.principalId());
+        // The actor is the authenticated caller, never a value of the request body: a body that names somebody else is
+        // refused (the connectors' ACTOR_MISMATCH), and the caller is set, not merely defaulted.
+        Object claimed = in.get("actor");
+        if (claimed != null && !String.valueOf(claimed).isBlank() && !String.valueOf(claimed).equals(ctx.principalId())) {
+            LOG.warn("module connector call refused ({}): tenant {}, operation {}", ACTOR_MISMATCH, ctx.tenantId(), operation);
+            throw ApiProblem.unprocessable(ACTOR_MISMATCH, "the request names an actor other than the authenticated"
+                    + " caller; nothing is done");
+        }
+        in.put("actor", ctx.principalId());
         ConnectorRequest request = new ConnectorRequest(tenantOrScope, op, null, 1, null, null, operation, in, null);
         if (apiRead && !connector.readOnly(request)) {
             LOG.warn("API read refused ({}): tenant {}, connector {}, operation {}", SangamConnector.OPERATION_NOT_READ_ONLY,

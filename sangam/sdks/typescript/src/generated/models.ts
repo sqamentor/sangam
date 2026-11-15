@@ -4312,6 +4312,80 @@ export interface DltDeliveryReportResult {
 }
 
 /**
+ * The principal-entity id to register.
+ *
+ * Schema `DltEntityRequest`.
+ */
+export interface DltEntityRequest {
+  /** 1 to 64 letters or digits */
+  entityId: string;
+}
+
+/**
+ * A sender header to register.
+ *
+ * Schema `DltHeaderRequest`.
+ */
+export interface DltHeaderRequest {
+  /** 6 letters or digits, with an optional TRAI suffix -P, -S, -T or -G */
+  header: string;
+}
+
+/**
+ * A tenant's stored DLT registration. A tenant with nothing registered has no entityId, empty lists and revision 0.
+ *
+ * Schema `DltRegistration`.
+ */
+export interface DltRegistration {
+  /** The principal-entity id; absent until one is registered */
+  entityId?: string;
+  /** Registered sender headers */
+  headers: Array<string>;
+  /** Registered content templates */
+  templates: Array<DltTemplate>;
+  /** Whitelisted URL prefixes (stored in lower case) */
+  urlPrefixes: Array<string>;
+  /** Moves by one with every change of the registration */
+  revision: number;
+}
+
+/**
+ * Outcome of a registration change.
+ *
+ * Schema `DltRegistrationChange`.
+ */
+export interface DltRegistrationChange {
+  /** false when the registration already held exactly this entry (nothing was written, no audit event) */
+  changed: boolean;
+  /** The tenant's revision after the call */
+  revision: number;
+}
+
+/**
+ * One DLT content template as registered with the operator.
+ *
+ * Schema `DltTemplate`.
+ */
+export interface DltTemplate {
+  /** The operator's template id: 1 to 64 letters, digits, '_' or '-' */
+  templateId: string;
+  /** The sender header the template is bound to */
+  header: string;
+  /** The template text with {#var#} placeholders, at most 2000 characters; a URL in it never starts with a placeholder */
+  body: string;
+}
+
+/**
+ * A URL prefix to whitelist.
+ *
+ * Schema `DltUrlPrefixRequest`.
+ */
+export interface DltUrlPrefixRequest {
+  /** An http or https URL with a host */
+  prefix: string;
+}
+
+/**
  * Stored document version (R74).
  *
  * Schema `Document`.

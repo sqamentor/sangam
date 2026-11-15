@@ -868,10 +868,10 @@ public class OperatonTaskAdapter implements TaskPort {
     private Map<String, String> businessKeys(List<org.operaton.bpm.engine.task.Task> list) {
         Set<String> ids = list.stream().map(org.operaton.bpm.engine.task.Task::getProcessInstanceId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<String, String> out = new HashMap<>();   // never Map.of(): a standalone task is looked up by a null id
         if (ids.isEmpty()) {
-            return Map.of();
+            return out;
         }
-        Map<String, String> out = new HashMap<>();
         for (ProcessInstance p : OperatonSupport.call(() ->
                 runtime.createProcessInstanceQuery().processInstanceIds(ids).list())) {
             if (p.getBusinessKey() != null) {

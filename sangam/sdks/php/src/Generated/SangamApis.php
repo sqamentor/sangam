@@ -30,6 +30,7 @@ use Sangam\Sdk\Generated\Api\DebugApi;
 use Sangam\Sdk\Generated\Api\DecisionsApi;
 use Sangam\Sdk\Generated\Api\DeploymentsApi;
 use Sangam\Sdk\Generated\Api\DltHooksApi;
+use Sangam\Sdk\Generated\Api\DltRegistrationApi;
 use Sangam\Sdk\Generated\Api\DocumentsApi;
 use Sangam\Sdk\Generated\Api\DscCertificatesApi;
 use Sangam\Sdk\Generated\Api\EventGridHooksApi;
@@ -88,7 +89,7 @@ use Sangam\Sdk\Generated\Api\WorkApi;
 use Sangam\Sdk\Generated\Api\WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths,
  * one property per API class (a tag, or a sub-path of a large tag). Use SangamClient::api().
  */
 final class SangamApis
@@ -116,6 +117,7 @@ final class SangamApis
     public readonly DecisionsApi $decisions;
     public readonly DeploymentsApi $deployments;
     public readonly DltHooksApi $dltHooks;
+    public readonly DltRegistrationApi $dltRegistration;
     public readonly DocumentsApi $documents;
     public readonly DscCertificatesApi $dscCertificates;
     public readonly EventGridHooksApi $eventGridHooks;
@@ -199,6 +201,7 @@ final class SangamApis
         $this->decisions = new DecisionsApi($calls);
         $this->deployments = new DeploymentsApi($calls);
         $this->dltHooks = new DltHooksApi($calls);
+        $this->dltRegistration = new DltRegistrationApi($calls);
         $this->documents = new DocumentsApi($calls);
         $this->dscCertificates = new DscCertificatesApi($calls);
         $this->eventGridHooks = new EventGridHooksApi($calls);

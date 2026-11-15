@@ -82,7 +82,8 @@ public class SecurityWiring {
     @Bean
     public SangamSecurity sangamSecurity(DataSource dataSource, Transactions sangamProductTransactions,
                                          RestProperties rest, Environment env,
-                                         SecurityAuditPoolWiring.SecurityAuditPool sangamSecurityAuditPool) {
+                                         SecurityAuditPoolWiring.SecurityAuditPool sangamSecurityAuditPool,
+                                         ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine) {
         SecurityDialect dialect;
         try (var c = dataSource.getConnection()) {
             dialect = SecurityDialect.detect(c);
@@ -93,12 +94,30 @@ public class SecurityWiring {
         SangamSecurity.Options options = new SangamSecurity.Options(staleness, null, rest.getBatchFourEyesThreshold(),
                 denialTransactions(sangamSecurityAuditPool, sangamProductTransactions), null);
         SangamSecurity security = new SangamSecurity(dialect, options);
+        // decision 193: the trusted case-type metadata of power checks; unbound, every power check is DENY
+        security.powers().useOperationMetadata(operationMetadata(engine));
         // decision 97 / M-016: a dedicated instance creates no tenant but its own (as DATABASE isolation)
         String dedicated = env.getProperty(org.sangam.server.bridge.DedicatedTenant.PROPERTY);
         if (dedicated != null) {
             security.tenants().useDedicatedTenant(org.sangam.server.bridge.DedicatedTenant.of(dedicated).tenant());
         }
         return security;
+    }
+
+    /**
+     * The trusted operation metadata of the delegation-of-powers checks (owner decision 193): the {@code powers}
+     * declarations of the deployed pack manifest of the case type and version, read from the engine's deployments
+     * ({@link org.sangam.packs.core.PackPowers}); never a request, a process variable or the class path. The engine is
+     * looked up at each check (it is created after this module); without an engine, or for a case type no pack
+     * deployment defines, nothing is classified and the check is denied.
+     */
+    static org.sangam.core.power.OperationMetadata operationMetadata(
+            ObjectProvider<org.operaton.bpm.engine.ProcessEngine> engine) {
+        return new org.sangam.core.power.ManifestOperationMetadata((tenant, caseType, caseTypeVersion) -> {
+            org.operaton.bpm.engine.ProcessEngine e = engine.getIfAvailable();
+            return e == null ? Optional.empty()
+                    : new org.sangam.packs.core.PackPowers(e.getRepositoryService()).deployed(tenant, caseType, caseTypeVersion);
+        });
     }
 
     /**

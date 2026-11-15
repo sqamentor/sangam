@@ -8,7 +8,8 @@
 # wrong or outside the tolerance is refused before the body is read as reports.
 # Decision 305: the per-tenant DLT registration (entity, headers, templates, URL prefixes) is stored and administered
 # through /admin/dlt-registration; start-up configuration only seeds it. DLT_TEMPLATE_REGISTERED is written in the
-# transaction that stores a template. The admin routes are published once W4-B names their permission.
+# transaction that stores a template. W4-B named the permissions (ACK 2026-11-13T08:18:51Z): dlt.registration.read for
+# the GET, dlt.registration.write for the four mutations, both tenant-scoped (tenant administration).
 
 TAGS.append(("DltHooks", "Inbound India DLT SMS delivery reports (decision 304)"))
 _DLT = "/hooks/sms-dlt/{tenant}/{connectorId}/delivery-reports"
@@ -54,3 +55,65 @@ PATHS[_DLT]["post"]["responses"]["422"] = {
     "description": "DLT_DELIVERY_REPORT_INVALID: the body is not a report or an array of reports, or a report has "
                    "neither clientRef nor messageId, or no status. Nothing is written",
     "content": PROBLEM}
+
+# ---------------------------------------------------------------- decision 305: /admin/dlt-registration
+TAGS.append(("DltRegistration", "The tenant's stored India DLT registration: principal entity, headers, content "
+                                "templates and whitelisted URL prefixes (decision 305)"))
+_DLTR = "/admin/dlt-registration"
+_DLT_REQS = ["R60", "GOV-10", "decision 305"]
+_DLT_W = _DLT_REQS + ["R41", "R42"]
+
+schema("DltTemplate", "One DLT content template as registered with the operator.",
+       "templateId header body", required=["templateId", "header", "body"],
+       descs={"templateId": "The operator's template id: 1 to 64 letters, digits, '_' or '-'",
+              "header": "The sender header the template is bound to",
+              "body": "The template text with {#var#} placeholders, at most 2000 characters; a URL in it never "
+                      "starts with a placeholder"})
+schema("DltRegistration", "A tenant's stored DLT registration. A tenant with nothing registered has no entityId, "
+                          "empty lists and revision 0.",
+       "entityId headers:list:s templates:list:DltTemplate urlPrefixes:list:s revision:long",
+       required=["headers", "templates", "urlPrefixes", "revision"],
+       descs={"entityId": "The principal-entity id; absent until one is registered",
+              "headers": "Registered sender headers",
+              "templates": "Registered content templates",
+              "urlPrefixes": "Whitelisted URL prefixes (stored in lower case)",
+              "revision": "Moves by one with every change of the registration"})
+schema("DltRegistrationChange", "Outcome of a registration change.", "changed:bool revision:long",
+       required=["changed", "revision"],
+       descs={"changed": "false when the registration already held exactly this entry (nothing was written, no audit "
+                         "event)",
+              "revision": "The tenant's revision after the call"})
+schema("DltEntityRequest", "The principal-entity id to register.", "entityId", required=["entityId"],
+       descs={"entityId": "1 to 64 letters or digits"})
+schema("DltHeaderRequest", "A sender header to register.", "header", required=["header"],
+       descs={"header": "6 letters or digits, with an optional TRAI suffix -P, -S, -T or -G"})
+schema("DltUrlPrefixRequest", "A URL prefix to whitelist.", "prefix", required=["prefix"],
+       descs={"prefix": "An http or https URL with a host"})
+
+_DLT_422 = ("422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when "
+            "the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.")
+op("get", _DLTR, "getDltRegistration", "DltRegistration", "The tenant's DLT registration",
+   "The caller's tenant's stored registration: entity, headers, templates, URL prefixes and revision. Start-up "
+   "configuration only seeds it; what is stored here is what the DLT SMS connector validates against. 501 "
+   "CAPABILITY_NOT_INSTALLED without sangam-integration.", _DLT_REQS,
+   resp=(200, "DltRegistration"), perm="dlt.registration.read", errors=("Unauthorized", "Forbidden", "NotImplemented"))
+for _m, _sub, _opid, _sum, _body, _ctype, _what in [
+        ("put", "/entity", "setDltEntity", "Set the principal entity", "DltEntityRequest", "dlt.registration.entity.set",
+         "Sets the tenant's principal-entity id."),
+        ("post", "/headers", "addDltHeader", "Register a sender header", "DltHeaderRequest",
+         "dlt.registration.header.add", "Registers a sender header."),
+        ("post", "/templates", "addDltTemplate", "Register a content template", "DltTemplate",
+         "dlt.registration.template.add",
+         "Registers a content template, or replaces the header and body of the template with the same id."),
+        ("post", "/urls", "addDltUrlPrefix", "Whitelist a URL prefix", "DltUrlPrefixRequest",
+         "dlt.registration.url.add", "Whitelists a URL prefix.")]:
+    op(_m, _DLTR + _sub, _opid, "DltRegistration", _sum,
+       _what + " The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain "
+       "dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged "
+       "answers changed=false and writes nothing. " + _DLT_422, _DLT_W,
+       body=_body, resp=(200, "DltRegistrationChange"), cmd=_ctype, perm="dlt.registration.write",
+       errors=("BadRequest", "Unauthorized", "Forbidden", "NotImplemented"))
+    PATHS[_DLTR + _sub][_m]["responses"]["422"] = {
+        "description": "ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID: the entry is refused by the "
+                       "DLT registration checks. Nothing is written",
+        "content": PROBLEM}

@@ -85,8 +85,45 @@ class SharedInstanceIsolationWiringTest {
         assertTrue(reg.getUrlPatterns().containsAll(List.of("/api/*", "/engine-rest/*")));
         assertTrue(reg.isEnabled());
 
-        var none = new SharedInstanceIsolationWiring().sangamSharedIsolationFilter(new MockEnvironment(),
+        // decisions 143, 152: without a tenant directory the disabled filter is a development-only state
+        var none = new SharedInstanceIsolationWiring().sangamSharedIsolationFilter(development(),
                 new StaticListableBeanFactory().getBeanProvider(AdminPort.class));
         assertFalse(none.isEnabled(), "no tenant directory, no recorded isolation to honour");
+    }
+
+    private static MockEnvironment development() {
+        // decision 143: a development installation states the switch; without it the environment is production
+        MockEnvironment env = new MockEnvironment().withProperty("sangam.security.production", "false");
+        env.setActiveProfiles("h2");
+        return env;
+    }
+
+    /**
+     * Decisions 143, 152: outside a validated development environment a shared instance without a tenant directory
+     * refuses the start by name. Before, it started with the isolation filter off and served every tenant, also one
+     * recorded with isolation DATABASE or SCHEMA (decision 97).
+     */
+    @Test
+    void withoutATenantDirectoryProductionRefusesTheStart() {
+        MockEnvironment helm = new MockEnvironment().withProperty("sangam.security.production", "true");
+        helm.setActiveProfiles("postgres", "oidc");
+        MockEnvironment prodProfile = new MockEnvironment();
+        prodProfile.setActiveProfiles("postgres", "prod");
+        MockEnvironment unset = new MockEnvironment();
+        MockEnvironment contradictory = new MockEnvironment().withProperty("sangam.security.production", "true");
+        contradictory.setActiveProfiles("h2");
+        for (MockEnvironment env : List.of(helm, prodProfile, unset, contradictory)) {
+            IllegalStateException refused = assertThrows(IllegalStateException.class,
+                    () -> new SharedInstanceIsolationWiring().sangamSharedIsolationFilter(env,
+                            new StaticListableBeanFactory().getBeanProvider(AdminPort.class)));
+            assertTrue(refused.getMessage().startsWith(SharedInstanceIsolationWiring.REFUSAL), refused.getMessage());
+            assertTrue(refused.getMessage().contains("decision 97"), refused.getMessage());
+        }
+        assertEquals("SHARED_ISOLATION_DIRECTORY_REQUIRED", SharedInstanceIsolationWiring.REFUSAL);
+        // with the directory every environment starts with the filter on
+        StaticListableBeanFactory beans = new StaticListableBeanFactory();
+        beans.addBean("admin", admin(Map.of(), null));
+        assertTrue(new SharedInstanceIsolationWiring().sangamSharedIsolationFilter(helm,
+                beans.getBeanProvider(AdminPort.class)).isEnabled());
     }
 }

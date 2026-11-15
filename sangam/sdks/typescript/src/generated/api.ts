@@ -4470,6 +4470,75 @@ export class DltHooksApi {
   }
 }
 
+/** Typed operations of `DltRegistration` (5 operations). */
+export class DltRegistrationApi {
+  constructor(private readonly calls: GeneratedCalls) {}
+
+  /**
+   * The tenant's DLT registration
+   *
+   * The caller's tenant's stored registration: entity, headers, templates, URL prefixes and revision. Start-up configuration only seeds it; what is stored here is what the DLT SMS connector validates against. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+   *
+   * `GET /admin/dlt-registration` (operationId `getDltRegistration`); permission `dlt.registration.read`.
+   */
+  async getDltRegistration(options?: RequestOptions): Promise<M.DltRegistration> {
+    const req: ApiRequest = { method: 'GET', path: `/admin/dlt-registration` };
+    return this.calls.json<M.DltRegistration>(req, options);
+  }
+
+  /**
+   * Set the principal entity
+   *
+   * Sets the tenant's principal-entity id. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+   *
+   * `PUT /admin/dlt-registration/entity` (operationId `setDltEntity`); permission `dlt.registration.write`; result stored atomically with the state change.
+   */
+  async setDltEntity(body: M.DltEntityRequest, options?: RequestOptions): Promise<M.DltRegistrationChange> {
+    const req: ApiRequest = { method: 'PUT', path: `/admin/dlt-registration/entity` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DltRegistrationChange>(req, options);
+  }
+
+  /**
+   * Register a sender header
+   *
+   * Registers a sender header. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+   *
+   * `POST /admin/dlt-registration/headers` (operationId `addDltHeader`); permission `dlt.registration.write`; result stored atomically with the state change.
+   */
+  async addDltHeader(body: M.DltHeaderRequest, options?: RequestOptions): Promise<M.DltRegistrationChange> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/dlt-registration/headers` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DltRegistrationChange>(req, options);
+  }
+
+  /**
+   * Register a content template
+   *
+   * Registers a content template, or replaces the header and body of the template with the same id. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+   *
+   * `POST /admin/dlt-registration/templates` (operationId `addDltTemplate`); permission `dlt.registration.write`; result stored atomically with the state change.
+   */
+  async addDltTemplate(body: M.DltTemplate, options?: RequestOptions): Promise<M.DltRegistrationChange> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/dlt-registration/templates` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DltRegistrationChange>(req, options);
+  }
+
+  /**
+   * Whitelist a URL prefix
+   *
+   * Whitelists a URL prefix. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+   *
+   * `POST /admin/dlt-registration/urls` (operationId `addDltUrlPrefix`); permission `dlt.registration.write`; result stored atomically with the state change.
+   */
+  async addDltUrlPrefix(body: M.DltUrlPrefixRequest, options?: RequestOptions): Promise<M.DltRegistrationChange> {
+    const req: ApiRequest = { method: 'POST', path: `/admin/dlt-registration/urls` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<M.DltRegistrationChange>(req, options);
+  }
+}
+
 /** Typed operations of `Documents` (10 operations). */
 export class DocumentsApi {
   constructor(private readonly calls: GeneratedCalls) {}
@@ -14627,7 +14696,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;
@@ -14652,6 +14721,7 @@ export class SangamApis {
   readonly decisions: DecisionsApi;
   readonly deployments: DeploymentsApi;
   readonly dltHooks: DltHooksApi;
+  readonly dltRegistration: DltRegistrationApi;
   readonly documents: DocumentsApi;
   readonly dscCertificates: DscCertificatesApi;
   readonly eventGridHooks: EventGridHooksApi;
@@ -14734,6 +14804,7 @@ export class SangamApis {
     this.decisions = new DecisionsApi(calls);
     this.deployments = new DeploymentsApi(calls);
     this.dltHooks = new DltHooksApi(calls);
+    this.dltRegistration = new DltRegistrationApi(calls);
     this.documents = new DocumentsApi(calls);
     this.dscCertificates = new DscCertificatesApi(calls);
     this.eventGridHooks = new EventGridHooksApi(calls);

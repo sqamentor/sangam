@@ -239,8 +239,14 @@ public class BillingWiring {
             ProfileResolver profiles, LedgerTenantDefinitions definitions, TxSupport tx) {
         // SL-127: a billing step without a period takes the tenant's current fiscal period (the ledger connector's
         // resolver), refused when no fiscal year is configured; never an invented calendar year
+        // RM-37: the recorded actor of a posting is the authenticated identity of the request, never the step input
         return new BillingConnector(billing, ledger, profiles, new BillingAccountSource(tx, definitions),
-                definitions.periodResolver(), ConfigWiring.engineClock());
+                definitions.periodResolver(), ConfigWiring.engineClock(), actorSource());
+    }
+
+    /** Who a billing posting is recorded for: the authenticated identity bound to the calling thread, if any. */
+    static BillingConnector.ActorSource actorSource() {
+        return new org.sangam.server.bridge.RequestActorSource();
     }
 
     @Bean

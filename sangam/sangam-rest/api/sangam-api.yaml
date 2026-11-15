@@ -109,6 +109,9 @@ tags:
   description: 'Inbound health interoperability: FHIR topic-based subscription notifications (sangam-connectors-health)'
 - name: DltHooks
   description: Inbound India DLT SMS delivery reports (decision 304)
+- name: DltRegistration
+  description: 'The tenant''s stored India DLT registration: principal entity, headers, content templates and whitelisted URL prefixes (decision
+    305)'
 - name: DscCertificates
   description: DSC certificate enrolment and admin approval (decision 227)
 - name: EventGridHooks
@@ -28102,6 +28105,282 @@ paths:
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
       security: []
+  /admin/dlt-registration:
+    get:
+      operationId: getDltRegistration
+      tags:
+      - DltRegistration
+      summary: The tenant's DLT registration
+      description: 'The caller''s tenant''s stored registration: entity, headers, templates, URL prefixes and revision. Start-up configuration
+        only seeds it; what is stored here is what the DLT SMS connector validates against. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.'
+      x-sangam-permission: dlt.registration.read
+      x-sangam-requirements:
+      - R60
+      - GOV-10
+      - decision 305
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DltRegistration'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/dlt-registration/entity:
+    put:
+      operationId: setDltEntity
+      tags:
+      - DltRegistration
+      summary: Set the principal entity
+      description: Sets the tenant's principal-entity id. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain
+        dlt:registry, with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and
+        writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused;
+        nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+      x-sangam-command-type: dlt.registration.entity.set
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: dlt.registration.write
+      x-sangam-requirements:
+      - R60
+      - GOV-10
+      - decision 305
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DltEntityRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DltRegistrationChange'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          description: 'ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID: the entry is refused by the DLT registration checks.
+            Nothing is written'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/dlt-registration/headers:
+    post:
+      operationId: addDltHeader
+      tags:
+      - DltRegistration
+      summary: Register a sender header
+      description: Registers a sender header. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry,
+        with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing.
+        422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is
+        written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+      x-sangam-command-type: dlt.registration.header.add
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: dlt.registration.write
+      x-sangam-requirements:
+      - R60
+      - GOV-10
+      - decision 305
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DltHeaderRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DltRegistrationChange'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          description: 'ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID: the entry is refused by the DLT registration checks.
+            Nothing is written'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/dlt-registration/templates:
+    post:
+      operationId: addDltTemplate
+      tags:
+      - DltRegistration
+      summary: Register a content template
+      description: Registers a content template, or replaces the header and body of the template with the same id. The change, the tenant's new
+        revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry, with the actor) are written in one transaction; an entry that
+        is already registered unchanged answers changed=false and writes nothing. 422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID,
+        TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+      x-sangam-command-type: dlt.registration.template.add
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: dlt.registration.write
+      x-sangam-requirements:
+      - R60
+      - GOV-10
+      - decision 305
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DltTemplate'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DltRegistrationChange'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          description: 'ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID: the entry is refused by the DLT registration checks.
+            Nothing is written'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /admin/dlt-registration/urls:
+    post:
+      operationId: addDltUrlPrefix
+      tags:
+      - DltRegistration
+      summary: Whitelist a URL prefix
+      description: Whitelists a URL prefix. The change, the tenant's new revision and the audit event DLT_TEMPLATE_REGISTERED (chain dlt:registry,
+        with the actor) are written in one transaction; an entry that is already registered unchanged answers changed=false and writes nothing.
+        422 with the DLT reason as code (ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID) when the entry is refused; nothing is
+        written. 501 CAPABILITY_NOT_INSTALLED without sangam-integration.
+      x-sangam-command-type: dlt.registration.url.add
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: dlt.registration.write
+      x-sangam-requirements:
+      - R60
+      - GOV-10
+      - decision 305
+      - R41
+      - R42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DltUrlPrefixRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DltRegistrationChange'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          description: 'ENTITY_INVALID, HEADER_INVALID, TEMPLATE_INVALID or URL_INVALID: the entry is refused by the DLT registration checks.
+            Nothing is written'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /tasks/{id}/dsc/prepare:
     post:
       operationId: prepareDscSignature
@@ -66539,6 +66818,95 @@ components:
           type: integer
           format: int32
           description: Reports that match no message sent through this connector, acknowledged and not written
+    DltTemplate:
+      type: object
+      description: One DLT content template as registered with the operator.
+      properties:
+        templateId:
+          type: string
+          description: 'The operator''s template id: 1 to 64 letters, digits, ''_'' or ''-'''
+        header:
+          type: string
+          description: The sender header the template is bound to
+        body:
+          type: string
+          description: The template text with {#var#} placeholders, at most 2000 characters; a URL in it never starts with a placeholder
+      required:
+      - templateId
+      - header
+      - body
+    DltRegistration:
+      type: object
+      description: A tenant's stored DLT registration. A tenant with nothing registered has no entityId, empty lists and revision 0.
+      properties:
+        entityId:
+          type: string
+          description: The principal-entity id; absent until one is registered
+        headers:
+          type: array
+          items:
+            type: string
+          description: Registered sender headers
+        templates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DltTemplate'
+          description: Registered content templates
+        urlPrefixes:
+          type: array
+          items:
+            type: string
+          description: Whitelisted URL prefixes (stored in lower case)
+        revision:
+          type: integer
+          format: int64
+          description: Moves by one with every change of the registration
+      required:
+      - headers
+      - templates
+      - urlPrefixes
+      - revision
+    DltRegistrationChange:
+      type: object
+      description: Outcome of a registration change.
+      properties:
+        changed:
+          type: boolean
+          description: false when the registration already held exactly this entry (nothing was written, no audit event)
+        revision:
+          type: integer
+          format: int64
+          description: The tenant's revision after the call
+      required:
+      - changed
+      - revision
+    DltEntityRequest:
+      type: object
+      description: The principal-entity id to register.
+      properties:
+        entityId:
+          type: string
+          description: 1 to 64 letters or digits
+      required:
+      - entityId
+    DltHeaderRequest:
+      type: object
+      description: A sender header to register.
+      properties:
+        header:
+          type: string
+          description: 6 letters or digits, with an optional TRAI suffix -P, -S, -T or -G
+      required:
+      - header
+    DltUrlPrefixRequest:
+      type: object
+      description: A URL prefix to whitelist.
+      properties:
+        prefix:
+          type: string
+          description: An http or https URL with a host
+      required:
+      - prefix
     DscPrepareRequest:
       type: object
       description: Step 1 of a DSC signature (decision 165).

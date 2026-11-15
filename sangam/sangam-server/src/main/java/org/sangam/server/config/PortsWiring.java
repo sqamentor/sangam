@@ -372,6 +372,19 @@ public class PortsWiring {
         }
     }
 
+    /**
+     * The document step of data erasure on this server's document store (R74, VI.5): without it the erasure service
+     * has no document eraser and the start is refused outside development ({@link DocumentEraserRequirement}). A
+     * site's own {@code LifecyclePorts.DocumentEraser} bean replaces it.
+     */
+    @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean(
+            org.sangam.integration.lifecycle.LifecyclePorts.DocumentEraser.class)
+    public org.sangam.integration.lifecycle.LifecyclePorts.DocumentEraser sangamContentDocumentEraser(
+            ContentService content, javax.sql.DataSource ds) {
+        return new org.sangam.server.bridge.ContentDocumentEraser(content, org.sangam.core.layer.Transactions.of(ds));
+    }
+
     @Bean
     public OutputTemplateRenderer sangamOutputTemplateRenderer(ContentService content) {
         return new OutputTemplateRenderer(content);

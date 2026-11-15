@@ -25,8 +25,9 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * {@value DedicatedTenantFilter#CODE}, at the dedicated filter's order. The isolation comes from the tenant directory
  * ({@link AdminPort#tenant}, read as the system principal and cached per tenant, {@link SharedInstanceIsolation}).
  *
- * <p>Without an {@link AdminPort} there is no directory and so no recorded isolation to honour; the filter is then
- * not registered, with a warning.
+ * <p>Without an {@link AdminPort} there is no directory and so no recorded isolation to honour: the start is refused
+ * ({@link #requireDirectory}), except in a validated development environment, where the filter is registered disabled
+ * with a warning.
  */
 @Configuration(proxyBeanMethods = false)
 @Conditional(SharedInstanceIsolationWiring.Shared.class)
@@ -41,16 +42,39 @@ public class SharedInstanceIsolationWiring {
     public FilterRegistrationBean<DedicatedTenantFilter> sangamSharedIsolationFilter(Environment env,
                                                                                     ObjectProvider<AdminPort> admin) {
         AdminPort port = admin.getIfAvailable();
+        requireDirectory(port, env);
         FilterRegistrationBean<DedicatedTenantFilter> reg = new FilterRegistrationBean<>(
                 new DedicatedTenantFilter(new SharedInstanceIsolation(isolationLookup(port, env))));
         reg.addUrlPatterns("/api/*", "/engine-rest/*");
         reg.setOrder(DedicatedTenantWiring.FILTER_ORDER);
         reg.setName("sangamSharedIsolationFilter");
         if (port == null) {
-            LOG.warn("No tenant directory (AdminPort): decision 97 isolation refusal is not active on this instance");
+            LOG.warn("DEVELOPMENT: no tenant directory (AdminPort): decision 97 isolation refusal is not active on this"
+                    + " instance (refused outside a development environment: {})", REFUSAL);
             reg.setEnabled(false);
         }
         return reg;
+    }
+
+    /** The name of the refusal of {@link #requireDirectory}. */
+    static final String REFUSAL = "SHARED_ISOLATION_DIRECTORY_REQUIRED";
+
+    /**
+     * Decisions 143 and 152 (no permissive fallback in production): without a tenant directory the filter is off and a
+     * tenant recorded with isolation DATABASE or SCHEMA would be served by this shared instance (decision 97). That is
+     * allowed only in a validated development environment; everywhere else (a missing or contradictory environment
+     * setting counts as production) the start is refused.
+     *
+     * @throws IllegalStateException {@value #REFUSAL}
+     */
+    static void requireDirectory(AdminPort admin, Environment env) {
+        if (admin == null && !ProductionEnvironment.developmentDefaultsAllowed(env)) {
+            throw new IllegalStateException(REFUSAL + ": a shared instance needs the tenant directory (AdminPort) to"
+                    + " refuse tenants recorded with isolation DATABASE or SCHEMA (decision 97); without it every such"
+                    + " tenant would be served here. Provide the AdminPort bean (sangam-rest's default or"
+                    + " sangam-security's), or set " + org.sangam.server.bridge.DedicatedTenant.PROPERTY
+                    + " on a dedicated instance");
+        }
     }
 
     /** Tenant id to its recorded isolation; null when the directory has no record of it (404). */

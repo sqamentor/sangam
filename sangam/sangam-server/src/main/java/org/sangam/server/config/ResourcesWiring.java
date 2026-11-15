@@ -83,6 +83,24 @@ public class ResourcesWiring {
 
     private static final Logger LOG = LoggerFactory.getLogger(ResourcesWiring.class);
 
+    /**
+     * The authorization of the resources module: sangam-security's VI.4 checks, seat directory and leave calendar. With
+     * the security module off the module is unguarded, which is a development-only default (decisions 143, 152):
+     * {@code withoutAuthorization} refuses it outside a validated development environment, so the start fails there.
+     */
+    static void authorization(ResourcesContext.Builder b, SangamSecurity sec, Environment env) {
+        if (sec != null) {
+            b.authorization(sec.authorization())
+                    .seats(sec.postings())
+                    .seatLink(new SecurityDutySeatLink(sec.postings()))
+                    .leave(new SecurityLeaveCalendar());
+            return;
+        }
+        b.withoutAuthorization(ProductionEnvironment.resolve(env));
+        LOG.warn("DEVELOPMENT, sangam-security off: resources run without VI.4 authorization, seat directory or leave"
+                + " calendar");
+    }
+
     @Bean
     public SangamResources sangamResources(TxSupport tx, Environment env, ProcessEngine engine,
             ObjectProvider<SangamSecurity> security, ObjectProvider<ResourcesPorts.BillingPort> billing,
@@ -111,15 +129,7 @@ public class ResourcesWiring {
                 .audit(ResourcesPortBridges.audit(new AuditChain(tx.dialect())))
                 .displayFeed(ResourcesPortBridges.displayFeed(tx, env.getProperty("sangam.resources.display-feed.channel")))
                 .settings(settings);
-        SangamSecurity sec = security.getIfAvailable();
-        if (sec != null) {
-            b.authorization(sec.authorization())
-                    .seats(sec.postings())
-                    .seatLink(new SecurityDutySeatLink(sec.postings()))
-                    .leave(new SecurityLeaveCalendar());
-        } else {
-            LOG.warn("sangam-security off: resources run without VI.4 visibility, seat directory or leave calendar");
-        }
+        authorization(b, security.getIfAvailable(), env);
         ResourcesPorts.BillingPort bp = billing.getIfAvailable();
         if (bp != null) {
             b.billing(bp);

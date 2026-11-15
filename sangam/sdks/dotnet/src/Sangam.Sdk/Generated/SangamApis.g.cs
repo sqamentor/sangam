@@ -6,7 +6,7 @@ namespace Sangam.Sdk.Generated;
 using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 /// <summary>
-/// The generated typed surface of sangam-api.yaml 0.1.0: 1132 operations on 951 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
+/// The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths, one property per API class (a tag, or a sub-path of a large tag). Use SangamClient.Api.
 /// </summary>
 public sealed class SangamApis
 {
@@ -36,6 +36,7 @@ public sealed class SangamApis
         Decisions = new DecisionsApi(calls);
         Deployments = new DeploymentsApi(calls);
         DltHooks = new DltHooksApi(calls);
+        DltRegistration = new DltRegistrationApi(calls);
         Documents = new DocumentsApi(calls);
         DscCertificates = new DscCertificatesApi(calls);
         EventGridHooks = new EventGridHooksApi(calls);
@@ -117,6 +118,7 @@ public sealed class SangamApis
     public DecisionsApi Decisions { get; }
     public DeploymentsApi Deployments { get; }
     public DltHooksApi DltHooks { get; }
+    public DltRegistrationApi DltRegistration { get; }
     public DocumentsApi Documents { get; }
     public DscCertificatesApi DscCertificates { get; }
     public EventGridHooksApi EventGridHooks { get; }
