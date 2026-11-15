@@ -17,9 +17,12 @@ import io.agroal.api.security.NamePrincipal;
 import io.agroal.api.security.SimplePassword;
 import io.agroal.narayana.NarayanaTransactionIntegration;
 
+import org.sangam.engine.db.DatabaseGuard;
+
 /**
  * The JTA pieces the Quarkus host is given, without booting Quarkus: Narayana's transaction manager and an Agroal pool
- * integrated with it (what quarkus-narayana-jta and quarkus-agroal wire), on a private in-memory H2 database.
+ * integrated with it (what quarkus-narayana-jta and quarkus-agroal wire), on a private in-memory H2 database prepared
+ * the way the Sangam engine step prepares it ({@link DatabaseGuard#prepareH2}) before any table exists.
  */
 final class JtaFixture implements AutoCloseable {
 
@@ -46,7 +49,12 @@ final class JtaFixture implements AutoCloseable {
                                 .jdbcUrl(url)
                                 .principal(new NamePrincipal("sa"))
                                 .credential(new SimplePassword(""))));
-        return new JtaFixture(tm, AgroalDataSource.from(config));
+        AgroalDataSource dataSource = AgroalDataSource.from(config);
+        // the BLOB alias Operaton's H2 create scripts need in MODE=PostgreSQL, on the still empty database: H2 creates
+        // a domain named like a data type only while no table exists (DatabaseGuard.prepareH2, its "Order" note), so
+        // a test that creates its product table first and then builds an engine would get "Unknown data type: BLOB"
+        DatabaseGuard.prepareH2(dataSource);
+        return new JtaFixture(tm, dataSource);
     }
 
     @Override
