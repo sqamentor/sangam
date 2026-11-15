@@ -727,8 +727,20 @@ export const api = {
   // ------------------------------------------------------------ citizen portal (C01–C06)
   portal: {
     services: () => http.get<T.PortalService[]>('/portal/services'),
-    apply: (serviceKey: string, variables: Record<string, unknown>, submit: boolean, key?: string) =>
-      http.post<T.Application>('/portal/applications', { serviceKey, variables: A.toVariableMap(variables), submit }, key),
+    /** Decision 63: the service's own form under portal.use (never an arbitrary form key). */
+    form: async (serviceKey: string) => A.normForm(await http.get<Record<string, unknown>>(`/portal/services/${enc(serviceKey)}/form`)),
+    /** Decisions 339, 341, 343: the current published consent notice of the service, one entry per purpose. */
+    notice: (serviceKey: string, lang?: string) => http.get<T.PortalNotice>(`/portal/services/${enc(serviceKey)}/notice`, { lang }),
+    /** A submission to a noticed service carries the consent; a draft never does (decision 341). */
+    apply: (serviceKey: string, variables: Record<string, unknown>, submit: boolean, key?: string, consent?: T.PortalConsent) =>
+      http.post<T.Application>('/portal/applications', { serviceKey, variables: A.toVariableMap(variables), submit, ...(consent ? { consent } : {}) }, key),
+    /** Decision 347: notices sent to the caller's portal account (breach notices with the pack's items). */
+    notifications: () => http.get<T.PortalNotification[]>('/portal/notifications'),
+    /** Decision 340: the caller's own consents (no subject: the server answers for the caller only). */
+    myConsents: () => http.get<T.MyConsent[]>('/compliance/consents'),
+    /** Decision 340: owner withdrawal; empty purposes withdraws the whole consent (ComplianceController.java:158-168). */
+    withdrawConsent: (consentId: string, purposes: string[], key?: string) =>
+      http.post<T.MyConsent>(`/compliance/consents/${enc(consentId)}/withdraw`, { purposes }, key),
     mine: (q: ListQuery = {}) => http.page<T.Application>('/portal/applications', q),
     get: (id: string) => http.get<T.Application>(`/portal/applications/${enc(id)}`),
     reply: (id: string, clarificationId: string, text: string, files: File[], key?: string) => {

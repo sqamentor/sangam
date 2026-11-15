@@ -38,6 +38,7 @@ import { Reconciliation, ReconciliationDetail } from './ops/IncidentsRecon';
 import { BatchDetail, Migration } from './ops/BatchMigration';
 import { AnalyticsDashboard } from './analytics/Analytics';
 import { PortalApplication, PortalApply, PortalGrievances, PortalHome } from './portal/Portal';
+import { PortalConsents, PortalNotices } from './portal/PortalPrivacy';
 
 const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -328,36 +329,124 @@ describe('M-047 analytics dashboard', () => {
 
 // ====================================================================== citizen portal
 
-/** Evidence: Portal.tsx:20-121 (catalogue, apply with consent), :152-306 (withdraw, appeal), :308-358 (grievances); endpoints.ts:644-661. */
+/**
+ * Evidence: Portal.tsx (catalogue; apply with the service's published notice, one checkbox per purpose and the age
+ * declaration, decisions 339/341/343; withdraw, appeal; grievances); endpoints.ts portal block. The form is the
+ * service's own (GET /portal/services/{key}/form, decision 63), the notice GET /portal/services/{key}/notice.
+ */
 describe('M-047 citizen portal', () => {
-  const service = { key: 'cert', name: 'Certificate', formKey: 'f1', fee: 0 };
+  const service = { key: 'cert', name: 'Certificate', formKey: 'f1', fee: 0, noticeKey: 'n1' };
   const form = { key: 'f1', components: [{ key: 'applicantName', label: 'Applicant name', type: 'textfield', validate: { required: true } }] };
+  const notice = {
+    noticeKey: 'n1',
+    version: 3,
+    language: 'en',
+    text: 'We use your data to process the application.',
+    contentHash: 'abc123',
+    purposes: [
+      { code: 'P_APPLY', name: 'Process the application' },
+      { code: 'P_UPDATES', name: 'Send updates' },
+    ],
+    childAgeYears: 18,
+  };
   const openApply = () => show(<PortalApply />, '/portal/apply/cert', '/portal/apply/:serviceKey');
-
-  it('submit needs consent and the required fields, then sends the typed variables with submit=true', async () => {
+  const routesForApply = () => {
     routes['/portal/services'] = [service];
-    routes['/forms/f1'] = form;
+    routes['/portal/services/cert/form'] = form;
+    routes['/portal/services/cert/notice'] = notice;
+  };
+
+  it('submit needs a ticked purpose of the published notice, the age declaration and the required fields, then sends the consent with submit=true', async () => {
+    routesForApply();
     api.post.mockResolvedValue({ id: 'a1', reference: 'APP-1' });
     openApply();
     const submit = (await screen.findByRole('button', { name: T('portal.submit') })) as HTMLButtonElement;
     expect(submit.disabled).toBe(true);
-    fireEvent.click(screen.getByLabelText(T('portal.consent')));
-    // validateForm runs synchronously before any call (Portal.tsx:78-83): an empty required field sends nothing
+    expect(await screen.findByText(notice.text)).toBeTruthy();
+    // decision 341: one checkbox per purpose, never the bundled box
+    expect(screen.queryByLabelText(T('portal.consent'))).toBeNull();
+    expect(screen.getByLabelText(T('portal.consentPurpose', { purpose: 'Send updates' }))).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(T('portal.consentPurpose', { purpose: 'Process the application' })));
+    expect(submit.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(L('portal.ageDeclaration')), { target: { value: 'ADULT' } });
+    expect(submit.disabled).toBe(false);
+    // validateForm runs synchronously before any call: an empty required field sends nothing
     fireEvent.click(submit);
     expect(api.post).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText(/Applicant name/), { target: { value: 'Asha' } });
     fireEvent.click(submit);
     await waitFor(() =>
-      expect(api.post).toHaveBeenCalledWith('/portal/applications', { serviceKey: 'cert', variables: { applicantName: { type: 'String', value: 'Asha' } }, submit: true }, KEY),
+      expect(api.post).toHaveBeenCalledWith(
+        '/portal/applications',
+        {
+          serviceKey: 'cert',
+          variables: { applicantName: { type: 'String', value: 'Asha' } },
+          submit: true,
+          consent: { noticeKey: 'n1', noticeVersion: 3, language: 'en', purposeCodes: ['P_APPLY'], ageDeclaration: 'ADULT' },
+        },
+        KEY,
+      ),
     );
   });
 
-  it('save draft sends submit=false without the consent', async () => {
-    routes['/portal/services'] = [service];
-    routes['/forms/f1'] = form;
+  it('a declared child needs the parent verification, which the submission carries', async () => {
+    routesForApply();
     api.post.mockResolvedValue({ id: 'a1', reference: 'APP-1' });
     openApply();
-    fireEvent.click(await screen.findByRole('button', { name: T('portal.saveDraft') }));
+    const submit = (await screen.findByRole('button', { name: T('portal.submit') })) as HTMLButtonElement;
+    fireEvent.click(await screen.findByLabelText(T('portal.consentPurpose', { purpose: 'Process the application' })));
+    fireEvent.change(screen.getByLabelText(L('portal.ageDeclaration')), { target: { value: 'CHILD' } });
+    expect(screen.getByText(T('portal.guardianNotice'))).toBeTruthy();
+    expect(submit.disabled).toBe(true);
+    fireEvent.change(screen.getByLabelText(L('portal.guardianVerification')), { target: { value: 'ver-7' } });
+    expect(submit.disabled).toBe(false);
+    fireEvent.change(screen.getByLabelText(/Applicant name/), { target: { value: 'Asha' } });
+    fireEvent.click(submit);
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith(
+        '/portal/applications',
+        expect.objectContaining({
+          submit: true,
+          consent: { noticeKey: 'n1', noticeVersion: 3, language: 'en', purposeCodes: ['P_APPLY'], ageDeclaration: 'CHILD', guardianVerificationId: 'ver-7' },
+        }),
+        KEY,
+      ),
+    );
+  });
+
+  it('a refused consent (notice not current) is shown and nothing navigates', async () => {
+    routesForApply();
+    api.post.mockRejectedValue(problem(409, 'NOTICE_NOT_CURRENT'));
+    openApply();
+    fireEvent.click(await screen.findByLabelText(T('portal.consentPurpose', { purpose: 'Send updates' })));
+    fireEvent.change(screen.getByLabelText(L('portal.ageDeclaration')), { target: { value: 'ADULT' } });
+    fireEvent.change(screen.getByLabelText(/Applicant name/), { target: { value: 'Asha' } });
+    fireEvent.click(screen.getByRole('button', { name: T('portal.submit') }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+  });
+
+  it('a service without a notice shows no consent box and submits without consent', async () => {
+    routes['/portal/services'] = [{ key: 'cert', name: 'Certificate', fee: 0 }];
+    api.post.mockResolvedValue({ id: 'a1', reference: 'APP-1' });
+    openApply();
+    const submit = (await screen.findByRole('button', { name: T('portal.submit') })) as HTMLButtonElement;
+    expect(screen.queryByText(T('portal.dpdpTitle'))).toBeNull();
+    expect(screen.queryByRole('checkbox')).toBeNull();
+    expect(api.get).not.toHaveBeenCalledWith('/portal/services/cert/notice', expect.anything());
+    fireEvent.click(submit);
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications', { serviceKey: 'cert', variables: {}, submit: true }, KEY));
+  });
+
+  it('save draft sends submit=false without the consent', async () => {
+    routesForApply();
+    api.post.mockResolvedValue({ id: 'a1', reference: 'APP-1' });
+    openApply();
+    // a ticked purpose and age do not travel with a draft: consent is given only on the final submit (decision 341,
+    // "draft before consent" stays open for counsel and its behaviour is unchanged)
+    fireEvent.click(await screen.findByLabelText(T('portal.consentPurpose', { purpose: 'Process the application' })));
+    fireEvent.change(screen.getByLabelText(L('portal.ageDeclaration')), { target: { value: 'ADULT' } });
+    fireEvent.click(screen.getByRole('button', { name: T('portal.saveDraft') }));
     await waitFor(() => expect(api.post).toHaveBeenCalledWith('/portal/applications', { serviceKey: 'cert', variables: {}, submit: false }, KEY));
   });
 
@@ -394,5 +483,89 @@ describe('M-047 citizen portal', () => {
     routes['/portal/services'] = problem(403);
     show(<PortalHome />);
     expect(await screen.findByText(T('error.notAvailable'))).toBeTruthy();
+  });
+});
+
+/** Evidence: PortalPrivacy.tsx (decisions 340 and 347); endpoints.ts portal.myConsents/withdrawConsent/notifications. */
+describe('M-047 citizen privacy pages', () => {
+  const consent = { consentId: 'c1', noticeKey: 'n1', noticeVersion: 3, status: 'GIVEN', givenAt: '2026-11-01T10:00:00Z', activePurposes: ['P_APPLY', 'P_UPDATES'] };
+  const withNames = () => {
+    routes['/portal/services'] = [{ key: 'cert', name: 'Certificate', fee: 0, noticeKey: 'n1' }];
+    routes['/portal/services/cert/notice'] = {
+      noticeKey: 'n1',
+      version: 3,
+      language: 'en',
+      text: 'x',
+      contentHash: 'h',
+      purposes: [
+        { code: 'P_APPLY', name: 'Process the application' },
+        { code: 'P_UPDATES', name: 'Send updates' },
+      ],
+    };
+  };
+
+  it('one purpose is withdrawn with one click through the owner-withdraw endpoint', async () => {
+    withNames();
+    routes['/compliance/consents'] = [consent];
+    show(<PortalConsents />);
+    fireEvent.click(await screen.findByRole('button', { name: T('portal.withdrawPurpose', { purpose: 'Send updates' }) }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/compliance/consents/c1/withdraw', { purposes: ['P_UPDATES'] }, KEY));
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
+  it('the whole consent is withdrawn with an empty purpose list', async () => {
+    withNames();
+    routes['/compliance/consents'] = [consent];
+    show(<PortalConsents />);
+    fireEvent.click(await screen.findByRole('button', { name: T('portal.withdrawAll') }));
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/compliance/consents/c1/withdraw', { purposes: [] }, KEY));
+  });
+
+  it('a consent with nothing active offers no withdrawal, and an unknown purpose shows its code', async () => {
+    routes['/compliance/consents'] = [
+      { ...consent, consentId: 'c2', status: 'WITHDRAWN', activePurposes: [] },
+      { ...consent, consentId: 'c3', activePurposes: ['P_OTHER'] },
+    ];
+    show(<PortalConsents />);
+    expect(await screen.findByText(T('portal.consentNothingActive'))).toBeTruthy();
+    expect(screen.getByRole('button', { name: T('portal.withdrawPurpose', { purpose: 'P_OTHER' }) })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T('portal.withdrawAll') })).toBeNull();
+  });
+
+  it('a refused withdrawal is shown', async () => {
+    withNames();
+    routes['/compliance/consents'] = [consent];
+    api.post.mockRejectedValue(problem(409, 'CONSENT_NOT_ACTIVE'));
+    show(<PortalConsents />);
+    fireEvent.click(await screen.findByRole('button', { name: T('portal.withdrawPurpose', { purpose: 'Send updates' }) }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+  });
+
+  it('a breach notice shows every item under its label and citation', async () => {
+    routes['/portal/notifications'] = [
+      {
+        id: 'n-1',
+        kind: 'BREACH',
+        reference: 'BR-1',
+        at: '2026-11-10T09:00:00Z',
+        subject: 'Personal data breach',
+        items: [
+          { key: 'description', label: 'Description of the breach', citation: 'r.7(1)(a)', text: 'Unauthorised access' },
+          { key: 'contact', label: 'Contact', citation: 'r.7(1)(e)', text: 'dpo@example.org' },
+        ],
+      },
+    ];
+    show(<PortalNotices />);
+    expect(await screen.findByText('Personal data breach')).toBeTruthy();
+    expect(screen.getByText('Description of the breach')).toBeTruthy();
+    expect(screen.getByText('(r.7(1)(a))')).toBeTruthy();
+    expect(screen.getByText('Unauthorised access')).toBeTruthy();
+    expect(screen.getByText('dpo@example.org')).toBeTruthy();
+  });
+
+  it('no notices shows the empty state', async () => {
+    routes['/portal/notifications'] = [];
+    show(<PortalNotices />);
+    expect(await screen.findByText(T('portal.noNotices'))).toBeTruthy();
   });
 });

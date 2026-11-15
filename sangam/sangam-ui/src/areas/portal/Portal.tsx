@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api/endpoints';
 import { http } from '../../api/client';
 import { NoticeView, type RenderedNotice } from '../../modules/compliance';
-import type { FormSchema } from '../../api/types';
+import type { FormSchema, PortalConsent } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtMoney } from '../../i18n';
 import { FormRenderer, validateForm, type FormValues } from '../../components/FormRenderer';
@@ -62,39 +62,97 @@ export function PortalHome() {
   );
 }
 
+/**
+ * Owner decisions 339, 341, 343: a service that names a consent notice shows the notice's current published version
+ * with one checkbox per purpose (never one bundled box) and the age declaration the jurisdiction pack's age of
+ * majority calls for; a declared child gives the verification of the parent's verifiable consent. The submission carries
+ * the notice key and version shown; the server records the consent and refuses a notice that is not the current one. A
+ * draft is saved as before, without consent (whether a draft may precede consent is open for counsel).
+ */
 export function PortalApply() {
   const { serviceKey = '' } = useParams();
   const { t, i18n } = useTranslation();
   const nav = useNavigate();
   const services = useAsync(() => api.portal.services(), []);
   const svc = services.data?.find((s) => s.key === serviceKey);
-  const form = useAsync(() => (svc ? api.forms.get(svc.formKey) : Promise.resolve<FormSchema>({ components: [] })), [svc?.formKey], !!svc);
+  const form = useAsync(() => (svc?.formKey ? api.portal.form(serviceKey) : Promise.resolve<FormSchema>({ components: [] })), [serviceKey, svc?.formKey], !!svc);
+  const notice = useAsync(() => api.portal.notice(serviceKey, i18n.language), [serviceKey, i18n.language], !!svc?.noticeKey);
   const [values, setValues] = useState<FormValues>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [consent, setConsent] = useState(false);
+  const [purposes, setPurposes] = useState<string[]>([]);
+  const [age, setAge] = useState<'' | 'ADULT' | 'CHILD'>('');
+  const [guardian, setGuardian] = useState('');
   const act = useAction();
   if (services.loading || (svc && form.loading)) return <Loading />;
   if (!svc) return <ProblemAlert error={services.error ?? new Error(t('error.notAvailable'))} />;
+  const n = notice.data;
+  const ageNeeded = n?.childAgeYears !== undefined && n?.childAgeYears !== null;
+  const consentReady = !svc.noticeKey || (!!n && purposes.length > 0 && (!ageNeeded || age !== '') && (age !== 'CHILD' || guardian.trim() !== ''));
+  const consent = (): PortalConsent | undefined =>
+    n
+      ? {
+          noticeKey: n.noticeKey,
+          noticeVersion: n.version,
+          language: n.language,
+          purposeCodes: n.purposes.map((p) => p.code).filter((c) => purposes.includes(c)),
+          ...(age ? { ageDeclaration: age } : {}),
+          ...(age === 'CHILD' ? { guardianVerificationId: guardian.trim() } : {}),
+        }
+      : undefined;
   const submit = (final: boolean) => {
     if (final && form.data) {
       const errs = validateForm(form.data, values, t);
       setErrors(errs);
       if (Object.keys(errs).length) return;
     }
-    void act.run((k) => api.portal.apply(serviceKey, values, final, k)).then((a) => {
+    if (final && !consentReady) return;
+    void act.run((k) => api.portal.apply(serviceKey, values, final, k, final && svc.noticeKey ? consent() : undefined)).then((a) => {
       if (a) {
         announce(final ? t('portal.submitted', { ref: a.reference }) : t('portal.draftSaved'));
         nav(`/portal/applications/${encodeURIComponent(a.id)}`);
       }
     });
   };
+  const toggle = (code: string, on: boolean) => setPurposes((p) => (on ? [...p.filter((c) => c !== code), code] : p.filter((c) => c !== code)));
   return (
     <>
       <PageHeader title={i18n.language === 'hi' && svc.nameHi ? svc.nameHi : svc.name} />
-      <Section title={t('portal.dpdpTitle')}>
-        <p>{t('portal.dpdpNotice')}</p>
-        <Checkbox label={t('portal.consent')} checked={consent} onChange={setConsent} />
-      </Section>
+      {svc.noticeKey && (
+        <Section title={t('portal.dpdpTitle')}>
+          <ProblemAlert error={notice.error} onRetry={notice.reload} />
+          {notice.loading && <Loading />}
+          {n && (
+            <>
+              <NoticeView notice={{ noticeKey: n.noticeKey, version: n.version, language: { code: n.language }, purposeCodes: n.purposes.map((p) => p.code), text: n.text, contentHash: n.contentHash }} />
+              <fieldset>
+                <legend>{t('portal.consentPurposes')}</legend>
+                {n.purposes.map((p) => (
+                  <Checkbox key={p.code} label={t('portal.consentPurpose', { purpose: p.name })} hint={p.description} checked={purposes.includes(p.code)} onChange={(on) => toggle(p.code, on)} />
+                ))}
+              </fieldset>
+              {ageNeeded && (
+                <SelectField
+                  label={t('portal.ageDeclaration')}
+                  required
+                  value={age}
+                  onChange={(v) => setAge(v as typeof age)}
+                  placeholder={t('portal.ageChoose')}
+                  options={[
+                    { value: 'ADULT', label: t('portal.ageAdult', { n: n.childAgeYears }) },
+                    { value: 'CHILD', label: t('portal.ageChild', { n: n.childAgeYears }) },
+                  ]}
+                />
+              )}
+              {age === 'CHILD' && (
+                <>
+                  <Notice tone="warn">{t('portal.guardianNotice')}</Notice>
+                  <TextField label={t('portal.guardianVerification')} hint={t('portal.guardianVerificationHint')} required value={guardian} onChange={setGuardian} />
+                </>
+              )}
+            </>
+          )}
+        </Section>
+      )}
       <ProblemAlert error={form.error ?? act.error} />
       {form.data && (
         <form
@@ -110,7 +168,7 @@ export function PortalApply() {
             <button type="button" disabled={act.busy} onClick={() => submit(false)}>
               {t('portal.saveDraft')}
             </button>
-            <button type="submit" className="primary" disabled={!consent || act.busy}>
+            <button type="submit" className="primary" disabled={!consentReady || act.busy}>
               {t('portal.submit')}
             </button>
           </div>
