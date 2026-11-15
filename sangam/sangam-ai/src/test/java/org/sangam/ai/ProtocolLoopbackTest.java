@@ -159,6 +159,40 @@ class ProtocolLoopbackTest {
         assertTrue(McpServer.validateHttpHeaders(call, "2026-07-28", "tools/call", "other").contains("-32020"));
     }
 
+    /**
+     * Decision 328, the rule the contract states for {@code POST /ai/mcp}: the MCP headers are optional in the contract
+     * and required exactly when {@code _meta} carries a protocol version. A versioned request without them is refused
+     * (HeaderMismatch, HTTP 400 in the host); a request without a version in {@code _meta} is served without them.
+     */
+    @Test
+    void aVersionedRequestNeedsItsHeadersAndALegacyRequestDoesNot() {
+        McpServer s = new McpServer((m, p, q, b, t, r) -> new McpServer.Reply(200, "ok"), x -> false);
+        McpServer.Caller who = new McpServer.Caller("t", "tok");
+        String meta = "\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\"}";
+        String versioned = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{" + meta + "}}";
+        String none = McpServer.validateHttpHeaders(versioned, null, null, null);
+        assertTrue(none != null && none.contains("-32020") && none.contains("MCP-Protocol-Version"), none);
+        String noMethod = McpServer.validateHttpHeaders(versioned, "2026-07-28", null, null);
+        assertTrue(noMethod != null && noMethod.contains("-32020") && noMethod.contains("Mcp-Method"), noMethod);
+        String wrongVersion = McpServer.validateHttpHeaders(versioned, "2025-06-18", "tools/list", null);
+        assertTrue(wrongVersion != null && wrongVersion.contains("MCP-Protocol-Version"), wrongVersion);
+        assertNull(McpServer.validateHttpHeaders(versioned, "2026-07-28", "tools/list", null),
+                "Mcp-Name is needed for tools/call only");
+        String call = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"list_tasks\"," + meta + "}}";
+        String noName = McpServer.validateHttpHeaders(call, "2026-07-28", "tools/call", null);
+        assertTrue(noName != null && noName.contains("-32020") && noName.contains("Mcp-Name"), noName);
+
+        for (String legacy : List.of(
+                "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\"}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/list\",\"params\":{}}",
+                "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"tools/list\"}",
+                "{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"ping\",\"params\":{\"_meta\":{\"progressToken\":\"p\"}}}")) {
+            assertNull(McpServer.validateHttpHeaders(legacy, null, null, null), "no version in _meta: " + legacy);
+            String answer = s.handle(legacy, who);
+            assertTrue(answer != null && answer.contains("\"result\"") && !answer.contains("\"error\""), answer);
+        }
+    }
+
     @Test
     void a2aFallsBackTo03WhenThePeerRefuses10() throws Exception {
         List<String> methods = new ArrayList<>();

@@ -383,16 +383,16 @@ final class AIApi
     /**
      * MCP endpoint
      *
-     * MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, and server/discover is served. A header that does not match the body is 400 HeaderMismatch (-32020); an unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType input_required with inputRequests and an integrity-protected requestState bound to the principal, a time limit and the originating request, and the client repeats the request with a new id, inputResponses and the echoed requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins (403 otherwise).
+     * MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, and server/discover is served. A request whose _meta carries no protocol version is served as the earlier revisions (initialize, ping, tools/list, tools/call) and its headers are not checked. When _meta carries a protocol version, a header that is absent or does not match the body is 400 HeaderMismatch (-32020); an unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType input_required with inputRequests and an integrity-protected requestState bound to the principal, a time limit and the originating request, and the client repeats the request with a new id, inputResponses and the echoed requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on sangam.ai.http-allowed-origins (403 otherwise).
      *
      * POST /ai/mcp (operationId aiMcp); permission ai.use.
      * @param Model\AiMcpBody|array $body request body
-     * @param string $mCPProtocolVersion header MCP-Protocol-Version
-     * @param string $mcpMethod header Mcp-Method
+     * @param string|null $mCPProtocolVersion header MCP-Protocol-Version
+     * @param string|null $mcpMethod header Mcp-Method
      * @param string|null $mcpName header Mcp-Name
      * @return array<string, mixed>
      */
-    public function aiMcp(Model\AiMcpBody|array $body, string $mCPProtocolVersion, string $mcpMethod, ?string $mcpName = null, ?RequestOptions $options = null): array
+    public function aiMcp(Model\AiMcpBody|array $body, ?string $mCPProtocolVersion = null, ?string $mcpMethod = null, ?string $mcpName = null, ?RequestOptions $options = null): array
     {
         $req = ApiRequest::post('/ai/mcp');
         $req->header('MCP-Protocol-Version', Support::headerValue($mCPProtocolVersion));
