@@ -453,3 +453,7 @@ Decision 372 was taken on 2026-11-15 under the owner's words "Choose recommended
 - **372 (where the principal key is enforced; compose users, owner chat 2026-11-15)**:
   - (1) The server's start refusal (decision 371 (5)) is the one enforcement of the compliance principal key; the Helm chart does not refuse a render without it, so the CI render with production defaults keeps working.
   - (2) A compose stack in its default production mode needs the key: `deploy/compose/.env.example` and `deploy/README.md` say how to make one, and the 0.1.0 release notes, when written, carry it as an upgrade note (the repository has no release-notes file yet).
+
+Decision 373 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the point lane D5 left open on SL-79; the recommended option is recorded.
+
+- **373 (how the pool-deadlock test proves nothing is stuck, owner chat 2026-11-15)**: `QuotaPoolDeadlockH2Support` proves the end state by draining the main pool (every connection obtained at the same time within the pool's own timeout), not by a snapshot of Hikari's waiter count, which also counted the server's own follow-up borrows on virtual threads (outbox relay, job executor, pipeline workers). The 36 concurrent starts must still all answer 200 and commit; no scheduler is turned off for the test.

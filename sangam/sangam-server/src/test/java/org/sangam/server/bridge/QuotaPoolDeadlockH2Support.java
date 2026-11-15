@@ -148,9 +148,32 @@ abstract class QuotaPoolDeadlockH2Support {
         }
         assertEquals((long) CALLERS * ROUNDS, engine.getRuntimeService().createProcessInstanceQuery()
                 .processDefinitionKey("sl43pool").count(), "every start committed");
-        // SL-79 diagnostic: the message supplier runs only when the assertion fails, so a pass adds nothing
-        assertEquals(0, pool.getHikariPoolMXBean().getThreadsAwaitingConnection(),
-                () -> "nobody left waiting" + waitDiagnostic(pool));
+        // SL-79 (decision 373): nothing is held or stuck. A snapshot of the waiter count also counted the server's own
+        // follow-up work (outbox publishers, job executor, pipeline workers on virtual threads borrow right after each
+        // answer), so the proof is a drain instead: every connection of the pool is obtained at the same time within the
+        // pool's own timeout. A leaked or deadlocked connection makes this fail; brief background borrows do not.
+        assertPoolDrains(pool);
+    }
+
+    /** All {@code getMaximumPoolSize()} connections held at once, each obtained within the pool's connection timeout. */
+    static void assertPoolDrains(HikariDataSource pool) throws Exception {
+        List<java.sql.Connection> held = new ArrayList<>();
+        try {
+            for (int i = 0; i < pool.getMaximumPoolSize(); i++) {
+                try {
+                    held.add(pool.getConnection());
+                } catch (java.sql.SQLException e) {
+                    throw new AssertionError("connection " + (i + 1) + " of " + pool.getMaximumPoolSize()
+                            + " not obtained within " + pool.getConnectionTimeout() + " ms: " + e.getMessage()
+                            + waitDiagnostic(pool), e);
+                }
+            }
+            assertEquals(pool.getMaximumPoolSize(), held.size(), "every connection of the pool obtained at once");
+        } finally {
+            for (java.sql.Connection c : held) {
+                c.close();
+            }
+        }
     }
 
     static final int DIAGNOSTIC_FRAMES = 15;
