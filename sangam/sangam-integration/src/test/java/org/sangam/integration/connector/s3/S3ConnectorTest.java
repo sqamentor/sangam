@@ -241,6 +241,23 @@ class S3ConnectorTest {
         }
     }
 
+    /** Owner decision 320: get and head read (HTTP GET, HEAD); put and delete change the bucket; nothing is sent to ask. */
+    @Test
+    void onlyGetAndHeadAreReadOnly() {
+        S3Connector c = connector("", 0, SECRETS);
+        Map<String, Boolean> expected = new LinkedHashMap<>();
+        expected.put("get", true);
+        expected.put("head", true);
+        expected.put("put", false);
+        expected.put("delete", false);
+        expected.put("GET", false);         // the operation is matched exactly, as invoke matches it
+        expected.put("list", false);
+        expected.put("invoke", false);
+        expected.forEach((operation, readOnly) -> assertEquals(readOnly,
+                c.readOnly(req(UUID.randomUUID(), operation, Map.of("key", "k", "content", "x"))), operation));
+        assertTrue(requests.isEmpty());
+    }
+
     @Test
     void aMissingCredentialIsANoEffectFailureAndNothingIsSent() {
         S3Connector c = connector("", 0, SecretResolver.of(Map.of("secret://s3/access", "AKIDEXAMPLE")));

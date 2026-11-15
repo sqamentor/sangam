@@ -82,7 +82,7 @@ public class BillingController {
         permissions.require(ctx, READ);
         Map<String, Object> in = base(ledger);
         put(in, "cycle", cycle);
-        return call(ctx, "accounts", in);
+        return read(ctx, "accounts", in);
     }
 
     @PostMapping("/invoices")
@@ -134,7 +134,7 @@ public class BillingController {
         permissions.require(ctx, READ);
         Map<String, Object> in = base(ledger);
         in.put("consumer", consumer);
-        return call(ctx, "arrears", in);
+        return read(ctx, "arrears", in);
     }
 
     @PostMapping("/consumers/{consumer}/penalties")
@@ -204,6 +204,12 @@ public class BillingController {
         } catch (FiscalYearNotConfiguredException e) {
             throw ApiProblem.unprocessable(FiscalYearNotConfiguredException.CODE, e.getMessage());
         }
+    }
+
+    /** A GET (decision 320): only a request the billing connector declares read-only is run. */
+    private Map<String, Object> read(RequestContext ctx, String operation, Map<String, Object> input) {
+        definitions.ensure(ctx.tenantId());
+        return ModuleConnectors.read(connector, ctx, ctx.tenantId(), operation, input);
     }
 
     /** Runs a billing connector operation after registering the tenant's ledger definitions. */

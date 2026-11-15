@@ -27,6 +27,7 @@ public class GeoException extends RuntimeException {
             case "FORBIDDEN" -> 403;
             case "GIS_UNAVAILABLE", "NO_CONNECTOR" -> 503;
             case "CONFLICT", "VERSION_CONFLICT" -> 409;
+            case "CONNECTOR_OPERATION_NOT_READ_ONLY" -> 422;   // owner decision 320: a permanent refusal
             default -> 400;
         };
     }

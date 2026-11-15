@@ -29,7 +29,8 @@ import java.util.function.BiFunction;
  */
 public final class ExternalLayerGateway {
 
-    private static final UUID NS = UUID.fromString("6f1b5a9e-3c1d-5e8a-9b0f-2a7c4d6e8f10");
+    private static final System.Logger LOG = System.getLogger(ExternalLayerGateway.class.getName());
+    private static final UUID NS =UUID.fromString("6f1b5a9e-3c1d-5e8a-9b0f-2a7c4d6e8f10");
 
     private final GeoService geo;
     private final BiFunction<String, String, SangamConnector> connectorResolver;
@@ -52,8 +53,26 @@ public final class ExternalLayerGateway {
         Map<String, Object> in = requestInput(x, input);
         String op = operation == null ? (x.protocol() == ExternalLayer.Protocol.WFS ? "getFeature" : "getMapUrl") : operation;
         UUID opId = Hashes.uuidV5(NS, tenantId + "|" + layerRef + "|" + op + "|" + new java.util.TreeMap<>(in));
-        return conn.invoke(new ConnectorRequest(tenantId, opId, "geo-" + opId, 1, "geo:external:" + layerRef, layerRef, op, in,
-                Instant.now().plusSeconds(60)));
+        ConnectorRequest request = new ConnectorRequest(tenantId, opId, "geo-" + opId, 1, "geo:external:" + layerRef, layerRef, op, in,
+                Instant.now().plusSeconds(60));
+        // Owner decision 320: this is an API read (the caller names the operation, the layer names the connector), made
+        // outside the operation ledger. Only a request the connector itself declares read-only is invoked.
+        if (!declaresReadOnly(conn, request)) {
+            LOG.log(System.Logger.Level.WARNING, "API read refused ({0}): tenant {1}, external layer {2}, connector {3},"
+                    + " operation {4}", SangamConnector.OPERATION_NOT_READ_ONLY, tenantId, layerRef, x.connectorId(), op);
+            throw new GeoException(SangamConnector.OPERATION_NOT_READ_ONLY, "connector " + x.connectorId()
+                    + " does not declare operation '" + op + "' read-only; an external-layer query never calls it");
+        }
+        return conn.invoke(request);
+    }
+
+    /** Fail closed: a connector whose answer cannot be had (it throws) has not declared the request read-only. */
+    private static boolean declaresReadOnly(SangamConnector conn, ConnectorRequest request) {
+        try {
+            return conn.readOnly(request);
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     /**

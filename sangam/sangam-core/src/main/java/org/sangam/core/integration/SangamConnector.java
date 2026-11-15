@@ -48,6 +48,30 @@ public interface SangamConnector {
         return new LookupResult.NotSupported();
     }
 
+    /**
+     * Problem code of an API read that was refused because the connector did not answer {@link #readOnly} for the
+     * request (owner decision 320): a permanent refusal (HTTP 422), never a retryable one.
+     */
+    String OPERATION_NOT_READ_ONLY = "CONNECTOR_OPERATION_NOT_READ_ONLY";
+
+    /**
+     * Whether {@link #invoke} of exactly this request is read-only (owner decisions 320 and 321): it changes no state,
+     * here or downstream, and sends nothing outside (no message, order, file or inquiry transaction; fetching with an
+     * HTTP {@code GET} or {@code HEAD}, or running a declared select, is a read). The answer is per request and comes
+     * from what the request will really do (the resolved HTTP method, the resolved statement, the operation the
+     * connector will run), never from a list of names and never from the caller's intent. It must not cause an effect
+     * and must not throw.
+     *
+     * <p>A path that calls a connector from an API read (outside {@code ConnectorInvoker}, so without the operation
+     * ledger, idempotency and maker-checker) invokes only a request for which this is {@code true}, and otherwise
+     * refuses with {@link #OPERATION_NOT_READ_ONLY}. The default is {@code false} (fail closed): a connector that does
+     * not override it can never be called from an API read. A connector that wraps another answers for the request it
+     * will pass on.
+     */
+    default boolean readOnly(ConnectorRequest request) {
+        return false;
+    }
+
     /** Health probe used by the operator view; must not cause an effect. */
     default boolean healthy() {
         return true;

@@ -92,6 +92,21 @@ public final class RestBackedDataObjects {
         return c;
     }
 
+    /**
+     * Owner decision 320, at definition time: a REST-backed data object whose {@code endpointRef} is bound to a
+     * connector that does not declare the list request read-only is refused (422 {@value RestBackedRecords#NOT_READ_ONLY}),
+     * so the administrator learns at once. Without the connector seam, or with a binding that does not resolve yet,
+     * nothing is refused here: the list itself is checked on every call.
+     */
+    public void requireReadOnlyList(RequestContext ctx, DataObjectDef d) {
+        RestBackedRecords c = connector.get();
+        String refusal = c == null ? null : c.listRefusal(JdbcSupport.tenant(ctx), d.endpointRef());
+        if (refusal != null) {
+            throw ApiProblem.unprocessable(RestBackedRecords.NOT_READ_ONLY, "endpointRef " + d.endpointRef()
+                    + " cannot back a data object: " + refusal).with("field", "endpointRef");
+        }
+    }
+
     // ------------------------------------------------------------------ list (decision 266)
 
     public Page<Map<String, Object>> list(RequestContext ctx, DataObjectDef d, String q, Page.PageRequest page,
@@ -103,6 +118,10 @@ public final class RestBackedDataObjects {
         try {
             answer = c.list(JdbcSupport.tenant(ctx), d.endpointRef(), q, offset, limit);
         } catch (RestBackedRecords.ConnectorProblem e) {
+            if (RestBackedRecords.NOT_READ_ONLY.equals(e.reasonCode())) {
+                // decision 320: a permanent refusal of this data object's binding, never a retryable 503
+                throw ApiProblem.unprocessable(RestBackedRecords.NOT_READ_ONLY, e.getMessage());
+            }
             throw failed(e.reasonCode(), e.getMessage());
         }
         if (answer == null || !(answer.records() instanceof List<?> raw)) {

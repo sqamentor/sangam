@@ -51,10 +51,28 @@ public interface RestBackedRecords {
     }
 
     /**
+     * Owner decision 320: the reason code of a list the connector seam refused because the bound connector does not
+     * declare the list request read-only. A permanent refusal (422), not a connector failure (503).
+     */
+    String NOT_READ_ONLY = "CONNECTOR_OPERATION_NOT_READ_ONLY";
+
+    /**
      * Synchronous read through the connector query operation {@value #LIST_OPERATION} with payload
-     * {@code {q, offset, limit}}. A failed or unavailable connector throws {@link ConnectorProblem}.
+     * {@code {q, offset, limit}}. A failed or unavailable connector throws {@link ConnectorProblem}. The list is an API
+     * read (owner decisions 320 and 321): the host calls the connector only when it declares this request read-only and
+     * otherwise throws {@link ConnectorProblem} with {@value #NOT_READ_ONLY}, nothing called.
      */
     Listing list(String tenantId, String endpointRef, String q, int offset, int limit);
+
+    /**
+     * Definition-time probe (owner decision 320): why a list of {@code endpointRef} would be refused as not read-only,
+     * or null when it would not be (also when the binding cannot be resolved yet). Nothing is called. The run-time check
+     * in {@link #list} is the guard; this only tells the administrator at once. The default (a host that does not
+     * probe) is null.
+     */
+    default String listRefusal(String tenantId, String endpointRef) {
+        return null;
+    }
 
     /**
      * Requests the {@value #CREATE_OPERATION} effect once per {@code operationId} with payload

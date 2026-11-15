@@ -268,7 +268,7 @@ public class ConfigController {
         in.put("code", body.code());
         put(in, "office", body.office());
         put(in, "asOf", body.asOf());
-        return ModuleConnectors.call(connector, ctx, scope(ctx, body.scope()), "classification.validate", in);
+        return ModuleConnectors.read(connector, ctx, scope(ctx, body.scope()), "classification.validate", in);
     }
 
     // ---------------------------------------------------------------- document types and crosswalks
@@ -299,7 +299,7 @@ public class ConfigController {
         in.put("document", body == null || body.document() == null ? Map.of() : body.document());
         put(in, "office", body == null ? null : body.office());
         put(in, "asOf", body == null ? null : body.asOf());
-        return ModuleConnectors.call(connector, ctx, scope(ctx, body == null ? null : body.scope()),
+        return ModuleConnectors.read(connector, ctx, scope(ctx, body == null ? null : body.scope()),
                 "documentType.check", in);
     }
 
@@ -316,7 +316,7 @@ public class ConfigController {
         put(in, "amount", body.amount());
         put(in, "office", body.office());
         put(in, "asOf", body.asOf());
-        return ModuleConnectors.call(connector, ctx, scope(ctx, body.scope()), "crosswalk.map", in);
+        return ModuleConnectors.read(connector, ctx, scope(ctx, body.scope()), "crosswalk.map", in);
     }
 
     // ---------------------------------------------------------------- helpers

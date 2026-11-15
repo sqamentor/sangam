@@ -52,6 +52,15 @@ public final class WfsConnector implements org.sangam.core.integration.SangamCon
                 ConnectorProfile.LIVE);
     }
 
+    /** Owner decision 320: the operations this connector runs are HTTP GET reads of the WFS service. */
+    @Override
+    public boolean readOnly(ConnectorRequest request) {
+        return switch (request.operation()) {
+            case "getCapabilities", "getFeature", "invoke" -> true;
+            default -> false;
+        };
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest request) {
         try {

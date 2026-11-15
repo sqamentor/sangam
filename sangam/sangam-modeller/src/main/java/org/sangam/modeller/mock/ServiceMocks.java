@@ -60,6 +60,12 @@ public final class ServiceMocks {
                 return real.descriptor();
             }
 
+            /** Owner decision 320: the real connector's answer, mocked or not, so an API read behaves as in production. */
+            @Override
+            public boolean readOnly(ConnectorRequest r) {
+                return real.readOnly(r);
+            }
+
             @Override
             public ConnectorResult invoke(ConnectorRequest r) {
                 if (!globalEnabled || disabledServices.contains(service)) {

@@ -13,6 +13,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.sangam.core.layer.CapabilityClass;
+import org.sangam.integration.packs.ApiReadGateway;
 import org.sangam.packs.core.Vars;
 import org.sangam.packs.port.ConnectorGateway;
 import org.sangam.packs.port.ConnectorRequest;
@@ -38,8 +39,7 @@ class RestBackedRecordsGatewayTest {
     final ConnectorGateway gateway = new ConnectorGateway() {
         @Override
         public ConnectorResult query(ConnectorRequest request) {
-            queries.add(request);
-            return answer;
+            throw new AssertionError("decision 320: a list is an API read and never uses ConnectorGateway.query");
         }
 
         @Override
@@ -70,7 +70,21 @@ class RestBackedRecordsGatewayTest {
         }
     };
 
-    final RestBackedRecordsGateway seam = new RestBackedRecordsGateway(gateway);
+    /** The API-read entry (decision 320); the shapes asserted below are those of the list request it receives. */
+    final ApiReadGateway reads = new ApiReadGateway() {
+        @Override
+        public ConnectorResult queryReadOnly(ConnectorRequest request) {
+            queries.add(request);
+            return answer;
+        }
+
+        @Override
+        public java.util.Optional<String> readOnlyRefusal(ConnectorRequest request) {
+            throw new AssertionError("not used");
+        }
+    };
+
+    final RestBackedRecordsGateway seam = new RestBackedRecordsGateway(gateway, reads);
 
     @Test
     void theListIsAQueryOfOperationListWithQOffsetLimit() {

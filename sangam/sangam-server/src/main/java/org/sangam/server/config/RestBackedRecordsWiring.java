@@ -30,7 +30,7 @@ public class RestBackedRecordsWiring {
     @Bean
     @ConditionalOnMissingBean(RestBackedRecords.class)
     public RestBackedRecords sangamRestBackedRecords(IntegrationConnectorGateway sangamIntegrationConnectorGateway) {
-        return new RestBackedRecordsGateway(sangamIntegrationConnectorGateway);
+        return new RestBackedRecordsGateway(sangamIntegrationConnectorGateway, sangamIntegrationConnectorGateway);
     }
 
     /** Decision 289: the data-object settlement emitter, registered on the store when it is created. */

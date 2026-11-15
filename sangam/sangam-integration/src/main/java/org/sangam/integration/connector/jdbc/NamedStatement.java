@@ -79,6 +79,23 @@ public record NamedStatement(String name, String sql, Kind kind, String position
         return new NamedStatement(name, sql, kind, out.toString(), params);
     }
 
+    /**
+     * True for a declared select (owner decision 320): kind {@link Kind#QUERY} whose SQL, after leading white space and
+     * comments, starts with the keyword {@code SELECT}. A query that starts with anything else ({@code WITH}, which may
+     * carry a data-modifying statement, {@code INSERT … RETURNING}, a call) is not counted as a read, and neither is a
+     * {@code SELECT … INTO} or a locking {@code SELECT … FOR UPDATE / FOR SHARE}. What a selected function does is the
+     * operator's statement and is not visible here.
+     */
+    public boolean isSelect() {
+        if (kind != Kind.QUERY || positionalSql == null) {
+            return false;
+        }
+        String code = positionalSql.replaceAll("(?s)/\\*.*?\\*/", " ").replaceAll("--[^\\n]*", " ")
+                .replaceAll("(?s)'(?:[^']|'')*'", "''").strip().toLowerCase(Locale.ROOT);
+        // one statement only: a second one after ';' is not a select the first keyword vouches for
+        return code.matches("(?s)select\\b.*") && !code.replaceAll(";\\s*$", "").contains(";") && !code.matches("(?s).*\\b(into|for\\s+(update|share|no\\s+key\\s+update|key\\s+share))\\b.*");
+    }
+
     /** Parses a kind name ({@code query} or {@code update}, any case). */
     public static Kind kind(String s) {
         if (s == null || s.isBlank()) {

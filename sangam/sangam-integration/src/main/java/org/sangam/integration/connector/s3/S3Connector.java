@@ -101,6 +101,12 @@ public final class S3Connector implements SangamConnector {
         }
     }
 
+    /** Owner decision 320: {@code get} (an HTTP GET) and {@code head} (an HTTP HEAD) read; put and delete do not. */
+    @Override
+    public boolean readOnly(ConnectorRequest r) {
+        return "get".equals(r.operation()) || "head".equals(r.operation());
+    }
+
     private ConnectorResult put(ConnectorRequest r, String key, long deadline) {
         byte[] body = content(r);
         if (body.length > config.maxPutBytes()) {
