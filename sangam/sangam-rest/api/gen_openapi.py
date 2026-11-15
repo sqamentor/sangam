@@ -127,7 +127,11 @@ SCHEMAS["DecimalString"] = {
 SCHEMAS["TypedValue"]["properties"]["value"]["description"] = (
     "String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is "
     "DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned "
-    "variable type (decision 138) and returned unchanged through history, export and import.")
+    "variable type (decision 138) and returned unchanged through history, export and import. A LocalDate value is a "
+    "calendar date, ISO-8601 uuuu-MM-dd exactly (years 0000-9999; a date-time, an offset or an impossible date is "
+    "refused with VALIDATION_FAILED, never coerced); the engine stores it as a variable type of its own and returns it "
+    "as the same typed value, also inside a Json map or list, where it is carried as this typed object (decision 333). "
+    "Date is an instant, a different type. A date sent as a plain string stays a string.")
 # Owner decision 142 (RM-08): the versioned power-limit decision of sangam-core org.sangam.core.power
 # (PowerLimitEvaluator.audit, contract sangam.power-decision/1; W4-A REQUEST 2026-11-12T18:48:41Z). Member names are the
 # audit payload's own (snake_case), so the REST layer and the audit record carry the same document.

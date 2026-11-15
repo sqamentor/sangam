@@ -518,12 +518,19 @@ public class OperatonPortalAdapter implements PortalPort {
         return o == null ? List.of() : List.of(String.valueOf(o));
     }
 
-    private static Instant instant(Object o) {
+    /**
+     * A portal date value as an instant: a date-time as is; a calendar date, typed ({@link LocalDate}, decision 333) or
+     * as ISO text, at the start of that day in UTC.
+     */
+    static Instant instant(Object o) {
         if (o instanceof Date d) {
             return d.toInstant();
         }
         if (o instanceof Instant i) {
             return i;
+        }
+        if (o instanceof LocalDate day) {
+            return day.atStartOfDay(ZoneOffset.UTC).toInstant();
         }
         if (o instanceof String s && !s.isBlank()) {
             try {

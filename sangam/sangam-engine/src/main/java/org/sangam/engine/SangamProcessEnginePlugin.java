@@ -199,6 +199,9 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
             pre.addAll(cfg.getCustomPreVariableSerializers());
         }
         cfg.setCustomPreVariableSerializers(pre);
+        // decision 333: LocalDate variables as ISO date text (type id sangam-local-date-v1), before the generic ones
+        // (B-47); registered first so that the decimal serializer below stays the very first (B-37)
+        org.sangam.packs.engine.LocalDateValueSerializer.register(cfg);
         // decision 138: BigDecimal variables as lossless decimal text (type id sangam-decimal-v1), first (B-37)
         org.sangam.packs.engine.DecimalValueSerializer.register(cfg);
 
