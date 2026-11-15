@@ -4,6 +4,7 @@ package org.sangam.resources;
 import org.sangam.config.locale.BusinessCalendar;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Outbox;
+import org.sangam.core.security.EnvironmentPolicy;
 import org.sangam.core.security.SecurityIdentity;
 import org.sangam.core.security.SecurityPorts;
 import org.sangam.resources.dialect.ResourcesDialect;
@@ -74,12 +75,14 @@ public final class ResourcesContext {
     public static final String P_CANCEL = "CANCEL";
     public static final String P_WORK = "WORK";
 
-    /** Object-level authorization check (wired to {@link SecurityPorts.Authorization#require}). */
+    /**
+     * Object-level authorization check (wired to {@link SecurityPorts.Authorization#require}). There is no permissive
+     * constant and no default (RM-27, RM-28): a context is built with an explicit guard, or, in a validated development
+     * environment only, with {@link Builder#withoutAuthorization}.
+     */
     @FunctionalInterface
     public interface Guard {
         void require(Connection c, SecurityIdentity actor, String resourceType, String permission, String id);
-
-        Guard ALLOW_ALL = (c, a, t, p, id) -> { };
 
         static Guard of(SecurityPorts.Authorization authz) {
             return authz::require;
@@ -264,8 +267,8 @@ public final class ResourcesContext {
     public static final class Builder {
         private final ResourcesDialect dialect;
         private RuleEvaluator rules;
-        private Guard guard = Guard.ALLOW_ALL;
-        private Visibility visibility = Visibility.TENANT_ONLY;
+        private Guard guard;
+        private Visibility visibility;
         private boolean deliverDirectly;
         private BiFunction<String, String, Optional<BusinessCalendar>> businessCalendars = (t, id) -> Optional.empty();
         private ResourcesPorts.BillingPort billing = ResourcesPorts.Defaults.FREE;
@@ -309,7 +312,37 @@ public final class ResourcesContext {
         public Builder seats(SecurityPorts.SeatDirectory v) { this.seats = v; return this; }
         public Builder settings(Map<String, ?> v) { if (v != null) { this.settings.putAll(v); } return this; }
 
+        /**
+         * A stand-alone context without an authorization layer: every object check passes and a list shows every row of
+         * the caller's tenant. Development and tests only (owner decisions 143 and 152): refused unless the resolved
+         * environment allows development-only defaults, so production, staging and an unknown or contradictory
+         * configuration can never run the module unguarded.
+         *
+         * @throws IllegalStateException outside a validated development environment
+         */
+        public Builder withoutAuthorization(EnvironmentPolicy.Resolution environment) {
+            Objects.requireNonNull(environment, "environment");
+            if (!environment.developmentDefaultsAllowed()) {
+                throw new IllegalStateException("sangam-resources cannot run without authorization in " + environment.mode()
+                        + ": wire the VI.4 authorization (Builder.authorization); an unguarded context is a"
+                        + " development-only default (decision 143)");
+            }
+            this.guard = (c, actor, resourceType, permission, id) -> { };
+            this.visibility = Visibility.TENANT_ONLY;
+            return this;
+        }
+
+        /**
+         * @throws IllegalStateException when no object guard or no list visibility was stated (RM-27, RM-28: neither
+         *                               has a default, so a host that forgets its authorization does not start)
+         */
         public ResourcesContext build() {
+            if (guard == null || visibility == null) {
+                throw new IllegalStateException("sangam-resources needs its authorization stated: "
+                        + (guard == null ? "no object guard" : "no list visibility") + " was set. Call"
+                        + " Builder.authorization(...) (or guard(...) and visibility(...)); a development host without"
+                        + " sangam-security calls withoutAuthorization(environment). Nothing is permitted by default");
+            }
             return new ResourcesContext(this);
         }
     }

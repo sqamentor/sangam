@@ -33,6 +33,19 @@ class IdempotencyServiceClientSafeErrorsTest {
 
     private final AtomicInteger commandRuns = new AtomicInteger();
 
+    /** A replay authorizer that permits nothing. */
+    private static final ReplayAuthorizer REFUSE_REPLAY = new ReplayAuthorizer() {
+        @Override
+        public boolean mayReplay(String tenantId, String principalId, String commandType, String resourceRef) {
+            return false;
+        }
+
+        @Override
+        public byte[] mask(String tenantId, String principalId, String resourceRef, byte[] storedBody) {
+            return new byte[0];
+        }
+    };
+
     /** A claim transaction that fails inside the driver with an IllegalArgumentException. */
     private static Transactions failing(RuntimeException failure) {
         return new Transactions() {
@@ -44,7 +57,9 @@ class IdempotencyServiceClientSafeErrorsTest {
     }
 
     private IdempotencyService service(Transactions tx) {
-        return new IdempotencyService(new IdempotencyStore(null, tx, "node-1"), null, tx, null, null, true);
+        // RM-27: profile and replay authorizer are stated; these tests never reach a replay
+        return new IdempotencyService(new IdempotencyStore(null, tx, "node-1"), null, tx, IdempotencyProfile.optional(),
+                REFUSE_REPLAY, true);
     }
 
     private static IdempotentRequest request(String key, Object body) {

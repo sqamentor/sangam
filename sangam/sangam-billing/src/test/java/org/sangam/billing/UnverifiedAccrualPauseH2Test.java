@@ -102,6 +102,35 @@ class UnverifiedAccrualPauseH2Test {
         }
     }
 
+    /**
+     * The audit events of a payment leave {@code AUDIT_PENDING} when the drainer appends them to the record's chain (the
+     * store signals it after every write), so the event of a resumed accrual is counted wherever it is. Here the drain
+     * is forced to completion: the event is on the chain, no longer pending, and still found once with its amount.
+     */
+    @Test
+    void theResumedAccrualEventIsFoundAfterItsDrainToTheChain() throws Exception {
+        Fixture f = fixture(null);
+        try (PendingAuditDrainer ignored = f.drainer()) {
+            UnverifiedPayment p = f.service().accept(CASHIER, "T", request("CHQ-1", "40.00"));
+            levy(f, LEVY);
+            f.service().resolve(SUPERVISOR, "T", p.id(), State.REJECTED, "never arrived", null, null);
+            f.drainer().sweep(java.time.Duration.ZERO);
+            String chain = JdbcUnverifiedPaymentStore.chainOf(p.id());
+            long stillPending = f.tx().inTransaction(c -> org.sangam.core.layer.Jdbc.one(c,
+                    "SELECT COUNT(*) FROM AUDIT_PENDING WHERE chain_id=?", rs -> rs.getLong(1), chain).orElse(-1L));
+            assertEquals(0L, stillPending, "every event of the payment was drained");
+            List<String> onChain = f.tx().inTransaction(c -> org.sangam.core.layer.Jdbc.query(c,
+                    "SELECT event_type FROM AUDIT_EVENT WHERE tenant_id=? AND chain_id=? ORDER BY seq",
+                    rs -> rs.getString(1), "T", chain));
+            assertEquals(List.of(UnverifiedPayments.PAYMENT_ACCEPTED_UNVERIFIED,
+                    UnverifiedPayments.PAYMENT_UNVERIFIED_RESOLVED, UnverifiedPayments.PAYMENT_UNVERIFIED_ACCRUAL_RESUMED),
+                    onChain, "the record's chain, in order");
+            assertEquals(1, audit(f, UnverifiedPayments.PAYMENT_UNVERIFIED_ACCRUAL_RESUMED));
+            assertTrue(auditPayload(f, UnverifiedPayments.PAYMENT_UNVERIFIED_ACCRUAL_RESUMED).contains("0.40"));
+            assertEquals(1, audit(f, UnverifiedPayments.PAYMENT_ACCEPTED_UNVERIFIED));
+        }
+    }
+
     @Test
     void reversedLeviesThePausedAccrualToo() throws Exception {
         Fixture f = fixture(null);

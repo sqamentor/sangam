@@ -50,7 +50,7 @@ class ResourceCatalogueUpsertH2Test {
             if (id.equals(deny)) {
                 throw ResourcesException.notEntitled("DENIED", "denied " + id);
             }
-        }).build();
+        }).visibility(org.sangam.resources.port.Visibility.TENANT_ONLY).build();
         catalogue = new ResourceCatalogue(ctx);
         catalogue.loadTypes(c, ALICE, List.of(Map.of("typeId", "ROOM", "name", "Room")));
         checks.clear();
