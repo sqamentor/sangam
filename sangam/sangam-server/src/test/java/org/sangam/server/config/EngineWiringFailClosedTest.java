@@ -30,6 +30,26 @@ class EngineWiringFailClosedTest {
         assertTrue(e.getMessage().contains(SangamRestAutoConfiguration.ALLOW_WITHOUT_SECURITY), e.getMessage());
     }
 
+    /**
+     * The refusal is the start-up check's, before any bean is created: a start without the module then fails for this
+     * reason, not with a missing-bean error of whichever bean needed the security module first.
+     */
+    @Test
+    void theStartUpCheckRefusesBeforeAnyBeanIsCreated() {
+        MockEnvironment staging = new MockEnvironment().withProperty("sangam.modules.security.enabled", "false")
+                .withProperty(org.sangam.core.security.ProductionMode.PROPERTY, "false");
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> EnvironmentPolicyWiring.StartupCheck.requireSecurityModule(staging));
+        assertTrue(e.getMessage().contains("sangam-security is not active"), e.getMessage());
+        EnvironmentPolicyWiring.StartupCheck check = EnvironmentPolicyWiring.sangamEnvironmentPolicyCheck();
+        check.setEnvironment(staging);
+        assertThrows(IllegalStateException.class, () -> check.postProcessBeanFactory(null));
+        MockEnvironment withModule = new MockEnvironment()
+                .withProperty(org.sangam.core.security.ProductionMode.PROPERTY, "false");
+        check.setEnvironment(withModule);
+        check.postProcessBeanFactory(null);   // the module is on by default: nothing to refuse
+    }
+
     /** Decision 143: an explicit development start states the switch false. */
     @Test
     void anExplicitDevelopmentStartRunsWithoutTheBinding() {
