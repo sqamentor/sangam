@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.DataSource;
+
+import com.zaxxer.hikari.HikariDataSource;
+
 import org.sangam.config.admin.ConfigAdminService;
 import org.sangam.config.api.ConfigConnector;
 import org.sangam.config.master.ClassificationRegistry;
@@ -26,6 +30,7 @@ import org.sangam.server.bridge.ConfigCaseBindingPlugin;
 import org.sangam.server.bridge.ConfigConnectorBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.ApplicationRunner;
@@ -37,7 +42,8 @@ import org.springframework.core.env.Environment;
 /**
  * Wires sangam-config (README "Integration notes"):
  * <ul>
- *   <li>{@link JdbcConfigStore} on the product DataSource: profiles, change register, master codes, number series and
+ *   <li>{@link JdbcConfigStore} on the product database through its own leaf pool ({@link ConfigStorePool}):
+ *       profiles, change register, master codes, number series and
  *       case bindings ({@code CFG_*} tables; Liquibase from sangam-persistence, {@code ConfigSchema.create} for the
  *       dev schema only).</li>
  *   <li>The layer model {@code profiles/layers.yaml}, {@link ProfileResolver}, {@link ProfileValidator} and the
@@ -67,8 +73,65 @@ public class ConfigWiring {
     public static final List<String> PACK_CONNECTOR_IDS = List.of("config.profile", "config.documentType",
             "config.classification", "config.series", "config.crosswalk");
 
+    /** The config store's leaf pool (see {@link ConfigStorePool}). */
+    public static final String STORE_POOL_NAME = "sangam-config";
+    static final String STORE_POOL_SIZE_PROPERTY = "sangam.config.store.pool.maximum-size";
+    static final int STORE_POOL_DEFAULT_SIZE = 4;
+
+    /**
+     * The leaf pool {@value #STORE_POOL_NAME} for the config store's own short transactions
+     * ({@code JdbcConfigStore.inTx}: change marker, profile and master-code reads, number series, change register, case
+     * binding). The store is read while the caller holds a connection of the main pool: a process start runs
+     * {@link ConfigCaseBindingPlugin} inside the engine command, which asks {@code ProfileResolver} for the change
+     * marker. A second connection from the main pool there is the SL-43 pool-locking deadlock once every slot is held
+     * by a start waiting for its second one. A connection of this pool is never held while another connection is
+     * requested (every {@code inTx} of the store is plain SQL on its own connection), so waits for it cannot form a
+     * cycle. Same database and settings as the main pool, derived by the one leaf-pool helper
+     * ({@link ComplianceWiring#leafPool}; X1-05, the precedent of SL-43 and SL-161);
+     * {@value #STORE_POOL_SIZE_PROPERTY} (default 4) connections on top of the main pool. A main pool that is not
+     * HikariCP (an embedding host's own pool) gets no leaf pool and the store stays on the main pool, as before, with a
+     * warning (the SL-132 rule).
+     */
+    public static final class ConfigStorePool implements DisposableBean {
+        private final HikariDataSource poolOrNull;
+
+        ConfigStorePool(HikariDataSource poolOrNull) {
+            this.poolOrNull = poolOrNull;
+        }
+
+        HikariDataSource poolOrNull() {
+            return poolOrNull;
+        }
+
+        /** The leaf pool, or {@code main} when there is none. */
+        DataSource dataSource(DataSource main) {
+            return poolOrNull == null ? main : poolOrNull;
+        }
+
+        @Override
+        public void destroy() {
+            if (poolOrNull != null) {
+                poolOrNull.close();
+            }
+        }
+    }
+
     @Bean
-    public JdbcConfigStore sangamConfigStore(TxSupport tx, Environment env) {
+    public ConfigStorePool sangamConfigStorePool(TxSupport tx, Environment env) {
+        return storePool(tx.dataSource(), env.getProperty(STORE_POOL_SIZE_PROPERTY, Integer.class, STORE_POOL_DEFAULT_SIZE));
+    }
+
+    static ConfigStorePool storePool(DataSource main, int maximumSize) {
+        if (!ComplianceWiring.isHikari(main)) {
+            LOG.warn("The main DataSource ({}) is not HikariCP, so the config store has no leaf pool and reads on a second"
+                    + " main-pool connection (pool-locking risk under load, SL-43)", main.getClass().getName());
+            return new ConfigStorePool(null);
+        }
+        return new ConfigStorePool(ComplianceWiring.leafPool(main, maximumSize, STORE_POOL_NAME));
+    }
+
+    @Bean
+    public JdbcConfigStore sangamConfigStore(TxSupport tx, Environment env, ConfigStorePool sangamConfigStorePool) {
         if (env.getProperty("sangam.persistence.dev-schema", Boolean.class, false)) {
             devSchema(tx, "CFG_PROFILE", () -> tx.withConnection(c -> {
                 try {
@@ -79,7 +142,7 @@ public class ConfigWiring {
                 }
             }));
         }
-        return new JdbcConfigStore(tx.dataSource(), tx.dialect());
+        return new JdbcConfigStore(sangamConfigStorePool.dataSource(tx.dataSource()), tx.dialect());
     }
 
     @Bean
