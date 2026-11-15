@@ -1,0 +1,86 @@
+{
+  "offices": [
+    {
+      "id": "PAYER",
+      "parent": ""
+    }
+  ],
+  "seats": [
+    {
+      "id": "INTEROP-ANALYST",
+      "role": "INTEROP",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": "MEMBER-SERVICES",
+      "name": {
+        "en": "Interoperability analyst",
+        "es": "Analista de interoperabilidad"
+      }
+    },
+    {
+      "id": "MEMBER-SERVICES",
+      "role": "MEMBERSVC",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Member services",
+        "es": "Servicios al afiliado"
+      }
+    },
+    {
+      "id": "COMPLIANCE-OFFICER",
+      "role": "PAYERCOMPLIANCE",
+      "office": "PAYER",
+      "level": "HEAD_OFFICE",
+      "reportsTo": null,
+      "name": {
+        "en": "Compliance officer",
+        "es": "Oficial de cumplimiento"
+      }
+    }
+  ],
+  "holdings": [
+    {
+      "seat": "INTEROP-ANALYST",
+      "person": "upa.interop-analyst",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "MEMBER-SERVICES",
+      "person": "upa.member-services",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    },
+    {
+      "seat": "COMPLIANCE-OFFICER",
+      "person": "upa.compliance-officer",
+      "basis": "SUBSTANTIVE",
+      "from": "2026-01-01"
+    }
+  ],
+  "roles": [
+    {
+      "code": "INTEROP",
+      "name": {
+        "en": "Interoperability analyst",
+        "es": "Analista de interoperabilidad"
+      }
+    },
+    {
+      "code": "MEMBERSVC",
+      "name": {
+        "en": "Member services",
+        "es": "Servicios al afiliado"
+      }
+    },
+    {
+      "code": "PAYERCOMPLIANCE",
+      "name": {
+        "en": "Compliance officer",
+        "es": "Oficial de cumplimiento"
+      }
+    }
+  ]
+}

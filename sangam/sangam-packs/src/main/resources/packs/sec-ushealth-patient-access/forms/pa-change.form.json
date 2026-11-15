@@ -1,0 +1,72 @@
+{
+  "key": "sec-ushealth-patient-access/pa-change",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Prior authorization change",
+    "es": "Cambio en una autorización previa"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "patientName",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Patient name",
+        "es": "Nombre del paciente"
+      }
+    },
+    {
+      "id": "memberId",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Member ID",
+        "es": "Número de afiliado"
+      }
+    },
+    {
+      "id": "payerProgram",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer program (MA, MEDICAID, CHIP, QHP_FFE, COMMERCIAL, MEDICARE_FFS)",
+        "es": "Programa del pagador (MA, MEDICAID, CHIP, QHP_FFE, COMERCIAL, MEDICARE_FFS)"
+      }
+    },
+    {
+      "id": "priorAuthNumber",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Prior authorization number",
+        "es": "Número de autorización previa"
+      }
+    },
+    {
+      "id": "itemCategory",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Item category (ITEM_OR_SERVICE, DRUG)",
+        "es": "Categoría del artículo (ITEM_OR_SERVICE, DRUG)"
+      }
+    },
+    {
+      "id": "paStatus",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Prior authorization status (as the payer recorded it)",
+        "es": "Estado de la autorización previa (según el registro del pagador)"
+      }
+    }
+  ]
+}

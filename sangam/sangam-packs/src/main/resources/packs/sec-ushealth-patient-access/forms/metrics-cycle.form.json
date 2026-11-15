@@ -1,0 +1,36 @@
+{
+  "key": "sec-ushealth-patient-access/metrics-cycle",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Usage metrics report",
+    "es": "Informe de métricas de uso"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "payerProgram",
+      "type": "select",
+      "required": true,
+      "label": {
+        "en": "Payer program (MA, MEDICAID, CHIP, QHP_FFE, COMMERCIAL, MEDICARE_FFS)",
+        "es": "Programa del pagador (MA, MEDICAID, CHIP, QHP_FFE, COMERCIAL, MEDICARE_FFS)"
+      }
+    },
+    {
+      "id": "reportingPeriod",
+      "type": "string",
+      "required": true,
+      "label": {
+        "en": "Reporting period",
+        "es": "Período del informe"
+      }
+    }
+  ]
+}

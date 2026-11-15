@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-patient-access/collectHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Metrics not compiled: check the API usage records",
+    "es": "Métricas no compiladas: revisar los registros de uso de la API"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "interopNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Interoperability follow-up notes",
+        "es": "Notas de seguimiento de interoperabilidad"
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "id": "sec.ushealth.patient-access",
+  "version": "1.0.0",
+  "name": {
+    "en": "Patient Access API: prior authorization information and usage metrics (CMS-0057-F)",
+    "es": "API de acceso del paciente: información de autorizaciones previas y métricas de uso (CMS-0057-F)"
+  },
+  "domain": "Healthcare (USA)",
+  "description": "Every prior authorization request or status change of an item or service is made available to the patient through the Patient Access API within the timeframe from DMN, with the retention from DMN; a drug is not part of it (US-HLT-061); an item category or status the table does not know is neither published nor excluded but held for a person, and an unconfirmed publication is held, never closed as done. The usage-metrics cycle compiles the metrics of the reporting period, a compliance officer reviews them and the report is submitted with a confirmed receipt. Every rule row is UNVERIFIED (decision 288): readiness blocks go-live until confirmed tenant overrides.",
+  "mainProcesses": [
+    "sangam-sec-ushealth-patient-access-pa"
+  ],
+  "resources": [
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-patient-access/sangam-sec-ushealth-patient-access-pa.bpmn"
+    },
+    {
+      "kind": "BPMN",
+      "path": "packs/sec-ushealth-patient-access/sangam-sec-ushealth-patient-access-metrics.bpmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-patient-access/sec-ushealth-patient-access-config.dmn"
+    },
+    {
+      "kind": "DMN",
+      "path": "packs/sec-ushealth-patient-access/sec-ushealth-patient-access-metrics-config.dmn"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/pa-change.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/classifyHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/publishHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/metrics-cycle.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/periodHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/collectHold.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/metrics-review.form.json"
+    },
+    {
+      "kind": "FORM",
+      "path": "packs/sec-ushealth-patient-access/forms/submitHold.form.json"
+    },
+    {
+      "kind": "SEED",
+      "path": "packs/sec-ushealth-patient-access/seed.json"
+    }
+  ],
+  "seed": "packs/sec-ushealth-patient-access/seed.json",
+  "connectors": [
+    {
+      "id": "payer.patientAccess",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Patient Access API of this payer (FHIR): prior authorization information made available to the patient"
+    },
+    {
+      "id": "payer.apiMetrics",
+      "capabilityClass": "a",
+      "govTag": "",
+      "purpose": "Patient Access API usage metrics of the reporting period"
+    },
+    {
+      "id": "payer.metricsReport",
+      "capabilityClass": "b",
+      "govTag": "",
+      "purpose": "Submit the usage metrics report (recipient configured by the tenant)"
+    }
+  ],
+  "covers": [
+    "US-HLT-061",
+    "GP-14",
+    "VI.5"
+  ],
+  "acceptance": [],
+  "dependsOn": [
+    "sangam.core"
+  ],
+  "tenantOverrides": [],
+  "calls": [
+    "sangam-core-cancellation"
+  ],
+  "placeholders": [
+    {
+      "decision": "sec-ushealth-patient-access-config",
+      "rule": "UNVERIFIED (use SYNTHETIC_DEMO_ONLY) Patient Access API prior authorization scope (excluding drugs, from 1 Jan 2027) with SYNTHETIC availability 1WD and retention P1Y",
+      "reason": "CMS-0057-F and 42 CFR 422.119 were not read (decision 288); the availability timeframe and the retention are in no local source; deploy the confirmed rule as a tenant override"
+    },
+    {
+      "decision": "sec-ushealth-patient-access-metrics-config",
+      "rule": "UNVERIFIED (use SYNTHETIC_DEMO_ONLY) Patient Access API usage metrics report due P90D (SYNTHETIC)",
+      "reason": "CMS-0057-F was not read (decision 288); the frequency, due date, recipient and content of the usage metrics report are in no local source; deploy the confirmed rule as a tenant override"
+    }
+  ]
+}

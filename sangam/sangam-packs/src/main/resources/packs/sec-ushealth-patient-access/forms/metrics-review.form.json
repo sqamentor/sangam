@@ -1,0 +1,56 @@
+{
+  "key": "sec-ushealth-patient-access/metrics-review",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Review the usage metrics report",
+    "es": "Revisar el informe de métricas de uso"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "reportingPeriod",
+      "type": "string",
+      "required": false,
+      "label": {
+        "en": "Reporting period",
+        "es": "Período del informe"
+      }
+    },
+    {
+      "id": "metricsReview",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Review of the usage metrics report",
+        "es": "Revisión del informe de métricas de uso"
+      }
+    }
+  ],
+  "decision": {
+    "variable": "metricsDecision",
+    "required": true,
+    "options": [
+      {
+        "value": "submitReport",
+        "label": {
+          "en": "Submit the report",
+          "es": "Enviar el informe"
+        }
+      },
+      {
+        "value": "recompile",
+        "label": {
+          "en": "Compile the metrics again",
+          "es": "Compilar las métricas de nuevo"
+        }
+      }
+    ]
+  }
+}

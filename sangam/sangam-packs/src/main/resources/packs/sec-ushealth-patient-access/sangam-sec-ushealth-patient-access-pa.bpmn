@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Patient Access API: prior authorization information. Generated layout; edit freely in the Sangam modeller. -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:operaton="http://operaton.org/schema/1.0/bpmn" xmlns:sangam="http://sangam.org/schema/1.0/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="defs_sec_ushealth_patient_acc" targetNamespace="http://sangam.org/packs" exporter="sangam-packs" exporterVersion="1.0.0">
+  <message id="msg_sangam_cancelCase" name="sangam.cancelCase"/>
+  <message id="msg_sangam_withdrawCase" name="sangam.withdrawCase"/>
+  <process id="sangam-sec-ushealth-patient-access-pa" name="Patient Access API: prior authorization information" isExecutable="true" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <extensionElements><operaton:executionListener event="start" class="org.sangam.packs.core.PackStartListener"><operaton:field name="packId"><operaton:string>sec.ushealth.patient-access</operaton:string></operaton:field><operaton:field name="packVersion"><operaton:string>1.0.0</operaton:string></operaton:field><operaton:field name="materialFields"><operaton:string>memberId,priorAuthNumber,itemCategory</operaton:string></operaton:field></operaton:executionListener></extensionElements>
+    <startEvent id="pt_start" name="Prior authorization request or status change received" operaton:initiator="initiator" operaton:formKey="sangam:sec-ushealth-patient-access/pa-change"></startEvent>
+    <serviceTask id="pt_defaults" name="Configuration" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="defaults"><operaton:string>patientName=@customerId;memberId=@customerId;payerProgram=MA;priorAuthNumber=@customerId;itemCategory=UNCLASSIFIED;paStatus=NOT_STATED;interopSeat=INTEROP-ANALYST;memberSeat=MEMBER-SERVICES</operaton:string></operaton:field></extensionElements></serviceTask>
+    <businessRuleTask id="pt_cfg" name="Patient Access API scope and timeframes (DMN)" operaton:class="org.sangam.packs.core.DecisionDelegate"><extensionElements><operaton:field name="decisionKey"><operaton:string>sec-ushealth-patient-access-config</operaton:string></operaton:field></extensionElements></businessRuleTask>
+    <exclusiveGateway id="pt_scopeGw" name="Part of the prior authorization information?" default="sec_ushealth_patient_acc_f7"></exclusiveGateway>
+    <endEvent id="pt_endExcluded" name="Drug: not part of the prior authorization information"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>NOT_IN_SCOPE</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <serviceTask id="pt_deadline" name="Regulatory clock: paPublish" operaton:class="org.sangam.packs.core.SlaDelegate"><extensionElements><operaton:field name="op"><operaton:string>DEADLINE</operaton:string></operaton:field><operaton:field name="clock"><operaton:string>paPublish</operaton:string></operaton:field><operaton:field name="spec"><operaton:expression>${paPublishSpec}</operaton:expression></operaton:field></extensionElements></serviceTask>
+    <userTask id="pt_classifyHold" name="Item category or status not stated: classify before anything is published" operaton:candidateGroups="${memberSeat}" operaton:formKey="sangam:sec-ushealth-patient-access/classifyHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <serviceTask id="pt_publish_clear" name="Clear the previous check result" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>publishRecordRef=null</operaton:string></operaton:field></extensionElements></serviceTask>
+    <serviceTask id="pt_publish" name="Make the prior authorization information available (Patient Access API)" operaton:class="org.sangam.packs.core.ConnectorCallDelegate" operaton:asyncBefore="true"><extensionElements><operaton:field name="connector"><operaton:string>payer.patientAccess</operaton:string></operaton:field><operaton:field name="operation"><operaton:string>publish</operaton:string></operaton:field><operaton:field name="mode"><operaton:string>submit</operaton:string></operaton:field><operaton:field name="inputs"><operaton:string>memberId,priorAuthNumber,paStatus,paRetentionSpec</operaton:string></operaton:field><operaton:field name="resultPrefix"><operaton:string>publish</operaton:string></operaton:field><operaton:field name="step"><operaton:string>pa-publish</operaton:string></operaton:field></extensionElements></serviceTask>
+    <exclusiveGateway id="pt_publishGw" name="Available to the patient?" default="sec_ushealth_patient_acc_f13"></exclusiveGateway>
+    <userTask id="pt_publishHold" name="Publication not confirmed: check the Patient Access API" operaton:candidateGroups="${interopSeat}" operaton:formKey="sangam:sec-ushealth-patient-access/publishHold"><extensionElements><operaton:taskListener event="complete" class="org.sangam.packs.core.ActorRecorderListener"></operaton:taskListener></extensionElements></userTask>
+    <endEvent id="pt_end" name="Prior authorization information available to the patient"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>PUBLISHED</operaton:string></operaton:field><operaton:field name="dataVars"><operaton:string>['publishRecordRef']</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+    <sequenceFlow id="sec_ushealth_patient_acc_f1" sourceRef="pt_start" targetRef="pt_defaults"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f2" sourceRef="pt_defaults" targetRef="pt_cfg"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f3" sourceRef="pt_cfg" targetRef="pt_scopeGw"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f4" name="drug" sourceRef="pt_scopeGw" targetRef="pt_endExcluded"><conditionExpression xsi:type="tFormalExpression">${paScope == 'EXCLUDED_DRUG'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_patient_acc_f5" name="item or service" sourceRef="pt_scopeGw" targetRef="pt_deadline"><conditionExpression xsi:type="tFormalExpression">${paScope == 'IN_SCOPE' &amp;&amp; paStatus != 'NOT_STATED'}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_patient_acc_f6" sourceRef="pt_classifyHold" targetRef="pt_cfg"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f7" name="not classified" sourceRef="pt_scopeGw" targetRef="pt_classifyHold"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f8" sourceRef="pt_publish_clear" targetRef="pt_publish"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f9" sourceRef="pt_deadline" targetRef="pt_publish_clear"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f10" sourceRef="pt_publish" targetRef="pt_publishGw"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f11" sourceRef="pt_publishHold" targetRef="pt_publish_clear"/>
+    <sequenceFlow id="sec_ushealth_patient_acc_f12" name="not confirmed" sourceRef="pt_publishGw" targetRef="pt_publishHold"><conditionExpression xsi:type="tFormalExpression">${publishStatus != 'COMPLETED' || publishRecordRef == null}</conditionExpression></sequenceFlow>
+    <sequenceFlow id="sec_ushealth_patient_acc_f13" name="available" sourceRef="pt_publishGw" targetRef="pt_end"/>
+    <subProcess id="pt_withdraw" name="Withdrawn by initiator" triggeredByEvent="true">
+      <startEvent id="pt_withdrawStart" name="Withdrawal requested" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_withdrawCase"/></startEvent>
+      <serviceTask id="pt_withdrawKind" name="Kind: withdrawal" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=WITHDRAWN</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pt_withdrawCall" name="Withdraw (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pt_withdrawEnd" name="Withdrawn"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>WITHDRAWN</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_patient_acc_f14" sourceRef="pt_withdrawStart" targetRef="pt_withdrawKind"/>
+      <sequenceFlow id="sec_ushealth_patient_acc_f15" sourceRef="pt_withdrawKind" targetRef="pt_withdrawCall"/>
+      <sequenceFlow id="sec_ushealth_patient_acc_f16" sourceRef="pt_withdrawCall" targetRef="pt_withdrawEnd"/>
+    </subProcess>
+    <subProcess id="pt_cancel" name="Authorised cancellation" triggeredByEvent="true">
+      <startEvent id="pt_cancelStart" name="Cancellation ordered" isInterrupting="true"><messageEventDefinition messageRef="msg_sangam_cancelCase"/></startEvent>
+      <serviceTask id="pt_cancelKind" name="Kind: cancellation" operaton:class="org.sangam.packs.core.SetVariablesDelegate"><extensionElements><operaton:field name="values"><operaton:string>cancelKind=CANCELLED</operaton:string></operaton:field></extensionElements></serviceTask>
+      <callActivity id="pt_cancelCall" name="Cancel (core)" calledElement="sangam-core-cancellation" operaton:calledElementBinding="versionTag" operaton:calledElementVersionTag="1.0.1"><extensionElements><operaton:in businessKey="#{execution.processBusinessKey}"/><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements></callActivity>
+      <endEvent id="pt_cancelEnd" name="Cancelled"><extensionElements><operaton:executionListener event="end" class="org.sangam.packs.core.BatchItemOutcomeListener"><operaton:field name="outcome"><operaton:string>CANCELLED</operaton:string></operaton:field></operaton:executionListener></extensionElements></endEvent>
+      <sequenceFlow id="sec_ushealth_patient_acc_f17" sourceRef="pt_cancelStart" targetRef="pt_cancelKind"/>
+      <sequenceFlow id="sec_ushealth_patient_acc_f18" sourceRef="pt_cancelKind" targetRef="pt_cancelCall"/>
+      <sequenceFlow id="sec_ushealth_patient_acc_f19" sourceRef="pt_cancelCall" targetRef="pt_cancelEnd"/>
+    </subProcess>
+  </process>
+  <bpmndi:BPMNDiagram id="sec_ushealth_patient_acc_diagram">
+    <bpmndi:BPMNPlane id="sec_ushealth_patient_acc_plane" bpmnElement="sangam-sec-ushealth-patient-access-pa">
+      <bpmndi:BPMNShape id="pt_start_di" bpmnElement="pt_start"><dc:Bounds x="52" y="52" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_defaults_di" bpmnElement="pt_defaults"><dc:Bounds x="185" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_cfg_di" bpmnElement="pt_cfg"><dc:Bounds x="350" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_scopeGw_di" bpmnElement="pt_scopeGw"><dc:Bounds x="540" y="45" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_endExcluded_di" bpmnElement="pt_endExcluded"><dc:Bounds x="712" y="302" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_deadline_di" bpmnElement="pt_deadline"><dc:Bounds x="680" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_classifyHold_di" bpmnElement="pt_classifyHold"><dc:Bounds x="680" y="30" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_publish_clear_di" bpmnElement="pt_publish_clear"><dc:Bounds x="845" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_publish_di" bpmnElement="pt_publish"><dc:Bounds x="1010" y="155" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_publishGw_di" bpmnElement="pt_publishGw"><dc:Bounds x="1200" y="170" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_publishHold_di" bpmnElement="pt_publishHold"><dc:Bounds x="1340" y="280" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_end_di" bpmnElement="pt_end"><dc:Bounds x="1372" y="177" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_withdraw_di" bpmnElement="pt_withdraw" isExpanded="true"><dc:Bounds x="30" y="410" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_withdrawStart_di" bpmnElement="pt_withdrawStart"><dc:Bounds x="92" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_withdrawKind_di" bpmnElement="pt_withdrawKind"><dc:Bounds x="225" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_withdrawCall_di" bpmnElement="pt_withdrawCall"><dc:Bounds x="390" y="450" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_withdrawEnd_di" bpmnElement="pt_withdrawEnd"><dc:Bounds x="587" y="472" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_cancel_di" bpmnElement="pt_cancel" isExpanded="true"><dc:Bounds x="30" y="600" width="623" height="150"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_cancelStart_di" bpmnElement="pt_cancelStart"><dc:Bounds x="92" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_cancelKind_di" bpmnElement="pt_cancelKind"><dc:Bounds x="225" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_cancelCall_di" bpmnElement="pt_cancelCall"><dc:Bounds x="390" y="640" width="100" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="pt_cancelEnd_di" bpmnElement="pt_cancelEnd"><dc:Bounds x="587" y="662" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f1_di" bpmnElement="sec_ushealth_patient_acc_f1"><di:waypoint x="88" y="70"/><di:waypoint x="185" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f2_di" bpmnElement="sec_ushealth_patient_acc_f2"><di:waypoint x="285" y="70"/><di:waypoint x="350" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f3_di" bpmnElement="sec_ushealth_patient_acc_f3"><di:waypoint x="450" y="70"/><di:waypoint x="540" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f4_di" bpmnElement="sec_ushealth_patient_acc_f4"><di:waypoint x="590" y="70"/><di:waypoint x="651" y="70"/><di:waypoint x="651" y="320"/><di:waypoint x="712" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f5_di" bpmnElement="sec_ushealth_patient_acc_f5"><di:waypoint x="590" y="70"/><di:waypoint x="635" y="70"/><di:waypoint x="635" y="195"/><di:waypoint x="680" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f6_di" bpmnElement="sec_ushealth_patient_acc_f6"><di:waypoint x="730" y="110"/><di:waypoint x="730" y="135"/><di:waypoint x="400" y="135"/><di:waypoint x="400" y="110"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f7_di" bpmnElement="sec_ushealth_patient_acc_f7"><di:waypoint x="590" y="70"/><di:waypoint x="680" y="70"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f8_di" bpmnElement="sec_ushealth_patient_acc_f8"><di:waypoint x="945" y="195"/><di:waypoint x="1010" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f9_di" bpmnElement="sec_ushealth_patient_acc_f9"><di:waypoint x="780" y="195"/><di:waypoint x="845" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f10_di" bpmnElement="sec_ushealth_patient_acc_f10"><di:waypoint x="1110" y="195"/><di:waypoint x="1200" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f11_di" bpmnElement="sec_ushealth_patient_acc_f11"><di:waypoint x="1390" y="360"/><di:waypoint x="1390" y="392"/><di:waypoint x="895" y="392"/><di:waypoint x="895" y="235"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f12_di" bpmnElement="sec_ushealth_patient_acc_f12"><di:waypoint x="1250" y="195"/><di:waypoint x="1295" y="195"/><di:waypoint x="1295" y="320"/><di:waypoint x="1340" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f13_di" bpmnElement="sec_ushealth_patient_acc_f13"><di:waypoint x="1250" y="195"/><di:waypoint x="1372" y="195"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f14_di" bpmnElement="sec_ushealth_patient_acc_f14"><di:waypoint x="128" y="490"/><di:waypoint x="225" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f15_di" bpmnElement="sec_ushealth_patient_acc_f15"><di:waypoint x="325" y="490"/><di:waypoint x="390" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f16_di" bpmnElement="sec_ushealth_patient_acc_f16"><di:waypoint x="490" y="490"/><di:waypoint x="587" y="490"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f17_di" bpmnElement="sec_ushealth_patient_acc_f17"><di:waypoint x="128" y="680"/><di:waypoint x="225" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f18_di" bpmnElement="sec_ushealth_patient_acc_f18"><di:waypoint x="325" y="680"/><di:waypoint x="390" y="680"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="sec_ushealth_patient_acc_f19_di" bpmnElement="sec_ushealth_patient_acc_f19"><di:waypoint x="490" y="680"/><di:waypoint x="587" y="680"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="defs_sec_ushealth_patient_access_metrics_config" name="Patient Access API usage metrics report (UNVERIFIED; tenant overridable)" namespace="http://sangam.org/packs">
+  <!-- SPDX-License-Identifier: Apache-2.0 -->
+  <!-- US-HLT-061 (requirement summary read; CMS-0057-F cited, not read). Override per tenant or payer program with the confirmed rule (GP-37). -->
+  <decision id="sec-ushealth-patient-access-metrics-config" name="Patient Access API usage metrics report (UNVERIFIED; tenant overridable)" operaton:historyTimeToLive="3650" operaton:versionTag="1.0.0">
+    <decisionTable id="sec-ushealth-patient-access-metrics-config_t" hitPolicy="FIRST">
+      <input id="sec-ushealth-patient-access-metrics-config_i0" label="Payer program"><inputExpression id="sec-ushealth-patient-access-metrics-config_ie0" typeRef="string"><text>payerProgram</text></inputExpression></input>
+      <output id="sec-ushealth-patient-access-metrics-config_o0" label="Report due within" name="metricsReportSpec" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-metrics-config_o1" label="Evidence (VERIFIED / UNVERIFIED)" name="evidenceStatus" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-metrics-config_o2" label="Permitted use (PRODUCTION / SYNTHETIC_DEMO_ONLY)" name="permittedUse" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-metrics-config_o3" label="Why this evidence status and use" name="evidenceNote" typeRef="string"/>
+      <output id="sec-ushealth-patient-access-metrics-config_o4" label="Source (citation)" name="source" typeRef="string"/>
+      <rule id="sec-ushealth-patient-access-metrics-config_r0"><description>US-HLT-061 usage metrics from 1 Jan 2026; P90D SYNTHETIC UNVERIFIED SYNTHETIC_DEMO_ONLY</description>
+        <inputEntry id="sec-ushealth-patient-access-metrics-config_r0_i0"><text>-</text></inputEntry>
+        <outputEntry id="sec-ushealth-patient-access-metrics-config_r0_o0"><text>"P90D"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-metrics-config_r0_o1"><text>"UNVERIFIED"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-metrics-config_r0_o2"><text>"SYNTHETIC_DEMO_ONLY"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-metrics-config_r0_o3"><text>"UNVERIFIED, SYNTHETIC_DEMO_ONLY (decision 288): the requirement summary US-HLT-061 says usage metrics are reported from 1 Jan 2026 and gives no frequency, due date, recipient or content; P90D is a SYNTHETIC demonstration value (open point); deploy the confirmed rule as a tenant override"</text></outputEntry>
+        <outputEntry id="sec-ushealth-patient-access-metrics-config_r0_o4"><text>"cited, not read: CMS-0057-F; CMS-9115-F (42 CFR 422.119); requirement summary US-HLT-061 (spike/results/US-HEALTH-WORKFLOWS.md:102, read)"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>

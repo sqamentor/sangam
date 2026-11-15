@@ -1,0 +1,27 @@
+{
+  "key": "sec-ushealth-patient-access/submitHold",
+  "version": "1.0.0",
+  "pack": "sec.ushealth.patient-access",
+  "title": {
+    "en": "Submission not confirmed: confirm the receipt and resend",
+    "es": "Envío no confirmado: confirmar el acuse y reenviar"
+  },
+  "caseSummary": {
+    "source": "materialFields",
+    "label": {
+      "en": "Case details",
+      "es": "Detalles del caso"
+    }
+  },
+  "fields": [
+    {
+      "id": "interopNotes",
+      "type": "text",
+      "required": true,
+      "label": {
+        "en": "Interoperability follow-up notes",
+        "es": "Notas de seguimiento de interoperabilidad"
+      }
+    }
+  ]
+}
