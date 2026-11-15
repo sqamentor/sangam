@@ -23,7 +23,23 @@ public record TypedValue(String type, Object value) {
     public static final Set<String> TYPES = Set.of("Decimal", "BigInteger", "Long", "Integer", "Boolean", "String",
             "Date", "LocalDate", "Json", "Bytes");
 
-    public static TypedValue decimal(BigDecimal v) { return new TypedValue("Decimal", v.toPlainString()); }
+    /** Longest decimal text the server stores (sangam-packs {@code DecimalText.MAX_CHARS}). */
+    static final int DECIMAL_MAX_CHARS = 1000;
+
+    /**
+     * A Decimal as the server writes it (decisions 333 and 363, server {@code TypedVariables.decimalText}): the plain
+     * text when that keeps value and scale ({@code 1234.50}, scale 0 or more); a negative scale ({@code 1E+3}) has no
+     * plain text of the same scale ({@code toPlainString} gave {@code 1000}, scale 0), so it is sent as the canonical
+     * {@link BigDecimal#toString()} text, as is a value whose plain text would exceed {@value #DECIMAL_MAX_CHARS}
+     * characters. Either text reads back through {@code new BigDecimal(text)} to the same value and scale.
+     */
+    public static TypedValue decimal(BigDecimal v) { return new TypedValue("Decimal", decimalText(v)); }
+
+    static String decimalText(BigDecimal v) {
+        if (v.scale() < 0 || v.scale() > DECIMAL_MAX_CHARS) return v.toString();
+        String plain = v.toPlainString();
+        return plain.length() <= DECIMAL_MAX_CHARS ? plain : v.toString();
+    }
     public static TypedValue decimal(String v) { return decimal(new BigDecimal(v)); }
     public static TypedValue bigInteger(BigInteger v) { return new TypedValue("BigInteger", v.toString()); }
     public static TypedValue ofLong(long v) { return new TypedValue("Long", Long.toString(v)); }
