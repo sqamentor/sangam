@@ -14,6 +14,7 @@ import type { ActivityInstance, ActivitySelection, ActivityState, ConsequencePre
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
 import { textIncludes } from '../../lib/text';
+import { jsonObjectInput } from '../../lib/jsonInput';
 import { BpmnDiagram } from '../../components/BpmnDiagram';
 import { http } from '../../api/client';
 import { useAuth } from '../../auth/AuthProvider';
@@ -615,6 +616,9 @@ function MoveAcrossDialog({ instanceId, tree, onClose, onDone }: { instanceId: s
   const [from, setFrom] = useState('');
   const [target, setTarget] = useState('');
   const [targetAct, setTargetAct] = useState('');
+  // CrossBoundaryMoveRequest requires all three: a blank one is refused by name, never sent
+  const [touched, setTouched] = useState(false);
+  const blank = (v: string) => (touched && !v.trim() ? t('form.required') : undefined);
   const act = useAction();
   return (
     <ReasonDialog
@@ -623,21 +627,31 @@ function MoveAcrossDialog({ instanceId, tree, onClose, onDone }: { instanceId: s
       busy={act.busy}
       error={act.error}
       onClose={onClose}
-      onConfirm={(reason) =>
+      onConfirm={(reason) => {
+        setTouched(true);
+        if (!from.trim() || !target.trim() || !targetAct.trim()) return;
         void act
-          .run((k) => api.processes.moveAcross(instanceId, { fromActivityInstanceId: from, targetInstanceId: target, targetActivityId: targetAct, reason }, k).then(() => true))
+          .run((k) => api.processes.moveAcross(instanceId, { fromActivityInstanceId: from, targetInstanceId: target.trim(), targetActivityId: targetAct.trim(), reason }, k).then(() => true))
           .then((ok) => {
             if (ok) {
               onClose();
               onDone();
             }
-          })
-      }
+          });
+      }}
     >
       <p className="hint">{t('ops.moveAcrossHint')}</p>
-      <SelectField label={t('ops.activityInstance')} value={from} onChange={setFrom} placeholder={t('form.choose')} options={acts.map((a) => ({ value: a.id, label: a.activityName ?? a.activityId }))} />
-      <TextField label={t('ops.targetInstance')} value={target} onChange={setTarget} required />
-      <TextField label={t('ops.activityId')} value={targetAct} onChange={setTargetAct} required />
+      <SelectField
+        label={t('ops.activityInstance')}
+        value={from}
+        onChange={setFrom}
+        placeholder={t('form.choose')}
+        required
+        error={blank(from)}
+        options={acts.map((a) => ({ value: a.id, label: a.activityName ?? a.activityId }))}
+      />
+      <TextField label={t('ops.targetInstance')} value={target} onChange={setTarget} required error={blank(target)} />
+      <TextField label={t('ops.activityId')} value={targetAct} onChange={setTargetAct} required error={blank(targetAct)} />
     </ReasonDialog>
   );
 }
@@ -648,6 +662,9 @@ function InjectDialog({ instanceId, picked, onClose }: { instanceId: string; pic
   const [name, setName] = useState('');
   const [after, setAfter] = useState(picked[0] ?? '');
   const [seat, setSeat] = useState('');
+  // the name and the activity to inject after are required on this screen: a blank one is refused by name, never sent
+  const [touched, setTouched] = useState(false);
+  const blank = (v: string) => (touched && !v.trim() ? t('form.required') : undefined);
   const act = useAction();
   const [done, setDone] = useState<string>();
   return (
@@ -657,9 +674,13 @@ function InjectDialog({ instanceId, picked, onClose }: { instanceId: string; pic
       busy={act.busy}
       error={act.error}
       onClose={onClose}
-      onConfirm={(reason) =>
-        void act.run((k) => api.processes.inject(instanceId, { kind, name, afterActivityId: after, assigneeSeatId: seat || undefined, reason }, k)).then((p) => p && setDone(p.packageId ?? p.derivedDefinitionId ?? p.state ?? 'OK'))
-      }
+      onConfirm={(reason) => {
+        setTouched(true);
+        if (!name.trim() || !after.trim()) return;
+        void act
+          .run((k) => api.processes.inject(instanceId, { kind, name: name.trim(), afterActivityId: after.trim(), assigneeSeatId: seat.trim() || undefined, reason }, k))
+          .then((p) => p && setDone(p.packageId ?? p.derivedDefinitionId ?? p.state ?? 'OK'));
+      }}
     >
       <Notice>{t('ops.injectHint')}</Notice>
       {done && (
@@ -673,8 +694,8 @@ function InjectDialog({ instanceId, picked, onClose }: { instanceId: string; pic
         onChange={(v) => setKind(v as typeof kind)}
         options={(['USER_TASK', 'EMBEDDED_SUBPROCESS', 'PARALLEL_USER_TASK'] as const).map((k) => ({ value: k, label: t(`ops.injectKind${k}`) }))}
       />
-      <TextField label={t('common.name')} value={name} onChange={setName} required />
-      <TextField label={t('ops.afterActivity')} value={after} onChange={setAfter} required />
+      <TextField label={t('common.name')} value={name} onChange={setName} required error={blank(name)} />
+      <TextField label={t('ops.afterActivity')} value={after} onChange={setAfter} required error={blank(after)} />
       <TextField label={t('ops.assigneeSeat')} value={seat} onChange={setSeat} />
     </ReasonDialog>
   );
@@ -686,6 +707,9 @@ function MessageDialog({ instanceId, businessKey, onClose, onDone }: { instanceI
   const [branch, setBranch] = useState('');
   const [vars, setVars] = useState('{}');
   const [kind, setKind] = useState<'message' | 'signal'>('message');
+  // the variables box is refused by name when it is not a JSON object; the message is never sent with {} instead
+  const [varsTouched, setVarsTouched] = useState(false);
+  const varsInput = jsonObjectInput(vars, 'object');
   const act = useAction();
   return (
     <Dialog
@@ -702,12 +726,9 @@ function MessageDialog({ instanceId, businessKey, onClose, onDone }: { instanceI
             className="primary"
             disabled={!name || act.busy}
             onClick={() => {
-              let v: Record<string, unknown> = {};
-              try {
-                v = JSON.parse(vars) as Record<string, unknown>;
-              } catch {
-                /* invalid JSON → empty */
-              }
+              setVarsTouched(true);
+              if (varsInput.problem) return;
+              const v = varsInput.value ?? {};
               void act
                 .run((k) =>
                   (kind === 'message'
@@ -731,9 +752,10 @@ function MessageDialog({ instanceId, businessKey, onClose, onDone }: { instanceI
       <SelectField label={t('ops.eventKind')} value={kind} onChange={(v) => setKind(v as 'message' | 'signal')} options={[{ value: 'message', label: t('ops.message') }, { value: 'signal', label: t('ops.signal') }]} />
       <TextField label={t('common.name')} value={name} onChange={setName} required />
       {kind === 'message' && <TextField label={t('ops.branchKey')} hint={t('ops.branchKeyHint')} value={branch} onChange={setBranch} />}
-      <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} />
+      <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} error={varsTouched && varsInput.problem ? t(varsInput.problem) : undefined} />
       <ProblemAlert error={act.error} />
     </Dialog>
+
   );
 }
 
@@ -741,6 +763,8 @@ function RestartDialog({ definitionId, instanceId, picked, onClose }: { definiti
   const { t } = useTranslation();
   const [activity, setActivity] = useState(picked[0] ?? '');
   const [initial, setInitial] = useState(true);
+  // the activity to restart before is required: a blank one is refused by name, never sent as startBeforeActivityIds ['']
+  const [touched, setTouched] = useState(false);
   const act = useAction();
   const [batch, setBatch] = useState<string>();
   return (
@@ -750,18 +774,28 @@ function RestartDialog({ definitionId, instanceId, picked, onClose }: { definiti
       busy={act.busy}
       error={act.error}
       onClose={onClose}
-      onConfirm={(reason) =>
+      onConfirm={(reason) => {
+        setTouched(true);
+        if (!activity.trim()) return;
         void act
-          .run((k) => api.processes.restart({ definitionId, instanceIds: [instanceId], startBeforeActivityId: activity, initialVariables: initial, reason }, k))
-          .then((b) => b && setBatch(b.id))
-      }
+          .run((k) => api.processes.restart({ definitionId, instanceIds: [instanceId], startBeforeActivityId: activity.trim(), initialVariables: initial, reason }, k))
+          .then((b) => b && setBatch(b.id));
+      }}
     >
       {batch && (
         <Notice tone="ok">
           <Link to={`/ops/batches/${encodeURIComponent(batch)}`}>{t('batch.created', { id: batch })}</Link>
         </Notice>
       )}
-      <TextField label={t('ops.restartFrom')} hint={t('ops.restartHint')} value={activity} onChange={setActivity} required />
+      <TextField
+        label={t('ops.restartFrom')}
+        hint={t('ops.restartHint')}
+        value={activity}
+        onChange={setActivity}
+        required
+        error={touched && !activity.trim() ? t('form.required') : undefined}
+      />
+
       <Checkbox label={t('ops.initialVariables')} checked={initial} onChange={setInitial} />
     </ReasonDialog>
   );

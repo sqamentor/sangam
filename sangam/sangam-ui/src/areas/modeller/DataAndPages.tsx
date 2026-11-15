@@ -64,7 +64,8 @@ export function DataObjects() {
   const list = useAsync(() => api.dataObjects.list(), []);
   const [edit, setEdit] = useState<DataObjectDef | null>(null);
   const [browse, setBrowse] = useState<string>('');
-  const records = usePaged((p) => api.dataObjects.records(browse, p), [browse]);
+  // nothing is read until an object is browsed (an empty key would read /data-objects//records, outside the contract)
+  const records = usePaged((p) => api.dataObjects.records(browse, p), [browse], 25, browse !== '');
   const act = useAction();
   // decision 284: creating a record needs lowcode.record.write
   const canWrite = useCanWriteRecords();
@@ -276,7 +277,12 @@ export function PageBuilder() {
               key: 'a',
               header: t('common.actions'),
               render: (r) => (
-                <button type="button" className="link" onClick={() => void api.pages.get(r.key).then(setModel)}>
+                <button
+                  type="button"
+                  className="link"
+                  // through act.run, so a refused read is shown in the alert above instead of an unhandled rejection
+                  onClick={() => void act.run(() => api.pages.get(r.key)).then((m) => m && setModel(m))}
+                >
                   {t('common.edit')}
                 </button>
               ),

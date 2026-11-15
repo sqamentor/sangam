@@ -25,6 +25,10 @@ export default defineConfig(({ mode }) => {
     test: { setupFiles: ['src/test/setup.ts'], css: { include: [/\.css\?(?:.*&)?raw(?:&|$)/] } },
     server: {
       port: 5173,
+      // M-047: under Vitest only (mode 'test'), the jsdom screen tests may read the REST contract (sangam-rest/api), to check every
+      // call they see against it (src/test/screens.tsx contractOperations). The dev server keeps Vite's default
+      // (this package only); nothing else outside the package is opened.
+      ...(mode === 'test' ? { fs: { allow: [root, resolve(root, '../sangam-rest/api')] } } : {}),
       proxy: {
         '/api': { target: backend, changeOrigin: true },
         '/engine-rest': { target: backend, changeOrigin: true },

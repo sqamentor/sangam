@@ -14,6 +14,7 @@ import { api } from '../../api/endpoints';
 import type { BatchType, ConsequencePreview, InstanceQuery, InstanceState, ProcessInstance } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate, fmtNumber } from '../../i18n';
+import { jsonObjectInput } from '../../lib/jsonInput';
 import { BpmnDiagram, type OverlayMode } from '../../components/BpmnDiagram';
 import { Badge, Checkbox, DataTable, Empty, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, SearchBox, Section, SelectField, Tabs, TextArea, TextField } from '../../components/ui';
 
@@ -117,6 +118,9 @@ export function DefinitionDetail() {
   const [batchType, setBatchType] = useState<BatchType | null>(null);
   const [preview, setPreview] = useState<ConsequencePreview>();
   const [payload, setPayload] = useState('');
+  // an optional payload: empty sends none, text that is not a JSON object is refused by name (never sent as none)
+  const [payloadTouched, setPayloadTouched] = useState(false);
+  const payloadInput = jsonObjectInput(payload, 'none');
   const [suspendOpen, setSuspendOpen] = useState(false);
   const [includeInstances, setIncludeInstances] = useState(true);
   const act = useAction();
@@ -130,6 +134,7 @@ export function DefinitionDetail() {
     }
     setBatchType(b);
     setPreview(undefined);
+    setPayloadTouched(false);
     setPayload(b === 'RESTART' && activity ? JSON.stringify({ startBeforeActivityId: activity, initialVariables: true }) : '');
     const p = await api.ops.batchPreview({ type: b, query: batchQuery(), reason: '' }).catch(() => undefined);
     setPreview(p);
@@ -224,12 +229,9 @@ export function DefinitionDetail() {
         danger={batchType === 'DELETE' || batchType === 'CANCEL'}
         onClose={() => setBatchType(null)}
         onConfirm={(reason) => {
-          let extra: Record<string, unknown> | undefined;
-          try {
-            extra = payload ? (JSON.parse(payload) as Record<string, unknown>) : undefined;
-          } catch {
-            extra = undefined;
-          }
+          setPayloadTouched(true);
+          if (payloadInput.problem) return;
+          const extra = payloadInput.value;
           void act.run((k) => api.ops.createBatch({ type: batchType!, query: batchQuery(), payload: extra, reason }, k)).then((b) => {
             if (b) {
               announce(t('batch.created', { id: b.id }));
@@ -240,7 +242,14 @@ export function DefinitionDetail() {
         }}
       >
         {(batchType === 'SET_VARIABLES' || batchType === 'RESTART') && (
-          <TextArea label={t('batch.payload')} hint={t(`batch.payloadHint.${batchType}`)} value={payload} onChange={setPayload} />
+          <TextArea
+            label={t('batch.payload')}
+            hint={t(`batch.payloadHint.${batchType}`)}
+            value={payload}
+            onChange={setPayload}
+            error={payloadTouched && payloadInput.problem ? t(payloadInput.problem) : undefined}
+          />
+
         )}
       </ReasonDialog>
       <ReasonDialog

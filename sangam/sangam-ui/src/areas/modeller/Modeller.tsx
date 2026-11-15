@@ -20,6 +20,7 @@ import { ModelCompare } from './ModelCompare';
 import type { ModelArtifact, ModelPackage, PackageDiff, PackageState, ValidationIssue } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
 import { fmtDate } from '../../i18n';
+import { jsonObjectInput } from '../../lib/jsonInput';
 import { useAuth } from '../../auth/AuthProvider';
 import { BpmnEditor, CmmnEditor, DmnEditor, EMPTY_BPMN, EMPTY_DMN, EMPTY_FORM, FormBuilder, type EditorHandle } from '../../components/Editors';
 import { Badge, Checkbox, DataTable, Dialog, Empty, KeyValues, Loading, Notice, PageHeader, Pagination, ProblemAlert, ReasonDialog, Section, SelectField, TabPanel, Tabs, TextArea, TextField } from '../../components/ui';
@@ -457,6 +458,9 @@ function PlayPanel({ pkg }: { pkg: ModelPackage }) {
   const act = useAction();
   const [key, setKey] = useState('');
   const [vars, setVars] = useState('{}');
+  // the variables box is refused by name when it is not a JSON object; the sandbox instance never starts with {} instead
+  const [varsTouched, setVarsTouched] = useState(false);
+  const varsInput = jsonObjectInput(vars, 'object');
   const [msg, setMsg] = useState<string>();
   return (
     <>
@@ -484,18 +488,16 @@ function PlayPanel({ pkg }: { pkg: ModelPackage }) {
         </button>
       </div>
       <TextField label={t('modeller.processKey')} value={key} onChange={setKey} />
-      <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} />
+      <TextArea label={t('ops.variablesJson')} value={vars} onChange={setVars} error={varsTouched && varsInput.problem ? t(varsInput.problem) : undefined} />
       <button
         type="button"
         disabled={!key}
         onClick={() => {
-          let v: Record<string, unknown> = {};
-          try {
-            v = JSON.parse(vars) as Record<string, unknown>;
-          } catch {
-            /* empty */
-          }
-          void act.run((k) => api.processes.start({ key, variables: v }, k)).then((i) => i && setMsg(t('modeller.sandboxStarted', { id: i.id })));
+          setVarsTouched(true);
+          if (varsInput.problem) return;
+          const v = varsInput.value ?? {};
+          void act
+.run((k) => api.processes.start({ key, variables: v }, k)).then((i) => i && setMsg(t('modeller.sandboxStarted', { id: i.id })));
         }}
       >
         {t('modeller.startSandbox')}

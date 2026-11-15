@@ -65,13 +65,15 @@ export function usePaged<T>(
   fn: (q: { page: number; size: number }, signal: AbortSignal) => Promise<Page<T>>,
   deps: DependencyList,
   initialSize = 25,
+  /** false: nothing to read yet (no request is sent, as with useAsync); the list keeps no data until it is enabled. */
+  enabled = true,
 ): PagedState<T> {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(initialSize);
   // reset to first page when filters change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => setPage(0), deps);
-  const state = useAsync((signal) => fn({ page, size }, signal), [...deps, page, size]);
+  const state = useAsync((signal) => fn({ page, size }, signal), [...deps, page, size], enabled);
   return { ...state, page, size, setPage, setSize };
 }
 

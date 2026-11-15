@@ -64,6 +64,7 @@
     "network": "The server could not be reached",
     "notAvailable": "Not available for your current seat",
     "notAvailableHint": "If you hold another seat that can act on this, switch seat in the header.",
+    "notInstalled": "This feature is not installed on this server",
     "reference": "Reference",
     "retryExhausted": "The change could not be applied after several attempts",
     "stale": "This item changed since you opened it",
@@ -305,6 +306,8 @@
     "required": "This field is required",
     "notANumber": "Enter a number, for example 1250.50",
     "wholeNumber": "Enter a whole number",
+    "jsonObject": "Enter a JSON object, for example {\"amount\": 100}",
+    "jsonListOfObjects": "Enter a JSON list of objects, for example [{\"id\": \"case-1\", \"inputs\": {}, \"expected\": {}}]",
     "tooManyPlaces": "Use at most {{n}} decimal places"
   },
   "teams": {
@@ -633,7 +636,9 @@
     "branchKey": "Branch key",
     "branchKeyHint": "Delivers the message to one waiting branch only.",
     "bulkRetry": "Retry selected",
-    "bulkRetryHint": "{{n}} incidents will be retried as a batch.",
+    "bulkRetryHint": "{{n}} incidents will be retried, each on its own.",
+    "bulkRetryDone": "{{n}} incidents retried",
+    "bulkRetryFailed": "{{n}} incidents were not retried",
     "businessKey": "Business key",
     "cancelInstance": "Cancel instance",
     "cancelMode": "Kind of cancellation",

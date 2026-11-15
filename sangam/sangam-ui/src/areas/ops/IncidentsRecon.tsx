@@ -5,9 +5,10 @@
  * LATE_RESULT_AFTER_DELETE and missing cancel-acks: evidence is mandatory for confirm / failed, retry only for
  * capability class (a)/(b) after a lookup (A-2), SoD (resolver ≠ initiator/approver) and four-eyes above a value.
  */
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { ApiError, newIdempotencyKey } from '../../api/client';
 import { api } from '../../api/endpoints';
 import type { ConsequencePreview, ReconStatus } from '../../api/types';
 import { announce, useAction, useAsync, usePaged } from '../../lib/hooks';
@@ -25,6 +26,7 @@ import {
   PageHeader,
   Pagination,
   ProblemAlert,
+  problemTitleKey,
   ReasonDialog,
   SearchBox,
   Section,
@@ -42,7 +44,41 @@ export function Incidents() {
   const list = usePaged((p) => api.ops.incidents({ ...p, type: type || undefined, q, processDefinitionKey: defKey, processInstanceId: piId }), [type, q, defKey, piId]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulk, setBulk] = useState(false);
+  const [failures, setFailures] = useState<{ id: string; label: string; error: Error }[]>([]);
+  // One idempotency key per incident, kept until that incident's retry succeeds, so confirming again after a timeout
+  // never retries an incident twice (R41); a key is dropped once its retry is done.
+  const keys = useRef(new Map<string, string>());
   const act = useAction();
+  /**
+   * Bulk retry is the retry of each selected incident (POST /ops/incidents/{id}/retry, the same command as the detail
+   * screen): the contract's BatchFilter has no incident ids, and a RETRY batch over instances would retry more than was
+   * selected. Each refusal is listed by incident and by name; the refused incidents stay selected for another try.
+   */
+  const retrySelected = async (reason: string) => {
+    const ids = [...selected];
+    const label = (id: string) => {
+      const r = list.data?.items.find((x) => x.id === id);
+      return r ? `${t(`ops.incType.${r.type}`, { defaultValue: r.type })} · ${r.businessKey ?? r.message ?? id}` : id;
+    };
+    const keyOf = (id: string) => {
+      let k = keys.current.get(id);
+      if (!k) keys.current.set(id, (k = newIdempotencyKey()));
+      return k;
+    };
+    const results = await act.run(() => Promise.allSettled(ids.map((id) => api.ops.incidentAction(id, 'retry', { reason }, keyOf(id)))));
+    if (!results) return;
+    const failed: { id: string; label: string; error: Error }[] = [];
+    results.forEach((r, n) => {
+      if (r.status === 'fulfilled') keys.current.delete(ids[n]);
+      else failed.push({ id: ids[n], label: label(ids[n]), error: r.reason instanceof Error ? r.reason : new Error(String(r.reason)) });
+    });
+    const done = ids.length - failed.length;
+    if (done > 0) announce(t('ops.bulkRetryDone', { n: done }));
+    setFailures(failed);
+    setSelected(new Set(failed.map((f) => f.id)));
+    list.reload();
+    if (failed.length === 0) setBulk(false);
+  };
   return (
     <>
       <PageHeader title={t('ops.incidentsTitle')} />
@@ -59,7 +95,13 @@ export function Incidents() {
       {selected.size > 0 && (
         <div className="toolbar bulk">
           <span>{t('common.selectedN', { n: selected.size })}</span>
-          <button type="button" onClick={() => setBulk(true)}>
+          <button
+            type="button"
+            onClick={() => {
+              setFailures([]);
+              setBulk(true);
+            }}
+          >
             {t('ops.bulkRetry')}
           </button>
         </div>
@@ -97,18 +139,22 @@ export function Incidents() {
         busy={act.busy}
         error={act.error}
         onClose={() => setBulk(false)}
-        onConfirm={(reason) =>
-          void act.run((k) => api.ops.bulkRetry([...selected], reason, k)).then((b) => {
-            if (b) {
-              setBulk(false);
-              setSelected(new Set());
-              announce(t('batch.created', { id: b.id }));
-              list.reload();
-            }
-          })
-        }
+        onConfirm={(reason) => void retrySelected(reason)}
       >
         <Notice>{t('ops.bulkRetryHint', { n: selected.size })}</Notice>
+        {failures.length > 0 && (
+          <div className="alert alert-bad" role="alert">
+            <strong>{t('ops.bulkRetryFailed', { n: failures.length })}</strong>
+            <ul>
+              {failures.map((f) => (
+                <li key={f.id}>
+                  {f.label}: {t(problemTitleKey(f.error))}
+                  {f.error instanceof ApiError && f.error.problem.code ? ` (${f.error.problem.code})` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </ReasonDialog>
     </>
   );
@@ -175,7 +221,11 @@ export function IncidentDetail() {
       {hasRole('PLATFORM_OPERATOR') && i.jobId && (
         <Section title={t('ops.stacktrace')}>
           {!trace ? (
-            <button type="button" onClick={() => void api.ops.jobStacktrace(i.jobId!).then(setTrace)}>
+            <button
+              type="button"
+              // through act.run, so a refused read (no job, no right) is shown in the alert above instead of an unhandled rejection
+              onClick={() => void act.run(() => api.ops.jobStacktrace(i.jobId!)).then((s) => typeof s === 'string' && setTrace(s))}
+            >
               {t('ops.showStacktrace')}
             </button>
           ) : (
