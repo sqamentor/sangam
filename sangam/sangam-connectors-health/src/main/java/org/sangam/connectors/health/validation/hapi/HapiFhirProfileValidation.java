@@ -25,7 +25,7 @@ import org.sangam.connectors.health.validation.FhirProfileValidation;
 /**
  * HAPI FHIR 8.12.1 implementation of {@link FhirProfileValidation} (decision 183). Loaded only by
  * {@code FhirProfileValidations} after it has checked that HAPI is on the class path; no other class of this module
- * refers to it. The chain is the one proven by the D-2 offline smoke run: base R4 definitions, the supplied conformance
+ * refers to it. The chain is the one proven by the offline smoke run of decision 183: base R4 definitions, the supplied conformance
  * resources, snapshot generation, in-memory terminology and the common code systems. Only resources the caller passes
  * are used; nothing is fetched from the network.
  */

@@ -389,7 +389,8 @@ public final class IntegrationConnectorGateway implements ConnectorGateway, ApiR
 
     /** Runs in the current Operaton command's connection when there is one (delegate path), else in a new transaction. */
     private <T> T inScope(Function<Connection, T> work) {
-        CommandContext cc = Context.getCommandContext();
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         if (cc != null) {
             return work.apply(cc.getDbSqlSession().getSqlSession().getConnection());
         }

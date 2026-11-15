@@ -14,7 +14,7 @@ import org.sangam.core.security.SecurityIdentity;
  * {@code settings.setJobIdentityBinder(TenantContext::runAs)}. The engine does not depend on sangam-security (it brings
  * Spring Security). The identity is passed explicitly: the engine hands it to {@link #runAs} and also attaches it to the
  * job's own engine command (sangam-engine {@code JobIdentitySupport.current()}), so this core port holds no
- * thread-bound state (M-097, ADR-D-27). Without an installed binder the engine binds only that command-scoped identity
+ * thread-bound state (M-097, SL-151). Without an installed binder the engine binds only that command-scoped identity
  * and logs a warning at start-up.
  */
 @FunctionalInterface

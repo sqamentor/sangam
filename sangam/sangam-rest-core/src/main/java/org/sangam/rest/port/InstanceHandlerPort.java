@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * M-059 (L6; R19, R25, R42, R49; ADR-D-26): the named query and update handlers a process model declares
+ * M-059 (L6; R19, R25, R42, R49; ADR-D-26 strict FEEL): the named query and update handlers a process model declares
  * ({@code sangam:query} / {@code sangam:update}), behind {@code POST /process-instances/{id}/queries/{name}} and
  * {@code POST /process-instances/{id}/updates/{name}} (contract schemas {@code InstanceQueryRequest/Result},
  * {@code InstanceUpdateRequest/Result}).

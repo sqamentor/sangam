@@ -24,7 +24,7 @@ import org.sangam.core.time.BusinessClock;
  * <p><b>Guard</b> ({@link #requireAllowed}): test mode is OFF by default; on, the engine refuses to start unless the
  * database is H2 and no production profile is active. There is no way to enable it on a Tier-1 database.
  */
-public final class TestModeClock {
+public final class TestModeClock implements AutoCloseable {
 
     /** Profile names that always refuse test mode. */
     static final Set<String> PRODUCTION_PROFILES = Set.of("prod", "production", "live");
@@ -35,6 +35,9 @@ public final class TestModeClock {
 
     private final OperatonClock engineClock;
     private final Consumer<Change> auditor;
+    /** The process-wide business clock before this one was put over it, and the one this instance installed. */
+    private final BusinessClock replaced;
+    private final BusinessClock installed;
     private long offsetMs;
 
     /**
@@ -45,7 +48,23 @@ public final class TestModeClock {
         this.auditor = Objects.requireNonNull(auditor, "auditor: every test-mode clock change is audited");
         BusinessClock previous = BusinessClock.system();
         Clock follows = new EngineClock(engineClock);
-        BusinessClock.install(BusinessClock.of(follows, previous::zone)); // tenant zones kept, instant from the engine
+        this.replaced = previous;
+        this.installed = BusinessClock.of(follows, previous::zone); // tenant zones kept, instant from the engine
+        BusinessClock.install(installed);
+    }
+
+    /**
+     * Gives the process-wide business clock back: the constructor replaces {@link BusinessClock#system()} for the whole
+     * JVM, and without this the process kept a clock that follows an engine which may be gone (the next engine or test
+     * in the same JVM read its business time through it). The clock that was there before comes back, unless another
+     * clock has been installed since (that one is left alone). The engine clock's offset is not touched: it belongs
+     * to the engine and is changed only by an audited call. Idempotent.
+     */
+    @Override
+    public synchronized void close() {
+        if (BusinessClock.system() == installed) {
+            BusinessClock.install(replaced);
+        }
     }
 
     /**

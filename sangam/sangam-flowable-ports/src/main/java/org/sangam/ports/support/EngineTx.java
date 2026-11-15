@@ -23,12 +23,14 @@ public final class EngineTx {
 
     /** True when called inside an engine command (listener, delegate, behaviour, history handler). */
     public static boolean inCommand() {
-        return Context.getCommandContext() != null;
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        return Context.hasActiveCommandContext();
     }
 
     /** The JDBC connection of the current engine command. */
     public static Connection connection() {
-        CommandContext cc = Context.getCommandContext();
+        // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+        CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
         if (cc == null) {
             throw new IllegalStateException("not inside an engine command");
         }

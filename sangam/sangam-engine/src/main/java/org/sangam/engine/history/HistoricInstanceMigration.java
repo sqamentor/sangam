@@ -122,7 +122,7 @@ public final class HistoricInstanceMigration {
         ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) engine.getProcessEngineConfiguration();
         return cfg.getProcessEnginePlugins().stream().filter(SangamProcessEnginePlugin.class::isInstance)
                 .map(p -> ((SangamProcessEnginePlugin) p).components()).findFirst()
-                .orElseThrow(() -> new IllegalStateException("FC-18: not a Sangam engine (no SangamProcessEnginePlugin)"));
+                .orElseThrow(() -> new IllegalStateException("FLOWABLE-INTO-OPERATON FC-18: not a Sangam engine (no SangamProcessEnginePlugin)"));
     }
 
     /**
@@ -177,7 +177,7 @@ public final class HistoricInstanceMigration {
                         to.id(), to.key(), processInstanceId, from.id()));
             }
             if (rows.get("ACT_HI_PROCINST") != 1) {
-                throw new IllegalStateException("FC-18: the history instance row was not moved");
+                throw new IllegalStateException("FLOWABLE-INTO-OPERATON FC-18: the history instance row was not moved");
             }
             Map<String, Object> p = new LinkedHashMap<>();
             p.put("processInstanceId", processInstanceId);

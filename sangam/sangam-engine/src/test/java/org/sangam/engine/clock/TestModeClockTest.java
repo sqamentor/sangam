@@ -38,6 +38,24 @@ class TestModeClockTest {
     }
 
     @Test
+    void closingGivesTheProcessWideBusinessClockBack() {
+        BusinessClock before = BusinessClock.system();
+        TestModeClock clock = new TestModeClock(OperatonClock.INSTANCE, c -> { });
+        org.junit.jupiter.api.Assertions.assertNotSame(before, BusinessClock.system(), "the constructor replaces it");
+        clock.close();
+        org.junit.jupiter.api.Assertions.assertSame(before, BusinessClock.system(), "and close restores it");
+        clock.close();
+        org.junit.jupiter.api.Assertions.assertSame(before, BusinessClock.system(), "idempotent");
+
+        // a clock installed by someone else after ours is not thrown away by our close
+        TestModeClock second = new TestModeClock(OperatonClock.INSTANCE, c -> { });
+        BusinessClock later = BusinessClock.of(java.time.Clock.systemUTC(), before::zone);
+        BusinessClock.install(later);
+        second.close();
+        org.junit.jupiter.api.Assertions.assertSame(later, BusinessClock.system());
+    }
+
+    @Test
     void engineAndBusinessClockMoveTogetherAndEveryChangeIsAudited() {
         List<TestModeClock.Change> audit = new CopyOnWriteArrayList<>();
         TestModeClock clock = new TestModeClock(OperatonClock.INSTANCE, audit::add);

@@ -73,9 +73,17 @@ public final class Schema {
               attempts             {int} NOT NULL,
               outcome              {text},
               created_at           {ts} NOT NULL,
-              updated_at           {ts} NOT NULL
+              updated_at           {ts} NOT NULL,
+              engine_work_id       {str64},
+              business_key         {str},
+              topic                {str}
             )""",
             "CREATE INDEX OPERATION_LEDGER_ROOT ON OPERATION_LEDGER (tenant_id, root_id)",
+            // as the product changelog (changeset 0002-01, the truth): OperationLedger.findByEngineWork and
+            // bindEngineWork read and write engine_work_id (A-14). The changelog's third index, OPERATION_LEDGER_ACTIVITY,
+            // is created by the integration reference schema (IntegrationSchema) on top of this one.
+            "CREATE INDEX OPERATION_LEDGER_WORK ON OPERATION_LEDGER (engine_work_id)",
+            "CREATE INDEX OPERATION_LEDGER_STATE ON OPERATION_LEDGER (tenant_id, state)",
             """
             CREATE TABLE RECONCILIATION_ITEM (
               id            {identity} PRIMARY KEY,

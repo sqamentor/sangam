@@ -26,8 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * SCIM 2.0 provisioning (M-099, RFC 7643 / 7644) of Sangam persons, groups and group memberships, owner decision 154
- * (ADR-D-154): postings and seats are read-only; a request that changes them is 400 {@code mutability} and changes
+ * SCIM 2.0 provisioning (M-099, RFC 7643 / 7644) of Sangam persons, groups and group memberships, owner decision 154:
+ * postings and seats are read-only; a request that changes them is 400 {@code mutability} and changes
  * nothing, while an unchanged echo of the current postings is accepted.
  *
  * <p>Runs in the caller's transaction with the caller's {@link SecurityIdentity} (the identity provider's service

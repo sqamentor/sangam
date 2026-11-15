@@ -37,6 +37,24 @@ class EngineTxH2Test {
         }
     }
 
+    /**
+     * Operaton 2.2's Context.getCommandContext() throws outside a command (ENGINE-09025) and never answers null, so
+     * the question is asked with Context.hasActiveCommandContext(): outside a command inCommand() is false and
+     * connection() refuses with its own message; inside one both answer.
+     */
+    @Test
+    void inCommandAndConnectionAnswerOutsideAndInsideACommand() throws Exception {
+        org.junit.jupiter.api.Assertions.assertFalse(EngineTx.inCommand(), "no engine at all: not in a command");
+        IllegalStateException refused = assertThrows(IllegalStateException.class, EngineTx::connection);
+        assertEquals("not inside an engine command", refused.getMessage());
+        try (PortsH2Engine h2 = PortsH2Engine.start(null)) {
+            org.junit.jupiter.api.Assertions.assertFalse(EngineTx.inCommand(), "an engine exists, no command runs");
+            boolean inside = EngineTx.execute(h2.engine, cc -> EngineTx.inCommand() && EngineTx.connection() != null);
+            org.junit.jupiter.api.Assertions.assertTrue(inside);
+            org.junit.jupiter.api.Assertions.assertFalse(EngineTx.inCommand(), "after the command");
+        }
+    }
+
     @Test
     void pluginCommandTransactionsRollBackWithTheCommand() throws Exception {
         try (PortsH2Engine h2 = PortsH2Engine.start(null)) {

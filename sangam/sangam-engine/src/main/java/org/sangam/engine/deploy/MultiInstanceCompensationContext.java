@@ -16,7 +16,7 @@ import org.operaton.bpm.engine.impl.pvm.runtime.PvmExecutionImpl;
 import org.operaton.bpm.engine.variable.value.TypedValue;
 
 /**
- * <b>Decision 148 (FIO D-27): a multi-instance compensation handler sees the instance it compensates.</b>
+ * <b>Decision 148 (FLOWABLE-INTO-OPERATON D-27): a multi-instance compensation handler sees the instance it compensates.</b>
  *
  * <p><b>Root cause</b> (javap, Operaton 2.2.0). A compensation boundary event does not make its activity a scope
  * ({@code BpmnParse.parseBoundaryEvents}: only non-compensation boundary events call {@code setScope(true)}), so the
@@ -25,7 +25,7 @@ import org.operaton.bpm.engine.variable.value.TypedValue;
  * ({@code loopCounter}, the element variable, locals) live on the instance execution (parallel: the concurrent child;
  * sequential: the body execution, overwritten by the next instance), which is removed. When compensation is thrown,
  * {@code CompensationUtil.throwCompensationEvent} creates a fresh empty execution for a subscription without
- * configuration, so every handler runs without its instance: the D-27 symptom (E16a #7, D-TENDER). For an inner
+ * configuration, so every handler runs without its instance: the FLOWABLE-INTO-OPERATON D-27 symptom (E16a #7, D-TENDER). For an inner
  * <i>sub-process</i>, {@code CompensationUtil.createEventScopeExecution} snapshots only the scope execution's own
  * locals; {@code loopCounter} is on its parent (the concurrent execution or the body execution) and is lost too.
  *

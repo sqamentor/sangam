@@ -45,7 +45,8 @@ public final class GeoTenant {
             if (ec != null && ec.getExecution() != null && ec.getExecution().getTenantId() != null) {
                 return ec.getExecution().getTenantId();
             }
-            CommandContext cc = Context.getCommandContext();
+            // Operaton 2.2: Context.getCommandContext() throws outside a command (ENGINE-09025), it never answers null
+            CommandContext cc = Context.hasActiveCommandContext() ? Context.getCommandContext() : null;
             if (cc != null) {
                 Authentication a = cc.getAuthentication();
                 List<String> ids = a == null ? null : a.getTenantIds();
