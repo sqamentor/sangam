@@ -12,11 +12,15 @@ import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.transaction.TransactionManager;
 
+import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.assembly.engine.EngineAssembly;
+import org.sangam.assembly.engine.EngineStartOrder;
 import org.sangam.assembly.host.AttributionTenant;
 import org.sangam.assembly.host.Capabilities;
 import org.sangam.assembly.host.Capability;
+import org.sangam.assembly.host.CapabilitySet;
 import org.sangam.assembly.host.ConnectionBinding;
+import org.sangam.assembly.host.EngineBuildClaims;
 import org.sangam.assembly.host.HostSeams;
 import org.sangam.assembly.host.SangamProperties;
 import org.sangam.assembly.host.SangamRuntime;
@@ -72,10 +76,19 @@ public class QuarkusHost {
     private final SangamEngineSettings engineSettings;
     private final String attributionTenant;
     private final OutboxDestinations outboxDestinations;
+    private final EngineBuildClaims<ProcessEngine> engineClaims;
+    private final EngineStartOrder startOrder;
     private JtaTxSupport txSupport;
 
     /** The outbox destinations this host has a publisher for beyond the fixed list: none in 0.1.0. */
     static final OutboxDestinations.Routes OUTBOX_ROUTES = OutboxDestinations.Routes.none();
+
+    /**
+     * Decision 376: the capabilities of the services that need no engine (audit chain and outbox writer, idempotency
+     * store), claimed before the engine build. None is assembled on this host yet, so each is missing and the start is
+     * refused with {@code CAPABILITY_MISSING}.
+     */
+    static final List<Capability> CLAIMED_BEFORE_BUILD = List.of();
 
     @Inject
     public QuarkusHost(Instance<QuarkusConfigSource> config, Instance<QuarkusLifecycle> lifecycle,
@@ -120,10 +133,16 @@ public class QuarkusHost {
         if (supplied.security() != null) {
             b.securityContext(supplied.security().binding());
         }
+        // decision 376: what needs no engine is claimed here, before the build; what needs it, only after the build
+        EngineBuildClaims.requireClaimableBeforeBuild(CLAIMED_BEFORE_BUILD);
+        b.assembled(CLAIMED_BEFORE_BUILD);
         this.seams = b.build();
+        this.engineClaims = new EngineBuildClaims<>();
+        this.startOrder = new EngineStartOrder(engineClaims);
         // phase 1b: the engine area (UTC, database checks, schema, Jackson line, job leases) is checked by the engine
-        // step itself (SangamEngineConfiguration, EngineCapabilityGuard); the runtime checks everything else
-        this.runtime = seams.runtime(hostChecked(), List.of(), List.of());
+        // step itself (SangamEngineConfiguration, EngineCapabilityGuard); the runtime checks everything else, settled
+        // at start-up, and starts the job executor last, after that check
+        this.runtime = seams.runtime(engineClaims, hostChecked(), List.of(startOrder.lifecycle()), List.of());
     }
 
     /**
@@ -221,8 +240,34 @@ public class QuarkusHost {
         return Capabilities.required().stream().filter(c -> !EngineAssembly.ENGINE_AREA.contains(c)).toList();
     }
 
+    /**
+     * The runtime: its capabilities are settled when it starts (decision 376), and the job executor is its last
+     * component ({@link EngineStartOrder}).
+     */
     public SangamRuntime runtime() {
         return runtime;
+    }
+
+    /**
+     * Decision 376: the capabilities only the engine build can supply ({@link EngineBuildClaims#AFTER_ENGINE_BUILD}:
+     * the inbox and relay, reconciliation, lifecycle and maintenance services, assembled whole). None is expected on
+     * this host in 0.1.0, so {@code outbox-relay-inbox} is missing before the build already.
+     */
+    public EngineBuildClaims<ProcessEngine> engineClaims() {
+        return engineClaims;
+    }
+
+    /** The engine plugin of decision 376: the engine built with the job executor off, the job executor started last. */
+    public EngineStartOrder startOrder() {
+        return startOrder;
+    }
+
+    /**
+     * The capability set the engine-build guard checks: the seams and the claims made before the build, with the
+     * capabilities only the build can supply counted as pending, not missing ({@link EngineBuildClaims#beforeBuild}).
+     */
+    public CapabilitySet capabilitiesBeforeBuild() {
+        return engineClaims.beforeBuild(hostChecked(), seams.capabilities());
     }
 
     /** The engine settings bound from the Quarkus configuration ({@link QuarkusEngineSettings}). */
