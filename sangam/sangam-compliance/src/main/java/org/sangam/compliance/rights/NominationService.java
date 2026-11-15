@@ -99,7 +99,7 @@ public final class NominationService {
         Map<String, Object> ev = new LinkedHashMap<>();
         ev.put("nomination", nominationId);
         ev.put("step", step);
-        ev.put("actor", actor == null ? null : ComplianceAudit.principalToken(tenantId, actor));
+        ev.put("actor", actor == null ? null : audit.principalToken(tenantId, actor));
         audit.principal(c, tenantId, principalRef, ComplianceAudit.NOMINATION_CHANGED, ev);
     }
 

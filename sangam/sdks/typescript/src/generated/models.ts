@@ -3408,6 +3408,7 @@ export interface ComplianceGiveConsentRequest {
   noticeVersion?: number;
   language?: string;
   purposeCodes: Array<string>;
+  /** Whether the data principal gave consent by a clear affirmative action (DPDP s.6(1); owner decision 369). Required: an omitted value is 400 VALIDATION_FAILED naming the field, never read as false or true. */
   affirmativeAction: boolean;
   channel?: string;
   guardianVerificationId?: string;

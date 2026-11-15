@@ -113,8 +113,12 @@ Paths are under `src/main/java/org/sangam/compliance/`. CMP ids refer to the IN 
    Add the 18 indexes listed there as well. The module also uses `LEGAL_HOLD` (integration) and the core
    `AUDIT_EVENT`, `AUDIT_PAYLOAD` and `ROOT_SEQ`.
 2. **Wiring.**
-   - Build `new SangamCompliance(dialect, Transactions.of(engineAdapter), configProvider, ports)`, then call
-     `ComplianceRuntime.install(...)`.
+   - Build `new SangamCompliance(dialect, Transactions.of(engineAdapter), configProvider, ports, denialTx,
+     PrincipalKey.fromBase64(<secret>))`, then call `ComplianceRuntime.install(...)`. Owner decision 369 (e): the
+     `PrincipalKey` (at least 32 bytes, from the secrets store) keys the data-principal tokens of the audit payloads and
+     the one-time-code identifier hashes (HMAC-SHA256). The constructors without it use `PrincipalKey.unconfigured()`:
+     every consent, guardian verification, nomination, personal-data read audit and one-time code is then refused with
+     `PRINCIPAL_KEY_NOT_CONFIGURED`.
    - `ports.legalHolds = new IntegrationLegalHoldAdapter(legalHoldStore)`.
    - `ports.erasure = new IntegrationErasureAdapter(erasureService)`.
    - Grant the principal `system:retention` the `ERASE_DATA` permission in the integration `LifecyclePorts.Authorizer`.

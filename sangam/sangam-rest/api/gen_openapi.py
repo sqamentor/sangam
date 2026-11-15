@@ -1880,7 +1880,8 @@ schema("ComplianceGiveConsentRequest", "Consent by the data principal (or a veri
        "principalRef noticeKey noticeVersion:int language purposeCodes:list:s affirmativeAction:bool channel "
        "guardianVerificationId consentManagerId cmArtefactId declaredCategory", ["noticeKey", "purposeCodes", "affirmativeAction", "declaredCategory"],
        enums={"declaredCategory": ["ADULT", "CHILD"]},
-       descs={"declaredCategory": "The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies."})
+       descs={"affirmativeAction": "Whether the data principal gave consent by a clear affirmative action (DPDP s.6(1); owner decision 369). Required: an omitted value is 400 VALIDATION_FAILED naming the field, never read as false or true.",
+              "declaredCategory": "The category declared for the data principal (owner decision 365). Required: an omitted or other value is 400 VALIDATION_FAILED naming the field, never defaulted. A declared CHILD needs guardianVerificationId (the verifiable consent of the parent, DPDP s.9), which the consent row then carries; the more protective of the declared and the principal directory category applies."})
 schema("ComplianceConsent", "A consent record with its active purposes and evidence hash (DPDP s.6).",
        "consentId principalRef noticeKey noticeVersion:int language status givenAt:dt withdrawnAt:dt consentManagerId "
        "cmArtefactId legacy:bool activePurposes:list:s evidenceHash", enums={"status": ["ACTIVE", "PARTIALLY_WITHDRAWN", "WITHDRAWN"]})
@@ -2062,7 +2063,7 @@ schema("ComplianceOtpVerifyRequest", "The code the data principal received.", "c
 schema("ComplianceOtpVerification", "A verified challenge: the rights submission then names it in proof.challengeId (single use).", "challengeId outcome attemptsLeft:int", ["challengeId", "outcome"],
        enums={"outcome": ["VERIFIED", "WRONG_CODE", "LOCKED", "EXPIRED", "INVALID"]})
 op("post", C + "/rights-requests/otp-challenges", "issueRightsRequestOtp", "Compliance", "Send a one-time code for a rights request",
-   "Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).",
+   "Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; more codes than the pack's issue limit for the identifier or for the client address within its window (rights.otp.issue-window-minutes, issue-max-per-identifier, issue-max-per-address) is 429 OTP_RATE_LIMITED naming the limit (owner decision 369); settings not configured is 409 OTP_NOT_CONFIGURED; no compliance principal key is 409 PRINCIPAL_KEY_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED, or RIGHTS_OTP_FAILED for a refusal (owner decision 360).",
    CR + ["DPDP s.13", "DPDP Rules r.14(1)"], params=TENANT_PUBLIC, body="ComplianceOtpChallengeRequest", resp=(201, "ComplianceOtpChallenge"),
    cmd="compliance.rights.otp.issue", created=True, errors=("BadRequest", "Conflict"))
 public(C + "/rights-requests/otp-challenges", "post")

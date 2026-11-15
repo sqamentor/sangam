@@ -17,7 +17,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read int|null $noticeVersion
  * @property-read string|null $language
  * @property-read list<string>|null $purposeCodes (required)
- * @property-read bool|null $affirmativeAction (required)
+ * @property-read bool|null $affirmativeAction (required) Whether the data principal gave consent by a clear affirmative action (DPDP s.6(1); owner decision 369). Required: an omitted value is 400 VALIDATION_FAILED naming the field, never read as false or true.
  * @property-read string|null $channel
  * @property-read string|null $guardianVerificationId
  * @property-read string|null $consentManagerId

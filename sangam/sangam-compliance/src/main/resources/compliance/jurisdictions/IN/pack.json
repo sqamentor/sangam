@@ -74,7 +74,10 @@
     "rights.otp.ttl-minutes": "10",
     "rights.otp.max-attempts": "5",
     "rights.otp.lockout-minutes": "30",
-    "rights.otp.code-length": "6"
+    "rights.otp.code-length": "6",
+    "rights.otp.issue-window-minutes": "60",
+    "rights.otp.issue-max-per-identifier": "5",
+    "rights.otp.issue-max-per-address": "20"
   },
   "legalBases": [
     {"code": "CONSENT", "citation": "s.4(1)(a), s.6", "kind": "CONSENT", "description": "Consent of the Data Principal"},

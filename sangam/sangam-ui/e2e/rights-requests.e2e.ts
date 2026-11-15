@@ -13,6 +13,8 @@
  *   reply period, and the reply is due within the pack's maximum (s.8(10), s.13; DPDP Rules r.14(3): 90 days).
  * - D-23 (OTP, owner decision 360): an OTP request needs a verified compliance-owned one-time code; an unaccepted
  *   identifier type, an unknown challenge and an unverified one are refused by name; the code is never in a response.
+ *   Owner decision 369 (d): one code more than the pack's issue limit for an identifier within its window is refused
+ *   with 429 OTP_RATE_LIMITED (the per-address limit and the audit of the refusal: PrincipalOtpChallengesH2Test).
  * The expected codes and days are read from the shipped India pack (support/compliance.ts indiaPack), never typed here.
  */
 import { randomUUID } from 'node:crypto';
@@ -126,6 +128,18 @@ test('an OTP rights request needs a verified one-time code (D-23, owner decision
       const wrong = await anonymous.post(`compliance/rights-requests/otp-challenges/${ch.challengeId}/verify`, { headers: headers(), data: { code: 'not-a-code' } });
       expect(wrong.status(), await wrong.text()).toBe(401);
       expect(((await wrong.json()) as { code?: string }).code).toBe('OTP_INVALID');
+
+      // decision 369 (d): the pack's issue limit per identifier, then one more is refused by name
+      const limit = Number(indiaPack().defaults?.['rights.otp.issue-max-per-identifier']);
+      expect(limit, 'the India pack sets the per-identifier issue limit').toBeGreaterThan(0);
+      const flood = `e2e-otp-limit-${randomUUID().slice(0, 8)}@example.test`;
+      for (let i = 0; i < limit; i++) {
+        const ok = await anonymous.post('compliance/rights-requests/otp-challenges', { headers: headers(), data: { identifierType: 'EMAIL', identifierValue: flood } });
+        expect(ok.status(), await ok.text()).toBe(201);
+      }
+      const limited = await anonymous.post('compliance/rights-requests/otp-challenges', { headers: headers(), data: { identifierType: 'EMAIL', identifierValue: flood } });
+      expect(limited.status(), await limited.text()).toBe(429);
+      expect(((await limited.json()) as { code?: string }).code).toBe('OTP_RATE_LIMITED');
     } else {
       expect(((await issued.json()) as { code?: string }).code).toBe('OTP_NOT_CONFIGURED');
     }

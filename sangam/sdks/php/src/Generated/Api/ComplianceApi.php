@@ -483,7 +483,7 @@ final class ComplianceApi
     /**
      * Send a one-time code for a rights request
      *
-     * Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; settings not configured is 409 OTP_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED (owner decision 360).
+     * Public, like the submission (tenant in X-Sangam-Tenant or ?tenant=). Short-lived, single use; a new code supersedes the identifier's open one; an identifier locked out after too many wrong codes is 429 OTP_LOCKED; more codes than the pack's issue limit for the identifier or for the client address within its window (rights.otp.issue-window-minutes, issue-max-per-identifier, issue-max-per-address) is 429 OTP_RATE_LIMITED naming the limit (owner decision 369); settings not configured is 409 OTP_NOT_CONFIGURED; no compliance principal key is 409 PRINCIPAL_KEY_NOT_CONFIGURED. Writes RIGHTS_OTP_ISSUED, or RIGHTS_OTP_FAILED for a refusal (owner decision 360).
      *
      * POST /compliance/rights-requests/otp-challenges (operationId issueRightsRequestOtp); result stored atomically with the state change.
      * @param Model\ComplianceOtpChallengeRequest|array $body request body

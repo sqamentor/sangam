@@ -92,7 +92,7 @@ class BreachSubjectNoticeListenerH2Test {
         CompliancePorts.PrincipalNotifier outbox = (c, m) -> "DLV-" + m.principalRef();
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, outbox, null, null, null, null, null, null,
                 null, authority, incidents, null, null, null, null, null);
-        return new SangamCompliance(D, tx, config, ports);
+        return new SangamCompliance(D, tx, config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
     }
 
     static String breach(SangamCompliance cmp, Connection c) {

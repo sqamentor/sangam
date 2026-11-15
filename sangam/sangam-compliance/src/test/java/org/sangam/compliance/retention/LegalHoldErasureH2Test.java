@@ -127,7 +127,7 @@ class LegalHoldErasureH2Test {
         };
         SangamCompliance.Ports ports = new SangamCompliance.Ports(holds, erasure, null, null, null, personal, null, null, null,
                 null, null, null, null, null, null, null, null);
-        SangamCompliance cmp = new SangamCompliance(D, tx, config, ports);
+        SangamCompliance cmp = new SangamCompliance(D, tx, config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
         tx.inTransaction(c -> {
             cmp.contacts.set(c, TENANT, new ContactDirectory.Contact("DPO", "Data Protection Officer", "Joint Secretary",
                     "Test Department", "dpo@example.gov.in", null, null, null, true, null), "admin-1");

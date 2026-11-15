@@ -85,7 +85,7 @@ class DpdpBreachReportedH2Test {
         // no workflow starter: no process is started, so no seat is needed
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, null, null, null, null, null, null, null,
                 null, authority, incidents, null, null, null, null, null);
-        return new SangamCompliance(D, tx, config, ports);
+        return new SangamCompliance(D, tx, config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
     }
 
     /** A registered breach with two affected principals, the authority already notified. */

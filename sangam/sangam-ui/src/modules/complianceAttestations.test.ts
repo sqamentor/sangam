@@ -3,6 +3,7 @@
  * Owner decision 362: the lawful-request verification, impact assessment, audit evidence and transfer evaluation forms
  * send their attestations (rankAdequate, independent, recipientSameProtectionAttested, recipientConditionMet) as explicit
  * Yes / No choices with no default; one left unanswered is refused before any call, as the server refuses it by name.
+ * Owner decision 369 (h): the consent form's affirmative action is such a choice too.
  */
 import { describe, expect, it } from 'vitest';
 import type { FormField } from '../api/types';
@@ -66,10 +67,23 @@ describe('compliance attestations (decision 362)', () => {
     expect(fld.validate?.required).toBe(true);
     expect(fld.values?.map((v) => v.value)).toEqual(['ADULT', 'CHILD']);
     expect((fld as { default?: unknown }).default).toBeUndefined();
-    expect(give?.check?.({ declaredCategory: 'CHILD' }, t)).toBeUndefined();
-    expect(give?.check?.({ declaredCategory: 'ADULT' }, t)).toBeUndefined();
-    expect(give?.check?.({}, t)).toBe('mod.compliance.choiceRequired:fld.declaredCategory');
-    expect(give?.check?.({ declaredCategory: 'UNKNOWN' }, t)).toBe('mod.compliance.choiceRequired:fld.declaredCategory');
+    expect(give?.check?.({ affirmativeAction: true, declaredCategory: 'CHILD' }, t)).toBeUndefined();
+    expect(give?.check?.({ affirmativeAction: true, declaredCategory: 'ADULT' }, t)).toBeUndefined();
+    expect(give?.check?.({ affirmativeAction: true }, t)).toBe('mod.compliance.choiceRequired:fld.declaredCategory');
+    expect(give?.check?.({ affirmativeAction: true, declaredCategory: 'UNKNOWN' }, t)).toBe('mod.compliance.choiceRequired:fld.declaredCategory');
+  });
+
+  it('decision 369 (h): the consent form asks the affirmative action as a required Yes / No with no default', () => {
+    const give = consents.create as Act;
+    const fld = choice(give, 'affirmativeAction');
+    expect(fld.type).toBe('select');
+    expect(fld.json).toBe(true);
+    expect(fld.validate?.required).toBe(true);
+    expect(fld.values?.map((v) => v.value)).toEqual(['true', 'false']);
+    expect((fld as { default?: unknown }).default).toBeUndefined();
+    expect(give.check?.({ declaredCategory: 'ADULT' }, t)).toBe('mod.compliance.choiceRequired:fld.affirmativeAction');
+    expect(give.check?.({ affirmativeAction: 'true', declaredCategory: 'ADULT' }, t)).toBe('mod.compliance.choiceRequired:fld.affirmativeAction');
+    expect(give.check?.({ affirmativeAction: false, declaredCategory: 'ADULT' }, t)).toBeUndefined();
   });
 
   it('checkChoices names the given label', () => {

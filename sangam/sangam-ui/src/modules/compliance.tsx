@@ -97,10 +97,12 @@ export const consents: PrincipalSearchDef = {
     id: 'give',
     label: 'act.recordConsent',
     path: '/compliance/consents',
-    fields: [f.text('principalRef'), f.text('noticeKey', undefined, true), f.num('noticeVersion'), f.select('language', ['en', 'hi'], 'fld.language', false, 'lang.'), f.json('purposeCodes', undefined, true), f.bool('affirmativeAction', 'fld.affirmativeAction'), f.text('channel'), f.select('declaredCategory', ['ADULT', 'CHILD'], 'fld.declaredCategory', true), f.text('guardianVerificationId')],
+    fields: [f.text('principalRef'), f.text('noticeKey', undefined, true), f.num('noticeVersion'), f.select('language', ['en', 'hi'], 'fld.language', false, 'lang.'), f.json('purposeCodes', undefined, true), yesNo('affirmativeAction', 'fld.affirmativeAction'), f.text('channel'), f.select('declaredCategory', ['ADULT', 'CHILD'], 'fld.declaredCategory', true), f.text('guardianVerificationId')],
     // owner decision 365: the declared category (adult or child) is a required choice with no default; a declared child
-    // needs the guardian verification id, which the consent row then carries
-    check: (body, t) => (body.declaredCategory === 'ADULT' || body.declaredCategory === 'CHILD' ? undefined : t('mod.compliance.choiceRequired', { field: t('fld.declaredCategory') })),
+    // needs the guardian verification id, which the consent row then carries. Owner decision 369 (h): the affirmative
+    // action is an explicit Yes / No, never assumed (the server refuses an omitted one by name)
+    check: (body, t) => checkChoices([['affirmativeAction', 'fld.affirmativeAction']])(body, t)
+      ?? (body.declaredCategory === 'ADULT' || body.declaredCategory === 'CHILD' ? undefined : t('mod.compliance.choiceRequired', { field: t('fld.declaredCategory') })),
     hint: 'mod.compliance.consentHint',
   },
   // M-051: WithdrawConsentRequest(purposes) (ComplianceRequests.java:27)

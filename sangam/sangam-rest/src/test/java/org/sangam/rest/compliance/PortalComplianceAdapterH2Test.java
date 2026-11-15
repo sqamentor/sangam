@@ -135,7 +135,7 @@ class PortalComplianceAdapterH2Test {
         CompliancePorts.IncidentAuthorityGateway incidents = s -> "INC-" + s.incidentId();
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, outbox, null, null, null, adults, null, null,
                 null, authority, incidents, null, null, null, null, null);
-        compliance = new SangamCompliance(D, joined, config, ports);
+        compliance = new SangamCompliance(D, joined, config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
         portal = new PortalComplianceAdapter(compliance, PortalComplianceAdapter.Inbox.documents(new DocumentStore(tx)));
         tx.withConnection(c -> {
             compliance.purposes.define(c, TENANT, purpose("P_APPLY", "Process the application", Set.of()), "dpo-1");

@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.operaton.bpm.engine.ProcessEngine;
+import org.sangam.compliance.PrincipalKey;
 import org.sangam.compliance.SangamCompliance;
 import org.sangam.compliance.adapters.IntegrationErasureAdapter;
 import org.sangam.compliance.adapters.IntegrationLegalHoldAdapter;
@@ -19,6 +20,7 @@ import org.sangam.compliance.ports.CompliancePorts;
 import org.sangam.core.api.EngineAdapter;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.ConnectorInvoker;
+import org.sangam.integration.connector.SecretResolver;
 import org.sangam.integration.lifecycle.ErasureService;
 import org.sangam.integration.lifecycle.LegalHoldStore;
 import org.sangam.integration.relay.LeaderElection;
@@ -62,7 +64,13 @@ import com.zaxxer.hikari.HikariDataSource;
  *       authorities → e-mail / HTTP connectors; workflow starts → the engine; log archive → a home-country filesystem
  *       store. The other ports stay at the module's "not configured" defaults (reported as gaps by the evidence report);</li>
  *   <li>{@link ComplianceScheduler}: leader-elected schedule ({@code sangam.compliance.schedule.enabled});</li>
- *   <li>{@link CompliancePurposePlugin}: purpose binding, national-id guard and retention tracking at process start/end.</li>
+ *   <li>{@link CompliancePurposePlugin}: purpose binding, national-id guard and retention tracking at process start/end;</li>
+ *   <li>owner decision 369 (e): the {@link PrincipalKey} of the data-principal tokens and the one-time-code identifier
+ *       hashes, from {@code sangam.compliance.principal-key-ref} (a {@code secret://} reference resolved through the
+ *       {@link SecretResolver}; base64, at least 32 bytes). Unset: the server starts, and every operation that writes
+ *       such a reference (consent, guardian verification, nomination, personal-data read audit, one-time code)
+ *       refuses with {@code PRINCIPAL_KEY_NOT_CONFIGURED}; a literal key, an unknown secret or a short key stop the
+ *       start by name.</li>
  * </ul>
  * The {@code ERASE_DATA} grant for {@code system:retention} is in {@code IntegrationWiring#sangamLifecycleAuthorizer}.
  * Disable with {@code sangam.modules.compliance.enabled=false}.
@@ -163,6 +171,34 @@ public class ComplianceWiring {
         return new HikariDataSource(cfg);
     }
 
+    static final String PRINCIPAL_KEY_REF = "sangam.compliance.principal-key-ref";
+
+    /** Owner decision 369 (e): the compliance principal key (class comment). */
+    @Bean
+    public PrincipalKey sangamCompliancePrincipalKey(Environment env, ObjectProvider<SecretResolver> secrets) {
+        return principalKey(env, secrets.getIfAvailable(SecretResolver::fromEnvironment));
+    }
+
+    /** The key behind {@value #PRINCIPAL_KEY_REF}; refuses a literal (keys are never configuration values). */
+    static PrincipalKey principalKey(Environment env, SecretResolver secrets) {
+        String ref = env.getProperty(PRINCIPAL_KEY_REF);
+        if (ref == null || ref.isBlank()) {
+            LOG.warn("{} is not set: consents, guardian verifications, nominations, personal-data read audits and"
+                    + " one-time codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED (owner decision 369)", PRINCIPAL_KEY_REF);
+            return PrincipalKey.unconfigured();
+        }
+        String r = ref.strip();
+        if (!r.startsWith("secret://")) {
+            throw new IllegalStateException(PRINCIPAL_KEY_REF + " must be a secret reference (secret://...), never the key");
+        }
+        String value = secrets.require(r);
+        try {
+            return PrincipalKey.fromBase64(value);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(PRINCIPAL_KEY_REF + ": " + e.getMessage());
+        }
+    }
+
     @Bean
     public SangamCompliance sangamCompliance(TxSupport tx, ObjectProvider<EngineAdapter> engineAdapter,
             ComplianceConfigProvider config, ProcessEngine engine, ObjectProvider<ErasureService> erasure,
@@ -170,7 +206,7 @@ public class ComplianceWiring {
             ObjectProvider<PublisherRegistry> publishers, Environment env, ComplianceAuditPool auditPool,
             ObjectProvider<CompliancePorts.AdultIdentityVerifier> adultVerifier,
             ObjectProvider<CompliancePorts.GuardianshipVerifier> guardianshipVerifier,
-            ObjectProvider<CompliancePorts.NationalIdVault> nationalIdVault) {
+            ObjectProvider<CompliancePorts.NationalIdVault> nationalIdVault, PrincipalKey principalKey) {
         Transactions ctx = transactions(tx, engineAdapter);
 
         CompliancePorts.LegalHoldPort holds = new IntegrationLegalHoldAdapter(new LegalHoldStore(tx.dialect()));
@@ -206,7 +242,7 @@ public class ComplianceWiring {
                 null /* geo */, nationalIdVault.getIfUnique() /* M-078 */, null /* securityEvidence */,
                 null /* sntp: built-in client */);
         SangamCompliance compliance = new SangamCompliance(tx.dialect(), ctx, config, ports,
-                Transactions.of(auditPool.pool));
+                Transactions.of(auditPool.pool), principalKey);
         ComplianceRuntime.install(compliance);
         LOG.info("sangam-compliance installed (erasure: {}, notifier: {}, authorities: {}, adult verifier: {},"
                 + " guardianship verifier: {}, national-id vault: {})", erasurePort != null, notifier != null,
@@ -224,7 +260,7 @@ public class ComplianceWiring {
     @ConditionalOnProperty(name = "sangam.compliance.national-id-vault.hmac-pepper")
     public org.sangam.compliance.identity.EncryptedNationalIdVault sangamNationalIdVault(TxSupport tx,
             ObjectProvider<EngineAdapter> engineAdapter, ObjectProvider<org.sangam.core.security.FieldEncryptor> encryptor,
-            ComplianceConfigProvider config, Environment env) {
+            ComplianceConfigProvider config, Environment env, PrincipalKey principalKey) {
         org.sangam.core.security.FieldEncryptor enc = encryptor.getIfAvailable();
         if (enc == null) {
             throw new IllegalStateException("sangam.compliance.national-id-vault.hmac-pepper is set but no FieldEncryptor"
@@ -233,7 +269,8 @@ public class ComplianceWiring {
         byte[] pepper = java.util.Base64.getDecoder().decode(
                 env.getRequiredProperty("sangam.compliance.national-id-vault.hmac-pepper").trim());
         return new org.sangam.compliance.identity.EncryptedNationalIdVault(tx.dialect(), transactions(tx, engineAdapter),
-                enc, pepper, new org.sangam.compliance.ComplianceAudit(new org.sangam.core.layer.AuditChain(tx.dialect())),
+                enc, pepper, new org.sangam.compliance.ComplianceAudit(new org.sangam.core.layer.AuditChain(tx.dialect()), null,
+                        principalKey),
                 config);
     }
 

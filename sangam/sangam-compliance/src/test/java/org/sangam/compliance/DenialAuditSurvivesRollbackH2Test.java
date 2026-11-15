@@ -96,7 +96,7 @@ class DenialAuditSurvivesRollbackH2Test {
         ComplianceConfig.Provider config = t -> ComplianceConfig.fromProperties(PACKS, Map.of("jurisdiction", PACK));
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null);
-        return new SangamCompliance(D, CALLER_POOL_UNUSED, config, ports, denialTx);
+        return new SangamCompliance(D, CALLER_POOL_UNUSED, config, ports, denialTx, org.sangam.compliance.PrincipalKey.of(new byte[32]));
     }
 
     Connection caller() throws Exception {

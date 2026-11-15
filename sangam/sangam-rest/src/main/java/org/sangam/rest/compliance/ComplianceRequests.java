@@ -57,9 +57,11 @@ public final class ComplianceRequests {
      * {@code language} is a language code of the tenant's jurisdiction pack (default: the pack default).
      * {@code declaredCategory} (owner decision 365) is {@code ADULT} or {@code CHILD}: required, an omitted or other
      * value refused by name, never defaulted; a declared child needs {@code guardianVerificationId}.
+     * {@code affirmativeAction} (owner decision 369 (h)) is boxed and required: an omitted value is refused by name,
+     * never read as false or true.
      */
     public record GiveConsentRequest(String principalRef, String noticeKey, Integer noticeVersion, String language,
-                                     Set<String> purposeCodes, boolean affirmativeAction, String channel,
+                                     Set<String> purposeCodes, Boolean affirmativeAction, String channel,
                                      String guardianVerificationId, String consentManagerId, String cmArtefactId,
                                      String declaredCategory) {
     }

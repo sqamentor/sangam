@@ -13,7 +13,7 @@ package org.sangam.sdk.generated.model;
  * @param noticeVersion wire field {@code noticeVersion}
  * @param language wire field {@code language}
  * @param purposeCodes wire field {@code purposeCodes} (required)
- * @param affirmativeAction wire field {@code affirmativeAction} (required)
+ * @param affirmativeAction wire field {@code affirmativeAction} (required). Whether the data principal gave consent by a clear affirmative action (DPDP s.6(1); owner decision 369). Required: an omitted value is 400 VALIDATION_FAILED naming the field, never read as false or true.
  * @param channel wire field {@code channel}
  * @param guardianVerificationId wire field {@code guardianVerificationId}
  * @param consentManagerId wire field {@code consentManagerId}

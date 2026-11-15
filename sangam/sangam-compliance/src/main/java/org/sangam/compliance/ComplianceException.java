@@ -58,15 +58,25 @@ public class ComplianceException extends RuntimeException {
         COMPLIANCE_PACK_NOT_INSTALLED(409),
         /** Owner decision 344: an incident type that is not a code of the authority's catalogue in the jurisdiction pack. */
         INCIDENT_TYPE_NOT_IN_CATALOGUE(422),
-        /** Invalid input. */
         /** Owner decision 360: the one-time code of a rights request cannot be sent (settings, notifier, template). */
-    OTP_NOT_CONFIGURED(409),
-    /** Owner decision 360: a wrong code, or a challenge that is unknown, used or of another tenant. */
-    OTP_INVALID(401),
-    OTP_EXPIRED(401),
-    /** Owner decision 360: too many wrong codes for the identifier; refused until the lock-out ends. */
-    OTP_LOCKED(429),
-    INVALID_INPUT(400);
+        OTP_NOT_CONFIGURED(409),
+        /** Owner decision 360: a wrong code, or a challenge that is unknown, used or of another tenant. */
+        OTP_INVALID(401),
+        OTP_EXPIRED(401),
+        /** Owner decision 360: too many wrong codes for the identifier; refused until the lock-out ends. */
+        OTP_LOCKED(429),
+        /**
+         * Owner decision 369 (d): too many codes were asked for the identifier or from the client address within the
+         * pack's window; refused until the window has passed.
+         */
+        OTP_RATE_LIMITED(429),
+        /**
+         * Owner decision 369 (e): no compliance principal key is configured, so no data-principal reference (audit
+         * token, challenge identifier hash) can be written; never written unkeyed.
+         */
+        PRINCIPAL_KEY_NOT_CONFIGURED(409),
+        /** Invalid input. */
+        INVALID_INPUT(400);
 
         private final int httpStatus;
 

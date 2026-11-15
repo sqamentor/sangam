@@ -105,7 +105,7 @@ class CompliancePrincipalReadsH2Test {
                 return false;
             }
         };
-        controller = new ComplianceController(new ComplianceApiImpl(new SangamCompliance(D, tx, config, ports)), permissions);
+        controller = new ComplianceController(new ComplianceApiImpl(new SangamCompliance(D, tx, config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]))), permissions);
     }
 
     @AfterEach
@@ -168,7 +168,8 @@ class CompliancePrincipalReadsH2Test {
         assertEquals("rights-requests", reads.get(0).get("records"));
         assertEquals(1, ((Number) reads.get(0).get("count")).intValue());
         assertEquals(OFFICER, reads.get(0).get("actor"));
-        assertEquals(ComplianceAudit.principalToken(TENANT, CITIZEN), reads.get(0).get("principal"));
+        assertEquals(org.sangam.compliance.PrincipalKey.of(new byte[32]).token(TENANT, CITIZEN), reads.get(0).get("principal"),
+                "the keyed token (owner decision 369 (e))");
         assertEquals("consents", reads.get(1).get("records"));
         assertEquals(0, ((Number) reads.get(1).get("count")).intValue(), "a search that finds nothing is still a read");
         assertEquals(id, reads.get(2).get("recordId"), "one request read by its id");

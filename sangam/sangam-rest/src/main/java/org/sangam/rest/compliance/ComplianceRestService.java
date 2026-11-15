@@ -65,8 +65,13 @@ public interface ComplianceRestService extends ComplianceApi {
 
     LogArchiveService.Segment sealLogs(SecurityIdentity id, Instant from, Instant to);
 
-    /** Owner decision 360: sends a one-time code for a rights request (public, the tenant from the request). */
-    org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r);
+    /**
+     * Owner decision 360: sends a one-time code for a rights request (public, the tenant from the request). Owner
+     * decision 369 (d): rate limited per identifier and per {@code clientAddress} (the request's resolved client
+     * address).
+     */
+    org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r,
+                                                                         String clientAddress);
 
     /** Owner decision 360: verifies a code; the attempt is recorded before a refusal is thrown (named code). */
     org.sangam.compliance.rights.PrincipalOtpChallenges.Verification verifyRightsOtp(String tenantId, String challengeId, String code);
