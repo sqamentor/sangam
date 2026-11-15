@@ -37,9 +37,11 @@ import org.springframework.context.ConfigurableApplicationContext;
  * <ul>
  *   <li>A normal start uses the {@code h2} development profile with its security bootstrap for the two conformance
  *       tenants (an ALLOW-everything policy for the administrator groups, {@code SecurityBootstrap}).</li>
- *   <li>A start without a capability uses no development profile (so decision 75's development exemption does not
- *       apply) and the configuration a non-development start needs, generated fresh per run as the acceptance suite
- *       does ({@code AbstractAcceptanceIT}): key-encryption key, registry and bundle signing keys, pepper.</li>
+ *   <li>A start without a capability uses the neutral profile {@link #NON_DEVELOPMENT_PROFILE} instead of a development
+ *       profile (so decision 75's development exemption does not apply; with no active profile at all the server's
+ *       default profile, h2, would make it a development start) and the configuration a non-development start needs,
+ *       generated fresh per run as the acceptance suite does ({@code AbstractAcceptanceIT}): key-encryption key,
+ *       registry and bundle signing keys, pepper.</li>
  * </ul>
  *
  * <p>Removable today: the security module ({@code sangam.modules.security.enabled=false}) takes away authorization and
@@ -51,6 +53,9 @@ public final class SpringHostHarness implements HostHarness {
 
     /** Groups of the administrator contexts: the dev bootstrap grants every permission to the first. */
     static final List<String> ADMIN_GROUPS = List.of("sangam-admin", "sangam-user", "sangam-operator", "sangam-worker");
+
+    /** A profile that says nothing about the environment (no profile file, not a development or production name). */
+    static final String NON_DEVELOPMENT_PROFILE = "conformance";
 
     /** The refusal of a start without the security module (SangamRestAutoConfiguration, decision 75). */
     static final String SECURITY_REFUSAL = "sangam-security is not active";
@@ -74,9 +79,9 @@ public final class SpringHostHarness implements HostHarness {
             props.put("sangam.modules.security.enabled", "false");
         }
         SpringApplicationBuilder app = new SpringApplicationBuilder(SangamServerApplication.class);
-        if (development) {
-            app.profiles("h2");
-        }
+        // without a capability: a neutral profile, because with no active profile the server's default profile applies,
+        // and that is h2 (application.yaml), a development profile
+        app.profiles(development ? "h2" : NON_DEVELOPMENT_PROFILE);
         // as command-line arguments: builder properties are only defaults, which application.yaml and the profile
         // files override (server port 8080, the h2 profile's database URL and bootstrap tenants)
         context = app.run(props.entrySet().stream().map(e -> "--" + e.getKey() + "=" + e.getValue()).toArray(String[]::new));
