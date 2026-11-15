@@ -489,3 +489,11 @@ Decision 380 was taken on 2026-11-16 under the owner's words "I Approved Go Ahea
   - (P2) Install: option (a). An entry of kind `package` carries a signed package bundle; install runs the catalogue checks and then `PackagePort.importBundle` (T70 verification; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). Code kinds (domain packs, connectors) are refused with 422 `CATALOGUE_KIND_NOT_INSTALLABLE`. Connector templates as element templates (b) are the follow-on; jars are never staged (c).
   - (P3) Keys: the host signs the index with its own catalogue key held as a secret reference (decision 37: one key per purpose and environment); consumers trust a list of public keys given as secret references, which replaces today's literal base64 key, in the way of `PackageSigningWiring`.
   - (P4) Tenancy: option (i). The index is platform-wide, published by the platform operator; installs are per tenant.
+
+Decision 381 was taken on 2026-11-16 under the owner's words "I Approved Go Ahead End to End also approved recommended option" for the points round 5 lane w2 left open; the recommended option of each is recorded.
+
+- **381 (round 5 lane w2 points, owner chat 2026-11-16)**:
+  - (1) JGit ships in the default server (option b); package Git sync stays off by default (`sangam.packages.git.enabled=false`) and its egress deny-all unless `sangam.packages.git.egress` lists the remote, so an operator turns it on without a rebuild. The licence and download records carry JGit.
+  - (2) `GET /packs/{id}/document-slots` stays for platform pack administrators only (option a).
+  - (3) The decision 145 migration inventory is exposed through an admin REST route (option b), together with the audited repair command: it requires an ownership-evidence reference, reuses `ChangeTenantService.moveInstance` and writes an audit event.
+  - (4) A Double handed to `TypedVariables` by in-process Java code is refused by name (option b), after every caller has been checked and moved to an exact decimal.
