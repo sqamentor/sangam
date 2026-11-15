@@ -11,13 +11,79 @@
  * - a published consent notice for that purpose (POST /compliance/notices/{key}/publish; ConsentNoticeService.publish,
  *   which also needs the withdraw, rights and complaint links of the server configuration).
  */
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { APIRequestContext, APIResponse } from '@playwright/test';
-import type { ComplianceSeed } from './env';
+import { UI_ROOT, type ComplianceSeed } from './env';
 
 export const E2E_PURPOSE = 'E2E_SERVICE';
 export const E2E_NOTICE = 'e2e-service-notice';
 export const E2E_DPO = { name: 'E2E Data Protection Officer', email: 'dpo@e2e.test' };
+
+/**
+ * The withdraw, rights and Board-complaint links the CI job gives the test-mode server (ui.yml "Start the stack",
+ * SPRING_APPLICATION_JSON sangam.compliance.links). The server prints them into every notice and the privacy policy
+ * (ConsentNoticeService linkLine); a change to one side without the other fails the notice specs, loudly.
+ */
+export const E2E_LINKS = {
+  withdrawConsent: 'http://127.0.0.1:8080/portal',
+  rightsPortal: 'http://127.0.0.1:8080/portal/grievances',
+  authorityComplaint: 'https://www.dpb.gov.in/',
+} as const;
+
+/** The India jurisdiction pack the server ships (sangam-compliance resources), read by the specs as data. */
+export interface IndiaPack {
+  code: string;
+  homeCountry: string;
+  rights: { code: string; maxDays?: number; defaultDays?: number }[];
+  contactRoles: { code: string }[];
+  authorities: { code: string; role: string; deadlineHours?: number; warnHours?: number }[];
+  breach: { detailedReportHours: number };
+  limits: Record<string, { value: number }>;
+  noticeLint: string[];
+}
+
+export function indiaPack(): IndiaPack {
+  const file = join(UI_ROOT, '..', 'sangam-compliance', 'src', 'main', 'resources', 'compliance', 'jurisdictions', 'IN', 'pack.json');
+  return JSON.parse(readFileSync(file, 'utf8')) as IndiaPack;
+}
+
+/** SHA-256 hex of a UTF-8 text, as the server's content and report hashes (Sql.hashHex). */
+export function sha256Hex(text: string): string {
+  return createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+/** A purpose code no earlier run or other spec uses. */
+export function uniqueCode(prefix: string): string {
+  return `${prefix}_${randomUUID().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
+}
+
+/** PUT /compliance/purposes/{code}: a consent purpose shaped like the seeded one, with the given English text. */
+export async function definePurpose(admin: APIRequestContext, code: string, text: { name: string; description: string }, active: boolean): Promise<void> {
+  await must(
+    `PUT /compliance/purposes/${code}`,
+    await admin.put(`compliance/purposes/${code}`, {
+      headers: key(),
+      data: {
+        names: { en: text.name },
+        descriptions: { en: text.description },
+        dataItems: [{ code: 'name', names: { en: 'Full name' }, sensitive: false }],
+        basis: 'CONSENT',
+        retention: 'P400D',
+        active,
+      },
+    }),
+    [200],
+  );
+}
+
+/** The tenant of an API client's identity (GET /me tenantId). */
+export async function tenantOf(ctx: APIRequestContext): Promise<string> {
+  const me = (await must('GET /me', await ctx.get('me'), [200])) as { tenantId?: string };
+  if (!me.tenantId) throw new Error('GET /me returned no tenantId');
+  return me.tenantId;
+}
 
 async function must(what: string, res: APIResponse, status: number[]): Promise<unknown> {
   if (!status.includes(res.status())) throw new Error(`seed: ${what} answered ${res.status()} ${await res.text()}`);
