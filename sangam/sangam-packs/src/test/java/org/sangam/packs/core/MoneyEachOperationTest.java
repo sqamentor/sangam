@@ -58,8 +58,8 @@ class MoneyEachOperationTest {
 
     /** A rounding policy DMN shaped like packgen rounding.py, one open-ended VERIFIED row from 1 January 2000. */
     private static String policyDmn(String key, String mode) {
-        return "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"d_" + key.replace('-', '_')
-                + "\" name=\"p\" namespace=\"t\"><decision id=\"" + key + "\" name=\"p\"><decisionTable id=\"t_"
+        return "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" xmlns:operaton=\"http://operaton.org/schema/1.0/dmn\" id=\"d_" + key.replace('-', '_')
+                + "\" name=\"p\" namespace=\"t\"><decision operaton:historyTimeToLive=\"30\" id=\"" + key + "\" name=\"p\"><decisionTable id=\"t_"
                 + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\"><input id=\"i0\"><inputExpression id=\"ie0\""
                 + " typeRef=\"date\"><text>date(asOfDate)</text></inputExpression></input>"
                 + "<output id=\"o0\" name=\"policyId\" typeRef=\"string\"/>"
@@ -89,8 +89,8 @@ class MoneyEachOperationTest {
 
     /** Versioned wage rules shaped like packgen payroll.py: ceiling 25,000.00 and limit 21,000.00 in minor units. */
     private static String rulesDmn(String key, String evidence, String use) {
-        return "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"d_" + key.replace('-', '_')
-                + "\" name=\"r\" namespace=\"t\"><decision id=\"" + key + "\" name=\"r\"><decisionTable id=\"t_"
+        return "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" xmlns:operaton=\"http://operaton.org/schema/1.0/dmn\" id=\"d_" + key.replace('-', '_')
+                + "\" name=\"r\" namespace=\"t\"><decision operaton:historyTimeToLive=\"30\" id=\"" + key + "\" name=\"r\"><decisionTable id=\"t_"
                 + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\"><input id=\"i0\"><inputExpression id=\"ie0\""
                 + " typeRef=\"date\"><text>date(asOfDate)</text></inputExpression></input>"
                 + "<output id=\"o0\" name=\"ruleId\" typeRef=\"string\"/>"
@@ -110,7 +110,7 @@ class MoneyEachOperationTest {
     }
 
     private static String process(String id, String rulesKey) {
-        return "<definitions " + NS + "><process id=\"" + id + "\" isExecutable=\"true\"><startEvent id=\"s\"/>"
+        return "<definitions " + NS + "><process id=\"" + id + "\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>"
                 + calc("pfE", "result", "pfEmployeeAmount", "op", "EACH", "items", "register", "itemResult",
                         "pfEmployee", "formula", "pfWages * pfEmployeePct / 100", "policy", "test-half-up",
                         "cap", "pfWages&lt;=pfWageCeiling", "rules", rulesKey)
@@ -177,7 +177,7 @@ class MoneyEachOperationTest {
     }
 
     private static final java.util.regex.Pattern CODE =
-            java.util.regex.Pattern.compile("(REGISTER|ITEM|RULES)_[A-Z]+(?=:)");
+            java.util.regex.Pattern.compile("(REGISTER|ITEM|RULES)_[A-Z_]+(?=:)"); // a code has several words
 
     /** The refusal code ({@code CODE: message}) of a start that must fail. */
     private static String refusal(String key, Map<String, Object> v) {

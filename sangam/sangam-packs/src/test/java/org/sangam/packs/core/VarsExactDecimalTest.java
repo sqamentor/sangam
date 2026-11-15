@@ -48,7 +48,7 @@ class VarsExactDecimalTest {
         engine = cfg.buildProcessEngine();
         String ns = "xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\""
                 + " xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" targetNamespace=\"t\"";
-        String sum = "<definitions " + ns + "><process id=\"exact-sum\" isExecutable=\"true\"><startEvent id=\"s\"/>"
+        String sum = "<definitions " + ns + "><process id=\"exact-sum\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>"
                 + "<serviceTask id=\"set\" operaton:class=\"" + SetVariablesDelegate.class.getName() + "\">"
                 + "<extensionElements><operaton:field name=\"values\"><operaton:string>a=0.1;b=0.2;fee=1234567.89"
                 + "</operaton:string></operaton:field></extensionElements></serviceTask>"
@@ -58,7 +58,7 @@ class VarsExactDecimalTest {
                 + "<sequenceFlow id=\"f2\" sourceRef=\"set\" targetRef=\"add\"/>"
                 + "<sequenceFlow id=\"f3\" sourceRef=\"add\" targetRef=\"hold\"/>"
                 + "<sequenceFlow id=\"f4\" sourceRef=\"hold\" targetRef=\"e\"/></process></definitions>";
-        String window = "<definitions " + ns + "><process id=\"exact-window\" isExecutable=\"true\"><startEvent id=\"s\"/>"
+        String window = "<definitions " + ns + "><process id=\"exact-window\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>"
                 + "<serviceTask id=\"eval\" operaton:class=\"org.sangam.packs.universal.EventWindowDelegate\">"
                 + "<extensionElements><operaton:field name=\"op\"><operaton:string>EVALUATE</operaton:string>"
                 + "</operaton:field></extensionElements></serviceTask>"

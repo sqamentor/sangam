@@ -62,11 +62,11 @@ class JointApprovalSeatsTest {
         // JOINT-B9-Y is held by p1.b9y, with p1.se on additional charge
         InMemorySeatDirectory dir = (InMemorySeatDirectory) PackRuntime.seats();
         LocalDate from = LocalDate.of(2026, 1, 1);
-        dir.addSeat(null, "JOINT-B9-X", "SE", "DPW-CIRCLE", "CE-ZONE");
-        dir.addSeat(null, "JOINT-B9-Y", "SE", "DPW-CIRCLE", "CE-ZONE");
-        dir.addHolding(null, new SeatHolding("JOINT-B9-X", "p1.se", SeatHolding.Basis.SUBSTANTIVE, null, from, null));
-        dir.addHolding(null, new SeatHolding("JOINT-B9-Y", "p1.b9y", SeatHolding.Basis.SUBSTANTIVE, null, from, null));
-        dir.addHolding(null, new SeatHolding("JOINT-B9-Y", "p1.se", SeatHolding.Basis.ADDITIONAL_CHARGE, "AC-B9",
+        dir.addSeat(PackTestTenant.ID, "JOINT-B9-X", "SE", "DPW-CIRCLE", "CE-ZONE");
+        dir.addSeat(PackTestTenant.ID, "JOINT-B9-Y", "SE", "DPW-CIRCLE", "CE-ZONE");
+        dir.addHolding(PackTestTenant.ID, new SeatHolding("JOINT-B9-X", "p1.se", SeatHolding.Basis.SUBSTANTIVE, null, from, null));
+        dir.addHolding(PackTestTenant.ID, new SeatHolding("JOINT-B9-Y", "p1.b9y", SeatHolding.Basis.SUBSTANTIVE, null, from, null));
+        dir.addHolding(PackTestTenant.ID, new SeatHolding("JOINT-B9-Y", "p1.se", SeatHolding.Basis.ADDITIONAL_CHARGE, "AC-B9",
                 from, null));
     }
 

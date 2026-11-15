@@ -211,8 +211,8 @@ class MoneyCalculationDelegateTest {
         String before = String.format(rule, "r1", "r1", "[date(\"1900-01-01\")..date(\"2025-12-31\")]", "r1", "r1",
                 "v1", "r1", "UNVERIFIED", "r1", "r1", "r1", "r1", "r1", "none found", "r1", "none", "r1",
                 "1900-01-01", "r1", "SYNTHETIC_DEMO_ONLY");
-        return "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"d_" + key.replace('-', '_')
-                + "\" name=\"p\" namespace=\"t\"><decision id=\"" + key + "\" name=\"p\"><decisionTable id=\"t_"
+        return "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" xmlns:operaton=\"http://operaton.org/schema/1.0/dmn\" id=\"d_" + key.replace('-', '_')
+                + "\" name=\"p\" namespace=\"t\"><decision operaton:historyTimeToLive=\"30\" id=\"" + key + "\" name=\"p\"><decisionTable id=\"t_"
                 + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\"><input id=\"i0\"><inputExpression id=\"ie0\""
                 + " typeRef=\"date\"><text>date(asOfDate)</text></inputExpression></input>" + out + now + before
                 + "</decisionTable></decision></definitions>";
@@ -228,7 +228,7 @@ class MoneyCalculationDelegateTest {
         cfg.setHistory("full");
         org.sangam.packs.PackTestEngines.configure(cfg); // decisions 138 and FEEL (sangam-feel), as production
         engine = cfg.buildProcessEngine();
-        String process = "<definitions " + NS + "><process id=\"money-calc\" isExecutable=\"true\"><startEvent id=\"s\"/>"
+        String process = "<definitions " + NS + "><process id=\"money-calc\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>"
                 + calc("pf", "result", "pfAmount", "formula",
                         "round(pfWages * pfEmployeePct / 100) + round(pfWages * pfEmployerPct / 100)",
                         "policy", "test-half-up-rounding")

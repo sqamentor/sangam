@@ -28,6 +28,7 @@ CODES = {
     'NO_ACTIVE_MOTHER_SANCTION': 'No active (or an exhausted) mother sanction',
     'NO_BUDGET': 'No budget available',
     'NOT_INCLUDED_BY_BUDGET_DIVISION': 'Not included by the Budget Division in the supplementary batch',
+    'PAYEE_EXCLUDED': 'Payee failed the integrity check (excluded, deceased or duplicate)',
     'PAYEE_NOT_CONFIRMED': 'Payee not confirmed',
     'REAPP_RULE': 'Re-appropriation not allowed by the rules (rule cited)',
     'SAVINGS_NOT_AVAILABLE': 'Savings not available in the source head',

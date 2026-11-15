@@ -68,7 +68,7 @@ class RuleCaseTypeListenerTest {
             <?xml version="1.0" encoding="UTF-8"?>
             <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
                          xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="http://sangam.org/test">
-              <process id="rct-case" isExecutable="true">
+              <process id="rct-case" isExecutable="true" operaton:historyTimeToLive="30">
                 <startEvent id="rc_start"/>
                 <callActivity id="rc_sanction" calledElement="rct-sanction">
                   <extensionElements><operaton:in variables="all"/><operaton:out variables="all"/></extensionElements>
@@ -84,7 +84,7 @@ class RuleCaseTypeListenerTest {
             <?xml version="1.0" encoding="UTF-8"?>
             <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
                          xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="http://sangam.org/test">
-              <process id="rct-sanction" isExecutable="true">
+              <process id="rct-sanction" isExecutable="true" operaton:historyTimeToLive="30">
                 <startEvent id="sn_start"/>
                 <userTask id="sn_sanction" operaton:candidateGroups="BRANCHMGR">
                   <extensionElements>
@@ -100,9 +100,9 @@ class RuleCaseTypeListenerTest {
 
     static final String POWERS = """
             <?xml version="1.0" encoding="UTF-8"?>
-            <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" id="d_rct" name="RCT powers"
+            <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:operaton="http://operaton.org/schema/1.0/dmn" id="d_rct" name="RCT powers"
                          namespace="http://sangam.org/test">
-              <decision id="rct-powers" name="RCT powers">
+              <decision operaton:historyTimeToLive="30" id="rct-powers" name="RCT powers">
                 <decisionTable id="t_rct" hitPolicy="FIRST">
                   <input id="i0" label="Seat role"><inputExpression id="ie0" typeRef="string"><text>seatRole</text></inputExpression></input>
                   <input id="i1" label="Case type"><inputExpression id="ie1" typeRef="string"><text>caseType</text></inputExpression></input>

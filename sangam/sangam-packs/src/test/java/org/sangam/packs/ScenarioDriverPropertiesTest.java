@@ -87,7 +87,8 @@ class ScenarioDriverPropertiesTest {
             @ForAll @Size(max = 12) List<@LongRange(min = 0, max = 864_000_000L) Long> advances) {
         BusinessClock outer = BusinessClock.system();
         PackDriver d = new PackDriver(engine);
-        Instant start = Instant.now();
+        // the engine clock counts whole milliseconds (java.util.Date): compare from the same resolution
+        Instant start = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
         long sum = 0;
         try {
             for (long ms : advances) {

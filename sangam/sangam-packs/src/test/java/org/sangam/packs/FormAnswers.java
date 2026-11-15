@@ -62,7 +62,7 @@ final class FormAnswers {
     Answer answer(Task t) {
         String seat = engine.getTaskService().getIdentityLinksForTask(t.getId()).stream()
                 .map(IdentityLink::getGroupId).filter(Objects::nonNull).findFirst().orElse("none");
-        String person = PackRuntime.seats().holderOf(null, seat, java.time.LocalDate.now()).orElse("user." + seat);
+        String person = PackRuntime.seats().holderOf(t.getTenantId(), seat, java.time.LocalDate.now()).orElse("user." + seat);
         Map<String, Object> v = new HashMap<>();
         JsonNode f = form(engine.getFormService().getTaskFormKey(t.getProcessDefinitionId(), t.getTaskDefinitionKey()));
         Map<String, Object> existing = engine.getTaskService().getVariables(t.getId());
@@ -73,7 +73,7 @@ final class FormAnswers {
                     continue;
                 }
                 Object val = switch (fld.path("type").asText()) {
-                    case "decimal", "number" -> 1000.0;
+                    case "decimal", "number" -> new java.math.BigDecimal("1000"); // decision 138: exact, never a float
                     case "money" -> 100_000L; // integer minor units: 1,000.00 of the pack currency (SD-398)
                     case "integer" -> 1;
                     case "boolean" -> true;

@@ -52,7 +52,7 @@ class MoneyWagePeriodTest {
 
     private static final String NS = "xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\""
             + " xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\" targetNamespace=\"t\"";
-    private static final String DMN = "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"d_";
+    private static final String DMN = "<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" xmlns:operaton=\"http://operaton.org/schema/1.0/dmn\" id=\"d_";
     private static final String DATE_INPUT = "<input id=\"i0\"><inputExpression id=\"ie0\" typeRef=\"date\">"
             + "<text>date(asOfDate)</text></inputExpression></input>";
 
@@ -68,7 +68,7 @@ class MoneyWagePeriodTest {
 
     private static String process(String id, String... tasks) {
         StringBuilder b = new StringBuilder("<definitions " + NS + "><process id=\"" + id
-                + "\" isExecutable=\"true\"><startEvent id=\"s\"/>");
+                + "\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>");
         for (String t : tasks) {
             b.append(t);
         }
@@ -104,7 +104,7 @@ class MoneyWagePeriodTest {
     private static String switchingPolicy(String key) {
         String cols = "policyId,policyVersion,evidenceStatus,permittedUse,mode,quantumMinor,negatives,source,provision,effectiveFrom";
         StringBuilder b = new StringBuilder(DMN + key.replace('-', '_') + "\" name=\"p\" namespace=\"t\">"
-                + "<decision id=\""
+                + "<decision operaton:historyTimeToLive=\"30\" id=\""
                 + key + "\" name=\"p\"><decisionTable id=\"t_" + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\">"
                 + DATE_INPUT);
         for (String c : cols.split(",")) {
@@ -137,7 +137,7 @@ class MoneyWagePeriodTest {
         String cols = "policyId,policyVersion,evidenceStatus,permittedUse,mode,quantumMinor,negatives,source,provision,"
                 + "effectiveFrom";
         StringBuilder b = new StringBuilder(DMN + key.replace('-', '_') + "\" name=\"p\" namespace=\"t\">"
-                + "<decision id=\""
+                + "<decision operaton:historyTimeToLive=\"30\" id=\""
                 + key + "\" name=\"p\"><decisionTable id=\"t_" + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\">"
                 + DATE_INPUT);
         for (String c : cols.split(",")) {
@@ -165,7 +165,7 @@ class MoneyWagePeriodTest {
         String[] cols = {"ruleId", "ruleVersion", "evidenceStatus", "permittedUse", "pfWageCeiling", "esiWageLimit", "esiContinuation",
                 "esiLowWageDailyLimit", "esiLowWageComparison", "esiContributionPeriodStarts", "periodRuleBasis"};
         StringBuilder b = new StringBuilder(DMN + key.replace('-', '_') + "\" name=\"r\" namespace=\"t\">"
-                + "<decision id=\""
+                + "<decision operaton:historyTimeToLive=\"30\" id=\""
                 + key + "\" name=\"r\"><decisionTable id=\"t_" + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\">"
                 + DATE_INPUT);
         for (String c : cols) {
@@ -222,7 +222,7 @@ class MoneyWagePeriodTest {
                 "esiContributionPeriodStarts", "esiMidPeriodJoiner", "esiLowWageDailyLimit", "esiLowWageComparison",
                 "esiAverageDailyWage", "esiAverageDailyWageStatus"};
         StringBuilder b = new StringBuilder(DMN + key.replace('-', '_') + "\" name=\"r\" namespace=\"t\">"
-                + "<decision id=\"" + key + "\" name=\"r\"><decisionTable id=\"t_" + key.replace('-', '_')
+                + "<decision operaton:historyTimeToLive=\"30\" id=\"" + key + "\" name=\"r\"><decisionTable id=\"t_" + key.replace('-', '_')
                 + "\" hitPolicy=\"UNIQUE\">" + DATE_INPUT);
         for (String c : cols) {
             b.append("<output id=\"o").append(++ids).append("\" name=\"").append(c).append("\" typeRef=\"")

@@ -50,7 +50,9 @@ import org.sangam.packs.spi.PackRegistry;
  */
 class PackAcceptanceTest {
 
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Decision 138: a fraction in scenario data becomes a BigDecimal case variable, never a Double. */
+    private static final ObjectMapper JSON = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();
     static ProcessEngine engine;
     static PackDriver driver;
 
@@ -127,6 +129,8 @@ class PackAcceptanceTest {
         }
         Map<String, JsonNode> rows = new java.util.LinkedHashMap<>();
         jsonOf(driver.var(bk, "meritList")).forEach(r -> rows.put(r.path("key").asText(), r));
+        // a ranked candidate without a post is on the waitlist with the score the ranking used (MeritListDelegate)
+        jsonOf(driver.var(bk, "waitlist")).forEach(r -> rows.putIfAbsent(r.path("key").asText(), r));
         if (merit.has("waitlist")) {
             List<String> want = new ArrayList<>();
             merit.path("waitlist").forEach(n -> want.add(p + n.asText()));

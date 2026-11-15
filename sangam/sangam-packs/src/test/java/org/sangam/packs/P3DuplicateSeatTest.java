@@ -68,7 +68,7 @@ class P3DuplicateSeatTest {
         Map<String, Object> v = AllPacksSmokeTest.bag();
         v.putAll(Map.of("applicantName", "Sita Devi", "applicantRef", "mobile:98XXXXXX10", "schemeId", "HOUSING-GRANT",
                 "beneficiaryId", beneficiaryId, "bankAccount", "3210987654", "ifsc", "PUNB0123400", "income", 120000,
-                "age", 41, "socialCategory", "SC", "landHolding", 0.5));
+                "age", 41, "socialCategory", "SC", "landHolding", new java.math.BigDecimal("0.5")));
         v.putAll(Map.of("district", "A", "officeId", "BLOCK-A1", "actingSeat", "DEO-A1", "initiator", "p3.deo-a1",
                 "instalmentInterval", "PT1S"));
         engine.getRuntimeService().createProcessInstanceByKey(KEY).businessKey(bk).setVariables(v)

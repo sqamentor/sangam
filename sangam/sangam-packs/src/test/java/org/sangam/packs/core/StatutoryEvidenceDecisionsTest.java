@@ -59,7 +59,7 @@ class StatutoryEvidenceDecisionsTest {
             f.append("<operaton:field name=\"").append(fields[i]).append("\"><operaton:string>").append(fields[i + 1])
                     .append("</operaton:string></operaton:field>");
         }
-        return "<definitions " + NS + "><process id=\"" + id + "\" isExecutable=\"true\"><startEvent id=\"s\"/>"
+        return "<definitions " + NS + "><process id=\"" + id + "\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\"><startEvent id=\"s\"/>"
                 + "<serviceTask id=\"one\" operaton:class=\"" + MoneyCalculationDelegate.class.getName()
                 + "\"><extensionElements>" + f + "</extensionElements></serviceTask><userTask id=\"hold\"/>"
                 + "<endEvent id=\"e\"/><sequenceFlow id=\"f1\" sourceRef=\"s\" targetRef=\"one\"/>"
@@ -82,8 +82,8 @@ class StatutoryEvidenceDecisionsTest {
     private static String policy(String key, String[]... rows) {
         String cols = "policyId,policyVersion,evidenceStatus,permittedUse,mode,quantumMinor,negatives,source,provision,"
                 + "effectiveFrom,periodRuleBasis";
-        StringBuilder b = new StringBuilder("<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" id=\"d_"
-                + key.replace('-', '_') + "\" name=\"p\" namespace=\"t\"><decision id=\"" + key + "\" name=\"p\">"
+        StringBuilder b = new StringBuilder("<definitions xmlns=\"https://www.omg.org/spec/DMN/20191111/MODEL/\" xmlns:operaton=\"http://operaton.org/schema/1.0/dmn\" id=\"d_"
+                + key.replace('-', '_') + "\" name=\"p\" namespace=\"t\"><decision operaton:historyTimeToLive=\"30\" id=\"" + key + "\" name=\"p\">"
                 + "<decisionTable id=\"t_" + key.replace('-', '_') + "\" hitPolicy=\"UNIQUE\"><input id=\"i0\">"
                 + "<inputExpression id=\"ie0\" typeRef=\"date\"><text>date(asOfDate)</text></inputExpression></input>");
         for (String c : cols.split(",")) {

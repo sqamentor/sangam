@@ -41,7 +41,8 @@ class DecimalFormulaTest {
     void additionSubtractionAndMultiplicationAreExact() {
         DecimalFormula f = DecimalFormula.parse("a + b");
         assertEquals(new BigDecimal("0.3"), f.evaluate(vars("a", "0.1", "b", "0.2"), NONE));
-        assertEquals(new BigDecimal("12.3456"), DecimalFormula.parse("q * p").evaluate(vars("q", "1.5", "p", "8.2304"),
+        // exact product: the scale of a product is the sum of the scales (1 + 4), so 12.34560, numerically 12.3456
+        assertEquals(new BigDecimal("12.34560"), DecimalFormula.parse("q * p").evaluate(vars("q", "1.5", "p", "8.2304"),
                 NONE));
         assertEquals(new BigDecimal("-0.5"), DecimalFormula.parse("a - b").evaluate(vars("a", "1", "b", "1.5"), NONE));
     }

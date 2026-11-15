@@ -283,6 +283,12 @@
       }
     },
     {
+      "code": "PAYEE_EXCLUDED",
+      "label": {
+        "en": "Payee failed the integrity check (excluded, deceased or duplicate)"
+      }
+    },
+    {
       "code": "PAYEE_NOT_CONFIRMED",
       "label": {
         "en": "Payee not confirmed"

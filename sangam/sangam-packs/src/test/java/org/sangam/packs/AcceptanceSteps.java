@@ -41,7 +41,9 @@ final class AcceptanceSteps {
     static final Set<String> ACTIONS = Set.of("complete", "correlate", "set", "start");
     /** In a {@code start} step's variables, this value is replaced by the scenario's business key. */
     static final String CASE = "@case";
-    private static final ObjectMapper JSON = new ObjectMapper();
+    /** Decision 138: a fraction in step data becomes a BigDecimal case variable, never a Double. */
+    private static final ObjectMapper JSON = com.fasterxml.jackson.databind.json.JsonMapper.builder()
+            .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).build();
 
     /** One step of {@code run.steps}. */
     record Step(String at, int n, Duration advance, String action, String message, Map<String, Object> vars,

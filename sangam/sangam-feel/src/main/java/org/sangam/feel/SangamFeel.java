@@ -65,6 +65,11 @@ public final class SangamFeel {
         Dmn16Support.install(dmn); // decision 158: DMN 1.6 documents (namespace 20240513), validated as DMN 1.5 form
         dmn.getTransformer().getDataTypeTransformerRegistry()
                 .addTransformer(NumberDataTypeTransformer.TYPE, new NumberDataTypeTransformer());
+        var types = dmn.getTransformer().getDataTypeTransformerRegistry();
+        var dateType = types.getTransformer(DateDataTypeTransformer.TYPE);
+        if (!(dateType instanceof DateDataTypeTransformer)) { // a repeated install keeps the one wrapper
+            types.addTransformer(DateDataTypeTransformer.TYPE, new DateDataTypeTransformer(dateType));
+        }
         return dmn;
     }
 

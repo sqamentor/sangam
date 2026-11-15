@@ -57,7 +57,9 @@ class AllPacksSmokeTest {
                 "projectName", "assetId", "premisesId", "orderId", "customerId", "description", "policyNo",
                 "incidentSummary", "rollbackPlan", "supplierName", "counterpartyName", "bgNo", "bgBank", "contractorId",
                 "qualification", "socialCategory", "district", "schemeId", "serviceCode", "licenceType", "leaveType",
-                "category", "subjectHead", "amendmentType", "deviceId", "entityId")) {
+                "category", "subjectHead", "amendmentType", "deviceId", "entityId",
+                // required start-form fields a decision reads (strict FEEL refuses an undefined variable, ADR-D-26)
+                "planPeriod", "projectId", "phiScope")) {
             v.put(s, "X-" + s);
         }
         v.put("schemeId", "HOUSING-GRANT");
@@ -76,11 +78,11 @@ class AllPacksSmokeTest {
         v.put("key", "ITEM-1");
         for (String n : List.of("premisesArea", "quantity", "qualifyingService", "areaHectares", "returnQty", "poQty",
                 "grnQty", "invoiceQty", "escalationIndex")) {
-            v.put(n, 1000.0);
+            v.put(n, new java.math.BigDecimal("1000")); // decision 138: an exact decimal, never a binary float
         }
         // money is integer minor units (SD-398, packgen money.py): 1,000.00 rupees = 100000 paise
         for (String n : List.of("amount", "estimateAmount", "income", "unitPrice", "lastPay", "bgAmount", "contractValue",
-                "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount")) {
+                "assetValue", "refundAmount", "poPrice", "invoicePrice", "amendmentAmount", "emdAmount", "debtAmount")) {
             v.put(n, 100_000L);
         }
         for (String n : List.of("age", "durationYears", "leaveDays", "extensionDays", "delayDays", "retentionYears",
@@ -88,7 +90,7 @@ class AllPacksSmokeTest {
             v.put(n, 3);
         }
         v.put("age", 40);
-        v.put("qualifyingService", 20.0);
+        v.put("qualifyingService", new java.math.BigDecimal("20"));
         v.put("gemAvailable", true);
         v.put("consentGiven", true);
         v.put("lifeLiberty", false);

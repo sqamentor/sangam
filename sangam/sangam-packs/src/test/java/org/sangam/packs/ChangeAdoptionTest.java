@@ -130,12 +130,12 @@ class ChangeAdoptionTest {
         InMemorySeatDirectory seats = (InMemorySeatDirectory) PackRuntime.seats();
         String seat = "PAY-AUTH";
         LocalDate today = LocalDate.now();
-        String substantive = seats.holderOf(null, seat, today).orElse(null);
-        seats.addHolding(InMemorySeatDirectory.DEFAULT_TENANT, new SeatHolding(seat, "delegate.person",
+        String substantive = seats.holderOf(PackTestTenant.ID, seat, today).orElse(null);
+        seats.addHolding(PackTestTenant.ID, new SeatHolding(seat, "delegate.person",
                 SeatHolding.Basis.DELEGATION, "ORDER/2026/9", today.plusDays(1), today.plusDays(10)));
-        assertEquals(substantive, seats.holderOf(null, seat, today).orElse(null), "not before its date");
-        assertTrue(seats.holding(null, "delegate.person", seat, today.plusDays(1)).isPresent(), "from its date");
-        assertTrue(seats.holding(null, "delegate.person", seat, today.plusDays(11)).isEmpty(), "ends on its date");
+        assertEquals(substantive, seats.holderOf(PackTestTenant.ID, seat, today).orElse(null), "not before its date");
+        assertTrue(seats.holding(PackTestTenant.ID, "delegate.person", seat, today.plusDays(1)).isPresent(), "from its date");
+        assertTrue(seats.holding(PackTestTenant.ID, "delegate.person", seat, today.plusDays(11)).isEmpty(), "ends on its date");
     }
 
     @Test

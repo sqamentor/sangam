@@ -49,7 +49,7 @@ class BatchFanOutDirectiveTest {
         engine = cfg.buildProcessEngine();
         String ns = "xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:operaton=\"http://operaton.org/schema/1.0/bpmn\""
                 + " targetNamespace=\"t\"";
-        String parent = "<definitions " + ns + "><process id=\"fan-parent\" isExecutable=\"true\">"
+        String parent = "<definitions " + ns + "><process id=\"fan-parent\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\">"
                 + "<startEvent id=\"s\"/>"
                 + task("load", "LOAD", "connector", "dbt.beneficiaryList", "sampleSize", "2", "itemsVar", "items")
                 + task("open", "OPEN", "itemsVar", "items")
@@ -61,7 +61,7 @@ class BatchFanOutDirectiveTest {
                 + "<sequenceFlow id=\"f3\" sourceRef=\"open\" targetRef=\"fan\"/>"
                 + "<sequenceFlow id=\"f4\" sourceRef=\"fan\" targetRef=\"hold\"/>"
                 + "<sequenceFlow id=\"f5\" sourceRef=\"hold\" targetRef=\"e\"/></process></definitions>";
-        String child = "<definitions " + ns + "><process id=\"fan-child\" isExecutable=\"true\">"
+        String child = "<definitions " + ns + "><process id=\"fan-child\" isExecutable=\"true\" operaton:historyTimeToLive=\"30\">"
                 + "<startEvent id=\"cs\"/><userTask id=\"ct\"/><endEvent id=\"ce\"/>"
                 + "<sequenceFlow id=\"c1\" sourceRef=\"cs\" targetRef=\"ct\"/>"
                 + "<sequenceFlow id=\"c2\" sourceRef=\"ct\" targetRef=\"ce\"/></process></definitions>";
