@@ -31,10 +31,13 @@ import org.sangam.integration.connector.http.HttpRestConnector;
  *       ({@link HttpRestConnector.AuthUnavailableException}). The payload hash is sent as {@code x-amz-content-sha256}
  *       and signed, as S3 requires.</li>
  *   <li><b>Object keys.</b> Only the characters AWS lists as safe in object key names ({@code 0-9 a-z A-Z ! - _ . * ' ( )}
- *       and {@code /} as the separator), 1 to 1024 bytes, no empty, {@code .} or {@code ..} segment. They are all legal in
- *       a URI path, so the key is sent as it is and the signer encodes each character once, which is exactly S3's
- *       canonical form (S3 does not double-encode the path, unlike the other AWS services). A key outside this set is
- *       refused before anything is sent ({@link IllegalArgumentException}), never silently rewritten.</li>
+ *       and {@code /} as the separator), plus {@code =}, 1 to 1024 bytes, no empty, {@code .} or {@code ..} segment.
+ *       {@code =} is what partitioned lake layouts are made of ({@code name=value/} segments, read by Spark, Trino,
+ *       Athena and DuckDB; the M-057 history sink writes {@code tenant=…/date=…/}); it has no meaning in a path. They are
+ *       all legal in a URI path (RFC 3986 {@code pchar}), so the key is sent as it is and the signer encodes each
+ *       character once ({@code =} as {@code %3D}), which is exactly S3's canonical form (S3 does not double-encode the
+ *       path, unlike the other AWS services). A key outside this set is refused before anything is sent
+ *       ({@link IllegalArgumentException}), never silently rewritten.</li>
  *   <li><b>Addressing.</b> Path style ({@code {endpoint}/{bucket}/{key}}, MinIO and Ceph) or virtual-hosted style
  *       ({@code {bucket}.{endpoint host}/{key}}, AWS). Bucket names follow the S3 rules (3 to 63 of {@code a-z 0-9 . -}).</li>
  * </ul>
@@ -43,7 +46,7 @@ public final class S3ObjectClient {
 
     /** Metadata header prefix of user metadata ({@code x-amz-meta-<name>}). */
     public static final String META_PREFIX = "x-amz-meta-";
-    private static final Pattern KEY = Pattern.compile("[A-Za-z0-9!\\-_.*'()/]{1,1024}");
+    private static final Pattern KEY = Pattern.compile("[A-Za-z0-9!\\-_.*'()=/]{1,1024}");
     private static final Pattern BUCKET = Pattern.compile("[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]");
     private static final Pattern META_NAME = Pattern.compile("[a-z0-9-]{1,128}");
     private static final String EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
@@ -168,13 +171,13 @@ public final class S3ObjectClient {
     }
 
     /**
-     * Refuses a key outside the AWS safe-character set, a leading or trailing {@code /}, and an empty, {@code .} or
-     * {@code ..} segment.
+     * Refuses a key outside the AWS safe-character set plus {@code =} (see the class comment), a leading or trailing
+     * {@code /}, and an empty, {@code .} or {@code ..} segment.
      */
     public static void checkKey(String key) {
         if (key == null || !KEY.matcher(key).matches()) {
             throw new IllegalArgumentException("object key must be 1-1024 of the S3 safe characters 0-9 a-z A-Z ! - _ . * ' ( )"
-                    + " and '/': " + HttpTransport.printable(key));
+                    + " = and '/': " + HttpTransport.printable(key));
         }
         if (key.startsWith("/") || key.endsWith("/")) {
             throw new IllegalArgumentException("object key must not start or end with '/': " + key);

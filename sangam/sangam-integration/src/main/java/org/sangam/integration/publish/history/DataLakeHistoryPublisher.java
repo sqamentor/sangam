@@ -96,10 +96,14 @@ public final class DataLakeHistoryPublisher implements Publisher {
         }
     }
 
-    /** The object key of one event (see the class comment); refused when the tenant id is not key-safe. */
+    /**
+     * The object key of one event (see the class comment); refused when the tenant id is not key-safe. A tenant id is
+     * one partition value: it holds neither the segment separator {@code /} nor the {@code name=value} separator
+     * {@code =} (a value with {@code =} would read back as a different partition).
+     */
     static String key(String prefix, Outbox.OutboxEvent e) throws PermanentPublishException {
         String tenant = e.tenantId() == null ? "" : e.tenantId();
-        if (!S3ObjectClient.isKeySafe(tenant) || tenant.contains("/")) {
+        if (!S3ObjectClient.isKeySafe(tenant) || tenant.contains("/") || tenant.contains("=")) {
             throw new PermanentPublishException("tenant id is not usable in an object key: " + tenant);
         }
         String k = "tenant=" + tenant + "/date=" + date(e.eventId()) + "/" + e.eventId() + ".json";

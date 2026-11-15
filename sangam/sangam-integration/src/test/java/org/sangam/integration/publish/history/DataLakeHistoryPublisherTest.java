@@ -123,6 +123,8 @@ class DataLakeHistoryPublisherTest {
         assertEquals("tenant=T1/date=undated/" + v4 + ".json", DataLakeHistoryPublisher.key("", event("T1", v4)));
         assertThrows(PermanentPublishException.class, () -> DataLakeHistoryPublisher.key("", event("a/b", V7)));
         assertThrows(PermanentPublishException.class, () -> DataLakeHistoryPublisher.key("", event("t 1", V7)));
+        assertThrows(PermanentPublishException.class, () -> DataLakeHistoryPublisher.key("", event("a=b", V7)),
+                "a tenant id is one partition value: no '=' inside it");
         assertThrows(PermanentPublishException.class, () -> DataLakeHistoryPublisher.key("", event(null, V7)));
         assertTrue(requests.isEmpty());
     }

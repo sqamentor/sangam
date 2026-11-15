@@ -3,6 +3,7 @@ package org.sangam.integration.document.pdf.pdfbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,6 +30,7 @@ import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureElement;
+import org.apache.pdfbox.pdmodel.documentinterchange.taggedpdf.PDTableAttributeObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.sangam.integration.document.pdf.PdfDocument;
@@ -118,8 +120,11 @@ class PdfBoxRendererTest {
             PDStructureElement headerRow = (PDStructureElement) table.getKids().get(0);
             PDStructureElement th = (PDStructureElement) headerRow.getKids().get(0);
             assertEquals("TH", th.getStructureType());
-            assertTrue(String.valueOf(th.getCOSObject().getDictionaryObject(COSName.getPDFName("A"))).contains("Column"),
-                    "header cells have column scope");
+            // read through the structure model: in a saved file /A is [attribute-object revision] and the attribute
+            // object is an indirect reference, so the array's text ("COSObject{n 0 R}") never shows its /Scope
+            assertEquals(1, th.getAttributes().size(), "one attribute object on a header cell");
+            PDTableAttributeObject scope = assertInstanceOf(PDTableAttributeObject.class, th.getAttributes().getObject(0));
+            assertEquals(PDTableAttributeObject.SCOPE_COLUMN, scope.getScope(), "header cells have column scope");
 
             COSDictionary parentTree = doc.getDocumentCatalog().getStructureTreeRoot().getCOSObject()
                     .getCOSDictionary(COSName.PARENT_TREE);
