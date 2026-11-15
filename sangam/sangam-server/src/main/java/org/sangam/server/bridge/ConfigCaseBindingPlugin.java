@@ -28,8 +28,10 @@ import org.springframework.beans.factory.ObjectProvider;
  * sangam-config "Case binding" (README integration notes): at the start of every root process instance, the tenant's
  * resolved profile binding is stored as the variable {@value #VARIABLE} and in {@code CFG_CASE_BINDING}, so a case keeps
  * the configuration version it started under (R43, K10). The row is written on the engine command's connection, so it
- * commits or rolls back with the instance. A tenant without a profile, or an instance that already carries a binding
- * (set by the pack's start listener), is left unchanged.
+ * commits or rolls back with the instance. The pack's start listener runs first and sets the same binding as the
+ * variable (it asks the same profile through the config connector); the row is then stored for that binding. A tenant
+ * without a profile is left unchanged, and so is an instance that carries any other binding: its variable is kept and
+ * nothing is stored.
  */
 public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
 
@@ -65,9 +67,6 @@ public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
     }
 
     private void onStart(DelegateExecution e) {
-        if (e.getVariable(VARIABLE) != null) {
-            return;
-        }
         String tenant = e.getTenantId();
         ProfileResolver resolver = profiles.getIfAvailable();
         if (tenant == null || resolver == null) {
@@ -86,7 +85,17 @@ public final class ConfigCaseBindingPlugin extends AbstractProcessEnginePlugin {
         if (p.binding() == null) {
             return;
         }
-        e.setVariable(VARIABLE, p.binding());
+        Object carried = e.getVariable(VARIABLE);
+        if (carried == null) {
+            e.setVariable(VARIABLE, p.binding());
+        } else if (!p.binding().equals(carried.toString())) {
+            // not the binding this server resolves for the tenant today (a start variable of the caller, an older
+            // case moved here): the variable stays as it is and is never stored as the case's binding
+            LOG.debug("instance {} of tenant {} carries another profile binding; not stored", e.getProcessInstanceId(), tenant);
+            return;
+        }
+        // also when the pack's start listener set the variable first (it runs before this listener and asks the same
+        // profile): without the row the case has no stored binding and its configuration reads follow later versions
         Connection c = Context.getCommandContext().getDbSqlSession().getSqlSession().getConnection();
         Jdbc.insertIfAbsent(c, dialect, "INSERT INTO CFG_CASE_BINDING (tenant_id, root_id, binding, bound_at) VALUES (?,?,?,?)",
                 tenant, e.getProcessInstanceId(), p.binding(), Instant.now());
