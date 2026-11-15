@@ -159,9 +159,17 @@ public class CellDirectory {
                 .stream().filter(t -> t != null && !t.isBlank()).findFirst();
     }
 
+    /**
+     * The administrative switch (decision 327): a registration never opens a cell, so until an administrator opens it
+     * here ({@code POST /admin/cells/{cellId}/placement?open=true}, role ADMIN) placement gives it no tenant. An unknown
+     * cell is refused, so no audit record names a cell that does not exist.
+     */
     @Transactional
     public void setPlacementOpen(String cellId, boolean open, String actor) {
-        jdbc.update("UPDATE CP_CELL SET placement_open = ? WHERE cell_id = ?", open ? 1 : 0, cellId);
+        int n = jdbc.update("UPDATE CP_CELL SET placement_open = ? WHERE cell_id = ?", open ? 1 : 0, cellId);
+        if (n != 1) {
+            throw new TenantRegistry.NotFound("cell " + cellId + " not found");
+        }
         audit.record(actor, open ? "CELL_PLACEMENT_OPEN" : "CELL_PLACEMENT_CLOSED", "cell:" + cellId, null);
     }
 

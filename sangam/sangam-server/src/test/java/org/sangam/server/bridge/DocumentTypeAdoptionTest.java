@@ -137,6 +137,21 @@ class DocumentTypeAdoptionTest {
         }
     }
 
+    /**
+     * The {@code n}th version label after the shipped RJ version (its last number plus {@code n}). The test used to
+     * name its new versions 2026.11.1 and 2026.11.2; the shipped RJ profile has since become 2026.11.1 itself, and a
+     * draft of an ACTIVE version is refused (VERSION_FROZEN). The labels now follow the shipped data.
+     */
+    static String later(int n) {
+        String shipped = rj.version();
+        int dot = shipped.lastIndexOf('.');
+        try {
+            return shipped.substring(0, dot + 1) + (Integer.parseInt(shipped.substring(dot + 1)) + n);
+        } catch (NumberFormatException e) {
+            return shipped + "." + n;
+        }
+    }
+
     /** A new RJ version: the shipped RJ document plus one document type row (the tenant administrator's change). */
     static ProfileDocument rjWithNewType(String version, String chain) {
         Map<String, Object> data = Tree.copyMap(rj.data());
@@ -144,6 +159,9 @@ class DocumentTypeAdoptionTest {
         assertTrue(types.stream().noneMatch(t -> FORM.equals(t.get("formNumber"))), "the form is new to RJ");
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("id", TYPE);
+        // a bill type, as every shipped bill row states: the bill asks the catalogue for a BILL row only
+        // (billFormKind>formKind, APPROVE-401 step 2b), so a row without the kind is never resolved as a bill
+        row.put("formKind", "BILL");
         row.put("formNumber", FORM);
         row.put("family", "CONTINGENT");
         row.put("approvalChain", chain);
@@ -214,9 +232,9 @@ class DocumentTypeAdoptionTest {
         assertEquals(Boolean.FALSE, var(before, "docValid"), "no passing default without a catalogue type");
 
         // a version whose new type names a chain RJ does not define is refused at activation (catalogue check)
-        makerChecker(rjWithNewType("2026.11.1", "NO_SUCH_CHAIN"));
+        makerChecker(rjWithNewType(later(1), "NO_SUCH_CHAIN"));
         ConfigException refused = assertThrows(ConfigException.class,
-                () -> admin.activate(TENANT, "2026.11.1", "rj.admin", List.of()));
+                () -> admin.activate(TENANT, later(1), "rj.admin", List.of()));
         assertEquals("ACTIVATION_REFUSED", refused.code());
         assertTrue(refused.findings().stream().anyMatch(f -> f.code().equals("CHAIN_UNKNOWN")
                 && f.path().equals("documentTypes." + TYPE)), "own scope validated with no scopes listed (SL-121): "
@@ -225,16 +243,16 @@ class DocumentTypeAdoptionTest {
         assertEquals("TYPE_UNKNOWN", var(stillOld, "docReasonCode"), "a refused version is never adopted");
 
         // the corrected version (RJ's own chain) activates; the next bill adopts the new type at bl_type and bl_check
-        makerChecker(rjWithNewType("2026.11.2", "TREASURY_STD"));
+        makerChecker(rjWithNewType(later(2), "TREASURY_STD"));
         assertFalse(catalogueHasForm(otherNode), "approved, not yet active: the other node caches the old catalogue");
-        admin.activate(TENANT, "2026.11.2", "rj.admin", List.of(TENANT));
+        admin.activate(TENANT, later(2), "rj.admin", List.of(TENANT));
         assertTrue(catalogueHasForm(otherNode), "the other node sees the activation through the change marker");
         String after = billThroughCatalogueSteps("SL35/BILL/after");
         assertEquals("COMPLETED", var(after, "docStatus"), "docReasonCode=" + var(after, "docReasonCode"));
         assertEquals(TYPE, var(after, "docId"));
         assertEquals("TREASURY_STD", var(after, "docApprovalChain"));
         assertEquals(Boolean.TRUE, var(after, "docValid"), "findings: " + var(after, "docFindings"));
-        assertTrue(String.valueOf(var(after, ConfigCaseBindingPlugin.VARIABLE)).contains(TENANT + "@2026.11.2"),
+        assertTrue(String.valueOf(var(after, ConfigCaseBindingPlugin.VARIABLE)).contains(TENANT + "@" + later(2)),
                 "a new case binds the new version: " + var(after, ConfigCaseBindingPlugin.VARIABLE));
 
         // the running case reaches bl_type and bl_check only now, and still reads the version it bound (GP-19 / R43)

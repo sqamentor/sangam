@@ -41,7 +41,7 @@ import org.sangam.engine.timer.ZonedCron;
 
 /**
  * SG-09: Sangam relies on behaviours of engine-internal Operaton classes for which Operaton 2.2 has no public
- * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, upgrade checklist items 2, 3, 6 and 7). Each test pins one of them through
+ * API or extension point (PATCHES.md I-7 … I-10, I-17, I-18, I-19, I-26, I-27, upgrade checklist items 2, 3, 6, 7 and 19). Each test pins one of them through
  * its observable effect, so an Operaton upgrade that changes the internal behaviour fails here, loudly, instead of
  * silently weakening Sangam.
  */
@@ -59,8 +59,14 @@ class EngineInternalsPinTest {
     }
 
     private static void withEngine(Consumer<OperatonEngineAdapter> test) {
+        withEngine("", test);
+    }
+
+    /** @param h2Options further H2 URL settings of the test's own database, for example {@code ;LOCK_TIMEOUT=30000} */
+    private static void withEngine(String h2Options, Consumer<OperatonEngineAdapter> test) {
         JdbcDataSource ds = new JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:p" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1");
+        ds.setURL("jdbc:h2:mem:p" + UUID.randomUUID().toString().replace("-", "") + ";MODE=PostgreSQL;DB_CLOSE_DELAY=-1"
+                + h2Options);
         SangamEngineSettings s = new SangamEngineSettings();
         s.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         s.setAllowMultipleEnginesPerJvm(true);
@@ -125,10 +131,24 @@ class EngineInternalsPinTest {
         });
     }
 
+    /** I-8: how long the test holds the root's row, and the lock wait of its database sessions (far above the hold). */
+    static final long I8_HOLD_MILLIS = 2000;
+    static final long I8_LOCK_WAIT_MILLIS = 30_000;
+
     /**
      * I-8: {@code CommandContext.tryCloseInternal} fires command-context close listeners before
      * {@code flushSessions}, which is where the L2 flush backstop locks the root of a command that did not go through
      * the adapter. Pinned: a plain {@code TaskService.complete} creates/locks the root's {@code ROOT_SEQ} row.
+     *
+     * <p>The test holds the root's row for {@link #I8_HOLD_MILLIS} and the plain command must still be waiting then.
+     * A plain engine command waits for the root's {@code ROOT_SEQ} row (the audit sequence of its history events, then
+     * the flush backstop) with the lock wait of its database session: the engine's own bound,
+     * {@code SangamEngineSettings.lockTimeout}, is set by the adapter's commands and the job handler, not on this
+     * path, and H2's session default is 2 s. The hold used to be 2 s as well, so whether the
+     * command was still waiting or had just given up with "Timeout trying to lock table ROOT_SEQ" depended on a few
+     * milliseconds (thread start, commit, timer granularity): green alone, red once in the full run on a loaded
+     * machine, and red every time with a hold of 2.6 s. The database of this test therefore gets a session lock wait
+     * far above the hold ({@link #I8_LOCK_WAIT_MILLIS}); the lock-wait bounds have their own tests.
      */
     @Test
     void i8_flushBackstopTakesRootLockForPlainEngineCommands() {
@@ -141,7 +161,7 @@ class EngineInternalsPinTest {
                     <userTask id="v"/>
                   </process>
                 """;
-        withEngine(a -> {
+        withEngine(";LOCK_TIMEOUT=" + I8_LOCK_WAIT_MILLIS, a -> {
             a.deploy("t1", "plain", Map.of("plain.bpmn", bpmn(m)));
             String pi = a.processEngine().getRuntimeService().startProcessInstanceByKey("plain").getId();
             var ts = a.processEngine().getTaskService();
@@ -160,7 +180,7 @@ class EngineInternalsPinTest {
                         rs -> rs.getString(1), pi).isPresent(), "root row exists");
                 worker.start();
                 try {
-                    worker.join(2000);
+                    worker.join(I8_HOLD_MILLIS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -305,6 +325,88 @@ class EngineInternalsPinTest {
             });
             assertEquals(List.of(false, false, true, true), flags,
                     "I-18: disable* switches the command's checks off and set* restores them");
+        });
+    }
+
+    /**
+     * I-26 (decision 332): the engine's public services are {@code ServiceImpl}s whose {@code getCommandExecutor()} is
+     * the required-transaction executor, and a command issued inside a command of that executor reuses its
+     * {@code CommandContext}. {@code CorrelationKeyHandover.call} relies on both to hand a key to the capture point.
+     */
+    @Test
+    void i26_aServiceCommandInsideACommandReusesItsContext() throws Exception {
+        org.operaton.bpm.engine.impl.ServiceImpl.class.getMethod("getCommandExecutor");
+        withEngine(a -> {
+            var runtime = a.processEngine().getRuntimeService();
+            assertTrue(runtime instanceof org.operaton.bpm.engine.impl.ServiceImpl, "I-26: " + runtime.getClass());
+            var executor = ((org.operaton.bpm.engine.impl.ServiceImpl) runtime).getCommandExecutor();
+            List<Boolean> same = executor.execute(outer -> List.of(
+                    executor.execute(inner -> inner == outer),
+                    org.sangam.engine.tx.CommandState.of(outer) == executor.execute(
+                            inner -> org.sangam.engine.tx.CommandState.of(inner))));
+            assertEquals(List.of(true, true), same, "I-26: a nested command shares the context and the command state");
+        });
+    }
+
+    /**
+     * I-27 (B-46, decision 331): Operaton's delayed state change ({@code AbstractSetStateCmd.scheduleSuspensionStateUpdate})
+     * creates a {@code TimerEntity} with the handler type and the canonical handler configuration below and hands it to
+     * {@code JobManager.schedule(TimerEntity)}; the custom session factory makes that Sangam's JobManager. Pinned: the
+     * handler types, the configuration keys {@code DelayedStateChangeTenant} reads, the method it overrides, and that
+     * every command gets Sangam's JobManager.
+     */
+    @Test
+    void i27_delayedStateChangeTimersAreScheduledThroughTheJobManagerWithThisConfiguration() throws Exception {
+        org.operaton.bpm.engine.impl.persistence.entity.JobManager.class.getMethod("schedule",
+                org.operaton.bpm.engine.impl.persistence.entity.TimerEntity.class);
+        assertEquals("suspend-processdefinition",
+                org.operaton.bpm.engine.impl.jobexecutor.TimerSuspendProcessDefinitionHandler.TYPE);
+        assertEquals("activate-processdefinition",
+                org.operaton.bpm.engine.impl.jobexecutor.TimerActivateProcessDefinitionHandler.TYPE);
+        assertEquals("suspend-job-definition", org.operaton.bpm.engine.impl.jobexecutor.TimerSuspendJobDefinitionHandler.TYPE);
+        assertEquals("activate-job-definition",
+                org.operaton.bpm.engine.impl.jobexecutor.TimerActivateJobDefinitionHandler.TYPE);
+        com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
+        var pd = org.operaton.bpm.engine.impl.jobexecutor.TimerChangeProcessDefinitionSuspensionStateJobHandler
+                .ProcessDefinitionSuspensionStateConfiguration.class;
+        var byId = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionId", String.class, boolean.class).invoke(null, "d1", true))
+                .toCanonicalString());
+        assertEquals("processDefinitionId", byId.path("by").asText());
+        assertEquals("d1", byId.path("processDefinitionId").asText());
+        var byKey = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionKey", String.class, boolean.class).invoke(null, "k1", true))
+                .toCanonicalString());
+        assertEquals("processDefinitionKey", byKey.path("by").asText());
+        assertEquals("k1", byKey.path("processDefinitionKey").asText());
+        assertTrue(!byKey.has("processDefinitionTenantId"), "I-27: no tenant key when no tenant was named: " + byKey);
+        var byKeyAndTenant = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionKeyAndTenantId", String.class, String.class, boolean.class)
+                .invoke(null, "k1", "t9", true)).toCanonicalString());
+        assertEquals("processDefinitionKey", byKeyAndTenant.path("by").asText());
+        assertEquals("t9", byKeyAndTenant.path("processDefinitionTenantId").asText());
+        var byKeyWithoutTenant = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) pd
+                .getMethod("byProcessDefinitionKeyAndTenantId", String.class, String.class, boolean.class)
+                .invoke(null, "k1", null, true)).toCanonicalString());
+        assertTrue(byKeyWithoutTenant.has("processDefinitionTenantId")
+                && byKeyWithoutTenant.get("processDefinitionTenantId").isNull(),
+                "I-27: 'without tenant' is the key with a JSON null: " + byKeyWithoutTenant);
+        var jd = org.operaton.bpm.engine.impl.jobexecutor.TimerChangeJobDefinitionSuspensionStateJobHandler
+                .JobDefinitionSuspensionStateConfiguration.class;
+        var byJobDefinition = json.readTree(((org.operaton.bpm.engine.impl.jobexecutor.JobHandlerConfiguration) jd
+                .getMethod("byJobDefinitionId", String.class, boolean.class).invoke(null, "j1", true))
+                .toCanonicalString());
+        assertEquals("jobDefinitionId", byJobDefinition.path("by").asText());
+        assertEquals("j1", byJobDefinition.path("jobDefinitionId").asText());
+        withEngine(a -> {
+            ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) a.processEngine()
+                    .getProcessEngineConfiguration();
+            Class<?> type = org.operaton.bpm.engine.impl.persistence.entity.JobManager.class;
+            assertTrue(cfg.getCustomSessionFactories().contains(cfg.getSessionFactories().get(type)),
+                    "I-27: the registered custom factory is the engine's factory for JobManager");
+            Class<?> used = cfg.getCommandExecutorTxRequired().execute(cc -> cc.getJobManager().getClass());
+            assertTrue(type.isAssignableFrom(used) && used != type && used.getName().startsWith("org.sangam."),
+                    "I-27: commands use Sangam's JobManager, got " + used.getName());
         });
     }
 

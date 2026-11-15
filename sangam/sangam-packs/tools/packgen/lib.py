@@ -376,13 +376,17 @@ class Scope:
                         async_=async_)
 
     def conn(self, id, name, connector, operation='call', mode='query', inputs=None, prefix=None, step=None,
-             error=None, async_=True):
+             error=None, async_=True, failed_when_invalid=False):
+        """failed_when_invalid: a validation query (answer: valid, findings) whose answer is valid=false is a FAILED
+        result of the step with its first error finding's code (ConnectorCallDelegate failedWhenInvalid)."""
         self.proc.connectors.add((connector, mode))
         # the default prefix is the connector's last segment, as ConnectorCallDelegate resolves it
         self.proc.conn_prefixes.setdefault(connector, set()).add(prefix or connector[connector.rfind('.') + 1:])
         return self.svc(id, name, C['CALL'], {'connector': connector, 'operation': operation, 'mode': mode,
                                               'inputs': inputs, 'resultPrefix': prefix, 'step': step,
-                                              'errorOnFailure': error}, async_=async_)
+                                              'errorOnFailure': error,
+                                              'failedWhenInvalid': 'true' if failed_when_invalid else None},
+                        async_=async_)
 
     def sla_task(self, id, name, seat_var, form=None, decision=None, fields=None, spec=None, default_spec='5WD',
                  on_breach='ESCALATE', approve='approve', refuse='reject', sod=False, sod_steps=None,

@@ -16,13 +16,13 @@ public sealed record ModelDiffRequest
     public string? Resource { get; init; }
 
     /// <summary>
-    /// The old model text (UTF-8); null or empty = a new file
+    /// The old model text (UTF-8); null or empty = a new file: every element of the new version is reported as ADDED
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("before")]
     public string? Before { get; init; }
 
     /// <summary>
-    /// The new model text (UTF-8); null or empty = a deleted file
+    /// The new model text (UTF-8); null or empty = a deleted file: every element of the old version is reported as REMOVED
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("after")]
     public string? After { get; init; }

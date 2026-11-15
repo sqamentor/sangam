@@ -40,7 +40,7 @@ Scaffolding for later releases:
 
 - **Output:** one line per change (`+` added, `-` removed, `~` changed, then level, element type, id, name, path and old -> new value). `--json` prints the `ModelDiffReport` of `POST /models/diff` instead.
 - **Matching:** elements are matched by id (form components by `id`, else `key`). Diagram layout (BPMNDI, DMNDI, CMMNDI) and modeller `exporter` attributes are ignored, so moving a shape is not a change.
-- **Absent version:** an empty file (for example `/dev/null`) stands for a new or deleted model; both empty is refused.
+- **Absent version:** an empty file (for example `/dev/null`) stands for a new or deleted model, and every element of the other version is then listed as added or removed (decision 329); both empty is refused.
 - **Format:** from `--resource`, else the AFTER file name (BEFORE when AFTER is empty), else the content.
 - **PR check:** with `--fail-on`, exit 1 when any change is at a listed level; without it, exit 0 whatever changed. A file that cannot be read, an unreadable model, two different formats or bad options exit 2.
 

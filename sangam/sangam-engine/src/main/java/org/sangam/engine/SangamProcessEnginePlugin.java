@@ -183,6 +183,8 @@ public class SangamProcessEnginePlugin implements ProcessEnginePlugin {
         List<org.operaton.bpm.engine.impl.interceptor.SessionFactory> sessions = cfg.getCustomSessionFactories() == null
                 ? new ArrayList<>() : new ArrayList<>(cfg.getCustomSessionFactories());
         sessions.addAll(org.sangam.engine.deploy.TenantScopedCreation.sessionFactories());
+        // decision 331: a delayed suspension or activation timer belongs to its definition's tenant (B-46)
+        sessions.add(org.sangam.engine.deploy.DelayedStateChangeTenant.sessionFactory());
         // SL-177: PROCESS_TRACE rows go with the instance's history (B-36)
         sessions.add(org.sangam.engine.trace.ProcessTraceHistoryRemoval.sessionFactory());
         cfg.setCustomSessionFactories(sessions);

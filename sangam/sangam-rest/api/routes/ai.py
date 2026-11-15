@@ -62,7 +62,9 @@ def _hdr(name, required, desc):
 op('post', '/ai/mcp', 'aiMcp', 'AI', 'MCP endpoint',
    'MCP 2026-07-28 Streamable HTTP, stateless: one POST endpoint (GET and DELETE answer 405), no initialize handshake '
    'and no Mcp-Session-Id; every request carries _meta io.modelcontextprotocol/protocolVersion and clientCapabilities, '
-   'and server/discover is served. A header that does not match the body is 400 HeaderMismatch (-32020); an '
+   'and server/discover is served. A request whose _meta carries no protocol version is served as the earlier '
+   'revisions (initialize, ping, tools/list, tools/call) and its headers are not checked. When _meta carries a '
+   'protocol version, a header that is absent or does not match the body is 400 HeaderMismatch (-32020); an '
    'unsupported revision is UnsupportedProtocolVersionError (-32022). The answer is application/json (the revision also '
    'allows an SSE stream scoped to the request; the server never sends JSON-RPC requests to the client). Sampling, '
    'elicitation and roots are never server-initiated: tools/call, resources/read and prompts/get may answer resultType '
@@ -70,10 +72,14 @@ op('post', '/ai/mcp', 'aiMcp', 'AI', 'MCP endpoint',
    'the originating request, and the client repeats the request with a new id, inputResponses and the echoed '
    'requestState. Tools use the caller token; write tools are off per tenant by default. A browser Origin must be on '
    'sangam.ai.http-allowed-origins (403 otherwise).', _R,
-   params=[_hdr('MCP-Protocol-Version', True, 'Protocol revision, 2026-07-28; equals _meta protocolVersion'),
-           _hdr('Mcp-Method', True, 'The JSON-RPC method of the body'),
-           _hdr('Mcp-Name', False, 'The tool, resource or prompt name; required for tools/call, resources/read and '
-                                   'prompts/get')],
+   params=[_hdr('MCP-Protocol-Version', False, 'Protocol revision, 2026-07-28. Required when _meta carries a protocol '
+                                               'version, and then equal to it (400 HeaderMismatch otherwise); not '
+                                               'checked for a request without one (decision 328)'),
+           _hdr('Mcp-Method', False, 'The JSON-RPC method of the body. Required when _meta carries a protocol '
+                                     'version, and then equal to the body method (400 HeaderMismatch otherwise); not '
+                                     'checked for a request without one (decision 328)'),
+           _hdr('Mcp-Name', False, 'The tool name. Required when _meta carries a protocol version and the method is '
+                                   'tools/call, and then equal to params.name (400 HeaderMismatch otherwise)')],
    body=_OBJ, resp=(200, _ANY), perm='ai.use')
 op('get', '/ai/a2a/{agent}/card', 'aiA2aCard', 'AI', 'A2A agent card', 'Card of a configured inbound agent of the tenant.', _R, params=[pp('agent')], resp=(200, _ANY), perm='ai.use')
 op('post', '/ai/a2a/{agent}', 'aiA2a', 'AI', 'A2A endpoint',

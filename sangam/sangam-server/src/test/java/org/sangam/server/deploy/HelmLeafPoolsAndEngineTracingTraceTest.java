@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * SL-168: the three leaf-pool sizes (X1-05) and the engine tracing switch (M-062) are server keys that operators could
+ * SL-168: the four leaf-pool sizes (X1-05; the config store pool is the fourth) and the engine tracing switch (M-062) are server keys that operators could
  * not set through the chart or compose. Each now goes the whole way: the server reads the env name with its default
  * (application.yaml), values.yaml carries the same default, the server ConfigMap renders exactly that env name from
  * the value, the schema types it, and compose passes the same env with the same default. A text trace in the style of
@@ -36,6 +36,8 @@ class HelmLeafPoolsAndEngineTracingTraceTest {
                     "securityDenialAudit", "securityDenialAudit", "integer"),
             new Key("SANGAM_COMPLIANCE_DENIAL_AUDIT_POOL_SIZE", "database.pool.leafPools.complianceDenialAudit",
                     "complianceDenialAudit", "complianceDenialAudit", "integer"),
+            new Key("SANGAM_CONFIG_STORE_POOL_SIZE", "database.pool.leafPools.configStore", "configStore", "configStore",
+                    "integer"),
             new Key("SANGAM_TRACING_ENGINE_ENABLED", "otel.engineTracing", "engineTracing", "engineTracing", "boolean"));
 
     private static String read(Path p) throws IOException {

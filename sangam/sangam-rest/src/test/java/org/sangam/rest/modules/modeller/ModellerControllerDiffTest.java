@@ -91,6 +91,22 @@ class ModellerControllerDiffTest {
                 new ModellerController.ModelDiffRequest("order.bpmn", null, V1)).get("changed"));
     }
 
+    /** Decision 329: a new or deleted file reports every element of the present version, not the root alone. */
+    @Test
+    @SuppressWarnings("unchecked")
+    void aNewOrDeletedFileListsEveryElement() {
+        Grants g = new Grants(Permissions.PACKAGE_READ);
+        for (boolean created : new boolean[] {true, false}) {
+            Map<String, Object> r = controller(g).diffModels(CTX, new ModellerController.ModelDiffRequest("order.bpmn",
+                    created ? null : V2, created ? V2 : ""));
+            List<Map<String, Object>> changes = (List<Map<String, Object>>) r.get("changes");
+            assertEquals(List.of("d", "e", "p", "s"), changes.stream().map(c -> c.get("elementId")).toList());
+            assertTrue(changes.stream().allMatch(c -> (created ? "ADDED" : "REMOVED").equals(c.get("kind"))
+                    && "".equals(c.get("path"))));
+            assertEquals(Map.of("ELEMENT", 4, "FLOW", 0, "EXPRESSION", 0, "PROPERTY", 0), r.get("summary"));
+        }
+    }
+
     @Test
     void withoutPackageReadIsForbidden() {
         ApiProblem p = assertThrows(ApiProblem.class, () -> controller(new Grants()).diffModels(CTX,

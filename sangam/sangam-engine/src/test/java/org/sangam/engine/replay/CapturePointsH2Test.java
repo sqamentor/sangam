@@ -92,6 +92,7 @@ class CapturePointsH2Test {
         settings.setSystemAuditScope("system:platform"); // decision 144: required at engine start
         settings.setAllowMultipleEnginesPerJvm(true);
         settings.setEngineSchemaUpdate("true"); // empty in-memory database owned by this test
+        settings.getDeployAllowedClasses().put("*", java.util.Set.of(InnerCorrelation.class.getName())); // SL-160
         if (l != null) {
             settings.enableReplayCapture(l, false);
         }
@@ -198,6 +199,104 @@ class CapturePointsH2Test {
         assertEquals("open", in.payload().get("messageName"));
         assertEquals("bk-3", in.payload().get("correlationKey"));
         assertEquals(7L, in.payload().get("n"));
+    }
+
+    /** A delegate that correlates the message {@code inner} to the instance with business key {@code bk-inner}. */
+    public static final class InnerCorrelation implements org.operaton.bpm.engine.delegate.JavaDelegate {
+        @Override
+        public void execute(org.operaton.bpm.engine.delegate.DelegateExecution execution) {
+            execution.getProcessEngineServices().getRuntimeService().createMessageCorrelation("inner")
+                    .processInstanceBusinessKey("bk-inner").correlate();
+        }
+    }
+
+    private static final String NESTED = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                         xmlns:operaton="http://operaton.org/schema/1.0/bpmn" targetNamespace="t">
+              <message id="outerMsg" name="outer"/>
+              <message id="innerMsg" name="inner"/>
+              <message id="kickMsg" name="kick"/>
+              <process id="outerProc" isExecutable="true">
+                <startEvent id="s"/>
+                <sequenceFlow id="f1" sourceRef="s" targetRef="waitOuter"/>
+                <intermediateCatchEvent id="waitOuter"><messageEventDefinition messageRef="outerMsg"/></intermediateCatchEvent>
+                <sequenceFlow id="f2" sourceRef="waitOuter" targetRef="tell"/>
+                <serviceTask id="tell" operaton:class="org.sangam.engine.replay.CapturePointsH2Test$InnerCorrelation"/>
+                <sequenceFlow id="f3" sourceRef="tell" targetRef="w"/>
+                <userTask id="w"/>
+              </process>
+              <process id="innerProc" isExecutable="true">
+                <startEvent id="s2"/>
+                <sequenceFlow id="g1" sourceRef="s2" targetRef="waitInner"/>
+                <intermediateCatchEvent id="waitInner"><messageEventDefinition messageRef="innerMsg"/></intermediateCatchEvent>
+                <sequenceFlow id="g2" sourceRef="waitInner" targetRef="w2"/>
+                <userTask id="w2"/>
+              </process>
+              <process id="kicked" isExecutable="true">
+                <startEvent id="ks"><messageEventDefinition messageRef="kickMsg"/></startEvent>
+                <sequenceFlow id="k1" sourceRef="ks" targetRef="tell2"/>
+                <serviceTask id="tell2" operaton:class="org.sangam.engine.replay.CapturePointsH2Test$InnerCorrelation"/>
+                <sequenceFlow id="k2" sourceRef="tell2" targetRef="w3"/>
+                <userTask id="w3"/>
+              </process>
+            </definitions>
+            """.strip();
+
+    private List<String> messageKeys() {
+        List<String> out = new ArrayList<>();
+        seen.stream().filter(i -> CapturedInput.MESSAGE_DELIVERED.equals(i.type()))
+                .forEach(i -> out.add(i.payload().get("messageName") + "=" + i.payload().get("correlationKey")));
+        return out;
+    }
+
+    /**
+     * Decision 332: only the adapter that was called with a correlation key hands it to the capture point, and only for
+     * the delivery of its own correlation. A correlation by any other caller, and one issued inside the delivery (a
+     * delegate), is captured without a key.
+     */
+    @Test
+    void theCorrelationKeyIsTheAdaptersOwnAndNullOnEveryOtherPath() {
+        OperatonEngineAdapter e = start(listener);
+        e.deploy("t1", "nested", Map.of("nested.bpmn", NESTED.getBytes(StandardCharsets.UTF_8)));
+        var runtime = e.processEngine().getRuntimeService();
+
+        // another caller: the engine API directly, with the same business-key filter and no hand-over
+        e.startProcess("t1", "innerProc", "bk-direct", Map.of());
+        runtime.createMessageCorrelation("inner").tenantId("t1").processInstanceBusinessKey("bk-direct").correlate();
+        assertEquals(List.of("inner=null"), messageKeys());
+        seen.clear();
+
+        // the adapter's delivery carries its key; the delegate's correlation inside that delivery does not
+        e.startProcess("t1", "innerProc", "bk-inner", Map.of());
+        e.startProcess("t1", "outerProc", "bk-outer", Map.of());
+        e.correlateMessage("t1", "outer", "bk-outer", Map.of());
+        assertEquals(List.of("outer=bk-outer", "inner=null"), messageKeys());
+        seen.clear();
+
+        // the adapter's correlation starts an instance (captured with its key before the start); the delegate of the
+        // new instance correlates in the same command and gets no key
+        e.startProcess("t1", "innerProc", "bk-inner", Map.of());
+        e.correlateMessage("t1", "kick", "bk-kick", Map.of());
+        assertEquals(List.of("kick=bk-kick", "inner=null"), messageKeys());
+        seen.clear();
+
+        // an adapter that is not in an engine command (the REST adapter) hands its key over the same way
+        e.startProcess("t1", "innerProc", "bk-rest", Map.of());
+        e.startProcess("t1", "outerProc", "bk-rest-outer", Map.of());
+        e.startProcess("t1", "innerProc", "bk-inner", Map.of());
+        CorrelationKeyHandover.call(runtime, "bk-rest", () -> runtime.createMessageCorrelation("inner").tenantId("t1")
+                .processInstanceBusinessKey("bk-rest").correlateWithResult());
+        CorrelationKeyHandover.call(runtime, "bk-rest-outer", () -> runtime.createMessageCorrelation("outer")
+                .tenantId("t1").processInstanceBusinessKey("bk-rest-outer").correlateAllWithResult());
+        assertEquals(List.of("inner=bk-rest", "outer=bk-rest-outer", "inner=null"), messageKeys());
+        seen.clear();
+
+        // nothing is left behind: after the adapter's calls a direct correlation is again without a key
+        e.startProcess("t1", "innerProc", "bk-after", Map.of());
+        runtime.createMessageCorrelation("inner").tenantId("t1").processInstanceBusinessKey("bk-after").correlate();
+        assertEquals(List.of("inner=null"), messageKeys());
+        assertEquals("no key", CorrelationKeyHandover.call(runtime, null, () -> "no key"), "without a key: as is");
     }
 
     @Test

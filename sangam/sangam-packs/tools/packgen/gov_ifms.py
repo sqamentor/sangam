@@ -323,8 +323,11 @@ def bill():
                  'billType>typeRef,billFormKind>formKind', 'doc')
     cls = s.conn('bl_cls', 'Validate head of account', 'config.classification', 'classification.validate', 'query',
                  'headOfAccount>code,docId>typeId', 'cls')
+    # The check shares the result prefix 'doc' with bl_type. A check that says "invalid" (an unknown type among them:
+    # documentType.check answers valid=false with a TYPE_UNKNOWN finding) is a FAILED result with that finding's code,
+    # so it never puts COMPLETED over the failed type lookup (docStatus, docReasonCode); the case is routed by docValid.
     chk = s.conn('bl_check', 'Check bill against its type', 'config.documentType', 'documentType.check', 'query',
-                 'docId>typeId,headOfAccount,amount,sanctionRef,claimPeriod', 'doc')
+                 'docId>typeId,headOfAccount,amount,sanctionRef,claimPeriod', 'doc', failed_when_invalid=True)
     # SL-115: the duplicate and payee checks fail closed (each cleared before its query; no default stands in)
     de, dup = checked_query(s, 'bl_dup', 'Duplicate / similar claim', 'ifms.duplicateBill', 'check',
                             'payee,amount,claimPeriod', 'dup', ['dupDuplicate'])

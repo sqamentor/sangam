@@ -31,6 +31,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.ExternalTaskEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import org.operaton.bpm.engine.variable.value.TypedValue;
+import org.sangam.engine.tx.CommandState;
 
 /**
  * Decision 151: the engine's capture points besides FEEL clock reads ({@link CapturingFeelClock}), kept out of
@@ -47,8 +48,9 @@ import org.operaton.bpm.engine.variable.value.TypedValue;
  *       before the timer's effect</td><td>{@code timerId}</td></tr>
  *   <tr><td>{@code MESSAGE_DELIVERED}</td><td>{@link #messageEventHandler()} (replaces Operaton's {@code message} event
  *       handler, same behaviour) for every delivery to a waiting execution; {@link #messageStart} in the adapter before
- *       a correlation that will start an instance</td><td>{@code messageName}, {@code correlationKey}, the message
- *       variables</td></tr>
+ *       a correlation that will start an instance</td><td>{@code messageName}, {@code correlationKey} (decision 332:
+ *       the key the adapter that issued the correlation was called with, handed over through
+ *       {@link CorrelationKeyHandover}; null on every other path), the message variables</td></tr>
  *   <tr><td>{@code EXTERNAL_TASK_RESULT}</td><td>{@link #externalResult}: the adapter's complete, fail and BPMN-error
  *       calls after the lease check; {@link #externalTimeout}: the lease-expiry sweep ({@code TIMEOUT})</td>
  *       <td>result variables; {@code errorMessage} or {@code errorCode}</td></tr>
@@ -114,11 +116,20 @@ public class CapturePoints {
         return new CommandInterceptor() {
             @Override
             public <T> T execute(Command<T> command) {
-                if (Context.hasActiveCommandContext()) {
-                    // registerCommandContextListener ignores a listener that is already registered (javap 2.2.0)
-                    Context.getCommandContext().registerCommandContextListener(onClose);
+                if (!Context.hasActiveCommandContext()) {
+                    return next.execute(command);
                 }
-                return next.execute(command);
+                CommandContext cc = Context.getCommandContext();
+                // registerCommandContextListener ignores a listener that is already registered (javap 2.2.0)
+                cc.registerCommandContextListener(onClose);
+                // decision 332: the command depth tells the adapter's own correlation from one issued inside it
+                CommandState state = CommandState.of(cc);
+                state.enterCommand();
+                try {
+                    return next.execute(command);
+                } finally {
+                    state.exitCommand();
+                }
             }
         };
     }
@@ -169,7 +180,10 @@ public class CapturePoints {
                         }
                         vars.put(e.getKey(), e.getValue());
                     }
-                    message(sub.getEventName(), businessKey, vars, sub.getExecutionId(), sub.getActivityId(),
+                    // decision 332: Operaton passes no business key for a delivery to a waiting execution; the key is
+                    // the one the adapter that issued this correlation was called with, null on every other path
+                    String key = businessKey != null ? businessKey : CommandState.of(cc).deliveredCorrelationKey();
+                    message(sub.getEventName(), key, vars, sub.getExecutionId(), sub.getActivityId(),
                             activityInstanceOf(sub.getExecution()));
                 }
                 super.handleEvent(sub, payload, localPayload, payloadToTriggeredScope, businessKey, cc);
@@ -187,6 +201,17 @@ public class CapturePoints {
         if (listener != null && noWaitingExecution) {
             message(messageName, businessKey, variables, null, null, null);
         }
+    }
+
+    /**
+     * The adapter's message correlation with its two capture duties: {@link #messageStart} first (decision 151), then
+     * the correlation with the key the adapter was called with handed over to the delivery's capture point
+     * (decision 332, {@link CorrelationKeyHandover#within}).
+     */
+    public <T> T correlate(CommandContext cc, boolean noWaitingExecution, String messageName, String businessKey,
+                           Map<String, Object> variables, Supplier<T> correlation) {
+        messageStart(noWaitingExecution, messageName, businessKey, variables);
+        return CorrelationKeyHandover.within(cc, businessKey, correlation);
     }
 
     private void message(String name, String correlationKey, Map<String, Object> variables, String executionId,

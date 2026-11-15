@@ -206,13 +206,68 @@ class ModelDiffTest {
         assertEquals("c1", r.changes().get(0).elementId());
     }
 
+    static List<String> ids(Result r, Level level) {
+        return of(r, level).stream().map(Change::elementId).toList();
+    }
+
+    /**
+     * Decision 329: an absent version (a new or deleted file) reports every element of the present one, each as one
+     * whole-element line, as {@link ModelDiff#compare} documents. (This test used to expect only the root line.)
+     */
     @Test
     void newAndDeletedFiles() {
         Result added = ModelDiff.compare("loss.form.json", null, form(""));
         assertEquals(Kind.ADDED, added.changes().get(0).kind());
+        assertEquals(List.of("(form)"), ids(added, Level.ELEMENT), "a form without fields is the form alone");
+
         Result removed = ModelDiff.compare("order.bpmn", bpmn("x", BASE, ""), new byte[0]);
         assertTrue(removed.changes().stream().allMatch(c -> c.kind() == Kind.REMOVED));
-        assertEquals(1, removed.changes().size(), "only the root: " + removed.toText());
+        assertTrue(removed.changes().stream().allMatch(c -> c.path().isEmpty() && c.before() == null && c.after() == null),
+                "whole-element lines only: " + removed.toText());
+        assertEquals(List.of("approve", "defs", "gw", "p", "start"), ids(removed, Level.ELEMENT), removed.toText());
+        assertEquals(List.of("f1", "f2"), ids(removed, Level.FLOW), "flows keep their level");
+        assertEquals(7, removed.changes().size(), "every element of the deleted file: " + removed.toText());
+
+        Result created = ModelDiff.compare("order.bpmn", null, bpmn("x", BASE, ""));
+        assertTrue(created.changes().stream().allMatch(c -> c.kind() == Kind.ADDED));
+        assertEquals(ids(removed, Level.ELEMENT), ids(created, Level.ELEMENT));
+        assertEquals(ids(removed, Level.FLOW), ids(created, Level.FLOW));
+        assertEquals("Approve", created.changes().stream().filter(c -> c.elementId().equals("approve")).findFirst()
+                .orElseThrow().name());
+    }
+
+    @Test
+    void aNewFileListsNestedElementsWhileAnAddedParentBetweenTwoVersionsStaysOneLine() {
+        String sub = "<bpmn:subProcess id=\"sub\"><bpmn:startEvent id=\"s2\"/>"
+                + "<bpmn:sequenceFlow id=\"f9\" sourceRef=\"s2\" targetRef=\"t2\"/><bpmn:userTask id=\"t2\"/></bpmn:subProcess>";
+        Result created = ModelDiff.compare("order.bpmn", new byte[0], bpmn("x", BASE + sub, ""));
+        assertEquals(List.of("approve", "defs", "gw", "p", "s2", "start", "sub", "t2"), ids(created, Level.ELEMENT));
+        assertEquals(List.of("f1", "f2", "f9"), ids(created, Level.FLOW));
+
+        Result grown = ModelDiff.compare("order.bpmn", bpmn("x", BASE, ""), bpmn("x", BASE + sub, ""));
+        assertEquals(List.of("sub"), ids(grown, Level.ELEMENT), "between two versions the parent's line covers its children");
+        assertEquals(List.of(), ids(grown, Level.FLOW));
+    }
+
+    @Test
+    void aNewOrDeletedFormListsEveryField() {
+        String desc = "{\"id\":\"description\",\"type\":\"text\",\"label\":{\"en\":\"Description\"}}";
+        String amount = "{\"id\":\"amount\",\"type\":\"money\",\"label\":{\"en\":\"Amount\"}}";
+        Result added = ModelDiff.compare("loss.form.json", null, form(desc + "," + amount));
+        assertTrue(added.changes().stream().allMatch(c -> c.kind() == Kind.ADDED && c.level() == Level.ELEMENT
+                && c.path().isEmpty()), added.toText());
+        assertEquals(List.of("(form)", "amount", "description"), ids(added, Level.ELEMENT));
+        Change field = added.changes().get(1);
+        assertEquals("money", field.elementType());
+        assertEquals("Amount", field.name());
+        Result removed = ModelDiff.compare("loss.form.json", form(desc + "," + amount), null);
+        assertTrue(removed.changes().stream().allMatch(c -> c.kind() == Kind.REMOVED));
+        assertEquals(ids(added, Level.ELEMENT), ids(removed, Level.ELEMENT));
+
+        String tree = "{\"components\":[{\"id\":\"g1\",\"type\":\"group\",\"components\":["
+                + "{\"id\":\"c1\",\"key\":\"x\",\"type\":\"textfield\",\"values\":[\"a\",\"b\"]}]}]}";
+        Result nested = ModelDiff.compare("f.form.json", new byte[0], tree.getBytes(StandardCharsets.UTF_8));
+        assertEquals(List.of("(form)", "c1", "g1"), ids(nested, Level.ELEMENT), "components at any depth");
     }
 
     @Test

@@ -9,8 +9,8 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code ModelDiffRequest} of sangam-api.yaml 0.1.0.
  *
  * @param resource wire field {@code resource} (required). File name; its extension (.bpmn,.bpmn20.xml,.dmn,.cmmn,.json) picks the format
- * @param before wire field {@code before}. The old model text (UTF-8); null or empty = a new file
- * @param after wire field {@code after}. The new model text (UTF-8); null or empty = a deleted file
+ * @param before wire field {@code before}. The old model text (UTF-8); null or empty = a new file: every element of the new version is reported as ADDED
+ * @param after wire field {@code after}. The new model text (UTF-8); null or empty = a deleted file: every element of the old version is reported as REMOVED
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ModelDiffRequest(

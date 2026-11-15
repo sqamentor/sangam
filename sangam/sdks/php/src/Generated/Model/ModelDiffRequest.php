@@ -13,8 +13,8 @@ use Sangam\Sdk\Generated\Support;
  * Schema ModelDiffRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $resource (required) File name; its extension (.bpmn,.bpmn20.xml,.dmn,.cmmn,.json) picks the format
- * @property-read string|null $before The old model text (UTF-8); null or empty = a new file
- * @property-read string|null $after The new model text (UTF-8); null or empty = a deleted file
+ * @property-read string|null $before The old model text (UTF-8); null or empty = a new file: every element of the new version is reported as ADDED
+ * @property-read string|null $after The new model text (UTF-8); null or empty = a deleted file: every element of the old version is reported as REMOVED
  */
 final class ModelDiffRequest implements \JsonSerializable
 {

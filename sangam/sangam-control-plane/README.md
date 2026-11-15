@@ -25,6 +25,10 @@ D-10). Design: `../SCALE-ARCHITECTURE.md` sections 5 and 7.
 `POST /api/v1/admin/tenants/{code}/moves` (`{targetCell?, reason}`), `GET /api/v1/admin/moves/{id}`,
 `POST /api/v1/admin/cells/{id}/placement?open=`, `POST /api/v1/admin/cells/{id}/retire`, `GET /api/v1/admin/audit?subject=`.
 
+Registering a cell (`PUT /api/v1/cells/{id}`, role CELL or ADMIN) does not open it for placement (decision 327): it
+receives no tenant until an administrator opens it with `POST /api/v1/admin/cells/{id}/placement?open=true` (role
+ADMIN only; audited as `CELL_PLACEMENT_OPEN`). A placement that finds only closed cells answers 409 and names them.
+
 ## Integration notes
 The move needs the cell tenant-admin API (IR-4 in `../sangam-cell/README.md`). Operaton's own tables are created by
 the engine (`schema-update: true`) in the control-plane database.

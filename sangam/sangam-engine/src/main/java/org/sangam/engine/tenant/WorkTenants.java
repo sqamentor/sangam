@@ -34,7 +34,11 @@ import org.sangam.core.tenant.TenantResolutionException;
  *       batch's seed and monitor jobs are maintenance only when the batch itself has no tenant (condition 2): Operaton
  *       gives them the tenant of their job definition, which {@code BatchEntity.createSeedJobDefinition} /
  *       {@code createMonitorJobDefinition} take from the batch ({@code JobDeclaration.createJobInstance}, javap 2.2.0),
- *       so a tenanted batch's jobs resolve by rule 1 to that tenant before this rule is looked at;</li>
+ *       so a tenanted batch's jobs resolve by rule 1 to that tenant before this rule is looked at. An untenanted
+ *       batch's seed job is <b>not</b> maintenance when it has a deployment: Operaton 2.2 gives the seed job (and the
+ *       execution jobs) of a batch over process definitions the deployment of the batch's source definition, so rule
+ *       2 or rule 4 decides by that deployment: it runs for a registered shared deployment and is refused otherwise
+ *       (decisions 197 and 330; {@code WorkTenantsH2Test});</li>
  *   <li>otherwise {@code tenantOwned(null, ...)}, which refuses {@code MISSING_ENGINE_TENANT}:
  *       {@link Outcome#UNRESOLVED_TENANT}. The work is never routed to a customer tenant or to the old attribution
  *       default ({@code defaultTenantId}, SL-86 meaning change): a job is not executed, an incident is recorded under

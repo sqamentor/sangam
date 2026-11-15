@@ -28,6 +28,11 @@ import org.sangam.packs.port.PackRuntime;
  *   <li>{@code resultPrefix}: result data entries are written as {@code <prefix><Key>} and the status as
  *       {@code <prefix>Status} (default prefix = last segment of the connector name);</li>
  *   <li>{@code errorOnFailure}: BPMN error code thrown on a FAILED result (else the status is only recorded);</li>
+ *   <li>{@code failedWhenInvalid} ({@code true}): for a validation query, whose answer is {@code valid} with
+ *       {@code findings}: an answer {@code valid=false} is a FAILED result of the step, with the code of its first
+ *       error finding as the reason code (else {@code INVALID}); the answer's data is still written. Without it a
+ *       check that says "invalid" is recorded as COMPLETED, and under a result prefix shared with an earlier step it
+ *       replaced that step's FAILED status and reason code (a bill of an unknown type read COMPLETED after its check);</li>
  *   <li>{@code documents} (decision 223): comma list of result data keys stored as a bytes JSON document
  *       ({@link Vars#setJsonDocument}) instead of a string variable, for data that can exceed the engine's
  *       4000-character string limit (a frozen wage register); a list or map is written as JSON, a text answer is
@@ -43,6 +48,7 @@ public class ConnectorCallDelegate implements JavaDelegate {
     private Expression resultPrefix;
     private Expression step;
     private Expression errorOnFailure;
+    private Expression failedWhenInvalid;
     private Expression documents;
 
     @Override
@@ -71,6 +77,9 @@ public class ConnectorCallDelegate implements JavaDelegate {
         } else {
             r = PackRuntime.gateway().query(new ConnectorRequest(Vars.tenant(ex), c, opName, null, bk,
                     ex.getProcessInstanceId(), Vars.withDirective(ex, c, payload), Vars.hash(payload)));
+            if ("true".equalsIgnoreCase(Vars.field(failedWhenInvalid, ex))) {
+                r = failedWhenInvalid(r);
+            }
         }
         ex.setVariable(prefix + "Status", r.status().name());
         ex.setVariable(prefix + "ReasonCode", r.reasonCode());
@@ -93,5 +102,30 @@ public class ConnectorCallDelegate implements JavaDelegate {
         if (err != null && r.status() == OperationStatus.FAILED) {
             throw new BpmnError(err, c + " failed: " + r.reasonCode());
         }
+    }
+
+    /** The reason code of an invalid answer that names no error finding. */
+    static final String INVALID = "INVALID";
+
+    /**
+     * {@code failedWhenInvalid}: a completed validation answer that says {@code valid=false} as a FAILED result with
+     * the code of its first error finding (a finding without a severity counts as an error), else {@link #INVALID};
+     * the data is kept. Every other result is returned unchanged.
+     */
+    static ConnectorResult failedWhenInvalid(ConnectorResult r) {
+        if (r.status() != OperationStatus.COMPLETED || !Boolean.FALSE.equals(r.data().get("valid"))) {
+            return r;
+        }
+        String code = INVALID;
+        if (r.data().get("findings") instanceof Iterable<?> findings) {
+            for (Object f : findings) {
+                if (f instanceof Map<?, ?> m && m.get("code") != null
+                        && (m.get("severity") == null || "ERROR".equalsIgnoreCase(String.valueOf(m.get("severity"))))) {
+                    code = String.valueOf(m.get("code"));
+                    break;
+                }
+            }
+        }
+        return new ConnectorResult(OperationStatus.FAILED, code, "the answer is valid=false", r.externalRef(), r.data());
     }
 }
