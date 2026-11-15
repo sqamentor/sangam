@@ -464,6 +464,9 @@ class EngineInternalsPinTest {
         Class<?> pd = org.operaton.bpm.engine.impl.persistence.entity.ProcessDefinitionManager.class;
         Class<?> jd = org.operaton.bpm.engine.impl.persistence.entity.JobDefinitionManager.class;
         Class<?> job = org.operaton.bpm.engine.impl.persistence.entity.JobManager.class;
+        Class<?> exec = org.operaton.bpm.engine.impl.persistence.entity.ExecutionManager.class;
+        Class<?> task = TaskManager.class;
+        Class<?> ext = org.operaton.bpm.engine.impl.persistence.entity.ExternalTaskManager.class;
         Object[][] methods = {
                 {pd, "updateProcessDefinitionSuspensionStateByKey", new Class<?>[] {String.class, state}},
                 {pd, "updateProcessDefinitionSuspensionStateByKeyAndTenantId", new Class<?>[] {String.class, String.class, state}},
@@ -480,7 +483,19 @@ class EngineInternalsPinTest {
                         new Class<?>[] {org.operaton.bpm.engine.impl.ProcessDefinitionQueryImpl.class}},
                 {jd, "findJobDefinitionCountByQueryCriteria",
                         new Class<?>[] {org.operaton.bpm.engine.impl.JobDefinitionQueryImpl.class}},
-                {job, "findJobCountByQueryCriteria", new Class<?>[] {org.operaton.bpm.engine.impl.JobQueryImpl.class}}};
+                {job, "findJobCountByQueryCriteria", new Class<?>[] {org.operaton.bpm.engine.impl.JobQueryImpl.class}},
+                // decision 364: the execution, task and external-task UPDATEs by key of a process instance state change
+                {exec, "updateExecutionSuspensionStateByProcessDefinitionKey", new Class<?>[] {String.class, state}},
+                {exec, "updateExecutionSuspensionStateByProcessDefinitionKeyAndTenantId",
+                        new Class<?>[] {String.class, String.class, state}},
+                {task, "updateTaskSuspensionStateByProcessDefinitionKey", new Class<?>[] {String.class, state}},
+                {task, "updateTaskSuspensionStateByProcessDefinitionKeyAndTenantId",
+                        new Class<?>[] {String.class, String.class, state}},
+                {ext, "updateExternalTaskSuspensionStateByProcessDefinitionKey", new Class<?>[] {String.class, state}},
+                {ext, "updateExternalTaskSuspensionStateByProcessDefinitionKeyAndTenantId",
+                        new Class<?>[] {String.class, String.class, state}},
+                {exec, "findProcessInstanceCountByQueryCriteria",
+                        new Class<?>[] {org.operaton.bpm.engine.impl.ProcessInstanceQueryImpl.class}}};
         for (Object[] m : methods) {
             java.lang.reflect.Method method = ((Class<?>) m[0]).getDeclaredMethod((String) m[1], (Class<?>[]) m[2]);
             assertTrue(java.lang.reflect.Modifier.isPublic(method.getModifiers()), "I-18: public " + m[1]);
@@ -490,6 +505,19 @@ class EngineInternalsPinTest {
         org.sangam.engine.deploy.TenantScopedCreation.sessionFactories().forEach(f -> replaced.add(f.getSessionType()));
         replaced.add(org.sangam.engine.deploy.DelayedStateChangeTenant.sessionFactory().getSessionType());
         assertTrue(replaced.containsAll(java.util.List.of(pd, jd, job)), "decision 355 seam installed: " + replaced);
+        assertTrue(replaced.containsAll(java.util.List.of(exec, task, ext)), "decision 364 seam installed: " + replaced);
+        // the query the decision-364 count builds: process instances of a key without a tenant
+        org.operaton.bpm.engine.impl.ProcessInstanceQueryImpl.class.getConstructor();
+        org.operaton.bpm.engine.impl.ProcessInstanceQueryImpl.class.getMethod("withoutTenantId");
+        withEngine(a -> {
+            ProcessEngineConfigurationImpl cfg = (ProcessEngineConfigurationImpl) a.processEngine()
+                    .getProcessEngineConfiguration();
+            List<Class<?>> used = cfg.getCommandExecutorTxRequired().execute(cc -> List.<Class<?>>of(
+                    cc.getExecutionManager().getClass(), cc.getExternalTaskManager().getClass()));
+            for (Class<?> c : used) {
+                assertTrue(c.getName().startsWith("org.sangam."), "decision 364: commands use Sangam's manager, got " + c);
+            }
+        });
     }
 
     private static String mapping(String file) throws java.io.IOException {
