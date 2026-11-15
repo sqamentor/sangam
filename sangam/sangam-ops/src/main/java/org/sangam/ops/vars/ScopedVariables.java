@@ -22,6 +22,13 @@ public final class ScopedVariables {
 
     public static final String CLUSTER = "cluster";
 
+    /** A variable name: a letter, then letters, digits, {@code _ . -}; at most 128 characters. */
+    private static final java.util.regex.Pattern VARIABLE_NAME = java.util.regex.Pattern.compile("[A-Za-z][A-Za-z0-9_.-]{0,127}");
+
+    /** A lower-cased name containing one of these words belongs in the secret store, not here. */
+    private static final java.util.regex.Pattern SECRET_LIKE =
+            java.util.regex.Pattern.compile("password|secret|token|apikey|api-key|credential");
+
     private final Dialect dialect;
     private final Transactions tx;
     private final AuditChain audit;
@@ -60,10 +67,11 @@ public final class ScopedVariables {
      * with its own row bookkeeping). The caller calls {@link #evict} after its commit.
      */
     public void set(java.sql.Connection c, String scope, String name, Object value, String actor, String reason) {
-        if (name == null || !name.matches("[A-Za-z][A-Za-z0-9_.-]{0,127}")) {
+        if (name == null || !VARIABLE_NAME.matcher(name).matches()) {
             throw new IllegalArgumentException("invalid variable name");
         }
-        if (name.toLowerCase(java.util.Locale.ROOT).matches(".*(password|secret|token|apikey|api-key|credential).*")) {
+        // name is at most 128 characters here; find() scans it once (no ".*x.*" backtracking over the whole input)
+        if (SECRET_LIKE.matcher(name.toLowerCase(java.util.Locale.ROOT)).find()) {
             throw new IllegalArgumentException("secret-like names belong in the secret store");
         }
         String json = Json.write(Map.of("v", value));

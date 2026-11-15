@@ -4,6 +4,7 @@ package org.sangam.ops.migrate;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.SqlIdentifier;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.Json;
 
@@ -41,12 +42,29 @@ public final class LegacyHistoryMigrator {
     private static final Set<String> NEVER_COPY = Set.of("pwd_", "salt_", "bytes_");
     private static final Map<String, String> SAFE = Map.of();
 
-    /** {@code keyColumns} is one key column, or two for a composite key (their values joined by {@code |} form the source id). */
+    /**
+     * {@code keyColumns} is one key column, or two for a composite key (their values joined by {@code |} form the source id).
+     *
+     * <p>The table name and every key column go into statement text (SQL cannot bind identifiers), so the one
+     * constructor refuses anything that is not an upper-case {@link SqlIdentifier}, and the key columns are copied in
+     * and out: no {@code Table} exists with an unvalidated name, and none can be changed after validation.
+     */
     public record Table(String name, String... keyColumns) {
         public Table {
-            if (!name.matches("[A-Z0-9_]+")) {
-                throw new IllegalArgumentException("invalid table " + name);
+            name = SqlIdentifier.upperCase(name).sql();
+            if (keyColumns == null || keyColumns.length < 1 || keyColumns.length > 2) {
+                throw new IllegalArgumentException("table " + name + " needs one or two key columns");
             }
+            keyColumns = keyColumns.clone();
+            for (int i = 0; i < keyColumns.length; i++) {
+                keyColumns[i] = SqlIdentifier.upperCase(keyColumns[i]).sql();
+            }
+        }
+
+        /** A copy: the validated columns of this table cannot be replaced through the accessor. */
+        @Override
+        public String[] keyColumns() {
+            return keyColumns.clone();
         }
 
         String order() {
@@ -237,7 +255,10 @@ public final class LegacyHistoryMigrator {
         if (!exists(t)) {
             return 0;
         }
-        try (Connection c = source.getConnection(); PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) FROM " + t.name()); ResultSet rs = ps.executeQuery()) {
+        // A table name cannot be bound. Every Table carries a name validated in its only constructor; the text is built
+        // from the identifier type, so nothing but that name can reach it.
+        String sql = SqlIdentifier.countSql(SqlIdentifier.upperCase(t.name()));
+        try (Connection c = source.getConnection(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             rs.next();
             return rs.getLong(1);
         }

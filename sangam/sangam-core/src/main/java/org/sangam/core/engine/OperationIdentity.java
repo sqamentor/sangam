@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.core.engine;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+
+import org.sangam.core.layer.Hashes;
 
 /**
  * Business-operation identity derived from the business key (T35, X.0d pending amendment 1, R36):
@@ -74,36 +73,12 @@ public final class OperationIdentity {
         return s;
     }
 
-    /** RFC 9562 UUID version 5 (SHA-1, name-based). */
+    /**
+     * RFC 9562 UUID version 5 (SHA-1, name-based). The one implementation is {@link Hashes#uuidV5}; this method stays
+     * for its callers and returns the same value for every input (pinned by {@code UuidV5SingleImplementationTest},
+     * because operation ids are persisted).
+     */
     public static UUID uuidV5(UUID namespace, String name) {
-        try {
-            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            sha1.update(toBytes(namespace));
-            byte[] h = sha1.digest(name.getBytes(StandardCharsets.UTF_8));
-            h[6] = (byte) ((h[6] & 0x0f) | 0x50);
-            h[8] = (byte) ((h[8] & 0x3f) | 0x80);
-            long msb = 0;
-            long lsb = 0;
-            for (int i = 0; i < 8; i++) {
-                msb = (msb << 8) | (h[i] & 0xff);
-            }
-            for (int i = 8; i < 16; i++) {
-                lsb = (lsb << 8) | (h[i] & 0xff);
-            }
-            return new UUID(msb, lsb);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static byte[] toBytes(UUID u) {
-        byte[] b = new byte[16];
-        long m = u.getMostSignificantBits();
-        long l = u.getLeastSignificantBits();
-        for (int i = 0; i < 8; i++) {
-            b[i] = (byte) (m >>> (56 - 8 * i));
-            b[8 + i] = (byte) (l >>> (56 - 8 * i));
-        }
-        return b;
+        return Hashes.uuidV5(namespace, name);
     }
 }

@@ -17,7 +17,8 @@ function routes(): { path: string; guarded: boolean; byAccess?: boolean }[] {
   expect(table.length).toBeGreaterThan(0);
   for (const line of table.split(/\r?\n/)) {
     const route = /<Route path="([^"]+)" element=\{(.*)\} \/>/.exec(line);
-    if (route) out.push({ path: route[1], guarded: /^g\(|<Guard /.test(route[2]) });
+    // guarded: the element is a g(...) call, or it contains a <Guard ...> element
+    if (route) out.push({ path: route[1], guarded: route[2].startsWith('g(') || route[2].includes('<Guard ') });
     const mod = /\{m\('([^']+)', /.exec(line);
     if (mod) out.push({ path: mod[1], guarded: true, byAccess: true });
   }

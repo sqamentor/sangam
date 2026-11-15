@@ -30,7 +30,10 @@ public final class Hashes {
         return b == null ? null : HexFormat.of().formatHex(b);
     }
 
-    /** RFC 4122 §4.3 version-5 (SHA-1) UUID of {@code name} in {@code namespace}. */
+    /**
+     * RFC 9562 §5.5 (RFC 4122 §4.3) version-5 (SHA-1) UUID of {@code name} in {@code namespace}. The only UUIDv5
+     * implementation of the product: {@code OperationIdentity.uuidV5} delegates here.
+     */
     public static UUID uuidV5(UUID namespace, String name) {
         MessageDigest md = digest("SHA-1");
         ByteBuffer ns = ByteBuffer.allocate(16);

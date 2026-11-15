@@ -4,6 +4,7 @@ package org.sangam.ops.sequence;
 import org.sangam.core.layer.AuditChain;
 import org.sangam.core.layer.Dialect;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.SqlIdentifier;
 import org.sangam.core.layer.Transactions;
 
 import java.util.List;
@@ -19,11 +20,8 @@ public final class SequenceAdmin {
     /** How to read one counter table. Identifiers are operator configuration, validated at construction. */
     public record Table(String name, String tenantColumn, String seriesColumn, String periodColumn, String valueColumn) {
         public Table {
-            for (String s : List.of(name, tenantColumn, seriesColumn, periodColumn, valueColumn)) {
-                if (!s.matches("[A-Za-z0-9_]+")) {
-                    throw new IllegalArgumentException("invalid identifier " + s);
-                }
-            }
+            // the one validating type for names that go into statement text (SQL cannot bind identifiers)
+            SqlIdentifier.allOf(List.of(name, tenantColumn, seriesColumn, periodColumn, valueColumn));
         }
     }
 

@@ -104,10 +104,17 @@ public class RestStoreReencryptionSources {
             }
         }
 
+        /** The first page of a tenant: constant SQL, every value bound. */
+        static final String PAGE_FIRST_SQL =
+                "SELECT kind, doc_id, body FROM REST_DOCUMENT WHERE tenant_id=? ORDER BY kind, doc_id";
+
+        /** A later page, after the key {@code (kind, doc_id)}: constant SQL, every value bound. */
+        static final String PAGE_AFTER_SQL = "SELECT kind, doc_id, body FROM REST_DOCUMENT WHERE tenant_id=?"
+                + " AND (kind>? OR (kind=? AND doc_id>?)) ORDER BY kind, doc_id";
+
         @Override
         public List<Row> page(Connection c, String tenantId, String afterKey, int limit) {
-            String sql = "SELECT kind, doc_id, body FROM REST_DOCUMENT WHERE tenant_id=?"
-                    + (afterKey == null ? "" : " AND (kind>? OR (kind=? AND doc_id>?))") + " ORDER BY kind, doc_id";
+            String sql = afterKey == null ? PAGE_FIRST_SQL : PAGE_AFTER_SQL;
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows(limit);
                 ps.setString(1, tenantId);
@@ -201,10 +208,17 @@ public class RestStoreReencryptionSources {
             return b == null ? null : new String(b, StandardCharsets.UTF_8);
         }
 
+        /** The first page of a tenant: constant SQL, every value bound. */
+        static final String PAGE_FIRST_SQL =
+                "SELECT draft_id, data_ciphertext FROM FORM_DRAFT WHERE tenant_id=? ORDER BY draft_id";
+
+        /** A later page, after {@code draft_id}: constant SQL, every value bound. */
+        static final String PAGE_AFTER_SQL =
+                "SELECT draft_id, data_ciphertext FROM FORM_DRAFT WHERE tenant_id=? AND draft_id>? ORDER BY draft_id";
+
         @Override
         public List<Row> page(Connection c, String tenantId, String afterKey, int limit) {
-            String sql = "SELECT draft_id, data_ciphertext FROM FORM_DRAFT WHERE tenant_id=?"
-                    + (afterKey == null ? "" : " AND draft_id>?") + " ORDER BY draft_id";
+            String sql = afterKey == null ? PAGE_FIRST_SQL : PAGE_AFTER_SQL;
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows(limit);
                 ps.setString(1, tenantId);

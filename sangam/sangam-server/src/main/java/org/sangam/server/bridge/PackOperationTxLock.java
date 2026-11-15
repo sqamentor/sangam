@@ -2,8 +2,9 @@
 package org.sangam.server.bridge;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -26,7 +27,8 @@ import org.sangam.rest.support.TxSupport;
  * the same pack and scope computes from the first one's committed result. Another pack or tenant is another row.
  *
  * <p><b>Bounded wait.</b> The lock statement waits at most {@code lockWait}: PostgreSQL {@code SET LOCAL lock_timeout}
- * (to the end of the transaction, so the deployment's own lock waits are bounded too); SQL Server, MySQL and H2 the
+ * (as {@code set_config('lock_timeout', ?, true)}, see {@link #setLocalLockTimeout}; to the end of the transaction,
+ * so the deployment's own lock waits are bounded too); SQL Server, MySQL and H2 the
  * session lock wait of {@link EngineDialect#applyLockTimeouts}, set back right after the lock statement (SL-99: a
  * pooled connection never keeps it); Oracle {@code FOR UPDATE WAIT 2} of the product-layer row lock. A lock-wait
  * timeout anywhere in the section ({@link #isLockTimeout}) is reported as {@link PackLifecycleException}
@@ -73,11 +75,7 @@ public final class PackOperationTxLock implements PackOperationLock {
     private void lock(Connection c, String tenantId, String packId) {
         Integer previous = engineDialect.sessionLockTimeout(c);
         if (engineDialect == EngineDialect.POSTGRESQL) {
-            try (Statement s = c.createStatement()) {
-                s.execute("SET LOCAL lock_timeout = '" + lockWait.toMillis() + "ms'");
-            } catch (SQLException e) {
-                throw new IllegalStateException("cannot set the lock timeout on PostgreSQL", e);
-            }
+            setLocalLockTimeout(c, lockWait);
         } else {
             engineDialect.applyLockTimeouts(c, lockWait, lockWait); // statement timeout: PostgreSQL only, unused here
         }
@@ -87,6 +85,24 @@ public final class PackOperationTxLock implements PackOperationLock {
             if (previous != null) {
                 engineDialect.restoreSessionLockTimeout(c, previous);
             }
+        }
+    }
+
+    /**
+     * PostgreSQL {@code SET LOCAL lock_timeout} as one constant statement: {@code SET} takes no bind parameter, its
+     * function form {@code set_config(name, value, is_local)} does, and {@code is_local = true} is {@code SET LOCAL}
+     * (the setting ends with the transaction). The wait is bound as text ({@code "<millis>ms"}).
+     */
+    static final String PG_SET_LOCAL_LOCK_TIMEOUT = "SELECT set_config('lock_timeout', ?, true)";
+
+    static void setLocalLockTimeout(Connection c, Duration wait) {
+        try (PreparedStatement ps = c.prepareStatement(PG_SET_LOCAL_LOCK_TIMEOUT)) {
+            ps.setString(1, wait.toMillis() + "ms");
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next(); // one row: the value now in force
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("cannot set the lock timeout on PostgreSQL", e);
         }
     }
 

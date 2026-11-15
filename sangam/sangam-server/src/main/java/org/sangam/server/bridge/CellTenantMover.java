@@ -50,11 +50,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Jdbc;
+import org.sangam.core.layer.SqlIdentifier;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.DocumentStore;
 import org.sangam.rest.support.TxSupport;
+import org.sangam.server.bridge.CellTenantPlans.Plan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,12 +137,6 @@ public final class CellTenantMover {
     }
 
     public record TenantChecksum(Map<String, Long> rowCounts, String contentHash) {
-    }
-
-    /** One table to move: its real name, columns, tenant filter and FK/PK metadata. */
-    private record Plan(String table, String upper, List<String> columns, Map<String, Integer> sqlTypes,
-                        String where, int whereParams, List<String> pk, Set<String> nullableFks,
-                        Set<String> requiredParents) {
     }
 
     private final TxSupport tx;
@@ -267,12 +263,10 @@ public final class CellTenantMover {
 
     /** Walks prefixes, extends and adopt from the tenant's documents, and writes the chain documents outside its scope. */
     private void exportSharedProfiles(Connection c, String tenant, BufferedWriter w) throws SQLException, IOException {
-        List<String> cols = List.of("profile_id", "version", "layer_id", "status", "effective_from", "effective_to",
-                "content_hash", "document_json", "updated_at");
+        List<String> cols = CellTenantPlans.SHARED_PROFILE_COLUMNS;
         java.util.ArrayDeque<String> queue = new java.util.ArrayDeque<>();
         Set<String> seen = new LinkedHashSet<>();
         queue.add(tenant);
-        String select = "SELECT " + String.join(", ", cols) + " FROM CFG_PROFILE WHERE profile_id=? AND status='ACTIVE'";
         ObjectNode head = JSON.createObjectNode().put("table", SHARED_PROFILES);
         ArrayNode ca = head.putArray("columns");
         cols.forEach(ca::add);
@@ -286,7 +280,7 @@ public final class CellTenantMover {
             for (int dot = id.lastIndexOf('.'); dot > 0; dot = id.lastIndexOf('.', dot - 1)) {
                 queue.add(id.substring(0, dot));
             }
-            try (PreparedStatement ps = c.prepareStatement(select)) {
+            try (PreparedStatement ps = c.prepareStatement(CellTenantPlans.SHARED_PROFILE_SELECT)) {
                 ps.setString(1, id);
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -478,8 +472,8 @@ public final class CellTenantMover {
         }
         String[] child = CHILDREN.get(p.upper());
         Map<String, Object> idMap = new HashMap<>();
-        String sql = "INSERT INTO " + p.table() + " (" + String.join(", ", insertCols) + ") VALUES ("
-                + String.join(",", java.util.Collections.nCopies(insertCols.size(), "?")) + ")";
+        // identifiers cannot be bound: the text is built from validated identifiers and '?' marks only
+        String sql = SqlIdentifier.insertSql(SqlIdentifier.of(p.table()), SqlIdentifier.allOf(insertCols));
         long n = 0;
         try (PreparedStatement ps = remapCol == null ? c.prepareStatement(sql) : null) {
             for (JsonNode row : rows) {
@@ -720,7 +714,7 @@ public final class CellTenantMover {
             int params;
             if (upper.equals("ACT_GE_BYTEARRAY")) {
                 // the tenant's own byte arrays (variables, history details) and every resource of its deployments
-                String dep = realNames.getOrDefault("ACT_RE_DEPLOYMENT", "ACT_RE_DEPLOYMENT");
+                String dep = SqlIdentifier.of(realNames.getOrDefault("ACT_RE_DEPLOYMENT", "ACT_RE_DEPLOYMENT")).sql();
                 String byDeployment = "DEPLOYMENT_ID_ IN (SELECT ID_ FROM " + dep + " WHERE TENANT_ID_=?)";
                 where = tenantCol == null ? byDeployment : "(" + tenantCol + "=? OR " + byDeployment + ")";
                 params = tenantCol == null ? 1 : 2;
@@ -733,7 +727,7 @@ public final class CellTenantMover {
                 params = 1;
             } else if (CHILDREN.containsKey(upper) && realNames.containsKey(CHILDREN.get(upper)[1])) {
                 String[] ch = CHILDREN.get(upper);
-                where = actualName(cols, ch[0]) + " IN (SELECT " + ch[2] + " FROM " + realNames.get(ch[1])
+                where = actualName(cols, ch[0]) + " IN (SELECT " + ch[2] + " FROM " + SqlIdentifier.of(realNames.get(ch[1])).sql()
                         + " WHERE " + (ch[1].startsWith("ACT_") ? "TENANT_ID_" : "tenant_id") + "=?)";
                 params = 1;
             } else {

@@ -53,14 +53,18 @@ class AuthorizationPolicyIT extends LayerSpecSupport {
         ensureIso();
         createTableIfMissing("ACT_RU_TASK_SIM",
                 "CREATE TABLE ACT_RU_TASK_SIM (ID_ {str64} PRIMARY KEY, TENANT_ID_ {str64} NOT NULL, NAME_ {str})");
-        try (Connection c = DS.getConnection(); Statement st = c.createStatement()) {
+        try (Connection c = DS.getConnection(); Statement st = c.createStatement();
+             PreparedStatement insert = c.prepareStatement("INSERT INTO ACT_RU_TASK_SIM VALUES (?, ?, ?)")) {
             st.execute("TRUNCATE TABLE ACT_RU_TASK_SIM");
             TASKS.clear();
             for (String t : TENANTS) {
                 for (int i = 0; i < TASKS_PER_TENANT; i++) {
                     Row r = new Row(t, t + "-task-" + String.format("%02d", i), (i % 2 == 0 ? "even-" : "odd-") + i);
                     TASKS.add(r);
-                    st.execute("INSERT INTO ACT_RU_TASK_SIM VALUES ('" + r.id + "','" + r.tenant + "','" + r.name + "')");
+                    insert.setString(1, r.id);
+                    insert.setString(2, r.tenant);
+                    insert.setString(3, r.name);
+                    insert.executeUpdate();
                 }
             }
         }

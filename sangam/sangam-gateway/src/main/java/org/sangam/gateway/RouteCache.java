@@ -74,8 +74,18 @@ public class RouteCache {
         if (e != null && System.currentTimeMillis() - e.fetchedAtMs() < props.maxStale().toMillis()) {
             return Mono.just(e.route());
         }
-        LOG.warn("No route for tenant {} and control plane unavailable: {}", tenant, ex.toString());
+        // tenant is the routing code TenantResolver validated ([A-Z0-9][A-Z0-9_-]{0,63}), not a credential
+        LOG.warn("No route for tenant {} and control plane unavailable: {}", tenant, failure(ex));
         return Mono.error(new ControlPlaneUnavailable());
+    }
+
+    /**
+     * What failed, for the log: the exception class and, for an HTTP answer, its status. Never the exception's own
+     * text, which can carry the request URI and a part of the control plane's response body.
+     */
+    static String failure(Throwable ex) {
+        String type = ex.getClass().getName();
+        return ex instanceof WebClientResponseException http ? type + " (HTTP " + http.getStatusCode().value() + ")" : type;
     }
 
     /** Called when a cell answers 421 Misdirected (tenant moved) so the next request re-resolves. */
@@ -104,7 +114,7 @@ public class RouteCache {
                 lastSuccessMs = now;
             }
         } catch (RuntimeException e) {
-            LOG.debug("Route snapshot refresh failed: {}", e.toString());
+            LOG.debug("Route snapshot refresh failed: {}", failure(e));
         }
     }
 

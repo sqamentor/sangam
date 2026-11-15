@@ -52,10 +52,17 @@ public class SecretStoreReencryptionSource {
             return NAME;
         }
 
+        /** The first page of a tenant: constant SQL, every value bound. */
+        static final String PAGE_FIRST_SQL =
+                "SELECT ref_name, envelope FROM OPS_SECRET WHERE tenant_id=? ORDER BY ref_name";
+
+        /** A later page, after {@code ref_name}: constant SQL, every value bound. */
+        static final String PAGE_AFTER_SQL =
+                "SELECT ref_name, envelope FROM OPS_SECRET WHERE tenant_id=? AND ref_name>? ORDER BY ref_name";
+
         @Override
         public List<Row> page(Connection c, String tenantId, String afterKey, int limit) {
-            String sql = "SELECT ref_name, envelope FROM OPS_SECRET WHERE tenant_id=?"
-                    + (afterKey == null ? "" : " AND ref_name>?") + " ORDER BY ref_name";
+            String sql = afterKey == null ? PAGE_FIRST_SQL : PAGE_AFTER_SQL;
             try (PreparedStatement ps = c.prepareStatement(sql)) {
                 ps.setMaxRows(limit);
                 ps.setString(1, tenantId);

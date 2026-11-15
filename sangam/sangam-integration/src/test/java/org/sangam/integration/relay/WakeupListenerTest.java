@@ -217,6 +217,20 @@ class WakeupListenerTest {
         }
     }
 
+    /** The channel goes into {@code LISTEN <channel>} as text, so it passes the shared SqlIdentifier gate. */
+    @Test
+    void theChannelIsOneIdentifierOfAtMostSixtyThreeCharacters() {
+        for (String bad : new String[]{"x; NOTIFY y", "t; DROP TABLE x", "A B", "a'b", "a\"b", "a--", "a.b", " a",
+                "a".repeat(64)}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> new WakeupListener(bad, null, WakeupListener.NotificationReader.PGJDBC, FAST), bad);
+            assertTrue(e.getMessage().startsWith("wake-up channel must be a lower-case identifier"), e.getMessage());
+        }
+        for (String ok : new String[]{WakeupNotifier.CHANNEL, "a", "_x9", "a".repeat(63)}) {
+            assertFalse(new WakeupListener(ok, null, WakeupListener.NotificationReader.PGJDBC, FAST).usesListen(), ok);
+        }
+    }
+
     @Test
     void settingsAreValidated() {
         assertThrows(IllegalArgumentException.class, () -> new WakeupListener.Settings(Duration.ZERO, Duration.ofSeconds(1),

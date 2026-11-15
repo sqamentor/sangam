@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 /**
  * The roll-up's row writes, shared by the per-event and the micro-batch path (one SQL text per write, portable
@@ -20,10 +22,16 @@ final class RollupWriter {
     /** Event ids per {@code IN (...)} lookup; stays far below every dialect's bind-parameter limit. */
     static final int ID_CHUNK = 100;
 
+    /** The dedup lookup; {@code :ids} is a collection parameter of at most {@link #ID_CHUNK} bound values. */
+    static final String SEEN_IN_SQL = "SELECT event_id FROM RU_EVENT_SEEN WHERE event_id IN (:ids)";
+
     private final JdbcTemplate jdbc;
+    /** The same template (same data source and transaction), for the one statement with a collection parameter. */
+    private final NamedParameterJdbcTemplate named;
 
     RollupWriter(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
+        this.named = new NamedParameterJdbcTemplate(jdbc);
     }
 
     /** Dedup row; a duplicate id raises {@code DuplicateKeyException}. */
@@ -45,9 +53,8 @@ final class RollupWriter {
         List<String> all = new ArrayList<>(ids);
         for (int from = 0; from < all.size(); from += ID_CHUNK) {
             List<String> chunk = all.subList(from, Math.min(all.size(), from + ID_CHUNK));
-            String marks = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
-            seen.addAll(jdbc.queryForList("SELECT event_id FROM RU_EVENT_SEEN WHERE event_id IN (" + marks + ")",
-                    String.class, chunk.toArray()));
+            // constant SQL: Spring expands :ids to one bound '?' per id of the chunk (never an empty list here)
+            seen.addAll(named.queryForList(SEEN_IN_SQL, Map.of("ids", chunk), String.class));
         }
         return seen;
     }

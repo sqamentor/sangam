@@ -247,7 +247,8 @@ class EsignResponseVerificationTest {
 
     @Test
     void weakKeysAndWrongKeyUsageAreRefused() throws Exception {
-        EsignTestPki.Party small = pki.user("Asha Verma", pki.ca(), KeyUsage.digitalSignature, 1024, EsignTestPki.NOT_AFTER);
+        EsignTestPki.Party small = pki.userWithWeakKeyForNegativeTest("Asha Verma", pki.ca(), KeyUsage.digitalSignature, 1024,
+                EsignTestPki.NOT_AFTER);
         invalid(verifier().verify(expected("T-19", "Asha Verma"),
                 answer("T-19", TS, small, EsignTestPki.cmsOverHash(small, hash, SIGNED))), "KEY_NOT_ACCEPTED");
         EsignTestPki.Party enc = pki.user("Asha Verma", pki.ca(), KeyUsage.keyEncipherment, 2048, EsignTestPki.NOT_AFTER);

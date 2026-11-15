@@ -198,7 +198,30 @@ public final class EsignTestPki implements AutoCloseable {
 
     // ---- certificates ----------------------------------------------------------------------------
 
+    /** Smallest RSA modulus of an ordinary test key. */
+    public static final int MIN_RSA_BITS = 2048;
+
+    /** An RSA test key of at least {@link #MIN_RSA_BITS} bits; a smaller size is refused (see {@link #weakRsaForNegativeTest}). */
     public static KeyPair rsa(int bits) throws Exception {
+        if (bits < MIN_RSA_BITS) {
+            throw new IllegalArgumentException("a test key has at least " + MIN_RSA_BITS + " bits, not " + bits
+                    + "; a negative test that needs a weak key calls weakRsaForNegativeTest");
+        }
+        return generateRsa(bits);
+    }
+
+    /**
+     * A deliberately weak RSA key (below {@link #MIN_RSA_BITS} bits), only for tests that prove such a key is
+     * <b>refused</b>. The name is the opt-in: no other method of this kit produces a key this small.
+     */
+    public static KeyPair weakRsaForNegativeTest(int bits) throws Exception {
+        if (bits >= MIN_RSA_BITS) {
+            throw new IllegalArgumentException(bits + " bits is not a weak key; use rsa(bits)");
+        }
+        return generateRsa(bits);
+    }
+
+    private static KeyPair generateRsa(int bits) throws Exception {
         KeyPairGenerator g = KeyPairGenerator.getInstance("RSA");
         g.initialize(bits);
         return g.generateKeyPair();
@@ -216,9 +239,21 @@ public final class EsignTestPki implements AutoCloseable {
         return new Party(kp, sign(b, kp));
     }
 
-    /** An end-entity signer issued by {@code issuer}, naming this kit's OCSP responder and CRL. */
+    /**
+     * An end-entity signer issued by {@code issuer}, naming this kit's OCSP responder and CRL. {@code rsaBits} below
+     * {@link #MIN_RSA_BITS} is refused; see {@link #userWithWeakKeyForNegativeTest}.
+     */
     public Party user(String cn, Party issuer, int keyUsage, int rsaBits, Instant notAfter) throws Exception {
-        KeyPair kp = rsa(rsaBits);
+        return issue(cn, issuer, keyUsage, rsa(rsaBits), notAfter);
+    }
+
+    /** As {@link #user(String, Party, int, int, Instant)} with a deliberately weak key, for a test that expects its refusal. */
+    public Party userWithWeakKeyForNegativeTest(String cn, Party issuer, int keyUsage, int weakRsaBits, Instant notAfter)
+            throws Exception {
+        return issue(cn, issuer, keyUsage, weakRsaForNegativeTest(weakRsaBits), notAfter);
+    }
+
+    private Party issue(String cn, Party issuer, int keyUsage, KeyPair kp, Instant notAfter) throws Exception {
         X509v3CertificateBuilder b = new JcaX509v3CertificateBuilder(
                 new JcaX509CertificateHolder(issuer.cert()).getSubject(), BigInteger.valueOf(SERIALS.incrementAndGet()),
                 Date.from(NOT_BEFORE), Date.from(notAfter), new X500Name("CN=" + cn + ",O=Test"), kp.getPublic());

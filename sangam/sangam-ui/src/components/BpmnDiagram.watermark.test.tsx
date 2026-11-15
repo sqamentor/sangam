@@ -53,8 +53,14 @@ describe('M-049 bpmn.io watermark', () => {
       expect(a).toBeTruthy();
       return a!;
     });
-    expect(logo.getAttribute('href')).toMatch(/bpmn\.io/);
-    expect(logo.getAttribute('title') ?? '').toMatch(/bpmn\.io/i);
+    // the link goes to bpmn.io itself: the host name of the parsed URL, not a substring of the attribute
+    // (a pattern such as /bpmn\.io/ also accepts https://bpmn.io.example.test and https://example.test/bpmn.io)
+    const href = logo.getAttribute('href');
+    expect(href).toBeTruthy();
+    const target = new URL(href!);
+    expect(target.hostname).toBe('bpmn.io');
+    expect(['http:', 'https:']).toContain(target.protocol);
+    expect(logo.getAttribute('title')).toBe('Powered by bpmn.io');
     expect(logo.style.display).not.toBe('none');
     expect(logo.style.visibility).not.toBe('hidden');
     expect(logo.style.opacity === '' || Number(logo.style.opacity) > 0).toBe(true);

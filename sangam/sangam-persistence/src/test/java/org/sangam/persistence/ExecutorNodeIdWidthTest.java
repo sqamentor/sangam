@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Map;
 import java.util.UUID;
@@ -40,9 +41,15 @@ class ExecutorNodeIdWidthTest {
                 assertEquals("NODE_ID", rs.getString("COLUMN_NAME"));
             }
             String pod = "n".repeat(253);
-            c.createStatement().execute("INSERT INTO EXEC_NODE(node_id, incarnation, started_at, heartbeat_at) VALUES ('"
-                    + pod + "', 'i', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
-            c.createStatement().execute("UPDATE EXEC_PARTITION SET owner_node='" + pod + "'");
+            try (PreparedStatement ps = c.prepareStatement("INSERT INTO EXEC_NODE(node_id, incarnation, started_at,"
+                    + " heartbeat_at) VALUES (?, 'i', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")) {
+                ps.setString(1, pod);
+                assertEquals(1, ps.executeUpdate());
+            }
+            try (PreparedStatement ps = c.prepareStatement("UPDATE EXEC_PARTITION SET owner_node=?")) {
+                ps.setString(1, pod);
+                ps.executeUpdate();
+            }
         }
     }
 

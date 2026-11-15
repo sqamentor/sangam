@@ -4,6 +4,7 @@ package org.sangam.integration.pipeline;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.sangam.core.layer.Jdbc;
 import org.sangam.core.layer.Outbox;
+import org.sangam.core.layer.SqlIdentifier;
 import org.sangam.core.layer.Transactions;
 import org.sangam.integration.connector.HttpTransport;
 import org.sangam.integration.connector.Json;
@@ -34,7 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.regex.Pattern;
 
 /**
  * Runs one pipeline run (N11). Sangam orchestrates; heavy engines stay outside (ADR-D-22): this is for bounded feeds.
@@ -58,7 +58,6 @@ import java.util.regex.Pattern;
 public final class PipelineRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipelineRunner.class);
-    private static final Pattern IDENT = Pattern.compile("[A-Za-z_][A-Za-z0-9_.]{0,127}");
     private static final Duration TTL = Duration.ofMinutes(2);
     private static final java.util.concurrent.ScheduledExecutorService HEARTBEATS =
             java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
@@ -620,9 +619,14 @@ public final class PipelineRunner {
             }
             return;
         }
-        String chunkCol = ident(s.require("chunkColumn"));
+        SqlIdentifier chunkCol = ident(s.require("chunkColumn"));
+        SqlIdentifier table = ident(s.require("table"));
+        SqlIdentifier runColumn = ident(runCol);
         try (Connection c = res.dataSource(s.require("datasource")).getConnection();
-             PreparedStatement ps = c.prepareStatement("DELETE FROM " + ident(s.require("table")) + " WHERE " + ident(runCol) + "=? AND " + chunkCol + ">=?")) {
+             // Identifiers cannot be bound. table, runColumn and chunkCol are SqlIdentifier values (ident() below,
+             // SqlIdentifier.qualified); the run id and the chunk number are bound.
+             // nosemgrep: sangam-jdbc-sql-concat
+             PreparedStatement ps = c.prepareStatement("DELETE FROM " + table.sql() + " WHERE " + runColumn.sql() + "=? AND " + chunkCol.sql() + ">=?")) {
             ps.setString(1, ctx.run.runId());
             ps.setLong(2, resumeChunk);
             ps.executeUpdate();
@@ -668,14 +672,14 @@ public final class PipelineRunner {
     }
 
     private void writeRow(Connection c, Ctx ctx, PipelineDefinition.Step s, Map<String, Object> rec, long chunk) throws SQLException {
-        String table = ident(s.require("table"));
+        SqlIdentifier table = ident(s.require("table"));
         Map<String, Object> columns = s.map("columns");
         List<Object> keys = s.list("keyColumns");
         if (!keys.isEmpty()) {
-            StringBuilder del = new StringBuilder("DELETE FROM ").append(table).append(" WHERE ");
+            StringBuilder del = new StringBuilder("DELETE FROM ").append(table.sql()).append(" WHERE ");
             List<Object> vals = new ArrayList<>();
             for (Object k : keys) {
-                del.append(vals.isEmpty() ? "" : " AND ").append(ident(k.toString())).append("=?");
+                del.append(vals.isEmpty() ? "" : " AND ").append(ident(String.valueOf(k)).sql()).append("=?");
                 vals.add(rec.get(String.valueOf(columns.get(k.toString()))));
             }
             try (PreparedStatement ps = c.prepareStatement(del.toString())) {
@@ -685,21 +689,19 @@ public final class PipelineRunner {
                 ps.executeUpdate();
             }
         }
-        StringBuilder cols = new StringBuilder();
-        StringBuilder marks = new StringBuilder();
+        List<SqlIdentifier> insertColumns = new ArrayList<>();
         List<Object> vals = new ArrayList<>();
         columns.forEach((col, field) -> {
-            cols.append(vals.isEmpty() ? "" : ",").append(ident(col));
-            marks.append(vals.isEmpty() ? "?" : ",?");
+            insertColumns.add(ident(col));
             vals.add(rec.get(String.valueOf(field)));
         });
         if (s.str("runIdColumn") != null) {
-            cols.append(',').append(ident(s.str("runIdColumn"))).append(',').append(ident(s.require("chunkColumn")));
-            marks.append(",?,?");
+            insertColumns.add(ident(s.str("runIdColumn")));
+            insertColumns.add(ident(s.require("chunkColumn")));
             vals.add(ctx.run.runId());
             vals.add(chunk);
         }
-        try (PreparedStatement ps = c.prepareStatement("INSERT INTO " + table + " (" + cols + ") VALUES (" + marks + ")")) {
+        try (PreparedStatement ps = c.prepareStatement(SqlIdentifier.insertSql(table, insertColumns))) {
             for (int i = 0; i < vals.size(); i++) {
                 setValue(ps, i + 1, vals.get(i));
             }
@@ -726,11 +728,9 @@ public final class PipelineRunner {
         return st != null && (st.startsWith("22") || st.startsWith("23"));
     }
 
-    private static String ident(String s) {
-        if (!IDENT.matcher(s).matches()) {
-            throw new IllegalArgumentException("invalid SQL identifier " + s);
-        }
-        return s;
+    /** A table or column name of a pipeline definition, validated ({@link SqlIdentifier#qualified}) before any SQL is built. */
+    static SqlIdentifier ident(String s) {
+        return SqlIdentifier.qualified(s);
     }
 
     // ------------------------------------------------------------------ helpers
