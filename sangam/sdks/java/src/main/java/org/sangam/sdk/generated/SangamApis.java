@@ -86,7 +86,7 @@ import org.sangam.sdk.generated.api.WorkApi;
 import org.sangam.sdk.generated.api.WorkspaceApi;
 
 /**
- * The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths,
+ * The generated typed surface of sangam-api.yaml 0.1.0: 1139 operations on 958 paths,
  * one accessor per API class (a tag, or a sub-path of a large tag: M-098 class-size gate). Obtain it with {@code SangamClient.api()}; it shares the client's transport
  * (auth, retries, Idempotency-Key, seat headers). The hand-written groups and the worker runtime are unchanged.
  */
@@ -356,7 +356,7 @@ public final class SangamApis {
     public PacksApi packs() { return packs; }
     /** {@code Plugins}: 6 operations. */
     public PluginsApi plugins() { return plugins; }
-    /** {@code Portal}: 11 operations. */
+    /** {@code Portal}: 13 operations. */
     public PortalApi portal() { return portal; }
     /** {@code Processes}: 33 operations. */
     public ProcessesApi processes() { return processes; }

@@ -13,11 +13,13 @@ import org.sangam.sdk.generated.model.FormVersion;
 import org.sangam.sdk.generated.model.Grievance;
 import org.sangam.sdk.generated.model.GrievanceReceipt;
 import org.sangam.sdk.generated.model.GrievanceRequest;
+import org.sangam.sdk.generated.model.PortalNotice;
+import org.sangam.sdk.generated.model.PortalNotification;
 import org.sangam.sdk.generated.model.PortalService;
 import org.sangam.sdk.generated.model.WithdrawRequest;
 
 /**
- * Typed operations of {@code Portal} (11 operations), generated from
+ * Typed operations of {@code Portal} (13 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -27,7 +29,9 @@ public final class PortalApi {
 
     private static final TypeReference<java.util.List<PortalService>> R_listPortalServices = new TypeReference<>() { };
     private static final TypeReference<FormVersion> R_getPortalServiceForm = new TypeReference<>() { };
+    private static final TypeReference<PortalNotice> R_getPortalServiceNotice = new TypeReference<>() { };
     private static final TypeReference<Application> R_applyForService = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<PortalNotification>> R_listMyPortalNotifications = new TypeReference<>() { };
     private static final TypeReference<Application> R_getMyApplication = new TypeReference<>() { };
     private static final TypeReference<Application> R_replyToClarification = new TypeReference<>() { };
     private static final TypeReference<Application> R_withdrawApplication = new TypeReference<>() { };
@@ -71,9 +75,26 @@ public final class PortalApi {
     }
 
     /**
+     * Consent notice of a service
+     *
+     * <p>The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
+     *
+     * <p>{@code GET /portal/services/{key}/notice} (operationId {@code getPortalServiceNotice}); permission {@code portal.use}.
+     * @param key path parameter {@code key}. service key
+     * @param lang query parameter {@code lang}, or null. language code of the jurisdiction pack (default: the tenant's)
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public PortalNotice getPortalServiceNotice(String key, String lang, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/portal/services/" + HttpTransport.seg(String.valueOf(key)) + "/notice");
+        req.query("lang", lang);
+        return call.json(req, options, R_getPortalServiceNotice);
+    }
+
+    /**
      * Apply for a service
      *
-     * <p>Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6).
+     * <p>Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6). A submission to a service that names a noticeKey records the applicant's consent (consent) on the notice's current published version in the same transaction as the application (owner decision 339): 403 CONSENT_REQUIRED without consent or without a ticked purpose, 409 NOTICE_NOT_CURRENT for another notice or a version that is not the current published one (or a consent sent to a service without a notice), 422 AGE_DECLARATION_REQUIRED when the pack sets an age of majority and none is declared, 403 GUARDIAN_CONSENT_REQUIRED for a declared child without a valid verification of the parent's verifiable consent, 403 CHILD_PROCESSING_FORBIDDEN for a purpose a child may not consent to (decision 343), 501 CAPABILITY_NOT_INSTALLED without sangam-compliance. A draft (submit=false) is kept as before and carries no consent (400 VALIDATION_FAILED).
      *
      * <p>{@code POST /portal/applications} (operationId {@code applyForService}); permission {@code portal.use}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body
@@ -102,6 +123,20 @@ public final class PortalApi {
         req.query("page", page);
         req.query("size", size);
         return call.page(req, options, Application.class, page, size);
+    }
+
+    /**
+     * My notices
+     *
+     * <p>Notices sent to the caller's portal account, newest first: a personal-data breach notice with the items the jurisdiction pack requires (IN: DPDP Rules r.7(1)(a)-(e); owner decision 347). Empty without sangam-compliance.
+     *
+     * <p>{@code GET /portal/notifications} (operationId {@code listMyPortalNotifications}); permission {@code portal.use}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<PortalNotification> listMyPortalNotifications(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/portal/notifications");
+        return call.json(req, options, R_listMyPortalNotifications);
     }
 
     /**

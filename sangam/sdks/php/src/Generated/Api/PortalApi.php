@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Portal (11 operations). */
+/** Typed operations of Portal (13 operations). */
 final class PortalApi
 {
     public function __construct(private readonly Calls $calls)
@@ -49,9 +49,25 @@ final class PortalApi
     }
 
     /**
+     * Consent notice of a service
+     *
+     * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
+     *
+     * GET /portal/services/{key}/notice (operationId getPortalServiceNotice); permission portal.use.
+     * @param string|null $lang query lang
+     * @return Model\PortalNotice|null
+     */
+    public function getPortalServiceNotice(string $key, ?string $lang = null, ?RequestOptions $options = null): ?Model\PortalNotice
+    {
+        $req = ApiRequest::get('/portal/services/' . HttpTransport::seg((string) $key) . '/notice');
+        $req->query('lang', $lang);
+        return $this->calls->model($req, $options, Model\PortalNotice::class);
+    }
+
+    /**
      * Apply for a service
      *
-     * Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6).
+     * Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6). A submission to a service that names a noticeKey records the applicant's consent (consent) on the notice's current published version in the same transaction as the application (owner decision 339): 403 CONSENT_REQUIRED without consent or without a ticked purpose, 409 NOTICE_NOT_CURRENT for another notice or a version that is not the current published one (or a consent sent to a service without a notice), 422 AGE_DECLARATION_REQUIRED when the pack sets an age of majority and none is declared, 403 GUARDIAN_CONSENT_REQUIRED for a declared child without a valid verification of the parent's verifiable consent, 403 CHILD_PROCESSING_FORBIDDEN for a purpose a child may not consent to (decision 343), 501 CAPABILITY_NOT_INSTALLED without sangam-compliance. A draft (submit=false) is kept as before and carries no consent (400 VALIDATION_FAILED).
      *
      * POST /portal/applications (operationId applyForService); permission portal.use; result stored atomically with the state change.
      * @param Model\ApplyRequest|array $body request body
@@ -82,6 +98,20 @@ final class PortalApi
         $req->query('page', $page);
         $req->query('size', $size);
         return $this->calls->page($req, $options, Model\Application::class, $page, $size);
+    }
+
+    /**
+     * My notices
+     *
+     * Notices sent to the caller's portal account, newest first: a personal-data breach notice with the items the jurisdiction pack requires (IN: DPDP Rules r.7(1)(a)-(e); owner decision 347). Empty without sangam-compliance.
+     *
+     * GET /portal/notifications (operationId listMyPortalNotifications); permission portal.use.
+     * @return list<Model\PortalNotification>
+     */
+    public function listMyPortalNotifications(?RequestOptions $options = null): array
+    {
+        $req = ApiRequest::get('/portal/notifications');
+        return $this->calls->models($req, $options, Model\PortalNotification::class);
     }
 
     /**

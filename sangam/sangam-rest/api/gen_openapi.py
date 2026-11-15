@@ -541,8 +541,10 @@ schema("CrossBoundaryMoveRequest", "Move a token across a call-activity boundary
 schema("ExternalTaskLogEntry", "Historic external-task log entry (PF-01).",
        "id externalTaskId topicName workerId state processInstanceId activityId timestamp:dt retries:int errorMessage")
 # Portal
-schema("PortalService", "Citizen service (C01). fee is a decimal string (R33).",
-       "key name nameHi description descriptionHi slaDays:int fee formKey documentsRequired:list:s")
+schema("PortalService", "Citizen service (C01). fee is a decimal string (R33). noticeKey: the consent notice of the "
+       "service; a service that names one takes the applicant's consent on its current published version with every "
+       "submission (owner decision 339).",
+       "key name nameHi description descriptionHi slaDays:int fee formKey documentsRequired:list:s noticeKey")
 schema("Clarification", "Clarification sought from the applicant (C04).", "id question askedAt:dt askedBySeat dueAt:dt reply repliedAt:dt")
 schema("PortalMessage", "Message shown to the applicant.", "at:dt text")
 schema("Application", "The applicant's own application (C03). UNKNOWN_OUTCOME is never shown as failed.",
@@ -550,7 +552,23 @@ schema("Application", "The applicant's own application (C03). UNKNOWN_OUTCOME is
        "clarifications:list:Clarification messages:list:PortalMessage outcomeDocumentId appealDeadline:dt paymentStatus",
        enums={"status": ["DRAFT", "SUBMITTED", "IN_PROGRESS", "CLARIFICATION_SOUGHT", "APPROVED", "REJECTED", "WITHDRAWN"],
               "paymentStatus": ["NOT_REQUIRED", "DUE", "PAID", "UNKNOWN_OUTCOME"]})
-schema("ApplyRequest", "New application; submit=false keeps it as a draft.", "serviceKey variables:map submit:bool", ["serviceKey"])
+schema("ApplyRequest", "New application; submit=false keeps it as a draft (a draft carries no consent). consent: required "
+       "on a submission to a service that names a noticeKey.", "serviceKey variables:map submit:bool consent:PortalConsent",
+       ["serviceKey"])
+schema("PortalConsent", "The applicant's consent on the service's published notice (owner decisions 339, 341, 343): the "
+       "notice key and the version shown, the language it was shown in, the purposes ticked one by one, the age "
+       "declaration, and for a declared child the verification of the parent's verifiable consent.",
+       "noticeKey noticeVersion:int language purposeCodes:list:s ageDeclaration guardianVerificationId",
+       ["noticeKey", "noticeVersion", "purposeCodes"], enums={"ageDeclaration": ["ADULT", "CHILD"]})
+schema("NoticePurpose", "A purpose of a consent notice, named in the notice's language.", "code name description")
+schema("PortalNotice", "The current published version of a service's consent notice: text and HTML as published, the "
+       "SHA-256 of the text, its purposes (one checkbox each, decision 341) and the jurisdiction pack's age of majority "
+       "(childAgeYears, absent when the pack sets none).",
+       "noticeKey version:int language text html contentHash purposes:list:NoticePurpose childAgeYears:int")
+schema("NoticeItem", "One item of a notice to a data principal, in pack order (IN: DPDP Rules r.7(1)(a)-(e)).",
+       "key label citation text")
+schema("PortalNotification", "A notice in the caller's portal account (kind BREACH_NOTICE: reference is the breach id; "
+       "owner decision 347).", "id kind reference at:dt subject items:list:NoticeItem", enums={"kind": ["BREACH_NOTICE"]})
 schema("WithdrawRequest", "Withdraw an application.", "reason", ["reason"])
 schema("AppealRequest", "Appeal a decision.", "grounds", ["grounds"])
 schema("Grievance", "Grievance or DPDP data-rights request.", "id reference subject status filedAt:dt dueAt:dt")
@@ -1441,9 +1459,30 @@ op("get", "/portal/services/{key}/form", "getPortalServiceForm", "Portal", "Appl
    "force merged into dataSchema on the server exactly as validation applies them (SL-166, FormPort.effective); "
    "versionHash is the form's own. 404 for a service not in the catalogue or without a form.", ["UP-22", "R47", "C02"],
    params=[pp("key", "service key")], resp=(200, "FormVersion"), perm="portal.use", errors=GET_E)
+op("get", "/portal/services/{key}/notice", "getPortalServiceNotice", "Portal", "Consent notice of a service",
+   "The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the "
+   "jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or "
+   "without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED "
+   "without sangam-compliance.", ["UP-22", "C02"],
+   params=[pp("key", "service key"), q("lang", desc="language code of the jurisdiction pack (default: the tenant's)")],
+   resp=(200, "PortalNotice"), perm="portal.use", errors=("Unauthorized", "Forbidden", "NotFound", "Unprocessable",
+                                                          "NotImplemented"))
 op("post", "/portal/applications", "applyForService", "Portal", "Apply for a service",
-   "Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6).", ["UP-22", "R41", "C02"],
-   body="ApplyRequest", resp=(201, "Application"), cmd="portal.apply", perm="portal.use", created=True)
+   "Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6). A submission to a "
+   "service that names a noticeKey records the applicant's consent (consent) on the notice's current published version "
+   "in the same transaction as the application (owner decision 339): 403 CONSENT_REQUIRED without consent or without a "
+   "ticked purpose, 409 NOTICE_NOT_CURRENT for another notice or a version that is not the current published one (or a "
+   "consent sent to a service without a notice), 422 AGE_DECLARATION_REQUIRED when the pack sets an age of majority and "
+   "none is declared, 403 GUARDIAN_CONSENT_REQUIRED for a declared child without a valid verification of the parent's "
+   "verifiable consent, 403 CHILD_PROCESSING_FORBIDDEN for a purpose a child may not consent to (decision 343), 501 "
+   "CAPABILITY_NOT_INSTALLED without sangam-compliance. A draft (submit=false) is kept as before and carries no consent "
+   "(400 VALIDATION_FAILED).", ["UP-22", "R41", "C02"],
+   body="ApplyRequest", resp=(201, "Application"), cmd="portal.apply", perm="portal.use", created=True,
+   errors=("BadRequest", "Unauthorized", "Forbidden", "NotFound", "NotImplemented"))
+op("get", "/portal/notifications", "listMyPortalNotifications", "Portal", "My notices",
+   "Notices sent to the caller's portal account, newest first: a personal-data breach notice with the items the "
+   "jurisdiction pack requires (IN: DPDP Rules r.7(1)(a)-(e); owner decision 347). Empty without sangam-compliance.",
+   ["UP-22"], resp=(200, "array:PortalNotification"), perm="portal.use", errors=WS_E)
 op("get", "/portal/applications", "listMyApplications", "Portal", "My applications", "Only the applicant's own applications (C03).",
    ["UP-22"], list_=True, resp=(200, "array:Application"), perm="portal.use", errors=WS_E)
 op("get", "/portal/applications/{id}", "getMyApplication", "Portal", "Application status",

@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// New application; submit=false keeps it as a draft.
+/// New application; submit=false keeps it as a draft (a draft carries no consent). consent: required on a submission to a service that names a noticeKey.
 /// Schema ApplyRequest.
 /// </summary>
 public sealed record ApplyRequest
@@ -20,4 +20,7 @@ public sealed record ApplyRequest
 
     [global::System.Text.Json.Serialization.JsonPropertyName("submit")]
     public bool? Submit { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("consent")]
+    public PortalConsent? Consent { get; init; }
 }

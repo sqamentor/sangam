@@ -8174,7 +8174,7 @@ export class PluginsApi {
   }
 }
 
-/** Typed operations of `Portal` (11 operations). */
+/** Typed operations of `Portal` (13 operations). */
 export class PortalApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -8203,9 +8203,21 @@ export class PortalApi {
   }
 
   /**
+   * Consent notice of a service
+   *
+   * The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
+   *
+   * `GET /portal/services/{key}/notice` (operationId `getPortalServiceNotice`); permission `portal.use`.
+   */
+  async getPortalServiceNotice(key: string, params?: { lang?: string /* language code of the jurisdiction pack (default: the tenant's) */ }, options?: RequestOptions): Promise<M.PortalNotice> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/services/${seg(String(key))}/notice`, query: { lang: params?.lang } };
+    return this.calls.json<M.PortalNotice>(req, options);
+  }
+
+  /**
    * Apply for a service
    *
-   * Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6).
+   * Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6). A submission to a service that names a noticeKey records the applicant's consent (consent) on the notice's current published version in the same transaction as the application (owner decision 339): 403 CONSENT_REQUIRED without consent or without a ticked purpose, 409 NOTICE_NOT_CURRENT for another notice or a version that is not the current published one (or a consent sent to a service without a notice), 422 AGE_DECLARATION_REQUIRED when the pack sets an age of majority and none is declared, 403 GUARDIAN_CONSENT_REQUIRED for a declared child without a valid verification of the parent's verifiable consent, 403 CHILD_PROCESSING_FORBIDDEN for a purpose a child may not consent to (decision 343), 501 CAPABILITY_NOT_INSTALLED without sangam-compliance. A draft (submit=false) is kept as before and carries no consent (400 VALIDATION_FAILED).
    *
    * `POST /portal/applications` (operationId `applyForService`); permission `portal.use`; result stored atomically with the state change.
    */
@@ -8225,6 +8237,18 @@ export class PortalApi {
   async listMyApplications(params?: { page?: number /* 0-based page index */; size?: number /* Page size */ }, options?: RequestOptions): Promise<Page<M.Application>> {
     const req: ApiRequest = { method: 'GET', path: `/portal/applications`, query: { page: params?.page, size: params?.size } };
     return this.calls.page<M.Application>(req, options, params?.page, params?.size);
+  }
+
+  /**
+   * My notices
+   *
+   * Notices sent to the caller's portal account, newest first: a personal-data breach notice with the items the jurisdiction pack requires (IN: DPDP Rules r.7(1)(a)-(e); owner decision 347). Empty without sangam-compliance.
+   *
+   * `GET /portal/notifications` (operationId `listMyPortalNotifications`); permission `portal.use`.
+   */
+  async listMyPortalNotifications(options?: RequestOptions): Promise<Array<M.PortalNotification>> {
+    const req: ApiRequest = { method: 'GET', path: `/portal/notifications` };
+    return this.calls.json<Array<M.PortalNotification>>(req, options);
   }
 
   /**
@@ -14696,7 +14720,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1139 operations on 958 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

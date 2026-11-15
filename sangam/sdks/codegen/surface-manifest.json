@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 956,
- "operations": 1137,
- "schemas": 859,
+ "paths": 958,
+ "operations": 1139,
+ "schemas": 864,
  "tags": [
   "AI",
   "Admin",
@@ -414,8 +414,8 @@
    "class": "PortalApi",
    "tag": "Portal",
    "pathPrefix": "",
-   "operations": 11,
-   "maxLines": 218
+   "operations": 13,
+   "maxLines": 253
   },
   {
    "class": "ProcessesApi",
@@ -1102,6 +1102,8 @@
   "ModuleDefaultsResult",
   "NodeStatus",
   "NoteRequest",
+  "NoticeItem",
+  "NoticePurpose",
   "Notification",
   "NotificationFailure",
   "NumberGrouping",
@@ -1214,7 +1216,10 @@
   "Policy",
   "PolicyMatch",
   "PolicyVersion",
+  "PortalConsent",
   "PortalMessage",
+  "PortalNotice",
+  "PortalNotification",
   "PortalService",
   "PowerLimitCap",
   "PowerLimitDecision",
@@ -3788,6 +3793,18 @@
    "php": "PortalApi#getPortalServiceForm"
   },
   {
+   "operationId": "getPortalServiceNotice",
+   "method": "GET",
+   "path": "/portal/services/{key}/notice",
+   "tag": "Portal",
+   "apiClass": "PortalApi",
+   "java": "PortalApi#getPortalServiceNotice",
+   "typescript": "portal.getPortalServiceNotice",
+   "python": "portal.get_portal_service_notice",
+   "dotnet": "PortalApi#GetPortalServiceNoticeAsync",
+   "php": "PortalApi#getPortalServiceNotice"
+  },
+  {
    "operationId": "applyForService",
    "method": "POST",
    "path": "/portal/applications",
@@ -3810,6 +3827,18 @@
    "python": "portal.list_my_applications",
    "dotnet": "PortalApi#ListMyApplicationsAsync",
    "php": "PortalApi#listMyApplications"
+  },
+  {
+   "operationId": "listMyPortalNotifications",
+   "method": "GET",
+   "path": "/portal/notifications",
+   "tag": "Portal",
+   "apiClass": "PortalApi",
+   "java": "PortalApi#listMyPortalNotifications",
+   "typescript": "portal.listMyPortalNotifications",
+   "python": "portal.list_my_portal_notifications",
+   "dotnet": "PortalApi#ListMyPortalNotificationsAsync",
+   "php": "PortalApi#listMyPortalNotifications"
   },
   {
    "operationId": "getMyApplication",

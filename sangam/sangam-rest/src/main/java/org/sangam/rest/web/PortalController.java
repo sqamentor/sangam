@@ -8,9 +8,11 @@ import java.util.List;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.FormPort;
 import org.sangam.rest.port.PermissionPort;
+import org.sangam.rest.port.PortalCompliancePort;
 import org.sangam.rest.port.PortalPort;
 import org.sangam.rest.port.RequestContext;
 import org.sangam.rest.support.Permissions;
+import org.sangam.rest.support.TxSupport;
 import org.sangam.rest.support.TypedVariables;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
@@ -38,11 +40,56 @@ public class PortalController {
     private final PortalPort portal;
     private final PermissionPort permissions;
     private final ObjectProvider<FormPort> forms;
+    private final ObjectProvider<PortalCompliancePort> compliance;
+    private final TxSupport tx;
 
-    public PortalController(PortalPort portal, PermissionPort permissions, ObjectProvider<FormPort> forms) {
+    /**
+     * @param compliance the data-protection module's portal view (absent when sangam-compliance is not installed)
+     * @param tx         the consent and the application commit or roll back together (owner decision 339)
+     */
+    public PortalController(PortalPort portal, PermissionPort permissions, ObjectProvider<FormPort> forms,
+                            ObjectProvider<PortalCompliancePort> compliance, TxSupport tx) {
         this.portal = portal;
         this.permissions = permissions;
         this.forms = forms;
+        this.compliance = compliance;
+        this.tx = tx;
+    }
+
+    private PortalPort.PortalService requireService(RequestContext ctx, String key) {
+        return portal.services(ctx).stream().filter(s -> s.key().equals(key)).findFirst()
+                .orElseThrow(() -> ApiProblem.notFound("Portal service", key));
+    }
+
+    private PortalCompliancePort requireCompliance() {
+        PortalCompliancePort c = compliance.getIfAvailable();
+        if (c == null) {
+            throw ApiProblem.notInstalled("data protection (consent notices)", "sangam-compliance");
+        }
+        return c;
+    }
+
+    /**
+     * Owner decisions 339, 341, 343: the current published version of the service's consent notice, with one entry per
+     * purpose and the jurisdiction pack's age of majority, for the application form to show before submission.
+     */
+    @GetMapping("/services/{key}/notice")
+    public PortalCompliancePort.PortalNotice serviceNotice(RequestContext ctx, @PathVariable String key,
+                                                           @RequestParam(required = false) String lang) {
+        permissions.require(ctx, Permissions.PORTAL_USE);
+        PortalPort.PortalService service = requireService(ctx, key);
+        if (service.noticeKey() == null) {
+            throw ApiProblem.notFound("Portal service notice", key);
+        }
+        return requireCompliance().notice(ctx, service.noticeKey(), lang);
+    }
+
+    /** Owner decision 347: the notices sent to the caller's portal account (breach notices), newest first. */
+    @GetMapping("/notifications")
+    public ResponseEntity<List<PortalCompliancePort.PortalNotification>> notifications(RequestContext ctx) {
+        permissions.require(ctx, Permissions.PORTAL_USE);
+        PortalCompliancePort c = compliance.getIfAvailable();
+        return Lists.ok(c == null ? List.of() : c.notifications(ctx));
     }
 
     @GetMapping("/services")
@@ -59,8 +106,7 @@ public class PortalController {
     @GetMapping("/services/{key}/form")
     public FormPort.FormVersion serviceForm(RequestContext ctx, @PathVariable String key) {
         permissions.require(ctx, Permissions.PORTAL_USE);
-        PortalPort.PortalService service = portal.services(ctx).stream().filter(s -> s.key().equals(key)).findFirst()
-                .orElseThrow(() -> ApiProblem.notFound("Portal service", key));
+        PortalPort.PortalService service = requireService(ctx, key);
         if (service.formKey() == null || service.formKey().isBlank()) {
             throw ApiProblem.notFound("Portal service form", key);
         }
@@ -71,14 +117,35 @@ public class PortalController {
         return f.effective(ctx, service.formKey());
     }
 
+    /**
+     * A draft ({@code submit=false}) is kept as before and carries no consent. A submission to a service that names a
+     * consent notice records the applicant's consent on the notice's current published version in the same transaction
+     * as the application (owner decision 339): a refused consent starts nothing, and a failed start keeps no consent.
+     */
     @PostMapping("/applications")
     public ResponseEntity<PortalPort.Application> apply(RequestContext ctx, @RequestBody PortalPort.ApplyRequest body) {
         permissions.require(ctx, Permissions.PORTAL_USE);
         if (body.serviceKey() == null || body.serviceKey().isBlank()) {
             throw ApiProblem.badRequest("VALIDATION_FAILED", "serviceKey is required");
         }
-        PortalPort.Application a = portal.apply(ctx, new PortalPort.ApplyRequest(body.serviceKey(),
-                TypedVariables.fromJson(body.variables()), body.submit()));
+        if (!body.submit() && body.consent() != null) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "a draft carries no consent; consent is given on submission");
+        }
+        PortalPort.ApplyRequest request = new PortalPort.ApplyRequest(body.serviceKey(),
+                TypedVariables.fromJson(body.variables()), body.submit(), null);
+        PortalPort.Application a;
+        String noticeKey = body.submit() ? requireService(ctx, body.serviceKey()).noticeKey() : null;
+        if (noticeKey == null) {
+            if (body.consent() != null) {
+                throw ApiProblem.conflict("NOTICE_NOT_CURRENT", "service " + body.serviceKey()
+                        + " takes no consent through the portal: it names no consent notice");
+            }
+            a = portal.apply(ctx, request);
+        } else {
+            PortalCompliancePort c = requireCompliance();
+            a = tx.inTx(() -> portal.apply(ctx, request,
+                    c.recordConsent(ctx, body.serviceKey(), noticeKey, body.consent())));
+        }
         Telemetry.businessKey(a.reference());
         return Lists.created("/api/v1/portal/applications/" + a.id(), a.id(), a);
     }

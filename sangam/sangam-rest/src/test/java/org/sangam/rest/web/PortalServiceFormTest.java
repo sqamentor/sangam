@@ -39,8 +39,10 @@ class PortalServiceFormTest {
             (proxy, method, args) -> {
                 if (method.getName().equals("services")) {
                     return List.of(
-                            new PortalPort.PortalService("birth", "Birth certificate", null, null, null, 7, null, "birth-cert", List.of()),
-                            new PortalPort.PortalService("info", "Information only", null, null, null, null, null, null, List.of()));
+                            new PortalPort.PortalService("birth", "Birth certificate", null, null, null, 7, null, "birth-cert", List.of(),
+                                    null),
+                            new PortalPort.PortalService("info", "Information only", null, null, null, null, null, null, List.of(),
+                                    null));
                 }
                 throw new UnsupportedOperationException(method.getName());
             });
@@ -74,8 +76,9 @@ class PortalServiceFormTest {
     }
 
     PortalController controller(boolean portalUse) {
-        return new PortalController(portal, permissions(portalUse),
-                new StaticListableBeanFactory(Map.of("forms", forms)).getBeanProvider(FormPort.class));
+        StaticListableBeanFactory beans = new StaticListableBeanFactory(Map.of("forms", forms));
+        return new PortalController(portal, permissions(portalUse), beans.getBeanProvider(FormPort.class),
+                beans.getBeanProvider(org.sangam.rest.port.PortalCompliancePort.class), null);
     }
 
     @Test

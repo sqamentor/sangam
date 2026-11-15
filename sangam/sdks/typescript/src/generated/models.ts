@@ -674,7 +674,7 @@ export interface Application {
 }
 
 /**
- * New application; submit=false keeps it as a draft.
+ * New application; submit=false keeps it as a draft (a draft carries no consent). consent: required on a submission to a service that names a noticeKey.
  *
  * Schema `ApplyRequest`.
  */
@@ -682,6 +682,7 @@ export interface ApplyRequest {
   serviceKey: string;
   variables?: Record<string, unknown>;
   submit?: boolean;
+  consent?: PortalConsent;
 }
 
 /**
@@ -7028,6 +7029,29 @@ export interface NoteRequest {
 }
 
 /**
+ * One item of a notice to a data principal, in pack order (IN: DPDP Rules r.7(1)(a)-(e)).
+ *
+ * Schema `NoticeItem`.
+ */
+export interface NoticeItem {
+  key?: string;
+  label?: string;
+  citation?: string;
+  text?: string;
+}
+
+/**
+ * A purpose of a consent notice, named in the notice's language.
+ *
+ * Schema `NoticePurpose`.
+ */
+export interface NoticePurpose {
+  code?: string;
+  name?: string;
+  description?: string;
+}
+
+/**
  * In-app notification (R60).
  *
  * Schema `Notification`.
@@ -8626,6 +8650,21 @@ export interface PolicyVersion {
 }
 
 /**
+ * The applicant's consent on the service's published notice (owner decisions 339, 341, 343): the notice key and the version shown, the language it was shown in, the purposes ticked one by one, the age declaration, and for a declared child the verification of the parent's verifiable consent.
+ *
+ * Schema `PortalConsent`.
+ */
+export interface PortalConsent {
+  noticeKey: string;
+  noticeVersion: number;
+  language?: string;
+  purposeCodes: Array<string>;
+  /**  One of: ADULT, CHILD. */
+  ageDeclaration?: 'ADULT' | 'CHILD';
+  guardianVerificationId?: string;
+}
+
+/**
  * Message shown to the applicant.
  *
  * Schema `PortalMessage`.
@@ -8636,7 +8675,38 @@ export interface PortalMessage {
 }
 
 /**
- * Citizen service (C01). fee is a decimal string (R33).
+ * The current published version of a service's consent notice: text and HTML as published, the SHA-256 of the text, its purposes (one checkbox each, decision 341) and the jurisdiction pack's age of majority (childAgeYears, absent when the pack sets none).
+ *
+ * Schema `PortalNotice`.
+ */
+export interface PortalNotice {
+  noticeKey?: string;
+  version?: number;
+  language?: string;
+  text?: string;
+  html?: string;
+  contentHash?: string;
+  purposes?: Array<NoticePurpose>;
+  childAgeYears?: number;
+}
+
+/**
+ * A notice in the caller's portal account (kind BREACH_NOTICE: reference is the breach id; owner decision 347).
+ *
+ * Schema `PortalNotification`.
+ */
+export interface PortalNotification {
+  id?: string;
+  /**  One of: BREACH_NOTICE. */
+  kind?: 'BREACH_NOTICE';
+  reference?: string;
+  at?: string;
+  subject?: string;
+  items?: Array<NoticeItem>;
+}
+
+/**
+ * Citizen service (C01). fee is a decimal string (R33). noticeKey: the consent notice of the service; a service that names one takes the applicant's consent on its current published version with every submission (owner decision 339).
  *
  * Schema `PortalService`.
  */
@@ -8650,6 +8720,7 @@ export interface PortalService {
   fee?: string;
   formKey?: string;
   documentsRequired?: Array<string>;
+  noticeKey?: string;
 }
 
 /**
