@@ -82,6 +82,8 @@ public class QuarkusHost {
         QuarkusConfigSource config = supplied.config() != null ? supplied.config()
                 : new QuarkusConfigSource(SangamProperties.empty(), List.of(), List.of());
         this.properties = config.properties();
+        // decision 317: no broker inbox on this host before phase 5; a switched-on one refuses the start by name
+        BrokerInboxRefusal.refuseIfEnabled(properties);
         this.engineSettings = QuarkusEngineSettings.from(properties, config.names(), config.profiles());
         this.transactions = new JtaTransactions(transactionManager, dataSource);
         HostSeams.Builder b = HostSeams.builder(HOST_NAME)
