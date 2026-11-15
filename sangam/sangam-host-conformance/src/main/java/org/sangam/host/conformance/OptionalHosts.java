@@ -55,8 +55,10 @@ public final class OptionalHosts {
     public static Path reactorRoot(Path from) throws IOException {
         for (Path p = from.toAbsolutePath().normalize(); p != null; p = p.getParent()) {
             Path pom = p.resolve("pom.xml");
-            if (Files.isRegularFile(pom)
-                    && Files.readString(pom, StandardCharsets.UTF_8).contains("<artifactId>sangam-parent</artifactId>")) {
+            // the pom that IS sangam-parent: every module names it too, inside its <parent> element
+            if (Files.isRegularFile(pom) && Files.readString(pom, StandardCharsets.UTF_8)
+                    .replaceAll("(?s)<!--.*?-->", "").replaceAll("(?s)<parent>.*?</parent>", "")
+                    .contains("<artifactId>sangam-parent</artifactId>")) {
                 return p;
             }
         }
