@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 965,
- "operations": 1147,
- "schemas": 876,
+ "paths": 966,
+ "operations": 1148,
+ "schemas": 878,
  "tags": [
   "AI",
   "Admin",
@@ -344,8 +344,8 @@
    "class": "ModellerApi",
    "tag": "Modeller",
    "pathPrefix": "",
-   "operations": 28,
-   "maxLines": 520
+   "operations": 29,
+   "maxLines": 542
   },
   {
    "class": "OnboardingApi",
@@ -736,6 +736,8 @@
   "CaseInstanceCommand",
   "CaseVersion",
   "CatalogueEntry",
+  "CatalogueExtensionEntry",
+  "CatalogueInstallRequest",
   "CellActivateRequest",
   "CellDrainStatus",
   "CellExportHandle",
@@ -7837,6 +7839,30 @@
    "php": "CaseFiles3Api#caseReferenceClose"
   },
   {
+   "operationId": "getExtensionCatalogue",
+   "method": "GET",
+   "path": "/catalogue",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getExtensionCatalogue",
+   "typescript": "modeller.getExtensionCatalogue",
+   "python": "modeller.get_extension_catalogue",
+   "dotnet": "ModellerApi#GetExtensionCatalogueAsync",
+   "php": "ModellerApi#getExtensionCatalogue"
+  },
+  {
+   "operationId": "installCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/{id}/{version}/install",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#installCatalogueEntry",
+   "typescript": "modeller.installCatalogueEntry",
+   "python": "modeller.install_catalogue_entry",
+   "dotnet": "ModellerApi#InstallCatalogueEntryAsync",
+   "php": "ModellerApi#installCatalogueEntry"
+  },
+  {
    "operationId": "createConversation",
    "method": "POST",
    "path": "/channels/conversations",
@@ -10019,18 +10045,6 @@
    "python": "modeller.verify_package_test_bundle",
    "dotnet": "ModellerApi#VerifyPackageTestBundleAsync",
    "php": "ModellerApi#verifyPackageTestBundle"
-  },
-  {
-   "operationId": "getExtensionCatalogue",
-   "method": "GET",
-   "path": "/catalogue",
-   "tag": "Modeller",
-   "apiClass": "ModellerApi",
-   "java": "ModellerApi#getExtensionCatalogue",
-   "typescript": "modeller.getExtensionCatalogue",
-   "python": "modeller.get_extension_catalogue",
-   "dotnet": "ModellerApi#GetExtensionCatalogueAsync",
-   "php": "ModellerApi#getExtensionCatalogue"
   },
   {
    "operationId": "getElementTemplate",

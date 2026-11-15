@@ -110,8 +110,7 @@ op("post", "/packages/{id}/tests/export", "exportPackageTests", "Modeller", "Exp
    params=[pp("id")], body="TestBundleExport", resp=(200, "object"), cmd="modeller.tests.export", perm="package.author")
 op("post", "/packages/tests/verify-bundle", "verifyPackageTestBundle", "Modeller", "Verify a test bundle", "Rejects a changed bundle.", MR,
    body="TestBundleVerify", resp=(200, "object"), cmd="modeller.tests.verify", perm="package.read")
-op("get", "/catalogue", "getExtensionCatalogue", "Modeller", "Extension catalogue", "Signed index read from a mirrored local file.", MR,
-   resp=(200, "array:VariableMap"), perm="package.read")
+# the extension catalogue routes are in catalogue.py (M-128, decision 380)
 
 _MB = {"required": True, "content": {"application/json": {"schema": typ('obj')}}}
 _MU = {"required": False, "content": {"application/json": {"schema": typ('obj')}}}

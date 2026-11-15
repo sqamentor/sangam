@@ -8,6 +8,8 @@ import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.ActionModelInvoke;
 import org.sangam.sdk.generated.model.ActionModelPublish;
+import org.sangam.sdk.generated.model.CatalogueExtensionEntry;
+import org.sangam.sdk.generated.model.CatalogueInstallRequest;
 import org.sangam.sdk.generated.model.ElementTemplateApply;
 import org.sangam.sdk.generated.model.ElementTemplatePublish;
 import org.sangam.sdk.generated.model.ModelDiffReport;
@@ -20,13 +22,14 @@ import org.sangam.sdk.generated.model.ModelTakeoverRequest;
 import org.sangam.sdk.generated.model.ModelTokenWalkRequest;
 import org.sangam.sdk.generated.model.ModellerFenceRequest;
 import org.sangam.sdk.generated.model.ModellerRunActionRequest;
+import org.sangam.sdk.generated.model.Package;
 import org.sangam.sdk.generated.model.ServiceMocksCreateMock;
 import org.sangam.sdk.generated.model.ServiceMocksToggle;
 import org.sangam.sdk.generated.model.TestBundleExport;
 import org.sangam.sdk.generated.model.TestBundleVerify;
 
 /**
- * Typed operations of {@code Modeller} (28 operations), generated from
+ * Typed operations of {@code Modeller} (29 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -34,6 +37,8 @@ import org.sangam.sdk.generated.model.TestBundleVerify;
 @SuppressWarnings("unused")
 public final class ModellerApi {
 
+    private static final TypeReference<java.util.List<CatalogueExtensionEntry>> R_getExtensionCatalogue = new TypeReference<>() { };
+    private static final TypeReference<Package> R_installCatalogueEntry = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_getProcessLandscape = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_walkModelToken = new TypeReference<>() { };
     private static final TypeReference<ModelDiffReport> R_diffModels = new TypeReference<>() { };
@@ -49,7 +54,6 @@ public final class ModellerApi {
     private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_listPackageTestReports = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_exportPackageTests = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_verifyPackageTestBundle = new TypeReference<>() { };
-    private static final TypeReference<java.util.List<java.util.Map<String, Object>>> R_getExtensionCatalogue = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_getElementTemplate = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_acquireModelLeaseUi = new TypeReference<>() { };
     private static final TypeReference<java.util.Map<String, Object>> R_runActionModel = new TypeReference<>() { };
@@ -62,6 +66,38 @@ public final class ModellerApi {
 
     public ModellerApi(HttpTransport http) {
         this.call = new GeneratedCalls(http);
+    }
+
+    /**
+     * Extension catalogue
+     *
+     * <p>The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form) or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID, CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+     *
+     * <p>{@code GET /catalogue} (operationId {@code getExtensionCatalogue}); permission {@code package.read}.
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<CatalogueExtensionEntry> getExtensionCatalogue(RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/catalogue");
+        return call.json(req, options, R_getExtensionCatalogue);
+    }
+
+    /**
+     * Install a catalogue entry
+     *
+     * <p>Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
+     *
+     * <p>{@code POST /catalogue/{id}/{version}/install} (operationId {@code installCatalogueEntry}); permission {@code package.deploy}; result stored atomically with the state change (x-sangam-idempotent).
+     * @param id path parameter {@code id}. catalogue entry id
+     * @param version path parameter {@code version}. catalogue entry version
+     * @param body request body, or null
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 201 response
+     */
+    public Package installCatalogueEntry(String id, String version, CatalogueInstallRequest body, RequestOptions options) {
+        ApiRequest req = ApiRequest.post("/catalogue/" + HttpTransport.seg(String.valueOf(id)) + "/" + HttpTransport.seg(String.valueOf(version)) + "/install");
+        req.body(body);
+        return call.json(req, options, R_installCatalogueEntry);
     }
 
     /**
@@ -368,20 +404,6 @@ public final class ModellerApi {
         ApiRequest req = ApiRequest.post("/packages/tests/verify-bundle");
         req.body(body);
         return call.json(req, options, R_verifyPackageTestBundle);
-    }
-
-    /**
-     * Extension catalogue
-     *
-     * <p>Signed index read from a mirrored local file.
-     *
-     * <p>{@code GET /catalogue} (operationId {@code getExtensionCatalogue}); permission {@code package.read}.
-     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
-     * @return the 200 response
-     */
-    public java.util.List<java.util.Map<String, Object>> getExtensionCatalogue(RequestOptions options) {
-        ApiRequest req = ApiRequest.get("/catalogue");
-        return call.json(req, options, R_getExtensionCatalogue);
     }
 
     /**

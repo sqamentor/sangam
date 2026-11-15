@@ -52,7 +52,7 @@ class ModellerControllerDiffTest {
     }
 
     static ModellerController controller(Grants g) {
-        return new ModellerController(null, g, null, null, null, null, null);
+        return new ModellerController(null, g, null, null, null, null);
     }
 
     static final String V1 = "<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" id=\"d\" targetNamespace=\"t\">"

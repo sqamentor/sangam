@@ -7,13 +7,36 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Modeller (28 operations).
+/// Typed operations of Modeller (29 operations).
 /// </summary>
 public sealed class ModellerApi
 {
     private readonly GeneratedCalls _calls;
 
     public ModellerApi(GeneratedCalls calls) => _calls = calls;
+
+    /// <summary>
+    /// Extension catalogue
+    /// The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form) or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID, CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+    /// GET /catalogue (operationId getExtensionCatalogue); permission package.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.CatalogueExtensionEntry>?> GetExtensionCatalogueAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/catalogue");
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.CatalogueExtensionEntry>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Install a catalogue entry
+    /// Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
+    /// POST /catalogue/{id}/{version}/install (operationId installCatalogueEntry); permission package.deploy; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.Package?> InstallCatalogueEntryAsync(string id, string version, M.CatalogueInstallRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/catalogue/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/install");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.Package?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Process landscape
@@ -238,17 +261,6 @@ public sealed class ModellerApi
         var req = ApiRequest.Post($"/packages/tests/verify-bundle");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.Dictionary<string, object?>?>(req, options, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Extension catalogue
-    /// Signed index read from a mirrored local file.
-    /// GET /catalogue (operationId getExtensionCatalogue); permission package.read.
-    /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?> GetExtensionCatalogueAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
-    {
-        var req = ApiRequest.Get($"/catalogue");
-        return await _calls.JsonAsync<global::System.Collections.Generic.List<global::System.Collections.Generic.Dictionary<string, object?>>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

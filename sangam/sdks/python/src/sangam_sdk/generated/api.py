@@ -5800,10 +5800,31 @@ class MeApi:
         return cast("M.Assignment", self._c.json(req, options))
 
 class ModellerApi:
-    """``Modeller`` (28 operations)."""
+    """``Modeller`` (29 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
+
+    def get_extension_catalogue(self, *, options: Optional[RequestOptions] = None) -> list[M.CatalogueExtensionEntry]:
+        """Extension catalogue
+
+        The entries of the platform-wide signed index, from the mirrored files (sangam.modeller.catalogue.index, the air-gapped form) or the hosted https URL (sangam.modeller.catalogue.url) fetched through the catalogue's egress allow-list (owner decision 380). The index signature must verify with one of the trusted keys (secret references). 404 when no catalogue is configured; 422 CATALOGUE_SIGNATURE_INVALID, CATALOGUE_FORMAT_INVALID or CATALOGUE_EGRESS_DENIED (no allow-list entry); 503 CATALOGUE_UNREACHABLE.
+
+        ``GET /catalogue`` (operationId ``getExtensionCatalogue``); permission ``package.read``.
+        """
+        req = ApiRequest("GET", f"/catalogue")
+        return cast("list[M.CatalogueExtensionEntry]", self._c.json(req, options))
+
+    def install_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueInstallRequest] = None, *, options: Optional[RequestOptions] = None) -> M.Package:
+        """Install a catalogue entry
+
+        Installs a kind package entry into the caller's tenant: the catalogue checks first (index signature, licence allow-list, platform version, artefact SHA-256), then the package import (T70: the bundle's own hash and signatures; the package lands APPROVED, activation still needs a deployer and the ENV_BINDING values). 404 CATALOGUE_ENTRY_NOT_FOUND; 422 CATALOGUE_KIND_NOT_INSTALLABLE (code kinds are never installed), CATALOGUE_CHECK_FAILED, CATALOGUE_ARTIFACT_INVALID, CATALOGUE_ARTIFACT_PATH_INVALID, CATALOGUE_EGRESS_DENIED, or a package import refusal (PACKAGE_HASH_MISMATCH, signatures); 409 PACKAGE_EXISTS.
+
+        ``POST /catalogue/{id}/{version}/install`` (operationId ``installCatalogueEntry``); permission ``package.deploy``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/{seg(str(id))}/{seg(str(version))}/install")
+        req.body = body
+        return cast("M.Package", self._c.json(req, options))
 
     def get_process_landscape(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Process landscape
@@ -6005,16 +6026,6 @@ class ModellerApi:
         req = ApiRequest("POST", f"/packages/tests/verify-bundle")
         req.body = body
         return cast("dict[str, Any]", self._c.json(req, options))
-
-    def get_extension_catalogue(self, *, options: Optional[RequestOptions] = None) -> list[dict[str, Any]]:
-        """Extension catalogue
-
-        Signed index read from a mirrored local file.
-
-        ``GET /catalogue`` (operationId ``getExtensionCatalogue``); permission ``package.read``.
-        """
-        req = ApiRequest("GET", f"/catalogue")
-        return cast("list[dict[str, Any]]", self._c.json(req, options))
 
     def get_element_template(self, key: str, *, version: Optional[int] = None, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Get a template
@@ -12664,7 +12675,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1147 operations on 965 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

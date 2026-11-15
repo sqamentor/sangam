@@ -1653,6 +1653,35 @@ export interface CatalogueEntry {
 }
 
 /**
+ * One entry of the signed platform-wide extension catalogue index.
+ *
+ * Schema `CatalogueExtensionEntry`.
+ */
+export interface CatalogueExtensionEntry {
+  id: string;
+  version: string;
+  /** package is installable (a signed package bundle); every other kind is code and is listed only */
+  kind: string;
+  publisher: string;
+  licence: string;
+  /** Hex SHA-256 of the artefact bytes */
+  sha256: string;
+  /** The oldest Sangam version the entry runs on */
+  minPlatform: string;
+  /** The artefact, relative to the index (a file of the mirror, or a URL of the hosted catalogue) */
+  artifactPath: string;
+}
+
+/**
+ * Why the catalogue entry is installed; kept in the PACKAGE_IMPORTED audit note.
+ *
+ * Schema `CatalogueInstallRequest`.
+ */
+export interface CatalogueInstallRequest {
+  reason?: string;
+}
+
+/**
  * Opens the imported tenant; `sourceAuditHead` must equal the imported chain heads.
  *
  * Schema `CellActivateRequest`.

@@ -11,22 +11,40 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 /**
- * Signed catalogue index of packs and connectors: manifest, licence, publisher, checksum, compatibility. It is a file an operator mirrors:
- * this class reads bytes and makes no network call, so air-gapped sites work the same way. An entry passes only with a valid Ed25519
- * signature over the index, an allowed licence and a matching artefact checksum. No hosted catalogue service or publisher workflow exists.
+ * Signed catalogue index of packs and connectors: manifest, licence, publisher, checksum, compatibility. The index is
+ * read from a {@link CatalogueSource}: a mirrored file (air-gapped sites) or a hosted HTTPS URL (owner decision 380).
+ * An entry passes only with a valid Ed25519 signature over the index by one of the trusted keys, an allowed licence
+ * and a matching artefact checksum.
  */
 public final class ExtensionCatalogue {
+
+    /** The one kind an install accepts (decision 380 P2 (a)): a signed package bundle. Code kinds are refused. */
+    public static final String KIND_PACKAGE = "package";
 
     public record Entry(String id, String version, String kind, String publisher, String licence, String sha256, String minPlatform, String artifactPath) {
     }
 
+    /** A refusal with a stable code ({@link #code()}); the message is the code, then the detail. */
     public static final class CatalogueException extends RuntimeException {
-        public CatalogueException(String m) {
-            super(m);
+        private final String code;
+
+        public CatalogueException(String code) {
+            super(code);
+            this.code = code;
+        }
+
+        public CatalogueException(String code, String detail) {
+            super(code + ": " + detail);
+            this.code = code;
+        }
+
+        public String code() {
+            return code;
         }
     }
 
@@ -35,17 +53,20 @@ public final class ExtensionCatalogue {
 
     /** Verifies the detached signature, then parses. {@code signatureBase64} covers the exact index bytes. */
     public static List<Entry> read(byte[] index, String signatureBase64, PublicKey trustedKey) {
-        try {
-            Signature s = Signature.getInstance("Ed25519");
-            s.initVerify(trustedKey);
-            s.update(index);
-            if (!s.verify(Base64.getDecoder().decode(signatureBase64))) {
-                throw new CatalogueException("CATALOGUE_SIGNATURE_INVALID");
-            }
-        } catch (GeneralSecurityException | IllegalArgumentException e) {
+        return read(index, signatureBase64, List.of(trustedKey));
+    }
+
+    /** As {@link #read(byte[], String, PublicKey)}; the signature must verify with one of {@code trustedKeys}. */
+    public static List<Entry> read(byte[] index, String signatureBase64, Collection<PublicKey> trustedKeys) {
+        if (!signedByOneOf(index, signatureBase64, trustedKeys)) {
             throw new CatalogueException("CATALOGUE_SIGNATURE_INVALID");
         }
-        JsonNode root = Json.tree(index);
+        JsonNode root;
+        try {
+            root = Json.tree(index);
+        } catch (RuntimeException e) {
+            throw new CatalogueException("CATALOGUE_FORMAT_INVALID");
+        }
         if (root == null || !root.path("entries").isArray()) {
             throw new CatalogueException("CATALOGUE_FORMAT_INVALID");
         }
@@ -55,6 +76,28 @@ public final class ExtensionCatalogue {
                     e.path("minPlatform").asText("0"), e.path("artifact").asText()));
         }
         return out;
+    }
+
+    private static boolean signedByOneOf(byte[] index, String signatureBase64, Collection<PublicKey> keys) {
+        byte[] sig;
+        try {
+            sig = Base64.getDecoder().decode(signatureBase64 == null ? "" : signatureBase64.strip());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        for (PublicKey k : keys) {
+            try {
+                Signature s = Signature.getInstance("Ed25519");
+                s.initVerify(k);
+                s.update(index);
+                if (s.verify(sig)) {
+                    return true;
+                }
+            } catch (GeneralSecurityException | IllegalArgumentException e) {
+                // not this key
+            }
+        }
+        return false;
     }
 
     /** Checks before installing: licence allow-list, platform version, artefact checksum. Returns the reasons to refuse; empty means pass. */
