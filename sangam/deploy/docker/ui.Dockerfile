@@ -56,9 +56,12 @@ COPY --chown=101:0 deploy/docker/ui/teams-headers.inc.template /etc/nginx/templa
 COPY --chmod=0555 deploy/docker/ui/16-sangam-teams.envsh /docker-entrypoint.d/16-sangam-teams.envsh
 # Decision 165: the DSC loopback agent origin (empty = not set up), checked at start by 17-sangam-dsc.envsh.
 COPY --chmod=0555 deploy/docker/ui/17-sangam-dsc.envsh /docker-entrypoint.d/17-sangam-dsc.envsh
+# Decision 349: the UI idle period in minutes (1-480, default 15), checked at start by 18-sangam-session.envsh.
+COPY --chmod=0555 deploy/docker/ui/18-sangam-session.envsh /docker-entrypoint.d/18-sangam-session.envsh
 ENV SANGAM_TEAMS_ENABLED=false \
     SANGAM_TEAMS_FRAME_ANCESTORS="" \
-    SANGAM_DSC_AGENT_ORIGIN=""
+    SANGAM_DSC_AGENT_ORIGIN="" \
+    SANGAM_UI_IDLE_MINUTES=15
 ENV SANGAM_API_UPSTREAM=http://sangam-server:8080 \
     SANGAM_PUBLIC_API_BASE=/api/v1 \
     SANGAM_OIDC_ISSUER=http://localhost:8180/realms/sangam \

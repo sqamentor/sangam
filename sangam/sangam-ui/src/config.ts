@@ -7,7 +7,8 @@
  * Sangam UI extras (optional): authMode, devToken, oidc.scope, oidc.redirectPath, oidc.postLogoutPath,
  * fonts (per-tenant / state font override, see FONTS.md and src/fonts.ts),
  * traceUrlTemplate (M-044: the trace viewer's URL with {traceId}, e.g. https://traces.example/trace/{traceId}; empty = no links),
- * teams.enabled (decision 162), dsc.agentUrl (decision 165: the signer's local DSC agent, a loopback origin only).
+ * teams.enabled (decision 162), dsc.agentUrl (decision 165: the signer's local DSC agent, a loopback origin only),
+ * session.idleMinutes (decision 349: minutes without input after which the session ends; see IDLE_MINUTES).
  * The API is called on the same origin (/api/v1, /engine-rest are proxied by the UI image).
  */
 import type { FontsConfig } from './fonts';
@@ -44,6 +45,25 @@ export interface SangamConfig {
    * requests anywhere else). The server's CSP connect-src must name the same origin.
    */
   dsc: { agentUrl: string };
+  /** Decision 349: the idle period of a signed-in session, in whole minutes (IDLE_MINUTES). */
+  session: { idleMinutes: number };
+}
+
+/**
+ * Decision 349 (CERT-In / DPDP matrix W-09): the UI idle period is deployment configuration (/config.json
+ * session.idleMinutes, rendered from SANGAM_UI_IDLE_MINUTES by the UI image, 18-sangam-session.envsh).
+ * - default 15 minutes: the inactivity bound of NIST SP 800-63B (2017) section 4.3.3 for AAL3 and of OWASP ASVS 4.0.3 V3.3.2 level 3, the
+ *   stricter of the two common references (AAL2 / level 2 say 30), chosen because the console shows citizens' personal
+ *   data at shared office desks. These are technical references, not law: the legal source of a specific period is
+ *   UNVERIFIED (matrix, carried over item 6);
+ * - accepted: a whole number of minutes from MIN to MAX (one working day). Anything else, 0 and "off" included, falls
+ *   back to the default: the idle timeout cannot be switched off by a bad or missing value (fail closed).
+ */
+export const IDLE_MINUTES = { DEFAULT: 15, MIN: 1, MAX: 480 } as const;
+
+export function idleMinutes(v: unknown): number {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && /^\d{1,4}$/.test(v.trim()) ? Number(v.trim()) : NaN;
+  return Number.isInteger(n) && n >= IDLE_MINUTES.MIN && n <= IDLE_MINUTES.MAX ? n : IDLE_MINUTES.DEFAULT;
 }
 
 export interface RawConfig {
@@ -61,6 +81,7 @@ export interface RawConfig {
   traceUrlTemplate?: string;
   teams?: { enabled?: boolean };
   dsc?: { agentUrl?: string };
+  session?: { idleMinutes?: number | string };
 }
 
 const defaults: SangamConfig = {
@@ -82,6 +103,7 @@ const defaults: SangamConfig = {
   traceUrlTemplate: '',
   teams: { enabled: false },
   dsc: { agentUrl: '' },
+  session: { idleMinutes: IDLE_MINUTES.DEFAULT },
 };
 
 /**
@@ -127,6 +149,7 @@ export function normalise(raw: RawConfig): SangamConfig {
     traceUrlTemplate: typeof raw.traceUrlTemplate === 'string' ? raw.traceUrlTemplate.trim() : defaults.traceUrlTemplate,
     teams: { enabled: raw.teams?.enabled === true },
     dsc: { agentUrl: loopbackOrigin(raw.dsc?.agentUrl) },
+    session: { idleMinutes: idleMinutes(raw.session?.idleMinutes) },
   };
 }
 

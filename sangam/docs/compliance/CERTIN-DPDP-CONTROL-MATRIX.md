@@ -85,14 +85,14 @@ How to read the table:
 | D-27 | Transfer outside India ([A] s.16; [R] r.15) | EXISTS (server) | none | Server test. |
 | D-28 | No term that waives rights ([A] s.6(2)) | EXISTS | `consent-notice` (a purpose saying "irrevocable" is refused with 422 `NOTICE_INVALID`, and no notice is published) | |
 | W-01 | Strict CSP | PARTIAL | `security-headers` (fixed directives on every route and asset; no violation across the app) | `style-src 'unsafe-inline'` for bpmn-js; Trusted Types, see W-02. |
-| W-02 | Trusted Types | MISSING | none | Owner list 14. |
+| W-02 | Trusted Types | PARTIAL (report-only, decision 349, lane D3) | `security-headers` (`Content-Security-Policy-Report-Only: require-trusted-types-for 'script'` on every route, never in the enforced policy; the sinks the app reports are attached to the run as `trusted-types-reports.json`, nothing is blocked) | Enforcement is the next step, after the reported sinks (bpmn-js, dmn-js) are handled. No CSP report endpoint exists, so reports stay in the browser (console, `securitypolicyviolation`); an endpoint is a server contract change. |
 | W-03 | No unsafe DOM sinks | EXISTS | `xss-rendering` (markup in a grievance subject and a purpose name shown as text) | |
 | W-04 | No third-party subresources | EXISTS | `no-tracking`, `shell.e2e.ts` | |
 | W-05 | Clickjacking | EXISTS | `security-headers` (`X-Frame-Options DENY` and `frame-ancestors 'none'`, `/teams.html` too while Teams is off) | |
 | W-06 | Other headers | PARTIAL | `security-headers` (nosniff, Referrer-Policy, Permissions-Policy, COOP, no server version) | HSTS belongs to the TLS ingress, not this image. |
 | W-07 | No tokens or PII in persistent storage; clean-up at sign-out | EXISTS (decision 337, lane D3) | `client-storage-and-urls` (token in sessionStorage only; none in any web storage after sign-out; a saved inbox filter keeps no search text and its key is a hash, never the user id); `savedFilters.test.ts`, `ui-parity-2.test.tsx` (P35, decision 337) | Saved inbox filters stay in localStorage by design (P35), without the free text and under SHA-256 of tenant and user. Old entries lose their free text on load; another user's old key keeps its name until that user opens the inbox. |
 | W-08 | No PII in URLs | PARTIAL | `client-storage-and-urls` (no token or typed text in any URL of the citizen's grievance flow) | Owner list 3: the register filters put the principal reference in the query string. |
-| W-09 | Session lifetime and idle timeout | PARTIAL (expiry; idle MISSING) | `session-expiry` (an expired token is refused with 401, and the UI returns to sign-in) | Owner list 14: idle timeout (legal source UNVERIFIED). |
+| W-09 | Session lifetime and idle timeout | EXISTS (expiry; idle by decision 349, lane D3) | `session-expiry` (an expired token is refused with 401, and the UI returns to sign-in; the image serves `session.idleMinutes` 15 by default; after the idle period a warning, then the session ends and the user must sign in again; "Stay signed in" keeps it); `src/auth/idle.test.tsx` | Idle period: `SANGAM_UI_IDLE_MINUTES` of the UI image (1-480, default 15, checked by `18-sangam-session.envsh`). The default follows NIST SP 800-63B (2017) 4.3.3 AAL3 and OWASP ASVS 4.0.3 V3.3.2 level 3, technical references only: the legal source of a specific period is UNVERIFIED. Not applied on the hall display route (`/display/queue/`) nor in the optional Teams app. |
 | W-10 | No stack traces or internals in errors | EXISTS | `access-control` (compliance, portal and notice ids that do not exist) | |
 | W-11 | No public production source maps | EXISTS (fixed in this lane: `build.sourcemap: false` in both Vite builds) | `security-headers` (no `sourceMappingURL`; every `.map` gives 404); `scripts/build-sourcemaps.test.mjs` | |
 | W-12 | postMessage origin validation | EXISTS (N/A today) | none | No message listener in the UI. |
@@ -185,7 +185,7 @@ How to read the table:
 14. **Idle timeout (W-09) and Trusted Types (W-02).**
     - Idle timeout options: (a) a configurable idle period with a warning, then sign-out; (b) leave it to the IdP session. The legal source of a period is UNVERIFIED.
     - Trusted Types options: (a) report-only first, then enforce; (b) not yet, because bpmn-js writes innerHTML.
-    - Recommendation: (a) for both, the period set by policy.
+    - Recommendation: (a) for both, the period set by policy. DONE (decision 349, lane D3): idle (a) with a warning, the period from `SANGAM_UI_IDLE_MINUTES` (default 15); Trusted Types (a), report-only step.
 15. **Grievance due date fixed in code.** `OperatonPortalAdapter.fileGrievance` sets `dueAt` to now + 30 days. The pack has GRIEVANCE `defaultDays 30` and `maxDays 90`.
     - Options:
       - (a) read `defaultDays` from the pack;
@@ -209,7 +209,7 @@ How to read the table:
 3. Corrigendum G.S.R. 892(E) of 10 Dec 2025 and what it changes.
 4. The CERT-In SBOM / QBOM / CBOM / AIBOM / HBOM Guidelines v2.0: date and contents.
 5. The exact wording of DPDP Act s.6(10), as used in D-04.
-6. A legal source for a specific session idle timeout (W-09).
+6. A legal source for a specific session idle timeout (W-09). Still UNVERIFIED (decision 349); the default of 15 minutes rests on technical references only (NIST SP 800-63B, OWASP ASVS).
 
 Code facts from the draft, as they stand now:
 - **The UPDATE / UPDATING refusal:** fixed.

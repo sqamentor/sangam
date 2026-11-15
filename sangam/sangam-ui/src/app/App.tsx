@@ -9,6 +9,7 @@ import { Layout } from './Layout';
 import { NAV } from './nav';
 import { ROUTE_ACCESS, canAccess, type Access } from './access';
 import { AuthCallback, SignIn } from '../areas/auth/SignIn';
+import { IdleSession } from '../auth/IdleSession';
 import { Loading, Notice, PageHeader } from '../components/ui';
 
 /** Lazy-load a named export so heavy areas (bpmn-js, dmn-js, form-js) are separate chunks. */
@@ -333,9 +334,15 @@ function Gate() {
   // M-033: the privacy policy is public (SecurityConfig.java:80-81); signed-in callers see it inside the app chrome.
   if (status !== 'authenticated' && loc.pathname.startsWith('/privacy')) return <Suspense fallback={<Loading />}><Routes><Route path="/privacy/:tenant?" element={<PublicPrivacy />} /></Routes></Suspense>;
   if (status !== 'authenticated') return <SignIn />;
-  // Hall display: signed-in kiosk account, no navigation chrome.
+  // Hall display: signed-in kiosk account, no navigation chrome. Nobody gives input to a hall display, so the idle
+  // timeout (decision 349) is not applied on this route; it applies again on every other page.
   if (loc.pathname.startsWith('/display/queue/')) return <Suspense fallback={<Loading />}><Routes><Route path="/display/queue/:servicePointId" element={<QueueDisplay />} /></Routes></Suspense>;
-  return <AuthedRoutes />;
+  return (
+    <>
+      <IdleSession />
+      <AuthedRoutes />
+    </>
+  );
 }
 
 export function App() {

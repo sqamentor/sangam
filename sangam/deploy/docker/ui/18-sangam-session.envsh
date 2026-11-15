@@ -1,0 +1,26 @@
+#!/bin/sh
+# SPDX-License-Identifier: Apache-2.0
+# Decision 349: the UI idle period, in whole minutes, for /config.json session.idleMinutes (the UI ends a signed-in
+# session after this long without input; src/config.ts IDLE_MINUTES). Sourced by the nginx image's
+# /docker-entrypoint.sh before 20-envsubst-on-templates.sh; a bad value stops the container (fail closed).
+#
+#   SANGAM_UI_IDLE_MINUTES   1-480, digits only, no leading zero (default 15, set in ui.Dockerfile). The idle timeout
+#                            cannot be switched off: 0, empty and anything else are refused. The legal source of a
+#                            specific period is UNVERIFIED (docs/compliance/CERTIN-DPDP-CONTROL-MATRIX.md, W-09).
+# Exported for the template (always overwritten here, so it cannot be set from outside):
+#   SANGAM_UI_IDLE_MINUTES_CHECKED   the validated number, written into the JSON as a number
+
+sangam_session_fail() {
+    echo "18-sangam-session.envsh: ERROR: $*" >&2
+    exit 1
+}
+
+sangam_idle="${SANGAM_UI_IDLE_MINUTES:-}"
+printf '%s\n' "$sangam_idle" | grep -Eqx '[1-9][0-9]{0,2}' \
+    || sangam_session_fail "SANGAM_UI_IDLE_MINUTES must be a whole number of minutes from 1 to 480 (the idle timeout cannot be switched off)"
+[ "$(printf '%s' "$sangam_idle" | wc -l)" -eq 0 ] || sangam_session_fail "SANGAM_UI_IDLE_MINUTES must be one line"
+[ "$sangam_idle" -le 480 ] || sangam_session_fail "SANGAM_UI_IDLE_MINUTES must be at most 480 (one working day)"
+SANGAM_UI_IDLE_MINUTES_CHECKED="$sangam_idle"
+export SANGAM_UI_IDLE_MINUTES_CHECKED
+echo "18-sangam-session.envsh: session.idleMinutes=${SANGAM_UI_IDLE_MINUTES_CHECKED}"
+unset sangam_idle

@@ -24,6 +24,10 @@ interface AuthState {
   seat: SeatHolding | null;
   login: (devToken?: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** Decision 349: ends the session without asking (idle timeout); the sign-in screen then says why. */
+  endSession: (reason: SignedOutReason) => Promise<void>;
+  /** Why the last session ended, when the UI ended it (shown on the sign-in screen until the next sign-in). */
+  signedOutReason: SignedOutReason | null;
   completeCallback: () => Promise<string>;
   setSeat: (seatId: string | null) => void;
   hasRole: (...roles: Role[]) => boolean;
@@ -34,6 +38,10 @@ const AuthContext = createContext<AuthState | null>(null);
 
 const DEV_TOKEN_KEY = 'sangam.devToken';
 const SEAT_KEY = 'sangam.seat';
+/** sessionStorage: why the UI ended the last session (survives the OIDC end-session redirect back to the app). */
+const SIGNED_OUT_KEY = 'sangam.signedOut';
+
+export type SignedOutReason = 'idle';
 
 function safeSession(): Storage | null {
   try {
@@ -95,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<ApiError | Error | null>(null);
   const [seatId, setSeatId] = useState<string | null>(() => safeSession()?.getItem(SEAT_KEY) ?? null);
   const [nonce, setNonce] = useState(0);
+  const [signedOutReason, setSignedOutReason] = useState<SignedOutReason | null>(() => (safeSession()?.getItem(SIGNED_OUT_KEY) === 'idle' ? 'idle' : null));
   const tokenRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -178,6 +187,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (devToken?: string) => {
+      safeSession()?.removeItem(SIGNED_OUT_KEY);
+      setSignedOutReason(null);
       if (mode === 'dev') {
         const t = devToken || config().devToken;
         safeSession()?.setItem(DEV_TOKEN_KEY, t);
@@ -201,6 +212,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await manager().signoutRedirect();
   }, [mode]);
+
+  /**
+   * Decision 349: the local session ends first and unconditionally (token, seat, user), so nothing signed in is left
+   * even when the identity provider cannot be reached; then, in OIDC mode, the provider's session is ended too, so the
+   * next sign-in asks for the credentials again instead of returning silently. Unsent field records stay encrypted and
+   * bound to the user (M-001), as with "Log out anyway".
+   */
+  const endSession = useCallback(
+    async (reason: SignedOutReason) => {
+      const s = safeSession();
+      s?.setItem(SIGNED_OUT_KEY, reason);
+      s?.removeItem(SEAT_KEY);
+      s?.removeItem(DEV_TOKEN_KEY);
+      tokenRef.current = null;
+      setSignedOutReason(reason);
+      setSeatId(null);
+      setMe(null);
+      setTenantLocale(null);
+      setStatus('anonymous');
+      if (mode !== 'oidc') return;
+      const m = manager();
+      const u = await m.getUser().catch(() => null);
+      await m.removeUser().catch(() => undefined);
+      await m.signoutRedirect(u?.id_token ? { id_token_hint: u.id_token } : undefined).catch(() => undefined);
+    },
+    [mode],
+  );
 
   const completeCallback = useCallback(async () => {
     const u = await manager().signinRedirectCallback();
@@ -242,6 +280,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     seat,
     login,
     logout,
+    endSession,
+    signedOutReason,
     completeCallback,
     setSeat,
     hasRole,

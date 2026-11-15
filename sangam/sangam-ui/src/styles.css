@@ -575,6 +575,15 @@ fieldset.group {
   background: var(--info-bg);
   color: var(--info-fg);
 }
+/* Decision 349: the idle warning stays in view above the page, whatever is scrolled or open. */
+.idle-warning {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  max-width: 24rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
 .alert a {
   color: inherit;
 }
