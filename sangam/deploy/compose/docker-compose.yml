@@ -122,8 +122,9 @@ x-server-common: &server-common
     # Owner decision 369 (e): the compliance principal key (HMAC of data-principal tokens and one-time-code identifier
     # hashes) behind a secret reference, e.g. secret://compliance/principal-key with its value in
     # SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY (base64, at least 32 bytes; .env, never committed) or a configured secret
-    # provider. Unset: consents and one-time codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED; a reference whose
-    # secret is missing, empty or short stops the start.
+    # provider. Decision 371 (5): required with SANGAM_SECURITY_PRODUCTION=true (this file's default): unset, the
+    # server refuses to start. With SANGAM_SECURITY_PRODUCTION=false, unset, consents and one-time codes are refused
+    # with PRINCIPAL_KEY_NOT_CONFIGURED. A reference whose secret is missing, empty or short stops the start.
     SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: ${SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF:-}
     SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY: ${SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY:-}
     # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.

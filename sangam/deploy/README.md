@@ -209,19 +209,27 @@ Chart behaviour worth knowing:
   is in `server.trustedProxies` (CIDR list, empty = trust nobody; env `SANGAM_TRUSTED_PROXIES`,
   `SANGAM_CLIENT_IP_HEADERS`); from any other peer they are stripped. Spring's own handling is off
   (`server.forward-headers-strategy=none`).
+  **`server.trustedProxies` must list the UI (sangam-ui, which proxies the API) and the ingress / edge proxies**
+  (owner decision 371 (1)). The server counts the one-time codes of rights requests per client address (decision
+  369 (d), `rights.otp.issue-max-per-address`) on the address it resolves: with an empty or incomplete list every
+  citizen behind the UI or the ingress has that hop's address, so they share one limit and a few requests lock
+  everyone out of rights-request one-time codes. The same address is used for rate limits and audit records.
+  Refusing to start in production while the list is empty is a follow-up before release (gap register DEC-371-1).
 - **Key material required on a non-dev profile.** The server refuses to start without: a key-encryption key
   (`sangam.security.kek.keys.<id>` + `sangam.security.kek.current-id`, or `sangam.security.kek.pkcs12.*`), the registry
   signer (`sangam.registry.signer.private-key` PKCS#8 + `.public-key` X.509, Ed25519, base64) and the identifier-vault
   pepper (`sangam.registry.vault.hmac-pepper`, base64). Supply them as env from a Secret (`server.envFrom`), never in
   values.
-- **Compliance principal key (decision 369).** Data-principal tokens in the compliance audit and the identifier and
+- **Compliance principal key (decisions 369, 371).** Data-principal tokens in the compliance audit and the identifier and
   client-address hashes of rights-request one-time codes are HMAC-SHA256 under one key per environment:
   `sangam.compliance.principal-key-ref` (env `SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF`), a `secret://` reference whose
   value is base64 of at least 32 bytes (for example `secret://compliance/principal-key` with
   `SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY` from a Secret through `server.envFrom`, or a secret provider of section
-  1.7). Unset, the server starts and consents, guardian verifications, nominations, personal-data read audits and
-  one-time codes are refused with `409 PRINCIPAL_KEY_NOT_CONFIGURED`; a literal key, or a reference whose secret is
-  missing, not base64 or shorter than 32 bytes, stops the start. Changing the key changes every token written after
+  1.7; the chart value is `compliance.principalKeyRef`). **Required in production** (decision 371 (5)): with
+  `server.production: true` (or a missing or contradictory production setting) the server refuses to start while it
+  is unset. Outside production, unset, the server starts and consents, guardian verifications, nominations,
+  personal-data read audits and one-time codes are refused with `409 PRINCIPAL_KEY_NOT_CONFIGURED`. A literal key,
+  or a reference whose secret is missing, not base64 or shorter than 32 bytes, stops the start everywhere. Changing the key changes every token written after
   the change (earlier events keep theirs), so rotate it only with a recorded change.
 - **Explicit production switch (decisions 143 and 198).** The chart always renders `SANGAM_SECURITY_PRODUCTION` from
   `server.production` (default `true`, boolean in the schema); a missing or invalid value stops the server. With

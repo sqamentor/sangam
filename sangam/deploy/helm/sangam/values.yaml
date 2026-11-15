@@ -212,6 +212,10 @@ server:
     # registrations that other pods changed
     registrationRefreshInterval: 1m
   # CIDRs of the ingress controller / edge proxies whose X-Forwarded-*/Forwarded headers are trusted. Empty = none.
+  # Owner decision 371 (1): list the UI pods (sangam-ui proxies the API) AND the ingress / edge proxies. The server
+  # counts rights-request one-time codes per client address (decision 369 (d)) on the address it resolves; with an
+  # empty or incomplete list every citizen shares the UI's or the ingress's address and so one limit
+  # (deploy/README.md section 1, "Hosting behind an edge / reverse proxy").
   trustedProxies: []
   # Client-IP headers in priority order (read only from trustedProxies), e.g. [CF-Connecting-IP, X-Forwarded-For].
   clientIpHeaders: [X-Forwarded-For]
@@ -589,6 +593,11 @@ compliance:
     email: smtp
     authorityEmail: smtp
     authorityHttp: rest
+  # Decisions 369 (e), 371 (5): SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF (sangam.compliance.principal-key-ref), a secret://
+  # REFERENCE (never the key) to base64 of at least 32 bytes, e.g. secret://compliance/principal-key served by the
+  # file provider (secrets.file.existingSecret) or SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY through server.envFrom.
+  # Required with server.production: true (the server refuses to start without it); one key per environment.
+  principalKeyRef: ""
 
 # ------------------------------------------------------------------------------------------------ SCALE (cells)
 # SCALE-ARCHITECTURE.md: the server as a cell + optional control plane, gateway and national roll-up.
