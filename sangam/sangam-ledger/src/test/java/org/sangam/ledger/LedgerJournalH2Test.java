@@ -81,12 +81,48 @@ class LedgerJournalH2Test {
         return count(f.tx(), "SELECT COUNT(*) FROM LDG_ENTRY WHERE tenant_id=? AND reference=?", "T", ref);
     }
 
-    /** LEDGER_POSTED rows of the tenant ledger chain, pending or already drained onto the chain. */
+    static final String PENDING_POSTED = "SELECT COUNT(*) FROM AUDIT_PENDING WHERE tenant_id=? AND chain_id=? AND event_type=?";
+    static final String CHAIN_POSTED = "SELECT COUNT(*) FROM AUDIT_EVENT WHERE tenant_id=? AND chain_id=? AND event_type=?";
+
+    /**
+     * LEDGER_POSTED rows of the tenant ledger chain, pending or already drained onto the chain. The store signals the
+     * drainer after the commit and the drain moves the row from {@code AUDIT_PENDING} to {@code AUDIT_EVENT} on its own
+     * thread, in one transaction. Two statements could read the pending row before that commit and the chain row after
+     * it, counting one event twice ({@link #twoStatementsCountOneEventTwiceWhenTheDrainCommitsBetweenThem}); one
+     * statement reads both tables in one snapshot, so an event is counted once, before or after its drain.
+     */
     static long auditRows(Fixture f) {
-        return count(f.tx(), "SELECT COUNT(*) FROM AUDIT_PENDING WHERE tenant_id=? AND chain_id=? AND event_type=?",
-                "T", "ledger:T", LedgerJournal.LEDGER_POSTED)
-                + count(f.tx(), "SELECT COUNT(*) FROM AUDIT_EVENT WHERE tenant_id=? AND chain_id=? AND event_type=?",
-                "T", "ledger:T", LedgerJournal.LEDGER_POSTED);
+        return f.tx().inTransaction(c -> Jdbc.one(c, "SELECT (" + PENDING_POSTED + ") + (" + CHAIN_POSTED + ")",
+                rs -> rs.getLong(1), "T", "ledger:T", LedgerJournal.LEDGER_POSTED,
+                "T", "ledger:T", LedgerJournal.LEDGER_POSTED).orElse(0L));
+    }
+
+    static long pendingPosted(Fixture f) {
+        return count(f.tx(), PENDING_POSTED, "T", "ledger:T", LedgerJournal.LEDGER_POSTED);
+    }
+
+    static long chainPosted(Fixture f) {
+        return count(f.tx(), CHAIN_POSTED, "T", "ledger:T", LedgerJournal.LEDGER_POSTED);
+    }
+
+    /** The fixture's journal without the after-commit drain signal: the test steps the drain itself. */
+    static LedgerPorts.PostingJournal withoutSignal(Fixture f) {
+        return new LedgerPorts.PostingJournal() {
+            @Override
+            public void posted(Connection c, LedgerStore.Entry entry, List<LedgerPorts.AccountingEntry> accounting) {
+                f.journal().posted(c, entry, accounting);
+            }
+
+            @Override
+            public void accounting(Connection c, List<LedgerPorts.AccountingEntry> entries) {
+                f.journal().accounting(c, entries);
+            }
+
+            @Override
+            public void committed(LedgerStore.Entry entry) {
+                // no signal: the drain runs only when the test sweeps
+            }
+        };
     }
 
     static long glRows(Fixture f, String ref) {
@@ -161,6 +197,44 @@ class LedgerJournalH2Test {
             assertEquals(1, auditRows(f), "a duplicate adds no audit row");
             assertEquals(1, glRows(f, "alloc-2"), "a duplicate adds no GL row");
             assertEquals(0, new BigDecimal("500").compareTo(s.available(K)), "applied once");
+
+            f.drainer().sweep(Duration.ZERO);
+            assertEquals(1, chainPosted(f), "after the drain the chain holds the posting's audit event once");
+            assertEquals(0, pendingPosted(f), "and nothing of it is left pending");
+        }
+    }
+
+    /**
+     * The failure of 2026-11-15 ({@code a duplicate adds no audit row ==> expected: <1> but was: <2>}), reproduced
+     * without threads: the product writes one LEDGER_POSTED row and the drain moves it in one transaction, but a count
+     * that reads {@code AUDIT_PENDING} and {@code AUDIT_EVENT} in two statements, with the drain committing between
+     * them, sees the event in both tables. The one-statement count stays 1 before, after and around the drain.
+     */
+    @Test
+    void twoStatementsCountOneEventTwiceWhenTheDrainCommitsBetweenThem() throws Exception {
+        Fixture f = fixture();
+        try (PendingAuditDrainer ignored = f.drainer()) {
+            LedgerService s = service(f.ds(), withoutSignal(f), new ArrayList<>());
+            LedgerRequest req = LedgerRequest.of("ALLOCATE", K, new BigDecimal("500"), "alloc-4");
+            assertTrue(s.apply(req).applied());
+            assertEquals(1, pendingPosted(f), "the posting's audit row is pending");
+            assertEquals(0, chainPosted(f), "nothing drained yet");
+            assertEquals(1, auditRows(f));
+
+            long pendingBefore = pendingPosted(f);          // first statement: before the drain
+            assertEquals(1, f.drainer().sweep(Duration.ZERO), "the drain moves exactly one event");
+            long chainAfter = chainPosted(f);               // second statement: after the drain
+            assertEquals(2, pendingBefore + chainAfter,
+                    "two statements around the drain's commit count the one event twice (the old helper)");
+
+            assertEquals(1, auditRows(f), "one statement counts it once after the drain");
+            assertEquals(0, pendingPosted(f));
+            assertEquals(1, chainPosted(f), "the product wrote it once");
+
+            assertTrue(s.apply(req).duplicate());
+            assertEquals(0, f.drainer().sweep(Duration.ZERO), "a duplicate leaves nothing to drain");
+            assertEquals(1, auditRows(f), "a duplicate adds no audit row");
+            assertEquals(1, chainPosted(f));
         }
     }
 
