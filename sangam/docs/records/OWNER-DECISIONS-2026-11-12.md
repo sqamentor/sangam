@@ -420,3 +420,15 @@ Decision 367 was taken on 2026-11-15 under the owner's words "Choose recommended
 Decision 368 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the point lane D5 left open; the recommended option (A) is recorded.
 
 - **368 (how requested token scopes are bound, owner chat 2026-11-15)**: Decision 358 is carried out with one authorisation model: the platform groups that are used as scopes (for example `sangam-worker`, `sangam-citizen`, `sangam-dpo`) exist as role rows (`SEC_ROLE`) of each tenant, created when the tenant is set up, and a role-definition path serves the e2e set-up; a requested scope is bound through `RoleAdminService.bind` only when it is a defined role the caller has the right to grant, and is otherwise refused by name. No separate bind for code-defined roles, and no bind of an undefined role id.
+
+Decision 369 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the points lane D6 left open; the recommended option of each is recorded.
+
+- **369 (rights intake and erasure follow-ups, owner chat 2026-11-15)**:
+  - (a) Erasure stays partial: roots without a legal hold are erased, held roots are refused by name (no all-or-nothing).
+  - (b) Correction of process data is refused with INVALID_STATE in 0.1.0; no correction hook per pack yet.
+  - (c) The principal reference of an OTP rights request is the identifier the pack accepts; no PrincipalDirectory resolution in 0.1.0.
+  - (d) Issuing an OTP challenge is rate limited per identifier and per client address before release, refused by name when exceeded; the limits come from the pack, no default in code.
+  - (e) The identifier hash and the principal token are keyed (HMAC) with a key from the secrets store, never plain SHA-256; without the key the feature fails closed.
+  - (g) Erasure is shown end to end by an e2e spec on a dedicated test citizen of its own, never the shared e2e citizen.
+  - (h) `GiveConsentRequest.affirmativeAction` is boxed and required by the contract, as decision 362; a missing value is refused by name.
+  - (i) The OTP settings of the IN pack (10-minute lifetime, 5 attempts, 30-minute lock-out, 6 digits) are the 0.1.0 values; a deployer changes them in the pack. Owner to confirm the numbers before release.
