@@ -486,7 +486,7 @@
     "allWork": "All my work",
     "deleteFilter": "Delete filter {{name}}",
     "saveFilter": "Save as filter",
-    "filterStoredHint": "Saved filters are kept in this browser. The server applies every criterion, so a filter never shows more than you may see."
+    "filterStoredHint": "Saved filters are kept in this browser, without the search text. The server applies every criterion, so a filter never shows more than you may see."
   },
   "sod": {
     "SAME_PERSON_AS_INITIATOR": "You initiated this case ({{initiator}}), so you cannot approve it.",

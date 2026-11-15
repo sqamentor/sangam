@@ -90,7 +90,7 @@ How to read the table:
 | W-04 | No third-party subresources | EXISTS | `no-tracking`, `shell.e2e.ts` | |
 | W-05 | Clickjacking | EXISTS | `security-headers` (`X-Frame-Options DENY` and `frame-ancestors 'none'`, `/teams.html` too while Teams is off) | |
 | W-06 | Other headers | PARTIAL | `security-headers` (nosniff, Referrer-Policy, Permissions-Policy, COOP, no server version) | HSTS belongs to the TLS ingress, not this image. |
-| W-07 | No tokens or PII in persistent storage; clean-up at sign-out | PARTIAL | `client-storage-and-urls` (token in sessionStorage only; none in any web storage after sign-out) | Owner list 3: saved inbox filters stay in localStorage. |
+| W-07 | No tokens or PII in persistent storage; clean-up at sign-out | EXISTS (decision 337, lane D3) | `client-storage-and-urls` (token in sessionStorage only; none in any web storage after sign-out; a saved inbox filter keeps no search text and its key is a hash, never the user id); `savedFilters.test.ts`, `ui-parity-2.test.tsx` (P35, decision 337) | Saved inbox filters stay in localStorage by design (P35), without the free text and under SHA-256 of tenant and user. Old entries lose their free text on load; another user's old key keeps its name until that user opens the inbox. |
 | W-08 | No PII in URLs | PARTIAL | `client-storage-and-urls` (no token or typed text in any URL of the citizen's grievance flow) | Owner list 3: the register filters put the principal reference in the query string. |
 | W-09 | Session lifetime and idle timeout | PARTIAL (expiry; idle MISSING) | `session-expiry` (an expired token is refused with 401, and the UI returns to sign-in) | Owner list 14: idle timeout (legal source UNVERIFIED). |
 | W-10 | No stack traces or internals in errors | EXISTS | `access-control` (compliance, portal and notice ids that do not exist) | |
@@ -125,7 +125,7 @@ How to read the table:
      - (a) clear them at sign-out, or keep them in sessionStorage;
      - (b) keep them, but never store the free-text query, and key them by a hash of the user;
      - (c) a server-side preference API.
-     - Recommendation: (b) now, (c) later.
+     - Recommendation: (b) now, (c) later. DONE for (b) (decision 337, lane D3): `src/areas/tasklist/savedFilters.ts`.
    - References in the query string (W-08): `listConsents` and the rights list take only a `subject` query parameter. Options:
      - (a) `POST …/search` with the reference in the body;
      - (b) an opaque principal id;

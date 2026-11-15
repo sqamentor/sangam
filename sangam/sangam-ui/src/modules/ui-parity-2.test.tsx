@@ -51,6 +51,7 @@ import { EngineAdminPage, OperatonOpsPage, Welcome, ENGINE_PERMISSIONS } from '.
 import { InstanceDetail } from '../areas/ops/InstanceDetail';
 import { DefinitionDetail, ProcessDefinitions } from '../areas/ops/Processes';
 import { TaskInbox, parseCardVariables } from '../areas/tasklist/TaskInbox';
+import { savedFiltersKey } from '../areas/tasklist/savedFilters';
 import { api as contract, historyActivityFilter } from '../api/endpoints';
 
 const T = (k: string, o?: Record<string, unknown>) => i18n.t(k, o) as string;
@@ -257,9 +258,13 @@ describe('P35/P45 inbox filter sidebar and card variables', () => {
   });
 
   it('P35 filters persist per person and can be deleted', async () => {
+    // decision 337: the key is a hash of tenant|user, never the user name
+    const key = (await savedFiltersKey(globalThis.crypto, { tenantId: 't1', userId: 'demo' }))!;
     show(<TaskInbox />);
     await saveFilter('Mine', 'amount');
-    const stored = JSON.parse(window.localStorage.getItem('sangam.inbox.filters.demo') ?? '[]') as { name: string; variables: unknown[] }[];
+    await waitFor(() => expect(window.localStorage.getItem(key)).not.toBeNull());
+    expect(Object.keys(window.localStorage).filter((k) => k.includes('demo'))).toEqual([]);
+    const stored = JSON.parse(window.localStorage.getItem(key) ?? '[]') as { name: string; variables: unknown[] }[];
     expect(stored.map((f) => [f.name, f.variables])).toEqual([['Mine', [{ name: 'amount', label: 'amount' }]]]);
     cleanup();
     show(<TaskInbox />);
@@ -267,7 +272,31 @@ describe('P35/P45 inbox filter sidebar and card variables', () => {
     expect(within(side).getByRole('button', { name: 'Mine' })).toBeTruthy();
     fireEvent.click(within(side).getByRole('button', { name: T('task.deleteFilter', { name: 'Mine' }) }));
     expect(within(side).queryByRole('button', { name: 'Mine' })).toBeNull();
-    expect(JSON.parse(window.localStorage.getItem('sangam.inbox.filters.demo') ?? '[]')).toEqual([]);
+    expect(JSON.parse(window.localStorage.getItem(key) ?? '[]')).toEqual([]);
+  });
+
+  it('decision 337: the search text is not saved with a filter and applying a filter clears it', async () => {
+    const key = (await savedFiltersKey(globalThis.crypto, { tenantId: 't1', userId: 'demo' }))!;
+    show(<TaskInbox />);
+    const search = () => screen.getByLabelText(L('task.search')) as HTMLInputElement;
+    const type = (v: string) => {
+      fireEvent.change(search(), { target: { value: v } });
+      fireEvent.submit(search().closest('form')!);
+    };
+    await screen.findByLabelText(L('task.search'));
+    type('Ramesh Kumar');
+    await waitFor(() => expect(JSON.stringify(lastCall(api.page, '/tasks')?.[1])).toContain('Ramesh Kumar'));
+    fireEvent.click(screen.getByRole('tab', { name: new RegExp(esc(T('task.section.POOL'))) }));
+    await saveFilter('Pool search', '');
+    await waitFor(() => expect(window.localStorage.getItem(key)).not.toBeNull());
+    const everything = JSON.stringify(Object.fromEntries(Object.keys(window.localStorage).map((k) => [k, window.localStorage.getItem(k)])));
+    expect(everything).not.toContain('Ramesh');
+    expect((JSON.parse(window.localStorage.getItem(key)!) as { section: string }[])[0]).toMatchObject({ section: 'POOL' });
+    const side = screen.getByRole('complementary', { name: T('task.filterSidebar') });
+    fireEvent.click(within(side).getByRole('button', { name: T('task.allWork') }));
+    type('other text');
+    fireEvent.click(within(side).getByRole('button', { name: 'Pool search' }));
+    await waitFor(() => expect(search().value).toBe(''));
   });
 
   it('P45 contract: variableNames only when asked for; card variable parsing bounded to the server maximum', async () => {
