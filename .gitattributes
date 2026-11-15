@@ -76,3 +76,5 @@ entrypoint      text eol=lf
 # a CRLF checkout changed the bytes and failed the check on a fresh Windows clone. LF in every checkout.
 sangam/deploy/fonts/*.txt text eol=lf
 sangam/deploy/fonts/README.md text eol=lf
+# Licence texts are recorded with their SHA-256 (test_release_assets.py CommittedTexts): LF in every checkout.
+sangam/deploy/licence/texts/*.txt text eol=lf
