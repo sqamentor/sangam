@@ -70,6 +70,9 @@ export async function definePurpose(admin: APIRequestContext, code: string, text
         descriptions: { en: text.description },
         dataItems: [{ code: 'name', names: { en: 'Full name' }, sensitive: false }],
         basis: 'CONSENT',
+        // an explicit attestation, never defaulted (ComplianceDefinePurposeRequest): a consent basis needs no Second
+        // Schedule standards, and the e2e purpose claims none
+        standardsAttested: false,
         retention: 'P400D',
         active,
       },
@@ -118,6 +121,7 @@ export async function seedCompliance(admin: APIRequestContext): Promise<Complian
           { code: 'mobile', names: { en: 'Mobile number' }, sensitive: false },
         ],
         basis: 'CONSENT',
+        standardsAttested: false, // explicit, see definePurpose
         retention: 'P400D',
         active: true,
       },

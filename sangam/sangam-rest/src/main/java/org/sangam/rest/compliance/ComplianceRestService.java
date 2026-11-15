@@ -33,7 +33,15 @@ public interface ComplianceRestService extends ComplianceApi {
 
     List<ContactDirectory.Contact> contacts(SecurityIdentity id);
 
+    /** A principal's rights requests; a read of another principal's writes PERSONAL_DATA_READ (owner decision 348). */
     List<DataSubjectRightsService.RightsRequest> rightsRequestsOf(SecurityIdentity id, String principalRef);
+
+    /**
+     * One rights request for the caller: her own, or any when {@code officer} (compliance.read). Another principal's
+     * request is NOT_FOUND to a non-officer (no existence leak) and writes PERSONAL_DATA_READ for an officer, in the
+     * transaction of the read (owner decision 348).
+     */
+    DataSubjectRightsService.RightsRequest rightsRequest(SecurityIdentity id, String requestId, boolean officer);
 
     IncidentReportingService.Incident incident(SecurityIdentity id, String incidentId);
 

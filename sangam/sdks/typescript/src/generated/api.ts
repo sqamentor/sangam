@@ -3659,7 +3659,7 @@ export class ChannelsApi {
   }
 }
 
-/** Typed operations of `Compliance` (32 operations). */
+/** Typed operations of `Compliance` (34 operations). */
 export class ComplianceApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -3721,7 +3721,7 @@ export class ComplianceApi {
    *
    * `PUT /compliance/purposes/{code}` (operationId `defineCompliancePurpose`); permission `compliance.admin`; result stored atomically with the state change.
    */
-  async defineCompliancePurpose(code: string, body: M.CompliancePurpose, options?: RequestOptions): Promise<M.CompliancePurpose> {
+  async defineCompliancePurpose(code: string, body: M.ComplianceDefinePurposeRequest, options?: RequestOptions): Promise<M.CompliancePurpose> {
     const req: ApiRequest = { method: 'PUT', path: `/compliance/purposes/${seg(String(code))}` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.CompliancePurpose>(req, options);
@@ -3741,14 +3741,14 @@ export class ComplianceApi {
   }
 
   /**
-   * Consent history
+   * Own consent history
    *
-   * Consents of a principal (default: the caller). Another principal's history needs compliance.read.
+   * The caller's own consents. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's history is searched with POST /compliance/consents/search.
    *
-   * `GET /compliance/consents` (operationId `listConsents`); permission `owner / compliance.read`.
+   * `GET /compliance/consents` (operationId `listConsents`); permission `authenticated (own)`.
    */
-  async listConsents(params?: { subject?: string }, options?: RequestOptions): Promise<Array<M.ComplianceConsent>> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/consents`, query: { subject: params?.subject } };
+  async listConsents(options?: RequestOptions): Promise<Array<M.ComplianceConsent>> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/consents` };
     return this.calls.json<Array<M.ComplianceConsent>>(req, options);
   }
 
@@ -3763,6 +3763,19 @@ export class ComplianceApi {
     const req: ApiRequest = { method: 'POST', path: `/compliance/consents/${seg(String(id))}/withdraw` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.ComplianceConsent>(req, options);
+  }
+
+  /**
+   * Search a principal's consents
+   *
+   * Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+   *
+   * `POST /compliance/consents/search` (operationId `searchConsents`); permission `owner / compliance.read`.
+   */
+  async searchConsents(body?: M.ComplianceSubjectSearch, options?: RequestOptions): Promise<Array<M.ComplianceConsent>> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/consents/search` };
+    if (body !== undefined) req.body = body;
+    return this.calls.json<Array<M.ComplianceConsent>>(req, options);
   }
 
   /**
@@ -3782,7 +3795,7 @@ export class ComplianceApi {
   /**
    * Submit a rights request (public)
    *
-   * Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by the published identifier; due dates from the pack.
+   * Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
    *
    * `POST /compliance/rights-requests` (operationId `submitRightsRequest`); result stored atomically with the state change.
    */
@@ -3794,21 +3807,34 @@ export class ComplianceApi {
   }
 
   /**
-   * Rights requests of a principal
+   * Own rights requests
    *
-   * Default: the caller's own; another principal's needs compliance.read.
+   * The caller's own rights requests. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's are searched with POST /compliance/rights-requests/search.
    *
-   * `GET /compliance/rights-requests` (operationId `listRightsRequests`); permission `owner / compliance.read`.
+   * `GET /compliance/rights-requests` (operationId `listRightsRequests`); permission `authenticated (own)`.
    */
-  async listRightsRequests(params?: { subject?: string }, options?: RequestOptions): Promise<Array<M.ComplianceRightsRequest>> {
-    const req: ApiRequest = { method: 'GET', path: `/compliance/rights-requests`, query: { subject: params?.subject } };
+  async listRightsRequests(options?: RequestOptions): Promise<Array<M.ComplianceRightsRequest>> {
+    const req: ApiRequest = { method: 'GET', path: `/compliance/rights-requests` };
+    return this.calls.json<Array<M.ComplianceRightsRequest>>(req, options);
+  }
+
+  /**
+   * Search a principal's rights requests
+   *
+   * Rights requests of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's need compliance.read and write PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+   *
+   * `POST /compliance/rights-requests/search` (operationId `searchRightsRequests`); permission `owner / compliance.read`.
+   */
+  async searchRightsRequests(body?: M.ComplianceSubjectSearch, options?: RequestOptions): Promise<Array<M.ComplianceRightsRequest>> {
+    const req: ApiRequest = { method: 'POST', path: `/compliance/rights-requests/search` };
+    if (body !== undefined) req.body = body;
     return this.calls.json<Array<M.ComplianceRightsRequest>>(req, options);
   }
 
   /**
    * Get a rights request
    *
-   * Visible to its principal or with compliance.read (otherwise 404).
+   * Visible to its principal or with compliance.read (otherwise 404); a compliance.read reader of another principal's request writes PERSONAL_DATA_READ (owner decision 348).
    *
    * `GET /compliance/rights-requests/{id}` (operationId `getRightsRequest`); permission `owner / compliance.read`.
    */
@@ -3820,7 +3846,7 @@ export class ComplianceApi {
   /**
    * Register a personal-data breach
    *
-   * Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7).
+   * Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7). incidentType, when given, is a code of the authority catalogue of the jurisdiction pack, else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344); 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
    *
    * `POST /compliance/breaches` (operationId `registerBreach`); permission `compliance.modify`; result stored atomically with the state change.
    */
@@ -3845,7 +3871,7 @@ export class ComplianceApi {
   /**
    * Register a reportable incident
    *
-   * A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing).
+   * A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing). type is a code of the authority's catalogue in the jurisdiction pack (GET /compliance/jurisdiction, authorities[].catalogue), else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344).
    *
    * `POST /compliance/incidents` (operationId `registerComplianceIncident`); permission `compliance.modify`; result stored atomically with the state change.
    */
@@ -14696,7 +14722,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1137 operations on 956 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1139 operations on 958 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

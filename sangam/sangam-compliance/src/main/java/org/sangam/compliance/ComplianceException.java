@@ -50,6 +50,14 @@ public class ComplianceException extends RuntimeException {
         INVALID_STATE(409),
         /** No compliance jurisdiction is set for the tenant; none is ever assumed (ADR-D-20). */
         JURISDICTION_NOT_SET(409),
+        /**
+         * Owner decision 336: the compliance process an action starts is not installed for the tenant (nor shared):
+         * a standalone server gets its compliance processes only by installing the compliance pack
+         * ({@code sangam.compliance}) through the pack installation of the tenant.
+         */
+        COMPLIANCE_PACK_NOT_INSTALLED(409),
+        /** Owner decision 344: an incident type that is not a code of the authority's catalogue in the jurisdiction pack. */
+        INCIDENT_TYPE_NOT_IN_CATALOGUE(422),
         /** Invalid input. */
         INVALID_INPUT(400);
 

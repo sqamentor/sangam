@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Compliance (32 operations).
+/// Typed operations of Compliance (34 operations).
 /// </summary>
 public sealed class ComplianceApi
 {
@@ -72,7 +72,7 @@ public sealed class ComplianceApi
     /// Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).
     /// PUT /compliance/purposes/{code} (operationId defineCompliancePurpose); permission compliance.admin; result stored atomically with the state change.
     /// </summary>
-    public async global::System.Threading.Tasks.Task<M.CompliancePurpose?> DefineCompliancePurposeAsync(string code, M.CompliancePurpose body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<M.CompliancePurpose?> DefineCompliancePurposeAsync(string code, M.ComplianceDefinePurposeRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Put($"/compliance/purposes/{HttpTransport.Seg(GeneratedCalls.Str(code)!)}");
         if (body is not null) req.WithBody(body);
@@ -92,14 +92,13 @@ public sealed class ComplianceApi
     }
 
     /// <summary>
-    /// Consent history
-    /// Consents of a principal (default: the caller). Another principal's history needs compliance.read.
-    /// GET /compliance/consents (operationId listConsents); permission owner / compliance.read.
+    /// Own consent history
+    /// The caller's own consents. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's history is searched with POST /compliance/consents/search.
+    /// GET /compliance/consents (operationId listConsents); permission authenticated (own).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceConsent>?> ListConsentsAsync(string? subject = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceConsent>?> ListConsentsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/compliance/consents");
-        req.WithQuery("subject", GeneratedCalls.Q(subject));
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceConsent>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
@@ -113,6 +112,18 @@ public sealed class ComplianceApi
         var req = ApiRequest.Post($"/compliance/consents/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/withdraw");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.ComplianceConsent?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Search a principal's consents
+    /// Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+    /// POST /compliance/consents/search (operationId searchConsents); permission owner / compliance.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceConsent>?> SearchConsentsAsync(M.ComplianceSubjectSearch? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/compliance/consents/search");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceConsent>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -131,7 +142,7 @@ public sealed class ComplianceApi
 
     /// <summary>
     /// Submit a rights request (public)
-    /// Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by the published identifier; due dates from the pack.
+    /// Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
     /// POST /compliance/rights-requests (operationId submitRightsRequest); result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ComplianceRightsRequest?> SubmitRightsRequestAsync(M.ComplianceRightsSubmission body, string? tenant = null, string? xSangamTenant = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -144,20 +155,31 @@ public sealed class ComplianceApi
     }
 
     /// <summary>
-    /// Rights requests of a principal
-    /// Default: the caller's own; another principal's needs compliance.read.
-    /// GET /compliance/rights-requests (operationId listRightsRequests); permission owner / compliance.read.
+    /// Own rights requests
+    /// The caller's own rights requests. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's are searched with POST /compliance/rights-requests/search.
+    /// GET /compliance/rights-requests (operationId listRightsRequests); permission authenticated (own).
     /// </summary>
-    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceRightsRequest>?> ListRightsRequestsAsync(string? subject = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceRightsRequest>?> ListRightsRequestsAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
     {
         var req = ApiRequest.Get($"/compliance/rights-requests");
-        req.WithQuery("subject", GeneratedCalls.Q(subject));
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceRightsRequest>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Search a principal's rights requests
+    /// Rights requests of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's need compliance.read and write PERSONAL_DATA_READ on that principal's chain (owner decision 348).
+    /// POST /compliance/rights-requests/search (operationId searchRightsRequests); permission owner / compliance.read.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.ComplianceRightsRequest>?> SearchRightsRequestsAsync(M.ComplianceSubjectSearch? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/compliance/rights-requests/search");
+        if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<global::System.Collections.Generic.List<M.ComplianceRightsRequest>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get a rights request
-    /// Visible to its principal or with compliance.read (otherwise 404).
+    /// Visible to its principal or with compliance.read (otherwise 404); a compliance.read reader of another principal's request writes PERSONAL_DATA_READ (owner decision 348).
     /// GET /compliance/rights-requests/{id} (operationId getRightsRequest); permission owner / compliance.read.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ComplianceRightsRequest?> GetRightsRequestAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -168,7 +190,7 @@ public sealed class ComplianceApi
 
     /// <summary>
     /// Register a personal-data breach
-    /// Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7).
+    /// Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7). incidentType, when given, is a code of the authority catalogue of the jurisdiction pack, else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344); 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).
     /// POST /compliance/breaches (operationId registerBreach); permission compliance.modify; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ComplianceBreach?> RegisterBreachAsync(M.ComplianceBreachRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
@@ -191,7 +213,7 @@ public sealed class ComplianceApi
 
     /// <summary>
     /// Register a reportable incident
-    /// A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing).
+    /// A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing). type is a code of the authority's catalogue in the jurisdiction pack (GET /compliance/jurisdiction, authorities[].catalogue), else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344).
     /// POST /compliance/incidents (operationId registerComplianceIncident); permission compliance.modify; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ComplianceIncident?> RegisterComplianceIncidentAsync(M.ComplianceIncidentRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

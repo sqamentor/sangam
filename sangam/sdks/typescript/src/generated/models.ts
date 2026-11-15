@@ -3336,6 +3336,7 @@ export interface ComplianceConsentArtefact {
  * Schema `ComplianceContact`.
  */
 export interface ComplianceContact {
+  /** Taken from the path on POST /compliance/contacts/{role}. */
   role?: string;
   name: string;
   designation?: string;
@@ -3344,8 +3345,53 @@ export interface ComplianceContact {
   phone?: string;
   mobile?: string;
   address?: string;
+  /** The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed. */
   resident?: boolean;
   validFrom?: string;
+}
+
+/**
+ * One itemised personal-data item of a purpose.
+ *
+ * Schema `ComplianceDataItemRequest`.
+ */
+export interface ComplianceDataItemRequest {
+  code: string;
+  names?: Record<string, string>;
+  /** A special category under the jurisdiction pack (IN: SPDI r.3, Aadhaar), masked in summaries. A legal attestation: required, true or false. */
+  sensitive: boolean;
+}
+
+/**
+ * A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.
+ *
+ * Schema `ComplianceDefinePurposeRequest`.
+ */
+export interface ComplianceDefinePurposeRequest {
+  /** Optional; when given, it must equal the path code. */
+  code?: string;
+  names?: Record<string, string>;
+  descriptions?: Record<string, string>;
+  dataItems?: Array<ComplianceDataItemRequest>;
+  basis: string;
+  legalRef?: string;
+  subGround?: string;
+  registerRef?: string;
+  /** The processing meets the standards the legal basis or exemption requires (IN: DPDP Rules Second Schedule). A legal attestation: required, true or false. */
+  standardsAttested: boolean;
+  exemptions?: Array<string>;
+  exemptionRef?: string;
+  childExemptions?: Array<string>;
+  flags?: Array<string>;
+  retentionTrigger?: string;
+  retention?: string;
+  retentionClass?: string;
+  recordClass?: string;
+  recordRetention?: string;
+  recordRetentionRef?: string;
+  /** Whether processing under the purpose may start (consent, notices and purpose binding refuse an inactive purpose). Required. */
+  active: boolean;
+  specialCondition?: string;
 }
 
 /**
@@ -3625,10 +3671,12 @@ export interface ComplianceRightsRequest {
   late?: boolean;
   outcome?: string;
   responseText?: string;
+  /** The published contact the data principal reaches about this request (owner decision 346): the DPO, else the pack's next published role; null when none is set. */
+  contact?: ComplianceContact;
 }
 
 /**
- * A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.
+ * A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335): identifierType SIGNED_IN for the caller's own signed-in identity (identifierValue blank or that identity), else the published identifier with its proof (OTP).
  *
  * Schema `ComplianceRightsSubmission`.
  */
@@ -3651,6 +3699,15 @@ export interface ComplianceRightsSubmission {
 export interface ComplianceSealLogsRequest {
   from: string;
   to?: string;
+}
+
+/**
+ * The principal whose records an officer searches (owner decision 338: in the body, never in the URL); blank = the caller's own.
+ *
+ * Schema `ComplianceSubjectSearch`.
+ */
+export interface ComplianceSubjectSearch {
+  subject?: string;
 }
 
 /**

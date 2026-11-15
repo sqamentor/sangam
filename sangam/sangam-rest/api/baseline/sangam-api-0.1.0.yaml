@@ -15017,7 +15017,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompliancePurpose'
+              $ref: '#/components/schemas/ComplianceDefinePurposeRequest'
       responses:
         '200':
           description: Success
@@ -15101,11 +15101,6 @@ paths:
       - Compliance
       summary: Consent history
       description: 'Consents of a principal (default: the caller). Another principal''s history needs compliance.read.'
-      parameters:
-      - name: subject
-        in: query
-        schema:
-          type: string
       x-sangam-permission: owner / compliance.read
       x-sangam-requirements:
       - GOV-4
@@ -15319,11 +15314,6 @@ paths:
       - Compliance
       summary: Rights requests of a principal
       description: 'Default: the caller''s own; another principal''s needs compliance.read.'
-      parameters:
-      - name: subject
-        in: query
-        schema:
-          type: string
       x-sangam-permission: owner / compliance.read
       x-sangam-requirements:
       - GOV-4
@@ -52873,6 +52863,91 @@ components:
           type: boolean
       required:
       - basis
+    ComplianceDefinePurposeRequest:
+      type: object
+      description: A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's
+        sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version
+        is assigned by the server (previous + 1). Durations are ISO-8601.
+      properties:
+        code:
+          type: string
+          description: Optional; when given, it must equal the path code.
+        names:
+          type: object
+          additionalProperties:
+            type: string
+        descriptions:
+          type: object
+          additionalProperties:
+            type: string
+        dataItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComplianceDataItemRequest'
+        basis:
+          type: string
+        legalRef:
+          type: string
+        subGround:
+          type: string
+        registerRef:
+          type: string
+        standardsAttested:
+          type: boolean
+          description: 'The processing meets the standards the legal basis or exemption requires (IN: DPDP Rules Second Schedule). A legal attestation:
+            required, true or false.'
+        exemptions:
+          type: array
+          items:
+            type: string
+        exemptionRef:
+          type: string
+        childExemptions:
+          type: array
+          items:
+            type: string
+        flags:
+          type: array
+          items:
+            type: string
+        retentionTrigger:
+          type: string
+        retention:
+          type: string
+        retentionClass:
+          type: string
+        recordClass:
+          type: string
+        recordRetention:
+          type: string
+        recordRetentionRef:
+          type: string
+        active:
+          type: boolean
+          description: Whether processing under the purpose may start (consent, notices and purpose binding refuse an inactive purpose). Required.
+        specialCondition:
+          type: string
+      required:
+      - basis
+      - standardsAttested
+      - active
+    ComplianceDataItemRequest:
+      type: object
+      description: One itemised personal-data item of a purpose.
+      properties:
+        code:
+          type: string
+        names:
+          type: object
+          additionalProperties:
+            type: string
+        sensitive:
+          type: boolean
+          description: 'A special category under the jurisdiction pack (IN: SPDI r.3, Aadhaar), masked in summaries. A legal attestation: required,
+            true or false.'
+      required:
+      - code
+      - sensitive
     ComplianceGiveConsentRequest:
       type: object
       description: Consent by the data principal (or a verified guardian, DPDP s.9). `language` is a code of the tenant's jurisdiction pack; principalRef

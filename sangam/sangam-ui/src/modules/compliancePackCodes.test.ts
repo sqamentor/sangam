@@ -13,13 +13,13 @@ import { describe, expect, it } from 'vitest';
 import inPack from '../../../sangam-compliance/src/main/resources/compliance/jurisdictions/IN/pack.json';
 import en from '../i18n/locales/en.json';
 import apiYaml from '../../../sangam-rest/api/sangam-api.yaml?raw';
-import { consents, contactsScreen, packCodeField, packCodes, rightsScreen, type JurisdictionView } from './compliance';
+import { breachesScreen, consents, contactAct, contactRoleOptions, contactRoles, incidentTypeOptions, packCodeField, packCodes, rightsScreen, type JurisdictionView } from './compliance';
 import type { FormField } from '../api/types';
 
 const enOpt = (en as unknown as { opt: Record<string, string> }).opt;
 const hasLabel = (k: string) => k.startsWith('opt.') && typeof enOpt[k.slice(4)] === 'string';
 // the jurisdiction endpoint returns the pack's rights and contactRoles records (ComplianceApiImpl.jurisdiction)
-const india: JurisdictionView = { code: inPack.code, rights: inPack.rights, contactRoles: inPack.contactRoles };
+const india: JurisdictionView = { code: inPack.code, rights: inPack.rights, contactRoles: inPack.contactRoles, authorities: inPack.authorities };
 const rightCodes = inPack.rights.map((r) => r.code);
 const roleCodes = inPack.contactRoles.map((r) => r.code);
 
@@ -40,10 +40,11 @@ describe('compliance fields take their codes from the jurisdiction pack (D-23, C
   });
 
   it('the contact form offers exactly the India pack contact roles', () => {
-    const role = field(contactsScreen(india, hasLabel).toolbar?.[0]?.fields, 'role');
-    expect(role.type).toBe('select');
-    expect(role.values?.map((v) => v.value)).toEqual(roleCodes);
+    // decision 345: the role is picked first, then the form of that role opens (contactAct)
+    const roles = contactRoleOptions(india, hasLabel);
+    expect(roles.map((v) => v.value)).toEqual(roleCodes);
     expect(roleCodes).toEqual(expect.arrayContaining(['DPO', 'CONTACT_PERSON', 'GRIEVANCE_OFFICER', 'CERT_IN_POC']));
+    expect(roles.find((v) => v.value === 'CERT_IN_POC')?.label).toBe('opt.CERT_IN_POC');
   });
 
   it('every India right and contact role has an English label (Q-06: English through en.json)', () => {
@@ -67,7 +68,7 @@ describe('compliance fields take their codes from the jurisdiction pack (D-23, C
       expect(right.type).toBe('textfield');
       expect(right.values).toBeUndefined();
       expect(right.validate?.required).toBe(true);
-      expect(field(contactsScreen(pack, hasLabel).toolbar?.[0]?.fields, 'role').type).toBe('textfield');
+      expect(contactRoleOptions(pack, hasLabel)).toEqual([]); // no role to pick: the tab says the pack is unreadable
     }
   });
 
@@ -112,5 +113,94 @@ describe('compliance list columns are fields of the record the server returns (D
     const keys = rightsScreen(india, hasLabel).columns.map((col) => col.key);
     expect(keys.filter((k) => !props.includes(k))).toEqual([]);
     expect(keys).toEqual(expect.arrayContaining(['requestId', 'receivedAt', 'dueAt']));
+  });
+});
+
+describe('owner decision 338: the registers are searched with the reference in the body, never in the URL', () => {
+  it('the consent and rights registers name a POST search path and no query filter', () => {
+    for (const def of [consents, rightsScreen(india, hasLabel)]) {
+      expect(def.search).toMatch(/^\/compliance\/(consents|rights-requests)\/search$/);
+      expect(JSON.stringify(def)).not.toContain('subject');
+      expect('filters' in def).toBe(false);
+    }
+  });
+
+  it('the contract has the two searches with a subject body and no subject query parameter on the lists', () => {
+    expect(contractProperties('ComplianceSubjectSearch')).toEqual(['subject']);
+    expect(apiYaml).toContain('operationId: searchConsents');
+    expect(apiYaml).toContain('operationId: searchRightsRequests');
+    const listOp = (opId: string) => {
+      const i = apiYaml.indexOf(`operationId: ${opId}`);
+      return apiYaml.slice(i, apiYaml.indexOf('responses:', i));
+    };
+    for (const op of ['listConsents', 'listRightsRequests']) expect(listOp(op)).not.toContain('name: subject');
+  });
+
+  it('a rights request carries the published contact (decision 346, ComplianceRightsRequest.contact)', () => {
+    expect(contractProperties('ComplianceRightsRequest')).toContain('contact');
+  });
+});
+
+describe('owner decision 344: the incident type is a pick-list of the pack catalogue', () => {
+  const certIn = inPack.authorities.find((a) => a.code === 'CERT-IN') as unknown as { citation: string; catalogue: { code: string; label: string }[] };
+  const annexureI = certIn.catalogue.map((x) => x.code);
+
+  it('the India pack catalogue is the 20 CERT-In Annexure I types (pack data, i to xx)', () => {
+    expect(certIn.citation).toContain('Annexure I');
+    expect(annexureI).toEqual(['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv', 'xvi', 'xvii', 'xviii', 'xix', 'xx']);
+  });
+
+  it('the incident form picks an incident authority, then a type of its catalogue', () => {
+    const act = breachesScreen(india).toolbar?.find((a) => a.id === 'incident');
+    const authority = field(act?.fields, 'authority');
+    expect(authority.type).toBe('select');
+    expect(authority.values?.map((v) => v.value)).toEqual(['CERT-IN']); // the only authority of role INCIDENT
+    const type = field(act?.fields, 'type');
+    expect(type.type).toBe('select');
+    expect(type.validate?.required).toBe(true);
+    expect(act?.dynamicValues?.type({ authority: 'CERT-IN' }).map((v) => v.value)).toEqual(annexureI);
+    expect(act?.dynamicValues?.type({ authority: '' })).toEqual([]);
+    expect(act?.dynamicValues?.type({ authority: 'CERT-IN' })[0].label).toBe(`i - ${certIn.catalogue[0].label}`);
+  });
+
+  it('the breach form offers the catalogue codes for the linked incident, never free text', () => {
+    const incidentType = field(breachesScreen(india).toolbar?.find((a) => a.id === 'breach')?.fields, 'incidentType');
+    expect(incidentType.type).toBe('select');
+    expect(incidentType.values?.map((v) => v.value)).toEqual(annexureI);
+    expect(incidentTypeOptions(india, 'DPB')).toEqual([]); // the Board has no incident catalogue
+  });
+
+  it('without a readable pack the type is typed and the server checks it', () => {
+    const act = breachesScreen(undefined).toolbar?.find((a) => a.id === 'incident');
+    expect(field(act?.fields, 'type').type).toBe('textfield');
+    expect(act?.dynamicValues).toBeUndefined();
+  });
+});
+
+describe('owner decision 345: the contact form shows the fields the pack requires for the chosen role', () => {
+  const role = (code: string) => contactRoles(india).find((r) => r.code === code)!;
+
+  it('the CERT-In point of contact asks for designation, mobile and address, required, not behind more fields', () => {
+    const poc = inPack.contactRoles.find((r) => r.code === 'CERT_IN_POC') as unknown as { requiredFields?: string[] };
+    expect(poc.requiredFields).toEqual(['designation', 'mobile', 'address']);
+    const act = contactAct(role('CERT_IN_POC'));
+    expect(act.path).toBe('/compliance/contacts/CERT_IN_POC');
+    for (const k of ['name', 'email', 'designation', 'mobile', 'address']) expect(field(act.fields, k).validate?.required).toBe(true);
+    expect(field(act.fields, 'phone').validate?.required).toBeUndefined();
+  });
+
+  it('a role without required fields asks for name and email only; a resident role asks for residency', () => {
+    const contact = contactAct(role('CONTACT_PERSON'));
+    expect(contact.fields?.map((x) => x.key)).toEqual(['name', 'email', 'phone']);
+    const dpo = contactAct(role('DPO'));
+    expect(field(dpo.fields, 'resident').type).toBe('checkbox');
+    const t = (k: string) => k;
+    expect(dpo.check?.({ name: 'n', email: 'e' }, t)).toBe('mod.compliance.residentRequired');
+    expect(dpo.check?.({ name: 'n', email: 'e', resident: true }, t)).toBeUndefined();
+  });
+
+  it('every new field label is in en.json (Q-06)', () => {
+    const fld = (en as unknown as { fld: Record<string, string> }).fld;
+    for (const k of ['designation', 'mobile', 'address', 'resident', 'organisation']) expect(typeof fld[k]).toBe('string');
   });
 });

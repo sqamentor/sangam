@@ -61,7 +61,8 @@ test('the compliance officer records a consent on the published notice and withd
   const officerApi = await apiAs(officer.token);
   try {
     const list = async () => {
-      const res = await officerApi.get('compliance/consents', { params: { subject: principal } });
+      // owner decision 338: the reference in the body of POST .../search, never in the URL
+      const res = await officerApi.post('compliance/consents/search', { headers: { 'Idempotency-Key': randomUUID() }, data: { subject: principal } });
       expect(res.status(), await res.text()).toBe(200);
       const body = (await res.json()) as Consent[] | { items?: Consent[] };
       return Array.isArray(body) ? body : (body.items ?? []);

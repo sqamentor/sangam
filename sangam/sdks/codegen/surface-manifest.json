@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 956,
- "operations": 1137,
- "schemas": 859,
+ "paths": 958,
+ "operations": 1139,
+ "schemas": 862,
  "tags": [
   "AI",
   "Admin",
@@ -183,8 +183,8 @@
    "class": "ComplianceApi",
    "tag": "Compliance",
    "pathPrefix": "",
-   "operations": 32,
-   "maxLines": 620
+   "operations": 34,
+   "maxLines": 652
   },
   {
    "class": "ConfigApi",
@@ -854,6 +854,8 @@
   "ComplianceConsent",
   "ComplianceConsentArtefact",
   "ComplianceContact",
+  "ComplianceDataItemRequest",
+  "ComplianceDefinePurposeRequest",
   "ComplianceGiveConsentRequest",
   "ComplianceImpactAssessment",
   "ComplianceImpactAssessmentRequest",
@@ -873,6 +875,7 @@
   "ComplianceRightsRequest",
   "ComplianceRightsSubmission",
   "ComplianceSealLogsRequest",
+  "ComplianceSubjectSearch",
   "ComplianceSubmitIncidentRequest",
   "ComplianceTransferDecision",
   "ComplianceTransferRequest",
@@ -5552,6 +5555,18 @@
    "php": "ComplianceApi#withdrawConsent"
   },
   {
+   "operationId": "searchConsents",
+   "method": "POST",
+   "path": "/compliance/consents/search",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#searchConsents",
+   "typescript": "compliance.searchConsents",
+   "python": "compliance.search_consents",
+   "dotnet": "ComplianceApi#SearchConsentsAsync",
+   "php": "ComplianceApi#searchConsents"
+  },
+  {
    "operationId": "ingestConsentArtefact",
    "method": "POST",
    "path": "/compliance/consent-managers/{cm}/artefacts",
@@ -5586,6 +5601,18 @@
    "python": "compliance.list_rights_requests",
    "dotnet": "ComplianceApi#ListRightsRequestsAsync",
    "php": "ComplianceApi#listRightsRequests"
+  },
+  {
+   "operationId": "searchRightsRequests",
+   "method": "POST",
+   "path": "/compliance/rights-requests/search",
+   "tag": "Compliance",
+   "apiClass": "ComplianceApi",
+   "java": "ComplianceApi#searchRightsRequests",
+   "typescript": "compliance.searchRightsRequests",
+   "python": "compliance.search_rights_requests",
+   "dotnet": "ComplianceApi#SearchRightsRequestsAsync",
+   "php": "ComplianceApi#searchRightsRequests"
   },
   {
    "operationId": "getRightsRequest",

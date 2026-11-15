@@ -42,7 +42,7 @@ public interface ComplianceApi {
     /** POST /consents/{id}:withdraw {purposes?} */
     ConsentService.Consent withdrawConsent(SecurityIdentity id, String consentId, Set<String> purposeCodes);
 
-    /** GET /consents?subject= */
+    /** GET /consents (own) and POST /consents/search {subject} (owner decision 338); a read of another principal's consents writes PERSONAL_DATA_READ (decision 348) */
     List<ConsentService.Consent> consents(SecurityIdentity id, String principalRef);
 
     /** POST /consent-managers/{cm}/artefacts — mTLS from the consent manager */
@@ -51,7 +51,14 @@ public interface ComplianceApi {
     /** POST /rights-requests (public, authenticated by the published identifier) */
     DataSubjectRightsService.RightsRequest submitRightsRequest(String tenantId, DataSubjectRightsService.Submission submission);
 
-    /** GET /rights-requests/{id} */
+    /**
+     * POST /rights-requests by a caller the server authenticated (owner decision 335): {@code signedInPrincipal} is the
+     * caller's identity in {@code tenantId}, or null for an anonymous call; the jurisdiction pack names the methods.
+     */
+    DataSubjectRightsService.RightsRequest submitRightsRequest(String tenantId, DataSubjectRightsService.Submission submission,
+                                                               String signedInPrincipal);
+
+    /** GET /rights-requests/{id}; a read of another principal's request writes PERSONAL_DATA_READ (owner decision 348) */
     DataSubjectRightsService.RightsRequest rightsRequest(SecurityIdentity id, String requestId);
 
     /** POST /breaches — MODIFY */

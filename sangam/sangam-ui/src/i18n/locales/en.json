@@ -2801,7 +2801,13 @@
     "definedBy": "Published by",
     "contentHash": "Content hash",
     "fiscalStartDay": "Financial year start day",
-    "fiscalStartDayHint": "Optional, 1 to 28: the day of the start month the financial year begins on. Empty means the 1st."
+    "fiscalStartDayHint": "Optional, 1 to 28: the day of the start month the financial year begins on. Empty means the 1st.",
+    "designation": "Designation",
+    "mobile": "Mobile number",
+    "organisation": "Organisation",
+    "resident": "Resident in the country",
+    "dataItems": "Data items",
+    "standardsAttested": "Meets the standards of the legal basis"
   },
   "opt": {
     "ACCEPT": "Accept",
@@ -3155,7 +3161,20 @@
       "rights": "Rights requests",
       "title": "Compliance",
       "verifyChains": "Verify hash chains",
-      "basisHint": "A legal-basis code of the tenant's jurisdiction pack. The server checks it against the pack."
+      "basisHint": "A legal-basis code of the tenant's jurisdiction pack. The server checks it against the pack.",
+      "searchHint": "The reference is sent in the request body, never in the address. Every look-up of another person's records is recorded in that person's audit trail.",
+      "reportZone": "The days are read in the tenant time zone {{zone}}: from the start of the first day to the start of the day after the last.",
+      "reportNoZone": "The tenant has no time zone in its profile, so the report period cannot be set. Ask the administrator to set the locale zone.",
+      "firstDay": "First day",
+      "lastDay": "Last day",
+      "reportPeriodOrder": "The last day is before the first day.",
+      "residentHint": "This role must be held by a person resident in the country of the jurisdiction pack.",
+      "residentRequired": "Confirm that the person is resident: the jurisdiction pack requires it for this role.",
+      "noPackRoles": "The jurisdiction pack could not be read, so no contact role can be chosen.",
+      "purposeHint": "Whether the processing meets the standards its legal basis requires, whether the purpose is active, and whether each data item is sensitive are your explicit choices: nothing is assumed. The version is assigned by the server.",
+      "dataItemsHint": "A JSON list of items, each with its code, its names by language and \"sensitive\": true or false, for example [{\"code\": \"name\", \"names\": {\"en\": \"Full name\"}, \"sensitive\": false}].",
+      "dataItemsInvalid": "Every data item needs a code and \"sensitive\": true or false.",
+      "choiceRequired": "Choose Yes or No for {{field}}."
     },
     "config": {
       "chain": "Layer chain",

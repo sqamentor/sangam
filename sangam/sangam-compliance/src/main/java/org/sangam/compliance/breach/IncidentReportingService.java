@@ -82,11 +82,36 @@ public final class IncidentReportingService {
         return workflows == WorkflowStarter.NONE ? Map.of() : cfg.seatVariables(SEAT_ROLES);
     }
 
-    /** Registers an incident for every pack authority of role INCIDENT whose catalogue has the type; returns them. */
+    /**
+     * Owner decision 344: {@code type} must be a code of the catalogue of the authority {@code authorityCode} (IN: CERT-In
+     * Annexure I), or, when {@code authorityCode} is null, of at least one authority of role INCIDENT; a pick-list code,
+     * never free text. Otherwise INCIDENT_TYPE_NOT_IN_CATALOGUE; the refused value is not echoed (it may be free text).
+     * Callers check before their first row, so a refusal writes nothing.
+     */
+    public void requireCatalogued(ComplianceConfig cfg, String authorityCode, String type) {
+        if (authorityCode != null) {
+            JurisdictionPack.Authority a = authority(cfg, authorityCode);
+            if (type == null || a.incidentType(type).isEmpty()) {
+                throw new ComplianceException(ComplianceException.Code.INCIDENT_TYPE_NOT_IN_CATALOGUE,
+                        "the incident type is not a code of the catalogue of " + a.code() + " (" + a.citation() + ")");
+            }
+            return;
+        }
+        if (type == null || cfg.pack.authoritiesWithRole("INCIDENT").stream().noneMatch(a -> a.incidentType(type).isPresent())) {
+            throw new ComplianceException(ComplianceException.Code.INCIDENT_TYPE_NOT_IN_CATALOGUE,
+                    "the incident type is not a code of the catalogue of any incident authority of the jurisdiction pack");
+        }
+    }
+
+    /**
+     * Registers an incident for every pack authority of role INCIDENT whose catalogue has the type; returns them.
+     * A type no catalogue has is refused with INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344).
+     */
     public List<Incident> registerAll(Connection c, String tenantId, String type, Instant occurredAt, Instant noticedAt,
                                       List<String> affectedSystems, Map<String, Object> indicators, String description, String breachId,
                                       String actor) {
         requireSeats(config.forTenant(tenantId)); // before the first incident row (M-010c)
+        requireCatalogued(config.forTenant(tenantId), null, type);
         List<Incident> out = new ArrayList<>();
         for (JurisdictionPack.Authority a : config.forTenant(tenantId).pack.authoritiesWithRole("INCIDENT")) {
             if (a.incidentType(type).isPresent()) {
@@ -100,9 +125,7 @@ public final class IncidentReportingService {
                              List<String> affectedSystems, Map<String, Object> indicators, String description, String breachId, String actor) {
         ComplianceConfig cfg = config.forTenant(tenantId);
         JurisdictionPack.Authority a = authority(cfg, authorityCode);
-        if (a.incidentType(type).isEmpty()) {
-            throw ComplianceException.invalid("incident type " + type + " is not in the catalogue of " + a.code());
-        }
+        requireCatalogued(cfg, authorityCode, type);
         Instant now = Sql.now(c, dialect);
         Instant noticed = noticedAt == null ? now : noticedAt;
         Instant due = a.deadlineHours() > 0 ? noticed.plus(Duration.ofHours(a.deadlineHours())) : null;

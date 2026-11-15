@@ -8,7 +8,7 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.
+ * A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335): identifierType SIGNED_IN for the caller's own signed-in identity (identifierValue blank or that identity), else the published identifier with its proof (OTP).
  *
  * Schema ComplianceRightsSubmission of sangam-api.yaml 0.1.0.
  *

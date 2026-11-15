@@ -6,8 +6,7 @@
  * - D-23 (partial): the operator's rights-request form offers exactly the rights of the India pack, ACCESS (s.11),
  *   CORRECTION, COMPLETION, UPDATING, ERASURE (s.12), GRIEVANCE (s.13), NOMINATION (s.14) of the DPDP Act, and so
  *   UPDATING, not the UPDATE the UI once kept on its own (fixed in this lane: compliance.tsx packCodeField). Submitting a
- *   request is not shown here: the standalone server wires no principal authenticator, so every submission is refused
- *   (ComplianceWiring, PRINCIPAL_NOT_AUTHENTICATED); that is an owner decision in the matrix;
+ *   request by the signed-in data principal (owner decision 335) is shown in erasure-legal-hold.e2e.ts;
  * - C-03 (partial): the contact form offers the pack's contact roles, among them the CERT-In point of contact
  *   (CERT-In Directions 28-04-2022 dir.(iii));
  * - D-22: a data principal files a grievance or data-rights request in the portal, gets a reference, sees the published

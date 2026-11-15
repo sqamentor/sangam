@@ -120,6 +120,10 @@
       {"code": "COURT", "citation": "r.11(a)", "description": "Guardian appointed by a court of law"},
       {"code": "RPWD_S15_AUTHORITY", "citation": "r.11(b)", "description": "Designated authority under the RPwD Act 2016 s.15"},
       {"code": "NATIONAL_TRUST_S13_LLC", "citation": "r.11(c)", "description": "Local level committee under the National Trust Act 1999 s.13"}
+    ],
+    "principal": [
+      {"code": "SIGNED_IN", "citation": "r.14(1)", "description": "The Data Principal's own signed-in account with the Data Fiduciary"},
+      {"code": "OTP", "citation": "r.14(1)", "description": "A one-time code sent to the identifier the Data Fiduciary published for making a request"}
     ]
   },
   "rights": [

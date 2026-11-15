@@ -78,10 +78,24 @@ public final class DataSubjectRightsService {
                              String nomineeRef, String channel, Map<String, Object> details) {
     }
 
+    /**
+     * A rights request. {@code contact} is the tenant's published contact (DPO first, {@link ContactDirectory#publishedContact})
+     * as it stands when the request is read, so every acknowledgement and response carries it (owner decision 346; IN:
+     * DPDP s.8(9), r.9); null while the tenant has designated none.
+     */
     public record RightsRequest(String requestId, String principalRef, String right, RightCategory category, Status status,
                                 Instant receivedAt, Instant dueAt, Instant closedAt, String processInstanceId, boolean escalated,
-                                boolean late, String outcome, String responseText) {
+                                boolean late, String outcome, String responseText, ContactDirectory.Contact contact) {
+        RightsRequest withContact(ContactDirectory.Contact c) {
+            return new RightsRequest(requestId, principalRef, right, category, status, receivedAt, dueAt, closedAt,
+                    processInstanceId, escalated, late, outcome, responseText, c);
+        }
     }
+
+    /** Owner decision 335: the pack method that authenticates the caller's own signed-in identity. */
+    public static final String SIGNED_IN = "SIGNED_IN";
+    /** Owner decision 335: the pack method that authenticates a one-time code to the published identifier. */
+    public static final String OTP = "OTP";
 
     public record ErasureReport(List<String> erased, Map<String, String> retained) {
     }
@@ -131,16 +145,23 @@ public final class DataSubjectRightsService {
         this.workflows = workflows == null ? WorkflowStarter.NONE : workflows;
     }
 
+    /** An anonymous submission: authenticated only by the published identifier ({@link #submit(Connection, String, Submission, String)}). */
     public RightsRequest submit(Connection c, String tenantId, Submission s) {
+        return submit(c, tenantId, s, null);
+    }
+
+    /**
+     * Intake of a rights request.
+     *
+     * @param signedInPrincipal the caller's identity in {@code tenantId} as the server authenticated it (never a value
+     *                          from the request body); null for an anonymous caller
+     */
+    public RightsRequest submit(Connection c, String tenantId, Submission s, String signedInPrincipal) {
         ComplianceConfig cfg = config.forTenant(tenantId);
         JurisdictionPack.Right right = cfg.pack.right(s.right()).orElseThrow(() ->
                 ComplianceException.invalid("right " + s.right() + " is not defined by jurisdiction " + cfg.pack.code()));
         Sql.requireText(s.identifierType(), "identifierType");
-        Optional<String> who = authenticator == null ? Optional.empty()
-                : authenticator.authenticate(c, tenantId, s.identifierType(), s.identifierValue(), s.proof() == null ? Map.of() : s.proof());
-        if (who.isEmpty()) {
-            throw new ComplianceException(Code.PRINCIPAL_NOT_AUTHENTICATED, "the requester could not be authenticated");
-        }
+        Optional<String> who = Optional.of(authenticate(c, tenantId, cfg.pack, s, signedInPrincipal));
         String principal;
         if (s.nomineeRef() != null) {
             if (!who.get().equals(s.nomineeRef())) {
@@ -203,6 +224,44 @@ public final class DataSubjectRightsService {
                     + " (DataSubjectRightsService.SEAT_ROLES)");
         }
         return cfg.seatVariables(roles);
+    }
+
+    /**
+     * Owner decision 335: the requester, authenticated by a method the jurisdiction pack names
+     * ({@link JurisdictionPack#principalVerification}); refused with {@code PRINCIPAL_NOT_AUTHENTICATED} otherwise.
+     * <ul>
+     *   <li>{@code identifierType SIGNED_IN}: the pack must name {@link #SIGNED_IN} and the server must have
+     *       authenticated the caller; the requester is that identity. An {@code identifierValue}, if given, must be the
+     *       same identity (the body never chooses whom the request is for).</li>
+     *   <li>any other identifier type (e-mail, mobile, application reference ...): the published-identifier
+     *       authenticator (OTP / SSO, {@link PrincipalAuthenticator}). A pack that names methods but not {@link #OTP}
+     *       refuses it; a pack that names none leaves it to that authenticator, as before the decision.</li>
+     * </ul>
+     * Without an authenticator for the method, nothing authenticates (fail closed).
+     */
+    private String authenticate(Connection c, String tenantId, JurisdictionPack pack, Submission s, String signedIn) {
+        Set<String> methods = new LinkedHashSet<>();
+        pack.principalVerification().forEach(m -> methods.add(m.code()));
+        if (SIGNED_IN.equals(s.identifierType())) {
+            if (!methods.contains(SIGNED_IN)) {
+                throw new ComplianceException(Code.PRINCIPAL_NOT_AUTHENTICATED, "jurisdiction " + pack.code()
+                        + " does not authenticate a rights request by the signed-in identity");
+            }
+            if (signedIn == null || signedIn.isBlank()) {
+                throw new ComplianceException(Code.PRINCIPAL_NOT_AUTHENTICATED, "a SIGNED_IN request needs a signed-in caller");
+            }
+            if (s.identifierValue() != null && !s.identifierValue().isBlank() && !s.identifierValue().equals(signedIn)) {
+                throw new ComplianceException(Code.PRINCIPAL_NOT_AUTHENTICATED, "the identifier is not the signed-in identity");
+            }
+            return signedIn;
+        }
+        if (!methods.isEmpty() && !methods.contains(OTP)) {
+            throw new ComplianceException(Code.PRINCIPAL_NOT_AUTHENTICATED, "jurisdiction " + pack.code()
+                    + " authenticates a rights request only by " + methods);
+        }
+        Optional<String> who = authenticator == null ? Optional.empty()
+                : authenticator.authenticate(c, tenantId, s.identifierType(), s.identifierValue(), s.proof() == null ? Map.of() : s.proof());
+        return who.orElseThrow(() -> new ComplianceException(Code.PRINCIPAL_NOT_AUTHENTICATED, "the requester could not be authenticated"));
     }
 
     public void markInProgress(Connection c, String tenantId, String requestId, String actor) {
@@ -495,12 +554,15 @@ public final class DataSubjectRightsService {
     }
 
     public RightsRequest get(Connection c, String tenantId, String requestId) {
-        return Jdbc.one(c, SELECT + " WHERE tenant_id=? AND request_id=?", DataSubjectRightsService::map, tenantId, requestId)
+        RightsRequest r = Jdbc.one(c, SELECT + " WHERE tenant_id=? AND request_id=?", DataSubjectRightsService::map, tenantId, requestId)
                 .orElseThrow(() -> ComplianceException.notFound("rights request", requestId));
+        return r.withContact(contacts.publishedContact(c, tenantId).orElse(null));
     }
 
     public List<RightsRequest> forPrincipal(Connection c, String tenantId, String principalRef) {
-        return Jdbc.query(c, SELECT + " WHERE tenant_id=? AND principal_ref=? ORDER BY received_at", DataSubjectRightsService::map, tenantId, principalRef);
+        ContactDirectory.Contact contact = contacts.publishedContact(c, tenantId).orElse(null);
+        return Jdbc.query(c, SELECT + " WHERE tenant_id=? AND principal_ref=? ORDER BY received_at", DataSubjectRightsService::map,
+                tenantId, principalRef).stream().map(r -> r.withContact(contact)).toList();
     }
 
     public Map<String, Object> statistics(Connection c, String tenantId, Instant from, Instant to) {
@@ -544,6 +606,6 @@ public final class DataSubjectRightsService {
     private static RightsRequest map(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new RightsRequest(rs.getString(1), rs.getString(2), rs.getString(3), RightCategory.valueOf(rs.getString(4)),
                 Status.valueOf(rs.getString(5)), Jdbc.instant(rs, "received_at"), Jdbc.instant(rs, "due_at"), Jdbc.instant(rs, "closed_at"),
-                rs.getString(9), Sql.bool(rs.getInt(10)), Sql.bool(rs.getInt(11)), rs.getString(12), rs.getString(13));
+                rs.getString(9), Sql.bool(rs.getInt(10)), Sql.bool(rs.getInt(11)), rs.getString(12), rs.getString(13), null);
     }
 }

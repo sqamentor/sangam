@@ -25,6 +25,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read bool|null $late
  * @property-read string|null $outcome
  * @property-read string|null $responseText
+ * @property-read ComplianceContact|null $contact The published contact the data principal reaches about this request (owner decision 346): the DPO, else the pack's next published role; null when none is set.
  */
 final class ComplianceRightsRequest implements \JsonSerializable
 {
@@ -42,6 +43,7 @@ final class ComplianceRightsRequest implements \JsonSerializable
      * @param bool|null $late
      * @param string|null $outcome
      * @param string|null $responseText
+     * @param ComplianceContact|null $contact
      */
     public function __construct(
         public readonly ?string $requestId = null,
@@ -57,6 +59,7 @@ final class ComplianceRightsRequest implements \JsonSerializable
         public readonly ?bool $late = null,
         public readonly ?string $outcome = null,
         public readonly ?string $responseText = null,
+        public readonly ?ComplianceContact $contact = null,
     ) {
     }
 
@@ -77,6 +80,7 @@ final class ComplianceRightsRequest implements \JsonSerializable
             Support::bool($data['late'] ?? null),
             Support::str($data['outcome'] ?? null),
             Support::str($data['responseText'] ?? null),
+            Support::model($data['contact'] ?? null, ComplianceContact::class),
         );
     }
 
@@ -121,6 +125,9 @@ final class ComplianceRightsRequest implements \JsonSerializable
         }
         if ($this->responseText !== null) {
             $out['responseText'] = $this->responseText;
+        }
+        if ($this->contact !== null) {
+            $out['contact'] = $this->contact;
         }
         return $out === [] ? new \stdClass() : $out;
     }

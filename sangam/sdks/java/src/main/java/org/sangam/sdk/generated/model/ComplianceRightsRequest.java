@@ -21,6 +21,7 @@ package org.sangam.sdk.generated.model;
  * @param late wire field {@code late}
  * @param outcome wire field {@code outcome}
  * @param responseText wire field {@code responseText}
+ * @param contact wire field {@code contact}. The published contact the data principal reaches about this request (owner decision 346): the DPO, else the pack's next published role; null when none is set.
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ComplianceRightsRequest(
@@ -36,5 +37,6 @@ public record ComplianceRightsRequest(
         @com.fasterxml.jackson.annotation.JsonProperty("escalated") Boolean escalated,
         @com.fasterxml.jackson.annotation.JsonProperty("late") Boolean late,
         @com.fasterxml.jackson.annotation.JsonProperty("outcome") String outcome,
-        @com.fasterxml.jackson.annotation.JsonProperty("responseText") String responseText) {
+        @com.fasterxml.jackson.annotation.JsonProperty("responseText") String responseText,
+        @com.fasterxml.jackson.annotation.JsonProperty("contact") ComplianceContact contact) {
 }

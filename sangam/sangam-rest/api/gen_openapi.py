@@ -1801,6 +1801,17 @@ schema("CompliancePurpose", "A processing purpose with its legal basis, data ite
        "code names:smap descriptions:smap dataItems:list:obj basis legalRef subGround registerRef standardsAttested:bool "
        "exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention retentionClass "
        "recordClass recordRetention recordRetentionRef version:int active:bool specialCondition", ["basis"])
+schema("ComplianceDefinePurposeRequest", "A processing purpose to define or version (PUT /compliance/purposes/{code}). standardsAttested, active and every data item's sensitive are explicit choices of the client, never defaulted (an omitted one is 400 VALIDATION_FAILED naming the field); the version is assigned by the server (previous + 1). Durations are ISO-8601.",
+       "code names:smap descriptions:smap dataItems:list:ComplianceDataItemRequest basis legalRef subGround registerRef "
+       "standardsAttested:bool exemptions:list:s exemptionRef childExemptions:list:s flags:list:s retentionTrigger retention "
+       "retentionClass recordClass recordRetention recordRetentionRef active:bool specialCondition",
+       ["basis", "standardsAttested", "active"],
+       descs={"standardsAttested": "The processing meets the standards the legal basis or exemption requires (IN: DPDP Rules Second Schedule). A legal attestation: required, true or false.",
+              "active": "Whether processing under the purpose may start (consent, notices and purpose binding refuse an inactive purpose). Required.",
+              "code": "Optional; when given, it must equal the path code."})
+schema("ComplianceDataItemRequest", "One itemised personal-data item of a purpose.", "code names:smap sensitive:bool",
+       ["code", "sensitive"],
+       descs={"sensitive": "A special category under the jurisdiction pack (IN: SPDI r.3, Aadhaar), masked in summaries. A legal attestation: required, true or false."})
 schema("ComplianceGiveConsentRequest", "Consent by the data principal (or a verified guardian, DPDP s.9). `language` is a code of the tenant's jurisdiction pack; principalRef defaults to the caller.",
        "principalRef noticeKey noticeVersion:int language purposeCodes:list:s affirmativeAction:bool channel "
        "guardianVerificationId consentManagerId cmArtefactId", ["noticeKey", "purposeCodes", "affirmativeAction"])
@@ -1811,11 +1822,14 @@ schema("ComplianceWithdrawConsentRequest", "Purposes to withdraw; empty = all (D
 schema("ComplianceConsentArtefact", "A consent artefact from a registered consent manager (DPDP s.6(7), Rules r.4).",
        "consentManagerId artefactId principalRef fiduciaryId noticeKey noticeVersion:int languageCode purposeCodes:list:s "
        "issuedAt:dt expiresAt:dt signature")
-schema("ComplianceRightsSubmission", "A data-principal rights request (DPDP s.11-14), authenticated by the published identifier.",
+schema("ComplianceRightsSubmission", "A data-principal rights request (DPDP s.11-14), authenticated by a method the jurisdiction pack names (owner decision 335): identifierType SIGNED_IN for the caller's own signed-in identity (identifierValue blank or that identity), else the published identifier with its proof (OTP).",
        "principalRef right identifierType identifierValue proof:smap nomineeRef channel details:obj", ["right"])
 schema("ComplianceRightsRequest", "A rights request with its statutory due date.",
        "requestId principalRef right category status receivedAt:dt dueAt:dt closedAt:dt processInstanceId escalated:bool "
-       "late:bool outcome responseText")
+       "late:bool outcome responseText contact:ComplianceContact",
+       descs={"contact": "The published contact the data principal reaches about this request (owner decision 346): the DPO, else the pack's next published role; null when none is set."})
+schema("ComplianceSubjectSearch", "The principal whose records an officer searches (owner decision 338: in the body, never in the URL); blank = the caller's own.",
+       "subject")
 schema("ComplianceBreachRequest", "A personal-data breach (DPDP s.8(6), Rules r.7).",
        "facts:smap awareAt:dt subjects:list:s roots:list:s incidentType")
 schema("ComplianceBreach", "A breach with its authority deadline (72 h detailed report).",
@@ -1835,7 +1849,9 @@ schema("ComplianceRespondLawfulRequest", "The response and the disclosed princip
        "responseRef principalRefs:list:s dataCategories:list:s", ["responseRef"])
 schema("ComplianceReasonBody", "A reason.", "reason", ["reason"])
 schema("ComplianceContact", "A published contact (DPO / grievance officer, DPDP s.8(9), s.10(2)).",
-       "role name designation organisation email phone mobile address resident:bool validFrom:dt", ["name", "email"])
+       "role name designation organisation email phone mobile address resident:bool validFrom:dt", ["name", "email"],
+       descs={"resident": "The person is resident in the pack's home country (a residency attestation). Required by the server, true, for a role the pack marks mustBeResident (IN: the DPO); omitted is not attested, never assumed.",
+              "role": "Taken from the path on POST /compliance/contacts/{role}."})
 schema("ComplianceAuditEvidenceRequest", "Independent data audit evidence (Significant Data Fiduciary, DPDP s.10).",
        "kind periodFrom:dt periodTo:dt completedAt:dt auditor accreditationRef independent:bool findings:list:s reportHash authorityReportRef",
        ["kind", "auditor"])
@@ -1890,7 +1906,7 @@ op("get", C + "/purposes", "listCompliancePurposes", "Compliance", "List purpose
    CR + ["DPDP s.4"], resp=(200, "array:CompliancePurpose"), perm="compliance.read", errors=STD_R)
 op("put", C + "/purposes/{code}", "defineCompliancePurpose", "Compliance", "Define a purpose",
    "Defines or versions a purpose; validated against the jurisdiction pack (legal basis, legitimate uses, retention).",
-   CR + ["DPDP s.4", "DPDP s.7", "R41"], params=[pp("code")], body="CompliancePurpose", resp=(200, "CompliancePurpose"),
+   CR + ["DPDP s.4", "DPDP s.7", "R41"], params=[pp("code")], body="ComplianceDefinePurposeRequest", resp=(200, "CompliancePurpose"),
    cmd="compliance.purpose.define", perm="compliance.admin")
 op("post", C + "/consents", "giveConsent", "Compliance", "Give consent",
    "The data principal (or verified guardian) consents to purposes of a notice version. Recording consent for another principal needs compliance.modify.",
@@ -1900,34 +1916,41 @@ op("post", C + "/consents/{id}/withdraw", "withdrawConsent", "Compliance", "With
    "Withdraws some or all purposes, as easily as consent was given (DPDP s.6(4)); processing stops within the pack limit.",
    CR + ["DPDP s.6(4)", "R41"], params=[ID], body="ComplianceWithdrawConsentRequest", resp=(200, "ComplianceConsent"),
    cmd="compliance.consent.withdraw", perm="owner / compliance.modify", body_required=False)
-op("get", C + "/consents", "listConsents", "Compliance", "Consent history",
-   "Consents of a principal (default: the caller). Another principal's history needs compliance.read.",
-   CR + ["DPDP s.6"], params=[q("subject")], resp=(200, "array:ComplianceConsent"), perm="owner / compliance.read",
-   errors=STD_R)
+op("get", C + "/consents", "listConsents", "Compliance", "Own consent history",
+   "The caller's own consents. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's history is searched with POST /compliance/consents/search.",
+   CR + ["DPDP s.6"], resp=(200, "array:ComplianceConsent"), perm="authenticated (own)", errors=STD_R)
+op("post", C + "/consents/search", "searchConsents", "Compliance", "Search a principal's consents",
+   "Consents of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's history needs compliance.read and writes PERSONAL_DATA_READ on that principal's chain (owner decision 348).",
+   CR + ["DPDP s.6", "DPDP Rules r.6"], body="ComplianceSubjectSearch", body_required=False,
+   resp=(200, "array:ComplianceConsent"), perm="owner / compliance.read", errors=STD_R)
 op("post", C + "/consent-managers/{cm}/artefacts", "ingestConsentArtefact", "Compliance", "Ingest a consent-manager artefact",
    "Called by a registered consent manager (mTLS at the gateway; public at the API).", CR + ["DPDP s.6(7)", "R41"],
    params=[pp("cm")] + TENANT_PUBLIC, body="ComplianceConsentArtefact", resp=(201, "ComplianceConsent"),
    cmd="compliance.consent-artefact.ingest", created=True)
 public(C + "/consent-managers/{cm}/artefacts", "post")
 op("post", C + "/rights-requests", "submitRightsRequest", "Compliance", "Submit a rights request (public)",
-   "Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by the published identifier; due dates from the pack.",
+   "Access, correction, erasure, grievance or nomination (DPDP s.11-14); authenticated by a method the jurisdiction pack names (owner decision 335: the caller's signed-in identity, or the published identifier with an OTP), else 401 PRINCIPAL_NOT_AUTHENTICATED; due dates from the pack; the acknowledgement carries the published DPO contact (decision 346). 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).",
    CR + ["DPDP s.11", "DPDP s.12", "DPDP s.13", "DPDP s.14", "R41"], params=TENANT_PUBLIC, body="ComplianceRightsSubmission",
    resp=(201, "ComplianceRightsRequest"), cmd="compliance.rights-request.submit", created=True)
 public(C + "/rights-requests", "post")
-op("get", C + "/rights-requests", "listRightsRequests", "Compliance", "Rights requests of a principal",
-   "Default: the caller's own; another principal's needs compliance.read.", CR, params=[q("subject")],
+op("get", C + "/rights-requests", "listRightsRequests", "Compliance", "Own rights requests",
+   "The caller's own rights requests. Owner decision 338: the subject query parameter is withdrawn (400 SUBJECT_QUERY_WITHDRAWN); another principal's are searched with POST /compliance/rights-requests/search.",
+   CR, resp=(200, "array:ComplianceRightsRequest"), perm="authenticated (own)", errors=STD_R)
+op("post", C + "/rights-requests/search", "searchRightsRequests", "Compliance", "Search a principal's rights requests",
+   "Rights requests of the principal named in the body (owner decision 338; blank = the caller's own). Another principal's need compliance.read and write PERSONAL_DATA_READ on that principal's chain (owner decision 348).",
+   CR + ["DPDP Rules r.6"], body="ComplianceSubjectSearch", body_required=False,
    resp=(200, "array:ComplianceRightsRequest"), perm="owner / compliance.read", errors=STD_R)
 op("get", C + "/rights-requests/{id}", "getRightsRequest", "Compliance", "Get a rights request",
-   "Visible to its principal or with compliance.read (otherwise 404).", CR, params=[ID], resp=(200, "ComplianceRightsRequest"),
+   "Visible to its principal or with compliance.read (otherwise 404); a compliance.read reader of another principal's request writes PERSONAL_DATA_READ (owner decision 348).", CR, params=[ID], resp=(200, "ComplianceRightsRequest"),
    perm="owner / compliance.read", errors=GET_E)
 op("post", C + "/breaches", "registerBreach", "Compliance", "Register a personal-data breach",
-   "Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7).", CR + ["DPDP s.8(6)", "R41"],
+   "Starts the authority and data-principal notification clocks (DPDP s.8(6), Rules r.7). incidentType, when given, is a code of the authority catalogue of the jurisdiction pack, else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344); 409 COMPLIANCE_PACK_NOT_INSTALLED when the compliance pack is not installed for the tenant (decision 336).", CR + ["DPDP s.8(6)", "R41"],
    body="ComplianceBreachRequest", resp=(201, "ComplianceBreach"), cmd="compliance.breach.register",
    perm="compliance.modify", created=True)
 op("get", C + "/breaches/{id}", "getBreach", "Compliance", "Get a breach", "Breach with deadlines and notification counts.",
    CR, params=[ID], resp=(200, "ComplianceBreach"), perm="compliance.read", errors=GET_E)
 op("post", C + "/incidents", "registerComplianceIncident", "Compliance", "Register a reportable incident",
-   "A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing).",
+   "A cyber-security incident for the configured authority (CERT-In: report within 6 hours of noticing). type is a code of the authority's catalogue in the jurisdiction pack (GET /compliance/jurisdiction, authorities[].catalogue), else 422 INCIDENT_TYPE_NOT_IN_CATALOGUE (owner decision 344).",
    CR + ["CERT-In 2022", "R51", "R41"], body="ComplianceIncidentRequest", resp=(201, "ComplianceIncident"),
    cmd="compliance.incident.register", perm="compliance.modify", created=True)
 op("get", C + "/incidents/{id}", "getComplianceIncident", "Compliance", "Get an incident", "Incident with its due time.",

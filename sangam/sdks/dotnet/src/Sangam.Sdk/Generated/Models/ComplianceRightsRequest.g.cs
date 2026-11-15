@@ -47,4 +47,10 @@ public sealed record ComplianceRightsRequest
 
     [global::System.Text.Json.Serialization.JsonPropertyName("responseText")]
     public string? ResponseText { get; init; }
+
+    /// <summary>
+    /// The published contact the data principal reaches about this request (owner decision 346): the DPO, else the pack's next published role; null when none is set.
+    /// </summary>
+    [global::System.Text.Json.Serialization.JsonPropertyName("contact")]
+    public ComplianceContact? Contact { get; init; }
 }
