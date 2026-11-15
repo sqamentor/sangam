@@ -13,7 +13,7 @@ import { mergeById, openEventStream } from '../api/sse';
 import { useAction, useAsync, useInterval } from '../lib/hooks';
 import { BpmnDiagram } from '../components/BpmnDiagram';
 import { fmtNumber } from '../i18n';
-import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, ReasonDialog, Section, TextArea, TextField } from '../components/ui';
+import { Badge, DataTable, Dialog, Empty, JsonView, Notice, ProblemAlert, ReasonDialog, Section, SelectField, TextArea, TextField } from '../components/ui';
 import { ModulePage, c, cell, f, type Row, type ScreenDef } from './engine';
 
 // ------------------------------------------------------------------ AI
@@ -239,24 +239,94 @@ export function Landscape() {
   );
 }
 
-/** Token walk: the server computes each step; the user picks the branch at a gateway. */
+/** The start events of the event sub-processes of a BPMN model (subProcess triggeredByEvent="true"); none when it does not parse. */
+export function eventSubProcessStarts(xml: string): { id: string; name?: string }[] {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  if (doc.getElementsByTagName('parsererror').length > 0) return [];
+  const out: { id: string; name?: string }[] = [];
+  for (const sp of Array.from(doc.getElementsByTagNameNS('*', 'subProcess'))) {
+    if (sp.getAttribute('triggeredByEvent') !== 'true') continue;
+    for (const se of Array.from(sp.children)) {
+      const id = se.getAttribute('id');
+      if (se.localName === 'startEvent' && id) out.push({ id, name: se.getAttribute('name') ?? undefined });
+    }
+  }
+  return out;
+}
+
+type Via = 'FLOW' | 'BOUNDARY' | 'EVENT_SUB_PROCESS' | 'COMPENSATION';
+interface WalkMove { step: number; flowId?: string; fromNode: string; toNode: string; via: Via }
+interface WalkView { status?: string; moves?: WalkMove[]; visited?: string[]; pending?: { gatewayId: string; options: string[] }; warnings?: string[]; current?: string[]; done?: boolean }
+
+/**
+ * Token walk (walkModelToken): the server walks the model from the start with every choice made so far and stops at the
+ * next one. The choices map, keyed by element id with the values in order for repeated visits, is held here and sent
+ * whole: at a gateway the outgoing flow id; at an activity with boundary events its own id (it completes) or the
+ * boundary event id that fires; for an event sub-process start event the node ids at which its event occurs.
+ */
 export function TokenWalk({ bpmnXml, file }: { bpmnXml: string; file: string }) {
   const { t } = useTranslation();
-  const [walk, setWalk] = useState<{ current?: string[]; choices?: { flowId: string; name?: string }[]; done?: boolean; state?: unknown }>();
+  const [walk, setWalk] = useState<WalkView>();
+  const [choices, setChoices] = useState<Record<string, string[]>>({});
   const [playing, setPlaying] = useState(false);
+  const starts = useMemo(() => eventSubProcessStarts(bpmnXml), [bpmnXml]);
+  const [espStart, setEspStart] = useState('');
+  const [espAt, setEspAt] = useState('');
   const act = useAction();
-  const step = (choice?: string) => void act.run(() => http.post<typeof walk>('/models/token-walk', { file, xml: bpmnXml, state: walk?.state, choice })).then((r) => r && setWalk(r));
-  const needChoice = (walk?.choices?.length ?? 0) > 0;
-  useInterval(() => { if (playing && !needChoice && !walk?.done && !act.busy) step(); }, playing ? 1000 : null);
+  const post = (next: Record<string, string[]>) =>
+    void act.run(() => http.post<WalkView>('/models/token-walk', { file, xml: bpmnXml, choices: next })).then((r) => {
+      if (!r) return;
+      setChoices(next);
+      setWalk(r);
+    });
+  const add = (id: string, value: string) => post({ ...choices, [id]: [...(choices[id] ?? []), value] });
+  const pending = walk?.pending;
+  const needChoice = (pending?.options.length ?? 0) > 0;
+  // the server lists the activity itself among the options when it waits on its boundary events
+  const boundary = needChoice && pending!.options.includes(pending!.gatewayId);
+  const reached = [...new Set(walk?.visited ?? [])];
+  const start = espStart || starts[0]?.id || '';
+  const at = espAt || walk?.current?.[0] || reached[reached.length - 1] || '';
+  useInterval(() => { if (playing && !needChoice && !walk?.done && !act.busy) post(choices); }, playing ? 1000 : null);
   return (
     <Section title={t('mod.modeller2.tokenWalk')}>
       <div className="toolbar">
-        <button type="button" disabled={act.busy || walk?.done || needChoice} onClick={() => step()}>{t('act.step')}</button>
+        <button type="button" disabled={act.busy || walk?.done || needChoice} onClick={() => post(choices)}>{t('act.step')}</button>
         <button type="button" aria-pressed={playing} onClick={() => setPlaying(!playing)}>{playing ? t('act.suspend') : t('act.start')}</button>
-        <button type="button" onClick={() => { setWalk(undefined); setPlaying(false); }}>{t('common.clear')}</button>
+        <button type="button" onClick={() => { setWalk(undefined); setChoices({}); setEspStart(''); setEspAt(''); setPlaying(false); }}>{t('common.clear')}</button>
       </div>
       <ProblemAlert error={act.error} />
-      {needChoice && <div className="toolbar" role="group" aria-label={t('mod.modeller2.gateway')}><span>{t('mod.modeller2.gateway')}</span>{walk!.choices!.map((x) => <button key={x.flowId} type="button" onClick={() => step(x.flowId)}>{x.name ?? x.flowId}</button>)}</div>}
+      {(walk?.warnings?.length ?? 0) > 0 && <Notice tone="warn">{walk!.warnings!.join('; ')}</Notice>}
+      {needChoice && boundary && (
+        <div className="toolbar" role="group" aria-label={t('mod.modeller2.boundaryChoice', { id: pending!.gatewayId })}>
+          <span>{t('mod.modeller2.boundaryChoice', { id: pending!.gatewayId })}</span>
+          {pending!.options.map((o) => (
+            <button key={o} type="button" disabled={act.busy} onClick={() => add(pending!.gatewayId, o)}>
+              {o === pending!.gatewayId ? t('mod.modeller2.completeActivity', { id: o }) : t('mod.modeller2.fireBoundary', { id: o })}
+            </button>
+          ))}
+        </div>
+      )}
+      {needChoice && !boundary && (
+        <div className="toolbar" role="group" aria-label={t('mod.modeller2.gateway')}>
+          <span>{t('mod.modeller2.gateway')}</span>
+          {pending!.options.map((o) => <button key={o} type="button" disabled={act.busy} onClick={() => add(pending!.gatewayId, o)}>{o}</button>)}
+        </div>
+      )}
+      {walk && starts.length > 0 && reached.length > 0 && (
+        <div className="toolbar" role="group" aria-label={t('mod.modeller2.triggerEsp')}>
+          <SelectField label={t('mod.modeller2.espStart')} value={start} onChange={setEspStart} options={starts.map((x) => ({ value: x.id, label: x.name ? `${x.name} (${x.id})` : x.id }))} />
+          <SelectField label={t('mod.modeller2.espAt')} value={at} onChange={setEspAt} options={reached.map((n) => ({ value: n, label: n }))} />
+          <button type="button" disabled={act.busy || !start || !at} onClick={() => add(start, at)}>{t('mod.modeller2.trigger')}</button>
+        </div>
+      )}
+      {(walk?.moves?.length ?? 0) > 0 && (
+        <ol aria-label={t('mod.modeller2.moves')} className="small">
+          {walk!.moves!.map((m) => (
+            <li key={m.step}>{`${m.fromNode} → ${m.toNode} · ${t(`mod.modeller2.via.${m.via}`)}${m.flowId ? ` ${m.flowId}` : ''}`}</li>
+          ))}
+        </ol>
+      )}
       <p aria-live="polite" className="small">{(walk?.current ?? []).join(', ')}</p>
       <BpmnDiagram title={file} xml={bpmnXml} selected={walk?.current ?? []} compact />
     </Section>
