@@ -3,10 +3,12 @@ package org.sangam.server.config;
 
 import org.operaton.bpm.engine.ProcessEngine;
 import org.sangam.packs.spi.PackRegistry;
+import org.sangam.rest.port.PackDocumentSlotsPort;
 import org.sangam.rest.port.PermissionPort;
 import org.sangam.rest.support.DocumentSlots;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.server.bridge.OperatonDocumentSlots;
+import org.sangam.server.bridge.PackRegistryDocumentSlots;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -27,5 +29,12 @@ public class DocumentSlotsWiring {
                                              PermissionPort permissions) {
         return new DocumentSlots(new OperatonDocumentSlots(engine.getRuntimeService(), engine.getTaskService(),
                 engine.getRepositoryService(), sangamPackRegistry, tx), permissions);
+    }
+
+    /** Decision 269: the read side, {@code GET /packs/{id}/document-slots}, from the same manifests. */
+    @Bean
+    @ConditionalOnMissingBean(PackDocumentSlotsPort.class)
+    public PackDocumentSlotsPort sangamPackDocumentSlots(PackRegistry sangamPackRegistry) {
+        return new PackRegistryDocumentSlots(sangamPackRegistry);
     }
 }

@@ -8,11 +8,12 @@ import org.sangam.sdk.http.ApiRequest;
 import org.sangam.sdk.http.HttpTransport;
 import org.sangam.sdk.generated.model.InstalledPack;
 import org.sangam.sdk.generated.model.PackDeployResult;
+import org.sangam.sdk.generated.model.PackDocumentSlot;
 import org.sangam.sdk.generated.model.PackLifecycleRequest;
 import org.sangam.sdk.generated.model.PackUninstalled;
 
 /**
- * Typed operations of {@code Packs} (3 operations), generated from
+ * Typed operations of {@code Packs} (4 operations), generated from
  * sangam-api.yaml 0.1.0. Errors raise {@link org.sangam.sdk.error.SangamApiException} (RFC 9457),
  * {@link org.sangam.sdk.error.StaleLeaseException} for 409 STALE_LEASE and
  * {@link org.sangam.sdk.error.GoneException} for 410.
@@ -23,6 +24,7 @@ public final class PacksApi {
     private static final TypeReference<java.util.List<InstalledPack>> R_listInstalledPacks = new TypeReference<>() { };
     private static final TypeReference<PackUninstalled> R_uninstallPack = new TypeReference<>() { };
     private static final TypeReference<PackDeployResult> R_rollbackPack = new TypeReference<>() { };
+    private static final TypeReference<java.util.List<PackDocumentSlot>> R_listPackDocumentSlots = new TypeReference<>() { };
 
     private final GeneratedCalls call;
 
@@ -78,5 +80,20 @@ public final class PacksApi {
         ApiRequest req = ApiRequest.post("/packs/" + HttpTransport.seg(String.valueOf(id)) + "/rollback");
         req.body(body);
         return call.json(req, options, R_rollbackPack);
+    }
+
+    /**
+     * Document slots of a pack
+     *
+     * <p>The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
+     *
+     * <p>{@code GET /packs/{id}/document-slots} (operationId {@code listPackDocumentSlots}); permission {@code tenant.admin}.
+     * @param id path parameter {@code id}. pack id, e.g. sec.health.admission-discharge
+     * @param options per-call Idempotency-Key, seat headers, timeout and extra headers, or null
+     * @return the 200 response
+     */
+    public java.util.List<PackDocumentSlot> listPackDocumentSlots(String id, RequestOptions options) {
+        ApiRequest req = ApiRequest.get("/packs/" + HttpTransport.seg(String.valueOf(id)) + "/document-slots");
+        return call.json(req, options, R_listPackDocumentSlots);
     }
 }

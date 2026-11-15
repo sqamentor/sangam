@@ -652,8 +652,12 @@ public class SangamRestAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public org.sangam.rest.port.PackageToolsPort sangamPackageToolsPort(PackagePort packages, AuditPort audit,
-            RestProperties props, org.sangam.rest.support.DocumentStore store) {
-        return new org.sangam.rest.adapter.operaton.OperatonPackageToolsAdapter(packages, audit, props, store);
+            RestProperties props, org.sangam.rest.support.DocumentStore store,
+            ObjectProvider<org.sangam.rest.port.PackageGitRemote> gitRemote) {
+        // M-100: Git pull and push use the host's transport when it binds one (the server, with sangam-integration's
+        // PackageGitSync); resolved per call, so without one they answer 501
+        return new org.sangam.rest.adapter.operaton.OperatonPackageToolsAdapter(packages, audit, props, store,
+                gitRemote::getIfAvailable);
     }
 
     // ---------------------------------------------------------------- web layer

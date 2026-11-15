@@ -252,6 +252,14 @@
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- M-100: JGit stays optional in sangam-integration, so the server binds package Git sync only when a deployment
+         puts JGit on the class path (PackageGitWiring checks for it). Test scope only: the binding's tests need it;
+         whether the default server ships it is open for the owner. -->
+    <dependency>
+      <groupId>org.eclipse.jgit</groupId>
+      <artifactId>org.eclipse.jgit</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- M-144/M-150: the host conformance kit and cross-host equivalence scenarios (org.sangam.server.host) -->
     <dependency>
       <groupId>io.github.sqamentor</groupId>

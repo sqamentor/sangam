@@ -8159,7 +8159,7 @@ export class PackagesApi {
   }
 }
 
-/** Typed operations of `Packs` (3 operations). */
+/** Typed operations of `Packs` (4 operations). */
 export class PacksApi {
   constructor(private readonly calls: GeneratedCalls) {}
 
@@ -8199,6 +8199,18 @@ export class PacksApi {
     const req: ApiRequest = { method: 'POST', path: `/packs/${seg(String(id))}/rollback` };
     if (body !== undefined) req.body = body;
     return this.calls.json<M.PackDeployResult>(req, options);
+  }
+
+  /**
+   * Document slots of a pack
+   *
+   * The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
+   *
+   * `GET /packs/{id}/document-slots` (operationId `listPackDocumentSlots`); permission `tenant.admin`.
+   */
+  async listPackDocumentSlots(id: string, options?: RequestOptions): Promise<Array<M.PackDocumentSlot>> {
+    const req: ApiRequest = { method: 'GET', path: `/packs/${seg(String(id))}/document-slots` };
+    return this.calls.json<Array<M.PackDocumentSlot>>(req, options);
   }
 }
 
@@ -14825,7 +14837,7 @@ export class WorkspaceApi {
   }
 }
 
-/** The generated typed surface of sangam-api.yaml 0.1.0: 1147 operations on 965 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
+/** The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths, one member per API class (a tag, or a sub-path of a large tag). Use `client.api`. */
 export class SangamApis {
   readonly ai: AIApi;
   readonly admin: AdminApi;

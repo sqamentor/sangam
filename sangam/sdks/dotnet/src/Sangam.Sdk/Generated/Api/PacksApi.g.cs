@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Packs (3 operations).
+/// Typed operations of Packs (4 operations).
 /// </summary>
 public sealed class PacksApi
 {
@@ -49,5 +49,16 @@ public sealed class PacksApi
         var req = ApiRequest.Post($"/packs/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/rollback");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.PackDeployResult?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Document slots of a pack
+    /// The documentType-to-slot pairs the pack declares for its DSC steps (decision 269), in manifest order; empty when the pack declares none. 404 NOT_FOUND when no pack with this id is registered.
+    /// GET /packs/{id}/document-slots (operationId listPackDocumentSlots); permission tenant.admin.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.PackDocumentSlot>?> ListPackDocumentSlotsAsync(string id, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/packs/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/document-slots");
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.PackDocumentSlot>?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 }
