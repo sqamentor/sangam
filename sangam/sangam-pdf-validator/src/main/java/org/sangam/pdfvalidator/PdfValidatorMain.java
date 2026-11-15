@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package org.sangam.pdfvalidator;
 
+import java.io.OutputStream;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import org.sangam.integration.sidecar.SidecarLogging;
 import org.sangam.integration.sidecar.SidecarSettings;
 
 /**
@@ -21,9 +23,12 @@ import org.sangam.integration.sidecar.SidecarSettings;
  *       reports {@code NOT_READY} and refuses every validation.</li>
  * </ul>
  * An invalid setting stops the start-up with a message instead of falling back to a default. No secret is printed.
+ * The console log is ECS JSON from the first line on (owner decision 324, {@link SidecarLogging}).
  */
 public final class PdfValidatorMain {
 
+    /** The {@code service.name} of every log line. */
+    public static final String SERVICE = "sangam-pdf-validator";
     public static final String PREFIX = "SANGAM_PDF_VALIDATOR";
     public static final String PORT_ENV = "SANGAM_PDF_VALIDATOR_PORT";
     public static final String BIND_ENV = "SANGAM_PDF_VALIDATOR_BIND";
@@ -36,6 +41,7 @@ public final class PdfValidatorMain {
     public static final String TLS_KEYSTORE_PASSWORD_FILE_ENV = "SANGAM_PDF_VALIDATOR_TLS_KEYSTORE_PASSWORD_FILE";
     public static final int DEFAULT_PORT = 8085;
     public static final Duration DEFAULT_PROCESSING_TIMEOUT = Duration.ofSeconds(120);
+    private static final System.Logger LOG = System.getLogger(PdfValidatorMain.class.getName());
 
     private PdfValidatorMain() {
     }
@@ -46,7 +52,19 @@ public final class PdfValidatorMain {
                 DEFAULT_PROCESSING_TIMEOUT);
     }
 
+    /** Installs the JSON console logging of this sidecar on {@code out} (decision 324); the first step of main. */
+    static void logging(OutputStream out) {
+        SidecarLogging.install(SERVICE, out);
+    }
+
+    /** The start-up line, logged as one JSON object; the not-ready reason is escaped like any other value. */
+    static void logStarted(String bind, int port, String transport, String validator, String notReady) {
+        LOG.log(System.Logger.Level.INFO, SERVICE + " listening on " + bind + ":" + port + " (" + transport + ") with "
+                + validator + (notReady == null ? "" : "; NOT READY: " + notReady));
+    }
+
     public static void main(String[] args) throws Exception {
+        logging(System.out);
         SidecarSettings s = settings(System.getenv());
         PdfValidatorService service = new PdfValidatorService(new VeraPdfValidator(), VeraPdfValidator.name(),
                 s.open());
@@ -56,9 +74,8 @@ public final class PdfValidatorMain {
             stopped.countDown();
         }, "pdf-validator-shutdown"));
         String notReady = s.authenticator().notReadyReason();
-        System.out.println("sangam-pdf-validator listening on " + s.bind() + ":" + service.port() + " ("
-                + s.transport().name().toLowerCase(java.util.Locale.ROOT) + ") with " + VeraPdfValidator.name()
-                + (notReady == null ? "" : "; NOT READY: " + notReady));
+        logStarted(s.bind(), service.port(), s.transport().name().toLowerCase(java.util.Locale.ROOT),
+                VeraPdfValidator.name(), notReady);
         stopped.await();
     }
 }
