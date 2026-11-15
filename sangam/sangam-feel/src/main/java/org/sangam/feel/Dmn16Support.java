@@ -59,9 +59,11 @@ import org.w3c.dom.NodeList;
  * parse (deployment, cache rebuild after a restart, standalone DMN engines) goes through the same conversion because
  * {@link SangamFeel#install} puts {@link #install} on every Sangam DMN engine configuration.
  *
- * <p>FEEL 1.6 changes (specification formal/25-12-02, clause 10.3.4): {@code date and time(date, time, timezone)} is
- * evaluated by the pinned FEEL engine; IANA zone ids in time literals are deprecated (warning
- * {@code SANGAM-DMN-TIME-IANA} in {@code org.sangam.engine.feel.DmnModelLint}). No conformance claim is made until the tests run.
+ * <p>FEEL 1.6 changes (specification formal/25-12-02, clause 10.3.4, Table 73): {@code date and time(date, time,
+ * timezone)} is not in the pinned FEEL engine (feel-engine 1.22.1 has the one-argument and the two-argument form only);
+ * {@link Dmn16Functions} adds it to every Sangam FEEL engine. IANA zone ids in time literals are deprecated (warning
+ * {@code SANGAM-DMN-TIME-IANA} in {@code org.sangam.engine.feel.DmnModelLint}). No conformance claim is made (the DMN
+ * TCK has not been run).
  *
  * <p>Limits: {@code RepositoryService#getDmnModelInstance} reads stored bytes with Operaton's model API directly and
  * does not know DMN 1.6; callers that need a model instance of a stored resource use {@link #readModel(byte[])}.
