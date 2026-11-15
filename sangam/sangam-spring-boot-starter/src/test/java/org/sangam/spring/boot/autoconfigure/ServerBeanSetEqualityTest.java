@@ -47,7 +47,9 @@ class ServerBeanSetEqualityTest {
                 "spring.config.location=optional:file:" + SERVER_CONFIG + "/",
                 "spring.datasource.url=jdbc:h2:mem:" + db + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL",
                 "server.port=0", "management.server.port=0",
-                "sangam.engine.allow-multiple-engines-per-jvm=false"};
+                "sangam.engine.allow-multiple-engines-per-jvm=false",
+                // decision 143: every installation states its environment; the h2 profile is a development one
+                "sangam.security.production=false"};
         String[] all = new String[base.length + extra.length];
         System.arraycopy(base, 0, all, 0, base.length);
         System.arraycopy(extra, 0, all, base.length, extra.length);

@@ -27,7 +27,9 @@ class HostDefaultModulesTest {
                 "spring.datasource.url=jdbc:h2:mem:host-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL",
                 "spring.datasource.username=sa",
                 "server.port=0",
-                "sangam.tenant.default=dev"};
+                "sangam.tenant.default=dev",
+                // decision 143: every installation states its environment; this one is a development host
+                "sangam.security.production=false"};
         String[] all = new String[base.length + extra.length];
         System.arraycopy(base, 0, all, 0, base.length);
         System.arraycopy(extra, 0, all, base.length, extra.length);

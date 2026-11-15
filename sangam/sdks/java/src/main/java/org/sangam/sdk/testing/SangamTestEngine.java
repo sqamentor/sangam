@@ -270,7 +270,7 @@ public final class SangamTestEngine implements AutoCloseable {
     /**
      * The next request whose last path segment is {@code action} (for example {@code complete},
      * {@code fetch-and-lock}, {@code process-instances}) is applied, and then its response is lost: the connection
-     * ends before the body, so the client sees a transport error (T02, T04).
+     * ends without an answer, so the client sees a transport error (T02, T04).
      */
     public SangamTestEngine loseNextResponse(String action) {
         synchronized (lock) {
@@ -440,15 +440,11 @@ public final class SangamTestEngine implements AutoCloseable {
             }
         }
         if (drop) {
-            // the effect is applied; the answer is lost: promise a body and end the exchange without it
-            try {
-                ex.sendResponseHeaders(200, 64);
-                ex.getResponseBody().close();
-            } catch (IOException ignored) {
-                // expected: fewer bytes than promised; the connection is closed
-            } finally {
-                ex.close();
-            }
+            // The effect is applied; the answer is lost: the exchange ends without any response, which closes the
+            // connection, so the client fails at once with an I/O error. (Promising a body and not sending it does
+            // not do that on every JDK: on JDK 25 the connection stays open and the client only ends at its own
+            // request timeout.)
+            ex.close();
             return;
         }
         a.headers().forEach((k, v) -> ex.getResponseHeaders().set(k, v));

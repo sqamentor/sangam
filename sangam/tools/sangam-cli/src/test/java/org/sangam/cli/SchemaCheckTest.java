@@ -54,7 +54,12 @@ class SchemaCheckTest {
         assertTrue(pg.contains("onb-run-postgresql"));
         assertFalse(pg.contains("onb-run-h2"), "dialect-only changesets count for their database only");
         assertTrue(h2.contains("onb-run-h2"));
-        assertEquals(pg.size(), h2.size(), "every dialect has the same number of product changesets");
+        // decision 170: the PostgreSQL changelog alone also holds the optional extension changesets (pgvector column,
+        // applied only where the extension is enabled); every other changeset exists once for every database
+        List<String> postgresOnly = pg.stream().filter(id -> !h2.contains(id) && !id.equals("onb-run-postgresql")).toList();
+        assertEquals(List.of("0044-08-vector-optional"), postgresOnly, "the optional PostgreSQL extension changesets");
+        assertEquals(pg.size() - postgresOnly.size(), h2.size(),
+                "apart from them, every dialect has the same number of product changesets");
         assertFalse(SchemaCheck.includes().stream().anyMatch(f -> f.contains("engine-patches") || f.contains("history-partitioning")),
                 "engine patches and partitioning are not product changesets");
     }

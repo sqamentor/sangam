@@ -6,6 +6,9 @@ sangam/sangam-packs/src/main/resources/packs/** text eol=lf
 sangam/sangam-packs/src/main/resources/META-INF/sangam/** text eol=lf
 sangam/sangam-packs/src/main/resources/profiles/** text eol=lf
 sangam/sangam-packs/README.md text eol=lf
+# The product changelogs are generator output too (sangam-persistence/tools/generate_changelogs.py writes LF) and their
+# tests read exact lines; with core.autocrlf=true a checkout had CRLF and Wave4bTablesH2Test failed on Windows.
+sangam/sangam-persistence/src/main/resources/db/changelog/** text eol=lf
 # SL-56 (B4), one rule for every generator output: the generator writes LF (open(..., newline="\n")) and the file is
 # "text eol=lf", so every checkout holds exactly the generator's bytes. Byte comparisons then agree on Windows and
 # Linux (packgen --check: filecmp; E46 hashes); the text-mode checks (generate_native_config --check, CI regenerate +

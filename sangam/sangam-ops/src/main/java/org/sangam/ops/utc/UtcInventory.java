@@ -75,7 +75,8 @@ public final class UtcInventory {
     private final Map<String, Column> columns;
 
     private UtcInventory(Map<String, Column> columns) {
-        this.columns = Map.copyOf(columns);
+        // listing order is part of the contract (columns(), columnsOf): Map.copyOf keeps no order
+        this.columns = java.util.Collections.unmodifiableMap(new LinkedHashMap<>(columns));
     }
 
     /** The product inventory from the classpath; fails when sangam-persistence (and so the resource) is absent. */
