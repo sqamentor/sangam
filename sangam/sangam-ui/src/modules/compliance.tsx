@@ -10,11 +10,43 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { download, http } from '../api/client';
 import type { FormField } from '../api/types';
+import { tenantLocale } from '../i18n';
 import { useAction, useAsync } from '../lib/hooks';
-import { Checkbox, JsonView, KeyValues, Loading, Notice, ProblemAlert, Section, TextField } from '../components/ui';
-import { ModulePage, c, f, type ScreenDef } from './engine';
+import { Checkbox, JsonView, KeyValues, Loading, Notice, ProblemAlert, Section, SelectField, TextField } from '../components/ui';
+import { ActionDialog, ModulePage, ModuleScreen, c, f, type Act, type ScreenDef } from './engine';
+import { reportPeriod } from './compliancePeriod';
+import { PrincipalSearchScreen, type PrincipalSearchDef } from './complianceSearch';
 
-const purposes: ScreenDef = {
+/** A required Yes / No choice with no default, sent as a JSON boolean. */
+export function yesNo(key: string, label = `fld.${key}`): FormField {
+  return { key, label, type: 'select', json: true, values: [{ value: 'true', label: 'common.yes' }, { value: 'false', label: 'common.no' }], validate: { required: true } };
+}
+
+/** The define-purpose form (ComplianceDefinePurposeRequest in sangam-api.yaml). */
+export const purposeFields: FormField[] = [
+  f.text('code', undefined, true),
+  f.json('names', 'fld.names', true),
+  f.text('basis', 'fld.lawfulBasis', true, { description: 'mod.compliance.basisHint' }),
+  yesNo('standardsAttested'),
+  yesNo('active'),
+  { ...f.json('dataItems', 'fld.dataItems'), description: 'mod.compliance.dataItemsHint' },
+  f.text('retention'),
+];
+
+/** Every data item names its code and says, true or false, whether it is sensitive; nothing is assumed. */
+export function checkPurpose(body: Record<string, unknown>, t: (k: string, o?: Record<string, unknown>) => string): string | undefined {
+  for (const k of ['standardsAttested', 'active']) if (typeof body[k] !== 'boolean') return t('mod.compliance.choiceRequired', { field: t(`fld.${k}`) });
+  const items = body.dataItems;
+  if (items === undefined) return undefined;
+  if (!Array.isArray(items)) return t('mod.compliance.dataItemsInvalid');
+  for (const x of items) {
+    const it = x as { code?: unknown; sensitive?: unknown } | null;
+    if (!it || typeof it !== 'object' || typeof it.code !== 'string' || !it.code || typeof it.sensitive !== 'boolean') return t('mod.compliance.dataItemsInvalid');
+  }
+  return undefined;
+}
+
+export const purposes: ScreenDef = {
   id: 'purposes',
   title: 'mod.compliance.purposes',
   list: '/compliance/purposes',
@@ -25,20 +57,23 @@ const purposes: ScreenDef = {
   toolbar: [
     // M-051: PurposeDefinition(code, names {lang: text}, descriptions, dataItems, basis, ...) (PurposeDefinition.java:27); basis is a legal
     // basis code of the tenant's jurisdiction pack (PurposeBindingGuard.java:64-65); owner 2026-11-12 #49: no fixed list in the UI
-    { id: 'define', label: 'act.definePurpose', method: 'PUT', path: '/compliance/purposes/{code}', fields: [f.text('code', undefined, true), f.json('names', 'fld.names', true), f.text('basis', 'fld.lawfulBasis', true, { description: 'mod.compliance.basisHint' }), f.text('retention')] },
+    // ComplianceDefinePurposeRequest: standardsAttested, active and every data item's sensitive are explicit choices
+    // (required Yes / No, no default; the server refuses an omitted one by name), and the version is the server's
+    { id: 'define', label: 'act.definePurpose', method: 'PUT', path: '/compliance/purposes/{code}', fields: purposeFields, check: checkPurpose, hint: 'mod.compliance.purposeHint' },
     // M-051: the server reads {purposes} only (ComplianceRequests.java:18, ComplianceController.java:106-111); the key is the path
     { id: 'notice', label: 'act.publishNotice', path: '/compliance/notices/{key}/publish', fields: [f.path(f.text('key', 'fld.noticeKey', true)), f.json('purposes', 'privacy.purposeCodes', true)], showResult: true, noJson: true, hint: 'mod.compliance.noticeHint' },
   ],
 };
 
-export const consents: ScreenDef = {
+/**
+ * The consent register of one data principal. Owner decision 338: searched with POST /compliance/consents/search and
+ * the reference in the body (complianceSearch.tsx), never ?subject= in the URL.
+ */
+export const consents: PrincipalSearchDef = {
   id: 'consents',
   title: 'mod.compliance.consents',
   description: 'mod.compliance.consentsDesc',
-  list: '/compliance/consents',
-  unpaged: true,
-  filters: [f.text('subject', 'fld.principalRef', true)],
-  requireFilters: ['subject'],
+  search: '/compliance/consents/search',
   // the fields of a consent record as the server returns it (ComplianceConsent in sangam-api.yaml; ConsentService.Consent):
   // its id is consentId and its purposes are activePurposes, so the id and purposes columns were always empty
   // (CERT-In / DPDP matrix D-04, compliancePackCodes.test.ts)
@@ -63,6 +98,57 @@ export interface JurisdictionView {
   code?: string;
   rights?: unknown;
   contactRoles?: unknown;
+  /** JurisdictionPack.Authority records: code, role, name, catalogue of incident types {code, label}. */
+  authorities?: unknown;
+}
+
+/** An incident authority of the pack (role INCIDENT) with its incident-type catalogue (IN: CERT-In Annexure I). */
+export interface IncidentAuthority {
+  code: string;
+  name?: string;
+  catalogue: { code: string; label: string }[];
+}
+
+/** The pack's incident authorities (role INCIDENT), in pack order, with their catalogues; malformed entries are skipped. */
+export function incidentAuthorities(pack: JurisdictionView | undefined): IncidentAuthority[] {
+  const list = pack?.authorities;
+  if (!Array.isArray(list)) return [];
+  const out: IncidentAuthority[] = [];
+  for (const a of list) {
+    if (!a || typeof a !== 'object') continue;
+    const r = a as { code?: unknown; role?: unknown; name?: unknown; catalogue?: unknown };
+    if (r.role !== 'INCIDENT' || typeof r.code !== 'string' || !r.code) continue;
+    const catalogue = Array.isArray(r.catalogue)
+      ? r.catalogue
+          .map((x) => (x && typeof x === 'object' ? (x as { code?: unknown; label?: unknown }) : {}))
+          .filter((x): x is { code: string; label?: unknown } => typeof x.code === 'string' && x.code.length > 0)
+          .map((x) => ({ code: x.code, label: typeof x.label === 'string' && x.label ? x.label : x.code }))
+      : [];
+    out.push({ code: r.code, name: typeof r.name === 'string' ? r.name : undefined, catalogue });
+  }
+  return out;
+}
+
+/** A catalogue entry as a select option: the code and the pack's label (pack data, not UI copy). */
+const typeOption = (x: { code: string; label: string }) => ({ value: x.code, label: x.label === x.code ? x.code : `${x.code} - ${x.label}` });
+
+/**
+ * Owner decision 344: the incident types an officer may pick, from the pack catalogue: of one authority, or (no
+ * authority given) of every incident authority, each code once. The server refuses any other value by name
+ * (INCIDENT_TYPE_NOT_IN_CATALOGUE).
+ */
+export function incidentTypeOptions(pack: JurisdictionView | undefined, authority?: string): { value: string; label: string }[] {
+  const seen = new Set<string>();
+  const out: { value: string; label: string }[] = [];
+  for (const a of incidentAuthorities(pack)) {
+    if (authority !== undefined && a.code !== authority) continue;
+    for (const x of a.catalogue) {
+      if (seen.has(x.code)) continue;
+      seen.add(x.code);
+      out.push(typeOption(x));
+    }
+  }
+  return out;
 }
 
 /** The codes of one pack list, in pack order; an absent or malformed list gives none. */
@@ -84,14 +170,15 @@ export function packCodeField(key: string, codes: string[], hasLabel: (i18nKey: 
   return { ...f.select(key, [], undefined, required), values: codes.map((v) => ({ value: v, label: hasLabel(`opt.${v}`) ? `opt.${v}` : v })) };
 }
 
-export function rightsScreen(pack: JurisdictionView | undefined, hasLabel: (i18nKey: string) => boolean): ScreenDef {
+/**
+ * Rights requests of one data principal. Owner decision 338: searched with POST /compliance/rights-requests/search and
+ * the reference in the body, never ?subject= in the URL. The detail carries the published DPO contact (decision 346).
+ */
+export function rightsScreen(pack: JurisdictionView | undefined, hasLabel: (i18nKey: string) => boolean): PrincipalSearchDef {
   return {
     id: 'rights',
     title: 'mod.compliance.rights',
-    list: '/compliance/rights-requests',
-    unpaged: true,
-    filters: [f.text('subject', 'fld.principalRef', true)],
-    requireFilters: ['subject'],
+    search: '/compliance/rights-requests/search',
     // ComplianceRightsRequest (sangam-api.yaml; DataSubjectRightsService.RightsRequest): requestId and receivedAt
     columns: [c('requestId', 'fld.requestId'), c('right'), c('status'), c('receivedAt'), c('dueAt')],
     rowKey: ['id', 'requestId'],
@@ -100,7 +187,20 @@ export function rightsScreen(pack: JurisdictionView | undefined, hasLabel: (i18n
   };
 }
 
-const breaches: ScreenDef = {
+/**
+ * Breaches and incidents. Owner decision 344: the incident type is a pick-list of the pack catalogue (IN: the 20 CERT-In
+ * Annexure I types), for the incident (of the chosen authority) and for the incident a breach opens; without a readable
+ * pack the code is typed and the server checks it like any other.
+ */
+export function breachesScreen(pack: JurisdictionView | undefined): ScreenDef {
+  const authorities = incidentAuthorities(pack);
+  const anyType = incidentTypeOptions(pack);
+  const breachType: FormField = anyType.length ? { ...f.select('incidentType', []), values: anyType } : f.text('incidentType');
+  const authority: FormField = authorities.length
+    ? { ...f.select('authority', [], undefined, true), values: authorities.map((a) => ({ value: a.code, label: a.name ? `${a.code} - ${a.name}` : a.code })) }
+    : f.text('authority', undefined, true);
+  const type: FormField = authorities.length ? { ...f.select('type', [], 'fld.incidentType', true), values: [] } : f.text('type', 'fld.incidentType', true);
+  return {
   id: 'breaches',
   title: 'mod.compliance.breaches',
   description: 'mod.compliance.breachesDesc',
@@ -112,14 +212,24 @@ const breaches: ScreenDef = {
   columns: [c('key', 'fld.field'), c('value', 'fld.value')],
   rowKey: ['key'],
   toolbar: [
-    { id: 'breach', label: 'act.registerBreach', path: '/compliance/breaches', fields: [f.dt('awareAt', undefined, true), f.text('incidentType'), f.json('facts', 'fld.facts', true), f.json('subjects'), f.json('roots')], showResult: true, hint: 'mod.compliance.breachHint' },
+    { id: 'breach', label: 'act.registerBreach', path: '/compliance/breaches', fields: [f.dt('awareAt', undefined, true), breachType, f.json('facts', 'fld.facts', true), f.json('subjects'), f.json('roots')], showResult: true, hint: 'mod.compliance.breachHint' },
     // M-051: IncidentRequest(authority, type, occurredAt, noticedAt, systems, description) (ComplianceRequests.java:34); required
     // authority, type, occurredAt (sangam-api.yaml ComplianceIncidentRequest)
-    { id: 'incident', label: 'act.registerIncident', path: '/compliance/incidents', fields: [f.text('authority', undefined, true), f.text('type', 'fld.incidentType', true), f.dt('occurredAt', 'fld.occurredAt', true), f.dt('noticedAt', undefined, true), f.json('systems', 'fld.affectedSystems'), f.area('description', 'fld.summary', true)], showResult: true, hint: 'mod.compliance.incidentHint' },
+    // decision 344: the type options are the catalogue of the chosen authority
+    {
+      id: 'incident',
+      label: 'act.registerIncident',
+      path: '/compliance/incidents',
+      fields: [authority, type, f.dt('occurredAt', 'fld.occurredAt', true), f.dt('noticedAt', undefined, true), f.json('systems', 'fld.affectedSystems'), f.area('description', 'fld.summary', true)],
+      dynamicValues: authorities.length ? { type: (v) => incidentTypeOptions(pack, typeof v.authority === 'string' ? v.authority : '') } : undefined,
+      showResult: true,
+      hint: 'mod.compliance.incidentHint',
+    },
     // M-051: SubmitIncidentRequest(actionsTaken) (ComplianceRequests.java:38); the incident id is the path only
     { id: 'submitIncident', label: 'act.submitIncidentReport', path: '/compliance/incidents/{incidentId}/submit', fields: [f.path(f.text('incidentId', undefined, true)), f.area('actionsTaken', 'fld.actionsTaken')], showResult: true },
   ],
-};
+  };
+}
 
 const lawful: ScreenDef = {
   id: 'lawful',
@@ -145,16 +255,103 @@ const lawful: ScreenDef = {
   ],
 };
 
-export function contactsScreen(pack: JurisdictionView | undefined, hasLabel: (i18nKey: string) => boolean): ScreenDef {
+/** The published contacts list (the form to set one is per role: contactAct). */
+export const contactsList: ScreenDef = {
+  id: 'contacts',
+  title: 'mod.compliance.contacts',
+  list: '/compliance/contacts',
+  unpaged: true,
+  columns: [c('role'), c('name'), c('designation'), c('email'), c('phone'), c('mobile')],
+  rowKey: ['role'],
+};
+
+/** A contact role of the pack as GET /compliance/jurisdiction gives it (JurisdictionPack.ContactRole). */
+export interface ContactRoleView {
+  code: string;
+  mustBeResident?: boolean;
+  requiredFields?: string[];
+}
+
+/** The pack's contact roles, in pack order; malformed entries are skipped. */
+export function contactRoles(pack: JurisdictionView | undefined): ContactRoleView[] {
+  const list = pack?.contactRoles;
+  if (!Array.isArray(list)) return [];
+  const out: ContactRoleView[] = [];
+  for (const x of list) {
+    if (!x || typeof x !== 'object') continue;
+    const r = x as { code?: unknown; mustBeResident?: unknown; requiredFields?: unknown };
+    if (typeof r.code !== 'string' || !r.code) continue;
+    const req = Array.isArray(r.requiredFields) ? r.requiredFields.filter((v): v is string => typeof v === 'string' && v.length > 0) : [];
+    out.push({ code: r.code, mustBeResident: r.mustBeResident === true, requiredFields: req });
+  }
+  return out;
+}
+
+/** The role picker of the contact form: the pack's contact roles, labelled by opt.<code> where the UI has it. */
+export function contactRoleOptions(pack: JurisdictionView | undefined, hasLabel: (i18nKey: string) => boolean): { value: string; label: string }[] {
+  return contactRoles(pack).map((r) => ({ value: r.code, label: hasLabel(`opt.${r.code}`) ? `opt.${r.code}` : r.code }));
+}
+
+/** The contact fields the server stores (ContactDirectory.Contact), in form order, besides role and resident. */
+const CONTACT_FIELDS = ['name', 'designation', 'organisation', 'email', 'phone', 'mobile', 'address'];
+
+/**
+ * Owner decision 345: the form that sets the contact of one pack role shows the fields the pack requires for that role
+ * (IN CERT_IN_POC: designation, mobile, address; CERT-In Directions Annexure II) as required fields of the form, not
+ * behind "more fields"; name and email are always required (ContactDirectory.set), and a role that must be resident
+ * asks for the residency confirmation. The server checks the same rules.
+ */
+export function contactAct(role: ContactRoleView): Act {
+  const required = new Set<string>(['name', 'email', ...(role.requiredFields ?? [])]);
+  const shown = CONTACT_FIELDS.filter((k) => required.has(k) || k === 'phone');
+  const extra = (role.requiredFields ?? []).filter((k) => !CONTACT_FIELDS.includes(k));
+  const fields: FormField[] = [...shown.map((k) => (k === 'address' ? f.area(k, undefined, true) : f.text(k, undefined, required.has(k)))), ...extra.map((k) => f.text(k, undefined, true))];
+  if (role.mustBeResident) fields.push(f.bool('resident', 'fld.resident'));
   return {
-    id: 'contacts',
-    title: 'mod.compliance.contacts',
-    list: '/compliance/contacts',
-    unpaged: true,
-    columns: [c('role'), c('name'), c('email'), c('phone')],
-    rowKey: ['role'],
-    toolbar: [{ id: 'set', label: 'act.setContact', path: '/compliance/contacts/{role}', fields: [packCodeField('role', packCodes(pack?.contactRoles), hasLabel, true), f.text('name', undefined, true), f.text('email', undefined, true), f.text('phone')] }],
+    id: 'set',
+    label: 'act.setContact',
+    path: `/compliance/contacts/${encodeURIComponent(role.code)}`,
+    fields,
+    hint: role.mustBeResident ? 'mod.compliance.residentHint' : undefined,
+    check: role.mustBeResident ? (body, t) => (body.resident === true ? undefined : t('mod.compliance.residentRequired')) : undefined,
   };
+}
+
+/** The contacts tab: the list, and a role picker whose form shows that role's required fields (decision 345). */
+export function ContactsTab({ pack, hasLabel }: { pack: JurisdictionView | undefined; hasLabel: (i18nKey: string) => boolean }) {
+  const { t } = useTranslation();
+  const roles = contactRoles(pack);
+  const [role, setRole] = useState('');
+  const [open, setOpen] = useState(false);
+  const [n, setN] = useState(0);
+  const chosen = roles.find((r) => r.code === role);
+  return (
+    <>
+      <ModuleScreen key={n} def={contactsList} embedded />
+      <Section title={t('act.setContact')}>
+        {roles.length === 0 ? (
+          <Notice tone="warn">{t('mod.compliance.noPackRoles')}</Notice>
+        ) : (
+          <div className="filters">
+            <SelectField label={t('fld.role')} required value={role} onChange={setRole} placeholder={t('form.choose')} options={contactRoleOptions(pack, hasLabel).map((o) => ({ value: o.value, label: o.label.startsWith('opt.') ? t(o.label) : o.label }))} />
+            <button type="button" className="primary" disabled={!chosen} onClick={() => setOpen(true)}>
+              {t('act.setContact')}
+            </button>
+          </div>
+        )}
+      </Section>
+      {open && chosen && (
+        <ActionDialog
+          act={contactAct(chosen)}
+          onClose={() => setOpen(false)}
+          onDone={() => {
+            setOpen(false);
+            setN((x) => x + 1);
+          }}
+        />
+      )}
+    </>
+  );
 }
 
 const evidence: ScreenDef = {
@@ -189,21 +386,27 @@ export function EvidenceReport() {
   const [verifyChains, setVerify] = useState(true);
   const [report, setReport] = useState<{ reportId?: string; hash?: string; content?: unknown; html?: string }>();
   const act = useAction();
-  const q = { from: from || undefined, to: to || undefined, verifyChains };
+  // owner decision 342: the chosen days become instants in the tenant's zone, [start of the first day, start of the
+  // day after the last); without the tenant's zone nothing is sent (never the reader's zone)
+  const zone = tenantLocale().zone;
+  const period = reportPeriod(from, to, zone);
+  const q = 'error' in period ? undefined : { from: period.from, to: period.to, verifyChains };
   return (
     <Section title={t('mod.compliance.report')}>
       <p className="hint">{t('mod.compliance.reportHint')}</p>
+      {zone ? <p className="hint">{t('mod.compliance.reportZone', { zone })}</p> : <Notice tone="warn">{t('mod.compliance.reportNoZone')}</Notice>}
       <div className="filters">
-        <TextField label={t('common.from')} type="date" value={from} onChange={setFrom} />
-        <TextField label={t('common.to')} type="date" value={to} onChange={setTo} />
+        <TextField label={t('mod.compliance.firstDay')} type="date" required value={from} onChange={setFrom} />
+        <TextField label={t('mod.compliance.lastDay')} type="date" required value={to} onChange={setTo} />
         <Checkbox label={t('mod.compliance.verifyChains')} checked={verifyChains} onChange={setVerify} />
-        <button type="button" className="primary" disabled={act.busy} onClick={() => void act.run(() => http.get<typeof report>('/compliance/reports', { ...q, format: 'json' })).then((r) => r && setReport(r))}>
+        <button type="button" className="primary" disabled={act.busy || !q} onClick={() => void (q && act.run(() => http.get<typeof report>('/compliance/reports', { ...q, format: 'json' })).then((r) => r && setReport(r)))}>
           {t('mod.compliance.generate')}
         </button>
-        <button type="button" onClick={() => void act.run(() => download('/compliance/reports', { ...q, format: 'html' }, 'compliance-report.html').then(() => true))}>
+        <button type="button" disabled={act.busy || !q} onClick={() => void (q && act.run(() => download('/compliance/reports', { ...q, format: 'html' }, 'compliance-report.html').then(() => true)))}>
           {t('mod.compliance.downloadHtml')}
         </button>
       </div>
+      {'error' in period && period.error === 'order' && <Notice tone="bad">{t('mod.compliance.reportPeriodOrder')}</Notice>}
       <ProblemAlert error={act.error} />
       {report && (
         <>
@@ -220,12 +423,26 @@ export function CompliancePage() {
   const { i18n } = useTranslation();
   // the pack's codes for the rights and contact-role fields (packCodeField); the evidence tab shows the same answer
   const pack = useAsync((signal) => http.get<JurisdictionView>('/compliance/jurisdiction', undefined, signal), []);
-  const screens = useMemo(() => {
+  // every tab in order; the consent and rights registers are searched by POST (decision 338) and the contact form is
+  // per role (decision 345), so those tabs are their own screens
+  const tabs = useMemo(() => {
     const hasLabel = (k: string) => i18n.exists(k);
-    return [purposes, consents, rightsScreen(pack.data, hasLabel), breaches, lawful, contactsScreen(pack.data, hasLabel), evidence];
+    const screen = (def: ScreenDef) => ({ id: def.id, label: def.title, node: <ModuleScreen def={def} embedded /> });
+    const search = (def: PrincipalSearchDef) => ({ id: def.id, label: def.title, node: <PrincipalSearchScreen def={def} /> });
+    return [
+      screen(purposes),
+      search(consents),
+      search(rightsScreen(pack.data, hasLabel)),
+      screen(breachesScreen(pack.data)),
+      screen(lawful),
+      { id: 'contacts', label: 'mod.compliance.contacts', node: <ContactsTab pack={pack.data} hasLabel={hasLabel} /> },
+      screen(evidence),
+      { id: 'report', label: 'mod.compliance.report', node: <EvidenceReport /> },
+      { id: 'privacy', label: 'privacy.title', node: <PrivacyAdmin /> },
+    ];
   }, [pack.data, i18n]);
   if (pack.loading && !pack.data && !pack.error) return <Loading />;
-  return <ModulePage title="mod.compliance.title" description="mod.compliance.desc" screens={screens} extra={[{ id: 'report', label: 'mod.compliance.report', node: <EvidenceReport /> }, { id: 'privacy', label: 'privacy.title', node: <PrivacyAdmin /> }]} />;
+  return <ModulePage title="mod.compliance.title" description="mod.compliance.desc" screens={[]} extra={tabs} />;
 }
 
 /** RenderedNotice (ConsentNoticeService.java:45-46; language: JurisdictionPack.Language, JurisdictionPack.java:39). */
