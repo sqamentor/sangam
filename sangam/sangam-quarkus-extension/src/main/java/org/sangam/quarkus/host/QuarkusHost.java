@@ -3,6 +3,7 @@ package org.sangam.quarkus.host;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -12,15 +13,20 @@ import jakarta.inject.Singleton;
 import jakarta.transaction.TransactionManager;
 
 import org.sangam.assembly.engine.EngineAssembly;
+import org.sangam.assembly.host.AttributionTenant;
 import org.sangam.assembly.host.Capabilities;
 import org.sangam.assembly.host.Capability;
 import org.sangam.assembly.host.ConnectionBinding;
 import org.sangam.assembly.host.HostSeams;
 import org.sangam.assembly.host.SangamProperties;
 import org.sangam.assembly.host.SangamRuntime;
+import org.sangam.assembly.integration.LifecycleAuthorization;
+import org.sangam.assembly.integration.OutboxDestinations;
 import org.sangam.assembly.integration.RelayWakeup;
 import org.sangam.core.layer.Dialect;
 import org.sangam.engine.SangamEngineSettings;
+import org.sangam.integration.lifecycle.LifecyclePorts;
+import org.sangam.rest.support.TxSupport;
 
 /**
  * The optional Quarkus host (M-143, owner decision 186): its seams handed to the plain-Java assembly, nothing decided
@@ -64,6 +70,12 @@ public class QuarkusHost {
     private final HostSeams seams;
     private final SangamRuntime runtime;
     private final SangamEngineSettings engineSettings;
+    private final String attributionTenant;
+    private final OutboxDestinations outboxDestinations;
+    private JtaTxSupport txSupport;
+
+    /** The outbox destinations this host has a publisher for beyond the fixed list: none in 0.1.0. */
+    static final OutboxDestinations.Routes OUTBOX_ROUTES = OutboxDestinations.Routes.none();
 
     @Inject
     public QuarkusHost(Instance<QuarkusConfigSource> config, Instance<QuarkusLifecycle> lifecycle,
@@ -86,6 +98,12 @@ public class QuarkusHost {
         this.properties = config.properties();
         // decision 317: no broker inbox on this host before phase 5; a switched-on one refuses the start by name
         BrokerInboxRefusal.refuseIfEnabled(properties);
+        // SL-86: the one attribution-tenant rule, the same plain-Java resolver the Spring host reads (the reserved
+        // shared key refuses the start naming sangam.tenant.default, before the engine is built)
+        this.attributionTenant = AttributionTenant.resolve(properties);
+        // phase 3, blocker 2: the outbox destination rule of the assembly with this host's routes; it delivers neither
+        // the roll-up stream nor the history projection sinks, so settings asking for them refuse the start by name
+        this.outboxDestinations = OutboxDestinations.of(HOST_NAME, properties, OUTBOX_ROUTES);
         this.engineSettings = QuarkusEngineSettings.from(properties, config.names(), config.profiles());
         this.transactions = new JtaTransactions(transactionManager, dataSource);
         HostSeams.Builder b = HostSeams.builder(HOST_NAME)
@@ -145,6 +163,41 @@ public class QuarkusHost {
 
     public JtaTransactions transactions() {
         return transactions;
+    }
+
+    /**
+     * Phase 3, blocker 3: the {@code TxSupport} of this host ({@link JtaTxSupport}) on the very transaction manager and
+     * data source the engine gets, for the idempotency store and the audit port. Created on first use, because the
+     * dialect is read from the database and the host itself touches no database before the engine step's checks.
+     */
+    public synchronized JtaTxSupport txSupport() {
+        if (txSupport == null) {
+            txSupport = new JtaTxSupport(transactions.transactionManager(), transactions.dataSource(),
+                    TxSupport.detectDialect(transactions.dataSource()));
+        }
+        return txSupport;
+    }
+
+    /**
+     * The attribution tenant of untenanted engine and integration work (SL-86, {@link AttributionTenant}), resolved
+     * once from this host's configuration.
+     */
+    public String attributionTenant() {
+        return attributionTenant;
+    }
+
+    /**
+     * Phase 3, blocker 4 (owner decision 374): the authorizer the instance lifecycle, erasure and maintenance services
+     * are built with. This host binds no security module before extraction phase 2, so this refuses with
+     * {@value LifecycleAuthorization#CODE}; it never hands out an allow-everything authorizer.
+     */
+    public LifecyclePorts.Authorizer lifecycleAuthorizer() {
+        return LifecycleAuthorization.require(HOST_NAME, Optional.empty());
+    }
+
+    /** Where every outbox event is delivered on this host ({@link OutboxDestinations}, {@link #OUTBOX_ROUTES}). */
+    public OutboxDestinations outboxDestinations() {
+        return outboxDestinations;
     }
 
     public HostSeams seams() {
