@@ -73,6 +73,27 @@ public final class BreachIncidentService {
     private final NoticeTemplate.Catalogues templates;
     private final WorkflowStarter workflows;
     private volatile BreachNotificationPlanner plans;
+    private final List<SubjectNoticeListener> subjectNoticeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** One item of a notice to a data subject, in pack order: the pack's key, label and citation, and the text sent. */
+    public record SubjectNoticeItem(String key, String label, String citation, String text) {
+    }
+
+    /**
+     * A notice sent to one affected data subject by {@link #notifySubjects}, with the pack's subject items (IN: DPDP
+     * Rules r.7(1)(a)-(e)) as structured items, so a channel such as the citizen's portal account (owner decision 347)
+     * can show each item under its label. Called inside the sending transaction, after the delivery is recorded: a
+     * listener that fails rolls the notice back with it.
+     */
+    @FunctionalInterface
+    public interface SubjectNoticeListener {
+        void sent(Connection c, String tenantId, String breachId, String principalRef, String deliveryRef, String subject,
+                  Language language, List<SubjectNoticeItem> items);
+    }
+
+    public void addSubjectNoticeListener(SubjectNoticeListener l) {
+        subjectNoticeListeners.add(java.util.Objects.requireNonNull(l, "listener"));
+    }
 
     /** The planner whose process this registration starts for each new breach (SangamCompliance wires it). */
     public void plans(BreachNotificationPlanner plans) {
@@ -218,14 +239,23 @@ public final class BreachIncidentService {
                 + " ORDER BY principal_ref", rs -> rs.getString(1), tenantId, breachId);
         StringBuilder body = new StringBuilder();
         items.values().forEach(v -> body.append(v).append('\n'));
+        List<SubjectNoticeItem> structured = new ArrayList<>();
+        for (JurisdictionPack.ReportItem i : cfg.pack.breach().subjectItems()) {
+            structured.add(new SubjectNoticeItem(i.key(), i.label(), i.citation(), String.valueOf(items.get(i.key()))));
+        }
+        List<SubjectNoticeItem> noticeItems = List.copyOf(structured);
         int n = 0;
         for (String p : pending) {
             Language lang = principals.preferredLanguage(c, tenantId, p).orElse(cfg.defaultLanguage);
             NoticeTemplate t = cat.get(lang.code()).or(() -> cat.get(cfg.defaultLanguage.code())).orElseThrow();
+            String subject = t.label("breach.subject", cfg.organisationName);
             String ref = notifier.send(c, new PrincipalMessage(tenantId, p, "BREACH_NOTICE", t.language(),
-                    t.label("breach.subject", cfg.organisationName), body.toString(), Map.of("breachId", breachId)));
+                    subject, body.toString(), Map.of("breachId", breachId)));
             Jdbc.update(c, "UPDATE CMP_BREACH_NOTICE SET delivery_ref=?, sent_at=" + dialect.now() + " WHERE tenant_id=? AND breach_id=?"
                     + " AND principal_ref=?", ref, tenantId, breachId, p);
+            for (SubjectNoticeListener l : subjectNoticeListeners) {
+                l.sent(c, tenantId, breachId, p, ref, subject, t.language(), noticeItems);
+            }
             n++;
         }
         Jdbc.update(c, "UPDATE CMP_BREACH SET subjects_notified=(SELECT COUNT(*) FROM CMP_BREACH_NOTICE n WHERE n.tenant_id=? AND"

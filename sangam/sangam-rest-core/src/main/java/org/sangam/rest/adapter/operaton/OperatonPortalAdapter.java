@@ -29,6 +29,7 @@ import org.sangam.rest.port.AuditPort;
 import org.sangam.rest.port.DocumentPort;
 import org.sangam.rest.port.Download;
 import org.sangam.rest.port.Page;
+import org.sangam.rest.port.PortalCompliancePort;
 import org.sangam.rest.port.PortalPort;
 import org.sangam.rest.port.ProcessPort;
 import org.sangam.rest.port.RegistryPort;
@@ -81,6 +82,12 @@ public class OperatonPortalAdapter implements PortalPort {
 
     private final org.sangam.rest.support.DocumentStore docs;
     private final org.sangam.rest.support.BusinessDates dates;
+    private final java.util.function.Supplier<PortalCompliancePort> compliance;
+
+    /** Process variables of a submission that carried a consent (owner decisions 339, 343). */
+    static final String CONSENT_ID = "sangamConsentId";
+    static final String AGE_DECLARATION = "sangamAgeDeclaration";
+    static final String GUARDIAN_VERIFICATION = "sangamGuardianVerificationId";
 
     public OperatonPortalAdapter(ProcessPort processes, TaskService tasks, RuntimeService runtime, HistoryService history,
                                  RepositoryService repository, DocumentPort documents, RegistryPort registry,
@@ -95,6 +102,19 @@ public class OperatonPortalAdapter implements PortalPort {
                                  RepositoryService repository, DocumentPort documents, RegistryPort registry,
                                  AuditPort audit, RestProperties props, TxSupport tx,
                                  org.sangam.rest.support.DocumentStore docs, org.sangam.rest.support.BusinessDates dates) {
+        this(processes, tasks, runtime, history, repository, documents, registry, audit, props, tx, docs, dates, () -> null);
+    }
+
+    /**
+     * @param compliance the data-protection module's portal view, resolved per call (null when the module is not
+     *                   installed): the grievance period comes from its jurisdiction pack (owner decision 350)
+     */
+    public OperatonPortalAdapter(ProcessPort processes, TaskService tasks, RuntimeService runtime, HistoryService history,
+                                 RepositoryService repository, DocumentPort documents, RegistryPort registry,
+                                 AuditPort audit, RestProperties props, TxSupport tx,
+                                 org.sangam.rest.support.DocumentStore docs, org.sangam.rest.support.BusinessDates dates,
+                                 java.util.function.Supplier<PortalCompliancePort> compliance) {
+        this.compliance = java.util.Objects.requireNonNull(compliance, "compliance");
         this.dates = java.util.Objects.requireNonNull(dates, "dates");
         this.docs = docs;
         this.processes = processes;
@@ -131,7 +151,11 @@ public class OperatonPortalAdapter implements PortalPort {
     private static PortalService service(Map<String, Object> e) {
         return new PortalService(str(e.get("key")), str(e.get("name")), str(e.get("nameHi")), str(e.get("description")),
                 str(e.get("descriptionHi")), intOrNull(e.get("slaDays")), str(e.get("fee")),
-                str(e.get("formKey")), strings(e.get("documentsRequired")));
+                str(e.get("formKey")), strings(e.get("documentsRequired")), blankToNull(str(e.get("noticeKey"))));
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
     }
 
     private Map<String, Object> requireService(RequestContext ctx, String key) {
@@ -143,6 +167,12 @@ public class OperatonPortalAdapter implements PortalPort {
 
     @Override
     public Application apply(RequestContext ctx, ApplyRequest r) {
+        return apply(ctx, r, null);
+    }
+
+    /** The consent recorded with a submission is kept on the application as process variables (never for a draft). */
+    @Override
+    public Application apply(RequestContext ctx, ApplyRequest r, ConsentRecord consent) {
         Map<String, Object> svc = requireService(ctx, r.serviceKey());
         String processKey = svc.get("processKey") != null ? str(svc.get("processKey")) : r.serviceKey();
         String reference = reference(r.serviceKey(), dates.today(ctx.tenantId()).getYear());
@@ -162,6 +192,13 @@ public class OperatonPortalAdapter implements PortalPort {
         vars.put(SERVICE_KEY, r.serviceKey());
         if (serviceName != null) {
             vars.put(SERVICE_NAME, serviceName);
+        }
+        if (consent != null) {
+            vars.put(CONSENT_ID, consent.consentId());
+            vars.put(AGE_DECLARATION, consent.ageDeclaration());
+            if (consent.guardianVerificationId() != null) {
+                vars.put(GUARDIAN_VERIFICATION, consent.guardianVerificationId());
+            }
         }
         Integer slaDays = intOrNull(svc.get("slaDays"));
         if (slaDays != null) {
@@ -458,7 +495,7 @@ public class OperatonPortalAdapter implements PortalPort {
                     null));
             status = "IN_PROGRESS";
         }
-        Grievance g = new Grievance(reference, reference, r.subject(), status, now, now.plus(30, ChronoUnit.DAYS));
+        Grievance g = new Grievance(reference, reference, r.subject(), status, now, grievanceDueAt(ctx, now));
         docs.insert(ctx.tenantId(), KIND_GRIEVANCE, Hashes.uuidV7().toString(), reference, status, ctx.principalId(),
                 null, g, ctx.principalId());
         Map<String, Object> p = new LinkedHashMap<>();
@@ -468,6 +505,17 @@ public class OperatonPortalAdapter implements PortalPort {
         audit.record(ctx, "sec:" + ctx.tenantId(), "GRIEVANCE_FILED", p);
         return new GrievanceReceipt(reference);
         });
+    }
+
+    /**
+     * Owner decision 350: the due date of a grievance is its filing time plus the published grievance period of the
+     * tenant's jurisdiction pack ({@link PortalCompliancePort#grievanceDueDays}), never a period fixed in code. Without the
+     * data-protection module or a jurisdiction there is no published period, so no due date is promised (null).
+     */
+    Instant grievanceDueAt(RequestContext ctx, Instant filedAt) {
+        PortalCompliancePort c = compliance.get();
+        java.util.OptionalInt days = c == null ? java.util.OptionalInt.empty() : c.grievanceDueDays(ctx);
+        return days.isPresent() ? filedAt.plus(days.getAsInt(), ChronoUnit.DAYS) : null;
     }
 
     /** The caller's unsubmitted draft, or null (another applicant's draft is invisible). */

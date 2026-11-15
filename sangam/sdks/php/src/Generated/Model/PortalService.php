@@ -8,7 +8,7 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * Citizen service (C01). fee is a decimal string (R33).
+ * Citizen service (C01). fee is a decimal string (R33). noticeKey: the consent notice of the service; a service that names one takes the applicant's consent on its current published version with every submission (owner decision 339).
  *
  * Schema PortalService of sangam-api.yaml 0.1.0.
  *
@@ -21,6 +21,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $fee
  * @property-read string|null $formKey
  * @property-read list<string>|null $documentsRequired
+ * @property-read string|null $noticeKey
  */
 final class PortalService implements \JsonSerializable
 {
@@ -34,6 +35,7 @@ final class PortalService implements \JsonSerializable
      * @param string|null $fee
      * @param string|null $formKey
      * @param list<string>|null $documentsRequired
+     * @param string|null $noticeKey
      */
     public function __construct(
         public readonly ?string $key = null,
@@ -45,6 +47,7 @@ final class PortalService implements \JsonSerializable
         public readonly ?string $fee = null,
         public readonly ?string $formKey = null,
         public readonly ?array $documentsRequired = null,
+        public readonly ?string $noticeKey = null,
     ) {
     }
 
@@ -61,6 +64,7 @@ final class PortalService implements \JsonSerializable
             Support::str($data['fee'] ?? null),
             Support::str($data['formKey'] ?? null),
             Support::arr($data['documentsRequired'] ?? null),
+            Support::str($data['noticeKey'] ?? null),
         );
     }
 
@@ -93,6 +97,9 @@ final class PortalService implements \JsonSerializable
         }
         if ($this->documentsRequired !== null) {
             $out['documentsRequired'] = $this->documentsRequired;
+        }
+        if ($this->noticeKey !== null) {
+            $out['noticeKey'] = $this->noticeKey;
         }
         return $out === [] ? new \stdClass() : $out;
     }

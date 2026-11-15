@@ -1127,8 +1127,73 @@ export interface PortalService {
   descriptionHi?: string;
   slaDays?: number;
   fee?: number;
-  formKey: string;
+  /** Absent for a service without an application form (PortalPort.PortalService). */
+  formKey?: string;
   documentsRequired?: string[];
+  /** The consent notice of the service: a submission carries the consent on its current published version (decision 339). */
+  noticeKey?: string;
+}
+
+/** PortalCompliancePort.NoticePurpose: one purpose of a notice, named in the notice's language. */
+export interface NoticePurpose {
+  code: string;
+  name: string;
+  description?: string;
+}
+
+/** PortalCompliancePort.PortalNotice: the current published version of a service's consent notice (decisions 339, 341, 343). */
+export interface PortalNotice {
+  noticeKey: string;
+  version: number;
+  language: string;
+  text?: string;
+  html?: string;
+  contentHash?: string;
+  purposes: NoticePurpose[];
+  /** The jurisdiction pack's age of majority; absent when the pack sets none. */
+  childAgeYears?: number;
+}
+
+/** PortalPort.PortalConsent: the consent sent with a submission, purposes ticked one by one (decision 341). */
+export interface PortalConsent {
+  noticeKey: string;
+  noticeVersion: number;
+  language: string;
+  purposeCodes: string[];
+  ageDeclaration?: 'ADULT' | 'CHILD';
+  guardianVerificationId?: string;
+}
+
+/** PortalCompliancePort.NoticeItem: one item of a notice to a data principal (IN: DPDP Rules r.7(1)(a)-(e)). */
+export interface NoticeItem {
+  key: string;
+  label: string;
+  citation?: string;
+  text: string;
+}
+
+/** PortalCompliancePort.PortalNotification: a notice in the caller's portal account (decision 347). */
+export interface PortalNotification {
+  id: Id;
+  kind: 'BREACH_NOTICE';
+  reference: string;
+  at?: Iso;
+  subject?: string;
+  items: NoticeItem[];
+}
+
+/** ConsentService.Consent (ConsentService.java:57-59), as GET /compliance/consents returns the caller's own. */
+export interface MyConsent {
+  consentId: Id;
+  principalRef?: string;
+  noticeKey?: string;
+  noticeVersion: number;
+  language?: string;
+  status: string;
+  givenAt?: Iso;
+  withdrawnAt?: Iso;
+  legacy?: boolean;
+  activePurposes: string[];
 }
 
 export interface Clarification {

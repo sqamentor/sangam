@@ -4,7 +4,7 @@
 namespace Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Citizen service (C01). fee is a decimal string (R33).
+/// Citizen service (C01). fee is a decimal string (R33). noticeKey: the consent notice of the service; a service that names one takes the applicant's consent on its current published version with every submission (owner decision 339).
 /// Schema PortalService.
 /// </summary>
 public sealed record PortalService
@@ -35,4 +35,7 @@ public sealed record PortalService
 
     [global::System.Text.Json.Serialization.JsonPropertyName("documentsRequired")]
     public global::System.Collections.Generic.List<string>? DocumentsRequired { get; init; }
+
+    [global::System.Text.Json.Serialization.JsonPropertyName("noticeKey")]
+    public string? NoticeKey { get; init; }
 }

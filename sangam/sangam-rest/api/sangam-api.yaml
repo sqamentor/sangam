@@ -9646,13 +9646,63 @@ paths:
           $ref: '#/components/responses/NotFound'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /portal/services/{key}/notice:
+    get:
+      operationId: getPortalServiceNotice
+      tags:
+      - Portal
+      summary: Consent notice of a service
+      description: The current published version of the service's consent notice (its noticeKey) with one entry per purpose and the jurisdiction
+        pack's age of majority (owner decisions 339, 341, 343). 404 for a service not in the catalogue or without a notice; 422 LANGUAGE_NOT_CONFIGURED
+        for a language the pack does not have; 501 CAPABILITY_NOT_INSTALLED without sangam-compliance.
+      parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+        description: service key
+      - name: lang
+        in: query
+        schema:
+          type: string
+        description: 'language code of the jurisdiction pack (default: the tenant''s)'
+      x-sangam-permission: portal.use
+      x-sangam-requirements:
+      - UP-22
+      - C02
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalNotice'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /portal/applications:
     post:
       operationId: applyForService
       tags:
       - Portal
       summary: Apply for a service
-      description: Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6).
+      description: 'Creates an application (draft or submitted); tenant bound by the portal channel (VI.4 rule 6). A submission to a service that
+        names a noticeKey records the applicant''s consent (consent) on the notice''s current published version in the same transaction as the
+        application (owner decision 339): 403 CONSENT_REQUIRED without consent or without a ticked purpose, 409 NOTICE_NOT_CURRENT for another
+        notice or a version that is not the current published one (or a consent sent to a service without a notice), 422 AGE_DECLARATION_REQUIRED
+        when the pack sets an age of majority and none is declared, 403 GUARDIAN_CONSENT_REQUIRED for a declared child without a valid verification
+        of the parent''s verifiable consent, 403 CHILD_PROCESSING_FORBIDDEN for a purpose a child may not consent to (decision 343), 501 CAPABILITY_NOT_INSTALLED
+        without sangam-compliance. A draft (submit=false) is kept as before and carries no consent (400 VALIDATION_FAILED).'
       x-sangam-command-type: portal.apply
       x-sangam-idempotent: true
       parameters:
@@ -9692,6 +9742,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
         '409':
           $ref: '#/components/responses/Conflict'
         '422':
@@ -9726,6 +9778,32 @@ paths:
               $ref: '#/components/headers/X-Total-Count'
             X-Total-Count-Capped:
               $ref: '#/components/headers/X-Total-Count-Capped'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /portal/notifications:
+    get:
+      operationId: listMyPortalNotifications
+      tags:
+      - Portal
+      summary: My notices
+      description: 'Notices sent to the caller''s portal account, newest first: a personal-data breach notice with the items the jurisdiction
+        pack requires (IN: DPDP Rules r.7(1)(a)-(e); owner decision 347). Empty without sangam-compliance.'
+      x-sangam-permission: portal.use
+      x-sangam-requirements:
+      - UP-22
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortalNotification'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -61510,7 +61588,8 @@ components:
           type: string
     PortalService:
       type: object
-      description: Citizen service (C01). fee is a decimal string (R33).
+      description: 'Citizen service (C01). fee is a decimal string (R33). noticeKey: the consent notice of the service; a service that names one
+        takes the applicant''s consent on its current published version with every submission (owner decision 339).'
       properties:
         key:
           type: string
@@ -61533,6 +61612,8 @@ components:
           type: array
           items:
             type: string
+        noticeKey:
+          type: string
     Clarification:
       type: object
       description: Clarification sought from the applicant (C04).
@@ -61619,7 +61700,8 @@ components:
           - UNKNOWN_OUTCOME
     ApplyRequest:
       type: object
-      description: New application; submit=false keeps it as a draft.
+      description: 'New application; submit=false keeps it as a draft (a draft carries no consent). consent: required on a submission to a service
+        that names a noticeKey.'
       properties:
         serviceKey:
           type: string
@@ -61627,8 +61709,106 @@ components:
           $ref: '#/components/schemas/VariableMap'
         submit:
           type: boolean
+        consent:
+          $ref: '#/components/schemas/PortalConsent'
       required:
       - serviceKey
+    PortalConsent:
+      type: object
+      description: 'The applicant''s consent on the service''s published notice (owner decisions 339, 341, 343): the notice key and the version
+        shown, the language it was shown in, the purposes ticked one by one, the age declaration, and for a declared child the verification of
+        the parent''s verifiable consent.'
+      properties:
+        noticeKey:
+          type: string
+        noticeVersion:
+          type: integer
+          format: int32
+        language:
+          type: string
+        purposeCodes:
+          type: array
+          items:
+            type: string
+        ageDeclaration:
+          type: string
+          enum:
+          - ADULT
+          - CHILD
+        guardianVerificationId:
+          type: string
+      required:
+      - noticeKey
+      - noticeVersion
+      - purposeCodes
+    NoticePurpose:
+      type: object
+      description: A purpose of a consent notice, named in the notice's language.
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+    PortalNotice:
+      type: object
+      description: 'The current published version of a service''s consent notice: text and HTML as published, the SHA-256 of the text, its purposes
+        (one checkbox each, decision 341) and the jurisdiction pack''s age of majority (childAgeYears, absent when the pack sets none).'
+      properties:
+        noticeKey:
+          type: string
+        version:
+          type: integer
+          format: int32
+        language:
+          type: string
+        text:
+          type: string
+        html:
+          type: string
+        contentHash:
+          type: string
+        purposes:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoticePurpose'
+        childAgeYears:
+          type: integer
+          format: int32
+    NoticeItem:
+      type: object
+      description: 'One item of a notice to a data principal, in pack order (IN: DPDP Rules r.7(1)(a)-(e)).'
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        citation:
+          type: string
+        text:
+          type: string
+    PortalNotification:
+      type: object
+      description: 'A notice in the caller''s portal account (kind BREACH_NOTICE: reference is the breach id; owner decision 347).'
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+          - BREACH_NOTICE
+        reference:
+          type: string
+        at:
+          type: string
+          format: date-time
+        subject:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/NoticeItem'
     WithdrawRequest:
       type: object
       description: Withdraw an application.

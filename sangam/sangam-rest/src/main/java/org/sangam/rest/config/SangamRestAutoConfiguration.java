@@ -95,7 +95,7 @@ public class SangamRestAutoConfiguration {
         org.sangam.core.security.FieldEncryptor fe = encryptor.getIfAvailable();
         if (fe != null) {
             // Personal data at rest (X.2.3.8, DPDP): portal drafts and grievances, reconciliation evidence metadata,
-            // identity-provider and service-principal records, notifications.
+            // identity-provider and service-principal records, notifications, notices in a citizen's portal account.
             store.setEncryption(fe, ENCRYPTED_DOCUMENT_KINDS);
         }
         return store;
@@ -103,7 +103,8 @@ public class SangamRestAutoConfiguration {
 
     /** REST_DOCUMENT kinds whose body is encrypted at rest when a FieldEncryptor is bound. */
     public static final java.util.Set<String> ENCRYPTED_DOCUMENT_KINDS = java.util.Set.of("portal:draft",
-            "portal:grievance", "ops:evidence", "identity:idp", "identity:service-principal", "notification");
+            "portal:grievance", "portal:notice", "ops:evidence", "identity:idp", "identity:service-principal",
+            "notification");
 
     /** REST_BLOB: export files and evidence. */
     @Bean
@@ -527,10 +528,13 @@ public class SangamRestAutoConfiguration {
     public org.sangam.rest.port.PortalPort sangamPortalPort(ProcessPort processes, ProcessEngine engine,
             DocumentPort documents, org.sangam.rest.port.RegistryPort registry, AuditPort audit, RestProperties props,
             TxSupport tx, org.sangam.rest.support.DocumentStore store,
-            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock) {
+            org.springframework.beans.factory.ObjectProvider<org.sangam.core.time.BusinessClock> businessClock,
+            ObjectProvider<org.sangam.rest.port.PortalCompliancePort> portalCompliance) {
+        // owner decision 350: the grievance period comes from the jurisdiction pack when sangam-compliance is installed
         return new org.sangam.rest.adapter.operaton.OperatonPortalAdapter(processes, engine.getTaskService(),
                 engine.getRuntimeService(), engine.getHistoryService(), engine.getRepositoryService(), documents,
-                registry, audit, props, tx, store, new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable));
+                registry, audit, props, tx, store, new org.sangam.rest.support.BusinessDates(businessClock::getIfAvailable),
+                portalCompliance::getIfAvailable);
     }
 
     @Bean
@@ -717,6 +721,18 @@ public class SangamRestAutoConfiguration {
         public org.sangam.rest.compliance.ComplianceRestService sangamComplianceApi(
                 org.sangam.compliance.SangamCompliance compliance) {
             return new org.sangam.rest.compliance.ComplianceApiImpl(compliance);
+        }
+
+        /**
+         * The citizen portal's view of the module (owner decisions 339, 340, 343, 347, 350): published notice, consent
+         * with the submission, the parent's verifiable consent, breach notices in the portal account, grievance period.
+         */
+        @Bean
+        @ConditionalOnMissingBean
+        public org.sangam.rest.port.PortalCompliancePort sangamPortalCompliance(
+                org.sangam.compliance.SangamCompliance compliance, org.sangam.rest.support.DocumentStore store) {
+            return new org.sangam.rest.compliance.PortalComplianceAdapter(compliance,
+                    org.sangam.rest.compliance.PortalComplianceAdapter.Inbox.documents(store));
         }
     }
 }

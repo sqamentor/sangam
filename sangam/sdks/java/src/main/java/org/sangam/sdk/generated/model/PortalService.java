@@ -4,7 +4,7 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * Citizen service (C01). fee is a decimal string (R33).
+ * Citizen service (C01). fee is a decimal string (R33). noticeKey: the consent notice of the service; a service that names one takes the applicant's consent on its current published version with every submission (owner decision 339).
  *
  * <p>Schema {@code PortalService} of sangam-api.yaml 0.1.0.
  *
@@ -17,6 +17,7 @@ package org.sangam.sdk.generated.model;
  * @param fee wire field {@code fee}
  * @param formKey wire field {@code formKey}
  * @param documentsRequired wire field {@code documentsRequired}
+ * @param noticeKey wire field {@code noticeKey}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record PortalService(
@@ -28,5 +29,6 @@ public record PortalService(
         @com.fasterxml.jackson.annotation.JsonProperty("slaDays") Integer slaDays,
         @com.fasterxml.jackson.annotation.JsonProperty("fee") String fee,
         @com.fasterxml.jackson.annotation.JsonProperty("formKey") String formKey,
-        @com.fasterxml.jackson.annotation.JsonProperty("documentsRequired") java.util.List<String> documentsRequired) {
+        @com.fasterxml.jackson.annotation.JsonProperty("documentsRequired") java.util.List<String> documentsRequired,
+        @com.fasterxml.jackson.annotation.JsonProperty("noticeKey") String noticeKey) {
 }

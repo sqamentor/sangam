@@ -4,6 +4,7 @@ package org.sangam.rest.port;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Citizen / applicant portal (C01–C06, PER-8, UP-22). The applicant is an external principal bound to the tenant by
@@ -12,8 +13,13 @@ import java.util.Map;
  */
 public interface PortalPort {
 
+    /**
+     * {@code noticeKey}: the consent notice of the service (field of its {@code services} registry entry). A service that
+     * names one takes the applicant's consent on the notice's current published version with every submission (owner
+     * decision 339); a service that names none takes no consent through the portal.
+     */
     record PortalService(String key, String name, String nameHi, String description, String descriptionHi,
-                         Integer slaDays, String fee, String formKey, List<String> documentsRequired) {
+                         Integer slaDays, String fee, String formKey, List<String> documentsRequired, String noticeKey) {
     }
 
     record Clarification(String id, String question, Instant askedAt, String askedBySeat, Instant dueAt,
@@ -33,7 +39,22 @@ public interface PortalPort {
                        Instant appealDeadline, String paymentStatus) {
     }
 
-    record ApplyRequest(String serviceKey, Map<String, Object> variables, boolean submit) {
+    /** {@code consent}: required on a submission ({@code submit=true}) to a service that names a notice; a draft sends none. */
+    record ApplyRequest(String serviceKey, Map<String, Object> variables, boolean submit, PortalConsent consent) {
+    }
+
+    /**
+     * The applicant's consent on the service's published notice (owner decisions 339, 341, 343): the notice key and the
+     * version shown, the language it was shown in, the purposes ticked one by one (one checkbox per purpose, never one
+     * bundled box), the age declaration ({@code ADULT}, or {@code CHILD} under the jurisdiction pack's age of majority)
+     * and, for a declared child, the guardian verification of the parent's verifiable consent.
+     */
+    record PortalConsent(String noticeKey, Integer noticeVersion, String language, Set<String> purposeCodes,
+                         String ageDeclaration, String guardianVerificationId) {
+    }
+
+    /** The consent the server recorded with a submission; set by the server, never taken from the request. */
+    record ConsentRecord(String consentId, String ageDeclaration, String guardianVerificationId) {
     }
 
     record ReplyRequest(String text, List<PortalFile> files) {
@@ -61,6 +82,17 @@ public interface PortalPort {
     List<PortalService> services(RequestContext ctx);
 
     Application apply(RequestContext ctx, ApplyRequest request);
+
+    /**
+     * A submission whose consent the caller recorded in the same transaction ({@code consent} null when the service
+     * takes none). An implementation that cannot keep the consent with the application refuses it (fail closed).
+     */
+    default Application apply(RequestContext ctx, ApplyRequest request, ConsentRecord consent) {
+        if (consent != null) {
+            throw ApiProblem.notInstalled("portal consent", getClass().getName());
+        }
+        return apply(ctx, request);
+    }
 
     Page<Application> applications(RequestContext ctx, Page.PageRequest page);
 

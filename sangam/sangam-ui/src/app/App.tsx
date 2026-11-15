@@ -33,6 +33,7 @@ const dp = () => import('../areas/modeller/DataAndPages');
 const an = () => import('../areas/analytics/Analytics');
 const au = () => import('../areas/audit/Audit');
 const po = () => import('../areas/portal/Portal');
+const pv = () => import('../areas/portal/PortalPrivacy');
 const hp = () => import('../areas/help/Help');
 const mReg = () => import('../modules/registry');
 const mRes = () => import('../modules/resources');
@@ -157,6 +158,8 @@ const PortalApply = named(po, 'PortalApply');
 const PortalApplications = named(po, 'PortalApplications');
 const PortalApplication = named(po, 'PortalApplication');
 const PortalGrievances = named(po, 'PortalGrievances');
+const PortalConsents = named(pv, 'PortalConsents');
+const PortalNotices = named(pv, 'PortalNotices');
 const PublicPrivacy = named(po, 'PublicPrivacy');
 const Accessibility = named(hp, 'Accessibility');
 const About = named(hp, 'About');
@@ -309,6 +312,8 @@ function AuthedRoutes() {
           <Route path="/portal/applications" element={g(CITIZEN, <PortalApplications />)} />
           <Route path="/portal/applications/:id" element={g(CITIZEN, <PortalApplication />)} />
           <Route path="/portal/grievances" element={g(CITIZEN, <PortalGrievances />)} />
+          <Route path="/portal/consents" element={g(CITIZEN, <PortalConsents />)} />
+          <Route path="/portal/notices" element={g(CITIZEN, <PortalNotices />)} />
 
           <Route path="/help/accessibility" element={<Accessibility />} />
           <Route path="/help/about" element={<About />} />

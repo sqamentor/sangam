@@ -162,6 +162,8 @@ export const NAV: NavArea[] = [
       { to: '/portal', label: 'nav.services' },
       { to: '/portal/applications', label: 'nav.myApplications' },
       { to: '/portal/grievances', label: 'nav.grievances' },
+      { to: '/portal/consents', label: 'nav.myConsents' },
+      { to: '/portal/notices', label: 'nav.myNotices' },
     ],
   },
 ];

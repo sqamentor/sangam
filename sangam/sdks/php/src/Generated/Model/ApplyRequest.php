@@ -8,13 +8,14 @@ namespace Sangam\Sdk\Generated\Model;
 use Sangam\Sdk\Generated\Support;
 
 /**
- * New application; submit=false keeps it as a draft.
+ * New application; submit=false keeps it as a draft (a draft carries no consent). consent: required on a submission to a service that names a noticeKey.
  *
  * Schema ApplyRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $serviceKey (required)
  * @property-read array<string, mixed>|null $variables
  * @property-read bool|null $submit
+ * @property-read PortalConsent|null $consent
  */
 final class ApplyRequest implements \JsonSerializable
 {
@@ -22,11 +23,13 @@ final class ApplyRequest implements \JsonSerializable
      * @param string|null $serviceKey
      * @param array<string, mixed>|null $variables
      * @param bool|null $submit
+     * @param PortalConsent|null $consent
      */
     public function __construct(
         public readonly ?string $serviceKey = null,
         public readonly ?array $variables = null,
         public readonly ?bool $submit = null,
+        public readonly ?PortalConsent $consent = null,
     ) {
     }
 
@@ -37,6 +40,7 @@ final class ApplyRequest implements \JsonSerializable
             Support::str($data['serviceKey'] ?? null),
             Support::arr($data['variables'] ?? null),
             Support::bool($data['submit'] ?? null),
+            Support::model($data['consent'] ?? null, PortalConsent::class),
         );
     }
 
@@ -51,6 +55,9 @@ final class ApplyRequest implements \JsonSerializable
         }
         if ($this->submit !== null) {
             $out['submit'] = $this->submit;
+        }
+        if ($this->consent !== null) {
+            $out['consent'] = $this->consent;
         }
         return $out === [] ? new \stdClass() : $out;
     }

@@ -4,17 +4,19 @@
 package org.sangam.sdk.generated.model;
 
 /**
- * New application; submit=false keeps it as a draft.
+ * New application; submit=false keeps it as a draft (a draft carries no consent). consent: required on a submission to a service that names a noticeKey.
  *
  * <p>Schema {@code ApplyRequest} of sangam-api.yaml 0.1.0.
  *
  * @param serviceKey wire field {@code serviceKey} (required)
  * @param variables wire field {@code variables}
  * @param submit wire field {@code submit}
+ * @param consent wire field {@code consent}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ApplyRequest(
         @com.fasterxml.jackson.annotation.JsonProperty("serviceKey") String serviceKey,
         @com.fasterxml.jackson.annotation.JsonProperty("variables") java.util.Map<String, Object> variables,
-        @com.fasterxml.jackson.annotation.JsonProperty("submit") Boolean submit) {
+        @com.fasterxml.jackson.annotation.JsonProperty("submit") Boolean submit,
+        @com.fasterxml.jackson.annotation.JsonProperty("consent") PortalConsent consent) {
 }
