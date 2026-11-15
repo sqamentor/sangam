@@ -146,6 +146,18 @@ public final class ConfigConnector implements SangamConnector {
                         "chain.signatures", "series.next", "crosswalk.map"), ConnectorProfile.LIVE);
     }
 
+    /**
+     * Owner decision 320: every operation reads the resolved profile except {@code series.next}, which issues a number.
+     */
+    @Override
+    public boolean readOnly(ConnectorRequest r) {
+        return switch (r.operation()) {
+            case "profile.get", "profile.binding", "classification.validate", "documentType.get", "documentType.check",
+                 "chain.signatures", "crosswalk.map" -> true;
+            default -> false;
+        };
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
         try {

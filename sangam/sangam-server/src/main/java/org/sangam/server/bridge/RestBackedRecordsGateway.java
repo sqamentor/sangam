@@ -4,6 +4,7 @@ package org.sangam.server.bridge;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.sangam.integration.packs.ApiReadGateway;
 import org.sangam.packs.core.Vars;
 import org.sangam.packs.port.ConnectorGateway;
 import org.sangam.packs.port.ConnectorRequest;
@@ -18,10 +19,13 @@ import org.sangam.rest.port.RestBackedRecords;
  * bound per tenant. Shapes only; the data-object rules are in sangam-rest {@code RestBackedDataObjects}.
  *
  * <ul>
- *   <li>list: {@link ConnectorGateway#query} operation {@value RestBackedRecords#LIST_OPERATION}, payload
+ *   <li>list: an API read (owner decisions 320 and 321), so {@link ApiReadGateway#queryReadOnly} and never
+ *       {@link ConnectorGateway#query}: operation {@value RestBackedRecords#LIST_OPERATION}, payload
  *       {@code {q, offset, limit}} ({@code q} left out when absent); COMPLETED answers {@code output.records} and
- *       {@code output.total}; FAILED is a {@link RestBackedRecords.ConnectorProblem} with the gateway's reason;
- *       PENDING or UNKNOWN (no definite answer) is {@value #CONNECTOR_UNAVAILABLE}.</li>
+ *       {@code output.total}; FAILED is a {@link RestBackedRecords.ConnectorProblem} with the gateway's reason
+ *       ({@code CONNECTOR_OPERATION_NOT_READ_ONLY} when the bound connector does not declare the request read-only;
+ *       nothing was called); PENDING or UNKNOWN (no definite answer) is {@value #CONNECTOR_UNAVAILABLE}.
+ *       {@link #listRefusal} asks the same question for a first-page list without calling anything.</li>
  *   <li>create: {@link ConnectorGateway#submit} operation {@value RestBackedRecords#CREATE_OPERATION} with the
  *       operationId, payload {@code {dataObject, record}}, its canonical hash, business key
  *       {@code data-object:<key>} and no process instance (outside any engine transaction, so the gateway opens its
@@ -34,21 +38,35 @@ public final class RestBackedRecordsGateway implements RestBackedRecords {
     public static final String CONNECTOR_UNAVAILABLE = "CONNECTOR_UNAVAILABLE";
 
     private final ConnectorGateway gateway;
+    private final ApiReadGateway reads;
 
-    public RestBackedRecordsGateway(ConnectorGateway gateway) {
-        this.gateway = gateway;
+    /**
+     * @param gateway effects and their outcomes (submit, lookup)
+     * @param reads   the API-read entry of the same gateway (list)
+     */
+    public RestBackedRecordsGateway(ConnectorGateway gateway, ApiReadGateway reads) {
+        this.gateway = java.util.Objects.requireNonNull(gateway, "gateway");
+        this.reads = java.util.Objects.requireNonNull(reads, "reads: a list never goes through ConnectorGateway.query");
     }
 
-    @Override
-    public Listing list(String tenantId, String endpointRef, String q, int offset, int limit) {
+    private static ConnectorRequest listRequest(String tenantId, String endpointRef, String q, int offset, int limit) {
         Map<String, Object> payload = new LinkedHashMap<>();
         if (q != null) {
             payload.put("q", q);
         }
         payload.put("offset", offset);
         payload.put("limit", limit);
-        ConnectorResult r = gateway.query(new ConnectorRequest(tenantId, endpointRef, LIST_OPERATION, null, null, null,
-                payload, Vars.hash(payload)));
+        return new ConnectorRequest(tenantId, endpointRef, LIST_OPERATION, null, null, null, payload, Vars.hash(payload));
+    }
+
+    @Override
+    public String listRefusal(String tenantId, String endpointRef) {
+        return reads.readOnlyRefusal(listRequest(tenantId, endpointRef, null, 0, 1)).orElse(null);
+    }
+
+    @Override
+    public Listing list(String tenantId, String endpointRef, String q, int offset, int limit) {
+        ConnectorResult r = reads.queryReadOnly(listRequest(tenantId, endpointRef, q, offset, limit));
         if (r == null) {
             throw new ConnectorProblem(CONNECTOR_UNAVAILABLE, "no answer from " + endpointRef);
         }

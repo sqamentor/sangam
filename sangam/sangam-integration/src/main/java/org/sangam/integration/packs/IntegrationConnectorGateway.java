@@ -46,7 +46,10 @@ import java.util.function.Function;
  *       {@code RETRY_SAME_OPERATION} resolution or a proven not-found lookup it dispatches again with the same
  *       operationId. The relay hands the event to {@link PackDispatchPublisher}, which calls the connector and delivers
  *       {@code sangam.operationResult} (or {@code sangam.signatureResult} for {@code sign}).</li>
- *   <li>{@link #query}: read-only, synchronous, no ledger.</li>
+ *   <li>{@link #query}: the pack step's query mode (an engine job inside a process): synchronous, no ledger.</li>
+ *   <li>{@link #queryReadOnly}: the entry of an API read ({@link ApiReadGateway}, owner decisions 320 and 321): the same
+ *       call, made only when the bound connector answers {@code readOnly} for the exact request; otherwise FAILED
+ *       {@code CONNECTOR_OPERATION_NOT_READ_ONLY}, a warning in the log, and the connector is not invoked.</li>
  *   <li>{@link #lookup}: stored outcome, or the connector's outcome lookup (classes a/b); class (c) → UNKNOWN. A
  *       not-found for an UNKNOWN operation of a process instance marks it RETRY_REQUESTED for the pack's re-submit; one
  *       with no process instance stays UNKNOWN for its reconciliation item, which re-dispatches it (decision 290).</li>
@@ -59,7 +62,7 @@ import java.util.function.Function;
  * non-UUID id falls back to a derived one, with a warning. Pack connectors without a binding go to the
  * {@code fallback} gateway (the packs' simulator in development) or fail with {@code CONNECTOR_NOT_CONFIGURED}.
  */
-public final class IntegrationConnectorGateway implements ConnectorGateway {
+public final class IntegrationConnectorGateway implements ConnectorGateway, ApiReadGateway {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(IntegrationConnectorGateway.class);
 
@@ -159,6 +162,27 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
 
     @Override
     public ConnectorResult query(org.sangam.packs.port.ConnectorRequest req) {
+        return query(req, false);
+    }
+
+    /** {@link ApiReadGateway}: {@link #query}, made only for a request the bound connector declares read-only. */
+    @Override
+    public ConnectorResult queryReadOnly(org.sangam.packs.port.ConnectorRequest req) {
+        return query(req, true);
+    }
+
+    @Override
+    public Optional<String> readOnlyRefusal(org.sangam.packs.port.ConnectorRequest req) {
+        Optional<PackConnectorBindings.Binding> b = bindings.binding(req.tenantId(), req.connector());
+        Optional<SangamConnector> conn = b.flatMap(x -> registry.find(req.tenantId(), x.connectorId()));
+        if (conn.isEmpty()) {
+            return Optional.empty();
+        }
+        ConnectorRequest cr = connectorRequest(req, b.get());
+        return declaresReadOnly(conn.get(), cr) ? Optional.empty() : Optional.of(notReadOnly(req, b.get(), cr));
+    }
+
+    private ConnectorResult query(org.sangam.packs.port.ConnectorRequest req, boolean apiRead) {
         Optional<PackConnectorBindings.Binding> b = bindings.binding(req.tenantId(), req.connector());
         if (b.isEmpty()) {
             return fallback != null ? fallback.query(req)
@@ -168,14 +192,12 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
         if (conn.isEmpty()) {
             return ConnectorResult.failed("CONNECTOR_NOT_CONFIGURED", "connector " + b.get().connectorId() + " is not registered");
         }
-        String tenant = tenantOf(req.tenantId());
-        UUID queryId = Hashes.uuidV5(OperationLedger.NAMESPACE, "query|" + req.connector() + "|" + req.payloadHash() + "|" + Instant.now());
-        // rootId is the ROOT case (the connector contract; SL-119: a called process's config read finds the binding
-        // its root case stored), as on the submit path
-        String root = req.processInstanceId() == null ? null : rootOf(req.processInstanceId());
-        ConnectorRequest cr = new ConnectorRequest(tenant, queryId, "query", 1, root, req.businessKey(),
-                b.get().operation() == null ? req.operation() : b.get().operation(), b.get().payloadMapper().apply(req.payload()),
-                Instant.now().plusSeconds(30));
+        ConnectorRequest cr = connectorRequest(req, b.get());
+        if (apiRead && !declaresReadOnly(conn.get(), cr)) {
+            String refusal = notReadOnly(req, b.get(), cr);
+            LOG.warn("API read refused ({}): tenant {}: {}", SangamConnector.OPERATION_NOT_READ_ONLY, cr.tenantId(), refusal);
+            return ConnectorResult.failed(SangamConnector.OPERATION_NOT_READ_ONLY, refusal);
+        }
         return switch (conn.get().invoke(cr)) {
             case org.sangam.core.integration.ConnectorResult.Success s -> ConnectorResult.completed(s.providerRef(), s.output());
             case org.sangam.core.integration.ConnectorResult.BusinessFailure f ->
@@ -183,6 +205,34 @@ public final class IntegrationConnectorGateway implements ConnectorGateway {
             case org.sangam.core.integration.ConnectorResult.TransientFailure t -> ConnectorResult.pending(null);
             case org.sangam.core.integration.ConnectorResult.OutcomeUnknown u -> ConnectorResult.pending(null);
         };
+    }
+
+    /** The connector request of a query: the binding's operation (else the caller's) and its mapped payload. */
+    private ConnectorRequest connectorRequest(org.sangam.packs.port.ConnectorRequest req, PackConnectorBindings.Binding b) {
+        UUID queryId = Hashes.uuidV5(OperationLedger.NAMESPACE, "query|" + req.connector() + "|" + req.payloadHash() + "|" + Instant.now());
+        // rootId is the ROOT case (the connector contract; SL-119: a called process's config read finds the binding
+        // its root case stored), as on the submit path
+        String root = req.processInstanceId() == null ? null : rootOf(req.processInstanceId());
+        return new ConnectorRequest(tenantOf(req.tenantId()), queryId, "query", 1, root, req.businessKey(),
+                b.operation() == null ? req.operation() : b.operation(), b.payloadMapper().apply(req.payload()),
+                Instant.now().plusSeconds(30));
+    }
+
+    /** Fail closed: a connector whose answer cannot be had (it throws) has not declared the request read-only. */
+    private static boolean declaresReadOnly(SangamConnector connector, ConnectorRequest cr) {
+        try {
+            return connector.readOnly(cr);
+        } catch (RuntimeException e) {
+            LOG.warn("connector {} failed to answer readOnly for operation {}: {}", connector.descriptor().id(),
+                    cr.operation(), e.toString());
+            return false;
+        }
+    }
+
+    private static String notReadOnly(org.sangam.packs.port.ConnectorRequest req, PackConnectorBindings.Binding b,
+                                      ConnectorRequest cr) {
+        return "pack connector " + req.connector() + " is bound to connector " + b.connectorId() + ", which does not"
+                + " declare operation '" + cr.operation() + "' with this request read-only; an API read never calls it";
     }
 
     // ------------------------------------------------------------------ lookup

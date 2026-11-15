@@ -184,6 +184,63 @@ class RestBackedDataObjectsTest {
         assertEquals(RestBackedDataObjects.RETRY_AFTER_SECONDS, p.retryAfterSeconds());
     }
 
+    // ------------------------------------------------------------------ read-only binding (decision 320)
+
+    @Test
+    void aListTheSeamRefusedAsNotReadOnlyIsAPermanent422NotARetryable503() {
+        failure = new RestBackedRecords.ConnectorProblem(RestBackedRecords.NOT_READ_ONLY,
+                "the list of erp.vendors failed: connector books does not declare operation 'closePeriod' read-only");
+        ApiProblem p = assertThrows(ApiProblem.class,
+                () -> rules().list(CTX, VENDORS, null, new Page.PageRequest(0, 10), false));
+        assertEquals(422, p.status());
+        assertEquals("CONNECTOR_OPERATION_NOT_READ_ONLY", p.code());
+        assertNull(p.retryAfterSeconds(), "nothing to retry: the binding is refused");
+    }
+
+    @Test
+    void aDataObjectWhoseBindingIsNotReadOnlyIsRefusedAtDefinition() {
+        List<String> probed = new ArrayList<>();
+        RestBackedRecords probing = new RestBackedRecords() {
+            @Override
+            public Listing list(String tenantId, String endpointRef, String q, int offset, int limit) {
+                throw new AssertionError("a definition calls nothing");
+            }
+
+            @Override
+            public Outcome submit(String tenantId, String endpointRef, String operationId, String dataObjectKey,
+                                  Map<String, Object> record) {
+                throw new AssertionError("a definition calls nothing");
+            }
+
+            @Override
+            public Outcome lookup(String tenantId, String endpointRef, String operationId) {
+                throw new AssertionError("a definition calls nothing");
+            }
+
+            @Override
+            public String listRefusal(String tenantId, String endpointRef) {
+                probed.add(tenantId + " " + endpointRef);
+                return "ledger.closePeriod".equals(endpointRef) ? "connector ledger does not declare 'closePeriod' read-only"
+                        : null;
+            }
+        };
+        DataObjectDef closing = new DataObjectDef("d2", "periods", "Periods", "REST", "ledger.closePeriod", 1,
+                VENDORS.fields());
+        ApiProblem p = assertThrows(ApiProblem.class, () -> rules(() -> probing, 10_000).requireReadOnlyList(CTX, closing));
+        assertEquals(422, p.status());
+        assertEquals("CONNECTOR_OPERATION_NOT_READ_ONLY", p.code());
+        assertEquals("endpointRef", p.extensions().get("field"));
+        assertTrue(p.getMessage().contains("ledger.closePeriod"), p.getMessage());
+
+        rules(() -> probing, 10_000).requireReadOnlyList(CTX, VENDORS);   // a read-only (or not yet resolvable) binding
+        assertEquals(List.of("t1 ledger.closePeriod", "t1 erp.vendors"), probed);
+
+        // a seam that does not probe, and no seam at all: nothing is refused here; the list is checked on every call
+        rules().requireReadOnlyList(CTX, closing);
+        rules(() -> null, 10_000).requireReadOnlyList(CTX, closing);
+        assertTrue(calls.isEmpty(), "nothing was called");
+    }
+
     // ------------------------------------------------------------------ create (decision 265)
 
     @Test

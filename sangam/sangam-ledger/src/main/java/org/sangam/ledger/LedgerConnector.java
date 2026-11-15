@@ -74,6 +74,16 @@ public final class LedgerConnector implements SangamConnector {
                         "adjust", "reverse", "write_off", "releaseHolds", "closePeriod"), ConnectorProfile.LIVE);
     }
 
+    /**
+     * Owner decision 320: only the balance read {@code available} (resolved as {@link #invoke} resolves the operation)
+     * is read-only. Every other operation posts, releases holds or closes a period.
+     */
+    @Override
+    public boolean readOnly(ConnectorRequest r) {
+        String op = r.operation().contains(".") ? r.operation().substring(r.operation().lastIndexOf('.') + 1) : r.operation();
+        return "available".equals(op);
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
         try {

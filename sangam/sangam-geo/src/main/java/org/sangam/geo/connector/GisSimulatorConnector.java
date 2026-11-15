@@ -46,6 +46,15 @@ public final class GisSimulatorConnector implements SangamConnector {
                 List.of("getFeature", "getCapabilities", "getMapUrl", "getFeatureInfo"), ConnectorProfile.SIMULATOR);
     }
 
+    /** Owner decision 320: the operations this simulator runs read its loaded feature types in memory. */
+    @Override
+    public boolean readOnly(ConnectorRequest req) {
+        return switch (req.operation()) {
+            case "getCapabilities", "getMapUrl", "getFeatureInfo", "getFeature", "invoke" -> true;
+            default -> false;
+        };
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest req) {
         try {

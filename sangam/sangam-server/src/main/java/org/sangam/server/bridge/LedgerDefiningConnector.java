@@ -30,6 +30,15 @@ public final class LedgerDefiningConnector implements SangamConnector {
         return delegate.descriptor();
     }
 
+    /**
+     * Owner decision 320: the delegate's answer. Registering the tenant's definitions only loads what its profile
+     * already says into the ledger service; it changes no balance and sends nothing.
+     */
+    @Override
+    public boolean readOnly(ConnectorRequest request) {
+        return delegate.readOnly(request);
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest request) {
         definitions.ensure(request.tenantId());

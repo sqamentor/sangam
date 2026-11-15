@@ -83,6 +83,16 @@ public final class BillingConnector implements SangamConnector {
                 List.of("accounts", "invoice", "collect", "arrears", "penalty", "waive"), ConnectorProfile.LIVE);
     }
 
+    /**
+     * Owner decision 320: {@code accounts} (the accounts billed in a cycle) and {@code arrears} (balances read from the
+     * ledger) are read-only, resolved as {@link #invoke} resolves the operation; invoice, collect, penalty and waive post.
+     */
+    @Override
+    public boolean readOnly(ConnectorRequest r) {
+        String op = r.operation().contains(".") ? r.operation().substring(r.operation().lastIndexOf('.') + 1) : r.operation();
+        return "accounts".equals(op) || "arrears".equals(op);
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
         try {

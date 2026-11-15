@@ -104,6 +104,17 @@ public final class JdbcConnector implements SangamConnector {
         return descriptor;
     }
 
+    /**
+     * Owner decision 320: read-only when the statement this request resolves to (its {@code statement}, else the
+     * operation, exactly as {@link #invoke} resolves it) is configured as a {@link NamedStatement.Kind#QUERY} and its
+     * SQL is a plain {@code SELECT} ({@link NamedStatement#isSelect()}). An unknown statement is not read-only.
+     */
+    @Override
+    public boolean readOnly(ConnectorRequest r) {
+        NamedStatement st = config.statements().get(r.str("statement", r.operation()));
+        return st != null && st.isSelect();
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
         LockScope.assertNoLockHeld("JDBC " + config.id());

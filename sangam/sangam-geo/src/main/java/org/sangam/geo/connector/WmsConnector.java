@@ -42,6 +42,15 @@ public final class WmsConnector implements SangamConnector {
                 List.of("getMapUrl", "getFeatureInfo", "getCapabilities"), ConnectorProfile.LIVE);
     }
 
+    /** Owner decision 320: {@code getMapUrl} only builds a URL; the other operations are HTTP GET reads of the WMS. */
+    @Override
+    public boolean readOnly(ConnectorRequest req) {
+        return switch (req.operation()) {
+            case "getMapUrl", "getFeatureInfo", "invoke", "getCapabilities" -> true;
+            default -> false;
+        };
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest req) {
         try {

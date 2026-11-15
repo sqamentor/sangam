@@ -433,6 +433,7 @@ public final class JdbcLowCodeAdapter implements LowCodePort {
         JdbcSupport.oneOf(d.backing(), "backing", BACKINGS);
         if ("REST".equals(d.backing())) {
             required(d.endpointRef(), "endpointRef");
+            restBacked.requireReadOnlyList(ctx, d);   // decision 320: never a binding whose list is not read-only
         }
         if (!d.key().matches("[A-Za-z0-9._-]{1,128}")) {
             throw invalid("key", "key must be 1..128 of [A-Za-z0-9._-]");

@@ -195,6 +195,17 @@ public final class HttpRestConnector implements SangamConnector {
         return descriptor;
     }
 
+    /**
+     * Owner decision 320: read-only when the method this request resolves to (its {@code method}, else the configured
+     * default, exactly as {@link #invoke} resolves it) is {@code GET} or {@code HEAD}; the operation name plays no part.
+     * Never with an {@link AsyncCallback}: such a call asks the endpoint to do work and send a result later.
+     */
+    @Override
+    public boolean readOnly(ConnectorRequest r) {
+        String method = r.str("method", config.defaultMethod()).toUpperCase(java.util.Locale.ROOT);
+        return config.callback() == null && (method.equals("GET") || method.equals("HEAD"));
+    }
+
     @Override
     public ConnectorResult invoke(ConnectorRequest r) {
         String method = r.str("method", config.defaultMethod()).toUpperCase(java.util.Locale.ROOT);
