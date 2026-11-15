@@ -23,6 +23,7 @@ import org.operaton.bpm.engine.ProcessEngine;
 import org.operaton.bpm.engine.impl.cfg.JakartaTransactionProcessEngineConfiguration;
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.operaton.bpm.model.bpmn.Bpmn;
+import org.operaton.bpm.quarkus.engine.extension.QuarkusProcessEngineConfiguration;
 
 /**
  * The shared-transaction seam of the Quarkus host (P-1): {@link JtaTransactions} joins a running JTA transaction,
@@ -129,7 +130,9 @@ class JtaTransactionsTest {
     }
 
     private ProcessEngine engine(String name) {
-        JakartaTransactionProcessEngineConfiguration config = new JakartaTransactionProcessEngineConfiguration();
+        // the host's own engine configuration class: it runs the bootstrap schema operations in a JTA transaction,
+        // as Agroal requires (a plain JTA configuration would use a connection opened before the transaction)
+        QuarkusProcessEngineConfiguration config = new QuarkusProcessEngineConfiguration();
         config.setProcessEngineName(name);
         config.setDataSource(jta.dataSource);
         config.setTransactionManager(jta.transactionManager);

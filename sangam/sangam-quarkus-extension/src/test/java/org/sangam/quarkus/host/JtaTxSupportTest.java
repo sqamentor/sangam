@@ -24,9 +24,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.operaton.bpm.engine.ProcessEngine;
-import org.operaton.bpm.engine.impl.cfg.JakartaTransactionProcessEngineConfiguration;
 import org.operaton.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.operaton.bpm.model.bpmn.Bpmn;
+import org.operaton.bpm.quarkus.engine.extension.QuarkusProcessEngineConfiguration;
 import org.sangam.core.layer.Dialect;
 import org.sangam.rest.support.TxSupport;
 
@@ -226,7 +226,9 @@ class JtaTxSupportTest {
     }
 
     private ProcessEngine engine(String name) {
-        JakartaTransactionProcessEngineConfiguration config = new JakartaTransactionProcessEngineConfiguration();
+        // the host's own engine configuration class: it runs the bootstrap schema operations in a JTA transaction,
+        // as Agroal requires (a plain JTA configuration would use a connection opened before the transaction)
+        QuarkusProcessEngineConfiguration config = new QuarkusProcessEngineConfiguration();
         config.setProcessEngineName(name);
         config.setDataSource(jta.dataSource);
         config.setTransactionManager(jta.transactionManager);
