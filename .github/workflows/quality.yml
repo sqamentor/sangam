@@ -53,7 +53,7 @@ jobs:
           for f in $(find . -path '*/target*/site/jacoco/jacoco.csv' | sort); do
             python3 -I -c "import csv,sys;r=list(csv.DictReader(open(sys.argv[1])));m=sum(int(x['LINE_MISSED']) for x in r);c=sum(int(x['LINE_COVERED']) for x in r);print(f'- {sys.argv[2]}: {100*c/max(c+m,1):.1f}% ({c}/{c+m} lines)')" "$f" "${f%%/target*}" >> "$GITHUB_STEP_SUMMARY"
           done
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: jacoco-reports
@@ -76,7 +76,7 @@ jobs:
         run: |
           mvn $MAVEN_ARGS -Psangam-mutation -pl sangam-core org.pitest:pitest-maven:1.30.2:mutationCoverage
           $RL record --check mutation --ledger-dir "$LEDGER" --status NOT-RUN --reason "report-only: the 70% target is reported, mutationThreshold 0; the PIT run completed"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: pit-reports

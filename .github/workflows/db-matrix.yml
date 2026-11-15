@@ -151,7 +151,7 @@ jobs:
         if: contains(format(',{0},', steps.plan.outputs.planned), ',db2,')
         run: |
           $RL record --check db-db2 --ledger-dir "$LEDGER" --status NOT-RUN --reason "Db2 is unsupported (SL-114); the IBM Db2 JCC driver is customer-supplied (LIC-3) and never fetched by this build"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: contains(format(',{0},', steps.plan.outputs.planned), ',db2,')
         with:
           name: ledger-db-db2
@@ -270,7 +270,7 @@ jobs:
             --reports . --summary "$GITHUB_STEP_SUMMARY"
       - name: Reports
         if: always() && steps.terms.outputs.run == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: db-${{ matrix.db }}-reports
           path: |
@@ -279,7 +279,7 @@ jobs:
             sangam/target/run-provenance/
           if-no-files-found: error
           retention-days: 30
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledger-db-${{ matrix.db }}
