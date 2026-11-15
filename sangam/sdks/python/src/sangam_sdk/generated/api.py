@@ -5800,7 +5800,7 @@ class MeApi:
         return cast("M.Assignment", self._c.json(req, options))
 
 class ModellerApi:
-    """``Modeller`` (29 operations)."""
+    """``Modeller`` (36 operations)."""
 
     def __init__(self, calls: _Calls) -> None:
         self._c = calls
@@ -5825,6 +5825,79 @@ class ModellerApi:
         req = ApiRequest("POST", f"/catalogue/{seg(str(id))}/{seg(str(version))}/install")
         req.body = body
         return cast("M.Package", self._c.json(req, options))
+
+    def submit_catalogue_entry(self, body: M.CatalogueSubmissionRequest, *, options: Optional[RequestOptions] = None) -> M.CatalogueHostedEntry:
+        """Submit a catalogue entry
+
+        Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``POST /catalogue/entries`` (operationId ``submitCatalogueEntry``); permission ``platform.catalogue.publish``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/entries")
+        req.body = body
+        return cast("M.CatalogueHostedEntry", self._c.json(req, options))
+
+    def list_catalogue_entries(self, *, state: Optional[Literal["SUBMITTED", "APPROVED", "REJECTED"]] = None, options: Optional[RequestOptions] = None) -> list[M.CatalogueHostedEntry]:
+        """Hosted catalogue entries
+
+        Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``GET /catalogue/entries`` (operationId ``listCatalogueEntries``); permission ``platform.catalogue.review``.
+        """
+        req = ApiRequest("GET", f"/catalogue/entries", query={"state": state})
+        return cast("list[M.CatalogueHostedEntry]", self._c.json(req, options))
+
+    def approve_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueReviewRequest] = None, *, options: Optional[RequestOptions] = None) -> M.CatalogueHostedEntry:
+        """Approve a catalogue entry
+
+        Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``POST /catalogue/entries/{id}/{version}/approve`` (operationId ``approveCatalogueEntry``); permission ``platform.catalogue.review``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/entries/{seg(str(id))}/{seg(str(version))}/approve")
+        req.body = body
+        return cast("M.CatalogueHostedEntry", self._c.json(req, options))
+
+    def reject_catalogue_entry(self, id: str, version: str, body: Optional[M.CatalogueReviewRequest] = None, *, options: Optional[RequestOptions] = None) -> M.CatalogueHostedEntry:
+        """Reject a catalogue entry
+
+        Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+
+        ``POST /catalogue/entries/{id}/{version}/reject`` (operationId ``rejectCatalogueEntry``); permission ``platform.catalogue.review``; result stored atomically with the state change.
+        """
+        req = ApiRequest("POST", f"/catalogue/entries/{seg(str(id))}/{seg(str(version))}/reject")
+        req.body = body
+        return cast("M.CatalogueHostedEntry", self._c.json(req, options))
+
+    def get_hosted_catalogue_index(self, *, options: Optional[RequestOptions] = None) -> str:
+        """Hosted catalogue index
+
+        The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+
+        ``GET /catalogue/hosted/index.json`` (operationId ``getHostedCatalogueIndex``).
+        """
+        req = ApiRequest("GET", f"/catalogue/hosted/index.json")
+        return cast("str", self._c.json(req, options))
+
+    def get_hosted_catalogue_index_signature(self, *, options: Optional[RequestOptions] = None) -> bytes:
+        """Hosted catalogue index signature
+
+        Base64 detached Ed25519 signature over the index bytes, by the host's own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref and.host.public-key-ref; decision 37). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+
+        ``GET /catalogue/hosted/index.json.sig`` (operationId ``getHostedCatalogueIndexSignature``).
+        """
+        req = ApiRequest("GET", f"/catalogue/hosted/index.json.sig")
+        return self._c.raw(req, options, "text/plain")
+
+    def get_hosted_catalogue_artifact(self, id: str, version: str, *, options: Optional[RequestOptions] = None) -> str:
+        """Hosted catalogue artefact
+
+        The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+
+        ``GET /catalogue/hosted/artifacts/{id}/{version}`` (operationId ``getHostedCatalogueArtifact``).
+        """
+        req = ApiRequest("GET", f"/catalogue/hosted/artifacts/{seg(str(id))}/{seg(str(version))}")
+        return cast("str", self._c.json(req, options))
 
     def get_process_landscape(self, *, options: Optional[RequestOptions] = None) -> dict[str, Any]:
         """Process landscape
@@ -12675,7 +12748,7 @@ class WorkspaceApi:
 
 
 class SangamApis:
-    """The generated typed surface of sangam-api.yaml 0.1.0: 1148 operations on 966 paths."""
+    """The generated typed surface of sangam-api.yaml 0.1.0: 1155 operations on 972 paths."""
 
     def __init__(self, http: HttpTransport) -> None:
         calls = _Calls(http)

@@ -1,8 +1,8 @@
 {
  "contractVersion": "0.1.0",
- "paths": 966,
- "operations": 1148,
- "schemas": 878,
+ "paths": 972,
+ "operations": 1155,
+ "schemas": 881,
  "tags": [
   "AI",
   "Admin",
@@ -344,8 +344,8 @@
    "class": "ModellerApi",
    "tag": "Modeller",
    "pathPrefix": "",
-   "operations": 29,
-   "maxLines": 542
+   "operations": 36,
+   "maxLines": 663
   },
   {
    "class": "OnboardingApi",
@@ -737,7 +737,10 @@
   "CaseVersion",
   "CatalogueEntry",
   "CatalogueExtensionEntry",
+  "CatalogueHostedEntry",
   "CatalogueInstallRequest",
+  "CatalogueReviewRequest",
+  "CatalogueSubmissionRequest",
   "CellActivateRequest",
   "CellDrainStatus",
   "CellExportHandle",
@@ -7861,6 +7864,90 @@
    "python": "modeller.install_catalogue_entry",
    "dotnet": "ModellerApi#InstallCatalogueEntryAsync",
    "php": "ModellerApi#installCatalogueEntry"
+  },
+  {
+   "operationId": "submitCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/entries",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#submitCatalogueEntry",
+   "typescript": "modeller.submitCatalogueEntry",
+   "python": "modeller.submit_catalogue_entry",
+   "dotnet": "ModellerApi#SubmitCatalogueEntryAsync",
+   "php": "ModellerApi#submitCatalogueEntry"
+  },
+  {
+   "operationId": "listCatalogueEntries",
+   "method": "GET",
+   "path": "/catalogue/entries",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#listCatalogueEntries",
+   "typescript": "modeller.listCatalogueEntries",
+   "python": "modeller.list_catalogue_entries",
+   "dotnet": "ModellerApi#ListCatalogueEntriesAsync",
+   "php": "ModellerApi#listCatalogueEntries"
+  },
+  {
+   "operationId": "approveCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/entries/{id}/{version}/approve",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#approveCatalogueEntry",
+   "typescript": "modeller.approveCatalogueEntry",
+   "python": "modeller.approve_catalogue_entry",
+   "dotnet": "ModellerApi#ApproveCatalogueEntryAsync",
+   "php": "ModellerApi#approveCatalogueEntry"
+  },
+  {
+   "operationId": "rejectCatalogueEntry",
+   "method": "POST",
+   "path": "/catalogue/entries/{id}/{version}/reject",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#rejectCatalogueEntry",
+   "typescript": "modeller.rejectCatalogueEntry",
+   "python": "modeller.reject_catalogue_entry",
+   "dotnet": "ModellerApi#RejectCatalogueEntryAsync",
+   "php": "ModellerApi#rejectCatalogueEntry"
+  },
+  {
+   "operationId": "getHostedCatalogueIndex",
+   "method": "GET",
+   "path": "/catalogue/hosted/index.json",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getHostedCatalogueIndex",
+   "typescript": "modeller.getHostedCatalogueIndex",
+   "python": "modeller.get_hosted_catalogue_index",
+   "dotnet": "ModellerApi#GetHostedCatalogueIndexAsync",
+   "php": "ModellerApi#getHostedCatalogueIndex"
+  },
+  {
+   "operationId": "getHostedCatalogueIndexSignature",
+   "method": "GET",
+   "path": "/catalogue/hosted/index.json.sig",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getHostedCatalogueIndexSignature",
+   "typescript": "modeller.getHostedCatalogueIndexSignature",
+   "python": "modeller.get_hosted_catalogue_index_signature",
+   "dotnet": "ModellerApi#GetHostedCatalogueIndexSignatureAsync",
+   "php": "ModellerApi#getHostedCatalogueIndexSignature"
+  },
+  {
+   "operationId": "getHostedCatalogueArtifact",
+   "method": "GET",
+   "path": "/catalogue/hosted/artifacts/{id}/{version}",
+   "tag": "Modeller",
+   "apiClass": "ModellerApi",
+   "java": "ModellerApi#getHostedCatalogueArtifact",
+   "typescript": "modeller.getHostedCatalogueArtifact",
+   "python": "modeller.get_hosted_catalogue_artifact",
+   "dotnet": "ModellerApi#GetHostedCatalogueArtifactAsync",
+   "php": "ModellerApi#getHostedCatalogueArtifact"
   },
   {
    "operationId": "createConversation",

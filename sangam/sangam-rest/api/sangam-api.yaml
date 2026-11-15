@@ -26412,6 +26412,324 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/entries:
+    post:
+      operationId: submitCatalogueEntry
+      tags:
+      - Modeller
+      summary: Submit a catalogue entry
+      description: Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never
+        staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED;
+        the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never
+        replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities;
+        no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      x-sangam-command-type: modeller.catalogue.submit
+      x-sangam-idempotent: true
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.catalogue.publish
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueSubmissionRequest'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueHostedEntry'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+            Location:
+              $ref: '#/components/headers/Location'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+    get:
+      operationId: listCatalogueEntries
+      tags:
+      - Modeller
+      summary: Hosted catalogue entries
+      description: Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only
+        permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      parameters:
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED
+          - REJECTED
+      x-sangam-permission: platform.catalogue.review
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogueHostedEntry'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/entries/{id}/{version}/approve:
+    post:
+      operationId: approveCatalogueEntry
+      tags:
+      - Modeller
+      summary: Approve a catalogue entry
+      description: Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES);
+        409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer
+        identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      x-sangam-command-type: modeller.catalogue.approve
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.catalogue.review
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueReviewRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueHostedEntry'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/entries/{id}/{version}/reject:
+    post:
+      operationId: rejectCatalogueEntry
+      tags:
+      - Modeller
+      summary: Reject a catalogue entry
+      description: Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES);
+        409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer
+        identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+      x-sangam-command-type: modeller.catalogue.reject
+      x-sangam-idempotent: true
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: platform.catalogue.review
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogueReviewRequest'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueHostedEntry'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+  /catalogue/hosted/index.json:
+    get:
+      operationId: getHostedCatalogueIndex
+      tags:
+      - Modeller
+      summary: Hosted catalogue index
+      description: 'The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials):
+        a consumer''s sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.'
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
+  /catalogue/hosted/index.json.sig:
+    get:
+      operationId: getHostedCatalogueIndexSignature
+      tags:
+      - Modeller
+      summary: Hosted catalogue index signature
+      description: 'Base64 detached Ed25519 signature over the index bytes, by the host''s own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref
+        and .host.public-key-ref; decision 37). Public (no credentials): a consumer''s sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json.
+        404 when hosting is off.'
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
+  /catalogue/hosted/artifacts/{id}/{version}:
+    get:
+      operationId: getHostedCatalogueArtifact
+      tags:
+      - Modeller
+      summary: Hosted catalogue artefact
+      description: 'The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer''s sangam.modeller.catalogue.url
+        names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry id
+      - name: version
+        in: path
+        required: true
+        schema:
+          type: string
+        description: catalogue entry version
+      x-sangam-requirements:
+      - R43
+      - T70
+      - R56
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
+      security: []
   /channels/conversations:
     post:
       operationId: createConversation
@@ -67146,6 +67464,93 @@ components:
       properties:
         reason:
           type: string
+    CatalogueSubmissionRequest:
+      type: object
+      description: A signed package bundle submitted to the platform-wide catalogue, with its catalogue fields.
+      properties:
+        id:
+          type: string
+          description: 1 to 100 of a-z 0-9 . _ - (a path segment of the hosted artefact URL)
+        version:
+          type: string
+          description: 1 to 100 of a-z 0-9 . _ - (a path segment of the hosted artefact URL)
+        licence:
+          type: string
+        minPlatform:
+          type: string
+          description: The oldest Sangam version the package runs on
+        bundle:
+          $ref: '#/components/schemas/PackageBundle'
+        reason:
+          type: string
+      required:
+      - id
+      - version
+      - licence
+      - minPlatform
+      - bundle
+    CatalogueReviewRequest:
+      type: object
+      description: Why a catalogue entry is approved or rejected (required to reject).
+      properties:
+        reason:
+          type: string
+    CatalogueHostedEntry:
+      type: object
+      description: A hosted catalogue entry and its review state.
+      properties:
+        id:
+          type: string
+        version:
+          type: string
+        kind:
+          type: string
+          enum:
+          - package
+        publisher:
+          type: string
+          description: tenant/principal of the submitter
+        licence:
+          type: string
+        sha256:
+          type: string
+          description: Hex SHA-256 of the exact bundle bytes served at artifactPath
+        minPlatform:
+          type: string
+        artifactPath:
+          type: string
+          description: 'Relative to the hosted index: artifacts/<id>/<version>'
+        state:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED
+          - REJECTED
+        submittedBy:
+          type: string
+        reviewedBy:
+          type: string
+        reason:
+          type: string
+        reviewReason:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - version
+      - kind
+      - publisher
+      - licence
+      - sha256
+      - minPlatform
+      - artifactPath
+      - state
+      - submittedBy
     ChannelAttachment:
       type: object
       description: A stored conversation attachment.

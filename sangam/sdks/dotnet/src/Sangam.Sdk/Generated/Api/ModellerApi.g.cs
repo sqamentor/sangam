@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Modeller (29 operations).
+/// Typed operations of Modeller (36 operations).
 /// </summary>
 public sealed class ModellerApi
 {
@@ -36,6 +36,87 @@ public sealed class ModellerApi
         var req = ApiRequest.Post($"/catalogue/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/install");
         if (body is not null) req.WithBody(body);
         return await _calls.JsonAsync<M.Package?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Submit a catalogue entry
+    /// Submits a signed package bundle to the platform-wide catalogue (decision 380 P4 (i)); kind package only, code jars are never staged. The bundle must pass this environment's package verification (hash recomputes, artefacts match, valid signatures), else 422 CATALOGUE_BUNDLE_UNVERIFIED; the entry's SHA-256 is taken over the stored bundle bytes. 422 CATALOGUE_ENTRY_ID_INVALID; 409 CATALOGUE_ENTRY_EXISTS (a version is never replaced). The entry is SUBMITTED until another person approves it. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+    /// POST /catalogue/entries (operationId submitCatalogueEntry); permission platform.catalogue.publish; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.CatalogueHostedEntry?> SubmitCatalogueEntryAsync(M.CatalogueSubmissionRequest body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/catalogue/entries");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.CatalogueHostedEntry?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Hosted catalogue entries
+    /// Every hosted entry with its review state, oldest first; needs platform.catalogue.publish or platform.catalogue.review. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+    /// GET /catalogue/entries (operationId listCatalogueEntries); permission platform.catalogue.review.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<M.CatalogueHostedEntry>?> ListCatalogueEntriesAsync(string? state = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/catalogue/entries");
+        req.WithQuery("state", GeneratedCalls.Q(state));
+        return await _calls.JsonAsync<global::System.Collections.Generic.List<M.CatalogueHostedEntry>?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Approve a catalogue entry
+    /// Adds a SUBMITTED entry to the signed hosted index. The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+    /// POST /catalogue/entries/{id}/{version}/approve (operationId approveCatalogueEntry); permission platform.catalogue.review; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.CatalogueHostedEntry?> ApproveCatalogueEntryAsync(string id, string version, M.CatalogueReviewRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/catalogue/entries/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/approve");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.CatalogueHostedEntry?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Reject a catalogue entry
+    /// Rejects a SUBMITTED entry; reason is required (400 REASON_REQUIRED). The reviewer must differ from the publisher (422 SEGREGATION_OF_DUTIES); 409 CATALOGUE_ENTRY_NOT_SUBMITTED when the entry is no longer SUBMITTED. Platform-only permission (the server maps it to platform-issuer identities; no tenant persona group holds it). 404 when hosting is off (sangam.modeller.catalogue.host.enabled).
+    /// POST /catalogue/entries/{id}/{version}/reject (operationId rejectCatalogueEntry); permission platform.catalogue.review; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.CatalogueHostedEntry?> RejectCatalogueEntryAsync(string id, string version, M.CatalogueReviewRequest? body = null, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Post($"/catalogue/entries/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}/reject");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.CatalogueHostedEntry?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Hosted catalogue index
+    /// The index of the approved entries, ordered by id then version; the exact bytes the signature covers. Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+    /// GET /catalogue/hosted/index.json (operationId getHostedCatalogueIndex).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<string?> GetHostedCatalogueIndexAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/catalogue/hosted/index.json");
+        return await _calls.JsonAsync<string?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Hosted catalogue index signature
+    /// Base64 detached Ed25519 signature over the index bytes, by the host's own catalogue key (secret references sangam.modeller.catalogue.host.signing-key-ref and.host.public-key-ref; decision 37). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+    /// GET /catalogue/hosted/index.json.sig (operationId getHostedCatalogueIndexSignature).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<byte[]> GetHostedCatalogueIndexSignatureAsync(RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/catalogue/hosted/index.json.sig");
+        return await _calls.BytesAsync(req, options, "text/plain", cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Hosted catalogue artefact
+    /// The exact bundle bytes of an approved entry (404 for any other state). Public (no credentials): a consumer's sangam.modeller.catalogue.url names /api/v1/catalogue/hosted/index.json. 404 when hosting is off.
+    /// GET /catalogue/hosted/artifacts/{id}/{version} (operationId getHostedCatalogueArtifact).
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<string?> GetHostedCatalogueArtifactAsync(string id, string version, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Get($"/catalogue/hosted/artifacts/{HttpTransport.Seg(GeneratedCalls.Str(id)!)}/{HttpTransport.Seg(GeneratedCalls.Str(version)!)}");
+        return await _calls.JsonAsync<string?>(req, options, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
