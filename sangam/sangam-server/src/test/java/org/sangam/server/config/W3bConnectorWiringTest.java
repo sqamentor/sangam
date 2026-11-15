@@ -9,48 +9,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.junit.jupiter.api.Test;
-import org.sangam.compliance.ports.CompliancePorts;
-import org.sangam.integration.connector.gov.DigiLockerRequesterConnector;
 import org.sangam.integration.connector.http.LiveHttpConnectors;
 import org.sangam.integration.connector.secrets.SecretProviders;
-import org.sangam.integration.sim.SimulatorProfile;
-import org.sangam.integration.sim.digilocker.DigiLockerRequesterSimulator;
 import org.springframework.mock.env.MockEnvironment;
 
-/** M-067 (HTTP connector keys), M-072 (AdultIdentityVerifier bean) and M-075 (secret provider settings) wiring. */
+/**
+ * M-067 (HTTP connector keys) and M-075 (secret provider settings) wiring. The M-072 AdultIdentityVerifier test moved
+ * with its wiring to {@code org.sangam.server.connector.gov.DigiLockerWiringTest} (SL-104).
+ */
 class W3bConnectorWiringTest {
-
-    @Test
-    void theAdultVerifierAnswersOnlyItsMethodCodesAndMapsConsentFailures() {
-        try (SimulatorProfile sims = new SimulatorProfile()) {
-            DigiLockerRequesterSimulator sim = sims.digiLockerRequester();
-            DigiLockerRequesterConnector c = DigiLockerRequesterConnector.simulator(sims);
-            CompliancePorts.AdultIdentityVerifier v = DigiLockerWiring.verifier(c, Set.of("DIGILOCKER_TOKEN"));
-
-            CompliancePorts.AdultVerification other = v.verifyAdult("t1", "p1", "AADHAAR_OTP", Map.of());
-            assertFalse(other.identifiable());
-            assertEquals("METHOD_NOT_SUPPORTED", other.detail());
-
-            DigiLockerRequesterConnector.AuthorizationRequest a = c.authorization("s");
-            String code = sim.consent(new DigiLockerRequesterSimulator.Person("DL-9", "P", LocalDate.of(1985, 3, 3), Map.of()),
-                    DigiLockerRequesterSimulator.challengeOf(a.codeVerifier()));
-            Map<String, String> ev = Map.of("code", code, "codeVerifier", a.codeVerifier(),
-                    "redirectUri", DigiLockerRequesterSimulator.REDIRECT_URI);
-            CompliancePorts.AdultVerification ok = v.verifyAdult("t1", "p1", "digilocker_token", ev);
-            assertTrue(ok.identifiable() && ok.adult(), ok.toString());
-            assertNotNull(ok.tokenRef());
-
-            CompliancePorts.AdultVerification reused = v.verifyAdult("t1", "p1", "DIGILOCKER_TOKEN", ev);
-            assertFalse(reused.adult());
-            assertEquals("CONSENT_INVALID", reused.detail());
-        }
-    }
 
     @Test
     void secretSettingsAreReadOnlyForTheListedProviders() {
