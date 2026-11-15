@@ -140,7 +140,11 @@ jobs:
           cp "$jar" sangam-server/target/sangam-server.jar
           docker buildx build -f deploy/docker/server.Dockerfile --target runtime --build-arg JAR_SOURCE=prebuilt \
             --build-arg PREBUILT_JAR=sangam-server/target/sangam-server.jar --load -t sangam-server:dev .
-          docker buildx build -f deploy/docker/server-test-mode.Dockerfile --load -t sangam-server:dev-test-mode .
+          # The test-mode image is a layer on sangam-server:dev, which exists only in the Docker engine's image store
+          # (--load above). The builder of setup-buildx-action runs in a container and resolves FROM against registries
+          # only ("sangam-server:dev: pull access denied, repository does not exist"), so this build uses the engine's
+          # own builder ("default", docker driver), which reads the engine's images.
+          docker buildx build --builder default -f deploy/docker/server-test-mode.Dockerfile -t sangam-server:dev-test-mode .
       - name: UI build (install scripts off, decision 130) and the UI image
         run: |
           set -euo pipefail
@@ -158,10 +162,22 @@ jobs:
             -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test sangam-server:dev-test-mode
           docker run -d --name sangam-ui --network e2e -p 127.0.0.1:8080:8080 \
             -e SANGAM_API_UPSTREAM=http://sangam-server:8080 sangam-ui:e2e
+          # Readiness as in deploy/compose/docker-compose.yml. bash, not sh: /dev/tcp is a bash feature and the image's
+          # sh is dash, where the probe can never succeed. A server that does not get ready fails here, with its log.
+          ready=""
           for i in $(seq 1 60); do
-            docker exec sangam-server sh -c 'exec 3<>/dev/tcp/127.0.0.1/8081' 2>/dev/null && break
+            if docker exec sangam-server bash -c 'exec 3<>/dev/tcp/127.0.0.1/8081 && printf "GET /actuator/health/readiness HTTP/1.0\r\n\r\n" >&3 && grep -q UP <&3' 2>/dev/null; then
+              ready=yes
+              break
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' sangam-server)" != "true" ]; then break; fi
             sleep 5
           done
+          if [ -z "$ready" ]; then
+            echo "::error::the test-mode server did not get ready"
+            docker logs --tail 200 sangam-server
+            exit 1
+          fi
           curl -sSf http://127.0.0.1:8080/ > /dev/null
       - name: Playwright browsers (decision 106)
         working-directory: sangam/sangam-ui
