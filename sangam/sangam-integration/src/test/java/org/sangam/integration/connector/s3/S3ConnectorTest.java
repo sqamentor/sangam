@@ -234,6 +234,11 @@ class S3ConnectorTest {
                 c.invoke(req(UUID.randomUUID(), "put", Map.of("key", "k", "content", "x", "contentBase64", "eA==")))).code());
         assertTrue(requests.isEmpty());
         assertThrows(IllegalArgumentException.class, () -> S3ObjectClient.checkKey("a/../b"));
+        // '=' is a key character (partitioned lake layouts, M-057); the other characters outside the safe set stay refused
+        S3ObjectClient.checkKey("tenant=T1/date=2026-11-12/e.json");
+        for (String key : List.of("a&b", "a+b", "a?b", "a#b", "a%3Db", "a;b", "a:b", "a@b", "a$b", "a,b")) {
+            assertThrows(IllegalArgumentException.class, () -> S3ObjectClient.checkKey(key), key);
+        }
     }
 
     @Test

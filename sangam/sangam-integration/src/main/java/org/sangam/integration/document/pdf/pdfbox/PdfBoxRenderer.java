@@ -120,7 +120,10 @@ public final class PdfBoxRenderer implements PdfRenderer {
         }
         Instant created = createdAt(document);
         try (PDDocument doc = new PDDocument()) {
+            // PDF 1.7 in the catalogue and in the file header: PDDocument.setVersion writes only the catalogue /Version
+            // for a document that is already 1.4 or later, and the header then stays at the writer's own "%PDF-1.6"
             doc.setVersion(1.7f);
+            doc.getDocument().setVersion(1.7f);
             PDDocumentCatalog catalog = doc.getDocumentCatalog();
             PDStructureTreeRoot tree = new PDStructureTreeRoot();
             catalog.setStructureTreeRoot(tree);

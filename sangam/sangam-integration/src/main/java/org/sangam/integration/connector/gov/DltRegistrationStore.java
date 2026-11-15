@@ -108,8 +108,7 @@ public final class DltRegistrationStore {
             throw new InvalidRegistration("ENTITY_INVALID", "the principal-entity id is 1 to 64 letters or digits");
         }
         return change(tenantId, actor, "ADMIN", c -> {
-            String current = Jdbc.one(c, "SELECT entity_id FROM DLT_REGISTRATION WHERE tenant_id=?", rs -> rs.getString(1), tenantId)
-                    .orElse(null);
+            String current = storedEntityId(c, tenantId);
             if (entityId.equals(current)) {
                 return null;
             }
@@ -150,8 +149,7 @@ public final class DltRegistrationStore {
                 throw new InvalidRegistration("ENTITY_INVALID", "seed of tenant " + s.tenantId());
             }
             if (s.entityId() != null && change(s.tenantId(), SEED_ACTOR, "SEED", c -> {
-                boolean none = Jdbc.one(c, "SELECT entity_id FROM DLT_REGISTRATION WHERE tenant_id=?", rs -> rs.getString(1),
-                        s.tenantId()).orElse(null) == null;
+                boolean none = storedEntityId(c, s.tenantId()) == null;
                 if (!none) {
                     return null;
                 }
@@ -206,6 +204,16 @@ public final class DltRegistrationStore {
             }
             return event(kind.name(), key, current.isPresent(), details);
         });
+    }
+
+    /**
+     * The tenant's stored principal-entity id, or null when none is registered yet. {@link #change} creates the
+     * registration row with {@code entity_id} NULL, so NULL is a normal state here ("row, no entity yet"), and
+     * {@link Jdbc#one} refuses a row whose mapped value is null; the column is therefore mapped to an {@link Optional}.
+     */
+    private static String storedEntityId(Connection c, String tenantId) {
+        return Jdbc.one(c, "SELECT entity_id FROM DLT_REGISTRATION WHERE tenant_id=?",
+                rs -> Optional.ofNullable(rs.getString(1)), tenantId).flatMap(e -> e).orElse(null);
     }
 
     private record Event(String registration, String key, boolean replaced, Map<String, Object> details) {
