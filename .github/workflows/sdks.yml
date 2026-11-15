@@ -398,7 +398,7 @@ jobs:
           (cd dotnet && dotnet new globaljson --force --sdk-version "${{ steps.dotnet.outputs.dotnet-version }}" --roll-forward latestPatch && dotnet build examples/Ac08Worker -c Release)
           python -m pip install --disable-pip-version-check -q --require-hashes --no-deps -r ../deploy/licence/ci-req-python-sdk.txt
           python -m pip install --disable-pip-version-check -q --no-build-isolation --no-deps -e python
-          (cd typescript && npm ci --ignore-scripts --no-audit --no-fund && npx --no tsc -p examples/tsconfig.json)
+          (cd typescript && npm ci --ignore-scripts --no-audit --no-fund && npm exec --no -- tsc -p examples/tsconfig.json)
           (cd php && composer install --no-interaction --prefer-dist --no-dev)
       - name: Run the harness
         working-directory: sangam

@@ -14,10 +14,11 @@
                        `--exit-code 0`, `exit-code: "0"`, `--allow-missing`, `if-no-files-found: ignore` (CR-01, RM-12)
   --check curl         no `curl ... | sh` or `wget ... | sh`: tools are fixed release assets with a committed
                        SHA-256 (ci-tool-pins.json "tools", fetched by fetch_tool.py) (CR-11)
-  --check npx          no `npx --yes`, `npx -y` or `npm exec --yes`, and every `npx`/`npm exec` passes `--no`: on a CI
+  --check npx          no `npx` in command position and no `npm exec` without `--no` (and never --yes/-y): on a CI
                        runner (no terminal) a bare `npx <tool>` whose package is missing installs the latest
-                       release without asking; `--no` makes it fail instead, so tools come from a committed
-                       lockfile (CR-12)
+                       release without asking, and npm 11 parses `npx --no <tool>` wrongly (it ran npm itself and
+                       the step exited 128), so the one accepted form is `npm exec --no -- <tool>`, which fails
+                       when the tool is not in the committed lockfile (CR-12)
   --check npm-scripts  every `npm ci`, `npm install` or `npm i` passes --ignore-scripts (decision 130, CR-14)
   --check lockfiles    every package.json has package-lock.json, composer.json has composer.lock, *.csproj has
                        packages.lock.json, Cargo.toml has Cargo.lock under the given --lock-root dirs (CR-18)
@@ -51,7 +52,8 @@ NPX_YES = re.compile(r"\bnpx\s+(--yes|-y)\b|\bnpm\s+exec\s+(--yes|-y)\b")
 # npx / npm exec in command position (line start, after run:/RUN, a shell separator, a subshell or an env prefix),
 # so prose such as a step name or "--check npx" is not a command.
 NPX_RUN = re.compile(r"(?:^|[;&|(`]|\brun:|\bRUN\b)\s*(?:\w+=\S+\s+)*(?:npx|npm\s+exec)\s+\S")
-NPX_NO = re.compile(r"(\bnpx|\bnpm\s+exec)\s+(?:--?[\w-]+(?:=\S+)?\s+)*--no(?:-install)?(?=\s|$)")
+NPX_CMD = re.compile(r"(?:^|[;&|(`]|\brun:|\bRUN\b)\s*(?:\w+=\S+\s+)*npx\s+\S")
+NPM_EXEC_NO = re.compile(r"\bnpm\s+exec\s+(?:--?[\w-]+(?:=\S+)?\s+)*--no\s+(?:--?[\w-]+(?:=\S+)?\s+)*--\s")
 NPM_INSTALL = re.compile(r"\bnpm\s+(ci|install|i)(\s|$)")
 IMAGE_ARG = re.compile(r"^\s*ARG\s+\w*IMAGE\w*=(\S+)")
 FROM_LINE = re.compile(r"^\s*FROM\s+(?:--\S+\s+)*(\S+)(?:\s+AS\s+(\S+))?\s*$", re.IGNORECASE)
@@ -171,8 +173,10 @@ def curl_rules(code):
 def npx_rules(code):
     yes = NPX_YES.search(code)
     return [(yes, "npx --yes fetches an unpinned package (install it from a committed lockfile)"),
-            (not yes and NPX_RUN.search(code) and not NPX_NO.search(code),
-             "npx without --no installs a missing package without asking on CI (pass --no; the tool must be in a committed lockfile)")]
+            (not yes and NPX_CMD.search(code),
+             "npx installs a missing package without asking on CI and misparses --no on npm 11 (use npm exec --no -- <tool>)"),
+            (not yes and not NPX_CMD.search(code) and NPX_RUN.search(code) and not NPM_EXEC_NO.search(code),
+             "npm exec without --no installs a missing package without asking on CI (use npm exec --no -- <tool>)")]
 
 
 def npm_rules(code):
