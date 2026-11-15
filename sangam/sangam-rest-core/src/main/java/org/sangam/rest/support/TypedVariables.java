@@ -77,7 +77,9 @@ public final class TypedVariables {
             return l.stream().map(TypedVariables::fromJsonValue).toList();
         }
         if (v instanceof Double d) {
-            // A JSON number with a fraction: keep it exact (R33), never a binary float.
+            // Never a binary float in the engine (R33). A request body never brings a Double here: the server's JSON
+            // mapper reads fractions as BigDecimal from their text (ExactJsonNumbersWiring, decision 138); this branch
+            // only keeps an in-process caller's Double from becoming a double variable.
             return new BigDecimal(d.toString());
         }
         return v;
