@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Input of ci-req-python-sdk.txt: CI build and tests of the Python SDK on Python 3.10 and 3.13 (sdks.yml). setuptools and
+# wheel are the SDK's build backend (pyproject.toml build-system.requires); pinned here so that the editable install and
+# the build run without build isolation and fetch nothing unpinned.
+build==1.2.2.post1
+pytest>=8,<9
+setuptools>=68
+wheel

@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Input of ci-req-python-publish.txt: build and upload of the Python SDK (publish-packages.yml, Python 3.13).
+build==1.2.2.post1
+twine==6.1.0
+setuptools>=68
+wheel

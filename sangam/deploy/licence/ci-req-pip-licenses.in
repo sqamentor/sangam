@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+# Input of ci-req-pip-licenses.txt (security.yml, pip licence report). Regenerate: see the header of that file.
+pip-licenses==5.5.5

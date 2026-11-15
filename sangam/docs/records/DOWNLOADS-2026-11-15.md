@@ -1,0 +1,19 @@
+# Downloads, 2026-11-15 (CI repair and dependency pinning)
+
+Package-resolution downloads made on the authoring machine on 2026-11-15. Registries: registry.npmjs.org, pypi.org,
+api.nuget.org, packagist.org. Owner approval: the pinning downloads were approved on 2026-11-15 ("allow the necessary
+package-resolution downloads from approved registries"); the first line was run before approval was asked and is
+recorded as such.
+
+| What | Command | Result kept in the repository |
+|---|---|---|
+| UI dependencies from the committed lockfile (to run the unit tests) | `npm ci --ignore-scripts` in `sangam-ui` | nothing (node_modules is not committed). Run without asking first; reported to the owner the same day |
+| `@cyclonedx/cyclonedx-npm` 2.1.0 to 7.0.1 (GHSA-q69g-4hcv-6jg4, GHSA-v75r-vx73-82pj) | `npm install --package-lock-only --ignore-scripts`, then `npm ci --ignore-scripts` in `deploy/licence/tools` | `deploy/licence/tools/package.json`, `package-lock.json` (16 packages, `npm audit`: 0) |
+| Hashed Python closures | `uv pip compile <file>.in --generate-hashes --universal --python-version <3.13 or 3.10> --no-header --no-annotate` (uv 0.12.12) | `deploy/licence/ci-req-pip-licenses.txt` (3 packages), `ci-req-semgrep.txt` (68), `ci-req-python-sdk.txt` (15), `ci-req-python-publish.txt` (33), each with its `.in` |
+| Install check of those files | `python -m pip install --require-hashes --no-deps -r <file>` in clean Python 3.13 venvs (pip-licenses, python-sdk, python-publish); `--dry-run` for semgrep | nothing; all four exited 0, `pip check` clean on the three installed |
+| .NET lock files | `dotnet restore --force-evaluate`, then `--locked-mode`, in the local image `mcr.microsoft.com/dotnet/sdk:8.0` (SDK 8.0.427) | `sdks/dotnet/**/packages.lock.json` (5 files; 14 packages, all in the test project) |
+| PHP lock file (tried, discarded) | `composer update --no-install` in the local image `composer:2` | nothing: `sdks.yml` pins phpunit with `composer update --with` on purpose and keeps no lock file in the library |
+
+Versions kept as they were: pip-licenses 5.5.5, semgrep 1.185.0, build 1.2.2.post1, twine 6.1.0, Microsoft.NET.Test.Sdk
+17.11.1, xunit 2.9.2, xunit.runner.visualstudio 2.8.2. Newly fixed by resolution (were floating): pytest 8.4.2,
+setuptools 84.2.1, wheel 0.48.0 and the transitive closures.

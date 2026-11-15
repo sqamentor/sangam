@@ -108,8 +108,8 @@ jobs:
         working-directory: sangam/sdks/python
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check build==1.2.2.post1 twine==6.1.0
-          python -m build -o ../../../packages/pypi
+          python -m pip install --disable-pip-version-check -q --require-hashes --no-deps -r "$GITHUB_WORKSPACE/sangam/deploy/licence/ci-req-python-publish.txt"
+          python -m build --no-isolation -o ../../../packages/pypi
           python -m twine check --strict ../../../packages/pypi/*
       - name: NuGet package
         working-directory: sangam/sdks/dotnet
@@ -169,7 +169,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
-          python -m pip install --disable-pip-version-check twine==6.1.0
+          python -m pip install --disable-pip-version-check -q --require-hashes --no-deps -r "$GITHUB_WORKSPACE/sangam/deploy/licence/ci-req-python-publish.txt"
           python -m twine upload --non-interactive packages/pypi/*
       - name: NuGet push
         env:

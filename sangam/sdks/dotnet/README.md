@@ -286,3 +286,16 @@ None (BCL only). The separate `Sangam.Sdk.Hosting` adapter references the `Micro
 - Test engine (R18, M-021): `Sangam.Sdk.Testing.SangamTestEngine`, an in-process `HttpMessageHandler`; contract tests T01–T04/T18 in `tests/Sangam.Sdk.Tests/Contract/` and the AC-08 worker `examples/Ac08Worker` (written, not run).
 - Trace context (M-062): HttpClient propagates `System.Diagnostics.Activity.Current` as W3C `traceparent` by itself; no SDK option is needed.
 - Compile-checked with .NET SDK 7.0.410 (`SangamTargetFramework=net7.0`); not yet built against a net8 SDK.
+
+## Lock files
+
+Every project has a committed `packages.lock.json` (`Directory.Build.props`, `RestorePackagesWithLockFile`). On CI
+(`CI=true`) every restore runs in locked mode: a direct or transitive package that is not in the lock file, or whose
+content hash differs, fails the restore (`NU1403`, `NU1004`).
+
+After changing a `PackageReference`, regenerate with the supported SDK (8.0) and review the diff:
+
+```
+dotnet restore --force-evaluate
+dotnet restore --locked-mode
+```

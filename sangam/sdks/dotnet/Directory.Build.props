@@ -1,0 +1,11 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Project>
+  <!-- CR-18: every project restores from a committed packages.lock.json. In CI (the CI variable is true on GitHub
+       Actions) every restore, explicit or implicit, runs in locked mode: a package, direct or transitive, that is not
+       in the lock file, or whose content hash differs, fails the restore. After changing a PackageReference,
+       regenerate with the SDK 8.0 restore option "force-evaluate" and review the diff (README.md, section Lock files). -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+</Project>
