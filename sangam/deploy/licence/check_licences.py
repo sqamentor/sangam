@@ -216,6 +216,8 @@ class Checker:
         self.conditional = policy.get("conditional", [])
         self.elections = policy.get("elections", [])
         self.pending = {e["purl"]: e for e in policy.get("pending_review", [])}
+        # reviewed_licences: exact purl -> entry; the policy spells purls as an SBOM does (pkg:npm/%40scope/name@version)
+        self.reviewed = {unquote(u): e for e in policy.get("reviewed_licences", []) for u in e["purls"]}
         self.os = policy.get("os_packages") or {}
         self.strict = strict or policy.get("unknown_license") == "fail"
         self.distribution = distribution
@@ -245,7 +247,9 @@ class Checker:
 
     @staticmethod
     def matches(purl, prefixes):
-        return any(purl.startswith(x) for x in prefixes)
+        """purl is compared unquoted, so a prefix written as in an SBOM (pkg:npm/%40bpmn-io/...) matches too."""
+        purl = unquote(purl)
+        return any(purl.startswith(unquote(x)) for x in prefixes)
 
     def is_os_package(self, purl):
         return self.image and self.matches(purl, self.os.get("purl_types", []))
@@ -338,10 +342,28 @@ class Checker:
         except ValueError as e:
             self.errors.append(f"BAD LICENCE EXPRESSION {label}: {e}")
             return
+        shown = expr or " AND ".join(ids)
+
+        reviewed = self.reviewed.get(f"{base}@{ver}")
+        if reviewed is not None:
+            # The package metadata of this exact version names no licence (nothing, or a pointer such as
+            # "SEE LICENSE IN LICENSE"); the licence was read from the package's own files and recorded. The entry
+            # holds only while the metadata still says what the review saw; then the usual rules judge the recorded
+            # licence (allowed, conditional for this component, forbidden ...).
+            want = reviewed.get("declared")
+            want = want if isinstance(want, list) else [want]   # one spelling, several, or None for no licence member
+            if (shown or None) not in want:
+                self.errors.append(f"REVIEWED LICENCE MISMATCH {label}: the metadata now declares {shown or 'nothing'}, "
+                                   f"the review recorded {' or '.join(w or 'nothing' for w in want)}; re-verify and "
+                                   "update reviewed_licences")
+                return
+            alternatives = [[reviewed["licence"]]]
+            self.notes.append(f"REVIEWED {label}: {reviewed['licence']}, metadata declares {shown or 'nothing'} "
+                              f"({reviewed['evidence']})")
+            shown = reviewed["licence"]
         if alternatives is None:
             (self.errors if self.strict else self.warnings).append(f"NO LICENCE DATA {label}")
             return
-        shown = expr or " AND ".join(ids)
 
         election = self.election_for(purl)
         if election is not None:

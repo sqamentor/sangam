@@ -82,6 +82,23 @@
   "_comment_rust_crates": "Decision 117: the Rust crates are MIT OR Apache-2.0 (both allowed, so their SPDX OR expression passes as it is); only ryu needs the election above. They matter only if a binary is ever shipped.",
   "_comment_pending_review": "Shipped components whose licence reading is open in the decision register. Each is reported as REVIEW REQUIRED and fails the gate until the register entry is closed and this list is updated (decision 117: the six Jersey jars stay unelected until their files are reviewed). Decision 176 (2026-11-12) closed DR-01 (the six Jersey jars, now elected EPL-2.0 above from the SPDX line of their own META-INF/NOTICE.md) and DR-02 (paranamer 2.8.3, BSD-3-Clause from the upstream LICENSE.txt at its release tag); evidence in the E16 CSV rows. The list is empty and stays in place for the next open reading.",
   "pending_review": [],
+  "_comment_reviewed_licences": "Exact component versions whose package metadata names no licence: nothing at all, or a pointer to a file ('SEE LICENSE IN LICENSE'). 'licence' is the licence read from the package's own files and recorded for that version in decision-register.json (test_check_licences.py checks that the two agree); 'declared' is what the metadata said at the review (null = no licence member; a list when two tools spell the same metadata differently). The gate judges the component by 'licence' under the ordinary rules of this file, so an entry here accepts nothing by itself: LicenseRef-bpmn.io passes only through the LIC-8 conditional entry above, MIT because it is in 'allowed'. A different metadata value, or another version, fails (REVIEWED LICENCE MISMATCH, UNKNOWN LICENCE or NO LICENCE DATA) until the files are read again.",
+  "reviewed_licences": [
+    { "licence": "LicenseRef-bpmn.io", "declared": "SEE LICENSE IN LICENSE",
+      "evidence": "LICENSE file of the package: the bpmn.io licence, MIT terms plus the watermark clause; LIC-8",
+      "purls": [
+        "pkg:npm/bpmn-js@17.11.1", "pkg:npm/dmn-js@16.8.2", "pkg:npm/dmn-js-shared@16.8.2", "pkg:npm/dmn-js-drd@16.8.2",
+        "pkg:npm/dmn-js-decision-table@16.8.2", "pkg:npm/dmn-js-literal-expression@16.8.2",
+        "pkg:npm/dmn-js-boxed-expression@16.8.2", "pkg:npm/%40bpmn-io/form-js-editor@1.12.0",
+        "pkg:npm/%40bpmn-io/form-js-viewer@1.12.0"
+      ] },
+    { "licence": "BSD-3-Clause", "declared": ["BSD-4-Clause", "BSD"],
+      "evidence": "decision 176 (DR-02): upstream LICENSE.txt at the release tag is BSD-3-Clause (attributions/paranamer-2.8.3.txt); the parent POM names 'BSD' with the bsd-3-clause URL, which the CycloneDX Maven plugin reports as BSD-4-Clause",
+      "purls": ["pkg:maven/com.thoughtworks.paranamer/paranamer@2.8.3"] },
+    { "licence": "MIT", "declared": null,
+      "evidence": "package.json has no license member; component.json and Readme.md of the package say MIT",
+      "purls": ["pkg:npm/component-props@1.1.1"] }
+  ],
   "_comment_restricted": "Copyleft licences allowed only through a conditional entry, an election or the OS-package rule; anywhere else they are forbidden, whatever the spelling (CF-17).",
   "restricted_licenses": ["LGPL-2.0", "LGPL-2.1", "LGPL-3.0", "LicenseRef-LGPL-unversioned", "MPL-1.1"],
   "_comment_forbidden": "Fails the build when found in what Sangam ships (runtime/compile scope SBOM, npm production deps).",
