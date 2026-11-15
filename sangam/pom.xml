@@ -66,7 +66,7 @@
     <module>sangam-security</module>
     <module>sangam-integration</module>
     <!-- decision 217: optional eSign and DSC signing module, the only holder of Bouncy Castle; never a compile dependency of
-         sangam-server or a default module (opt-in runtime add-on through the sangam-server profile sangam-esign); live eSign off (decision 215) -->
+         sangam-server or a default module (opt-in runtime add-on beside the server fat jar: deploy/docker/server/esign-addon.sh); live eSign off (decision 215) -->
     <module>sangam-esign</module>
     <!-- decisions 114/119: veraPDF validator, a separate container; the only module allowed Rhino (PdfValidatorReactorScopeTest) -->
     <module>sangam-pdf-validator</module>

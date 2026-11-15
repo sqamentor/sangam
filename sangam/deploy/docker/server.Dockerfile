@@ -73,9 +73,9 @@ RUN --mount=type=cache,target=/root/.m2 \
 # default, so a default image has no Bouncy Castle. --build-arg WITH_ESIGN=true (sangam-server only) adds the
 # sangam-esign jar and the runtime jars the fat jar lacks (Bouncy Castle) to /opt/sangam/lib-ext, which is on
 # loader.path; the server finds the verifiers by ServiceLoader. The list is /opt/sangam/lib-ext/ESIGN-ADDON.txt. Live
-# eSign stays off until decision 215 is met; this only makes verified eSign and DSC possible. The sangam-server
-# profile sangam-esign puts the same module inside the fat jar instead; the image keeps the fat jar as released and
-# adds the jars beside it, which is also how the release asset sangam-esign-<v>.tgz ships them.
+# eSign stays off until decision 215 is met; this only makes verified eSign and DSC possible. The module is never
+# inside the fat jar (the server build bans Bouncy Castle): the image keeps the fat jar as released and adds the jars
+# beside it, which is also how the release asset sangam-esign-<v>.tgz ships them.
 ARG WITH_ESIGN=false
 RUN --mount=type=cache,target=/root/.m2 \
     case "${WITH_ESIGN}" in \

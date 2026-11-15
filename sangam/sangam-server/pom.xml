@@ -400,20 +400,10 @@
         </dependency>
       </dependencies>
     </profile>
-    <!-- Decision 217: the optional eSign and DSC signing module (sangam-esign, the only holder of Bouncy Castle) as an opt-in
-         runtime add-on: -Psangam-esign puts it on the server class path; it is never a compile dependency of this module,
-         so the default server has no Bouncy Castle. Live eSign stays off until decision 215 confirms the ESP profile. -->
-    <profile>
-      <id>sangam-esign</id>
-      <dependencies>
-        <dependency>
-          <groupId>io.github.sqamentor</groupId>
-          <artifactId>sangam-esign</artifactId>
-          <version>${project.version}</version>
-          <scope>runtime</scope>
-        </dependency>
-      </dependencies>
-    </profile>
+    <!-- Decision 217: the optional eSign and DSC signing module (sangam-esign, the only holder of Bouncy Castle) is never
+         a dependency of this module, in any profile: Bouncy Castle is banned from the server (enforcer, SL-106), so the
+         fat jar never contains it. The add-on is shipped beside the fat jar (deploy/docker/server/esign-addon.sh: image
+         build arg WITH_ESIGN=true, or the release asset sangam-esign-<v>.tgz in /opt/sangam/lib-ext, deploy README). -->
     <!-- Decisions 183 and 187: HAPI FHIR profile validation as an opt-in runtime add-on. sangam-connectors-health declares
          HAPI as OPTIONAL, so the default server carries none of it (FhirProfileValidations answers CAPABILITY_MISSING);
          -Psangam-health-validation adds the same closure, versions and exclusions as that module's pom (keep the two

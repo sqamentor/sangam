@@ -172,8 +172,10 @@ public class EngineWiring {
     /**
      * M-021: the clock behind {@code /api/v1/test-mode/clock}, only with {@value #TEST_MODE_PROPERTY}. Built after the
      * engine (it takes the adapter), and re-checks H2 and the profiles itself rather than trusting the settings bean.
+     * The bean is closed with the context ({@code TestModeClockBridge.close}), which gives the process-wide business
+     * clock back.
      */
-    @Bean
+    @Bean(destroyMethod = "close")
     @ConditionalOnProperty(name = TEST_MODE_PROPERTY, havingValue = "true")
     public org.sangam.rest.port.TestClockPort sangamTestClockPort(SangamEngineSettings sangamEngineSettings,
                                                                   OperatonEngineAdapter sangamEngineAdapter,
