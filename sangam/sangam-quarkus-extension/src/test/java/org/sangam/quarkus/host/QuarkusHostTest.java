@@ -138,6 +138,23 @@ class QuarkusHostTest {
     }
 
     @Test
+    void whatOnlyTheEngineBuildSuppliesIsPendingAtTheBuildGuardAndSettledAtStart() {
+        // decision 376: an expected after-build capability does not refuse the engine build; the start settles it
+        QuarkusHost host = host(Map.of());
+        EngineCapabilityGuard guard = new EngineCapabilityGuard(host);
+        assertTrue(assertThrows(CapabilityMissingException.class, guard::refuseHostGaps).missing()
+                .contains(Capabilities.OUTBOX_RELAY_INBOX), "nothing expects it: missing before the build");
+        host.engineClaims().expect(Capabilities.OUTBOX_RELAY_INBOX, engine -> List.of());
+        CapabilityMissingException beforeBuild = assertThrows(CapabilityMissingException.class, guard::refuseHostGaps);
+        assertFalse(beforeBuild.missing().contains(Capabilities.OUTBOX_RELAY_INBOX), beforeBuild.getMessage());
+        assertTrue(beforeBuild.missing().contains(Capabilities.AUDIT_CHAIN), "claimed before the build: still missing");
+        CapabilityMissingException atStart = assertThrows(CapabilityMissingException.class, host.runtime()::start);
+        assertTrue(atStart.missing().contains(Capabilities.OUTBOX_RELAY_INBOX), "the engine was never built");
+        assertEquals(org.sangam.assembly.engine.EngineStartOrder.NAME,
+                host.runtime().startOrder().get(host.runtime().startOrder().size() - 1), "the job executor is last");
+    }
+
+    @Test
     void suppliesExactlyTheFiveSeams() {
         Set<Capability> supplied = host(Map.of()).seams().capabilities();
         for (Capability c : SEAMS) {
