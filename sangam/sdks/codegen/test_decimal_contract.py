@@ -2,8 +2,10 @@
 """Owner decision 138 guard for the contract and the SDK surface: exact decimals are strings end to end, and no SDK
 type ever turns money or a financial decimal into a float.
 
-- MoneyAmount and DecimalString are string schemas whose pattern accepts plain decimal text only (no exponent, no
-  sign other than a leading minus, no bare dot);
+- MoneyAmount and DecimalString are string schemas whose pattern accepts plain decimal text (no sign other than a
+  leading minus, no bare dot); MoneyAmount never has an exponent; DecimalString also accepts exactly the canonical
+  exponent form the server writes in an answer when plain text cannot keep the scale (decision 363:
+  java.math.BigDecimal#toString, "1E+3" for scale -3), and no other exponent text;
 - every property named like money (amount, fee, price, tax, balance, max_amount, ...) resolves, through the same IR the
   SDK emitters use (contract_ir), to a string: never double, a JSON-number decimal or an integer (owner decision 211:
   money travels as decimal text in the API and every SDK, Task.amount included);
@@ -49,6 +51,20 @@ class DecimalContractTest(unittest.TestCase):
                 self.assertTrue(p.match(ok), f"{name} accepts {ok}")
             for bad in ("1e5", "1.5E-3", ".5", "5.", "+1", "1,000.00", "NaN", "Infinity", " 1", "0x10"):
                 self.assertFalse(p.match(bad) and p.match(bad).group(0) == bad, f"{name} refuses {bad!r}")
+        money = re.compile(self.schemas["MoneyAmount"]["pattern"])
+        for exp in ("1E+3", "1E-2000"):
+            self.assertFalse(money.match(exp) and money.match(exp).group(0) == exp, f"MoneyAmount refuses {exp!r}")
+
+    def test_decimal_string_accepts_the_canonical_answer_forms_only(self):
+        # decision 363: what the server writes for a negative scale (and for plain text over the 1000-character limit)
+        p = re.compile(self.schemas["DecimalString"]["pattern"])
+        full = lambda s: bool(p.match(s)) and p.match(s).group(0) == s  # noqa: E731
+        for ok in ("1E+3", "-2.5E+10", "0E+3", "1.00E+4", "1E-2000", "0E-7"):
+            self.assertTrue(full(ok), f"DecimalString accepts the answer form {ok!r}")
+        for bad in ("1E5", "1e+5", "1E-6", "12E+3", "0.5E+3", "1E+03", "1E+0", "-0E+3", "1E+"):
+            self.assertFalse(full(bad), f"DecimalString refuses {bad!r}, not BigDecimal#toString output")
+        self.assertIn("decision 363", self.schemas["DecimalString"]["description"])
+        self.assertIn("decision 363", self.schemas["TypedValue"]["properties"]["value"]["description"])
 
     def test_money_named_properties_are_strings_in_every_sdk_model(self):
         offenders = []
