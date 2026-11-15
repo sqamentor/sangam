@@ -434,7 +434,12 @@ For SQL Server and MySQL, the scripts in `compose/db/` are the reference.
 runs on it, and nothing here claims it works. The server refuses a CockroachDB server unless
 `SANGAM_EXPERIMENTAL_COCKROACHDB=true` (default off); then it logs an EXPERIMENTAL warning at every start and uses the
 PostgreSQL dialect. The engine pool still has to run READ COMMITTED, which CockroachDB offers only after
-`SET CLUSTER SETTING sql.txn.read_committed_isolation.enabled = true`. Use it for testing only.
+`SET CLUSTER SETTING sql.txn.read_committed_isolation.enabled = true`. Liquibase 4.33.0 takes a CockroachDB server for
+its own `cockroachdb` database type, so the PostgreSQL product changesets are tagged `dbms:postgresql,cockroachdb`
+(decision 379) and the product changelog applies there; before that fix the experimental mode would have started on
+an empty product schema. The optional pgvector column and the optional history partitioning are PostgreSQL only and
+are skipped on CockroachDB. Whether every PostgreSQL statement runs on CockroachDB is not tested (no CockroachDB lane):
+use it for testing only.
 
 **YugabyteDB (YSQL): experimental only (M-108, decisions 156 and 323).** YugabyteDB is not a supported database, no
 release check runs on it, and nothing here claims it works. It is reached through the PostgreSQL driver and the

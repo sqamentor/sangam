@@ -1,8 +1,10 @@
 --liquibase formatted sql
 
 -- sangam-onboarding run state (org.sangam.onboarding.flow.OnboardingStore.TEMPLATES), one changeset per dialect.
+-- Decisions 205 and 379: the PostgreSQL changeset also names cockroachdb, Liquibase's short name for a CockroachDB
+-- server (a dbms value is not part of the checksum, CockroachDbChangelogDbmsTest).
 
---changeset sangam:onb-run-postgresql dbms:postgresql
+--changeset sangam:onb-run-postgresql dbms:postgresql,cockroachdb
 CREATE TABLE ONB_RUN (run_id VARCHAR(64) NOT NULL PRIMARY KEY, tenant_id VARCHAR(64) NOT NULL, status VARCHAR(64) NOT NULL, updated_ms BIGINT NOT NULL, document_json TEXT NOT NULL);
 CREATE INDEX ONB_RUN_TENANT ON ONB_RUN (tenant_id, updated_ms);
 
