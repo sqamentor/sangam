@@ -57,6 +57,13 @@ final class UtcConversionStore {
             + " created_by, version, session_zone";
     private static final String CELL_COLUMNS = "column_name, key_hash, key_json, run_id, status, reason, original_value,"
             + " converted_value";
+    /** The first page of a run's cells: constant SQL, every value bound. */
+    private static final String CELLS_FIRST_SQL = "SELECT " + CELL_COLUMNS
+            + " FROM OPS_UTC_CELL WHERE run_id = ? AND status = ? ORDER BY key_hash, column_name";
+    /** A later page, after ({@code key_hash}, {@code column_name}): constant SQL, every value bound. */
+    private static final String CELLS_AFTER_SQL = "SELECT " + CELL_COLUMNS
+            + " FROM OPS_UTC_CELL WHERE run_id = ? AND status = ?"
+            + " AND (key_hash > ? OR (key_hash = ? AND column_name > ?)) ORDER BY key_hash, column_name";
 
     private final Dialect dialect;
 
@@ -152,9 +159,7 @@ final class UtcConversionStore {
 
     /** Up to {@code limit} cells of {@code runId} in {@code status}, after ({@code afterHash}, {@code afterColumn}). */
     List<Cell> cells(Connection c, String runId, CellStatus status, String afterHash, String afterColumn, int limit) {
-        String sql = "SELECT " + CELL_COLUMNS + " FROM OPS_UTC_CELL WHERE run_id = ? AND status = ?"
-                + (afterHash == null ? "" : " AND (key_hash > ? OR (key_hash = ? AND column_name > ?))")
-                + " ORDER BY key_hash, column_name";
+        String sql = afterHash == null ? CELLS_FIRST_SQL : CELLS_AFTER_SQL;
         Object[] params = afterHash == null ? new Object[]{runId, status.name()}
                 : new Object[]{runId, status.name(), afterHash, afterHash, afterColumn};
         try (PreparedStatement ps = c.prepareStatement(sql)) {

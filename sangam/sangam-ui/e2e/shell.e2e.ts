@@ -68,6 +68,11 @@ test.describe('fonts (owner decisions 120, 121)', () => {
     expect(result.family.replace(/["']/g, '')).toMatch(/^Noto Sans Devanagari\b/);
     expect(result.loaded).toBe(true);
     expect(fontRequests).toContain('/fonts/noto/NotoSansDevanagari-Regular.ttf');
-    expect(fontRequests.filter((p) => /sakal|fontsource|\.woff2$/i.test(p))).toEqual([]);
+    // no other font source: nothing named sakal or fontsource anywhere in the path, and no .woff2 file (any case)
+    const fromAnotherSource = (path: string) => {
+      const p = path.toLowerCase();
+      return p.includes('sakal') || p.includes('fontsource') || p.endsWith('.woff2');
+    };
+    expect(fontRequests.filter(fromAnotherSource)).toEqual([]);
   });
 });

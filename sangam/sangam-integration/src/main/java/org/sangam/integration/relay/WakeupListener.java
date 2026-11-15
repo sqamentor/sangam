@@ -14,9 +14,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
 
 import org.sangam.core.layer.Dialect;
+import org.sangam.core.layer.SqlIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +48,8 @@ import org.slf4j.LoggerFactory;
 public final class WakeupListener implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(WakeupListener.class);
-    /** An unquoted PostgreSQL identifier in lower case (LISTEN folds unquoted names to lower case). */
-    private static final Pattern CHANNEL_NAME = Pattern.compile("[a-z_][a-z0-9_]{0,62}");
+    /** Longest PostgreSQL identifier (NAMEDATALEN - 1); the channel is an unquoted one in lower case (LISTEN folds to it). */
+    private static final int CHANNEL_MAX_LENGTH = 63;
 
     /** Opens a new physical (non-pooled) connection. */
     @FunctionalInterface
@@ -101,7 +101,8 @@ public final class WakeupListener implements AutoCloseable {
         }
     }
 
-    private final String channel;
+    /** Validated at construction ({@link SqlIdentifier#lowerCase}): LISTEN takes an identifier, which SQL cannot bind. */
+    private final SqlIdentifier channel;
     private final ConnectionSource source;
     private final NotificationReader reader;
     private final Settings settings;
@@ -119,10 +120,11 @@ public final class WakeupListener implements AutoCloseable {
      * @param reader  waits for notifications on the connection
      */
     public WakeupListener(String channel, ConnectionSource source, NotificationReader reader, Settings settings) {
-        if (channel == null || !CHANNEL_NAME.matcher(channel).matches()) {
-            throw new IllegalArgumentException("wake-up channel must be a lower-case identifier: " + channel);
+        try {
+            this.channel = SqlIdentifier.lowerCase(channel, CHANNEL_MAX_LENGTH);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("wake-up channel must be a lower-case identifier: " + e.getMessage(), e);
         }
-        this.channel = channel;
         this.source = source;
         this.reader = Objects.requireNonNull(reader, "reader");
         this.settings = Objects.requireNonNull(settings, "settings");
@@ -200,7 +202,10 @@ public final class WakeupListener implements AutoCloseable {
                 c.setAutoCommit(true);
                 networkTimeout(c);
                 try (Statement s = c.createStatement()) {
-                    s.execute("LISTEN " + channel);
+                    // LISTEN takes an identifier, never a bind parameter. channel is a SqlIdentifier, validated by
+                    // SqlIdentifier.lowerCase in the constructor (letters, digits, underscore; at most 63 characters).
+                    // nosemgrep: sangam-jdbc-sql-concat
+                    s.execute("LISTEN " + channel.sql());
                 }
                 listening = true;
                 long n = connects.incrementAndGet();

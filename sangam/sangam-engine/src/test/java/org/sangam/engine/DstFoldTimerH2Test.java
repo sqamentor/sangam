@@ -113,7 +113,7 @@ class DstFoldTimerH2Test {
             now = now.plus(step).isAfter(end) ? end : now.plus(step);
             a.setClock(now);
             a.executeDueJobs();
-            long c = a.countTasks(new TaskQuery(null, null, null, pid, "tick", 0, 0));
+            int c = Math.toIntExact(a.countTasks(new TaskQuery(null, null, null, pid, "tick", 0, 0)));
             while (fires.size() < c) {
                 fires.add(now);
             }

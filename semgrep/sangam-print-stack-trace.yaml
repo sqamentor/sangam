@@ -5,10 +5,20 @@ rules:
     languages: [java]
     severity: WARNING
     message: >-
-      printStackTrace() writes to stderr, outside the structured log, the trace id and the redaction rules. Log the
-      exception through the logger (log.error("...", e)) or rethrow it.
+      printStackTrace() writes to stderr (or to the print stream it is given, such as System.err or System.out),
+      outside the structured log, the trace id and the redaction rules. Log the exception through the logger
+      (log.error("...", e)) or rethrow it.
     metadata:
       category: correctness
       cwe: "CWE-209: Generation of Error Message Containing Sensitive Information"
       owner: M-094
-    pattern: $E.printStackTrace(...)
+    # What the message says, and no more: the trace goes to a console or print stream. printStackTrace(PrintWriter)
+    # into a StringWriter (a trace captured as text for a structured field, as the SDK worker's failure report does)
+    # writes nothing to stderr and is not matched.
+    pattern-either:
+      - pattern: $E.printStackTrace()
+      - pattern: $E.printStackTrace(System.err)
+      - pattern: $E.printStackTrace(System.out)
+      # a java.io.PrintStream held in a variable or parameter (typed metavariable; both spellings of the type)
+      - pattern: $E.printStackTrace((java.io.PrintStream $OUT))
+      - pattern: $E.printStackTrace((PrintStream $OUT))

@@ -67,22 +67,61 @@ public final class OpsBindings {
     }
 
     public static List<SearchIndexMaintenance.Reader> engineReaders(Transactions tx) {
-        return List.of(new EngineReader(tx, "TASK", "ACT_RU_TASK", "NAME_", "DESCRIPTION_"),
-                new EngineReader(tx, "HISTORIC_PROCESS_INSTANCE", "ACT_HI_PROCINST", "BUSINESS_KEY_", "PROC_DEF_KEY_"),
-                new EngineReader(tx, "PROCESS_DEFINITION", "ACT_RE_PROCDEF", "NAME_", "KEY_"));
+        List<SearchIndexMaintenance.Reader> readers = new ArrayList<>();
+        for (EngineSource source : EngineSource.values()) {
+            readers.add(new EngineReader(tx, source));
+        }
+        return List.copyOf(readers);
     }
 
-    private record EngineReader(Transactions tx, String type, String table, String title, String body) implements SearchIndexMaintenance.Reader {
+    /**
+     * The engine tables the search index is rebuilt from. Each one carries its whole statements as constants (count,
+     * first page, later page): no statement text is assembled at run time, and the tenant and the last id are bound.
+     */
+    enum EngineSource {
+        TASK("ACT_RU_TASK",
+                "SELECT COUNT(*) FROM ACT_RU_TASK WHERE TENANT_ID_=?",
+                "SELECT ID_, NAME_, DESCRIPTION_ FROM ACT_RU_TASK WHERE TENANT_ID_=? ORDER BY ID_",
+                "SELECT ID_, NAME_, DESCRIPTION_ FROM ACT_RU_TASK WHERE TENANT_ID_=? AND ID_>? ORDER BY ID_"),
+        HISTORIC_PROCESS_INSTANCE("ACT_HI_PROCINST",
+                "SELECT COUNT(*) FROM ACT_HI_PROCINST WHERE TENANT_ID_=?",
+                "SELECT ID_, BUSINESS_KEY_, PROC_DEF_KEY_ FROM ACT_HI_PROCINST WHERE TENANT_ID_=? ORDER BY ID_",
+                "SELECT ID_, BUSINESS_KEY_, PROC_DEF_KEY_ FROM ACT_HI_PROCINST WHERE TENANT_ID_=? AND ID_>? ORDER BY ID_"),
+        PROCESS_DEFINITION("ACT_RE_PROCDEF",
+                "SELECT COUNT(*) FROM ACT_RE_PROCDEF WHERE TENANT_ID_=?",
+                "SELECT ID_, NAME_, KEY_ FROM ACT_RE_PROCDEF WHERE TENANT_ID_=? ORDER BY ID_",
+                "SELECT ID_, NAME_, KEY_ FROM ACT_RE_PROCDEF WHERE TENANT_ID_=? AND ID_>? ORDER BY ID_");
+
+        final String table;
+        final String countSql;
+        final String firstPageSql;
+        final String nextPageSql;
+
+        EngineSource(String table, String countSql, String firstPageSql, String nextPageSql) {
+            this.table = table;
+            this.countSql = countSql;
+            this.firstPageSql = firstPageSql;
+            this.nextPageSql = nextPageSql;
+        }
+    }
+
+    private record EngineReader(Transactions tx, EngineSource source) implements SearchIndexMaintenance.Reader {
+        /** The document type of the index: the constant's name. */
+        @Override
+        public String type() {
+            return source.name();
+        }
+
         @Override
         public long count(String tenant) {
-            return tx.inTransaction(c -> Jdbc.one(c, "SELECT COUNT(*) FROM " + table + " WHERE TENANT_ID_=?", rs -> rs.getLong(1), tenant).orElse(0L));
+            return tx.inTransaction(c -> Jdbc.one(c, source.countSql, rs -> rs.getLong(1), tenant).orElse(0L));
         }
 
         @Override
         public List<SearchIndexMaintenance.Doc> read(String tenant, String afterId, int limit) {
+            String table = source.table;
             return tx.inTransaction(c -> {
-                String sql = "SELECT ID_, " + title + ", " + body + " FROM " + table + " WHERE TENANT_ID_=?"
-                        + (afterId == null ? "" : " AND ID_>?") + " ORDER BY ID_";
+                String sql = afterId == null ? source.firstPageSql : source.nextPageSql;
                 try (PreparedStatement ps = c.prepareStatement(sql)) {
                     ps.setMaxRows(limit);
                     ps.setString(1, tenant);

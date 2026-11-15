@@ -32,9 +32,10 @@ public class TenantResolver {
     public Optional<String> resolve(ServerHttpRequest req) {
         String auth = req.getHeaders().getFirst("Authorization");
         if (auth != null && auth.regionMatches(true, 0, "Bearer ", 0, 7)) {
-            Optional<String> fromToken = claim(auth.substring(7).trim());
-            if (fromToken.isPresent()) {
-                return fromToken;
+            // the tenant code the token claims (validated by valid()): a routing key, not the token and not a credential
+            Optional<String> claimedTenant = claim(auth.substring(7).trim());
+            if (claimedTenant.isPresent()) {
+                return claimedTenant;
             }
         }
         String host = req.getHeaders().getFirst("Host");

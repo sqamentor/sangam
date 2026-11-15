@@ -13,6 +13,7 @@ import org.sangam.geo.connector.ExternalLayerGateway;
 import org.sangam.geo.geofence.Geofence;
 import org.sangam.geo.geofence.GeofenceResult;
 import org.sangam.geo.model.GeoJson;
+import org.sangam.geo.model.GeoMath;
 import org.sangam.geo.model.GeoPoint;
 import org.sangam.geo.model.Geometries;
 import org.sangam.geo.model.Geometry;
@@ -173,12 +174,13 @@ public final class GeoRestService implements GeoRestPort {
     @Override
     public List<Map<String, Object>> nearest(GeoCaller caller, String layer, String objectType, double lat, double lon, int n,
                                              double maxKm, String tags) {
+        double maxMeters = searchMeters(maxKm);
         GeoPoint p = new GeoPoint(lat, lon);
         int k = Math.max(1, Math.min(200, n <= 0 ? 5 : n));
         List<Map<String, Object>> out = new ArrayList<>();
         if (objectType != null) {
-            Set<String> req = tags == null || tags.isBlank() ? Set.of() : new LinkedHashSet<>(List.of(tags.split("\\s*,\\s*")));
-            for (Nearest.Ranked r : geo.nearestObjects(caller.tenantId(), objectType, p, k, maxKm * 1000, req)) {
+            Set<String> req = tagSet(tags);
+            for (Nearest.Ranked r : geo.nearestObjects(caller.tenantId(), objectType, p, k, maxMeters, req)) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("objectType", objectType);
                 m.put("id", r.item().id());
@@ -192,10 +194,47 @@ public final class GeoRestService implements GeoRestPort {
         if (layer == null) {
             throw new GeoException("INVALID_REQUEST", "layer or objectType is required");
         }
-        for (GeoService.NearestFeature f : geo.nearestFeatures(caller.tenantId(), layer, p, k, maxKm * 1000)) {
+        for (GeoService.NearestFeature f : geo.nearestFeatures(caller.tenantId(), layer, p, k, maxMeters)) {
             Map<String, Object> m = new LinkedHashMap<>(f.feature().summary());
             m.put("distanceM", f.distanceMeters());
             out.add(m);
+        }
+        return out;
+    }
+
+    /**
+     * Largest search radius in kilometres: half the Earth's circumference, the greatest distance between two points
+     * on it. A larger request finds nothing more.
+     */
+    static final double MAX_SEARCH_KM = Math.PI * GeoMath.EARTH_RADIUS_M / 1000;
+
+    /**
+     * The search radius in metres of the request parameter {@code maxKm}, checked where the value enters: NaN, an
+     * infinity or a negative number is refused ({@code INVALID_REQUEST}); 0 means "not given" (the service default);
+     * anything above {@link #MAX_SEARCH_KM} is that. The result is always finite, so the conversion cannot overflow.
+     */
+    static double searchMeters(double maxKm) {
+        if (!Double.isFinite(maxKm) || maxKm < 0) {
+            throw new GeoException("INVALID_REQUEST", "maxKm must be a finite number that is not negative");
+        }
+        return Math.min(maxKm, MAX_SEARCH_KM) * 1000;
+    }
+
+    /**
+     * The required tags of a comma-separated parameter, in order, each stripped, empty items dropped. Splitting on
+     * the literal comma is linear in the input (a pattern such as {@code \s*,\s*} is quadratic on a long run of
+     * whitespace).
+     */
+    static Set<String> tagSet(String tags) {
+        if (tags == null) {
+            return Set.of();
+        }
+        Set<String> out = new LinkedHashSet<>();
+        for (String item : tags.split(",", -1)) {
+            String tag = item.strip();
+            if (!tag.isEmpty()) {
+                out.add(tag);
+            }
         }
         return out;
     }

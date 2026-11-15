@@ -68,6 +68,9 @@ public final class ExifReader {
     private static final DateTimeFormatter EXIF_TS = DateTimeFormatter.ofPattern("yyyy:MM:dd HH:mm:ss");
     private static final int MAX_SCAN = 256 * 1024;
 
+    /** Most values of one IFD entry that are read; an entry declaring more (a hostile 32-bit count) is skipped. */
+    static final int MAX_VALUES = 4096;
+
     /** Upper bound for PNG and HEIF parsing (whole-file container formats). */
     static final int MAX_CONTAINER_BYTES = 64 * 1024 * 1024;
 
@@ -278,18 +281,20 @@ public final class ExifReader {
                 case 5, 10 -> 8;
                 default -> 0;
             };
-            if (size == 0 || count > 4096) {
+            if (size == 0 || count > MAX_VALUES) {
                 continue;
             }
-            long total = size * count;
+            // bounded above, so the 32-bit count of the file is an int from here on (no long/int loop comparison)
+            int values = Math.toIntExact(count);
+            long total = (long) size * values;
             int vo = total <= 4 ? e + 8 : t.getInt(e + 8);
             if (vo < 0 || vo + total > t.limit()) {
                 continue;
             }
             switch (type) {
                 case 2 -> {
-                    byte[] s = new byte[(int) count];
-                    for (int k = 0; k < count; k++) {
+                    byte[] s = new byte[values];
+                    for (int k = 0; k < values; k++) {
                         s[k] = t.get(vo + k);
                     }
                     int end = 0;
@@ -301,8 +306,8 @@ public final class ExifReader {
                 case 3 -> out.put(tag, (long) (t.getShort(vo) & 0xFFFF));
                 case 4 -> out.put(tag, t.getInt(vo) & 0xFFFFFFFFL);
                 case 5, 10 -> {
-                    double[] r = new double[(int) count];
-                    for (int k = 0; k < count; k++) {
+                    double[] r = new double[values];
+                    for (int k = 0; k < values; k++) {
                         long num = t.getInt(vo + k * 8) & 0xFFFFFFFFL, den = t.getInt(vo + k * 8 + 4) & 0xFFFFFFFFL;
                         if (type == 10) {
                             num = t.getInt(vo + k * 8);

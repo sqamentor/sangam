@@ -10,17 +10,20 @@
 // Outputs:
 //   - src/modeller/compatibility.json (shown in the modeller, used by the pre-deploy check);
 //   - test-plan/R46-ROUND-TRIP-TESTS.md (the round-trip test list for the testing phase).
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readTextOr, readTextOrNull } from './read-text.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const nm = join(root, 'node_modules');
 const ref = join(root, '..', '..', 'reference', 'operaton');
-const read = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : '');
+// Optional inputs are read in one step (no exists-then-read): an absent file is '' or the empty previous matrix.
+const read = (p) => readTextOr(p, '');
 const rules = JSON.parse(readFileSync(join(root, 'scripts', 'compat-rules.json'), 'utf8'));
 const outJson = join(root, 'src', 'modeller', 'compatibility.json');
-const previous = existsSync(outJson) ? JSON.parse(readFileSync(outJson, 'utf8')) : { rows: [] };
+const previousText = readTextOrNull(outJson);
+const previous = previousText === null ? { rows: [] } : JSON.parse(previousText);
 const prevEngine = new Map(previous.rows.map((r) => [`${r.notation}:${r.construct}`, r.engine]));
 
 const lower = (s) => s.charAt(0).toLowerCase() + s.slice(1);

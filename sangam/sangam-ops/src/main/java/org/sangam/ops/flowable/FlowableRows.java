@@ -2,6 +2,7 @@
 package org.sangam.ops.flowable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.sangam.core.layer.SqlIdentifier;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -139,8 +140,8 @@ public interface FlowableRows {
 
         @Override
         public List<Map<String, Object>> where(String table, String column, Collection<String> values) {
-            checkName(table);
-            checkName(column);
+            SqlIdentifier from = name(table);
+            SqlIdentifier by = name(column);
             List<String> list = new ArrayList<>(new java.util.LinkedHashSet<>(values));
             List<Map<String, Object>> out = new ArrayList<>();
             if (list.isEmpty() || !exists(table)) {
@@ -149,15 +150,15 @@ public interface FlowableRows {
             for (int i = 0; i < list.size(); i += IN_CHUNK) {
                 List<String> chunk = list.subList(i, Math.min(list.size(), i + IN_CHUNK));
                 String marks = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
-                out.addAll(select("SELECT * FROM " + table + " WHERE " + column + " IN (" + marks + ")", chunk));
+                out.addAll(select("SELECT * FROM " + from.sql() + " WHERE " + by.sql() + " IN (" + marks + ")", chunk));
             }
             return out;
         }
 
         @Override
         public List<Map<String, Object>> all(String table) {
-            checkName(table);
-            return exists(table) ? select("SELECT * FROM " + table, List.of()) : List.of();
+            SqlIdentifier from = name(table);
+            return exists(table) ? select("SELECT * FROM " + from.sql(), List.of()) : List.of();
         }
 
         @Override
@@ -183,11 +184,12 @@ public interface FlowableRows {
 
         @Override
         public long count(String table) {
-            checkName(table);
+            SqlIdentifier from = name(table);
             if (!exists(table)) {
                 return 0;
             }
-            try (Connection c = source.getConnection(); PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) FROM " + table);
+            // a table name cannot be bound: the text is built from the validated identifier only
+            try (Connection c = source.getConnection(); PreparedStatement ps = c.prepareStatement(SqlIdentifier.countSql(from));
                  ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 return rs.getLong(1);
@@ -250,10 +252,9 @@ public interface FlowableRows {
             return existing.contains(table.toUpperCase(Locale.ROOT));
         }
 
-        private static void checkName(String name) {
-            if (!name.matches("[A-Z0-9_]+")) {
-                throw new IllegalArgumentException("invalid identifier " + name);
-            }
+        /** A table or column name as a validated upper-case identifier; anything else is refused before any SQL. */
+        static SqlIdentifier name(String name) {
+            return SqlIdentifier.upperCase(name);
         }
     }
 }

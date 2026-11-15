@@ -504,9 +504,17 @@ public final class LegacyHistoryProjector {
 
     // ------------------------------------------------------------------ reads
 
+    /** The first batch of a source: constant SQL, every value bound. */
+    private static final String BATCH_FIRST_SQL =
+            "SELECT source_id, tenant_id, payload FROM OPS_MIG_ROW WHERE job_id=? AND source_table=? ORDER BY source_id";
+
+    /** A later batch, after the last source id read: constant SQL, every value bound. */
+    private static final String BATCH_AFTER_SQL =
+            "SELECT source_id, tenant_id, payload FROM OPS_MIG_ROW WHERE job_id=? AND source_table=? AND source_id > ?"
+                    + " ORDER BY source_id";
+
     private List<MigRow> batch(String jobId, Source s, String after, int size) {
-        String sql = "SELECT source_id, tenant_id, payload FROM OPS_MIG_ROW WHERE job_id=? AND source_table=?"
-                + (after == null ? "" : " AND source_id > ?") + " ORDER BY source_id";
+        String sql = after == null ? BATCH_FIRST_SQL : BATCH_AFTER_SQL;
         Object[] params = after == null ? new Object[]{jobId, s.name()} : new Object[]{jobId, s.name(), after};
         return target.inTransaction(c -> {
             List<MigRow> rows = new ArrayList<>();

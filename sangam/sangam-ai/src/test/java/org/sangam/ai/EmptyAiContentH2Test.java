@@ -13,6 +13,7 @@ import org.sangam.core.layer.Schema;
 import org.sangam.core.layer.Transactions;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.Duration;
@@ -23,6 +24,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Regression SL-87 for the two sangam-ai text columns that could be empty. Oracle stores '' as NULL, so both failed
@@ -59,10 +61,13 @@ class EmptyAiContentH2Test {
         String nullInput = rt.start(def, "t", "alice", null, null, null);
         assertEquals("", rt.find(nullInput).orElseThrow().input(), "a null input is the empty input");
         assertEquals("hi", rt.find(rt.start(def, "t", "alice", "hi", null, null)).orElseThrow().input());
-        try (Connection c = ds.getConnection(); Statement st = c.createStatement();
-             ResultSet rs = st.executeQuery("SELECT input_text FROM AI_AGENT_RUN WHERE run_id = '" + runId + "'")) {
-            rs.next();
-            assertNull(rs.getString(1), "an empty input is stored as NULL ('' is NULL on Oracle)");
+        try (Connection c = ds.getConnection();
+             PreparedStatement ps = c.prepareStatement("SELECT input_text FROM AI_AGENT_RUN WHERE run_id = ?")) {
+            ps.setString(1, runId);
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "the run row exists");
+                assertNull(rs.getString(1), "an empty input is stored as NULL ('' is NULL on Oracle)");
+            }
         }
 
         DraftService empty = new DraftService(Dialect.POSTGRESQL, tx, audit, new SimulatedLlm());   // replies with no content
