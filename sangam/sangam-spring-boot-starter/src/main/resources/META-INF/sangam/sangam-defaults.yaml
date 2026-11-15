@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Sangam defaults for an application that embeds Sangam (sangam-spring-boot-starter, M-014).
-# Loaded by SangamDefaultsEnvironmentPostProcessor as Spring Boot's defaultProperties: the LOWEST precedence, so every
-# key here is overridden by the host's own application.yaml / properties, profiles, system properties and environment.
+# Loaded by SangamDefaultsEnvironmentPostProcessor as the property source sangamDefaults, the LOWEST precedence (below
+# Spring Boot's defaultProperties too, SangamDefaultsOrder; decision 334), so every key here is overridden by the host's
+# own application.yaml / properties, default properties, profiles, system properties, environment and command line.
 # Content: sangam-server's application.yaml without what belongs to a deployment of the standalone server (server.*,
 # management.*, logging.*, spring.application / spring.profiles / spring.lifecycle), and with the host module defaults
 # below. SangamDefaultsDriftTest keeps the two files equal key by key; change the server's application.yaml first.
@@ -54,6 +55,8 @@ operaton:
       enabled: false
     history-level: full
     database:
+      # Decision 334: the starter replaces this value by the environment (SangamDefaultsEnvironmentPostProcessor
+      # .environmentDefaults): true only in a validated development environment, false (check only) elsewhere.
       schema-update: false
     job-execution:
       # SANGAM_JOB_EXECUTOR_ENABLED=false for API-only pods; disabled automatically in one-shot Liquibase modes.
@@ -357,7 +360,8 @@ sangam:
     # Fallback tenant for the DEV TOKEN only; a JWT without a tenant claim is always 401.
     default: ${SANGAM_TENANT_DEFAULT:}
   liquibase:
-    # startup | validate | migrate-only | update-sql | release-locks (env SANGAM_LIQUIBASE_MODE)
+    # startup | validate | migrate-only | update-sql | release-locks (env SANGAM_LIQUIBASE_MODE). Decision 334: the
+    # starter's default is startup only in a validated development environment, validate elsewhere.
     mode: ${SANGAM_LIQUIBASE_MODE:startup}
     sql-file: ${SANGAM_LIQUIBASE_SQL_FILE:}
   db:

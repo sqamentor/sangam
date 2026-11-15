@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.example.sangamhost.SampleHostApplication;
@@ -48,9 +49,7 @@ class HostDefaultModulesTest {
                     "sangamComplianceConfig"}) {
                 assertFalse(ctx.containsBean(off), off + " is off until the host enables its module");
             }
-            var sources = ctx.getEnvironment().getPropertySources();
-            PropertySource<?> last = sources.stream().reduce((a, b) -> b).orElseThrow();
-            assertEquals(SangamDefaultsEnvironmentPostProcessor.SOURCE_NAME, last.getName(), "lowest precedence");
+            assertLowestPrecedence(ctx);
             assertEquals("false", ctx.getEnvironment().getProperty("sangam.modules.billing.enabled"));
         }
     }
@@ -62,5 +61,26 @@ class HostDefaultModulesTest {
                 "sangam.modules.billing.enabled=true")) {
             assertTrue(ctx.containsBean("sangamBillingService"), "the host's setting wins over Sangam's default");
         }
+    }
+
+    /** Spring's own source with only the {@code local.management.port} alias, added after every host setting. */
+    static final String MANAGEMENT_ALIAS = "Management Server";
+
+    /**
+     * Decision 334: Sangam's defaults are below every source that carries a host setting, Spring Boot's
+     * {@code defaultProperties} included. Spring itself adds the {@value #MANAGEMENT_ALIAS} source with
+     * {@code addLast} while the context refreshes ({@code ManagementContextAutoConfiguration
+     * .SameManagementContextConfiguration.addLocalManagementPortPropertyAlias}, Spring Boot 4.1.2), so "the very last
+     * source" is not the rule; that source holds only the alias {@code local.management.port} of
+     * {@code local.server.port}, never a host setting.
+     */
+    static void assertLowestPrecedence(ConfigurableApplicationContext ctx) {
+        List<String> names = ctx.getEnvironment().getPropertySources().stream().map(PropertySource::getName).toList();
+        int sangam = names.indexOf(SangamDefaultsEnvironmentPostProcessor.SOURCE_NAME);
+        assertTrue(sangam >= 0, names.toString());
+        assertTrue(names.contains("defaultProperties") && sangam > names.indexOf("defaultProperties"),
+                "below Spring Boot's defaultProperties: " + names);
+        assertEquals(List.of(), names.subList(sangam + 1, names.size()).stream()
+                .filter(n -> !MANAGEMENT_ALIAS.equals(n)).toList(), "lowest precedence: " + names);
     }
 }

@@ -55,7 +55,8 @@ import org.springframework.core.env.Environment;
  * {@code CAPABILITY_MISSING} unless sangam-security's engine plugin is in the final list.
  *
  * <p>Liquibase ({@code SchemaBootstrap}) is forced to run before the engine is configured, so product tables exist
- * when the engine and its plugins start.
+ * when the engine and its plugins start. Then (decision 334) {@link EngineSchemaGuard}: an engine that only checks its
+ * schema on a database without its tables is refused with {@code ENGINE_SCHEMA_MISSING}.
  *
  * <p><b>Engine checks</b> (owner decisions 276, 286 and 287, phase 1b): before {@code prepare}, the engine area's own
  * checks of {@code EngineAssembly} run on this host too: utc-jvm, jackson-feel-compatibility, schema-before-engine
@@ -102,6 +103,8 @@ public final class EngineConfigurationCustomizer implements BeanPostProcessor, B
                 Optional.ofNullable(beans.getBeanProvider(IncidentSink.class).getIfAvailable()),
                 beans.getBeansOfType(WorkCalendar.class));
         DataSource raw = beans.getBean(DataSource.class);
+        // decision 334: a check-only engine on a database without its tables is refused by name, not by ENGINE-03057
+        EngineSchemaGuard.require(environment, raw);
         EngineAssembly.EngineChecks engine = engineChecks(settings, ranSchema, raw);
         SangamEngineConfigurer configurer = new SangamEngineConfigurer(settings);
         DataSource prepared = configurer.prepare(raw);
