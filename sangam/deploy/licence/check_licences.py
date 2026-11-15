@@ -136,6 +136,18 @@ def normalise(term):
 _TOKEN = re.compile(r"\(|\)|[^\s()]+")
 
 
+def is_choice(alternatives):
+    """True when the licence terms offer a choice (more than one distinct OR-alternative), RM-17."""
+    return alternatives is not None and len({frozenset(a) for a in alternatives}) > 1
+
+
+def offered_choice(alternatives):
+    """The set of licences of a choice whose every alternative is one licence; None for anything else."""
+    if not is_choice(alternatives) or any(len(a) != 1 for a in alternatives):
+        return None
+    return frozenset(a[0] for a in alternatives)
+
+
 def expression_alternatives(expr):
     """SPDX expression -> list of OR-alternatives, each a list of AND-ed terms (disjunctive normal form).
 
@@ -254,13 +266,20 @@ class Checker:
     def is_os_package(self, purl):
         return self.image and self.matches(purl, self.os.get("purl_types", []))
 
-    def election_for(self, purl):
+    def election_for(self, purl, alternatives=None):
+        """The recorded election of a component: by exact purl, by purl prefix plus exact versions, or (decision 383) by
+        purl prefix plus the exact set of single-licence alternatives offered (a class election such as the Rust
+        crates offered as MIT OR Apache-2.0)."""
         base, version = purl_base(purl)
         exact = f"{base}@{version}"
+        offered = offered_choice(alternatives)
         for e in self.elections:
             if exact in e.get("purls", []):
                 return e
             if e.get("purl_prefix") and base.startswith(e["purl_prefix"]) and version in e.get("versions", []):
+                return e
+            if (e.get("purl_prefix") and "offered" in e and offered is not None and base.startswith(e["purl_prefix"])
+                    and offered == frozenset(e["offered"])):
                 return e
         return None
 
@@ -365,7 +384,12 @@ class Checker:
             (self.errors if self.strict else self.warnings).append(f"NO LICENCE DATA {label}")
             return
 
-        election = self.election_for(purl)
+        election = self.election_for(purl, alternatives)
+        if election is None and is_choice(alternatives):
+            # decision 383 (RM-17): a component offered under a choice of licences needs a recorded election
+            self.errors.append(f"NO ELECTION {label}: offered as {shown}; record the elected licence in licence-policy.json "
+                               "elections (owner decision 383)")
+            return
         if election is not None:
             offered = {t for alt in alternatives for t in alt}
             if not self.in_scope(election):
@@ -416,11 +440,16 @@ class Checker:
         if alternatives is None:
             self.warnings.append(f"NO LICENCE DATA (build, reported only) {label}")
             return
-        election = self.election_for(purl)
+        shown = expr or " AND ".join(ids)
+        election = self.election_for(purl, alternatives)
+        if election is None and is_choice(alternatives):
+            # decision 383: the refusal applies shipped or not
+            self.errors.append(f"NO ELECTION (build) {label}: offered as {shown}; record the elected licence in "
+                               "licence-policy.json elections (owner decision 383)")
+            return
         if election is not None and election["elected"] in {t for alt in alternatives for t in alt}:
             alternatives = [[election["elected"]]]
         best = self.judge(alternatives, purl)
-        shown = expr or " AND ".join(ids)
         if best == "forbidden":
             self.errors.append(f"FORBIDDEN LICENCE (build) {label}: {shown}")
         elif best == "unknown":
@@ -527,7 +556,12 @@ def annotate_sbom(path, policy):
                       {"name": "sangam:exception:verified-license", "value": e["license"]},
                       {"name": "sangam:exception:evidence", "value": evidence}]
             hit += 1
-        el = probe.election_for(purl)
+        ids, expr = licence_terms(comp)
+        try:
+            alternatives = expression_alternatives(expr) if expr else [[normalise(i) for i in ids]] if ids else None
+        except ValueError:
+            alternatives = None
+        el = probe.election_for(purl, alternatives)
         if el:
             props += [{"name": "sangam:election", "value": el["elected"]},
                       {"name": "sangam:election:decision", "value": f"owner decision {el['decision']}"}]

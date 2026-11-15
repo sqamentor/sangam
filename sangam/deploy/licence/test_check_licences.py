@@ -127,8 +127,13 @@ class AndReading(unittest.TestCase):
     def test_a_plain_list_of_allowed_terms_passes(self):
         self.assertEqual([], check([comp("pkg:maven/x/y@1", "Apache-2.0", "MIT")]).errors)
 
-    def test_or_expression_passes_on_one_allowed_alternative(self):
-        self.assertEqual([], check([comp("pkg:maven/x/y@1", expr="GPL-3.0-only OR MIT")]).errors)
+    def test_an_or_choice_without_an_election_is_refused(self):
+        # decision 383 (RM-17): before, "GPL-3.0-only OR MIT" passed on its allowed alternative with no election
+        for strict in (True, False):
+            ch = check([comp("pkg:maven/x/y@1", expr="GPL-3.0-only OR MIT")], strict=strict)
+            self.assertTrue(any(e.startswith("NO ELECTION") and "decision 383" in e for e in ch.errors), ch.errors)
+        ch = check([comp("pkg:npm/x@1", expr="MIT OR Apache-2.0")])
+        self.assertTrue(any(e.startswith("NO ELECTION") for e in ch.errors), "both allowed is still a choice: " + str(ch.errors))
 
     def test_unversioned_lgpl_spelling_is_forbidden_not_unknown(self):
         ch = check([comp("pkg:maven/x/y@1", "GNU Lesser General Public License")], strict=False)
@@ -154,6 +159,63 @@ class Elections(unittest.TestCase):
         c = comp("pkg:maven/org.verapdf/validation-model-jakarta@1.30.4", expr="GPL-3.0-or-later OR MPL-2.0")
         self.assertEqual([], check([c], distribution="pdf-validator").errors)
         self.assertTrue(any("ELECTION OUT OF SCOPE" in e for e in check([c], distribution="server").errors))
+
+
+class NoElectionRefusal(unittest.TestCase):
+    """Decision 383: the Rust class election, the one-by-one Jersey elections, then the refusal, shipped or not."""
+
+    def test_a_build_scope_choice_without_an_election_is_refused_too(self):
+        ch = check([comp("pkg:maven/x/build-tool@1", expr="EPL-1.0 OR LGPL-2.1-only")], build_scope=True)
+        self.assertTrue(any(e.startswith("NO ELECTION (build)") for e in ch.errors), ch.errors)
+        ok = check([comp("pkg:maven/ch.qos.logback/logback-core@1.5.38", expr="EPL-2.0 OR LGPL-2.1-only")], build_scope=True)
+        self.assertEqual([], ok.errors)
+
+    def test_a_single_licence_or_a_plain_list_is_not_a_choice(self):
+        self.assertEqual([], check([comp("pkg:maven/x/y@1", expr="MIT")]).errors)
+        self.assertEqual([], check([comp("pkg:maven/x/y@1", "Apache-2.0", "MIT")]).errors, "a list is AND, RM-18")
+        self.assertEqual([], check([comp("pkg:maven/x/y@1", expr="MIT OR MIT")]).errors, "one distinct alternative")
+
+    def test_rust_crates_offered_as_mit_or_apache_elect_apache(self):
+        for expr in ("MIT OR Apache-2.0", "Apache-2.0 OR MIT", "(MIT OR Apache-2.0)"):
+            ch = check([comp("pkg:cargo/serde@1.0.228", expr=expr)])
+            self.assertEqual([], ch.errors, expr)
+            self.assertTrue(any("ELECTED" in n and "Apache-2.0" in n and "383" in n for n in ch.notes), ch.notes)
+
+    def test_the_rust_class_election_needs_exactly_that_choice_and_a_crate(self):
+        for c in (comp("pkg:cargo/x@1", expr="MIT OR Apache-2.0 OR Zlib"),
+                  comp("pkg:cargo/x@1", expr="MIT"),
+                  comp("pkg:npm/x@1", expr="MIT OR Apache-2.0")):
+            ch = check([c])
+            if c["licenses"][0]["expression"] == "MIT":
+                self.assertFalse(any("ELECTED" in n for n in ch.notes), "a single licence is not elected")
+                continue
+            self.assertTrue(any(e.startswith("NO ELECTION") for e in ch.errors), (c, ch.errors))
+
+    def test_each_jersey_jar_has_its_own_election_with_the_evidence_of_its_texts(self):
+        jars = ["containers/jersey-container-servlet", "core/jersey-client", "core/jersey-common", "core/jersey-server",
+                "ext/jersey-bean-validation", "ext/jersey-entity-filtering", "ext/jersey-spring6", "inject/jersey-hk2"]
+        for j in jars:
+            g, a = j.split("/")
+            purl = f"pkg:maven/org.glassfish.jersey.{g}/{a}@4.0.3"
+            entries = [e for e in POLICY["elections"] if purl in e.get("purls", [])]
+            self.assertEqual(1, len(entries), purl)
+            e = entries[0]
+            self.assertEqual([purl], e["purls"], "elected one by one")
+            self.assertEqual("EPL-2.0", e["elected"])
+            self.assertIn("383", e["decision"])
+            self.assertIn("META-INF/NOTICE.md", e["evidence"])
+            self.assertRegex(e["evidence"], r"SHA-256 [0-9a-f]{64}")
+            ch = check([comp(purl, expr="EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0")])
+            self.assertEqual([], ch.errors, purl)
+
+    def test_annotate_records_a_class_election(self):
+        import tempfile as tf
+        with tf.TemporaryDirectory() as d:
+            p = os.path.join(d, "b.json")
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump({"bomFormat": "CycloneDX", "components": [comp("pkg:cargo/serde@1.0.228", expr="MIT OR Apache-2.0")]}, f)
+            hit, elected = cl.annotate_sbom(p, POLICY)
+            self.assertEqual(1, elected)
 
 
 class PendingReview(unittest.TestCase):

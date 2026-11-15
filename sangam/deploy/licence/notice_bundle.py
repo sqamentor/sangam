@@ -40,7 +40,11 @@ def used_licences(comp, checker):
     """Returns (declared text, list of SPDX ids the distribution uses)."""
     names, expr = licence_terms(comp)
     purl = comp.get("purl") or ""
-    election = checker.election_for(purl) if purl else None
+    try:
+        alternatives = expression_alternatives(expr) if expr else [[normalise(n) for n in names]] if names else None
+    except ValueError:
+        alternatives = None
+    election = checker.election_for(purl, alternatives) if purl else None  # decision 383: class elections need the choice
     declared = expr if expr else " AND ".join(normalise(n) for n in names)
     if election:
         terms = [election["elected"]]
