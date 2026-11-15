@@ -180,8 +180,15 @@ jobs:
           fi
           curl -sSf http://127.0.0.1:8080/ > /dev/null
       - name: Playwright browsers (decision 106)
+        # The browsers of the @playwright/test version pinned in package-lock.json, installed by "npm ci" in the UI
+        # build step above. Never "npx playwright": with the package missing, npx on a CI runner installs the latest
+        # playwright from the registry without asking (an unpinned download, and browsers of another version).
         working-directory: sangam/sangam-ui
-        run: npx playwright install --with-deps chromium firefox
+        run: |
+          set -euo pipefail
+          test -f node_modules/@playwright/test/package.json || { echo "::error::@playwright/test is not installed from package-lock.json"; exit 1; }
+          ./node_modules/.bin/playwright --version
+          ./node_modules/.bin/playwright install --with-deps chromium firefox
       - name: End-to-end tests
         # Ledger check ui-e2e (release-checks.json, INT-H2). It FAILS unless Playwright ran at least one test and
         # skipped none and none failed: the JSON reporter's stats are checked after the run, so a test.skip (for

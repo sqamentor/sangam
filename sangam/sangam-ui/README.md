@@ -121,8 +121,9 @@ their own instance.
 | `a11y.e2e.ts` | axe-core with colour contrast on the main screens; serious and critical violations fail (M-046) |
 | `embed.e2e.ts` | the M-043 module in a host page: same origin, and cross origin when `SANGAM_E2E_CORS_ORIGIN` names an origin the server allows |
 
-Status: written in Wave 4, not installed and not run. `@playwright/test` and its Chromium and Firefox browsers are
-approved by owner decision 106 and are fetched only in the test phase, logged in the downloads log. Run order:
+Status: written in Wave 4. `@playwright/test` (owner decision 106) is a pinned devDependency in `package-lock.json`;
+its Chromium and Firefox browsers are installed by the local binary (`node_modules/.bin/playwright install`, never
+`npx playwright`) only in the test phase, logged in the downloads log. Run order:
 `npm run build:embed`, start the stack, then `npm run e2e`. The compose-backed CI job belongs to `ui.yml` (W4-C).
 
 ## Cross-cutting
