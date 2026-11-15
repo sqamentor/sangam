@@ -160,7 +160,8 @@ class SecurityIncidentCatalogueEventsH2Test {
             c.setAutoCommit(false);
             ComplianceException e = assertThrows(ComplianceException.class, () -> cmp.incidents.register(c, TENANT, "CERT-IN", "no-such-type",
                     null, NOTICED, List.of(), Map.of(), "x", null, "ciso-1"));
-            assertEquals(ComplianceException.Code.INVALID_INPUT, e.code());
+            // owner decision 344: refused by name (it was INVALID_INPUT before)
+            assertEquals(ComplianceException.Code.INCIDENT_TYPE_NOT_IN_CATALOGUE, e.code());
             assertEquals(0, count(c, ComplianceAudit.SEC_INCIDENT_OPENED));
             assertEquals(0, count(c, ComplianceAudit.SEC_INCIDENT_CLASSIFIED));
             c.rollback();

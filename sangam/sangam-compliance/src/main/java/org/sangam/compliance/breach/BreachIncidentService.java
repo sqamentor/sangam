@@ -112,6 +112,9 @@ public final class BreachIncidentService {
         Map<String, Object> seats = workflows == WorkflowStarter.NONE ? Map.of() : cfg.seatVariables(SEAT_ROLES);
         if ((incidentType != null ? incidentType : rules.linkedIncidentType()) != null) {
             incidents.requireSeats(cfg);
+            // owner decision 344: the linked incident's type is a catalogue code, checked before the breach row
+            incidents.requireCatalogued(cfg, rules.linkedIncidentAuthority(),
+                    incidentType != null ? incidentType : rules.linkedIncidentType());
         }
         BreachNotificationPlanner planner = plans;
         Map<String, Object> planSeats = planner == null ? Map.of() : planner.requireSeats(cfg);
