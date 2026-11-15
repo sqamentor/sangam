@@ -23,13 +23,14 @@ WORKDIR /src
 COPY sangam-ui/package.json sangam-ui/package-lock.json* ./
 # npm ci honours an offline mirror through NPM_CONFIG_REGISTRY / .npmrc (see deploy/README.md "Offline builds").
 ARG NPM_CONFIG_REGISTRY
-# Decision 130 (RM-25, CR-14): no install-time scripts. Of the packages in package-lock.json with hasInstallScript, only
-# esbuild's postinstall (it checks and links the platform binary) is needed by the Vite build, so it alone is rebuilt.
-# The others are not run: @carbon/grid and @carbon/layout (ibmtelemetry, install-time telemetry), inferno
-# (opencollective banner) and fsevents (macOS only, optional).
+# Decision 130 (RM-25, CR-14): no install-time scripts, and since Vite 8 (M-117) none is needed, so nothing is rebuilt
+# after npm ci. rolldown and lightningcss load their native binary from a prebuilt optional package
+# (@rolldown/binding-linux-*, lightningcss-linux-*; plain optionalDependencies selected by os and cpu, no
+# hasInstallScript). esbuild, whose postinstall used to be rebuilt here by name, is no longer in package-lock.json.
+# The packages that do have an install script are not run: @carbon/grid and @carbon/layout (ibmtelemetry, install-time
+# telemetry), inferno (opencollective banner) and fsevents (macOS only, optional).
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --ignore-scripts --no-audit --no-fund \
- && npm rebuild esbuild
+    npm ci --ignore-scripts --no-audit --no-fund
 COPY sangam-ui/ ./
 # Decision 120 (RM-24): scripts/deploy-fonts.mjs reads the approved Noto TTFs, their OFL texts and the SHA-256 table
 # from ../deploy/fonts relative to the UI root (/src), so they go to /deploy/fonts; a missing or changed file fails the build.

@@ -26,7 +26,7 @@ Requirements covered:
 | Upgrades | R32 (N/N-1 rolling upgrade) |
 | Hosting | R51 (log retention), R56 (no outbound calls by default) |
 
-Also: `SUPPORT-MATRIX.md` (R5, R7: JDK, framework, driver and deployment matrix, native-light APIs) and `evidence/` (R52: audit evidence pack).
+Also: `SUPPORT-MATRIX.md` (R5, R7: JDK, framework, driver and deployment matrix, native-light APIs, supported browsers) and `evidence/` (R52: audit evidence pack).
 
 **Runtime since this update:**
 
@@ -36,6 +36,8 @@ Also: `SUPPORT-MATRIX.md` (R5, R7: JDK, framework, driver and deployment matrix,
 - `server.Dockerfile` also builds the SCALE apps through `--build-arg APP_MODULE=`.
 - Writable state is `/var/lib/sangam`. It holds the compliance log archive, so back it up and keep it at least 180 days (R51). Helm: `server.state`, ReadWriteMany.
 - SCALE on compose: `docker compose -f docker-compose.yml -f docker-compose.scale.yml --profile postgres up -d`. On Helm: `scale.*` (`examples/values-scale.yaml`).
+
+**Supported browsers for the UI (owner decision 309):** Chrome and Edge 111 or later, Firefox 114 or later, Safari 16.4 or later. This is the Vite 8 default build target (`baseline-widely-available`), and `sangam-ui/vite.config.ts` deliberately sets no `build.target` override. Older browsers are not supported: the built JavaScript and CSS may use syntax they cannot parse. The same baseline applies to the embeddable web components (`npm run build:embed`). See `SUPPORT-MATRIX.md` section 9 and `sangam-ui/README.md`.
 
 ---
 
@@ -965,13 +967,16 @@ To build from source inside the air-gapped network:
   ```
 
   The Oracle JDBC driver for CI tests comes only with the CI profile `-Poracle-it` (decision 123), from your internal mirror (Maven Central `com.oracle.database.jdbc`), never from the bundle.
-- **npm:** never run install scripts (decision 130): every `npm ci` passes `--ignore-scripts`, and the UI then runs
-  `npm rebuild esbuild` (the one install script its build needs). On the connected side, run
+- **npm:** never run install scripts (decision 130): every `npm ci` passes `--ignore-scripts`. The UI build needs no
+  install script and no rebuild step since Vite 8 (M-117): rolldown and lightningcss use prebuilt optional packages
+  (`@rolldown/binding-*`, `lightningcss-*`) that `npm ci` installs for the build host's OS and CPU, and esbuild is no
+  longer in the lockfile. Fill the cache on the same OS and CPU as the offline build host (for the UI image: Linux),
+  because npm fetches only the native packages of the platform it runs on. On the connected side, run
   `npm ci --ignore-scripts --cache ./npm-cache` in `sangam/sangam-ui`. Then either:
   - `npm pack` every dependency;
   - better: tar the `./npm-cache` directory.
 
-  Inside, run `npm ci --ignore-scripts --offline --cache ./npm-cache && npm rebuild esbuild`, or set `NPM_CONFIG_REGISTRY=https://nexus.sdc.local/repository/npm-all/` (an internal npm proxy). The UI Dockerfile accepts `--build-arg NPM_CONFIG_REGISTRY=...`.
+  Inside, run `npm ci --ignore-scripts --offline --cache ./npm-cache`, or set `NPM_CONFIG_REGISTRY=https://nexus.sdc.local/repository/npm-all/` (an internal npm proxy). The UI Dockerfile accepts `--build-arg NPM_CONFIG_REGISTRY=...`.
 - **Docker builds offline:** use the `prebuilt` targets (`--build-arg JAR_SOURCE=prebuilt`, `--build-arg DIST_SOURCE=prebuilt`). They need no network beyond the base images, which are in the bundle (`docker load`).
 - **SBOM offline:** `deploy/airgap/generate-sbom.sh --offline`.
 

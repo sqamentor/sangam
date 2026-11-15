@@ -119,6 +119,20 @@ References (official vendor pages; titles as published, not re-fetched in this p
 Policy" (Salesforce Developers, REST API Developer Guide); ServiceNow "Release cycle" and "Upgrade" pages (ServiceNow
 product documentation); Microsoft "Release planning" and "Solution concepts" for Dataverse (Microsoft Learn).
 
+## 9. Browsers for the UI (owner decision 309)
+
+**Supported browsers (owner decision 309):** Chrome and Edge 111 or later, Firefox 114 or later, Safari 16.4 or later. This is the Vite 8 default build target (`baseline-widely-available`), and `sangam-ui/vite.config.ts` deliberately sets no `build.target` override. Older browsers are not supported: the built JavaScript and CSS may use syntax they cannot parse. The same baseline applies to the embeddable web components (`npm run build:embed`).
+
+| Browser | Minimum version | Status |
+|---|---|---|
+| Chrome | 111 | Declared |
+| Edge | 111 | Declared |
+| Firefox | 114 | Declared |
+| Safari | 16.4 | Declared |
+| Any older version, any other browser engine | None | **Unsupported** |
+
+Evidence so far: the baseline is the build target only (Vite 8.3.5 in `sangam-ui/package.json`; no `build.target` in `vite.config.ts` or `vite.embed.config.ts`). The UI unit tests run in jsdom, not in a browser, and the browser end-to-end suite (`ui.yml`, Playwright) has not been run on the Vite 8 build, so no browser row is proven yet. This applies to `sangam-ui` and the embeddable components; the server, gateway and SDKs have no browser requirement.
+
 ## Local JDK evidence (SG-06, SG-07)
 
 Run on 2026-11-08, Windows 11, `mvnw -B -fae -Dsangam.target=<dir> test` (every module, every unit test, surefire
