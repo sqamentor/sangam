@@ -34,7 +34,7 @@ const programmes: ScreenDef = {
     { id: 'target', label: 'act.setTarget', method: 'PUT', path: '/programmes/{programmeId}/targets', fields: [f.text('indicatorKey', undefined, true), f.text('periodId', undefined, true), f.text('orgUnit', undefined, true), f.money('value', 'fld.targetValue', true)] },
     // M-039/M-051: MilestoneRequest(orgUnit, name, seq, plannedStart, plannedEnd, weight, dependsOn) (ProgrammeController.java:91-92,
     // :254-259); the earlier plannedDate field is not read by the server
-    { id: 'milestone', label: 'act.planMilestone', path: '/programmes/{programmeId}/milestones', noJson: true, fields: [f.text('name', undefined, true), f.text('orgUnit'), f.num('seq'), f.date('plannedStart', 'fld.plannedStart', true), f.date('plannedEnd', 'fld.plannedEnd', true), f.money('weight'), f.json('dependsOn', 'fld.dependsOn')] },
+    { id: 'milestone', label: 'act.planMilestone', path: '/programmes/{programmeId}/milestones', noJson: true, fields: [f.text('name', undefined, true), f.text('orgUnit'), f.num('seq', undefined, true), f.date('plannedStart', 'fld.plannedStart', true), f.date('plannedEnd', 'fld.plannedEnd', true), f.money('weight'), f.json('dependsOn', 'fld.dependsOn')] },
     // M-051: AchievementRequest(indicatorKey, periodId, orgUnit, value) (ProgrammeController.java:104)
     { id: 'achievement', label: 'act.recordAchievement', path: '/programmes/{programmeId}/achievements', fields: [f.text('indicatorKey', undefined, true), f.text('periodId', undefined, true), f.text('orgUnit', undefined, true), f.money('value', 'fld.achievedValue', true)] },
     // M-051: FinancialRequest(programmeId, periodId, orgUnit, head, allocated, released, committed, expended, currency) (ProgrammeRestPort.java:51)
@@ -104,7 +104,7 @@ const periods: ScreenDef = {
   rowKey: ['periodId', 'id'],
   // M-051: GeneratePeriodsRequest(frequency, fiscalStartYear, dueOffsetDays) (ProgrammeController.java:70); frequency is
   // IndicatorDefinition.Frequency (IndicatorDefinition.java:33)
-  toolbar: [{ id: 'generate', label: 'act.generatePeriods', path: '/programme-periods/generate', fields: [f.num('fiscalStartYear', 'fld.fiscalYear', true), f.select('frequency', ['WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL'], undefined, true), f.num('dueOffsetDays', 'fld.dueOffsetDays')], showResult: true }],
+  toolbar: [{ id: 'generate', label: 'act.generatePeriods', path: '/programme-periods/generate', fields: [f.num('fiscalStartYear', 'fld.fiscalYear', true), f.select('frequency', ['WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF_YEARLY', 'ANNUAL'], undefined, true), f.num('dueOffsetDays', 'fld.dueOffsetDays', true)], showResult: true }],
   actions: [{ id: 'state', label: 'act.setState', path: '/programme-periods/{periodId}/state', fields: [f.select('state', ['OPEN', 'CLOSED', 'LOCKED'], undefined, true)], reason: 'body' }],
 };
 
@@ -132,10 +132,11 @@ const returns: ScreenDef = {
   // M-051: CampaignRequest(returnKey, periodId, rootNode, programmeId) (ProgrammeController.java:95)
   toolbar: [{ id: 'campaign', label: 'act.startCampaign', path: '/programme-returns/campaigns', fields: [f.text('returnKey', undefined, true), f.text('periodId', undefined, true), f.text('rootNode', 'fld.rootOrgUnit', true), f.text('programmeId')], showResult: true, hint: 'mod.programmes.campaignHint' }],
   actions: [
-    // M-051: ReturnValuesRequest(expectedVersion, values, remarks) and VersionBody(expectedVersion) (ProgrammeController.java:98, :101)
-    { id: 'values', label: 'act.saveValues', method: 'PUT', path: '/programme-returns/{returnId}/values', fields: [f.num('expectedVersion', 'fld.version', true), f.json('values', undefined, true), f.json('remarks', 'fld.remarks')] },
+    // M-051: ReturnValuesRequest(expectedVersion, values, remarks) and VersionBody(expectedVersion) (ProgrammeController.java:98, :101); the
+    // expected version is the return's rowVersion (ReturnService.java:54-58, :190-191, :216-218), prefilled from the selected row
+    { id: 'values', label: 'act.saveValues', method: 'PUT', path: '/programme-returns/{returnId}/values', fields: [f.num('expectedVersion', 'fld.version', true), f.json('values', undefined, true), f.json('remarks', 'fld.remarks')], defaults: (r) => ({ expectedVersion: r?.rowVersion as number }) },
     { id: 'validate', label: 'act.validate', path: '/programme-returns/{returnId}/validate', showResult: true, noJson: true },
-    { id: 'submit', label: 'act.submit', path: '/programme-returns/{returnId}/submit', fields: [f.num('expectedVersion', 'fld.version', true)], showResult: true },
+    { id: 'submit', label: 'act.submit', path: '/programme-returns/{returnId}/submit', fields: [f.num('expectedVersion', 'fld.version', true)], defaults: (r) => ({ expectedVersion: r?.rowVersion as number }), showResult: true },
     { id: 'ack', label: 'act.ackFinding', path: '/programme-returns/{returnId}/findings/{seq}/ack', fields: [f.num('seq', undefined, true)], reason: 'body' },
     { id: 'accept', label: 'act.accept', path: '/programme-returns/{returnId}/accept', noJson: true },
     { id: 'sendBack', label: 'act.sendBack', path: '/programme-returns/{returnId}/send-back', reason: 'body' },
@@ -170,3 +171,6 @@ const config: ScreenDef = {
 export function ProgrammesPage() {
   return <ModulePage title="mod.programmes.title" description="mod.programmes.desc" screens={[programmes, targets, milestones, periods, returns, defaulters, alerts, config]} />;
 }
+
+/** The screen definitions, for the tests of the request bodies their actions send. */
+export const programmeScreens = { programmes, milestones, targets, periods, returns };

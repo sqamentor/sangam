@@ -13,7 +13,7 @@ package org.sangam.sdk.generated.model;
  * @param title wire field {@code title}
  * @param docType wire field {@code docType}
  * @param confidentiality wire field {@code confidentiality}
- * @param exhibit wire field {@code exhibit}
+ * @param exhibit wire field {@code exhibit} (required)
  * @param exhibitRef wire field {@code exhibitRef}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

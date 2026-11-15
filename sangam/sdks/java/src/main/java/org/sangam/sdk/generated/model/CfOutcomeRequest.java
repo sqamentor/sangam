@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param outcome wire field {@code outcome}
  * @param outcomeText wire field {@code outcomeText}
- * @param adjourned wire field {@code adjourned}
+ * @param adjourned wire field {@code adjourned} (required)
  * @param nextDate wire field {@code nextDate}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

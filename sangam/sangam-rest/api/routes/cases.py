@@ -33,19 +33,19 @@ schema('CfEscalationStep', 'EscalationStep (Java CaseConfig.EscalationStep).',
 schema('CfHearing', 'Hearing (Java HearingService.Hearing).',
        'tenantId:s hearingId:s caseId:s kind:s forum:s scheduledAt:dt status:s outcome:s outcomeText:s nextDate:dt externalRef:s recordedBy:s recordedAt:dt')
 schema('CfUpdateRequest', 'UpdateRequest (Java CaseFileRestPort.UpdateRequest).',
-       'attributes:obj replace:bool title:s priority:s confidentiality:s rowVersion:long')
+       'attributes:obj replace:bool title:s priority:s confidentiality:s rowVersion:long', ['replace', 'rowVersion'])
 schema('CfStageRequest', 'StageRequest (Java CaseFileRestPort.StageRequest).',
-       'stage:s reason:s rowVersion:long')
+       'stage:s reason:s rowVersion:long', ['rowVersion'])
 schema('CfCaseFileRestPortAssignRequest', 'AssignRequest (Java CaseFileRestPort.AssignRequest).',
-       'ownerSeat:s orgUnit:s rowVersion:long')
+       'ownerSeat:s orgUnit:s rowVersion:long', ['rowVersion'])
 schema('CfReasonRequest', 'ReasonRequest (Java CaseFileRestPort.ReasonRequest).',
-       'reason:s stage:s rowVersion:long')
+       'reason:s stage:s rowVersion:long', ['rowVersion'])
 schema('CfMilestoneRequest', 'MilestoneRequest (Java CaseFileController.MilestoneRequest).',
        'milestone:s occurredAt:dt')
 schema('CfPartyInput', 'PartyInput (Java PartyService.PartyInput).',
        'kind:s displayName:s identifiers:obj contact:obj externalRef:s')
 schema('CfAddPartyRequest', 'AddPartyRequest (Java CaseFileRestPort.AddPartyRequest).',
-       'partyId:s newParty:CfPartyInput role:s capacity:s representedBy:s masked:bool')
+       'partyId:s newParty:CfPartyInput role:s capacity:s representedBy:s masked:bool', ['masked'])
 schema('CfPartyResult', 'PartyResult (Java CaseFileRestPort.PartyResult).',
        'caseParty:CfCaseParty conflicts:list:CfConflict')
 schema('CfConflict', 'Conflict (Java PartyService.Conflict).',
@@ -57,7 +57,7 @@ schema('CfRecordRequest', 'RecordRequest (Java CaseFileRestPort.RecordRequest).'
 schema('CfFolderRequest', 'FolderRequest (Java CaseFileController.FolderRequest).',
        'parentFolderId:s name:s')
 schema('CfDocumentRequest', 'DocumentRequest (Java CaseFileRestPort.DocumentRequest).',
-       'folderId:s contentItemId:s title:s docType:s confidentiality:s exhibit:bool exhibitRef:s')
+       'folderId:s contentItemId:s title:s docType:s confidentiality:s exhibit:bool exhibitRef:s', ['exhibit'])
 schema('CfNote', 'Note (Java CaseContentsService.Note).',
        'tenantId:s noteId:s caseId:s body:s visibility:s author:s createdAt:dt supersedes:s superseded:bool')
 schema('CfNoteRequest', 'NoteRequest (Java CaseFileController.NoteRequest).',
@@ -73,7 +73,7 @@ schema('CfSplitRequest', 'SplitRequest (Java CaseLinkService.SplitRequest).',
 schema('CfHearingRequest', 'HearingRequest (Java CaseFileRestPort.HearingRequest).',
        'kind:s forum:s scheduledAt:dt externalRef:s')
 schema('CfOutcomeRequest', 'OutcomeRequest (Java CaseFileRestPort.OutcomeRequest).',
-       'outcome:s outcomeText:s adjourned:bool nextDate:dt')
+       'outcome:s outcomeText:s adjourned:bool nextDate:dt', ['adjourned'])
 schema('CfCaseFileRestPortExtendRequest', 'ExtendRequest (Java CaseFileRestPort.ExtendRequest).',
        'newDueAt:dt reason:s')
 schema('CfConstituteRequest', 'ConstituteRequest (Java CommitteeService.ConstituteRequest).',
@@ -125,21 +125,21 @@ schema('CfNotice', 'Notice (Java MeetingService.Notice).',
 schema('CfAttendanceRequest', 'AttendanceRequest (Java MeetingRestPort.AttendanceRequest).',
        'memberId:s attendeeRef:s attendance:s proxyFor:s')
 schema('CfDecisionInput', 'DecisionInput (Java MeetingService.DecisionInput).',
-       'itemId:s text:s outcome:s votesFor:int votesAgainst:int abstentions:int dissent:list:obj')
+       'itemId:s text:s outcome:s votesFor:int votesAgainst:int abstentions:int dissent:list:obj', ['votesFor', 'votesAgainst', 'abstentions'])
 schema('CfTextBody', 'TextBody (Java MeetingController.TextBody).',
        'text:s')
 schema('CfApproveMinutesRequest', 'ApproveMinutesRequest (Java MeetingRestPort.ApproveMinutesRequest).',
-       'version:int contentHash:s esignRef:s')
+       'version:int contentHash:s esignRef:s', ['version'])
 schema('CfCreateRequest', 'CreateRequest (Java ActionItemService.CreateRequest).',
        'meetingId:s decisionId:s committeeId:s title:s ownerSeat:s ownerPerson:s dueAt:dt period:s')
 schema('CfAtrBody', 'AtrBody (Java MeetingController.AtrBody).',
        'atrText:s')
 schema('CfVerifyRequest', 'VerifyRequest (Java MeetingRestPort.VerifyRequest).',
-       'accept:bool reason:s')
+       'accept:bool reason:s', ['accept'])
 schema('CfReassignBody', 'ReassignBody (Java MeetingController.ReassignBody).',
        'ownerSeat:s ownerPerson:s')
 schema('CfRegisterRequest', 'RegisterRequest (Java ReferenceService.RegisterRequest).',
-       'kind:s sourceName:s sourceCategory:s sourceRef:s subject:s body:s receivedAt:dt receivedVia:s priority:s orgUnit:s orgCode:s assignedSeat:s assignedPerson:s fixedDueAt:dt attributes:obj parentReferenceId:s allowDuplicate:bool')
+       'kind:s sourceName:s sourceCategory:s sourceRef:s subject:s body:s receivedAt:dt receivedVia:s priority:s orgUnit:s orgCode:s assignedSeat:s assignedPerson:s fixedDueAt:dt attributes:obj parentReferenceId:s allowDuplicate:bool', ['allowDuplicate'])
 schema('CfReference', 'Reference (Java ReferenceService.Reference).',
        'tenantId:s referenceId:s kind:s kindVersion:int number:s sourceName:s sourceCategory:s sourceRef:s subject:s body:s receivedAt:dt receivedVia:s priority:s status:s assignedSeat:s assignedPerson:s orgUnit:s dueAt:dt deadlineId:s caseId:s parentReferenceId:s attributes:obj replyDraft:s replyDraftedBy:s replyText:s replyRef:s repliedBy:s repliedAt:dt replyApprovedBy:s late:bool closedAt:dt closeReason:s createdBy:s rowVersion:long')
 schema('CfReferenceServicePendency', 'Pendency (Java ReferenceService.Pendency).',

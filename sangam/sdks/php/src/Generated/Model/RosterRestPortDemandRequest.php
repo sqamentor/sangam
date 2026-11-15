@@ -16,7 +16,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $skill
  * @property-read list<string>|null $weekdays
  * @property-read string|null $dutyDay
- * @property-read int|null $requiredCount
+ * @property-read int|null $requiredCount (required)
  * @property-read string|null $dutySeatId
  * @property-read string|null $locationId
  */

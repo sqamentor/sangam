@@ -15,6 +15,9 @@ public sealed record PgMilestoneRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("name")]
     public string? Name { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("seq")]
     public int? Seq { get; init; }
 

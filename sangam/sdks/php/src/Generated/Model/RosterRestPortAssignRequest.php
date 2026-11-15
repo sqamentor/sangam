@@ -19,7 +19,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $demandId
  * @property-read string|null $dutySeatId
  * @property-read string|null $locationId
- * @property-read bool|null $override
+ * @property-read bool|null $override (required)
  * @property-read string|null $overrideReason
  */
 final class RosterRestPortAssignRequest implements \JsonSerializable

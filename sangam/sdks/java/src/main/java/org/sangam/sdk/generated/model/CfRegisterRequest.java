@@ -24,7 +24,7 @@ package org.sangam.sdk.generated.model;
  * @param fixedDueAt wire field {@code fixedDueAt}
  * @param attributes wire field {@code attributes}
  * @param parentReferenceId wire field {@code parentReferenceId}
- * @param allowDuplicate wire field {@code allowDuplicate}
+ * @param allowDuplicate wire field {@code allowDuplicate} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record CfRegisterRequest(

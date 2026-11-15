@@ -21,9 +21,15 @@ public sealed record MigrationExecuteRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("filter")]
     public BatchFilter? Filter { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("skipCustomListeners")]
     public bool? SkipCustomListeners { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("skipIoMappings")]
     public bool? SkipIoMappings { get; init; }
 

@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code CfVerifyRequest} of sangam-api.yaml 0.1.0.
  *
- * @param accept wire field {@code accept}
+ * @param accept wire field {@code accept} (required)
  * @param reason wire field {@code reason}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

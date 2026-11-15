@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema ResourcesApprovalRequest of sangam-api.yaml 0.1.0.
  *
- * @property-read bool|null $approved
+ * @property-read bool|null $approved (required)
  * @property-read string|null $reason
  */
 final class ResourcesApprovalRequest implements \JsonSerializable

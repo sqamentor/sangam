@@ -10,7 +10,7 @@ package org.sangam.sdk.generated.model;
  *
  * @param series wire field {@code series}
  * @param period wire field {@code period}
- * @param value wire field {@code value}
+ * @param value wire field {@code value} (required)
  * @param reason wire field {@code reason}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

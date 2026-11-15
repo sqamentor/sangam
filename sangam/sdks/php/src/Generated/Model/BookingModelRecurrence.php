@@ -13,11 +13,11 @@ use Sangam\Sdk\Generated\Support;
  * Schema BookingModelRecurrence of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $frequency  One of: DAILY, WEEKLY, MONTHLY.
- * @property-read int|null $interval
+ * @property-read int|null $interval (required)
  * @property-read list<string>|null $byDays
  * @property-read int|null $count
  * @property-read string|null $until
- * @property-read bool|null $allOrNothing
+ * @property-read bool|null $allOrNothing (required)
  */
 final class BookingModelRecurrence implements \JsonSerializable
 {

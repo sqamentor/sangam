@@ -30,9 +30,15 @@ public sealed record CalendarServiceSlotTemplate
     [global::System.Text.Json.Serialization.JsonPropertyName("to")]
     public string? To { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("slotMinutes")]
     public int? SlotMinutes { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("unitsPerSlot")]
     public int? UnitsPerSlot { get; init; }
 

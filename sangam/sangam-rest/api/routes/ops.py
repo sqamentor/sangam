@@ -9,7 +9,7 @@ _OLIST = {"application/json": {"schema": {"type": "array", "items": {}}}}
 
 schema('OpsValue', 'ValueRequest.', 'value:any reason:s')
 schema('OpsSecret', 'SecretRequest; write-only.', 'value:s')
-schema('OpsAdvance', 'AdvanceRequest; forward only.', 'series:s period:s value:long reason:s')
+schema('OpsAdvance', 'AdvanceRequest; forward only.', 'series:s period:s value:long reason:s', ['value'])
 schema('OpsReason', 'ReasonRequest.', 'reason:s')
 schema('OpsJob', 'Job.', 'generation:long state:s indexed:long expected:long message:s reason:s')
 schema('OpsPurge', 'PurgeResult.', 'purged:int')

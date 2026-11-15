@@ -200,3 +200,6 @@ const arrears: ScreenDef = {
 export function BillingPage() {
   return <ModulePage title="mod.billing.title" description="mod.billing.desc" screens={[billAccounts, arrears]} />;
 }
+
+/** The screen definitions, for the tests of the request bodies their actions send. */
+export const financeScreens = { accounts };

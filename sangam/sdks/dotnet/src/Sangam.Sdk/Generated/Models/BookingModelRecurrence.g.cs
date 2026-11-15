@@ -15,6 +15,9 @@ public sealed record BookingModelRecurrence
     [global::System.Text.Json.Serialization.JsonPropertyName("frequency")]
     public string? Frequency { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("interval")]
     public int? Interval { get; init; }
 
@@ -27,6 +30,9 @@ public sealed record BookingModelRecurrence
     [global::System.Text.Json.Serialization.JsonPropertyName("until")]
     public global::System.DateOnly? Until { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("allOrNothing")]
     public bool? AllOrNothing { get; init; }
 

@@ -28,7 +28,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $fixedDueAt
  * @property-read array<string, mixed>|null $attributes
  * @property-read string|null $parentReferenceId
- * @property-read bool|null $allowDuplicate
+ * @property-read bool|null $allowDuplicate (required)
  */
 final class CfRegisterRequest implements \JsonSerializable
 {

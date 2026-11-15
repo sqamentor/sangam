@@ -311,7 +311,8 @@ export function Alerts() {
             className="primary"
             disabled={!edit?.name || !edit?.kpi || edit?.threshold === undefined}
             onClick={() =>
-              void act.run(() => api.analytics.saveAlert(edit!)).then((r) => {
+              // AlertRule.active is a primitive (refused when missing, Jackson 3): sent as the box shows it (checked when unset)
+              void act.run(() => api.analytics.saveAlert({ ...edit!, active: edit!.active ?? true })).then((r) => {
                 if (r) {
                   setEdit(null);
                   list.reload();

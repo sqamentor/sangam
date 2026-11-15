@@ -13,7 +13,7 @@ use Sangam\Sdk\Generated\Support;
  * Schema AiClassify of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $key
- * @property-read int|null $version
+ * @property-read int|null $version (required)
  * @property-read list<string>|null $labels
  * @property-read list<string>|null $fields
  * @property-read float|null $threshold

@@ -17,9 +17,9 @@ package org.sangam.sdk.generated.model;
  * @param reference wire field {@code reference}
  * @param auditRef wire field {@code auditRef}
  * @param asOf wire field {@code asOf}
- * @param fromCommitment wire field {@code fromCommitment}
- * @param fromEncumbrance wire field {@code fromEncumbrance}
- * @param holdIfShort wire field {@code holdIfShort}
+ * @param fromCommitment wire field {@code fromCommitment} (required)
+ * @param fromEncumbrance wire field {@code fromEncumbrance} (required)
+ * @param holdIfShort wire field {@code holdIfShort} (required)
  * @param attrs wire field {@code attrs}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

@@ -10,8 +10,8 @@ package org.sangam.sdk.generated.model;
  *
  * @param instructions wire field {@code instructions} (required)
  * @param reason wire field {@code reason} (required)
- * @param skipCustomListeners wire field {@code skipCustomListeners}
- * @param skipIoMappings wire field {@code skipIoMappings}
+ * @param skipCustomListeners wire field {@code skipCustomListeners} (required)
+ * @param skipIoMappings wire field {@code skipIoMappings} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ModifyRequest(

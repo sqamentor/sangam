@@ -17,8 +17,8 @@ use Sangam\Sdk\Generated\Support;
  * @property-read list<string>|null $weekdays
  * @property-read string|null $from Local time (HH:mm[:ss])
  * @property-read string|null $to Local time (HH:mm[:ss])
- * @property-read int|null $slotMinutes
- * @property-read int|null $unitsPerSlot
+ * @property-read int|null $slotMinutes (required)
+ * @property-read int|null $unitsPerSlot (required)
  * @property-read string|null $validFrom
  * @property-read string|null $validTo
  * @property-read array<string, mixed>|null $attributes

@@ -15,8 +15,8 @@ use Sangam\Sdk\Generated\Support;
  * @property-read MigrationPlanRequest|null $plan (required)
  * @property-read list<string>|null $processInstanceIds
  * @property-read BatchFilter|null $filter
- * @property-read bool|null $skipCustomListeners
- * @property-read bool|null $skipIoMappings
+ * @property-read bool|null $skipCustomListeners (required)
+ * @property-read bool|null $skipIoMappings (required)
  * @property-read string|null $reason (required)
  */
 final class MigrationExecuteRequest implements \JsonSerializable

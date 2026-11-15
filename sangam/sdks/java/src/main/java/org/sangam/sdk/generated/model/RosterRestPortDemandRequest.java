@@ -12,7 +12,7 @@ package org.sangam.sdk.generated.model;
  * @param skill wire field {@code skill}
  * @param weekdays wire field {@code weekdays}
  * @param dutyDay wire field {@code dutyDay}
- * @param requiredCount wire field {@code requiredCount}
+ * @param requiredCount wire field {@code requiredCount} (required)
  * @param dutySeatId wire field {@code dutySeatId}
  * @param locationId wire field {@code locationId}
  * @param additionalProperties members not named in the contract schema (additionalProperties)

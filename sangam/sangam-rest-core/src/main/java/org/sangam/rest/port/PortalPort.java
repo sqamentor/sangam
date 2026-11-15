@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Citizen / applicant portal (C01–C06, PER-8, UP-22). The applicant is an external principal bound to the tenant by
  * the portal channel; they see only their own applications, and officer identities only as seat designations.
@@ -33,7 +36,19 @@ public interface PortalPort {
                        Instant appealDeadline, String paymentStatus) {
     }
 
+    /**
+     * A new application. Optional on a request (SL-81): an omitted {@code submit} is false, which keeps the
+     * application as a draft.
+     */
     record ApplyRequest(String serviceKey, Map<String, Object> variables, boolean submit) {
+
+        /** Request binding: an omitted optional flag takes the documented default above, never a guess. */
+        @JsonCreator
+        public static ApplyRequest fromRequest(@JsonProperty("serviceKey") String serviceKey,
+                                               @JsonProperty("variables") Map<String, Object> variables,
+                                               @JsonProperty("submit") Boolean submit) {
+            return new ApplyRequest(serviceKey, variables, submit != null && submit);
+        }
     }
 
     record ReplyRequest(String text, List<PortalFile> files) {

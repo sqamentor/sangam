@@ -21,9 +21,9 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $reference
  * @property-read string|null $auditRef
  * @property-read string|null $asOf
- * @property-read bool|null $fromCommitment
- * @property-read bool|null $fromEncumbrance
- * @property-read bool|null $holdIfShort
+ * @property-read bool|null $fromCommitment (required)
+ * @property-read bool|null $fromEncumbrance (required)
+ * @property-read bool|null $holdIfShort (required)
  * @property-read array<string, mixed>|null $attrs
  */
 final class LedgerOperationRequest implements \JsonSerializable

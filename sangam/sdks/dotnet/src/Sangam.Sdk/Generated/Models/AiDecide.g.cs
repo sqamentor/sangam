@@ -9,6 +9,9 @@ namespace Sangam.Sdk.Generated.Models;
 /// </summary>
 public sealed record AiDecide
 {
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("approve")]
     public bool? Approve { get; init; }
 

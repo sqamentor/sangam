@@ -13,12 +13,12 @@ use Sangam\Sdk\Generated\Support;
  * Schema PgMilestoneServiceProgress of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $milestoneId
- * @property-read int|null $expectedVersion
+ * @property-read int|null $expectedVersion (required)
  * @property-read string|null $percentComplete
  * @property-read string|null $actualStart
  * @property-read string|null $actualEnd
  * @property-read list<mixed>|null $addEvidence
- * @property-read bool|null $drop
+ * @property-read bool|null $drop (required)
  * @property-read string|null $reason
  */
 final class PgMilestoneServiceProgress implements \JsonSerializable

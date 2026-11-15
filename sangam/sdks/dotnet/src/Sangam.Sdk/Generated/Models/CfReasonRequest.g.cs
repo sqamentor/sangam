@@ -15,6 +15,9 @@ public sealed record CfReasonRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("stage")]
     public string? Stage { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("rowVersion")]
     public long? RowVersion { get; init; }
 }

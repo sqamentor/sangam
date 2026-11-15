@@ -18,6 +18,9 @@ public sealed record ChannelAttachment
     [global::System.Text.Json.Serialization.JsonPropertyName("contentType")]
     public string? ContentType { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("sizeBytes")]
     public long? SizeBytes { get; init; }
 

@@ -45,6 +45,9 @@ public sealed record BookingModelHoldRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("businessKey")]
     public string? BusinessKey { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("bump")]
     public bool? Bump { get; init; }
 
@@ -54,6 +57,9 @@ public sealed record BookingModelHoldRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("reason")]
     public string? Reason { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("waitlistIfFull")]
     public bool? WaitlistIfFull { get; init; }
 

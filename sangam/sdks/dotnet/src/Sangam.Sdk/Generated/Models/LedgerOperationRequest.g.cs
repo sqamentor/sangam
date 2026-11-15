@@ -45,12 +45,21 @@ public sealed record LedgerOperationRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("asOf")]
     public global::System.DateOnly? AsOf { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("fromCommitment")]
     public bool? FromCommitment { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("fromEncumbrance")]
     public bool? FromEncumbrance { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("holdIfShort")]
     public bool? HoldIfShort { get; init; }
 

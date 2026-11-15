@@ -1027,10 +1027,21 @@ export function Groups() {
 
 // ------------------------------------------------------------------ A05 identity providers, I03 principals
 
+/** The i18n key of what is wrong with an identity provider's session timeout (minutes, a whole number), or undefined. */
+export function idpTimeoutProblem(v: unknown): 'form.required' | 'form.wholeNumber' | undefined {
+  if (v === undefined || v === null || v === '' || (typeof v === 'number' && Number.isNaN(v))) return 'form.required';
+  return typeof v === 'number' && Number.isInteger(v) ? undefined : 'form.wholeNumber';
+}
+
 export function IdentityProviders() {
   const { t } = useTranslation();
   const list = useAsync(() => api.admin.identityProviders(), []);
-  const [edit, setEdit] = useState<Record<string, unknown> | null>(null);
+  const [edit, setEditRaw] = useState<Record<string, unknown> | null>(null);
+  const [timeoutTouched, setTimeoutTouched] = useState(false);
+  const setEdit = (next: Record<string, unknown> | null) => {
+    if (next === null) setTimeoutTouched(false);
+    setEditRaw(next);
+  };
   const [msg, setMsg] = useState<string>();
   const act = useAction();
   return (
@@ -1097,7 +1108,13 @@ export function IdentityProviders() {
               } catch {
                 /* invalid JSON */
               }
-              void act.run(() => api.admin.saveIdentityProvider({ ...edit!, attributeMapping: mapping } as never)).then((r) => {
+              // IdentityProvider's mfaRequired and sessionTimeoutMin are primitives (refused when missing, Jackson 3): the box is sent as
+              // shown and an empty or fractional timeout is refused here instead of being sent
+              if (idpTimeoutProblem(edit!.sessionTimeoutMin)) {
+                setTimeoutTouched(true);
+                return;
+              }
+              void act.run(() => api.admin.saveIdentityProvider({ ...edit!, attributeMapping: mapping, mfaRequired: Boolean(edit!.mfaRequired), sessionTimeoutMin: Number(edit!.sessionTimeoutMin) } as never)).then((r) => {
                 if (r) {
                   setEdit(null);
                   list.reload();
@@ -1117,7 +1134,14 @@ export function IdentityProviders() {
             <TextField label={t('admin.metadataUrl')} value={String(edit.metadataUrl ?? '')} onChange={(v) => setEdit({ ...edit, metadataUrl: v })} />
             <TextArea label={t('admin.attributeMapping')} value={String(edit.attributeMapping ?? '')} onChange={(v) => setEdit({ ...edit, attributeMapping: v })} />
             <Checkbox label={t('admin.mfa')} checked={Boolean(edit.mfaRequired)} onChange={(v) => setEdit({ ...edit, mfaRequired: v })} />
-            <TextField label={t('admin.sessionTimeout')} type="number" value={String(edit.sessionTimeoutMin ?? 30)} onChange={(v) => setEdit({ ...edit, sessionTimeoutMin: Number(v) })} />
+            <TextField
+              label={t('admin.sessionTimeout')}
+              type="number"
+              required
+              value={edit.sessionTimeoutMin === undefined || edit.sessionTimeoutMin === null ? '' : String(edit.sessionTimeoutMin)}
+              onChange={(v) => setEdit({ ...edit, sessionTimeoutMin: v.trim() === '' ? undefined : Number(v) })}
+              error={timeoutTouched && idpTimeoutProblem(edit.sessionTimeoutMin) ? t(idpTimeoutProblem(edit.sessionTimeoutMin)!) : undefined}
+            />
             <Notice>{t('admin.idpActivationRule')}</Notice>
           </>
         )}

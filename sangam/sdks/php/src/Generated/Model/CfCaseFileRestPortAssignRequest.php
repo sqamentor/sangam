@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $ownerSeat
  * @property-read string|null $orgUnit
- * @property-read int|null $rowVersion
+ * @property-read int|null $rowVersion (required)
  */
 final class CfCaseFileRestPortAssignRequest implements \JsonSerializable
 {

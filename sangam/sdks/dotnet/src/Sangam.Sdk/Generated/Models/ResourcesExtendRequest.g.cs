@@ -12,6 +12,9 @@ public sealed record ResourcesExtendRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("newValidTo")]
     public global::System.DateTimeOffset? NewValidTo { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("version")]
     public long? Version { get; init; }
 

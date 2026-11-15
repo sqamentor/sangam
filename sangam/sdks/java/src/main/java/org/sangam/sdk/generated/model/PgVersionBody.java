@@ -8,7 +8,7 @@ package org.sangam.sdk.generated.model;
  *
  * <p>Schema {@code PgVersionBody} of sangam-api.yaml 0.1.0.
  *
- * @param expectedVersion wire field {@code expectedVersion}
+ * @param expectedVersion wire field {@code expectedVersion} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record PgVersionBody(

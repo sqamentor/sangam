@@ -15,7 +15,7 @@ schema("LedgerAccount", "A balance; amounts are decimal strings (R33).",
 schema("LedgerOperationRequest", "One ledger operation. reference defaults to the Idempotency-Key; one of the two is "
        "required (a retry must not post twice).",
        "operation account:LedgerAccountRef target:LedgerAccountRef amount currency rateType reference auditRef "
-       "asOf:date fromCommitment:bool fromEncumbrance:bool holdIfShort:bool attrs:obj", ["operation", "account"],
+       "asOf:date fromCommitment:bool fromEncumbrance:bool holdIfShort:bool attrs:obj", ["operation", "account", "fromCommitment", "fromEncumbrance", "holdIfShort"],
        descs={"operation": "ALLOCATE, DISTRIBUTE, WITHDRAW, COMMIT, ENCUMBER, RELEASE, CONSUME, TRANSFER, ADJUST, "
                            "REVERSE, WRITE_OFF, ...",
               "amount": "decimal string (R33)"})

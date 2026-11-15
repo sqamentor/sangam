@@ -21,9 +21,15 @@ public sealed record RosterRestPortShiftRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("fromTime")]
     public string? FromTime { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("durationMinutes")]
     public int? DurationMinutes { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("night")]
     public bool? Night { get; init; }
 

@@ -21,6 +21,9 @@ public sealed record MigrationInstruction
     [global::System.Text.Json.Serialization.JsonPropertyName("targetActivityIds")]
     public global::System.Collections.Generic.List<string>? TargetActivityIds { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("updateEventTrigger")]
     public bool? UpdateEventTrigger { get; init; }
 }

@@ -15,7 +15,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $seatId
  * @property-read list<string>|null $skills
  * @property-read string|null $rotationId
- * @property-read int|null $rotationOffset
+ * @property-read int|null $rotationOffset (required)
  * @property-read array<string, mixed>|null $attributes
  */
 final class RosterRestPortMemberRequest implements \JsonSerializable

@@ -24,6 +24,9 @@ public sealed record CfDocumentRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("confidentiality")]
     public string? Confidentiality { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("exhibit")]
     public bool? Exhibit { get; init; }
 

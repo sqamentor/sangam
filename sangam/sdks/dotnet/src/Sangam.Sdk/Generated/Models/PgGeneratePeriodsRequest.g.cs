@@ -12,9 +12,15 @@ public sealed record PgGeneratePeriodsRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("frequency")]
     public string? Frequency { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("fiscalStartYear")]
     public int? FiscalStartYear { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("dueOffsetDays")]
     public int? DueOffsetDays { get; init; }
 }

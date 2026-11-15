@@ -11,7 +11,7 @@ package org.sangam.sdk.generated.model;
  * @param key wire field {@code key}
  * @param name wire field {@code name}
  * @param contentType wire field {@code contentType}
- * @param sizeBytes wire field {@code sizeBytes}
+ * @param sizeBytes wire field {@code sizeBytes} (required)
  * @param sha256 wire field {@code sha256}
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

@@ -5,6 +5,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Delegation-of-powers tables (IX.5 rule 3, K6, A04): versioned DMN tables of financial and administrative powers per
  * seat, with four-eyes approval (author ≠ approver) and an effective date. Distinct from person-to-person delegation
@@ -15,10 +18,31 @@ public interface PowerTablePort {
     record TestCase(String id, Map<String, Object> inputs, Map<String, Object> expected) {
     }
 
-    /** state: DRAFT | IN_REVIEW | APPROVED | ACTIVE | SUPERSEDED | REJECTED. */
+    /**
+     * state: DRAFT | IN_REVIEW | APPROVED | ACTIVE | SUPERSEDED | REJECTED. Optional on a request (SL-81), with
+     * these defaults: {@code version} 0 (server-assigned: the next version of the key on create, kept on update);
+     * {@code revision} 0 (none read: server-assigned on create; an update of a DRAFT refuses 0 with 409
+     * REVISION_CONFLICT).
+     */
     record PowerTable(String id, String key, String name, int version, String state, Instant effectiveFrom,
                       String author, String approver, String dmnXml, List<TestCase> testCases, String deploymentId,
                       long revision) {
+
+        /** Request binding: an omitted optional number takes the documented default above, never a guess. */
+        @JsonCreator
+        public static PowerTable fromRequest(@JsonProperty("id") String id, @JsonProperty("key") String key,
+                                             @JsonProperty("name") String name, @JsonProperty("version") Integer version,
+                                             @JsonProperty("state") String state,
+                                             @JsonProperty("effectiveFrom") Instant effectiveFrom,
+                                             @JsonProperty("author") String author,
+                                             @JsonProperty("approver") String approver,
+                                             @JsonProperty("dmnXml") String dmnXml,
+                                             @JsonProperty("testCases") List<TestCase> testCases,
+                                             @JsonProperty("deploymentId") String deploymentId,
+                                             @JsonProperty("revision") Long revision) {
+            return new PowerTable(id, key, name, version == null ? 0 : version, state, effectiveFrom, author, approver,
+                    dmnXml, testCases, deploymentId, revision == null ? 0L : revision);
+        }
     }
 
     record TestOutcome(String id, boolean passed, Map<String, Object> actual) {

@@ -9,7 +9,7 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code ResourcesExtendRequest} of sangam-api.yaml 0.1.0.
  *
  * @param newValidTo wire field {@code newValidTo}
- * @param version wire field {@code version}
+ * @param version wire field {@code version} (required)
  * @param reason wire field {@code reason}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */

@@ -5,7 +5,7 @@
 TAGS.append(("Channels", "Conversations, opt-ins, channel status and provider webhooks (sangam-channels)"))
 CHR = ["R19", "R81"]
 
-schema("ChannelAttachment", "A stored conversation attachment.", "key name contentType sizeBytes:long sha256")
+schema("ChannelAttachment", "A stored conversation attachment.", "key name contentType sizeBytes:long sha256", ["sizeBytes"])
 schema("ChannelMessage", "A conversation message.", "id conversationId sender body attachments:list:ChannelAttachment at",
        ["id", "conversationId", "sender"])
 schema("ChannelConversation", "A conversation.", "id tenantId title caseRef retentionClass", ["id", "tenantId"])

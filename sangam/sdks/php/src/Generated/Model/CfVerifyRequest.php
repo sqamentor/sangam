@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema CfVerifyRequest of sangam-api.yaml 0.1.0.
  *
- * @property-read bool|null $accept
+ * @property-read bool|null $accept (required)
  * @property-read string|null $reason
  */
 final class CfVerifyRequest implements \JsonSerializable

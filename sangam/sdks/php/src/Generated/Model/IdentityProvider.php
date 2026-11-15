@@ -18,8 +18,8 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $issuer
  * @property-read string|null $metadataUrl
  * @property-read array<string, string>|null $attributeMapping
- * @property-read bool|null $mfaRequired
- * @property-read int|null $sessionTimeoutMin
+ * @property-read bool|null $mfaRequired (required)
+ * @property-read int|null $sessionTimeoutMin (required)
  * @property-read string|null $status  One of: DRAFT, TESTED, ACTIVE.
  * @property-read string|null $lastTestAt
  */

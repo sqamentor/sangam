@@ -9,7 +9,7 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code AiClassify} of sangam-api.yaml 0.1.0.
  *
  * @param key wire field {@code key}
- * @param version wire field {@code version}
+ * @param version wire field {@code version} (required)
  * @param labels wire field {@code labels}
  * @param fields wire field {@code fields}
  * @param threshold wire field {@code threshold}

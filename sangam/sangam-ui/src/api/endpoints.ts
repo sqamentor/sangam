@@ -41,6 +41,16 @@ export function taskSort(sort?: string): string | undefined {
 }
 
 /**
+ * A migration plan as sent for validation and execution: MigrationPlanRequest.mapEqualActivities and each
+ * MigrationInstruction.updateEventTrigger are primitives (refused when missing, Jackson 3). The plan is the screen's explicit
+ * instructions (generated with mapEqualActivities true, then edited), so equal activities are not mapped again (false), and each
+ * instruction's updateEventTrigger is sent as its box shows it (BatchMigration.tsx: checked={!!updateEventTrigger}).
+ */
+export function explicitPlan(plan: T.MigrationPlan): T.MigrationPlan & { mapEqualActivities: boolean } {
+  return { ...plan, mapEqualActivities: false, instructions: (plan.instructions ?? []).map((i) => ({ ...i, updateEventTrigger: !!i.updateEventTrigger })) };
+}
+
+/**
  * P13: the query a tree selection adds to one history log, by what that log's API filters on. The operation log and
  * the called-instance list have none (the server answers 400 FILTER_UNSUPPORTED rather than ignore a filter).
  */
@@ -291,7 +301,9 @@ export const api = {
     modifyPreview: (id: string, instructions: T.ModificationInstruction[]) =>
       http.post<T.ConsequencePreview>(`/process-instances/${enc(id)}/modify/preview`, { instructions }),
     modify: (id: string, instructions: T.ModificationInstruction[], reason: string, key?: string) =>
-      http.post<void>(`/process-instances/${enc(id)}/modify`, { instructions, reason }, key),
+      // ModifyRequest's skipCustomListeners / skipIoMappings are primitives (refused when missing, Jackson 3); the modify dialog does not
+      // offer them, so they are sent as an explicit false (listeners and IO mappings run)
+      http.post<void>(`/process-instances/${enc(id)}/modify`, { instructions, reason, skipCustomListeners: false, skipIoMappings: false }, key),
     moveAcross: (id: string, body: { fromActivityInstanceId: string; targetInstanceId: string; targetActivityId: string; reason: string }, key?: string) =>
       http.post<void>(`/process-instances/${enc(id)}/cross-boundary-move`, body, key), // (FC-17)
     /** InjectionRequest → InjectionResult (FC-15). */
@@ -315,7 +327,9 @@ export const api = {
       http
         .post<Record<string, unknown>>(
           '/ops/restarts',
-          { processDefinitionId: body.definitionId, processInstanceIds: body.instanceIds, startBeforeActivityIds: [body.startBeforeActivityId], initialVariables: body.initialVariables, reason: body.reason },
+          // RestartRequest's initialVariables and skipCustomListeners are primitives (refused when missing, Jackson 3): initialVariables is
+          // the dialog's box, skipCustomListeners is not offered and is sent as an explicit false
+          { processDefinitionId: body.definitionId, processInstanceIds: body.instanceIds, startBeforeActivityIds: [body.startBeforeActivityId], initialVariables: body.initialVariables, skipCustomListeners: false, reason: body.reason },
           key,
         )
         .then(A.normBatch),
@@ -505,7 +519,7 @@ export const api = {
       http.post<T.MigrationPlan>('/ops/migrations/plan', { sourceDefinitionId, targetDefinitionId, mapEqualActivities: true }),
     /** the plan endpoint validates the given instructions and returns valid / validationErrors. */
     validate: async (plan: T.MigrationPlan): Promise<T.MigrationValidation> => {
-      const r = await http.post<T.MigrationPlan & { valid?: boolean; validationErrors?: string[] }>('/ops/migrations/plan', { ...plan, mapEqualActivities: false });
+      const r = await http.post<T.MigrationPlan & { valid?: boolean; validationErrors?: string[] }>('/ops/migrations/plan', explicitPlan(plan));
       if ((r as unknown as T.MigrationValidation).instructionReports) return r as unknown as T.MigrationValidation;
       return { valid: !!r.valid, instructionReports: (r.validationErrors ?? []).map((e) => ({ instruction: { sourceActivityIds: [], targetActivityIds: [] }, failures: [e] })) };
     },
@@ -524,9 +538,13 @@ export const api = {
         .post<Record<string, unknown>>(
           '/ops/migrations/execute',
           {
-            plan: b.plan,
+            plan: explicitPlan(b.plan),
             processInstanceIds: b.query.instanceIds,
             filter: b.query.instanceIds ? undefined : A.toBatchFilter({ definitionId: b.plan.sourceDefinitionId, ...b.query }),
+            // MigrationExecuteRequest's skipCustomListeners / skipIoMappings are primitives (refused when missing, Jackson 3); the
+            // migration screen does not offer them, so they are sent as an explicit false
+            skipCustomListeners: false,
+            skipIoMappings: false,
             reason: b.reason,
             preHook: b.preHook,
             postModification: b.postModification, // (FC-18 1→N / N→1)

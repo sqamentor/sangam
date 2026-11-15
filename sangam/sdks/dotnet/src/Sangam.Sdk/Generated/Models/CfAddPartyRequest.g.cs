@@ -24,6 +24,9 @@ public sealed record CfAddPartyRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("representedBy")]
     public string? RepresentedBy { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("masked")]
     public bool? Masked { get; init; }
 }

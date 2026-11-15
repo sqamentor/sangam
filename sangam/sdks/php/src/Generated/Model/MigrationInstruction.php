@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read list<string>|null $sourceActivityIds (required)
  * @property-read list<string>|null $targetActivityIds (required)
- * @property-read bool|null $updateEventTrigger
+ * @property-read bool|null $updateEventTrigger (required)
  */
 final class MigrationInstruction implements \JsonSerializable
 {

@@ -12,8 +12,8 @@ package org.sangam.sdk.generated.model;
  * @param code wire field {@code code}
  * @param name wire field {@code name}
  * @param fromTime wire field {@code fromTime}
- * @param durationMinutes wire field {@code durationMinutes}
- * @param night wire field {@code night}
+ * @param durationMinutes wire field {@code durationMinutes} (required)
+ * @param night wire field {@code night} (required)
  * @param skills wire field {@code skills}
  * @param zoneId wire field {@code zoneId}
  * @param attributes wire field {@code attributes}

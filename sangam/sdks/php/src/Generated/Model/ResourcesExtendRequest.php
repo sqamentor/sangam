@@ -13,7 +13,7 @@ use Sangam\Sdk\Generated\Support;
  * Schema ResourcesExtendRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read string|null $newValidTo
- * @property-read int|null $version
+ * @property-read int|null $version (required)
  * @property-read string|null $reason
  */
 final class ResourcesExtendRequest implements \JsonSerializable

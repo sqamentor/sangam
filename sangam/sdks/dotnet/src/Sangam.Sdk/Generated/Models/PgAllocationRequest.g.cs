@@ -15,6 +15,9 @@ public sealed record PgAllocationRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("weights")]
     public global::System.Collections.Generic.Dictionary<string, object?>? Weights { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("allowOverAllocation")]
     public bool? AllowOverAllocation { get; init; }
 }

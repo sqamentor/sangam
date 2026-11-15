@@ -9,8 +9,8 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code PgGeneratePeriodsRequest} of sangam-api.yaml 0.1.0.
  *
  * @param frequency wire field {@code frequency}
- * @param fiscalStartYear wire field {@code fiscalStartYear}
- * @param dueOffsetDays wire field {@code dueOffsetDays}
+ * @param fiscalStartYear wire field {@code fiscalStartYear} (required)
+ * @param dueOffsetDays wire field {@code dueOffsetDays} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record PgGeneratePeriodsRequest(

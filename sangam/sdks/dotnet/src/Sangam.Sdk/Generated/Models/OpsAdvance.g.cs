@@ -15,6 +15,9 @@ public sealed record OpsAdvance
     [global::System.Text.Json.Serialization.JsonPropertyName("period")]
     public string? Period { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("value")]
     public long? Value { get; init; }
 

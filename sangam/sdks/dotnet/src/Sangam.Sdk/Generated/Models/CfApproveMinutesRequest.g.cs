@@ -9,6 +9,9 @@ namespace Sangam.Sdk.Generated.Models;
 /// </summary>
 public sealed record CfApproveMinutesRequest
 {
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("version")]
     public int? Version { get; init; }
 

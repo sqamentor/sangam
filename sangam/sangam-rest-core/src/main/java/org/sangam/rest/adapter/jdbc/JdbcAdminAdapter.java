@@ -136,7 +136,8 @@ public final class JdbcAdminAdapter implements AdminPort {
             checkRevision(in.revision(), cur.revision(), "OrgUnit", id);
             validateOrgUnit(t, in, id);
             OrgUnit o = new OrgUnit(id, t, in.parentId(), in.code(), in.name(), in.names(),
-                    in.level() == null ? cur.level() : in.level(), in.active(), in.attributes(), cur.revision() + 1);
+                    in.level() == null ? cur.level() : in.level(), in.active() == null ? cur.active() : in.active(),
+                    in.attributes(), cur.revision() + 1);
             orgUnits.in(t).put(id, o);
             audit.record(ctx, securityChain(ctx), "ORG_UNIT_CHANGED",
                     payload("change", "UPDATED", "orgUnitId", id, "code", o.code(), "parentId", o.parentId(),
@@ -239,7 +240,8 @@ public final class JdbcAdminAdapter implements AdminPort {
             checkRevision(in.revision(), cur.revision(), "Seat", id);
             validateSeat(t, in, id);
             Seat s = new Seat(id, t, in.orgUnitId(), in.code(), in.designation(), in.name(), in.hierarchyLevel(),
-                    in.reportsToSeatId(), in.roles() == null ? List.of() : List.copyOf(in.roles()), in.active(),
+                    in.reportsToSeatId(), in.roles() == null ? List.of() : List.copyOf(in.roles()),
+                    in.active() == null ? cur.active() : in.active(),
                     in.attributes(), cur.revision() + 1);
             seats.in(t).put(id, s);
             boolean moved = !Objects.equals(cur.orgUnitId(), s.orgUnitId());

@@ -14,8 +14,8 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read list<ModificationInstruction>|null $instructions (required)
  * @property-read string|null $reason (required)
- * @property-read bool|null $skipCustomListeners
- * @property-read bool|null $skipIoMappings
+ * @property-read bool|null $skipCustomListeners (required)
+ * @property-read bool|null $skipIoMappings (required)
  */
 final class ModifyRequest implements \JsonSerializable
 {

@@ -13,8 +13,8 @@ package org.sangam.sdk.generated.model;
  * @param weekdays wire field {@code weekdays}
  * @param from wire field {@code from}. Local time (HH:mm[:ss])
  * @param to wire field {@code to}. Local time (HH:mm[:ss])
- * @param slotMinutes wire field {@code slotMinutes}
- * @param unitsPerSlot wire field {@code unitsPerSlot}
+ * @param slotMinutes wire field {@code slotMinutes} (required)
+ * @param unitsPerSlot wire field {@code unitsPerSlot} (required)
  * @param validFrom wire field {@code validFrom}
  * @param validTo wire field {@code validTo}
  * @param attributes wire field {@code attributes}

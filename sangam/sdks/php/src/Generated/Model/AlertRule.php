@@ -19,7 +19,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read float|null $threshold (required)
  * @property-read string|null $channel (required)  One of: IN_APP, EMAIL, WEBHOOK.
  * @property-read list<string>|null $recipients
- * @property-read bool|null $active
+ * @property-read bool|null $active (required)
  */
 final class AlertRule implements \JsonSerializable
 {

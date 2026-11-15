@@ -11,7 +11,7 @@ package org.sangam.sdk.generated.model;
  * @param seatId wire field {@code seatId}
  * @param skills wire field {@code skills}
  * @param rotationId wire field {@code rotationId}
- * @param rotationOffset wire field {@code rotationOffset}
+ * @param rotationOffset wire field {@code rotationOffset} (required)
  * @param attributes wire field {@code attributes}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */

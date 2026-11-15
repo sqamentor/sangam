@@ -9,6 +9,9 @@ namespace Sangam.Sdk.Generated.Models;
 /// </summary>
 public sealed record CfVerifyRequest
 {
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("accept")]
     public bool? Accept { get; init; }
 

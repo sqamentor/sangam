@@ -300,7 +300,7 @@ schema("ModificationInstruction", "Instance modification instruction (O03, R49; 
        enums={"type": ["startBeforeActivity", "startAfterActivity", "startTransition", "cancelActivity",
                        "cancelActivityInstance", "cancelTransitionInstance"]})
 schema("ModifyRequest", "Modify a running instance; a reason is mandatory (R63).",
-       "instructions:list:ModificationInstruction reason skipCustomListeners:bool skipIoMappings:bool", ["instructions", "reason"])
+       "instructions:list:ModificationInstruction reason skipCustomListeners:bool skipIoMappings:bool", ["instructions", "reason", "skipCustomListeners", "skipIoMappings"])
 schema("TriggerRequest", "Signal one waiting execution (FC-12 triggerable tasks, receive tasks).",
        "executionId activityId variables:map reason")
 schema("ActivityInstance", "Activity instance tree.",
@@ -447,18 +447,18 @@ schema("BatchItem", "Per-item result.", "index:int rootId state error itemKey fi
 schema("BatchControlRequest", "Pause/resume/cancel/approve (four-eyes) a batch.", "action reason", ["action", "reason"],
        enums={"action": ["PAUSE", "RESUME", "CANCEL", "APPROVE"]})
 schema("MigrationInstruction", "Activity mapping; 1:N and N:1 allowed (FC-18).",
-       "sourceActivityIds:list:s targetActivityIds:list:s updateEventTrigger:bool", ["sourceActivityIds", "targetActivityIds"])
+       "sourceActivityIds:list:s targetActivityIds:list:s updateEventTrigger:bool", ["sourceActivityIds", "targetActivityIds", "updateEventTrigger"])
 schema("MigrationPlanRequest", "Migration plan input (R48).",
        "sourceDefinitionId targetDefinitionId mapEqualActivities:bool instructions:list:MigrationInstruction formMappings:map variables:map",
-       ["sourceDefinitionId", "targetDefinitionId"])
+       ["sourceDefinitionId", "targetDefinitionId", "mapEqualActivities"])
 schema("MigrationPlan", "Validated plan with dry-run count.",
        "sourceDefinitionId targetDefinitionId instructions:list:MigrationInstruction valid:bool validationErrors:list:s affectedInstances:long")
 schema("MigrationExecuteRequest", "Execute a migration as a batch.",
        "plan:MigrationPlanRequest processInstanceIds:list:s filter:BatchFilter skipCustomListeners:bool skipIoMappings:bool reason",
-       ["plan", "reason"])
+       ["plan", "reason", "skipCustomListeners", "skipIoMappings"])
 schema("RestartRequest", "Restart completed or cancelled instances (R63, PF-05).",
        "processDefinitionId processInstanceIds:list:s startBeforeActivityIds:list:s initialVariables:bool skipCustomListeners:bool reason",
-       ["processDefinitionId", "processInstanceIds", "reason"])
+       ["processDefinitionId", "processInstanceIds", "reason", "initialVariables", "skipCustomListeners"])
 schema("CleanupStatus", "History cleanup status (R29, PF-10).", "jobId dueDate:dt retries:int exceptionMessage removable:lmap")
 # Events
 schema("EventChannel", "Event channel (FC-03).",
@@ -593,7 +593,7 @@ schema("ConformanceResult", "Conformance of traces against the deployed BPMN (R6
        "fitness:num precision:num deviations:list:Deviation fixtureId")
 schema("DurationReportRow", "Instance duration report row (PF-07).", "period count:long avgMs:long minMs:long maxMs:long")
 schema("AlertRule", "KPI threshold alert (R65).", "id name kpi operator threshold:num channel recipients:list:s active:bool",
-       ["name", "kpi", "operator", "threshold", "channel"],
+       ["name", "kpi", "operator", "threshold", "channel", "active"],
        enums={"operator": [">", "<", ">=", "<="], "channel": ["IN_APP", "EMAIL", "WEBHOOK"]})
 schema("AgentUsage", "Agent usage and budgets (R72). costUnits and budget are AI usage units derived from tokens, not "
                      "money: they carry no currency and no amount is billed from them (InsightsPort.AgentUsage; money "
@@ -637,7 +637,7 @@ schema("User", "Identity (R67).", "id username displayName email active:bool gro
 schema("Group", "Group (R67).", "id name type members:int source", enums={"source": ["LOCAL", "OIDC", "LDAP", "SCIM"]})
 schema("IdentityProvider", "Identity provider (R50, R67).",
        "id name protocol issuer metadataUrl attributeMapping:smap mfaRequired:bool sessionTimeoutMin:int status lastTestAt:dt",
-       ["name", "protocol"], enums={"protocol": ["OIDC", "SAML2", "LDAP"], "status": ["DRAFT", "TESTED", "ACTIVE"]})
+       ["name", "protocol", "mfaRequired", "sessionTimeoutMin"], enums={"protocol": ["OIDC", "SAML2", "LDAP"], "status": ["DRAFT", "TESTED", "ACTIVE"]})
 schema("IdentityTestResult", "Connection test result.", "ok:bool message")
 schema("IdentitySyncResult", "Directory sync result.", "users:long groups:long")
 schema("ServicePrincipal", "Service principal bound to tenant and topics (R26, K14).",
@@ -663,7 +663,7 @@ schema("PageBlock", "Page block (R77).", "id kind title text query columns:list:
 schema("PageModel", "Versioned low-code page (R77, EC-03), authorized on the server.", "id key title version:int state blocks:list:PageBlock",
        ["key", "title"], enums={"state": ["DRAFT", "ACTIVE", "RETIRED"]})
 schema("PageSummary", "Page list entry.", "id key title version:int state")
-schema("DataObjectField", "Data-object field (R78).", "name type required:bool reference sensitive:bool", ["name", "type"],
+schema("DataObjectField", "Data-object field (R78).", "name type required:bool reference sensitive:bool", ["name", "type", "required", "sensitive"],
        enums={"type": ["string", "number", "boolean", "date", "reference", "json"]})
 schema("DataObjectDef", "Data object definition (R78, EC-06).", "id key name backing endpointRef version:int fields:list:DataObjectField",
        ["key", "name", "backing"], enums={"backing": ["DB", "REST"]},

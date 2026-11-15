@@ -13,7 +13,7 @@ use Sangam\Sdk\Generated\Support;
  * Schema RosterRestPortDecisionRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read int|null $version
- * @property-read bool|null $approved
+ * @property-read bool|null $approved (required)
  * @property-read string|null $reason
  */
 final class RosterRestPortDecisionRequest implements \JsonSerializable

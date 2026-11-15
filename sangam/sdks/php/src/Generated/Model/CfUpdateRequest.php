@@ -13,11 +13,11 @@ use Sangam\Sdk\Generated\Support;
  * Schema CfUpdateRequest of sangam-api.yaml 0.1.0.
  *
  * @property-read array<string, mixed>|null $attributes
- * @property-read bool|null $replace
+ * @property-read bool|null $replace (required)
  * @property-read string|null $title
  * @property-read string|null $priority
  * @property-read string|null $confidentiality
- * @property-read int|null $rowVersion
+ * @property-read int|null $rowVersion (required)
  */
 final class CfUpdateRequest implements \JsonSerializable
 {

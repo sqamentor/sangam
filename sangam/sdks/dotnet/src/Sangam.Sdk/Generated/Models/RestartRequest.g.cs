@@ -24,9 +24,15 @@ public sealed record RestartRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("startBeforeActivityIds")]
     public global::System.Collections.Generic.List<string>? StartBeforeActivityIds { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("initialVariables")]
     public bool? InitialVariables { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("skipCustomListeners")]
     public bool? SkipCustomListeners { get; init; }
 

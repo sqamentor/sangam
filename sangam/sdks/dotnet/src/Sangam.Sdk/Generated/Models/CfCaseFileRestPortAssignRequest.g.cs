@@ -15,6 +15,9 @@ public sealed record CfCaseFileRestPortAssignRequest
     [global::System.Text.Json.Serialization.JsonPropertyName("orgUnit")]
     public string? OrgUnit { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("rowVersion")]
     public long? RowVersion { get; init; }
 }

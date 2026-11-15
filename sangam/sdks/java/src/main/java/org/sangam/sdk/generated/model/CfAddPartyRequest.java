@@ -13,7 +13,7 @@ package org.sangam.sdk.generated.model;
  * @param role wire field {@code role}
  * @param capacity wire field {@code capacity}
  * @param representedBy wire field {@code representedBy}
- * @param masked wire field {@code masked}
+ * @param masked wire field {@code masked} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record CfAddPartyRequest(

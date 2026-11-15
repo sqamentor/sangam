@@ -15,7 +15,7 @@ package org.sangam.sdk.generated.model;
  * @param demandId wire field {@code demandId}
  * @param dutySeatId wire field {@code dutySeatId}
  * @param locationId wire field {@code locationId}
- * @param override wire field {@code override}
+ * @param override wire field {@code override} (required)
  * @param overrideReason wire field {@code overrideReason}
  * @param additionalProperties members not named in the contract schema (additionalProperties)
  */

@@ -302,3 +302,411 @@ corrections:
     to: "success response 201"
     reason: "RosterController.requestSwap answers 201 Created (Lists.created / ResponseEntity.created / status 201); the generator now reads the status from the controller source"
     decision: "owner precedent 2026-11-12 (0.1.0 unreleased; W2-C contract gaps)"
+  - method: POST
+    path: /process-instances/{id}/modify
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "ModifyRequest: skipCustomListeners, skipIoMappings optional"
+    to: "ModifyRequest: skipCustomListeners, skipIoMappings required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops/migrations/plan
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "MigrationInstruction: updateEventTrigger optional"
+    to: "MigrationInstruction: updateEventTrigger required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops/migrations/plan
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "MigrationPlanRequest: mapEqualActivities optional"
+    to: "MigrationPlanRequest: mapEqualActivities required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops/migrations/execute
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "MigrationInstruction: updateEventTrigger optional"
+    to: "MigrationInstruction: updateEventTrigger required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops/migrations/execute
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "MigrationPlanRequest: mapEqualActivities optional"
+    to: "MigrationPlanRequest: mapEqualActivities required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops/migrations/execute
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "MigrationExecuteRequest: skipCustomListeners, skipIoMappings optional"
+    to: "MigrationExecuteRequest: skipCustomListeners, skipIoMappings required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops/restarts
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RestartRequest: initialVariables, skipCustomListeners optional"
+    to: "RestartRequest: initialVariables, skipCustomListeners required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /analytics/alerts
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "AlertRule: active optional"
+    to: "AlertRule: active required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /analytics/alerts/{id}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "AlertRule: active optional"
+    to: "AlertRule: active required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /admin/identity-providers
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "IdentityProvider: mfaRequired, sessionTimeoutMin optional"
+    to: "IdentityProvider: mfaRequired, sessionTimeoutMin required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /admin/identity-providers/{id}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "IdentityProvider: mfaRequired, sessionTimeoutMin optional"
+    to: "IdentityProvider: mfaRequired, sessionTimeoutMin required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /data-objects
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "DataObjectField: required, sensitive optional"
+    to: "DataObjectField: required, sensitive required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /data-objects/{id}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "DataObjectField: required, sensitive optional"
+    to: "DataObjectField: required, sensitive required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ai/approvals/{id}/decide
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "AiDecide: approve optional"
+    to: "AiDecide: approve required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ai/classifications
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "AiClassify: version optional"
+    to: "AiClassify: version required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PATCH
+    path: /case-files/{id}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfUpdateRequest: replace, rowVersion optional"
+    to: "CfUpdateRequest: replace, rowVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /case-files/{id}/stage
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfStageRequest: rowVersion optional"
+    to: "CfStageRequest: rowVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /case-files/{id}/assign
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfCaseFileRestPortAssignRequest: rowVersion optional"
+    to: "CfCaseFileRestPortAssignRequest: rowVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /case-files/{id}/close
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfReasonRequest: rowVersion optional"
+    to: "CfReasonRequest: rowVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /case-files/{id}/reopen
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfReasonRequest: rowVersion optional"
+    to: "CfReasonRequest: rowVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /case-files/{id}/parties
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfAddPartyRequest: masked optional"
+    to: "CfAddPartyRequest: masked required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /case-files/{id}/documents
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfDocumentRequest: exhibit optional"
+    to: "CfDocumentRequest: exhibit required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /hearings/{id}/outcome
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfOutcomeRequest: adjourned optional"
+    to: "CfOutcomeRequest: adjourned required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /meetings/{id}/decisions
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfDecisionInput: votesFor, votesAgainst, abstentions optional"
+    to: "CfDecisionInput: votesFor, votesAgainst, abstentions required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /meetings/{id}/minutes/approve
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfApproveMinutesRequest: version optional"
+    to: "CfApproveMinutesRequest: version required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /action-items/{id}/verify
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfVerifyRequest: accept optional"
+    to: "CfVerifyRequest: accept required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /references
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CfRegisterRequest: allowDuplicate optional"
+    to: "CfRegisterRequest: allowDuplicate required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /channels/conversations/{id}/messages
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "ChannelAttachment: sizeBytes optional"
+    to: "ChannelAttachment: sizeBytes required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ledger/{ledger}/operations
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "LedgerOperationRequest: fromCommitment, fromEncumbrance, holdIfShort optional"
+    to: "LedgerOperationRequest: fromCommitment, fromEncumbrance, holdIfShort required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /ops-admin/sequences/{table}/advance
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "OpsAdvance: value optional"
+    to: "OpsAdvance: value required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /programme-periods/generate
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgGeneratePeriodsRequest: fiscalStartYear, dueOffsetDays optional"
+    to: "PgGeneratePeriodsRequest: fiscalStartYear, dueOffsetDays required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PATCH
+    path: /programmes/{id}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgUpdateProgrammeRequest: expectedVersion optional"
+    to: "PgUpdateProgrammeRequest: expectedVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /programme-targets/{id}/allocate
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgAllocationRequest: allowOverAllocation optional"
+    to: "PgAllocationRequest: allowOverAllocation required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /programmes/{id}/milestones
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgMilestoneRequest: seq optional"
+    to: "PgMilestoneRequest: seq required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PATCH
+    path: /programme-milestones/{id}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgMilestoneServiceProgress: expectedVersion, drop optional"
+    to: "PgMilestoneServiceProgress: expectedVersion, drop required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /programme-returns/{id}/values
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgReturnValuesRequest: expectedVersion optional"
+    to: "PgReturnValuesRequest: expectedVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /programme-returns/{id}/submit
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "PgVersionBody: expectedVersion optional"
+    to: "PgVersionBody: expectedVersion required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /resources/slot-templates
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "CalendarServiceSlotTemplate: slotMinutes, unitsPerSlot optional"
+    to: "CalendarServiceSlotTemplate: slotMinutes, unitsPerSlot required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /resources/bookings/quote
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "BookingModelHoldRequest: bump, waitlistIfFull optional"
+    to: "BookingModelHoldRequest: bump, waitlistIfFull required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /resources/bookings/hold
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "BookingModelHoldRequest: bump, waitlistIfFull optional"
+    to: "BookingModelHoldRequest: bump, waitlistIfFull required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /resources/bookings/hold-series
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "BookingModelHoldRequest: bump, waitlistIfFull optional"
+    to: "BookingModelHoldRequest: bump, waitlistIfFull required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /resources/bookings/hold-series
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "BookingModelRecurrence: interval, allOrNothing optional"
+    to: "BookingModelRecurrence: interval, allOrNothing required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /resources/bookings/{bookingId}/approval
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "ResourcesApprovalRequest: approved optional"
+    to: "ResourcesApprovalRequest: approved required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /resources/allotments/{allotmentId}/extend
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "ResourcesExtendRequest: version optional"
+    to: "ResourcesExtendRequest: version required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /queues/service-points/{servicePointId}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "QueueRestPortServicePointRequest: slaMinutes optional"
+    to: "QueueRestPortServicePointRequest: slaMinutes required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /rosters/shifts
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RosterRestPortShiftRequest: durationMinutes, night optional"
+    to: "RosterRestPortShiftRequest: durationMinutes, night required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: PUT
+    path: /rosters/periods/{periodId}/members/{personId}
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RosterRestPortMemberRequest: rotationOffset optional"
+    to: "RosterRestPortMemberRequest: rotationOffset required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /rosters/periods/{periodId}/demand
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RosterRestPortDemandRequest: requiredCount optional"
+    to: "RosterRestPortDemandRequest: requiredCount required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /rosters/periods/{periodId}/publication-decision
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RosterRestPortDecisionRequest: approved optional"
+    to: "RosterRestPortDecisionRequest: approved required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /rosters/periods/{periodId}/assignments
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RosterRestPortAssignRequest: override optional"
+    to: "RosterRestPortAssignRequest: override required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"
+  - method: POST
+    path: /rosters/swaps/{swapId}/decision
+    corrected: 2026-11-15
+    baseline: baseline/sangam-api-0.1.0.yaml
+    from: "RosterRestPortDecisionRequest: approved optional"
+    to: "RosterRestPortDecisionRequest: approved required"
+    reason: "each is a Java primitive in the bound request record; Jackson 3 refuses a missing or null value with 400 VALIDATION_FAILED (SL-81), so a request without it never worked (PrimitiveRequestFieldContractTest)"
+    decision: "owner brief 2026-11-15, round 4 lane D5 item 1 (0.1.0 unreleased; SL-81)"

@@ -45,6 +45,9 @@ public sealed record AlertRule
     [global::System.Text.Json.Serialization.JsonPropertyName("recipients")]
     public global::System.Collections.Generic.List<string>? Recipients { get; init; }
 
+    /// <summary>
+    /// Required.
+    /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("active")]
     public bool? Active { get; init; }
 }

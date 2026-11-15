@@ -12,7 +12,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * Schema PgUpdateProgrammeRequest of sangam-api.yaml 0.1.0.
  *
- * @property-read int|null $expectedVersion
+ * @property-read int|null $expectedVersion (required)
  * @property-read PgProgrammeInput|null $programme
  */
 final class PgUpdateProgrammeRequest implements \JsonSerializable

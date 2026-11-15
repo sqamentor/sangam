@@ -11,8 +11,8 @@ package org.sangam.sdk.generated.model;
  * @param processDefinitionId wire field {@code processDefinitionId} (required)
  * @param processInstanceIds wire field {@code processInstanceIds} (required)
  * @param startBeforeActivityIds wire field {@code startBeforeActivityIds}
- * @param initialVariables wire field {@code initialVariables}
- * @param skipCustomListeners wire field {@code skipCustomListeners}
+ * @param initialVariables wire field {@code initialVariables} (required)
+ * @param skipCustomListeners wire field {@code skipCustomListeners} (required)
  * @param reason wire field {@code reason} (required)
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)

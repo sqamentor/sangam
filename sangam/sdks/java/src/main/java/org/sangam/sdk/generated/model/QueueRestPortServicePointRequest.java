@@ -12,7 +12,7 @@ package org.sangam.sdk.generated.model;
  * @param resourceId wire field {@code resourceId}
  * @param calendarId wire field {@code calendarId}
  * @param tokenPrefix wire field {@code tokenPrefix}
- * @param slaMinutes wire field {@code slaMinutes}
+ * @param slaMinutes wire field {@code slaMinutes} (required)
  * @param priorityDecision wire field {@code priorityDecision}
  * @param routingDecision wire field {@code routingDecision}
  * @param config wire field {@code config}
