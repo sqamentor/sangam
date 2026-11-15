@@ -69,8 +69,8 @@ and fetch, extend, complete and fail external work over REST. They are outside t
 | E | Every `/api/v1/work` route requires the `WORK_EXECUTE` permission | `rest/web/WorkController` |
 
 **Gaps.**
-- **TM-5 (I/E, high; register SL-157). Status 2026-11-12: coded in Wave 2** (`EngineAdapterWorkAdapter` gives back a
-  leased item of another tenant and checks the tenant on every later call; tests not run). Finding as recorded: The worker fetch is not filtered by tenant on the adapter the server uses. With an
+- **TM-5 (I/E, high; register SL-157). Status 2026-11-12: coded in Wave 2; 2026-11-15: WorkerTenantIsolationH2Test passed in the ci18 H2 run** (`EngineAdapterWorkAdapter` gives back a
+  leased item of another tenant and checks the tenant on every later call; ITs not run). Finding as recorded: The worker fetch is not filtered by tenant on the adapter the server uses. With an
   `EngineAdapter` bean (always, in the server) the REST layer uses `EngineAdapterWorkAdapter`. Its `fetchAndLock` calls
   `OperatonEngineAdapter.fetchAndLockWork(workerId, topic, ...)`, which runs Operaton `fetchAndLock` without a tenant
   filter, and `map()` then labels every result with the caller's tenant (`ctx.tenantId()`). The leased item's own
@@ -99,7 +99,7 @@ out-of-process script worker, never in the engine.
 | T | Java serialization of variables off; XML external entities off | `engine/SangamProcessEnginePlugin` |
 
 **Gaps.**
-- **TM-9 (E, high; register SL-159, backlog M-061).** The out-of-process script worker does not exist (`sangam-flowable-ports/README.md` FC-27, FC-47:
+- **TM-9 (E, high; register SL-159, backlog M-061). Status 2026-11-15: coded** (`tools/sangam-script-worker` runs each script under nsjail, owner decisions 53, 77, 78, 89 and 128; script tasks are rewritten to the worker convention at deploy by `ScriptTaskDeployRewrite`; unit tests passed in the ci18 H2 run; a script under a real nsjail on Linux is not yet run). Finding as recorded: The out-of-process script worker does not exist (`sangam-flowable-ports/README.md` FC-27, FC-47:
   "script worker: WS-INTEGRATION"). There is no sandbox, CPU or memory limit for scripts anywhere.
 - **TM-10 (E, high; register SL-160).** Owner decision 2026-11-12: an allow-list at deploy (only reviewed delegate
   classes and expression functions are deployable; `SANGAM.md` X.0k). **Status: coded** (part A
