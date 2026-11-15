@@ -44,6 +44,10 @@ class OutboxDestinationPublishersTest {
             "IntegrationWiring.java|spec.substring(0, spec.length() - \":ordered\".length())",
             "sangam.integration.default-destinations: operator configuration",
             "IntegrationWiring.java|spec", "sangam.integration.default-destinations: operator configuration",
+            // decision 376 / G7 phase 3 blocker 2: the same rule in plain Java for every host (sangam-assembly)
+            "OutboxDestinations.java|spec.substring(0, spec.length() - ORDERED_SUFFIX.length())",
+            "sangam.integration.default-destinations: operator configuration",
+            "OutboxDestinations.java|spec", "sangam.integration.default-destinations: operator configuration",
             "PortsHistoryEventHandler.java|x", "configured extra history destinations",
             "CaseModuleNotifier.java|destination()",
             "the same CaseModuleNotifier.destination() is registered by CaseWiring.notifier (publishers.register(n.destination(), ...))",
