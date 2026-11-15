@@ -16,10 +16,10 @@ use Sangam\Sdk\Generated\Support;
  * @property-read string|null $xml
  * @property-read string|null $file
  * @property-read string|null $processId
- * @property-read array<string, mixed>|null $choices
+ * @property-read array<string, mixed>|null $choices Element id to the values to take, in order for repeated visits (M-128): for a gateway the outgoing flow id; for an activity with boundary events its own id (it completes) or the id of the boundary event that fires; for the start event of an event sub-process the flow node ids at which its event occurs (never asked for)
  * @property-read int|null $maxSteps
- * @property-read array<string, mixed>|null $state
- * @property-read string|null $choice
+ * @property-read array<string, mixed>|null $state The previous answer's state; with choice, the step-by-step form
+ * @property-read string|null $choice The value for the element the previous answer waits for; added after its earlier choices
  */
 final class ModelTokenWalkRequest implements \JsonSerializable
 {

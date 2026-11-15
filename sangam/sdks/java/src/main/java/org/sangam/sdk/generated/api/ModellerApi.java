@@ -81,7 +81,7 @@ public final class ModellerApi {
     /**
      * Token walk
      *
-     * <p>Reads the model only; nothing runs.
+     * <p>Reads the model only; nothing runs. Walks gateways, boundary events, event sub-processes, error and escalation propagation, compensation and terminate end events; each move names how the token got there (via FLOW, BOUNDARY, EVENT_SUB_PROCESS or COMPENSATION). 422 MODELLER_REJECTED when a choice names no outgoing flow or boundary event, or an event sub-process trigger names no flow node.
      *
      * <p>{@code POST /models/token-walk} (operationId {@code walkModelToken}); permission {@code package.read}; result stored atomically with the state change (x-sangam-idempotent).
      * @param body request body

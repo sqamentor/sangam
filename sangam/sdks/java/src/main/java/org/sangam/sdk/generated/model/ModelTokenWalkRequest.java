@@ -12,10 +12,10 @@ package org.sangam.sdk.generated.model;
  * @param xml wire field {@code xml}
  * @param file wire field {@code file}
  * @param processId wire field {@code processId}
- * @param choices wire field {@code choices}
+ * @param choices wire field {@code choices}. Element id to the values to take, in order for repeated visits (M-128): for a gateway the outgoing flow id; for an activity with boundary events its own id (it completes) or the id of the boundary event that fires; for the start event of an event sub-process the flow node ids at which its event occurs (never asked for)
  * @param maxSteps wire field {@code maxSteps}
- * @param state wire field {@code state}
- * @param choice wire field {@code choice}
+ * @param state wire field {@code state}. The previous answer's state; with choice, the step-by-step form
+ * @param choice wire field {@code choice}. The value for the element the previous answer waits for; added after its earlier choices
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record ModelTokenWalkRequest(
