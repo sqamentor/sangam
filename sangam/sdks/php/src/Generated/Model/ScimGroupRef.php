@@ -14,19 +14,19 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $value
  * @property-read string|null $display
- * @property-read string|null $$ref
+ * @property-read string|null $ref (wire name $ref)
  */
 final class ScimGroupRef implements \JsonSerializable
 {
     /**
      * @param string|null $value
      * @param string|null $display
-     * @param string|null $$ref
+     * @param string|null $ref
      */
     public function __construct(
         public readonly ?string $value = null,
         public readonly ?string $display = null,
-        public readonly ?string $$ref = null,
+        public readonly ?string $ref = null,
     ) {
     }
 
@@ -49,8 +49,8 @@ final class ScimGroupRef implements \JsonSerializable
         if ($this->display !== null) {
             $out['display'] = $this->display;
         }
-        if ($this->$ref !== null) {
-            $out['$ref'] = $this->$ref;
+        if ($this->ref !== null) {
+            $out['$ref'] = $this->ref;
         }
         return $out === [] ? new \stdClass() : $out;
     }

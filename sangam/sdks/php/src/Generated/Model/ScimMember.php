@@ -14,7 +14,7 @@ use Sangam\Sdk\Generated\Support;
  *
  * @property-read string|null $value (required)
  * @property-read string|null $display
- * @property-read string|null $$ref
+ * @property-read string|null $ref (wire name $ref)
  * @property-read string|null $type  One of: User, Group.
  */
 final class ScimMember implements \JsonSerializable
@@ -22,13 +22,13 @@ final class ScimMember implements \JsonSerializable
     /**
      * @param string|null $value
      * @param string|null $display
-     * @param string|null $$ref
+     * @param string|null $ref
      * @param string|null $type
      */
     public function __construct(
         public readonly ?string $value = null,
         public readonly ?string $display = null,
-        public readonly ?string $$ref = null,
+        public readonly ?string $ref = null,
         public readonly ?string $type = null,
     ) {
     }
@@ -53,8 +53,8 @@ final class ScimMember implements \JsonSerializable
         if ($this->display !== null) {
             $out['display'] = $this->display;
         }
-        if ($this->$ref !== null) {
-            $out['$ref'] = $this->$ref;
+        if ($this->ref !== null) {
+            $out['$ref'] = $this->ref;
         }
         if ($this->type !== null) {
             $out['type'] = $this->type;

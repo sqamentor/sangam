@@ -65,6 +65,18 @@ final class GeneratedSurfaceTest extends TestCase
         }
     }
 
+    public function testAWireNameThatIsNoPhpVariableKeepsItsJsonKey(): void
+    {
+        // "$ref" (SCIM) cannot follow a "$" in PHP source: the property is ref, the JSON key stays "$ref"
+        $g = \Sangam\Sdk\Generated\Model\ScimGroupRef::fromArray(['value' => 'g-1', '$ref' => 'https://x.example/Groups/g-1']);
+        self::assertSame('https://x.example/Groups/g-1', $g->ref);
+        self::assertSame(['value' => 'g-1', '$ref' => 'https://x.example/Groups/g-1'], json_decode(Json::encode($g), true));
+        $u = \Sangam\Sdk\Generated\Model\ScimUser::fromArray(
+            ['urn:sangam:params:scim:schemas:extension:2.0:User' => []]);
+        self::assertNotNull($u->urnSangamParamsScimSchemasExtension20User);
+        self::assertArrayHasKey('urn:sangam:params:scim:schemas:extension:2.0:User', json_decode(Json::encode($u), true));
+    }
+
     public function testModelsReadTheWireNamesAndKeepUndeclaredMembers(): void
     {
         $w = ExternalWork::fromArray(['id' => 'wk-1', 'lockVersion' => 3,

@@ -25,7 +25,7 @@ use Sangam\Sdk\Generated\Support;
  * @property-read list<ScimMultiValue>|null $emails
  * @property-read list<ScimMultiValue>|null $phoneNumbers
  * @property-read list<ScimGroupRef>|null $groups
- * @property-read ScimSangamUser|null $urn:sangam:params:scim:schemas:extension:2.0:User
+ * @property-read ScimSangamUser|null $urnSangamParamsScimSchemasExtension20User (wire name urn:sangam:params:scim:schemas:extension:2.0:User)
  * @property-read ScimMeta|null $meta
  */
 final class ScimUser implements \JsonSerializable
@@ -44,7 +44,7 @@ final class ScimUser implements \JsonSerializable
      * @param list<ScimMultiValue>|null $emails
      * @param list<ScimMultiValue>|null $phoneNumbers
      * @param list<ScimGroupRef>|null $groups
-     * @param ScimSangamUser|null $urn:sangam:params:scim:schemas:extension:2.0:User
+     * @param ScimSangamUser|null $urnSangamParamsScimSchemasExtension20User
      * @param ScimMeta|null $meta
      * @param array<string, mixed> $additionalProperties members not named in the schema
      */
@@ -62,7 +62,7 @@ final class ScimUser implements \JsonSerializable
         public readonly ?array $emails = null,
         public readonly ?array $phoneNumbers = null,
         public readonly ?array $groups = null,
-        public readonly ?ScimSangamUser $urn:sangam:params:scim:schemas:extension:2.0:User = null,
+        public readonly ?ScimSangamUser $urnSangamParamsScimSchemasExtension20User = null,
         public readonly ?ScimMeta $meta = null,
         public readonly array $additionalProperties = [],
     ) {
@@ -134,8 +134,8 @@ final class ScimUser implements \JsonSerializable
         if ($this->groups !== null) {
             $out['groups'] = $this->groups;
         }
-        if ($this->urn:sangam:params:scim:schemas:extension:2.0:User !== null) {
-            $out['urn:sangam:params:scim:schemas:extension:2.0:User'] = $this->urn:sangam:params:scim:schemas:extension:2.0:User;
+        if ($this->urnSangamParamsScimSchemasExtension20User !== null) {
+            $out['urn:sangam:params:scim:schemas:extension:2.0:User'] = $this->urnSangamParamsScimSchemasExtension20User;
         }
         if ($this->meta !== null) {
             $out['meta'] = $this->meta;

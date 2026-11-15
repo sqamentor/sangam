@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """PHP emitter: one readonly class per schema in Sangam\\Sdk\\Generated\\Model (fromArray / jsonSerialize, wire
-names as property names), one API class per tag in Sangam\\Sdk\\Generated\\Api and the SangamApis facade. Runtime: the
+names as property names; a wire name that is no PHP variable name gets a camel-case one, see prop_names), one API class per tag in Sangam\\Sdk\\Generated\\Api and the SangamApis facade. Runtime: the
 SDK's own HttpTransport (curl); no new dependency. PHP >= 8.2 (composer.json)."""
 from __future__ import annotations
 
@@ -32,6 +32,34 @@ def var(name: str, used: set[str]) -> str:
         i += "_"
     used.add(i)
     return i
+
+
+PHP_VARIABLE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+
+
+def prop_names(m: Model) -> dict[str, str]:
+    """PHP property name of every wire name of a model. A wire name that is a PHP variable name is the property name
+    (unchanged surface). Any other ("$ref", the SCIM extension URN "urn:...:User") cannot follow a "$" in PHP source:
+    it gets the camel-case identifier the Java surface uses (ref, urnSangamParamsScimSchemasExtension20User); the wire
+    name stays the JSON key in fromArray and jsonSerialize. "this" is refused by PHP as a promoted parameter."""
+    def plain(w: str) -> bool:
+        return bool(PHP_VARIABLE.match(w)) and w != "this"
+    taken = {p.wire for p in m.props if plain(p.wire)}
+    if m.extras is not None:
+        taken.add("additionalProperties")
+    names: dict[str, str] = {}
+    for p in m.props:
+        if plain(p.wire):
+            names[p.wire] = p.wire
+            continue
+        i = camel(p.wire)
+        if not plain(i):
+            i += "Value"
+        while i in taken:
+            i += "_"
+        taken.add(i)
+        names[p.wire] = i
+    return names
 
 
 def pq(s: str) -> str:
@@ -120,22 +148,24 @@ def model_file(c: Contract, m: Model) -> str:
     desc = pdoc((m.description or f"Contract schema {m.name}.") + f"\n\nSchema {m.name} of sangam-api.yaml {c.version}.")
     out += [f" * {l}" if l else " *" for l in desc.splitlines()]
     out.append(" *")
+    names = prop_names(m)
     for p in m.props:
         d = pdoc(p.description.replace("\n", " ")) + (f" One of: {', '.join(p.type.enum)}." if p.type.enum else "")
-        out.append(f" * @property-read {phpdoc(p.type)}|null ${p.wire}{' (required)' if p.required else ''}"
+        w = "" if names[p.wire] == p.wire else pdoc(f" (wire name {p.wire})")
+        out.append(f" * @property-read {phpdoc(p.type)}|null ${names[p.wire]}{w}{' (required)' if p.required else ''}"
                    + (f" {d}" if d.strip() else ""))
     out.append(" */")
     out.append(f"final class {m.name} implements \\JsonSerializable")
     out.append("{")
     out.append("    /**")
     for p in m.props:
-        out.append(f"     * @param {phpdoc(p.type)}|null ${p.wire}")
+        out.append(f"     * @param {phpdoc(p.type)}|null ${names[p.wire]}")
     if m.extras is not None:
         out.append("     * @param array<string, mixed> $additionalProperties members not named in the schema")
     out.append("     */")
     out.append("    public function __construct(")
     for p in m.props:
-        out.append(f"        public readonly {native(p.type)} ${p.wire} = null,")
+        out.append(f"        public readonly {native(p.type)} ${names[p.wire]} = null,")
     if m.extras is not None:
         if any(p.wire == "additionalProperties" for p in m.props):
             raise ValueError(f"{m.name}: property additionalProperties clashes with the extras map")
@@ -161,8 +191,8 @@ def model_file(c: Contract, m: Model) -> str:
     out.append("    {")
     out.append("        $out = " + ("$this->additionalProperties;" if m.extras is not None else "[];"))
     for p in m.props:
-        out.append(f"        if ($this->{p.wire} !== null) {{")
-        out.append(f"            $out[{pq(p.wire)}] = $this->{p.wire};")
+        out.append(f"        if ($this->{names[p.wire]} !== null) {{")
+        out.append(f"            $out[{pq(p.wire)}] = $this->{names[p.wire]};")
         out.append("        }")
     out.append("        return $out === [] ? new \\stdClass() : $out;")
     out.append("    }")
