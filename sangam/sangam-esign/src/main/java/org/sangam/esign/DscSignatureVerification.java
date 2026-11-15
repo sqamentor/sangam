@@ -139,7 +139,7 @@ public final class DscSignatureVerification implements DscSignatureVerifier {
             List<PDSignature> all = doc.getSignatureDictionaries();
             PDSignature sig = all.get(all.size() - 1);
             CMSSignedData cms = new CMSSignedData(new CMSProcessableByteArray(sig.getSignedContent(pdf)),
-                    sig.getContents(pdf));
+                    PdfSignatureValidator.cmsOf(sig.getContents(pdf)));
             if (cms.getSignerInfos().size() != 1) {
                 throw new IllegalStateException("expected one signer, found " + cms.getSignerInfos().size());
             }
