@@ -4,6 +4,9 @@ package org.sangam.engine.replay;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.operaton.bpm.engine.externaltask.ExternalTask;
@@ -31,6 +35,7 @@ import org.operaton.bpm.engine.impl.persistence.entity.ExecutionEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.ExternalTaskEntity;
 import org.operaton.bpm.engine.impl.persistence.entity.TimerEntity;
 import org.operaton.bpm.engine.variable.value.TypedValue;
+import org.sangam.core.time.BusinessClock;
 import org.sangam.engine.tx.CommandState;
 
 /**
@@ -58,25 +63,41 @@ import org.sangam.engine.tx.CommandState;
  *
  * A value the fixture cannot carry exactly (a double, a float, an object, a file) or a variable whose name collides
  * with a payload key is not converted: the listener's {@link CaptureListener#unsupported} is called with the reason.
+ *
+ * <p>Decision 354: a {@link LocalDate} variable is captured as a {@link LocalDateInZone} ({@code LOCAL_DATE} with its
+ * zone), never dropped. The zone is the business zone of the tenant of the object that took the input (the message's
+ * event subscription, the external task, the tenant the adapter correlated for), from the tenant zone source
+ * ({@link BusinessClock#system()}: the tenant profile zone the server installs, UTC for a shared or unknown tenant).
+ * Operaton's {@code null} tenant is the shared scope. UTC is recorded as the named zone {@code UTC} (the same rules as
+ * the offset {@code Z}), the form a fixture accepts.
  */
 public class CapturePoints {
 
     /** No listener: every method returns at once. */
-    public static final CapturePoints NONE = new CapturePoints(null, () -> null);
+    public static final CapturePoints NONE = new CapturePoints(null, () -> null, t -> null);
 
     private final CaptureListener listener;
     private final Supplier<Instant> engineClock;
+    private final Function<String, ZoneId> tenantZone;
     /** Attempts per timer job (TIMER_FIRED); a retried firing counts up. */
     private final Map<String, Integer> timerAttempts = new ConcurrentHashMap<>();
 
-    CapturePoints(CaptureListener listener, Supplier<Instant> engineClock) {
+    CapturePoints(CaptureListener listener, Supplier<Instant> engineClock, Function<String, ZoneId> tenantZone) {
         this.listener = listener;
         this.engineClock = engineClock;
+        this.tenantZone = tenantZone;
     }
 
-    /** {@link #NONE} when {@code listener} is null. */
+    /** {@link #NONE} when {@code listener} is null; tenant zones from {@link BusinessClock#system()}, read per input. */
     public static CapturePoints of(CaptureListener listener, Supplier<Instant> engineClock) {
-        return listener == null ? NONE : new CapturePoints(listener, Objects.requireNonNull(engineClock, "engineClock"));
+        return of(listener, engineClock, t -> BusinessClock.system().zone(t));
+    }
+
+    /** {@link #NONE} when {@code listener} is null; {@code tenantZone} gives a tenant's business zone (decision 354). */
+    public static CapturePoints of(CaptureListener listener, Supplier<Instant> engineClock,
+                                   Function<String, ZoneId> tenantZone) {
+        return listener == null ? NONE : new CapturePoints(listener, Objects.requireNonNull(engineClock, "engineClock"),
+                Objects.requireNonNull(tenantZone, "tenantZone"));
     }
 
     public boolean active() {
@@ -184,7 +205,7 @@ public class CapturePoints {
                     // the one the adapter that issued this correlation was called with, null on every other path
                     String key = businessKey != null ? businessKey : CommandState.of(cc).deliveredCorrelationKey();
                     message(sub.getEventName(), key, vars, sub.getExecutionId(), sub.getActivityId(),
-                            activityInstanceOf(sub.getExecution()));
+                            activityInstanceOf(sub.getExecution()), sub.getTenantId());
                 }
                 super.handleEvent(sub, payload, localPayload, payloadToTriggeredScope, businessKey, cc);
             }
@@ -194,12 +215,12 @@ public class CapturePoints {
     /**
      * A message correlation that will start an instance (no execution waits for it: {@code noWaitingExecution}),
      * reported before the start so it precedes every input the new instance takes. Execution and activity are not
-     * known yet (null).
+     * known yet (null). {@code tenantId}: the engine tenant the correlation is for (null: shared).
      */
-    public void messageStart(boolean noWaitingExecution, String messageName, String businessKey,
+    public void messageStart(boolean noWaitingExecution, String tenantId, String messageName, String businessKey,
                              Map<String, Object> variables) {
         if (listener != null && noWaitingExecution) {
-            message(messageName, businessKey, variables, null, null, null);
+            message(messageName, businessKey, variables, null, null, null, tenantId);
         }
     }
 
@@ -208,18 +229,18 @@ public class CapturePoints {
      * the correlation with the key the adapter was called with handed over to the delivery's capture point
      * (decision 332, {@link CorrelationKeyHandover#within}).
      */
-    public <T> T correlate(CommandContext cc, boolean noWaitingExecution, String messageName, String businessKey,
-                           Map<String, Object> variables, Supplier<T> correlation) {
-        messageStart(noWaitingExecution, messageName, businessKey, variables);
+    public <T> T correlate(CommandContext cc, boolean noWaitingExecution, String tenantId, String messageName,
+                           String businessKey, Map<String, Object> variables, Supplier<T> correlation) {
+        messageStart(noWaitingExecution, tenantId, messageName, businessKey, variables);
         return CorrelationKeyHandover.within(cc, businessKey, correlation);
     }
 
     private void message(String name, String correlationKey, Map<String, Object> variables, String executionId,
-                         String activityId, String activityInstanceId) {
+                         String activityId, String activityInstanceId, String tenantId) {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("messageName", name);
         p.put("correlationKey", correlationKey);
-        putVariables(p, variables, "message " + name);
+        putVariables(p, variables, "message " + name, tenantId);
         emit(new CapturedInput(CapturedInput.MESSAGE_DELIVERED, executionId, activityId, activityInstanceId, 1, now(),
                 null, null, p));
     }
@@ -243,7 +264,7 @@ public class CapturePoints {
         if (errorKey != null) {
             p.put(errorKey, errorValue);
         }
-        putVariables(p, variables, "external task " + workId);
+        putVariables(p, variables, "external task " + workId, t == null ? null : t.getTenantId());
         emit(new CapturedInput(CapturedInput.EXTERNAL_TASK_RESULT, t == null ? null : t.getExecutionId(),
                 t == null ? null : t.getActivityId(), t == null ? null : t.getActivityInstanceId(), Math.max(1, attemptNo),
                 now(), outcome, retriesLeft, p));
@@ -277,8 +298,11 @@ public class CapturePoints {
         return payload instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
     }
 
-    /** Adds the variables converted to replayable values; anything else is reported unsupported and left out. */
-    void putVariables(Map<String, Object> p, Map<String, Object> variables, String where) {
+    /**
+     * Adds the variables converted to replayable values; anything else is reported unsupported and left out. A date
+     * gets the business zone of {@code tenantId} (decision 354).
+     */
+    void putVariables(Map<String, Object> p, Map<String, Object> variables, String where, String tenantId) {
         if (variables == null) {
             return;
         }
@@ -288,7 +312,7 @@ public class CapturePoints {
                 continue;
             }
             Object v = e.getValue() instanceof TypedValue tv ? tv.getValue() : e.getValue();
-            Object r = replayable(v);
+            Object r = v instanceof LocalDate d ? new LocalDateInZone(d, zoneOf(tenantId)) : replayable(v);
             if (v != null && r == null) {
                 listener.unsupported(where + ": variable " + e.getKey() + " is a " + v.getClass().getName()
                         + ", which a replay fixture cannot carry exactly");
@@ -296,6 +320,12 @@ public class CapturePoints {
             }
             p.put(e.getKey(), r);
         }
+    }
+
+    /** The business zone of an engine tenant (null: shared), UTC as the named zone {@code UTC}. */
+    ZoneId zoneOf(String tenantId) {
+        ZoneId z = tenantZone.apply(tenantId);
+        return z == null || ZoneOffset.UTC.equals(z) ? ZoneId.of("UTC") : z;
     }
 
     /** The exact replayable form, or null when there is none (a null input gives null). */
