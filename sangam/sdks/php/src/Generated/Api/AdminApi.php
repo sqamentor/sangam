@@ -13,7 +13,7 @@ use Sangam\Sdk\Http\ApiRequest;
 use Sangam\Sdk\Http\HttpTransport;
 use Sangam\Sdk\Model\Page;
 
-/** Typed operations of Admin (36 operations). */
+/** Typed operations of Admin (37 operations). */
 final class AdminApi
 {
     public function __construct(private readonly Calls $calls)
@@ -619,6 +619,24 @@ final class AdminApi
     }
 
     /**
+     * Define a role
+     *
+     * Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
+     *
+     * PUT /admin/roles/{roleId} (operationId defineRole); permission policy.admin; result stored atomically with the state change.
+     * @param Model\RoleDefinition|array $body request body
+     * @return Model\RoleDefinition|null
+     */
+    public function defineRole(string $roleId, Model\RoleDefinition|array $body, ?RequestOptions $options = null): ?Model\RoleDefinition
+    {
+        $req = ApiRequest::put('/admin/roles/' . HttpTransport::seg((string) $roleId));
+        if ($body !== null) {
+            $req->body($body);
+        }
+        return $this->calls->model($req, $options, Model\RoleDefinition::class);
+    }
+
+    /**
      * Service principals
      *
      * Worker and integration principals (R26).
@@ -635,7 +653,7 @@ final class AdminApi
     /**
      * Create a service principal
      *
-     * Returns the secret once; only its hash is stored (R26).
+     * Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role (decisions 358, 368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller may not grant, both naming the scope.
      *
      * POST /admin/service-principals (operationId createServicePrincipal); permission tenant.admin; result stored atomically with the state change.
      * @param Model\ServicePrincipal|array $body request body

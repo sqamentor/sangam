@@ -12951,6 +12951,63 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '421':
           $ref: '#/components/responses/MisdirectedRequest'
+  /admin/roles/{roleId}:
+    put:
+      operationId: defineRole
+      tags:
+      - Admin
+      summary: Define a role
+      description: Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token
+        scope is bound to a service principal only when it is a defined role the caller may grant.
+      x-sangam-command-type: admin.role.define
+      x-sangam-idempotent: true
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/SeatHeader'
+      - $ref: '#/components/parameters/ActingForSeat'
+      x-sangam-permission: policy.admin
+      x-sangam-requirements:
+      - VI.4
+      - R41
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleDefinition'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDefinition'
+          headers:
+            Idempotent-Replayed:
+              $ref: '#/components/headers/Idempotent-Replayed'
+            Idempotency-Key-Expires:
+              $ref: '#/components/headers/Idempotency-Key-Expires'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '421':
+          $ref: '#/components/responses/MisdirectedRequest'
   /admin/service-principals:
     get:
       operationId: listServicePrincipals
@@ -12982,7 +13039,8 @@ paths:
       tags:
       - Admin
       summary: Create a service principal
-      description: Returns the secret once; only its hash is stored (R26).
+      description: 'Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role (decisions 358,
+        368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller may not grant, both naming the scope.'
       x-sangam-command-type: admin.service-principal.create
       x-sangam-idempotent: true
       parameters:
@@ -62773,6 +62831,38 @@ components:
           $ref: '#/components/schemas/ServicePrincipal'
         secret:
           type: string
+    RoleRule:
+      type: object
+      description: 'One rule of a role (decision 368): security permissions on a resource type and id; resourceId omitted or * = every id, deny
+        omitted = allow.'
+      properties:
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        deny:
+          type: boolean
+      required:
+      - resourceType
+      - permissions
+    RoleDefinition:
+      type: object
+      description: A role of the tenant (SEC_ROLE, decision 368); rules omitted = a role that grants nothing itself.
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleRule'
+      required:
+      - name
     OrgUnitImportResult:
       type: object
       description: 'Bulk org-unit import result (CSV: id,parentId,code,name,nameHi,level).'

@@ -58,6 +58,9 @@ public final class SecurityBootstrap {
                     if (security.tenants().find(c, tenant).isEmpty()) {
                         security.tenants().createTenant(c, platform, tenant, tenant, null, null, "dev", Map.of());
                         LOG.warn("DEV bootstrap: created tenant '{}'", tenant);
+                    } else {
+                        // decision 368: a tenant created before the platform role rows existed gets them (idempotent)
+                        security.roles().ensurePlatformRoles(c, platform, tenant);
                     }
                     if (security.policies().find(c, tenant, POLICY_ID).isEmpty()) {
                         List<String> subjects = adminGroups.stream().map(g -> SecurityIdentity.GROUP + g).toList();

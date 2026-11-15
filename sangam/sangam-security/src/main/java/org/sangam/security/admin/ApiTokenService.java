@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * Personal and service API tokens (FLOWABLE-INTO-OPERATON FC-42 {@code Token}; worker/service principals of R26 and IJ-01). A token is
  * {@code sgm_<tokenId>.<secret>}; only {@code SHA-256(secret)} is stored, the plaintext is returned once at issue.
- * Tokens carry an owner, a tenant, scopes (role ids the token may use, a subset of the owner's), an expiry and a
+ * Tokens carry an owner, a tenant, scopes (role ids the token may use, a subset of the owner's: decision 358), an expiry and a
  * revocation flag. Authentication compares hashes in constant time and records {@code last_used_at}.
  */
 public final class ApiTokenService {
@@ -44,22 +44,87 @@ public final class ApiTokenService {
                             Instant lastUsedAt, boolean revoked) {
     }
 
+    /**
+     * The roles a person holds now in a tenant: role bindings of the person, of its groups and of its seats, and the
+     * IdP roles mirrored as memberships ({@code PrincipalResolver#heldRoles}). Decision 358: a token's scopes must be a
+     * subset of these.
+     */
+    @FunctionalInterface
+    public interface HeldRoles {
+        Set<String> of(Connection c, String tenantId, String personId);
+    }
+
+    /** Stable code of a refused scope (decisions 358, 368): the scope is not a role the owner holds. */
+    public static final String SCOPE_NOT_HELD = "TOKEN_SCOPE_NOT_HELD";
+
     private final SecurityDialect dialect;
     private final AuthorizationService authz;
     private final SecurityAuditService audit;
+    private final HeldRoles held;
+    private final java.util.concurrent.atomic.AtomicBoolean breakGlassIssuerTaken = new java.util.concurrent.atomic.AtomicBoolean();
 
-    public ApiTokenService(SecurityDialect dialect, AuthorizationService authz, SecurityAuditService audit) {
+    public ApiTokenService(SecurityDialect dialect, AuthorizationService authz, SecurityAuditService audit, HeldRoles held) {
         this.dialect = dialect;
         this.authz = authz;
         this.audit = audit;
+        this.held = java.util.Objects.requireNonNull(held, "held roles");
     }
 
-    /** Issues a token for {@code ownerPersonId} (self-service for one's own tokens, else ADMIN on API_TOKEN). */
+    /**
+     * Issues a token for {@code ownerPersonId} (self-service for one's own tokens, else ADMIN on API_TOKEN). Decision
+     * 358: every scope must be a role the owner holds now ({@link HeldRoles}; for one's own token also a role of the
+     * caller's session); any other scope is refused by name with {@code 409 TOKEN_SCOPE_NOT_HELD} and nothing is
+     * stored. A service principal gets its roles first through {@code RoleAdminService#bind} (decision 368).
+     * Break-glass tokens are issued only through {@link #breakGlassIssuer()}.
+     */
     public IssuedToken issue(Connection c, SecurityIdentity actor, String ownerPersonId, String name, Set<String> scopes,
                              Instant expiresAt) {
         if (!actor.personId().equals(ownerPersonId)) {
             authz.require(c, actor, ResourceRegistry.API_TOKEN, Permission.ADMIN, ResourceRegistry.ANY_ID);
         }
+        Set<String> requested = scopes == null ? Set.of() : scopes;
+        if (!requested.isEmpty()) {
+            Set<String> holds = new LinkedHashSet<>(held.of(c, actor.tenantId(), ownerPersonId));
+            if (actor.personId().equals(ownerPersonId) && !actor.system()) {
+                holds.addAll(actor.roles());
+            }
+            List<String> notHeld = requested.stream().filter(s -> s == null || !holds.contains(s))
+                    .map(String::valueOf).sorted().toList();
+            if (!notHeld.isEmpty()) {
+                throw new SangamSecurityException.AdminConflict(SCOPE_NOT_HELD, "token scopes " + notHeld
+                        + " are not roles the owner " + ownerPersonId + " holds");
+            }
+        }
+        return store(c, actor, ownerPersonId, name, requested, expiresAt, false);
+    }
+
+    /**
+     * The one issuer of break-glass tokens (M-084, decision 358): the roles come from the tenant's token-class
+     * configuration after dual approval, not from the holder's roles, and every use raises an alarm
+     * ({@link BreakGlassUse}). It can be taken once; {@code BreakGlassService} takes it when it is constructed, so no
+     * other caller can reach this path.
+     */
+    public BreakGlassIssuer breakGlassIssuer() {
+        if (!breakGlassIssuerTaken.compareAndSet(false, true)) {
+            throw new IllegalStateException("the break-glass issuer of this token service is already taken");
+        }
+        return (c, approver, holderPersonId, name, roles, expiresAt) -> {
+            if (name == null || !name.startsWith(BREAK_GLASS_NAME_PREFIX)) {
+                throw new IllegalArgumentException("a break-glass token is named " + BREAK_GLASS_NAME_PREFIX + "<class>");
+            }
+            return store(c, approver, holderPersonId, name, roles == null ? Set.of() : roles, expiresAt, true);
+        };
+    }
+
+    /** Issues a break-glass token ({@link #breakGlassIssuer()}). */
+    @FunctionalInterface
+    public interface BreakGlassIssuer {
+        IssuedToken issue(Connection c, SecurityIdentity approver, String holderPersonId, String name, Set<String> roles,
+                          Instant expiresAt);
+    }
+
+    private IssuedToken store(Connection c, SecurityIdentity actor, String ownerPersonId, String name, Set<String> scopes,
+                              Instant expiresAt, boolean breakGlassIssue) {
         Instant now = Sql.dbNow(c, dialect);
         if (expiresAt == null || !expiresAt.isAfter(now) || expiresAt.isAfter(now.plusSeconds(366L * 24 * 3600))) {
             throw new SangamSecurityException.AdminConflict("INVALID_EXPIRY", "a token needs an expiry within one year");
@@ -70,13 +135,17 @@ public final class ApiTokenService {
         String id = Sql.newId().replace("-", "");
         Jdbc.update(c, "INSERT INTO SEC_API_TOKEN(token_id, tenant_id, owner_person_id, name, secret_hash, scopes, created_at,"
                         + " expires_at, last_used_at, revoked_at, created_by) VALUES (?,?,?,?,?,?,?,?,NULL,NULL,?)",
-                id, actor.tenantId(), ownerPersonId, name, hash(secretText), Sql.toJson(scopes == null ? List.of() : List.copyOf(scopes)),
+                id, actor.tenantId(), ownerPersonId, name, hash(secretText), Sql.toJson(List.copyOf(scopes)),
                 now, expiresAt, actor.personId());
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("token_id", id);
         p.put("owner_person_id", ownerPersonId);
         p.put("name", name);
         p.put("expires_at", expiresAt);
+        p.put("scopes", scopes.stream().map(String::valueOf).sorted().toList());
+        if (breakGlassIssue) {
+            p.put("break_glass", true);
+        }
         audit.security(c, actor, SecurityEventType.API_TOKEN_ISSUED, p);
         return new IssuedToken(id, PREFIX + id + "." + secretText, expiresAt);
     }

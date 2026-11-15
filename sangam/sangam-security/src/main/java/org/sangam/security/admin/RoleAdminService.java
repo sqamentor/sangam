@@ -140,6 +140,54 @@ public final class RoleAdminService {
                         Jdbc.instant(rs, "valid_to")), actor.tenantId(), roleId);
     }
 
+    private volatile Set<String> platformRoles = Set.of();
+
+    /**
+     * The platform groups used as token scopes (decision 368), from the code that grants them: the server passes the
+     * keys of its group permission map. Each becomes a role row of every tenant at tenant set-up
+     * ({@link #ensurePlatformRoles}); a role id must be a valid role id.
+     */
+    public void usePlatformRoles(Set<String> roleIds) {
+        Set<String> ids = new java.util.TreeSet<>();
+        for (String r : roleIds) {
+            if (r == null || !r.matches(ROLE_ID_PATTERN)) {
+                throw new IllegalArgumentException("not a valid role id: " + r);
+            }
+            ids.add(r);
+        }
+        this.platformRoles = Set.copyOf(ids);
+    }
+
+    /** The platform roles of {@link #usePlatformRoles} (sorted). */
+    public List<String> platformRoles() {
+        return platformRoles.stream().sorted().toList();
+    }
+
+    /** Role ids: what {@link #defineRole} and the role-definition path accept. */
+    public static final String ROLE_ID_PATTERN = "[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}";
+
+    /**
+     * Decision 368: creates the role row (SEC_ROLE) of each platform role the tenant lacks, with no rules of its own
+     * (what the group grants stays in the code that grants it). A role an administrator has defined already is never
+     * overwritten. Idempotent; runs when a tenant is set up ({@code TenantAdminService#createTenant}) and from the
+     * development bootstrap for a tenant that exists. Returns the role ids created (audited as {@code GRANT_CHANGED}).
+     */
+    public List<String> ensurePlatformRoles(Connection c, SecurityIdentity platformAdmin, String tenantId) {
+        List<String> created = new ArrayList<>();
+        Instant now = Sql.dbNow(c, dialect);
+        for (String roleId : platformRoles()) {
+            if (Sql.insertIfAbsent(c, dialect, "INSERT INTO SEC_ROLE(tenant_id, role_id, name, rules, updated_by, updated_at)"
+                    + " VALUES (?,?,?,?,?,?)", tenantId, roleId, roleId, "[]", platformAdmin.personId(), now)) {
+                created.add(roleId);
+            }
+        }
+        if (!created.isEmpty()) {
+            audit.securityIn(c, tenantId, platformAdmin, SecurityEventType.GRANT_CHANGED,
+                    Map.of("platform_roles_created", List.copyOf(created)));
+        }
+        return created;
+    }
+
     /**
      * Bootstraps a new tenant (AJ-01 step 2): creates the {@code tenant-admin} role and appoints <b>two</b>
      * administrators (two-person rule). Runs as the tenant's system principal on behalf of the platform admin.

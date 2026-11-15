@@ -3,6 +3,7 @@ package org.sangam.security.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -54,6 +55,22 @@ class TenantIsolationH2Test {
         AuthorizationService authz = new AuthorizationService(
                 new PolicyCompiler(SecurityDialect.H2, new ResourceRegistry(), Duration.ZERO), audit);
         tenants = new TenantAdminService(SecurityDialect.H2, authz, audit);
+        // decision 368: the set-up step SangamSecurity binds; recorded here
+        tenants.useTenantSetup((conn, admin, tenant) -> setUp.add(tenant));
+    }
+
+    private final List<String> setUp = new java.util.ArrayList<>();
+
+    @Test
+    void eachCreatedTenantRunsTheSetUpStepAndNoneIsCreatedWithoutOne() {
+        tenants.createTenant(c, platform, "h1", "H1", null, null, null, Map.of());
+        assertEquals(List.of("h1"), setUp, "the set-up step runs in the creating transaction");
+        TenantAdminService unbound = new TenantAdminService(SecurityDialect.H2,
+                new AuthorizationService(new PolicyCompiler(SecurityDialect.H2, new ResourceRegistry(), Duration.ZERO),
+                        new SecurityAuditService(SecurityDialect.H2)), new SecurityAuditService(SecurityDialect.H2));
+        assertThrows(IllegalStateException.class,
+                () -> unbound.createTenant(c, platform, "h2", "H2", null, null, null, Map.of()));
+        assertTrue(tenants.find(c, "h2").isEmpty(), "refused before anything is stored");
     }
 
     @AfterEach

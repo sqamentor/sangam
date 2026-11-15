@@ -7,7 +7,7 @@ using global::Sangam.Sdk.Http;
 using M = global::Sangam.Sdk.Generated.Models;
 
 /// <summary>
-/// Typed operations of Admin (36 operations).
+/// Typed operations of Admin (37 operations).
 /// </summary>
 public sealed class AdminApi
 {
@@ -432,6 +432,18 @@ public sealed class AdminApi
     }
 
     /// <summary>
+    /// Define a role
+    /// Defines or replaces a role of the caller's tenant (decision 368; CHANGE_GRANT on ROLE roleId; GRANT_CHANGED). A requested token scope is bound to a service principal only when it is a defined role the caller may grant.
+    /// PUT /admin/roles/{roleId} (operationId defineRole); permission policy.admin; result stored atomically with the state change.
+    /// </summary>
+    public async global::System.Threading.Tasks.Task<M.RoleDefinition?> DefineRoleAsync(string roleId, M.RoleDefinition body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)
+    {
+        var req = ApiRequest.Put($"/admin/roles/{HttpTransport.Seg(GeneratedCalls.Str(roleId)!)}");
+        if (body is not null) req.WithBody(body);
+        return await _calls.JsonAsync<M.RoleDefinition?>(req, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Service principals
     /// Worker and integration principals (R26).
     /// GET /admin/service-principals (operationId listServicePrincipals); permission admin.read.
@@ -444,7 +456,7 @@ public sealed class AdminApi
 
     /// <summary>
     /// Create a service principal
-    /// Returns the secret once; only its hash is stored (R26).
+    /// Returns the secret once; only its hash is stored (R26). Each scope is first bound to the principal as a role (decisions 358, 368): 409 UNKNOWN_ROLE for a scope that is no defined role of the tenant, 403 for a scope the caller may not grant, both naming the scope.
     /// POST /admin/service-principals (operationId createServicePrincipal); permission tenant.admin; result stored atomically with the state change.
     /// </summary>
     public async global::System.Threading.Tasks.Task<M.ServicePrincipalSecret?> CreateServicePrincipalAsync(M.ServicePrincipal body, RequestOptions? options = null, global::System.Threading.CancellationToken cancellationToken = default)

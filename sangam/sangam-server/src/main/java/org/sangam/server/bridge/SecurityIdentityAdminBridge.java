@@ -26,9 +26,12 @@ import org.sangam.rest.support.RestProperties;
 import org.sangam.rest.support.TxSupport;
 import org.sangam.security.SangamSecurity;
 import org.sangam.security.admin.ApiTokenService;
+import org.sangam.security.admin.RoleAdminService;
 import org.sangam.security.admin.SecurityDirectoryService;
 import org.sangam.security.org.OrgModel;
 import org.sangam.security.policy.AuthorizedQueryBuilder;
+import org.sangam.security.policy.Permission;
+import org.sangam.security.policy.ResourceRegistry;
 
 /**
  * sangam-rest {@link IdentityAdminPort} on sangam-security where the security module has the service:
@@ -260,10 +263,70 @@ public final class SecurityIdentityAdminBridge implements IdentityAdminPort {
             for (String topic : p.topics()) {
                 security.workers().bind(c, actor, owner, topic);
             }
+            bindScopes(c, actor, owner, p.scopes());
             return security.tokens().issue(c, actor, owner, p.name(), new LinkedHashSet<>(p.scopes()), expires);
         });
         return new ServicePrincipalSecret(new ServicePrincipal(issued.tokenId(), p.name(), List.copyOf(p.scopes()),
                 List.copyOf(p.topics()), issued.expiresAt(), null, "ACTIVE"), issued.plaintext());
+    }
+
+    /**
+     * Decisions 358 and 368: the service principal first gets each requested scope as a role, through
+     * {@code RoleAdminService#bind}, so the token's scopes are roles its owner holds. A scope it holds already is not
+     * bound again. bind refuses a scope that is no defined role of the tenant ({@code 409 UNKNOWN_ROLE}, naming it) and
+     * a scope the caller has no right to grant ({@code 403 ACTION_NOT_PERMITTED}, named here); either refusal rolls the
+     * whole creation back.
+     */
+    private void bindScopes(Connection c, SecurityIdentity actor, String owner, List<String> scopes) {
+        Set<String> held = security.principals().heldRoles(c, actor.tenantId(), owner);
+        for (String scope : new LinkedHashSet<>(scopes)) {
+            if (scope == null || scope.isBlank()) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "a scope is a role id").with("field", "scopes");
+            }
+            if (held.contains(scope)) {
+                continue;
+            }
+            try {
+                security.roles().bind(c, actor, scope, SecurityIdentity.USER + owner, null, null);
+            } catch (SangamSecurityException.AccessDenied e) {
+                throw new SangamSecurityException.AccessDenied("scope " + scope + ": " + e.getMessage()
+                        + " (granting role " + scope + " needs CHANGE_GRANT on ROLE " + scope + ")", e.policyVersion());
+            }
+        }
+    }
+
+    @Override
+    public RoleDefinition defineRole(RequestContext ctx, String roleId, RoleDefinition role) {
+        if (roleId == null || !roleId.matches(RoleAdminService.ROLE_ID_PATTERN)) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "not a valid role id").with("field", "roleId");
+        }
+        if (role == null || role.name() == null || role.name().isBlank()) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "name is required").with("field", "name");
+        }
+        List<RoleAdminService.RoleRule> rules = new ArrayList<>();
+        for (RoleRule r : role.rules() == null ? List.<RoleRule>of() : role.rules()) {
+            if (r == null || r.resourceType() == null || r.resourceType().isBlank() || r.permissions() == null
+                    || r.permissions().isEmpty()) {
+                throw ApiProblem.badRequest("VALIDATION_FAILED", "a rule needs a resource type and permissions")
+                        .with("field", "rules");
+            }
+            Set<Permission> perms = java.util.EnumSet.noneOf(Permission.class);
+            for (String name : r.permissions()) {
+                try {
+                    perms.add(Permission.parse(name));
+                } catch (IllegalArgumentException e) {
+                    throw ApiProblem.badRequest("VALIDATION_FAILED", "unknown permission " + name).with("field", "rules");
+                }
+            }
+            rules.add(new RoleAdminService.RoleRule(r.resourceType(),
+                    r.resourceId() == null || r.resourceId().isBlank() ? ResourceRegistry.ANY_ID : r.resourceId(), perms,
+                    Boolean.TRUE.equals(r.deny())));
+        }
+        run(c -> {
+            security.roles().defineRole(c, actor(ctx), roleId, role.name(), rules);
+            return null;
+        });
+        return new RoleDefinition(roleId, role.name(), role.rules() == null ? List.of() : List.copyOf(role.rules()));
     }
 
     @Override

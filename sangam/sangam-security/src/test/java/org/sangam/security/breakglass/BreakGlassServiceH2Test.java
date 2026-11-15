@@ -50,6 +50,8 @@ class BreakGlassServiceH2Test {
     private ApiTokenService tokens;
     private BreakGlassService service;
     private final List<Map<String, Object>> alarms = new ArrayList<>();
+    /** Roles each person holds (decision 358); the holder holds no break-glass role of its own. */
+    private final Map<String, Set<String>> heldRoles = Map.of("holder", Set.of("reader"));
 
     @BeforeEach
     void db() throws Exception {
@@ -94,7 +96,8 @@ class BreakGlassServiceH2Test {
         SecurityAuditService audit = new SecurityAuditService(SecurityDialect.H2);
         AuthorizationService authz = new AuthorizationService(
                 new PolicyCompiler(SecurityDialect.H2, new ResourceRegistry(), Duration.ZERO), audit);
-        tokens = new ApiTokenService(SecurityDialect.H2, authz, audit);
+        // decision 358: the roles each person holds (an ordinary token's scopes must be among them)
+        tokens = new ApiTokenService(SecurityDialect.H2, authz, audit, (conn, tenant, person) -> heldRoles.getOrDefault(person, Set.of()));
         service = new BreakGlassService(SecurityDialect.H2, authz, audit, new TenantAdminService(SecurityDialect.H2, authz, audit),
                 tokens);
         tokens.useBreakGlass(service::used);
@@ -275,6 +278,27 @@ class BreakGlassServiceH2Test {
         assertNull(who.attributes().get(BreakGlassService.ATTR_GRANT), "the grant row decides, not the name");
         assertEquals(0, events("BREAK_GLASS_USED").size());
         assertTrue(alarms.isEmpty());
+    }
+
+    @Test
+    void breakGlassRolesComeFromTheTokenClassNotFromTheHoldersRoles() {
+        // decision 358: the holder holds no tenant-admin role, so an ordinary token with it is refused by name ...
+        SangamSecurityException.AdminConflict refused = assertThrows(SangamSecurityException.AdminConflict.class,
+                () -> tokens.issue(c, admin("ap1"), "holder", "ordinary", Set.of("tenant-admin"),
+                        java.time.Instant.now().plusSeconds(600)));
+        assertEquals(ApiTokenService.SCOPE_NOT_HELD, refused.code());
+        assertTrue(refused.getMessage().contains("tenant-admin"), refused.getMessage());
+        // ... while the break-glass path, after dual approval, issues the class roles
+        BreakGlassService.Grant g = requested();
+        service.approve(c, admin("ap1"), g.grantId());
+        String plaintext = service.approve(c, admin("ap2"), g.grantId()).token().orElseThrow().plaintext();
+        assertEquals(Set.of("tenant-admin"), tokens.authenticate(c, plaintext, null).orElseThrow().roles());
+    }
+
+    @Test
+    void theBreakGlassIssuerIsTakenOnceByTheBreakGlassService() {
+        // decision 358: no caller other than BreakGlassService reaches the break-glass issuer
+        assertThrows(IllegalStateException.class, () -> tokens.breakGlassIssuer());
     }
 
     @Test
