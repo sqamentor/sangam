@@ -126,6 +126,26 @@
       <artifactId>sangam-assembly</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- Extraction phase 3 (decisions 276, 277): the plain-Java TxSupport contract and the JDBC stores and ports that
+         need it (idempotency store, audit port), which this host's JtaTxSupport serves. Spring-free (decision 285;
+         HostFrameworkBoundaryTest); its optional module dependencies do not reach this host. -->
+    <dependency>
+      <groupId>io.github.sqamentor</groupId>
+      <artifactId>sangam-rest-core</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <!-- its operaton-engine dependency would bring spring-beans and spring-core back (D-38, coordinator order D-5
+             (3)); excluded as on operaton-bpm-quarkus-engine above, checked by EngineWithoutSpringTest -->
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-beans</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>spring-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- Operaton's Quarkus engine extension (runtime part; the deployer's own build runs the Quarkus augmentation) -->
     <dependency>
       <groupId>org.operaton.bpm.quarkus</groupId>

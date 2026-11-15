@@ -87,6 +87,57 @@ class QuarkusHostTest {
     }
 
     @Test
+    void theAttributionTenantIsTheAssemblysOneRule() {
+        // SL-86 on this host (blocker 1 of phase 3): the plain-Java resolver the Spring host reads as well
+        assertEquals("default", host(Map.of()).attributionTenant());
+        assertEquals("default", host(Map.of("sangam.tenant.default", " ")).attributionTenant());
+        assertEquals("RJ", host(Map.of("sangam.tenant.default", " RJ ")).attributionTenant());
+        IllegalStateException shared = assertThrows(IllegalStateException.class,
+                () -> host(Map.of("sangam.tenant.default", "-")));
+        assertTrue(shared.getMessage().startsWith("sangam.tenant.default: "), shared.getMessage());
+    }
+
+    @Test
+    void theOutboxDestinationsAreTheAssemblysRuleAndUndeliverableOnesRefuseTheStart() {
+        // blocker 2 of phase 3: the fixed list is routed; this host has no roll-up or projection publisher
+        org.sangam.integration.relay.OutboxWriter.SubscriptionResolver r = host(Map.of(
+                "sangam.integration.default-destinations", "readmodel,payments:ordered")).outboxDestinations().resolver();
+        assertEquals(List.of(org.sangam.core.layer.Outbox.Destination.unordered("readmodel"),
+                org.sangam.core.layer.Outbox.Destination.ordered("payments")),
+                List.copyOf(r.destinations("T1", "sangam.history.process.end")));
+        IllegalStateException rollup = assertThrows(IllegalStateException.class, () -> host(Map.of(
+                "sangam.cell.id", "c1", "sangam.cell.rollup.ingest-url", "https://rollup.example")));
+        assertTrue(rollup.getMessage().startsWith("OUTBOX_DESTINATION_NOT_DELIVERED: the quarkus host"),
+                rollup.getMessage());
+        IllegalStateException sink = assertThrows(IllegalStateException.class, () -> host(Map.of(
+                "sangam.history.projection.search.url", "https://search.example")));
+        assertTrue(sink.getMessage().contains("sangam.history.projection.search.url"), sink.getMessage());
+    }
+
+    @Test
+    void theTxSupportRunsOnTheEnginesTransactionManagerAndDataSource() {
+        // blocker 3 of phase 3: the identity the engine guard checks for the shared transaction
+        QuarkusHost host = host(Map.of());
+        JtaTxSupport tx = host.txSupport();
+        assertTrue(tx.transactionManager() == host.transactions().transactionManager());
+        assertTrue(tx.dataSource() == host.transactions().dataSource());
+        assertEquals(org.sangam.core.layer.Dialect.POSTGRESQL, tx.dialect(), "H2 in PostgreSQL mode");
+        assertTrue(tx == host.txSupport(), "one TxSupport per host");
+    }
+
+    @Test
+    void theLifecycleAuthorizerIsRefusedByNameWithoutASecurityModule() {
+        // blocker 4 of phase 3, decision 374: never an allow-everything authorizer, also with the module switched off
+        for (Map<String, String> config : List.of(Map.<String, String>of(),
+                Map.of("sangam.modules.security.enabled", "false"))) {
+            IllegalStateException refused = assertThrows(IllegalStateException.class,
+                    () -> host(config).lifecycleAuthorizer());
+            assertTrue(refused.getMessage().startsWith("SECURITY_MODULE_NOT_BOUND: the quarkus host"),
+                    refused.getMessage());
+        }
+    }
+
+    @Test
     void suppliesExactlyTheFiveSeams() {
         Set<Capability> supplied = host(Map.of()).seams().capabilities();
         for (Capability c : SEAMS) {

@@ -78,16 +78,21 @@ Phase 3 (decision 276) brings the audit chain, the idempotency store, the outbox
 
 ### What does not work yet
 
-The integration services themselves are **not constructed on this host**. `audit-chain`, `idempotency-store` and `outbox-relay-inbox` are still reported missing, so every start is still refused with `CAPABILITY_MISSING`. A capability is reported present only when its service really runs; none of the three does.
+The integration services themselves are **not constructed on this host yet**. `audit-chain`, `idempotency-store` and `outbox-relay-inbox` are still reported missing, so every start is still refused with `CAPABILITY_MISSING`. A capability is reported present only when its service really runs; none of the three does.
 
-The rest of phase 3 waits for these decisions and changes, none of which this module can make alone:
+Round 5 (lane q1) removed four of the five blockers of phase 3 in code. The fifth needs an owner decision:
 
-1. **Attribution tenant.** The history-to-outbox handler needs the attribution tenant. Its one resolver, `AttributionTenant`, lives in `sangam-server` and reads Spring's `Environment`. It must become a plain-Java function before the assembly can call it.
-2. **Outbox destinations.** The rule that adds the roll-up and history-projection destinations is a static method of the Spring class `IntegrationWiring`. It must move to plain Java, or this host must refuse those settings by name.
-3. **Transactions for the idempotency store and the audit port.** `JdbcIdempotencyAdapter` and `JdbcAuditAdapter` need a `TxSupport` (join, always-new transaction, rollback-only, after-commit). The only implementation is Spring's. `ConnectionBinding` offers one joining transaction and nothing else, so a JTA `TxSupport` needs a design decision (suspend and resume on Narayana) and its own integrity tests.
-4. **Lifecycle authorizer.** The maintenance sweeps call the instance lifecycle service, which needs an authorizer from the security area (phase 2). Without security the Spring wiring uses a no-op authorizer; on this host that would be a silent downgrade.
-5. **Order of engine build and capability check.** The inbox, the reconciliation engine and the audit port need the built engine, but this host checks its capabilities before the engine is built. The rule for claiming such a capability is not decided.
-
+1. **Attribution tenant: DONE.** The one resolver is plain Java: `org.sangam.assembly.host.AttributionTenant.resolve(SangamProperties)`. The Spring host's `org.sangam.server.config.AttributionTenant` now only reads its `Environment` through it. `QuarkusHost.attributionTenant()` resolves it at construction; the reserved shared key `-` refuses the start, naming `sangam.tenant.default`.
+2. **Outbox destinations: DONE.** The rule is plain Java: `org.sangam.assembly.integration.OutboxDestinations`. A host hands in the destinations it has a publisher for (`Routes`). This host has no roll-up or history-projection publisher (`QuarkusHost.OUTBOX_ROUTES` is empty), so `sangam.cell.id` with `sangam.cell.rollup.ingest-url`, and any `sangam.history.projection.{search.url,kafka.topic,datalake.bucket}`, refuse the start with `OUTBOX_DESTINATION_NOT_DELIVERED`, naming each key. Open: the Spring host's `IntegrationWiring.subscriptions/merge` and `HistoryProjectionWiring.destinations` should call this class (a REQUEST for the owner of those files).
+3. **Transactions for the idempotency store and the audit port: DONE.** `JtaTxSupport` is the `TxSupport` of this host, on the engine's own Narayana transaction manager and Agroal data source (`QuarkusHost.txSupport()`):
+   - joining or owning a transaction;
+   - an always-new transaction that suspends and resumes the running one (what Spring's JTA transaction manager does for REQUIRES_NEW);
+   - one connection bound per transaction and closed at completion, refused outside a transaction;
+   - rollback-only, reported to the owner when a participant set it;
+   - after-commit work through a JTA `Synchronization`.
+   `JtaTxSupportTest` covers each of these, also with the engine in the same transaction.
+4. **Lifecycle authorizer: DONE (owner decision 374).** `org.sangam.assembly.integration.LifecycleAuthorization.require` hands out only a bound security module's authorizer. Without one, it refuses with `SECURITY_MODULE_NOT_BOUND`, naming the host. This host binds no security module before phase 2, so `QuarkusHost.lifecycleAuthorizer()` always refuses, also with `sangam.modules.security.enabled=false`. There is no allow-everything authorizer on this host.
+5. **Order of engine build and capability check: OPEN, needs an owner decision.** The inbox, the reconciliation engine, the lifecycle services and the audit port need the built engine. This host checks its capabilities before the engine is built (`EngineCapabilityGuard.preInit`, `QuarkusHost` builds the capability set in its constructor). Until the rule for claiming such a capability is decided, the integration services are not assembled here and their capabilities stay missing.
 ### Scheduling (decision 315)
 
 - The integration services keep their own executors. No service takes a `HostScheduler`.
@@ -168,7 +173,11 @@ Since extraction phase 3 started, `sangam-assembly` depends on `sangam-integrati
 - `angus-mail` 2.0.4 with `angus-activation` 2.0.2, `jakarta.mail-api` 2.1.5 and `jakarta.activation-api` 2.1.4;
 - `sshd-sftp`, `sshd-core` and `sshd-common` 2.15.0 with `jcl-over-slf4j` 2.0.20.
 
-The Quarkus BOM would move the SSHD and Angus artefacts to other versions, so this module's pom pins them. These artefacts are **not yet in the D-5 licence record for this host**; they are reviewed for the Spring server only.
+The Quarkus BOM would move the SSHD and Angus artefacts to other versions, so this module's pom pins them.
+
+Since round 5, the module also depends on `sangam-rest-core` (the plain-Java `TxSupport` and the JDBC stores, decision 277). That adds `jackson-datatype-jsr310` 2.22.3. Its `operaton-engine` dependency would bring `spring-beans` and `spring-core` back, so they are excluded there as well.
+
+All 13 artefacts above are in the D-5 licence record for this host (`sangam/docs/records/DOWNLOADS-WAVE4.md`, rows `r5-q1 D-5 licence`, 2026-11-15). Every one is ALLOWED. The Angus and Jakarta Mail jars use the BSD-3-Clause election of decision 117. Each was already cached with a matching SHA-1, so nothing was downloaded.
 
 The closure has these adjustments:
 
@@ -182,10 +191,12 @@ All downloads, licences and checksums are recorded in `sangam/docs/records/DOWNL
 
 ## Tests
 
-The tests in this table are plain JUnit and do not boot Quarkus. They were run on 2026-11-15 (H2, offline, JDK 25): all pass except one.
+The tests in this table are plain JUnit and do not boot Quarkus. They were run on 2026-11-15 (H2, offline, JDK 25, round 5 lane q1): 60 tests, all pass.
 
-- **Failing:** `JtaTransactionsTest.engineAndProductRowsCommitOrRollBackTogether`. Its plain engine cannot create `ACT_GE_BYTEARRAY` on the fixture's H2 in `MODE=PostgreSQL` (`Unknown data type: "BLOB"`). A check run showed that `DatabaseGuard.prepareH2`, which the Sangam engine step uses to add the `BLOB` alias, leaves no alias on the fixture's Agroal data source; it logs its failure only at debug level. The cause is not yet known, and the same step runs when this host starts on H2. The other five tests of that class pass.
-- **Not run:** the two conformance kit classes below (they boot Quarkus).
+- **Fixed:** `JtaTransactionsTest.engineAndProductRowsCommitOrRollBackTogether` failed with `Unknown data type: "BLOB"`. There were two causes:
+  - The test created its product table before the engine, and H2 creates the `BLOB` domain only on an empty database (`DatabaseGuard.prepareH2`, its "Order" note). `JtaFixture` now prepares the database first.
+  - The plain `JakartaTransactionProcessEngineConfiguration` then failed with Agroal's "Deferred enlistment not supported". Its bootstrap command uses a connection opened before the JTA transaction. The test engines now use `QuarkusProcessEngineConfiguration`, the class this host's engine really uses; it overrides the schema-operations executor for this case.
+- **Not run:** the two conformance kit classes below (they boot Quarkus). On 2026-11-15 they could not start offline: `io.quarkus:quarkus-bom-quarkus-platform-properties:properties:3.40.1.1` is not in the local repository, and downloads are not allowed in this round.
 
 | Test | What it checks |
 |---|---|
@@ -198,6 +209,8 @@ The tests in this table are plain JUnit and do not boot Quarkus. They were run o
 | `QuarkusEngineSettingsTest` | default and configured system audit scope; the product schema and executor partitioning switches and their defaults; unbound `sangam.engine.*` keys and `SANGAM_ENGINE_*` environment forms refused; test mode refused in production |
 | `BrokerInboxRefusalTest` | decision 317: the host is refused by name while the Kafka or JMS broker inbox is switched on; off or absent, nothing is refused |
 | `QuarkusRelayWakeupTest` | decision 316: the polling wake-up on every dialect, no `LISTEN` session; a notification that cannot be sent leaves no JTA transaction behind |
+| `JtaTxSupportTest` | phase 3 blocker 3: the `TxSupport` contract on Narayana and Agroal: joining and owning, the always-new transaction independent of the suspended one in both directions, one bound connection per transaction released at completion, rollback-only, after-commit, the engine in the same transaction |
+| `AttributionTenantTest`, `OutboxDestinationsTest`, `LifecycleAuthorizationTest` (sangam-assembly) | phase 3 blockers 1, 2 and 4: the one attribution-tenant rule; the outbox destination rule with host routes and `OUTBOX_DESTINATION_NOT_DELIVERED`; `SECURITY_MODULE_NOT_BOUND` (decision 374) |
 | `RelayWakeupTest` (sangam-assembly) | decision 316: polling never opens a connection, wakes its own JVM and still sends `pg_notify`; `LISTEN` is never chosen or left silently |
 | `IntegrationLifecyclesTest` (sangam-assembly) | phase 3, decision 315: the integration services' start and stop order; nothing assembled without the scheduling seam |
 | `IntegrationSweepsTest` (sangam-assembly) | decision 315: the pending-audit sweep and the idempotency cleanup run on the host scheduler with the Spring host's keys and defaults |
