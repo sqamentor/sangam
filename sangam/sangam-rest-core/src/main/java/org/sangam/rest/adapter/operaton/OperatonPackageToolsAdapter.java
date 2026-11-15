@@ -35,6 +35,7 @@ import org.operaton.bpm.model.xml.instance.ModelElementInstance;
 import org.sangam.core.layer.Hashes;
 import org.sangam.rest.port.ApiProblem;
 import org.sangam.rest.port.AuditPort;
+import org.sangam.rest.port.PackageGitRemote;
 import org.sangam.rest.port.PackagePort;
 import org.sangam.rest.port.PackageToolsPort;
 import org.sangam.rest.port.RequestContext;
@@ -52,8 +53,9 @@ import org.w3c.dom.Node;
  *       key and decision reference resolves inside the package);</li>
  *   <li><b>tests</b>: {@code *.test.json} resources ({@code {"decision","cases":[{"name","inputs","expected"}]}})
  *       evaluated offline against the package's DMN (R80);</li>
- *   <li><b>Git</b>: the configuration (remote, branch, credential reference only) is stored; pull and push are
- *       stage-E collaboration (R69) provided by sangam-packs, so they answer {@code 501 CAPABILITY_NOT_INSTALLED};</li>
+ *   <li><b>Git</b> (R69, M-100): the configuration (remote, branch, credential reference only) is stored; pull and push
+ *       run through the host's {@link PackageGitRemote} ({@link PackageGitOperations}: fast-forward only, sync state,
+ *       audit) and answer {@code 501 CAPABILITY_NOT_INSTALLED} while the host binds none;</li>
  *   <li><b>comments</b>: stored per package in the document store (kind {@code package:comment}, ref = package id),
  *       audited {@code PACKAGE_COMMENTED};</li>
  *   <li><b>assessment</b> (EC-21): classification of foreign BPMN/DMN/CMMN constructs, parsed with an XXE-safe
@@ -63,7 +65,7 @@ import org.w3c.dom.Node;
  */
 public final class OperatonPackageToolsAdapter implements PackageToolsPort {
 
-    private static final Set<String> TEXT_EXTENSIONS = Set.of(".bpmn", ".dmn", ".cmmn", ".form", ".json", ".xml",
+    static final Set<String> TEXT_EXTENSIONS = Set.of(".bpmn", ".dmn", ".cmmn", ".form", ".json", ".xml",
             ".yaml", ".yml", ".txt");
     private static final int MI_LIMIT = 1000;
     private static final String BPMN_NS = "http://www.omg.org/spec/BPMN/20100524/MODEL";
@@ -103,9 +105,18 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
     static final String KIND_COMMENT = "package:comment";
 
     private final org.sangam.rest.support.DocumentStore docs;
+    private final PackageGitOperations git;
 
     public OperatonPackageToolsAdapter(PackagePort packages, AuditPort audit, RestProperties props,
                                        org.sangam.rest.support.DocumentStore docs) {
+        this(packages, audit, props, docs, null);
+    }
+
+    /** {@code gitRemote}: the host's Git transport, resolved per call (M-100); null, or answering null, binds none. */
+    public OperatonPackageToolsAdapter(PackagePort packages, AuditPort audit, RestProperties props,
+                                       org.sangam.rest.support.DocumentStore docs,
+                                       java.util.function.Supplier<PackageGitRemote> gitRemote) {
+        this.git = new PackageGitOperations(packages, audit, docs, gitRemote);
         this.docs = docs;
         this.packages = packages;
         this.audit = audit;
@@ -337,8 +348,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
     public GitStatus gitStatus(RequestContext ctx, String packageId) {
         packages.get(ctx, packageId);
         GitConfig c = docs.get(ctx.tenantId(), KIND_GIT, packageId).map(d -> d.as(GitConfig.class)).orElse(null);
-        return c == null ? new GitStatus(null, null, 0, 0, null, List.of())
-                : new GitStatus(c.remote(), c.branch(), 0, 0, null, List.of());
+        return git.status(ctx, packageId, c);
     }
 
     @Override
@@ -369,14 +379,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
 
     @Override
     public GitSyncResult gitSync(RequestContext ctx, String packageId, String direction, GitSyncRequest request) {
-        packages.get(ctx, packageId);
-        if (!"pull".equals(direction) && !"push".equals(direction)) {
-            throw ApiProblem.badRequest("VALIDATION_FAILED", "direction must be pull or push");
-        }
-        if (docs.get(ctx.tenantId(), KIND_GIT, packageId).isEmpty()) {
-            throw ApiProblem.conflict("GIT_NOT_CONFIGURED", "Configure the Git remote first");
-        }
-        throw ApiProblem.notInstalled("Git sync (R69)", "sangam-packs");
+        return git.sync(ctx, packageId, direction, request);
     }
 
     // ------------------------------------------------------------------ comments (R69)
@@ -632,7 +635,7 @@ public final class OperatonPackageToolsAdapter implements PackageToolsPort {
 
     // ------------------------------------------------------------------ helpers
 
-    private static Map<String, byte[]> resources(PackagePort.Package p) {
+    static Map<String, byte[]> resources(PackagePort.Package p) {
         Map<String, byte[]> out = new LinkedHashMap<>();
         if (p.resources() == null) {
             return out;
