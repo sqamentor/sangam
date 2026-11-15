@@ -388,6 +388,9 @@ services:
       # Decision 165: DSC loopback agent on the signer's computer; empty (default) = DSC not set up. Only
       # http://127.0.0.1:<port> or http://localhost:<port> (no path, no IPv6); the image refuses anything else.
       SANGAM_DSC_AGENT_ORIGIN: ${SANGAM_DSC_AGENT_ORIGIN:-}
+      # Decisions 349 and 359: idle sign-out after this many minutes without input, 1-480 (default 15); the image
+      # refuses anything else. The queue hall display (/display/queue/) is exempt.
+      SANGAM_UI_IDLE_MINUTES: ${SANGAM_UI_IDLE_MINUTES:-15}
     ports: ["${SANGAM_UI_PORT:-3000}:8080"]
     networks: [sangam]
 

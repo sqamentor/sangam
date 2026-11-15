@@ -71,6 +71,9 @@ spec:
             # Decision 165: DSC loopback agent origin; empty = DSC not set up
             - name: SANGAM_DSC_AGENT_ORIGIN
               value: {{ .Values.ui.dscAgentOrigin | quote }}
+            # Decisions 349 and 359: idle sign-out after this many minutes without input (1-480, /config.json session.idleMinutes)
+            - name: SANGAM_UI_IDLE_MINUTES
+              value: {{ int .Values.ui.idleMinutes | quote }}
           livenessProbe:
             httpGet: { path: /healthz, port: http }
             periodSeconds: 10
