@@ -44,8 +44,10 @@ class PackageSigningWiringTest {
         assertNull(plain.signer());
         assertFalse(plain.allowUnsigned(), "outside development unsigned packages are refused");
         assertNull(plain.environment());
-        assertTrue(PackageSigningWiring.signing(env("h2"), none).allowUnsigned());
-        assertTrue(PackageSigningWiring.signing(env("dev"), none).allowUnsigned());
+        // decision 143: development defaults need a development profile and the switch saying non-production
+        assertTrue(PackageSigningWiring.signing(env("h2").withProperty("sangam.security.production", "false"), none).allowUnsigned());
+        assertTrue(PackageSigningWiring.signing(env("dev").withProperty("sangam.security.production", "false"), none).allowUnsigned());
+        assertFalse(PackageSigningWiring.signing(env("h2"), none).allowUnsigned(), "a profile alone is not enough");
         PackageSigning prodDev = PackageSigningWiring.signing(env("dev", "prod"), none);
         assertFalse(prodDev.allowUnsigned(), "never in production");
         assertTrue(prodDev.production());

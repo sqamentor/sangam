@@ -16,7 +16,7 @@ import org.springframework.core.env.Environment;
  * before any other bean of the server is created: a missing, invalid or contradictory
  * {@code sangam.security.production} refuses the start with a clear configuration error, and a valid configuration is
  * logged once (mode, the configuration source of the switch, the profiles; no secrets). A development environment is
- * labelled as such in the log.
+ * labelled as such in the log. The same early place refuses a start without the security module (decision 75).
  */
 @Configuration(proxyBeanMethods = false)
 public class EnvironmentPolicyWiring {
@@ -40,6 +40,17 @@ public class EnvironmentPolicyWiring {
         @Override
         public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
             check(env);
+            requireSecurityModule(env);
+        }
+
+        /**
+         * Decision 75 (fail closed), here so that it is the first thing a start without the security module meets: such
+         * a start is refused unless development is explicit. The same check runs where the module is missed (the
+         * engine's job identity binding, the REST permission model), but those are bean factory methods, and a bean
+         * that needs a security-module bean could fail before them with an error that names no reason.
+         */
+        static void requireSecurityModule(Environment env) {
+            EngineWiring.securityModuleEnabled(env);
         }
 
         /** Resolves and logs; throws {@link EnvironmentPolicy.ConfigurationError} for a refused configuration. */

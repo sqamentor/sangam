@@ -54,8 +54,10 @@ class W3bConnectorWiringTest {
 
     @Test
     void secretSettingsAreReadOnlyForTheListedProviders() {
-        MockEnvironment env = new MockEnvironment()
-                .withProperty("sangam.secrets.providers", "file,vault,env")
+        MockEnvironment env = new MockEnvironment();
+        // as in the running server: Spring Boot's conversion service reads "30s" as a Duration
+        env.setConversionService(new org.springframework.boot.convert.ApplicationConversionService());
+        env.withProperty("sangam.secrets.providers", "file,vault,env")
                 .withProperty("sangam.secrets.file.root", "/run/secrets")
                 .withProperty("sangam.secrets.vault.url", "https://vault.example:8200")
                 .withProperty("sangam.secrets.vault.token-ref", "secret://vault/token")
@@ -73,6 +75,45 @@ class W3bConnectorWiringTest {
     void aListedVaultWithoutUrlFailsStartup() {
         MockEnvironment env = new MockEnvironment().withProperty("sangam.secrets.providers", "vault");
         assertThrows(IllegalStateException.class, () -> SecretsWiring.settings(env));
+    }
+
+    /**
+     * The platform resolver bean exists in every server context: a component that takes a {@code SecretResolver} (the
+     * channel webhook controller) is wired with no provider configured, and then it is the environment resolver.
+     */
+    @Test
+    void thePlatformSecretResolverBeanExistsWithoutProvidersAndReadsOnlyTheEnvironment() {
+        new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                .withUserConfiguration(SecretsWiring.class, NeedsASecretResolver.class)
+                .run(ctx -> {
+                    assertNull(ctx.getStartupFailure(), String.valueOf(ctx.getStartupFailure()));
+                    org.sangam.integration.connector.SecretResolver secrets =
+                            ctx.getBean(org.sangam.integration.connector.SecretResolver.class);
+                    assertTrue(secrets.resolve("secret://w3b/not-a-configured-secret").isEmpty());
+                    assertEquals("literal", secrets.require("literal"));
+                    assertEquals(secrets, ctx.getBean(NeedsASecretResolver.class).secrets);
+                });
+        assertFalse(SecretsWiring.providersConfigured(new MockEnvironment()));
+        assertFalse(SecretsWiring.providersConfigured(new MockEnvironment().withProperty("sangam.secrets.providers", "false")));
+        assertTrue(SecretsWiring.providersConfigured(new MockEnvironment().withProperty("sangam.secrets.providers", "env")));
+    }
+
+    @Test
+    void aConfiguredProviderListIsBuiltAndAnEmptyOneFailsStartup() {
+        SecretsWiring wiring = new SecretsWiring();
+        assertNotNull(wiring.sangamSecretResolver(new MockEnvironment().withProperty("sangam.secrets.providers", "env")));
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> wiring.sangamSecretResolver(new MockEnvironment().withProperty("sangam.secrets.providers", "")));
+        assertTrue(e.getMessage().contains("sangam.secrets.providers is empty"), e.getMessage());
+    }
+
+    /** A component with a mandatory {@code SecretResolver}, as {@code ChannelHooksController} has. */
+    static final class NeedsASecretResolver {
+        final org.sangam.integration.connector.SecretResolver secrets;
+
+        NeedsASecretResolver(org.sangam.integration.connector.SecretResolver secrets) {
+            this.secrets = secrets;
+        }
     }
 
     @Test

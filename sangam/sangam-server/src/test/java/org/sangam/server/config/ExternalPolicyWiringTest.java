@@ -90,6 +90,7 @@ class ExternalPolicyWiringTest {
         assertThrows(IllegalStateException.class, () -> ExternalPolicyWiring.settings(new MockEnvironment()
                 .withProperty(P + ".endpoint", "http://pdp:8181/v1/data/sangam")));
         HttpExternalPolicyCheck.Settings dev = ExternalPolicyWiring.settings(new MockEnvironment()
+                .withProperty("sangam.security.production", "false")
                 .withProperty(P + ".endpoint", "http://127.0.0.1:8181/v1/data/sangam")
                 .withProperty(P + ".allow-plain-http", "true"));
         assertTrue(dev.allowPlainHttp());

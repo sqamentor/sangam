@@ -125,12 +125,19 @@ class PoolExhaustionProblemsTest {
 
     @Test
     void retryAfterComesFromTheSettingInWholeSeconds() {
-        assertEquals(2, PoolExhaustionProblems.retryAfterSeconds(new MockEnvironment()));
+        assertEquals(2, PoolExhaustionProblems.retryAfterSeconds(bootEnvironment()));
         assertEquals(5, PoolExhaustionProblems.retryAfterSeconds(
-                new MockEnvironment().withProperty(PoolExhaustionProblems.RETRY_AFTER, "5s")));
+                bootEnvironment().withProperty(PoolExhaustionProblems.RETRY_AFTER, "5s")));
         assertEquals(1, PoolExhaustionProblems.retryAfterSeconds(
-                new MockEnvironment().withProperty(PoolExhaustionProblems.RETRY_AFTER, "300ms")));
+                bootEnvironment().withProperty(PoolExhaustionProblems.RETRY_AFTER, "300ms")));
         assertEquals(1, PoolExhaustionProblems.retryAfterSeconds(
-                new MockEnvironment().withProperty(PoolExhaustionProblems.RETRY_AFTER, "0s")));
+                bootEnvironment().withProperty(PoolExhaustionProblems.RETRY_AFTER, "0s")));
+    }
+
+    /** An environment that converts as the running server's does (Spring Boot's conversion service: {@code 5s}). */
+    private static MockEnvironment bootEnvironment() {
+        MockEnvironment env = new MockEnvironment();
+        env.setConversionService(new org.springframework.boot.convert.ApplicationConversionService());
+        return env;
     }
 }

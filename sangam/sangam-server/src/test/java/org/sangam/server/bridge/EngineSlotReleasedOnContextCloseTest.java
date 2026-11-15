@@ -34,10 +34,11 @@ class EngineSlotReleasedOnContextCloseTest {
     }
 
     private static ConfigurableApplicationContext start(String db) {
+        // as command-line arguments: builder properties are defaults, which application.yaml overrides (the server and
+        // management ports 8080/8081, the database URL), so the scenario would depend on free fixed ports
         return new SpringApplicationBuilder(SangamServerApplication.class).profiles("h2")
-                .properties("server.port=0", "sangam.engine.allow-multiple-engines-per-jvm=false",
-                        "spring.datasource.url=jdbc:h2:mem:" + db + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL")
-                .run();
+                .run("--server.port=0", "--management.server.port=0", "--sangam.engine.allow-multiple-engines-per-jvm=false",
+                        "--spring.datasource.url=jdbc:h2:mem:" + db + ";DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000;MODE=PostgreSQL");
     }
 
     @Test

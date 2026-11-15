@@ -274,7 +274,7 @@ class HelmValuesSchemaTest {
 
         static final Set<String> KEYWORDS = Set.of("$schema", "$comment", "title", "description", "definitions", "$ref",
                 "type", "properties", "required", "additionalProperties", "enum", "const", "minimum", "maximum",
-                "exclusiveMinimum", "minLength", "pattern", "allOf", "not", "if", "then", "else", "items");
+                "exclusiveMinimum", "minLength", "pattern", "allOf", "anyOf", "not", "if", "then", "else", "items", "minItems");
 
         private final Map<String, Object> root;
 
@@ -298,9 +298,9 @@ class HelmValuesSchemaTest {
                 out.add(e.getKey());
                 switch (e.getKey()) {
                     case "properties", "definitions" -> ((Map<String, Object>) e.getValue()).values().forEach(v -> keywords(v, out));
-                    case "allOf" -> ((List<Object>) e.getValue()).forEach(v -> keywords(v, out));
+                    case "allOf", "anyOf" -> ((List<Object>) e.getValue()).forEach(v -> keywords(v, out));
                     case "enum", "const", "required", "$schema", "$comment", "title", "description", "type", "$ref",
-                         "minimum", "maximum", "exclusiveMinimum", "minLength", "pattern" -> { }
+                         "minimum", "maximum", "exclusiveMinimum", "minLength", "pattern", "minItems" -> { }
                     default -> keywords(e.getValue(), out); // additionalProperties, items, not, if, then, else
                 }
             }
@@ -319,7 +319,10 @@ class HelmValuesSchemaTest {
                 check(resolve((String) s.get("$ref")), v, path, errors);
                 return;
             }
-            if (s.containsKey("type") && !typeMatches((String) s.get("type"), v)) {
+            // draft-07: "type" is one name or a list of names, any of which may match
+            Object type = s.get("type");
+            if (type != null && (type instanceof List<?> names ? names : List.of(type)).stream()
+                    .noneMatch(t -> typeMatches((String) t, v))) {
                 errors.add(path + ": expected type " + s.get("type") + ", got " + v);
                 return;
             }
@@ -366,6 +369,9 @@ class HelmValuesSchemaTest {
                     }
                 }
             }
+            if (v instanceof List<?> list && s.containsKey("minItems") && list.size() < ((Number) s.get("minItems")).intValue()) {
+                errors.add(path + ": fewer than " + s.get("minItems") + " items");
+            }
             if (v instanceof List<?> list && s.containsKey("items")) {
                 for (int i = 0; i < list.size(); i++) {
                     check(s.get("items"), list.get(i), path + "[" + i + "]", errors);
@@ -373,6 +379,17 @@ class HelmValuesSchemaTest {
             }
             for (Object sub : (List<Object>) s.getOrDefault("allOf", List.of())) {
                 check(sub, v, path, errors);
+            }
+            if (s.containsKey("anyOf")) {
+                boolean any = false;
+                for (Object sub : (List<Object>) s.get("anyOf")) {
+                    List<String> inner = new ArrayList<>();
+                    check(sub, v, path, inner);
+                    any |= inner.isEmpty();
+                }
+                if (!any) {
+                    errors.add(path + ": matches none of anyOf");
+                }
             }
             if (s.containsKey("not")) {
                 List<String> inner = new ArrayList<>();

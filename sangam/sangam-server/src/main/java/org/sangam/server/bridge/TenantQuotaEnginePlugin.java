@@ -102,10 +102,10 @@ public final class TenantQuotaEnginePlugin implements ProcessEnginePlugin {
          * checked against it; an unlimited tenant still never loads a byte-array value to measure it.
          */
         private static void checkVariables(TenantQuotas q, String tenant) {
-            CommandContext ctx = Context.getCommandContext();
-            if (ctx == null) {
+            if (!Context.hasActiveCommandContext()) {   // getCommandContext() throws outside a command, never null
                 return;
             }
+            CommandContext ctx = Context.getCommandContext();
             long max = 0;
             boolean limitRead = false;
             for (CachedDbEntity cached : ctx.getDbEntityManager().getDbEntityCache().getCachedEntities()) {

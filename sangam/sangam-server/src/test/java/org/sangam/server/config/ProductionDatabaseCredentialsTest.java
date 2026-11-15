@@ -35,7 +35,8 @@ class ProductionDatabaseCredentialsTest {
 
     @Test
     void notProductionNothingIsChecked() {
-        assertTrue(ProductionDatabaseCredentials.violations(profile("sangam", "sangam")).isEmpty());
+        assertTrue(ProductionDatabaseCredentials.violations(
+                profile("sangam", "sangam").withProperty("sangam.security.production", "false")).isEmpty());
     }
 
     @Test

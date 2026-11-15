@@ -62,7 +62,8 @@ class OidcProductionValidationTest {
     @Test
     void outsideProductionTheGapsAreOnlyReported() {
         assertDoesNotThrow(() -> new OidcConfig().sangamJwtDecoder(
-                new MockEnvironment().withProperty(OidcConfig.JWKS, JWKS), props("")));
+                new MockEnvironment().withProperty("sangam.security.production", "false").withProperty(OidcConfig.JWKS, JWKS),
+                props("")));
         assertEquals(2, OidcConfig.requireCompleteValidation(false, null, " ").size(), "both gaps are named in the WARN");
         assertEquals(0, OidcConfig.requireCompleteValidation(true, ISSUER, "sangam-server").size());
     }

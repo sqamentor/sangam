@@ -181,9 +181,11 @@ public final class ClientJwtVerifier {
         }
         JWT parsed;
         String issuer;
+        boolean issuedAtPresent;
         try {
             parsed = JWTParser.parse(token);
             issuer = parsed.getJWTClaimsSet().getIssuer();
+            issuedAtPresent = parsed.getJWTClaimsSet().getIssueTime() != null;
         } catch (ParseException e) {
             throw new Rejected(Reason.MALFORMED, "the token is not a JWT");
         }
@@ -208,7 +210,8 @@ public final class ClientJwtVerifier {
         Instant exp = jwt.getExpiresAt();
         Instant iat = jwt.getIssuedAt();
         String jti = jwt.getId();
-        if (exp == null || iat == null || jti == null || jti.isBlank()) {
+        // iat is asked of the token itself: the decoder's claim converter fills a missing iat with exp - 1 s
+        if (exp == null || iat == null || !issuedAtPresent || jti == null || jti.isBlank()) {
             throw new Rejected(Reason.MISSING_CLAIM, "exp, iat and jti are required");
         }
         if (!now.minus(clockSkew).isBefore(exp)) {
