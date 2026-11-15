@@ -1,0 +1,82 @@
+{
+  "$comment": "SPDX-License-Identifier: Apache-2.0. The built-in connector ELEMENT templates (M-067, M-068, M-072), in palette order. Read by org.sangam.modeller.template.ConnectorTemplates; templates are data (ADR-D-20, SL-104), so a template for a named external system is added here, never in product Java. Each document: id, name, description, appliesTo, fields (name, binding, required, then pattern, default and choices when set). A change of name, description, appliesTo or fields publishes a new template version at the next start.",
+  "templates": [
+    {
+      "id": "sangam.connector.aws-lambda",
+      "name": "AWS Lambda function",
+      "description": "Invokes a Lambda function through the HTTP connector (auth.type=aws-sigv4, service lambda). Path /2015-03-31/functions/{function}/invocations; header X-Amz-Invocation-Type selects RequestResponse or Event. A function error (X-Amz-Function-Error) is a business failure FUNCTION_ERROR when response.failure-header is set.",
+      "appliesTo": ["bpmn:ServiceTask"],
+      "fields": [
+        { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },
+        { "name": "topic", "binding": "operaton:topic", "required": true, "pattern": "[A-Za-z0-9._:-]{1,200}" },
+        { "name": "path", "binding": "input:path", "required": false, "pattern": "/2015-03-31/functions/[A-Za-z0-9_:.-]{1,170}/invocations" },
+        { "name": "headers", "binding": "input:headers", "required": false },
+        { "name": "body", "binding": "input:body", "required": false }
+      ]
+    },
+    {
+      "id": "sangam.connector.azure-function",
+      "name": "Azure Function (HTTP trigger)",
+      "description": "Calls an HTTP-triggered Azure Function through the HTTP connector (auth.type=function-key; the key is a secret:// reference in the connector configuration).",
+      "appliesTo": ["bpmn:ServiceTask"],
+      "fields": [
+        { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },
+        { "name": "topic", "binding": "operaton:topic", "required": true, "pattern": "[A-Za-z0-9._:-]{1,200}" },
+        { "name": "path", "binding": "input:path", "required": false, "pattern": "/api/[A-Za-z0-9_./-]{1,200}" },
+        { "name": "query", "binding": "input:query", "required": false },
+        { "name": "body", "binding": "input:body", "required": false }
+      ]
+    },
+    {
+      "id": "sangam.connector.gcp-cloud-run",
+      "name": "Google Cloud Run / Cloud Functions",
+      "description": "Calls a Cloud Run service or a 2nd-gen function through the HTTP connector (auth.type=gcp-id-token; the audience is the service URL).",
+      "appliesTo": ["bpmn:ServiceTask"],
+      "fields": [
+        { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },
+        { "name": "topic", "binding": "operaton:topic", "required": true, "pattern": "[A-Za-z0-9._:-]{1,200}" },
+        { "name": "path", "binding": "input:path", "required": false, "pattern": "/[A-Za-z0-9_./-]{0,200}" },
+        { "name": "query", "binding": "input:query", "required": false },
+        { "name": "body", "binding": "input:body", "required": false }
+      ]
+    },
+    {
+      "id": "sangam.connector.async-serverless",
+      "name": "Serverless function, asynchronous",
+      "description": "Starts a function and continues on its callback: the connector adds the callback (endpoint.callback.url, a /events/{channel} inbound webhook) and the correlation key (the operation id) to the request. Model a message catch event after this task correlated on the correlation key.",
+      "appliesTo": ["bpmn:ServiceTask"],
+      "fields": [
+        { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },
+        { "name": "topic", "binding": "operaton:topic", "required": true, "pattern": "[A-Za-z0-9._:-]{1,200}" },
+        { "name": "path", "binding": "input:path", "required": false, "pattern": "/[A-Za-z0-9_./-]{0,200}" },
+        { "name": "headers", "binding": "input:headers", "required": false },
+        { "name": "body", "binding": "input:body", "required": false }
+      ]
+    },
+    {
+      "id": "sangam.connector.digilocker-requester",
+      "name": "DigiLocker: verify adult / pull document",
+      "description": "Pull with consent from DigiLocker. verify-adult answers identifiable, adult, issuer and a token reference (never the date of birth); pull lists the issued documents and fetches those named in uris.The consent code and PKCE verifier come from the consent step of the case.",
+      "appliesTo": ["bpmn:ServiceTask"],
+      "fields": [
+        { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },
+        { "name": "topic", "binding": "operaton:topic", "required": true, "pattern": "[A-Za-z0-9._:-]{1,200}" },
+        { "name": "code", "binding": "input:code", "required": true },
+        { "name": "codeVerifier", "binding": "input:codeVerifier", "required": true },
+        { "name": "uris", "binding": "input:uris", "required": false }
+      ]
+    },
+    {
+      "id": "sangam.connector.operation-ref",
+      "name": "API operation (contract reference)",
+      "description": "Calls an operation of an OpenAPI or AsyncAPI document stored in the package: sangam:operationRef names it as contractId#operationId; the request body is validated against the operation schema.",
+      "appliesTo": ["bpmn:ServiceTask"],
+      "fields": [
+        { "name": "type", "binding": "operaton:type", "required": true, "pattern": "external", "default": "external", "choices": ["external"] },
+        { "name": "topic", "binding": "operaton:topic", "required": true, "pattern": "[A-Za-z0-9._:-]{1,200}" },
+        { "name": "operationRef", "binding": "sangam:operationRef", "required": true, "pattern": "[A-Za-z0-9_.-]{1,120}(@[0-9]{1,9})?#[A-Za-z0-9_.-]{1,200}" },
+        { "name": "body", "binding": "input:body", "required": false }
+      ]
+    }
+  ]
+}

@@ -60,4 +60,33 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Decisions 140 and 217 (licence-policy.json: org.bouncycastle is allowed_in the esign add-on only): the
+           reactor-wide ban (root pom, SL-106) stays. This module IS the esign add-on, so it alone gets the three
+           Bouncy Castle jdk18on jars, each at exactly the managed version. combine.children="append" keeps the root
+           includes. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>sangam-banned-dependencies</id>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <includes combine.children="append">
+                    <include>org.bouncycastle:bcprov-jdk18on:[${version.bouncycastle}]</include>
+                    <include>org.bouncycastle:bcpkix-jdk18on:[${version.bouncycastle}]</include>
+                    <include>org.bouncycastle:bcutil-jdk18on:[${version.bouncycastle}]</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

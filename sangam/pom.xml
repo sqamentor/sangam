@@ -653,6 +653,17 @@
                     <!-- SG-27: consumer namespace ban on org.camunda* (shipped scopes), one exact exception below -->
                     <exclude>org.camunda*:*:*:*:compile</exclude>
                     <exclude>org.camunda*:*:*:*:runtime</exclude>
+                    <!-- Decisions 217, 232, 235, 243 (licence-policy.json forbidden_components with allowed_in):
+                         Bouncy Castle (jdk18on of the esign add-on, bcprov-lts8on of jnats) and the NATS client
+                         ship only in their opt-in add-ons, never in the server or another distribution (shipped
+                         scopes). The rule does not look at OPTIONAL dependencies, which Maven never passes on:
+                         that is how sangam-flowable-ports and sangam-integration compile against jnats and
+                         sangam-connectors-health against bcprov-jdk18on. Only sangam-esign, the esign add-on
+                         itself, lifts the ban in its own pom (BannedDependencyExemptionsTest). -->
+                    <exclude>org.bouncycastle:*:*:*:compile</exclude>
+                    <exclude>org.bouncycastle:*:*:*:runtime</exclude>
+                    <exclude>io.nats:jnats:*:*:compile</exclude>
+                    <exclude>io.nats:jnats:*:*:runtime</exclude>
                     <!-- Owner decision 2026-11-12: LGPL build-time tools (licence-policy.json build_time_tools) never
                          enter a shipped scope. They run as Maven plugins, which bannedDependencies does not see. -->
                     <exclude>com.github.spotbugs:spotbugs:*:*:compile</exclude>
