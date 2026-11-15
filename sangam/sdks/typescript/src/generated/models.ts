@@ -6822,9 +6822,9 @@ export interface ModelDiffReport {
 export interface ModelDiffRequest {
   /** File name; its extension (.bpmn,.bpmn20.xml,.dmn,.cmmn,.json) picks the format */
   resource: string;
-  /** The old model text (UTF-8); null or empty = a new file */
+  /** The old model text (UTF-8); null or empty = a new file: every element of the new version is reported as ADDED */
   before?: string;
-  /** The new model text (UTF-8); null or empty = a deleted file */
+  /** The new model text (UTF-8); null or empty = a deleted file: every element of the old version is reported as REMOVED */
   after?: string;
 }
 

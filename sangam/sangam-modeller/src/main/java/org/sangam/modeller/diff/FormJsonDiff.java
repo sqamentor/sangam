@@ -54,12 +54,33 @@ final class FormJsonDiff {
         List<Change> out = new ArrayList<>();
         Owner root = new Owner(FORM_KEY, "form", text(b.isMissingNode() ? a : b, "key"));
         if (a.isMissingNode() || b.isMissingNode()) {
-            out.add(new Change(Level.ELEMENT, a.isMissingNode() ? Kind.ADDED : Kind.REMOVED, FORM_KEY, "form",
-                    root.name(), "", null, null));
+            // an absent version (a new or deleted file, decision 329): the form and every element of the present one
+            Kind kind = a.isMissingNode() ? Kind.ADDED : Kind.REMOVED;
+            out.add(new Change(Level.ELEMENT, kind, FORM_KEY, "form", root.name(), "", null, null));
+            everyElement(a.isMissingNode() ? b : a, kind, out);
             return out;
         }
         walk(root, "", a, b, out);
         return out;
+    }
+
+    /**
+     * Every element below {@code n}, as one whole-element line each: the items of each array that is matched by
+     * identity (the same rule as between two present versions, {@link #identity}), at any depth.
+     */
+    private static void everyElement(JsonNode n, Kind kind, List<Change> out) {
+        if (n.isObject()) {
+            n.forEach(child -> everyElement(child, kind, out));
+        } else if (n.isArray()) {
+            String identity = identity(n, n);
+            for (JsonNode item : n) {
+                if (identity != null) {
+                    out.add(new Change(Level.ELEMENT, kind, item.get(identity).asText(), text(item, "type"), name(item),
+                            "", null, null));
+                }
+                everyElement(item, kind, out);
+            }
+        }
     }
 
     private static void walk(Owner owner, String path, JsonNode a, JsonNode b, List<Change> out) {

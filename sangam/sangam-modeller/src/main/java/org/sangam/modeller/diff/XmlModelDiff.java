@@ -82,14 +82,18 @@ final class XmlModelDiff {
         Map<String, Unit> a = ModelDiff.nonEmpty(before) ? units(resource, before) : Map.of();
         Map<String, Unit> b = ModelDiff.nonEmpty(after) ? units(resource, after) : Map.of();
         List<Change> out = new ArrayList<>();
-        // an element inside a removed (added) element is covered by its parent's line
+        // Between two present versions an element inside a removed (added) element is covered by its parent's line.
+        // An absent version (a new or deleted file, decision 329) has no parent line to stand for anything: every
+        // element of the present version is listed, so a review of a new file sees each task, gateway and flow.
+        boolean deletedFile = b.isEmpty();
+        boolean newFile = a.isEmpty();
         for (Unit u : a.values()) {
-            if (!b.containsKey(u.key()) && (u.parentKey() == null || b.containsKey(u.parentKey()))) {
+            if (!b.containsKey(u.key()) && (deletedFile || u.parentKey() == null || b.containsKey(u.parentKey()))) {
                 out.add(whole(Kind.REMOVED, u));
             }
         }
         for (Unit u : b.values()) {
-            if (!a.containsKey(u.key()) && (u.parentKey() == null || a.containsKey(u.parentKey()))) {
+            if (!a.containsKey(u.key()) && (newFile || u.parentKey() == null || a.containsKey(u.parentKey()))) {
                 out.add(whole(Kind.ADDED, u));
             }
         }

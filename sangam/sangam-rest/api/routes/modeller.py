@@ -24,8 +24,10 @@ _DIFF_LEVELS = ["ELEMENT", "FLOW", "EXPRESSION", "PROPERTY"]
 schema("ModelDiffRequest", "Two versions of one model file to compare. Each side is at most 5 MiB of UTF-8 text.",
        "resource before after", ["resource"], descs={
            "resource": "File name; its extension (.bpmn, .bpmn20.xml, .dmn, .cmmn, .json) picks the format",
-           "before": "The old model text (UTF-8); null or empty = a new file",
-           "after": "The new model text (UTF-8); null or empty = a deleted file"})
+           "before": "The old model text (UTF-8); null or empty = a new file: every element of the new version is "
+                     "reported as ADDED",
+           "after": "The new model text (UTF-8); null or empty = a deleted file: every element of the old version is "
+                    "reported as REMOVED"})
 SCHEMAS["ModelDiffRequest"]["properties"]["resource"]["maxLength"] = 255
 for _side in ("before", "after"):
     SCHEMAS["ModelDiffRequest"]["properties"][_side]["type"] = ["string", "null"]

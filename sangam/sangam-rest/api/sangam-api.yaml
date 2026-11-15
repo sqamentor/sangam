@@ -68218,12 +68218,12 @@ components:
           type:
           - string
           - 'null'
-          description: The old model text (UTF-8); null or empty = a new file
+          description: 'The old model text (UTF-8); null or empty = a new file: every element of the new version is reported as ADDED'
         after:
           type:
           - string
           - 'null'
-          description: The new model text (UTF-8); null or empty = a deleted file
+          description: 'The new model text (UTF-8); null or empty = a deleted file: every element of the old version is reported as REMOVED'
       required:
       - resource
     ModelDiffSummary:
