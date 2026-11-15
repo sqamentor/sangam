@@ -238,10 +238,13 @@
       <artifactId>mssql-jdbc</artifactId>
       <scope>runtime</scope>
     </dependency>
+    <!-- RM-38: optional, so the LGPL driver never reaches a module that depends on this one (LIC-4/LIC-5); the server's
+         own runtime, tests and SBOM keep it, and the image adds it through loader.path. -->
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
       <scope>runtime</scope>
+      <optional>true</optional>
     </dependency>
 
     <dependency>
