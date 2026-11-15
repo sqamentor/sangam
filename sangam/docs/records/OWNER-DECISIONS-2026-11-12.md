@@ -457,3 +457,11 @@ Decision 372 was taken on 2026-11-15 under the owner's words "Choose recommended
 Decision 373 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the point lane D5 left open on SL-79; the recommended option is recorded.
 
 - **373 (how the pool-deadlock test proves nothing is stuck, owner chat 2026-11-15)**: `QuotaPoolDeadlockH2Support` proves the end state by draining the main pool (every connection obtained at the same time within the pool's own timeout), not by a snapshot of Hikari's waiter count, which also counted the server's own follow-up borrows on virtual threads (outbox relay, job executor, pipeline workers). The 36 concurrent starts must still all answer 200 and commit; no scheduler is turned off for the test.
+
+Decision 374 was taken on 2026-11-15 under the owner's words "Choose recommended option end to end ." for the point lane q1 left open on the Quarkus host (G7 extraction phase 3, blocker 4); the recommended option is recorded.
+
+- **374 (the lifecycle authorizer on a host without a security module, owner chat 2026-11-15)**: `LifecycleAuthorization.require` hands the instance lifecycle, erasure and maintenance services only the authorizer of the bound security module; with none bound it refuses with `SECURITY_MODULE_NOT_BOUND`, naming the host. The assembly has no allow-everything authorizer, also not with the module switched off; `QuarkusHost.lifecycleAuthorizer()` therefore refuses until phase 2 binds a security module.
+
+Decision 375 was taken on 2026-11-16 under the owner's words "I Approved Go Ahead End to End also approved recommended option" for the point lane u4 left open on the generic create form (M-047 follow-up); the recommended option is recorded.
+
+- **375 (default values of a new entry in the generic create form, owner chat 2026-11-16)**: a new entry starts from each field's declared default (a new agent definition has human review checked and sends `true`); a checkbox with no default starts unchecked and is sent as `false`, the value its box shows, as for every explicit boolean. A new service-registry entry therefore sends `simulator: false`, and its screen test expects it.
