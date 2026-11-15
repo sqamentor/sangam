@@ -9,7 +9,7 @@ package org.sangam.sdk.generated.model;
  * <p>Schema {@code TypedValue} of sangam-api.yaml 0.1.0.
  *
  * @param type wire field {@code type} (required).  One of: Decimal, BigInteger, Long, Integer, Boolean, String, Date, LocalDate, Json, Bytes.
- * @param value wire field {@code value} (required). String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned variable type (decision 138) and returned unchanged through history, export and import.
+ * @param value wire field {@code value} (required). String form for Decimal/BigInteger/Long/Date/LocalDate/Bytes(base64); any JSON for Json. A Decimal value is DecimalString text: exact, scale kept, stored by the engine losslessly as decimal text under a stable, versioned variable type (decision 138) and returned unchanged through history, export and import. A LocalDate value is a calendar date, ISO-8601 uuuu-MM-dd exactly (years 0000-9999; a date-time, an offset or an impossible date is refused with VALIDATION_FAILED, never coerced); the engine stores it as a variable type of its own and returns it as the same typed value, also inside a Json map or list, where it is carried as this typed object (decision 333). Date is an instant, a different type. A date sent as a plain string stays a string.
  */
 @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public record TypedValue(

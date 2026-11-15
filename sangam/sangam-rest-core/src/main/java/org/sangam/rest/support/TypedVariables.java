@@ -11,11 +11,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.sangam.packs.engine.LocalDateText;
+import org.sangam.rest.port.ApiProblem;
+
 /**
  * R33 typed JSON for variables. Plain JSON values pass through. A typed value is written as
  * {@code {"type":"Decimal","value":"1234.50"}}; money is never a binary float and large integers are strings (E18).
  * Supported types: Decimal, BigInteger, Long, Integer, Boolean, String, Date (ISO-8601 instant), LocalDate, Json.
  * Outbound, BigDecimal/BigInteger/Date/LocalDate are written back in the typed form.
+ *
+ * <p>Decision 333: {@code {"type":"LocalDate","value":"2026-03-31"}} becomes a {@link LocalDate}, which the engine stores
+ * as a variable type of its own ({@code sangam-local-date-v1}, ISO text) and which comes back as the same typed value,
+ * also inside a Json map or list. The text must be {@code uuuu-MM-dd} exactly, years 0000-9999 (engine format v1,
+ * {@link LocalDateText}); anything else, a date-time included, is refused with {@code VALIDATION_FAILED}, never
+ * coerced. {@code Date} is a different type: an instant ({@code java.util.Date}), never a calendar date. The lower-case
+ * aliases ({@code decimal}, {@code integer-string}, {@code date-time}, {@code date}, ...) name the same types as the JSON
+ * Schema formats of the form profile; {@code date} is {@code LocalDate}. A plain string stays a string: a date written
+ * untyped is stored and returned as text, as before.
  */
 public final class TypedVariables {
 
@@ -48,7 +60,7 @@ public final class TypedVariables {
                 case "Boolean", "boolean" -> Boolean.parseBoolean(s);
                 case "String", "string" -> s;
                 case "Date", "date-time" -> Date.from(Instant.parse(s));
-                case "LocalDate", "date" -> LocalDate.parse(s).toString();
+                case "LocalDate", "date" -> localDate(s);
                 case "Json", "json" -> value;
                 default -> throw new IllegalArgumentException("unknown typed variable type " + type);
             };
@@ -110,6 +122,15 @@ public final class TypedVariables {
             return v;
         }
         return String.valueOf(v);
+    }
+
+    /** Decision 333: strict ISO date text as a {@link LocalDate}; invalid text is a validation problem. */
+    static LocalDate localDate(String text) {
+        try {
+            return LocalDateText.parse(text);
+        } catch (LocalDateText.LocalDateFormatException e) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "typed variable LocalDate: " + e.getMessage());
+        }
     }
 
     private static Map<String, Object> typed(String type, Object value) {
