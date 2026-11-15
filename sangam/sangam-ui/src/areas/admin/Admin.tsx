@@ -438,13 +438,13 @@ export function Assignments() {
             <SelectField
               label={t('admin.kind')}
               value={form.kind ?? 'SUBSTANTIVE'}
-              onChange={(v) => setForm({ ...form, kind: v as SeatHoldingKind })}
+              onChange={(v) => (setForm({ ...form, kind: v as SeatHoldingKind }), setImpact(undefined))}
               options={(['SUBSTANTIVE', 'ADDITIONAL_CHARGE', 'LEAVE_SUBSTITUTE'] as const).map((k) => ({ value: k, label: t(`seat.kind.${k}`) }))}
             />
             <TextField label={t('admin.personId')} required value={form.personId ?? ''} onChange={(v) => (setForm({ ...form, personId: v }), setImpact(undefined))} />
             <TextField label={t('admin.seatId')} required value={form.seatId ?? ''} onChange={(v) => (setForm({ ...form, seatId: v }), setImpact(undefined))} />
-            <TextField label={t('admin.validFrom')} type="date" required value={(form.validFrom ?? '').slice(0, 10)} onChange={(v) => setForm({ ...form, validFrom: v })} />
-            <TextField label={t('admin.validTo')} type="date" required={form.kind !== 'SUBSTANTIVE'} value={(form.validTo ?? '').slice(0, 10)} onChange={(v) => setForm({ ...form, validTo: v || undefined })} />
+            <TextField label={t('admin.validFrom')} type="date" required value={(form.validFrom ?? '').slice(0, 10)} onChange={(v) => (setForm({ ...form, validFrom: v }), setImpact(undefined))} />
+            <TextField label={t('admin.validTo')} type="date" required={form.kind !== 'SUBSTANTIVE'} value={(form.validTo ?? '').slice(0, 10)} onChange={(v) => (setForm({ ...form, validTo: v || undefined }), setImpact(undefined))} />
             <TextArea label={t('common.reason')} required value={form.reason ?? ''} onChange={(v) => setForm({ ...form, reason: v })} />
             {form.kind !== 'SUBSTANTIVE' && <Notice>{t('admin.actedForHint')}</Notice>}
             {impact && (
@@ -1033,13 +1033,29 @@ export function idpTimeoutProblem(v: unknown): 'form.required' | 'form.wholeNumb
   return typeof v === 'number' && Number.isInteger(v) ? undefined : 'form.wholeNumber';
 }
 
+/** The attribute mapping typed as JSON text, as an object of strings; undefined when the text is not such an object. */
+export function idpMapping(v: unknown): Record<string, string> | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(String(v ?? '{}'));
+  } catch {
+    return undefined;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+  return Object.values(parsed).every((x) => typeof x === 'string') ? (parsed as Record<string, string>) : undefined;
+}
+
 export function IdentityProviders() {
   const { t } = useTranslation();
   const list = useAsync(() => api.admin.identityProviders(), []);
   const [edit, setEditRaw] = useState<Record<string, unknown> | null>(null);
   const [timeoutTouched, setTimeoutTouched] = useState(false);
+  const [mappingTouched, setMappingTouched] = useState(false);
   const setEdit = (next: Record<string, unknown> | null) => {
-    if (next === null) setTimeoutTouched(false);
+    if (next === null) {
+      setTimeoutTouched(false);
+      setMappingTouched(false);
+    }
     setEditRaw(next);
   };
   const [msg, setMsg] = useState<string>();
@@ -1102,18 +1118,14 @@ export function IdentityProviders() {
             type="button"
             className="primary"
             onClick={() => {
-              let mapping: Record<string, string> = {};
-              try {
-                mapping = JSON.parse(String(edit!.attributeMapping ?? '{}')) as Record<string, string>;
-              } catch {
-                /* invalid JSON */
-              }
+              // The mapping is what the login reads (username, tenant): text that is not a JSON object is refused here, never
+              // sent as an empty mapping that would replace the saved one
+              const mapping = idpMapping(edit!.attributeMapping);
+              setMappingTouched(true);
               // IdentityProvider's mfaRequired and sessionTimeoutMin are primitives (refused when missing, Jackson 3): the box is sent as
               // shown and an empty or fractional timeout is refused here instead of being sent
-              if (idpTimeoutProblem(edit!.sessionTimeoutMin)) {
-                setTimeoutTouched(true);
-                return;
-              }
+              setTimeoutTouched(true);
+              if (mapping === undefined || idpTimeoutProblem(edit!.sessionTimeoutMin)) return;
               void act.run(() => api.admin.saveIdentityProvider({ ...edit!, attributeMapping: mapping, mfaRequired: Boolean(edit!.mfaRequired), sessionTimeoutMin: Number(edit!.sessionTimeoutMin) } as never)).then((r) => {
                 if (r) {
                   setEdit(null);
@@ -1132,7 +1144,12 @@ export function IdentityProviders() {
             <SelectField label={t('admin.protocol')} value={String(edit.protocol)} onChange={(v) => setEdit({ ...edit, protocol: v })} options={['OIDC', 'SAML2', 'LDAP'].map((v) => ({ value: v, label: v }))} />
             <TextField label={t('admin.issuer')} value={String(edit.issuer ?? '')} onChange={(v) => setEdit({ ...edit, issuer: v })} />
             <TextField label={t('admin.metadataUrl')} value={String(edit.metadataUrl ?? '')} onChange={(v) => setEdit({ ...edit, metadataUrl: v })} />
-            <TextArea label={t('admin.attributeMapping')} value={String(edit.attributeMapping ?? '')} onChange={(v) => setEdit({ ...edit, attributeMapping: v })} />
+            <TextArea
+              label={t('admin.attributeMapping')}
+              value={String(edit.attributeMapping ?? '')}
+              onChange={(v) => setEdit({ ...edit, attributeMapping: v })}
+              error={mappingTouched && idpMapping(edit.attributeMapping) === undefined ? t('mod.common.invalidJson') : undefined}
+            />
             <Checkbox label={t('admin.mfa')} checked={Boolean(edit.mfaRequired)} onChange={(v) => setEdit({ ...edit, mfaRequired: v })} />
             <TextField
               label={t('admin.sessionTimeout')}
@@ -1388,7 +1405,8 @@ export function Templates() {
         { key: 'urls', type: 'textarea', label: 'admin.whitelistedUrls' },
       ]}
       rowActions={[
-        { id: 'test-send', label: 'admin.testSend' },
+        // RegistryController maps only activate | retire | test (sangam-api.yaml actOne enum)
+        { id: 'test', label: 'admin.testSend' },
         { id: 'retire', label: 'admin.retire', reason: true, danger: true },
       ]}
     />

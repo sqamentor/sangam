@@ -624,7 +624,8 @@ export const api = {
   /** Declarative CRUD screens. DELETE carries ?reason=. */
   resource: {
     list: <R>(path: string, q: ListQuery) => http.page<R>(path, q),
-    save: <R extends { id?: string }>(path: string, r: R) => (r.id ? http.put<R>(`${path}/${enc(r.id)}`, r) : http.post<R>(path, r)),
+    /** create (POST) or update (PUT of the id); `create` says which, since some entries carry a user-chosen id when new. */
+    save: <R extends { id?: string }>(path: string, r: R, create = !r.id) => (create ? http.post<R>(path, r) : http.put<R>(`${path}/${enc(r.id!)}`, r)),
     remove: (path: string, id: string, reason: string) => http.del<void>(`${path}/${enc(id)}`, { reason }),
     action: <R>(path: string, id: string, action: string, body: unknown = {}) => http.post<R>(`${path}/${enc(id)}/${action}`, body),
   },

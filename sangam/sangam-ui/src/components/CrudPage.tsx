@@ -66,6 +66,13 @@ export function CrudPage<R extends { id?: string }>({
   const [sort, setSort] = useState<string>();
   const list = usePaged((p) => api.resource.list<R>(path, { ...p, q, sort }), [path, q, sort]);
   const [editing, setEditing] = useState<FormValues | null>(null);
+  // A new entry is created (POST) even when its id is typed by the user (a tenant or group id): whether the editor holds a
+  // new entry is kept here, never inferred from the presence of an id, which would send a new tenant as an update (PUT).
+  const [creating, setCreating] = useState(false);
+  const edit = (v: FormValues | null, isNew = false) => {
+    setCreating(isNew);
+    setEditing(v);
+  };
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState<{ row: R; action: CrudRowAction<R> | 'delete' } | null>(null);
   const save = useAction();
@@ -79,7 +86,7 @@ export function CrudPage<R extends { id?: string }>({
       header: t('common.actions'),
       render: (r: R) => (
         <div className="toolbar">
-          <button type="button" className="link" onClick={() => setEditing({ ...(r as Record<string, unknown>) })}>
+          <button type="button" className="link" onClick={() => edit({ ...(r as Record<string, unknown>) })}>
             {t('common.edit')}
           </button>
           {rowActions
@@ -113,10 +120,10 @@ export function CrudPage<R extends { id?: string }>({
     const errs = validateForm(schema, editing, t);
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    const r = await save.run(() => api.resource.save(path, editing as unknown as R));
+    const r = await save.run(() => api.resource.save(path, editing as unknown as R, creating));
     if (r) {
       announce(t('common.saved'));
-      setEditing(null);
+      edit(null);
       list.reload();
     }
   };
@@ -130,7 +137,7 @@ export function CrudPage<R extends { id?: string }>({
           <>
             {extraToolbar}
             {canCreate && (
-              <button type="button" className="primary" onClick={() => setEditing({ ...newDefaults })}>
+              <button type="button" className="primary" onClick={() => edit({ ...newDefaults }, true)}>
                 {t('common.new')}
               </button>
             )}
@@ -153,12 +160,12 @@ export function CrudPage<R extends { id?: string }>({
       )}
       <Dialog
         open={editing !== null}
-        title={editing?.id ? t('common.edit') : t('common.new')}
-        onClose={() => setEditing(null)}
+        title={creating ? t('common.new') : t('common.edit')}
+        onClose={() => edit(null)}
         wide
         footer={
           <>
-            <button type="button" onClick={() => setEditing(null)}>
+            <button type="button" onClick={() => edit(null)}>
               {t('common.cancel')}
             </button>
             <button type="button" className="primary" disabled={save.busy} onClick={() => void onSave()}>
