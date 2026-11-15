@@ -31,7 +31,7 @@ const purposes: ScreenDef = {
   ],
 };
 
-const consents: ScreenDef = {
+export const consents: ScreenDef = {
   id: 'consents',
   title: 'mod.compliance.consents',
   description: 'mod.compliance.consentsDesc',
@@ -39,7 +39,10 @@ const consents: ScreenDef = {
   unpaged: true,
   filters: [f.text('subject', 'fld.principalRef', true)],
   requireFilters: ['subject'],
-  columns: [c('id'), c('noticeKey'), c('noticeVersion'), c('purposeCodes'), c('status'), c('givenAt'), c('withdrawnAt')],
+  // the fields of a consent record as the server returns it (ComplianceConsent in sangam-api.yaml; ConsentService.Consent):
+  // its id is consentId and its purposes are activePurposes, so the id and purposes columns were always empty
+  // (CERT-In / DPDP matrix D-04, compliancePackCodes.test.ts)
+  columns: [c('consentId', 'fld.id'), c('noticeKey'), c('noticeVersion'), c('activePurposes', 'fld.purposeCodes'), c('status'), c('givenAt'), c('withdrawnAt')],
   rowKey: ['id', 'consentId'],
   create: {
     id: 'give',
@@ -89,7 +92,8 @@ export function rightsScreen(pack: JurisdictionView | undefined, hasLabel: (i18n
     unpaged: true,
     filters: [f.text('subject', 'fld.principalRef', true)],
     requireFilters: ['subject'],
-    columns: [c('id'), c('right'), c('status'), c('submittedAt'), c('dueAt')],
+    // ComplianceRightsRequest (sangam-api.yaml; DataSubjectRightsService.RightsRequest): requestId and receivedAt
+    columns: [c('requestId', 'fld.requestId'), c('right'), c('status'), c('receivedAt'), c('dueAt')],
     rowKey: ['id', 'requestId'],
     detail: '/compliance/rights-requests/{id}',
     create: { id: 'submit', label: 'act.submitRightsRequest', path: '/compliance/rights-requests', fields: [f.text('principalRef'), packCodeField('right', packCodes(pack?.rights), hasLabel, true), f.text('identifierType'), f.text('identifierValue', undefined, false, { sensitive: true }), f.text('nomineeRef'), f.text('channel'), f.json('details')] },
