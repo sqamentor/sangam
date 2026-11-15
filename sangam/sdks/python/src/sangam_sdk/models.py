@@ -201,6 +201,13 @@ class Task(_Model):
     delegation_state: Optional[str] = None
     #: VariableMap as sent (TypedValues not unwrapped)
     variables: Optional[dict[str, Any]] = None
+    #: M-042 task index: MoneyAmount, a decimal string in major units with exactly the currency's fraction digits
+    #: (never a float); None when the process has no index rule or the rule found no amount
+    amount: Optional[str] = None
+    #: ISO 4217 code of ``amount``; None with it
+    currency: Optional[str] = None
+    #: reference the process's index rule set at creation (at most 255 characters); None without one
+    reference: Optional[str] = None
     _times = ("created", "due", "follow_up", "last_updated", "claim_time")
 
 

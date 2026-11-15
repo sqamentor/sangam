@@ -192,6 +192,78 @@ class PendingReview(unittest.TestCase):
         self.assertTrue(check([comp("pkg:maven/org.ogce/xpp3@1.1.6", iu)]).errors)
 
 
+class ReviewedLicences(unittest.TestCase):
+    """ui.yml "Licence policy (strict, distribution ui)", 2026-11-15: nine bpmn.io packages declare the pointer
+    "SEE LICENSE IN LICENSE" and component-props declares nothing, so the gate saw no licence it could judge although
+    each version is in the decision register with the licence read from its files."""
+    BPMN = "pkg:npm/bpmn-js@17.11.1"
+    FORM = "pkg:npm/%40bpmn-io/form-js-editor@1.12.0"
+    PROPS = "pkg:npm/component-props@1.1.1"
+
+    def test_a_reviewed_bpmn_io_version_is_judged_by_its_recorded_licence_and_stays_conditional(self):
+        ch = check([comp(self.BPMN, "SEE LICENSE IN LICENSE"), comp(self.FORM, "SEE LICENSE IN LICENSE")], distribution="ui")
+        self.assertEqual([], ch.errors)
+        self.assertEqual(2, sum("REVIEWED" in n and "LicenseRef-bpmn.io" in n for n in ch.notes), ch.notes)
+        self.assertEqual(2, sum("CONDITIONAL" in n and "LIC-8" in n for n in ch.notes), ch.notes)
+
+    def test_a_package_without_any_licence_member_is_judged_by_its_recorded_licence(self):
+        c = comp(self.PROPS)
+        self.assertEqual([], c["licenses"])
+        self.assertEqual([], check([c], distribution="ui").errors)
+
+    def test_another_version_is_not_covered(self):
+        ch = check([comp("pkg:npm/bpmn-js@17.11.2", "SEE LICENSE IN LICENSE"), comp("pkg:npm/component-props@1.1.2")])
+        self.assertTrue(any("UNKNOWN LICENCE" in e and "bpmn-js@17.11.2" in e for e in ch.errors), ch.errors)
+        self.assertTrue(any("NO LICENCE DATA" in e and "component-props@1.1.2" in e for e in ch.errors), ch.errors)
+
+    def test_changed_metadata_needs_a_new_review(self):
+        ch = check([comp(self.BPMN, "MIT"), comp(self.PROPS, "ISC")])
+        self.assertEqual(2, sum("REVIEWED LICENCE MISMATCH" in e for e in ch.errors), ch.errors)
+
+    def test_an_entry_accepts_nothing_by_itself(self):
+        policy = json.loads(json.dumps(POLICY))
+        policy["reviewed_licences"] = [
+            {"licence": "GPL-3.0-only", "declared": "SEE LICENSE IN LICENSE", "evidence": "test", "purls": ["pkg:npm/x@1.0.0"]},
+            {"licence": "LicenseRef-bpmn.io", "declared": None, "evidence": "test", "purls": ["pkg:npm/not-bpmn-io@1.0.0"]},
+            {"licence": "LicenseRef-not-in-the-policy", "declared": None, "evidence": "test", "purls": ["pkg:npm/y@1.0.0"]}]
+        ch = cl.Checker(policy, True)
+        for c in (comp("pkg:npm/x@1.0.0", "SEE LICENSE IN LICENSE"), comp("pkg:npm/not-bpmn-io@1.0.0"), comp("pkg:npm/y@1.0.0")):
+            ch.check_component(c, "test")
+        self.assertEqual(2, sum("FORBIDDEN LICENCE" in e for e in ch.errors), ch.errors)
+        self.assertEqual(1, sum("UNKNOWN LICENCE" in e for e in ch.errors), ch.errors)
+
+    def test_every_entry_agrees_with_the_decision_register(self):
+        register = cl.load_json(os.path.join(HERE, "decision-register.json"))["components"]
+        entries = POLICY["reviewed_licences"]
+        self.assertTrue(entries)
+        for e in entries:
+            for purl in e["purls"]:
+                row = register.get(purl)
+                self.assertIsNotNone(row, f"{purl} is not in decision-register.json")
+                recorded, _, declared = row["spdx"].partition(" (declared '")
+                self.assertEqual(e["licence"], recorded, purl)
+                if declared:  # the register names the declared spelling only where it kept one
+                    self.assertEqual(e["declared"], declared[:-2], purl)
+                self.assertTrue(row["decision"].startswith("ACCEPTED"), purl)
+
+    def test_decision_176_paranamer_as_the_cyclonedx_maven_plugin_reports_it(self):
+        # licence-check.yml 2026-11-15: "UNKNOWN LICENCE com.thoughtworks.paranamer:paranamer@2.8.3: BSD-4-Clause"
+        purl = "pkg:maven/com.thoughtworks.paranamer/paranamer@2.8.3"
+        c = comp(purl)
+        c["licenses"] = [{"license": {"id": "BSD-4-Clause"}}]
+        ch = check([c], distribution="server")
+        self.assertEqual([], ch.errors)
+        self.assertTrue(any("REVIEWED" in n and "BSD-3-Clause" in n and "decision 176" in n for n in ch.notes), ch.notes)
+        # BSD-4-Clause itself is not accepted: any other component or version that declares it still fails
+        other = comp("pkg:maven/com.thoughtworks.paranamer/paranamer@2.8", "BSD-4-Clause")
+        self.assertTrue(any("UNKNOWN LICENCE" in e for e in check([other]).errors))
+
+    def test_a_policy_prefix_spelled_as_in_an_sbom_matches(self):
+        self.assertTrue(cl.Checker.matches("pkg:npm/@bpmn-io/form-js-viewer@1.12.0", ["pkg:npm/%40bpmn-io/form-js-viewer"]))
+        self.assertTrue(cl.Checker.matches("pkg:npm/%40bpmn-io/form-js-viewer@1.12.0", ["pkg:npm/%40bpmn-io/form-js-viewer"]))
+        self.assertFalse(cl.Checker.matches("pkg:npm/@other/form-js-viewer@1.12.0", ["pkg:npm/%40bpmn-io/form-js-viewer"]))
+
+
 class Scoping(unittest.TestCase):
     def test_bouncy_castle_and_jnats_only_in_their_add_ons(self):
         # decisions 217 and 232

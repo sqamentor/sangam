@@ -81,7 +81,7 @@ public sealed record ExternalWork(
 }
 
 /// <summary>W3C Trace Context of the request that created the work (R13, M-062); <c>Traceparent</c> is required in the schema.</summary>
-public sealed record TraceContext(string? Traceparent, string? Tracestate);
+public sealed record TraceContext(string Traceparent, string? Tracestate);
 
 /// <summary>
 /// Operation-ledger entry of a leased work item (SL-16, R37). <c>MayDispatch</c> false with state SUCCEEDED: complete
@@ -133,7 +133,11 @@ public sealed record TaskView(
     string? ProcessDefinitionKey, string? CaseInstanceId, string? BusinessKey, string? Assignee, string? Owner,
     string? SeatId, string? TenantId, DateTimeOffset? Created, DateTimeOffset? Due, DateTimeOffset? FollowUp,
     DateTimeOffset? LastUpdated, DateTimeOffset? ClaimTime, string? State, int? Priority, string? FormKey,
-    string? DelegationState, VarMap? Variables = null);
+    string? DelegationState, VarMap? Variables = null,
+    // M-042 task index: Amount is a MoneyAmount, a decimal string in major units with exactly the currency's fraction
+    // digits (never a binary floating-point number); Currency is its ISO 4217 code; Reference is set by the process's
+    // index rule. All three are null when the process has no rule or the rule found none.
+    string? Amount = null, string? Currency = null, string? Reference = null);
 
 /// <summary><c>POST /tasks/{id}/complete</c>: <c>PayloadHash</c> (required) binds the approval to the payload (VI.4 rule 5).</summary>
 public sealed record CompleteTaskRequest(string PayloadHash, Vars? Variables = null, string? Decision = null,

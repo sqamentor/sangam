@@ -12,6 +12,7 @@ import yaml  # noqa: E402
 import contract_ir as ir  # noqa: E402
 import emit_dotnet  # noqa: E402
 import emit_java  # noqa: E402
+import emit_php  # noqa: E402
 import emit_python  # noqa: E402
 import generate_sdk_surface as gen  # noqa: E402
 
@@ -173,7 +174,51 @@ class Identifiers(unittest.TestCase):
         self.assertEqual(ir.camel("2fa"), "n2fa", "a leading digit still gets the N prefix")
 
 
+class PhpPropertyNames(unittest.TestCase):
+    """A wire name is not always a PHP variable name: "$ref" (ScimGroupRef, ScimMember) and the SCIM extension URN
+    (ScimUser) were emitted after a "$" as they are, which PHP refuses to parse (sdks.yml php job, 2026-11-15)."""
+
+    def model(self, *wires, extras=None):
+        return ir.Model("M", [ir.Prop(w, ir.T("string"), False) for w in wires], extras)
+
+    def test_a_variable_name_is_kept_and_any_other_wire_name_gets_an_identifier(self):
+        names = emit_php.prop_names(self.model("value", "$ref", "urn:sangam:params:scim:schemas:extension:2.0:User",
+                                               "this", "snake_case"))
+        self.assertEqual({"value": "value", "$ref": "ref", "this": "thisValue", "snake_case": "snake_case",
+                          "urn:sangam:params:scim:schemas:extension:2.0:User":
+                              "urnSangamParamsScimSchemasExtension20User"}, names)
+
+    def test_a_derived_name_never_takes_the_name_of_another_property(self):
+        self.assertEqual({"ref": "ref", "$ref": "ref_"}, emit_php.prop_names(self.model("$ref", "ref")))
+        self.assertEqual({"$additionalProperties": "additionalProperties_"},
+                         emit_php.prop_names(self.model("$additionalProperties", extras=ir.T("any"))))
+
+    def test_the_wire_name_stays_the_json_key(self):
+        c = RealContract.contract()
+        text = emit_php.model_file(c, c.models["ScimGroupRef"])
+        self.assertIn("public readonly ?string $ref = null,", text)
+        self.assertIn("Support::str($data['$ref'] ?? null)", text)
+        self.assertIn("$out['$ref'] = $this->ref;", text)
+        self.assertNotIn("$$", text)
+
+    def test_every_generated_property_is_a_php_variable(self):
+        c = RealContract.contract()
+        for m in c.models.values():
+            for wire, name in emit_php.prop_names(m).items():
+                self.assertRegex(name, r"\A[A-Za-z_][A-Za-z0-9_]*\Z", f"{m.name}.{wire}")
+                self.assertNotEqual("this", name, f"{m.name}.{wire}")
+
+
 class RealContract(unittest.TestCase):
+    _contract = None
+
+    @classmethod
+    def contract(cls):
+        if RealContract._contract is None:
+            with open(gen.CONTRACT, encoding="utf-8") as fh:
+                RealContract._contract = ir.build(yaml.safe_load(fh))
+        return RealContract._contract
+
     @classmethod
     def setUpClass(cls):
         with open(gen.CONTRACT, encoding="utf-8") as fh:

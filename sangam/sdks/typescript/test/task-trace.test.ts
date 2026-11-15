@@ -11,14 +11,14 @@ const client = new SangamClient({ baseUrl: 'http://127.0.0.1:1' });
 
 describe('task trace context (M-062)', () => {
   it('exposes the engine trace context of the work item', () => {
-    const ctx = new TaskContext({ id: 'wk-1', lockVersion: 1, traceContext: { traceparent: TP, tracestate: 'congo=t61rcWkgMzE' } },
+    const ctx = new TaskContext({ id: 'wk-1', lockVersion: 1, attemptId: 'at-1', traceContext: { traceparent: TP, tracestate: 'congo=t61rcWkgMzE' } },
       'w-1', client, noopLogger);
     assert.equal(ctx.traceparent, TP);
     assert.equal(ctx.tracestate, 'congo=t61rcWkgMzE');
   });
 
   it('is undefined when the server stored none', () => {
-    const ctx = new TaskContext({ id: 'wk-1', lockVersion: 1 }, 'w-1', client, noopLogger);
+    const ctx = new TaskContext({ id: 'wk-1', lockVersion: 1, attemptId: 'at-1' }, 'w-1', client, noopLogger);
     assert.equal(ctx.traceparent, undefined);
     assert.equal(ctx.tracestate, undefined);
   });

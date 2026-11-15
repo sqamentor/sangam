@@ -47,6 +47,24 @@ def command(lang: str, jar: str | None) -> list[str]:
             "-v", f"{SANGAM}:/local", "-w", "/local", IMAGE, *args[:1], "-i", CONTRACT_REL, *args[1:]]
 
 
+# Heap of the Gradle daemon and of the Kotlin compile daemon for the generated Kotlin client. The contract has more than
+# 1100 operations and the generator writes one class per tag (RegistryApi.kt alone has more than 12 000 lines); with
+# Gradle's default daemon heap (512 MiB, which the Kotlin daemon inherits) compileKotlin ends in
+# "java.lang.OutOfMemoryError: Java heap space" (sdks.yml tier2-kotlin, 2026-11-15). The jvm-okhttp4 library of the
+# generator writes no gradle.properties of its own.
+KOTLIN_BUILD_HEAP = "4g"
+
+
+def write_kotlin_build_memory(out: str) -> None:
+    path = os.path.join(out, "gradle.properties")
+    if os.path.exists(path):
+        raise RuntimeError(f"{path}: the generator now writes gradle.properties; merge the heap settings into it")
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("# written by sdks/tier2/generate_tier2.py (not by openapi-generator)\n"
+                 f"org.gradle.jvmargs=-Xmx{KOTLIN_BUILD_HEAP}\n"
+                 f"kotlin.daemon.jvmargs=-Xmx{KOTLIN_BUILD_HEAP}\n")
+
+
 def main(argv: list[str]) -> int:
     jar = next((a.split("=", 1)[1] for a in argv if a.startswith("--jar=")), None)
     if "--jar" in argv:
@@ -67,6 +85,8 @@ def main(argv: list[str]) -> int:
         r = subprocess.run(cmd, cwd=SANGAM)
         if r.returncode != 0:
             return r.returncode
+        if lang == "kotlin":
+            write_kotlin_build_memory(out)
     return 0
 
 
