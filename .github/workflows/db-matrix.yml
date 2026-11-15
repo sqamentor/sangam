@@ -10,6 +10,11 @@
 # SG-05: lane sqlserver2025 (SQL Server dialect and profile on mcr.microsoft.com/mssql/server:2025-CU10-ubuntu-24.04,
 # the image AcceptanceDatabase uses) runs nightly and on request as tier "1-candidate": it is report-only (its ledger
 # line is NOT-RUN, never PASS) until its acceptance run is green and deploy/SUPPORT-MATRIX.md declares it.
+# M-108 (decisions 156 and 323): lane yugabytedb (YugabyteDB YSQL through the PostgreSQL driver) is tier
+# "experimental": nightly and on request, report-only and never gating, and it runs only sangam-engine's YugabyteDbIT
+# (the guard, the product changelog and the identity-order probe on a real server), not the server acceptance suite.
+# Its image must be pinned by digest (SANGAM_IT_IMAGE_YUGABYTEDB = <repo>:<tag>@sha256:<64 hex>); until it is, the lane
+# writes NOT-RUN with that reason and pulls nothing.
 # Q22 (owner 2026-11-12): the DB legs run only the database ITs (failsafe, profile sangam-it-only); the unit tests run
 # once, in ci-build.yml. SG-16: every leg records its provenance (commit, JDK, test-JVM zone, database).
 #
@@ -35,7 +40,7 @@ on:
   workflow_dispatch:
     inputs:
       dbs:
-        description: "Comma-separated: postgres,oracle,sqlserver,sqlserver2025,mysql,mariadb,db2"
+        description: "Comma-separated: postgres,oracle,sqlserver,sqlserver2025,mysql,mariadb,db2,yugabytedb"
         default: "postgres,oracle,sqlserver,mysql"
         required: true
   workflow_call:
@@ -114,13 +119,14 @@ jobs:
           ev = os.environ["EVENT"]; sched = os.environ.get("SCHEDULE", ""); given = os.environ.get("INPUT_DBS", "")
           tier1 = ["postgres", "oracle", "sqlserver", "mysql"]
           candidates = ["sqlserver2025"]   # SG-05: reported, not gating, until declared in SUPPORT-MATRIX
+          experimental = ["yugabytedb"]    # M-108, decisions 156 and 323: reported, never gating
           if given.strip():
               dbs = [d.strip() for d in given.split(",") if d.strip()]
               why = "explicit input"
           elif ev == "schedule" and sched == "30 21 * * 6":
               dbs, why = ["mariadb", "db2"], "weekly Tier-2"
           elif ev == "schedule":
-              dbs, why = tier1 + candidates, "nightly Tier-1 + candidates"
+              dbs, why = tier1 + candidates + experimental, "nightly Tier-1 + candidates + experimental"
           elif ev == "pull_request":
               if os.environ.get("CH_SHARED") == "true":
                   dbs, why = tier1, "PR touches shared SQL / mappings / migrations"
@@ -129,12 +135,12 @@ jobs:
                   why = "PR: PostgreSQL + affected dialects"
           else:
               dbs, why = ["postgres"], "default"
-          allowed = set(tier1 + candidates + ["mariadb", "db2"])
+          allowed = set(tier1 + candidates + experimental + ["mariadb", "db2"])
           bad = [d for d in dbs if d not in allowed]
           if bad:
               raise SystemExit(f"unknown database(s): {bad}")
           tier = {"postgres": "1", "oracle": "1", "sqlserver": "1", "sqlserver2025": "1-candidate", "mysql": "1",
-                  "mariadb": "2", "db2": "unsupported"}
+                  "mariadb": "2", "db2": "unsupported", "yugabytedb": "experimental"}
           planned = list(dict.fromkeys(dbs))
           inc = [{"db": d, "tier": tier[d]} for d in planned if d != "db2"]
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -178,12 +184,15 @@ jobs:
       SANGAM_IT_IMAGE_MYSQL: mysql:8.4
       SANGAM_IT_IMAGE_MARIADB: mariadb:11.4
       SANGAM_IT_IMAGE_DB2: icr.io/db2_community/db2:12.1.2.0
+      # M-108: YugabyteDB YSQL, pinned by digest (<repo>:<tag>@sha256:<64 hex>). Not pinned yet: the digest needs a
+      # registry lookup, which the integrator does; while this is empty the lane is NOT-RUN and pulls nothing.
+      SANGAM_IT_IMAGE_YUGABYTEDB: ""
       TESTCONTAINERS_RYUK_DISABLED: "false"
       # Decision 122: operator acceptance of vendor database terms, passed through to the test JVM unchanged.
       SANGAM_ACCEPT_ORACLE_FREE_TERMS: ${{ vars.SANGAM_ACCEPT_ORACLE_FREE_TERMS }}
       SANGAM_ACCEPT_MSSQL_EULA: ${{ vars.SANGAM_ACCEPT_MSSQL_EULA }}
       SANGAM_ACCEPT_DB2_COMMUNITY_TERMS: ${{ vars.SANGAM_ACCEPT_DB2_COMMUNITY_TERMS }}
-      REPORT_ONLY: ${{ matrix.tier == '1-candidate' && '--report-only' || '' }}
+      REPORT_ONLY: ${{ (matrix.tier == '1-candidate' || matrix.tier == 'experimental') && '--report-only' || '' }}
     defaults:
       run:
         working-directory: sangam
@@ -198,7 +207,12 @@ jobs:
             sqlserver|sqlserver2025) var=SANGAM_ACCEPT_MSSQL_EULA ;;
             *) var="" ;;
           esac
-          if [ -z "$var" ] || [ "${!var}" = "Y" ]; then
+          if [ "${{ matrix.db }}" = yugabytedb ] && ! printf '%s' "$SANGAM_IT_IMAGE_YUGABYTEDB" | grep -Eq '^[^@[:space:]]+:[^@[:space:]]+@sha256:[0-9a-f]{64}$'; then
+            # M-108: an experimental image is run only when pinned by digest; never pulled by tag alone
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            $RL record --check "db-${{ matrix.db }}" --ledger-dir "$LEDGER" --status NOT-RUN \
+              --reason "SANGAM_IT_IMAGE_YUGABYTEDB is not pinned by digest (<repo>:<tag>@sha256:<64 hex>): M-108 runs no unpinned image"
+          elif [ -z "$var" ] || [ "${!var}" = "Y" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
           else
             echo "run=false" >> "$GITHUB_OUTPUT"
@@ -233,6 +247,20 @@ jobs:
           # Q22: sangam-it-only skips the surefire unit tests (they run in ci-build.yml); failsafe ITs still run.
           profiles=sangam-db-it,sangam-it-only
           [ "${{ matrix.db }}" = oracle ] && profiles="$profiles,oracle-it"
+          if [ "${{ matrix.db }}" = yugabytedb ]; then
+            # M-108: only YugabyteDbIT (sangam-engine), and the report must show it ran with nothing skipped: an
+            # assumption skip is never a result (RM-12). Report-only (REPORT_ONLY), never gating.
+            # shellcheck disable=SC2086
+            $RL run --check db-yugabytedb --ledger-dir "$LEDGER" $REPORT_ONLY -- bash -c '
+              set -euo pipefail
+              mvn $MAVEN_ARGS verify -pl sangam-engine -am -P"'"$profiles"'" -Dsangam.db=yugabytedb \
+                -Dit.test=YugabyteDbIT -Dfailsafe.failIfNoSpecifiedTests=false
+              r=sangam-engine/target/failsafe-reports/TEST-org.sangam.engine.db.YugabyteDbIT.xml
+              [ -f "$r" ] || { echo "::error::YugabyteDbIT wrote no report"; exit 1; }
+              grep -Eq "<testsuite[^>]* skipped=\"0\"" "$r" && ! grep -Eq "<testsuite[^>]* tests=\"0\"" "$r" \
+                || { echo "::error::YugabyteDbIT was skipped or ran no test"; exit 1; }'
+            exit 0
+          fi
           # shellcheck disable=SC2086
           $RL run --check "db-${{ matrix.db }}" --ledger-dir "$LEDGER" $REPORT_ONLY -- \
             mvn $MAVEN_ARGS verify -P"$profiles" -Dsangam.db=${{ matrix.db }}
