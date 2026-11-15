@@ -6,6 +6,8 @@ catalogue (TABLES below), so the five dialects can never drift apart (A-15, D-54
     python -I tools/generate_changelogs.py        (run from sangam/sangam-persistence)
 
 Output: src/main/resources/db/changelog/<dbms>/sangam-0001-baseline.sql for postgresql, oracle, mssql, mysql, h2.
+YugabyteDB YSQL (M-108, experimental) gets no file of its own: Liquibase 4.33.0 identifies it as postgresql, so the
+postgresql file is its changelog (YugabyteDbChangelogDbmsTest).
 The generated files are committed; Liquibase never runs this script. Change a table here, re-run, and add the
 change as a NEW changeset file (never edit an applied changeset; Liquibase checksums would fail).
 
