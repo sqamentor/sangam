@@ -268,7 +268,7 @@ Generic framework additions: regions (limit, authority, default and breach-rule 
 | US-HLT-049 | SANGAM | [S] | accessExceptions MANNER, FEES, LICENSING, TEFCA_MANNER |
 | US-HLT-050 | DF | [U] | OIG disincentives: deployer exposure; evidence INFORMATION_BLOCKING_REVIEW |
 | US-HLT-051 | SHARED | [S] | SLA + exception code required; pack sec.ushealth.access-request |
-| US-HLT-061 | DF | [S] | payer Patient Access API: not in compliance scope (payer-side hosting; gap for sangam-connectors-health) |
+| US-HLT-061 | DF | [S] | payer Patient Access API: not in compliance scope; workflow in the pack `sec.ushealth.patient-access` (sangam-packs, decision 174), rule values UNVERIFIED (decision 377) |
 | US-HLT-062 | DF | [S] | Provider Access: pack sec.ushealth.provider-access (attribution and opt-out checked at source, response clock DMN) |
 | US-HLT-063 | DF | [S] | Payer-to-Payer: pack sec.ushealth.payer-to-payer (opt-in, member match, five-year look-back DMN) |
 | US-HLT-064 | DF | [U] | response clock DMN sec-ushealth-p2p-config and sec-ushealth-provider-access-config, 1WD (verify) |
@@ -285,4 +285,4 @@ Generic framework additions: regions (limit, authority, default and breach-rule 
 
 GDPR coverage (GDPR-001…044, Arts 5-10, 12-22, 25, 27, 28, 30, 32-39, 44-49) is in `compliance/jurisdictions/EU-GDPR/obligations.tsv`.
 
-**Not implemented here:** US-HLT-061, 066, 067, 114-116 and 122 are outside this module; they are listed for traceability only and remain gaps for the owning modules.
+**Not implemented here:** US-HLT-061 (pack `sec.ushealth.patient-access`), 066, 067, 114-116 and 122 are outside this module; they are listed for traceability only and remain gaps for the owning modules.
