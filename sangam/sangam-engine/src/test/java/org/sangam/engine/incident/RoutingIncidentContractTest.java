@@ -35,14 +35,20 @@ import org.sangam.engine.deploy.StrictExclusiveGatewayBehavior;
  *       ({@code "<CODE>: ..."});</li>
  *   <li>audit event type {@code ROUTING_INCIDENT}, appended once per opened incident in the same command;</li>
  *   <li>audit payload keys, in this order: {@code code, incidentId, processInstanceId, processDefinitionId, gateway,
- *       message}.</li>
+ *       message}, followed by the additive keys of decision 144 ({@code engineTenant, resolvedScope,
+ *       resolutionReason}) and no other key.</li>
  * </ul>
- * A deliberate change is a v2 of the contract: bump it with the consumers first, then change this test.
+ * The additive keys stay v1 (decision 357): the one consumer, the OneIFMS adapter, reads only the incident message
+ * prefix and parses nothing else (oneifms {@code SangamRoutingIncidents.code}, commit c8c3b204, P-452). A change to
+ * the six v1 keys, their order, the codes or the event type is a v2: bump it with the consumers first, then change
+ * this test.
  */
 class RoutingIncidentContractTest {
 
     static final List<String> PAYLOAD_KEYS_V1 = List.of("code", "incidentId", "processInstanceId",
             "processDefinitionId", "gateway", "message");
+    /** Decision 144 (tenant attribution), additive within v1 by decision 357; appended after the v1 keys. */
+    static final List<String> PAYLOAD_KEYS_ADDITIVE = List.of("engineTenant", "resolvedScope", "resolutionReason");
 
     // ------------------------------------------------------------------ constants
 
@@ -118,7 +124,11 @@ class RoutingIncidentContractTest {
             Appended ev = routing.get(0);
             assertEquals("t1", ev.tenant());
             assertEquals(pi, ev.root(), "audited on the root instance's chain");
-            assertEquals(PAYLOAD_KEYS_V1, List.copyOf(ev.payload().keySet()), "v1 payload keys, in order");
+            List<String> keys = List.copyOf(ev.payload().keySet());
+            assertEquals(PAYLOAD_KEYS_V1, keys.subList(0, Math.min(keys.size(), PAYLOAD_KEYS_V1.size())),
+                    "v1 payload keys first, in order");
+            assertEquals(PAYLOAD_KEYS_ADDITIVE, keys.subList(Math.min(keys.size(), PAYLOAD_KEYS_V1.size()), keys.size()),
+                    "then exactly the additive keys of decision 144, in order");
             assertEquals(expectedCode, ev.payload().get("code"));
             assertEquals(inc.getId(), ev.payload().get("incidentId"));
             assertEquals(pi, ev.payload().get("processInstanceId"));
