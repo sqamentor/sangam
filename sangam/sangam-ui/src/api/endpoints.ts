@@ -456,8 +456,6 @@ export const api = {
       action === 'retry' || action === 'resolve'
         ? http.post<void>(`/ops/incidents/${enc(id)}/${action}`, { reason: body.reason ?? '', retries: body.retries, annotation: body.note }, key)
         : http.post<void>(`/ops/incidents/${enc(id)}/${action}`, body, key),
-    bulkRetry: (ids: string[], reason: string, key?: string) =>
-      http.post<Record<string, unknown>>('/ops/batches', { type: 'RETRY', filter: { processInstanceIds: ids }, reason }, key).then(A.normBatch), // as a RETRY batch
     batches: async (q: ListQuery & { status?: T.BatchStatus }) =>
       A.mapPage(await http.page<Record<string, unknown>>('/ops/batches', { page: q.page, size: q.size, state: q.status === 'CANCELED' ? 'CANCELLED' : q.status }), A.normBatch),
     batch: async (id: string) => A.normBatch(await http.get<Record<string, unknown>>(`/ops/batches/${enc(id)}`)),

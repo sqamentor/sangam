@@ -36,7 +36,7 @@ vi.mock('../../plugins/host', () => ({ PluginSlot: () => null, usePlugins: () =>
 
 import apiYaml from '../../../../sangam-rest/api/sangam-api.yaml?raw';
 import { fmtNumber, initI18n } from '../../i18n';
-import { EMPTY_PAGE, KEY, L, T, contractOperations, dialog, outsideContract, pageOf, problem, reasonAndConfirm, recordCalls, rowWith, show, type } from '../../test/screens';
+import { EMPTY_PAGE, KEY, L, T, confirmIn, contractOperations, dialog, noDialog, outsideContract, pageOf, problem, reasonAndConfirm, recordCalls, rowWith, show, type } from '../../test/screens';
 import { OpsDashboard } from './OpsDashboard';
 import { DefinitionDetail, InstanceSearch, ProcessDefinitions } from './Processes';
 import { IncidentDetail, Incidents } from './IncidentsRecon';
@@ -188,7 +188,54 @@ describe('incidents', () => {
     show(<Incidents />);
     expect(await screen.findByText(T('ops.noIncidents'))).toBeTruthy();
   });
-});
+
+  const two = [
+    { id: 'inc1', type: 'failedJob', message: 'Gateway timeout', businessKey: 'APP-9', processInstanceId: 'pi1', createdAt: '2026-11-10T08:00:00Z' },
+    { id: 'inc2', type: 'failedJob', message: 'Bank refused', businessKey: 'APP-10', processInstanceId: 'pi2', createdAt: '2026-11-10T08:05:00Z' },
+  ];
+  const pickBoth = async () => {
+    fireEvent.click(within(rowWith(await screen.findByText('Gateway timeout').then((e) => e.textContent!))).getByRole('checkbox'));
+    fireEvent.click(within(rowWith('Bank refused')).getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: T('ops.bulkRetry') }));
+  };
+
+  it('bulk retry retries each selected incident on its own route, never a batch over their ids', async () => {
+    pages['/ops/incidents'] = pageOf(two);
+    show(<Incidents />);
+    await pickBoth();
+    expect(within(dialog()).getByText(T('ops.bulkRetryHint', { n: 2 }))).toBeTruthy();
+    reasonAndConfirm('Gateway is back up');
+    const body = { reason: 'Gateway is back up', retries: undefined, annotation: undefined };
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(2));
+    expect(api.post).toHaveBeenCalledWith('/ops/incidents/inc1/retry', body, KEY);
+    expect(api.post).toHaveBeenCalledWith('/ops/incidents/inc2/retry', body, KEY);
+    const [k1, k2] = api.post.mock.calls.map((c) => c[2] as string);
+    expect(k1).not.toBe(k2);
+    expect(api.post.mock.calls.some((c) => c[0] === '/ops/batches')).toBe(false);
+    await waitFor(noDialog);
+  });
+
+  it('a partial failure names each refused incident; a second confirm retries only those, under the same key', async () => {
+    pages['/ops/incidents'] = pageOf(two);
+    api.post.mockImplementation(async (path: string) => {
+      if (path === '/ops/incidents/inc2/retry') throw problem(409, 'INCIDENT_ALREADY_RESOLVED');
+      return {};
+    });
+    show(<Incidents />);
+    await pickBoth();
+    reasonAndConfirm('Gateway is back up');
+    const d = dialog();
+    expect(await within(d).findByText(T('ops.bulkRetryFailed', { n: 1 }))).toBeTruthy();
+    expect(within(d).getByText(`${T('ops.incType.failedJob')} · APP-10: ${T('error.conflict')} (INCIDENT_ALREADY_RESOLVED)`)).toBeTruthy();
+    expect(within(d).getByText(T('ops.bulkRetryHint', { n: 1 }))).toBeTruthy();
+    const firstKey = api.post.mock.calls.find((c) => c[0] === '/ops/incidents/inc2/retry')![2];
+    api.post.mockClear();
+    api.post.mockResolvedValue({});
+    fireEvent.click(confirmIn(d));
+    await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
+    expect(api.post).toHaveBeenCalledWith('/ops/incidents/inc2/retry', { reason: 'Gateway is back up', retries: undefined, annotation: undefined }, firstKey);
+    await waitFor(noDialog);
+  });});
 
 /** Evidence: IncidentsRecon.tsx:122-223; endpoints.ts:452-458, 481 (stack trace). */
 describe('incident detail', () => {
