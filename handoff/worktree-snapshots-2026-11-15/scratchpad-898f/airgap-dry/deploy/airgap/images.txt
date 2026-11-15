@@ -1,2 +1,0 @@
-product alpine:3.20
-runtime nginxinc/nginx-unprivileged:1.28.0-alpine

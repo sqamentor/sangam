@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.sangam.server.NoClassPathAutoDeploymentTest
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 98.64 s -- in org.sangam.server.NoClassPathAutoDeploymentTest

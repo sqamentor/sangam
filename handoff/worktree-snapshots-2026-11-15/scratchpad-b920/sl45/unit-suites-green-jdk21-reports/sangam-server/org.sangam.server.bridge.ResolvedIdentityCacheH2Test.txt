@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.sangam.server.bridge.ResolvedIdentityCacheH2Test
--------------------------------------------------------------------------------
-Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 15.92 s -- in org.sangam.server.bridge.ResolvedIdentityCacheH2Test

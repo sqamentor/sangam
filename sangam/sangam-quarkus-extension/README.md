@@ -102,7 +102,7 @@ The closure has these adjustments:
 - **No JDBC driver extension.** The deployer chooses the database. `quarkus-jdbc-h2` would bring h2 2.4.240 and jts-core 1.19.0, which the licence review holds.
 - **`quarkus-maven-plugin` is not used.** The deployer's application build runs the Quarkus augmentation. `META-INF/beans.xml` makes this jar a bean archive.
 
-All downloads, licences and checksums are recorded in `sangam-handoff/DOWNLOADS-WAVE4.md` (W4-F/B66 D-5 lines).
+All downloads, licences and checksums are recorded in `sangam/docs/records/DOWNLOADS-WAVE4.md` (W4-F/B66 D-5 lines).
 
 ## Tests
 

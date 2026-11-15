@@ -1,2 +1,0 @@
-CONFLICT M sangam-engine\src\main\java\org\sangam\engine\SangamEngineConfigurer.java: changed in the integration tree too
-copied 50 deleted 0 conflicts 1 (my change set: 32 files)

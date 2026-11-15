@@ -7,7 +7,7 @@ import java.util.List;
 import org.sangam.core.layer.Jdbc;
 
 /**
- * The DDL of {@code sangam-handoff/W2-JOB-SIDE-TABLES-CONTRACT.md} §1–§3, verbatim (H2 / PostgreSQL types), for the H2
+ * The DDL of {@code sangam/docs/records/W2-JOB-SIDE-TABLES-CONTRACT.md} §1–§3, verbatim (H2 / PostgreSQL types), for the H2
  * tests until W2-E's changelogs create the tables. Keep it equal to the contract.
  */
 final class JobSideTablesDdl {

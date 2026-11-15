@@ -1,1 +1,0 @@
-sha256sum --strict -c SHA256SUMS

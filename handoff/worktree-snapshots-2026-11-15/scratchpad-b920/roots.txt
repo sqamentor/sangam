@@ -1,1 +1,0 @@
-sangam/sangam-packs/src/main/resources sangam/sangam-compliance/src/main/resources/packs sangam/sangam-persistence/src/main/resources/db sangam/sangam-control-plane/src/main/resources/db sangam/sangam-rollup/src/main/resources/db sangam/sangam-rest/api sangam/deploy/compose/keycloak sangam/sdks sangam/deploy/evidence sangam/sangam-packs/README.md

@@ -1,3 +1,0 @@
-[["| Applies ADR-D-16 (Operaton as a dependency, no engine schema change). Example in tree: the partitioned-executor tables `EXEC_*` (M-056, changesets `0039-*`) |",
-"| Consistent with ADR-D-16 (Operaton as a dependency, extended through plugins): Operaton's `ACT_*` tables keep their upstream shape, and Sangam's job data is created by `generate_changelogs.py` like every other product table |"],
-["None of them\ncreates a new ADR number: each one applies an existing ADR or requirement.", "None of them\nhas its own ADR number."]]

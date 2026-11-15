@@ -147,9 +147,7 @@ class LineEndings(unittest.TestCase):
 
     def lf_files(self):
         for d, dirs, names in os.walk(REPO):
-            # handoff/ holds byte-for-byte archive copies of old worktrees (.gitattributes: -text); nothing there is
-            # ever run or built, and converting them would break the byte-for-byte record.
-            dirs[:] = [x for x in dirs if x not in wg.SKIP_DIRS and x != ".git" and not (d == REPO and x == "handoff")]
+            dirs[:] = [x for x in dirs if x not in wg.SKIP_DIRS and x != ".git"]
             for n in names:
                 if self.LF_NAMES.search(n):
                     yield os.path.join(d, n)
@@ -177,9 +175,6 @@ class LineEndings(unittest.TestCase):
             self.assertIn((pattern, "text", "eol=lf"), rules, pattern)
         for pattern in ("*.ps1", "*.cmd", "*.bat"):
             self.assertIn((pattern, "text", "eol=crlf"), rules, pattern)
-        with open(os.path.join(REPO, ".gitattributes"), encoding="utf-8") as f:
-            last = [line.split() for line in f if line.strip() and not line.startswith("#")][-1]
-        self.assertEqual(last, ["handoff/**", "-text"], "the archive rule must stay last so that it wins")
 
 
 class Downloads(unittest.TestCase):

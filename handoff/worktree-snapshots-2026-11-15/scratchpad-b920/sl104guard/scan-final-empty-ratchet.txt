@@ -1,2 +1,0 @@
-files scanned: 1366  (allow-list: */connector/gov/*, */sim/*, sangam-connectors-health/*)
-hits=0 violations=0 ratchet-entries=0 stale=0

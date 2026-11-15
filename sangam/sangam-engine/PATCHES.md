@@ -124,7 +124,7 @@ pinned by `EngineInternalsPinTest`, so an upgrade that changes it fails the buil
 
 ### Stage D engine patches: extension-point evidence (M-106, 2026-11-12)
 
-ADR-D-16 allows an engine source patch only where no extension point exists. The per-patch inventory (javap on `operaton-engine-2.2.0.jar`, with the bytecode and mapping lines) is `sangam-handoff/M-106-EVIDENCE-2026-11-12.md`. Verdicts; nothing is patched and the engine jar stays unchanged:
+ADR-D-16 allows an engine source patch only where no extension point exists. The per-patch inventory (javap on `operaton-engine-2.2.0.jar`, with the bytecode and mapping lines) is `sangam/docs/records/M-106-EVIDENCE-2026-11-12.md`. Verdicts; nothing is patched and the engine jar stays unchanged:
 
 | Patch | Verdict | Extension point found |
 |---|---|---|

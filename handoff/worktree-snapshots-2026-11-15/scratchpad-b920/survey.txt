@@ -1,5 +1,0 @@
-paths 879 operations 1043 schemas 700
-sangam-control-plane-api.yaml paths 15 operations 17 schemas 12
-sangam-gateway-api.yaml paths 0 operations 0 schemas 1
-sangam-rollup-api.yaml paths 5 operations 5 schemas 8
-sangam-events.asyncapi.yaml channels 5 operations 5 messages 17 schemas 21

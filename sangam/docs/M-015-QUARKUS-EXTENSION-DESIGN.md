@@ -25,7 +25,7 @@ Owner decisions 72-75 (2026-11-12, after the first version of this document) ans
 | Root `pom.xml`, `sangam-bom` | Unchanged. |
 | This document | Rewritten (Option B). |
 | `sangam-core/src/test/java/org/sangam/core/arch/HostFrameworkBoundaryTest.java` | Host-framework boundary guard with a shrink-only ratchet (section 5): hosts per decisions 72 and 74, banned packages per decision 81. |
-| Downloads | **POM files only**, resolved by `dependency:tree` (0 jars). Logged in `sangam-handoff/DOWNLOADS-WAVE3-2026-11-12.md`. |
+| Downloads | **POM files only**, resolved by `dependency:tree` (0 jars). Logged in `sangam/docs/records/DOWNLOADS-WAVE3-2026-11-12.md`. |
 
 ## 1. Evidence base
 

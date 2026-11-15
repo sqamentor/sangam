@@ -1,7 +1,0 @@
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/SangamPortsPlugin.java
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/ProductBatchService.java
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/batch/StandardBatchHandlers.java
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/cmmn/SangamCmmnElementHandlerRegistry.java
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/events/EventDispatcher.java
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/jobs/FilteredAcquireJobsCmd.java
-sangam/sangam-flowable-ports/src/main/java/org/sangam/ports/modelimport/FlowableModelImporter.java

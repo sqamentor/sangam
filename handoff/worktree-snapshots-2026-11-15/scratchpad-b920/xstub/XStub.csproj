@@ -1,8 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net7.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><LangVersion>latest</LangVersion><OutputType>Library</OutputType></PropertyGroup>
-  <ItemGroup>
-    <Compile Include="D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sdks/dotnet/tests/Sangam.Sdk.Tests/Contract/*.cs" />
-    <Compile Include="D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sdks/dotnet/tests/Sangam.Sdk.Tests/Testing/*.cs" />
-    <ProjectReference Include="D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sdks/dotnet/src/Sangam.Sdk/Sangam.Sdk.csproj" AdditionalProperties="SangamTargetFramework=net7.0" />
-  </ItemGroup>
-</Project>

@@ -1,7 +1,0 @@
-[
-["SL-157", "SL-157"], ["SL-158", "SL-158"], ["SL-161", "SL-161"], ["SL-162", "SL-162"], ["SL-164", "SL-164"],
-["SL-168", "SL-168"], ["SL-134", "SL-134"], ["SL-159", "SL-159"], ["SL-176", "SL-176"], ["SL-179", "SL-179"],
-["SL-180", "SL-180|HeldWorkReleaser"], ["SL-75", "SL-75|worktree-snapshots"], ["SL-111", "SL-111"], ["AC-08", "AC-08"],
-["SL-172", "SL-172|LockScope"], ["M-089 precise", "deploy/evidence/procurement|\\bGeM\\b"], ["M-128 any", "M-128"],
-["M-149 any RM", "RM-\\d\\d"], ["backup docs W4-C", "backup console|backup\\.console"], ["187 default false", "application\\.yaml:136|connectors-health\\.enabled|decision 187"]
-]

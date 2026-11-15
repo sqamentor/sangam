@@ -1,4 +1,0 @@
-sleep is /usr/bin/sleep
-sleep rc=127 elapsed=1
-sub
-rc2=127 elapsed=2

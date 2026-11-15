@@ -1,1 +1,0 @@
-[["        ?HttpSender $sender = null,\n    ) {\n        // the curl requirement", "        ?HttpSender $sender = null,\n        ?\\Closure $traceContext = null,\n    ) {\n        // the curl requirement"], ["            $this->log, $userAgent, $seat, $actingForSeat, $sender);\n", "            $this->log, $userAgent, $seat, $actingForSeat, $sender, $traceContext);\n"]]

@@ -1,3 +1,0 @@
-[["**Evidence rule.** Every control and gap below cites the source file (paths relative to `sangam/`).",
-"**Evidence rule.** Every control and gap below cites the source type or file. Java types are named by module or\npackage tail (for example `server/config/SecurityConfig` is\n`sangam-server/src/main/java/org/sangam/server/config/SecurityConfig.java`); other paths are relative to `sangam/`."],
-["(loopback, link-local and site-local targets blocked)", "(loopback, private and metadata ranges blocked)"]]

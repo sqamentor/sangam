@@ -1,1 +1,0 @@
-{"bomFormat":"CycloneDX","components":[{"name":"a","purl":"pkg:maven/com.github.spotbugs/spotbugs-annotations@4.10.5"},{"name":"b","purl":"pkg:maven/org.sonarsource.scanner.lib/sonar-scanner-download-cache@4.1.2.1663"}]}

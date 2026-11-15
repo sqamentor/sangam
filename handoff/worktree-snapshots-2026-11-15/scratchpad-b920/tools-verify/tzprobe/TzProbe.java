@@ -1,1 +1,0 @@
-public class TzProbe { public static void main(String[] a) { System.out.println(System.getProperty("java.version") + " default=" + java.util.TimeZone.getDefault().getID() + " user.timezone=" + System.getProperty("user.timezone")); } }

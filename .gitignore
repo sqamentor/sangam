@@ -26,6 +26,9 @@ spike/results/run-queue/
 spike/results/*.console.log
 spike/results/run-queue.log
 
+# jqwik failure database written next to a module by a property-test run
+.jqwik-database
+
 # Python and Node build caches
 __pycache__/
 *.pyc

@@ -1,2 +1,0 @@
-[[" Today's `CellWiring` bean answers only admitted (ACTIVE) or not, which `TenantAdmission.decide` turns into ADMIT or REDELIVER, so MOVED and PURGED are redelivered until that bean answers PARK for them.",
-" `CellWiring.sangamInboxTenantAdmission` answers ADMIT for ACTIVE, REDELIVER for FROZEN and IMPORTING, and PARK (with the target cell and move id) for MOVED and PURGED."]]

@@ -1,4 +1,0 @@
-org.sangam:sangam-connectors-health:jar:0.1.0-SNAPSHOT
-\- ca.uhn.hapi.fhir:hapi-fhir-validation:jar:8.12.1:compile (optional)
-   \- ca.uhn.hapi.fhir:org.hl7.fhir.validation:jar:6.9.12:compile (optional)
-      \- org.ogce:xpp3:jar:1.1.6:compile (optional)

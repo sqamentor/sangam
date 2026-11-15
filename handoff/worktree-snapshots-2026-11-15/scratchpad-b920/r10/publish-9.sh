@@ -1,1 +1,0 @@
-npm publish packages/npm/*.tgz --provenance --access public

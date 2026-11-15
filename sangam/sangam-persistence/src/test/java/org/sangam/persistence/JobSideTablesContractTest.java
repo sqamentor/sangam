@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * M-056 / M-062: the job side tables in the changelogs match, column for column, the DDL of
- * sangam-handoff/W2-JOB-SIDE-TABLES-CONTRACT.md (W2-D builds its H2 tests from that DDL). recoveries carries the
+ * sangam/docs/records/W2-JOB-SIDE-TABLES-CONTRACT.md (W2-D builds its H2 tests from that DDL). recoveries carries the
  * optional DB default 0 the contract welcomes. No foreign key on any dialect (Operaton's bulk deletes must not fail).
  */
 class JobSideTablesContractTest {

@@ -1,2 +1,0 @@
-jars 2475
-~m2\org\cyclonedx\cyclonedx-core-java\9.0.5\cyclonedx-core-java-9.0.5.jar ['licenses/BSD-2-Clause.txt', 'licenses/BSD-3-Clause.txt', 'licenses/CC0-1.0.txt', 'licenses/CDDL-1.1.txt', 'licenses/EPL-2.0.txt', 'licenses/GPL-2.0+.txt', 'licenses/GPL-2.0-only.txt', 'licenses/GPL-2.0-or-later.txt', 'licenses/GPL-2.0-with-GCC-exception.txt', 'licenses/GPL-2.0-with-autoconf-exception.txt', 'licenses/GPL-2.0-with-bison-exception.txt', 'licenses/GPL-2.0-with-classpath-exception.txt']

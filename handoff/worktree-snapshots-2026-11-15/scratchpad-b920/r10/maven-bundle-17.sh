@@ -1,1 +1,0 @@
-mvn -B -ntp -q org.codehaus.mojo:versions-maven-plugin:2.25.1:set -DnewVersion="$V" -DprocessAllModules=true -DgenerateBackupPoms=false

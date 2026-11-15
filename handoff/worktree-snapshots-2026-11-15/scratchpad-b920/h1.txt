@@ -1,5 +1,0 @@
-598d1e1e6ea4c0a9 sangam-persistence/src/main/resources/db/changelog\h2\sangam-0001-baseline.sql
-f10132a980e261fc sangam-persistence/src/main/resources/db/changelog\mssql\sangam-0001-baseline.sql
-030f3640b6097072 sangam-persistence/src/main/resources/db/changelog\mysql\sangam-0001-baseline.sql
-420c122f44906bf5 sangam-persistence/src/main/resources/db/changelog\oracle\sangam-0001-baseline.sql
-784308bbbb18b677 sangam-persistence/src/main/resources/db/changelog\postgresql\sangam-0001-baseline.sql

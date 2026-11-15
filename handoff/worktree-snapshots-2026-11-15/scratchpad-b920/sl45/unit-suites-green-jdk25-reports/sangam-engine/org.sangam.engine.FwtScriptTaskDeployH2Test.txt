@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.sangam.engine.FwtScriptTaskDeployH2Test
--------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.530 s -- in org.sangam.engine.FwtScriptTaskDeployH2Test

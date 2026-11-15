@@ -1,9 +1,0 @@
-[
-["M-125 CLI diff", "sangam diff|cli diff|diff command|upgrade check.{0,80}diff|DiffCommand"],
-["Teams W4-J later", "teams\\.html|teams\\.enabled|TeamsApp|Teams app|decision 162|decision 213"],
-["Arazzo server wiring", "ArazzoOperationStep.{0,80}wir|wir.{0,60}ArazzoOperationStep|TemporalConnector.{0,60}wir|ArazzoWiring|TemporalWiring"],
-["M-089 procurement build", "build_evidence|procurement evidence|evidence/procurement|M-089"],
-["M-103 review screen", "OCR.{0,80}(review|screen|knowledge)|OcrReview"],
-["M-108 yugabyte / CI lane", "yugabyte|cockroach.{0,60}(CI|lane|db-matrix)"],
-["gitSync binding", "gitSync|PackageGitSync"]
-]

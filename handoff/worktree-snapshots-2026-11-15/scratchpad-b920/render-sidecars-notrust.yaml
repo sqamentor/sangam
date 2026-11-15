@@ -1,5 +1,0 @@
-Error: values don't meet the specifications of the schema(s) in the following chart(s):
-sangam:
-- (root): Must validate "then" as "if" was valid
-- sidecarTrustStore.existingSecret: String length must be greater than or equal to 1
-- (root): Must validate all the schemas (allOf)

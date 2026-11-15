@@ -1,4 +1,0 @@
-b: DETECTED at grant #16 to B: acquire B returned 0, lock file now says owner='A'; 442 bytes: b'{"owner": "A", "what": "job A: mvn -T1 verify -pl sangam-engine,sangam-flowable-ports,sangam-integration (lane 3)", "since": "2026-11-10T00:53:01+00:00", "epoch": 1794271981.9706151, "held_by": "owner name until release (not a pid)", "acquirer_pid": 14428, "acquirer_pid_note": "short-lived acquire process; exits at once (I-34)", "holder_pid": 2012, "holder_start": 1794271974.3344684, "lease_until": 1794272583.962574, "lease_seconds": 600}'
-b: release B after detection -> rc=2
-b: 16 grants to B
-hb: 599 heartbeat calls, 134 wrote a record

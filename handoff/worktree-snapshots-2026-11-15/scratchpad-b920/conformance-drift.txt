@@ -1,6 +1,0 @@
-conformance closure=65 managed=2111 missing-boms=[]
-DRIFT io.micrometer:micrometer-commons reactor=1.17.2 (compile) module=1.17.1 cached=False
-DRIFT io.micrometer:micrometer-core reactor=1.17.2 (compile) module=1.17.1 cached=False
-DRIFT io.micrometer:micrometer-observation reactor=1.17.2 (compile) module=1.17.1 cached=False
-DRIFT org.scala-lang:scala-library reactor=2.13.18 (compile) module=2.13.16 cached=True
-DRIFT org.slf4j:slf4j-api reactor=2.0.17 (compile) module=2.0.18 cached=True

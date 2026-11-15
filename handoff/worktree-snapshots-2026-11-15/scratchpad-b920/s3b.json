@@ -1,2 +1,0 @@
-[["(`SecurityAuditPoolWiring`, `sangam.security.denial-audit.pool.maximum-size`, default 2) as `denialTx`.",
-"(`SecurityAuditPoolWiring`, `sangam.security.denial-audit.pool.maximum-size`, default 2) as `denialTx`; only when\n   that pool is absent does `SecurityWiring.denialTransactions` fall back to the product transactions."]]

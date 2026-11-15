@@ -1,1 +1,0 @@
-const y=require(process.argv[2]);const fs=require("fs");for(const f of process.argv.slice(3)){try{const d=y.load(fs.readFileSync(f,"utf8"));console.log("yaml ok",f,Object.keys(d.services||{}).length+" services")}catch(e){console.log("YAML ERROR",f,e.message);process.exitCode=1}}

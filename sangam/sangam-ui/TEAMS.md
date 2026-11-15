@@ -37,7 +37,7 @@ The console never imports `src/teams`. `src/teams/teams.test.tsx` checks this.
 ## Dependency
 
 `@microsoft/teams-js` 2.59.0 and its runtime closure (debug 4.4.3, ms 2.1.3 and base64-js 1.5.1) are all MIT. They
-were installed with `--ignore-scripts` from the tarballs recorded in `sangam-handoff/DOWNLOADS-WAVE4.md` (D-3), and
+were installed with `--ignore-scripts` from the tarballs recorded in `sangam/docs/records/DOWNLOADS-WAVE4.md` (D-3), and
 `package-lock.json` pins their integrity.
 
 ## Installing for one site

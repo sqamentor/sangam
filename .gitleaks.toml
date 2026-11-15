@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: Apache-2.0
+# Gitleaks configuration (security.yml, job gitleaks; gitleaks 8.30.1). The default rules stay on; the allowlists below
+# cover only findings that the 2026-11-15 triage read line by line (125 code-scanning alerts, none a credential;
+# sangam-handoff SEC-C report). Every allowlist names its rule, its paths and the exact shape it lets through, so a real
+# key pasted into the same file is still reported. Nothing here turns a rule off.
+#
+# Not verified locally: gitleaks is not installed on the authoring machine. The first report-only run on main shows
+# whether each regex clears what it should; a finding that stays open is fixed here, never by widening a path rule.
+title = "Sangam gitleaks configuration"
+
+[extend]
+useDefault = true
+
+# 1. HISTORICAL ONLY. handoff/ (byte copies of old worktrees and records) left main on 2026-11-15 for the tag
+#    archive/handoff-2026-11-15 (ARCHIVE.md). Gitleaks reads the whole history, so the commits that added the folder are
+#    still scanned. This entry covers that path in exactly those commits (condition AND); it covers nothing in the
+#    active tree and no later commit. 89 findings triaged, none a credential, conclusion provisional
+#    (sangam/docs/security/2026-11-15-secret-scan-triage.md). These are archived findings, not fixed ones.
+[[allowlists]]
+description = "archived handoff/ folder in the commits that added it (historical, triaged 2026-11-15)"
+condition = "AND"
+paths = ['''^handoff/''']
+commits = [
+  "057712c02fe742c0dbfe0e65483eb439ca218b30",
+  "f553b432dcfd0b6d55c44124f09ca50c319f81e9",
+]
+
+# 2. PEM header strings in a parser, a simulator and two tests. The key material is generated at run time
+#    (KeyPairGenerator); the files hold the BEGIN/END text only. The match must contain the code that wraps a
+#    generated key or the header pattern itself, so a pasted PEM body is still a finding.
+[[allowlists]]
+description = "PEM header literals around a key generated at run time"
+targetRules = ["private-key"]
+condition = "AND"
+regexTarget = "match"
+paths = [
+  '''^sangam/sangam-integration/src/main/java/org/sangam/integration/connector/http/Jwt\.java$''',
+  '''^sangam/sangam-integration/src/main/java/org/sangam/integration/sim/serverless/ServerlessSimulator\.java$''',
+  '''^sangam/sangam-integration/src/test/java/org/sangam/integration/connector/http/JwtTest\.java$''',
+  '''^sangam/sangam-integration/src/test/java/org/sangam/integration/publish/cloud/CloudChannelsTest\.java$''',
+]
+regexes = ['''Base64\.getMimeEncoder|\(BEGIN\|END\)|getEncoded\(\)''']
+
+# 3. ABDM Fidelius known-answer vectors (Curve25519 test key pairs published with the MIT reference CLI). A known-answer
+#    test needs fixed values; FideliusVectorsTest asserts the file is the recorded upstream copy.
+[[allowlists]]
+description = "Fidelius known-answer test vectors"
+targetRules = ["generic-api-key"]
+paths = ['''^sangam/sangam-connectors-health/src/test/resources/.*fidelius/test_vectors\.json$''']
+
+# 4. Digests that sit next to the words "access" or "credentials": a SHA-256 of a generated BPMN model and a 40-hex
+#    action commit SHA.
+[[allowlists]]
+description = "SHA-256 of a generated model in a packgen test"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^sangam/sangam-packs/tools/packgen/test_compliance\.py$''']
+regexes = ['''^[0-9a-f]{64}$''']
+
+[[allowlists]]
+description = "40-hex action commit SHA in the CI pin list"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "secret"
+paths = ['''^sangam/deploy/licence/ci-tool-pins\.json$''']
+regexes = ['''^[0-9a-f]{40}$''']
+
+# 5. Model identifiers after the word "key": process keys, form keys, a routing decision key, simulator receipt
+#    references, a jar file name. Only these shapes, only in these files.
+[[allowlists]]
+description = "process, form and decision keys in pack models, generators and their tests"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "secret"
+paths = [
+  '''^sangam/sangam-packs/src/main/resources/packs/''',
+  '''^sangam/sangam-packs/tools/packgen/''',
+  '''E16cPattern(IT|Test)\.java$''',
+  '''demo-answers\.properties$''',
+  '''^spike/results/E10\.json$''',
+]
+regexes = [
+  '''^gp\d+[-_]\w+$''',
+  '''^(recruitment|consultancy)/[a-z]+$''',
+  '''^up19-signatory$''',
+  '''^sangam-up19-clm$''',
+  '''SIM-[A-Z]+-\d+$''',
+  '''\.jar$''',
+]
+
+# 6. The documented development token placeholder (application-h2.yaml default; refused outside the development
+#    profile, decision 152). The exact literal, in the README only.
+[[allowlists]]
+description = "documented dev-token placeholder in the server README"
+targetRules = ["curl-auth-header"]
+condition = "AND"
+regexTarget = "line"
+paths = ['''^sangam/sangam-server/README\.md$''']
+regexes = ['''Bearer sangam-dev-token-change-me"''']
+
+# 7. The fixed ASN.1 prefix of every Ed25519 PKCS#8 key (21 characters, no key byte): two wiring tests assert that a
+#    literal key is refused in favour of a secret:// reference.
+[[allowlists]]
+description = "Ed25519 PKCS#8 ASN.1 prefix used to test that a literal key is refused"
+targetRules = ["generic-api-key"]
+condition = "AND"
+regexTarget = "secret"
+paths = [
+  '''^sangam/sangam-server/src/test/java/org/sangam/server/config/PackageSigningWiringTest\.java$''',
+  '''^sangam/sangam-server/src/test/java/org/sangam/server/config/AuditCheckpointWiringTest\.java$''',
+]
+regexes = ['''^MC4CAQAwBQYDK2VwBCIEI$''']

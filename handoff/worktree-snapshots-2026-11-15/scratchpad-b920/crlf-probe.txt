@@ -1,5 +1,0 @@
-line one
-line two
-inserted A
-inserted B
-line three

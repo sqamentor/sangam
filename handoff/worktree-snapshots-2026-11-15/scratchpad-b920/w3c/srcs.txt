@@ -1,7 +1,0 @@
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/ChannelsTest.java"
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/ConversationEmptyBodyH2Test.java"
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/MessengerProvidersTest.java"
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/conversation/ConversationIndexAndRetentionH2Test.java"
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/enterprise/SapRfcAndODataTest.java"
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/mail/GraphMailSourceTest.java"
-"D:/GITHUB  Project/Custom WorkFlow/.claude/worktrees/workspace-scan-resume-06b524/sangam/sangam-channels/src/test/java/org/sangam/channels/messenger/InboundProvidersTest.java"

@@ -1,8 +1,0 @@
-DIFF in/GOI.yaml
-DIFF in/presets/IN-PRESET-UT-NOLEG.yaml
-DIFF in/states/DH.yaml
-DIFF in/states/KA.yaml
-DIFF in/states/RJ.yaml
-DIFF in/states/TG.yaml
-DIFF in/states/TN.yaml
-compared 152 152

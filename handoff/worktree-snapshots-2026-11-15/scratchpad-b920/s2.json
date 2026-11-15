@@ -1,2 +1,0 @@
-[["Status 2026-11-12: `sangam-server` `SecurityWiring` still passes the main-pool product\n   transactions as `denialTx`; the leaf pool is wiring work for the server lane.",
-"In the server, `SecurityWiring` passes the leaf pool `sangam-security-audit`\n   (`SecurityAuditPoolWiring`, `sangam.security.denial-audit.pool.maximum-size`, default 2) as `denialTx`."]]

@@ -1112,7 +1112,7 @@ TABLES = [
         ("node_id", "{str64}", "NOT NULL"), ("incarnation", "{str64}", "NOT NULL"), ("started_at", "{ts}", "NOT NULL"),
         ("heartbeat_at", "{ts}", "NOT NULL"), ("draining", "{small}", "DEFAULT 0 NOT NULL"),
     ], ["node_id"], []),
-    # Job side tables (owner decision 2026-11-12; contract sangam-handoff/W2-JOB-SIDE-TABLES-CONTRACT.md, W2-D): Sangam
+    # Job side tables (owner decision 2026-11-12; contract sangam/docs/records/W2-JOB-SIDE-TABLES-CONTRACT.md, W2-D): Sangam
     # data about Operaton jobs lives here, keyed by the engine id; ACT_RU_JOB / ACT_RU_EXT_TASK are never altered. No
     # foreign key (Operaton's bulk deletes must not fail; orphans are ignored and swept). OFF by default: the engine
     # writes nothing here unless sangam.engine.executor-partitioning / trace-links are on.

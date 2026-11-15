@@ -1,1 +1,0 @@
-function rep($f,$a,$b){ $t=[IO.File]::ReadAllText($f); $nl= if($t.Contains("`r`n")){"`r`n"}else{"`n"}; $a=$a.Replace("`r`n","`n").Replace("`n",$nl); $b=$b.Replace("`r`n","`n").Replace("`n",$nl); if(-not $t.Contains($a)){ throw "missing in $f : $a" }; [IO.File]::WriteAllText($f,$t.Replace($a,$b)) }

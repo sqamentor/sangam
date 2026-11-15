@@ -75,8 +75,6 @@ jobs:
             paths-ignore:
               - spike/**
               - reference/**
-              # SL-75: byte copies of private worktrees, not product code
-              - handoff/**
               - "**/node_modules/**"
               - "**/target/**"
       - name: Build (Java)
@@ -328,7 +326,7 @@ jobs:
         run: |
           # shellcheck disable=SC2086
           $RL run --check secret-scan --ledger-dir "$LEDGER" $REPORT_ONLY --tool-version gitleaks-8.30.1 -- \
-            "$RUNNER_TEMP/bin/gitleaks" git --redact --no-banner --exit-code 1 --report-format sarif --report-path gitleaks.sarif .
+            "$RUNNER_TEMP/bin/gitleaks" git --config .gitleaks.toml --redact --no-banner --exit-code 1 --report-format sarif --report-path gitleaks.sarif .
       - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         if: always() && hashFiles('gitleaks.sarif') != ''
         with:
