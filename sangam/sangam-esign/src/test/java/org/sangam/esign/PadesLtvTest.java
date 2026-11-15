@@ -285,7 +285,9 @@ class PadesLtvTest {
                             .get(new DefaultDigestAlgorithmIdentifierFinder().find("SHA-256")),
                     new ASN1ObjectIdentifier("1.2.3.4.1"));
             gen.addCertificates(new JcaCertStore(List.of(tsa.cert())));
-            TimeStampToken token = gen.generate(new TimeStampRequestGenerator().generate(TSPAlgorithms.SHA256,
+            TimeStampRequestGenerator request = new TimeStampRequestGenerator();
+            request.setCertReq(true);   // the token then carries the TSA certificate
+            TimeStampToken token = gen.generate(request.generate(TSPAlgorithms.SHA256,
                     PadesSigning.sha256(si.getSignature())), BigInteger.ONE, Date.from(TSA_TIME));
             AttributeTable unsigned = new AttributeTable(new ASN1EncodableVector()).add(
                     PKCSObjectIdentifiers.id_aa_signatureTimeStampToken, token.toCMSSignedData().toASN1Structure());
