@@ -43,7 +43,10 @@ import org.sangam.engine.SangamEngineConfigurer;
  *   <li>runs {@code SangamEngineConfigurer.afterBuild} once the engine is built (MySQL engine patches, history
  *       partitioning, the engine adapter) and frees the engine slot on shutdown;</li>
  *   <li>puts {@link EngineCapabilityGuard} in the plugin list, which refuses an engine without the Sangam plugin and
- *       re-checks every capability on the final configuration.</li>
+ *       re-checks every capability on the final configuration;</li>
+ *   <li>puts {@link QuarkusHost#startOrder()} in the plugin list (owner decision 376): the engine is built with the job
+ *       executor off, the services that need the engine are assembled once it is built, and the job executor starts
+ *       last, as the runtime's last component, after every capability check passed.</li>
  * </ol>
  */
 @Singleton
@@ -83,9 +86,11 @@ public class SangamEngineConfiguration extends QuarkusProcessEngineConfiguration
         List<ProcessEnginePlugin> plugins = EngineAssembly.orderPlugins(cfg.getProcessEnginePlugins(),
                 configurer.plugin(), name -> false, name -> List.of(),
                 configurer.findings().operatonDatabaseType());
-        // EngineSettingsReapplyPlugin stays last
+        // EngineSettingsReapplyPlugin stays last; the start order (decision 376) runs after every plugin that sets the
+        // job executor activation and after afterBuild, so the after-build services see the engine adapter
         plugins.add(plugins.size() - 1, afterBuild);
         plugins.add(plugins.size() - 1, guard);
+        plugins.add(plugins.size() - 1, host.startOrder());
         cfg.setProcessEnginePlugins(plugins);
         return configurer;
     }

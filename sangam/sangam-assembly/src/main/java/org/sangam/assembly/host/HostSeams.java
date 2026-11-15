@@ -133,11 +133,25 @@ public final class HostSeams {
      */
     public SangamRuntime runtime(Collection<Capability> needed, List<? extends Lifecycle> lifecycles,
                                  List<? extends HealthCheck> checks) {
+        return SangamRuntime.of(resolve(needed), withScheduler(lifecycles), checks);
+    }
+
+    /**
+     * A runtime over these seams whose capabilities and after-build components are settled at start-up from
+     * {@code claims} (owner decision 376); the standalone scheduler (when used) is one of its fixed components.
+     */
+    public SangamRuntime runtime(EngineBuildClaims<?> claims, Collection<Capability> needed,
+                                 List<? extends Lifecycle> lifecycles, List<? extends HealthCheck> checks) {
+        Objects.requireNonNull(claims, "claims");
+        return SangamRuntime.settledAtStart(claims.settlement(this, needed), withScheduler(lifecycles), checks);
+    }
+
+    private List<Lifecycle> withScheduler(List<? extends Lifecycle> lifecycles) {
         List<Lifecycle> all = new ArrayList<>(lifecycles);
         if (!hostScheduler && scheduler instanceof HostScheduler.Standalone s) { // none when the host declined it
             all.add(s);
         }
-        return SangamRuntime.of(resolve(needed), all, checks);
+        return all;
     }
 
     /** Collects the seams a host supplies. */

@@ -80,10 +80,10 @@ Phase 3 (decision 276) brings the audit chain, the idempotency store, the outbox
 
 The integration services themselves are **not constructed on this host yet**. `audit-chain`, `idempotency-store` and `outbox-relay-inbox` are still reported missing, so every start is still refused with `CAPABILITY_MISSING`. A capability is reported present only when its service really runs; none of the three does.
 
-Round 5 (lane q1) removed four of the five blockers of phase 3 in code. The fifth needs an owner decision:
+Round 5 (lane q1) removed the five blockers of phase 3 in code (the fifth by owner decision 376 in round 6):
 
 1. **Attribution tenant: DONE.** The one resolver is plain Java: `org.sangam.assembly.host.AttributionTenant.resolve(SangamProperties)`. The Spring host's `org.sangam.server.config.AttributionTenant` now only reads its `Environment` through it. `QuarkusHost.attributionTenant()` resolves it at construction; the reserved shared key `-` refuses the start, naming `sangam.tenant.default`.
-2. **Outbox destinations: DONE.** The rule is plain Java: `org.sangam.assembly.integration.OutboxDestinations`. A host hands in the destinations it has a publisher for (`Routes`). This host has no roll-up or history-projection publisher (`QuarkusHost.OUTBOX_ROUTES` is empty), so `sangam.cell.id` with `sangam.cell.rollup.ingest-url`, and any `sangam.history.projection.{search.url,kafka.topic,datalake.bucket}`, refuse the start with `OUTBOX_DESTINATION_NOT_DELIVERED`, naming each key. Open: the Spring host's `IntegrationWiring.subscriptions/merge` and `HistoryProjectionWiring.destinations` should call this class (a REQUEST for the owner of those files).
+2. **Outbox destinations: DONE.** The rule is plain Java: `org.sangam.assembly.integration.OutboxDestinations`. A host hands in the destinations it has a publisher for (`Routes`). This host has no roll-up or history-projection publisher (`QuarkusHost.OUTBOX_ROUTES` is empty), so `sangam.cell.id` with `sangam.cell.rollup.ingest-url`, and any `sangam.history.projection.{search.url,kafka.topic,datalake.bucket}`, refuse the start with `OUTBOX_DESTINATION_NOT_DELIVERED`, naming each key. Open: the Spring host's `IntegrationWiring.subscriptions/merge` and `HistoryProjectionWiring.destinations` should call this class (assigned to lane w2 in round 6).
 3. **Transactions for the idempotency store and the audit port: DONE.** `JtaTxSupport` is the `TxSupport` of this host, on the engine's own Narayana transaction manager and Agroal data source (`QuarkusHost.txSupport()`):
    - joining or owning a transaction;
    - an always-new transaction that suspends and resumes the running one (what Spring's JTA transaction manager does for REQUIRES_NEW);
@@ -92,7 +92,13 @@ Round 5 (lane q1) removed four of the five blockers of phase 3 in code. The fift
    - after-commit work through a JTA `Synchronization`.
    `JtaTxSupportTest` covers each of these, also with the engine in the same transaction.
 4. **Lifecycle authorizer: DONE (owner decision 374).** `org.sangam.assembly.integration.LifecycleAuthorization.require` hands out only a bound security module's authorizer. Without one, it refuses with `SECURITY_MODULE_NOT_BOUND`, naming the host. This host binds no security module before phase 2, so `QuarkusHost.lifecycleAuthorizer()` always refuses, also with `sangam.modules.security.enabled=false`. There is no allow-everything authorizer on this host.
-5. **Order of engine build and capability check: OPEN, needs an owner decision.** The inbox, the reconciliation engine, the lifecycle services and the audit port need the built engine. This host checks its capabilities before the engine is built (`EngineCapabilityGuard.preInit`, `QuarkusHost` builds the capability set in its constructor). Until the rule for claiming such a capability is decided, the integration services are not assembled here and their capabilities stay missing.
+5. **Order of engine build and capability check: DONE (owner decision 376, option C).**
+   - Services that need no engine (audit chain and outbox writer, idempotency store) are claimed before the engine build (`QuarkusHost.CLAIMED_BEFORE_BUILD`). `EngineBuildClaims.requireClaimableBeforeBuild` refuses `outbox-relay-inbox` there.
+   - The inbox and relay, reconciliation, lifecycle and maintenance services need the built engine. They claim `outbox-relay-inbox` only after the build succeeded (`org.sangam.assembly.host.EngineBuildClaims`): the host `expect`s it before the build, and `EngineStartOrder.postProcessEngineBuild` assembles it. Before the build an expected capability is pending, not missing (`QuarkusHost.capabilitiesBeforeBuild()`, read by `EngineCapabilityGuard`). One that nothing expects is missing already then.
+   - The capability set is settled at start-up (`SangamRuntime.settledAtStart`). An expected capability whose engine was never built, or whose assembly failed, is missing. The start is refused with `CAPABILITY_MISSING`, with the assembly failure suppressed in the refusal.
+   - The engine is built with the job executor off (`org.sangam.assembly.engine.EngineStartOrder`, in the plugin list right before the settings re-apply). Its `preInit` keeps the configured wish and switches the activation off; its `postInit` refuses a build whose job executor would still start with it.
+   - The job executor is the runtime's last component (`sangam-engine-job-executor`, phase `Integer.MAX_VALUE`). It starts only after every capability check passed and every other component started, and stops first. A refused start leaves it stopped, so no job runs before the check (`EngineStartOrderTest`).
+   - In 0.1.0 this host still assembles none of these services (`CLAIMED_BEFORE_BUILD` is empty and nothing is expected), so every start is still refused with `CAPABILITY_MISSING`. `SECURITY_MODULE_NOT_BOUND` (decision 374) is unchanged.
 ### Scheduling (decision 315)
 
 - The integration services keep their own executors. No service takes a `HostScheduler`.
@@ -191,18 +197,18 @@ All downloads, licences and checksums are recorded in `sangam/docs/records/DOWNL
 
 ## Tests
 
-The tests in this table are plain JUnit and do not boot Quarkus. They were run on 2026-11-15 (H2, offline, JDK 25, round 5 lane q1): 60 tests, all pass.
+The tests in this table are plain JUnit and do not boot Quarkus. They were run on 2026-11-16 (H2, offline, JDK 25, round 6 lane q1, after decision 376): 65 tests, all pass.
 
 - **Fixed:** `JtaTransactionsTest.engineAndProductRowsCommitOrRollBackTogether` failed with `Unknown data type: "BLOB"`. There were two causes:
   - The test created its product table before the engine, and H2 creates the `BLOB` domain only on an empty database (`DatabaseGuard.prepareH2`, its "Order" note). `JtaFixture` now prepares the database first.
   - The plain `JakartaTransactionProcessEngineConfiguration` then failed with Agroal's "Deferred enlistment not supported". Its bootstrap command uses a connection opened before the JTA transaction. The test engines now use `QuarkusProcessEngineConfiguration`, the class this host's engine really uses; it overrides the schema-operations executor for this case.
-- **Not run:** the two conformance kit classes below (they boot Quarkus). On 2026-11-15 they could not start offline: `io.quarkus:quarkus-bom-quarkus-platform-properties:properties:3.40.1.1` is not in the local repository, and downloads are not allowed in this round.
+- **Not run:** the two conformance kit classes below (they boot Quarkus). On 2026-11-15 and again in round 6 (2026-11-16) they could not start offline: `io.quarkus:quarkus-bom-quarkus-platform-properties:properties:3.40.1.1` is not in the local repository, and downloads are not allowed.
 
 | Test | What it checks |
 |---|---|
 | `QuarkusConfigSourceTest` | config source |
 | `JtaTransactionsTest` | joining, owning and rolling back a transaction; engine and product rows in one JTA transaction on Narayana with Agroal and H2 |
-| `QuarkusHostTest` | exactly five seams; every other required capability outside the engine area refuses with CAPABILITY_MISSING, both at the engine build and at start-up; engine checks not run count as missing at the engine build; job leases needed only with executor partitioning (decision 286, both cases) |
+| `QuarkusHostTest` | exactly five seams; every other required capability outside the engine area refuses with CAPABILITY_MISSING, both at the engine build and at start-up; engine checks not run count as missing at the engine build; job leases needed only with executor partitioning (decision 286, both cases); decision 376: an expected after-build capability is pending at the build guard and missing at start until the build claims it, and the job executor is the last runtime component |
 | `QuarkusSeamsTest` | decision 279: without each seam bean its capability is missing and the start is refused (no standalone scheduling fallback); decision 278: HTTP and OIDC over HTTP never claimed |
 | `EngineWithoutSpringTest` | no Spring on the class path; the engine builds, deploys and runs |
 | `SangamEngineConfigurationTest` | the Quarkus engine configuration carries `SangamProcessEnginePlugin` first, the guard and after-build step, `EngineSettingsReapplyPlugin` last, the host's data source and transaction manager, and the system audit scope; the bean refuses before any database access, also without the product schema (decision 287 b) |
@@ -211,6 +217,8 @@ The tests in this table are plain JUnit and do not boot Quarkus. They were run o
 | `QuarkusRelayWakeupTest` | decision 316: the polling wake-up on every dialect, no `LISTEN` session; a notification that cannot be sent leaves no JTA transaction behind |
 | `JtaTxSupportTest` | phase 3 blocker 3: the `TxSupport` contract on Narayana and Agroal: joining and owning, the always-new transaction independent of the suspended one in both directions, one bound connection per transaction released at completion, rollback-only, after-commit, the engine in the same transaction |
 | `AttributionTenantTest`, `OutboxDestinationsTest`, `LifecycleAuthorizationTest` (sangam-assembly) | phase 3 blockers 1, 2 and 4: the one attribution-tenant rule; the outbox destination rule with host routes and `OUTBOX_DESTINATION_NOT_DELIVERED`; `SECURITY_MODULE_NOT_BOUND` (decision 374) |
+| `EngineStartOrderTest` | phase 3 blocker 5, decision 376, on a real engine: built with the job executor off although configured on; a due job does not run while the start is refused; the job executor starts last only after a passing check and stops with the runtime; the engine build reports itself to the after-build claims; the plugin sits right before the settings re-apply |
+| `EngineBuildClaimsTest` (sangam-assembly) | decision 376: only `outbox-relay-inbox` is claimed after the build; pending before the build, missing at start until the build claims it; a refused start starts nothing; after-build components start with the fixed ones in phase order, the job executor last; a failed assembly is named in the refusal |
 | `RelayWakeupTest` (sangam-assembly) | decision 316: polling never opens a connection, wakes its own JVM and still sends `pg_notify`; `LISTEN` is never chosen or left silently |
 | `IntegrationLifecyclesTest` (sangam-assembly) | phase 3, decision 315: the integration services' start and stop order; nothing assembled without the scheduling seam |
 | `IntegrationSweepsTest` (sangam-assembly) | decision 315: the pending-audit sweep and the idempotency cleanup run on the host scheduler with the Spring host's keys and defaults |

@@ -26,7 +26,9 @@ import org.sangam.engine.SangamProcessEnginePlugin;
  *       while the security module is on, and the engine area of extraction phase 1b
  *       ({@link EngineAssembly.EngineChecks}: UTC, database checks, schema before the engine, Jackson line, job leases
  *       while partitioning is on), as {@link SangamEngineConfiguration} ran them; not run counts as missing;</li>
- *   <li>every other required capability of the host ({@code SangamRuntime} capability set).</li>
+ *   <li>every other required capability of the host, as it stands before the build (decision 376: what only the build
+ *       can supply is pending, not missing, {@link QuarkusHost#capabilitiesBeforeBuild()}; the runtime settles it at
+ *       start-up).</li>
  * </ol>
  * One {@code CAPABILITY_MISSING} refusal names every capability either check misses (sorted by id), so the refusal of
  * a start without one capability always names that capability, and keeps each failed engine check's own exception as
@@ -52,7 +54,7 @@ public final class EngineCapabilityGuard extends AbstractProcessEnginePlugin {
 
     /** Refuses when the host lacks a required capability outside the engine area; nothing else has run yet. */
     public void refuseHostGaps() {
-        List<Capability> missing = host.runtime().capabilities().missingRequired();
+        List<Capability> missing = host.capabilitiesBeforeBuild().missingRequired();
         if (!missing.isEmpty()) {
             throw new CapabilityMissingException("engine start-up", missing);
         }
@@ -65,7 +67,7 @@ public final class EngineCapabilityGuard extends AbstractProcessEnginePlugin {
     public void refuseHostGaps(EngineAssembly.EngineChecks checks) {
         engineChecked(checks);
         Set<Capability> missing = new TreeSet<>(Comparator.comparing(Capability::id));
-        missing.addAll(host.runtime().capabilities().missingRequired());
+        missing.addAll(host.capabilitiesBeforeBuild().missingRequired());
         missing.addAll(checks.missing());
         if (!missing.isEmpty()) {
             throw EngineAssembly.refusal("engine start-up", List.copyOf(missing), checks.failures());
@@ -98,7 +100,7 @@ public final class EngineCapabilityGuard extends AbstractProcessEnginePlugin {
         } catch (CapabilityMissingException e) {
             missing.addAll(e.missing());
         }
-        missing.addAll(host.runtime().capabilities().missingRequired());
+        missing.addAll(host.capabilitiesBeforeBuild().missingRequired());
         if (!missing.isEmpty()) {
             throw EngineAssembly.refusal("engine start-up", List.copyOf(missing), checks.failures());
         }
