@@ -36,7 +36,12 @@ import org.sangam.core.layer.Jdbc;
  *
  * <ul>
  *   <li><b>Issue</b>: the identifier type must be one the tenant accepts ({@code rights.otp.identifier-types}); a new
- *       challenge supersedes the identifier's open one; an identifier locked out is refused ({@code OTP_LOCKED}).</li>
+ *       challenge supersedes the identifier's open one; an identifier locked out is refused ({@code OTP_LOCKED}).
+ *       Owner decision 369 (d): at most {@code rights.otp.issue-max-per-identifier} codes per identifier and
+ *       {@code rights.otp.issue-max-per-address} per client address are sent within
+ *       {@code rights.otp.issue-window-minutes}; one more is refused with {@code OTP_RATE_LIMITED}, naming the limit.
+ *       A refused issue rolls the caller back, so its audit event is a {@linkplain ComplianceAudit#denial denial}
+ *       that commits on its own (M-009), on the denial chain of the identifier's token.</li>
  *   <li><b>Verify</b>: the code is compared in constant time with its salted hash (the code itself is never stored or
  *       audited); a wrong code counts against the identifier, and {@code rights.otp.max-attempts} wrong codes within
  *       {@code rights.otp.lockout-minutes} lock it out for that period; an expired, used or other tenant's challenge
@@ -46,8 +51,11 @@ import org.sangam.core.layer.Jdbc;
  *       {@code proof.challengeId} of a verified, unexpired challenge of the tenant and identifier; single use (a
  *       conditional update), so a second submission with the same challenge is refused.</li>
  * </ul>
- * Lifetime, attempts, lock-out and code length come from tenant configuration over the pack defaults (IN pack
- * {@code defaults}); none is defaulted in code: an unset one refuses the issue with {@code OTP_NOT_CONFIGURED}.
+ * Lifetime, attempts, lock-out, code length and the issue limits come from tenant configuration over the pack defaults
+ * (IN pack {@code defaults}); none is defaulted in code: an unset one refuses the issue with {@code OTP_NOT_CONFIGURED}.
+ * Owner decision 369 (e): the stored identifier and client-address hashes and the audited token are keyed with the
+ * compliance {@link org.sangam.compliance.PrincipalKey} (HMAC), never a plain SHA-256; without the key every call
+ * refuses with {@code PRINCIPAL_KEY_NOT_CONFIGURED}.
  * Every issue, verification and refusal is audited on the tenant's chain ({@code RIGHTS_OTP_ISSUED},
  * {@code RIGHTS_OTP_VERIFIED}, {@code RIGHTS_OTP_FAILED}; SANGAM.md X.4.0.3 Security) with the token ({@link ComplianceAudit#principalToken}) of the
  * identifier, never the identifier or the code.
@@ -100,8 +108,14 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
         this.templates = templates;
     }
 
-    /** Sends a code to the identifier; returns the challenge (never the code). */
-    public Challenge issue(Connection c, String tenantId, String identifierType, String identifierValue, Language language) {
+    /**
+     * Sends a code to the identifier; returns the challenge (never the code).
+     *
+     * @param clientAddress the address the request came from (the server's resolved client address, behind trusted
+     *                      proxies only); required, it is what the per-address limit counts (owner decision 369 (d))
+     */
+    public Challenge issue(Connection c, String tenantId, String identifierType, String identifierValue, Language language,
+                           String clientAddress) {
         ComplianceConfig cfg = config.forTenant(tenantId);
         String type = acceptedType(cfg, identifierType);
         String value = normalise(Sql.requireText(identifierValue, "identifierValue"));
@@ -110,11 +124,25 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
             throw new ComplianceException(Code.OTP_NOT_CONFIGURED, "no principal notifier is configured to send the code");
         }
         Map<String, String> attributes = attributes(cfg, type, value);
+        String client = Sql.requireText(clientAddress, "clientAddress").strip().toLowerCase(Locale.ROOT);
         Instant now = Sql.now(c, dialect);
         String idHash = identifierHash(tenantId, type, value);
+        String clientHash = audit.principalKey().clientAddressHash(tenantId, client);
+        String who = token(tenantId, value);
         if (lockedUntil(c, tenantId, idHash, now).isPresent()) {
-            audit.organisation(c, tenantId, FAILED, Sql.kv("identifierType", type, "identifier", token(tenantId, value), "outcome", "LOCKED"));
+            refusedIssue(c, tenantId, type, who, "LOCKED", null);
             throw new ComplianceException(Code.OTP_LOCKED, "too many wrong codes; try again later");
+        }
+        Instant window = now.minus(Duration.ofMinutes(s.issueWindowMinutes()));
+        if (issuedSince(c, tenantId, "identifier_hash", idHash, window) >= s.issueMaxPerIdentifier()) {
+            refusedIssue(c, tenantId, type, who, "RATE_LIMITED", "IDENTIFIER");
+            throw new ComplianceException(Code.OTP_RATE_LIMITED, "too many codes were asked for this identifier (limit "
+                    + s.issueMaxPerIdentifier() + " in " + s.issueWindowMinutes() + " minutes); try again later");
+        }
+        if (issuedSince(c, tenantId, "client_hash", clientHash, window) >= s.issueMaxPerAddress()) {
+            refusedIssue(c, tenantId, type, who, "RATE_LIMITED", "ADDRESS");
+            throw new ComplianceException(Code.OTP_RATE_LIMITED, "too many codes were asked from this address (limit "
+                    + s.issueMaxPerAddress() + " in " + s.issueWindowMinutes() + " minutes); try again later");
         }
         Jdbc.update(c, "UPDATE CMP_OTP_CHALLENGE SET status='SUPERSEDED' WHERE tenant_id=? AND identifier_hash=? AND status='ISSUED'",
                 tenantId, idHash);
@@ -123,9 +151,9 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
         String salt = HexFormat.of().formatHex(bytes(16));
         Instant expires = now.plus(Duration.ofMinutes(s.ttlMinutes()));
         Jdbc.update(c, "INSERT INTO CMP_OTP_CHALLENGE(tenant_id, challenge_id, identifier_type, identifier_hash, code_hash, salt,"
-                        + " status, attempts, issued_at, expires_at, locked_until, verified_at, consumed_at)"
-                        + " VALUES (?,?,?,?,?,?,'ISSUED',0,?,?,NULL,NULL,NULL)",
-                tenantId, id, type, idHash, codeHash(salt, id, code), salt, now, expires);
+                        + " status, attempts, issued_at, expires_at, locked_until, verified_at, consumed_at, client_hash)"
+                        + " VALUES (?,?,?,?,?,?,'ISSUED',0,?,?,NULL,NULL,NULL,?)",
+                tenantId, id, type, idHash, codeHash(salt, id, code), salt, now, expires, clientHash);
         Language lang = language == null ? cfg.defaultLanguage : language;
         NoticeTemplate.Catalogue cat = templates.of(cfg.pack);
         // the chosen language's message, else the default language's; never a message without the code
@@ -136,7 +164,7 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
                 .replace("{minutes}", Integer.toString(s.ttlMinutes()));
         notifier.send(c, new PrincipalMessage(tenantId, value, MESSAGE_KIND, t.language(), t.label("otp.subject",
                 cfg.organisationName), body, attributes));
-        audit.organisation(c, tenantId, ISSUED, Sql.kv("challenge", id, "identifierType", type, "identifier", token(tenantId, value),
+        audit.organisation(c, tenantId, ISSUED, Sql.kv("challenge", id, "identifierType", type, "identifier", who,
                 "expiresAt", expires.toString()));
         return new Challenge(id, type, expires);
     }
@@ -213,7 +241,8 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
 
     // ---------------------------------------------------------------- internals
 
-    record Settings(int ttlMinutes, int maxAttempts, int lockoutMinutes, int codeLength) {
+    record Settings(int ttlMinutes, int maxAttempts, int lockoutMinutes, int codeLength, int issueWindowMinutes,
+                    int issueMaxPerIdentifier, int issueMaxPerAddress) {
     }
 
     record Row(String identifierType, String identifierHash, String codeHash, String salt, String status, int attempts,
@@ -221,14 +250,18 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
     }
 
     static Settings settings(ComplianceConfig cfg) {
-        if (cfg.otpTtlMinutes == null || cfg.otpMaxAttempts == null || cfg.otpLockoutMinutes == null || cfg.otpCodeLength == null) {
-            throw new ComplianceException(Code.OTP_NOT_CONFIGURED, "rights.otp.ttl-minutes, max-attempts, lockout-minutes and"
-                    + " code-length must be configured (tenant configuration or the jurisdiction pack defaults)");
+        if (cfg.otpTtlMinutes == null || cfg.otpMaxAttempts == null || cfg.otpLockoutMinutes == null || cfg.otpCodeLength == null
+                || cfg.otpIssueWindowMinutes == null || cfg.otpIssueMaxPerIdentifier == null || cfg.otpIssueMaxPerAddress == null) {
+            throw new ComplianceException(Code.OTP_NOT_CONFIGURED, "rights.otp.ttl-minutes, max-attempts, lockout-minutes,"
+                    + " code-length, issue-window-minutes, issue-max-per-identifier and issue-max-per-address must be configured"
+                    + " (tenant configuration or the jurisdiction pack defaults)");
         }
-        if (cfg.otpTtlMinutes < 1 || cfg.otpMaxAttempts < 1 || cfg.otpLockoutMinutes < 1 || cfg.otpCodeLength < 6) {
+        if (cfg.otpTtlMinutes < 1 || cfg.otpMaxAttempts < 1 || cfg.otpLockoutMinutes < 1 || cfg.otpCodeLength < 6
+                || cfg.otpIssueWindowMinutes < 1 || cfg.otpIssueMaxPerIdentifier < 1 || cfg.otpIssueMaxPerAddress < 1) {
             throw new ComplianceException(Code.OTP_NOT_CONFIGURED, "rights.otp settings must be positive and the code at least six digits");
         }
-        return new Settings(cfg.otpTtlMinutes, cfg.otpMaxAttempts, cfg.otpLockoutMinutes, cfg.otpCodeLength);
+        return new Settings(cfg.otpTtlMinutes, cfg.otpMaxAttempts, cfg.otpLockoutMinutes, cfg.otpCodeLength,
+                cfg.otpIssueWindowMinutes, cfg.otpIssueMaxPerIdentifier, cfg.otpIssueMaxPerAddress);
     }
 
     private static String acceptedType(ComplianceConfig cfg, String identifierType) {
@@ -258,6 +291,27 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
         };
     }
 
+    /**
+     * A refused issue: the caller rolls back, so the event is a denial committed on its own (M-009) on the denial chain
+     * of the identifier's token (never of the identifier itself).
+     */
+    private void refusedIssue(Connection c, String tenantId, String type, String who, String outcome, String limit) {
+        Map<String, Object> p = new java.util.LinkedHashMap<>();
+        p.put("identifierType", type);
+        p.put("identifier", who);
+        p.put("outcome", outcome);
+        if (limit != null) {
+            p.put("limit", limit);
+        }
+        audit.denial(c, tenantId, who, FAILED, p);
+    }
+
+    /** Challenges issued since {@code from} with {@code column} (identifier_hash or client_hash) equal to {@code hash}. */
+    private static long issuedSince(Connection c, String tenantId, String column, String hash, Instant from) {
+        return Jdbc.one(c, "SELECT COUNT(*) FROM CMP_OTP_CHALLENGE WHERE tenant_id=? AND " + column + "=? AND issued_at>?",
+                rs -> rs.getLong(1), tenantId, hash, from).orElse(0L);
+    }
+
     private Verification failed(Connection c, String tenantId, String challengeId, String type, Outcome outcome, Integer left) {
         audit.organisation(c, tenantId, FAILED, Sql.kv("challenge", challengeId, "identifierType", type == null ? "" : type,
                 "outcome", outcome.name()));
@@ -283,12 +337,13 @@ public final class PrincipalOtpChallenges implements PrincipalAuthenticator {
         return identifierValue.strip().toLowerCase(Locale.ROOT);
     }
 
-    static String identifierHash(String tenantId, String type, String value) {
-        return sha256(tenantId + "\u0000" + type + "\u0000" + value);
+    /** Owner decision 369 (e): keyed with the compliance principal key, never a plain SHA-256. */
+    String identifierHash(String tenantId, String type, String value) {
+        return audit.principalKey().identifierHash(tenantId, type, value);
     }
 
-    private static String token(String tenantId, String value) {
-        return ComplianceAudit.principalToken(tenantId, value);
+    private String token(String tenantId, String value) {
+        return audit.principalToken(tenantId, value);
     }
 
     static String codeHash(String salt, String challengeId, String code) {

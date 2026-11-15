@@ -6491,6 +6491,12 @@ ALTER TABLE CMP_INCIDENT ADD (closed_by VARCHAR2(255 CHAR));
 CREATE INDEX CONNECTOR_CALL_DELIVERY ON CONNECTOR_CALL (connector_id, last_result, updated_at);
 --rollback DROP INDEX CONNECTOR_CALL_DELIVERY;
 
+--changeset sangam:0045-22-cmp_otp_challenge-alter dbms:oracle
+--comment: decision 369 OTP issue limit per client address: keyed client-address hash
+ALTER TABLE CMP_OTP_CHALLENGE ADD (client_hash VARCHAR2(64 CHAR));
+CREATE INDEX CMP_OTP_CLIENT ON CMP_OTP_CHALLENGE (tenant_id, client_hash, issued_at);
+--rollback DROP INDEX CMP_OTP_CLIENT; ALTER TABLE CMP_OTP_CHALLENGE DROP COLUMN client_hash;
+
 --changeset sangam:0033-01-cfg_master_code-data dbms:oracle
 --comment: SL-84 root master codes: parent_code '' becomes the absent-key value '-'
 UPDATE CFG_MASTER_CODE SET parent_code = '-' WHERE parent_code = '';

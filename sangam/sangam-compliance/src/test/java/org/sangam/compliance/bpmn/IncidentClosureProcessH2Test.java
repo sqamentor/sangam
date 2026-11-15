@@ -89,7 +89,7 @@ class IncidentClosureProcessH2Test {
                 .setVariables(variables).execute().getId();
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, null, null, null, null, null, null, null,
                 starter, null, gateway, null, null, null, null, null);
-        cmp = new SangamCompliance(D, tx(), config, ports);
+        cmp = new SangamCompliance(D, tx(), config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
         ComplianceRuntime.install(cmp);
     }
 

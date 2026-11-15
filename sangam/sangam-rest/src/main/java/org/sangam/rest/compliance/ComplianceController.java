@@ -319,7 +319,9 @@ public class ComplianceController {
             @RequestHeader(value = TENANT_HEADER, required = false) String tenantHeader,
             @RequestParam(required = false) String tenant) {
         String tenantId = publicTenant(req, tenantHeader, tenant);
-        org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge ch = api.issueRightsOtp(tenantId, body);
+        // owner decision 369 (d): the per-address limit counts the resolved client address (TrustedProxyFilter: a
+        // forwarding header counts only from a trusted proxy, so a caller cannot choose its own address)
+        org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge ch = api.issueRightsOtp(tenantId, body, req.getRemoteAddr());
         return Lists.created("/api/v1/compliance/rights-requests/otp-challenges/" + ch.challengeId(), ch.challengeId(), ch);
     }
 

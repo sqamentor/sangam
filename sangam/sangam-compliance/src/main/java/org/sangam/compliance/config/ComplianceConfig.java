@@ -82,6 +82,14 @@ public final class ComplianceConfig {
     public final Integer otpMaxAttempts;
     public final Integer otpLockoutMinutes;
     public final Integer otpCodeLength;
+    /**
+     * Owner decision 369 (d): the issue limits of the one-time code, {@code rights.otp.issue-window-minutes},
+     * {@code rights.otp.issue-max-per-identifier} and {@code rights.otp.issue-max-per-address}; null when unset (no
+     * default in code: an unset one refuses the issue).
+     */
+    public final Integer otpIssueWindowMinutes;
+    public final Integer otpIssueMaxPerIdentifier;
+    public final Integer otpIssueMaxPerAddress;
     /** Identifier types a code may be sent to (upper case, e.g. MOBILE, EMAIL). */
     public final List<String> otpIdentifierTypes;
     /** The tenant's DLT template id for the SMS code (blank: no SMS code). */
@@ -157,6 +165,9 @@ public final class ComplianceConfig {
         otpMaxAttempts = optionalInt(p, "rights.otp.max-attempts");
         otpLockoutMinutes = optionalInt(p, "rights.otp.lockout-minutes");
         otpCodeLength = optionalInt(p, "rights.otp.code-length");
+        otpIssueWindowMinutes = optionalInt(p, "rights.otp.issue-window-minutes");
+        otpIssueMaxPerIdentifier = optionalInt(p, "rights.otp.issue-max-per-identifier");
+        otpIssueMaxPerAddress = optionalInt(p, "rights.otp.issue-max-per-address");
         otpIdentifierTypes = csvOr(p, "rights.otp.identifier-types", List.of()).stream()
                 .map(s -> s.toUpperCase(Locale.ROOT)).toList();
         otpSmsTemplateId = str(p, "rights.otp.sms-template-id", "");

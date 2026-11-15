@@ -38,6 +38,8 @@ export interface IndiaPack {
   homeCountry: string;
   rights: { code: string; maxDays?: number; defaultDays?: number }[];
   contactRoles: { code: string }[];
+  /** The pack's configuration defaults (string values), e.g. rights.otp.issue-max-per-identifier. */
+  defaults?: Record<string, string>;
   authorities: { code: string; role: string; deadlineHours?: number; warnHours?: number }[];
   breach: { detailedReportHours: number };
   limits: Record<string, { value: number }>;

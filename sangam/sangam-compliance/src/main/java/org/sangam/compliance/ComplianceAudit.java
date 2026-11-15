@@ -2,7 +2,6 @@
 package org.sangam.compliance;
 
 import org.sangam.core.layer.AuditChain;
-import org.sangam.core.layer.Hashes;
 import org.sangam.core.layer.Transactions;
 
 import java.sql.Connection;
@@ -24,7 +23,9 @@ import java.util.Map;
  *   <li>{@code cmp:d:<32 hex>} — one <b>denial</b> chain per data principal (same hash as {@code cmp:p:}) for refusals
  *       that roll the caller back ({@link #denial}: purpose binding, child safeguards).</li>
  * </ul>
- * Payloads hold references and counts, not personal data; where a value is needed as proof, its SHA-256 is stored.
+ * Payloads hold references and counts, not personal data; where a value is needed as proof, its SHA-256 is stored. A
+ * data principal is referred to by {@link #principalToken}, keyed with the {@link PrincipalKey} (owner decision 369 (e));
+ * without the key a token is refused by name, never written unkeyed.
  *
  * <p><b>Denials (M-009, XII.4 #3).</b> A refusal throws, so the caller's transaction rolls back and an in-line event
  * would be lost. {@link #denial} therefore commits the event on its own, through {@code denialTx}. Two waits could hang
@@ -127,15 +128,26 @@ public final class ComplianceAudit {
 
     private final AuditChain chain;
     private final Transactions denialTx;
+    private final PrincipalKey key;
 
+    /** No principal key: {@link #principalToken} refuses (fail closed). */
     public ComplianceAudit(AuditChain chain) {
-        this(chain, null);
+        this(chain, null, PrincipalKey.unconfigured());
     }
 
-    /** @param denialTx leaf transactions for {@link #denial} (see the class comment); null = in-line */
+    /** @param denialTx leaf transactions for {@link #denial} (see the class comment); null = in-line. No principal key. */
     public ComplianceAudit(AuditChain chain, Transactions denialTx) {
+        this(chain, denialTx, PrincipalKey.unconfigured());
+    }
+
+    /**
+     * @param denialTx leaf transactions for {@link #denial} (see the class comment); null = in-line
+     * @param key      the principal key of the tokens (owner decision 369 (e)); {@link PrincipalKey#unconfigured()} refuses
+     */
+    public ComplianceAudit(AuditChain chain, Transactions denialTx, PrincipalKey key) {
         this.chain = chain;
         this.denialTx = denialTx;
+        this.key = java.util.Objects.requireNonNull(key, "key (PrincipalKey.unconfigured() for none)");
     }
 
     public static String tenantChain(String tenantId) {
@@ -152,9 +164,18 @@ public final class ComplianceAudit {
         return AuditChain.hashedChain("cmp:d:", tenantId, principalRef);
     }
 
-    /** Reference to a principal used in audit payloads: a hash, so the chain can be kept after erasure. */
-    public static String principalToken(String tenantId, String principalRef) {
-        return Hashes.hex(Hashes.sha256("principal:" + tenantId + "\u0000" + principalRef)).substring(0, 32);
+    /**
+     * Reference to a principal used in audit payloads: keyed (HMAC, {@link PrincipalKey#token}), so the chain can be
+     * kept after erasure and the reference cannot be reversed by trying candidate identifiers (owner decision 369 (e)).
+     * Refused with {@code PRINCIPAL_KEY_NOT_CONFIGURED} when no key is configured.
+     */
+    public String principalToken(String tenantId, String principalRef) {
+        return key.token(tenantId, principalRef);
+    }
+
+    /** The principal key (owner decision 369 (e)): the identifier hashes of one-time-code challenges. */
+    public PrincipalKey principalKey() {
+        return key;
     }
 
     public AuditChain.AuditEvent organisation(Connection c, String tenantId, String eventType, Map<String, ?> payload) {

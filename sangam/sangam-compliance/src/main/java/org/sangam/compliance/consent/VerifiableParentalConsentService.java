@@ -149,7 +149,7 @@ public final class VerifiableParentalConsentService {
                 tenantId, id, principalRef, guardianRef, kind, method, issuer, tokenRef, appointment, orderRef,
                 ok ? Status.VERIFIED : Status.REJECTED, now, validUntil == null ? null : validUntil.toString(), actor, detail);
         Map<String, Object> ev = Sql.kv("verification", id, "kind", kind.name(), "method", method, "issuer", issuer,
-                "outcome", ok ? "VERIFIED" : "REJECTED", "guardian", ComplianceAudit.principalToken(tenantId, guardianRef), "actor", actor);
+                "outcome", ok ? "VERIFIED" : "REJECTED", "guardian", audit.principalToken(tenantId, guardianRef), "actor", actor);
         audit.principal(c, tenantId, principalRef, ok ? ComplianceAudit.GUARDIAN_VERIFIED : ComplianceAudit.GUARDIAN_REJECTED, ev);
         return new Verification(id, principalRef, guardianRef, kind, method, ok ? Status.VERIFIED : Status.REJECTED, now, validUntil);
     }

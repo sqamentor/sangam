@@ -1497,6 +1497,10 @@ ALTERS = [
     # last result, oldest first. Index only.
     ("0045-20", "decision 304 DLT delivery fallback: CONNECTOR_CALL by connector, last result and update time",
      "CONNECTOR_CALL", [], [("CONNECTOR_CALL_DELIVERY", False, ["connector_id", "last_result", "updated_at"])]),
+    # Decision 369 (d): the one-time code is rate limited per client address; the keyed hash of the address
+    # (never the address) is stored with the challenge, counted by tenant, hash and issue time.
+    ("0045-22", "decision 369 OTP issue limit per client address: keyed client-address hash", "CMP_OTP_CHALLENGE",
+     [("client_hash", "{str64}", "")], [("CMP_OTP_CLIENT", False, ["tenant_id", "client_hash", "issued_at"])]),
 ]
 
 # Data changesets, applied after every table and alter changeset:

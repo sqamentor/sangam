@@ -119,6 +119,13 @@ x-server-common: &server-common
     # (SANGAM_COMPLIANCE_JURISDICTIONS and _LOG_ARCHIVE_COUNTRY are set once, above: duplicate keys are a YAML error)
     SANGAM_COMPLIANCE_ORGANISATION: ${SANGAM_COMPLIANCE_ORGANISATION:-Sangam development}
     SANGAM_COMPLIANCE_TENANTS: ${SANGAM_COMPLIANCE_TENANTS:-dept-finance,dept-social-welfare,dept-industries}
+    # Owner decision 369 (e): the compliance principal key (HMAC of data-principal tokens and one-time-code identifier
+    # hashes) behind a secret reference, e.g. secret://compliance/principal-key with its value in
+    # SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY (base64, at least 32 bytes; .env, never committed) or a configured secret
+    # provider. Unset: consents and one-time codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED; a reference whose
+    # secret is missing, empty or short stops the start.
+    SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF: ${SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF:-}
+    SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY: ${SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY:-}
     # In-process simulators of sangam-integration (SimulatorProfile); the sim-* containers are the standalone variant.
     SANGAM_INTEGRATION_SIMULATORS_ENABLED: ${SANGAM_SIMULATORS_ENABLED:-false}
     SANGAM_CONNECTORS_IFMS_BASE_URL: http://sim-ifms:9000

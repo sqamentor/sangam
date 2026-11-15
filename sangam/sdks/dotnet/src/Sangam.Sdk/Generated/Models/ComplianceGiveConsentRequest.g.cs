@@ -31,7 +31,7 @@ public sealed record ComplianceGiveConsentRequest
     public global::System.Collections.Generic.List<string>? PurposeCodes { get; init; }
 
     /// <summary>
-    /// Required.
+    /// Whether the data principal gave consent by a clear affirmative action (DPDP s.6(1); owner decision 369). Required: an omitted value is 400 VALIDATION_FAILED naming the field, never read as false or true. Required.
     /// </summary>
     [global::System.Text.Json.Serialization.JsonPropertyName("affirmativeAction")]
     public bool? AffirmativeAction { get; init; }

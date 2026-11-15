@@ -136,7 +136,7 @@ public final class ComplianceSchema {
             CREATE TABLE CMP_OTP_CHALLENGE (tenant_id {str64} NOT NULL, challenge_id {str64} NOT NULL, identifier_type {str64} NOT NULL,
               identifier_hash {str64} NOT NULL, code_hash {str64} NOT NULL, salt {str64} NOT NULL, status {str64} NOT NULL,
               attempts {int} NOT NULL, issued_at {ts} NOT NULL, expires_at {ts} NOT NULL, locked_until {ts}, verified_at {ts},
-              consumed_at {ts}, PRIMARY KEY (tenant_id, challenge_id))""",
+              consumed_at {ts}, client_hash {str64}, PRIMARY KEY (tenant_id, challenge_id))""",
             """
             CREATE TABLE CMP_NTP_CHECK (tenant_id {str64} NOT NULL, check_id {str64} NOT NULL, checked_at {ts} NOT NULL, ok {small} NOT NULL,
               jvm_offset_ms {long}, db_offset_ms {long}, best_server {str}, results_json {text}, detail {str}, PRIMARY KEY (tenant_id, check_id))""",
@@ -164,6 +164,7 @@ public final class ComplianceSchema {
             "CREATE INDEX CMP_RETENTION_P ON CMP_RETENTION_ITEM (tenant_id, principal_ref)",
             "CREATE INDEX CMP_RIGHTS_P ON CMP_RIGHTS_REQUEST (tenant_id, principal_ref)",
             "CREATE INDEX CMP_OTP_IDENTIFIER ON CMP_OTP_CHALLENGE (tenant_id, identifier_hash, status)",
+            "CREATE INDEX CMP_OTP_CLIENT ON CMP_OTP_CHALLENGE (tenant_id, client_hash, issued_at)",
             "CREATE INDEX CMP_RIGHTS_DUE ON CMP_RIGHTS_REQUEST (tenant_id, closed_at, due_at)",
             "CREATE INDEX CMP_NOMINATION_P ON CMP_NOMINATION (tenant_id, principal_ref)",
             "CREATE INDEX CMP_GUARDIAN_P ON CMP_GUARDIAN_VERIFICATION (tenant_id, principal_ref)",

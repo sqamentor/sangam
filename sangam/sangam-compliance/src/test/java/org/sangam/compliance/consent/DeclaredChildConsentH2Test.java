@@ -67,6 +67,10 @@ class DeclaredChildConsentH2Test {
     }
 
     SangamCompliance compliance(PrincipalDirectory directory) {
+        return compliance(directory, org.sangam.compliance.PrincipalKey.of(new byte[32]));
+    }
+
+    SangamCompliance compliance(PrincipalDirectory directory, org.sangam.compliance.PrincipalKey key) {
         Map<String, String> props = new HashMap<>();
         props.put("jurisdiction", "IN");
         props.put("links.rights-portal", "https://example.gov.in/rights");
@@ -83,7 +87,7 @@ class DeclaredChildConsentH2Test {
                 "token-" + person, "verified");
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, null, directory, null, null, adults, null, null,
                 null, null, null, null, null, null, null, null);
-        SangamCompliance cmp = new SangamCompliance(D, tx, config, ports);
+        SangamCompliance cmp = new SangamCompliance(D, tx, config, ports, null, key);
         cmp.contacts.set(c, TENANT, new ContactDirectory.Contact("DPO", "Data Protection Officer", "Joint Secretary",
                 "Test Department", "dpo@example.gov.in", null, null, null, true, null), "admin-1");
         cmp.purposes.define(c, TENANT, new PurposeDefinition(PURPOSE, Map.of("en", "Service delivery"),
@@ -128,6 +132,20 @@ class DeclaredChildConsentH2Test {
 
     long consents() {
         return Jdbc.one(c, "SELECT COUNT(*) FROM CMP_CONSENT WHERE tenant_id=?", rs -> rs.getLong(1), TENANT).orElse(0L);
+    }
+
+    /**
+     * Owner decision 369 (e): the consent proof refers to the principal and the giver by the keyed token; without the
+     * compliance principal key the consent is refused by name before anything is stored, never proven with an unkeyed
+     * token.
+     */
+    @Test
+    void withoutThePrincipalKeyAConsentIsRefusedByNameAndNotStored() {
+        SangamCompliance cmp = compliance(null, org.sangam.compliance.PrincipalKey.unconfigured());
+        ComplianceException e = assertThrows(ComplianceException.class,
+                () -> cmp.consents.give(c, TENANT, give(CHILD, null, PrincipalCategory.ADULT)));
+        assertEquals(ComplianceException.Code.PRINCIPAL_KEY_NOT_CONFIGURED, e.code());
+        assertEquals(0, consents());
     }
 
     @Test

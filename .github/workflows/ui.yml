@@ -166,7 +166,14 @@ jobs:
           # organisation use their documented variables; links and seats have none, so they go in as Spring Boot's
           # SPRING_APPLICATION_JSON. Test values of the throw-away test-mode server, nothing else changes.
           compliance='{"sangam":{"compliance":{"links":{"withdraw-consent":"http://127.0.0.1:8080/portal","rights-portal":"http://127.0.0.1:8080/portal/grievances","authority-complaint":"https://www.dpb.gov.in/"},"seats":{"DPO":"e2e-seat-dpo","GRIEVANCE-OFFICER":"e2e-seat-grievance","RECORDS-OFFICER":"e2e-seat-records","PRIVACY-OFFICER":"e2e-seat-privacy","CISO":"e2e-seat-ciso","CISO-HEAD":"e2e-seat-ciso-head"}}}}'
+          # Owner decision 369 (e): the compliance principal key, a throw-away random key of this run, behind a secret
+          # reference resolved from the environment (SecretResolver.fromEnvironment); without it consents and one-time
+          # codes are refused with PRINCIPAL_KEY_NOT_CONFIGURED.
+          principal_key=$(python3 -I -c "import base64, secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())")
+          echo "::add-mask::$principal_key"
           docker run -d --name sangam-server --network e2e -e SANGAM_DEV_TOKEN="$token" \
+            -e SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF=secret://compliance/principal-key \
+            -e SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY="$principal_key" \
             -e SANGAM_SECURITY_CORS_ALLOWEDORIGINS=https://host.e2e.test \
             -e SANGAM_COMPLIANCE_JURISDICTIONS=IN -e SANGAM_COMPLIANCE_ORGANISATION="Sangam e2e" \
             -e SPRING_APPLICATION_JSON="$compliance" sangam-server:dev-test-mode

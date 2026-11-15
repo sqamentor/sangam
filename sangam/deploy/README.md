@@ -214,6 +214,15 @@ Chart behaviour worth knowing:
   signer (`sangam.registry.signer.private-key` PKCS#8 + `.public-key` X.509, Ed25519, base64) and the identifier-vault
   pepper (`sangam.registry.vault.hmac-pepper`, base64). Supply them as env from a Secret (`server.envFrom`), never in
   values.
+- **Compliance principal key (decision 369).** Data-principal tokens in the compliance audit and the identifier and
+  client-address hashes of rights-request one-time codes are HMAC-SHA256 under one key per environment:
+  `sangam.compliance.principal-key-ref` (env `SANGAM_COMPLIANCE_PRINCIPAL_KEY_REF`), a `secret://` reference whose
+  value is base64 of at least 32 bytes (for example `secret://compliance/principal-key` with
+  `SANGAM_SECRET_COMPLIANCE_PRINCIPAL_KEY` from a Secret through `server.envFrom`, or a secret provider of section
+  1.7). Unset, the server starts and consents, guardian verifications, nominations, personal-data read audits and
+  one-time codes are refused with `409 PRINCIPAL_KEY_NOT_CONFIGURED`; a literal key, or a reference whose secret is
+  missing, not base64 or shorter than 32 bytes, stops the start. Changing the key changes every token written after
+  the change (earlier events keep theirs), so rotate it only with a recorded change.
 - **Explicit production switch (decisions 143 and 198).** The chart always renders `SANGAM_SECURITY_PRODUCTION` from
   `server.production` (default `true`, boolean in the schema); a missing or invalid value stops the server. With
   `true` a dev profile in `server.springProfiles` is ignored with a warning; `false` together with a production

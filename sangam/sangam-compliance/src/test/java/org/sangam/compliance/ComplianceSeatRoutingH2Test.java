@@ -104,7 +104,7 @@ class ComplianceSeatRoutingH2Test {
         } : null;
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, null, null, auth, null, null, null, null,
                 starter, null, null, null, null, null, null, null);
-        return new SangamCompliance(D, newConnections(), config, ports);
+        return new SangamCompliance(D, newConnections(), config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
     }
 
     Connection caller() throws Exception {

@@ -158,8 +158,8 @@ public final class ConsentService {
         proof.put("language", lang.code());
         proof.put("noticeHash", notice.contentHash());
         proof.put("purposes", new ArrayList<>(new TreeSet<>(g.purposeCodes())));
-        proof.put("principal", ComplianceAudit.principalToken(tenantId, g.principalRef()));
-        proof.put("givenBy", g.givenBy() == null ? null : ComplianceAudit.principalToken(tenantId, g.givenBy()));
+        proof.put("principal", audit.principalToken(tenantId, g.principalRef()));
+        proof.put("givenBy", g.givenBy() == null ? null : audit.principalToken(tenantId, g.givenBy()));
         proof.put("channel", g.channel());
         proof.put("givenAt", now.toString());
         proof.put("category", category.name());
@@ -258,7 +258,7 @@ public final class ConsentService {
         ev.put("purposes", new ArrayList<>(new TreeSet<>(target)));
         ev.put("full", all);
         ev.put("channel", channel);
-        ev.put("actor", actor == null ? null : ComplianceAudit.principalToken(tenantId, actor));
+        ev.put("actor", actor == null ? null : audit.principalToken(tenantId, actor));
         ev.put("withdrawnAt", now.toString());
         audit.principal(c, tenantId, principalRef, ComplianceAudit.CONSENT_WITHDRAWN, ev);
         processors.cease(c, tenantId, principalRef, target, "CONSENT_WITHDRAWN");

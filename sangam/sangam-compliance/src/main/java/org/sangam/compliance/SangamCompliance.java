@@ -106,11 +106,22 @@ public final class SangamCompliance {
      */
     public SangamCompliance(Dialect dialect, Transactions tx, ComplianceConfig.Provider config, Ports p,
                             Transactions denialTx) {
+        this(dialect, tx, config, p, denialTx, PrincipalKey.unconfigured());
+    }
+
+    /**
+     * @param denialTx     see {@link #SangamCompliance(Dialect, Transactions, ComplianceConfig.Provider, Ports, Transactions)}
+     * @param principalKey owner decision 369 (e): the key of the data-principal tokens and the challenge identifier
+     *                     hashes (HMAC), from the secrets store; {@link PrincipalKey#unconfigured()} makes every
+     *                     operation that writes such a reference refuse with {@code PRINCIPAL_KEY_NOT_CONFIGURED}
+     */
+    public SangamCompliance(Dialect dialect, Transactions tx, ComplianceConfig.Provider config, Ports p,
+                            Transactions denialTx, PrincipalKey principalKey) {
         this.dialect = dialect;
         this.tx = tx;
         this.config = config;
         AuditChain chain = new AuditChain(dialect);
-        this.audit = new ComplianceAudit(chain, denialTx);
+        this.audit = new ComplianceAudit(chain, denialTx, principalKey);
         CompliancePorts.LegalHoldPort holds = p.legalHolds() != null ? p.legalHolds() : NO_HOLDS;
         CompliancePorts.ErasurePort erasure = p.erasure() != null ? p.erasure()
                 : (t, r, k, a, why) -> new CompliancePorts.ErasureOutcome(CompliancePorts.ErasureStatus.FAILED, java.util.Map.of(), "ErasurePort not configured");

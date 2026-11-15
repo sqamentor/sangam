@@ -102,8 +102,20 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     public ConsentService.GiveConsent toGiveConsent(SecurityIdentity id, ComplianceRequests.GiveConsentRequest r) {
         String subject = r.principalRef() == null || r.principalRef().isBlank() ? id.personId() : r.principalRef();
         return new ConsentService.GiveConsent(subject, r.noticeKey(), r.noticeVersion(), language(id.tenantId(), r.language()),
-                r.purposeCodes(), r.affirmativeAction(), r.channel() == null ? "api" : r.channel(), id.personId(),
+                r.purposeCodes(), affirmativeAction(r.affirmativeAction()), r.channel() == null ? "api" : r.channel(), id.personId(),
                 r.guardianVerificationId(), r.consentManagerId(), r.cmArtefactId(), declaredCategory(r.declaredCategory()));
+    }
+
+    /**
+     * Owner decision 369 (h): the data principal's clear affirmative action (IN: DPDP s.6(1)) is an explicit answer:
+     * required, never assumed; an omitted value is refused by name.
+     */
+    static boolean affirmativeAction(Boolean given) {
+        if (given == null) {
+            throw ApiProblem.badRequest("VALIDATION_FAILED", "affirmativeAction is required (true or false): whether the"
+                    + " data principal gave consent by a clear affirmative action; it is never assumed (owner decision 369)");
+        }
+        return given;
     }
 
     /** Owner decision 365: the declared category is required, ADULT or CHILD, refused by name otherwise (never defaulted). */
@@ -330,8 +342,11 @@ public final class ComplianceApiImpl implements ComplianceRestService {
     }
 
     @Override
-    public org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r) {
-        return tx(c -> compliance.otp.issue(c, tenantId, r.identifierType(), r.identifierValue(), language(tenantId, r.language())));
+    public org.sangam.compliance.rights.PrincipalOtpChallenges.Challenge issueRightsOtp(String tenantId, ComplianceRequests.OtpChallengeRequest r,
+                                                                                String clientAddress) {
+        // a refusal (lock-out, issue limit) rolls this back; its audit event commits on its own (ComplianceAudit.denial)
+        return tx(c -> compliance.otp.issue(c, tenantId, r.identifierType(), r.identifierValue(), language(tenantId, r.language()),
+                clientAddress));
     }
 
     @Override

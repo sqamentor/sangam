@@ -76,7 +76,7 @@ class RightsIntakeAuthenticationH2Test {
         // no workflow starter: no process, so no seat is needed
         SangamCompliance.Ports ports = new SangamCompliance.Ports(null, null, null, null, authenticator, null, null, null, null,
                 null, null, null, null, null, null, null, null);
-        return new SangamCompliance(D, tx, config, ports);
+        return new SangamCompliance(D, tx, config, ports, null, org.sangam.compliance.PrincipalKey.of(new byte[32]));
     }
 
     Connection caller() throws Exception {

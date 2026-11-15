@@ -42,10 +42,11 @@ class ComplianceVerifierWiringTest {
                 Base64.getEncoder().encodeToString(new byte[32]));
         ComplianceWiring w = new ComplianceWiring();
         IllegalStateException e = assertThrows(IllegalStateException.class, () -> w.sangamNationalIdVault(tx,
-                provider((EngineAdapter) null), provider((FieldEncryptor) null), mock(ComplianceConfigProvider.class), env));
+                provider((EngineAdapter) null), provider((FieldEncryptor) null), mock(ComplianceConfigProvider.class), env,
+                org.sangam.compliance.PrincipalKey.unconfigured()));
         assertTrue(e.getMessage().contains("FieldEncryptor"));
         assertNotNull(w.sangamNationalIdVault(tx, provider((EngineAdapter) null), provider(mock(FieldEncryptor.class)),
-                mock(ComplianceConfigProvider.class), env));
+                mock(ComplianceConfigProvider.class), env, org.sangam.compliance.PrincipalKey.unconfigured()));
     }
 
     @Test
@@ -55,7 +56,8 @@ class ComplianceVerifierWiringTest {
         MockEnvironment env = new MockEnvironment().withProperty("sangam.compliance.national-id-vault.hmac-pepper",
                 Base64.getEncoder().encodeToString(new byte[8]));
         assertThrows(IllegalArgumentException.class, () -> new ComplianceWiring().sangamNationalIdVault(tx,
-                provider((EngineAdapter) null), provider(mock(FieldEncryptor.class)), mock(ComplianceConfigProvider.class), env));
+                provider((EngineAdapter) null), provider(mock(FieldEncryptor.class)), mock(ComplianceConfigProvider.class), env,
+                org.sangam.compliance.PrincipalKey.unconfigured()));
     }
 
     @Test
