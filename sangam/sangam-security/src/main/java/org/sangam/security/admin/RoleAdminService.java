@@ -140,7 +140,8 @@ public final class RoleAdminService {
                         Jdbc.instant(rs, "valid_to")), actor.tenantId(), roleId);
     }
 
-    private volatile Set<String> platformRoles = Set.of();
+    /** Null until the host binds the list; every use refuses without it (RM-27: nothing by default). */
+    private volatile Set<String> platformRoles;
 
     /**
      * The platform groups used as token scopes (decision 368), from the code that grants them: the server passes the
@@ -158,9 +159,35 @@ public final class RoleAdminService {
         this.platformRoles = Set.copyOf(ids);
     }
 
-    /** The platform roles of {@link #usePlatformRoles} (sorted). */
+    /** The platform roles of {@link #usePlatformRoles} (sorted); refuses when none are bound. */
     public List<String> platformRoles() {
-        return platformRoles.stream().sorted().toList();
+        Set<String> bound = platformRoles;
+        if (bound == null) {
+            throw new IllegalStateException("no platform roles are bound (decision 368); the server binds the groups"
+                    + " of its permission map with usePlatformRoles");
+        }
+        return bound.stream().sorted().toList();
+    }
+
+    /**
+     * Decision 370 (1): at server start, fills in the missing platform role rows of every existing tenant, each tenant
+     * in its own transaction ({@link #ensurePlatformRoles}: idempotent, never overwriting a defined role, audited as
+     * {@code GRANT_CHANGED} in that tenant). Refuses before reading anything when no platform roles are bound. Returns
+     * the role ids created per tenant (only tenants that got a row).
+     */
+    public Map<String, List<String>> ensurePlatformRolesOfEveryTenant(org.sangam.core.layer.Transactions tx,
+                                                                       String actorId) {
+        platformRoles();
+        List<String> tenants = tx.inTransaction(c -> Jdbc.query(c, "SELECT tenant_id FROM SEC_TENANT ORDER BY tenant_id",
+                rs -> rs.getString(1)));
+        Map<String, List<String>> created = new LinkedHashMap<>();
+        for (String tenant : tenants) {
+            List<String> ids = tx.inTransaction(c -> ensurePlatformRoles(c, SecurityIdentity.system(tenant, actorId), tenant));
+            if (!ids.isEmpty()) {
+                created.put(tenant, ids);
+            }
+        }
+        return created;
     }
 
     /** Role ids: what {@link #defineRole} and the role-definition path accept. */

@@ -44,6 +44,8 @@ class SecurityAdminBridgeTenantIsolationH2Test {
         try (Connection c = ds.getConnection()) {
             security = new SangamSecurity(SecurityDialect.detect(c), null);
         }
+        // as SecurityWiring.sangamSecurity binds it (decisions 368, 370)
+        security.roles().usePlatformRoles(org.sangam.server.config.SecurityWiring.platformRoles());
         bridge = new SecurityAdminBridge(security,
                 new SpringTxSupport(ds, new DataSourceTransactionManager(ds), TxSupport.detectDialect(ds)), null, new RestProperties());
     }
